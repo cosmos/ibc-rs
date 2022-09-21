@@ -4,31 +4,15 @@ on:
     paths:
       - .github/workflows/rust.yml
       - Cargo.toml
-      - Cargo.lock
       - ci/**
-      - e2e/**
-      - proto/**
-      - modules/**
-      - relayer/**
-      - relayer-cli/**
-      - relayer-rest/**
-      - telemetry/**
-      - tools/**
+      - crates/modules/**
   push:
     branches: master
     paths:
       - .github/workflows/rust.yml
       - Cargo.toml
-      - Cargo.lock
       - ci/**
-      - e2e/**
-      - proto/**
-      - modules/**
-      - relayer/**
-      - relayer-cli/**
-      - relayer-rest/**
-      - telemetry/**
-      - tools/**
+      - crates/modules/**
 
 env:
   CARGO_INCREMENTAL: 0
@@ -88,7 +72,7 @@ jobs:
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --no-default-features --all-targets
+          args: --no-default-features
 
   test-stable:
     runs-on: ubuntu-latest
@@ -107,7 +91,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features --no-fail-fast --workspace --exclude ibc-integration-test -- --nocapture
+          args: --all-features --no-fail-fast --workspace -- --nocapture
 
   # test-coverage:
   #   runs-on: ubuntu-latest
