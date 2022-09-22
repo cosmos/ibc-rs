@@ -23,14 +23,14 @@ repository:
 ## Decision Making
 
 When contributing to the project, the following process leads to the best chance of
-landing the changes in `master`.
+landing the changes in `main`.
 
 All new contributions should start with a Github issue which captures the
 problem you're trying to solve. Starting off with an issue allows for early
 feedback. Once the issue is created, maintainers may request that more detailed
 documentation be written in the form of a Request for Comment (RFC) or an
 Architectural Decision Record
-([ADR](https://github.com/cosmos/ibc-rs/blob/master/docs/architecture/README.md)).
+([ADR](https://github.com/cosmos/ibc-rs/blob/main/docs/architecture/README.md)).
 
 Discussion at the RFC stage will build collective understanding of the dimensions
 of the problem and help structure conversations around trade-offs.
@@ -47,7 +47,7 @@ turn it into an ADR.
 When the problem and the proposed solution are well understood,
 changes should start with a [draft
 pull request](https://github.blog/2019-02-14-introducing-draft-pull-requests/)
-against `master`. The draft status signals that work is underway. When the work
+against `main`. The draft status signals that work is underway. When the work
 is ready for feedback, hitting "Ready for Review" will signal to the
 maintainers to take a look.
 
@@ -60,14 +60,14 @@ that PRs will sit open for long periods of time.
 
 Each stage of the process is aimed at creating feedback cycles which align
 contributors and maintainers in order to ensure that:
-- Contributors don’t waste their time implementing/proposing features which won’t land in `master`
+- Contributors don’t waste their time implementing/proposing features which won’t land in `main`
 - Maintainers have the necessary context in order to support and review contributions
 
 ## Forking
 
 If you do not have write access to the repository, your contribution should be
 made through a fork on Github. Fork the repository, contribute to your fork
-(either in the `master` branch of the fork or in a separate branch), and then
+(either in the `main` branch of the fork or in a separate branch), and then
 make a pull request back upstream.
 
 When forking, add your fork's URL as a new git remote in your local copy of the
@@ -78,11 +78,11 @@ repo. For instance, to create a fork and work on a branch of it:
 - `git remote add origin git@github.com:<location of fork>
 
 Now `origin` refers to your fork and `upstream` refers to the original version.
-Now `git push -u origin master` to update the fork, and make pull requests
+Now `git push -u origin main` to update the fork, and make pull requests
 against the original repo.
 
 To pull in updates from the origin repo, run `git fetch upstream` followed by
-`git rebase upstream/master` (or whatever branch you're working in).
+`git rebase upstream/main` (or whatever branch you're working in).
 
 ## Changelog
 
@@ -176,14 +176,14 @@ exposed.
 
 ## Pull Requests
 
-If you have write access to the ibc-rs repo, you can directly branch off of `master`.
+If you have write access to the ibc-rs repo, you can directly branch off of `main`.
 This makes it easier for project maintainers to directly make changes to your
 branch should the need arise.
 
 Branch names should be prefixed with the author's name followed by a short description
 of the feature, eg. `name/feature-x`.
 
-Pull requests are made against `master` and are squash-merged into master.
+Pull requests are made against `main` and are squash-merged into main.
 
 PRs must:
 - make reference to an issue outlining the context
@@ -240,19 +240,19 @@ Our release process is as follows:
    issues here and push them to the release PR.
 5. Mark the PR as **Ready for Review** and incorporate feedback on the release.
 6. Once approved, merge the PR.
-7. Pull `master` and run the [`release.sh`](./scripts/release.sh) script.
-   If any problem arises, submit a new PR, get it merged to `master` and try again.
+7. Pull `main` and run the [`release.sh`](./scripts/release.sh) script.
+   If any problem arises, submit a new PR, get it merged to `main` and try again.
    The reason for not releasing straight from the release branch, and therefore losing the
    ability to fix publishing problems as they arise, is that we would like the embedded
    metadata of the published crates, namely the Git commit at which the release was done,
-   to match the Git commit on the `master` branch which will be tagged.
+   to match the Git commit on the `main` branch which will be tagged.
    [See this article][crates.io-security] for a more in-depth explanation.
    **Note:** This step requires the appropriate privileges to push crates to [crates.io].
 8. Once all crates have been successfully released, create a signed tag and push it to
    GitHub: `git tag -s -a vX.Y.Z`. In the tag message, write the version and the link
    to the corresponding section of the changelog.
 9. Once the tag is pushed, wait for the CI bot to create a GitHub release, and update
-   the release description to `[📖 CHANGELOG](https://github.com/cosmos/ibc-rs/blob/master/CHANGELOG.md#vXYZ)`.
+   the release description to `[📖 CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)`.
 10. Wait an hour or so, and check that the CI job has uploaded the Hermes binaries to the release.
 11. All done! 🎉
 
