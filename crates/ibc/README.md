@@ -9,10 +9,7 @@
 ![Rust 1.60+][rustc-version]
 
 
-See the [ibc-rs] repo root for more detailed information on how this crate can be used.
-
-
-Implementation of the Inter-Blockchain Communication Protocol ([IBC]) module.
+Implementation of the Inter-Blockchain Communication Protocol ([IBC]) in Rust.
 
 ## Documentation
 
