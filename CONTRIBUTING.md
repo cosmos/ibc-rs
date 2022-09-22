@@ -233,7 +233,6 @@ Our release process is as follows:
       too).
    2. All crates' `lib.rs` files documentation references' `html_root_url`
       parameters must point to the new version.
-   3. Every reference to Hermes version in the [guide](./guide).
 
 4. Run `cargo doc --all-features --open` locally to double-check that all the
    documentation compiles and seems up-to-date and coherent. Fix any potential
@@ -253,8 +252,7 @@ Our release process is as follows:
    to the corresponding section of the changelog.
 9. Once the tag is pushed, wait for the CI bot to create a GitHub release, and update
    the release description to `[📖 CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)`.
-10. Wait an hour or so, and check that the CI job has uploaded the Hermes binaries to the release.
-11. All done! 🎉
+10. All done! 🎉
 
 [crates.io]: https://crates.io
 [crates.io-security]: https://codeandbitters.com/published-crate-analysis/
