@@ -13,10 +13,6 @@ the `ibc` rust crate which defines the main data structures and on-chain logic f
 
 See the [ibc](crates/ibc) crate's README.md for more detailed information on the `ibc` crate.
 
-## Requirements
-
-The crates in this project require the latest stable version of Rust: `1.60.0`.
-
 ## Contributing
 
 IBC is specified in English in the [cosmos/ibc repo][ibc]. Any
