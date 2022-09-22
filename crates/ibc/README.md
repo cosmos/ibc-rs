@@ -1,4 +1,4 @@
-# IBC module
+# IBC Rust implementation
 
 [![Crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
