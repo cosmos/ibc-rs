@@ -1,4 +1,4 @@
-# IBC Rust implementation
+# IBC in Rust
 
 [![Crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
