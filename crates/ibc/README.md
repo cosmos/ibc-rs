@@ -66,7 +66,7 @@ Unless required by applicable law or agreed to in writing, software distributed 
 [e2e-link]: https://github.com/cosmos/ibc-rs/actions?query=workflow%3A%22End+to+End+testing%22
 
 [license-image]: https://img.shields.io/badge/license-Apache2.0-blue.svg
-[license-link]: https://github.com/cosmos/ibc-rs/blob/master/LICENSE
+[license-link]: https://github.com/cosmos/ibc-rs/blob/main/LICENSE
 [rustc-image]: https://img.shields.io/badge/rustc-stable-blue.svg
 [rustc-version]: https://img.shields.io/badge/rustc-1.60+-blue.svg
 
