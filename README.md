@@ -32,7 +32,7 @@ under active development.
 
 - [IBC Website][ibc-homepage]
 - [IBC Specification][ibc]
-- [IBC Modules in Go][ibc-go]
+- [IBC Go implementation][ibc-go]
 
 ## License
 
