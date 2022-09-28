@@ -4,7 +4,7 @@
 version: 2
 updates:
   - package-ecosystem: "cargo"
-    directory: "crates/modules"
+    directory: "crates/ibc"
     schedule:
       interval: "weekly"
 
