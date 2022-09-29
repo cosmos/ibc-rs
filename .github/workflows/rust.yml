@@ -4,31 +4,15 @@ on:
     paths:
       - .github/workflows/rust.yml
       - Cargo.toml
-      - Cargo.lock
       - ci/**
-      - e2e/**
-      - proto/**
-      - modules/**
-      - relayer/**
-      - relayer-cli/**
-      - relayer-rest/**
-      - telemetry/**
-      - tools/**
+      - crates/**
   push:
-    branches: master
+    branches: main
     paths:
       - .github/workflows/rust.yml
       - Cargo.toml
-      - Cargo.lock
       - ci/**
-      - e2e/**
-      - proto/**
-      - modules/**
-      - relayer/**
-      - relayer-cli/**
-      - relayer-rest/**
-      - telemetry/**
-      - tools/**
+      - crates/**
 
 env:
   CARGO_INCREMENTAL: 0
@@ -45,7 +29,7 @@ jobs:
     - uses: rokroskar/workflow-run-cleanup-action@master
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-    if: "!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/master'"
+    if: "!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/main'"
 
   fmt:
     runs-on: ubuntu-latest
@@ -88,7 +72,7 @@ jobs:
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --no-default-features --all-targets
+          args: --no-default-features
 
   test-stable:
     runs-on: ubuntu-latest
@@ -107,7 +91,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features --no-fail-fast --workspace --exclude ibc-integration-test -- --nocapture
+          args: --all-features --no-fail-fast --workspace -- --nocapture
 
   # test-coverage:
   #   runs-on: ubuntu-latest

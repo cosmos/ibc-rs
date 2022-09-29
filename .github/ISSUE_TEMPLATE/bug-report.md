@@ -16,7 +16,7 @@ v    Please also ensure that this is not a duplicate issue :)
 
 ## Version
 
-<!-- `hermes version`, ibc-rs release version, or git commit hash -->
+<!-- ibc-rs release version or git commit hash -->
 
 ## Steps to Reproduce
 

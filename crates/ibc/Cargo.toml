@@ -5,7 +5,7 @@ edition      = "2021"
 license      = "Apache-2.0"
 readme       = "README.md"
 keywords     = ["blockchain", "consensus", "cosmos", "ibc", "tendermint"]
-repository   = "https://github.com/informalsystems/ibc-rs"
+repository   = "https://github.com/cosmos/ibc-rs"
 authors      = ["Informal Systems <hello@informal.systems>"]
 rust-version = "1.60"
 description  = """
@@ -27,7 +27,7 @@ mocks = ["tendermint-testgen", "clock", "std"]
 
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
-ibc-proto = { version = "0.20.1", path = "../proto", default-features = false }
+ibc-proto = { version = "0.20.1", default-features = false }
 ics23 = { version = "=0.8.1", default-features = false, features = ["host-functions"] }
 time = { version = ">=0.3.0, <0.3.12", default-features = false }
 serde_derive = { version = "1.0.104", default-features = false }
