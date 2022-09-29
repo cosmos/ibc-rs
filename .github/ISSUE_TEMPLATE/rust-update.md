@@ -20,9 +20,6 @@ Rust version:
 - [ ] Update the `rust-version` fields in all `Cargo.toml` files.
 - [ ] Update the `msrv` field in `clippy.toml` and fix all lints reported by
       `cargo clippy --all-features`.
-- [ ] Update the MSRV shields in README files:
-  - `README.md`
-  - `relayer-rest/README.md`
-- [ ] Update the MSRV in the guide: `guide/src/pre_requisites.md`
+- [ ] Update the MSRV shields in `README.md` file.
 - [ ] Add a `.changelog` entry to the `breaking-changes` section,
       announcing the new MSRV.
