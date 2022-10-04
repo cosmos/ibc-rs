@@ -1,11 +1,12 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the client module.
 
 use core::fmt::{Display, Error as FmtError, Formatter};
+use ibc_proto::google::protobuf::Any;
 use serde_derive::{Deserialize, Serialize};
+use subtle_encoding::hex;
 use tendermint::abci::tag::Tag;
 use tendermint::abci::Event as AbciEvent;
 
-use super::header::Header;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::height::Height;
 use crate::core::ics24_host::identifier::ClientId;
@@ -20,6 +21,8 @@ pub const CLIENT_TYPE_ATTRIBUTE_KEY: &str = "client_type";
 
 /// The content of the `key` field for the attribute containing the height.
 pub const CONSENSUS_HEIGHT_ATTRIBUTE_KEY: &str = "consensus_height";
+
+pub const CONSENSUS_HEIGHTS_ATTRIBUTE_KEY: &str = "consensus_heights";
 
 /// The content of the `key` field for the header in update client event.
 pub const HEADER_ATTRIBUTE_KEY: &str = "header";
@@ -81,6 +84,54 @@ impl From<Height> for ConsensusHeightAttribute {
     }
 }
 
+struct ConsensusHeightsAttribute {
+    consensus_heights: Vec<Height>,
+}
+
+impl From<ConsensusHeightsAttribute> for Tag {
+    fn from(attr: ConsensusHeightsAttribute) -> Self {
+        let consensus_heights: Vec<String> = attr
+            .consensus_heights
+            .into_iter()
+            .map(|consensus_height| consensus_height.to_string())
+            .collect();
+        Tag {
+            key: CONSENSUS_HEIGHTS_ATTRIBUTE_KEY.parse().unwrap(),
+            value: consensus_heights.join(",").parse().unwrap(),
+        }
+    }
+}
+
+impl From<Vec<Height>> for ConsensusHeightsAttribute {
+    fn from(consensus_heights: Vec<Height>) -> Self {
+        Self { consensus_heights }
+    }
+}
+
+struct HeaderAttribute {
+    header: Any,
+}
+
+impl From<HeaderAttribute> for Tag {
+    fn from(attr: HeaderAttribute) -> Self {
+        Tag {
+            key: HEADER_ATTRIBUTE_KEY.parse().unwrap(),
+            value: String::from_utf8(hex::encode(attr.header.value))
+                .unwrap()
+                .parse()
+                .unwrap(),
+        }
+    }
+}
+
+impl From<Any> for HeaderAttribute {
+    fn from(header: Any) -> Self {
+        Self { header }
+    }
+}
+
+// TODO: REMOVE Attributes at the end
+// (DO NOT MERGE WITHOUT REMOVE)
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Attributes {
     pub client_id: ClientId,
@@ -170,41 +221,18 @@ impl From<CreateClient> for AbciEvent {
 /// UpdateClient event signals a recent update of an on-chain client (IBC Client).
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct UpdateClient {
-    pub common: Attributes,
-    pub header: Option<Box<dyn Header>>,
-}
-
-impl UpdateClient {
-    pub fn client_id(&self) -> &ClientId {
-        &self.common.client_id
-    }
-
-    pub fn client_type(&self) -> ClientType {
-        self.common.client_type
-    }
-
-    pub fn consensus_height(&self) -> Height {
-        self.common.consensus_height
-    }
+    pub client_id: ClientId,
+    pub client_type: ClientType,
+    // Deprecated: consensus_height is deprecated and will be removed in a future release.
+    // Please use consensus_heights instead.
+    pub consensus_height: Height,
+    pub consensus_heights: Vec<Height>,
+    pub header: Any,
 }
 
 impl Display for UpdateClient {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        // TODO Display: Check for a solution for Box<dyn Header>
-        write!(
-            f,
-            "UpdateClient {{ common: {}, header: None }}",
-            self.common
-        )
-    }
-}
-
-impl From<Attributes> for UpdateClient {
-    fn from(attrs: Attributes) -> Self {
-        UpdateClient {
-            common: attrs,
-            header: None,
-        }
+        write!(f, "{:?}", self)
     }
 }
 
@@ -215,18 +243,16 @@ impl From<UpdateClient> for IbcEvent {
 }
 
 impl From<UpdateClient> for AbciEvent {
-    fn from(v: UpdateClient) -> Self {
-        let mut attributes = Vec::<Tag>::from(v.common);
-        if let Some(h) = v.header {
-            let header = Tag {
-                key: HEADER_ATTRIBUTE_KEY.parse().unwrap(),
-                value: h.encode_to_hex_string().parse().unwrap(),
-            };
-            attributes.push(header);
-        }
+    fn from(c: UpdateClient) -> Self {
         AbciEvent {
             type_str: IbcEventType::UpdateClient.as_str().to_string(),
-            attributes,
+            attributes: vec![
+                ClientIdAttribute::from(c.client_id).into(),
+                ClientTypeAttribute::from(c.client_type).into(),
+                ConsensusHeightAttribute::from(c.consensus_height).into(),
+                ConsensusHeightsAttribute::from(c.consensus_heights).into(),
+                HeaderAttribute::from(c.header).into(),
+            ],
         }
     }
 }
