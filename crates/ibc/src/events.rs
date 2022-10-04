@@ -222,7 +222,7 @@ impl FromStr for IbcEventType {
 }
 
 /// Events created by the IBC component of a chain, destined for a relayer.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug)]
 pub enum IbcEvent {
     NewBlock(NewBlock),
 
@@ -325,13 +325,6 @@ impl TryFrom<IbcEvent> for AbciEvent {
 }
 
 impl IbcEvent {
-    pub fn to_json(&self) -> String {
-        match serde_json::to_string(self) {
-            Ok(value) => value,
-            Err(_) => format!("{:?}", self), // Fallback to debug printing
-        }
-    }
-
     pub fn event_type(&self) -> IbcEventType {
         match self {
             IbcEvent::NewBlock(_) => IbcEventType::NewBlock,

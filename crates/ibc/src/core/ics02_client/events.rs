@@ -55,6 +55,63 @@ impl From<NewBlock> for IbcEvent {
     }
 }
 
+struct ClientIdAttribute {
+    client_id: ClientId,
+}
+
+impl From<ClientIdAttribute> for Tag {
+    fn from(attr: ClientIdAttribute) -> Self {
+        Tag {
+            key: CLIENT_ID_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr.client_id.to_string().parse().unwrap(),
+        }
+    }
+}
+
+impl From<ClientId> for ClientIdAttribute {
+    fn from(client_id: ClientId) -> Self {
+        Self { client_id }
+    }
+}
+
+struct ClientTypeAttribute {
+    client_type: ClientType,
+}
+
+impl From<ClientTypeAttribute> for Tag {
+    fn from(attr: ClientTypeAttribute) -> Self {
+        Tag {
+            key: CLIENT_TYPE_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr.client_type.to_string().parse().unwrap(),
+        }
+    }
+}
+
+impl From<ClientType> for ClientTypeAttribute {
+    fn from(client_type: ClientType) -> Self {
+        Self { client_type }
+    }
+}
+
+struct ConsensusHeightAttribute {
+    consensus_height: Height,
+}
+
+impl From<ConsensusHeightAttribute> for Tag {
+    fn from(attr: ConsensusHeightAttribute) -> Self {
+        Tag {
+            key: CONSENSUS_HEIGHT_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr.consensus_height.to_string().parse().unwrap(),
+        }
+    }
+}
+
+impl From<Height> for ConsensusHeightAttribute {
+    fn from(consensus_height: Height) -> Self {
+        Self { consensus_height }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Attributes {
     pub client_id: ClientId,
@@ -109,24 +166,16 @@ impl From<Attributes> for Vec<Tag> {
 }
 
 /// CreateClient event signals the creation of a new on-chain client (IBC client).
-#[derive(Debug, Serialize, Clone, PartialEq, Eq)]
-pub struct CreateClient(pub Attributes);
-
-impl CreateClient {
-    pub fn client_id(&self) -> &ClientId {
-        &self.0.client_id
-    }
+#[derive(Debug)]
+pub struct CreateClient {
+    pub client_id: ClientId,
+    pub client_type: ClientType,
+    pub consensus_height: Height,
 }
 
 impl Display for CreateClient {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "CreateClient {{ {} }}", self.0)
-    }
-}
-
-impl From<Attributes> for CreateClient {
-    fn from(attrs: Attributes) -> Self {
-        CreateClient(attrs)
+        write!(f, "CreateClient {{ {} }}", self)
     }
 }
 
@@ -137,11 +186,14 @@ impl From<CreateClient> for IbcEvent {
 }
 
 impl From<CreateClient> for AbciEvent {
-    fn from(v: CreateClient) -> Self {
-        let attributes = Vec::<Tag>::from(v.0);
+    fn from(c: CreateClient) -> Self {
         AbciEvent {
             type_str: IbcEventType::CreateClient.as_str().to_string(),
-            attributes,
+            attributes: vec![
+                ClientIdAttribute::from(c.client_id).into(),
+                ClientTypeAttribute::from(c.client_type).into(),
+                ConsensusHeightAttribute::from(c.consensus_height).into(),
+            ],
         }
     }
 }
