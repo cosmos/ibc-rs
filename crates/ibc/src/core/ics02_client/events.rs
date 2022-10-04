@@ -24,37 +24,6 @@ pub const CONSENSUS_HEIGHT_ATTRIBUTE_KEY: &str = "consensus_height";
 /// The content of the `key` field for the header in update client event.
 pub const HEADER_ATTRIBUTE_KEY: &str = "header";
 
-/// NewBlock event signals the committing & execution of a new block.
-// TODO - find a better place for NewBlock
-#[derive(Debug, Serialize, Clone, Copy, PartialEq, Eq)]
-pub struct NewBlock {
-    pub height: Height,
-}
-
-impl NewBlock {
-    pub fn new(h: Height) -> NewBlock {
-        NewBlock { height: h }
-    }
-    pub fn set_height(&mut self, height: Height) {
-        self.height = height;
-    }
-    pub fn height(&self) -> Height {
-        self.height
-    }
-}
-
-impl Display for NewBlock {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "NewBlock {{ height: {} }}", self.height)
-    }
-}
-
-impl From<NewBlock> for IbcEvent {
-    fn from(v: NewBlock) -> Self {
-        IbcEvent::NewBlock(v)
-    }
-}
-
 struct ClientIdAttribute {
     client_id: ClientId,
 }

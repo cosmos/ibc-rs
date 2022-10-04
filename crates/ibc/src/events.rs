@@ -10,7 +10,6 @@ use tendermint::abci::tag::Tag;
 use tendermint::abci::Event as AbciEvent;
 
 use crate::core::ics02_client::error as client_error;
-use crate::core::ics02_client::events::NewBlock;
 use crate::core::ics02_client::events::{self as ClientEvents};
 use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics03_connection::events as ConnectionEvents;
@@ -98,9 +97,7 @@ impl WithBlockDataType {
     }
 }
 
-const NEW_BLOCK_EVENT: &str = "new_block";
 const EMPTY_EVENT: &str = "empty";
-const CHAIN_ERROR_EVENT: &str = "chain_error";
 const APP_MODULE_EVENT: &str = "app_module";
 /// Client event types
 const CREATE_CLIENT_EVENT: &str = "create_client";
@@ -130,7 +127,6 @@ const TIMEOUT_ON_CLOSE_EVENT: &str = "timeout_packet_on_close";
 /// Events types
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum IbcEventType {
-    NewBlock,
     CreateClient,
     UpdateClient,
     UpgradeClient,
@@ -153,13 +149,11 @@ pub enum IbcEventType {
     TimeoutOnClose,
     AppModule,
     Empty,
-    ChainError,
 }
 
 impl IbcEventType {
     pub fn as_str(&self) -> &'static str {
         match *self {
-            IbcEventType::NewBlock => NEW_BLOCK_EVENT,
             IbcEventType::CreateClient => CREATE_CLIENT_EVENT,
             IbcEventType::UpdateClient => UPDATE_CLIENT_EVENT,
             IbcEventType::UpgradeClient => UPGRADE_CLIENT_EVENT,
@@ -182,7 +176,6 @@ impl IbcEventType {
             IbcEventType::TimeoutOnClose => TIMEOUT_ON_CLOSE_EVENT,
             IbcEventType::AppModule => APP_MODULE_EVENT,
             IbcEventType::Empty => EMPTY_EVENT,
-            IbcEventType::ChainError => CHAIN_ERROR_EVENT,
         }
     }
 }
@@ -192,7 +185,6 @@ impl FromStr for IbcEventType {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            NEW_BLOCK_EVENT => Ok(IbcEventType::NewBlock),
             CREATE_CLIENT_EVENT => Ok(IbcEventType::CreateClient),
             UPDATE_CLIENT_EVENT => Ok(IbcEventType::UpdateClient),
             UPGRADE_CLIENT_EVENT => Ok(IbcEventType::UpgradeClient),
@@ -214,7 +206,6 @@ impl FromStr for IbcEventType {
             TIMEOUT_EVENT => Ok(IbcEventType::Timeout),
             TIMEOUT_ON_CLOSE_EVENT => Ok(IbcEventType::TimeoutOnClose),
             EMPTY_EVENT => Ok(IbcEventType::Empty),
-            CHAIN_ERROR_EVENT => Ok(IbcEventType::ChainError),
             // from_str() for `APP_MODULE_EVENT` MUST fail because a `ModuleEvent`'s type isn't constant
             _ => Err(Error::incorrect_event_type(s.to_string())),
         }
@@ -224,8 +215,6 @@ impl FromStr for IbcEventType {
 /// Events created by the IBC component of a chain, destined for a relayer.
 #[derive(Debug)]
 pub enum IbcEvent {
-    NewBlock(NewBlock),
-
     CreateClient(ClientEvents::CreateClient),
     UpdateClient(ClientEvents::UpdateClient),
     UpgradeClient(ClientEvents::UpgradeClient),
@@ -251,15 +240,11 @@ pub enum IbcEvent {
     TimeoutOnClosePacket(ChannelEvents::TimeoutOnClosePacket),
 
     AppModule(ModuleEvent),
-
-    ChainError(String), // Special event, signifying an error on CheckTx or DeliverTx
 }
 
 impl Display for IbcEvent {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         match self {
-            IbcEvent::NewBlock(ev) => write!(f, "NewBlock({})", ev.height),
-
             IbcEvent::CreateClient(ev) => write!(f, "CreateClient({})", ev),
             IbcEvent::UpdateClient(ev) => write!(f, "UpdateClient({})", ev),
             IbcEvent::UpgradeClient(ev) => write!(f, "UpgradeClient({})", ev),
@@ -285,8 +270,6 @@ impl Display for IbcEvent {
             IbcEvent::TimeoutOnClosePacket(ev) => write!(f, "TimeoutOnClosePacket({})", ev),
 
             IbcEvent::AppModule(ev) => write!(f, "AppModule({})", ev),
-
-            IbcEvent::ChainError(ev) => write!(f, "ChainError({})", ev),
         }
     }
 }
@@ -317,9 +300,6 @@ impl TryFrom<IbcEvent> for AbciEvent {
             IbcEvent::TimeoutPacket(event) => event.try_into().map_err(Error::channel)?,
             IbcEvent::TimeoutOnClosePacket(event) => event.try_into().map_err(Error::channel)?,
             IbcEvent::AppModule(event) => event.try_into()?,
-            IbcEvent::NewBlock(_) | IbcEvent::ChainError(_) => {
-                return Err(Error::incorrect_event_type(event.to_string()))
-            }
         })
     }
 }
@@ -327,7 +307,6 @@ impl TryFrom<IbcEvent> for AbciEvent {
 impl IbcEvent {
     pub fn event_type(&self) -> IbcEventType {
         match self {
-            IbcEvent::NewBlock(_) => IbcEventType::NewBlock,
             IbcEvent::CreateClient(_) => IbcEventType::CreateClient,
             IbcEvent::UpdateClient(_) => IbcEventType::UpdateClient,
             IbcEvent::ClientMisbehaviour(_) => IbcEventType::ClientMisbehaviour,
@@ -349,7 +328,6 @@ impl IbcEvent {
             IbcEvent::TimeoutPacket(_) => IbcEventType::Timeout,
             IbcEvent::TimeoutOnClosePacket(_) => IbcEventType::TimeoutOnClose,
             IbcEvent::AppModule(_) => IbcEventType::AppModule,
-            IbcEvent::ChainError(_) => IbcEventType::ChainError,
         }
     }
 
