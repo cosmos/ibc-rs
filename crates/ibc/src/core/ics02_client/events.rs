@@ -2,7 +2,6 @@
 
 use core::fmt::{Display, Error as FmtError, Formatter};
 use ibc_proto::google::protobuf::Any;
-use serde_derive::{Deserialize, Serialize};
 use subtle_encoding::hex;
 use tendermint::abci::tag::Tag;
 use tendermint::abci::Event as AbciEvent;
@@ -132,61 +131,6 @@ impl From<HeaderAttribute> for Tag {
 impl From<Any> for HeaderAttribute {
     fn from(header: Any) -> Self {
         Self { header }
-    }
-}
-
-// TODO: REMOVE Attributes at the end
-// (DO NOT MERGE WITHOUT REMOVE)
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Attributes {
-    pub client_id: ClientId,
-    pub client_type: ClientType,
-    pub consensus_height: Height,
-}
-
-impl Default for Attributes {
-    fn default() -> Self {
-        Attributes {
-            client_id: Default::default(),
-            client_type: ClientType::Tendermint,
-            consensus_height: Height::new(0, 1).unwrap(),
-        }
-    }
-}
-
-impl Display for Attributes {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(
-            f,
-            "Attributes {{ client_id: {}, client_type: {}, consensus_height: {} }}",
-            self.client_id, self.client_type, self.consensus_height
-        )
-    }
-}
-
-/// Convert attributes to Tendermint ABCI tags
-///
-/// # Note
-/// The parsing of `Key`s and `Value`s never fails, because the
-/// `FromStr` instance of `tendermint::abci::tag::{Key, Value}`
-/// is infallible, even if it is not represented in the error type.
-/// Once tendermint-rs improves the API of the `Key` and `Value` types,
-/// we will be able to remove the `.parse().unwrap()` calls.
-impl From<Attributes> for Vec<Tag> {
-    fn from(attrs: Attributes) -> Self {
-        let client_id = Tag {
-            key: CLIENT_ID_ATTRIBUTE_KEY.parse().unwrap(),
-            value: attrs.client_id.to_string().parse().unwrap(),
-        };
-        let client_type = Tag {
-            key: CLIENT_TYPE_ATTRIBUTE_KEY.parse().unwrap(),
-            value: attrs.client_type.as_str().parse().unwrap(),
-        };
-        let consensus_height = Tag {
-            key: CONSENSUS_HEIGHT_ATTRIBUTE_KEY.parse().unwrap(),
-            value: attrs.consensus_height.to_string().parse().unwrap(),
-        };
-        vec![client_id, client_type, consensus_height]
     }
 }
 
