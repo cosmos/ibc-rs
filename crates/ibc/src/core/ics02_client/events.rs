@@ -112,6 +112,7 @@ impl From<Vec<Height>> for ConsensusHeightsAttribute {
     }
 }
 
+#[derive(Debug)]
 struct HeaderAttribute {
     header: Any,
 }
@@ -225,12 +226,6 @@ impl Display for CreateClient {
     }
 }
 
-impl From<CreateClient> for IbcEvent {
-    fn from(v: CreateClient) -> Self {
-        IbcEvent::CreateClient(v)
-    }
-}
-
 impl From<CreateClient> for AbciEvent {
     fn from(c: CreateClient) -> Self {
         AbciEvent {
@@ -245,15 +240,53 @@ impl From<CreateClient> for AbciEvent {
 }
 
 /// UpdateClient event signals a recent update of an on-chain client (IBC Client).
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug)]
 pub struct UpdateClient {
-    pub client_id: ClientId,
-    pub client_type: ClientType,
+    client_id: ClientIdAttribute,
+    client_type: ClientTypeAttribute,
     // Deprecated: consensus_height is deprecated and will be removed in a future release.
     // Please use consensus_heights instead.
-    pub consensus_height: Height,
-    pub consensus_heights: Vec<Height>,
-    pub header: Any,
+    consensus_height: ConsensusHeightAttribute,
+    consensus_heights: ConsensusHeightsAttribute,
+    header: HeaderAttribute,
+}
+
+impl UpdateClient {
+    pub fn new(
+        client_id: ClientId,
+        client_type: ClientType,
+        consensus_height: Height,
+        consensus_heights: Vec<Height>,
+        header: Any,
+    ) -> Self {
+        Self {
+            client_id: ClientIdAttribute::from(client_id),
+            client_type: ClientTypeAttribute::from(client_type),
+            consensus_height: ConsensusHeightAttribute::from(consensus_height),
+            consensus_heights: ConsensusHeightsAttribute::from(consensus_heights),
+            header: HeaderAttribute::from(header),
+        }
+    }
+
+    pub fn client_id(&self) -> &ClientId {
+        &self.client_id.client_id
+    }
+
+    pub fn client_type(&self) -> &ClientType {
+        &self.client_type.client_type
+    }
+
+    pub fn consensus_height(&self) -> &Height {
+        &self.consensus_height.consensus_height
+    }
+
+    pub fn consensus_heights(&self) -> &[Height] {
+        self.consensus_heights.consensus_heights.as_ref()
+    }
+
+    pub fn header(&self) -> &Any {
+        &self.header.header
+    }
 }
 
 impl Display for UpdateClient {
@@ -262,22 +295,16 @@ impl Display for UpdateClient {
     }
 }
 
-impl From<UpdateClient> for IbcEvent {
-    fn from(v: UpdateClient) -> Self {
-        IbcEvent::UpdateClient(v)
-    }
-}
-
 impl From<UpdateClient> for AbciEvent {
-    fn from(c: UpdateClient) -> Self {
+    fn from(u: UpdateClient) -> Self {
         AbciEvent {
             type_str: IbcEventType::UpdateClient.as_str().to_string(),
             attributes: vec![
-                ClientIdAttribute::from(c.client_id).into(),
-                ClientTypeAttribute::from(c.client_type).into(),
-                ConsensusHeightAttribute::from(c.consensus_height).into(),
-                ConsensusHeightsAttribute::from(c.consensus_heights).into(),
-                HeaderAttribute::from(c.header).into(),
+                u.client_id.into(),
+                u.client_type.into(),
+                u.consensus_height.into(),
+                u.consensus_heights.into(),
+                u.header.into(),
             ],
         }
     }

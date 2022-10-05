@@ -90,13 +90,13 @@ pub fn process<Ctx: ClientReader>(
         processed_height: ctx.host_height(),
     });
 
-    output.emit(IbcEvent::UpdateClient(UpdateClient {
+    output.emit(IbcEvent::UpdateClient(UpdateClient::new(
         client_id,
         client_type,
         consensus_height,
-        consensus_heights: vec![consensus_height],
+        vec![consensus_height],
         header,
-    }));
+    )));
 
     Ok(output.with_result(result))
 }
@@ -153,7 +153,7 @@ mod tests {
                 assert_eq!(events.len(), 1);
                 let event = events.pop().unwrap();
                 assert!(
-                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id == msg.client_id)
+                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id() == &msg.client_id)
                 );
                 assert!(log.is_empty());
                 // Check the result
@@ -235,7 +235,7 @@ mod tests {
                     assert_eq!(events.len(), 1);
                     let event = events.pop().unwrap();
                     assert!(
-                        matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id == msg.client_id)
+                        matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id() == &msg.client_id)
                     );
                     assert!(log.is_empty());
                 }
@@ -295,7 +295,7 @@ mod tests {
                 assert_eq!(events.len(), 1);
                 let event = events.pop().unwrap();
                 assert!(
-                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id == msg.client_id)
+                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id() == &msg.client_id)
                 );
                 assert!(log.is_empty());
                 // Check the result
@@ -364,7 +364,7 @@ mod tests {
                 assert_eq!(events.len(), 1);
                 let event = events.pop().unwrap();
                 assert!(
-                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id == msg.client_id)
+                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id() == &msg.client_id)
                 );
                 assert!(log.is_empty());
                 // Check the result
@@ -444,7 +444,7 @@ mod tests {
                 assert_eq!(events.len(), 1);
                 let event = events.pop().unwrap();
                 assert!(
-                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id == msg.client_id)
+                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id() == &msg.client_id)
                 );
                 assert!(log.is_empty());
                 // Check the result
