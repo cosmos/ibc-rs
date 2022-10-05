@@ -27,6 +27,7 @@ pub const CONSENSUS_HEIGHTS_ATTRIBUTE_KEY: &str = "consensus_heights";
 /// The content of the `key` field for the header in update client event.
 pub const HEADER_ATTRIBUTE_KEY: &str = "header";
 
+#[derive(Debug)]
 struct ClientIdAttribute {
     client_id: ClientId,
 }
@@ -46,6 +47,7 @@ impl From<ClientId> for ClientIdAttribute {
     }
 }
 
+#[derive(Debug)]
 struct ClientTypeAttribute {
     client_type: ClientType,
 }
@@ -65,6 +67,7 @@ impl From<ClientType> for ClientTypeAttribute {
     }
 }
 
+#[derive(Debug)]
 struct ConsensusHeightAttribute {
     consensus_height: Height,
 }
@@ -84,6 +87,7 @@ impl From<Height> for ConsensusHeightAttribute {
     }
 }
 
+#[derive(Debug)]
 struct ConsensusHeightsAttribute {
     consensus_heights: Vec<Height>,
 }
@@ -188,9 +192,31 @@ impl From<Attributes> for Vec<Tag> {
 /// CreateClient event signals the creation of a new on-chain client (IBC client).
 #[derive(Debug)]
 pub struct CreateClient {
-    pub client_id: ClientId,
-    pub client_type: ClientType,
-    pub consensus_height: Height,
+    client_id: ClientIdAttribute,
+    client_type: ClientTypeAttribute,
+    consensus_height: ConsensusHeightAttribute,
+}
+
+impl CreateClient {
+    pub fn new(client_id: ClientId, client_type: ClientType, consensus_height: Height) -> Self {
+        Self {
+            client_id: ClientIdAttribute::from(client_id),
+            client_type: ClientTypeAttribute::from(client_type),
+            consensus_height: ConsensusHeightAttribute::from(consensus_height),
+        }
+    }
+
+    pub fn client_id(&self) -> &ClientId {
+        &self.client_id.client_id
+    }
+
+    pub fn client_type(&self) -> &ClientType {
+        &self.client_type.client_type
+    }
+
+    pub fn consensus_height(&self) -> &Height {
+        &self.consensus_height.consensus_height
+    }
 }
 
 impl Display for CreateClient {
@@ -210,9 +236,9 @@ impl From<CreateClient> for AbciEvent {
         AbciEvent {
             type_str: IbcEventType::CreateClient.as_str().to_string(),
             attributes: vec![
-                ClientIdAttribute::from(c.client_id).into(),
-                ClientTypeAttribute::from(c.client_type).into(),
-                ConsensusHeightAttribute::from(c.consensus_height).into(),
+                c.client_id.into(),
+                c.client_type.into(),
+                c.consensus_height.into(),
             ],
         }
     }

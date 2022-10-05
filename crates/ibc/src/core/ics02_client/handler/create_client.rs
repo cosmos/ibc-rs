@@ -61,11 +61,11 @@ pub fn process(ctx: &dyn ClientReader, msg: MsgCreateClient) -> HandlerResult<Cl
         processed_height: ctx.host_height(),
     });
 
-    output.emit(IbcEvent::from(CreateClient {
-        client_id: client_id.clone(),
+    output.emit(IbcEvent::CreateClient(CreateClient::new(
+        client_id.clone(),
         client_type,
         consensus_height,
-    }));
+    )));
 
     output.log(format!(
         "success: generated new client identifier: {}",
@@ -126,7 +126,7 @@ mod tests {
                 let event = events.pop().unwrap();
                 let expected_client_id = ClientId::new(ClientType::Mock, 0).unwrap();
                 assert!(
-                    matches!(event, IbcEvent::CreateClient(ref e) if e.client_id == expected_client_id)
+                    matches!(event, IbcEvent::CreateClient(ref e) if e.client_id() == &expected_client_id)
                 );
                 match result {
                     ClientResult::Create(create_result) => {
@@ -200,7 +200,7 @@ mod tests {
                     assert_eq!(events.len(), 1);
                     let event = events.pop().unwrap();
                     assert!(
-                        matches!(event, IbcEvent::CreateClient(ref e) if e.client_id == expected_client_id)
+                        matches!(event, IbcEvent::CreateClient(ref e) if e.client_id() == &expected_client_id)
                     );
                     match result {
                         ClientResult::Create(create_res) => {
@@ -272,7 +272,7 @@ mod tests {
                 let event = events.pop().unwrap();
                 let expected_client_id = ClientId::new(ClientType::Tendermint, 0).unwrap();
                 assert!(
-                    matches!(event, IbcEvent::CreateClient(ref e) if e.client_id == expected_client_id)
+                    matches!(event, IbcEvent::CreateClient(ref e) if e.client_id() == &expected_client_id)
                 );
                 match result {
                     ClientResult::Create(create_res) => {
