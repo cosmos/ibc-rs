@@ -94,7 +94,7 @@ pub fn process<Ctx: ClientReader>(
         client_id,
         client_type,
         consensus_height,
-        consensus_heights: vec![consensus_height.clone()],
+        consensus_heights: vec![consensus_height],
         header,
     }));
 

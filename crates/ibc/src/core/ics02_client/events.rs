@@ -195,7 +195,7 @@ pub struct CreateClient {
 
 impl Display for CreateClient {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "CreateClient {{ {} }}", self)
+        write!(f, "{:?}", self)
     }
 }
 
@@ -219,7 +219,7 @@ impl From<CreateClient> for AbciEvent {
 }
 
 /// UpdateClient event signals a recent update of an on-chain client (IBC Client).
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct UpdateClient {
     pub client_id: ClientId,
     pub client_type: ClientType,

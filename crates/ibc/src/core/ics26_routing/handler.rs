@@ -349,7 +349,7 @@ mod tests {
             "There was no event generated for client creation!"
         );
         let client_id = match client_id_event.unwrap() {
-            IbcEvent::CreateClient(create_client) => create_client.client_id.clone(),
+            IbcEvent::CreateClient(create_client) => create_client.client_id,
             event => panic!("unexpected IBC event: {:?}", event),
         };
 
