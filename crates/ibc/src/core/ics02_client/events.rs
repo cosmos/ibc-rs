@@ -10,7 +10,7 @@ use tendermint::abci::Event as AbciEvent;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::height::Height;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::events::{IbcEvent, IbcEventType};
+use crate::events::IbcEventType;
 use crate::prelude::*;
 
 /// The content of the `key` field for the attribute containing the client identifier.
@@ -312,39 +312,43 @@ impl From<UpdateClient> for AbciEvent {
 
 /// ClientMisbehaviour event signals the update of an on-chain client (IBC Client) with evidence of
 /// misbehaviour.
-#[derive(Debug, Serialize, Clone, PartialEq, Eq)]
-pub struct ClientMisbehaviour(pub Attributes);
+#[derive(Debug)]
+pub struct ClientMisbehaviour {
+    client_id: ClientIdAttribute,
+    client_type: ClientTypeAttribute,
+}
 
 impl ClientMisbehaviour {
+    pub fn new(client_id: ClientId, client_type: ClientType) -> Self {
+        Self {
+            client_id: ClientIdAttribute::from(client_id),
+            client_type: ClientTypeAttribute::from(client_type),
+        }
+    }
+
     pub fn client_id(&self) -> &ClientId {
-        &self.0.client_id
+        &self.client_id.client_id
+    }
+
+    pub fn client_type(&self) -> &ClientType {
+        &self.client_type.client_type
     }
 }
 
 impl Display for ClientMisbehaviour {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "ClientMisbehaviour {{ {} }}", self.0)
-    }
-}
-
-impl From<Attributes> for ClientMisbehaviour {
-    fn from(attrs: Attributes) -> Self {
-        ClientMisbehaviour(attrs)
-    }
-}
-
-impl From<ClientMisbehaviour> for IbcEvent {
-    fn from(v: ClientMisbehaviour) -> Self {
-        IbcEvent::ClientMisbehaviour(v)
+        write!(f, "{:?}", self)
     }
 }
 
 impl From<ClientMisbehaviour> for AbciEvent {
-    fn from(v: ClientMisbehaviour) -> Self {
-        let attributes = Vec::<Tag>::from(v.0);
+    fn from(c: ClientMisbehaviour) -> Self {
         AbciEvent {
             type_str: IbcEventType::ClientMisbehaviour.as_str().to_string(),
-            attributes,
+            attributes: vec![
+                c.client_id.into(),
+                c.client_type.into(),
+            ]
         }
     }
 }
