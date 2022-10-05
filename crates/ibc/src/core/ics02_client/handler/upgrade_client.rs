@@ -4,7 +4,7 @@ use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::Error;
-use crate::core::ics02_client::events::Attributes;
+use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
 use crate::core::ics24_host::identifier::ClientId;
@@ -56,17 +56,20 @@ pub fn process(
     // Not implemented yet: https://github.com/informalsystems/ibc-rs/issues/722
     // todo!()
 
+    let client_type = client_state.client_type();
+    let consensus_height = client_state.latest_height();
+
     let result = ClientResult::Upgrade(Result {
         client_id: client_id.clone(),
         client_state,
         consensus_state,
     });
-    let event_attributes = Attributes {
-        client_id,
-        ..Default::default()
-    };
 
-    output.emit(IbcEvent::UpgradeClient(event_attributes.into()));
+    output.emit(IbcEvent::UpgradeClient(UpgradeClient::new(
+        client_id,
+        client_type,
+        consensus_height,
+    )));
     Ok(output.with_result(result))
 }
 

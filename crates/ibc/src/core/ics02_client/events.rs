@@ -345,42 +345,56 @@ impl From<ClientMisbehaviour> for AbciEvent {
     fn from(c: ClientMisbehaviour) -> Self {
         AbciEvent {
             type_str: IbcEventType::ClientMisbehaviour.as_str().to_string(),
-            attributes: vec![
-                c.client_id.into(),
-                c.client_type.into(),
-            ]
+            attributes: vec![c.client_id.into(), c.client_type.into()],
         }
     }
 }
 
 /// Signals a recent upgrade of an on-chain client (IBC Client).
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
-pub struct UpgradeClient(pub Attributes);
+#[derive(Debug)]
+pub struct UpgradeClient {
+    client_id: ClientIdAttribute,
+    client_type: ClientTypeAttribute,
+    consensus_height: ConsensusHeightAttribute,
+}
 
 impl UpgradeClient {
+    pub fn new(client_id: ClientId, client_type: ClientType, consensus_height: Height) -> Self {
+        Self {
+            client_id: ClientIdAttribute::from(client_id),
+            client_type: ClientTypeAttribute::from(client_type),
+            consensus_height: ConsensusHeightAttribute::from(consensus_height),
+        }
+    }
+
     pub fn client_id(&self) -> &ClientId {
-        &self.0.client_id
+        &self.client_id.client_id
+    }
+
+    pub fn client_type(&self) -> &ClientType {
+        &self.client_type.client_type
+    }
+
+    pub fn consensus_height(&self) -> &Height {
+        &self.consensus_height.consensus_height
     }
 }
 
 impl Display for UpgradeClient {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "UpgradeClient {{ {} }}", self.0)
-    }
-}
-
-impl From<Attributes> for UpgradeClient {
-    fn from(attrs: Attributes) -> Self {
-        UpgradeClient(attrs)
+        write!(f, "{:?}", self)
     }
 }
 
 impl From<UpgradeClient> for AbciEvent {
-    fn from(v: UpgradeClient) -> Self {
-        let attributes = Vec::<Tag>::from(v.0);
+    fn from(u: UpgradeClient) -> Self {
         AbciEvent {
             type_str: IbcEventType::UpgradeClient.as_str().to_string(),
-            attributes,
+            attributes: vec![
+                u.client_id.into(),
+                u.client_type.into(),
+                u.consensus_height.into(),
+            ],
         }
     }
 }
