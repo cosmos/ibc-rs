@@ -159,10 +159,6 @@ impl From<Header> for Any {
     }
 }
 
-pub fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
-    RawHeader::decode(buf).map_err(Error::decode)?.try_into()
-}
-
 impl From<Header> for RawHeader {
     fn from(value: Header) -> Self {
         RawHeader {
