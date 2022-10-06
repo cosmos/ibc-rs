@@ -119,9 +119,7 @@ mod tests {
         let output = dispatch(&ctx, ClientMsg::CreateClient(msg.clone()));
 
         match output {
-            Ok(HandlerOutput {
-                result, ..
-            }) => {
+            Ok(HandlerOutput { result, .. }) => {
                 let expected_client_id = ClientId::new(ClientType::Mock, 0).unwrap();
                 match result {
                     ClientResult::Create(create_result) => {
@@ -189,30 +187,26 @@ mod tests {
             let output = dispatch(&ctx, ClientMsg::CreateClient(msg.clone()));
 
             match output {
-                Ok(HandlerOutput {
-                    result, ..
-                }) => {
-                    match result {
-                        ClientResult::Create(create_res) => {
-                            assert_eq!(
-                                create_res.client_type,
-                                create_res.client_state.client_type()
-                            );
-                            assert_eq!(create_res.client_id, expected_client_id);
-                            assert_eq!(
-                                create_res.client_state.as_ref().clone_into(),
-                                msg.client_state
-                            );
-                            assert_eq!(
-                                create_res.consensus_state.as_ref().clone_into(),
-                                msg.consensus_state
-                            );
-                        }
-                        _ => {
-                            panic!("expected result of type ClientResult::CreateResult");
-                        }
+                Ok(HandlerOutput { result, .. }) => match result {
+                    ClientResult::Create(create_res) => {
+                        assert_eq!(
+                            create_res.client_type,
+                            create_res.client_state.client_type()
+                        );
+                        assert_eq!(create_res.client_id, expected_client_id);
+                        assert_eq!(
+                            create_res.client_state.as_ref().clone_into(),
+                            msg.client_state
+                        );
+                        assert_eq!(
+                            create_res.consensus_state.as_ref().clone_into(),
+                            msg.consensus_state
+                        );
                     }
-                }
+                    _ => {
+                        panic!("expected result of type ClientResult::CreateResult");
+                    }
+                },
                 Err(err) => {
                     panic!("unexpected error: {}", err);
                 }
@@ -255,9 +249,7 @@ mod tests {
         let output = dispatch(&ctx, ClientMsg::CreateClient(msg.clone()));
 
         match output {
-            Ok(HandlerOutput {
-                result, ..
-            }) => {
+            Ok(HandlerOutput { result, .. }) => {
                 let expected_client_id = ClientId::new(ClientType::Tendermint, 0).unwrap();
                 match result {
                     ClientResult::Create(create_res) => {

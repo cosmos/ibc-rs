@@ -142,7 +142,7 @@ mod tests {
             signer,
         };
 
-        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg.clone()));
+        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg));
 
         match output {
             Ok(HandlerOutput {
@@ -274,7 +274,7 @@ mod tests {
             signer,
         };
 
-        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg.clone()));
+        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg));
 
         match output {
             Ok(HandlerOutput {
@@ -338,7 +338,7 @@ mod tests {
             signer,
         };
 
-        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg.clone()));
+        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg));
 
         match output {
             Ok(HandlerOutput {
@@ -413,7 +413,7 @@ mod tests {
             signer,
         };
 
-        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg.clone()));
+        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg));
 
         match output {
             Ok(HandlerOutput {
