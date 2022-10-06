@@ -99,7 +99,6 @@ impl WithBlockDataType {
 
 const EMPTY_EVENT: &str = "empty";
 const APP_MODULE_EVENT: &str = "app_module";
-const MESSAGE_EVENT: &str = "message";
 /// Client event types
 const CREATE_CLIENT_EVENT: &str = "create_client";
 const UPDATE_CLIENT_EVENT: &str = "update_client";
@@ -150,7 +149,6 @@ pub enum IbcEventType {
     TimeoutOnClose,
     AppModule,
     Empty,
-    Message,
 }
 
 impl IbcEventType {
@@ -178,7 +176,6 @@ impl IbcEventType {
             IbcEventType::TimeoutOnClose => TIMEOUT_ON_CLOSE_EVENT,
             IbcEventType::AppModule => APP_MODULE_EVENT,
             IbcEventType::Empty => EMPTY_EVENT,
-            IbcEventType::Message => MESSAGE_EVENT,
         }
     }
 }
@@ -243,7 +240,6 @@ pub enum IbcEvent {
     TimeoutOnClosePacket(ChannelEvents::TimeoutOnClosePacket),
 
     AppModule(ModuleEvent),
-    Message(EventMessage),
 }
 
 impl Display for IbcEvent {
@@ -274,7 +270,6 @@ impl Display for IbcEvent {
             IbcEvent::TimeoutOnClosePacket(ev) => write!(f, "TimeoutOnClosePacket({})", ev),
 
             IbcEvent::AppModule(ev) => write!(f, "AppModule({})", ev),
-            IbcEvent::Message(ev) => write!(f, "Message({})", ev),
         }
     }
 }
@@ -305,7 +300,6 @@ impl TryFrom<IbcEvent> for AbciEvent {
             IbcEvent::TimeoutPacket(event) => event.try_into().map_err(Error::channel)?,
             IbcEvent::TimeoutOnClosePacket(event) => event.try_into().map_err(Error::channel)?,
             IbcEvent::AppModule(event) => event.try_into()?,
-            IbcEvent::Message(event) => event.into(),
         })
     }
 }
@@ -334,7 +328,6 @@ impl IbcEvent {
             IbcEvent::TimeoutPacket(_) => IbcEventType::Timeout,
             IbcEvent::TimeoutOnClosePacket(_) => IbcEventType::TimeoutOnClose,
             IbcEvent::AppModule(_) => IbcEventType::AppModule,
-            IbcEvent::Message(_) => IbcEventType::Message,
         }
     }
 
@@ -456,31 +449,5 @@ impl From<ModuleEventAttribute> for Tag {
                 .parse()
                 .expect("Value::from_str() impl is infallible"),
         }
-    }
-}
-
-pub const MODULE_ATTRIBUTE_KEY: &str = "module";
-
-/// Corresponds to ibc-go's `sdk.EventTypeMessage` events
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-pub struct EventMessage {
-    pub category: String,
-}
-
-impl From<EventMessage> for AbciEvent {
-    fn from(event_message: EventMessage) -> Self {
-        AbciEvent {
-            type_str: IbcEventType::Message.as_str().to_string(),
-            attributes: vec![Tag {
-                key: MODULE_ATTRIBUTE_KEY.parse().unwrap(),
-                value: event_message.category.parse().unwrap(),
-            }],
-        }
-    }
-}
-
-impl Display for EventMessage {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "{:?}", self)
     }
 }

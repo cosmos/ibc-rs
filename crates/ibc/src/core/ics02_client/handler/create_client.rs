@@ -7,7 +7,7 @@ use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::Error;
-use crate::core::ics02_client::events::{client_event_message, CreateClient};
+use crate::core::ics02_client::events::CreateClient;
 use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::height::Height;
 use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
@@ -66,7 +66,6 @@ pub fn process(ctx: &dyn ClientReader, msg: MsgCreateClient) -> HandlerResult<Cl
         client_type,
         consensus_height,
     )));
-    output.emit(IbcEvent::Message(client_event_message()));
 
     output.log(format!(
         "success: generated new client identifier: {}",
