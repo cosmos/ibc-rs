@@ -1,4 +1,4 @@
-# ADR 008: ICS20 Implementation Proposal
+# ADR 003: ICS20 Implementation Proposal
 
 Previously [ADR 008](https://github.com/informalsystems/hermes/blob/master/docs/architecture/adr-008-ics20-implementation.md) in [hermes](https://github.com/informalsystems/hermes) repository.
 
