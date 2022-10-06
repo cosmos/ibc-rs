@@ -76,7 +76,9 @@ pub fn process(
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use crate::core::ics02_client::client_type::ClientType;
+    use crate::events::IbcEvent;
+    use crate::{downcast, prelude::*};
 
     use core::str::FromStr;
 
@@ -197,5 +199,30 @@ mod tests {
                 panic!("expected LowUpgradeHeight error, instead got {:?}", output);
             }
         }
+    }
+
+    #[test]
+    fn test_upgrade_client_event() {
+        let client_id = ClientId::default();
+        let signer = get_dummy_account_id();
+
+        let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
+
+        let upgrade_height = Height::new(1, 26).unwrap();
+        let msg = MsgUpgradeClient {
+            client_id: client_id.clone(),
+            client_state: MockClientState::new(MockHeader::new(upgrade_height)).into(),
+            consensus_state: MockConsensusState::new(MockHeader::new(upgrade_height)).into(),
+            proof_upgrade_client: Default::default(),
+            proof_upgrade_consensus_state: Default::default(),
+            signer,
+        };
+
+        let output = dispatch(&ctx, ClientMsg::UpgradeClient(msg)).unwrap();
+        let upgrade_client_event =
+            downcast!(output.events.first().unwrap() => IbcEvent::UpgradeClient).unwrap();
+        assert_eq!(upgrade_client_event.client_id(), &client_id);
+        assert_eq!(upgrade_client_event.client_type(), &ClientType::Mock);
+        assert_eq!(upgrade_client_event.consensus_height(), &upgrade_height);
     }
 }
