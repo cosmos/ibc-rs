@@ -95,7 +95,6 @@ mod tests {
     use crate::core::ics02_client::trust_threshold::TrustThreshold;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ClientId;
-    use crate::events::IbcEvent;
     use crate::handler::HandlerOutput;
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
@@ -121,14 +120,9 @@ mod tests {
 
         match output {
             Ok(HandlerOutput {
-                result, mut events, ..
+                result, ..
             }) => {
-                assert_eq!(events.len(), 1);
-                let event = events.pop().unwrap();
                 let expected_client_id = ClientId::new(ClientType::Mock, 0).unwrap();
-                assert!(
-                    matches!(event, IbcEvent::CreateClient(ref e) if e.client_id() == &expected_client_id)
-                );
                 match result {
                     ClientResult::Create(create_result) => {
                         assert_eq!(create_result.client_type, ClientType::Mock);
@@ -196,13 +190,8 @@ mod tests {
 
             match output {
                 Ok(HandlerOutput {
-                    result, mut events, ..
+                    result, ..
                 }) => {
-                    assert_eq!(events.len(), 1);
-                    let event = events.pop().unwrap();
-                    assert!(
-                        matches!(event, IbcEvent::CreateClient(ref e) if e.client_id() == &expected_client_id)
-                    );
                     match result {
                         ClientResult::Create(create_res) => {
                             assert_eq!(
@@ -267,14 +256,9 @@ mod tests {
 
         match output {
             Ok(HandlerOutput {
-                result, mut events, ..
+                result, ..
             }) => {
-                assert_eq!(events.len(), 1);
-                let event = events.pop().unwrap();
                 let expected_client_id = ClientId::new(ClientType::Tendermint, 0).unwrap();
-                assert!(
-                    matches!(event, IbcEvent::CreateClient(ref e) if e.client_id() == &expected_client_id)
-                );
                 match result {
                     ClientResult::Create(create_res) => {
                         assert_eq!(create_res.client_type, ClientType::Tendermint);

@@ -87,7 +87,6 @@ mod tests {
     use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
     use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics24_host::identifier::ClientId;
-    use crate::events::IbcEvent;
     use crate::handler::HandlerOutput;
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
@@ -118,14 +117,9 @@ mod tests {
         match output {
             Ok(HandlerOutput {
                 result,
-                mut events,
+                events: _,
                 log,
             }) => {
-                assert_eq!(events.len(), 1);
-                let event = events.pop().unwrap();
-                assert!(
-                    matches!(event, IbcEvent::UpgradeClient(ref e) if e.client_id() == &msg.client_id)
-                );
                 assert!(log.is_empty());
                 // Check the result
                 match result {

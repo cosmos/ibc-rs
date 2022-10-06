@@ -117,7 +117,6 @@ mod tests {
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
     use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
-    use crate::events::IbcEvent;
     use crate::handler::HandlerOutput;
     use crate::mock::client_state::MockClientState;
     use crate::mock::context::MockContext;
@@ -148,14 +147,9 @@ mod tests {
         match output {
             Ok(HandlerOutput {
                 result,
-                mut events,
+                events: _,
                 log,
             }) => {
-                assert_eq!(events.len(), 1);
-                let event = events.pop().unwrap();
-                assert!(
-                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id() == &msg.client_id)
-                );
                 assert!(log.is_empty());
                 // Check the result
                 match result {
@@ -230,14 +224,9 @@ mod tests {
             match output {
                 Ok(HandlerOutput {
                     result: _,
-                    mut events,
+                    events: _,
                     log,
                 }) => {
-                    assert_eq!(events.len(), 1);
-                    let event = events.pop().unwrap();
-                    assert!(
-                        matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id() == &msg.client_id)
-                    );
                     assert!(log.is_empty());
                 }
                 Err(err) => {
@@ -290,14 +279,9 @@ mod tests {
         match output {
             Ok(HandlerOutput {
                 result,
-                mut events,
+                events: _,
                 log,
             }) => {
-                assert_eq!(events.len(), 1);
-                let event = events.pop().unwrap();
-                assert!(
-                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id() == &msg.client_id)
-                );
                 assert!(log.is_empty());
                 // Check the result
                 match result {
@@ -359,14 +343,9 @@ mod tests {
         match output {
             Ok(HandlerOutput {
                 result,
-                mut events,
+                events: _,
                 log,
             }) => {
-                assert_eq!(events.len(), 1);
-                let event = events.pop().unwrap();
-                assert!(
-                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id() == &msg.client_id)
-                );
                 assert!(log.is_empty());
                 // Check the result
                 match result {
@@ -439,14 +418,9 @@ mod tests {
         match output {
             Ok(HandlerOutput {
                 result,
-                mut events,
+                events: _,
                 log,
             }) => {
-                assert_eq!(events.len(), 1);
-                let event = events.pop().unwrap();
-                assert!(
-                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id() == &msg.client_id)
-                );
                 assert!(log.is_empty());
                 // Check the result
                 match result {
