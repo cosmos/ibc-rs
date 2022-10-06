@@ -104,6 +104,7 @@ pub fn process<Ctx: ClientReader>(
 #[cfg(test)]
 mod tests {
     use core::str::FromStr;
+    use ibc_proto::google::protobuf::Any;
     use test_log::test;
 
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
@@ -116,15 +117,16 @@ mod tests {
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
     use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
+    use crate::events::IbcEvent;
     use crate::handler::HandlerOutput;
     use crate::mock::client_state::MockClientState;
     use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
     use crate::mock::host::{HostBlock, HostType};
-    use crate::prelude::*;
     use crate::test_utils::get_dummy_account_id;
     use crate::timestamp::Timestamp;
     use crate::Height;
+    use crate::{downcast, prelude::*};
 
     #[test]
     fn test_update_client_ok() {
@@ -491,5 +493,29 @@ mod tests {
     }
 
     #[test]
-    fn test_update_client_events() {}
+    fn test_update_client_events() {
+        let client_id = ClientId::default();
+        let signer = get_dummy_account_id();
+
+        let timestamp = Timestamp::now();
+
+        let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
+        let height = Height::new(0, 46).unwrap();
+        let header: Any = MockHeader::new(height).with_timestamp(timestamp).into();
+        let msg = MsgUpdateClient {
+            client_id: client_id.clone(),
+            header: header.clone(),
+            signer,
+        };
+
+        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg)).unwrap();
+        let update_client_event =
+            downcast!(output.events.first().unwrap() => IbcEvent::UpdateClient).unwrap();
+
+        assert_eq!(update_client_event.client_id(), &client_id);
+        assert_eq!(update_client_event.client_type(), &ClientType::Mock);
+        assert_eq!(update_client_event.consensus_height(), &height);
+        assert_eq!(update_client_event.consensus_heights(), &vec![height]);
+        assert_eq!(update_client_event.header(), &header);
+    }
 }
