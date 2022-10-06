@@ -25,9 +25,10 @@ To suggest an ADR, please make use of the [ADR template](./adr-template.md) prov
 
 ## Table of Contents
 
-| ADR \#                                                    | Description                                           | Status   |
-|-----------------------------------------------------------|-------------------------------------------------------|----------|
-| [001](./adr-001-handler-implementation.md)                | IBC handlers implementation                           | Accepted |
-| [002](./adr-002-error.md)                                 | Error Management                                      | Accepted |
-| [003](./adr-003-ics20-implementation.md)                  | ICS20 implementation                                  | Accepted |
-| [004](./adr-004-light-client-crates-extraction.md)        | Light client crates extraction                        | Accepted |
+| ADR \#                                             | Description                                           | Status   |
+|----------------------------------------------------|-------------------------------------------------------|----------|
+| [001](./adr-001-handler-implementation.md)         | IBC handlers implementation                           | Accepted |
+| [002](./adr-002-error.md)                          | Error Management                                      | Accepted |
+| [003](./adr-003-ics20-implementation.md)           | ICS20 implementation                                  | Accepted |
+| [004](./adr-004-light-client-crates-extraction.md) | Light client crates extraction                        | Accepted |
+| [005](./adr-005-handlers-redesign.md)              | Handlers validation and execution separation          | Accepted |
