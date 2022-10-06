@@ -1,4 +1,4 @@
-# ADR 012: Handlers validation and execution separation
+# ADR 005: Handlers validation and execution separation
 
 ## Status
 Proposed
@@ -23,7 +23,7 @@ The following are out of scope for this ADR:
 
 Below is a diagram of how the main components of this ADR fit together.
 
-![Main components](./assets/adr12.jpg)
+![Main components](./assets/adr05.jpg)
 
 ### Validation vs Execution
 Each handler can be split into validation and execution. *Validation* is the set of statements which can make the transaction fail. It comprises all the "checks". Execution is the set of statements which mutate the state. In the IBC standard handlers, validation occurs before execution. Note that execution can fail in practice, if say a write operation fails.
