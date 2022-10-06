@@ -1,4 +1,4 @@
-# ADR 011: Light client crates extraction
+# ADR 004: Light client crates extraction
 
 Previously [ADR 011](https://github.com/informalsystems/hermes/blob/master/docs/architecture/adr-011-light-client-crates-extraction.md) in [hermes](https://github.com/informalsystems/hermes) repository.
 
