@@ -1,7 +1,7 @@
 # ADR 005: Handlers validation and execution separation
 
 ## Status
-Proposed
+Accepted
 
 ## Changelog
 * 9/9/2022: initial proposal
