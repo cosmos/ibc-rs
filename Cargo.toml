@@ -11,6 +11,4 @@ exclude = [
 ]
 
 [patch.crates-io]
-# We can't use the latest ibc-proto since some fields involved in crossing-hellos are marked deprecated.
-# Remove `rev` when we remove crossing hellos.
-ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs", rev = "5f8b99c4b36101722d6ad01803bda4ae9e649bce" }
+ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs" }

@@ -4,6 +4,9 @@
 
 #![no_std]
 #![allow(clippy::large_enum_variant)]
+// We currently still have the crossing-hellos logic, which requires using
+// deprecated fields. See issue #143.
+#![allow(deprecated)]
 #![deny(
     warnings,
     trivial_casts,
