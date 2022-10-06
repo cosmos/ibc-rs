@@ -4,7 +4,7 @@ use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::Error;
-use crate::core::ics02_client::events::{UpgradeClient, client_event_message};
+use crate::core::ics02_client::events::{client_event_message, UpgradeClient};
 use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
 use crate::core::ics24_host::identifier::ClientId;
@@ -71,7 +71,7 @@ pub fn process(
         consensus_height,
     )));
     output.emit(IbcEvent::Message(client_event_message()));
-    
+
     Ok(output.with_result(result))
 }
 
