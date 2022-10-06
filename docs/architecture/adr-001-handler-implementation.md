@@ -620,7 +620,7 @@ into the `Any...` enumeration:
 
 ## Status
 
-Proposed
+Accepted
 
 ## Consequences
 
