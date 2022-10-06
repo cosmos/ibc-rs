@@ -1,4 +1,4 @@
-# ADR 007: Error Management
+# ADR 002: Error Management
 
 Previously [ADR 007](https://github.com/informalsystems/hermes/blob/master/docs/architecture/adr-007-error.md) in [hermes](https://github.com/informalsystems/hermes) repository.
 
