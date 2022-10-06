@@ -32,4 +32,6 @@ substrate-std = [
 ]
 
 [patch.crates-io]
-ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs" }
+# We can't use the latest ibc-proto since some fields involved in crossing-hellos are marked deprecated.
+# Remove `rev` when we remove crossing hellos.
+ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs", branch = "main" }
