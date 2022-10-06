@@ -450,7 +450,7 @@ A long-lived branch may be used to not block development on the modules code in 
 
 ## Status
 
-Proposed
+Accepted
 
 ## Consequences
 
