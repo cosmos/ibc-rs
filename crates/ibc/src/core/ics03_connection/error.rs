@@ -122,6 +122,8 @@ define_error! {
 
         MissingCounterpartyPrefix
             | _ | { "missing counterparty prefix" },
+        MissingClientState
+            | _ | { "missing client state" },
 
         NullClientProof
             | _ | { "client proof must be present" },

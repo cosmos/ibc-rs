@@ -4,7 +4,7 @@ use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, Sta
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::Error;
 use crate::core::ics03_connection::events::Attributes;
-use crate::core::ics03_connection::handler::verify::verify_proofs;
+use crate::core::ics03_connection::handler::verify;
 use crate::core::ics03_connection::handler::{ConnectionIdState, ConnectionResult};
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
 use crate::events::IbcEvent;
@@ -39,15 +39,17 @@ pub(crate) fn process(
         conn_end.delay_period(),
     );
 
-    // 2. Pass the details to the verification function.
-    verify_proofs(
+    verify::verify_connection_proof(
         ctx,
-        None,
         msg.proofs.height(),
         &conn_end,
         &expected_conn,
-        &msg.proofs,
+        msg.proofs.height(),
+        msg.proofs.object_proof(),
     )?;
+    if let Some(proof) = msg.proofs.consensus_proof() {
+        verify::verify_consensus_proof(ctx, msg.proofs.height(), &conn_end, &proof)?;
+    }
 
     output.log("success: connection verification passed");
 

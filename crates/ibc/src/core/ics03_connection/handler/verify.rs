@@ -12,7 +12,7 @@ use crate::Height;
 /// Entry point for verifying all proofs bundled in any ICS3 message.
 pub fn verify_proofs(
     ctx: &dyn ConnectionReader,
-    client_state: Option<Any>,
+    expected_client_state: Any,
     height: Height,
     connection_end: &ConnectionEnd,
     expected_conn: &ConnectionEnd,
@@ -28,19 +28,17 @@ pub fn verify_proofs(
     )?;
 
     // If the message includes a client state, then verify the proof for that state.
-    if let Some(expected_client_state) = client_state {
-        verify_client_proof(
-            ctx,
-            height,
-            connection_end,
-            expected_client_state,
-            proofs.height(),
-            proofs
-                .client_proof()
-                .as_ref()
-                .ok_or_else(Error::null_client_proof)?,
-        )?;
-    }
+    verify_client_proof(
+        ctx,
+        height,
+        connection_end,
+        expected_client_state,
+        proofs.height(),
+        proofs
+            .client_proof()
+            .as_ref()
+            .ok_or_else(Error::null_client_proof)?,
+    )?;
 
     // If a consensus proof is attached to the message, then verify it.
     if let Some(proof) = proofs.consensus_proof() {

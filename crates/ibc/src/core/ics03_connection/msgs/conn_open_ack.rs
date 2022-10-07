@@ -20,7 +20,7 @@ pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenAck";
 pub struct MsgConnectionOpenAck {
     pub connection_id: ConnectionId,
     pub counterparty_connection_id: ConnectionId,
-    pub client_state: Option<Any>,
+    pub client_state: Any,
     pub proofs: Proofs,
     pub version: Version,
     pub signer: Signer,
@@ -82,7 +82,7 @@ impl TryFrom<RawMsgConnectionOpenAck> for MsgConnectionOpenAck {
                 .counterparty_connection_id
                 .parse()
                 .map_err(Error::invalid_identifier)?,
-            client_state: msg.client_state,
+            client_state: msg.client_state.ok_or_else(Error::missing_client_state)?,
             version: msg.version.ok_or_else(Error::empty_versions)?.try_into()?,
             proofs: Proofs::new(
                 msg.proof_try.try_into().map_err(Error::invalid_proof)?,
@@ -102,7 +102,7 @@ impl From<MsgConnectionOpenAck> for RawMsgConnectionOpenAck {
         RawMsgConnectionOpenAck {
             connection_id: ics_msg.connection_id.as_str().to_string(),
             counterparty_connection_id: ics_msg.counterparty_connection_id.as_str().to_string(),
-            client_state: ics_msg.client_state,
+            client_state: Some(ics_msg.client_state),
             proof_height: Some(ics_msg.proofs.height().into()),
             proof_try: ics_msg.proofs.object_proof().clone().into(),
             proof_client: ics_msg
