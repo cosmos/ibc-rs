@@ -153,6 +153,14 @@ impl PrefixedDenom {
     pub fn add_trace_prefix(&mut self, prefix: TracePrefix) {
         self.trace_path.add_prefix(prefix)
     }
+
+    pub fn trace_path(&self) -> &TracePath {
+        &self.trace_path
+    }
+
+    pub fn base_denom(&self) -> &BaseDenom {
+        &self.base_denom
+    }
 }
 
 /// Returns true if the denomination originally came from the sender chain and

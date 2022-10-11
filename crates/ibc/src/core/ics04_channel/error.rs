@@ -1,5 +1,6 @@
 use super::packet::Sequence;
 use super::timeout::TimeoutHeight;
+use crate::applications::transfer::error as transfer_error;
 use crate::core::ics02_client::error as client_error;
 use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics04_channel::channel::State;
@@ -12,7 +13,7 @@ use crate::signer::SignerError;
 use crate::timestamp::Timestamp;
 use crate::Height;
 
-use flex_error::{define_error, TraceError};
+use flex_error::{define_error, TraceError, DisplayOnly};
 use ibc_proto::protobuf::Error as TendermintError;
 
 define_error! {
@@ -25,6 +26,10 @@ define_error! {
         Ics05Port
             [ port_error::Error ]
             | _ | { "ics05 port error" },
+
+        Ics20Transfer
+            [DisplayOnly<transfer_error::Error> ]
+            | _| { "ics20 transfer error" },
 
         UnknownState
             { state: i32 }
