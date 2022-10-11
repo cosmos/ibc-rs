@@ -97,7 +97,6 @@ impl WithBlockDataType {
     }
 }
 
-const EMPTY_EVENT: &str = "empty";
 const APP_MODULE_EVENT: &str = "app_module";
 /// Client event types
 const CREATE_CLIENT_EVENT: &str = "create_client";
@@ -148,7 +147,6 @@ pub enum IbcEventType {
     Timeout,
     TimeoutOnClose,
     AppModule,
-    Empty,
 }
 
 impl IbcEventType {
@@ -175,7 +173,6 @@ impl IbcEventType {
             IbcEventType::Timeout => TIMEOUT_EVENT,
             IbcEventType::TimeoutOnClose => TIMEOUT_ON_CLOSE_EVENT,
             IbcEventType::AppModule => APP_MODULE_EVENT,
-            IbcEventType::Empty => EMPTY_EVENT,
         }
     }
 }
@@ -205,7 +202,6 @@ impl FromStr for IbcEventType {
             ACK_PACKET_EVENT => Ok(IbcEventType::AckPacket),
             TIMEOUT_EVENT => Ok(IbcEventType::Timeout),
             TIMEOUT_ON_CLOSE_EVENT => Ok(IbcEventType::TimeoutOnClose),
-            EMPTY_EVENT => Ok(IbcEventType::Empty),
             // from_str() for `APP_MODULE_EVENT` MUST fail because a `ModuleEvent`'s type isn't constant
             _ => Err(Error::incorrect_event_type(s.to_string())),
         }
