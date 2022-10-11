@@ -7,7 +7,7 @@ use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::Error;
-use crate::core::ics02_client::events::Attributes;
+use crate::core::ics02_client::events::CreateClient;
 use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::height::Height;
 use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
@@ -50,10 +50,7 @@ pub fn process(ctx: &dyn ClientReader, msg: MsgCreateClient) -> HandlerResult<Cl
 
     let consensus_state = client_state.initialise(consensus_state)?;
 
-    output.log(format!(
-        "success: generated new client identifier: {}",
-        client_id
-    ));
+    let consensus_height = client_state.latest_height();
 
     let result = ClientResult::Create(Result {
         client_id: client_id.clone(),
@@ -64,11 +61,16 @@ pub fn process(ctx: &dyn ClientReader, msg: MsgCreateClient) -> HandlerResult<Cl
         processed_height: ctx.host_height(),
     });
 
-    let event_attributes = Attributes {
-        client_id,
-        ..Default::default()
-    };
-    output.emit(IbcEvent::CreateClient(event_attributes.into()));
+    output.emit(IbcEvent::CreateClient(CreateClient::new(
+        client_id.clone(),
+        client_type,
+        consensus_height,
+    )));
+
+    output.log(format!(
+        "success: generated new client identifier: {}",
+        client_id
+    ));
 
     Ok(output.with_result(result))
 }
@@ -92,7 +94,6 @@ mod tests {
     use crate::core::ics02_client::trust_threshold::TrustThreshold;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ClientId;
-    use crate::events::IbcEvent;
     use crate::handler::HandlerOutput;
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
@@ -117,15 +118,8 @@ mod tests {
         let output = dispatch(&ctx, ClientMsg::CreateClient(msg.clone()));
 
         match output {
-            Ok(HandlerOutput {
-                result, mut events, ..
-            }) => {
-                assert_eq!(events.len(), 1);
-                let event = events.pop().unwrap();
+            Ok(HandlerOutput { result, .. }) => {
                 let expected_client_id = ClientId::new(ClientType::Mock, 0).unwrap();
-                assert!(
-                    matches!(event, IbcEvent::CreateClient(ref e) if e.client_id() == &expected_client_id)
-                );
                 match result {
                     ClientResult::Create(create_result) => {
                         assert_eq!(create_result.client_type, ClientType::Mock);
@@ -192,35 +186,26 @@ mod tests {
             let output = dispatch(&ctx, ClientMsg::CreateClient(msg.clone()));
 
             match output {
-                Ok(HandlerOutput {
-                    result, mut events, ..
-                }) => {
-                    assert_eq!(events.len(), 1);
-                    let event = events.pop().unwrap();
-                    assert!(
-                        matches!(event, IbcEvent::CreateClient(ref e) if e.client_id() == &expected_client_id)
-                    );
-                    match result {
-                        ClientResult::Create(create_res) => {
-                            assert_eq!(
-                                create_res.client_type,
-                                create_res.client_state.client_type()
-                            );
-                            assert_eq!(create_res.client_id, expected_client_id);
-                            assert_eq!(
-                                create_res.client_state.as_ref().clone_into(),
-                                msg.client_state
-                            );
-                            assert_eq!(
-                                create_res.consensus_state.as_ref().clone_into(),
-                                msg.consensus_state
-                            );
-                        }
-                        _ => {
-                            panic!("expected result of type ClientResult::CreateResult");
-                        }
+                Ok(HandlerOutput { result, .. }) => match result {
+                    ClientResult::Create(create_res) => {
+                        assert_eq!(
+                            create_res.client_type,
+                            create_res.client_state.client_type()
+                        );
+                        assert_eq!(create_res.client_id, expected_client_id);
+                        assert_eq!(
+                            create_res.client_state.as_ref().clone_into(),
+                            msg.client_state
+                        );
+                        assert_eq!(
+                            create_res.consensus_state.as_ref().clone_into(),
+                            msg.consensus_state
+                        );
                     }
-                }
+                    _ => {
+                        panic!("expected result of type ClientResult::CreateResult");
+                    }
+                },
                 Err(err) => {
                     panic!("unexpected error: {}", err);
                 }
@@ -263,15 +248,8 @@ mod tests {
         let output = dispatch(&ctx, ClientMsg::CreateClient(msg.clone()));
 
         match output {
-            Ok(HandlerOutput {
-                result, mut events, ..
-            }) => {
-                assert_eq!(events.len(), 1);
-                let event = events.pop().unwrap();
+            Ok(HandlerOutput { result, .. }) => {
                 let expected_client_id = ClientId::new(ClientType::Tendermint, 0).unwrap();
-                assert!(
-                    matches!(event, IbcEvent::CreateClient(ref e) if e.client_id() == &expected_client_id)
-                );
                 match result {
                     ClientResult::Create(create_res) => {
                         assert_eq!(create_res.client_type, ClientType::Tendermint);

@@ -342,8 +342,8 @@ mod tests {
         ctx.scope_port_to_module(msg_chan_init.port_id.clone(), transfer_module_id.clone());
 
         // Figure out the ID of the client that was just created.
-        let mut events = res.unwrap().events;
-        let client_id_event = events.pop();
+        let events = res.unwrap().events;
+        let client_id_event = events.first();
         assert!(
             client_id_event.is_some(),
             "There was no event generated for client creation!"

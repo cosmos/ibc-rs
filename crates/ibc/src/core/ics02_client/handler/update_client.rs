@@ -6,7 +6,7 @@ use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::Error;
-use crate::core::ics02_client::events::Attributes;
+use crate::core::ics02_client::events::UpdateClient;
 use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::height::Height;
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
@@ -76,8 +76,11 @@ pub fn process<Ctx: ClientReader>(
         client_state,
         consensus_state,
     } = client_state
-        .check_header_and_update_state(ctx, client_id.clone(), header)
+        .check_header_and_update_state(ctx, client_id.clone(), header.clone())
         .map_err(|e| Error::header_verification_failure(e.to_string()))?;
+
+    let client_type = client_state.client_type();
+    let consensus_height = client_state.latest_height();
 
     let result = ClientResult::Update(Result {
         client_id: client_id.clone(),
@@ -87,11 +90,13 @@ pub fn process<Ctx: ClientReader>(
         processed_height: ctx.host_height(),
     });
 
-    let event_attributes = Attributes {
+    output.emit(IbcEvent::UpdateClient(UpdateClient::new(
         client_id,
-        ..Default::default()
-    };
-    output.emit(IbcEvent::UpdateClient(event_attributes.into()));
+        client_type,
+        consensus_height,
+        vec![consensus_height],
+        header,
+    )));
 
     Ok(output.with_result(result))
 }
@@ -99,6 +104,7 @@ pub fn process<Ctx: ClientReader>(
 #[cfg(test)]
 mod tests {
     use core::str::FromStr;
+    use ibc_proto::google::protobuf::Any;
     use test_log::test;
 
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
@@ -117,10 +123,10 @@ mod tests {
     use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
     use crate::mock::host::{HostBlock, HostType};
-    use crate::prelude::*;
     use crate::test_utils::get_dummy_account_id;
     use crate::timestamp::Timestamp;
     use crate::Height;
+    use crate::{downcast, prelude::*};
 
     #[test]
     fn test_update_client_ok() {
@@ -137,19 +143,14 @@ mod tests {
             signer,
         };
 
-        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg.clone()));
+        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg));
 
         match output {
             Ok(HandlerOutput {
                 result,
-                mut events,
+                events: _,
                 log,
             }) => {
-                assert_eq!(events.len(), 1);
-                let event = events.pop().unwrap();
-                assert!(
-                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id() == &msg.client_id)
-                );
                 assert!(log.is_empty());
                 // Check the result
                 match result {
@@ -224,14 +225,9 @@ mod tests {
             match output {
                 Ok(HandlerOutput {
                     result: _,
-                    mut events,
+                    events: _,
                     log,
                 }) => {
-                    assert_eq!(events.len(), 1);
-                    let event = events.pop().unwrap();
-                    assert!(
-                        matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id() == &msg.client_id)
-                    );
                     assert!(log.is_empty());
                 }
                 Err(err) => {
@@ -279,19 +275,14 @@ mod tests {
             signer,
         };
 
-        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg.clone()));
+        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg));
 
         match output {
             Ok(HandlerOutput {
                 result,
-                mut events,
+                events: _,
                 log,
             }) => {
-                assert_eq!(events.len(), 1);
-                let event = events.pop().unwrap();
-                assert!(
-                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id() == &msg.client_id)
-                );
                 assert!(log.is_empty());
                 // Check the result
                 match result {
@@ -348,19 +339,14 @@ mod tests {
             signer,
         };
 
-        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg.clone()));
+        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg));
 
         match output {
             Ok(HandlerOutput {
                 result,
-                mut events,
+                events: _,
                 log,
             }) => {
-                assert_eq!(events.len(), 1);
-                let event = events.pop().unwrap();
-                assert!(
-                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id() == &msg.client_id)
-                );
                 assert!(log.is_empty());
                 // Check the result
                 match result {
@@ -428,19 +414,14 @@ mod tests {
             signer,
         };
 
-        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg.clone()));
+        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg));
 
         match output {
             Ok(HandlerOutput {
                 result,
-                mut events,
+                events: _,
                 log,
             }) => {
-                assert_eq!(events.len(), 1);
-                let event = events.pop().unwrap();
-                assert!(
-                    matches!(event, IbcEvent::UpdateClient(ref e) if e.client_id() == &msg.client_id)
-                );
                 assert!(log.is_empty());
                 // Check the result
                 match result {
@@ -509,5 +490,32 @@ mod tests {
                 _ => panic!("unexpected error: {:?}", err),
             },
         }
+    }
+
+    #[test]
+    fn test_update_client_events() {
+        let client_id = ClientId::default();
+        let signer = get_dummy_account_id();
+
+        let timestamp = Timestamp::now();
+
+        let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
+        let height = Height::new(0, 46).unwrap();
+        let header: Any = MockHeader::new(height).with_timestamp(timestamp).into();
+        let msg = MsgUpdateClient {
+            client_id: client_id.clone(),
+            header: header.clone(),
+            signer,
+        };
+
+        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg)).unwrap();
+        let update_client_event =
+            downcast!(output.events.first().unwrap() => IbcEvent::UpdateClient).unwrap();
+
+        assert_eq!(update_client_event.client_id(), &client_id);
+        assert_eq!(update_client_event.client_type(), &ClientType::Mock);
+        assert_eq!(update_client_event.consensus_height(), &height);
+        assert_eq!(update_client_event.consensus_heights(), &vec![height]);
+        assert_eq!(update_client_event.header(), &header);
     }
 }

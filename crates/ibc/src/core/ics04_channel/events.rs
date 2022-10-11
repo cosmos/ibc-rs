@@ -1,6 +1,5 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the channels module.
 
-use core::fmt::{Display, Error as FmtError, Formatter};
 use serde_derive::{Deserialize, Serialize};
 use tendermint::abci::tag::Tag;
 use tendermint::abci::Event as AbciEvent;
@@ -10,7 +9,6 @@ use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::events::{Error as EventError, IbcEvent, IbcEventType};
 use crate::prelude::*;
-use crate::utils::pretty::PrettySlice;
 
 /// Channel event attribute keys
 pub const CONNECTION_ID_ATTRIBUTE_KEY: &str = "connection_id";
@@ -45,17 +43,6 @@ impl Attributes {
     }
     pub fn channel_id(&self) -> Option<&ChannelId> {
         self.channel_id.as_ref()
-    }
-}
-
-impl Display for Attributes {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        match (&self.channel_id, &self.counterparty_channel_id) {
-            (Some(channel_id), Some(counterparty_channel_id)) => write!(f, "Attributes {{ port_id: {}, channel_id: {}, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: {} }}", self.port_id, channel_id, self.connection_id, self.counterparty_port_id, counterparty_channel_id),
-            (Some(channel_id), None) => write!(f, "Attributes {{ port_id: {}, channel_id: {}, connection_id: None, counterparty_port_id: {}, counterparty_channel_id: None }}", self.port_id, channel_id, self.counterparty_port_id),
-            (None, Some(counterparty_channel_id)) => write!(f, "Attributes {{ port_id: {}, channel_id: None, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: {} }}", self.port_id, self.connection_id, self.counterparty_port_id, counterparty_channel_id),
-            (None, None) => write!(f, "Attributes {{ port_id: {}, client_id: None, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: None }}", self.port_id, self.connection_id, self.counterparty_port_id),
-        }
     }
 }
 
@@ -193,17 +180,6 @@ impl OpenInit {
     }
 }
 
-impl Display for OpenInit {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        match (&self.channel_id, &self.counterparty_channel_id) {
-            (Some(channel_id), Some(counterparty_channel_id)) => write!(f, "OpenInit {{ port_id: {}, channel_id: {}, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: {} }}", self.port_id, channel_id, self.connection_id, self.counterparty_port_id, counterparty_channel_id),
-            (Some(channel_id), None) => write!(f, "OpenInit {{ port_id: {}, channel_id: {}, connection_id: None, counterparty_port_id: {}, counterparty_channel_id: None }}", self.port_id, channel_id, self.counterparty_port_id),
-            (None, Some(counterparty_channel_id)) => write!(f, "OpenInit {{ port_id: {}, channel_id: None, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: {} }}", self.port_id, self.connection_id, self.counterparty_port_id, counterparty_channel_id),
-            (None, None) => write!(f, "OpenInit {{ port_id: {}, client_id: None, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: None }}", self.port_id, self.connection_id, self.counterparty_port_id),
-        }
-    }
-}
-
 impl From<OpenInit> for Attributes {
     fn from(ev: OpenInit) -> Self {
         Self {
@@ -235,17 +211,6 @@ pub struct OpenTry {
     pub connection_id: ConnectionId,
     pub counterparty_port_id: PortId,
     pub counterparty_channel_id: Option<ChannelId>,
-}
-
-impl Display for OpenTry {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        match (&self.channel_id, &self.counterparty_channel_id) {
-            (Some(channel_id), Some(counterparty_channel_id)) => write!(f, "OpenTry {{ port_id: {}, channel_id: {}, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: {} }}", self.port_id, channel_id, self.connection_id, self.counterparty_port_id, counterparty_channel_id),
-            (Some(channel_id), None) => write!(f, "OpenTry {{ port_id: {}, channel_id: {}, connection_id: None, counterparty_port_id: {}, counterparty_channel_id: None }}", self.port_id, channel_id, self.counterparty_port_id),
-            (None, Some(counterparty_channel_id)) => write!(f, "OpenTry {{ port_id: {}, channel_id: None, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: {} }}", self.port_id, self.connection_id, self.counterparty_port_id, counterparty_channel_id),
-            (None, None) => write!(f, "OpenTry {{ port_id: {}, client_id: None, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: None }}", self.port_id, self.connection_id, self.counterparty_port_id),
-        }
-    }
 }
 
 impl From<OpenTry> for Attributes {
@@ -287,17 +252,6 @@ pub struct OpenAck {
     pub counterparty_channel_id: Option<ChannelId>,
     pub connection_id: ConnectionId,
     pub counterparty_port_id: PortId,
-}
-
-impl Display for OpenAck {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        match (&self.channel_id, &self.counterparty_channel_id) {
-            (Some(channel_id), Some(counterparty_channel_id)) => write!(f, "OpenAck {{ port_id: {}, channel_id: {}, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: {} }}", self.port_id, channel_id, self.connection_id, self.counterparty_port_id, counterparty_channel_id),
-            (Some(channel_id), None) => write!(f, "OpenAck {{ port_id: {}, channel_id: {}, connection_id: None, counterparty_port_id: {}, counterparty_channel_id: None }}", self.port_id, channel_id, self.counterparty_port_id),
-            (None, Some(counterparty_channel_id)) => write!(f, "OpenAck {{ port_id: {}, channel_id: None, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: {} }}", self.port_id, self.connection_id, self.counterparty_port_id, counterparty_channel_id),
-            (None, None) => write!(f, "OpenAck {{ port_id: {}, client_id: None, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: None }}", self.port_id, self.connection_id, self.counterparty_port_id),
-        }
-    }
 }
 
 impl From<OpenAck> for Attributes {
@@ -346,17 +300,6 @@ pub struct OpenConfirm {
     pub counterparty_channel_id: Option<ChannelId>,
 }
 
-impl Display for OpenConfirm {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        match (&self.channel_id, &self.counterparty_channel_id) {
-            (Some(channel_id), Some(counterparty_channel_id)) => write!(f, "OpenConfirm {{ port_id: {}, channel_id: {}, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: {} }}", self.port_id, channel_id, self.connection_id, self.counterparty_port_id, counterparty_channel_id),
-            (Some(channel_id), None) => write!(f, "OpenConfirm {{ port_id: {}, channel_id: {}, connection_id: None, counterparty_port_id: {}, counterparty_channel_id: None }}", self.port_id, channel_id, self.counterparty_port_id),
-            (None, Some(counterparty_channel_id)) => write!(f, "OpenConfirm {{ port_id: {}, channel_id: None, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: {} }}", self.port_id, self.connection_id, self.counterparty_port_id, counterparty_channel_id),
-            (None, None) => write!(f, "OpenConfirm {{ port_id: {}, client_id: None, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: None }}", self.port_id, self.connection_id, self.counterparty_port_id),
-        }
-    }
-}
-
 impl From<OpenConfirm> for Attributes {
     fn from(ev: OpenConfirm) -> Self {
         Self {
@@ -397,15 +340,6 @@ pub struct CloseInit {
     pub connection_id: ConnectionId,
     pub counterparty_port_id: PortId,
     pub counterparty_channel_id: Option<ChannelId>,
-}
-
-impl Display for CloseInit {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        match &self.counterparty_channel_id {
-            Some(counterparty_channel_id) => write!(f, "CloseInit {{ port_id: {}, channel_id: {}, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: {} }}", self.port_id, self.channel_id, self.connection_id, self.counterparty_port_id, counterparty_channel_id),
-            None => write!(f, "CloseInit {{ port_id: {}, client_id: None, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: None }}", self.port_id, self.connection_id, self.counterparty_port_id),
-        }
-    }
 }
 
 impl From<CloseInit> for Attributes {
@@ -474,17 +408,6 @@ pub struct CloseConfirm {
     pub connection_id: ConnectionId,
     pub counterparty_port_id: PortId,
     pub counterparty_channel_id: Option<ChannelId>,
-}
-
-impl Display for CloseConfirm {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        match (&self.channel_id, &self.counterparty_channel_id) {
-            (Some(channel_id), Some(counterparty_channel_id)) => write!(f, "CloseConfirm {{ port_id: {}, channel_id: {}, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: {} }}", self.port_id, channel_id, self.connection_id, self.counterparty_port_id, counterparty_channel_id),
-            (Some(channel_id), None) => write!(f, "CloseConfirm {{ port_id: {}, channel_id: {}, connection_id: None, counterparty_port_id: {}, counterparty_channel_id: None }}", self.port_id, channel_id, self.counterparty_port_id),
-            (None, Some(counterparty_channel_id)) => write!(f, "CloseConfirm {{ port_id: {}, channel_id: None, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: {} }}", self.port_id, self.connection_id, self.counterparty_port_id, counterparty_channel_id),
-            (None, None) => write!(f, "CloseConfirm {{ port_id: {}, client_id: None, connection_id: {}, counterparty_port_id: {}, counterparty_channel_id: None }}", self.port_id, self.connection_id, self.counterparty_port_id),
-        }
-    }
 }
 
 impl From<CloseConfirm> for Attributes {
@@ -581,12 +504,6 @@ impl SendPacket {
     }
 }
 
-impl Display for SendPacket {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "SendPacket {{ packet: {} }}", self.packet)
-    }
-}
-
 impl From<SendPacket> for IbcEvent {
     fn from(v: SendPacket) -> Self {
         IbcEvent::SendPacket(v)
@@ -622,12 +539,6 @@ impl ReceivePacket {
     }
     pub fn dst_channel_id(&self) -> &ChannelId {
         &self.packet.destination_channel
-    }
-}
-
-impl Display for ReceivePacket {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "ReceivePacket {{ packet: {} }}", self.packet)
     }
 }
 
@@ -671,17 +582,6 @@ impl WriteAcknowledgement {
     }
 }
 
-impl Display for WriteAcknowledgement {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(
-            f,
-            "WriteAcknowledgement {{ packet: {}, ack: {} }}",
-            self.packet,
-            PrettySlice(&self.ack)
-        )
-    }
-}
-
 impl From<WriteAcknowledgement> for IbcEvent {
     fn from(v: WriteAcknowledgement) -> Self {
         IbcEvent::WriteAcknowledgement(v)
@@ -719,12 +619,6 @@ impl AcknowledgePacket {
     }
     pub fn src_channel_id(&self) -> &ChannelId {
         &self.packet.source_channel
-    }
-}
-
-impl Display for AcknowledgePacket {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "AcknowledgePacket {{ packet: {}}}", self.packet)
     }
 }
 
@@ -766,12 +660,6 @@ impl TimeoutPacket {
     }
 }
 
-impl Display for TimeoutPacket {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "TimeoutPacket {{ packet: {}}}", self.packet)
-    }
-}
-
 impl From<TimeoutPacket> for IbcEvent {
     fn from(v: TimeoutPacket) -> Self {
         IbcEvent::TimeoutPacket(v)
@@ -807,12 +695,6 @@ impl TimeoutOnClosePacket {
     }
     pub fn dst_channel_id(&self) -> &ChannelId {
         &self.packet.destination_channel
-    }
-}
-
-impl Display for TimeoutOnClosePacket {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "TimeoutOnClosePacket {{ packet: {}}}", self.packet)
     }
 }
 
