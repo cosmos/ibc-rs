@@ -1,0 +1,2 @@
+- Remove `Display` from `IbcEvent` ([#144](https://github.com/cosmos/ibc-rs/issues/144)).
+- Remove `IbcEvent::Empty` ([#144](https://github.com/cosmos/ibc-rs/issues/144)).
