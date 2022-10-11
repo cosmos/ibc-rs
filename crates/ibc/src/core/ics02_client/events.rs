@@ -1,6 +1,7 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the client module.
 
 use core::fmt::{Display, Error as FmtError, Formatter};
+use derive_more::From;
 use ibc_proto::google::protobuf::Any;
 use subtle_encoding::hex;
 use tendermint::abci::tag::Tag;
@@ -26,7 +27,7 @@ pub const CONSENSUS_HEIGHTS_ATTRIBUTE_KEY: &str = "consensus_heights";
 /// The content of the `key` field for the header in update client event.
 pub const HEADER_ATTRIBUTE_KEY: &str = "header";
 
-#[derive(Debug)]
+#[derive(Debug, From)]
 struct ClientIdAttribute {
     client_id: ClientId,
 }
@@ -40,13 +41,7 @@ impl From<ClientIdAttribute> for Tag {
     }
 }
 
-impl From<ClientId> for ClientIdAttribute {
-    fn from(client_id: ClientId) -> Self {
-        Self { client_id }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, From)]
 struct ClientTypeAttribute {
     client_type: ClientType,
 }
@@ -60,13 +55,7 @@ impl From<ClientTypeAttribute> for Tag {
     }
 }
 
-impl From<ClientType> for ClientTypeAttribute {
-    fn from(client_type: ClientType) -> Self {
-        Self { client_type }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, From)]
 struct ConsensusHeightAttribute {
     consensus_height: Height,
 }
@@ -80,13 +69,7 @@ impl From<ConsensusHeightAttribute> for Tag {
     }
 }
 
-impl From<Height> for ConsensusHeightAttribute {
-    fn from(consensus_height: Height) -> Self {
-        Self { consensus_height }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, From)]
 struct ConsensusHeightsAttribute {
     consensus_heights: Vec<Height>,
 }
@@ -105,13 +88,7 @@ impl From<ConsensusHeightsAttribute> for Tag {
     }
 }
 
-impl From<Vec<Height>> for ConsensusHeightsAttribute {
-    fn from(consensus_heights: Vec<Height>) -> Self {
-        Self { consensus_heights }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, From)]
 struct HeaderAttribute {
     header: Any,
 }
@@ -125,12 +102,6 @@ impl From<HeaderAttribute> for Tag {
                 .parse()
                 .unwrap(),
         }
-    }
-}
-
-impl From<Any> for HeaderAttribute {
-    fn from(header: Any) -> Self {
-        Self { header }
     }
 }
 
