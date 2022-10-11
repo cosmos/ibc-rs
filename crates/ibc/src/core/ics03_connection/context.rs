@@ -6,7 +6,7 @@ use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::error::Error;
-use crate::core::ics03_connection::handler::{ConnectionIdState, ConnectionResult};
+use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::version::{get_compatible_versions, pick_version, Version};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
@@ -72,17 +72,13 @@ pub trait ConnectionKeeper {
     fn store_connection_result(&mut self, result: ConnectionResult) -> Result<(), Error> {
         self.store_connection(result.connection_id.clone(), &result.connection_end)?;
 
-        // If we generated an identifier, increase the counter & associate this new identifier
-        // with the client id.
-        if matches!(result.connection_id_state, ConnectionIdState::Generated) {
-            self.increase_connection_counter();
+        self.increase_connection_counter();
 
-            // Also associate the connection end to its client identifier.
-            self.store_connection_to_client(
-                result.connection_id.clone(),
-                result.connection_end.client_id(),
-            )?;
-        }
+        // Also associate the connection end to its client identifier.
+        self.store_connection_to_client(
+            result.connection_id.clone(),
+            result.connection_end.client_id(),
+        )?;
 
         Ok(())
     }

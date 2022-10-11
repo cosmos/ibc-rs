@@ -158,29 +158,3 @@ pub fn verify_consensus_proof(
         )
         .map_err(|e| Error::consensus_state_verification_failure(proof.height(), e))
 }
-
-/// Checks that `claimed_height` is within normal bounds, i.e., fresh enough so that the chain has
-/// not pruned it yet, but not newer than the current (actual) height of the local chain.
-pub fn check_client_consensus_height(
-    ctx: &dyn ConnectionReader,
-    claimed_height: Height,
-) -> Result<(), Error> {
-    if claimed_height > ctx.host_current_height() {
-        // Fail if the consensus height is too advanced.
-        return Err(Error::invalid_consensus_height(
-            claimed_height,
-            ctx.host_current_height(),
-        ));
-    }
-
-    if claimed_height < ctx.host_oldest_height() {
-        // Fail if the consensus height is too old (has been pruned).
-        return Err(Error::stale_consensus_height(
-            claimed_height,
-            ctx.host_oldest_height(),
-        ));
-    }
-
-    // Height check is within normal bounds, check passes.
-    Ok(())
-}

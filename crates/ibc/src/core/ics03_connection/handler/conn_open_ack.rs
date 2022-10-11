@@ -4,10 +4,8 @@ use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, Sta
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::Error;
 use crate::core::ics03_connection::events::Attributes;
-use crate::core::ics03_connection::handler::verify::{
-    check_client_consensus_height, verify_proofs,
-};
-use crate::core::ics03_connection::handler::{ConnectionIdState, ConnectionResult};
+use crate::core::ics03_connection::handler::verify::verify_proofs;
+use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};

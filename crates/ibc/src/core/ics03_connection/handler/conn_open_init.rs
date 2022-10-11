@@ -4,7 +4,7 @@ use crate::core::ics03_connection::connection::{ConnectionEnd, State};
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::Error;
 use crate::core::ics03_connection::events::Attributes;
-use crate::core::ics03_connection::handler::{ConnectionIdState, ConnectionResult};
+use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::events::IbcEvent;
@@ -50,7 +50,6 @@ pub(crate) fn process(
 
     let result = ConnectionResult {
         connection_id: conn_id.clone(),
-        connection_id_state: ConnectionIdState::Generated,
         connection_end: new_connection_end,
     };
 

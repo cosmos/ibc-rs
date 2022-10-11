@@ -2,7 +2,6 @@ use crate::prelude::*;
 
 use core::{
     convert::{TryFrom, TryInto},
-    str::FromStr,
     time::Duration,
 };
 
@@ -14,8 +13,7 @@ use crate::core::ics03_connection::connection::Counterparty;
 use crate::core::ics03_connection::error::Error;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
-use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-use crate::proofs::{ConsensusProof, Proofs};
+use crate::core::ics24_host::identifier::ClientId;
 use crate::signer::Signer;
 use crate::tx_msg::Msg;
 use crate::Height;
@@ -27,22 +25,20 @@ pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenTry";
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgConnectionOpenTry {
-    pub previous_connection_id: Option<ConnectionId>,
     pub client_id: ClientId,
     pub client_state: Any,
     pub counterparty: Counterparty,
     pub counterparty_versions: Vec<Version>,
-    pub proofs: Proofs,
+    pub proof_connection_end: CommitmentProofBytes,
+    pub proof_client_state: CommitmentProofBytes,
+    pub proof_consensus_state: CommitmentProofBytes,
+    pub proofs_height: Height,
+    pub consensus_height: Height,
     pub delay_period: Duration,
     pub signer: Signer,
-}
 
-impl MsgConnectionOpenTry {
-    /// Getter for accessing the `consensus_height` field from this message.
-    /// Returns `None` if this field is not set.
-    pub fn consensus_height(&self) -> Option<Height> {
-        self.proofs.consensus_proof().map(|proof| proof.height())
-    }
+    /// deprecrated. Only kept here for proper conversion to/from the raw type
+    previous_connection_id: String,
 }
 
 impl Msg for MsgConnectionOpenTry {
@@ -64,33 +60,6 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
     type Error = Error;
 
     fn try_from(msg: RawMsgConnectionOpenTry) -> Result<Self, Self::Error> {
-        let previous_connection_id = Some(msg.previous_connection_id)
-            .filter(|x| !x.is_empty())
-            .map(|v| FromStr::from_str(v.as_str()))
-            .transpose()
-            .map_err(Error::invalid_identifier)?;
-
-        let consensus_height = msg
-            .consensus_height
-            .and_then(|raw_height| raw_height.try_into().ok())
-            .ok_or_else(Error::missing_consensus_height)?;
-
-        let consensus_proof_obj = ConsensusProof::new(
-            msg.proof_consensus
-                .try_into()
-                .map_err(Error::invalid_proof)?,
-            consensus_height,
-        )
-        .map_err(Error::invalid_proof)?;
-
-        let proof_height = msg
-            .proof_height
-            .and_then(|raw_height| raw_height.try_into().ok())
-            .ok_or_else(Error::missing_proof_height)?;
-
-        let client_proof =
-            CommitmentProofBytes::try_from(msg.proof_client).map_err(Error::invalid_proof)?;
-
         let counterparty_versions = msg
             .counterparty_versions
             .into_iter()
@@ -102,7 +71,7 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
         }
 
         Ok(Self {
-            previous_connection_id,
+            previous_connection_id: msg.previous_connection_id,
             client_id: msg.client_id.parse().map_err(Error::invalid_identifier)?,
             client_state: msg.client_state.ok_or_else(Error::missing_client_state)?,
             counterparty: msg
@@ -110,14 +79,20 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
                 .ok_or_else(Error::missing_counterparty)?
                 .try_into()?,
             counterparty_versions,
-            proofs: Proofs::new(
-                msg.proof_init.try_into().map_err(Error::invalid_proof)?,
-                Some(client_proof),
-                Some(consensus_proof_obj),
-                None,
-                proof_height,
-            )
-            .map_err(Error::invalid_proof)?,
+            proof_connection_end: msg.proof_init.try_into().map_err(Error::invalid_proof)?,
+            proof_client_state: msg.proof_client.try_into().map_err(Error::invalid_proof)?,
+            proof_consensus_state: msg
+                .proof_consensus
+                .try_into()
+                .map_err(Error::invalid_proof)?,
+            proofs_height: msg
+                .proof_height
+                .and_then(|raw_height| raw_height.try_into().ok())
+                .ok_or_else(Error::missing_proof_height)?,
+            consensus_height: msg
+                .consensus_height
+                .and_then(|raw_height| raw_height.try_into().ok())
+                .ok_or_else(Error::missing_consensus_height)?,
             delay_period: Duration::from_nanos(msg.delay_period),
             signer: msg.signer.parse().map_err(Error::signer)?,
         })
@@ -125,36 +100,24 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
 }
 
 impl From<MsgConnectionOpenTry> for RawMsgConnectionOpenTry {
-    fn from(ics_msg: MsgConnectionOpenTry) -> Self {
+    fn from(msg: MsgConnectionOpenTry) -> Self {
         RawMsgConnectionOpenTry {
-            client_id: ics_msg.client_id.as_str().to_string(),
-            previous_connection_id: ics_msg
-                .previous_connection_id
-                .map_or_else(|| "".to_string(), |v| v.as_str().to_string()),
-            client_state: Some(ics_msg.client_state),
-            counterparty: Some(ics_msg.counterparty.into()),
-            delay_period: ics_msg.delay_period.as_nanos() as u64,
-            counterparty_versions: ics_msg
+            client_id: msg.client_id.as_str().to_string(),
+            previous_connection_id: msg.previous_connection_id,
+            client_state: Some(msg.client_state),
+            counterparty: Some(msg.counterparty.into()),
+            delay_period: msg.delay_period.as_nanos() as u64,
+            counterparty_versions: msg
                 .counterparty_versions
                 .iter()
                 .map(|v| v.clone().into())
                 .collect(),
-            proof_height: Some(ics_msg.proofs.height().into()),
-            proof_init: ics_msg.proofs.object_proof().clone().into(),
-            proof_client: ics_msg
-                .proofs
-                .client_proof()
-                .clone()
-                .map_or_else(Vec::new, |v| v.into()),
-            proof_consensus: ics_msg
-                .proofs
-                .consensus_proof()
-                .map_or_else(Vec::new, |v| v.proof().clone().into()),
-            consensus_height: ics_msg
-                .proofs
-                .consensus_proof()
-                .map_or_else(|| None, |h| Some(h.height().into())),
-            signer: ics_msg.signer.to_string(),
+            proof_height: Some(msg.proofs_height.into()),
+            proof_init: msg.proof_connection_end.into(),
+            proof_client: msg.proof_client_state.into(),
+            proof_consensus: msg.proof_consensus_state.into(),
+            consensus_height: Some(msg.consensus_height.into()),
+            signer: msg.signer.to_string(),
         }
     }
 }
@@ -179,7 +142,7 @@ pub mod test_util {
         /// Moves the given message into another one, and updates the `previous_connection_id` field.
         pub fn with_previous_connection_id(
             self,
-            previous_connection_id: Option<ConnectionId>,
+            previous_connection_id: String,
         ) -> MsgConnectionOpenTry {
             MsgConnectionOpenTry {
                 previous_connection_id,

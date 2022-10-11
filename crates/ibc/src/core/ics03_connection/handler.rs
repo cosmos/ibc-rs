@@ -14,6 +14,7 @@ pub mod conn_open_try;
 
 pub mod verify;
 
+// TODO: REMOVE (BEFORE MERGE)
 /// Defines the possible states of a connection identifier in a `ConnectionResult`.
 #[derive(Clone, Debug)]
 pub enum ConnectionIdState {
@@ -31,9 +32,6 @@ pub struct ConnectionResult {
     /// newly-generated connection id (e.g., when processing `MsgConnectionOpenInit`) or
     /// an existing connection id (e.g., for `MsgConnectionOpenAck`).
     pub connection_id: ConnectionId,
-
-    /// The state of the connection identifier (whether it was newly-generated or not).
-    pub connection_id_state: ConnectionIdState,
 
     /// The connection end, which the handler produced as a result of processing the message.
     pub connection_end: ConnectionEnd,
