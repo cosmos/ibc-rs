@@ -1,6 +1,5 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the client module.
 
-use core::fmt::{Display, Error as FmtError, Formatter};
 use derive_more::From;
 use ibc_proto::google::protobuf::Any;
 use subtle_encoding::hex;
@@ -135,12 +134,6 @@ impl CreateClient {
     }
 }
 
-impl Display for CreateClient {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "{:?}", self)
-    }
-}
-
 impl From<CreateClient> for AbciEvent {
     fn from(c: CreateClient) -> Self {
         AbciEvent {
@@ -204,12 +197,6 @@ impl UpdateClient {
     }
 }
 
-impl Display for UpdateClient {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "{:?}", self)
-    }
-}
-
 impl From<UpdateClient> for AbciEvent {
     fn from(u: UpdateClient) -> Self {
         AbciEvent {
@@ -250,12 +237,6 @@ impl ClientMisbehaviour {
     }
 }
 
-impl Display for ClientMisbehaviour {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "{:?}", self)
-    }
-}
-
 impl From<ClientMisbehaviour> for AbciEvent {
     fn from(c: ClientMisbehaviour) -> Self {
         AbciEvent {
@@ -292,12 +273,6 @@ impl UpgradeClient {
 
     pub fn consensus_height(&self) -> &Height {
         &self.consensus_height.consensus_height
-    }
-}
-
-impl Display for UpgradeClient {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "{:?}", self)
     }
 }
 
