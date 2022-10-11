@@ -380,7 +380,7 @@ impl IbcTestRunner {
                         previous_connection_id: previous_connection_id.map(Self::connection_id),
                         client_id: Self::client_id(client_id),
                         // TODO: is this ever needed?
-                        client_state: None,
+                        client_state: Self::client_state(client_state).into(),
                         counterparty: Self::counterparty(
                             counterparty_client_id,
                             Some(counterparty_connection_id),
@@ -409,7 +409,7 @@ impl IbcTestRunner {
                         connection_id: Self::connection_id(connection_id),
                         counterparty_connection_id: Self::connection_id(counterparty_connection_id),
                         // TODO: is this ever needed?
-                        client_state: None,
+                        client_state: Self::client_state(client_state).into(),
                         proofs: Self::proofs(client_state),
                         version: Self::version(),
                         signer: Self::signer(),
