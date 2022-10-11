@@ -47,9 +47,6 @@ pub(crate) fn process(
         msg.proofs.height(),
         msg.proofs.object_proof(),
     )?;
-    if let Some(proof) = msg.proofs.consensus_proof() {
-        verify::verify_consensus_proof(ctx, msg.proofs.height(), &conn_end, &proof)?;
-    }
 
     output.log("success: connection verification passed");
 
