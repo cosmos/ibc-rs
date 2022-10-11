@@ -23,6 +23,8 @@ use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientStat
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 use serde::{Deserialize, Serialize};
+use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
+use tendermint::trust_threshold::TrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::{ProdVerifier, Verdict, Verifier};
@@ -80,6 +82,15 @@ impl ClientState {
         upgrade_path: Vec<String>,
         allow_update: AllowUpdate,
     ) -> Result<ClientState, Error> {
+        if chain_id.as_str().len() > MaxChainIdLen {
+            return Err(Error::chain_id_too_long(format!(
+                "ClientState chain-id is ({:?}) is too long, got: {:?}, max allowed: {:?}",
+                chain_id,
+                chain_id.as_str().len(),
+                MaxChainIdLen
+            )));
+        }
+
         // Basic validation of trusting period and unbonding period: each should be non-zero.
         if trusting_period <= Duration::new(0, 0) {
             return Err(Error::invalid_trusting_period(format!(
@@ -105,8 +116,29 @@ impl ClientState {
         // `TrustThreshold` is guaranteed to be in the range `[0, 1)`, but a `TrustThreshold::ZERO`
         // value is invalid in this context
         if trust_level == TrustThreshold::ZERO {
-            return Err(Error::validation(
+            return Err(Error::invalid_trust_threshold(
                 "ClientState trust-level cannot be zero".to_string(),
+            ));
+        }
+
+        if let Err(err) =
+            TrustThresholdFraction::new(trust_level.numerator(), trust_level.denominator())
+        {
+            return Err(Error::invalid_trust_threshold(format!(
+                "ClientState trust-level is not in the range [1/3, 1): {:?}",
+                err
+            )));
+        }
+
+        if max_clock_drift <= Duration::new(0, 0) {
+            return Err(Error::invalid_max_clock_drift(
+                "ClientState max-clock-drift must be greater than zero".to_string(),
+            ));
+        }
+
+        if latest_height.revision_number() != chain_id.version() {
+            return Err(Error::invalid_latest_height(
+                "ClientState latest-height revision number must match chain-id version".to_string(),
             ));
         }
 
@@ -115,6 +147,16 @@ impl ClientState {
             return Err(Error::validation(
                 "ClientState proof-specs cannot be empty".to_string(),
             ));
+        }
+
+        // `upgrade_path` itself may be empty, but if not then each key must be non-empty
+        for (idx, key) in upgrade_path.iter().enumerate() {
+            if key.trim().is_empty() {
+                return Err(Error::validation(format!(
+                    "ClientState upgrade-path key at index {:?} cannot be empty",
+                    idx
+                )));
+            }
         }
 
         Ok(Self {
