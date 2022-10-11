@@ -15,6 +15,12 @@ use crate::serializers::serde_string;
 #[serde(transparent)]
 pub struct BaseDenom(String);
 
+impl BaseDenom {
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
 impl FromStr for BaseDenom {
     type Err = Error;
 
