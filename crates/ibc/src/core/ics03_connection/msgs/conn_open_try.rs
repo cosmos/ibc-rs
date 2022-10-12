@@ -37,8 +37,9 @@ pub struct MsgConnectionOpenTry {
     pub delay_period: Duration,
     pub signer: Signer,
 
-    /// deprecrated. Only kept here for proper conversion to/from the raw type
-    previous_connection_id: String,
+    #[deprecated(since = "0.20.0")]
+    /// Only kept here for proper conversion to/from the raw type
+    pub previous_connection_id: String,
 }
 
 impl Msg for MsgConnectionOpenTry {
