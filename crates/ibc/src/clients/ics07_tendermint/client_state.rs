@@ -49,18 +49,18 @@ pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClientState {
-    pub chain_id: ChainId,
-    pub trust_level: TrustThreshold,
-    pub trusting_period: Duration,
-    pub unbonding_period: Duration,
-    pub max_clock_drift: Duration,
-    pub latest_height: Height,
-    pub proof_specs: ProofSpecs,
-    pub upgrade_path: Vec<String>,
-    pub allow_update: AllowUpdate,
-    pub frozen_height: Option<Height>,
+    chain_id: ChainId,
+    trust_level: TrustThreshold,
+    trusting_period: Duration,
+    unbonding_period: Duration,
+    max_clock_drift: Duration,
+    latest_height: Height,
+    proof_specs: ProofSpecs,
+    upgrade_path: Vec<String>,
+    allow_update: AllowUpdate,
+    frozen_height: Option<Height>,
     #[serde(skip)]
-    pub verifier: ProdVerifier,
+    verifier: ProdVerifier,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
