@@ -35,14 +35,6 @@ pub(crate) fn process(
         ));
     }
 
-    if msg.consensus_height < ctx.host_oldest_height() {
-        // Fail if the consensus height is too old (has been pruned).
-        return Err(Error::stale_consensus_height(
-            msg.consensus_height,
-            ctx.host_oldest_height(),
-        ));
-    }
-
     let version = ctx.pick_version(
         ctx.get_compatible_versions(),
         msg.counterparty_versions.clone(),

@@ -30,6 +30,7 @@ pub trait ConnectionReader {
     /// Returns the current height of the local chain.
     fn host_current_height(&self) -> Height;
 
+    #[deprecated(since = "0.20.0")]
     /// Returns the oldest height available on the local chain.
     fn host_oldest_height(&self) -> Height;
 

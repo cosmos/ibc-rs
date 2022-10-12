@@ -26,14 +26,6 @@ pub(crate) fn process(
         ));
     }
 
-    if msg.consensus_height < ctx.host_oldest_height() {
-        // Fail if the consensus height is too old (has been pruned).
-        return Err(Error::stale_consensus_height(
-            msg.consensus_height,
-            ctx.host_oldest_height(),
-        ));
-    }
-
     ///////////////////////////////////////////////////////////
     // validate_self_client() verification goes here
     // See [issue](https://github.com/cosmos/ibc-rs/issues/162)
