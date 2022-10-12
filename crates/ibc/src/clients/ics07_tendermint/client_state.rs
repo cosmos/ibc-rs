@@ -962,7 +962,7 @@ mod tests {
             max_clock_drift: Duration::new(3, 0),
             latest_height: Height::new(0, 10).unwrap(),
             proof_specs: ProofSpecs::default(),
-            upgrade_path: vec!["".to_string()],
+            upgrade_path: vec!["upgrade".to_owned(), "upgradedIBCState".to_owned()],
             allow_update: AllowUpdate {
                 after_expiry: false,
                 after_misbehaviour: false,
@@ -1134,14 +1134,14 @@ mod tests {
     fn client_state_verify_height() {
         // Define a "default" set of parameters to reuse throughout these tests.
         let default_params: ClientStateParams = ClientStateParams {
-            id: ChainId::default(),
+            id: ChainId::new("ibc".to_string(), 1),
             trust_level: TrustThreshold::ONE_THIRD,
             trusting_period: Duration::new(64000, 0),
             unbonding_period: Duration::new(128000, 0),
             max_clock_drift: Duration::new(3, 0),
             latest_height: Height::new(1, 10).unwrap(),
             proof_specs: ProofSpecs::default(),
-            upgrade_path: vec!["".to_string()],
+            upgrade_path: vec!["upgrade".to_owned(), "upgradedIBCState".to_owned()],
             allow_update: AllowUpdate {
                 after_expiry: false,
                 after_misbehaviour: false,
@@ -1236,7 +1236,7 @@ pub mod test_util {
             )
             .unwrap(),
             Default::default(),
-            vec!["".to_string()],
+            vec!["upgrade".to_owned(), "upgradedIBCState".to_owned()],
             AllowUpdate {
                 after_expiry: false,
                 after_misbehaviour: false,
