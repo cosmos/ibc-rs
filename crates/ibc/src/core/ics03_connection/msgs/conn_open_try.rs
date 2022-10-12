@@ -139,17 +139,6 @@ pub mod test_util {
 
     /// Testing-specific helper methods.
     impl MsgConnectionOpenTry {
-        /// Moves the given message into another one, and updates the `previous_connection_id` field.
-        pub fn with_previous_connection_id(
-            self,
-            previous_connection_id: String,
-        ) -> MsgConnectionOpenTry {
-            MsgConnectionOpenTry {
-                previous_connection_id,
-                ..self
-            }
-        }
-
         /// Setter for `client_id`.
         pub fn with_client_id(self, client_id: ClientId) -> MsgConnectionOpenTry {
             MsgConnectionOpenTry { client_id, ..self }
