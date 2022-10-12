@@ -47,14 +47,6 @@ pub(crate) fn process(
         return Err(Error::connection_mismatch(msg.connection_id));
     }
 
-    // Set the connection ID of the counterparty
-    let prev_counterparty = self_connection_end.counterparty();
-    let counterparty = Counterparty::new(
-        prev_counterparty.client_id().clone(),
-        Some(msg.counterparty_connection_id.clone()),
-        prev_counterparty.prefix().clone(),
-    );
-
     // Proof verification.
     {
         let client_state = ctx.client_state(self_connection_end.client_id())?;
@@ -117,16 +109,24 @@ pub(crate) fn process(
             .map_err(|e| Error::consensus_state_verification_failure(msg.proofs_height, e))?;
     }
 
-    let result = ConnectionResult {
-        connection_id: msg.connection_id,
-        connection_id_state: ConnectionIdState::Reused,
-        connection_end: ConnectionEnd::new(
-            State::Open,
-            self_connection_end.client_id().clone(),
-            counterparty,
-            vec![msg.version],
-            self_connection_end.delay_period(),
-        ),
+    // Success
+    let result = {
+        let new_connection_end = {
+            let mut counterparty = self_connection_end.counterparty().clone();
+            counterparty.connection_id = Some(msg.counterparty_connection_id.clone());
+
+            let mut connection = self_connection_end;
+            connection.set_state(State::Open);
+            connection.set_version(msg.version.clone());
+            connection.set_counterparty(counterparty);
+            connection
+        };
+
+        ConnectionResult {
+            connection_id: msg.connection_id,
+            connection_id_state: ConnectionIdState::Reused,
+            connection_end: new_connection_end,
+        }
     };
 
     let event_attributes = Attributes {
