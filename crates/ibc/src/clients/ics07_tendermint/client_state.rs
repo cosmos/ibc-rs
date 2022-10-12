@@ -962,7 +962,7 @@ mod tests {
             max_clock_drift: Duration::new(3, 0),
             latest_height: Height::new(0, 10).unwrap(),
             proof_specs: ProofSpecs::default(),
-            upgrade_path: vec!["upgrade".to_owned(), "upgradedIBCState".to_owned()],
+            upgrade_path: Default::default(),
             allow_update: AllowUpdate {
                 after_expiry: false,
                 after_misbehaviour: false,
@@ -982,9 +982,17 @@ mod tests {
                 want_pass: true,
             },
             Test {
-                name: "Valid empty upgrade-path".to_string(),
+                name: "Valid (empty) upgrade-path".to_string(),
                 params: ClientStateParams {
                     upgrade_path: vec![],
+                    ..default_params.clone()
+                },
+                want_pass: true,
+            },
+            Test {
+                name: "Valid upgrade-path".to_string(),
+                params: ClientStateParams {
+                    upgrade_path: vec!["upgrade".to_owned(), "upgradedIBCState".to_owned()],
                     ..default_params.clone()
                 },
                 want_pass: true,
@@ -1198,7 +1206,7 @@ mod tests {
             max_clock_drift: Duration::new(3, 0),
             latest_height: Height::new(1, 10).unwrap(),
             proof_specs: ProofSpecs::default(),
-            upgrade_path: vec!["upgrade".to_owned(), "upgradedIBCState".to_owned()],
+            upgrade_path: Default::default(),
             allow_update: AllowUpdate {
                 after_expiry: false,
                 after_misbehaviour: false,
@@ -1293,7 +1301,7 @@ pub mod test_util {
             )
             .unwrap(),
             Default::default(),
-            vec!["upgrade".to_owned(), "upgradedIBCState".to_owned()],
+            Default::default(),
             AllowUpdate {
                 after_expiry: false,
                 after_misbehaviour: false,

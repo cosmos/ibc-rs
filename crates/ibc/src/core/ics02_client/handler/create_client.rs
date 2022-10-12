@@ -229,7 +229,7 @@ mod tests {
             Duration::from_millis(3000),
             Height::new(0, u64::from(tm_header.height)).unwrap(),
             ProofSpecs::default(),
-            vec!["upgrade".to_owned(), "upgradedIBCState".to_owned()],
+            vec![],
             AllowUpdate {
                 after_expiry: false,
                 after_misbehaviour: false,
