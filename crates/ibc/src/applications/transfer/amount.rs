@@ -9,7 +9,7 @@ use crate::bigint::U256;
 #[derive(
     Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Serialize, Deserialize, Display, From, Into,
 )]
-pub struct Amount(pub U256);
+pub struct Amount(U256);
 
 impl Amount {
     pub fn checked_add(self, rhs: Self) -> Option<Self> {
