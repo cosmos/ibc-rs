@@ -982,6 +982,38 @@ mod tests {
                 want_pass: true,
             },
             Test {
+                name: "Valid empty upgrade-path".to_string(),
+                params: ClientStateParams {
+                    upgrade_path: vec![],
+                    ..default_params.clone()
+                },
+                want_pass: true,
+            },
+            Test {
+                name: "Valid long (50 chars) chain-id".to_string(),
+                params: ClientStateParams {
+                    id: ChainId::new("a".repeat(48), 0),
+                    ..default_params.clone()
+                },
+                want_pass: true,
+            },
+            Test {
+                name: "Invalid too-long (51 chars) chain-id".to_string(),
+                params: ClientStateParams {
+                    id: ChainId::new("a".repeat(49), 0),
+                    ..default_params.clone()
+                },
+                want_pass: false,
+            },
+            Test {
+                name: "Invalid (zero) max-clock-drift period".to_string(),
+                params: ClientStateParams {
+                    max_clock_drift: ZERO_DURATION,
+                    ..default_params.clone()
+                },
+                want_pass: false,
+            },
+            Test {
                 name: "Invalid unbonding period".to_string(),
                 params: ClientStateParams {
                     unbonding_period: ZERO_DURATION,
@@ -1007,9 +1039,34 @@ mod tests {
                 want_pass: false,
             },
             Test {
-                name: "Invalid (too small) trusting trust threshold".to_string(),
+                name: "Invalid (equal) trusting period w.r.t. unbonding period".to_string(),
+                params: ClientStateParams {
+                    trusting_period: Duration::new(10, 0),
+                    unbonding_period: Duration::new(10, 0),
+                    ..default_params.clone()
+                },
+                want_pass: false,
+            },
+            Test {
+                name: "Invalid (zero) trusting trust threshold".to_string(),
                 params: ClientStateParams {
                     trust_level: TrustThreshold::ZERO,
+                    ..default_params.clone()
+                },
+                want_pass: false,
+            },
+            Test {
+                name: "Invalid (too small) trusting trust threshold".to_string(),
+                params: ClientStateParams {
+                    trust_level: TrustThreshold::new(1, 4).unwrap(),
+                    ..default_params.clone()
+                },
+                want_pass: false,
+            },
+            Test {
+                name: "Invalid latest height revision number (doesn't match chain)".to_string(),
+                params: ClientStateParams {
+                    latest_height: Height::new(1, 1).unwrap(),
                     ..default_params.clone()
                 },
                 want_pass: false,
