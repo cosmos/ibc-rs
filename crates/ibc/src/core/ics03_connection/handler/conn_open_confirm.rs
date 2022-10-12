@@ -4,7 +4,6 @@ use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, Sta
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::Error;
 use crate::core::ics03_connection::events::Attributes;
-use crate::core::ics03_connection::handler::verify;
 use crate::core::ics03_connection::handler::{ConnectionIdState, ConnectionResult};
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
 use crate::events::IbcEvent;
@@ -18,45 +17,56 @@ pub(crate) fn process(
     let mut output = HandlerOutput::builder();
 
     // Validate the connection end.
-    let mut conn_end = ctx.connection_end(&msg.connection_id)?;
+    let mut self_connection_end = ctx.connection_end(&msg.connection_id)?;
     // A connection end must be in TryOpen state; otherwise return error.
-    if !conn_end.state_matches(&State::TryOpen) {
+    if !self_connection_end.state_matches(&State::TryOpen) {
         // Old connection end is in incorrect state, propagate the error.
         return Err(Error::connection_mismatch(msg.connection_id));
     }
 
-    // Verify proofs. Assemble the connection end as we expect to find it on the counterparty.
-    let expected_conn = ConnectionEnd::new(
-        State::Open,
-        conn_end.counterparty().client_id().clone(),
-        Counterparty::new(
-            // The counterparty is the local chain.
-            conn_end.client_id().clone(), // The local client identifier.
-            Some(msg.connection_id.clone()), // Local connection id.
-            ctx.commitment_prefix(),      // Local commitment prefix.
-        ),
-        conn_end.versions().to_vec(),
-        conn_end.delay_period(),
-    );
+    // Verify proofs
+    {
+        let client_state = ctx.client_state(self_connection_end.client_id())?;
+        let consensus_state =
+            ctx.client_consensus_state(self_connection_end.client_id(), msg.proofs_height)?;
+        let counterparty_connection_id = self_connection_end
+            .counterparty()
+            .connection_id()
+            .ok_or_else(Error::invalid_counterparty)?;
+        let counterparty_expected_connection_end = ConnectionEnd::new(
+            State::Open,
+            self_connection_end.counterparty().client_id().clone(),
+            Counterparty::new(
+                // The counterparty is the local chain.
+                self_connection_end.client_id().clone(), // The local client identifier.
+                Some(msg.connection_id.clone()),         // Local connection id.
+                ctx.commitment_prefix(),                 // Local commitment prefix.
+            ),
+            self_connection_end.versions().to_vec(),
+            self_connection_end.delay_period(),
+        );
 
-    verify::verify_connection_proof(
-        ctx,
-        msg.proofs.height(),
-        &conn_end,
-        &expected_conn,
-        msg.proofs.height(),
-        msg.proofs.object_proof(),
-    )?;
+        client_state
+            .verify_connection_state(
+                msg.proofs_height,
+                self_connection_end.counterparty().prefix(),
+                &msg.proof_connection_end,
+                consensus_state.root(),
+                counterparty_connection_id,
+                &counterparty_expected_connection_end,
+            )
+            .map_err(Error::verify_connection_state)?;
+    }
 
     output.log("success: connection verification passed");
 
     // Transition our own end of the connection to state OPEN.
-    conn_end.set_state(State::Open);
+    self_connection_end.set_state(State::Open);
 
     let result = ConnectionResult {
         connection_id: msg.connection_id,
         connection_id_state: ConnectionIdState::Reused,
-        connection_end: conn_end,
+        connection_end: self_connection_end,
     };
 
     let event_attributes = Attributes {

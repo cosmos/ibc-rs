@@ -1,4 +1,5 @@
-use crate::prelude::*;
+use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
+use crate::{prelude::*, Height};
 
 use ibc_proto::protobuf::Protobuf;
 
@@ -6,7 +7,6 @@ use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenConfirm as RawMsgConn
 
 use crate::core::ics03_connection::error::Error;
 use crate::core::ics24_host::identifier::ConnectionId;
-use crate::proofs::Proofs;
 use crate::signer::Signer;
 use crate::tx_msg::Msg;
 
@@ -18,7 +18,8 @@ pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenConfirm";
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgConnectionOpenConfirm {
     pub connection_id: ConnectionId,
-    pub proofs: Proofs,
+    pub proof_connection_end: CommitmentProofBytes,
+    pub proofs_height: Height,
     pub signer: Signer,
 }
 
@@ -41,36 +42,28 @@ impl TryFrom<RawMsgConnectionOpenConfirm> for MsgConnectionOpenConfirm {
     type Error = Error;
 
     fn try_from(msg: RawMsgConnectionOpenConfirm) -> Result<Self, Self::Error> {
-        let proof_height = msg
-            .proof_height
-            .and_then(|raw_height| raw_height.try_into().ok())
-            .ok_or_else(Error::missing_proof_height)?;
-
         Ok(Self {
             connection_id: msg
                 .connection_id
                 .parse()
                 .map_err(Error::invalid_identifier)?,
-            proofs: Proofs::new(
-                msg.proof_ack.try_into().map_err(Error::invalid_proof)?,
-                None,
-                None,
-                None,
-                proof_height,
-            )
-            .map_err(Error::invalid_proof)?,
+            proof_connection_end: msg.proof_ack.try_into().map_err(Error::invalid_proof)?,
+            proofs_height: msg
+                .proof_height
+                .and_then(|raw_height| raw_height.try_into().ok())
+                .ok_or_else(Error::missing_proof_height)?,
             signer: msg.signer.parse().map_err(Error::signer)?,
         })
     }
 }
 
 impl From<MsgConnectionOpenConfirm> for RawMsgConnectionOpenConfirm {
-    fn from(ics_msg: MsgConnectionOpenConfirm) -> Self {
+    fn from(msg: MsgConnectionOpenConfirm) -> Self {
         RawMsgConnectionOpenConfirm {
-            connection_id: ics_msg.connection_id.as_str().to_string(),
-            proof_ack: ics_msg.proofs.object_proof().clone().into(),
-            proof_height: Some(ics_msg.proofs.height().into()),
-            signer: ics_msg.signer.to_string(),
+            connection_id: msg.connection_id.as_str().to_string(),
+            proof_ack: msg.proof_connection_end.into(),
+            proof_height: Some(msg.proofs_height.into()),
+            signer: msg.signer.to_string(),
         }
     }
 }
