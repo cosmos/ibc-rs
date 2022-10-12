@@ -787,10 +787,41 @@ impl TryFrom<RawTmClientState> for ClientState {
     type Error = Error;
 
     fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
-        let trust_level = raw
-            .trust_level
-            .clone()
-            .ok_or_else(Error::missing_trusting_period)?;
+        let chain_id = ChainId::from_string(raw.chain_id.as_str());
+
+        let trust_level = {
+            let trust_level = raw
+                .trust_level
+                .clone()
+                .ok_or_else(Error::missing_trusting_period)?;
+            trust_level
+                .try_into()
+                .map_err(|e| Error::invalid_trust_threshold(format!("{}", e)))?
+        };
+
+        let trusting_period = raw
+            .trusting_period
+            .ok_or_else(Error::missing_trusting_period)?
+            .try_into()
+            .map_err(|_| Error::negative_trusting_period())?;
+
+        let unbonding_period = raw
+            .unbonding_period
+            .ok_or_else(Error::missing_unbonding_period)?
+            .try_into()
+            .map_err(|_| Error::negative_unbonding_period())?;
+
+        let max_clock_drift = raw
+            .max_clock_drift
+            .ok_or_else(Error::missing_max_clock_drift)?
+            .try_into()
+            .map_err(|_| Error::negative_max_clock_drift())?;
+
+        let latest_height = raw
+            .latest_height
+            .ok_or_else(Error::missing_latest_height)?
+            .try_into()
+            .map_err(|_| Error::missing_latest_height())?;
 
         // In `RawClientState`, a `frozen_height` of `0` means "not frozen".
         // See:
@@ -799,41 +830,29 @@ impl TryFrom<RawTmClientState> for ClientState {
             .frozen_height
             .and_then(|raw_height| raw_height.try_into().ok());
 
-        #[allow(deprecated)]
-        Ok(Self {
-            chain_id: ChainId::from_string(raw.chain_id.as_str()),
-            trust_level: trust_level
-                .try_into()
-                .map_err(|e| Error::invalid_trust_threshold(format!("{}", e)))?,
-            trusting_period: raw
-                .trusting_period
-                .ok_or_else(Error::missing_trusting_period)?
-                .try_into()
-                .map_err(|_| Error::negative_trusting_period())?,
-            unbonding_period: raw
-                .unbonding_period
-                .ok_or_else(Error::missing_unbonding_period)?
-                .try_into()
-                .map_err(|_| Error::negative_unbonding_period())?,
-            max_clock_drift: raw
-                .max_clock_drift
-                .ok_or_else(Error::missing_max_clock_drift)?
-                .try_into()
-                .map_err(|_| Error::negative_max_clock_drift())?,
-            latest_height: raw
-                .latest_height
-                .ok_or_else(Error::missing_latest_height)?
-                .try_into()
-                .map_err(|_| Error::missing_latest_height())?,
-            frozen_height,
-            upgrade_path: raw.upgrade_path,
-            allow_update: AllowUpdate {
-                after_expiry: raw.allow_update_after_expiry,
-                after_misbehaviour: raw.allow_update_after_misbehaviour,
-            },
-            proof_specs: raw.proof_specs.into(),
-            verifier: ProdVerifier::default(),
-        })
+        let allow_update = AllowUpdate {
+            after_expiry: raw.allow_update_after_expiry,
+            after_misbehaviour: raw.allow_update_after_misbehaviour,
+        };
+
+        let client_state = {
+            let mut cs = ClientState::new(
+                chain_id,
+                trust_level,
+                trusting_period,
+                unbonding_period,
+                max_clock_drift,
+                latest_height,
+                raw.proof_specs.into(),
+                raw.upgrade_path,
+                allow_update,
+            )?;
+
+            cs.frozen_height = frozen_height;
+            cs
+        };
+
+        Ok(client_state)
     }
 }
 
