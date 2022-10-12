@@ -9,7 +9,7 @@ use crate::bigint::U256;
 #[derive(
     Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Serialize, Deserialize, Display, From, Into,
 )]
-pub struct Amount(U256);
+pub struct Amount(pub U256);
 
 impl Amount {
     pub fn checked_add(self, rhs: Self) -> Option<Self> {
@@ -18,10 +18,6 @@ impl Amount {
 
     pub fn checked_sub(self, rhs: Self) -> Option<Self> {
         self.0.checked_sub(rhs.0).map(Self)
-    }
-    
-    pub fn as_u256(&self) -> &U256 {
-        &self.0
     }
 }
 
