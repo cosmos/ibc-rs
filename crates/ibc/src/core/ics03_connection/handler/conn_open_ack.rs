@@ -4,12 +4,13 @@ use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, Sta
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::Error;
 use crate::core::ics03_connection::events::Attributes;
-use crate::core::ics03_connection::handler::verify::verify_proofs;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
+
+use super::ConnectionIdState;
 
 pub(crate) fn process(
     ctx: &dyn ConnectionReader,
@@ -17,70 +18,115 @@ pub(crate) fn process(
 ) -> HandlerResult<ConnectionResult, Error> {
     let mut output = HandlerOutput::builder();
 
-    // If a consensus proof is present, check that the consensus height (for
-    // client proof) in the message is not too advanced nor too old.
-    if let Some(consensus_height) = msg.consensus_height() {
-        check_client_consensus_height(ctx, consensus_height)?;
+    if msg.consensus_height > ctx.host_current_height() {
+        // Fail if the consensus height is too advanced.
+        return Err(Error::invalid_consensus_height(
+            msg.consensus_height,
+            ctx.host_current_height(),
+        ));
     }
 
-    // Validate the connection end.
-    let mut conn_end = ctx.connection_end(&msg.connection_id)?;
-    // A connection end must be Init or TryOpen; otherwise we return an error.
-    let state_is_consistent = conn_end.state_matches(&State::Init)
-        && conn_end.versions().contains(&msg.version)
-        || conn_end.state_matches(&State::TryOpen)
-            && conn_end.versions().get(0).eq(&Some(&msg.version));
+    if msg.consensus_height < ctx.host_oldest_height() {
+        // Fail if the consensus height is too old (has been pruned).
+        return Err(Error::stale_consensus_height(
+            msg.consensus_height,
+            ctx.host_oldest_height(),
+        ));
+    }
 
-    if !state_is_consistent {
-        // Old connection end is in incorrect state, propagate the error.
+    ///////////////////////////////////////////////////////////
+    // validate_self_client() verification goes here
+    // See [issue](https://github.com/cosmos/ibc-rs/issues/162)
+    ///////////////////////////////////////////////////////////
+
+    // Validate the connection end.
+    let self_connection_end = ctx.connection_end(&msg.connection_id)?;
+    if !(self_connection_end.state_matches(&State::Init)
+        && self_connection_end.versions().contains(&msg.version))
+    {
         return Err(Error::connection_mismatch(msg.connection_id));
     }
 
     // Set the connection ID of the counterparty
-    let prev_counterparty = conn_end.counterparty();
+    let prev_counterparty = self_connection_end.counterparty();
     let counterparty = Counterparty::new(
         prev_counterparty.client_id().clone(),
         Some(msg.counterparty_connection_id.clone()),
         prev_counterparty.prefix().clone(),
     );
-    conn_end.set_state(State::Open);
-    conn_end.set_version(msg.version.clone());
-    conn_end.set_counterparty(counterparty);
 
     // Proof verification.
-    let expected_conn = {
-        // The counterparty is the local chain.
-        let counterparty = Counterparty::new(
-            conn_end.client_id().clone(),    // The local client identifier.
-            Some(msg.connection_id.clone()), // This chain's connection id as known on counterparty.
-            ctx.commitment_prefix(),         // Local commitment prefix.
-        );
+    {
+        let client_state = ctx.client_state(self_connection_end.client_id())?;
+        let consensus_state =
+            ctx.client_consensus_state(self_connection_end.client_id(), msg.proofs_height)?;
 
-        ConnectionEnd::new(
-            State::TryOpen,
-            conn_end.counterparty().client_id().clone(),
-            counterparty,
-            vec![msg.version.clone()],
-            conn_end.delay_period(),
-        )
-    };
+        {
+            let counterparty_connection_id = self_connection_end
+                .counterparty()
+                .connection_id()
+                .ok_or_else(Error::invalid_counterparty)?;
+            let counterparty_expected_connection_end = ConnectionEnd::new(
+                State::TryOpen,
+                self_connection_end.counterparty().client_id().clone(),
+                Counterparty::new(
+                    self_connection_end.client_id().clone(), // The local client identifier.
+                    Some(msg.connection_id.clone()), // This chain's connection id as known on counterparty.
+                    ctx.commitment_prefix(),         // Local commitment prefix.
+                ),
+                vec![msg.version.clone()],
+                self_connection_end.delay_period(),
+            );
 
-    // 2. Pass the details to the verification function.
-    verify_proofs(
-        ctx,
-        msg.client_state,
-        msg.proofs.height(),
-        &conn_end,
-        &expected_conn,
-        &msg.proofs,
-    )?;
+            client_state
+                .verify_connection_state(
+                    msg.proofs_height,
+                    self_connection_end.counterparty().prefix(),
+                    &msg.proof_connection_end,
+                    consensus_state.root(),
+                    counterparty_connection_id,
+                    &counterparty_expected_connection_end,
+                )
+                .map_err(Error::verify_connection_state)?;
+        }
 
-    output.log("success: connection verification passed");
+        client_state
+            .verify_client_full_state(
+                msg.proofs_height,
+                self_connection_end.counterparty().prefix(),
+                &msg.proof_client_state,
+                consensus_state.root(),
+                self_connection_end.counterparty().client_id(),
+                msg.client_state,
+            )
+            .map_err(|e| {
+                Error::client_state_verification_failure(self_connection_end.client_id().clone(), e)
+            })?;
+
+        let expected_consensus_state = ctx.host_consensus_state(msg.consensus_height)?;
+        client_state
+            .verify_client_consensus_state(
+                msg.proofs_height,
+                self_connection_end.counterparty().prefix(),
+                &msg.proof_consensus_state,
+                consensus_state.root(),
+                self_connection_end.counterparty().client_id(),
+                msg.consensus_height,
+                expected_consensus_state.as_ref(),
+            )
+            .map_err(|e| Error::consensus_state_verification_failure(msg.proofs_height, e))?;
+    }
 
     let result = ConnectionResult {
         connection_id: msg.connection_id,
         connection_id_state: ConnectionIdState::Reused,
-        connection_end: conn_end,
+        connection_end: ConnectionEnd::new(
+            State::Open,
+            self_connection_end.client_id().clone(),
+            counterparty,
+            vec![msg.version],
+            self_connection_end.delay_period(),
+        ),
     };
 
     let event_attributes = Attributes {
@@ -129,7 +175,7 @@ mod tests {
 
         // Client parameters -- identifier and correct height (matching the proof height)
         let client_id = ClientId::from_str("mock_clientid").unwrap();
-        let proof_height = msg_ack.proofs.height();
+        let proof_height = msg_ack.proofs_height;
 
         // Parametrize the host chain to have a height at least as recent as the
         // the height of the proofs in the Ack msg.

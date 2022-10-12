@@ -11,6 +11,8 @@ use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
+use super::ConnectionIdState;
+
 pub(crate) fn process(
     ctx: &dyn ConnectionReader,
     msg: MsgConnectionOpenTry,
@@ -41,14 +43,6 @@ pub(crate) fn process(
         ));
     }
 
-    let counterparty_expected_connection_end = ConnectionEnd::new(
-        State::Init,
-        msg.counterparty.client_id().clone(),
-        Counterparty::new(msg.client_id.clone(), None, ctx.commitment_prefix()),
-        msg.counterparty_versions.clone(),
-        msg.delay_period,
-    );
-
     let version = ctx.pick_version(
         ctx.get_compatible_versions(),
         msg.counterparty_versions.clone(),
@@ -67,20 +61,30 @@ pub(crate) fn process(
         let consensus_state =
             ctx.client_consensus_state(self_connection_end.client_id(), msg.proofs_height)?;
 
-        let counterparty_connection_id = self_connection_end
-            .counterparty()
-            .connection_id()
-            .ok_or_else(Error::invalid_counterparty)?;
-        client_state
-            .verify_connection_state(
-                msg.proofs_height,
-                self_connection_end.counterparty().prefix(),
-                &msg.proof_connection_end,
-                consensus_state.root(),
-                counterparty_connection_id,
-                &counterparty_expected_connection_end,
-            )
-            .map_err(Error::verify_connection_state)?;
+        {
+            let counterparty_connection_id = self_connection_end
+                .counterparty()
+                .connection_id()
+                .ok_or_else(Error::invalid_counterparty)?;
+            let counterparty_expected_connection_end = ConnectionEnd::new(
+                State::Init,
+                msg.counterparty.client_id().clone(),
+                Counterparty::new(msg.client_id.clone(), None, ctx.commitment_prefix()),
+                msg.counterparty_versions.clone(),
+                msg.delay_period,
+            );
+
+            client_state
+                .verify_connection_state(
+                    msg.proofs_height,
+                    self_connection_end.counterparty().prefix(),
+                    &msg.proof_connection_end,
+                    consensus_state.root(),
+                    counterparty_connection_id,
+                    &counterparty_expected_connection_end,
+                )
+                .map_err(Error::verify_connection_state)?;
+        }
 
         client_state
             .verify_client_full_state(
@@ -112,6 +116,7 @@ pub(crate) fn process(
     let result = ConnectionResult {
         connection_id: self_connection_id.clone(),
         connection_end: self_connection_end,
+        connection_id_state: ConnectionIdState::Generated,
     };
 
     let event_attributes = Attributes {

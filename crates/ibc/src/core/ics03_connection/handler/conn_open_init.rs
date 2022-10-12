@@ -11,6 +11,8 @@ use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
+use super::ConnectionIdState;
+
 pub(crate) fn process(
     ctx: &dyn ConnectionReader,
     msg: MsgConnectionOpenInit,
@@ -51,6 +53,7 @@ pub(crate) fn process(
     let result = ConnectionResult {
         connection_id: conn_id.clone(),
         connection_end: new_connection_end,
+        connection_id_state: ConnectionIdState::Generated,
     };
 
     let event_attributes = Attributes {

@@ -14,6 +14,8 @@ use crate::prelude::*;
 use crate::Height;
 use ibc_proto::google::protobuf::Any;
 
+use super::handler::ConnectionIdState;
+
 /// A context supplying all the necessary read-only dependencies for processing any `ConnectionMsg`.
 pub trait ConnectionReader {
     /// Returns the ConnectionEnd for the given identifier `conn_id`.
@@ -72,13 +74,17 @@ pub trait ConnectionKeeper {
     fn store_connection_result(&mut self, result: ConnectionResult) -> Result<(), Error> {
         self.store_connection(result.connection_id.clone(), &result.connection_end)?;
 
-        self.increase_connection_counter();
+        // If we generated an identifier, increase the counter & associate this new identifier
+        // with the client id.
+        if matches!(result.connection_id_state, ConnectionIdState::Generated) {
+            self.increase_connection_counter();
 
-        // Also associate the connection end to its client identifier.
-        self.store_connection_to_client(
-            result.connection_id.clone(),
-            result.connection_end.client_id(),
-        )?;
+            // Also associate the connection end to its client identifier.
+            self.store_connection_to_client(
+                result.connection_id.clone(),
+                result.connection_end.client_id(),
+            )?;
+        }
 
         Ok(())
     }
