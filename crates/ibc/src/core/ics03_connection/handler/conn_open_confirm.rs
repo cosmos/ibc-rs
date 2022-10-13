@@ -10,69 +10,79 @@ use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
+/// Per our convention, this message is processed on chain B.
 pub(crate) fn process(
-    ctx: &dyn ConnectionReader,
+    ctx_b: &dyn ConnectionReader,
     msg: MsgConnectionOpenConfirm,
 ) -> HandlerResult<ConnectionResult, Error> {
     let mut output = HandlerOutput::builder();
 
-    // Validate the connection end.
-    let mut self_connection_end = ctx.connection_end(&msg.connection_id)?;
-    // A connection end must be in TryOpen state; otherwise return error.
-    if !self_connection_end.state_matches(&State::TryOpen) {
-        // Old connection end is in incorrect state, propagate the error.
-        return Err(Error::connection_mismatch(msg.connection_id));
+    let conn_end_on_b = ctx_b.connection_end(&msg.conn_id_on_b)?;
+    if !conn_end_on_b.state_matches(&State::TryOpen) {
+        return Err(Error::connection_mismatch(msg.conn_id_on_b));
     }
 
     // Verify proofs
     {
-        let client_state = ctx.client_state(self_connection_end.client_id())?;
-        let consensus_state =
-            ctx.client_consensus_state(self_connection_end.client_id(), msg.proofs_height)?;
-        let counterparty_connection_id = self_connection_end
+        let client_state_of_a_on_b = ctx_b.client_state(conn_end_on_b.client_id())?;
+        let consensus_state_of_a_on_b =
+            ctx_b.client_consensus_state(conn_end_on_b.client_id(), msg.proof_height_on_a)?;
+
+        let client_id_on_a = conn_end_on_b.counterparty().client_id();
+        let client_id_on_b = conn_end_on_b.client_id();
+        let conn_id_on_a = conn_end_on_b
             .counterparty()
             .connection_id()
             .ok_or_else(Error::invalid_counterparty)?;
-        let counterparty_expected_connection_end = ConnectionEnd::new(
+        let prefix_on_a = conn_end_on_b.counterparty().prefix();
+        let prefix_on_b = ctx_b.commitment_prefix();
+
+        let expected_conn_end_on_a = ConnectionEnd::new(
             State::Open,
-            self_connection_end.counterparty().client_id().clone(),
+            client_id_on_a.clone(),
             Counterparty::new(
-                // The counterparty is the local chain.
-                self_connection_end.client_id().clone(), // The local client identifier.
-                Some(msg.connection_id.clone()),         // Local connection id.
-                ctx.commitment_prefix(),                 // Local commitment prefix.
+                client_id_on_b.clone(),
+                Some(msg.conn_id_on_b.clone()),
+                prefix_on_b,
             ),
-            self_connection_end.versions().to_vec(),
-            self_connection_end.delay_period(),
+            conn_end_on_b.versions().to_vec(),
+            conn_end_on_b.delay_period(),
         );
 
-        client_state
+        client_state_of_a_on_b
             .verify_connection_state(
-                msg.proofs_height,
-                self_connection_end.counterparty().prefix(),
-                &msg.proof_connection_end,
-                consensus_state.root(),
-                counterparty_connection_id,
-                &counterparty_expected_connection_end,
+                msg.proof_height_on_a,
+                prefix_on_a,
+                &msg.proof_conn_end_on_a,
+                consensus_state_of_a_on_b.root(),
+                conn_id_on_a,
+                &expected_conn_end_on_a,
             )
             .map_err(Error::verify_connection_state)?;
     }
 
-    // Transition our own end of the connection to state OPEN.
-    self_connection_end.set_state(State::Open);
+    // Success
+    let result = {
+        let new_conn_end_on_b = {
+            let mut new_conn_end_on_b = conn_end_on_b;
 
-    let result = ConnectionResult {
-        connection_id: msg.connection_id,
-        connection_id_state: ConnectionIdState::Reused,
-        connection_end: self_connection_end,
+            new_conn_end_on_b.set_state(State::Open);
+            new_conn_end_on_b
+        };
+
+        ConnectionResult {
+            connection_id: msg.conn_id_on_b,
+            connection_id_state: ConnectionIdState::Reused,
+            connection_end: new_conn_end_on_b,
+        }
     };
 
     let event_attributes = Attributes {
         connection_id: Some(result.connection_id.clone()),
         ..Default::default()
     };
+    
     output.emit(IbcEvent::OpenConfirmConnection(event_attributes.into()));
-
     output.log("success: conn_open_confirm verification passed");
 
     Ok(output.with_result(result))
@@ -112,7 +122,7 @@ mod tests {
             MsgConnectionOpenConfirm::try_from(get_dummy_raw_msg_conn_open_confirm()).unwrap();
         let counterparty = Counterparty::new(
             client_id.clone(),
-            Some(msg_confirm.connection_id.clone()),
+            Some(msg_confirm.conn_id_on_b.clone()),
             CommitmentPrefix::try_from(b"ibc".to_vec()).unwrap(),
         );
 
@@ -141,7 +151,7 @@ mod tests {
                 ctx: context
                     .clone()
                     .with_client(&client_id, Height::new(0, 10).unwrap())
-                    .with_connection(msg_confirm.connection_id.clone(), incorrect_conn_end_state),
+                    .with_connection(msg_confirm.conn_id_on_b.clone(), incorrect_conn_end_state),
                 msg: ConnectionMsg::ConnectionOpenConfirm(msg_confirm.clone()),
                 want_pass: false,
             },
@@ -149,7 +159,7 @@ mod tests {
                 name: "Processing successful".to_string(),
                 ctx: context
                     .with_client(&client_id, Height::new(0, 10).unwrap())
-                    .with_connection(msg_confirm.connection_id.clone(), correct_conn_end),
+                    .with_connection(msg_confirm.conn_id_on_b.clone(), correct_conn_end),
                 msg: ConnectionMsg::ConnectionOpenConfirm(msg_confirm),
                 want_pass: true,
             },

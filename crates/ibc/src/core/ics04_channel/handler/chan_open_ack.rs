@@ -153,7 +153,7 @@ mod tests {
 
         let conn_end = ConnectionEnd::new(
             ConnectionState::Open,
-            msg_conn_init.client_id_a.clone(),
+            msg_conn_init.client_id_on_a.clone(),
             ConnectionCounterparty::new(
                 msg_conn_init.counterparty.client_id().clone(),
                 Some(ConnectionId::from_str("defaultConnection-1").unwrap()),

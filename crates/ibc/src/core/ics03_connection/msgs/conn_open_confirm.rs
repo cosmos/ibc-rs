@@ -12,14 +12,16 @@ use crate::tx_msg::Msg;
 
 pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenConfirm";
 
-///
-/// Message definition for `MsgConnectionOpenConfirm` (i.e., `ConnOpenConfirm` datagram).
-///
+/// Per our convention, this message is sent to chain B.
+/// The handler will check proofs of chain A.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgConnectionOpenConfirm {
-    pub connection_id: ConnectionId,
-    pub proof_connection_end: CommitmentProofBytes,
-    pub proofs_height: Height,
+    /// ConnectionId that chain B has chosen for it's ConnectionEnd
+    pub conn_id_on_b: ConnectionId,
+    /// proof of ConnectionEnd stored on Chain A during ConnOpenInit
+    pub proof_conn_end_on_a: CommitmentProofBytes,
+    /// Height at which `proof_conn_end_on_a` in this message was taken
+    pub proof_height_on_a: Height,
     pub signer: Signer,
 }
 
@@ -43,12 +45,12 @@ impl TryFrom<RawMsgConnectionOpenConfirm> for MsgConnectionOpenConfirm {
 
     fn try_from(msg: RawMsgConnectionOpenConfirm) -> Result<Self, Self::Error> {
         Ok(Self {
-            connection_id: msg
+            conn_id_on_b: msg
                 .connection_id
                 .parse()
                 .map_err(Error::invalid_identifier)?,
-            proof_connection_end: msg.proof_ack.try_into().map_err(Error::invalid_proof)?,
-            proofs_height: msg
+            proof_conn_end_on_a: msg.proof_ack.try_into().map_err(Error::invalid_proof)?,
+            proof_height_on_a: msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
                 .ok_or_else(Error::missing_proof_height)?,
@@ -60,9 +62,9 @@ impl TryFrom<RawMsgConnectionOpenConfirm> for MsgConnectionOpenConfirm {
 impl From<MsgConnectionOpenConfirm> for RawMsgConnectionOpenConfirm {
     fn from(msg: MsgConnectionOpenConfirm) -> Self {
         RawMsgConnectionOpenConfirm {
-            connection_id: msg.connection_id.as_str().to_string(),
-            proof_ack: msg.proof_connection_end.into(),
-            proof_height: Some(msg.proofs_height.into()),
+            connection_id: msg.conn_id_on_b.as_str().to_string(),
+            proof_ack: msg.proof_conn_end_on_a.into(),
+            proof_height: Some(msg.proof_height_on_a.into()),
             signer: msg.signer.to_string(),
         }
     }
