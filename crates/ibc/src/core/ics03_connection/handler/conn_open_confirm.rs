@@ -58,7 +58,6 @@ pub(crate) fn process(
             .map_err(Error::verify_connection_state)?;
     }
 
-
     // Transition our own end of the connection to state OPEN.
     self_connection_end.set_state(State::Open);
 
