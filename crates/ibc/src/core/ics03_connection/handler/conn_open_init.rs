@@ -13,53 +13,53 @@ use crate::prelude::*;
 
 use super::ConnectionIdState;
 
+/// Per our convention, this message is processed on chain A.
 pub(crate) fn process(
-    ctx: &dyn ConnectionReader,
+    ctx_a: &dyn ConnectionReader,
     msg: MsgConnectionOpenInit,
 ) -> HandlerResult<ConnectionResult, Error> {
     let mut output = HandlerOutput::builder();
 
     // An IBC client running on the local (host) chain should exist.
-    ctx.client_state(&msg.client_id)?;
+    ctx_a.client_state(&msg.client_id_on_a)?;
 
     let versions = match msg.version {
         Some(version) => {
-            if ctx.get_compatible_versions().contains(&version) {
+            if ctx_a.get_compatible_versions().contains(&version) {
                 Ok(vec![version])
             } else {
                 Err(Error::version_not_supported(version))
             }
         }
-        None => Ok(ctx.get_compatible_versions()),
+        None => Ok(ctx_a.get_compatible_versions()),
     }?;
 
-    let new_connection_end = ConnectionEnd::new(
+    let conn_end_on_a = ConnectionEnd::new(
         State::Init,
-        msg.client_id.clone(),
+        msg.client_id_on_a.clone(),
         msg.counterparty.clone(),
         versions,
         msg.delay_period,
     );
 
     // Construct the identifier for the new connection.
-    let id_counter = ctx.connection_counter()?;
-    let conn_id = ConnectionId::new(id_counter);
+    let conn_id_on_a = ConnectionId::new(ctx_a.connection_counter()?);
 
     let result = ConnectionResult {
-        connection_id: conn_id.clone(),
-        connection_end: new_connection_end,
+        connection_id: conn_id_on_a.clone(),
+        connection_end: conn_end_on_a,
         connection_id_state: ConnectionIdState::Generated,
     };
 
     let event_attributes = Attributes {
-        connection_id: Some(conn_id.clone()),
+        connection_id: Some(conn_id_on_a.clone()),
         ..Default::default()
     };
 
     output.emit(IbcEvent::OpenInitConnection(event_attributes.into()));
     output.log(format!(
         "success: conn_open_init: generated new connection identifier: {}",
-        conn_id
+        conn_id_on_a
     ));
 
     Ok(output.with_result(result))
@@ -110,7 +110,7 @@ mod tests {
         };
         let default_context = MockContext::default();
         let good_context = default_context.clone().with_client(
-            &msg_conn_init_default.client_id,
+            &msg_conn_init_default.client_id_on_a,
             Height::new(0, 10).unwrap(),
         );
 

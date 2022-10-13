@@ -14,12 +14,12 @@ use crate::tx_msg::Msg;
 
 pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenInit";
 
-///
-/// Message definition `MsgConnectionOpenInit`  (i.e., the `ConnOpenInit` datagram).
-///
+/// Per our convention, this message is sent to chain A.
+/// The handler will check proofs of chain B.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgConnectionOpenInit {
-    pub client_id: ClientId,
+    /// ClientId on chain A that the connection is being opened for
+    pub client_id_on_a: ClientId,
     pub counterparty: Counterparty,
     pub version: Option<Version>,
     pub delay_period: Duration,
@@ -46,7 +46,7 @@ impl TryFrom<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {
 
     fn try_from(msg: RawMsgConnectionOpenInit) -> Result<Self, Self::Error> {
         Ok(Self {
-            client_id: msg.client_id.parse().map_err(Error::invalid_identifier)?,
+            client_id_on_a: msg.client_id.parse().map_err(Error::invalid_identifier)?,
             counterparty: msg
                 .counterparty
                 .ok_or_else(Error::missing_counterparty)?
@@ -61,7 +61,7 @@ impl TryFrom<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {
 impl From<MsgConnectionOpenInit> for RawMsgConnectionOpenInit {
     fn from(ics_msg: MsgConnectionOpenInit) -> Self {
         RawMsgConnectionOpenInit {
-            client_id: ics_msg.client_id.as_str().to_string(),
+            client_id: ics_msg.client_id_on_a.as_str().to_string(),
             counterparty: Some(ics_msg.counterparty.into()),
             version: ics_msg.version.map(|version| version.into()),
             delay_period: ics_msg.delay_period.as_nanos() as u64,
@@ -85,7 +85,10 @@ pub mod test_util {
     impl MsgConnectionOpenInit {
         /// Setter for `client_id`. Amenable to chaining, since it consumes the input message.
         pub fn with_client_id(self, client_id: ClientId) -> Self {
-            MsgConnectionOpenInit { client_id, ..self }
+            MsgConnectionOpenInit {
+                client_id_on_a: client_id,
+                ..self
+            }
         }
     }
 
