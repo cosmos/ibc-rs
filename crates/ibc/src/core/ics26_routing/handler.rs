@@ -5,8 +5,7 @@ use ibc_proto::google::protobuf::Any;
 use crate::core::ics02_client::handler::dispatch as ics2_msg_dispatcher;
 use crate::core::ics03_connection::handler::dispatch as ics3_msg_dispatcher;
 use crate::core::ics04_channel::handler::{
-    channel_callback as ics4_callback, channel_dispatch as ics4_msg_dispatcher,
-    channel_validate as ics4_validate, recv_packet::RecvPacketResult,
+    channel_callback, channel_dispatch, channel_validate, recv_packet::RecvPacketResult,
 };
 use crate::core::ics04_channel::handler::{
     get_module_for_packet_msg, packet_callback as ics4_packet_callback,
@@ -85,13 +84,13 @@ where
         }
 
         Ics4ChannelMsg(msg) => {
-            let module_id = ics4_validate(ctx, &msg).map_err(Error::ics04_channel)?;
+            let module_id = channel_validate(ctx, &msg).map_err(Error::ics04_channel)?;
             let (mut handler_builder, channel_result) =
-                ics4_msg_dispatcher(ctx, &msg).map_err(Error::ics04_channel)?;
+                channel_dispatch(ctx, &msg).map_err(Error::ics04_channel)?;
 
             let mut module_output = ModuleOutputBuilder::new();
             let cb_result =
-                ics4_callback(ctx, &module_id, &msg, channel_result, &mut module_output);
+                channel_callback(ctx, &module_id, &msg, channel_result, &mut module_output);
             handler_builder.merge(module_output);
             let channel_result = cb_result.map_err(Error::ics04_channel)?;
 
