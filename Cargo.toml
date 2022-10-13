@@ -4,6 +4,8 @@ resolver = "2"
 
 members = [
     "crates/ibc",
+    "crates/ibc-framework",
+    "crates/ibc-cosmos",
 ]
 
 exclude = [

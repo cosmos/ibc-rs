@@ -57,6 +57,8 @@ pub trait ClientState:
     /// state timestamp
     fn expired(&self, elapsed: Duration) -> bool;
 
+    fn trusting_period(&self) -> Duration;
+
     /// Helper function to verify the upgrade client procedure.
     /// Resets all fields except the blockchain-specific ones,
     /// and updates the given fields.

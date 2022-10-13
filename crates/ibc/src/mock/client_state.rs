@@ -158,6 +158,10 @@ impl ClientState for MockClientState {
         false
     }
 
+    fn trusting_period(&self) -> Duration {
+        Duration::MAX
+    }
+
     fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, Error> {
         MockConsensusState::try_from(consensus_state).map(MockConsensusState::into_box)
     }
