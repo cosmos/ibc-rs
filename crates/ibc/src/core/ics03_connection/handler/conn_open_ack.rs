@@ -20,7 +20,6 @@ pub(crate) fn process(
     let mut output = HandlerOutput::builder();
 
     if msg.consensus_height_of_a_on_b > ctx_a.host_current_height() {
-        // Fail if the consensus height is too advanced.
         return Err(Error::invalid_consensus_height(
             msg.consensus_height_of_a_on_b,
             ctx_a.host_current_height(),
@@ -32,7 +31,6 @@ pub(crate) fn process(
     // See [issue](https://github.com/cosmos/ibc-rs/issues/162)
     ///////////////////////////////////////////////////////////
 
-    // Validate the connection end.
     let conn_end_on_a = ctx_a.connection_end(&msg.conn_id_on_a)?;
     if !(conn_end_on_a.state_matches(&State::Init)
         && conn_end_on_a.versions().contains(&msg.version))

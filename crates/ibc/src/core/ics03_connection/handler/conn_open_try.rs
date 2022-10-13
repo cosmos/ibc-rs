@@ -48,6 +48,7 @@ pub(crate) fn process(
         msg.delay_period,
     );
 
+    // Verify proofs
     {
         let client_state_of_a_on_b = ctx_b.client_state(conn_end_on_b.client_id())?;
         let consensus_state_of_a_on_b =
@@ -111,6 +112,7 @@ pub(crate) fn process(
             .map_err(|e| Error::consensus_state_verification_failure(msg.proofs_height_on_a, e))?;
     }
 
+    // Success
     let result = ConnectionResult {
         connection_id: conn_id_on_b.clone(),
         connection_end: conn_end_on_b,
