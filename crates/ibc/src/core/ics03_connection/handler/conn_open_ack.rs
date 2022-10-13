@@ -125,7 +125,9 @@ pub(crate) fn process(
         connection_id: Some(result.connection_id.clone()),
         ..Default::default()
     };
+
     output.emit(IbcEvent::OpenAckConnection(event_attributes.into()));
+    output.log("success: conn_open_ack verification passed");
 
     Ok(output.with_result(result))
 }

@@ -45,11 +45,6 @@ pub(crate) fn process(
     let id_counter = ctx.connection_counter()?;
     let conn_id = ConnectionId::new(id_counter);
 
-    output.log(format!(
-        "success: generated new connection identifier: {}",
-        conn_id
-    ));
-
     let result = ConnectionResult {
         connection_id: conn_id.clone(),
         connection_end: new_connection_end,
@@ -57,10 +52,15 @@ pub(crate) fn process(
     };
 
     let event_attributes = Attributes {
-        connection_id: Some(conn_id),
+        connection_id: Some(conn_id.clone()),
         ..Default::default()
     };
+
     output.emit(IbcEvent::OpenInitConnection(event_attributes.into()));
+    output.log(format!(
+        "success: conn_open_init: generated new connection identifier: {}",
+        conn_id
+    ));
 
     Ok(output.with_result(result))
 }

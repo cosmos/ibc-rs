@@ -58,7 +58,6 @@ pub(crate) fn process(
             .map_err(Error::verify_connection_state)?;
     }
 
-    output.log("success: connection verification passed");
 
     // Transition our own end of the connection to state OPEN.
     self_connection_end.set_state(State::Open);
@@ -74,6 +73,8 @@ pub(crate) fn process(
         ..Default::default()
     };
     output.emit(IbcEvent::OpenConfirmConnection(event_attributes.into()));
+
+    output.log("success: conn_open_confirm verification passed");
 
     Ok(output.with_result(result))
 }

@@ -115,7 +115,9 @@ pub(crate) fn process(
         connection_id: Some(self_connection_id),
         ..Default::default()
     };
+
     output.emit(IbcEvent::OpenTryConnection(event_attributes.into()));
+    output.log("success: conn_open_try verification passed");
 
     Ok(output.with_result(result))
 }
