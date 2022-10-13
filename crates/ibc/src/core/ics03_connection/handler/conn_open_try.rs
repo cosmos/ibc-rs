@@ -58,7 +58,7 @@ pub(crate) fn process(
         let prefix_on_b = ctx_b.commitment_prefix();
 
         {
-            let conn_end_on_a = conn_end_on_b
+            let conn_id_on_a = conn_end_on_b
                 .counterparty()
                 .connection_id()
                 .ok_or_else(Error::invalid_counterparty)?;
@@ -77,7 +77,7 @@ pub(crate) fn process(
                     prefix_on_a,
                     &msg.proof_conn_end_on_a,
                     consensus_state_of_a_on_b.root(),
-                    conn_end_on_a,
+                    conn_id_on_a,
                     &expected_conn_end_on_a,
                 )
                 .map_err(Error::verify_connection_state)?;
