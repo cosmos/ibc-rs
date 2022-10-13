@@ -4,7 +4,7 @@ use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::Error;
-use crate::core::ics02_client::events::Attributes;
+use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
 use crate::core::ics24_host::identifier::ClientId;
@@ -56,23 +56,29 @@ pub fn process(
     // Not implemented yet: https://github.com/informalsystems/ibc-rs/issues/722
     // todo!()
 
+    let client_type = client_state.client_type();
+    let consensus_height = client_state.latest_height();
+
     let result = ClientResult::Upgrade(Result {
         client_id: client_id.clone(),
         client_state,
         consensus_state,
     });
-    let event_attributes = Attributes {
-        client_id,
-        ..Default::default()
-    };
 
-    output.emit(IbcEvent::UpgradeClient(event_attributes.into()));
+    output.emit(IbcEvent::UpgradeClient(UpgradeClient::new(
+        client_id,
+        client_type,
+        consensus_height,
+    )));
+
     Ok(output.with_result(result))
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use crate::core::ics02_client::client_type::ClientType;
+    use crate::events::IbcEvent;
+    use crate::{downcast, prelude::*};
 
     use core::str::FromStr;
 
@@ -82,7 +88,6 @@ mod tests {
     use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
     use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics24_host::identifier::ClientId;
-    use crate::events::IbcEvent;
     use crate::handler::HandlerOutput;
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
@@ -113,14 +118,9 @@ mod tests {
         match output {
             Ok(HandlerOutput {
                 result,
-                mut events,
+                events: _,
                 log,
             }) => {
-                assert_eq!(events.len(), 1);
-                let event = events.pop().unwrap();
-                assert!(
-                    matches!(event, IbcEvent::UpgradeClient(ref e) if e.client_id() == &msg.client_id)
-                );
                 assert!(log.is_empty());
                 // Check the result
                 match result {
@@ -199,5 +199,30 @@ mod tests {
                 panic!("expected LowUpgradeHeight error, instead got {:?}", output);
             }
         }
+    }
+
+    #[test]
+    fn test_upgrade_client_event() {
+        let client_id = ClientId::default();
+        let signer = get_dummy_account_id();
+
+        let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
+
+        let upgrade_height = Height::new(1, 26).unwrap();
+        let msg = MsgUpgradeClient {
+            client_id: client_id.clone(),
+            client_state: MockClientState::new(MockHeader::new(upgrade_height)).into(),
+            consensus_state: MockConsensusState::new(MockHeader::new(upgrade_height)).into(),
+            proof_upgrade_client: Default::default(),
+            proof_upgrade_consensus_state: Default::default(),
+            signer,
+        };
+
+        let output = dispatch(&ctx, ClientMsg::UpgradeClient(msg)).unwrap();
+        let upgrade_client_event =
+            downcast!(output.events.first().unwrap() => IbcEvent::UpgradeClient).unwrap();
+        assert_eq!(upgrade_client_event.client_id(), &client_id);
+        assert_eq!(upgrade_client_event.client_type(), &ClientType::Mock);
+        assert_eq!(upgrade_client_event.consensus_height(), &upgrade_height);
     }
 }

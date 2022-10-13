@@ -29,7 +29,7 @@ pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenTry";
 pub struct MsgConnectionOpenTry {
     pub previous_connection_id: Option<ConnectionId>,
     pub client_id: ClientId,
-    pub client_state: Option<Any>,
+    pub client_state: Any,
     pub counterparty: Counterparty,
     pub counterparty_versions: Vec<Version>,
     pub proofs: Proofs,
@@ -104,7 +104,7 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
         Ok(Self {
             previous_connection_id,
             client_id: msg.client_id.parse().map_err(Error::invalid_identifier)?,
-            client_state: msg.client_state,
+            client_state: msg.client_state.ok_or_else(Error::missing_client_state)?,
             counterparty: msg
                 .counterparty
                 .ok_or_else(Error::missing_counterparty)?
@@ -131,7 +131,7 @@ impl From<MsgConnectionOpenTry> for RawMsgConnectionOpenTry {
             previous_connection_id: ics_msg
                 .previous_connection_id
                 .map_or_else(|| "".to_string(), |v| v.as_str().to_string()),
-            client_state: ics_msg.client_state,
+            client_state: Some(ics_msg.client_state),
             counterparty: Some(ics_msg.counterparty.into()),
             delay_period: ics_msg.delay_period.as_nanos() as u64,
             counterparty_versions: ics_msg
@@ -161,8 +161,11 @@ impl From<MsgConnectionOpenTry> for RawMsgConnectionOpenTry {
 
 #[cfg(test)]
 pub mod test_util {
+    use crate::core::ics02_client::height::Height;
+    use crate::mock::client_state::MockClientState;
+    use crate::mock::header::MockHeader;
     use crate::prelude::*;
-    use ibc_proto::ibc::core::client::v1::Height;
+    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenTry as RawMsgConnectionOpenTry;
 
     use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
@@ -198,10 +201,11 @@ pub mod test_util {
         proof_height: u64,
         consensus_height: u64,
     ) -> RawMsgConnectionOpenTry {
+        let client_state_height = Height::new(0, consensus_height).unwrap();
         RawMsgConnectionOpenTry {
             client_id: ClientId::default().to_string(),
             previous_connection_id: ConnectionId::default().to_string(),
-            client_state: None,
+            client_state: Some(MockClientState::new(MockHeader::new(client_state_height)).into()),
             counterparty: Some(get_dummy_raw_counterparty()),
             delay_period: 0,
             counterparty_versions: get_compatible_versions()
@@ -209,12 +213,12 @@ pub mod test_util {
                 .map(|v| v.clone().into())
                 .collect(),
             proof_init: get_dummy_proof(),
-            proof_height: Some(Height {
+            proof_height: Some(RawHeight {
                 revision_number: 0,
                 revision_height: proof_height,
             }),
             proof_consensus: get_dummy_proof(),
-            consensus_height: Some(Height {
+            consensus_height: Some(RawHeight {
                 revision_number: 0,
                 revision_height: consensus_height,
             }),

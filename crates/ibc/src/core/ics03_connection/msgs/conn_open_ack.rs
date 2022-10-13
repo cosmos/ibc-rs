@@ -20,7 +20,7 @@ pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenAck";
 pub struct MsgConnectionOpenAck {
     pub connection_id: ConnectionId,
     pub counterparty_connection_id: ConnectionId,
-    pub client_state: Option<Any>,
+    pub client_state: Any,
     pub proofs: Proofs,
     pub version: Version,
     pub signer: Signer,
@@ -82,7 +82,7 @@ impl TryFrom<RawMsgConnectionOpenAck> for MsgConnectionOpenAck {
                 .counterparty_connection_id
                 .parse()
                 .map_err(Error::invalid_identifier)?,
-            client_state: msg.client_state,
+            client_state: msg.client_state.ok_or_else(Error::missing_client_state)?,
             version: msg.version.ok_or_else(Error::empty_versions)?.try_into()?,
             proofs: Proofs::new(
                 msg.proof_try.try_into().map_err(Error::invalid_proof)?,
@@ -102,7 +102,7 @@ impl From<MsgConnectionOpenAck> for RawMsgConnectionOpenAck {
         RawMsgConnectionOpenAck {
             connection_id: ics_msg.connection_id.as_str().to_string(),
             counterparty_connection_id: ics_msg.counterparty_connection_id.as_str().to_string(),
-            client_state: ics_msg.client_state,
+            client_state: Some(ics_msg.client_state),
             proof_height: Some(ics_msg.proofs.height().into()),
             proof_try: ics_msg.proofs.object_proof().clone().into(),
             proof_client: ics_msg
@@ -126,8 +126,11 @@ impl From<MsgConnectionOpenAck> for RawMsgConnectionOpenAck {
 
 #[cfg(test)]
 pub mod test_util {
+    use crate::core::ics02_client::height::Height;
+    use crate::mock::client_state::MockClientState;
+    use crate::mock::header::MockHeader;
     use crate::prelude::*;
-    use ibc_proto::ibc::core::client::v1::Height;
+    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenAck as RawMsgConnectionOpenAck;
 
     use crate::core::ics03_connection::version::Version;
@@ -138,20 +141,21 @@ pub mod test_util {
         proof_height: u64,
         consensus_height: u64,
     ) -> RawMsgConnectionOpenAck {
+        let client_state_height = Height::new(0, consensus_height).unwrap();
         RawMsgConnectionOpenAck {
             connection_id: ConnectionId::new(0).to_string(),
             counterparty_connection_id: ConnectionId::new(1).to_string(),
             proof_try: get_dummy_proof(),
-            proof_height: Some(Height {
+            proof_height: Some(RawHeight {
                 revision_number: 0,
                 revision_height: proof_height,
             }),
             proof_consensus: get_dummy_proof(),
-            consensus_height: Some(Height {
+            consensus_height: Some(RawHeight {
                 revision_number: 0,
                 revision_height: consensus_height,
             }),
-            client_state: None,
+            client_state: Some(MockClientState::new(MockHeader::new(client_state_height)).into()),
             proof_client: get_dummy_proof(),
             version: Some(Version::default().into()),
             signer: get_dummy_bech32_account(),
