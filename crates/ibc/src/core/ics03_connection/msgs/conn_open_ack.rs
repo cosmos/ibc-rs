@@ -14,7 +14,7 @@ use crate::Height;
 
 pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenAck";
 
-/// Per our convention, this message is sent on chain A.
+/// Per our convention, this message is sent to chain A.
 /// The handler will check proofs of chain B.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgConnectionOpenAck {
@@ -22,7 +22,7 @@ pub struct MsgConnectionOpenAck {
     pub conn_id_on_a: ConnectionId,
     /// ConnectionId that chain B has chosen for it's ConnectionEnd
     pub conn_id_on_b: ConnectionId,
-    /// ClientState tracking chain A on chain B
+    /// ClientState of client tracking chain A on chain B
     pub client_state_of_a_on_b: Any,
     /// proof of ConnectionEnd stored on Chain B during ConnOpenTry
     pub proof_conn_end_on_b: CommitmentProofBytes,
