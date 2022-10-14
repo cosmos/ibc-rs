@@ -22,7 +22,8 @@ use crate::core::ics04_channel::Version;
 use crate::core::ics05_port::context::PortReader;
 use crate::core::ics05_port::error::Error as PortError;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ics26_routing::context::{Module, ModuleId, ModuleOutputBuilder};
+use crate::core::ics26_routing::context::{Module, ModuleId};
+use crate::events::ModuleEvent;
 use crate::mock::context::MockIbcStore;
 use crate::prelude::*;
 use crate::signer::Signer;
@@ -75,9 +76,19 @@ impl DummyTransferModule {
 }
 
 impl Module for DummyTransferModule {
+    fn on_chan_open_init(
+        &mut self,
+        _order: Order,
+        _connection_hops: &[ConnectionId],
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty: &Counterparty,
+        version: &Version,
+    ) -> Result<(Vec<String>, Vec<ModuleEvent>, Version), Error> {
+        Ok((Vec::new(), Vec::new(), version.clone()))
+    }
     fn on_chan_open_try(
         &mut self,
-        _output: &mut ModuleOutputBuilder,
         _order: Order,
         _connection_hops: &[ConnectionId],
         _port_id: &PortId,
@@ -85,8 +96,8 @@ impl Module for DummyTransferModule {
         _counterparty: &Counterparty,
         _version: &Version,
         counterparty_version: &Version,
-    ) -> Result<Version, Error> {
-        Ok(counterparty_version.clone())
+    ) -> Result<(Vec<String>, Vec<ModuleEvent>, Version), Error> {
+        Ok((Vec::new(), Vec::new(), counterparty_version.clone()))
     }
 }
 

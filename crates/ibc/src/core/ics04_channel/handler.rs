@@ -1,4 +1,5 @@
 //! This module implements the processing logic for ICS4 (channel) messages.
+use crate::events::{IbcEvent, ModuleEvent};
 use crate::prelude::*;
 
 use crate::core::ics04_channel::channel::ChannelEnd;
@@ -63,7 +64,7 @@ where
 pub fn channel_dispatch<Ctx>(
     ctx: &Ctx,
     msg: &ChannelMsg,
-) -> Result<(HandlerOutputBuilder<()>, ChannelResult), Error>
+) -> Result<(Vec<String>, Vec<IbcEvent>, ChannelResult), Error>
 where
     Ctx: ChannelReader,
 {
@@ -80,17 +81,15 @@ where
         log,
         events,
     } = output;
-    let builder = HandlerOutput::builder().with_log(log).with_events(events);
-    Ok((builder, result))
+    Ok((log, events, result))
 }
 
 pub fn channel_callback<Ctx>(
     ctx: &mut Ctx,
     module_id: &ModuleId,
     msg: &ChannelMsg,
-    mut result: ChannelResult,
-    module_output: &mut ModuleOutputBuilder,
-) -> Result<ChannelResult, Error>
+    result: &ChannelResult,
+) -> Result<(Vec<String>, Vec<ModuleEvent>), Error>
 where
     Ctx: Ics26Context,
 {
@@ -100,45 +99,20 @@ where
         .ok_or_else(Error::route_not_found)?;
 
     match msg {
-        ChannelMsg::ChannelOpenInit(msg) => cb.on_chan_open_init(
-            module_output,
-            msg.channel.ordering,
-            &msg.channel.connection_hops,
-            &msg.port_id,
-            &result.channel_id,
-            msg.channel.counterparty(),
-            &msg.channel.version,
-        )?,
-        ChannelMsg::ChannelOpenTry(msg) => {
-            let version = cb.on_chan_open_try(
-                module_output,
-                msg.channel.ordering,
-                &msg.channel.connection_hops,
-                &msg.port_id,
-                &result.channel_id,
-                msg.channel.counterparty(),
-                msg.channel.version(),
-                &msg.counterparty_version,
-            )?;
-            result.channel_end.version = version;
+        ChannelMsg::ChannelOpenAck(msg) => {
+            cb.on_chan_open_ack(&msg.port_id, &result.channel_id, &msg.counterparty_version)
         }
-        ChannelMsg::ChannelOpenAck(msg) => cb.on_chan_open_ack(
-            module_output,
-            &msg.port_id,
-            &result.channel_id,
-            &msg.counterparty_version,
-        )?,
         ChannelMsg::ChannelOpenConfirm(msg) => {
-            cb.on_chan_open_confirm(module_output, &msg.port_id, &result.channel_id)?
+            cb.on_chan_open_confirm(&msg.port_id, &result.channel_id)
         }
         ChannelMsg::ChannelCloseInit(msg) => {
-            cb.on_chan_close_init(module_output, &msg.port_id, &result.channel_id)?
+            cb.on_chan_close_init(&msg.port_id, &result.channel_id)
         }
         ChannelMsg::ChannelCloseConfirm(msg) => {
-            cb.on_chan_close_confirm(module_output, &msg.port_id, &result.channel_id)?
+            cb.on_chan_close_confirm(&msg.port_id, &result.channel_id)
         }
+        _ => panic!("Implemented elsewhere. This is temporary and shouldn't get merged"),
     }
-    Ok(result)
 }
 
 pub fn get_module_for_packet_msg<Ctx>(ctx: &Ctx, msg: &PacketMsg) -> Result<ModuleId, Error>

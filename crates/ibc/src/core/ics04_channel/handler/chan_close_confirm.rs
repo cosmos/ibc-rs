@@ -161,17 +161,15 @@ mod tests {
                 chan_end,
             );
 
-        let (handler_output_builder, _) = channel_dispatch(
+        let (_, events, _) = channel_dispatch(
             &context,
             &ChannelMsg::ChannelCloseConfirm(msg_chan_close_confirm),
         )
         .unwrap();
 
-        let handler_output = handler_output_builder.with_result(());
+        assert!(!events.is_empty()); // Some events must exist.
 
-        assert!(!handler_output.events.is_empty()); // Some events must exist.
-
-        for event in handler_output.events.iter() {
+        for event in events.iter() {
             assert!(matches!(event, &IbcEvent::CloseConfirmChannel(_)));
         }
     }

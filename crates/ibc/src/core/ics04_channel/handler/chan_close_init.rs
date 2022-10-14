@@ -133,13 +133,12 @@ mod tests {
                 )
         };
 
-        let (handler_output_builder, _) =
+        let (_, events, _) =
             channel_dispatch(&context, &ChannelMsg::ChannelCloseInit(msg_chan_close_init)).unwrap();
-        let handler_output = handler_output_builder.with_result(());
 
-        assert!(!handler_output.events.is_empty()); // Some events must exist.
+        assert!(!events.is_empty()); // Some events must exist.
 
-        for event in handler_output.events.iter() {
+        for event in events.iter() {
             assert!(matches!(event, &IbcEvent::CloseInitChannel(_)));
         }
     }

@@ -1439,6 +1439,7 @@ mod tests {
         Acknowledgement, Module, ModuleId, ModuleOutputBuilder, OnRecvPacketAck, Router,
         RouterBuilder,
     };
+    use crate::events::ModuleEvent;
     use crate::mock::context::MockContext;
     use crate::mock::context::MockRouterBuilder;
     use crate::mock::host::HostType;
@@ -1605,9 +1606,20 @@ mod tests {
         }
 
         impl Module for FooModule {
+            fn on_chan_open_init(
+                &mut self,
+                _order: Order,
+                _connection_hops: &[ConnectionId],
+                _port_id: &PortId,
+                _channel_id: &ChannelId,
+                _counterparty: &Counterparty,
+                version: &Version,
+            ) -> Result<(Vec<String>, Vec<ModuleEvent>, Version), Error> {
+                Ok((Vec::new(), Vec::new(), version.clone()))
+            }
+
             fn on_chan_open_try(
                 &mut self,
-                _output: &mut ModuleOutputBuilder,
                 _order: Order,
                 _connection_hops: &[ConnectionId],
                 _port_id: &PortId,
@@ -1615,8 +1627,8 @@ mod tests {
                 _counterparty: &Counterparty,
                 _version: &Version,
                 counterparty_version: &Version,
-            ) -> Result<Version, Error> {
-                Ok(counterparty_version.clone())
+            ) -> Result<(Vec<String>, Vec<ModuleEvent>, Version), Error> {
+                Ok((Vec::new(), Vec::new(), counterparty_version.clone()))
             }
 
             fn on_recv_packet(
@@ -1640,9 +1652,20 @@ mod tests {
         struct BarModule;
 
         impl Module for BarModule {
+            fn on_chan_open_init(
+                &mut self,
+                _order: Order,
+                _connection_hops: &[ConnectionId],
+                _port_id: &PortId,
+                _channel_id: &ChannelId,
+                _counterparty: &Counterparty,
+                version: &Version,
+            ) -> Result<(Vec<String>, Vec<ModuleEvent>, Version), Error> {
+                Ok((Vec::new(), Vec::new(), version.clone()))
+            }
+
             fn on_chan_open_try(
                 &mut self,
-                _output: &mut ModuleOutputBuilder,
                 _order: Order,
                 _connection_hops: &[ConnectionId],
                 _port_id: &PortId,
@@ -1650,8 +1673,8 @@ mod tests {
                 _counterparty: &Counterparty,
                 _version: &Version,
                 counterparty_version: &Version,
-            ) -> Result<Version, Error> {
-                Ok(counterparty_version.clone())
+            ) -> Result<(Vec<String>, Vec<ModuleEvent>, Version), Error> {
+                Ok((Vec::new(), Vec::new(), counterparty_version.clone()))
             }
         }
 

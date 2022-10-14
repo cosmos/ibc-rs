@@ -101,65 +101,57 @@ pub trait Module: Send + Sync + AsAnyMut {
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init(
         &mut self,
-        _output: &mut ModuleOutputBuilder,
-        _order: Order,
-        _connection_hops: &[ConnectionId],
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty: &Counterparty,
-        _version: &Version,
-    ) -> Result<(), Error> {
-        Ok(())
-    }
+        order: Order,
+        connection_hops: &[ConnectionId],
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        counterparty: &Counterparty,
+        version: &Version,
+    ) -> Result<(Vec<String>, Vec<ModuleEvent>, Version), Error>;
 
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_try(
         &mut self,
-        _output: &mut ModuleOutputBuilder,
-        _order: Order,
-        _connection_hops: &[ConnectionId],
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty: &Counterparty,
-        _version: &Version,
-        _counterparty_version: &Version,
-    ) -> Result<Version, Error>;
+        order: Order,
+        connection_hops: &[ConnectionId],
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        counterparty: &Counterparty,
+        version: &Version,
+        counterparty_version: &Version,
+    ) -> Result<(Vec<String>, Vec<ModuleEvent>, Version), Error>;
 
     fn on_chan_open_ack(
         &mut self,
-        _output: &mut ModuleOutputBuilder,
         _port_id: &PortId,
         _channel_id: &ChannelId,
         _counterparty_version: &Version,
-    ) -> Result<(), Error> {
-        Ok(())
+    ) -> Result<(Vec<String>, Vec<ModuleEvent>), Error> {
+        Ok((Vec::new(), Vec::new()))
     }
 
     fn on_chan_open_confirm(
         &mut self,
-        _output: &mut ModuleOutputBuilder,
         _port_id: &PortId,
         _channel_id: &ChannelId,
-    ) -> Result<(), Error> {
-        Ok(())
+    ) -> Result<(Vec<String>, Vec<ModuleEvent>), Error> {
+        Ok((Vec::new(), Vec::new()))
     }
 
     fn on_chan_close_init(
         &mut self,
-        _output: &mut ModuleOutputBuilder,
         _port_id: &PortId,
         _channel_id: &ChannelId,
-    ) -> Result<(), Error> {
-        Ok(())
+    ) -> Result<(Vec<String>, Vec<ModuleEvent>), Error> {
+        Ok((Vec::new(), Vec::new()))
     }
 
     fn on_chan_close_confirm(
         &mut self,
-        _output: &mut ModuleOutputBuilder,
         _port_id: &PortId,
         _channel_id: &ChannelId,
-    ) -> Result<(), Error> {
-        Ok(())
+    ) -> Result<(Vec<String>, Vec<ModuleEvent>), Error> {
+        Ok((Vec::new(), Vec::new()))
     }
 
     fn on_recv_packet(
