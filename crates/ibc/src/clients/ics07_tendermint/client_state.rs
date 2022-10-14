@@ -81,6 +81,7 @@ impl ClientState {
         proof_specs: ProofSpecs,
         upgrade_path: Vec<String>,
         allow_update: AllowUpdate,
+        frozen_height: Option<Height>,
     ) -> Result<ClientState, Error> {
         if chain_id.as_str().len() > MaxChainIdLen {
             return Err(Error::chain_id_too_long(
@@ -162,7 +163,7 @@ impl ClientState {
             proof_specs,
             upgrade_path,
             allow_update,
-            frozen_height: None,
+            frozen_height,
             verifier: ProdVerifier::default(),
         })
     }
@@ -761,6 +762,7 @@ fn verify_delay_passed(
     )
     .map_err(|e| e.into())
 }
+
 fn downcast_tm_client_state(cs: &dyn Ics2ClientState) -> Result<&ClientState, Ics02Error> {
     cs.as_any()
         .downcast_ref::<ClientState>()
@@ -828,22 +830,18 @@ impl TryFrom<RawTmClientState> for ClientState {
             after_misbehaviour: raw.allow_update_after_misbehaviour,
         };
 
-        let client_state = {
-            let mut cs = ClientState::new(
-                chain_id,
-                trust_level,
-                trusting_period,
-                unbonding_period,
-                max_clock_drift,
-                latest_height,
-                raw.proof_specs.into(),
-                raw.upgrade_path,
-                allow_update,
-            )?;
-
-            cs.frozen_height = frozen_height;
-            cs
-        };
+        let client_state = ClientState::new(
+            chain_id,
+            trust_level,
+            trusting_period,
+            unbonding_period,
+            max_clock_drift,
+            latest_height,
+            raw.proof_specs.into(),
+            raw.upgrade_path,
+            allow_update,
+            frozen_height,
+        )?;
 
         Ok(client_state)
     }
@@ -1104,6 +1102,7 @@ mod tests {
                 p.proof_specs,
                 p.upgrade_path,
                 p.allow_update,
+                None,
             );
 
             assert_eq!(
@@ -1257,6 +1256,7 @@ mod tests {
                 p.proof_specs,
                 p.upgrade_path,
                 p.allow_update,
+                None,
             )
             .unwrap();
             let client_state = match test.setup {
@@ -1306,6 +1306,7 @@ pub mod test_util {
                 after_expiry: false,
                 after_misbehaviour: false,
             },
+            None,
         )
         .unwrap()
     }

@@ -234,6 +234,7 @@ mod tests {
                 after_expiry: false,
                 after_misbehaviour: false,
             },
+            None,
         )
         .unwrap()
         .into();
