@@ -12,7 +12,7 @@
 //!
 //! We remove such ambiguity by adopting the following conventions:
 //! + we call "chain A" the chain that runs `ConnOpenInit` and `ConnOpenAck`
-//! + we call "chain B" is the chain that runs `ConnOpenTry` and `ConnOpenConfirm`
+//! + we call "chain B" the chain that runs `ConnOpenTry` and `ConnOpenConfirm`
 //! + In variable names,
 //!     + `on_a` implies "stored on chain A"
 //!     + `of_a` implies "of light client for chain A"
