@@ -144,9 +144,9 @@ impl Display for TracePath {
 pub struct PrefixedDenom {
     /// A series of `{port-id}/{channel-id}`s for tracing the source of the token.
     #[serde(with = "serde_string")]
-    trace_path: TracePath,
+    pub trace_path: TracePath,
     /// Base denomination of the relayed fungible token.
-    base_denom: BaseDenom,
+    pub base_denom: BaseDenom,
 }
 
 impl PrefixedDenom {
@@ -158,14 +158,6 @@ impl PrefixedDenom {
     /// Adds the specified prefix to the trace path.
     pub fn add_trace_prefix(&mut self, prefix: TracePrefix) {
         self.trace_path.add_prefix(prefix)
-    }
-
-    pub fn trace_path(&self) -> &TracePath {
-        &self.trace_path
-    }
-
-    pub fn base_denom(&self) -> &BaseDenom {
-        &self.base_denom
     }
 }
 
