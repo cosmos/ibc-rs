@@ -15,6 +15,12 @@ use crate::serializers::serde_string;
 #[serde(transparent)]
 pub struct BaseDenom(String);
 
+impl BaseDenom {
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
 impl FromStr for BaseDenom {
     type Err = Error;
 
@@ -138,9 +144,9 @@ impl Display for TracePath {
 pub struct PrefixedDenom {
     /// A series of `{port-id}/{channel-id}`s for tracing the source of the token.
     #[serde(with = "serde_string")]
-    trace_path: TracePath,
+    pub trace_path: TracePath,
     /// Base denomination of the relayed fungible token.
-    base_denom: BaseDenom,
+    pub base_denom: BaseDenom,
 }
 
 impl PrefixedDenom {
