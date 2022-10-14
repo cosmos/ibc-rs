@@ -23,6 +23,8 @@ use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientStat
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 use serde::{Deserialize, Serialize};
+use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
+use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThreshold;
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::{ProdVerifier, Verdict, Verifier};
@@ -47,18 +49,18 @@ pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClientState {
-    pub chain_id: ChainId,
-    pub trust_level: TrustThreshold,
-    pub trusting_period: Duration,
-    pub unbonding_period: Duration,
-    pub max_clock_drift: Duration,
-    pub latest_height: Height,
-    pub proof_specs: ProofSpecs,
-    pub upgrade_path: Vec<String>,
-    pub allow_update: AllowUpdate,
-    pub frozen_height: Option<Height>,
+    chain_id: ChainId,
+    trust_level: TrustThreshold,
+    trusting_period: Duration,
+    unbonding_period: Duration,
+    max_clock_drift: Duration,
+    latest_height: Height,
+    proof_specs: ProofSpecs,
+    upgrade_path: Vec<String>,
+    allow_update: AllowUpdate,
+    frozen_height: Option<Height>,
     #[serde(skip)]
-    pub verifier: ProdVerifier,
+    verifier: ProdVerifier,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -79,7 +81,27 @@ impl ClientState {
         proof_specs: ProofSpecs,
         upgrade_path: Vec<String>,
         allow_update: AllowUpdate,
+        frozen_height: Option<Height>,
     ) -> Result<ClientState, Error> {
+        if chain_id.as_str().len() > MaxChainIdLen {
+            return Err(Error::chain_id_too_long(
+                chain_id.to_string(),
+                chain_id.as_str().len(),
+                MaxChainIdLen,
+            ));
+        }
+
+        // `TrustThreshold` is guaranteed to be in the range `[0, 1)`, but a `TrustThreshold::ZERO`
+        // value is invalid in this context
+        if trust_level == TrustThreshold::ZERO {
+            return Err(Error::invalid_trust_threshold(
+                "ClientState trust-level cannot be zero".to_string(),
+            ));
+        }
+
+        let _ = TendermintTrustThreshold::new(trust_level.numerator(), trust_level.denominator())
+            .map_err(Error::invalid_tendermint_trust_threshold)?;
+
         // Basic validation of trusting period and unbonding period: each should be non-zero.
         if trusting_period <= Duration::new(0, 0) {
             return Err(Error::invalid_trusting_period(format!(
@@ -102,11 +124,15 @@ impl ClientState {
             )));
         }
 
-        // `TrustThreshold` is guaranteed to be in the range `[0, 1)`, but a `TrustThreshold::ZERO`
-        // value is invalid in this context
-        if trust_level == TrustThreshold::ZERO {
-            return Err(Error::validation(
-                "ClientState trust-level cannot be zero".to_string(),
+        if max_clock_drift <= Duration::new(0, 0) {
+            return Err(Error::invalid_max_clock_drift(
+                "ClientState max-clock-drift must be greater than zero".to_string(),
+            ));
+        }
+
+        if latest_height.revision_number() != chain_id.version() {
+            return Err(Error::invalid_latest_height(
+                "ClientState latest-height revision number must match chain-id version".to_string(),
             ));
         }
 
@@ -115,6 +141,16 @@ impl ClientState {
             return Err(Error::validation(
                 "ClientState proof-specs cannot be empty".to_string(),
             ));
+        }
+
+        // `upgrade_path` itself may be empty, but if not then each key must be non-empty
+        for (idx, key) in upgrade_path.iter().enumerate() {
+            if key.trim().is_empty() {
+                return Err(Error::validation(format!(
+                    "ClientState upgrade-path key at index {:?} cannot be empty",
+                    idx
+                )));
+            }
         }
 
         Ok(Self {
@@ -127,7 +163,7 @@ impl ClientState {
             proof_specs,
             upgrade_path,
             allow_update,
-            frozen_height: None,
+            frozen_height,
             verifier: ProdVerifier::default(),
         })
     }
@@ -726,6 +762,7 @@ fn verify_delay_passed(
     )
     .map_err(|e| e.into())
 }
+
 fn downcast_tm_client_state(cs: &dyn Ics2ClientState) -> Result<&ClientState, Ics02Error> {
     cs.as_any()
         .downcast_ref::<ClientState>()
@@ -745,10 +782,41 @@ impl TryFrom<RawTmClientState> for ClientState {
     type Error = Error;
 
     fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
-        let trust_level = raw
-            .trust_level
-            .clone()
-            .ok_or_else(Error::missing_trusting_period)?;
+        let chain_id = ChainId::from_string(raw.chain_id.as_str());
+
+        let trust_level = {
+            let trust_level = raw
+                .trust_level
+                .clone()
+                .ok_or_else(Error::missing_trusting_period)?;
+            trust_level
+                .try_into()
+                .map_err(|e| Error::invalid_trust_threshold(format!("{}", e)))?
+        };
+
+        let trusting_period = raw
+            .trusting_period
+            .ok_or_else(Error::missing_trusting_period)?
+            .try_into()
+            .map_err(|_| Error::negative_trusting_period())?;
+
+        let unbonding_period = raw
+            .unbonding_period
+            .ok_or_else(Error::missing_unbonding_period)?
+            .try_into()
+            .map_err(|_| Error::negative_unbonding_period())?;
+
+        let max_clock_drift = raw
+            .max_clock_drift
+            .ok_or_else(Error::missing_max_clock_drift)?
+            .try_into()
+            .map_err(|_| Error::negative_max_clock_drift())?;
+
+        let latest_height = raw
+            .latest_height
+            .ok_or_else(Error::missing_latest_height)?
+            .try_into()
+            .map_err(|_| Error::missing_latest_height())?;
 
         // In `RawClientState`, a `frozen_height` of `0` means "not frozen".
         // See:
@@ -757,41 +825,25 @@ impl TryFrom<RawTmClientState> for ClientState {
             .frozen_height
             .and_then(|raw_height| raw_height.try_into().ok());
 
-        #[allow(deprecated)]
-        Ok(Self {
-            chain_id: ChainId::from_string(raw.chain_id.as_str()),
-            trust_level: trust_level
-                .try_into()
-                .map_err(|e| Error::invalid_trust_threshold(format!("{}", e)))?,
-            trusting_period: raw
-                .trusting_period
-                .ok_or_else(Error::missing_trusting_period)?
-                .try_into()
-                .map_err(|_| Error::negative_trusting_period())?,
-            unbonding_period: raw
-                .unbonding_period
-                .ok_or_else(Error::missing_unbonding_period)?
-                .try_into()
-                .map_err(|_| Error::negative_unbonding_period())?,
-            max_clock_drift: raw
-                .max_clock_drift
-                .ok_or_else(Error::missing_max_clock_drift)?
-                .try_into()
-                .map_err(|_| Error::negative_max_clock_drift())?,
-            latest_height: raw
-                .latest_height
-                .ok_or_else(Error::missing_latest_height)?
-                .try_into()
-                .map_err(|_| Error::missing_latest_height())?,
+        let allow_update = AllowUpdate {
+            after_expiry: raw.allow_update_after_expiry,
+            after_misbehaviour: raw.allow_update_after_misbehaviour,
+        };
+
+        let client_state = ClientState::new(
+            chain_id,
+            trust_level,
+            trusting_period,
+            unbonding_period,
+            max_clock_drift,
+            latest_height,
+            raw.proof_specs.into(),
+            raw.upgrade_path,
+            allow_update,
             frozen_height,
-            upgrade_path: raw.upgrade_path,
-            allow_update: AllowUpdate {
-                after_expiry: raw.allow_update_after_expiry,
-                after_misbehaviour: raw.allow_update_after_misbehaviour,
-            },
-            proof_specs: raw.proof_specs.into(),
-            verifier: ProdVerifier::default(),
-        })
+        )?;
+
+        Ok(client_state)
     }
 }
 
@@ -908,7 +960,7 @@ mod tests {
             max_clock_drift: Duration::new(3, 0),
             latest_height: Height::new(0, 10).unwrap(),
             proof_specs: ProofSpecs::default(),
-            upgrade_path: vec!["".to_string()],
+            upgrade_path: Default::default(),
             allow_update: AllowUpdate {
                 after_expiry: false,
                 after_misbehaviour: false,
@@ -926,6 +978,46 @@ mod tests {
                 name: "Valid parameters".to_string(),
                 params: default_params.clone(),
                 want_pass: true,
+            },
+            Test {
+                name: "Valid (empty) upgrade-path".to_string(),
+                params: ClientStateParams {
+                    upgrade_path: vec![],
+                    ..default_params.clone()
+                },
+                want_pass: true,
+            },
+            Test {
+                name: "Valid upgrade-path".to_string(),
+                params: ClientStateParams {
+                    upgrade_path: vec!["upgrade".to_owned(), "upgradedIBCState".to_owned()],
+                    ..default_params.clone()
+                },
+                want_pass: true,
+            },
+            Test {
+                name: "Valid long (50 chars) chain-id".to_string(),
+                params: ClientStateParams {
+                    id: ChainId::new("a".repeat(48), 0),
+                    ..default_params.clone()
+                },
+                want_pass: true,
+            },
+            Test {
+                name: "Invalid too-long (51 chars) chain-id".to_string(),
+                params: ClientStateParams {
+                    id: ChainId::new("a".repeat(49), 0),
+                    ..default_params.clone()
+                },
+                want_pass: false,
+            },
+            Test {
+                name: "Invalid (zero) max-clock-drift period".to_string(),
+                params: ClientStateParams {
+                    max_clock_drift: ZERO_DURATION,
+                    ..default_params.clone()
+                },
+                want_pass: false,
             },
             Test {
                 name: "Invalid unbonding period".to_string(),
@@ -953,9 +1045,34 @@ mod tests {
                 want_pass: false,
             },
             Test {
-                name: "Invalid (too small) trusting trust threshold".to_string(),
+                name: "Invalid (equal) trusting period w.r.t. unbonding period".to_string(),
+                params: ClientStateParams {
+                    trusting_period: Duration::new(10, 0),
+                    unbonding_period: Duration::new(10, 0),
+                    ..default_params.clone()
+                },
+                want_pass: false,
+            },
+            Test {
+                name: "Invalid (zero) trusting trust threshold".to_string(),
                 params: ClientStateParams {
                     trust_level: TrustThreshold::ZERO,
+                    ..default_params.clone()
+                },
+                want_pass: false,
+            },
+            Test {
+                name: "Invalid (too small) trusting trust threshold".to_string(),
+                params: ClientStateParams {
+                    trust_level: TrustThreshold::new(1, 4).unwrap(),
+                    ..default_params.clone()
+                },
+                want_pass: false,
+            },
+            Test {
+                name: "Invalid latest height revision number (doesn't match chain)".to_string(),
+                params: ClientStateParams {
+                    latest_height: Height::new(1, 1).unwrap(),
                     ..default_params.clone()
                 },
                 want_pass: false,
@@ -985,6 +1102,7 @@ mod tests {
                 p.proof_specs,
                 p.upgrade_path,
                 p.allow_update,
+                None,
             );
 
             assert_eq!(
@@ -1080,14 +1198,14 @@ mod tests {
     fn client_state_verify_height() {
         // Define a "default" set of parameters to reuse throughout these tests.
         let default_params: ClientStateParams = ClientStateParams {
-            id: ChainId::default(),
+            id: ChainId::new("ibc".to_string(), 1),
             trust_level: TrustThreshold::ONE_THIRD,
             trusting_period: Duration::new(64000, 0),
             unbonding_period: Duration::new(128000, 0),
             max_clock_drift: Duration::new(3, 0),
             latest_height: Height::new(1, 10).unwrap(),
             proof_specs: ProofSpecs::default(),
-            upgrade_path: vec!["".to_string()],
+            upgrade_path: Default::default(),
             allow_update: AllowUpdate {
                 after_expiry: false,
                 after_misbehaviour: false,
@@ -1138,6 +1256,7 @@ mod tests {
                 p.proof_specs,
                 p.upgrade_path,
                 p.allow_update,
+                None,
             )
             .unwrap();
             let client_state = match test.setup {
@@ -1182,11 +1301,12 @@ pub mod test_util {
             )
             .unwrap(),
             Default::default(),
-            vec!["".to_string()],
+            Default::default(),
             AllowUpdate {
                 after_expiry: false,
                 after_misbehaviour: false,
             },
+            None,
         )
         .unwrap()
     }

@@ -16,6 +16,14 @@ use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightCl
 define_error! {
     #[derive(Debug, PartialEq, Eq)]
     Error {
+        ChainIdTooLong
+            {
+                chain_id: String,
+                len: usize,
+                max_len: usize,
+            }
+            |e| { format_args!("chain-id is ({0}) is too long, got: {1}, max allowed: {2}", e.chain_id, e.len, e.max_len) },
+
         InvalidTrustingPeriod
             { reason: String }
             |e| { format_args!("invalid trusting period: {}", e.reason) },
@@ -35,6 +43,18 @@ define_error! {
         InvalidTrustThreshold
             { reason: String }
             |e| { format_args!("invalid client state trust threshold: {}", e.reason) },
+
+        InvalidTendermintTrustThreshold
+            [ TendermintError ]
+            |_| { "invalid tendermint client state trust threshold" },
+
+        InvalidMaxClockDrift
+            { reason: String }
+            |e| { format_args!("invalid client state max clock drift: {}", e.reason) },
+
+        InvalidLatestHeight
+            { reason: String }
+            |e| { format_args!("invalid client state latest height: {}", e.reason) },
 
         MissingSignedHeader
             |_| { "missing signed header" },
