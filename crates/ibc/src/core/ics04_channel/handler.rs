@@ -88,7 +88,7 @@ pub fn channel_callback<Ctx>(
     ctx: &mut Ctx,
     module_id: &ModuleId,
     msg: &ChannelMsg,
-    result: &ChannelResult,
+    result: &mut ChannelResult,
 ) -> Result<(Vec<String>, Vec<ModuleEvent>), Error>
 where
     Ctx: Ics26Context,
@@ -99,6 +99,33 @@ where
         .ok_or_else(Error::route_not_found)?;
 
     match msg {
+        ChannelMsg::ChannelOpenInit(msg) => {
+            let (module_logs, module_events, version) = cb.on_chan_open_init(
+                msg.channel.ordering,
+                &msg.channel.connection_hops,
+                &msg.port_id,
+                &result.channel_id,
+                msg.channel.counterparty(),
+                &msg.channel.version,
+            )?;
+            result.channel_end.version = version;
+
+            Ok((module_logs, module_events))
+        }
+        ChannelMsg::ChannelOpenTry(msg) => {
+            let (module_logs, module_events, version) = cb.on_chan_open_try(
+                msg.channel.ordering,
+                &msg.channel.connection_hops,
+                &msg.port_id,
+                &result.channel_id,
+                msg.channel.counterparty(),
+                &msg.channel.version,
+                &msg.counterparty_version,
+            )?;
+            result.channel_end.version = version;
+
+            Ok((module_logs, module_events))
+        }
         ChannelMsg::ChannelOpenAck(msg) => {
             cb.on_chan_open_ack(&msg.port_id, &result.channel_id, &msg.counterparty_version)
         }
@@ -111,7 +138,6 @@ where
         ChannelMsg::ChannelCloseConfirm(msg) => {
             cb.on_chan_close_confirm(&msg.port_id, &result.channel_id)
         }
-        _ => panic!("Implemented elsewhere. This is temporary and shouldn't get merged"),
     }
 }
 

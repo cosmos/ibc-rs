@@ -1,4 +1,3 @@
-use crate::core::ics04_channel::msgs::ChannelMsg;
 use crate::handler::HandlerOutputBuilder;
 use crate::prelude::*;
 
@@ -7,21 +6,19 @@ use ibc_proto::google::protobuf::Any;
 use crate::core::ics02_client::handler::dispatch as ics2_msg_dispatcher;
 use crate::core::ics03_connection::handler::dispatch as ics3_msg_dispatcher;
 use crate::core::ics04_channel::handler::{
-    chan_open_init, chan_open_try, get_module_for_packet_msg,
-    packet_callback as ics4_packet_callback, packet_dispatch as ics4_packet_msg_dispatcher,
-};
-use crate::core::ics04_channel::handler::{
     channel_callback, channel_dispatch, channel_validate, recv_packet::RecvPacketResult,
 };
-use crate::core::ics04_channel::{error::Error as ChannelError, packet::PacketResult};
+use crate::core::ics04_channel::handler::{
+    get_module_for_packet_msg, packet_callback as ics4_packet_callback,
+    packet_dispatch as ics4_packet_msg_dispatcher,
+};
+use crate::core::ics04_channel::packet::PacketResult;
 use crate::core::ics26_routing::context::Ics26Context;
 use crate::core::ics26_routing::error::Error;
 use crate::core::ics26_routing::msgs::Ics26Envelope::{
     self, Ics2Msg, Ics3Msg, Ics4ChannelMsg, Ics4PacketMsg,
 };
 use crate::{events::IbcEvent, handler::HandlerOutput};
-
-use super::context::Router;
 
 /// Result of message execution - comprises of events emitted and logs entries created during the
 /// execution of a transaction message.
@@ -91,89 +88,26 @@ where
             let module_id = channel_validate(ctx, &msg).map_err(Error::ics04_channel)?;
             let dispatch_output = HandlerOutputBuilder::<()>::new();
 
-            match msg {
-                ChannelMsg::ChannelOpenInit(msg_open_init) => {
-                    let mut handler_output = chan_open_init::process(ctx, &msg_open_init)
-                        .map_err(Error::ics04_channel)?;
-                    let cb = ctx
-                        .router_mut()
-                        .get_route_mut(&module_id)
-                        .ok_or_else(ChannelError::route_not_found)
-                        .map_err(Error::ics04_channel)?;
-                    let (module_logs, module_events, version) = cb
-                        .on_chan_open_init(
-                            msg_open_init.channel.ordering,
-                            &msg_open_init.channel.connection_hops,
-                            &msg_open_init.port_id,
-                            &handler_output.result.channel_id,
-                            msg_open_init.channel.counterparty(),
-                            &msg_open_init.channel.version,
-                        )
-                        .map_err(Error::ics04_channel)?;
+            let (dispatch_logs, dispatch_events, mut channel_result) =
+                channel_dispatch(ctx, &msg).map_err(Error::ics04_channel)?;
 
-                    handler_output.result.channel_end.version = version;
+            // Note: `OpenInit` and `OpenTry` modify the `version` field of the `channel_result`,
+            // so we must pass it mutably. We intend to clean this up with the implementation of
+            // ADR 5.
+            let (module_logs, module_events) =
+                channel_callback(ctx, &module_id, &msg, &mut channel_result)
+                    .map_err(Error::ics04_channel)?;
 
-                    ctx.store_channel_result(handler_output.result)
-                        .map_err(Error::ics04_channel)?;
+            // Apply any results to the host chain store.
+            ctx.store_channel_result(channel_result)
+                .map_err(Error::ics04_channel)?;
 
-                    dispatch_output
-                        .with_events(handler_output.events)
-                        .with_events(module_events.into_iter().map(IbcEvent::AppModule).collect())
-                        .with_log(handler_output.log)
-                        .with_log(module_logs)
-                        .with_result(())
-                }
-                ChannelMsg::ChannelOpenTry(msg) => {
-                    let mut handler_output =
-                        chan_open_try::process(ctx, &msg).map_err(Error::ics04_channel)?;
-                    let cb = ctx
-                        .router_mut()
-                        .get_route_mut(&module_id)
-                        .ok_or_else(ChannelError::route_not_found)
-                        .map_err(Error::ics04_channel)?;
-                    let (module_logs, module_events, version) = cb
-                        .on_chan_open_try(
-                            msg.channel.ordering,
-                            &msg.channel.connection_hops,
-                            &msg.port_id,
-                            &handler_output.result.channel_id,
-                            msg.channel.counterparty(),
-                            &msg.channel.version,
-                            &msg.counterparty_version,
-                        )
-                        .map_err(Error::ics04_channel)?;
-
-                    handler_output.result.channel_end.version = version;
-
-                    ctx.store_channel_result(handler_output.result)
-                        .map_err(Error::ics04_channel)?;
-
-                    dispatch_output
-                        .with_events(handler_output.events)
-                        .with_events(module_events.into_iter().map(IbcEvent::AppModule).collect())
-                        .with_log(handler_output.log)
-                        .with_log(module_logs)
-                        .with_result(())
-                }
-                _ => {
-                    let (dispatch_logs, dispatch_events, channel_result) =
-                        channel_dispatch(ctx, &msg).map_err(Error::ics04_channel)?;
-                    let (module_logs, module_events) =
-                        channel_callback(ctx, &module_id, &msg, &channel_result)
-                            .map_err(Error::ics04_channel)?;
-
-                    // Apply any results to the host chain store.
-                    ctx.store_channel_result(channel_result)
-                        .map_err(Error::ics04_channel)?;
-
-                    dispatch_output
-                        .with_events(dispatch_events)
-                        .with_events(module_events.into_iter().map(IbcEvent::AppModule).collect())
-                        .with_log(dispatch_logs)
-                        .with_log(module_logs)
-                        .with_result(())
-                }
-            }
+            dispatch_output
+                .with_events(dispatch_events)
+                .with_events(module_events.into_iter().map(IbcEvent::AppModule).collect())
+                .with_log(dispatch_logs)
+                .with_log(module_logs)
+                .with_result(())
         }
 
         Ics4PacketMsg(msg) => {
