@@ -1,3 +1,4 @@
+use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::prelude::*;
 
 use alloc::borrow::{Borrow, Cow};
@@ -107,7 +108,7 @@ pub trait Module: Send + Sync + AsAnyMut {
         channel_id: &ChannelId,
         counterparty: &Counterparty,
         version: &Version,
-    ) -> Result<(Vec<String>, Vec<ModuleEvent>, Version), Error>;
+    ) -> Result<(ModuleExtras, Version), Error>;
 
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_try(
@@ -119,39 +120,51 @@ pub trait Module: Send + Sync + AsAnyMut {
         counterparty: &Counterparty,
         version: &Version,
         counterparty_version: &Version,
-    ) -> Result<(Vec<String>, Vec<ModuleEvent>, Version), Error>;
+    ) -> Result<(ModuleExtras, Version), Error>;
 
     fn on_chan_open_ack(
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
         _counterparty_version: &Version,
-    ) -> Result<(Vec<String>, Vec<ModuleEvent>), Error> {
-        Ok((Vec::new(), Vec::new()))
+    ) -> Result<ModuleExtras, Error> {
+        Ok(ModuleExtras {
+            events: Vec::new(),
+            log: Vec::new(),
+        })
     }
 
     fn on_chan_open_confirm(
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
-    ) -> Result<(Vec<String>, Vec<ModuleEvent>), Error> {
-        Ok((Vec::new(), Vec::new()))
+    ) -> Result<ModuleExtras, Error> {
+        Ok(ModuleExtras {
+            events: Vec::new(),
+            log: Vec::new(),
+        })
     }
 
     fn on_chan_close_init(
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
-    ) -> Result<(Vec<String>, Vec<ModuleEvent>), Error> {
-        Ok((Vec::new(), Vec::new()))
+    ) -> Result<ModuleExtras, Error> {
+        Ok(ModuleExtras {
+            events: Vec::new(),
+            log: Vec::new(),
+        })
     }
 
     fn on_chan_close_confirm(
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
-    ) -> Result<(Vec<String>, Vec<ModuleEvent>), Error> {
-        Ok((Vec::new(), Vec::new()))
+    ) -> Result<ModuleExtras, Error> {
+        Ok(ModuleExtras {
+            events: Vec::new(),
+            log: Vec::new(),
+        })
     }
 
     fn on_recv_packet(

@@ -47,6 +47,11 @@ pub struct ChannelResult {
     pub channel_end: ChannelEnd,
 }
 
+pub struct ModuleExtras {
+    pub events: Vec<ModuleEvent>,
+    pub log: Vec<String>,
+}
+
 pub fn channel_validate<Ctx>(ctx: &Ctx, msg: &ChannelMsg) -> Result<ModuleId, Error>
 where
     Ctx: Ics26Context,
@@ -89,7 +94,7 @@ pub fn channel_callback<Ctx>(
     module_id: &ModuleId,
     msg: &ChannelMsg,
     result: &mut ChannelResult,
-) -> Result<(Vec<String>, Vec<ModuleEvent>), Error>
+) -> Result<ModuleExtras, Error>
 where
     Ctx: Ics26Context,
 {
@@ -100,7 +105,7 @@ where
 
     match msg {
         ChannelMsg::ChannelOpenInit(msg) => {
-            let (module_logs, module_events, version) = cb.on_chan_open_init(
+            let (extras, version) = cb.on_chan_open_init(
                 msg.channel.ordering,
                 &msg.channel.connection_hops,
                 &msg.port_id,
@@ -110,10 +115,10 @@ where
             )?;
             result.channel_end.version = version;
 
-            Ok((module_logs, module_events))
+            Ok(extras)
         }
         ChannelMsg::ChannelOpenTry(msg) => {
-            let (module_logs, module_events, version) = cb.on_chan_open_try(
+            let (extras, version) = cb.on_chan_open_try(
                 msg.channel.ordering,
                 &msg.channel.connection_hops,
                 &msg.port_id,
@@ -124,7 +129,7 @@ where
             )?;
             result.channel_end.version = version;
 
-            Ok((module_logs, module_events))
+            Ok(extras)
         }
         ChannelMsg::ChannelOpenAck(msg) => {
             cb.on_chan_open_ack(&msg.port_id, &result.channel_id, &msg.counterparty_version)

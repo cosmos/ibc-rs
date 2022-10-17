@@ -94,9 +94,8 @@ where
             // Note: `OpenInit` and `OpenTry` modify the `version` field of the `channel_result`,
             // so we must pass it mutably. We intend to clean this up with the implementation of
             // ADR 5.
-            let (module_logs, module_events) =
-                channel_callback(ctx, &module_id, &msg, &mut channel_result)
-                    .map_err(Error::ics04_channel)?;
+            let callback_extras = channel_callback(ctx, &module_id, &msg, &mut channel_result)
+                .map_err(Error::ics04_channel)?;
 
             // Apply any results to the host chain store.
             ctx.store_channel_result(channel_result)
@@ -104,9 +103,15 @@ where
 
             dispatch_output
                 .with_events(dispatch_events)
-                .with_events(module_events.into_iter().map(IbcEvent::AppModule).collect())
+                .with_events(
+                    callback_extras
+                        .events
+                        .into_iter()
+                        .map(IbcEvent::AppModule)
+                        .collect(),
+                )
                 .with_log(dispatch_logs)
-                .with_log(module_logs)
+                .with_log(callback_extras.log)
                 .with_result(())
         }
 

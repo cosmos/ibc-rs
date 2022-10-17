@@ -1431,6 +1431,7 @@ mod tests {
 
     use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::error::Error;
+    use crate::core::ics04_channel::handler::ModuleExtras;
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChainId;
@@ -1439,7 +1440,6 @@ mod tests {
         Acknowledgement, Module, ModuleId, ModuleOutputBuilder, OnRecvPacketAck, Router,
         RouterBuilder,
     };
-    use crate::events::ModuleEvent;
     use crate::mock::context::MockContext;
     use crate::mock::context::MockRouterBuilder;
     use crate::mock::host::HostType;
@@ -1614,8 +1614,14 @@ mod tests {
                 _channel_id: &ChannelId,
                 _counterparty: &Counterparty,
                 version: &Version,
-            ) -> Result<(Vec<String>, Vec<ModuleEvent>, Version), Error> {
-                Ok((Vec::new(), Vec::new(), version.clone()))
+            ) -> Result<(ModuleExtras, Version), Error> {
+                Ok((
+                    ModuleExtras {
+                        events: Vec::new(),
+                        log: Vec::new(),
+                    },
+                    version.clone(),
+                ))
             }
 
             fn on_chan_open_try(
@@ -1627,8 +1633,14 @@ mod tests {
                 _counterparty: &Counterparty,
                 _version: &Version,
                 counterparty_version: &Version,
-            ) -> Result<(Vec<String>, Vec<ModuleEvent>, Version), Error> {
-                Ok((Vec::new(), Vec::new(), counterparty_version.clone()))
+            ) -> Result<(ModuleExtras, Version), Error> {
+                Ok((
+                    ModuleExtras {
+                        events: Vec::new(),
+                        log: Vec::new(),
+                    },
+                    counterparty_version.clone(),
+                ))
             }
 
             fn on_recv_packet(
@@ -1660,8 +1672,14 @@ mod tests {
                 _channel_id: &ChannelId,
                 _counterparty: &Counterparty,
                 version: &Version,
-            ) -> Result<(Vec<String>, Vec<ModuleEvent>, Version), Error> {
-                Ok((Vec::new(), Vec::new(), version.clone()))
+            ) -> Result<(ModuleExtras, Version), Error> {
+                Ok((
+                    ModuleExtras {
+                        events: Vec::new(),
+                        log: Vec::new(),
+                    },
+                    version.clone(),
+                ))
             }
 
             fn on_chan_open_try(
@@ -1673,8 +1691,14 @@ mod tests {
                 _counterparty: &Counterparty,
                 _version: &Version,
                 counterparty_version: &Version,
-            ) -> Result<(Vec<String>, Vec<ModuleEvent>, Version), Error> {
-                Ok((Vec::new(), Vec::new(), counterparty_version.clone()))
+            ) -> Result<(ModuleExtras, Version), Error> {
+                Ok((
+                    ModuleExtras {
+                        events: Vec::new(),
+                        log: Vec::new(),
+                    },
+                    counterparty_version.clone(),
+                ))
             }
         }
 
