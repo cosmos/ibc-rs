@@ -45,7 +45,7 @@ pub trait Ics26Context:
 #[derive(Debug, PartialEq, Eq)]
 pub struct InvalidModuleId;
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Deserialize, Serialize)]
 pub struct ModuleId(String);
 
 impl ModuleId {
