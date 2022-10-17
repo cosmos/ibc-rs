@@ -166,11 +166,8 @@ mod tests {
         let mut msg =
             MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(proof_height)).unwrap();
 
-        // Assumption: an already existing `Init` channel should exist in the context for `msg`, and
-        // this channel should depend on connection `conn_id`.
         let chan_id = ChannelId::new(24);
         let hops = vec![conn_id.clone()];
-        msg.previous_channel_id = Some(chan_id.clone());
         msg.channel.connection_hops = hops;
 
         // A preloaded channel end that resides in the context. This is constructed so as to be

@@ -2,7 +2,7 @@ use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::error::Error as ChannelError;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::error::ValidationError;
-use crate::core::ics24_host::identifier::{ChannelId, PortId};
+use crate::core::ics24_host::identifier::PortId;
 use crate::prelude::*;
 use crate::proofs::Proofs;
 use crate::signer::Signer;
@@ -10,8 +10,6 @@ use crate::tx_msg::Msg;
 
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenTry as RawMsgChannelOpenTry;
 use ibc_proto::protobuf::Protobuf;
-
-use core::str::FromStr;
 
 pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenTry";
 
@@ -21,17 +19,19 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenTry";
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelOpenTry {
     pub port_id: PortId,
-    pub previous_channel_id: Option<ChannelId>,
     pub channel: ChannelEnd,
     pub counterparty_version: Version,
     pub proofs: Proofs,
     pub signer: Signer,
+
+    #[deprecated(since = "0.21.0")]
+    /// Only kept here for proper conversion to/from the raw type
+    pub previous_channel_id: String,
 }
 
 impl MsgChannelOpenTry {
     pub fn new(
         port_id: PortId,
-        previous_channel_id: Option<ChannelId>,
         channel: ChannelEnd,
         counterparty_version: Version,
         proofs: Proofs,
@@ -39,11 +39,11 @@ impl MsgChannelOpenTry {
     ) -> Self {
         Self {
             port_id,
-            previous_channel_id,
             channel,
             counterparty_version,
             proofs,
             signer,
+            previous_channel_id: "".to_string(),
         }
     }
 }
@@ -89,15 +89,9 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
         )
         .map_err(ChannelError::invalid_proof)?;
 
-        let previous_channel_id = Some(raw_msg.previous_channel_id)
-            .filter(|x| !x.is_empty())
-            .map(|v| FromStr::from_str(v.as_str()))
-            .transpose()
-            .map_err(ChannelError::identifier)?;
-
         let msg = MsgChannelOpenTry {
             port_id: raw_msg.port_id.parse().map_err(ChannelError::identifier)?,
-            previous_channel_id,
+            previous_channel_id: raw_msg.previous_channel_id,
             channel: raw_msg
                 .channel
                 .ok_or_else(ChannelError::missing_channel)?
@@ -118,9 +112,7 @@ impl From<MsgChannelOpenTry> for RawMsgChannelOpenTry {
     fn from(domain_msg: MsgChannelOpenTry) -> Self {
         RawMsgChannelOpenTry {
             port_id: domain_msg.port_id.to_string(),
-            previous_channel_id: domain_msg
-                .previous_channel_id
-                .map_or_else(|| "".to_string(), |v| v.to_string()),
+            previous_channel_id: domain_msg.previous_channel_id,
             channel: Some(domain_msg.channel.into()),
             counterparty_version: domain_msg.counterparty_version.to_string(),
             proof_init: domain_msg.proofs.object_proof().clone().into(),
@@ -204,30 +196,6 @@ mod tests {
                 name: "Bad port, name too long".to_string(),
                 raw: RawMsgChannelOpenTry {
                     port_id: "abcdefghijasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfadgasgasdfasdfaabcdefghijasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfadgasgasdfasdfa".to_string(),
-                    ..default_raw_msg.clone()
-                },
-                want_pass: false,
-            },
-            Test {
-                name: "Correct channel identifier".to_string(),
-                raw: RawMsgChannelOpenTry {
-                    previous_channel_id: "channel-34".to_string(),
-                    ..default_raw_msg.clone()
-                },
-                want_pass: true,
-            },
-            Test {
-                name: "Bad channel, name too short".to_string(),
-                raw: RawMsgChannelOpenTry {
-                    previous_channel_id: "chshort".to_string(),
-                    ..default_raw_msg.clone()
-                },
-                want_pass: false,
-            },
-            Test {
-                name: "Bad channel, name too long".to_string(),
-                raw: RawMsgChannelOpenTry {
-                    previous_channel_id: "channel-128391283791827398127398791283912837918273981273987912839".to_string(),
                     ..default_raw_msg.clone()
                 },
                 want_pass: false,
