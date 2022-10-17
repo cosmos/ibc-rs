@@ -102,6 +102,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
+    use crate::core::ics26_routing::handler::MsgReceipt;
     use crate::prelude::*;
 
     use test_log::test;
@@ -187,7 +188,7 @@ mod tests {
             let res = channel_dispatch(&test.ctx, &test.msg);
             // Additionally check the events and the output objects in the result.
             match res {
-                Ok((_logs, events, res)) => {
+                Ok((MsgReceipt { log: _, events }, res)) => {
                     assert!(
                             test.want_pass,
                             "chan_open_confirm: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",

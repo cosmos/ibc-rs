@@ -127,6 +127,7 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics24_host::identifier::ConnectionId;
+    use crate::core::ics26_routing::handler::MsgReceipt;
     use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::prelude::*;
@@ -288,7 +289,7 @@ mod tests {
             let res = channel_dispatch(&test.ctx, &test.msg);
             // Additionally check the events and the output objects in the result.
             match res {
-                Ok((_logs, events, res)) => {
+                Ok((MsgReceipt { log: _, events }, res)) => {
                     assert!(
                             test.want_pass,
                             "chan_open_ack: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",

@@ -88,8 +88,13 @@ where
             let module_id = channel_validate(ctx, &msg).map_err(Error::ics04_channel)?;
             let dispatch_output = HandlerOutputBuilder::<()>::new();
 
-            let (dispatch_logs, dispatch_events, mut channel_result) =
-                channel_dispatch(ctx, &msg).map_err(Error::ics04_channel)?;
+            let (
+                MsgReceipt {
+                    events: dispatch_events,
+                    log: dispatch_log,
+                },
+                mut channel_result,
+            ) = channel_dispatch(ctx, &msg).map_err(Error::ics04_channel)?;
 
             // Note: `OpenInit` and `OpenTry` modify the `version` field of the `channel_result`,
             // so we must pass it mutably. We intend to clean this up with the implementation of
@@ -110,7 +115,7 @@ where
                         .map(IbcEvent::AppModule)
                         .collect(),
                 )
-                .with_log(dispatch_logs)
+                .with_log(dispatch_log)
                 .with_log(callback_extras.log)
                 .with_result(())
         }

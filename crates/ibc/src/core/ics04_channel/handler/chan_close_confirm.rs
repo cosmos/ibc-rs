@@ -102,6 +102,7 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
     use crate::core::ics04_channel::msgs::ChannelMsg;
+    use crate::core::ics26_routing::handler::MsgReceipt;
     use crate::events::IbcEvent;
     use crate::prelude::*;
 
@@ -161,7 +162,7 @@ mod tests {
                 chan_end,
             );
 
-        let (_, events, _) = channel_dispatch(
+        let (MsgReceipt { events, log: _ }, _) = channel_dispatch(
             &context,
             &ChannelMsg::ChannelCloseConfirm(msg_chan_close_confirm),
         )

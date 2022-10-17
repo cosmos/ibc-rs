@@ -1,5 +1,6 @@
 //! This module implements the processing logic for ICS4 (channel) messages.
-use crate::events::{IbcEvent, ModuleEvent};
+use crate::core::ics26_routing::handler::MsgReceipt;
+use crate::events::ModuleEvent;
 use crate::prelude::*;
 
 use crate::core::ics04_channel::channel::ChannelEnd;
@@ -69,7 +70,7 @@ where
 pub fn channel_dispatch<Ctx>(
     ctx: &Ctx,
     msg: &ChannelMsg,
-) -> Result<(Vec<String>, Vec<IbcEvent>, ChannelResult), Error>
+) -> Result<(MsgReceipt, ChannelResult), Error>
 where
     Ctx: ChannelReader,
 {
@@ -86,7 +87,7 @@ where
         log,
         events,
     } = output;
-    Ok((log, events, result))
+    Ok((MsgReceipt { events, log }, result))
 }
 
 pub fn channel_callback<Ctx>(
