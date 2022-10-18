@@ -100,29 +100,6 @@ pub trait Ics20Context:
     type AccountId: TryFrom<Signer>;
 }
 
-fn validate_transfer_channel_params(
-    ctx: &mut impl Ics20Context,
-    order: Order,
-    port_id: &PortId,
-    _channel_id: &ChannelId,
-    version: &Version,
-) -> Result<(), Ics20Error> {
-    if order != Order::Unordered {
-        return Err(Ics20Error::channel_not_unordered(order));
-    }
-
-    let bound_port = ctx.get_port()?;
-    if port_id != &bound_port {
-        return Err(Ics20Error::invalid_port(port_id.clone(), bound_port));
-    }
-
-    if !version.is_empty() && version != &Version::ics20() {
-        return Err(Ics20Error::invalid_version(version.clone()));
-    }
-
-    Ok(())
-}
-
 fn validate_counterparty_version(counterparty_version: &Version) -> Result<(), Ics20Error> {
     if counterparty_version == &Version::ics20() {
         Ok(())
@@ -143,7 +120,6 @@ pub fn on_chan_open_init(
     _counterparty: &Counterparty,
     version: &Version,
 ) -> Result<(ModuleExtras, Version), Ics20Error> {
-    validate_transfer_channel_params(ctx, order, port_id, channel_id, version)?;
     if order != Order::Unordered {
         return Err(Ics20Error::channel_not_unordered(order));
     }
@@ -161,17 +137,22 @@ pub fn on_chan_open_init(
 
 #[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_try(
-    ctx: &mut impl Ics20Context,
+    _ctx: &mut impl Ics20Context,
     order: Order,
     _connection_hops: &[ConnectionId],
-    port_id: &PortId,
-    channel_id: &ChannelId,
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
     _counterparty: &Counterparty,
-    version: &Version,
     counterparty_version: &Version,
 ) -> Result<(ModuleExtras, Version), Ics20Error> {
-    validate_transfer_channel_params(ctx, order, port_id, channel_id, version)?;
-    validate_counterparty_version(counterparty_version)?;
+    if order != Order::Unordered {
+        return Err(Ics20Error::channel_not_unordered(order));
+    }
+    if counterparty_version != &Version::ics20() {
+        return Err(Ics20Error::invalid_counterparty_version(
+            counterparty_version.clone(),
+        ))
+    }
 
     Ok((ModuleExtras::empty(), Version::ics20()))
 }
