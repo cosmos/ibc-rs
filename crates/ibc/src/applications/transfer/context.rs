@@ -141,7 +141,7 @@ pub fn on_chan_open_try(
     if counterparty_version != &Version::ics20() {
         return Err(Ics20Error::invalid_counterparty_version(
             counterparty_version.clone(),
-        ))
+        ));
     }
 
     Ok((ModuleExtras::empty(), Version::ics20()))
@@ -156,7 +156,7 @@ pub fn on_chan_open_ack(
     if counterparty_version != &Version::ics20() {
         return Err(Ics20Error::invalid_counterparty_version(
             counterparty_version.clone(),
-        ))
+        ));
     }
 
     Ok(ModuleExtras::empty())
