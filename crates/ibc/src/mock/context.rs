@@ -1631,7 +1631,6 @@ mod tests {
                 _port_id: &PortId,
                 _channel_id: &ChannelId,
                 _counterparty: &Counterparty,
-                _version: &Version,
                 counterparty_version: &Version,
             ) -> Result<(ModuleExtras, Version), Error> {
                 Ok((
@@ -1689,7 +1688,6 @@ mod tests {
                 _port_id: &PortId,
                 _channel_id: &ChannelId,
                 _counterparty: &Counterparty,
-                _version: &Version,
                 counterparty_version: &Version,
             ) -> Result<(ModuleExtras, Version), Error> {
                 Ok((

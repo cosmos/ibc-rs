@@ -134,7 +134,6 @@ where
                 &msg.port_id,
                 &result.channel_id,
                 msg.channel.counterparty(),
-                &msg.channel.version,
                 &msg.counterparty_version,
             )?;
             result.channel_end.version = version;

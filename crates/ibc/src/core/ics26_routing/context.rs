@@ -118,7 +118,6 @@ pub trait Module: Send + Sync + AsAnyMut {
         port_id: &PortId,
         channel_id: &ChannelId,
         counterparty: &Counterparty,
-        version: &Version,
         counterparty_version: &Version,
     ) -> Result<(ModuleExtras, Version), Error>;
 

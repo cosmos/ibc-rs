@@ -151,7 +151,6 @@ pub fn on_chan_open_init(
 #[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_try(
     ctx: &mut impl Ics20Context,
-    _output: &mut ModuleOutputBuilder,
     order: Order,
     _connection_hops: &[ConnectionId],
     port_id: &PortId,
@@ -159,10 +158,11 @@ pub fn on_chan_open_try(
     _counterparty: &Counterparty,
     version: &Version,
     counterparty_version: &Version,
-) -> Result<Version, Ics20Error> {
+) -> Result<(ModuleExtras, Version), Ics20Error> {
     validate_transfer_channel_params(ctx, order, port_id, channel_id, version)?;
     validate_counterparty_version(counterparty_version)?;
-    Ok(Version::ics20())
+
+    Ok((ModuleExtras::empty(), Version::ics20()))
 }
 
 pub fn on_chan_open_ack(
