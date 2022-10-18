@@ -100,23 +100,13 @@ pub trait Ics20Context:
     type AccountId: TryFrom<Signer>;
 }
 
-fn validate_counterparty_version(counterparty_version: &Version) -> Result<(), Ics20Error> {
-    if counterparty_version == &Version::ics20() {
-        Ok(())
-    } else {
-        Err(Ics20Error::invalid_counterparty_version(
-            counterparty_version.clone(),
-        ))
-    }
-}
-
 #[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_init(
     ctx: &mut impl Ics20Context,
     order: Order,
     _connection_hops: &[ConnectionId],
     port_id: &PortId,
-    channel_id: &ChannelId,
+    _channel_id: &ChannelId,
     _counterparty: &Counterparty,
     version: &Version,
 ) -> Result<(ModuleExtras, Version), Ics20Error> {
@@ -159,40 +149,41 @@ pub fn on_chan_open_try(
 
 pub fn on_chan_open_ack(
     _ctx: &mut impl Ics20Context,
-    _output: &mut ModuleOutputBuilder,
     _port_id: &PortId,
     _channel_id: &ChannelId,
     counterparty_version: &Version,
-) -> Result<(), Ics20Error> {
-    validate_counterparty_version(counterparty_version)?;
-    Ok(())
+) -> Result<ModuleExtras, Ics20Error> {
+    if counterparty_version != &Version::ics20() {
+        return Err(Ics20Error::invalid_counterparty_version(
+            counterparty_version.clone(),
+        ))
+    }
+
+    Ok(ModuleExtras::empty())
 }
 
 pub fn on_chan_open_confirm(
     _ctx: &mut impl Ics20Context,
-    _output: &mut ModuleOutputBuilder,
     _port_id: &PortId,
     _channel_id: &ChannelId,
-) -> Result<(), Ics20Error> {
-    Ok(())
+) -> Result<ModuleExtras, Ics20Error> {
+    Ok(ModuleExtras::empty())
 }
 
 pub fn on_chan_close_init(
     _ctx: &mut impl Ics20Context,
-    _output: &mut ModuleOutputBuilder,
     _port_id: &PortId,
     _channel_id: &ChannelId,
-) -> Result<(), Ics20Error> {
+) -> Result<ModuleExtras, Ics20Error> {
     Err(Ics20Error::cant_close_channel())
 }
 
 pub fn on_chan_close_confirm(
     _ctx: &mut impl Ics20Context,
-    _output: &mut ModuleOutputBuilder,
     _port_id: &PortId,
     _channel_id: &ChannelId,
-) -> Result<(), Ics20Error> {
-    Ok(())
+) -> Result<ModuleExtras, Ics20Error> {
+    Ok(ModuleExtras::empty())
 }
 
 pub fn on_recv_packet<Ctx: 'static + Ics20Context>(
