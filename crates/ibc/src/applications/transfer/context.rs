@@ -144,6 +144,17 @@ pub fn on_chan_open_init(
     version: &Version,
 ) -> Result<(ModuleExtras, Version), Ics20Error> {
     validate_transfer_channel_params(ctx, order, port_id, channel_id, version)?;
+    if order != Order::Unordered {
+        return Err(Ics20Error::channel_not_unordered(order));
+    }
+    let bound_port = ctx.get_port()?;
+    if port_id != &bound_port {
+        return Err(Ics20Error::invalid_port(port_id.clone(), bound_port));
+    }
+
+    if !version.is_empty() && version != &Version::ics20() {
+        return Err(Ics20Error::invalid_version(version.clone()));
+    }
 
     Ok((ModuleExtras::empty(), Version::ics20()))
 }
