@@ -53,6 +53,15 @@ pub struct ModuleExtras {
     pub log: Vec<String>,
 }
 
+impl ModuleExtras {
+    pub fn empty() -> Self {
+        ModuleExtras {
+            events: Vec::new(),
+            log: Vec::new(),
+        }
+    }
+}
+
 pub fn channel_validate<Ctx>(ctx: &Ctx, msg: &ChannelMsg) -> Result<ModuleId, Error>
 where
     Ctx: Ics26Context,

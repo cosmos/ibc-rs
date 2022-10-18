@@ -10,6 +10,7 @@ use crate::applications::transfer::relay::on_timeout_packet::process_timeout_pac
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
+use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as GenericAcknowledgement;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
@@ -115,7 +116,7 @@ fn validate_transfer_channel_params(
         return Err(Ics20Error::invalid_port(port_id.clone(), bound_port));
     }
 
-    if version != &Version::ics20() {
+    if !version.is_empty() && version != &Version::ics20() {
         return Err(Ics20Error::invalid_version(version.clone()));
     }
 
@@ -135,15 +136,16 @@ fn validate_counterparty_version(counterparty_version: &Version) -> Result<(), I
 #[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_init(
     ctx: &mut impl Ics20Context,
-    _output: &mut ModuleOutputBuilder,
     order: Order,
     _connection_hops: &[ConnectionId],
     port_id: &PortId,
     channel_id: &ChannelId,
     _counterparty: &Counterparty,
     version: &Version,
-) -> Result<(), Ics20Error> {
-    validate_transfer_channel_params(ctx, order, port_id, channel_id, version)
+) -> Result<(ModuleExtras, Version), Ics20Error> {
+    validate_transfer_channel_params(ctx, order, port_id, channel_id, version)?;
+
+    Ok((ModuleExtras::empty(), Version::ics20()))
 }
 
 #[allow(clippy::too_many_arguments)]

@@ -30,6 +30,10 @@ impl Version {
     pub fn empty() -> Self {
         Self::new("".to_string())
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 impl From<String> for Version {
