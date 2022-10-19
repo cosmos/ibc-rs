@@ -1,0 +1,1 @@
+This is a major release, which implemented [ADR 4](https://github.com/cosmos/ibc-rs/blob/main/docs/architecture/adr-004-light-client-crates-extraction.md), as well as some miscellaneous bug fixes. Please see the corresponding sections for more information.

@@ -1,5 +1,47 @@
 # CHANGELOG
 
+## v0.20.0
+
+*October 19, 2022*
+
+This is a major release, which implemented [ADR 4](https://github.com/cosmos/ibc-rs/blob/main/docs/architecture/adr-004-light-client-crates-extraction.md), as well as some miscellaneous bug fixes. Please see the corresponding sections for more information.
+
+### BREAKING CHANGES
+
+- Add missing Tendermint `ClientState` checks and make all its fields private.
+- Add a `frozen_height` input parameter to `ClientState::new()`.
+  ([#22](https://github.com/cosmos/ibc-rs/issues/22)).
+- Remove `Display` from `IbcEvent` ([#144](https://github.com/cosmos/ibc-rs/issues/144)).
+- Remove `IbcEvent::Empty` ([#144](https://github.com/cosmos/ibc-rs/issues/144)).
+- Make `client_state` field required in `MsgConnectionOpenTry` and
+  `MsgConnectionOpenAck`. Necessary for correctness according to spec.  
+  ([#159](https://github.com/cosmos/ibc-rs/issues/159)).
+- Redesign the API to allow light client implementations to be hosted outside the ibc-rs repository. 
+  ([#2483](https://github.com/informalsystems/ibc-rs/pull/2483)).
+
+### BUG FIXES
+
+- Make client events compatible with ibc-go v5
+  ([#144](https://github.com/cosmos/ibc-rs/issues/144)).
+- Delete packet commitment in acknowledge packet handler regardless of channel ordering
+  ([#2229](https://github.com/informalsystems/ibc-rs/issues/2229)).
+
+### FEATURES
+
+- Public PrefixedDenom inner type and add as_str func for BaseDenom 
+  ([#161](https://github.com/cosmos/ibc-rs/issues/161))
+
+### IMPROVEMENTS
+
+- Derive Hash for ModuleId ([#179](https://github.com/cosmos/ibc-rs/issues/179))
+- Improved `core::ics04_channel` APIs, avoiding poor ergonomics of
+  reference-to-tuple arguments and inconsistent ownership patterns.
+  ([#2603](https://github.com/informalsystems/ibc-rs/pull/2603)).
+
+### DESIGN DECISIONS
+- Propose ADR05 for handlers validation and execution separation.
+  ([#2582](https://github.com/informalsystems/ibc-rs/pull/2582)).
+
 ## v0.19.0
 
 *August 22nd, 2022*

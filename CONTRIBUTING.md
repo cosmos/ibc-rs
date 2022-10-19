@@ -222,7 +222,7 @@ Our release process is as follows:
    1. Running `unclog build -u` and copy pasting the output at the top
       of the `CHANGELOG.md` file, making sure to update the header with
       the new version.
-   1. Running `unclog release vX.Y.Z` to create a summary of all of the changes
+   1. Running `unclog release --editor <editor> --version vX.Y.Z` to create a summary of all of the changes
       in this release.
    3. Committing the updated `CHANGELOG.md` file and `.changelog` directory to the repo.
 2. Push this to a branch `release/vX.Y.Z` according to the version number of
@@ -237,22 +237,17 @@ Our release process is as follows:
 4. Run `cargo doc --all-features --open` locally to double-check that all the
    documentation compiles and seems up-to-date and coherent. Fix any potential
    issues here and push them to the release PR.
-5. Mark the PR as **Ready for Review** and incorporate feedback on the release.
-6. Once approved, merge the PR.
-7. Pull `main` and run the [`release.sh`](./scripts/release.sh) script.
-   If any problem arises, submit a new PR, get it merged to `main` and try again.
-   The reason for not releasing straight from the release branch, and therefore losing the
-   ability to fix publishing problems as they arise, is that we would like the embedded
-   metadata of the published crates, namely the Git commit at which the release was done,
-   to match the Git commit on the `main` branch which will be tagged.
-   [See this article][crates.io-security] for a more in-depth explanation.
-   **Note:** This step requires the appropriate privileges to push crates to [crates.io].
-8. Once all crates have been successfully released, create a signed tag and push it to
+5. Run `cargo publish --dry-run` to double-check that publishing will work. Fix
+ any potential issues here and push them to the release PR.
+6. Mark the PR as **Ready for Review** and incorporate feedback on the release.
+7. Once approved, merge the PR, and pull the `main` branch.
+8. From the `crates/ibc` folder, run `cargo publish`
+9. Once all crates have been successfully released, create a signed tag and push it to
    GitHub: `git tag -s -a vX.Y.Z`. In the tag message, write the version and the link
    to the corresponding section of the changelog.
-9. Once the tag is pushed, wait for the CI bot to create a GitHub release, and update
+10. Once the tag is pushed, wait for the CI bot to create a GitHub release, and update
    the release description to `[📖 CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)`.
-10. All done! 🎉
+11. All done! 🎉
 
 [crates.io]: https://crates.io
 [crates.io-security]: https://codeandbitters.com/published-crate-analysis/
