@@ -148,6 +148,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
+    use crate::mock::client_state::MOCK_CLIENT_TYPE;
     use crate::prelude::*;
 
     use test_log::test;
@@ -185,7 +186,7 @@ mod tests {
         // Some general-purpose variable to parametrize the messages and the context.
         let proof_height = 10;
         let conn_id = ConnectionId::new(2);
-        let client_id = ClientId::new(ClientType::Mock, 45).unwrap();
+        let client_id = ClientId::new(ClientType::new(MOCK_CLIENT_TYPE), 45).unwrap();
 
         // The context. We'll reuse this same one across all tests.
         let context = MockContext::default();
@@ -353,7 +354,7 @@ mod tests {
                                 ics03_error::Ics02ClientSubdetail {
                                     source: ics02_error::ErrorDetail::ClientNotFound(
                                         ics02_error::ClientNotFoundSubdetail {
-                                            client_id: ClientId::new(ClientType::Mock, 45).unwrap()
+                                            client_id: ClientId::new(ClientType::new(MOCK_CLIENT_TYPE), 45).unwrap()
                                         }
                                     )
                                 }

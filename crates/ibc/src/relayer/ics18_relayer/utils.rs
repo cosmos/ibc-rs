@@ -49,10 +49,12 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::clients::ics07_tendermint::client_state::TENDERMINT_CLIENT_TYPE;
     use crate::core::ics02_client::client_type::ClientType;
     use crate::core::ics02_client::header::{downcast_header, Header};
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ics26_routing::msgs::Ics26Envelope;
+    use crate::mock::client_state::MOCK_CLIENT_TYPE;
     use crate::mock::context::MockContext;
     use crate::mock::host::{HostBlock, HostType};
     use crate::prelude::*;
@@ -74,8 +76,8 @@ mod tests {
         let client_on_a_for_b_height = Height::new(1, 20).unwrap(); // Should be smaller than `chain_b_start_height`
         let num_iterations = 4;
 
-        let client_on_a_for_b = ClientId::new(ClientType::Tendermint, 0).unwrap();
-        let client_on_b_for_a = ClientId::new(ClientType::Mock, 0).unwrap();
+        let client_on_a_for_b = ClientId::new(ClientType::new(TENDERMINT_CLIENT_TYPE), 0).unwrap();
+        let client_on_b_for_a = ClientId::new(ClientType::new(MOCK_CLIENT_TYPE), 0).unwrap();
 
         // Create two mock contexts, one for each chain.
         let mut ctx_a = MockContext::new(
@@ -87,7 +89,7 @@ mod tests {
         .with_client_parametrized(
             &client_on_a_for_b,
             client_on_a_for_b_height,
-            Some(ClientType::Tendermint), // The target host chain (B) is synthetic TM.
+            Some(ClientType::new(TENDERMINT_CLIENT_TYPE)), // The target host chain (B) is synthetic TM.
             Some(client_on_a_for_b_height),
         );
         let mut ctx_b = MockContext::new(
@@ -99,7 +101,7 @@ mod tests {
         .with_client_parametrized(
             &client_on_b_for_a,
             client_on_b_for_a_height,
-            Some(ClientType::Mock), // The target host chain is mock.
+            Some(ClientType::new(MOCK_CLIENT_TYPE)), // The target host chain is mock.
             Some(client_on_b_for_a_height),
         );
 
@@ -109,10 +111,10 @@ mod tests {
             let a_latest_header = ctx_a.query_latest_header().unwrap();
             assert_eq!(
                 a_latest_header.client_type(),
-                ClientType::Mock,
+                ClientType::new(MOCK_CLIENT_TYPE),
                 "Client type verification in header failed for context A (Mock); got {:?} but expected {:?}",
                 a_latest_header.client_type(),
-                ClientType::Mock
+                ClientType::new(MOCK_CLIENT_TYPE)
             );
 
             let client_msg_b_res =
@@ -162,10 +164,10 @@ mod tests {
 
             assert_eq!(
                 b_latest_header.client_type(),
-                ClientType::Tendermint,
+                ClientType::new(TENDERMINT_CLIENT_TYPE),
                 "Client type verification in header failed for context B (TM); got {:?} but expected {:?}",
                 b_latest_header.client_type(),
-                ClientType::Tendermint
+                ClientType::new(TENDERMINT_CLIENT_TYPE)
             );
 
             let client_msg_a_res = build_client_update_datagram(

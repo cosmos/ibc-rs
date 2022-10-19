@@ -131,7 +131,7 @@ impl IbcTestRunner {
     }
 
     pub fn client_id(client_id: u64) -> ClientId {
-        ClientId::new(ClientType::Mock, client_id)
+        ClientId::new(ClientType::new(MOCK_CLIENT_TYPE), client_id)
             .expect("it should be possible to create the client identifier")
     }
 

@@ -107,6 +107,7 @@ mod tests {
     use ibc_proto::google::protobuf::Any;
     use test_log::test;
 
+    use crate::clients::ics07_tendermint::client_state::TENDERMINT_CLIENT_TYPE;
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::core::ics02_client::client_state::ClientState;
     use crate::core::ics02_client::client_type::ClientType;
@@ -119,7 +120,7 @@ mod tests {
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::events::IbcEvent;
     use crate::handler::HandlerOutput;
-    use crate::mock::client_state::MockClientState;
+    use crate::mock::client_state::{MockClientState, MOCK_CLIENT_TYPE};
     use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
     use crate::mock::host::{HostBlock, HostType};
@@ -239,7 +240,7 @@ mod tests {
 
     #[test]
     fn test_update_synthetic_tendermint_client_adjacent_ok() {
-        let client_id = ClientId::new(ClientType::Tendermint, 0).unwrap();
+        let client_id = ClientId::new(ClientType::new(TENDERMINT_CLIENT_TYPE), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let update_height = Height::new(1, 21).unwrap();
 
@@ -252,7 +253,7 @@ mod tests {
         .with_client_parametrized(
             &client_id,
             client_height,
-            Some(ClientType::Tendermint), // The target host chain (B) is synthetic TM.
+            Some(ClientType::new(TENDERMINT_CLIENT_TYPE)), // The target host chain (B) is synthetic TM.
             Some(client_height),
         );
 
@@ -302,7 +303,7 @@ mod tests {
 
     #[test]
     fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
-        let client_id = ClientId::new(ClientType::Tendermint, 0).unwrap();
+        let client_id = ClientId::new(ClientType::new(TENDERMINT_CLIENT_TYPE), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let update_height = Height::new(1, 21).unwrap();
 
@@ -315,7 +316,7 @@ mod tests {
         .with_client_parametrized_history(
             &client_id,
             client_height,
-            Some(ClientType::Tendermint), // The target host chain (B) is synthetic TM.
+            Some(ClientType::new(TENDERMINT_CLIENT_TYPE)), // The target host chain (B) is synthetic TM.
             Some(client_height),
         );
 
@@ -366,7 +367,7 @@ mod tests {
 
     #[test]
     fn test_update_synthetic_tendermint_client_duplicate_ok() {
-        let client_id = ClientId::new(ClientType::Tendermint, 0).unwrap();
+        let client_id = ClientId::new(ClientType::new(TENDERMINT_CLIENT_TYPE), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
 
         let chain_start_height = Height::new(1, 11).unwrap();
@@ -380,7 +381,7 @@ mod tests {
         .with_client_parametrized(
             &client_id,
             client_height,
-            Some(ClientType::Tendermint), // The target host chain (B) is synthetic TM.
+            Some(ClientType::new(TENDERMINT_CLIENT_TYPE)), // The target host chain (B) is synthetic TM.
             Some(client_height),
         );
 
@@ -442,7 +443,7 @@ mod tests {
 
     #[test]
     fn test_update_synthetic_tendermint_client_lower_height() {
-        let client_id = ClientId::new(ClientType::Tendermint, 0).unwrap();
+        let client_id = ClientId::new(ClientType::new(TENDERMINT_CLIENT_TYPE), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
 
         let client_update_height = Height::new(1, 19).unwrap();
@@ -458,7 +459,7 @@ mod tests {
         .with_client_parametrized(
             &client_id,
             client_height,
-            Some(ClientType::Tendermint), // The target host chain (B) is synthetic TM.
+            Some(ClientType::new(TENDERMINT_CLIENT_TYPE)), // The target host chain (B) is synthetic TM.
             Some(client_height),
         );
 
@@ -513,7 +514,7 @@ mod tests {
             downcast!(output.events.first().unwrap() => IbcEvent::UpdateClient).unwrap();
 
         assert_eq!(update_client_event.client_id(), &client_id);
-        assert_eq!(update_client_event.client_type(), &ClientType::Mock);
+        assert_eq!(update_client_event.client_type(), &ClientType::new(MOCK_CLIENT_TYPE));
         assert_eq!(update_client_event.consensus_height(), &height);
         assert_eq!(update_client_event.consensus_heights(), &vec![height]);
         assert_eq!(update_client_event.header(), &header);

@@ -102,6 +102,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
+    use crate::mock::client_state::MOCK_CLIENT_TYPE;
     use crate::prelude::*;
 
     use test_log::test;
@@ -134,7 +135,7 @@ mod tests {
             msg: ChannelMsg,
             want_pass: bool,
         }
-        let client_id = ClientId::new(ClientType::Mock, 24).unwrap();
+        let client_id = ClientId::new(ClientType::new(MOCK_CLIENT_TYPE), 24).unwrap();
         let conn_id = ConnectionId::new(2);
         let context = MockContext::default();
         let client_consensus_state_height = context.host_current_height().revision_height();

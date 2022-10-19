@@ -12,6 +12,8 @@ use crate::core::ics02_client::header::Header;
 use crate::timestamp::Timestamp;
 use crate::Height;
 
+use super::client_state::MOCK_CLIENT_TYPE;
+
 pub const MOCK_HEADER_TYPE_URL: &str = "/ibc.mock.Header";
 
 #[derive(Copy, Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
@@ -85,7 +87,7 @@ impl MockHeader {
 
 impl Header for MockHeader {
     fn client_type(&self) -> ClientType {
-        ClientType::Mock
+        ClientType::new(MOCK_CLIENT_TYPE)
     }
 
     fn height(&self) -> Height {

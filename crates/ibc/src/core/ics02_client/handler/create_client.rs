@@ -83,7 +83,7 @@ mod tests {
     use test_log::test;
 
     use crate::clients::ics07_tendermint::client_state::{
-        AllowUpdate, ClientState as TmClientState,
+        AllowUpdate, ClientState as TmClientState, TENDERMINT_CLIENT_TYPE,
     };
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
@@ -95,7 +95,7 @@ mod tests {
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ClientId;
     use crate::handler::HandlerOutput;
-    use crate::mock::client_state::MockClientState;
+    use crate::mock::client_state::{MockClientState, MOCK_CLIENT_TYPE};
     use crate::mock::consensus_state::MockConsensusState;
     use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
@@ -119,10 +119,10 @@ mod tests {
 
         match output {
             Ok(HandlerOutput { result, .. }) => {
-                let expected_client_id = ClientId::new(ClientType::Mock, 0).unwrap();
+                let expected_client_id = ClientId::new(ClientType::new(MOCK_CLIENT_TYPE), 0).unwrap();
                 match result {
                     ClientResult::Create(create_result) => {
-                        assert_eq!(create_result.client_type, ClientType::Mock);
+                        assert_eq!(create_result.client_type, ClientType::new(MOCK_CLIENT_TYPE));
                         assert_eq!(create_result.client_id, expected_client_id);
                         assert_eq!(
                             create_result.client_state.as_ref().clone_into(),
@@ -180,7 +180,7 @@ mod tests {
         // The expected client id that will be generated will be identical to "9999-mock-0" for all
         // tests. This is because we're not persisting any client results (which is done via the
         // tests for `ics26_routing::dispatch`.
-        let expected_client_id = ClientId::new(ClientType::Mock, 0).unwrap();
+        let expected_client_id = ClientId::new(ClientType::new(MOCK_CLIENT_TYPE), 0).unwrap();
 
         for msg in create_client_msgs {
             let output = dispatch(&ctx, ClientMsg::CreateClient(msg.clone()));
@@ -250,10 +250,10 @@ mod tests {
 
         match output {
             Ok(HandlerOutput { result, .. }) => {
-                let expected_client_id = ClientId::new(ClientType::Tendermint, 0).unwrap();
+                let expected_client_id = ClientId::new(ClientType::new(TENDERMINT_CLIENT_TYPE), 0).unwrap();
                 match result {
                     ClientResult::Create(create_res) => {
-                        assert_eq!(create_res.client_type, ClientType::Tendermint);
+                        assert_eq!(create_res.client_type, ClientType::new(TENDERMINT_CLIENT_TYPE));
                         assert_eq!(create_res.client_id, expected_client_id);
                         assert_eq!(
                             create_res.client_state.as_ref().clone_into(),

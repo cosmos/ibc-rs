@@ -103,6 +103,7 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
     use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::events::IbcEvent;
+    use crate::mock::client_state::MOCK_CLIENT_TYPE;
     use crate::prelude::*;
 
     use crate::core::ics02_client::client_type::ClientType;
@@ -123,7 +124,7 @@ mod tests {
 
     #[test]
     fn chan_close_confirm_event_height() {
-        let client_id = ClientId::new(ClientType::Mock, 24).unwrap();
+        let client_id = ClientId::new(ClientType::new(MOCK_CLIENT_TYPE), 24).unwrap();
         let conn_id = ConnectionId::new(2);
         let default_context = MockContext::default();
         let client_consensus_state_height = default_context.host_height();

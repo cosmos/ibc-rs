@@ -12,6 +12,8 @@ use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::mock::header::MockHeader;
 use crate::timestamp::Timestamp;
 
+use super::client_state::MOCK_CLIENT_TYPE;
+
 pub const MOCK_CONSENSUS_STATE_TYPE_URL: &str = "/ibc.mock.ConsensusState";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -96,7 +98,7 @@ impl From<MockConsensusState> for Any {
 
 impl ConsensusState for MockConsensusState {
     fn client_type(&self) -> ClientType {
-        ClientType::Mock
+        ClientType::new(MOCK_CLIENT_TYPE)
     }
 
     fn root(&self) -> &CommitmentRoot {

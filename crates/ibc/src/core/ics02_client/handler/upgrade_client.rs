@@ -89,7 +89,7 @@ mod tests {
     use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics24_host::identifier::ClientId;
     use crate::handler::HandlerOutput;
-    use crate::mock::client_state::MockClientState;
+    use crate::mock::client_state::{MockClientState, MOCK_CLIENT_TYPE};
     use crate::mock::consensus_state::MockConsensusState;
     use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
@@ -222,7 +222,7 @@ mod tests {
         let upgrade_client_event =
             downcast!(output.events.first().unwrap() => IbcEvent::UpgradeClient).unwrap();
         assert_eq!(upgrade_client_event.client_id(), &client_id);
-        assert_eq!(upgrade_client_event.client_type(), &ClientType::Mock);
+        assert_eq!(upgrade_client_event.client_type(), &ClientType::new(MOCK_CLIENT_TYPE));
         assert_eq!(upgrade_client_event.consensus_height(), &upgrade_height);
     }
 }

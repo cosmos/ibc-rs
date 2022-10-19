@@ -50,6 +50,8 @@ use crate::signer::Signer;
 use crate::timestamp::Timestamp;
 use crate::Height;
 
+use super::client_state::MOCK_CLIENT_TYPE;
+
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
 /// A context implementing the dependencies necessary for testing any IBC module.
@@ -177,7 +179,12 @@ impl MockContext {
     /// to this client a mock client state and a mock consensus state for height `height`. The type
     /// of this client is implicitly assumed to be Mock.
     pub fn with_client(self, client_id: &ClientId, height: Height) -> Self {
-        self.with_client_parametrized(client_id, height, Some(ClientType::Mock), Some(height))
+        self.with_client_parametrized(
+            client_id,
+            height,
+            Some(ClientType::new(MOCK_CLIENT_TYPE)),
+            Some(height),
+        )
     }
 
     /// Similar to `with_client`, this function associates a client record to this context, but
@@ -194,15 +201,15 @@ impl MockContext {
     ) -> Self {
         let cs_height = consensus_state_height.unwrap_or(client_state_height);
 
-        let client_type = client_type.unwrap_or(ClientType::Mock);
-        let (client_state, consensus_state) = match client_type {
+        let client_type = client_type.unwrap_or(ClientType::new(MOCK_CLIENT_TYPE));
+        let (client_state, consensus_state) = match client_type.as_str() {
             // If it's a mock client, create the corresponding mock states.
-            ClientType::Mock => (
+            CLIENT_TYPE_MOCK => (
                 Some(MockClientState::new(MockHeader::new(client_state_height)).into_box()),
                 MockConsensusState::new(MockHeader::new(cs_height)).into_box(),
             ),
             // If it's a Tendermint client, we need TM states.
-            ClientType::Tendermint => {
+            CLIENT_TYPE_TENDERMINT => {
                 let light_block = HostBlock::generate_tm_block(
                     self.host_chain_id.clone(),
                     cs_height.revision_height(),
@@ -215,6 +222,7 @@ impl MockContext {
                 // Return the tuple.
                 (Some(client_state), light_block.into())
             }
+            _ => panic!("Unknown client type")
         };
         let consensus_states = vec![(cs_height, consensus_state)].into_iter().collect();
 
@@ -243,17 +251,17 @@ impl MockContext {
         let cs_height = consensus_state_height.unwrap_or(client_state_height);
         let prev_cs_height = cs_height.clone().sub(1).unwrap_or(client_state_height);
 
-        let client_type = client_type.unwrap_or(ClientType::Mock);
+        let client_type = client_type.unwrap_or(ClientType::new(MOCK_CLIENT_TYPE));
         let now = Timestamp::now();
 
-        let (client_state, consensus_state) = match client_type {
+        let (client_state, consensus_state) = match client_type.as_str() {
             // If it's a mock client, create the corresponding mock states.
-            ClientType::Mock => (
+            CLIENT_TYPE_MOCK => (
                 Some(MockClientState::new(MockHeader::new(client_state_height)).into_box()),
                 MockConsensusState::new(MockHeader::new(cs_height)).into_box(),
             ),
             // If it's a Tendermint client, we need TM states.
-            ClientType::Tendermint => {
+            CLIENT_TYPE_TENDERMINT => {
                 let light_block = HostBlock::generate_tm_block(
                     self.host_chain_id.clone(),
                     cs_height.revision_height(),
@@ -265,21 +273,23 @@ impl MockContext {
 
                 // Return the tuple.
                 (Some(client_state), light_block.into())
-            }
+            },
+            _ => panic!("Unknown client type")
         };
 
-        let prev_consensus_state = match client_type {
+        let prev_consensus_state = match client_type.as_str() {
             // If it's a mock client, create the corresponding mock states.
-            ClientType::Mock => MockConsensusState::new(MockHeader::new(prev_cs_height)).into_box(),
+            CLIENT_TYPE_MOCK => MockConsensusState::new(MockHeader::new(prev_cs_height)).into_box(),
             // If it's a Tendermint client, we need TM states.
-            ClientType::Tendermint => {
+            CLIENT_TYPE_TENDERMINT => {
                 let light_block = HostBlock::generate_tm_block(
                     self.host_chain_id.clone(),
                     prev_cs_height.revision_height(),
                     now.sub(self.block_time).unwrap(),
                 );
                 light_block.into()
-            }
+            },
+            _ => panic!("unknown client type")
         };
 
         let consensus_states = vec![
@@ -1345,7 +1355,7 @@ impl ClientKeeper for MockContext {
             .clients
             .entry(client_id)
             .or_insert(MockClientRecord {
-                client_type: ClientType::Mock,
+                client_type: ClientType::new(MOCK_CLIENT_TYPE),
                 consensus_states: Default::default(),
                 client_state: Default::default(),
             });
