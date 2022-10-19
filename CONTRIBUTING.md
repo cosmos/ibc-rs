@@ -237,15 +237,17 @@ Our release process is as follows:
 4. Run `cargo doc --all-features --open` locally to double-check that all the
    documentation compiles and seems up-to-date and coherent. Fix any potential
    issues here and push them to the release PR.
-5. Mark the PR as **Ready for Review** and incorporate feedback on the release.
-6. Once approved, merge the PR, and pull the `main` branch.
-7. From the `crates/ibc` folder, run `cargo publish`
-8. Once all crates have been successfully released, create a signed tag and push it to
+5. Run `cargo publish --dry-run` to double-check that publishing will work. Fix
+ any potential issues here and push them to the release PR.
+6. Mark the PR as **Ready for Review** and incorporate feedback on the release.
+7. Once approved, merge the PR, and pull the `main` branch.
+8. From the `crates/ibc` folder, run `cargo publish`
+9. Once all crates have been successfully released, create a signed tag and push it to
    GitHub: `git tag -s -a vX.Y.Z`. In the tag message, write the version and the link
    to the corresponding section of the changelog.
-9. Once the tag is pushed, wait for the CI bot to create a GitHub release, and update
+10. Once the tag is pushed, wait for the CI bot to create a GitHub release, and update
    the release description to `[📖 CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)`.
-10. All done! 🎉
+11. All done! 🎉
 
 [crates.io]: https://crates.io
 [crates.io-security]: https://codeandbitters.com/published-crate-analysis/
