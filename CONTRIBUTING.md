@@ -238,15 +238,8 @@ Our release process is as follows:
    documentation compiles and seems up-to-date and coherent. Fix any potential
    issues here and push them to the release PR.
 5. Mark the PR as **Ready for Review** and incorporate feedback on the release.
-6. Once approved, merge the PR.
-7. Pull `main` and run the [`release.sh`](./scripts/release.sh) script.
-   If any problem arises, submit a new PR, get it merged to `main` and try again.
-   The reason for not releasing straight from the release branch, and therefore losing the
-   ability to fix publishing problems as they arise, is that we would like the embedded
-   metadata of the published crates, namely the Git commit at which the release was done,
-   to match the Git commit on the `main` branch which will be tagged.
-   [See this article][crates.io-security] for a more in-depth explanation.
-   **Note:** This step requires the appropriate privileges to push crates to [crates.io].
+6. Once approved, merge the PR, and pull the `main` branch.
+7. From the `crates/ibc` folder, run `cargo publish`
 8. Once all crates have been successfully released, create a signed tag and push it to
    GitHub: `git tag -s -a vX.Y.Z`. In the tag message, write the version and the link
    to the corresponding section of the changelog.
