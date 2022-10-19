@@ -153,7 +153,7 @@ mod tests {
 
         let conn_end = ConnectionEnd::new(
             ConnectionState::Open,
-            msg_conn_init.client_id.clone(),
+            msg_conn_init.client_id_on_a.clone(),
             ConnectionCounterparty::new(
                 msg_conn_init.counterparty.client_id().clone(),
                 Some(ConnectionId::from_str("defaultConnection-1").unwrap()),
@@ -224,7 +224,7 @@ mod tests {
                 ctx: context
                     .clone()
                     .with_client(
-                        &msg_conn_try.client_id,
+                        &msg_conn_try.client_id_on_b,
                         Height::new(0, client_consensus_state_height).unwrap(),
                     )
                     .with_channel(
@@ -240,7 +240,7 @@ mod tests {
                 ctx: context
                     .clone()
                     .with_client(
-                        &msg_conn_try.client_id,
+                        &msg_conn_try.client_id_on_b,
                         Height::new(0, client_consensus_state_height).unwrap(),
                     )
                     .with_channel(
@@ -268,7 +268,7 @@ mod tests {
                 name: "Good parameters".to_string(),
                 ctx: context //  .clone()
                     .with_client(
-                        &msg_conn_try.client_id,
+                        &msg_conn_try.client_id_on_b,
                         Height::new(0, client_consensus_state_height).unwrap(),
                     )
                     .with_connection(cid, conn_end)

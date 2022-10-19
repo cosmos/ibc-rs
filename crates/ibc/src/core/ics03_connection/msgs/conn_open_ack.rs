@@ -8,30 +8,34 @@ use crate::core::ics03_connection::error::Error;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics24_host::identifier::ConnectionId;
-use crate::proofs::{ConsensusProof, Proofs};
 use crate::signer::Signer;
 use crate::tx_msg::Msg;
 use crate::Height;
 
 pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenAck";
 
-/// Message definition `MsgConnectionOpenAck`  (i.e., `ConnOpenAck` datagram).
+/// Per our convention, this message is sent to chain A.
+/// The handler will check proofs of chain B.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgConnectionOpenAck {
-    pub connection_id: ConnectionId,
-    pub counterparty_connection_id: ConnectionId,
-    pub client_state: Any,
-    pub proofs: Proofs,
+    /// ConnectionId that chain A has chosen for it's ConnectionEnd
+    pub conn_id_on_a: ConnectionId,
+    /// ConnectionId that chain B has chosen for it's ConnectionEnd
+    pub conn_id_on_b: ConnectionId,
+    /// ClientState of client tracking chain A on chain B
+    pub client_state_of_a_on_b: Any,
+    /// proof of ConnectionEnd stored on Chain B during ConnOpenTry
+    pub proof_conn_end_on_b: CommitmentProofBytes,
+    /// proof of ClientState tracking chain A on chain B
+    pub proof_client_state_of_a_on_b: CommitmentProofBytes,
+    /// proof that chain B has stored ConsensusState of chain A on its client
+    pub proof_consensus_state_of_a_on_b: CommitmentProofBytes,
+    /// Height at which all proofs in this message were taken
+    pub proofs_height_on_b: Height,
+    /// height of latest header of chain A that updated the client on chain B
+    pub consensus_height_of_a_on_b: Height,
     pub version: Version,
     pub signer: Signer,
-}
-
-impl MsgConnectionOpenAck {
-    /// Getter for accessing the `consensus_height` field from this message.
-    /// Returns `None` if this field is not set.
-    pub fn consensus_height(&self) -> Option<Height> {
-        self.proofs.consensus_proof().map(|proof| proof.height())
-    }
 }
 
 impl Msg for MsgConnectionOpenAck {
@@ -53,73 +57,52 @@ impl TryFrom<RawMsgConnectionOpenAck> for MsgConnectionOpenAck {
     type Error = Error;
 
     fn try_from(msg: RawMsgConnectionOpenAck) -> Result<Self, Self::Error> {
-        let consensus_height = msg
-            .consensus_height
-            .and_then(|raw_height| raw_height.try_into().ok())
-            .ok_or_else(Error::missing_consensus_height)?;
-        let consensus_proof_obj = ConsensusProof::new(
-            msg.proof_consensus
-                .try_into()
-                .map_err(Error::invalid_proof)?,
-            consensus_height,
-        )
-        .map_err(Error::invalid_proof)?;
-
-        let proof_height = msg
-            .proof_height
-            .and_then(|raw_height| raw_height.try_into().ok())
-            .ok_or_else(Error::missing_proof_height)?;
-
-        let client_proof =
-            CommitmentProofBytes::try_from(msg.proof_client).map_err(Error::invalid_proof)?;
-
         Ok(Self {
-            connection_id: msg
+            conn_id_on_a: msg
                 .connection_id
                 .parse()
                 .map_err(Error::invalid_identifier)?,
-            counterparty_connection_id: msg
+            conn_id_on_b: msg
                 .counterparty_connection_id
                 .parse()
                 .map_err(Error::invalid_identifier)?,
-            client_state: msg.client_state.ok_or_else(Error::missing_client_state)?,
+            client_state_of_a_on_b: msg.client_state.ok_or_else(Error::missing_client_state)?,
             version: msg.version.ok_or_else(Error::empty_versions)?.try_into()?,
-            proofs: Proofs::new(
-                msg.proof_try.try_into().map_err(Error::invalid_proof)?,
-                Some(client_proof),
-                Option::from(consensus_proof_obj),
-                None,
-                proof_height,
-            )
-            .map_err(Error::invalid_proof)?,
+            proof_conn_end_on_b: msg.proof_try.try_into().map_err(Error::invalid_proof)?,
+            proof_client_state_of_a_on_b: msg
+                .proof_client
+                .try_into()
+                .map_err(Error::invalid_proof)?,
+            proof_consensus_state_of_a_on_b: msg
+                .proof_consensus
+                .try_into()
+                .map_err(Error::invalid_proof)?,
+            proofs_height_on_b: msg
+                .proof_height
+                .and_then(|raw_height| raw_height.try_into().ok())
+                .ok_or_else(Error::missing_proof_height)?,
+            consensus_height_of_a_on_b: msg
+                .consensus_height
+                .and_then(|raw_height| raw_height.try_into().ok())
+                .ok_or_else(Error::missing_consensus_height)?,
             signer: msg.signer.parse().map_err(Error::signer)?,
         })
     }
 }
 
 impl From<MsgConnectionOpenAck> for RawMsgConnectionOpenAck {
-    fn from(ics_msg: MsgConnectionOpenAck) -> Self {
+    fn from(msg: MsgConnectionOpenAck) -> Self {
         RawMsgConnectionOpenAck {
-            connection_id: ics_msg.connection_id.as_str().to_string(),
-            counterparty_connection_id: ics_msg.counterparty_connection_id.as_str().to_string(),
-            client_state: Some(ics_msg.client_state),
-            proof_height: Some(ics_msg.proofs.height().into()),
-            proof_try: ics_msg.proofs.object_proof().clone().into(),
-            proof_client: ics_msg
-                .proofs
-                .client_proof()
-                .clone()
-                .map_or_else(Vec::new, |v| v.into()),
-            proof_consensus: ics_msg
-                .proofs
-                .consensus_proof()
-                .map_or_else(Vec::new, |v| v.proof().clone().into()),
-            consensus_height: ics_msg
-                .proofs
-                .consensus_proof()
-                .map_or_else(|| None, |h| Some(h.height().into())),
-            version: Some(ics_msg.version.into()),
-            signer: ics_msg.signer.to_string(),
+            connection_id: msg.conn_id_on_a.as_str().to_string(),
+            counterparty_connection_id: msg.conn_id_on_b.as_str().to_string(),
+            client_state: Some(msg.client_state_of_a_on_b),
+            proof_height: Some(msg.proofs_height_on_b.into()),
+            proof_try: msg.proof_conn_end_on_b.into(),
+            proof_client: msg.proof_client_state_of_a_on_b.into(),
+            proof_consensus: msg.proof_consensus_state_of_a_on_b.into(),
+            consensus_height: Some(msg.consensus_height_of_a_on_b.into()),
+            version: Some(msg.version.into()),
+            signer: msg.signer.to_string(),
         }
     }
 }
