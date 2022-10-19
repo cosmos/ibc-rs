@@ -33,7 +33,7 @@ use crate::Height;
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
 
-pub(crate) const MOCK_CLIENT_TYPE: &'static str = "9999-mock";
+pub const MOCK_CLIENT_TYPE: &str = "9999-mock";
 
 /// A mock of an IBC client record as it is stored in a mock context.
 /// For testing ICS02 handlers mostly, cf. `MockClientContext`.

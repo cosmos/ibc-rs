@@ -16,7 +16,9 @@ use sha2::Digest;
 use tracing::debug;
 
 use crate::clients::ics07_tendermint::client_state::test_util::get_dummy_tendermint_client_state;
-use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
+use crate::clients::ics07_tendermint::client_state::{
+    ClientState as TmClientState, TENDERMINT_CLIENT_TYPE,
+};
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
@@ -201,29 +203,28 @@ impl MockContext {
     ) -> Self {
         let cs_height = consensus_state_height.unwrap_or(client_state_height);
 
-        let client_type = client_type.unwrap_or(ClientType::new(MOCK_CLIENT_TYPE));
-        let (client_state, consensus_state) = match client_type.as_str() {
-            // If it's a mock client, create the corresponding mock states.
-            CLIENT_TYPE_MOCK => (
+        let client_type = client_type.unwrap_or_else(|| ClientType::new(MOCK_CLIENT_TYPE));
+        let (client_state, consensus_state) = if client_type.as_str() == MOCK_CLIENT_TYPE {
+            (
                 Some(MockClientState::new(MockHeader::new(client_state_height)).into_box()),
                 MockConsensusState::new(MockHeader::new(cs_height)).into_box(),
-            ),
-            // If it's a Tendermint client, we need TM states.
-            CLIENT_TYPE_TENDERMINT => {
-                let light_block = HostBlock::generate_tm_block(
-                    self.host_chain_id.clone(),
-                    cs_height.revision_height(),
-                    Timestamp::now(),
-                );
+            )
+        } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
+            let light_block = HostBlock::generate_tm_block(
+                self.host_chain_id.clone(),
+                cs_height.revision_height(),
+                Timestamp::now(),
+            );
 
-                let client_state =
-                    get_dummy_tendermint_client_state(light_block.header().clone()).into_box();
+            let client_state =
+                get_dummy_tendermint_client_state(light_block.header().clone()).into_box();
 
-                // Return the tuple.
-                (Some(client_state), light_block.into())
-            }
-            _ => panic!("Unknown client type")
+            // Return the tuple.
+            (Some(client_state), light_block.into())
+        } else {
+            panic!("unknown client type")
         };
+        // If it's a mock client, create the corresponding mock states.
         let consensus_states = vec![(cs_height, consensus_state)].into_iter().collect();
 
         debug!("consensus states: {:?}", consensus_states);
@@ -251,45 +252,43 @@ impl MockContext {
         let cs_height = consensus_state_height.unwrap_or(client_state_height);
         let prev_cs_height = cs_height.clone().sub(1).unwrap_or(client_state_height);
 
-        let client_type = client_type.unwrap_or(ClientType::new(MOCK_CLIENT_TYPE));
+        let client_type = client_type.unwrap_or_else(|| ClientType::new(MOCK_CLIENT_TYPE));
         let now = Timestamp::now();
 
-        let (client_state, consensus_state) = match client_type.as_str() {
+        let (client_state, consensus_state) = if client_type.as_str() == MOCK_CLIENT_TYPE {
             // If it's a mock client, create the corresponding mock states.
-            CLIENT_TYPE_MOCK => (
+            (
                 Some(MockClientState::new(MockHeader::new(client_state_height)).into_box()),
                 MockConsensusState::new(MockHeader::new(cs_height)).into_box(),
-            ),
+            )
+        } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
             // If it's a Tendermint client, we need TM states.
-            CLIENT_TYPE_TENDERMINT => {
-                let light_block = HostBlock::generate_tm_block(
-                    self.host_chain_id.clone(),
-                    cs_height.revision_height(),
-                    now,
-                );
+            let light_block = HostBlock::generate_tm_block(
+                self.host_chain_id.clone(),
+                cs_height.revision_height(),
+                now,
+            );
 
-                let client_state =
-                    get_dummy_tendermint_client_state(light_block.header().clone()).into_box();
+            let client_state =
+                get_dummy_tendermint_client_state(light_block.header().clone()).into_box();
 
-                // Return the tuple.
-                (Some(client_state), light_block.into())
-            },
-            _ => panic!("Unknown client type")
+            // Return the tuple.
+            (Some(client_state), light_block.into())
+        } else {
+            panic!("Unknown client type")
         };
 
-        let prev_consensus_state = match client_type.as_str() {
-            // If it's a mock client, create the corresponding mock states.
-            CLIENT_TYPE_MOCK => MockConsensusState::new(MockHeader::new(prev_cs_height)).into_box(),
-            // If it's a Tendermint client, we need TM states.
-            CLIENT_TYPE_TENDERMINT => {
-                let light_block = HostBlock::generate_tm_block(
-                    self.host_chain_id.clone(),
-                    prev_cs_height.revision_height(),
-                    now.sub(self.block_time).unwrap(),
-                );
-                light_block.into()
-            },
-            _ => panic!("unknown client type")
+        let prev_consensus_state = if client_type.as_str() == MOCK_CLIENT_TYPE {
+            MockConsensusState::new(MockHeader::new(prev_cs_height)).into_box()
+        } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
+            let light_block = HostBlock::generate_tm_block(
+                self.host_chain_id.clone(),
+                prev_cs_height.revision_height(),
+                now.sub(self.block_time).unwrap(),
+            );
+            light_block.into()
+        } else {
+            panic!("Unknown client type")
         };
 
         let consensus_states = vec![

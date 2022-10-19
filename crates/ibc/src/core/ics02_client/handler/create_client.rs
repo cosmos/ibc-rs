@@ -119,7 +119,8 @@ mod tests {
 
         match output {
             Ok(HandlerOutput { result, .. }) => {
-                let expected_client_id = ClientId::new(ClientType::new(MOCK_CLIENT_TYPE), 0).unwrap();
+                let expected_client_id =
+                    ClientId::new(ClientType::new(MOCK_CLIENT_TYPE), 0).unwrap();
                 match result {
                     ClientResult::Create(create_result) => {
                         assert_eq!(create_result.client_type, ClientType::new(MOCK_CLIENT_TYPE));
@@ -250,10 +251,14 @@ mod tests {
 
         match output {
             Ok(HandlerOutput { result, .. }) => {
-                let expected_client_id = ClientId::new(ClientType::new(TENDERMINT_CLIENT_TYPE), 0).unwrap();
+                let expected_client_id =
+                    ClientId::new(ClientType::new(TENDERMINT_CLIENT_TYPE), 0).unwrap();
                 match result {
                     ClientResult::Create(create_res) => {
-                        assert_eq!(create_res.client_type, ClientType::new(TENDERMINT_CLIENT_TYPE));
+                        assert_eq!(
+                            create_res.client_type,
+                            ClientType::new(TENDERMINT_CLIENT_TYPE)
+                        );
                         assert_eq!(create_res.client_id, expected_client_id);
                         assert_eq!(
                             create_res.client_state.as_ref().clone_into(),

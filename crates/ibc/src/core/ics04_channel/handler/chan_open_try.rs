@@ -354,7 +354,11 @@ mod tests {
                                 ics03_error::Ics02ClientSubdetail {
                                     source: ics02_error::ErrorDetail::ClientNotFound(
                                         ics02_error::ClientNotFoundSubdetail {
-                                            client_id: ClientId::new(ClientType::new(MOCK_CLIENT_TYPE), 45).unwrap()
+                                            client_id: ClientId::new(
+                                                ClientType::new(MOCK_CLIENT_TYPE),
+                                                45
+                                            )
+                                            .unwrap()
                                         }
                                     )
                                 }

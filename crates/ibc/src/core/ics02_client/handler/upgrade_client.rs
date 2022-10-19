@@ -222,7 +222,10 @@ mod tests {
         let upgrade_client_event =
             downcast!(output.events.first().unwrap() => IbcEvent::UpgradeClient).unwrap();
         assert_eq!(upgrade_client_event.client_id(), &client_id);
-        assert_eq!(upgrade_client_event.client_type(), &ClientType::new(MOCK_CLIENT_TYPE));
+        assert_eq!(
+            upgrade_client_event.client_type(),
+            &ClientType::new(MOCK_CLIENT_TYPE)
+        );
         assert_eq!(upgrade_client_event.consensus_height(), &upgrade_height);
     }
 }

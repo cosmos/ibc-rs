@@ -514,7 +514,10 @@ mod tests {
             downcast!(output.events.first().unwrap() => IbcEvent::UpdateClient).unwrap();
 
         assert_eq!(update_client_event.client_id(), &client_id);
-        assert_eq!(update_client_event.client_type(), &ClientType::new(MOCK_CLIENT_TYPE));
+        assert_eq!(
+            update_client_event.client_type(),
+            &ClientType::new(MOCK_CLIENT_TYPE)
+        );
         assert_eq!(update_client_event.consensus_height(), &height);
         assert_eq!(update_client_event.consensus_heights(), &vec![height]);
         assert_eq!(update_client_event.header(), &header);

@@ -47,7 +47,7 @@ use crate::Height;
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
-pub(crate) const TENDERMINT_CLIENT_TYPE: &'static str = "07-tendermint";
+pub(crate) const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClientState {
