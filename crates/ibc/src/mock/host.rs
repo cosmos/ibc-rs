@@ -16,13 +16,12 @@ use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::Error;
 use crate::core::ics02_client::header::Header;
 use crate::core::ics24_host::identifier::ChainId;
+use crate::mock::client_state::client_type as mock_client_type;
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::prelude::*;
 use crate::timestamp::Timestamp;
 use crate::Height;
-
-use super::client_state::MOCK_CLIENT_TYPE;
 
 /// Defines the different types of host chains that a mock context can emulate.
 /// The variants are as follows:
@@ -180,7 +179,7 @@ impl From<HostBlock> for Any {
 impl Header for HostBlock {
     fn client_type(&self) -> ClientType {
         match self {
-            HostBlock::Mock(_) => ClientType::new(MOCK_CLIENT_TYPE),
+            HostBlock::Mock(_) => mock_client_type(),
             HostBlock::SyntheticTendermint(_) => tm_client_type(),
         }
     }

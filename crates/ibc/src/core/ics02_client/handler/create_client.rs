@@ -88,7 +88,6 @@ mod tests {
     };
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
-    use crate::core::ics02_client::client_type::ClientType;
     use crate::core::ics02_client::handler::{dispatch, ClientResult};
     use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
     use crate::core::ics02_client::msgs::ClientMsg;
@@ -96,7 +95,7 @@ mod tests {
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ClientId;
     use crate::handler::HandlerOutput;
-    use crate::mock::client_state::{MockClientState, MOCK_CLIENT_TYPE};
+    use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
     use crate::mock::consensus_state::MockConsensusState;
     use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
@@ -120,11 +119,10 @@ mod tests {
 
         match output {
             Ok(HandlerOutput { result, .. }) => {
-                let expected_client_id =
-                    ClientId::new(ClientType::new(MOCK_CLIENT_TYPE), 0).unwrap();
+                let expected_client_id = ClientId::new(mock_client_type(), 0).unwrap();
                 match result {
                     ClientResult::Create(create_result) => {
-                        assert_eq!(create_result.client_type, ClientType::new(MOCK_CLIENT_TYPE));
+                        assert_eq!(create_result.client_type, mock_client_type());
                         assert_eq!(create_result.client_id, expected_client_id);
                         assert_eq!(
                             create_result.client_state.as_ref().clone_into(),
@@ -182,7 +180,7 @@ mod tests {
         // The expected client id that will be generated will be identical to "9999-mock-0" for all
         // tests. This is because we're not persisting any client results (which is done via the
         // tests for `ics26_routing::dispatch`.
-        let expected_client_id = ClientId::new(ClientType::new(MOCK_CLIENT_TYPE), 0).unwrap();
+        let expected_client_id = ClientId::new(mock_client_type(), 0).unwrap();
 
         for msg in create_client_msgs {
             let output = dispatch(&ctx, ClientMsg::CreateClient(msg.clone()));

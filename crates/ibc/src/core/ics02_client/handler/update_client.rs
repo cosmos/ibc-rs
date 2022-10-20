@@ -110,7 +110,6 @@ mod tests {
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::core::ics02_client::client_state::ClientState;
-    use crate::core::ics02_client::client_type::ClientType;
     use crate::core::ics02_client::consensus_state::downcast_consensus_state;
     use crate::core::ics02_client::error::{Error, ErrorDetail};
     use crate::core::ics02_client::handler::dispatch;
@@ -120,7 +119,8 @@ mod tests {
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::events::IbcEvent;
     use crate::handler::HandlerOutput;
-    use crate::mock::client_state::{MockClientState, MOCK_CLIENT_TYPE};
+    use crate::mock::client_state::client_type as mock_client_type;
+    use crate::mock::client_state::MockClientState;
     use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
     use crate::mock::host::{HostBlock, HostType};
@@ -514,10 +514,7 @@ mod tests {
             downcast!(output.events.first().unwrap() => IbcEvent::UpdateClient).unwrap();
 
         assert_eq!(update_client_event.client_id(), &client_id);
-        assert_eq!(
-            update_client_event.client_type(),
-            &ClientType::new(MOCK_CLIENT_TYPE)
-        );
+        assert_eq!(update_client_event.client_type(), &mock_client_type());
         assert_eq!(update_client_event.consensus_height(), &height);
         assert_eq!(update_client_event.consensus_heights(), &vec![height]);
         assert_eq!(update_client_event.header(), &header);

@@ -41,7 +41,9 @@ use crate::core::ics26_routing::context::{Ics26Context, Module, ModuleId, Router
 use crate::core::ics26_routing::handler::{deliver, dispatch, MsgReceipt};
 use crate::core::ics26_routing::msgs::Ics26Envelope;
 use crate::events::IbcEvent;
-use crate::mock::client_state::{MockClientRecord, MockClientState};
+use crate::mock::client_state::{
+    client_type as mock_client_type, MockClientRecord, MockClientState,
+};
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::mock::host::{HostBlock, HostType};
@@ -180,12 +182,7 @@ impl MockContext {
     /// to this client a mock client state and a mock consensus state for height `height`. The type
     /// of this client is implicitly assumed to be Mock.
     pub fn with_client(self, client_id: &ClientId, height: Height) -> Self {
-        self.with_client_parametrized(
-            client_id,
-            height,
-            Some(ClientType::new(MOCK_CLIENT_TYPE)),
-            Some(height),
-        )
+        self.with_client_parametrized(client_id, height, Some(mock_client_type()), Some(height))
     }
 
     /// Similar to `with_client`, this function associates a client record to this context, but
@@ -202,7 +199,7 @@ impl MockContext {
     ) -> Self {
         let cs_height = consensus_state_height.unwrap_or(client_state_height);
 
-        let client_type = client_type.unwrap_or_else(|| ClientType::new(MOCK_CLIENT_TYPE));
+        let client_type = client_type.unwrap_or_else(mock_client_type);
         let (client_state, consensus_state) = if client_type.as_str() == MOCK_CLIENT_TYPE {
             (
                 Some(MockClientState::new(MockHeader::new(client_state_height)).into_box()),
@@ -251,7 +248,7 @@ impl MockContext {
         let cs_height = consensus_state_height.unwrap_or(client_state_height);
         let prev_cs_height = cs_height.clone().sub(1).unwrap_or(client_state_height);
 
-        let client_type = client_type.unwrap_or_else(|| ClientType::new(MOCK_CLIENT_TYPE));
+        let client_type = client_type.unwrap_or_else(mock_client_type);
         let now = Timestamp::now();
 
         let (client_state, consensus_state) = if client_type.as_str() == MOCK_CLIENT_TYPE {
@@ -1353,7 +1350,7 @@ impl ClientKeeper for MockContext {
             .clients
             .entry(client_id)
             .or_insert(MockClientRecord {
-                client_type: ClientType::new(MOCK_CLIENT_TYPE),
+                client_type: mock_client_type(),
                 consensus_states: Default::default(),
                 client_state: Default::default(),
             });
