@@ -49,7 +49,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::clients::ics07_tendermint::client_state::TENDERMINT_CLIENT_TYPE;
+    use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::core::ics02_client::client_type::ClientType;
     use crate::core::ics02_client::header::{downcast_header, Header};
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
@@ -76,7 +76,7 @@ mod tests {
         let client_on_a_for_b_height = Height::new(1, 20).unwrap(); // Should be smaller than `chain_b_start_height`
         let num_iterations = 4;
 
-        let client_on_a_for_b = ClientId::new(ClientType::new(TENDERMINT_CLIENT_TYPE), 0).unwrap();
+        let client_on_a_for_b = ClientId::new(tm_client_type(), 0).unwrap();
         let client_on_b_for_a = ClientId::new(ClientType::new(MOCK_CLIENT_TYPE), 0).unwrap();
 
         // Create two mock contexts, one for each chain.
@@ -89,7 +89,7 @@ mod tests {
         .with_client_parametrized(
             &client_on_a_for_b,
             client_on_a_for_b_height,
-            Some(ClientType::new(TENDERMINT_CLIENT_TYPE)), // The target host chain (B) is synthetic TM.
+            Some(tm_client_type()), // The target host chain (B) is synthetic TM.
             Some(client_on_a_for_b_height),
         );
         let mut ctx_b = MockContext::new(
@@ -164,10 +164,10 @@ mod tests {
 
             assert_eq!(
                 b_latest_header.client_type(),
-                ClientType::new(TENDERMINT_CLIENT_TYPE),
+                tm_client_type(),
                 "Client type verification in header failed for context B (TM); got {:?} but expected {:?}",
                 b_latest_header.client_type(),
-                ClientType::new(TENDERMINT_CLIENT_TYPE)
+                tm_client_type(),
             );
 
             let client_msg_a_res = build_client_update_datagram(

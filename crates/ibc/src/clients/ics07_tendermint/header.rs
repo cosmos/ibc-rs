@@ -19,7 +19,7 @@ use crate::timestamp::Timestamp;
 use crate::utils::pretty::{PrettySignedHeader, PrettyValidatorSet};
 use crate::Height;
 
-use super::client_state::TENDERMINT_CLIENT_TYPE;
+use super::client_type as tm_client_type;
 
 pub const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
 
@@ -81,7 +81,7 @@ pub fn headers_compatible(header: &SignedHeader, other: &SignedHeader) -> bool {
 
 impl crate::core::ics02_client::header::Header for Header {
     fn client_type(&self) -> ClientType {
-        ClientType::new(TENDERMINT_CLIENT_TYPE)
+        tm_client_type()
     }
 
     fn height(&self) -> Height {

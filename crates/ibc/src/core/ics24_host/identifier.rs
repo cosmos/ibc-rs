@@ -5,7 +5,7 @@ use core::str::FromStr;
 use serde::{Deserialize, Serialize};
 
 use super::validate::*;
-use crate::clients::ics07_tendermint::client_state::TENDERMINT_CLIENT_TYPE;
+use crate::clients::ics07_tendermint::client_type as tm_client_type;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics24_host::error::ValidationError;
 use crate::prelude::*;
@@ -189,7 +189,7 @@ impl FromStr for ClientId {
 
 impl Default for ClientId {
     fn default() -> Self {
-        Self::new(ClientType::new(TENDERMINT_CLIENT_TYPE), 0).unwrap()
+        Self::new(tm_client_type(), 0).unwrap()
     }
 }
 

@@ -1,5 +1,6 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
+use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
 use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap;
@@ -16,9 +17,7 @@ use sha2::Digest;
 use tracing::debug;
 
 use crate::clients::ics07_tendermint::client_state::test_util::get_dummy_tendermint_client_state;
-use crate::clients::ics07_tendermint::client_state::{
-    ClientState as TmClientState, TENDERMINT_CLIENT_TYPE,
-};
+use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;

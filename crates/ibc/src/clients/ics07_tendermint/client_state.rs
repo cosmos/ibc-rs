@@ -45,9 +45,9 @@ use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, Connecti
 use crate::timestamp::{Timestamp, ZERO_DURATION};
 use crate::Height;
 
-pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
+use super::client_type as tm_client_type;
 
-pub(crate) const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
+pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClientState {
@@ -264,7 +264,7 @@ impl Ics2ClientState for ClientState {
     }
 
     fn client_type(&self) -> ClientType {
-        ClientType::new(TENDERMINT_CLIENT_TYPE)
+        tm_client_type()
     }
 
     fn latest_height(&self) -> Height {
@@ -766,17 +766,15 @@ fn verify_delay_passed(
 }
 
 fn downcast_tm_client_state(cs: &dyn Ics2ClientState) -> Result<&ClientState, Ics02Error> {
-    cs.as_any().downcast_ref::<ClientState>().ok_or_else(|| {
-        Ics02Error::client_args_type_mismatch(ClientType::new(TENDERMINT_CLIENT_TYPE))
-    })
+    cs.as_any()
+        .downcast_ref::<ClientState>()
+        .ok_or_else(|| Ics02Error::client_args_type_mismatch(tm_client_type()))
 }
 
 fn downcast_tm_consensus_state(cs: &dyn ConsensusState) -> Result<TmConsensusState, Ics02Error> {
     cs.as_any()
         .downcast_ref::<TmConsensusState>()
-        .ok_or_else(|| {
-            Ics02Error::client_args_type_mismatch(ClientType::new(TENDERMINT_CLIENT_TYPE))
-        })
+        .ok_or_else(|| Ics02Error::client_args_type_mismatch(tm_client_type()))
         .map(Clone::clone)
 }
 

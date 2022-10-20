@@ -77,13 +77,14 @@ pub fn process(ctx: &dyn ClientReader, msg: MsgCreateClient) -> HandlerResult<Cl
 
 #[cfg(test)]
 mod tests {
+    use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::prelude::*;
 
     use core::time::Duration;
     use test_log::test;
 
     use crate::clients::ics07_tendermint::client_state::{
-        AllowUpdate, ClientState as TmClientState, TENDERMINT_CLIENT_TYPE,
+        AllowUpdate, ClientState as TmClientState,
     };
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
@@ -251,14 +252,10 @@ mod tests {
 
         match output {
             Ok(HandlerOutput { result, .. }) => {
-                let expected_client_id =
-                    ClientId::new(ClientType::new(TENDERMINT_CLIENT_TYPE), 0).unwrap();
+                let expected_client_id = ClientId::new(tm_client_type(), 0).unwrap();
                 match result {
                     ClientResult::Create(create_res) => {
-                        assert_eq!(
-                            create_res.client_type,
-                            ClientType::new(TENDERMINT_CLIENT_TYPE)
-                        );
+                        assert_eq!(create_res.client_type, tm_client_type());
                         assert_eq!(create_res.client_id, expected_client_id);
                         assert_eq!(
                             create_res.client_state.as_ref().clone_into(),
