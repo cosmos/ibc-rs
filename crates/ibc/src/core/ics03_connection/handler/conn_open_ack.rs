@@ -109,6 +109,14 @@ pub(crate) fn process(
     }
 
     // Success
+    output.emit(IbcEvent::OpenAckConnection(OpenAck::new(
+        msg.conn_id_on_a.clone(),
+        client_id_on_a.clone(),
+        Some(conn_id_on_b.clone()),
+        client_id_on_b.clone(),
+    )));
+    output.log("success: conn_open_ack verification passed");
+
     let result = {
         let new_conn_end_on_a = {
             let mut counterparty = conn_end_on_a.counterparty().clone();
@@ -127,14 +135,6 @@ pub(crate) fn process(
             connection_end: new_conn_end_on_a,
         }
     };
-
-    output.emit(IbcEvent::OpenAckConnection(OpenAck::new(
-        msg.conn_id_on_a,
-        client_id_on_a.clone(),
-        Some(conn_id_on_b.clone()),
-        client_id_on_b.clone(),
-    )));
-    output.log("success: conn_open_ack verification passed");
 
     Ok(output.with_result(result))
 }

@@ -62,6 +62,14 @@ pub(crate) fn process(
     }
 
     // Success
+    output.emit(IbcEvent::OpenConfirmConnection(OpenConfirm::new(
+        msg.conn_id_on_b.clone(),
+        client_id_on_b.clone(),
+        Some(conn_id_on_a.clone()),
+        client_id_on_a.clone(),
+    )));
+    output.log("success: conn_open_confirm verification passed");
+
     let result = {
         let new_conn_end_on_b = {
             let mut new_conn_end_on_b = conn_end_on_b;
@@ -76,14 +84,6 @@ pub(crate) fn process(
             connection_end: new_conn_end_on_b,
         }
     };
-
-    output.emit(IbcEvent::OpenConfirmConnection(OpenConfirm::new(
-        msg.conn_id_on_b,
-        client_id_on_b.clone(),
-        Some(conn_id_on_a.clone()),
-        client_id_on_a.clone(),
-    )));
-    output.log("success: conn_open_confirm verification passed");
 
     Ok(output.with_result(result))
 }

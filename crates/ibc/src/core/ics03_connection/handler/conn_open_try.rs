@@ -114,19 +114,19 @@ pub(crate) fn process(
     }
 
     // Success
-    let result = ConnectionResult {
-        connection_id: conn_id_on_b.clone(),
-        connection_end: conn_end_on_b,
-        connection_id_state: ConnectionIdState::Generated,
-    };
-
     output.emit(IbcEvent::OpenTryConnection(OpenTry::new(
-        conn_id_on_b,
+        conn_id_on_b.clone(),
         msg.client_id_on_b,
         Some(conn_id_on_a.clone()),
         client_id_on_a.clone(),
     )));
     output.log("success: conn_open_try verification passed");
+
+    let result = ConnectionResult {
+        connection_id: conn_id_on_b,
+        connection_end: conn_end_on_b,
+        connection_id_state: ConnectionIdState::Generated,
+    };
 
     Ok(output.with_result(result))
 }

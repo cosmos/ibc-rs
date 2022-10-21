@@ -108,7 +108,7 @@ impl From<OpenInit> for AbciEvent {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub struct OpenTry(pub Attributes);
+pub struct OpenTry(Attributes);
 
 impl OpenTry {
     /// Per our convention, this event is generated on chain B.
@@ -151,7 +151,7 @@ impl From<OpenTry> for AbciEvent {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub struct OpenAck(pub Attributes);
+pub struct OpenAck(Attributes);
 
 impl OpenAck {
     /// Per our convention, this event is generated on chain A.
@@ -194,7 +194,7 @@ impl From<OpenAck> for AbciEvent {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub struct OpenConfirm(pub Attributes);
+pub struct OpenConfirm(Attributes);
 
 impl OpenConfirm {
     /// Per our convention, this event is generated on chain B.

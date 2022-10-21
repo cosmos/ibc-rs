@@ -51,6 +51,11 @@ pub(crate) fn process(
         connection_id_state: ConnectionIdState::Generated,
     };
 
+    output.log(format!(
+        "success: conn_open_init: generated new connection identifier: {}",
+        conn_id_on_a
+    ));
+
     {
         let conn_id_on_b = None;
         let client_id_on_b = msg.counterparty.client_id().clone();
@@ -62,10 +67,6 @@ pub(crate) fn process(
             client_id_on_b,
         )));
     }
-    output.log(format!(
-        "success: conn_open_init: generated new connection identifier: {}",
-        conn_id_on_a
-    ));
 
     Ok(output.with_result(result))
 }
