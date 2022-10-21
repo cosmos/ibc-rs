@@ -407,7 +407,7 @@ pub(crate) mod test {
 
         assert!(res.is_err());
     }
-    
+
     /// If the counterparty supports ics20, then return ics20
     #[test]
     fn test_on_chan_open_try_counterparty_correct_version() {
