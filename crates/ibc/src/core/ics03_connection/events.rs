@@ -5,7 +5,7 @@ use tendermint::abci::tag::Tag;
 use tendermint::abci::Event as AbciEvent;
 
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-use crate::events::{IbcEvent, IbcEventType};
+use crate::events::IbcEventType;
 use crate::prelude::*;
 
 /// The content of the `key` field for the attribute containing the connection identifier.
@@ -110,23 +110,31 @@ impl From<OpenInit> for AbciEvent {
 pub struct OpenTry(pub Attributes);
 
 impl OpenTry {
-    pub fn attributes(&self) -> &Attributes {
-        &self.0
+    pub fn new(
+        connection_id: ConnectionId,
+        client_id: ClientId,
+        counterparty_connection_id: Option<ConnectionId>,
+        counterparty_client_id: ClientId,
+    ) -> Self {
+        Self(Attributes {
+            connection_id,
+            client_id,
+            counterparty_connection_id,
+            counterparty_client_id,
+        })
     }
-    pub fn connection_id(&self) -> Option<&ConnectionId> {
-        self.0.connection_id.as_ref()
-    }
-}
 
-impl From<Attributes> for OpenTry {
-    fn from(attrs: Attributes) -> Self {
-        OpenTry(attrs)
+    pub fn connection_id(&self) -> &ConnectionId {
+        &self.0.connection_id
     }
-}
-
-impl From<OpenTry> for IbcEvent {
-    fn from(v: OpenTry) -> Self {
-        IbcEvent::OpenTryConnection(v)
+    pub fn client_id(&self) -> &ClientId {
+        &self.0.client_id
+    }
+    pub fn counterparty_connection_id(&self) -> Option<&ConnectionId> {
+        self.0.counterparty_connection_id.as_ref()
+    }
+    pub fn counterparty_client_id(&self) -> &ClientId {
+        &self.0.counterparty_client_id
     }
 }
 
@@ -144,23 +152,31 @@ impl From<OpenTry> for AbciEvent {
 pub struct OpenAck(pub Attributes);
 
 impl OpenAck {
-    pub fn attributes(&self) -> &Attributes {
-        &self.0
+    pub fn new(
+        connection_id: ConnectionId,
+        client_id: ClientId,
+        counterparty_connection_id: Option<ConnectionId>,
+        counterparty_client_id: ClientId,
+    ) -> Self {
+        Self(Attributes {
+            connection_id,
+            client_id,
+            counterparty_connection_id,
+            counterparty_client_id,
+        })
     }
-    pub fn connection_id(&self) -> Option<&ConnectionId> {
-        self.0.connection_id.as_ref()
-    }
-}
 
-impl From<Attributes> for OpenAck {
-    fn from(attrs: Attributes) -> Self {
-        OpenAck(attrs)
+    pub fn connection_id(&self) -> &ConnectionId {
+        &self.0.connection_id
     }
-}
-
-impl From<OpenAck> for IbcEvent {
-    fn from(v: OpenAck) -> Self {
-        IbcEvent::OpenAckConnection(v)
+    pub fn client_id(&self) -> &ClientId {
+        &self.0.client_id
+    }
+    pub fn counterparty_connection_id(&self) -> Option<&ConnectionId> {
+        self.0.counterparty_connection_id.as_ref()
+    }
+    pub fn counterparty_client_id(&self) -> &ClientId {
+        &self.0.counterparty_client_id
     }
 }
 
@@ -178,23 +194,31 @@ impl From<OpenAck> for AbciEvent {
 pub struct OpenConfirm(pub Attributes);
 
 impl OpenConfirm {
-    pub fn attributes(&self) -> &Attributes {
-        &self.0
+    pub fn new(
+        connection_id: ConnectionId,
+        client_id: ClientId,
+        counterparty_connection_id: Option<ConnectionId>,
+        counterparty_client_id: ClientId,
+    ) -> Self {
+        Self(Attributes {
+            connection_id,
+            client_id,
+            counterparty_connection_id,
+            counterparty_client_id,
+        })
     }
-    pub fn connection_id(&self) -> Option<&ConnectionId> {
-        self.0.connection_id.as_ref()
-    }
-}
 
-impl From<Attributes> for OpenConfirm {
-    fn from(attrs: Attributes) -> Self {
-        OpenConfirm(attrs)
+    pub fn connection_id(&self) -> &ConnectionId {
+        &self.0.connection_id
     }
-}
-
-impl From<OpenConfirm> for IbcEvent {
-    fn from(v: OpenConfirm) -> Self {
-        IbcEvent::OpenConfirmConnection(v)
+    pub fn client_id(&self) -> &ClientId {
+        &self.0.client_id
+    }
+    pub fn counterparty_connection_id(&self) -> Option<&ConnectionId> {
+        self.0.counterparty_connection_id.as_ref()
+    }
+    pub fn counterparty_client_id(&self) -> &ClientId {
+        &self.0.counterparty_client_id
     }
 }
 
