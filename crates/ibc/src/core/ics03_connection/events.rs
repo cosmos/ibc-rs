@@ -68,17 +68,18 @@ impl From<Attributes> for Vec<Tag> {
 pub struct OpenInit(Attributes);
 
 impl OpenInit {
+    /// Per our convention, this event is generated on chain A.
     pub fn new(
-        connection_id: ConnectionId,
-        client_id: ClientId,
-        counterparty_connection_id: Option<ConnectionId>,
-        counterparty_client_id: ClientId,
+        conn_id_on_a: ConnectionId,
+        client_id_on_a: ClientId,
+        conn_id_on_b: Option<ConnectionId>,
+        client_id_on_b: ClientId,
     ) -> Self {
         Self(Attributes {
-            connection_id,
-            client_id,
-            counterparty_connection_id,
-            counterparty_client_id,
+            connection_id: conn_id_on_a,
+            client_id: client_id_on_a,
+            counterparty_connection_id: conn_id_on_b,
+            counterparty_client_id: client_id_on_b,
         })
     }
 
@@ -110,17 +111,18 @@ impl From<OpenInit> for AbciEvent {
 pub struct OpenTry(pub Attributes);
 
 impl OpenTry {
+    /// Per our convention, this event is generated on chain B.
     pub fn new(
-        connection_id: ConnectionId,
-        client_id: ClientId,
-        counterparty_connection_id: Option<ConnectionId>,
-        counterparty_client_id: ClientId,
+        conn_id_on_b: ConnectionId,
+        client_id_on_b: ClientId,
+        conn_id_on_a: Option<ConnectionId>,
+        client_id_on_a: ClientId,
     ) -> Self {
         Self(Attributes {
-            connection_id,
-            client_id,
-            counterparty_connection_id,
-            counterparty_client_id,
+            connection_id: conn_id_on_b,
+            client_id: client_id_on_b,
+            counterparty_connection_id: conn_id_on_a,
+            counterparty_client_id: client_id_on_a,
         })
     }
 
@@ -152,17 +154,18 @@ impl From<OpenTry> for AbciEvent {
 pub struct OpenAck(pub Attributes);
 
 impl OpenAck {
+    /// Per our convention, this event is generated on chain A.
     pub fn new(
-        connection_id: ConnectionId,
-        client_id: ClientId,
-        counterparty_connection_id: Option<ConnectionId>,
-        counterparty_client_id: ClientId,
+        conn_id_on_a: ConnectionId,
+        client_id_on_a: ClientId,
+        conn_id_on_b: Option<ConnectionId>,
+        client_id_on_b: ClientId,
     ) -> Self {
         Self(Attributes {
-            connection_id,
-            client_id,
-            counterparty_connection_id,
-            counterparty_client_id,
+            connection_id: conn_id_on_a,
+            client_id: client_id_on_a,
+            counterparty_connection_id: conn_id_on_b,
+            counterparty_client_id: client_id_on_b,
         })
     }
 
@@ -194,17 +197,18 @@ impl From<OpenAck> for AbciEvent {
 pub struct OpenConfirm(pub Attributes);
 
 impl OpenConfirm {
+    /// Per our convention, this event is generated on chain B.
     pub fn new(
-        connection_id: ConnectionId,
-        client_id: ClientId,
-        counterparty_connection_id: Option<ConnectionId>,
-        counterparty_client_id: ClientId,
+        conn_id_on_b: ConnectionId,
+        client_id_on_b: ClientId,
+        conn_id_on_a: Option<ConnectionId>,
+        client_id_on_a: ClientId,
     ) -> Self {
         Self(Attributes {
-            connection_id,
-            client_id,
-            counterparty_connection_id,
-            counterparty_client_id,
+            connection_id: conn_id_on_b,
+            client_id: client_id_on_b,
+            counterparty_connection_id: conn_id_on_a,
+            counterparty_client_id: client_id_on_a,
         })
     }
 
