@@ -99,6 +99,7 @@ where
             // Note: `OpenInit` and `OpenTry` modify the `version` field of the `channel_result`,
             // so we must pass it mutably. We intend to clean this up with the implementation of
             // ADR 5.
+            // See issue [#190](https://github.com/cosmos/ibc-rs/issues/190)
             let callback_extras = channel_callback(ctx, &module_id, &msg, &mut channel_result)
                 .map_err(Error::ics04_channel)?;
 
