@@ -64,6 +64,10 @@ pub fn get_dummy_bech32_account() -> String {
     "cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng".to_string()
 }
 
+pub fn get_dummy_transfer_module() -> DummyTransferModule {
+    let ibc_store = Arc::new(Mutex::new(MockIbcStore::default()));
+    DummyTransferModule { ibc_store }
+}
 #[derive(Debug)]
 pub struct DummyTransferModule {
     ibc_store: Arc<Mutex<MockIbcStore>>,

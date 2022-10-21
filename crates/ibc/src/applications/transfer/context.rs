@@ -274,10 +274,15 @@ pub(crate) mod test {
     use crate::applications::transfer::msgs::transfer::MsgTransfer;
     use crate::applications::transfer::relay::send_transfer::send_transfer;
     use crate::applications::transfer::PrefixedCoin;
+    use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::error::Error;
+    use crate::core::ics04_channel::Version;
+    use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
     use crate::handler::HandlerOutputBuilder;
     use crate::prelude::*;
-    use crate::test_utils::DummyTransferModule;
+    use crate::test_utils::{get_dummy_transfer_module, DummyTransferModule};
+
+    use super::on_chan_open_init;
 
     pub(crate) fn deliver(
         ctx: &mut DummyTransferModule,
@@ -285,6 +290,31 @@ pub(crate) mod test {
         msg: MsgTransfer<PrefixedCoin>,
     ) -> Result<(), Error> {
         send_transfer(ctx, output, msg).map_err(|e: Ics20Error| Error::app_module(e.to_string()))
+    }
+
+    fn get_defaults() -> (
+        DummyTransferModule,
+        Order,
+        Vec<ConnectionId>,
+        PortId,
+        ChannelId,
+        Counterparty,
+    ) {
+        let ctx = get_dummy_transfer_module();
+        let order = Order::Unordered;
+        let connection_hops = vec![ConnectionId::new(1)];
+        let port_id = PortId::transfer();
+        let channel_id = ChannelId::new(1);
+        let counterparty = Counterparty::new(port_id.clone(), Some(channel_id.clone()));
+
+        (
+            ctx,
+            order,
+            connection_hops,
+            port_id,
+            channel_id,
+            counterparty,
+        )
     }
 
     #[test]
@@ -315,5 +345,62 @@ pub(crate) mod test {
             "channel-187",
             "cosmos177x69sver58mcfs74x6dg0tv6ls4s3xmmcaw53",
         );
+    }
+
+    #[test]
+    fn test_on_chan_open_init_empty_version() {
+        let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
+
+        let in_version = Version::new("".to_string());
+
+        let (_, out_version) = on_chan_open_init(
+            &mut ctx,
+            order,
+            &connection_hops,
+            &port_id,
+            &channel_id,
+            &counterparty,
+            &in_version,
+        )
+        .unwrap();
+
+        assert_eq!(out_version, Version::ics20());
+    }
+
+    #[test]
+    fn test_on_chan_open_init_ics20_version() {
+        let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
+
+        let in_version = Version::ics20();
+        let (_, out_version) = on_chan_open_init(
+            &mut ctx,
+            order,
+            &connection_hops,
+            &port_id,
+            &channel_id,
+            &counterparty,
+            &in_version,
+        )
+        .unwrap();
+
+        assert_eq!(out_version, Version::ics20());
+    }
+
+    #[test]
+    fn test_on_chan_open_init_incorrect_version() {
+        let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
+
+        let in_version = Version::new("some-unsupported-version".to_string());
+        let res = on_chan_open_init(
+            &mut ctx,
+            order,
+            &connection_hops,
+            &port_id,
+            &channel_id,
+            &counterparty,
+            &in_version,
+        );
+
+        assert!(res.is_err());
     }
 }
