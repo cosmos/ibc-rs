@@ -269,7 +269,7 @@ pub fn on_timeout_packet(
 pub(crate) mod test {
     use subtle_encoding::bech32;
 
-    use crate::applications::transfer::context::cosmos_adr028_escrow_address;
+    use crate::applications::transfer::context::{cosmos_adr028_escrow_address, on_chan_open_try};
     use crate::applications::transfer::error::Error as Ics20Error;
     use crate::applications::transfer::msgs::transfer::MsgTransfer;
     use crate::applications::transfer::relay::send_transfer::send_transfer;
@@ -347,6 +347,8 @@ pub(crate) mod test {
         );
     }
 
+    /// If the relayer passed "", indicating that it wants us to return the versions we support.
+    /// We currently only support ics20
     #[test]
     fn test_on_chan_open_init_empty_version() {
         let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
@@ -367,6 +369,7 @@ pub(crate) mod test {
         assert_eq!(out_version, Version::ics20());
     }
 
+    /// If the relayer passed in the only supported version (ics20), then return ics20
     #[test]
     fn test_on_chan_open_init_ics20_version() {
         let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
@@ -386,6 +389,7 @@ pub(crate) mod test {
         assert_eq!(out_version, Version::ics20());
     }
 
+    /// If the relayer passed in an unsupported version, then fail
     #[test]
     fn test_on_chan_open_init_incorrect_version() {
         let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
@@ -399,6 +403,47 @@ pub(crate) mod test {
             &channel_id,
             &counterparty,
             &in_version,
+        );
+
+        assert!(res.is_err());
+    }
+    
+    /// If the counterparty supports ics20, then return ics20
+    #[test]
+    fn test_on_chan_open_try_counterparty_correct_version() {
+        let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
+
+        let counterparty_version = Version::ics20();
+
+        let (_, out_version) = on_chan_open_try(
+            &mut ctx,
+            order,
+            &connection_hops,
+            &port_id,
+            &channel_id,
+            &counterparty,
+            &counterparty_version,
+        )
+        .unwrap();
+
+        assert_eq!(out_version, Version::ics20());
+    }
+
+    /// If the counterparty doesn't support ics20, then fail
+    #[test]
+    fn test_on_chan_open_try_counterparty_incorrect_version() {
+        let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
+
+        let counterparty_version = Version::new("some-unsupported-version".to_string());
+
+        let res = on_chan_open_try(
+            &mut ctx,
+            order,
+            &connection_hops,
+            &port_id,
+            &channel_id,
+            &counterparty,
+            &counterparty_version,
         );
 
         assert!(res.is_err());
