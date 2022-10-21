@@ -15,7 +15,7 @@ pub const COUNTERPARTY_CONN_ID_ATTRIBUTE_KEY: &str = "counterparty_connection_id
 pub const COUNTERPARTY_CLIENT_ID_ATTRIBUTE_KEY: &str = "counterparty_client_id";
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
-pub struct Attributes {
+struct Attributes {
     pub connection_id: ConnectionId,
     pub client_id: ClientId,
     pub counterparty_connection_id: Option<ConnectionId>,
