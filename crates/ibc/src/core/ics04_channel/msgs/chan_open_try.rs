@@ -24,7 +24,7 @@ pub struct MsgChannelOpenTry {
     pub proofs: Proofs,
     pub signer: Signer,
 
-    #[deprecated(since = "0.21.0")]
+    #[deprecated(since = "0.22.0")]
     /// Only kept here for proper conversion to/from the raw type
     pub previous_channel_id: String,
 }
