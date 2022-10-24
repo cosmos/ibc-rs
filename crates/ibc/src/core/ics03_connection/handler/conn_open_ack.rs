@@ -112,7 +112,7 @@ pub(crate) fn process(
     output.emit(IbcEvent::OpenAckConnection(OpenAck::new(
         msg.conn_id_on_a.clone(),
         client_id_on_a.clone(),
-        Some(conn_id_on_b.clone()),
+        conn_id_on_b.clone(),
         client_id_on_b.clone(),
     )));
     output.log("success: conn_open_ack verification passed");

@@ -72,13 +72,12 @@ impl OpenInit {
     pub fn new(
         conn_id_on_a: ConnectionId,
         client_id_on_a: ClientId,
-        conn_id_on_b: Option<ConnectionId>,
         client_id_on_b: ClientId,
     ) -> Self {
         Self(Attributes {
             connection_id: conn_id_on_a,
             client_id: client_id_on_a,
-            counterparty_connection_id: conn_id_on_b,
+            counterparty_connection_id: None,
             counterparty_client_id: client_id_on_b,
         })
     }
@@ -115,13 +114,13 @@ impl OpenTry {
     pub fn new(
         conn_id_on_b: ConnectionId,
         client_id_on_b: ClientId,
-        conn_id_on_a: Option<ConnectionId>,
+        conn_id_on_a: ConnectionId,
         client_id_on_a: ClientId,
     ) -> Self {
         Self(Attributes {
             connection_id: conn_id_on_b,
             client_id: client_id_on_b,
-            counterparty_connection_id: conn_id_on_a,
+            counterparty_connection_id: Some(conn_id_on_a),
             counterparty_client_id: client_id_on_a,
         })
     }
@@ -158,13 +157,13 @@ impl OpenAck {
     pub fn new(
         conn_id_on_a: ConnectionId,
         client_id_on_a: ClientId,
-        conn_id_on_b: Option<ConnectionId>,
+        conn_id_on_b: ConnectionId,
         client_id_on_b: ClientId,
     ) -> Self {
         Self(Attributes {
             connection_id: conn_id_on_a,
             client_id: client_id_on_a,
-            counterparty_connection_id: conn_id_on_b,
+            counterparty_connection_id: Some(conn_id_on_b),
             counterparty_client_id: client_id_on_b,
         })
     }
@@ -201,13 +200,13 @@ impl OpenConfirm {
     pub fn new(
         conn_id_on_b: ConnectionId,
         client_id_on_b: ClientId,
-        conn_id_on_a: Option<ConnectionId>,
+        conn_id_on_a: ConnectionId,
         client_id_on_a: ClientId,
     ) -> Self {
         Self(Attributes {
             connection_id: conn_id_on_b,
             client_id: client_id_on_b,
-            counterparty_connection_id: conn_id_on_a,
+            counterparty_connection_id: Some(conn_id_on_a),
             counterparty_client_id: client_id_on_a,
         })
     }

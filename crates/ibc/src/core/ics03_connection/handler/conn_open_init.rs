@@ -57,13 +57,11 @@ pub(crate) fn process(
     ));
 
     {
-        let conn_id_on_b = None;
         let client_id_on_b = msg.counterparty.client_id().clone();
 
         output.emit(IbcEvent::OpenInitConnection(OpenInit::new(
             conn_id_on_a,
             msg.client_id_on_a,
-            conn_id_on_b,
             client_id_on_b,
         )));
     }

@@ -117,7 +117,7 @@ pub(crate) fn process(
     output.emit(IbcEvent::OpenTryConnection(OpenTry::new(
         conn_id_on_b.clone(),
         msg.client_id_on_b,
-        Some(conn_id_on_a.clone()),
+        conn_id_on_a.clone(),
         client_id_on_a.clone(),
     )));
     output.log("success: conn_open_try verification passed");

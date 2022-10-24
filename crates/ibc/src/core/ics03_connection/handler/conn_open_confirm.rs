@@ -65,7 +65,7 @@ pub(crate) fn process(
     output.emit(IbcEvent::OpenConfirmConnection(OpenConfirm::new(
         msg.conn_id_on_b.clone(),
         client_id_on_b.clone(),
-        Some(conn_id_on_a.clone()),
+        conn_id_on_a.clone(),
         client_id_on_a.clone(),
     )));
     output.log("success: conn_open_confirm verification passed");
