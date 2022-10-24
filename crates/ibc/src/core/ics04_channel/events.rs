@@ -1,5 +1,6 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the channels module.
 
+use derive_more::From;
 use serde_derive::{Deserialize, Serialize};
 use tendermint::abci::tag::Tag;
 use tendermint::abci::Event as AbciEvent;
@@ -10,12 +11,15 @@ use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::events::{Error as EventError, IbcEvent, IbcEventType};
 use crate::prelude::*;
 
+use super::Version;
+
 /// Channel event attribute keys
 pub const CONNECTION_ID_ATTRIBUTE_KEY: &str = "connection_id";
 pub const CHANNEL_ID_ATTRIBUTE_KEY: &str = "channel_id";
 pub const PORT_ID_ATTRIBUTE_KEY: &str = "port_id";
 pub const COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY: &str = "counterparty_channel_id";
 pub const COUNTERPARTY_PORT_ID_ATTRIBUTE_KEY: &str = "counterparty_port_id";
+pub const VERSION_ATTRIBUTE_KEY: &str = "version";
 
 /// Packet event attribute keys
 pub const PKT_SEQ_ATTRIBUTE_KEY: &str = "packet_sequence";
@@ -160,6 +164,90 @@ impl TryFrom<Packet> for Vec<Tag> {
 
 pub trait EventType {
     fn event_type() -> IbcEventType;
+}
+
+#[derive(Debug, From)]
+struct PortIdAttribute {
+    port_id: PortId,
+}
+
+impl From<PortIdAttribute> for Tag {
+    fn from(attr: PortIdAttribute) -> Self {
+        Tag {
+            key: PORT_ID_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr.port_id.to_string().parse().unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, From)]
+struct ChannelIdAttribute {
+    channel_id: ChannelId,
+}
+
+impl From<ChannelIdAttribute> for Tag {
+    fn from(attr: ChannelIdAttribute) -> Self {
+        Tag {
+            key: CHANNEL_ID_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr.channel_id.to_string().parse().unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, From)]
+struct CounterpartyPortIdAttribute {
+    counterparty_port_id: PortId,
+}
+
+impl From<CounterpartyPortIdAttribute> for Tag {
+    fn from(attr: CounterpartyPortIdAttribute) -> Self {
+        Tag {
+            key: COUNTERPARTY_PORT_ID_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr.counterparty_port_id.to_string().parse().unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, From)]
+struct CounterpartyChannelIdAttribute {
+    counterparty_channel_id: ChannelId,
+}
+
+impl From<CounterpartyChannelIdAttribute> for Tag {
+    fn from(attr: CounterpartyChannelIdAttribute) -> Self {
+        Tag {
+            key: COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr.counterparty_channel_id.to_string().parse().unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, From)]
+struct ConnectionIdAttribute {
+    connection_id: ConnectionId,
+}
+
+impl From<ConnectionIdAttribute> for Tag {
+    fn from(attr: ConnectionIdAttribute) -> Self {
+        Tag {
+            key: CONNECTION_ID_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr.connection_id.to_string().parse().unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, From)]
+struct VersionAttribute {
+    version: Version,
+}
+
+impl From<VersionAttribute> for Tag {
+    fn from(attr: VersionAttribute) -> Self {
+        Tag {
+            key: VERSION_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr.version.to_string().parse().unwrap(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
