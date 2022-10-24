@@ -1,4 +1,6 @@
 //! This module implements the processing logic for ICS4 (channel) messages.
+use crate::core::ics26_routing::handler::MsgReceipt;
+use crate::events::ModuleEvent;
 use crate::prelude::*;
 
 use crate::core::ics04_channel::channel::ChannelEnd;
@@ -46,6 +48,20 @@ pub struct ChannelResult {
     pub channel_end: ChannelEnd,
 }
 
+pub struct ModuleExtras {
+    pub events: Vec<ModuleEvent>,
+    pub log: Vec<String>,
+}
+
+impl ModuleExtras {
+    pub fn empty() -> Self {
+        ModuleExtras {
+            events: Vec::new(),
+            log: Vec::new(),
+        }
+    }
+}
+
 pub fn channel_validate<Ctx>(ctx: &Ctx, msg: &ChannelMsg) -> Result<ModuleId, Error>
 where
     Ctx: Ics26Context,
@@ -63,7 +79,7 @@ where
 pub fn channel_dispatch<Ctx>(
     ctx: &Ctx,
     msg: &ChannelMsg,
-) -> Result<(HandlerOutputBuilder<()>, ChannelResult), Error>
+) -> Result<(MsgReceipt, ChannelResult), Error>
 where
     Ctx: ChannelReader,
 {
@@ -80,17 +96,15 @@ where
         log,
         events,
     } = output;
-    let builder = HandlerOutput::builder().with_log(log).with_events(events);
-    Ok((builder, result))
+    Ok((MsgReceipt { events, log }, result))
 }
 
 pub fn channel_callback<Ctx>(
     ctx: &mut Ctx,
     module_id: &ModuleId,
     msg: &ChannelMsg,
-    mut result: ChannelResult,
-    module_output: &mut ModuleOutputBuilder,
-) -> Result<ChannelResult, Error>
+    result: &mut ChannelResult,
+) -> Result<ModuleExtras, Error>
 where
     Ctx: Ics26Context,
 {
@@ -100,45 +114,45 @@ where
         .ok_or_else(Error::route_not_found)?;
 
     match msg {
-        ChannelMsg::ChannelOpenInit(msg) => cb.on_chan_open_init(
-            module_output,
-            msg.channel.ordering,
-            &msg.channel.connection_hops,
-            &msg.port_id,
-            &result.channel_id,
-            msg.channel.counterparty(),
-            &msg.channel.version,
-        )?,
-        ChannelMsg::ChannelOpenTry(msg) => {
-            let version = cb.on_chan_open_try(
-                module_output,
+        ChannelMsg::ChannelOpenInit(msg) => {
+            let (extras, version) = cb.on_chan_open_init(
                 msg.channel.ordering,
                 &msg.channel.connection_hops,
                 &msg.port_id,
                 &result.channel_id,
                 msg.channel.counterparty(),
-                msg.channel.version(),
+                &msg.channel.version,
+            )?;
+            result.channel_end.version = version;
+
+            Ok(extras)
+        }
+        ChannelMsg::ChannelOpenTry(msg) => {
+            let (extras, version) = cb.on_chan_open_try(
+                msg.channel.ordering,
+                &msg.channel.connection_hops,
+                &msg.port_id,
+                &result.channel_id,
+                msg.channel.counterparty(),
                 &msg.counterparty_version,
             )?;
             result.channel_end.version = version;
+
+            Ok(extras)
         }
-        ChannelMsg::ChannelOpenAck(msg) => cb.on_chan_open_ack(
-            module_output,
-            &msg.port_id,
-            &result.channel_id,
-            &msg.counterparty_version,
-        )?,
+        ChannelMsg::ChannelOpenAck(msg) => {
+            cb.on_chan_open_ack(&msg.port_id, &result.channel_id, &msg.counterparty_version)
+        }
         ChannelMsg::ChannelOpenConfirm(msg) => {
-            cb.on_chan_open_confirm(module_output, &msg.port_id, &result.channel_id)?
+            cb.on_chan_open_confirm(&msg.port_id, &result.channel_id)
         }
         ChannelMsg::ChannelCloseInit(msg) => {
-            cb.on_chan_close_init(module_output, &msg.port_id, &result.channel_id)?
+            cb.on_chan_close_init(&msg.port_id, &result.channel_id)
         }
         ChannelMsg::ChannelCloseConfirm(msg) => {
-            cb.on_chan_close_confirm(module_output, &msg.port_id, &result.channel_id)?
+            cb.on_chan_close_confirm(&msg.port_id, &result.channel_id)
         }
     }
-    Ok(result)
 }
 
 pub fn get_module_for_packet_msg<Ctx>(ctx: &Ctx, msg: &PacketMsg) -> Result<ModuleId, Error>
