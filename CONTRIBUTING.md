@@ -217,7 +217,7 @@ consent) who is more appropriate to shepherd the PR through to completion.
 
 Our release process is as follows:
 
-1. Update the [changelog](#changelog) to reflect and summarize all changes in
+1. In a new branch `release/vX.Y.Z`, update the [changelog](#changelog) to reflect and summarize all changes in
    the release. This involves:
    1. Running `unclog build -u` and copy pasting the output at the top
       of the `CHANGELOG.md` file, making sure to update the header with
@@ -238,7 +238,7 @@ Our release process is as follows:
    documentation compiles and seems up-to-date and coherent. Fix any potential
    issues here and push them to the release PR.
 5. Run `cargo publish --dry-run` to double-check that publishing will work. Fix
- any potential issues here and push them to the release PR.
+   any potential issues here and push them to the release PR.
 6. Mark the PR as **Ready for Review** and incorporate feedback on the release.
 7. Once approved, merge the PR, and pull the `main` branch.
 8. From the `crates/ibc` folder, run `cargo publish`

@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## v0.21.0
+
+*October 24, 2022*
+
+This is a small release that allows new `ClientTypes` to be created, which was missed when implementing ADR 4. The changes are not concensus-breaking.
+
+### BREAKING CHANGES
+
+- Make ClientType allow any string value as opposed to just Tendermint
+  ([#188](https://github.com/cosmos/ibc-rs/issues/188))
+
 ## v0.20.0
 
 *October 19, 2022*
