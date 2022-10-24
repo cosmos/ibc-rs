@@ -8,6 +8,7 @@ use crate::core::ics04_channel::events::Attributes;
 use crate::core::ics04_channel::handler::verify::verify_channel_proofs;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
+use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::ChannelId;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
@@ -18,48 +19,6 @@ pub(crate) fn process<Ctx: ChannelReader>(
     msg: &MsgChannelOpenTry,
 ) -> HandlerResult<ChannelResult, Error> {
     let mut output = HandlerOutput::builder();
-
-    // Unwrap the old channel end (if any) and validate it against the message.
-    let (mut new_channel_end, channel_id) = match &msg.previous_channel_id {
-        Some(prev_id) => {
-            let old_channel_end = ctx.channel_end(&msg.port_id, prev_id)?;
-
-            // Validate that existing channel end matches with the one we're trying to establish.
-            if old_channel_end.state_matches(&State::Init)
-                && old_channel_end.order_matches(msg.channel.ordering())
-                && old_channel_end.connection_hops_matches(msg.channel.connection_hops())
-                && old_channel_end.counterparty_matches(msg.channel.counterparty())
-                && old_channel_end.version_matches(msg.channel.version())
-            {
-                // A ChannelEnd already exists and all validation passed.
-                Ok((old_channel_end, prev_id.clone()))
-            } else {
-                // A ConnectionEnd already exists and validation failed.
-                Err(Error::channel_mismatch(prev_id.clone()))
-            }
-        }
-        // No previous channel id was supplied. Create a new channel end & an identifier.
-        None => {
-            let channel_end = ChannelEnd::new(
-                State::Init,
-                *msg.channel.ordering(),
-                msg.channel.counterparty().clone(),
-                msg.channel.connection_hops().clone(),
-                msg.counterparty_version.clone(),
-            );
-
-            // Channel identifier construction.
-            let id_counter = ctx.channel_counter()?;
-            let chan_id = ChannelId::new(id_counter);
-
-            output.log(format!(
-                "success: generated new channel identifier: {}",
-                chan_id
-            ));
-
-            Ok((channel_end, chan_id))
-        }
-    }?;
 
     // An IBC connection running on the local (host) chain should exist.
     if msg.channel.connection_hops().len() != 1 {
@@ -111,26 +70,29 @@ pub(crate) fn process<Ctx: ChannelReader>(
     verify_channel_proofs(
         ctx,
         msg.proofs.height(),
-        &new_channel_end,
+        &msg.channel,
         &conn,
         &expected_channel_end,
         &msg.proofs,
     )?;
 
-    output.log("success: channel open try ");
+    output.log("success: channel open try");
 
-    // Transition the channel end to the new state & pick a version.
-    new_channel_end.set_state(State::TryOpen);
+    let channel_id = ChannelId::new(ctx.channel_counter()?);
+    let channel_end = ChannelEnd::new(
+        State::TryOpen,
+        *msg.channel.ordering(),
+        msg.channel.counterparty().clone(),
+        msg.channel.connection_hops().clone(),
+        // Note: This will be rewritten by the module callback
+        Version::empty(),
+    );
 
     let result = ChannelResult {
         port_id: msg.port_id.clone(),
-        channel_id_state: if matches!(msg.previous_channel_id, None) {
-            ChannelIdState::Generated
-        } else {
-            ChannelIdState::Reused
-        },
+        channel_id_state: ChannelIdState::Generated,
         channel_id: channel_id.clone(),
-        channel_end: new_channel_end,
+        channel_end,
     };
 
     let event_attributes = Attributes {
@@ -148,6 +110,8 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
+    use crate::core::ics04_channel::handler::chan_open_try;
+    use crate::downcast;
     use crate::prelude::*;
 
     use test_log::test;
@@ -161,11 +125,10 @@ mod tests {
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, State};
-    use crate::core::ics04_channel::handler::channel_dispatch;
+    use crate::core::ics04_channel::error;
     use crate::core::ics04_channel::msgs::chan_open_try::test_util::get_dummy_raw_msg_chan_open_try;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics04_channel::msgs::ChannelMsg;
-    use crate::core::ics04_channel::{error, Version};
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId};
     use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
@@ -203,16 +166,9 @@ mod tests {
         let mut msg =
             MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(proof_height)).unwrap();
 
-        // Assumption: an already existing `Init` channel should exist in the context for `msg`, and
-        // this channel should depend on connection `conn_id`.
         let chan_id = ChannelId::new(24);
         let hops = vec![conn_id.clone()];
-        msg.previous_channel_id = Some(chan_id.clone());
         msg.channel.connection_hops = hops;
-
-        // This message does not assume a channel should already be initialized.
-        let mut msg_vanilla = msg.clone();
-        msg_vanilla.previous_channel_id = None;
 
         // A preloaded channel end that resides in the context. This is constructed so as to be
         // consistent with the incoming ChanOpenTry message `msg`.
@@ -224,52 +180,11 @@ mod tests {
             msg.channel.version().clone(),
         );
 
-        // A preloaded channel end that resides in the context. This is constructed so as to be
-        // __inconsistent__ with the incoming ChanOpenTry message `msg` due to its version field.
-        let version = Version::from(format!("{}-", msg.channel.version()));
-        let incorrect_chan_end_ver = ChannelEnd::new(
-            State::Init,
-            *msg.channel.ordering(),
-            msg.channel.counterparty().clone(),
-            msg.channel.connection_hops().clone(),
-            version,
-        );
-
-        // A preloaded channel end residing in the context, which will be __inconsistent__ with
-        // the incoming ChanOpenTry message `msg` due to its connection hops field.
-        let hops = vec![ConnectionId::new(9890)];
-        let incorrect_chan_end_hops = ChannelEnd::new(
-            State::Init,
-            *msg.channel.ordering(),
-            msg.channel.counterparty().clone(),
-            hops,
-            msg.channel.version().clone(),
-        );
-
         let tests: Vec<Test> = vec![
-            Test {
-                name: "Processing fails because no channel is preloaded in the context".to_string(),
-                ctx: context.clone(),
-                msg: ChannelMsg::ChannelOpenTry(msg.clone()),
-                want_pass: false,
-                match_error: {
-                    let port_id = msg.port_id.clone();
-                    let channel_id = chan_id.clone();
-                    Box::new(move |e| match e {
-                        error::ErrorDetail::ChannelNotFound(e) => {
-                            assert_eq!(e.port_id, port_id);
-                            assert_eq!(e.channel_id, channel_id);
-                        }
-                        _ => {
-                            panic!("Expected ChannelNotFound, instead got {}", e)
-                        }
-                    })
-                },
-            },
             Test {
                 name: "Processing fails because no connection exists in the context".to_string(),
                 ctx: context.clone(),
-                msg: ChannelMsg::ChannelOpenTry(msg_vanilla.clone()),
+                msg: ChannelMsg::ChannelOpenTry(msg.clone()),
                 want_pass: false,
                 match_error: {
                     let connection_id = msg.channel.connection_hops()[0].clone();
@@ -284,51 +199,6 @@ mod tests {
                         }
                         _ => {
                             panic!("Expected MissingConnection, instead got {}", e)
-                        }
-                    })
-                },
-            },
-            Test {
-                name: "Processing fails because of inconsistent version with preexisting channel"
-                    .to_string(),
-                ctx: context
-                    .clone()
-                    .with_connection(conn_id.clone(), conn_end.clone())
-                    .with_channel(msg.port_id.clone(), chan_id.clone(), incorrect_chan_end_ver),
-                msg: ChannelMsg::ChannelOpenTry(msg.clone()),
-                want_pass: false,
-                match_error: {
-                    let channel_id = chan_id.clone();
-                    Box::new(move |e| match e {
-                        error::ErrorDetail::ChannelMismatch(e) => {
-                            assert_eq!(e.channel_id, channel_id);
-                        }
-                        _ => {
-                            panic!("Expected ChannelMismatch, instead got {}", e)
-                        }
-                    })
-                },
-            },
-            Test {
-                name: "Processing fails because of inconsistent connection hops".to_string(),
-                ctx: context
-                    .clone()
-                    .with_connection(conn_id.clone(), conn_end.clone())
-                    .with_channel(
-                        msg.port_id.clone(),
-                        chan_id.clone(),
-                        incorrect_chan_end_hops,
-                    ),
-                msg: ChannelMsg::ChannelOpenTry(msg.clone()),
-                want_pass: false,
-                match_error: {
-                    let channel_id = chan_id.clone();
-                    Box::new(move |e| match e {
-                        error::ErrorDetail::ChannelMismatch(e) => {
-                            assert_eq!(e.channel_id, channel_id);
-                        }
-                        _ => {
-                            panic!("Expected ChannelMismatch, instead got {}", e)
                         }
                     })
                 },
@@ -372,7 +242,7 @@ mod tests {
                     .with_client(&client_id, Height::new(0, proof_height).unwrap())
                     .with_connection(conn_id.clone(), conn_end.clone())
                     .with_channel(msg.port_id.clone(), chan_id, correct_chan_end),
-                msg: ChannelMsg::ChannelOpenTry(msg),
+                msg: ChannelMsg::ChannelOpenTry(msg.clone()),
                 want_pass: true,
                 match_error: Box::new(|_| {}),
             },
@@ -382,7 +252,7 @@ mod tests {
                 ctx: context
                     .with_client(&client_id, Height::new(0, proof_height).unwrap())
                     .with_connection(conn_id, conn_end),
-                msg: ChannelMsg::ChannelOpenTry(msg_vanilla),
+                msg: ChannelMsg::ChannelOpenTry(msg),
                 want_pass: true,
                 match_error: Box::new(|_| {}),
             },
@@ -391,23 +261,26 @@ mod tests {
         .collect();
 
         for test in tests {
-            let res = channel_dispatch(&test.ctx, &test.msg);
+            let test_msg = downcast!(test.msg => ChannelMsg::ChannelOpenTry).unwrap();
+            let res = chan_open_try::process(&test.ctx, &test_msg);
             // Additionally check the events and the output objects in the result.
             match res {
-                Ok((proto_output, res)) => {
+                Ok(proto_output) => {
                     assert!(
                         test.want_pass,
                         "chan_open_ack: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
                         test.name,
-                        test.msg,
+                        test_msg,
                         test.ctx.clone()
                     );
 
-                    let proto_output = proto_output.with_result(());
                     assert!(!proto_output.events.is_empty()); // Some events must exist.
 
                     // The object in the output is a channel end, should have TryOpen state.
-                    assert_eq!(res.channel_end.state().clone(), State::TryOpen);
+                    assert_eq!(
+                        proto_output.result.channel_end.state().clone(),
+                        State::TryOpen
+                    );
 
                     for e in proto_output.events.iter() {
                         assert!(matches!(e, &IbcEvent::OpenTryChannel(_)));
@@ -418,7 +291,7 @@ mod tests {
                         !test.want_pass,
                         "chan_open_try: did not pass test: {}, \nparams:\n\tmsg={:?}\n\tcontext={:?}\nerror: {:?}",
                         test.name,
-                        test.msg,
+                        test_msg,
                         test.ctx.clone(),
                         e,
                     );
