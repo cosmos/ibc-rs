@@ -102,6 +102,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
+    use crate::core::ics26_routing::handler::MsgReceipt;
     use crate::prelude::*;
 
     use test_log::test;
@@ -187,7 +188,7 @@ mod tests {
             let res = channel_dispatch(&test.ctx, &test.msg);
             // Additionally check the events and the output objects in the result.
             match res {
-                Ok((proto_output, res)) => {
+                Ok((MsgReceipt { log: _, events }, res)) => {
                     assert!(
                             test.want_pass,
                             "chan_open_confirm: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
@@ -196,14 +197,13 @@ mod tests {
                             test.ctx.clone()
                         );
 
-                    let proto_output = proto_output.with_result(());
-                    assert!(!proto_output.events.is_empty()); // Some events must exist.
+                    assert!(!events.is_empty()); // Some events must exist.
 
                     // The object in the output is a ConnectionEnd, should have init state.
                     //assert_eq!(res.channel_id, msg_chan_init.channel_id().clone());
                     assert_eq!(res.channel_end.state().clone(), State::Open);
 
-                    for e in proto_output.events.iter() {
+                    for e in events.iter() {
                         assert!(matches!(e, &IbcEvent::OpenConfirmChannel(_)));
                     }
                 }

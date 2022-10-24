@@ -1,3 +1,4 @@
+use crate::handler::HandlerOutputBuilder;
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
@@ -5,15 +6,14 @@ use ibc_proto::google::protobuf::Any;
 use crate::core::ics02_client::handler::dispatch as ics2_msg_dispatcher;
 use crate::core::ics03_connection::handler::dispatch as ics3_msg_dispatcher;
 use crate::core::ics04_channel::handler::{
-    channel_callback as ics4_callback, channel_dispatch as ics4_msg_dispatcher,
-    channel_validate as ics4_validate, recv_packet::RecvPacketResult,
+    channel_callback, channel_dispatch, channel_validate, recv_packet::RecvPacketResult,
 };
 use crate::core::ics04_channel::handler::{
     get_module_for_packet_msg, packet_callback as ics4_packet_callback,
     packet_dispatch as ics4_packet_msg_dispatcher,
 };
 use crate::core::ics04_channel::packet::PacketResult;
-use crate::core::ics26_routing::context::{Ics26Context, ModuleOutputBuilder};
+use crate::core::ics26_routing::context::Ics26Context;
 use crate::core::ics26_routing::error::Error;
 use crate::core::ics26_routing::msgs::Ics26Envelope::{
     self, Ics2Msg, Ics3Msg, Ics4ChannelMsg, Ics4PacketMsg,
@@ -85,21 +85,40 @@ where
         }
 
         Ics4ChannelMsg(msg) => {
-            let module_id = ics4_validate(ctx, &msg).map_err(Error::ics04_channel)?;
-            let (mut handler_builder, channel_result) =
-                ics4_msg_dispatcher(ctx, &msg).map_err(Error::ics04_channel)?;
+            let module_id = channel_validate(ctx, &msg).map_err(Error::ics04_channel)?;
+            let dispatch_output = HandlerOutputBuilder::<()>::new();
 
-            let mut module_output = ModuleOutputBuilder::new();
-            let cb_result =
-                ics4_callback(ctx, &module_id, &msg, channel_result, &mut module_output);
-            handler_builder.merge(module_output);
-            let channel_result = cb_result.map_err(Error::ics04_channel)?;
+            let (
+                MsgReceipt {
+                    events: dispatch_events,
+                    log: dispatch_log,
+                },
+                mut channel_result,
+            ) = channel_dispatch(ctx, &msg).map_err(Error::ics04_channel)?;
+
+            // Note: `OpenInit` and `OpenTry` modify the `version` field of the `channel_result`,
+            // so we must pass it mutably. We intend to clean this up with the implementation of
+            // ADR 5.
+            // See issue [#190](https://github.com/cosmos/ibc-rs/issues/190)
+            let callback_extras = channel_callback(ctx, &module_id, &msg, &mut channel_result)
+                .map_err(Error::ics04_channel)?;
 
             // Apply any results to the host chain store.
             ctx.store_channel_result(channel_result)
                 .map_err(Error::ics04_channel)?;
 
-            handler_builder.with_result(())
+            dispatch_output
+                .with_events(dispatch_events)
+                .with_events(
+                    callback_extras
+                        .events
+                        .into_iter()
+                        .map(IbcEvent::AppModule)
+                        .collect(),
+                )
+                .with_log(dispatch_log)
+                .with_log(callback_extras.log)
+                .with_result(())
         }
 
         Ics4PacketMsg(msg) => {
