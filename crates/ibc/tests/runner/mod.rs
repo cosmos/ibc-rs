@@ -5,7 +5,6 @@ use core::convert::TryInto;
 use core::fmt::Debug;
 use core::time::Duration;
 
-use ibc::core::ics02_client::client_type::ClientType;
 use ibc::core::ics02_client::context::ClientReader;
 use ibc::core::ics02_client::error as client_error;
 use ibc::core::ics02_client::msgs::create_client::MsgCreateClient;
@@ -25,6 +24,7 @@ use ibc::core::ics23_commitment::commitment::{CommitmentPrefix, CommitmentProofB
 use ibc::core::ics24_host::identifier::{ChainId, ClientId, ConnectionId};
 use ibc::core::ics26_routing::error as routing_error;
 use ibc::core::ics26_routing::msgs::Ics26Envelope;
+use ibc::mock::client_state::client_type as mock_client_type;
 use ibc::mock::client_state::MockClientState;
 use ibc::mock::consensus_state::MockConsensusState;
 use ibc::mock::context::MockContext;
@@ -131,7 +131,7 @@ impl IbcTestRunner {
     }
 
     pub fn client_id(client_id: u64) -> ClientId {
-        ClientId::new(ClientType::Mock, client_id)
+        ClientId::new(mock_client_type(), client_id)
             .expect("it should be possible to create the client identifier")
     }
 

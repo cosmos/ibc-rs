@@ -76,7 +76,6 @@ pub fn process(
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ics02_client::client_type::ClientType;
     use crate::events::IbcEvent;
     use crate::{downcast, prelude::*};
 
@@ -89,6 +88,7 @@ mod tests {
     use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics24_host::identifier::ClientId;
     use crate::handler::HandlerOutput;
+    use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
     use crate::mock::context::MockContext;
@@ -222,7 +222,7 @@ mod tests {
         let upgrade_client_event =
             downcast!(output.events.first().unwrap() => IbcEvent::UpgradeClient).unwrap();
         assert_eq!(upgrade_client_event.client_id(), &client_id);
-        assert_eq!(upgrade_client_event.client_type(), &ClientType::Mock);
+        assert_eq!(upgrade_client_event.client_type(), &mock_client_type());
         assert_eq!(upgrade_client_event.consensus_height(), &upgrade_height);
     }
 }

@@ -8,6 +8,7 @@ use tendermint::block::Header as TmHeader;
 use tendermint_testgen::light_block::TmLightBlock;
 use tendermint_testgen::{Generator, LightBlock as TestgenLightBlock};
 
+use crate::clients::ics07_tendermint::client_type as tm_client_type;
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TMConsensusState;
 use crate::clients::ics07_tendermint::header::TENDERMINT_HEADER_TYPE_URL;
 use crate::core::ics02_client::client_type::ClientType;
@@ -15,6 +16,7 @@ use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::Error;
 use crate::core::ics02_client::header::Header;
 use crate::core::ics24_host::identifier::ChainId;
+use crate::mock::client_state::client_type as mock_client_type;
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::prelude::*;
@@ -177,8 +179,8 @@ impl From<HostBlock> for Any {
 impl Header for HostBlock {
     fn client_type(&self) -> ClientType {
         match self {
-            HostBlock::Mock(_) => ClientType::Mock,
-            HostBlock::SyntheticTendermint(_) => ClientType::Tendermint,
+            HostBlock::Mock(_) => mock_client_type(),
+            HostBlock::SyntheticTendermint(_) => tm_client_type(),
         }
     }
 

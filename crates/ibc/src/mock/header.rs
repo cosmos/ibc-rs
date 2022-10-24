@@ -9,6 +9,7 @@ use serde_derive::{Deserialize, Serialize};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::Error;
 use crate::core::ics02_client::header::Header;
+use crate::mock::client_state::client_type as mock_client_type;
 use crate::timestamp::Timestamp;
 use crate::Height;
 
@@ -85,7 +86,7 @@ impl MockHeader {
 
 impl Header for MockHeader {
     fn client_type(&self) -> ClientType {
-        ClientType::Mock
+        mock_client_type()
     }
 
     fn height(&self) -> Height {
