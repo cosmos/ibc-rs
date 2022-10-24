@@ -1615,13 +1615,7 @@ mod tests {
                 _counterparty: &Counterparty,
                 version: &Version,
             ) -> Result<(ModuleExtras, Version), Error> {
-                Ok((
-                    ModuleExtras {
-                        events: Vec::new(),
-                        log: Vec::new(),
-                    },
-                    version.clone(),
-                ))
+                Ok((ModuleExtras::empty(), version.clone()))
             }
 
             fn on_chan_open_try(
@@ -1633,13 +1627,7 @@ mod tests {
                 _counterparty: &Counterparty,
                 counterparty_version: &Version,
             ) -> Result<(ModuleExtras, Version), Error> {
-                Ok((
-                    ModuleExtras {
-                        events: Vec::new(),
-                        log: Vec::new(),
-                    },
-                    counterparty_version.clone(),
-                ))
+                Ok((ModuleExtras::empty(), counterparty_version.clone()))
             }
 
             fn on_recv_packet(
@@ -1672,13 +1660,7 @@ mod tests {
                 _counterparty: &Counterparty,
                 version: &Version,
             ) -> Result<(ModuleExtras, Version), Error> {
-                Ok((
-                    ModuleExtras {
-                        events: Vec::new(),
-                        log: Vec::new(),
-                    },
-                    version.clone(),
-                ))
+                Ok((ModuleExtras::empty(), version.clone()))
             }
 
             fn on_chan_open_try(
@@ -1690,13 +1672,7 @@ mod tests {
                 _counterparty: &Counterparty,
                 counterparty_version: &Version,
             ) -> Result<(ModuleExtras, Version), Error> {
-                Ok((
-                    ModuleExtras {
-                        events: Vec::new(),
-                        log: Vec::new(),
-                    },
-                    counterparty_version.clone(),
-                ))
+                Ok((ModuleExtras::empty(), counterparty_version.clone()))
             }
         }
 

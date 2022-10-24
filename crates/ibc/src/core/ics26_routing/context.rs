@@ -127,10 +127,7 @@ pub trait Module: Send + Sync + AsAnyMut {
         _channel_id: &ChannelId,
         _counterparty_version: &Version,
     ) -> Result<ModuleExtras, Error> {
-        Ok(ModuleExtras {
-            events: Vec::new(),
-            log: Vec::new(),
-        })
+        Ok(ModuleExtras::empty())
     }
 
     fn on_chan_open_confirm(
@@ -138,10 +135,7 @@ pub trait Module: Send + Sync + AsAnyMut {
         _port_id: &PortId,
         _channel_id: &ChannelId,
     ) -> Result<ModuleExtras, Error> {
-        Ok(ModuleExtras {
-            events: Vec::new(),
-            log: Vec::new(),
-        })
+        Ok(ModuleExtras::empty())
     }
 
     fn on_chan_close_init(
@@ -149,10 +143,7 @@ pub trait Module: Send + Sync + AsAnyMut {
         _port_id: &PortId,
         _channel_id: &ChannelId,
     ) -> Result<ModuleExtras, Error> {
-        Ok(ModuleExtras {
-            events: Vec::new(),
-            log: Vec::new(),
-        })
+        Ok(ModuleExtras::empty())
     }
 
     fn on_chan_close_confirm(
@@ -160,10 +151,7 @@ pub trait Module: Send + Sync + AsAnyMut {
         _port_id: &PortId,
         _channel_id: &ChannelId,
     ) -> Result<ModuleExtras, Error> {
-        Ok(ModuleExtras {
-            events: Vec::new(),
-            log: Vec::new(),
-        })
+        Ok(ModuleExtras::empty())
     }
 
     fn on_recv_packet(
