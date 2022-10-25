@@ -6,13 +6,15 @@ use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::error::Error;
-use crate::core::ics03_connection::handler::{ConnectionIdState, ConnectionResult};
+use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::version::{get_compatible_versions, pick_version, Version};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::prelude::*;
 use crate::Height;
 use ibc_proto::google::protobuf::Any;
+
+use super::handler::ConnectionIdState;
 
 /// A context supplying all the necessary read-only dependencies for processing any `ConnectionMsg`.
 pub trait ConnectionReader {
@@ -28,6 +30,7 @@ pub trait ConnectionReader {
     /// Returns the current height of the local chain.
     fn host_current_height(&self) -> Height;
 
+    #[deprecated(since = "0.20.0")]
     /// Returns the oldest height available on the local chain.
     fn host_oldest_height(&self) -> Height;
 

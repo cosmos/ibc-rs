@@ -73,6 +73,7 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_close_init::test_util::get_dummy_raw_msg_chan_close_init;
     use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
     use crate::core::ics04_channel::msgs::ChannelMsg;
+    use crate::core::ics26_routing::handler::MsgReceipt;
     use crate::events::IbcEvent;
     use crate::prelude::*;
 
@@ -133,13 +134,12 @@ mod tests {
                 )
         };
 
-        let (handler_output_builder, _) =
+        let (MsgReceipt { events, log: _ }, _) =
             channel_dispatch(&context, &ChannelMsg::ChannelCloseInit(msg_chan_close_init)).unwrap();
-        let handler_output = handler_output_builder.with_result(());
 
-        assert!(!handler_output.events.is_empty()); // Some events must exist.
+        assert!(!events.is_empty()); // Some events must exist.
 
-        for event in handler_output.events.iter() {
+        for event in events.iter() {
             assert!(matches!(event, &IbcEvent::CloseInitChannel(_)));
         }
     }
