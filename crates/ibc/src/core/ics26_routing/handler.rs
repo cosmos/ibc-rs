@@ -88,15 +88,8 @@ where
             let module_id = channel_validate(ctx, &msg).map_err(Error::ics04_channel)?;
             let dispatch_output = HandlerOutputBuilder::<()>::new();
 
-            let (
-                // TODO (BEFORE MERGE): `channel_dispatch()` should no longer return events
-                // They are now created in `channel_events()`
-                MsgReceipt {
-                    events: _events,
-                    log: dispatch_log,
-                },
-                mut channel_result,
-            ) = channel_dispatch(ctx, &msg).map_err(Error::ics04_channel)?;
+            let (dispatch_log, mut channel_result) =
+                channel_dispatch(ctx, &msg).map_err(Error::ics04_channel)?;
 
             // Note: `OpenInit` and `OpenTry` modify the `version` field of the `channel_result`,
             // so we must pass it mutably. We intend to clean this up with the implementation of
