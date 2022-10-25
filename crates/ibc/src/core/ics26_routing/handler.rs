@@ -181,6 +181,8 @@ mod tests {
     use crate::core::ics04_channel::context::ChannelReader;
     use crate::core::ics04_channel::msgs::acknowledgement::test_util::get_dummy_raw_msg_ack_with_packet;
     use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
+    use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
+    use crate::core::ics04_channel::msgs::chan_open_confirm::test_util::get_dummy_raw_msg_chan_open_confirm;
     use crate::core::ics04_channel::msgs::{
         chan_close_confirm::{
             test_util::get_dummy_raw_msg_chan_close_confirm, MsgChannelCloseConfirm,
@@ -754,5 +756,35 @@ mod tests {
         let event = res.events.first().unwrap();
 
         assert!(matches!(event, IbcEvent::OpenAckChannel(_)));
+    }
+
+    #[test]
+    fn test_chan_open_confirm_event() {
+        let mut ctx = get_channel_events_ctx().with_channel(
+            PortId::default(),
+            ChannelId::default(),
+            ChannelEnd::new(
+                ChannelState::TryOpen,
+                ChannelOrder::Unordered,
+                ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
+                vec![ConnectionId::new(0)],
+                ChannelVersion::default(),
+            ),
+        );
+
+        let msg_chan_open_confirm =
+            MsgChannelOpenConfirm::try_from(get_dummy_raw_msg_chan_open_confirm(1)).unwrap();
+
+        let res = dispatch(
+            &mut ctx,
+            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelOpenConfirm(msg_chan_open_confirm)),
+        )
+        .unwrap();
+
+        assert_eq!(res.events.len(), 1);
+
+        let event = res.events.first().unwrap();
+
+        assert!(matches!(event, IbcEvent::OpenConfirmChannel(_)));
     }
 }
