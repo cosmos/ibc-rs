@@ -39,11 +39,6 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let id_counter = ctx.channel_counter()?;
     let chan_id = ChannelId::new(id_counter);
 
-    output.log(format!(
-        "success: generated new channel identifier: {}",
-        chan_id
-    ));
-
     let new_channel_end = ChannelEnd::new(
         State::Init,
         *msg.channel.ordering(),
@@ -52,7 +47,10 @@ pub(crate) fn process<Ctx: ChannelReader>(
         msg.channel.version().clone(),
     );
 
-    output.log("success: no channel found");
+    output.log(format!(
+        "success: channel open init with channel identifier: {}",
+        chan_id
+    ));
 
     let result = ChannelResult {
         port_id: msg.port_id.clone(),

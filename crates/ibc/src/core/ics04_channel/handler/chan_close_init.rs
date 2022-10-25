@@ -40,7 +40,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         ));
     }
 
-    output.log("success: channel close init ");
+    output.log("success: channel close init");
 
     // Transition the channel end to the new state & pick a version.
     channel_end.set_state(State::Closed);

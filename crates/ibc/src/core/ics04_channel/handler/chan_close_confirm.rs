@@ -69,7 +69,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         &msg.proofs,
     )?;
 
-    output.log("success: channel close confirm ");
+    output.log("success: channel close confirm");
 
     // Transition the channel end to the new state & pick a version.
     channel_end.set_state(State::Closed);
