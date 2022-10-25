@@ -118,7 +118,6 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId};
-    use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::timestamp::ZERO_DURATION;
     use crate::Height;
@@ -262,17 +261,11 @@ mod tests {
                         test.ctx.clone()
                     );
 
-                    assert!(!proto_output.events.is_empty()); // Some events must exist.
-
                     // The object in the output is a channel end, should have TryOpen state.
                     assert_eq!(
                         proto_output.result.channel_end.state().clone(),
                         State::TryOpen
                     );
-
-                    for e in proto_output.events.iter() {
-                        assert!(matches!(e, &IbcEvent::OpenTryChannel(_)));
-                    }
                 }
                 Err(e) => {
                     assert!(

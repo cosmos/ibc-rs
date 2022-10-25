@@ -61,8 +61,6 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_close_init::test_util::get_dummy_raw_msg_chan_close_init;
     use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
     use crate::core::ics04_channel::msgs::ChannelMsg;
-    use crate::core::ics26_routing::handler::MsgReceipt;
-    use crate::events::IbcEvent;
     use crate::prelude::*;
 
     use crate::core::ics02_client::client_type::ClientType;
@@ -122,13 +120,6 @@ mod tests {
                 )
         };
 
-        let (MsgReceipt { events, log: _ }, _) =
-            channel_dispatch(&context, &ChannelMsg::ChannelCloseInit(msg_chan_close_init)).unwrap();
-
-        assert!(!events.is_empty()); // Some events must exist.
-
-        for event in events.iter() {
-            assert!(matches!(event, &IbcEvent::CloseInitChannel(_)));
-        }
+        channel_dispatch(&context, &ChannelMsg::ChannelCloseInit(msg_chan_close_init)).unwrap();
     }
 }
