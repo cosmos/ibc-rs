@@ -92,7 +92,7 @@ where
                 // TODO (BEFORE MERGE): `channel_dispatch()` should no longer return events
                 // They are now created in `channel_events()`
                 MsgReceipt {
-                    events: dispatch_events,
+                    events: _events,
                     log: dispatch_log,
                 },
                 mut channel_result,
@@ -107,9 +107,9 @@ where
 
             let dispatch_events = channel_events(
                 &msg,
-                channel_result.channel_id,
+                channel_result.channel_id.clone(),
                 channel_result.channel_end.counterparty().clone(),
-                channel_result.channel_end.version,
+                &channel_result.channel_end.version,
             );
 
             // Apply any results to the host chain store.

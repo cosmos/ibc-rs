@@ -56,7 +56,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     let result = ChannelResult {
         port_id: msg.port_id.clone(),
-        channel_id: chan_id.clone(),
+        channel_id: chan_id,
         channel_end: new_channel_end,
         channel_id_state: ChannelIdState::Generated,
     };
@@ -66,7 +66,6 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ics26_routing::handler::MsgReceipt;
     use crate::prelude::*;
 
     use test_log::test;
@@ -132,7 +131,7 @@ mod tests {
             let res = channel_dispatch(&test.ctx, &test.msg);
             // Additionally check the events and the output objects in the result.
             match res {
-                Ok((MsgReceipt { log: _, events }, res)) => {
+                Ok((_, res)) => {
                     assert!(
                         test.want_pass,
                         "chan_open_init: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",

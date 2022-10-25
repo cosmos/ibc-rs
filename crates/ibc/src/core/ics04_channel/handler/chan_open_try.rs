@@ -89,7 +89,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let result = ChannelResult {
         port_id: msg.port_id.clone(),
         channel_id_state: ChannelIdState::Generated,
-        channel_id: channel_id.clone(),
+        channel_id,
         channel_end,
     };
 

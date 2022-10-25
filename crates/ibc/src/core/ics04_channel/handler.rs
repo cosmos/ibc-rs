@@ -164,15 +164,15 @@ pub fn channel_events(
     msg: &ChannelMsg,
     channel_id: ChannelId,
     counterparty: Counterparty,
-    version: Version,
+    version: &Version,
 ) -> Vec<IbcEvent> {
     let event = match msg {
         ChannelMsg::ChannelOpenInit(msg) => IbcEvent::OpenInitChannel(OpenInit::new(
-            msg.port_id,
+            msg.port_id.clone(),
             channel_id,
             counterparty.port_id,
-            msg.channel.connection_hops[0],
-            version,
+            msg.channel.connection_hops[0].clone(),
+            version.clone(),
         )),
         ChannelMsg::ChannelOpenTry(_) => todo!(),
         ChannelMsg::ChannelOpenAck(_) => todo!(),
