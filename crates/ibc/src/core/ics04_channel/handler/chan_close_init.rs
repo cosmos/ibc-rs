@@ -3,10 +3,8 @@ use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::Error;
-use crate::core::ics04_channel::events::Attributes;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
-use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 
 pub(crate) fn process<Ctx: ChannelReader>(
@@ -53,16 +51,6 @@ pub(crate) fn process<Ctx: ChannelReader>(
         channel_id_state: ChannelIdState::Reused,
         channel_end,
     };
-
-    let event_attributes = Attributes {
-        channel_id: Some(msg.channel_id.clone()),
-        ..Default::default()
-    };
-    output.emit(IbcEvent::CloseInitChannel(
-        event_attributes
-            .try_into()
-            .map_err(|_| Error::missing_channel_id())?,
-    ));
 
     Ok(output.with_result(result))
 }

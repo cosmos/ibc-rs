@@ -8,7 +8,7 @@ use tendermint::abci::Event as AbciEvent;
 use crate::core::ics04_channel::error::Error;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use crate::events::{Error as EventError, IbcEvent, IbcEventType};
+use crate::events::{IbcEvent, IbcEventType};
 use crate::prelude::*;
 
 use super::Version;
@@ -489,71 +489,60 @@ impl From<OpenConfirm> for AbciEvent {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Debug)]
 pub struct CloseInit {
-    pub port_id: PortId,
-    pub channel_id: ChannelId,
-    pub connection_id: ConnectionId,
-    pub counterparty_port_id: PortId,
-    pub counterparty_channel_id: Option<ChannelId>,
-}
-
-impl From<CloseInit> for Attributes {
-    fn from(ev: CloseInit) -> Self {
-        Self {
-            port_id: ev.port_id,
-            channel_id: Some(ev.channel_id),
-            connection_id: ev.connection_id,
-            counterparty_port_id: ev.counterparty_port_id,
-            counterparty_channel_id: ev.counterparty_channel_id,
-        }
-    }
+    port_id: PortIdAttribute,
+    channel_id: ChannelIdAttribute,
+    counterparty_port_id: PortIdAttribute,
+    counterparty_channel_id: ChannelIdAttribute,
+    connection_id: ConnectionIdAttribute,
 }
 
 impl CloseInit {
-    pub fn port_id(&self) -> &PortId {
-        &self.port_id
-    }
-
-    pub fn channel_id(&self) -> &ChannelId {
-        &self.channel_id
-    }
-
-    pub fn counterparty_port_id(&self) -> &PortId {
-        &self.counterparty_port_id
-    }
-
-    pub fn counterparty_channel_id(&self) -> Option<&ChannelId> {
-        self.counterparty_channel_id.as_ref()
-    }
-}
-
-impl TryFrom<Attributes> for CloseInit {
-    type Error = EventError;
-    fn try_from(attrs: Attributes) -> Result<Self, Self::Error> {
-        if let Some(channel_id) = attrs.channel_id() {
-            Ok(CloseInit {
-                port_id: attrs.port_id.clone(),
-                channel_id: channel_id.clone(),
-                connection_id: attrs.connection_id.clone(),
-                counterparty_port_id: attrs.counterparty_port_id.clone(),
-                counterparty_channel_id: attrs.counterparty_channel_id,
-            })
-        } else {
-            Err(EventError::channel(Error::missing_channel_id()))
+    pub fn new(
+        port_id: PortId,
+        channel_id: ChannelId,
+        counterparty_port_id: PortId,
+        counterparty_channel_id: ChannelId,
+        connection_id: ConnectionId,
+    ) -> Self {
+        Self {
+            port_id: PortIdAttribute::from(port_id),
+            channel_id: ChannelIdAttribute::from(channel_id),
+            counterparty_port_id: PortIdAttribute::from(counterparty_port_id),
+            counterparty_channel_id: ChannelIdAttribute::from(counterparty_channel_id),
+            connection_id: ConnectionIdAttribute::from(connection_id),
         }
     }
-}
-
-impl From<CloseInit> for IbcEvent {
-    fn from(v: CloseInit) -> Self {
-        IbcEvent::CloseInitChannel(v)
+    pub fn port_id(&self) -> &PortId {
+        &self.port_id.port_id
+    }
+    pub fn channel_id(&self) -> &ChannelId {
+        &self.channel_id.channel_id
+    }
+    pub fn counterparty_port_id(&self) -> &PortId {
+        &self.counterparty_port_id.port_id
+    }
+    pub fn counterparty_channel_id(&self) -> &ChannelId {
+        &self.counterparty_channel_id.channel_id
+    }
+    pub fn connection_id(&self) -> &ConnectionId {
+        &self.connection_id.connection_id
     }
 }
 
-impl EventType for CloseInit {
-    fn event_type() -> IbcEventType {
-        IbcEventType::CloseInitChannel
+impl From<CloseInit> for AbciEvent {
+    fn from(o: CloseInit) -> Self {
+        AbciEvent {
+            type_str: IbcEventType::CloseInitChannel.as_str().to_string(),
+            attributes: vec![
+                o.port_id.into(),
+                o.channel_id.into(),
+                o.counterparty_port_id.into(),
+                o.counterparty_channel_id.into(),
+                o.connection_id.into(),
+            ],
+        }
     }
 }
 
