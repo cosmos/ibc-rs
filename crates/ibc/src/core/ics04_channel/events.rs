@@ -311,44 +311,67 @@ impl From<OpenInit> for AbciEvent {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Debug)]
 pub struct OpenTry {
-    pub port_id: PortId,
-    pub channel_id: Option<ChannelId>,
-    pub connection_id: ConnectionId,
-    pub counterparty_port_id: PortId,
-    pub counterparty_channel_id: Option<ChannelId>,
+    port_id: PortIdAttribute,
+    channel_id: ChannelIdAttribute,
+    counterparty_port_id: PortIdAttribute,
+    counterparty_channel_id: ChannelIdAttribute,
+    connection_id: ConnectionIdAttribute,
+    version: VersionAttribute,
 }
 
-impl From<OpenTry> for Attributes {
-    fn from(ev: OpenTry) -> Self {
+impl OpenTry {
+    pub fn new(
+        port_id: PortId,
+        channel_id: ChannelId,
+        counterparty_port_id: PortId,
+        counterparty_channel_id: ChannelId,
+        connection_id: ConnectionId,
+        version: Version,
+    ) -> Self {
         Self {
-            port_id: ev.port_id,
-            channel_id: ev.channel_id,
-            connection_id: ev.connection_id,
-            counterparty_port_id: ev.counterparty_port_id,
-            counterparty_channel_id: ev.counterparty_channel_id,
+            port_id: PortIdAttribute::from(port_id),
+            channel_id: ChannelIdAttribute::from(channel_id),
+            counterparty_port_id: PortIdAttribute::from(counterparty_port_id),
+            counterparty_channel_id: ChannelIdAttribute::from(counterparty_channel_id),
+            connection_id: ConnectionIdAttribute::from(connection_id),
+            version: VersionAttribute::from(version),
         }
     }
-}
-impl OpenTry {
-    pub fn channel_id(&self) -> Option<&ChannelId> {
-        self.channel_id.as_ref()
-    }
     pub fn port_id(&self) -> &PortId {
-        &self.port_id
+        &self.port_id.port_id
+    }
+    pub fn channel_id(&self) -> &ChannelId {
+        &self.channel_id.channel_id
+    }
+    pub fn counterparty_port_id(&self) -> &PortId {
+        &self.counterparty_port_id.port_id
+    }
+    pub fn counterparty_channel_id(&self) -> &ChannelId {
+        &self.counterparty_channel_id.channel_id
+    }
+    pub fn connection_id(&self) -> &ConnectionId {
+        &self.connection_id.connection_id
+    }
+    pub fn version(&self) -> &Version {
+        &self.version.version
     }
 }
 
-impl From<OpenTry> for IbcEvent {
-    fn from(v: OpenTry) -> Self {
-        IbcEvent::OpenTryChannel(v)
-    }
-}
-
-impl EventType for OpenTry {
-    fn event_type() -> IbcEventType {
-        IbcEventType::OpenTryChannel
+impl From<OpenTry> for AbciEvent {
+    fn from(o: OpenTry) -> Self {
+        AbciEvent {
+            type_str: IbcEventType::OpenTryChannel.as_str().to_string(),
+            attributes: vec![
+                o.port_id.into(),
+                o.channel_id.into(),
+                o.counterparty_port_id.into(),
+                o.counterparty_channel_id.into(),
+                o.connection_id.into(),
+                o.version.into(),
+            ],
+        }
     }
 }
 
