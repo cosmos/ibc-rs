@@ -177,12 +177,11 @@ mod tests {
     use crate::core::ics04_channel::channel::Counterparty as ChannelCounterparty;
     use crate::core::ics04_channel::channel::Order as ChannelOrder;
     use crate::core::ics04_channel::channel::State as ChannelState;
-    use crate::core::ics04_channel::Version as ChannelVersion;
     use crate::core::ics04_channel::context::ChannelReader;
     use crate::core::ics04_channel::msgs::acknowledgement::test_util::get_dummy_raw_msg_ack_with_packet;
     use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
-    use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
     use crate::core::ics04_channel::msgs::chan_open_confirm::test_util::get_dummy_raw_msg_chan_open_confirm;
+    use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
     use crate::core::ics04_channel::msgs::{
         chan_close_confirm::{
             test_util::get_dummy_raw_msg_chan_close_confirm, MsgChannelCloseConfirm,
@@ -196,6 +195,7 @@ mod tests {
         ChannelMsg, PacketMsg,
     };
     use crate::core::ics04_channel::timeout::TimeoutHeight;
+    use crate::core::ics04_channel::Version as ChannelVersion;
     use crate::core::ics23_commitment::commitment::test_util::get_dummy_merkle_proof;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
@@ -683,7 +683,7 @@ mod tests {
             .build();
 
         // Note: messages will be using the default port
-        ctx.scope_port_to_module(PortId::default(), module_id.clone());
+        ctx.scope_port_to_module(PortId::default(), module_id);
 
         ctx.with_router(router)
     }
