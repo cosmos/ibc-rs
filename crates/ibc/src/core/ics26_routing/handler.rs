@@ -163,14 +163,21 @@ mod tests {
         create_client::MsgCreateClient, update_client::MsgUpdateClient,
         upgrade_client::MsgUpgradeClient, ClientMsg,
     };
-    use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
+    use crate::core::ics03_connection::connection::{
+        ConnectionEnd, Counterparty as ConnCounterparty, State as ConnState,
+    };
     use crate::core::ics03_connection::msgs::{
         conn_open_ack::{test_util::get_dummy_raw_msg_conn_open_ack, MsgConnectionOpenAck},
         conn_open_init::{test_util::get_dummy_raw_msg_conn_open_init, MsgConnectionOpenInit},
         conn_open_try::{test_util::get_dummy_raw_msg_conn_open_try, MsgConnectionOpenTry},
         ConnectionMsg,
     };
-    use crate::core::ics03_connection::version::Version;
+    use crate::core::ics03_connection::version::Version as ConnVersion;
+    use crate::core::ics04_channel::channel::ChannelEnd;
+    use crate::core::ics04_channel::channel::Counterparty as ChannelCounterparty;
+    use crate::core::ics04_channel::channel::Order as ChannelOrder;
+    use crate::core::ics04_channel::channel::State as ChannelState;
+    use crate::core::ics04_channel::Version as ChannelVersion;
     use crate::core::ics04_channel::context::ChannelReader;
     use crate::core::ics04_channel::msgs::acknowledgement::test_util::get_dummy_raw_msg_ack_with_packet;
     use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
@@ -189,7 +196,7 @@ mod tests {
     use crate::core::ics04_channel::timeout::TimeoutHeight;
     use crate::core::ics23_commitment::commitment::test_util::get_dummy_merkle_proof;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-    use crate::core::ics24_host::identifier::{ClientId, ConnectionId, PortId};
+    use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
     use crate::core::ics26_routing::context::{Ics26Context, ModuleId, Router, RouterBuilder};
     use crate::core::ics26_routing::error::Error;
     use crate::core::ics26_routing::handler::dispatch;
@@ -656,14 +663,14 @@ mod tests {
             .with_connection(
                 ConnectionId::new(0),
                 ConnectionEnd::new(
-                    State::Open,
+                    ConnState::Open,
                     ClientId::default(),
-                    Counterparty::new(
+                    ConnCounterparty::new(
                         ClientId::default(),
                         Some(ConnectionId::new(0)),
                         CommitmentPrefix::default(),
                     ),
-                    vec![Version::default()],
+                    vec![ConnVersion::default()],
                     Duration::MAX,
                 ),
             );
@@ -717,5 +724,35 @@ mod tests {
         let event = res.events.first().unwrap();
 
         assert!(matches!(event, IbcEvent::OpenTryChannel(_)));
+    }
+
+    #[test]
+    fn test_chan_open_ack_event() {
+        let mut ctx = get_channel_events_ctx().with_channel(
+            PortId::default(),
+            ChannelId::default(),
+            ChannelEnd::new(
+                ChannelState::Init,
+                ChannelOrder::Unordered,
+                ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
+                vec![ConnectionId::new(0)],
+                ChannelVersion::default(),
+            ),
+        );
+
+        let msg_chan_open_ack =
+            MsgChannelOpenAck::try_from(get_dummy_raw_msg_chan_open_ack(1)).unwrap();
+
+        let res = dispatch(
+            &mut ctx,
+            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelOpenAck(msg_chan_open_ack)),
+        )
+        .unwrap();
+
+        assert_eq!(res.events.len(), 1);
+
+        let event = res.events.first().unwrap();
+
+        assert!(matches!(event, IbcEvent::OpenAckChannel(_)));
     }
 }
