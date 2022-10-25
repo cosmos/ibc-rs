@@ -9,7 +9,7 @@ use crate::core::ics04_channel::handler::{
     channel_callback, channel_dispatch, channel_validate, recv_packet::RecvPacketResult,
 };
 use crate::core::ics04_channel::handler::{
-    get_module_for_packet_msg, packet_callback as ics4_packet_callback,
+    channel_events, get_module_for_packet_msg, packet_callback as ics4_packet_callback,
     packet_dispatch as ics4_packet_msg_dispatcher,
 };
 use crate::core::ics04_channel::packet::PacketResult;
@@ -89,6 +89,8 @@ where
             let dispatch_output = HandlerOutputBuilder::<()>::new();
 
             let (
+                // TODO (BEFORE MERGE): `channel_dispatch()` should no longer return events
+                // They are now created in `channel_events()`
                 MsgReceipt {
                     events: dispatch_events,
                     log: dispatch_log,
@@ -102,6 +104,14 @@ where
             // See issue [#190](https://github.com/cosmos/ibc-rs/issues/190)
             let callback_extras = channel_callback(ctx, &module_id, &msg, &mut channel_result)
                 .map_err(Error::ics04_channel)?;
+
+            let dispatch_events = channel_events(
+                ctx,
+                &msg,
+                channel_result.channel_id,
+                channel_result.channel_end.counterparty().clone(),
+                channel_result.channel_end.version,
+            );
 
             // Apply any results to the host chain store.
             ctx.store_channel_result(channel_result)

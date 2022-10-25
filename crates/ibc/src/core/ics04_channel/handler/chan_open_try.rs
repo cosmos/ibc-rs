@@ -4,13 +4,11 @@ use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::Error;
-use crate::core::ics04_channel::events::Attributes;
 use crate::core::ics04_channel::handler::verify::verify_channel_proofs;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::ChannelId;
-use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
@@ -94,16 +92,6 @@ pub(crate) fn process<Ctx: ChannelReader>(
         channel_id: channel_id.clone(),
         channel_end,
     };
-
-    let event_attributes = Attributes {
-        channel_id: Some(channel_id),
-        ..Default::default()
-    };
-    output.emit(IbcEvent::OpenTryChannel(
-        event_attributes
-            .try_into()
-            .map_err(|_| Error::missing_channel_id())?,
-    ));
 
     Ok(output.with_result(result))
 }

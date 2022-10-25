@@ -3,11 +3,9 @@
 use crate::core::ics04_channel::channel::{ChannelEnd, State};
 use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::Error;
-use crate::core::ics04_channel::events::Attributes;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
 use crate::core::ics24_host::identifier::ChannelId;
-use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
@@ -63,16 +61,6 @@ pub(crate) fn process<Ctx: ChannelReader>(
         channel_id_state: ChannelIdState::Generated,
     };
 
-    let event_attributes = Attributes {
-        channel_id: Some(chan_id),
-        ..Default::default()
-    };
-    output.emit(IbcEvent::OpenInitChannel(
-        event_attributes
-            .try_into()
-            .map_err(|_| Error::missing_channel_id())?,
-    ));
-
     Ok(output.with_result(result))
 }
 
@@ -94,7 +82,6 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
     use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics24_host::identifier::ConnectionId;
-    use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
 
     #[test]
@@ -154,18 +141,12 @@ mod tests {
                         test.ctx.clone()
                     );
 
-                    assert!(!events.is_empty()); // Some events must exist.
-
                     // The object in the output is a ChannelEnd, should have init state.
                     assert_eq!(res.channel_end.state().clone(), State::Init);
                     let msg_init = test.msg;
 
                     if let ChannelMsg::ChannelOpenInit(msg_init) = msg_init {
                         assert_eq!(res.port_id.clone(), msg_init.port_id.clone());
-                    }
-
-                    for e in events.iter() {
-                        assert!(matches!(e, &IbcEvent::OpenInitChannel(_)));
                     }
                 }
                 Err(e) => {

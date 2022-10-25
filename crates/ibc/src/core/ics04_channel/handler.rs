@@ -1,6 +1,6 @@
 //! This module implements the processing logic for ICS4 (channel) messages.
 use crate::core::ics26_routing::handler::MsgReceipt;
-use crate::events::ModuleEvent;
+use crate::events::{IbcEvent, ModuleEvent};
 use crate::prelude::*;
 
 use crate::core::ics04_channel::channel::ChannelEnd;
@@ -14,6 +14,10 @@ use crate::core::ics26_routing::context::{
     Acknowledgement, Ics26Context, ModuleId, ModuleOutputBuilder, OnRecvPacketAck, Router,
 };
 use crate::handler::{HandlerOutput, HandlerOutputBuilder};
+
+use super::channel::Counterparty;
+use super::events::OpenInit;
+use super::Version;
 
 pub mod acknowledgement;
 pub mod chan_close_confirm;
@@ -153,6 +157,35 @@ where
             cb.on_chan_close_confirm(&msg.port_id, &result.channel_id)
         }
     }
+}
+
+/// Constructs the proper channel event
+pub fn channel_events<Ctx>(
+    ctx: &Ctx,
+    msg: &ChannelMsg,
+    channel_id: ChannelId,
+    counterparty: Counterparty,
+    version: Version,
+) -> Vec<IbcEvent>
+where
+    Ctx: Ics26Context,
+{
+    let event = match msg {
+        ChannelMsg::ChannelOpenInit(msg) => IbcEvent::OpenInitChannel(OpenInit::new(
+            msg.port_id,
+            channel_id,
+            counterparty.port_id,
+            msg.channel.connection_hops[0],
+            version,
+        )),
+        ChannelMsg::ChannelOpenTry(_) => todo!(),
+        ChannelMsg::ChannelOpenAck(_) => todo!(),
+        ChannelMsg::ChannelOpenConfirm(_) => todo!(),
+        ChannelMsg::ChannelCloseInit(_) => todo!(),
+        ChannelMsg::ChannelCloseConfirm(_) => todo!(),
+    };
+
+    vec![event]
 }
 
 pub fn get_module_for_packet_msg<Ctx>(ctx: &Ctx, msg: &PacketMsg) -> Result<ModuleId, Error>
