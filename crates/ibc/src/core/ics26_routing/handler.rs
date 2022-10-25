@@ -109,6 +109,7 @@ where
                 &msg,
                 channel_result.channel_id.clone(),
                 channel_result.channel_end.counterparty().clone(),
+                channel_result.channel_end.connection_hops[0].clone(),
                 &channel_result.channel_end.version,
             );
 

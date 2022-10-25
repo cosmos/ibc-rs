@@ -9,14 +9,14 @@ use crate::core::ics04_channel::error::Error;
 use crate::core::ics04_channel::msgs::ChannelMsg;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::{msgs::PacketMsg, packet::PacketResult};
-use crate::core::ics24_host::identifier::{ChannelId, PortId};
+use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{
     Acknowledgement, Ics26Context, ModuleId, ModuleOutputBuilder, OnRecvPacketAck, Router,
 };
 use crate::handler::{HandlerOutput, HandlerOutputBuilder};
 
 use super::channel::Counterparty;
-use super::events::OpenInit;
+use super::events::{CloseConfirm, CloseInit, OpenAck, OpenConfirm, OpenInit, OpenTry};
 use super::Version;
 
 pub mod acknowledgement;
@@ -164,6 +164,7 @@ pub fn channel_events(
     msg: &ChannelMsg,
     channel_id: ChannelId,
     counterparty: Counterparty,
+    connection_id: ConnectionId,
     version: &Version,
 ) -> Vec<IbcEvent> {
     let event = match msg {
@@ -171,14 +172,55 @@ pub fn channel_events(
             msg.port_id.clone(),
             channel_id,
             counterparty.port_id,
-            msg.channel.connection_hops[0].clone(),
+            connection_id,
             version.clone(),
         )),
-        ChannelMsg::ChannelOpenTry(_) => todo!(),
-        ChannelMsg::ChannelOpenAck(_) => todo!(),
-        ChannelMsg::ChannelOpenConfirm(_) => todo!(),
-        ChannelMsg::ChannelCloseInit(_) => todo!(),
-        ChannelMsg::ChannelCloseConfirm(_) => todo!(),
+        ChannelMsg::ChannelOpenTry(msg) => IbcEvent::OpenTryChannel(OpenTry::new(
+            msg.port_id.clone(),
+            channel_id,
+            counterparty.port_id,
+            counterparty
+                .channel_id
+                .expect("counterparty channel id must exist after channel open try"),
+            connection_id,
+            version.clone(),
+        )),
+        ChannelMsg::ChannelOpenAck(msg) => IbcEvent::OpenAckChannel(OpenAck::new(
+            msg.port_id.clone(),
+            channel_id,
+            counterparty.port_id,
+            counterparty
+                .channel_id
+                .expect("counterparty channel id must exist after channel open ack"),
+            connection_id,
+        )),
+        ChannelMsg::ChannelOpenConfirm(msg) => IbcEvent::OpenConfirmChannel(OpenConfirm::new(
+            msg.port_id.clone(),
+            channel_id,
+            counterparty.port_id,
+            counterparty
+                .channel_id
+                .expect("counterparty channel id must exist after channel open confirm"),
+            connection_id,
+        )),
+        ChannelMsg::ChannelCloseInit(msg) => IbcEvent::CloseInitChannel(CloseInit::new(
+            msg.port_id.clone(),
+            channel_id,
+            counterparty.port_id,
+            counterparty
+                .channel_id
+                .expect("counterparty channel id must exist after channel open ack"),
+            connection_id,
+        )),
+        ChannelMsg::ChannelCloseConfirm(msg) => IbcEvent::CloseConfirmChannel(CloseConfirm::new(
+            msg.port_id.clone(),
+            channel_id,
+            counterparty.port_id,
+            counterparty
+                .channel_id
+                .expect("counterparty channel id must exist after channel open ack"),
+            connection_id,
+        )),
     };
 
     vec![event]
