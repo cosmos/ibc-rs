@@ -188,6 +188,7 @@ mod tests {
     };
     use crate::core::ics04_channel::timeout::TimeoutHeight;
     use crate::core::ics23_commitment::commitment::test_util::get_dummy_merkle_proof;
+    use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId, PortId};
     use crate::core::ics26_routing::context::{Ics26Context, ModuleId, Router, RouterBuilder};
     use crate::core::ics26_routing::error::Error;
@@ -650,16 +651,22 @@ mod tests {
 
     fn get_channel_events_ctx() -> MockContext {
         let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
-        let mut ctx = MockContext::default().with_connection(
-            ConnectionId::new(0),
-            ConnectionEnd::new(
-                State::Open,
-                ClientId::default(),
-                Counterparty::default(),
-                vec![Version::default()],
-                Duration::MAX,
-            ),
-        );
+        let mut ctx = MockContext::default()
+            .with_client(&ClientId::default(), Height::new(0, 1).unwrap())
+            .with_connection(
+                ConnectionId::new(0),
+                ConnectionEnd::new(
+                    State::Open,
+                    ClientId::default(),
+                    Counterparty::new(
+                        ClientId::default(),
+                        Some(ConnectionId::new(0)),
+                        CommitmentPrefix::default(),
+                    ),
+                    vec![Version::default()],
+                    Duration::MAX,
+                ),
+            );
         let module = DummyTransferModule::new(ctx.ibc_store_share());
         let router = MockRouterBuilder::default()
             .add_route(module_id.clone(), module)
@@ -692,4 +699,23 @@ mod tests {
         assert!(matches!(event, IbcEvent::OpenInitChannel(_)));
     }
 
+    #[test]
+    fn test_chan_open_try_event() {
+        let mut ctx = get_channel_events_ctx();
+
+        let msg_chan_open_try =
+            MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(1)).unwrap();
+
+        let res = dispatch(
+            &mut ctx,
+            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelOpenTry(msg_chan_open_try)),
+        )
+        .unwrap();
+
+        assert_eq!(res.events.len(), 1);
+
+        let event = res.events.first().unwrap();
+
+        assert!(matches!(event, IbcEvent::OpenTryChannel(_)));
+    }
 }
