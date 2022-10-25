@@ -432,45 +432,60 @@ impl From<OpenAck> for AbciEvent {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Debug)]
 pub struct OpenConfirm {
-    pub port_id: PortId,
-    pub channel_id: Option<ChannelId>,
-    pub connection_id: ConnectionId,
-    pub counterparty_port_id: PortId,
-    pub counterparty_channel_id: Option<ChannelId>,
-}
-
-impl From<OpenConfirm> for Attributes {
-    fn from(ev: OpenConfirm) -> Self {
-        Self {
-            port_id: ev.port_id,
-            channel_id: ev.channel_id,
-            connection_id: ev.connection_id,
-            counterparty_port_id: ev.counterparty_port_id,
-            counterparty_channel_id: ev.counterparty_channel_id,
-        }
-    }
+    port_id: PortIdAttribute,
+    channel_id: ChannelIdAttribute,
+    counterparty_port_id: PortIdAttribute,
+    counterparty_channel_id: ChannelIdAttribute,
+    connection_id: ConnectionIdAttribute,
 }
 
 impl OpenConfirm {
-    pub fn channel_id(&self) -> Option<&ChannelId> {
-        self.channel_id.as_ref()
+    pub fn new(
+        port_id: PortId,
+        channel_id: ChannelId,
+        counterparty_port_id: PortId,
+        counterparty_channel_id: ChannelId,
+        connection_id: ConnectionId,
+    ) -> Self {
+        Self {
+            port_id: PortIdAttribute::from(port_id),
+            channel_id: ChannelIdAttribute::from(channel_id),
+            counterparty_port_id: PortIdAttribute::from(counterparty_port_id),
+            counterparty_channel_id: ChannelIdAttribute::from(counterparty_channel_id),
+            connection_id: ConnectionIdAttribute::from(connection_id),
+        }
     }
     pub fn port_id(&self) -> &PortId {
-        &self.port_id
+        &self.port_id.port_id
+    }
+    pub fn channel_id(&self) -> &ChannelId {
+        &self.channel_id.channel_id
+    }
+    pub fn counterparty_port_id(&self) -> &PortId {
+        &self.counterparty_port_id.port_id
+    }
+    pub fn counterparty_channel_id(&self) -> &ChannelId {
+        &self.counterparty_channel_id.channel_id
+    }
+    pub fn connection_id(&self) -> &ConnectionId {
+        &self.connection_id.connection_id
     }
 }
 
-impl From<OpenConfirm> for IbcEvent {
-    fn from(v: OpenConfirm) -> Self {
-        IbcEvent::OpenConfirmChannel(v)
-    }
-}
-
-impl EventType for OpenConfirm {
-    fn event_type() -> IbcEventType {
-        IbcEventType::OpenConfirmChannel
+impl From<OpenConfirm> for AbciEvent {
+    fn from(o: OpenConfirm) -> Self {
+        AbciEvent {
+            type_str: IbcEventType::OpenConfirmChannel.as_str().to_string(),
+            attributes: vec![
+                o.port_id.into(),
+                o.channel_id.into(),
+                o.counterparty_port_id.into(),
+                o.counterparty_channel_id.into(),
+                o.connection_id.into(),
+            ],
+        }
     }
 }
 
