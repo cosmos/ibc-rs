@@ -100,10 +100,6 @@ impl TryFrom<Packet> for Vec<Tag> {
     }
 }
 
-pub trait EventType {
-    fn event_type() -> IbcEventType;
-}
-
 #[derive(Debug, From)]
 struct PortIdAttribute {
     port_id: PortId,
