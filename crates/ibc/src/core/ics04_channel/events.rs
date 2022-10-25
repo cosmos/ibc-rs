@@ -1,7 +1,7 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the channels module.
 
 use derive_more::From;
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Serialize;
 use tendermint::abci::tag::Tag;
 use tendermint::abci::Event as AbciEvent;
 
@@ -31,68 +31,6 @@ pub const PKT_DST_CHANNEL_ATTRIBUTE_KEY: &str = "packet_dst_channel";
 pub const PKT_TIMEOUT_HEIGHT_ATTRIBUTE_KEY: &str = "packet_timeout_height";
 pub const PKT_TIMEOUT_TIMESTAMP_ATTRIBUTE_KEY: &str = "packet_timeout_timestamp";
 pub const PKT_ACK_ATTRIBUTE_KEY: &str = "packet_ack";
-
-#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
-pub struct Attributes {
-    pub port_id: PortId,
-    pub channel_id: Option<ChannelId>,
-    pub connection_id: ConnectionId,
-    pub counterparty_port_id: PortId,
-    pub counterparty_channel_id: Option<ChannelId>,
-}
-
-impl Attributes {
-    pub fn port_id(&self) -> &PortId {
-        &self.port_id
-    }
-    pub fn channel_id(&self) -> Option<&ChannelId> {
-        self.channel_id.as_ref()
-    }
-}
-
-/// Convert attributes to Tendermint ABCI tags
-///
-/// # Note
-/// The parsing of `Key`s and `Value`s never fails, because the
-/// `FromStr` instance of `tendermint::abci::tag::{Key, Value}`
-/// is infallible, even if it is not represented in the error type.
-/// Once tendermint-rs improves the API of the `Key` and `Value` types,
-/// we will be able to remove the `.parse().unwrap()` calls.
-impl From<Attributes> for Vec<Tag> {
-    fn from(a: Attributes) -> Self {
-        let mut attributes = vec![];
-        let port_id = Tag {
-            key: PORT_ID_ATTRIBUTE_KEY.parse().unwrap(),
-            value: a.port_id.to_string().parse().unwrap(),
-        };
-        attributes.push(port_id);
-        if let Some(channel_id) = a.channel_id {
-            let channel_id = Tag {
-                key: CHANNEL_ID_ATTRIBUTE_KEY.parse().unwrap(),
-                value: channel_id.to_string().parse().unwrap(),
-            };
-            attributes.push(channel_id);
-        }
-        let connection_id = Tag {
-            key: CONNECTION_ID_ATTRIBUTE_KEY.parse().unwrap(),
-            value: a.connection_id.to_string().parse().unwrap(),
-        };
-        attributes.push(connection_id);
-        let counterparty_port_id = Tag {
-            key: COUNTERPARTY_PORT_ID_ATTRIBUTE_KEY.parse().unwrap(),
-            value: a.counterparty_port_id.to_string().parse().unwrap(),
-        };
-        attributes.push(counterparty_port_id);
-        if let Some(channel_id) = a.counterparty_channel_id {
-            let channel_id = Tag {
-                key: COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY.parse().unwrap(),
-                value: channel_id.to_string().parse().unwrap(),
-            };
-            attributes.push(channel_id);
-        }
-        attributes
-    }
-}
 
 /// Convert attributes to Tendermint ABCI tags
 ///
@@ -546,42 +484,60 @@ impl From<CloseInit> for AbciEvent {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Debug)]
 pub struct CloseConfirm {
-    pub channel_id: Option<ChannelId>,
-    pub port_id: PortId,
-    pub connection_id: ConnectionId,
-    pub counterparty_port_id: PortId,
-    pub counterparty_channel_id: Option<ChannelId>,
-}
-
-impl From<CloseConfirm> for Attributes {
-    fn from(ev: CloseConfirm) -> Self {
-        Self {
-            port_id: ev.port_id,
-            channel_id: ev.channel_id,
-            connection_id: ev.connection_id,
-            counterparty_port_id: ev.counterparty_port_id,
-            counterparty_channel_id: ev.counterparty_channel_id,
-        }
-    }
+    port_id: PortIdAttribute,
+    channel_id: ChannelIdAttribute,
+    counterparty_port_id: PortIdAttribute,
+    counterparty_channel_id: ChannelIdAttribute,
+    connection_id: ConnectionIdAttribute,
 }
 
 impl CloseConfirm {
-    pub fn channel_id(&self) -> Option<&ChannelId> {
-        self.channel_id.as_ref()
+    pub fn new(
+        port_id: PortId,
+        channel_id: ChannelId,
+        counterparty_port_id: PortId,
+        counterparty_channel_id: ChannelId,
+        connection_id: ConnectionId,
+    ) -> Self {
+        Self {
+            port_id: PortIdAttribute::from(port_id),
+            channel_id: ChannelIdAttribute::from(channel_id),
+            counterparty_port_id: PortIdAttribute::from(counterparty_port_id),
+            counterparty_channel_id: ChannelIdAttribute::from(counterparty_channel_id),
+            connection_id: ConnectionIdAttribute::from(connection_id),
+        }
+    }
+    pub fn port_id(&self) -> &PortId {
+        &self.port_id.port_id
+    }
+    pub fn channel_id(&self) -> &ChannelId {
+        &self.channel_id.channel_id
+    }
+    pub fn counterparty_port_id(&self) -> &PortId {
+        &self.counterparty_port_id.port_id
+    }
+    pub fn counterparty_channel_id(&self) -> &ChannelId {
+        &self.counterparty_channel_id.channel_id
+    }
+    pub fn connection_id(&self) -> &ConnectionId {
+        &self.connection_id.connection_id
     }
 }
 
-impl From<CloseConfirm> for IbcEvent {
-    fn from(v: CloseConfirm) -> Self {
-        IbcEvent::CloseConfirmChannel(v)
-    }
-}
-
-impl EventType for CloseConfirm {
-    fn event_type() -> IbcEventType {
-        IbcEventType::CloseConfirmChannel
+impl From<CloseConfirm> for AbciEvent {
+    fn from(o: CloseConfirm) -> Self {
+        AbciEvent {
+            type_str: IbcEventType::CloseConfirmChannel.as_str().to_string(),
+            attributes: vec![
+                o.port_id.into(),
+                o.channel_id.into(),
+                o.counterparty_port_id.into(),
+                o.counterparty_channel_id.into(),
+                o.connection_id.into(),
+            ],
+        }
     }
 }
 

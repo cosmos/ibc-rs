@@ -160,16 +160,12 @@ where
 }
 
 /// Constructs the proper channel event
-pub fn channel_events<Ctx>(
-    ctx: &Ctx,
+pub fn channel_events(
     msg: &ChannelMsg,
     channel_id: ChannelId,
     counterparty: Counterparty,
     version: Version,
-) -> Vec<IbcEvent>
-where
-    Ctx: Ics26Context,
-{
+) -> Vec<IbcEvent> {
     let event = match msg {
         ChannelMsg::ChannelOpenInit(msg) => IbcEvent::OpenInitChannel(OpenInit::new(
             msg.port_id,

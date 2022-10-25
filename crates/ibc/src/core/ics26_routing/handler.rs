@@ -106,7 +106,6 @@ where
                 .map_err(Error::ics04_channel)?;
 
             let dispatch_events = channel_events(
-                ctx,
                 &msg,
                 channel_result.channel_id,
                 channel_result.channel_end.counterparty().clone(),
