@@ -787,4 +787,34 @@ mod tests {
 
         assert!(matches!(event, IbcEvent::OpenConfirmChannel(_)));
     }
+
+    #[test]
+    fn test_chan_close_init_event() {
+        let mut ctx = get_channel_events_ctx().with_channel(
+            PortId::default(),
+            ChannelId::default(),
+            ChannelEnd::new(
+                ChannelState::Open,
+                ChannelOrder::Unordered,
+                ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
+                vec![ConnectionId::new(0)],
+                ChannelVersion::default(),
+            ),
+        );
+
+        let msg_chan_close_init =
+            MsgChannelCloseInit::try_from(get_dummy_raw_msg_chan_close_init()).unwrap();
+
+        let res = dispatch(
+            &mut ctx,
+            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelCloseInit(msg_chan_close_init)),
+        )
+        .unwrap();
+
+        assert_eq!(res.events.len(), 1);
+
+        let event = res.events.first().unwrap();
+
+        assert!(matches!(event, IbcEvent::CloseInitChannel(_)));
+    }
 }
