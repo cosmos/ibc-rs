@@ -250,45 +250,64 @@ impl From<VersionAttribute> for Tag {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Debug)]
 pub struct OpenInit {
-    pub port_id: PortId,
-    pub channel_id: Option<ChannelId>,
-    pub connection_id: ConnectionId,
-    pub counterparty_port_id: PortId,
-    pub counterparty_channel_id: Option<ChannelId>,
+    port_id: PortIdAttribute,
+    channel_id: ChannelIdAttribute,
+    counterparty_port_id: PortIdAttribute,
+    connection_id: ConnectionIdAttribute,
+    version: VersionAttribute,
 }
 
 impl OpenInit {
-    pub fn channel_id(&self) -> Option<&ChannelId> {
-        self.channel_id.as_ref()
-    }
-    pub fn port_id(&self) -> &PortId {
-        &self.port_id
-    }
-}
-
-impl From<OpenInit> for Attributes {
-    fn from(ev: OpenInit) -> Self {
+    pub fn new(
+        port_id: PortId,
+        channel_id: ChannelId,
+        counterparty_port_id: PortId,
+        connection_id: ConnectionId,
+        version: Version,
+    ) -> Self {
         Self {
-            port_id: ev.port_id,
-            channel_id: ev.channel_id,
-            connection_id: ev.connection_id,
-            counterparty_port_id: ev.counterparty_port_id,
-            counterparty_channel_id: ev.counterparty_channel_id,
+            port_id: PortIdAttribute::from(port_id),
+            channel_id: ChannelIdAttribute::from(channel_id),
+            counterparty_port_id: PortIdAttribute::from(counterparty_port_id),
+            connection_id: ConnectionIdAttribute::from(connection_id),
+            version: VersionAttribute::from(version),
         }
     }
-}
-
-impl From<OpenInit> for IbcEvent {
-    fn from(v: OpenInit) -> Self {
-        IbcEvent::OpenInitChannel(v)
+    pub fn port_id(&self) -> &PortId {
+        &self.port_id.port_id
+    }
+    pub fn channel_id(&self) -> &ChannelId {
+        &self.channel_id.channel_id
+    }
+    pub fn counterparty_port_id(&self) -> &PortId {
+        &self.counterparty_port_id.port_id
+    }
+    pub fn connection_id(&self) -> &ConnectionId {
+        &self.connection_id.connection_id
+    }
+    pub fn version(&self) -> &Version {
+        &self.version.version
     }
 }
 
-impl EventType for OpenInit {
-    fn event_type() -> IbcEventType {
-        IbcEventType::OpenInitChannel
+impl From<OpenInit> for AbciEvent {
+    fn from(o: OpenInit) -> Self {
+        AbciEvent {
+            type_str: IbcEventType::OpenInitChannel.as_str().to_string(),
+            attributes: vec![
+                o.port_id.into(),
+                o.channel_id.into(),
+                o.counterparty_port_id.into(),
+                Tag {
+                    key: COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY.parse().unwrap(),
+                    value: String::from("").parse().unwrap(),
+                },
+                o.connection_id.into(),
+                o.version.into(),
+            ],
+        }
     }
 }
 
@@ -527,50 +546,6 @@ impl EventType for CloseConfirm {
         IbcEventType::CloseConfirmChannel
     }
 }
-
-macro_rules! impl_try_from_attribute_for_event {
-    ($($event:ty),+) => {
-        $(impl TryFrom<Attributes> for $event {
-            type Error = EventError;
-
-            fn try_from(attrs: Attributes) -> Result<Self, Self::Error> {
-                Ok(Self {
-                    port_id: attrs.port_id,
-                    channel_id: attrs.channel_id,
-                    connection_id: attrs.connection_id,
-                    counterparty_port_id: attrs.counterparty_port_id,
-                    counterparty_channel_id: attrs.counterparty_channel_id,
-                })
-            }
-        })+
-    };
-}
-
-impl_try_from_attribute_for_event!(OpenInit, OpenTry, OpenAck, OpenConfirm, CloseConfirm);
-
-macro_rules! impl_from_ibc_to_abci_event {
-    ($($event:ty),+) => {
-        $(impl From<$event> for AbciEvent {
-            fn from(v: $event) -> Self {
-                let attributes = Vec::<Tag>::from(Attributes::from(v));
-                let type_str = <$event>::event_type().as_str().to_string();
-                AbciEvent {
-                    type_str,
-                    attributes,
-                }
-            }
-        })+
-    };
-}
-
-impl_from_ibc_to_abci_event!(
-    OpenInit,
-    OpenTry,
-    OpenAck,
-    OpenConfirm,
-    CloseInit,
-    CloseConfirm
-);
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct SendPacket {
