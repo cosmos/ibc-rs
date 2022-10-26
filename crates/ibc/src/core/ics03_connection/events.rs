@@ -46,7 +46,7 @@ impl From<Attributes> for Vec<Tag> {
             key: COUNTERPARTY_CONN_ID_ATTRIBUTE_KEY.parse().unwrap(),
             value: match a.counterparty_connection_id {
                 Some(counterparty_conn_id) => counterparty_conn_id.to_string().parse().unwrap(),
-                None => "".to_string().parse().unwrap(),
+                None => "".parse().unwrap(),
             },
         };
 
