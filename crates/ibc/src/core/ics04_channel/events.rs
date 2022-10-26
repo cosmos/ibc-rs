@@ -13,6 +13,7 @@ use crate::events::{IbcEvent, IbcEventType};
 use crate::prelude::*;
 use crate::timestamp::Timestamp;
 
+use super::channel::Order;
 use super::packet::Sequence;
 use super::timeout::TimeoutHeight;
 use super::Version;
@@ -33,6 +34,7 @@ pub const PKT_SRC_PORT_ATTRIBUTE_KEY: &str = "packet_src_port";
 pub const PKT_SRC_CHANNEL_ATTRIBUTE_KEY: &str = "packet_src_channel";
 pub const PKT_DST_PORT_ATTRIBUTE_KEY: &str = "packet_dst_port";
 pub const PKT_DST_CHANNEL_ATTRIBUTE_KEY: &str = "packet_dst_channel";
+pub const PKT_CHANNEL_ORDERING_ATTRIBUTE_KEY: &str = "packet_channel_ordering";
 pub const PKT_TIMEOUT_HEIGHT_ATTRIBUTE_KEY: &str = "packet_timeout_height";
 pub const PKT_TIMEOUT_TIMESTAMP_ATTRIBUTE_KEY: &str = "packet_timeout_timestamp";
 pub const PKT_ACK_ATTRIBUTE_KEY: &str = "packet_ack";
@@ -628,6 +630,20 @@ impl From<SequenceAttribute> for Tag {
         Tag {
             key: PKT_SEQ_ATTRIBUTE_KEY.parse().unwrap(),
             value: u64::from(attr.sequence).to_string().parse().unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, From)]
+struct ChannelOrderingAttribute {
+    order: Order,
+}
+
+impl From<ChannelOrderingAttribute> for Tag {
+    fn from(attr: ChannelOrderingAttribute) -> Self {
+        Tag {
+            key: PKT_CHANNEL_ORDERING_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr.order.as_str().parse().unwrap(),
         }
     }
 }
