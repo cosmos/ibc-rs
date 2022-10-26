@@ -537,6 +537,26 @@ impl From<CloseConfirm> for AbciEvent {
     }
 }
 
+#[derive(Debug, From)]
+struct DataAttribute {
+    data: Vec<u8>,
+}
+
+impl TryFrom<DataAttribute> for Tag {
+    type Error = Error;
+
+    fn try_from(attr: DataAttribute) -> Result<Self, Self::Error> {
+        Ok(Tag {
+            key: PKT_DATA_ATTRIBUTE_KEY.parse().unwrap(),
+            value: String::from_utf8(attr.data)
+                // TODO: use error defined in v0.21.0
+                .map_err(|_| Error::invalid_packet())?
+                .parse()
+                .unwrap(),
+        })
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct SendPacket {
     pub packet: Packet,
