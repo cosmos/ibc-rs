@@ -400,6 +400,8 @@ pub mod tests {
     use crate::core::ics04_channel::{packet::{test_utils::get_dummy_raw_packet, Packet}, events::SendPacket};
 
     #[test]
+    /// Ensures that we don't panic when packet data is not utf-8. 
+    /// See issue [#199](https://github.com/cosmos/ibc-rs/issues/199)
     pub fn test_packet_data_non_utf8() {
         let mut packet = Packet::try_from(get_dummy_raw_packet(1, 1)).unwrap();
         packet.data = vec![128];

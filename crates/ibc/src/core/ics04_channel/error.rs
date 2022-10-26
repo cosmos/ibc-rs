@@ -83,6 +83,9 @@ define_error! {
         ZeroPacketData
             | _ | { "packet data bytes cannot be empty" },
 
+        NonUtf8PacketData
+            | _ | { "packet data bytes must be utf8 (this restriction will be lifted in the future)" },
+
         InvalidTimeoutHeight
             | _ | { "invalid timeout height for the packet" },
 
