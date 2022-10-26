@@ -12,6 +12,7 @@ use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::events::{IbcEvent, IbcEventType};
 use crate::prelude::*;
 
+use super::timeout::TimeoutHeight;
 use super::Version;
 
 /// Channel event attribute keys
@@ -573,6 +574,25 @@ impl From<DataHexAttribute> for Tag {
                 .unwrap()
                 .parse()
                 .unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, From)]
+struct TimeoutHeightAttribute {
+    timeout_height: TimeoutHeight,
+}
+
+impl From<TimeoutHeightAttribute> for Tag {
+    fn from(attr: TimeoutHeightAttribute) -> Self {
+        Tag {
+            key: PKT_TIMEOUT_HEIGHT_ATTRIBUTE_KEY.parse().unwrap(),
+            value: match attr.timeout_height {
+                TimeoutHeight::Never => "0-0".to_string(),
+                TimeoutHeight::At(height) => height.to_string(),
+            }
+            .parse()
+            .unwrap(),
         }
     }
 }
