@@ -2,6 +2,7 @@
 
 use derive_more::From;
 use serde_derive::Serialize;
+use subtle_encoding::hex;
 use tendermint::abci::tag::Tag;
 use tendermint::abci::Event as AbciEvent;
 
@@ -24,6 +25,7 @@ pub const VERSION_ATTRIBUTE_KEY: &str = "version";
 /// Packet event attribute keys
 pub const PKT_SEQ_ATTRIBUTE_KEY: &str = "packet_sequence";
 pub const PKT_DATA_ATTRIBUTE_KEY: &str = "packet_data";
+pub const PKT_DATA_HEX_ATTRIBUTE_KEY: &str = "packet_data_hex";
 pub const PKT_SRC_PORT_ATTRIBUTE_KEY: &str = "packet_src_port";
 pub const PKT_SRC_CHANNEL_ATTRIBUTE_KEY: &str = "packet_src_channel";
 pub const PKT_DST_PORT_ATTRIBUTE_KEY: &str = "packet_dst_port";
@@ -537,6 +539,7 @@ impl From<CloseConfirm> for AbciEvent {
     }
 }
 
+#[deprecated]
 #[derive(Debug, From)]
 struct DataAttribute {
     data: Vec<u8>,
@@ -554,6 +557,23 @@ impl TryFrom<DataAttribute> for Tag {
                 .parse()
                 .unwrap(),
         })
+    }
+}
+
+#[derive(Debug, From)]
+struct DataHexAttribute {
+    data: Vec<u8>,
+}
+
+impl From<DataHexAttribute> for Tag {
+    fn from(attr: DataHexAttribute) -> Self {
+        Tag {
+            key: PKT_DATA_HEX_ATTRIBUTE_KEY.parse().unwrap(),
+            value: String::from_utf8(hex::encode(attr.data))
+                .unwrap()
+                .parse()
+                .unwrap(),
+        }
     }
 }
 
