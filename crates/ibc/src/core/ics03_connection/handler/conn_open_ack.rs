@@ -3,7 +3,7 @@
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::Error;
-use crate::core::ics03_connection::events::Attributes;
+use crate::core::ics03_connection::events::OpenAck;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::events::IbcEvent;
@@ -38,6 +38,14 @@ pub(crate) fn process(
         return Err(Error::connection_mismatch(msg.conn_id_on_a));
     }
 
+    let client_id_on_a = conn_end_on_a.client_id();
+    let client_id_on_b = conn_end_on_a.counterparty().client_id();
+
+    let conn_id_on_b = conn_end_on_a
+        .counterparty()
+        .connection_id()
+        .ok_or_else(Error::invalid_counterparty)?;
+
     // Proof verification.
     {
         let client_state_of_b_on_a = ctx_a.client_state(conn_end_on_a.client_id())?;
@@ -46,14 +54,8 @@ pub(crate) fn process(
 
         let prefix_on_a = ctx_a.commitment_prefix();
         let prefix_on_b = conn_end_on_a.counterparty().prefix();
-        let client_id_on_a = conn_end_on_a.client_id();
-        let client_id_on_b = conn_end_on_a.counterparty().client_id();
 
         {
-            let conn_id_on_b = conn_end_on_a
-                .counterparty()
-                .connection_id()
-                .ok_or_else(Error::invalid_counterparty)?;
             let expected_conn_end_on_b = ConnectionEnd::new(
                 State::TryOpen,
                 client_id_on_b.clone(),
@@ -107,6 +109,14 @@ pub(crate) fn process(
     }
 
     // Success
+    output.emit(IbcEvent::OpenAckConnection(OpenAck::new(
+        msg.conn_id_on_a.clone(),
+        client_id_on_a.clone(),
+        conn_id_on_b.clone(),
+        client_id_on_b.clone(),
+    )));
+    output.log("success: conn_open_ack verification passed");
+
     let result = {
         let new_conn_end_on_a = {
             let mut counterparty = conn_end_on_a.counterparty().clone();
@@ -125,14 +135,6 @@ pub(crate) fn process(
             connection_end: new_conn_end_on_a,
         }
     };
-
-    let event_attributes = Attributes {
-        connection_id: Some(result.connection_id.clone()),
-        ..Default::default()
-    };
-
-    output.emit(IbcEvent::OpenAckConnection(event_attributes.into()));
-    output.log("success: conn_open_ack verification passed");
 
     Ok(output.with_result(result))
 }
