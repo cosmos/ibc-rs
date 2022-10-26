@@ -11,6 +11,7 @@ use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::events::{IbcEvent, IbcEventType};
 use crate::prelude::*;
+use crate::timestamp::Timestamp;
 
 use super::timeout::TimeoutHeight;
 use super::Version;
@@ -593,6 +594,25 @@ impl From<TimeoutHeightAttribute> for Tag {
             }
             .parse()
             .unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, From)]
+struct TimeoutTimestampAttribute {
+    timeout_timestamp: Timestamp,
+}
+
+impl From<TimeoutTimestampAttribute> for Tag {
+    fn from(attr: TimeoutTimestampAttribute) -> Self {
+        Tag {
+            key: PKT_TIMEOUT_TIMESTAMP_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr
+                .timeout_timestamp
+                .nanoseconds()
+                .to_string()
+                .parse()
+                .unwrap(),
         }
     }
 }
