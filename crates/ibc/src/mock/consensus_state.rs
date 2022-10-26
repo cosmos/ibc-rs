@@ -9,6 +9,7 @@ use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::Error;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
+use crate::mock::client_state::client_type as mock_client_type;
 use crate::mock::header::MockHeader;
 use crate::timestamp::Timestamp;
 
@@ -96,7 +97,7 @@ impl From<MockConsensusState> for Any {
 
 impl ConsensusState for MockConsensusState {
     fn client_type(&self) -> ClientType {
-        ClientType::Mock
+        mock_client_type()
     }
 
     fn root(&self) -> &CommitmentRoot {
