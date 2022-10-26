@@ -391,3 +391,20 @@ impl From<ModuleEventAttribute> for Tag {
         }
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use alloc::vec;
+
+    use crate::core::ics04_channel::{packet::{test_utils::get_dummy_raw_packet, Packet}, events::SendPacket};
+
+    #[test]
+    pub fn test_packet_data_non_utf8() {
+        let mut packet = Packet::try_from(get_dummy_raw_packet(1, 1)).unwrap();
+        packet.data = vec![128];
+
+        let ibc_event = IbcEvent::SendPacket(SendPacket{ packet });
+        let _ = AbciEvent::try_from(ibc_event);
+    }
+}
