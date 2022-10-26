@@ -3,7 +3,7 @@
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::Error;
-use crate::core::ics03_connection::events::Attributes;
+use crate::core::ics03_connection::events::OpenTry;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
 use crate::core::ics24_host::identifier::ConnectionId;
@@ -48,21 +48,22 @@ pub(crate) fn process(
         msg.delay_period,
     );
 
+    let client_id_on_a = msg.counterparty.client_id();
+    let conn_id_on_a = conn_end_on_b
+        .counterparty()
+        .connection_id()
+        .ok_or_else(Error::invalid_counterparty)?;
+
     // Verify proofs
     {
         let client_state_of_a_on_b = ctx_b.client_state(conn_end_on_b.client_id())?;
         let consensus_state_of_a_on_b =
             ctx_b.client_consensus_state(conn_end_on_b.client_id(), msg.proofs_height_on_a)?;
 
-        let client_id_on_a = msg.counterparty.client_id();
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let prefix_on_b = ctx_b.commitment_prefix();
 
         {
-            let conn_id_on_a = conn_end_on_b
-                .counterparty()
-                .connection_id()
-                .ok_or_else(Error::invalid_counterparty)?;
             let versions_on_a = msg.counterparty_versions;
             let expected_conn_end_on_a = ConnectionEnd::new(
                 State::Init,
@@ -113,19 +114,19 @@ pub(crate) fn process(
     }
 
     // Success
+    output.emit(IbcEvent::OpenTryConnection(OpenTry::new(
+        conn_id_on_b.clone(),
+        msg.client_id_on_b,
+        conn_id_on_a.clone(),
+        client_id_on_a.clone(),
+    )));
+    output.log("success: conn_open_try verification passed");
+
     let result = ConnectionResult {
-        connection_id: conn_id_on_b.clone(),
+        connection_id: conn_id_on_b,
         connection_end: conn_end_on_b,
         connection_id_state: ConnectionIdState::Generated,
     };
-
-    let event_attributes = Attributes {
-        connection_id: Some(conn_id_on_b),
-        ..Default::default()
-    };
-
-    output.emit(IbcEvent::OpenTryConnection(event_attributes.into()));
-    output.log("success: conn_open_try verification passed");
 
     Ok(output.with_result(result))
 }

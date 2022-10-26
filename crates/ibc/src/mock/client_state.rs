@@ -27,11 +27,18 @@ use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::Error;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
+use crate::mock::client_state::client_type as mock_client_type;
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::Height;
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
+
+pub const MOCK_CLIENT_TYPE: &str = "9999-mock";
+
+pub fn client_type() -> ClientType {
+    ClientType::new(MOCK_CLIENT_TYPE)
+}
 
 /// A mock of an IBC client record as it is stored in a mock context.
 /// For testing ICS02 handlers mostly, cf. `MockClientContext`.
@@ -134,7 +141,7 @@ impl ClientState for MockClientState {
     }
 
     fn client_type(&self) -> ClientType {
-        ClientType::Mock
+        mock_client_type()
     }
 
     fn latest_height(&self) -> Height {

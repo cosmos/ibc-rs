@@ -5,6 +5,7 @@ use core::str::FromStr;
 use serde::{Deserialize, Serialize};
 
 use super::validate::*;
+use crate::clients::ics07_tendermint::client_type as tm_client_type;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics24_host::error::ValidationError;
 use crate::prelude::*;
@@ -150,12 +151,12 @@ impl ClientId {
     /// ```
     /// # use ibc::core::ics24_host::identifier::ClientId;
     /// # use ibc::core::ics02_client::client_type::ClientType;
-    /// let tm_client_id = ClientId::new(ClientType::Tendermint, 0);
+    /// let tm_client_id = ClientId::new(ClientType::new("07-tendermint"), 0);
     /// assert!(tm_client_id.is_ok());
     /// tm_client_id.map(|id| { assert_eq!(&id, "07-tendermint-0") });
     /// ```
-    pub fn new(ctype: ClientType, counter: u64) -> Result<Self, ValidationError> {
-        let prefix = Self::prefix(ctype);
+    pub fn new(client_type: ClientType, counter: u64) -> Result<Self, ValidationError> {
+        let prefix = client_type.as_str();
         let id = format!("{}-{}", prefix, counter);
         Self::from_str(id.as_str())
     }
@@ -163,18 +164,6 @@ impl ClientId {
     /// Get this identifier as a borrowed `&str`
     pub fn as_str(&self) -> &str {
         &self.0
-    }
-
-    /// Returns one of the prefixes that should be present in any client identifiers.
-    /// The prefix is deterministic for a given chain type, hence all clients for a Tendermint-type
-    /// chain, for example, will have the prefix '07-tendermint'.
-    pub fn prefix(client_type: ClientType) -> &'static str {
-        match client_type {
-            ClientType::Tendermint => ClientType::Tendermint.as_str(),
-
-            #[cfg(any(test, feature = "mocks"))]
-            ClientType::Mock => ClientType::Mock.as_str(),
-        }
     }
 
     /// Get this identifier as a borrowed byte slice
@@ -200,7 +189,7 @@ impl FromStr for ClientId {
 
 impl Default for ClientId {
     fn default() -> Self {
-        Self::new(ClientType::Tendermint, 0).unwrap()
+        Self::new(tm_client_type(), 0).unwrap()
     }
 }
 

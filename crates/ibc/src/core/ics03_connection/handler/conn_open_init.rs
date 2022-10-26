@@ -3,7 +3,7 @@
 use crate::core::ics03_connection::connection::{ConnectionEnd, State};
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::Error;
-use crate::core::ics03_connection::events::Attributes;
+use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics24_host::identifier::ConnectionId;
@@ -51,16 +51,20 @@ pub(crate) fn process(
         connection_id_state: ConnectionIdState::Generated,
     };
 
-    let event_attributes = Attributes {
-        connection_id: Some(conn_id_on_a.clone()),
-        ..Default::default()
-    };
-
-    output.emit(IbcEvent::OpenInitConnection(event_attributes.into()));
     output.log(format!(
         "success: conn_open_init: generated new connection identifier: {}",
         conn_id_on_a
     ));
+
+    {
+        let client_id_on_b = msg.counterparty.client_id().clone();
+
+        output.emit(IbcEvent::OpenInitConnection(OpenInit::new(
+            conn_id_on_a,
+            msg.client_id_on_a,
+            client_id_on_b,
+        )));
+    }
 
     Ok(output.with_result(result))
 }

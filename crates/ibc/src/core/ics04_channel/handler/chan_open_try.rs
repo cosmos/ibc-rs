@@ -104,7 +104,6 @@ mod tests {
 
     use test_log::test;
 
-    use crate::core::ics02_client::client_type::ClientType;
     use crate::core::ics02_client::error as ics02_error;
     use crate::core::ics03_connection::connection::ConnectionEnd;
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
@@ -118,6 +117,7 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId};
+    use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::timestamp::ZERO_DURATION;
     use crate::Height;
@@ -135,7 +135,7 @@ mod tests {
         // Some general-purpose variable to parametrize the messages and the context.
         let proof_height = 10;
         let conn_id = ConnectionId::new(2);
-        let client_id = ClientId::new(ClientType::Mock, 45).unwrap();
+        let client_id = ClientId::new(mock_client_type(), 45).unwrap();
 
         // The context. We'll reuse this same one across all tests.
         let context = MockContext::default();
@@ -210,7 +210,8 @@ mod tests {
                                 ics03_error::Ics02ClientSubdetail {
                                     source: ics02_error::ErrorDetail::ClientNotFound(
                                         ics02_error::ClientNotFoundSubdetail {
-                                            client_id: ClientId::new(ClientType::Mock, 45).unwrap()
+                                            client_id: ClientId::new(mock_client_type(), 45)
+                                                .unwrap()
                                         }
                                     )
                                 }

@@ -3,7 +3,7 @@
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::Error;
-use crate::core::ics03_connection::events::Attributes;
+use crate::core::ics03_connection::events::OpenConfirm;
 use crate::core::ics03_connection::handler::{ConnectionIdState, ConnectionResult};
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
 use crate::events::IbcEvent;
@@ -21,6 +21,12 @@ pub(crate) fn process(
     if !conn_end_on_b.state_matches(&State::TryOpen) {
         return Err(Error::connection_mismatch(msg.conn_id_on_b));
     }
+    let client_id_on_a = conn_end_on_b.counterparty().client_id();
+    let client_id_on_b = conn_end_on_b.client_id();
+    let conn_id_on_a = conn_end_on_b
+        .counterparty()
+        .connection_id()
+        .ok_or_else(Error::invalid_counterparty)?;
 
     // Verify proofs
     {
@@ -28,12 +34,6 @@ pub(crate) fn process(
         let consensus_state_of_a_on_b =
             ctx_b.client_consensus_state(conn_end_on_b.client_id(), msg.proof_height_on_a)?;
 
-        let client_id_on_a = conn_end_on_b.counterparty().client_id();
-        let client_id_on_b = conn_end_on_b.client_id();
-        let conn_id_on_a = conn_end_on_b
-            .counterparty()
-            .connection_id()
-            .ok_or_else(Error::invalid_counterparty)?;
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let prefix_on_b = ctx_b.commitment_prefix();
 
@@ -62,6 +62,14 @@ pub(crate) fn process(
     }
 
     // Success
+    output.emit(IbcEvent::OpenConfirmConnection(OpenConfirm::new(
+        msg.conn_id_on_b.clone(),
+        client_id_on_b.clone(),
+        conn_id_on_a.clone(),
+        client_id_on_a.clone(),
+    )));
+    output.log("success: conn_open_confirm verification passed");
+
     let result = {
         let new_conn_end_on_b = {
             let mut new_conn_end_on_b = conn_end_on_b;
@@ -76,14 +84,6 @@ pub(crate) fn process(
             connection_end: new_conn_end_on_b,
         }
     };
-
-    let event_attributes = Attributes {
-        connection_id: Some(result.connection_id.clone()),
-        ..Default::default()
-    };
-
-    output.emit(IbcEvent::OpenConfirmConnection(event_attributes.into()));
-    output.log("success: conn_open_confirm verification passed");
 
     Ok(output.with_result(result))
 }
