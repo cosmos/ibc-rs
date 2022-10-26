@@ -13,6 +13,7 @@ use crate::events::{IbcEvent, IbcEventType};
 use crate::prelude::*;
 use crate::timestamp::Timestamp;
 
+use super::packet::Sequence;
 use super::timeout::TimeoutHeight;
 use super::Version;
 
@@ -613,6 +614,20 @@ impl From<TimeoutTimestampAttribute> for Tag {
                 .to_string()
                 .parse()
                 .unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, From)]
+struct SequenceAttribute {
+    sequence: Sequence,
+}
+
+impl From<SequenceAttribute> for Tag {
+    fn from(attr: SequenceAttribute) -> Self {
+        Tag {
+            key: PKT_SEQ_ATTRIBUTE_KEY.parse().unwrap(),
+            value: u64::from(attr.sequence).to_string().parse().unwrap(),
         }
     }
 }
