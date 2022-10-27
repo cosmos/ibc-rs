@@ -289,13 +289,6 @@ impl IbcEvent {
             IbcEvent::AppModule(_) => IbcEventType::AppModule,
         }
     }
-
-    pub fn ack(&self) -> Option<&[u8]> {
-        match self {
-            IbcEvent::WriteAcknowledgement(ev) => Some(&ev.ack),
-            _ => None,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]

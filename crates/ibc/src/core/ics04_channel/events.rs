@@ -14,6 +14,7 @@ use crate::prelude::*;
 use crate::timestamp::Timestamp;
 
 use super::channel::Order;
+use super::msgs::acknowledgement::Acknowledgement;
 use super::packet::Sequence;
 use super::timeout::TimeoutHeight;
 use super::Version;
@@ -38,6 +39,7 @@ pub const PKT_CHANNEL_ORDERING_ATTRIBUTE_KEY: &str = "packet_channel_ordering";
 pub const PKT_TIMEOUT_HEIGHT_ATTRIBUTE_KEY: &str = "packet_timeout_height";
 pub const PKT_TIMEOUT_TIMESTAMP_ATTRIBUTE_KEY: &str = "packet_timeout_timestamp";
 pub const PKT_ACK_ATTRIBUTE_KEY: &str = "packet_ack";
+pub const PKT_ACK_HEX_ATTRIBUTE_KEY: &str = "packet_ack_hex";
 pub const PKT_CONNECTION_ID_ATTRIBUTE_KEY: &str = "packet_connection";
 
 /// Convert attributes to Tendermint ABCI tags
@@ -548,7 +550,6 @@ impl From<CloseConfirm> for AbciEvent {
     }
 }
 
-#[deprecated]
 #[derive(Debug, From)]
 struct PacketDataAttribute {
     packet_data: Vec<u8>,
@@ -562,9 +563,10 @@ impl TryFrom<PacketDataAttribute> for Vec<Tag> {
             Tag {
                 key: PKT_DATA_ATTRIBUTE_KEY.parse().unwrap(),
                 value: String::from_utf8(attr.packet_data.clone())
-                    // Note: this attribute forces us to assume that Packet data is valid UTF-8, even
-                    // though the standard doesn't require it. It has been deprecated in ibc-go,
-                    // and we will deprecate it in v0.22.0. It will be removed in the future.
+                    // Note: this attribute forces us to assume that Packet data
+                    // is valid UTF-8, even though the standard doesn't require
+                    // it. It has been deprecated in ibc-go. It will be removed
+                    // in the future.
                     .map_err(|_| Error::non_utf8_packet_data())?
                     .parse()
                     .unwrap(),
@@ -718,6 +720,40 @@ impl From<PacketConnectionIdAttribute> for Tag {
     }
 }
 
+#[derive(Debug, From)]
+struct AcknowledgementAttribute {
+    acknowledgement: Acknowledgement,
+}
+
+impl TryFrom<AcknowledgementAttribute> for Vec<Tag> {
+    type Error = Error;
+
+    fn try_from(attr: AcknowledgementAttribute) -> Result<Self, Self::Error> {
+        let tags = vec![
+            Tag {
+                key: PKT_ACK_ATTRIBUTE_KEY.parse().unwrap(),
+                value: String::from_utf8(attr.acknowledgement.as_ref().into())
+                    // Note: this attribute forces us to assume that Packet data
+                    // is valid UTF-8, even though the standard doesn't require
+                    // it. It has been deprecated in ibc-go. It will be removed
+                    // in the future.
+                    .map_err(|_| Error::non_utf8_packet_data())?
+                    .parse()
+                    .unwrap(),
+            },
+            Tag {
+                key: PKT_ACK_HEX_ATTRIBUTE_KEY.parse().unwrap(),
+                value: String::from_utf8(hex::encode(attr.acknowledgement))
+                    .unwrap()
+                    .parse()
+                    .unwrap(),
+            },
+        ];
+
+        Ok(tags)
+    }
+}
+
 #[derive(Debug)]
 pub struct SendPacket {
     packet_data: PacketDataAttribute,
@@ -837,11 +873,17 @@ pub struct WriteAcknowledgement {
     dst_port_id: DstPortIdAttribute,
     dst_channel_id: DstChannelIdAttribute,
     channel_ordering: ChannelOrderingAttribute,
+    acknowledgement: AcknowledgementAttribute,
     dst_connection_id: PacketConnectionIdAttribute,
 }
 
 impl WriteAcknowledgement {
-    pub fn new(packet: Packet, channel_ordering: Order, dst_connection_id: ConnectionId) -> Self {
+    pub fn new(
+        packet: Packet,
+        channel_ordering: Order,
+        dst_connection_id: ConnectionId,
+        acknowledgement: Acknowledgement,
+    ) -> Self {
         Self {
             packet_data: packet.data.into(),
             timeout_height: packet.timeout_height.into(),
@@ -852,6 +894,7 @@ impl WriteAcknowledgement {
             dst_port_id: packet.destination_port.into(),
             dst_channel_id: packet.destination_channel.into(),
             channel_ordering: channel_ordering.into(),
+            acknowledgement: acknowledgement.into(),
             dst_connection_id: dst_connection_id.into(),
         }
     }
@@ -871,6 +914,7 @@ impl TryFrom<WriteAcknowledgement> for AbciEvent {
         attributes.push(v.dst_port_id.into());
         attributes.push(v.dst_channel_id.into());
         attributes.push(v.channel_ordering.into());
+        attributes.append(&mut v.acknowledgement.try_into()?);
         attributes.push(v.dst_connection_id.into());
 
         Ok(AbciEvent {

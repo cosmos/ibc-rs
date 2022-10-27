@@ -63,10 +63,16 @@ pub fn process<Ctx: ChannelReader>(
 
     output.log("success: packet write acknowledgement");
 
-    output.emit(IbcEvent::WriteAcknowledgement(WriteAcknowledgement {
-        packet,
-        ack: ack.into(),
-    }));
+    {
+        let dest_connection_id = dest_channel_end.connection_hops()[0].clone();
+
+        output.emit(IbcEvent::WriteAcknowledgement(WriteAcknowledgement::new(
+            packet,
+            dest_channel_end.ordering,
+            dest_connection_id,
+            ack,
+        )));
+    }
 
     Ok(output.with_result(result))
 }
