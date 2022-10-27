@@ -1,7 +1,6 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the channels module.
 
 use derive_more::From;
-use serde_derive::Serialize;
 use subtle_encoding::hex;
 use tendermint::abci::tag::Tag;
 use tendermint::abci::Event as AbciEvent;
@@ -9,7 +8,7 @@ use tendermint::abci::Event as AbciEvent;
 use crate::core::ics04_channel::error::Error;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use crate::events::{IbcEvent, IbcEventType};
+use crate::events::IbcEventType;
 use crate::prelude::*;
 use crate::timestamp::Timestamp;
 
@@ -1027,44 +1026,6 @@ impl TryFrom<TimeoutPacket> for AbciEvent {
 
         Ok(AbciEvent {
             type_str: IbcEventType::Timeout.as_str().to_string(),
-            attributes,
-        })
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub struct TimeoutOnClosePacket {
-    pub packet: Packet,
-}
-
-impl TimeoutOnClosePacket {
-    pub fn src_port_id(&self) -> &PortId {
-        &self.packet.source_port
-    }
-    pub fn src_channel_id(&self) -> &ChannelId {
-        &self.packet.source_channel
-    }
-    pub fn dst_port_id(&self) -> &PortId {
-        &self.packet.destination_port
-    }
-    pub fn dst_channel_id(&self) -> &ChannelId {
-        &self.packet.destination_channel
-    }
-}
-
-impl From<TimeoutOnClosePacket> for IbcEvent {
-    fn from(v: TimeoutOnClosePacket) -> Self {
-        IbcEvent::TimeoutOnClosePacket(v)
-    }
-}
-
-impl TryFrom<TimeoutOnClosePacket> for AbciEvent {
-    type Error = Error;
-
-    fn try_from(v: TimeoutOnClosePacket) -> Result<Self, Self::Error> {
-        let attributes = Vec::<Tag>::try_from(v.packet)?;
-        Ok(AbciEvent {
-            type_str: IbcEventType::TimeoutOnClose.as_str().to_string(),
             attributes,
         })
     }
