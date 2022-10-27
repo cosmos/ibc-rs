@@ -10,6 +10,7 @@ use crate::applications::transfer::relay::on_timeout_packet::process_timeout_pac
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
+use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as GenericAcknowledgement;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
@@ -99,106 +100,90 @@ pub trait Ics20Context:
     type AccountId: TryFrom<Signer>;
 }
 
-fn validate_transfer_channel_params(
+#[allow(clippy::too_many_arguments)]
+pub fn on_chan_open_init(
     ctx: &mut impl Ics20Context,
     order: Order,
+    _connection_hops: &[ConnectionId],
     port_id: &PortId,
     _channel_id: &ChannelId,
+    _counterparty: &Counterparty,
     version: &Version,
-) -> Result<(), Ics20Error> {
+) -> Result<(ModuleExtras, Version), Ics20Error> {
     if order != Order::Unordered {
         return Err(Ics20Error::channel_not_unordered(order));
     }
-
     let bound_port = ctx.get_port()?;
     if port_id != &bound_port {
         return Err(Ics20Error::invalid_port(port_id.clone(), bound_port));
     }
 
-    if version != &Version::ics20() {
+    if !version.is_empty() && version != &Version::ics20() {
         return Err(Ics20Error::invalid_version(version.clone()));
     }
 
-    Ok(())
-}
-
-fn validate_counterparty_version(counterparty_version: &Version) -> Result<(), Ics20Error> {
-    if counterparty_version == &Version::ics20() {
-        Ok(())
-    } else {
-        Err(Ics20Error::invalid_counterparty_version(
-            counterparty_version.clone(),
-        ))
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
-pub fn on_chan_open_init(
-    ctx: &mut impl Ics20Context,
-    _output: &mut ModuleOutputBuilder,
-    order: Order,
-    _connection_hops: &[ConnectionId],
-    port_id: &PortId,
-    channel_id: &ChannelId,
-    _counterparty: &Counterparty,
-    version: &Version,
-) -> Result<(), Ics20Error> {
-    validate_transfer_channel_params(ctx, order, port_id, channel_id, version)
+    Ok((ModuleExtras::empty(), Version::ics20()))
 }
 
 #[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_try(
-    ctx: &mut impl Ics20Context,
-    _output: &mut ModuleOutputBuilder,
+    _ctx: &mut impl Ics20Context,
     order: Order,
     _connection_hops: &[ConnectionId],
-    port_id: &PortId,
-    channel_id: &ChannelId,
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
     _counterparty: &Counterparty,
-    version: &Version,
     counterparty_version: &Version,
-) -> Result<Version, Ics20Error> {
-    validate_transfer_channel_params(ctx, order, port_id, channel_id, version)?;
-    validate_counterparty_version(counterparty_version)?;
-    Ok(Version::ics20())
+) -> Result<(ModuleExtras, Version), Ics20Error> {
+    if order != Order::Unordered {
+        return Err(Ics20Error::channel_not_unordered(order));
+    }
+    if counterparty_version != &Version::ics20() {
+        return Err(Ics20Error::invalid_counterparty_version(
+            counterparty_version.clone(),
+        ));
+    }
+
+    Ok((ModuleExtras::empty(), Version::ics20()))
 }
 
 pub fn on_chan_open_ack(
     _ctx: &mut impl Ics20Context,
-    _output: &mut ModuleOutputBuilder,
     _port_id: &PortId,
     _channel_id: &ChannelId,
     counterparty_version: &Version,
-) -> Result<(), Ics20Error> {
-    validate_counterparty_version(counterparty_version)?;
-    Ok(())
+) -> Result<ModuleExtras, Ics20Error> {
+    if counterparty_version != &Version::ics20() {
+        return Err(Ics20Error::invalid_counterparty_version(
+            counterparty_version.clone(),
+        ));
+    }
+
+    Ok(ModuleExtras::empty())
 }
 
 pub fn on_chan_open_confirm(
     _ctx: &mut impl Ics20Context,
-    _output: &mut ModuleOutputBuilder,
     _port_id: &PortId,
     _channel_id: &ChannelId,
-) -> Result<(), Ics20Error> {
-    Ok(())
+) -> Result<ModuleExtras, Ics20Error> {
+    Ok(ModuleExtras::empty())
 }
 
 pub fn on_chan_close_init(
     _ctx: &mut impl Ics20Context,
-    _output: &mut ModuleOutputBuilder,
     _port_id: &PortId,
     _channel_id: &ChannelId,
-) -> Result<(), Ics20Error> {
+) -> Result<ModuleExtras, Ics20Error> {
     Err(Ics20Error::cant_close_channel())
 }
 
 pub fn on_chan_close_confirm(
     _ctx: &mut impl Ics20Context,
-    _output: &mut ModuleOutputBuilder,
     _port_id: &PortId,
     _channel_id: &ChannelId,
-) -> Result<(), Ics20Error> {
-    Ok(())
+) -> Result<ModuleExtras, Ics20Error> {
+    Ok(ModuleExtras::empty())
 }
 
 pub fn on_recv_packet<Ctx: 'static + Ics20Context>(
@@ -284,15 +269,20 @@ pub fn on_timeout_packet(
 pub(crate) mod test {
     use subtle_encoding::bech32;
 
-    use crate::applications::transfer::context::cosmos_adr028_escrow_address;
+    use crate::applications::transfer::context::{cosmos_adr028_escrow_address, on_chan_open_try};
     use crate::applications::transfer::error::Error as Ics20Error;
     use crate::applications::transfer::msgs::transfer::MsgTransfer;
     use crate::applications::transfer::relay::send_transfer::send_transfer;
     use crate::applications::transfer::PrefixedCoin;
+    use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::error::Error;
+    use crate::core::ics04_channel::Version;
+    use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
     use crate::handler::HandlerOutputBuilder;
     use crate::prelude::*;
-    use crate::test_utils::DummyTransferModule;
+    use crate::test_utils::{get_dummy_transfer_module, DummyTransferModule};
+
+    use super::on_chan_open_init;
 
     pub(crate) fn deliver(
         ctx: &mut DummyTransferModule,
@@ -300,6 +290,31 @@ pub(crate) mod test {
         msg: MsgTransfer<PrefixedCoin>,
     ) -> Result<(), Error> {
         send_transfer(ctx, output, msg).map_err(|e: Ics20Error| Error::app_module(e.to_string()))
+    }
+
+    fn get_defaults() -> (
+        DummyTransferModule,
+        Order,
+        Vec<ConnectionId>,
+        PortId,
+        ChannelId,
+        Counterparty,
+    ) {
+        let ctx = get_dummy_transfer_module();
+        let order = Order::Unordered;
+        let connection_hops = vec![ConnectionId::new(1)];
+        let port_id = PortId::transfer();
+        let channel_id = ChannelId::new(1);
+        let counterparty = Counterparty::new(port_id.clone(), Some(channel_id.clone()));
+
+        (
+            ctx,
+            order,
+            connection_hops,
+            port_id,
+            channel_id,
+            counterparty,
+        )
     }
 
     #[test]
@@ -330,5 +345,107 @@ pub(crate) mod test {
             "channel-187",
             "cosmos177x69sver58mcfs74x6dg0tv6ls4s3xmmcaw53",
         );
+    }
+
+    /// If the relayer passed "", indicating that it wants us to return the versions we support.
+    /// We currently only support ics20
+    #[test]
+    fn test_on_chan_open_init_empty_version() {
+        let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
+
+        let in_version = Version::new("".to_string());
+
+        let (_, out_version) = on_chan_open_init(
+            &mut ctx,
+            order,
+            &connection_hops,
+            &port_id,
+            &channel_id,
+            &counterparty,
+            &in_version,
+        )
+        .unwrap();
+
+        assert_eq!(out_version, Version::ics20());
+    }
+
+    /// If the relayer passed in the only supported version (ics20), then return ics20
+    #[test]
+    fn test_on_chan_open_init_ics20_version() {
+        let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
+
+        let in_version = Version::ics20();
+        let (_, out_version) = on_chan_open_init(
+            &mut ctx,
+            order,
+            &connection_hops,
+            &port_id,
+            &channel_id,
+            &counterparty,
+            &in_version,
+        )
+        .unwrap();
+
+        assert_eq!(out_version, Version::ics20());
+    }
+
+    /// If the relayer passed in an unsupported version, then fail
+    #[test]
+    fn test_on_chan_open_init_incorrect_version() {
+        let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
+
+        let in_version = Version::new("some-unsupported-version".to_string());
+        let res = on_chan_open_init(
+            &mut ctx,
+            order,
+            &connection_hops,
+            &port_id,
+            &channel_id,
+            &counterparty,
+            &in_version,
+        );
+
+        assert!(res.is_err());
+    }
+
+    /// If the counterparty supports ics20, then return ics20
+    #[test]
+    fn test_on_chan_open_try_counterparty_correct_version() {
+        let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
+
+        let counterparty_version = Version::ics20();
+
+        let (_, out_version) = on_chan_open_try(
+            &mut ctx,
+            order,
+            &connection_hops,
+            &port_id,
+            &channel_id,
+            &counterparty,
+            &counterparty_version,
+        )
+        .unwrap();
+
+        assert_eq!(out_version, Version::ics20());
+    }
+
+    /// If the counterparty doesn't support ics20, then fail
+    #[test]
+    fn test_on_chan_open_try_counterparty_incorrect_version() {
+        let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
+
+        let counterparty_version = Version::new("some-unsupported-version".to_string());
+
+        let res = on_chan_open_try(
+            &mut ctx,
+            order,
+            &connection_hops,
+            &port_id,
+            &channel_id,
+            &counterparty,
+            &counterparty_version,
+        );
+
+        assert!(res.is_err());
     }
 }

@@ -11,7 +11,6 @@ use crate::core::ics02_client::error as client_error;
 use crate::core::ics02_client::events::{self as ClientEvents};
 use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics03_connection::events as ConnectionEvents;
-use crate::core::ics03_connection::events::Attributes as ConnectionAttributes;
 use crate::core::ics04_channel::error as channel_error;
 use crate::core::ics04_channel::events as ChannelEvents;
 use crate::core::ics04_channel::events::Attributes as ChannelAttributes;
@@ -299,16 +298,6 @@ impl IbcEvent {
             IbcEvent::OpenTryChannel(ev) => Some(ev.into()),
             IbcEvent::OpenAckChannel(ev) => Some(ev.into()),
             IbcEvent::OpenConfirmChannel(ev) => Some(ev.into()),
-            _ => None,
-        }
-    }
-
-    pub fn connection_attributes(&self) -> Option<&ConnectionAttributes> {
-        match self {
-            IbcEvent::OpenInitConnection(ev) => Some(ev.attributes()),
-            IbcEvent::OpenTryConnection(ev) => Some(ev.attributes()),
-            IbcEvent::OpenAckConnection(ev) => Some(ev.attributes()),
-            IbcEvent::OpenConfirmConnection(ev) => Some(ev.attributes()),
             _ => None,
         }
     }

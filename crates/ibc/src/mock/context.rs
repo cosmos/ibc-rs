@@ -1436,6 +1436,7 @@ mod tests {
 
     use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::error::Error;
+    use crate::core::ics04_channel::handler::ModuleExtras;
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChainId;
@@ -1610,18 +1611,28 @@ mod tests {
         }
 
         impl Module for FooModule {
-            fn on_chan_open_try(
+            fn on_chan_open_init(
                 &mut self,
-                _output: &mut ModuleOutputBuilder,
                 _order: Order,
                 _connection_hops: &[ConnectionId],
                 _port_id: &PortId,
                 _channel_id: &ChannelId,
                 _counterparty: &Counterparty,
-                _version: &Version,
+                version: &Version,
+            ) -> Result<(ModuleExtras, Version), Error> {
+                Ok((ModuleExtras::empty(), version.clone()))
+            }
+
+            fn on_chan_open_try(
+                &mut self,
+                _order: Order,
+                _connection_hops: &[ConnectionId],
+                _port_id: &PortId,
+                _channel_id: &ChannelId,
+                _counterparty: &Counterparty,
                 counterparty_version: &Version,
-            ) -> Result<Version, Error> {
-                Ok(counterparty_version.clone())
+            ) -> Result<(ModuleExtras, Version), Error> {
+                Ok((ModuleExtras::empty(), counterparty_version.clone()))
             }
 
             fn on_recv_packet(
@@ -1645,18 +1656,28 @@ mod tests {
         struct BarModule;
 
         impl Module for BarModule {
-            fn on_chan_open_try(
+            fn on_chan_open_init(
                 &mut self,
-                _output: &mut ModuleOutputBuilder,
                 _order: Order,
                 _connection_hops: &[ConnectionId],
                 _port_id: &PortId,
                 _channel_id: &ChannelId,
                 _counterparty: &Counterparty,
-                _version: &Version,
+                version: &Version,
+            ) -> Result<(ModuleExtras, Version), Error> {
+                Ok((ModuleExtras::empty(), version.clone()))
+            }
+
+            fn on_chan_open_try(
+                &mut self,
+                _order: Order,
+                _connection_hops: &[ConnectionId],
+                _port_id: &PortId,
+                _channel_id: &ChannelId,
+                _counterparty: &Counterparty,
                 counterparty_version: &Version,
-            ) -> Result<Version, Error> {
-                Ok(counterparty_version.clone())
+            ) -> Result<(ModuleExtras, Version), Error> {
+                Ok((ModuleExtras::empty(), counterparty_version.clone()))
             }
         }
 

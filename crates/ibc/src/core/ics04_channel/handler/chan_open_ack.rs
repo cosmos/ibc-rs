@@ -127,6 +127,7 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics24_host::identifier::ConnectionId;
+    use crate::core::ics26_routing::handler::MsgReceipt;
     use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::prelude::*;
@@ -153,7 +154,7 @@ mod tests {
 
         let conn_end = ConnectionEnd::new(
             ConnectionState::Open,
-            msg_conn_init.client_id.clone(),
+            msg_conn_init.client_id_on_a.clone(),
             ConnectionCounterparty::new(
                 msg_conn_init.counterparty.client_id().clone(),
                 Some(ConnectionId::from_str("defaultConnection-1").unwrap()),
@@ -224,7 +225,7 @@ mod tests {
                 ctx: context
                     .clone()
                     .with_client(
-                        &msg_conn_try.client_id,
+                        &msg_conn_try.client_id_on_b,
                         Height::new(0, client_consensus_state_height).unwrap(),
                     )
                     .with_channel(
@@ -240,7 +241,7 @@ mod tests {
                 ctx: context
                     .clone()
                     .with_client(
-                        &msg_conn_try.client_id,
+                        &msg_conn_try.client_id_on_b,
                         Height::new(0, client_consensus_state_height).unwrap(),
                     )
                     .with_channel(
@@ -268,7 +269,7 @@ mod tests {
                 name: "Good parameters".to_string(),
                 ctx: context //  .clone()
                     .with_client(
-                        &msg_conn_try.client_id,
+                        &msg_conn_try.client_id_on_b,
                         Height::new(0, client_consensus_state_height).unwrap(),
                     )
                     .with_connection(cid, conn_end)
@@ -288,7 +289,7 @@ mod tests {
             let res = channel_dispatch(&test.ctx, &test.msg);
             // Additionally check the events and the output objects in the result.
             match res {
-                Ok((proto_output, res)) => {
+                Ok((MsgReceipt { log: _, events }, res)) => {
                     assert!(
                             test.want_pass,
                             "chan_open_ack: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
@@ -297,14 +298,13 @@ mod tests {
                             test.ctx.clone()
                         );
 
-                    let proto_output = proto_output.with_result(());
-                    assert!(!proto_output.events.is_empty()); // Some events must exist.
+                    assert!(!events.is_empty()); // Some events must exist.
 
                     // The object in the output is a ConnectionEnd, should have init state.
                     //assert_eq!(res.channel_id, msg_chan_init.channel_id().clone());
                     assert_eq!(res.channel_end.state().clone(), State::Open);
 
-                    for e in proto_output.events.iter() {
+                    for e in events.iter() {
                         assert!(matches!(e, &IbcEvent::OpenAckChannel(_)));
                     }
                 }

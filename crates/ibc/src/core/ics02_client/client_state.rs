@@ -101,11 +101,11 @@ pub trait ClientState:
     #[allow(clippy::too_many_arguments)]
     fn verify_client_consensus_state(
         &self,
-        height: Height,
-        prefix: &CommitmentPrefix,
+        proof_height: Height,
+        counterparty_prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        client_id: &ClientId,
+        counterparty_client_id: &ClientId,
         consensus_height: Height,
         expected_consensus_state: &dyn ConsensusState,
     ) -> Result<(), Error>;
@@ -114,11 +114,11 @@ pub trait ClientState:
     #[allow(clippy::too_many_arguments)]
     fn verify_connection_state(
         &self,
-        height: Height,
-        prefix: &CommitmentPrefix,
+        proof_height: Height,
+        counterparty_prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        connection_id: &ConnectionId,
+        counterparty_connection_id: &ConnectionId,
         expected_connection_end: &ConnectionEnd,
     ) -> Result<(), Error>;
 
@@ -139,8 +139,8 @@ pub trait ClientState:
     #[allow(clippy::too_many_arguments)]
     fn verify_client_full_state(
         &self,
-        height: Height,
-        prefix: &CommitmentPrefix,
+        proof_height: Height,
+        counterparty_prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         client_id: &ClientId,
