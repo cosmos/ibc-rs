@@ -52,7 +52,8 @@ pub fn process<Ctx: ChannelReader>(
         ));
     }
 
-    let connection_end = ctx.connection_end(&source_channel_end.connection_hops()[0])?;
+    let source_connection_id = source_channel_end.connection_hops()[0].clone();
+    let connection_end = ctx.connection_end(&source_connection_id)?;
 
     let client_id = connection_end.client_id().clone();
 
@@ -112,7 +113,7 @@ pub fn process<Ctx: ChannelReader>(
             port_id: packet.source_port.clone(),
             channel_id: packet.source_channel.clone(),
             seq: packet.sequence,
-            channel: Some(source_channel_end),
+            channel: Some(source_channel_end.clone()),
         })
     } else {
         verify_packet_receipt_absence(
@@ -133,9 +134,11 @@ pub fn process<Ctx: ChannelReader>(
 
     output.log("success: packet timeout ");
 
-    output.emit(IbcEvent::TimeoutPacket(TimeoutPacket {
-        packet: packet.clone(),
-    }));
+    output.emit(IbcEvent::TimeoutPacket(TimeoutPacket::new(
+        packet.clone(),
+        source_channel_end.ordering,
+        source_connection_id,
+    )));
 
     Ok(output.with_result(result))
 }
