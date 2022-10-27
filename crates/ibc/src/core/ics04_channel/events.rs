@@ -647,29 +647,34 @@ impl From<ChannelOrderingAttribute> for Tag {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Debug)]
 pub struct SendPacket {
-    pub packet: Packet,
+    packet_data: PacketDataAttribute,
+    timeout_height: TimeoutHeightAttribute,
+    timeout_timestamp: TimeoutTimestampAttribute,
+    sequence: SequenceAttribute,
+    src_port_id: PortIdAttribute,
+    src_channel_id: ChannelIdAttribute,
+    dst_port_id: PortIdAttribute,
+    dst_channel_id: ChannelIdAttribute,
+    channel_ordering: ChannelOrderingAttribute,
+    src_connection_id: ConnectionIdAttribute,
 }
 
 impl SendPacket {
-    pub fn src_port_id(&self) -> &PortId {
-        &self.packet.source_port
-    }
-    pub fn src_channel_id(&self) -> &ChannelId {
-        &self.packet.source_channel
-    }
-    pub fn dst_port_id(&self) -> &PortId {
-        &self.packet.destination_port
-    }
-    pub fn dst_channel_id(&self) -> &ChannelId {
-        &self.packet.destination_channel
-    }
-}
-
-impl From<SendPacket> for IbcEvent {
-    fn from(v: SendPacket) -> Self {
-        IbcEvent::SendPacket(v)
+    pub fn new(packet: Packet, channel_ordering: Order, src_connection_id: ConnectionId) -> Self {
+        Self {
+            packet_data: packet.data.into(),
+            timeout_height: packet.timeout_height.into(),
+            timeout_timestamp: packet.timeout_timestamp.into(),
+            sequence: packet.sequence.into(),
+            src_port_id: packet.source_port.into(),
+            src_channel_id: packet.source_channel.into(),
+            dst_port_id: packet.destination_port.into(),
+            dst_channel_id: packet.destination_channel.into(),
+            channel_ordering: channel_ordering.into(),
+            src_connection_id: src_connection_id.into(),
+        }
     }
 }
 
@@ -677,7 +682,18 @@ impl TryFrom<SendPacket> for AbciEvent {
     type Error = Error;
 
     fn try_from(v: SendPacket) -> Result<Self, Self::Error> {
-        let attributes = Vec::<Tag>::try_from(v.packet)?;
+        let mut attributes = Vec::with_capacity(11);
+        attributes.append(&mut v.packet_data.try_into()?);
+        attributes.push(v.timeout_height.into());
+        attributes.push(v.timeout_timestamp.into());
+        attributes.push(v.sequence.into());
+        attributes.push(v.src_port_id.into());
+        attributes.push(v.src_channel_id.into());
+        attributes.push(v.dst_port_id.into());
+        attributes.push(v.dst_channel_id.into());
+        attributes.push(v.channel_ordering.into());
+        attributes.push(v.src_connection_id.into());
+
         Ok(AbciEvent {
             type_str: IbcEventType::SendPacket.as_str().to_string(),
             attributes,

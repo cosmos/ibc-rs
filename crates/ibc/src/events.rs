@@ -13,7 +13,6 @@ use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics03_connection::events as ConnectionEvents;
 use crate::core::ics04_channel::error as channel_error;
 use crate::core::ics04_channel::events as ChannelEvents;
-use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics26_routing::context::ModuleId;
 use crate::timestamp::ParseTimestampError;
@@ -291,18 +290,6 @@ impl IbcEvent {
         }
     }
 
-    pub fn packet(&self) -> Option<&Packet> {
-        match self {
-            IbcEvent::SendPacket(ev) => Some(&ev.packet),
-            IbcEvent::ReceivePacket(ev) => Some(&ev.packet),
-            IbcEvent::WriteAcknowledgement(ev) => Some(&ev.packet),
-            IbcEvent::AcknowledgePacket(ev) => Some(&ev.packet),
-            IbcEvent::TimeoutPacket(ev) => Some(&ev.packet),
-            IbcEvent::TimeoutOnClosePacket(ev) => Some(&ev.packet),
-            _ => None,
-        }
-    }
-
     pub fn ack(&self) -> Option<&[u8]> {
         match self {
             IbcEvent::WriteAcknowledgement(ev) => Some(&ev.ack),
@@ -375,9 +362,13 @@ pub mod tests {
     use super::*;
     use alloc::vec;
 
-    use crate::core::ics04_channel::{
-        events::SendPacket,
-        packet::{test_utils::get_dummy_raw_packet, Packet},
+    use crate::core::{
+        ics04_channel::{
+            channel::Order,
+            events::SendPacket,
+            packet::{test_utils::get_dummy_raw_packet, Packet},
+        },
+        ics24_host::identifier::ConnectionId,
     };
 
     #[test]
@@ -387,7 +378,11 @@ pub mod tests {
         let mut packet = Packet::try_from(get_dummy_raw_packet(1, 1)).unwrap();
         packet.data = vec![128];
 
-        let ibc_event = IbcEvent::SendPacket(SendPacket { packet });
+        let ibc_event = IbcEvent::SendPacket(SendPacket::new(
+            packet,
+            Order::Unordered,
+            ConnectionId::default(),
+        ));
         let _ = AbciEvent::try_from(ibc_event);
     }
 }
