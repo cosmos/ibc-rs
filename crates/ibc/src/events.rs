@@ -369,3 +369,25 @@ impl From<ModuleEventAttribute> for Tag {
         }
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use alloc::vec;
+
+    use crate::core::ics04_channel::{
+        events::SendPacket,
+        packet::{test_utils::get_dummy_raw_packet, Packet},
+    };
+
+    #[test]
+    /// Ensures that we don't panic when packet data is not valid UTF-8.
+    /// See issue [#199](https://github.com/cosmos/ibc-rs/issues/199)
+    pub fn test_packet_data_non_utf8() {
+        let mut packet = Packet::try_from(get_dummy_raw_packet(1, 1)).unwrap();
+        packet.data = vec![128];
+
+        let ibc_event = IbcEvent::SendPacket(SendPacket { packet });
+        let _ = AbciEvent::try_from(ibc_event);
+    }
+}
