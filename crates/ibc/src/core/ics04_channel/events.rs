@@ -549,39 +549,35 @@ impl From<CloseConfirm> for AbciEvent {
 
 #[deprecated]
 #[derive(Debug, From)]
-struct DataAttribute {
-    data: Vec<u8>,
+struct PacketDataAttribute {
+    packet_data: Vec<u8>,
 }
 
-impl TryFrom<DataAttribute> for Tag {
+impl TryFrom<PacketDataAttribute> for Vec<Tag> {
     type Error = Error;
 
-    fn try_from(attr: DataAttribute) -> Result<Self, Self::Error> {
-        Ok(Tag {
-            key: PKT_DATA_ATTRIBUTE_KEY.parse().unwrap(),
-            value: String::from_utf8(attr.data)
-                // TODO: use error defined in v0.21.0
-                .map_err(|_| Error::invalid_packet())?
-                .parse()
-                .unwrap(),
-        })
-    }
-}
+    fn try_from(attr: PacketDataAttribute) -> Result<Self, Self::Error> {
+        let tags = vec![
+            Tag {
+                key: PKT_DATA_ATTRIBUTE_KEY.parse().unwrap(),
+                value: String::from_utf8(attr.packet_data.clone())
+                    // Note: this attribute forces us to assume that Packet data is valid UTF-8, even
+                    // though the standard doesn't require it. It has been deprecated in ibc-go,
+                    // and we will deprecate it in v0.22.0. It will be removed in the future.
+                    .map_err(|_| Error::non_utf8_packet_data())?
+                    .parse()
+                    .unwrap(),
+            },
+            Tag {
+                key: PKT_DATA_HEX_ATTRIBUTE_KEY.parse().unwrap(),
+                value: String::from_utf8(hex::encode(attr.packet_data))
+                    .unwrap()
+                    .parse()
+                    .unwrap(),
+            },
+        ];
 
-#[derive(Debug, From)]
-struct DataHexAttribute {
-    data: Vec<u8>,
-}
-
-impl From<DataHexAttribute> for Tag {
-    fn from(attr: DataHexAttribute) -> Self {
-        Tag {
-            key: PKT_DATA_HEX_ATTRIBUTE_KEY.parse().unwrap(),
-            value: String::from_utf8(hex::encode(attr.data))
-                .unwrap()
-                .parse()
-                .unwrap(),
-        }
+        Ok(tags)
     }
 }
 
