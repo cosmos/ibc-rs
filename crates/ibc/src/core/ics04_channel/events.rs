@@ -38,6 +38,7 @@ pub const PKT_CHANNEL_ORDERING_ATTRIBUTE_KEY: &str = "packet_channel_ordering";
 pub const PKT_TIMEOUT_HEIGHT_ATTRIBUTE_KEY: &str = "packet_timeout_height";
 pub const PKT_TIMEOUT_TIMESTAMP_ATTRIBUTE_KEY: &str = "packet_timeout_timestamp";
 pub const PKT_ACK_ATTRIBUTE_KEY: &str = "packet_ack";
+pub const PKT_CONNECTION_ID_ATTRIBUTE_KEY: &str = "packet_connection";
 
 /// Convert attributes to Tendermint ABCI tags
 ///
@@ -634,6 +635,62 @@ impl From<SequenceAttribute> for Tag {
 }
 
 #[derive(Debug, From)]
+struct SrcPortIdAttribute {
+    src_port_id: PortId,
+}
+
+impl From<SrcPortIdAttribute> for Tag {
+    fn from(attr: SrcPortIdAttribute) -> Self {
+        Tag {
+            key: PKT_SRC_PORT_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr.src_port_id.as_str().parse().unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, From)]
+struct SrcChannelIdAttribute {
+    src_channel_id: ChannelId,
+}
+
+impl From<SrcChannelIdAttribute> for Tag {
+    fn from(attr: SrcChannelIdAttribute) -> Self {
+        Tag {
+            key: PKT_SRC_CHANNEL_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr.src_channel_id.as_str().parse().unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, From)]
+struct DstPortIdAttribute {
+    dst_port_id: PortId,
+}
+
+impl From<DstPortIdAttribute> for Tag {
+    fn from(attr: DstPortIdAttribute) -> Self {
+        Tag {
+            key: PKT_DST_PORT_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr.dst_port_id.as_str().parse().unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, From)]
+struct DstChannelIdAttribute {
+    dst_channel_id: ChannelId,
+}
+
+impl From<DstChannelIdAttribute> for Tag {
+    fn from(attr: DstChannelIdAttribute) -> Self {
+        Tag {
+            key: PKT_DST_CHANNEL_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr.dst_channel_id.as_str().parse().unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, From)]
 struct ChannelOrderingAttribute {
     order: Order,
 }
@@ -647,18 +704,32 @@ impl From<ChannelOrderingAttribute> for Tag {
     }
 }
 
+#[derive(Debug, From)]
+struct PacketConnectionIdAttribute {
+    connection_id: ConnectionId,
+}
+
+impl From<PacketConnectionIdAttribute> for Tag {
+    fn from(attr: PacketConnectionIdAttribute) -> Self {
+        Tag {
+            key: PKT_CONNECTION_ID_ATTRIBUTE_KEY.parse().unwrap(),
+            value: attr.connection_id.as_str().parse().unwrap(),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct SendPacket {
     packet_data: PacketDataAttribute,
     timeout_height: TimeoutHeightAttribute,
     timeout_timestamp: TimeoutTimestampAttribute,
     sequence: SequenceAttribute,
-    src_port_id: PortIdAttribute,
-    src_channel_id: ChannelIdAttribute,
-    dst_port_id: PortIdAttribute,
-    dst_channel_id: ChannelIdAttribute,
+    src_port_id: SrcPortIdAttribute,
+    src_channel_id: SrcChannelIdAttribute,
+    dst_port_id: DstPortIdAttribute,
+    dst_channel_id: DstChannelIdAttribute,
     channel_ordering: ChannelOrderingAttribute,
-    src_connection_id: ConnectionIdAttribute,
+    src_connection_id: PacketConnectionIdAttribute,
 }
 
 impl SendPacket {
@@ -707,12 +778,12 @@ pub struct ReceivePacket {
     timeout_height: TimeoutHeightAttribute,
     timeout_timestamp: TimeoutTimestampAttribute,
     sequence: SequenceAttribute,
-    src_port_id: PortIdAttribute,
-    src_channel_id: ChannelIdAttribute,
-    dst_port_id: PortIdAttribute,
-    dst_channel_id: ChannelIdAttribute,
+    src_port_id: SrcPortIdAttribute,
+    src_channel_id: SrcChannelIdAttribute,
+    dst_port_id: DstPortIdAttribute,
+    dst_channel_id: DstChannelIdAttribute,
     channel_ordering: ChannelOrderingAttribute,
-    dst_connection_id: ConnectionIdAttribute,
+    dst_connection_id: PacketConnectionIdAttribute,
 }
 
 impl ReceivePacket {
@@ -755,31 +826,34 @@ impl TryFrom<ReceivePacket> for AbciEvent {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Debug)]
 pub struct WriteAcknowledgement {
-    pub packet: Packet,
-    #[serde(serialize_with = "crate::serializers::ser_hex_upper")]
-    pub ack: Vec<u8>,
+    packet_data: PacketDataAttribute,
+    timeout_height: TimeoutHeightAttribute,
+    timeout_timestamp: TimeoutTimestampAttribute,
+    sequence: SequenceAttribute,
+    src_port_id: SrcPortIdAttribute,
+    src_channel_id: SrcChannelIdAttribute,
+    dst_port_id: DstPortIdAttribute,
+    dst_channel_id: DstChannelIdAttribute,
+    channel_ordering: ChannelOrderingAttribute,
+    dst_connection_id: PacketConnectionIdAttribute,
 }
 
 impl WriteAcknowledgement {
-    pub fn src_port_id(&self) -> &PortId {
-        &self.packet.source_port
-    }
-    pub fn src_channel_id(&self) -> &ChannelId {
-        &self.packet.source_channel
-    }
-    pub fn dst_port_id(&self) -> &PortId {
-        &self.packet.destination_port
-    }
-    pub fn dst_channel_id(&self) -> &ChannelId {
-        &self.packet.destination_channel
-    }
-}
-
-impl From<WriteAcknowledgement> for IbcEvent {
-    fn from(v: WriteAcknowledgement) -> Self {
-        IbcEvent::WriteAcknowledgement(v)
+    pub fn new(packet: Packet, channel_ordering: Order, dst_connection_id: ConnectionId) -> Self {
+        Self {
+            packet_data: packet.data.into(),
+            timeout_height: packet.timeout_height.into(),
+            timeout_timestamp: packet.timeout_timestamp.into(),
+            sequence: packet.sequence.into(),
+            src_port_id: packet.source_port.into(),
+            src_channel_id: packet.source_channel.into(),
+            dst_port_id: packet.destination_port.into(),
+            dst_channel_id: packet.destination_channel.into(),
+            channel_ordering: channel_ordering.into(),
+            dst_connection_id: dst_connection_id.into(),
+        }
     }
 }
 
@@ -787,15 +861,18 @@ impl TryFrom<WriteAcknowledgement> for AbciEvent {
     type Error = Error;
 
     fn try_from(v: WriteAcknowledgement) -> Result<Self, Self::Error> {
-        let mut attributes = Vec::<Tag>::try_from(v.packet)?;
-        let val =
-            String::from_utf8(v.ack).expect("hex-encoded string should always be valid UTF-8");
-        // No actual conversion from string to `Tag::Key` or `Tag::Value`
-        let ack = Tag {
-            key: PKT_ACK_ATTRIBUTE_KEY.parse().unwrap(),
-            value: val.parse().unwrap(),
-        };
-        attributes.push(ack);
+        let mut attributes = Vec::with_capacity(11);
+        attributes.append(&mut v.packet_data.try_into()?);
+        attributes.push(v.timeout_height.into());
+        attributes.push(v.timeout_timestamp.into());
+        attributes.push(v.sequence.into());
+        attributes.push(v.src_port_id.into());
+        attributes.push(v.src_channel_id.into());
+        attributes.push(v.dst_port_id.into());
+        attributes.push(v.dst_channel_id.into());
+        attributes.push(v.channel_ordering.into());
+        attributes.push(v.dst_connection_id.into());
+
         Ok(AbciEvent {
             type_str: IbcEventType::WriteAck.as_str().to_string(),
             attributes,
