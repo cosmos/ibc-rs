@@ -84,7 +84,7 @@ define_error! {
             | _ | { "packet data bytes cannot be empty" },
 
         NonUtf8PacketData
-            | _ | { "packet data bytes must be utf8 (this restriction will be lifted in the future)" },
+            | _ | { "packet data bytes must be valid UTF-8 (this restriction will be lifted in the future)" },
 
         InvalidTimeoutHeight
             | _ | { "invalid timeout height for the packet" },

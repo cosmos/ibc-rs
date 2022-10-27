@@ -143,7 +143,7 @@ impl TryFrom<Packet> for Vec<Tag> {
         };
         attributes.push(timeout_timestamp);
 
-        // Note: this attribute forces us to assume that Packet data is utf-8, even
+        // Note: this attribute forces us to assume that Packet data is valid UTF-8, even
         // though the standard doesn't require it. It has been deprecated in ibc-go,
         // and we will deprecate it in v0.22.0. It will be removed in the future.
         let val = String::from_utf8(p.data).map_err(|_| Error::non_utf8_packet_data())?;
