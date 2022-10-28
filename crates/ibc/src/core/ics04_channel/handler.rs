@@ -233,10 +233,10 @@ where
         PacketMsg::AckPacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.source_port)
             .map_err(Error::ics05_port)?,
-        PacketMsg::ToPacket(msg) => ctx
+        PacketMsg::TimeoutPacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.source_port)
             .map_err(Error::ics05_port)?,
-        PacketMsg::ToClosePacket(msg) => ctx
+        PacketMsg::TimeoutOnClosePacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.source_port)
             .map_err(Error::ics05_port)?,
     };
@@ -259,8 +259,8 @@ where
     let output = match msg {
         PacketMsg::RecvPacket(msg) => recv_packet::process(ctx, msg),
         PacketMsg::AckPacket(msg) => acknowledgement::process(ctx, msg),
-        PacketMsg::ToPacket(msg) => timeout::process(ctx, msg),
-        PacketMsg::ToClosePacket(msg) => timeout_on_close::process(ctx, msg),
+        PacketMsg::TimeoutPacket(msg) => timeout::process(ctx, msg),
+        PacketMsg::TimeoutOnClosePacket(msg) => timeout_on_close::process(ctx, msg),
     }?;
     let HandlerOutput {
         result,
@@ -325,8 +325,8 @@ fn do_packet_callback(
             &msg.acknowledgement,
             &msg.signer,
         ),
-        PacketMsg::ToPacket(msg) => cb.on_timeout_packet(module_output, &msg.packet, &msg.signer),
-        PacketMsg::ToClosePacket(msg) => {
+        PacketMsg::TimeoutPacket(msg) => cb.on_timeout_packet(module_output, &msg.packet, &msg.signer),
+        PacketMsg::TimeoutOnClosePacket(msg) => {
             cb.on_timeout_packet(module_output, &msg.packet, &msg.signer)
         }
     }
