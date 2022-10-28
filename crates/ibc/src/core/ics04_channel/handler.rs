@@ -325,7 +325,9 @@ fn do_packet_callback(
             &msg.acknowledgement,
             &msg.signer,
         ),
-        PacketMsg::TimeoutPacket(msg) => cb.on_timeout_packet(module_output, &msg.packet, &msg.signer),
+        PacketMsg::TimeoutPacket(msg) => {
+            cb.on_timeout_packet(module_output, &msg.packet, &msg.signer)
+        }
         PacketMsg::TimeoutOnClosePacket(msg) => {
             cb.on_timeout_packet(module_output, &msg.packet, &msg.signer)
         }

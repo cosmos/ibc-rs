@@ -581,7 +581,8 @@ mod tests {
             //ICS04-to_on_close
             Test {
                 name: "Timeout on close".to_string(),
-                msg: Ics26Envelope::Ics4PacketMsg(PacketMsg::TimeoutOnClosePacket(msg_to_on_close)).into(),
+                msg: Ics26Envelope::Ics4PacketMsg(PacketMsg::TimeoutOnClosePacket(msg_to_on_close))
+                    .into(),
                 want_pass: true,
                 state_check: None,
             },
