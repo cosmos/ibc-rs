@@ -55,7 +55,7 @@ impl From<PortIdAttribute> for Tag {
     }
 }
 
-#[derive(Debug, From)]
+#[derive(Clone, Debug, From)]
 struct ChannelIdAttribute {
     channel_id: ChannelId,
 }
@@ -478,12 +478,16 @@ impl From<CloseConfirm> for AbciEvent {
     }
 }
 
+/// A `ChannelClosed` event is emitted when a channel is closed as a result of a packet timing out. Note that
+/// since optimistic packet sends (i.e. send a packet before channel handshake is complete) are supported,
+/// we might not have a counterparty channel id value yet. This would happen if a packet is sent right
+/// after a `ChannelOpenInit` message.
 #[derive(Debug)]
 pub struct ChannelClosed {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
     counterparty_port_id: PortIdAttribute,
-    counterparty_channel_id: ChannelIdAttribute,
+    maybe_counterparty_channel_id: Option<ChannelIdAttribute>,
     connection_id: ConnectionIdAttribute,
     channel_ordering: ChannelOrderingAttribute,
 }
@@ -493,7 +497,7 @@ impl ChannelClosed {
         port_id: PortId,
         channel_id: ChannelId,
         counterparty_port_id: PortId,
-        counterparty_channel_id: ChannelId,
+        maybe_counterparty_channel_id: Option<ChannelId>,
         connection_id: ConnectionId,
         channel_ordering: Order,
     ) -> Self {
@@ -501,7 +505,7 @@ impl ChannelClosed {
             port_id: port_id.into(),
             channel_id: channel_id.into(),
             counterparty_port_id: counterparty_port_id.into(),
-            counterparty_channel_id: counterparty_channel_id.into(),
+            maybe_counterparty_channel_id: maybe_counterparty_channel_id.map(|c| c.into()),
             connection_id: connection_id.into(),
             channel_ordering: channel_ordering.into(),
         }
@@ -515,8 +519,10 @@ impl ChannelClosed {
     pub fn counterparty_port_id(&self) -> &PortId {
         &self.counterparty_port_id.port_id
     }
-    pub fn counterparty_channel_id(&self) -> &ChannelId {
-        &self.counterparty_channel_id.channel_id
+    pub fn counterparty_channel_id(&self) -> Option<ChannelId> {
+        self.maybe_counterparty_channel_id
+            .clone()
+            .map(|c| c.channel_id)
     }
     pub fn connection_id(&self) -> &ConnectionId {
         &self.connection_id.connection_id
@@ -534,7 +540,13 @@ impl From<ChannelClosed> for AbciEvent {
                 ev.port_id.into(),
                 ev.channel_id.into(),
                 ev.counterparty_port_id.into(),
-                ev.counterparty_channel_id.into(),
+                ev.maybe_counterparty_channel_id.map_or(
+                    Tag {
+                        key: COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY.parse().unwrap(),
+                        value: "".parse().unwrap(),
+                    },
+                    |c| c.into(),
+                ),
                 ev.connection_id.into(),
                 ev.channel_ordering.into(),
             ],
