@@ -143,11 +143,11 @@ impl OpenInit {
         version: Version,
     ) -> Self {
         Self {
-            port_id: PortIdAttribute::from(port_id),
-            channel_id: ChannelIdAttribute::from(channel_id),
-            counterparty_port_id: PortIdAttribute::from(counterparty_port_id),
-            connection_id: ConnectionIdAttribute::from(connection_id),
-            version: VersionAttribute::from(version),
+            port_id: port_id.into(),
+            channel_id: channel_id.into(),
+            counterparty_port_id: counterparty_port_id.into(),
+            connection_id: connection_id.into(),
+            version: version.into(),
         }
     }
     pub fn port_id(&self) -> &PortId {
@@ -206,12 +206,12 @@ impl OpenTry {
         version: Version,
     ) -> Self {
         Self {
-            port_id: PortIdAttribute::from(port_id),
-            channel_id: ChannelIdAttribute::from(channel_id),
-            counterparty_port_id: PortIdAttribute::from(counterparty_port_id),
-            counterparty_channel_id: ChannelIdAttribute::from(counterparty_channel_id),
-            connection_id: ConnectionIdAttribute::from(connection_id),
-            version: VersionAttribute::from(version),
+            port_id: port_id.into(),
+            channel_id: channel_id.into(),
+            counterparty_port_id: counterparty_port_id.into(),
+            counterparty_channel_id: counterparty_channel_id.into(),
+            connection_id: connection_id.into(),
+            version: version.into(),
         }
     }
     pub fn port_id(&self) -> &PortId {
@@ -268,11 +268,11 @@ impl OpenAck {
         connection_id: ConnectionId,
     ) -> Self {
         Self {
-            port_id: PortIdAttribute::from(port_id),
-            channel_id: ChannelIdAttribute::from(channel_id),
-            counterparty_port_id: PortIdAttribute::from(counterparty_port_id),
-            counterparty_channel_id: ChannelIdAttribute::from(counterparty_channel_id),
-            connection_id: ConnectionIdAttribute::from(connection_id),
+            port_id: port_id.into(),
+            channel_id: channel_id.into(),
+            counterparty_port_id: counterparty_port_id.into(),
+            counterparty_channel_id: counterparty_channel_id.into(),
+            connection_id: connection_id.into(),
         }
     }
     pub fn port_id(&self) -> &PortId {
@@ -325,11 +325,11 @@ impl OpenConfirm {
         connection_id: ConnectionId,
     ) -> Self {
         Self {
-            port_id: PortIdAttribute::from(port_id),
-            channel_id: ChannelIdAttribute::from(channel_id),
-            counterparty_port_id: PortIdAttribute::from(counterparty_port_id),
-            counterparty_channel_id: ChannelIdAttribute::from(counterparty_channel_id),
-            connection_id: ConnectionIdAttribute::from(connection_id),
+            port_id: port_id.into(),
+            channel_id: channel_id.into(),
+            counterparty_port_id: counterparty_port_id.into(),
+            counterparty_channel_id: counterparty_channel_id.into(),
+            connection_id: connection_id.into(),
         }
     }
     pub fn port_id(&self) -> &PortId {
@@ -382,11 +382,11 @@ impl CloseInit {
         connection_id: ConnectionId,
     ) -> Self {
         Self {
-            port_id: PortIdAttribute::from(port_id),
-            channel_id: ChannelIdAttribute::from(channel_id),
-            counterparty_port_id: PortIdAttribute::from(counterparty_port_id),
-            counterparty_channel_id: ChannelIdAttribute::from(counterparty_channel_id),
-            connection_id: ConnectionIdAttribute::from(connection_id),
+            port_id: port_id.into(),
+            channel_id: channel_id.into(),
+            counterparty_port_id: counterparty_port_id.into(),
+            counterparty_channel_id: counterparty_channel_id.into(),
+            connection_id: connection_id.into(),
         }
     }
     pub fn port_id(&self) -> &PortId {
@@ -439,11 +439,11 @@ impl CloseConfirm {
         connection_id: ConnectionId,
     ) -> Self {
         Self {
-            port_id: PortIdAttribute::from(port_id),
-            channel_id: ChannelIdAttribute::from(channel_id),
-            counterparty_port_id: PortIdAttribute::from(counterparty_port_id),
-            counterparty_channel_id: ChannelIdAttribute::from(counterparty_channel_id),
-            connection_id: ConnectionIdAttribute::from(connection_id),
+            port_id: port_id.into(),
+            channel_id: channel_id.into(),
+            counterparty_port_id: counterparty_port_id.into(),
+            counterparty_channel_id: counterparty_channel_id.into(),
+            connection_id: connection_id.into(),
         }
     }
     pub fn port_id(&self) -> &PortId {
@@ -498,12 +498,12 @@ impl ChannelClosed {
         channel_ordering: Order,
     ) -> Self {
         Self {
-            port_id: PortIdAttribute::from(port_id),
-            channel_id: ChannelIdAttribute::from(channel_id),
-            counterparty_port_id: PortIdAttribute::from(counterparty_port_id),
-            counterparty_channel_id: ChannelIdAttribute::from(counterparty_channel_id),
-            connection_id: ConnectionIdAttribute::from(connection_id),
-            channel_ordering: ChannelOrderingAttribute::from(channel_ordering),
+            port_id: port_id.into(),
+            channel_id: channel_id.into(),
+            counterparty_port_id: counterparty_port_id.into(),
+            counterparty_channel_id: counterparty_channel_id.into(),
+            connection_id: connection_id.into(),
+            channel_ordering: channel_ordering.into(),
         }
     }
     pub fn port_id(&self) -> &PortId {
