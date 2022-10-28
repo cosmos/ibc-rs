@@ -478,6 +478,70 @@ impl From<CloseConfirm> for AbciEvent {
     }
 }
 
+#[derive(Debug)]
+pub struct ChannelClosed {
+    port_id: PortIdAttribute,
+    channel_id: ChannelIdAttribute,
+    counterparty_port_id: PortIdAttribute,
+    counterparty_channel_id: ChannelIdAttribute,
+    connection_id: ConnectionIdAttribute,
+    channel_ordering: ChannelOrderingAttribute,
+}
+
+impl ChannelClosed {
+    pub fn new(
+        port_id: PortId,
+        channel_id: ChannelId,
+        counterparty_port_id: PortId,
+        counterparty_channel_id: ChannelId,
+        connection_id: ConnectionId,
+        channel_ordering: Order,
+    ) -> Self {
+        Self {
+            port_id: PortIdAttribute::from(port_id),
+            channel_id: ChannelIdAttribute::from(channel_id),
+            counterparty_port_id: PortIdAttribute::from(counterparty_port_id),
+            counterparty_channel_id: ChannelIdAttribute::from(counterparty_channel_id),
+            connection_id: ConnectionIdAttribute::from(connection_id),
+            channel_ordering: ChannelOrderingAttribute::from(channel_ordering),
+        }
+    }
+    pub fn port_id(&self) -> &PortId {
+        &self.port_id.port_id
+    }
+    pub fn channel_id(&self) -> &ChannelId {
+        &self.channel_id.channel_id
+    }
+    pub fn counterparty_port_id(&self) -> &PortId {
+        &self.counterparty_port_id.port_id
+    }
+    pub fn counterparty_channel_id(&self) -> &ChannelId {
+        &self.counterparty_channel_id.channel_id
+    }
+    pub fn connection_id(&self) -> &ConnectionId {
+        &self.connection_id.connection_id
+    }
+    pub fn channel_ordering(&self) -> &Order {
+        &self.channel_ordering.order
+    }
+}
+
+impl From<ChannelClosed> for AbciEvent {
+    fn from(ev: ChannelClosed) -> Self {
+        AbciEvent {
+            type_str: IbcEventType::ChannelClosed.as_str().to_string(),
+            attributes: vec![
+                ev.port_id.into(),
+                ev.channel_id.into(),
+                ev.counterparty_port_id.into(),
+                ev.counterparty_channel_id.into(),
+                ev.connection_id.into(),
+                ev.channel_ordering.into(),
+            ],
+        }
+    }
+}
+
 #[derive(Debug, From)]
 struct PacketDataAttribute {
     packet_data: Vec<u8>,

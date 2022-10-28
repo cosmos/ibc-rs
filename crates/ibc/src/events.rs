@@ -116,6 +116,7 @@ const RECEIVE_PACKET_EVENT: &str = "receive_packet";
 const WRITE_ACK_EVENT: &str = "write_acknowledgement";
 const ACK_PACKET_EVENT: &str = "acknowledge_packet";
 const TIMEOUT_EVENT: &str = "timeout_packet";
+const CHANNEL_CLOSED_EVENT: &str = "channel_close";
 
 /// Events types
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -134,6 +135,7 @@ pub enum IbcEventType {
     OpenConfirmChannel,
     CloseInitChannel,
     CloseConfirmChannel,
+    ChannelClosed,
     SendPacket,
     ReceivePacket,
     WriteAck,
@@ -159,6 +161,7 @@ impl IbcEventType {
             IbcEventType::OpenConfirmChannel => CHANNEL_OPEN_CONFIRM_EVENT,
             IbcEventType::CloseInitChannel => CHANNEL_CLOSE_INIT_EVENT,
             IbcEventType::CloseConfirmChannel => CHANNEL_CLOSE_CONFIRM_EVENT,
+            IbcEventType::ChannelClosed => CHANNEL_CLOSED_EVENT,
             IbcEventType::SendPacket => SEND_PACKET_EVENT,
             IbcEventType::ReceivePacket => RECEIVE_PACKET_EVENT,
             IbcEventType::WriteAck => WRITE_ACK_EVENT,
@@ -193,6 +196,7 @@ impl FromStr for IbcEventType {
             WRITE_ACK_EVENT => Ok(IbcEventType::WriteAck),
             ACK_PACKET_EVENT => Ok(IbcEventType::AckPacket),
             TIMEOUT_EVENT => Ok(IbcEventType::Timeout),
+            CHANNEL_CLOSED_EVENT => Ok(IbcEventType::ChannelClosed),
             // from_str() for `APP_MODULE_EVENT` MUST fail because a `ModuleEvent`'s type isn't constant
             _ => Err(Error::incorrect_event_type(s.to_string())),
         }
@@ -224,6 +228,7 @@ pub enum IbcEvent {
     WriteAcknowledgement(ChannelEvents::WriteAcknowledgement),
     AcknowledgePacket(ChannelEvents::AcknowledgePacket),
     TimeoutPacket(ChannelEvents::TimeoutPacket),
+    ChannelClosed(ChannelEvents::ChannelClosed),
 
     AppModule(ModuleEvent),
 }
@@ -252,6 +257,7 @@ impl TryFrom<IbcEvent> for AbciEvent {
             IbcEvent::WriteAcknowledgement(event) => event.try_into().map_err(Error::channel)?,
             IbcEvent::AcknowledgePacket(event) => event.try_into().map_err(Error::channel)?,
             IbcEvent::TimeoutPacket(event) => event.try_into().map_err(Error::channel)?,
+            IbcEvent::ChannelClosed(event) => event.into(),
             IbcEvent::AppModule(event) => event.try_into()?,
         })
     }
@@ -279,6 +285,7 @@ impl IbcEvent {
             IbcEvent::WriteAcknowledgement(_) => IbcEventType::WriteAck,
             IbcEvent::AcknowledgePacket(_) => IbcEventType::AckPacket,
             IbcEvent::TimeoutPacket(_) => IbcEventType::Timeout,
+            IbcEvent::ChannelClosed(_) => IbcEventType::ChannelClosed,
             IbcEvent::AppModule(_) => IbcEventType::AppModule,
         }
     }
