@@ -151,7 +151,7 @@ impl ClientId {
     /// ```
     /// # use ibc::core::ics24_host::identifier::ClientId;
     /// # use ibc::core::ics02_client::client_type::ClientType;
-    /// let tm_client_id = ClientId::new(ClientType::new("07-tendermint"), 0);
+    /// let tm_client_id = ClientId::new(ClientType::new("07-tendermint".to_string()), 0);
     /// assert!(tm_client_id.is_ok());
     /// tm_client_id.map(|id| { assert_eq!(&id, "07-tendermint-0") });
     /// ```
