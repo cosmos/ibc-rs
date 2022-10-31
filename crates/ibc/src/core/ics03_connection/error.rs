@@ -159,5 +159,8 @@ define_error! {
 
         ImplementationSpecific
             | _ | { "implementation specific error" },
+
+        InvalidClientState
+            | _ | { "invalid client state in message" },
     }
 }

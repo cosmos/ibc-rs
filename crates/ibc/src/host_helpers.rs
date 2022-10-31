@@ -2,12 +2,11 @@ use ibc_proto::google::protobuf::Any;
 
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics03_connection::context::ConnectionReader;
-use crate::core::ics04_channel::error::Error;
-
-use super::client_state::ClientState as TmClientState;
+use crate::core::ics03_connection::error::Error;
+use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 
 /// Implementation of `ConnectionReader::validate_self_client()` for tendermint chains.
-pub fn tm_validate_self_client(
+pub fn tendermint_validate_self_client(
     ctx: &dyn ConnectionReader,
     counterparty_client_state: Any,
 ) -> Result<(), Error> {

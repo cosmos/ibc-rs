@@ -352,9 +352,6 @@ define_error! {
         AbciConversionFailed
             { abci_event: String }
             | e | { format_args!("Failed to convert abci event to IbcEvent: {}", e.abci_event)},
-
-        InvalidClientState
-            | _ | { "invalid client state in message" },
     }
 }
 
