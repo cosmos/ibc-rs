@@ -142,8 +142,11 @@ impl TryFrom<Packet> for Vec<Tag> {
                 .unwrap(),
         };
         attributes.push(timeout_timestamp);
-        let val =
-            String::from_utf8(p.data).expect("hex-encoded string should always be valid UTF-8");
+
+        // Note: this attribute forces us to assume that Packet data is valid UTF-8, even
+        // though the standard doesn't require it. It has been deprecated in ibc-go,
+        // and we will deprecate it in v0.22.0. It will be removed in the future.
+        let val = String::from_utf8(p.data).map_err(|_| Error::non_utf8_packet_data())?;
         let packet_data = Tag {
             key: PKT_DATA_ATTRIBUTE_KEY.parse().unwrap(),
             value: val.parse().unwrap(),

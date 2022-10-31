@@ -5,7 +5,7 @@ use tendermint::abci::tag::Tag;
 use tendermint::abci::Event as AbciEvent;
 
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-use crate::events::{IbcEvent, IbcEventType};
+use crate::events::IbcEventType;
 use crate::prelude::*;
 
 /// The content of the `key` field for the attribute containing the connection identifier.
@@ -15,8 +15,8 @@ pub const COUNTERPARTY_CONN_ID_ATTRIBUTE_KEY: &str = "counterparty_connection_id
 pub const COUNTERPARTY_CLIENT_ID_ATTRIBUTE_KEY: &str = "counterparty_client_id";
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
-pub struct Attributes {
-    pub connection_id: Option<ConnectionId>,
+struct Attributes {
+    pub connection_id: ConnectionId,
     pub client_id: ClientId,
     pub counterparty_connection_id: Option<ConnectionId>,
     pub counterparty_client_id: ClientId,
@@ -32,56 +32,67 @@ pub struct Attributes {
 /// we will be able to remove the `.parse().unwrap()` calls.
 impl From<Attributes> for Vec<Tag> {
     fn from(a: Attributes) -> Self {
-        let mut attributes = vec![];
-        if let Some(conn_id) = a.connection_id {
-            let conn_id = Tag {
-                key: CONN_ID_ATTRIBUTE_KEY.parse().unwrap(),
-                value: conn_id.to_string().parse().unwrap(),
-            };
-            attributes.push(conn_id);
-        }
+        let conn_id = Tag {
+            key: CONN_ID_ATTRIBUTE_KEY.parse().unwrap(),
+            value: a.connection_id.to_string().parse().unwrap(),
+        };
+
         let client_id = Tag {
             key: CLIENT_ID_ATTRIBUTE_KEY.parse().unwrap(),
             value: a.client_id.to_string().parse().unwrap(),
         };
-        attributes.push(client_id);
-        if let Some(conn_id) = a.counterparty_connection_id {
-            let conn_id = Tag {
-                key: COUNTERPARTY_CONN_ID_ATTRIBUTE_KEY.parse().unwrap(),
-                value: conn_id.to_string().parse().unwrap(),
-            };
-            attributes.push(conn_id);
-        }
+
+        let counterparty_conn_id = Tag {
+            key: COUNTERPARTY_CONN_ID_ATTRIBUTE_KEY.parse().unwrap(),
+            value: match a.counterparty_connection_id {
+                Some(counterparty_conn_id) => counterparty_conn_id.to_string().parse().unwrap(),
+                None => "".parse().unwrap(),
+            },
+        };
+
         let counterparty_client_id = Tag {
             key: COUNTERPARTY_CLIENT_ID_ATTRIBUTE_KEY.parse().unwrap(),
             value: a.counterparty_client_id.to_string().parse().unwrap(),
         };
-        attributes.push(counterparty_client_id);
-        attributes
+
+        vec![
+            conn_id,
+            client_id,
+            counterparty_client_id,
+            counterparty_conn_id,
+        ]
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub struct OpenInit(pub Attributes);
+pub struct OpenInit(Attributes);
 
 impl OpenInit {
-    pub fn attributes(&self) -> &Attributes {
-        &self.0
+    /// Per our convention, this event is generated on chain A.
+    pub fn new(
+        conn_id_on_a: ConnectionId,
+        client_id_on_a: ClientId,
+        client_id_on_b: ClientId,
+    ) -> Self {
+        Self(Attributes {
+            connection_id: conn_id_on_a,
+            client_id: client_id_on_a,
+            counterparty_connection_id: None,
+            counterparty_client_id: client_id_on_b,
+        })
     }
-    pub fn connection_id(&self) -> Option<&ConnectionId> {
-        self.0.connection_id.as_ref()
-    }
-}
 
-impl From<Attributes> for OpenInit {
-    fn from(attrs: Attributes) -> Self {
-        OpenInit(attrs)
+    pub fn connection_id(&self) -> &ConnectionId {
+        &self.0.connection_id
     }
-}
-
-impl From<OpenInit> for IbcEvent {
-    fn from(v: OpenInit) -> Self {
-        IbcEvent::OpenInitConnection(v)
+    pub fn client_id(&self) -> &ClientId {
+        &self.0.client_id
+    }
+    pub fn counterparty_connection_id(&self) -> Option<&ConnectionId> {
+        self.0.counterparty_connection_id.as_ref()
+    }
+    pub fn counterparty_client_id(&self) -> &ClientId {
+        &self.0.counterparty_client_id
     }
 }
 
@@ -96,26 +107,35 @@ impl From<OpenInit> for AbciEvent {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub struct OpenTry(pub Attributes);
+pub struct OpenTry(Attributes);
 
 impl OpenTry {
-    pub fn attributes(&self) -> &Attributes {
-        &self.0
+    /// Per our convention, this event is generated on chain B.
+    pub fn new(
+        conn_id_on_b: ConnectionId,
+        client_id_on_b: ClientId,
+        conn_id_on_a: ConnectionId,
+        client_id_on_a: ClientId,
+    ) -> Self {
+        Self(Attributes {
+            connection_id: conn_id_on_b,
+            client_id: client_id_on_b,
+            counterparty_connection_id: Some(conn_id_on_a),
+            counterparty_client_id: client_id_on_a,
+        })
     }
-    pub fn connection_id(&self) -> Option<&ConnectionId> {
-        self.0.connection_id.as_ref()
-    }
-}
 
-impl From<Attributes> for OpenTry {
-    fn from(attrs: Attributes) -> Self {
-        OpenTry(attrs)
+    pub fn connection_id(&self) -> &ConnectionId {
+        &self.0.connection_id
     }
-}
-
-impl From<OpenTry> for IbcEvent {
-    fn from(v: OpenTry) -> Self {
-        IbcEvent::OpenTryConnection(v)
+    pub fn client_id(&self) -> &ClientId {
+        &self.0.client_id
+    }
+    pub fn counterparty_connection_id(&self) -> Option<&ConnectionId> {
+        self.0.counterparty_connection_id.as_ref()
+    }
+    pub fn counterparty_client_id(&self) -> &ClientId {
+        &self.0.counterparty_client_id
     }
 }
 
@@ -130,26 +150,35 @@ impl From<OpenTry> for AbciEvent {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub struct OpenAck(pub Attributes);
+pub struct OpenAck(Attributes);
 
 impl OpenAck {
-    pub fn attributes(&self) -> &Attributes {
-        &self.0
+    /// Per our convention, this event is generated on chain A.
+    pub fn new(
+        conn_id_on_a: ConnectionId,
+        client_id_on_a: ClientId,
+        conn_id_on_b: ConnectionId,
+        client_id_on_b: ClientId,
+    ) -> Self {
+        Self(Attributes {
+            connection_id: conn_id_on_a,
+            client_id: client_id_on_a,
+            counterparty_connection_id: Some(conn_id_on_b),
+            counterparty_client_id: client_id_on_b,
+        })
     }
-    pub fn connection_id(&self) -> Option<&ConnectionId> {
-        self.0.connection_id.as_ref()
-    }
-}
 
-impl From<Attributes> for OpenAck {
-    fn from(attrs: Attributes) -> Self {
-        OpenAck(attrs)
+    pub fn connection_id(&self) -> &ConnectionId {
+        &self.0.connection_id
     }
-}
-
-impl From<OpenAck> for IbcEvent {
-    fn from(v: OpenAck) -> Self {
-        IbcEvent::OpenAckConnection(v)
+    pub fn client_id(&self) -> &ClientId {
+        &self.0.client_id
+    }
+    pub fn counterparty_connection_id(&self) -> Option<&ConnectionId> {
+        self.0.counterparty_connection_id.as_ref()
+    }
+    pub fn counterparty_client_id(&self) -> &ClientId {
+        &self.0.counterparty_client_id
     }
 }
 
@@ -164,26 +193,35 @@ impl From<OpenAck> for AbciEvent {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub struct OpenConfirm(pub Attributes);
+pub struct OpenConfirm(Attributes);
 
 impl OpenConfirm {
-    pub fn attributes(&self) -> &Attributes {
-        &self.0
+    /// Per our convention, this event is generated on chain B.
+    pub fn new(
+        conn_id_on_b: ConnectionId,
+        client_id_on_b: ClientId,
+        conn_id_on_a: ConnectionId,
+        client_id_on_a: ClientId,
+    ) -> Self {
+        Self(Attributes {
+            connection_id: conn_id_on_b,
+            client_id: client_id_on_b,
+            counterparty_connection_id: Some(conn_id_on_a),
+            counterparty_client_id: client_id_on_a,
+        })
     }
-    pub fn connection_id(&self) -> Option<&ConnectionId> {
-        self.0.connection_id.as_ref()
-    }
-}
 
-impl From<Attributes> for OpenConfirm {
-    fn from(attrs: Attributes) -> Self {
-        OpenConfirm(attrs)
+    pub fn connection_id(&self) -> &ConnectionId {
+        &self.0.connection_id
     }
-}
-
-impl From<OpenConfirm> for IbcEvent {
-    fn from(v: OpenConfirm) -> Self {
-        IbcEvent::OpenConfirmConnection(v)
+    pub fn client_id(&self) -> &ClientId {
+        &self.0.client_id
+    }
+    pub fn counterparty_connection_id(&self) -> Option<&ConnectionId> {
+        self.0.counterparty_connection_id.as_ref()
+    }
+    pub fn counterparty_client_id(&self) -> &ClientId {
+        &self.0.counterparty_client_id
     }
 }
 

@@ -11,7 +11,6 @@ use crate::core::ics02_client::error as client_error;
 use crate::core::ics02_client::events::{self as ClientEvents};
 use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics03_connection::events as ConnectionEvents;
-use crate::core::ics03_connection::events::Attributes as ConnectionAttributes;
 use crate::core::ics04_channel::error as channel_error;
 use crate::core::ics04_channel::events as ChannelEvents;
 use crate::core::ics04_channel::events::Attributes as ChannelAttributes;
@@ -303,16 +302,6 @@ impl IbcEvent {
         }
     }
 
-    pub fn connection_attributes(&self) -> Option<&ConnectionAttributes> {
-        match self {
-            IbcEvent::OpenInitConnection(ev) => Some(ev.attributes()),
-            IbcEvent::OpenTryConnection(ev) => Some(ev.attributes()),
-            IbcEvent::OpenAckConnection(ev) => Some(ev.attributes()),
-            IbcEvent::OpenConfirmConnection(ev) => Some(ev.attributes()),
-            _ => None,
-        }
-    }
-
     pub fn packet(&self) -> Option<&Packet> {
         match self {
             IbcEvent::SendPacket(ev) => Some(&ev.packet),
@@ -389,5 +378,27 @@ impl From<ModuleEventAttribute> for Tag {
                 .parse()
                 .expect("Value::from_str() impl is infallible"),
         }
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use alloc::vec;
+
+    use crate::core::ics04_channel::{
+        events::SendPacket,
+        packet::{test_utils::get_dummy_raw_packet, Packet},
+    };
+
+    #[test]
+    /// Ensures that we don't panic when packet data is not valid UTF-8.
+    /// See issue [#199](https://github.com/cosmos/ibc-rs/issues/199)
+    pub fn test_packet_data_non_utf8() {
+        let mut packet = Packet::try_from(get_dummy_raw_packet(1, 1)).unwrap();
+        packet.data = vec![128];
+
+        let ibc_event = IbcEvent::SendPacket(SendPacket { packet });
+        let _ = AbciEvent::try_from(ibc_event);
     }
 }

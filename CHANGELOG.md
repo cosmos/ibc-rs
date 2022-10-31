@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## v0.21.1
+
+*October 27, 2022*
+
+This release fixes a critical vulnerability. It is strongly advised to upgrade.
+
+### BUG FIXES
+
+- No longer panic when packet data is not valid UTF-8
+  ([#199](https://github.com/cosmos/ibc-rs/issues/199))
+
+## v0.21.0
+
+*October 24, 2022*
+
+This is a small release that allows new `ClientTypes` to be created, which was missed when implementing ADR 4. The changes are not consensus-breaking.
+
+### BREAKING CHANGES
+
+- Make ClientType allow any string value as opposed to just Tendermint
+  ([#188](https://github.com/cosmos/ibc-rs/issues/188))
+
 ## v0.20.0
 
 *October 19, 2022*

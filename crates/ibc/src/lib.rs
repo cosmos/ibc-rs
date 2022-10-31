@@ -16,7 +16,7 @@
     rust_2018_idioms
 )]
 #![forbid(unsafe_code)]
-#![doc(html_root_url = "https://docs.rs/ibc/0.20.0")]
+#![doc(html_root_url = "https://docs.rs/ibc/0.21.1")]
 
 //! This library implements the InterBlockchain Communication (IBC) protocol in Rust. IBC is
 //! a distributed protocol that enables communication between distinct sovereign blockchains.
