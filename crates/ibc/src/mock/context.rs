@@ -1137,6 +1137,10 @@ impl ConnectionReader for MockContext {
     fn validate_self_client(&self, _counterparty_client_state: Any) -> Result<(), Ics03Error> {
         Ok(())
     }
+
+    fn chain_id(&self) -> ChainId {
+        self.chain_id()
+    }
 }
 
 impl ConnectionKeeper for MockContext {

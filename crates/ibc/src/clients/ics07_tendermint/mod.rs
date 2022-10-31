@@ -7,6 +7,7 @@ pub mod client_state;
 pub mod consensus_state;
 pub mod error;
 pub mod header;
+pub mod host_helpers;
 pub mod misbehaviour;
 
 pub(crate) const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
@@ -14,3 +15,5 @@ pub(crate) const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
 pub fn client_type() -> ClientType {
     ClientType::new(TENDERMINT_CLIENT_TYPE)
 }
+
+pub use host_helpers::validate_self_client;
