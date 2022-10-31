@@ -6,7 +6,8 @@ use crate::core::ics04_channel::error::Error;
 
 use super::client_state::ClientState as TmClientState;
 
-pub fn validate_self_client(
+/// Implementation of `ConnectionReader::validate_self_client()` for tendermint chains.
+pub fn tm_validate_self_client(
     ctx: &dyn ConnectionReader,
     counterparty_client_state: Any,
 ) -> Result<(), Error> {

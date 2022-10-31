@@ -1139,7 +1139,7 @@ impl ConnectionReader for MockContext {
     }
 
     fn chain_id(&self) -> ChainId {
-        self.chain_id()
+        self.host_chain_id.clone()
     }
 }
 

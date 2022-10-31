@@ -9,7 +9,7 @@ use crate::core::ics03_connection::error::Error;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::version::{get_compatible_versions, pick_version, Version};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-use crate::core::ics24_host::identifier::{ClientId, ConnectionId, ChainId};
+use crate::core::ics24_host::identifier::{ChainId, ClientId, ConnectionId};
 use crate::prelude::*;
 use crate::Height;
 use ibc_proto::google::protobuf::Any;
