@@ -44,7 +44,7 @@ pub fn process(ctx: &dyn ClientReader, msg: MsgCreateClient) -> HandlerResult<Cl
 
     let client_type = client_state.client_type();
 
-    let client_id = ClientId::new(client_type, id_counter).map_err(|e| {
+    let client_id = ClientId::new(client_type.clone(), id_counter).map_err(|e| {
         Error::client_identifier_constructor(client_state.client_type(), id_counter, e)
     })?;
 
@@ -54,7 +54,7 @@ pub fn process(ctx: &dyn ClientReader, msg: MsgCreateClient) -> HandlerResult<Cl
 
     let result = ClientResult::Create(Result {
         client_id: client_id.clone(),
-        client_type,
+        client_type: client_type.clone(),
         client_state,
         consensus_state,
         processed_time: ctx.host_timestamp(),
