@@ -9,7 +9,7 @@ use crate::core::ics03_connection::error::Error;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::version::{get_compatible_versions, pick_version, Version};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-use crate::core::ics24_host::identifier::{ChainId, ClientId, ConnectionId};
+use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::prelude::*;
 use crate::Height;
 use ibc_proto::google::protobuf::Any;
@@ -18,9 +18,6 @@ use super::handler::ConnectionIdState;
 
 /// A context supplying all the necessary read-only dependencies for processing any `ConnectionMsg`.
 pub trait ConnectionReader {
-    /// Returns the host chain id
-    fn chain_id(&self) -> ChainId;
-
     /// Returns the ConnectionEnd for the given identifier `conn_id`.
     fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, Error>;
 
