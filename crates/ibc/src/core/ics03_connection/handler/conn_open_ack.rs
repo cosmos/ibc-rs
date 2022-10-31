@@ -26,10 +26,7 @@ pub(crate) fn process(
         ));
     }
 
-    ///////////////////////////////////////////////////////////
-    // validate_self_client() verification goes here
-    // See [issue](https://github.com/cosmos/ibc-rs/issues/162)
-    ///////////////////////////////////////////////////////////
+    ctx_a.validate_self_client(&msg.client_state_of_a_on_b)?;
 
     let conn_end_on_a = ctx_a.connection_end(&msg.conn_id_on_a)?;
     if !(conn_end_on_a.state_matches(&State::Init)
