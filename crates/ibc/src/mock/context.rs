@@ -1133,6 +1133,13 @@ impl ConnectionReader for MockContext {
     fn connection_counter(&self) -> Result<u64, Ics03Error> {
         Ok(self.ibc_store.lock().unwrap().connection_ids_counter)
     }
+
+    fn validate_self_client(
+        &self,
+        _counterparty_client_state: &Any,
+    ) -> Result<(), Ics03Error> {
+        Ok(())
+    }
 }
 
 impl ConnectionKeeper for MockContext {
