@@ -1,6 +1,5 @@
 ///! This module holds all the abci event attributes for IBC events emitted
 ///! during the channel handshake.
-
 use alloc::string::ToString;
 use derive_more::From;
 use tendermint::abci::tag::Tag;

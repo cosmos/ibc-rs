@@ -1,9 +1,8 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the channels module.
 
 mod channel_attributes;
+mod packet_attributes;
 
-use derive_more::From;
-use subtle_encoding::hex;
 use tendermint::abci::tag::Tag;
 use tendermint::abci::Event as AbciEvent;
 
@@ -12,33 +11,20 @@ use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::events::IbcEventType;
 use crate::prelude::*;
-use crate::timestamp::Timestamp;
 
 use self::channel_attributes::{
     ChannelIdAttribute, ConnectionIdAttribute, PortIdAttribute, VersionAttribute,
     COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY,
 };
+use self::packet_attributes::{
+    AcknowledgementAttribute, ChannelOrderingAttribute, DstChannelIdAttribute, DstPortIdAttribute,
+    PacketConnectionIdAttribute, PacketDataAttribute, SequenceAttribute, SrcChannelIdAttribute,
+    SrcPortIdAttribute, TimeoutHeightAttribute, TimeoutTimestampAttribute,
+};
 
 use super::channel::Order;
 use super::msgs::acknowledgement::Acknowledgement;
-use super::packet::Sequence;
-use super::timeout::TimeoutHeight;
 use super::Version;
-
-/// Packet event attribute keys
-pub const PKT_SEQ_ATTRIBUTE_KEY: &str = "packet_sequence";
-pub const PKT_DATA_ATTRIBUTE_KEY: &str = "packet_data";
-pub const PKT_DATA_HEX_ATTRIBUTE_KEY: &str = "packet_data_hex";
-pub const PKT_SRC_PORT_ATTRIBUTE_KEY: &str = "packet_src_port";
-pub const PKT_SRC_CHANNEL_ATTRIBUTE_KEY: &str = "packet_src_channel";
-pub const PKT_DST_PORT_ATTRIBUTE_KEY: &str = "packet_dst_port";
-pub const PKT_DST_CHANNEL_ATTRIBUTE_KEY: &str = "packet_dst_channel";
-pub const PKT_CHANNEL_ORDERING_ATTRIBUTE_KEY: &str = "packet_channel_ordering";
-pub const PKT_TIMEOUT_HEIGHT_ATTRIBUTE_KEY: &str = "packet_timeout_height";
-pub const PKT_TIMEOUT_TIMESTAMP_ATTRIBUTE_KEY: &str = "packet_timeout_timestamp";
-pub const PKT_ACK_ATTRIBUTE_KEY: &str = "packet_ack";
-pub const PKT_ACK_HEX_ATTRIBUTE_KEY: &str = "packet_ack_hex";
-pub const PKT_CONNECTION_ID_ATTRIBUTE_KEY: &str = "packet_connection";
 
 #[derive(Debug)]
 pub struct OpenInit {
@@ -466,210 +452,6 @@ impl From<ChannelClosed> for AbciEvent {
                 ev.channel_ordering.into(),
             ],
         }
-    }
-}
-
-#[derive(Debug, From)]
-struct PacketDataAttribute {
-    packet_data: Vec<u8>,
-}
-
-impl TryFrom<PacketDataAttribute> for Vec<Tag> {
-    type Error = Error;
-
-    fn try_from(attr: PacketDataAttribute) -> Result<Self, Self::Error> {
-        let tags = vec![
-            Tag {
-                key: PKT_DATA_ATTRIBUTE_KEY.parse().unwrap(),
-                value: String::from_utf8(attr.packet_data.clone())
-                    // Note: this attribute forces us to assume that Packet data
-                    // is valid UTF-8, even though the standard doesn't require
-                    // it. It has been deprecated in ibc-go. It will be removed
-                    // in the future.
-                    .map_err(|_| Error::non_utf8_packet_data())?
-                    .parse()
-                    .unwrap(),
-            },
-            Tag {
-                key: PKT_DATA_HEX_ATTRIBUTE_KEY.parse().unwrap(),
-                value: String::from_utf8(hex::encode(attr.packet_data))
-                    .unwrap()
-                    .parse()
-                    .unwrap(),
-            },
-        ];
-
-        Ok(tags)
-    }
-}
-
-#[derive(Debug, From)]
-struct TimeoutHeightAttribute {
-    timeout_height: TimeoutHeight,
-}
-
-impl From<TimeoutHeightAttribute> for Tag {
-    fn from(attr: TimeoutHeightAttribute) -> Self {
-        Tag {
-            key: PKT_TIMEOUT_HEIGHT_ATTRIBUTE_KEY.parse().unwrap(),
-            value: match attr.timeout_height {
-                TimeoutHeight::Never => "0-0".to_string(),
-                TimeoutHeight::At(height) => height.to_string(),
-            }
-            .parse()
-            .unwrap(),
-        }
-    }
-}
-
-#[derive(Debug, From)]
-struct TimeoutTimestampAttribute {
-    timeout_timestamp: Timestamp,
-}
-
-impl From<TimeoutTimestampAttribute> for Tag {
-    fn from(attr: TimeoutTimestampAttribute) -> Self {
-        Tag {
-            key: PKT_TIMEOUT_TIMESTAMP_ATTRIBUTE_KEY.parse().unwrap(),
-            value: attr
-                .timeout_timestamp
-                .nanoseconds()
-                .to_string()
-                .parse()
-                .unwrap(),
-        }
-    }
-}
-
-#[derive(Debug, From)]
-struct SequenceAttribute {
-    sequence: Sequence,
-}
-
-impl From<SequenceAttribute> for Tag {
-    fn from(attr: SequenceAttribute) -> Self {
-        Tag {
-            key: PKT_SEQ_ATTRIBUTE_KEY.parse().unwrap(),
-            value: u64::from(attr.sequence).to_string().parse().unwrap(),
-        }
-    }
-}
-
-#[derive(Debug, From)]
-struct SrcPortIdAttribute {
-    src_port_id: PortId,
-}
-
-impl From<SrcPortIdAttribute> for Tag {
-    fn from(attr: SrcPortIdAttribute) -> Self {
-        Tag {
-            key: PKT_SRC_PORT_ATTRIBUTE_KEY.parse().unwrap(),
-            value: attr.src_port_id.as_str().parse().unwrap(),
-        }
-    }
-}
-
-#[derive(Debug, From)]
-struct SrcChannelIdAttribute {
-    src_channel_id: ChannelId,
-}
-
-impl From<SrcChannelIdAttribute> for Tag {
-    fn from(attr: SrcChannelIdAttribute) -> Self {
-        Tag {
-            key: PKT_SRC_CHANNEL_ATTRIBUTE_KEY.parse().unwrap(),
-            value: attr.src_channel_id.as_str().parse().unwrap(),
-        }
-    }
-}
-
-#[derive(Debug, From)]
-struct DstPortIdAttribute {
-    dst_port_id: PortId,
-}
-
-impl From<DstPortIdAttribute> for Tag {
-    fn from(attr: DstPortIdAttribute) -> Self {
-        Tag {
-            key: PKT_DST_PORT_ATTRIBUTE_KEY.parse().unwrap(),
-            value: attr.dst_port_id.as_str().parse().unwrap(),
-        }
-    }
-}
-
-#[derive(Debug, From)]
-struct DstChannelIdAttribute {
-    dst_channel_id: ChannelId,
-}
-
-impl From<DstChannelIdAttribute> for Tag {
-    fn from(attr: DstChannelIdAttribute) -> Self {
-        Tag {
-            key: PKT_DST_CHANNEL_ATTRIBUTE_KEY.parse().unwrap(),
-            value: attr.dst_channel_id.as_str().parse().unwrap(),
-        }
-    }
-}
-
-#[derive(Debug, From)]
-struct ChannelOrderingAttribute {
-    order: Order,
-}
-
-impl From<ChannelOrderingAttribute> for Tag {
-    fn from(attr: ChannelOrderingAttribute) -> Self {
-        Tag {
-            key: PKT_CHANNEL_ORDERING_ATTRIBUTE_KEY.parse().unwrap(),
-            value: attr.order.as_str().parse().unwrap(),
-        }
-    }
-}
-
-#[derive(Debug, From)]
-struct PacketConnectionIdAttribute {
-    connection_id: ConnectionId,
-}
-
-impl From<PacketConnectionIdAttribute> for Tag {
-    fn from(attr: PacketConnectionIdAttribute) -> Self {
-        Tag {
-            key: PKT_CONNECTION_ID_ATTRIBUTE_KEY.parse().unwrap(),
-            value: attr.connection_id.as_str().parse().unwrap(),
-        }
-    }
-}
-
-#[derive(Debug, From)]
-struct AcknowledgementAttribute {
-    acknowledgement: Acknowledgement,
-}
-
-impl TryFrom<AcknowledgementAttribute> for Vec<Tag> {
-    type Error = Error;
-
-    fn try_from(attr: AcknowledgementAttribute) -> Result<Self, Self::Error> {
-        let tags = vec![
-            Tag {
-                key: PKT_ACK_ATTRIBUTE_KEY.parse().unwrap(),
-                value: String::from_utf8(attr.acknowledgement.as_ref().into())
-                    // Note: this attribute forces us to assume that Packet data
-                    // is valid UTF-8, even though the standard doesn't require
-                    // it. It has been deprecated in ibc-go. It will be removed
-                    // in the future.
-                    .map_err(|_| Error::non_utf8_packet_data())?
-                    .parse()
-                    .unwrap(),
-            },
-            Tag {
-                key: PKT_ACK_HEX_ATTRIBUTE_KEY.parse().unwrap(),
-                value: String::from_utf8(hex::encode(attr.acknowledgement))
-                    .unwrap()
-                    .parse()
-                    .unwrap(),
-            },
-        ];
-
-        Ok(tags)
     }
 }
 
