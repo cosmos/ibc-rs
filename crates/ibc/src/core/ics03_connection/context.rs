@@ -69,10 +69,7 @@ pub trait ConnectionReader {
     fn connection_counter(&self) -> Result<u64, Error>;
 
     /// Validates the `ClientState` of the client on the counterparty chain.
-    fn validate_self_client(
-        &self,
-        counterparty_client_state: &Any,
-    ) -> Result<(), Error>;
+    fn validate_self_client(&self, counterparty_client_state: &Any) -> Result<(), Error>;
 }
 
 /// A context supplying all the necessary write-only dependencies (i.e., storage writing facility)
