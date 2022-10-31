@@ -22,7 +22,7 @@ pub(crate) fn process(
 
     let conn_id_on_b = ConnectionId::new(ctx_b.connection_counter()?);
 
-    ctx_b.validate_self_client(&msg.client_state_of_b_on_a)?;
+    ctx_b.validate_self_client(msg.client_state_of_b_on_a.clone())?;
 
     if msg.consensus_height_of_b_on_a > ctx_b.host_current_height() {
         // Fail if the consensus height is too advanced.
