@@ -1,3 +1,5 @@
+use core::time::Duration;
+
 use ibc_proto::google::protobuf::Any;
 
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
@@ -23,7 +25,7 @@ pub trait TmValidateSelfClientContext {
         }
 
         let self_chain_id = self.chain_id();
-        if self_chain_id != counterparty_client_state.chain_id() {
+        if self_chain_id != &counterparty_client_state.chain_id {
             return Err(Error::invalid_client_state());
         }
 
@@ -37,12 +39,12 @@ pub trait TmValidateSelfClientContext {
             return Err(Error::invalid_client_state());
         }
 
-        if self.proof_specs() != counterparty_client_state.proof_specs() {
+        if self.proof_specs() != &counterparty_client_state.proof_specs {
             return Err(Error::invalid_client_state());
         }
 
         let _ = {
-            let trust_level = counterparty_client_state.trust_level();
+            let trust_level = counterparty_client_state.trust_level;
 
             TendermintTrustThresholdFraction::new(
                 trust_level.numerator(),
@@ -51,12 +53,19 @@ pub trait TmValidateSelfClientContext {
             .map_err(|_| Error::invalid_client_state())?
         };
 
+        if self.unbonding_period() != counterparty_client_state.unbonding_period {
+            return Err(Error::invalid_client_state());
+        }
+
         Ok(())
     }
 
     /// Returns the host chain id
-    fn chain_id(&self) -> ChainId;
+    fn chain_id(&self) -> &ChainId;
 
     /// Returns the host proof specs
     fn proof_specs(&self) -> &ProofSpecs;
+    
+    /// Returns the host unbonding period
+    fn unbonding_period(&self) -> Duration;
 }
