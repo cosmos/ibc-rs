@@ -7,6 +7,8 @@ use crate::core::ics03_connection::error::Error;
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::ChainId;
 
+use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
+
 pub trait TmValidateSelfClientContext {
     fn validate_self_client(
         &self,
@@ -38,6 +40,16 @@ pub trait TmValidateSelfClientContext {
         if self.proof_specs() != counterparty_client_state.proof_specs() {
             return Err(Error::invalid_client_state());
         }
+
+        let _ = {
+            let trust_level = counterparty_client_state.trust_level();
+
+            TendermintTrustThresholdFraction::new(
+                trust_level.numerator(),
+                trust_level.denominator(),
+            )
+            .map_err(|_| Error::invalid_client_state())?
+        };
 
         Ok(())
     }

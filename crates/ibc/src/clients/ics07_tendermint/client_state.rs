@@ -24,7 +24,7 @@ use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 use serde::{Deserialize, Serialize};
 use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
-use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThreshold;
+use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::{ProdVerifier, Verdict, Verifier};
@@ -101,7 +101,7 @@ impl ClientState {
             ));
         }
 
-        let _ = TendermintTrustThreshold::new(trust_level.numerator(), trust_level.denominator())
+        let _ = TendermintTrustThresholdFraction::new(trust_level.numerator(), trust_level.denominator())
             .map_err(Error::invalid_tendermint_trust_threshold)?;
 
         // Basic validation of trusting period and unbonding period: each should be non-zero.
@@ -252,6 +252,10 @@ impl ClientState {
     
     pub fn proof_specs(&self) -> &ProofSpecs {
         &self.proof_specs
+    }
+
+    pub fn trust_level(&self) -> TrustThreshold {
+        self.trust_level
     }
 }
 
