@@ -4,6 +4,7 @@ use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::Error;
+use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::ChainId;
 
 pub trait TmValidateSelfClientContext {
@@ -34,8 +35,16 @@ pub trait TmValidateSelfClientContext {
             return Err(Error::invalid_client_state());
         }
 
+        if self.proof_specs() != counterparty_client_state.proof_specs() {
+            return Err(Error::invalid_client_state());
+        }
+
         Ok(())
     }
 
+    /// Returns the host chain id
     fn chain_id(&self) -> ChainId;
+
+    /// Returns the host proof specs
+    fn proof_specs(&self) -> &ProofSpecs;
 }

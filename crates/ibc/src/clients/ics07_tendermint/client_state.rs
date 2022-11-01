@@ -249,6 +249,10 @@ impl ClientState {
             _ => Ok(()),
         }
     }
+    
+    pub fn proof_specs(&self) -> &ProofSpecs {
+        &self.proof_specs
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
