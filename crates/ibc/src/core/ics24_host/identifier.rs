@@ -193,6 +193,12 @@ impl Default for ClientId {
     }
 }
 
+impl From<ClientId> for String {
+    fn from(id: ClientId) -> Self {
+        id.0
+    }
+}
+
 /// Equality check against string literal (satisfies &ClientId == &str).
 /// ```
 /// use core::str::FromStr;

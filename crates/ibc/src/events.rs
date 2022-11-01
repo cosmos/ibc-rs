@@ -4,8 +4,7 @@ use core::convert::{TryFrom, TryInto};
 use core::str::FromStr;
 use flex_error::{define_error, TraceError};
 use serde_derive::{Deserialize, Serialize};
-use tendermint::abci::tag::Tag;
-use tendermint::abci::Event as AbciEvent;
+use tendermint::abci;
 
 use crate::core::ics02_client::error as client_error;
 use crate::core::ics02_client::events::{self as ClientEvents};
@@ -235,7 +234,7 @@ pub enum IbcEvent {
     AppModule(ModuleEvent),
 }
 
-impl TryFrom<IbcEvent> for AbciEvent {
+impl TryFrom<IbcEvent> for abci::Event {
     type Error = Error;
 
     fn try_from(event: IbcEvent) -> Result<Self, Self::Error> {
@@ -329,7 +328,7 @@ pub struct ModuleEvent {
     pub attributes: Vec<ModuleEventAttribute>,
 }
 
-impl TryFrom<ModuleEvent> for AbciEvent {
+impl TryFrom<ModuleEvent> for abci::Event {
     type Error = Error;
 
     fn try_from(event: ModuleEvent) -> Result<Self, Self::Error> {
@@ -338,8 +337,8 @@ impl TryFrom<ModuleEvent> for AbciEvent {
         }
 
         let attributes = event.attributes.into_iter().map(Into::into).collect();
-        Ok(AbciEvent {
-            type_str: event.kind,
+        Ok(abci::Event {
+            kind: event.kind,
             attributes,
         })
     }
@@ -366,18 +365,9 @@ impl<K: ToString, V: ToString> From<(K, V)> for ModuleEventAttribute {
     }
 }
 
-impl From<ModuleEventAttribute> for Tag {
+impl From<ModuleEventAttribute> for abci::EventAttribute {
     fn from(attr: ModuleEventAttribute) -> Self {
-        Self {
-            key: attr
-                .key
-                .parse()
-                .expect("Key::from_str() impl is infallible"),
-            value: attr
-                .key
-                .parse()
-                .expect("Value::from_str() impl is infallible"),
-        }
+        (attr.key, attr.value).into()
     }
 }
 
@@ -399,6 +389,6 @@ pub mod tests {
         packet.data = vec![128];
 
         let ibc_event = IbcEvent::SendPacket(SendPacket { packet });
-        let _ = AbciEvent::try_from(ibc_event);
+        let _ = abci::Event::try_from(ibc_event);
     }
 }
