@@ -101,8 +101,11 @@ impl ClientState {
             ));
         }
 
-        let _ = TendermintTrustThresholdFraction::new(trust_level.numerator(), trust_level.denominator())
-            .map_err(Error::invalid_tendermint_trust_threshold)?;
+        let _ = TendermintTrustThresholdFraction::new(
+            trust_level.numerator(),
+            trust_level.denominator(),
+        )
+        .map_err(Error::invalid_tendermint_trust_threshold)?;
 
         // Basic validation of trusting period and unbonding period: each should be non-zero.
         if trusting_period <= Duration::new(0, 0) {

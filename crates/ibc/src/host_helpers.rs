@@ -57,12 +57,12 @@ pub trait TmValidateSelfClientContext {
         if self.unbonding_period() != counterparty_client_state.unbonding_period {
             return Err(Error::invalid_client_state());
         }
-    
+
         if counterparty_client_state.unbonding_period < counterparty_client_state.trusting_period {
             return Err(Error::invalid_client_state());
         }
 
-        if self.upgrade_path() != &counterparty_client_state.upgrade_path {
+        if self.upgrade_path() != counterparty_client_state.upgrade_path {
             return Err(Error::invalid_client_state());
         }
 
@@ -74,7 +74,7 @@ pub trait TmValidateSelfClientContext {
 
     /// Returns the host proof specs
     fn proof_specs(&self) -> &ProofSpecs;
-    
+
     /// Returns the host unbonding period
     fn unbonding_period(&self) -> Duration;
 
