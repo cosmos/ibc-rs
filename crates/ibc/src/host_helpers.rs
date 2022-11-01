@@ -1,5 +1,6 @@
 use core::time::Duration;
 
+use alloc::string::String;
 use ibc_proto::google::protobuf::Any;
 
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
@@ -56,6 +57,14 @@ pub trait TmValidateSelfClientContext {
         if self.unbonding_period() != counterparty_client_state.unbonding_period {
             return Err(Error::invalid_client_state());
         }
+    
+        if counterparty_client_state.unbonding_period < counterparty_client_state.trusting_period {
+            return Err(Error::invalid_client_state());
+        }
+
+        if self.upgrade_path() != &counterparty_client_state.upgrade_path {
+            return Err(Error::invalid_client_state());
+        }
 
         Ok(())
     }
@@ -68,4 +77,7 @@ pub trait TmValidateSelfClientContext {
     
     /// Returns the host unbonding period
     fn unbonding_period(&self) -> Duration;
+
+    /// Returns the host uprade path. May be empty.
+    fn upgrade_path(&self) -> &[String];
 }

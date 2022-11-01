@@ -53,12 +53,12 @@ pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint
 pub struct ClientState {
     pub chain_id: ChainId,
     pub trust_level: TrustThreshold,
-    trusting_period: Duration,
+    pub trusting_period: Duration,
     pub unbonding_period: Duration,
     max_clock_drift: Duration,
     latest_height: Height,
     pub proof_specs: ProofSpecs,
-    upgrade_path: Vec<String>,
+    pub upgrade_path: Vec<String>,
     allow_update: AllowUpdate,
     frozen_height: Option<Height>,
     #[serde(skip)]
