@@ -574,18 +574,11 @@ pub struct WriteAcknowledgement {
     src_channel_id: SrcChannelIdAttribute,
     dst_port_id: DstPortIdAttribute,
     dst_channel_id: DstChannelIdAttribute,
-    channel_ordering: ChannelOrderingAttribute,
     acknowledgement: AcknowledgementAttribute,
-    dst_connection_id: PacketConnectionIdAttribute,
 }
 
 impl WriteAcknowledgement {
-    pub fn new(
-        packet: Packet,
-        channel_ordering: Order,
-        dst_connection_id: ConnectionId,
-        acknowledgement: Acknowledgement,
-    ) -> Self {
+    pub fn new(packet: Packet, acknowledgement: Acknowledgement) -> Self {
         Self {
             packet_data: packet.data.into(),
             timeout_height: packet.timeout_height.into(),
@@ -595,9 +588,7 @@ impl WriteAcknowledgement {
             src_channel_id: packet.source_channel.into(),
             dst_port_id: packet.destination_port.into(),
             dst_channel_id: packet.destination_channel.into(),
-            channel_ordering: channel_ordering.into(),
             acknowledgement: acknowledgement.into(),
-            dst_connection_id: dst_connection_id.into(),
         }
     }
 }
@@ -615,9 +606,7 @@ impl TryFrom<WriteAcknowledgement> for AbciEvent {
         attributes.push(v.src_channel_id.into());
         attributes.push(v.dst_port_id.into());
         attributes.push(v.dst_channel_id.into());
-        attributes.push(v.channel_ordering.into());
         attributes.append(&mut v.acknowledgement.try_into()?);
-        attributes.push(v.dst_connection_id.into());
 
         Ok(AbciEvent {
             type_str: IbcEventType::WriteAck.as_str().to_string(),
