@@ -387,7 +387,7 @@ impl From<CloseConfirm> for AbciEvent {
 pub struct ChannelClosed {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
-    counterparty_port_id: PortIdAttribute,
+    counterparty_port_id: CounterpartyPortIdAttribute,
     maybe_counterparty_channel_id: Option<ChannelIdAttribute>,
     connection_id: ConnectionIdAttribute,
     channel_ordering: ChannelOrderingAttribute,
