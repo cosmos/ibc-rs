@@ -388,7 +388,7 @@ pub struct ChannelClosed {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
     counterparty_port_id: CounterpartyPortIdAttribute,
-    maybe_counterparty_channel_id: Option<ChannelIdAttribute>,
+    maybe_counterparty_channel_id: Option<CounterpartyChannelIdAttribute>,
     connection_id: ConnectionIdAttribute,
     channel_ordering: ChannelOrderingAttribute,
 }
