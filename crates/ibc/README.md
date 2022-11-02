@@ -56,12 +56,8 @@ Unless required by applicable law or agreed to in writing, software distributed 
 [crate-link]: https://crates.io/crates/ibc
 [docs-image]: https://docs.rs/ibc/badge.svg
 [docs-link]: https://docs.rs/ibc/
-
 [build-image]: https://github.com/cosmos/ibc-rs/workflows/Rust/badge.svg
 [build-link]: https://github.com/cosmos/ibc-rs/actions?query=workflow%3ARust
-[e2e-image]: https://github.com/cosmos/ibc-rs/workflows/End%20to%20End%20testing/badge.svg
-[e2e-link]: https://github.com/cosmos/ibc-rs/actions?query=workflow%3A%22End+to+End+testing%22
-
 [license-image]: https://img.shields.io/badge/license-Apache2.0-blue.svg
 [license-link]: https://github.com/cosmos/ibc-rs/blob/main/LICENSE
 [rustc-image]: https://img.shields.io/badge/rustc-stable-blue.svg
