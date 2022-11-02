@@ -617,7 +617,6 @@ impl TryFrom<WriteAcknowledgement> for AbciEvent {
 
 #[derive(Debug)]
 pub struct AcknowledgePacket {
-    packet_data: PacketDataAttribute,
     timeout_height: TimeoutHeightAttribute,
     timeout_timestamp: TimeoutTimestampAttribute,
     sequence: SequenceAttribute,
@@ -632,7 +631,6 @@ pub struct AcknowledgePacket {
 impl AcknowledgePacket {
     pub fn new(packet: Packet, channel_ordering: Order, src_connection_id: ConnectionId) -> Self {
         Self {
-            packet_data: packet.data.into(),
             timeout_height: packet.timeout_height.into(),
             timeout_timestamp: packet.timeout_timestamp.into(),
             sequence: packet.sequence.into(),
@@ -651,7 +649,6 @@ impl TryFrom<AcknowledgePacket> for AbciEvent {
 
     fn try_from(v: AcknowledgePacket) -> Result<Self, Self::Error> {
         let mut attributes = Vec::with_capacity(11);
-        attributes.append(&mut v.packet_data.try_into()?);
         attributes.push(v.timeout_height.into());
         attributes.push(v.timeout_timestamp.into());
         attributes.push(v.sequence.into());
