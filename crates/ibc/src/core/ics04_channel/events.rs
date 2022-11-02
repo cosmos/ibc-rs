@@ -682,7 +682,6 @@ impl TryFrom<AcknowledgePacket> for AbciEvent {
 
 #[derive(Debug)]
 pub struct TimeoutPacket {
-    packet_data: PacketDataAttribute,
     timeout_height: TimeoutHeightAttribute,
     timeout_timestamp: TimeoutTimestampAttribute,
     sequence: SequenceAttribute,
@@ -691,13 +690,11 @@ pub struct TimeoutPacket {
     dst_port_id: DstPortIdAttribute,
     dst_channel_id: DstChannelIdAttribute,
     channel_ordering: ChannelOrderingAttribute,
-    src_connection_id: PacketConnectionIdAttribute,
 }
 
 impl TimeoutPacket {
-    pub fn new(packet: Packet, channel_ordering: Order, src_connection_id: ConnectionId) -> Self {
+    pub fn new(packet: Packet, channel_ordering: Order) -> Self {
         Self {
-            packet_data: packet.data.into(),
             timeout_height: packet.timeout_height.into(),
             timeout_timestamp: packet.timeout_timestamp.into(),
             sequence: packet.sequence.into(),
@@ -706,7 +703,6 @@ impl TimeoutPacket {
             dst_port_id: packet.destination_port.into(),
             dst_channel_id: packet.destination_channel.into(),
             channel_ordering: channel_ordering.into(),
-            src_connection_id: src_connection_id.into(),
         }
     }
 }
@@ -716,7 +712,6 @@ impl TryFrom<TimeoutPacket> for AbciEvent {
 
     fn try_from(v: TimeoutPacket) -> Result<Self, Self::Error> {
         let mut attributes = Vec::with_capacity(11);
-        attributes.append(&mut v.packet_data.try_into()?);
         attributes.push(v.timeout_height.into());
         attributes.push(v.timeout_timestamp.into());
         attributes.push(v.sequence.into());
@@ -725,7 +720,6 @@ impl TryFrom<TimeoutPacket> for AbciEvent {
         attributes.push(v.dst_port_id.into());
         attributes.push(v.dst_channel_id.into());
         attributes.push(v.channel_ordering.into());
-        attributes.push(v.src_connection_id.into());
 
         Ok(AbciEvent {
             type_str: IbcEventType::Timeout.as_str().to_string(),

@@ -133,7 +133,6 @@ pub fn process<Ctx: ChannelReader>(
     output.emit(IbcEvent::TimeoutPacket(TimeoutPacket::new(
         packet.clone(),
         source_channel_end.ordering,
-        source_connection_id.clone(),
     )));
 
     if source_channel_end.order_matches(&Order::Ordered) {
