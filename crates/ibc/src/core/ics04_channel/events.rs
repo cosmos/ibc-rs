@@ -13,7 +13,8 @@ use crate::events::IbcEventType;
 use crate::prelude::*;
 
 use self::channel_attributes::{
-    ChannelIdAttribute, ConnectionIdAttribute, PortIdAttribute, VersionAttribute,
+    ChannelIdAttribute, ConnectionIdAttribute, CounterpartyChannelIdAttribute,
+    CounterpartyPortIdAttribute, PortIdAttribute, VersionAttribute,
     COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY,
 };
 use self::packet_attributes::{
@@ -418,12 +419,12 @@ impl ChannelClosed {
         &self.channel_id.channel_id
     }
     pub fn counterparty_port_id(&self) -> &PortId {
-        &self.counterparty_port_id.port_id
+        &self.counterparty_port_id.counterparty_port_id
     }
-    pub fn counterparty_channel_id(&self) -> Option<ChannelId> {
+    pub fn counterparty_channel_id(&self) -> Option<&ChannelId> {
         self.maybe_counterparty_channel_id
-            .clone()
-            .map(|c| c.channel_id)
+            .as_ref()
+            .map(|c| c.as_ref())
     }
     pub fn connection_id(&self) -> &ConnectionId {
         &self.connection_id.connection_id

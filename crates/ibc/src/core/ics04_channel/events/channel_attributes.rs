@@ -74,6 +74,12 @@ impl From<CounterpartyChannelIdAttribute> for Tag {
     }
 }
 
+impl AsRef<ChannelId> for CounterpartyChannelIdAttribute {
+    fn as_ref(&self) -> &ChannelId {
+        &self.counterparty_channel_id
+    }
+}
+
 #[derive(Debug, From)]
 pub struct ConnectionIdAttribute {
     pub connection_id: ConnectionId,
