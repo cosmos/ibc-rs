@@ -6,7 +6,7 @@ resolver = "2"
 
 [dependencies]
 ibc = { path = "../../crates/ibc", default-features = false }
-ibc-proto = { version = "0.20.1", default-features = false }
+ibc-proto = { version = "0.21.0", default-features = false }
 tendermint = { version = "0.26.0", default-features = false }
 tendermint-proto = { version = "0.26.0", default-features = false }
 tendermint-light-client-verifier = { version = "0.26.0", default-features = false }
@@ -32,4 +32,4 @@ substrate-std = [
 ]
 
 [patch.crates-io]
-ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs", branch = "main" }
+ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs.git", rev = "2cf514366768ddef257db3283a0b8bcb4bf9638a" }
