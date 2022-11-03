@@ -208,7 +208,7 @@ This is a major release, which implemented [ADR 4](https://github.com/cosmos/ibc
   ([#1706](https://github.com/informalsystems/ibc-rs/issues/1706))
 - Define CapabilityReader and CapabilityKeeper traits
   ([#1769](https://github.com/informalsystems/ibc-rs/issues/1769))
-- [Relayer Library](crates/relayer)
+- [Relayer Library](https://github.com/informalsystems/hermes/tree/master/crates/relayer)
   - Add two more health checks: tx indexing enabled and historical entries > 0
     ([#1388](https://github.com/informalsystems/ibc-rs/issues/1388))
   - Changed `ConnectionEnd::versions` method to be non-allocating by having it return a `&[Version]` instead of `Vec<Version>`
