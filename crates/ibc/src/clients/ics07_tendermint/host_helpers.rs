@@ -85,7 +85,9 @@ pub trait ValidateSelfClientContext {
             )));
         }
 
-        if self.upgrade_path() != counterparty_client_state.upgrade_path {
+        if !counterparty_client_state.upgrade_path.is_empty()
+            && self.upgrade_path() != counterparty_client_state.upgrade_path
+        {
             return Err(Error::invalid_client_state(format!(
                 "invalid upgrade path. expected: {:?}, got: {:?}",
                 self.upgrade_path(),
