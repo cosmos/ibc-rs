@@ -13,8 +13,6 @@ use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics03_connection::events as ConnectionEvents;
 use crate::core::ics04_channel::error as channel_error;
 use crate::core::ics04_channel::events as ChannelEvents;
-use crate::core::ics04_channel::events::Attributes as ChannelAttributes;
-use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics26_routing::context::ModuleId;
 use crate::timestamp::ParseTimestampError;
@@ -118,7 +116,7 @@ const RECEIVE_PACKET_EVENT: &str = "receive_packet";
 const WRITE_ACK_EVENT: &str = "write_acknowledgement";
 const ACK_PACKET_EVENT: &str = "acknowledge_packet";
 const TIMEOUT_EVENT: &str = "timeout_packet";
-const TIMEOUT_ON_CLOSE_EVENT: &str = "timeout_packet_on_close";
+const CHANNEL_CLOSED_EVENT: &str = "channel_close";
 
 /// Events types
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -137,12 +135,12 @@ pub enum IbcEventType {
     OpenConfirmChannel,
     CloseInitChannel,
     CloseConfirmChannel,
+    ChannelClosed,
     SendPacket,
     ReceivePacket,
     WriteAck,
     AckPacket,
     Timeout,
-    TimeoutOnClose,
     AppModule,
 }
 
@@ -163,12 +161,12 @@ impl IbcEventType {
             IbcEventType::OpenConfirmChannel => CHANNEL_OPEN_CONFIRM_EVENT,
             IbcEventType::CloseInitChannel => CHANNEL_CLOSE_INIT_EVENT,
             IbcEventType::CloseConfirmChannel => CHANNEL_CLOSE_CONFIRM_EVENT,
+            IbcEventType::ChannelClosed => CHANNEL_CLOSED_EVENT,
             IbcEventType::SendPacket => SEND_PACKET_EVENT,
             IbcEventType::ReceivePacket => RECEIVE_PACKET_EVENT,
             IbcEventType::WriteAck => WRITE_ACK_EVENT,
             IbcEventType::AckPacket => ACK_PACKET_EVENT,
             IbcEventType::Timeout => TIMEOUT_EVENT,
-            IbcEventType::TimeoutOnClose => TIMEOUT_ON_CLOSE_EVENT,
             IbcEventType::AppModule => APP_MODULE_EVENT,
         }
     }
@@ -198,7 +196,7 @@ impl FromStr for IbcEventType {
             WRITE_ACK_EVENT => Ok(IbcEventType::WriteAck),
             ACK_PACKET_EVENT => Ok(IbcEventType::AckPacket),
             TIMEOUT_EVENT => Ok(IbcEventType::Timeout),
-            TIMEOUT_ON_CLOSE_EVENT => Ok(IbcEventType::TimeoutOnClose),
+            CHANNEL_CLOSED_EVENT => Ok(IbcEventType::ChannelClosed),
             // from_str() for `APP_MODULE_EVENT` MUST fail because a `ModuleEvent`'s type isn't constant
             _ => Err(Error::incorrect_event_type(s.to_string())),
         }
@@ -230,7 +228,7 @@ pub enum IbcEvent {
     WriteAcknowledgement(ChannelEvents::WriteAcknowledgement),
     AcknowledgePacket(ChannelEvents::AcknowledgePacket),
     TimeoutPacket(ChannelEvents::TimeoutPacket),
-    TimeoutOnClosePacket(ChannelEvents::TimeoutOnClosePacket),
+    ChannelClosed(ChannelEvents::ChannelClosed),
 
     AppModule(ModuleEvent),
 }
@@ -259,7 +257,7 @@ impl TryFrom<IbcEvent> for AbciEvent {
             IbcEvent::WriteAcknowledgement(event) => event.try_into().map_err(Error::channel)?,
             IbcEvent::AcknowledgePacket(event) => event.try_into().map_err(Error::channel)?,
             IbcEvent::TimeoutPacket(event) => event.try_into().map_err(Error::channel)?,
-            IbcEvent::TimeoutOnClosePacket(event) => event.try_into().map_err(Error::channel)?,
+            IbcEvent::ChannelClosed(event) => event.into(),
             IbcEvent::AppModule(event) => event.try_into()?,
         })
     }
@@ -287,37 +285,8 @@ impl IbcEvent {
             IbcEvent::WriteAcknowledgement(_) => IbcEventType::WriteAck,
             IbcEvent::AcknowledgePacket(_) => IbcEventType::AckPacket,
             IbcEvent::TimeoutPacket(_) => IbcEventType::Timeout,
-            IbcEvent::TimeoutOnClosePacket(_) => IbcEventType::TimeoutOnClose,
+            IbcEvent::ChannelClosed(_) => IbcEventType::ChannelClosed,
             IbcEvent::AppModule(_) => IbcEventType::AppModule,
-        }
-    }
-
-    pub fn channel_attributes(self) -> Option<ChannelAttributes> {
-        match self {
-            IbcEvent::OpenInitChannel(ev) => Some(ev.into()),
-            IbcEvent::OpenTryChannel(ev) => Some(ev.into()),
-            IbcEvent::OpenAckChannel(ev) => Some(ev.into()),
-            IbcEvent::OpenConfirmChannel(ev) => Some(ev.into()),
-            _ => None,
-        }
-    }
-
-    pub fn packet(&self) -> Option<&Packet> {
-        match self {
-            IbcEvent::SendPacket(ev) => Some(&ev.packet),
-            IbcEvent::ReceivePacket(ev) => Some(&ev.packet),
-            IbcEvent::WriteAcknowledgement(ev) => Some(&ev.packet),
-            IbcEvent::AcknowledgePacket(ev) => Some(&ev.packet),
-            IbcEvent::TimeoutPacket(ev) => Some(&ev.packet),
-            IbcEvent::TimeoutOnClosePacket(ev) => Some(&ev.packet),
-            _ => None,
-        }
-    }
-
-    pub fn ack(&self) -> Option<&[u8]> {
-        match self {
-            IbcEvent::WriteAcknowledgement(ev) => Some(&ev.ack),
-            _ => None,
         }
     }
 }
@@ -386,9 +355,13 @@ pub mod tests {
     use super::*;
     use alloc::vec;
 
-    use crate::core::ics04_channel::{
-        events::SendPacket,
-        packet::{test_utils::get_dummy_raw_packet, Packet},
+    use crate::core::{
+        ics04_channel::{
+            channel::Order,
+            events::SendPacket,
+            packet::{test_utils::get_dummy_raw_packet, Packet},
+        },
+        ics24_host::identifier::ConnectionId,
     };
 
     #[test]
@@ -398,7 +371,11 @@ pub mod tests {
         let mut packet = Packet::try_from(get_dummy_raw_packet(1, 1)).unwrap();
         packet.data = vec![128];
 
-        let ibc_event = IbcEvent::SendPacket(SendPacket { packet });
+        let ibc_event = IbcEvent::SendPacket(SendPacket::new(
+            packet,
+            Order::Unordered,
+            ConnectionId::default(),
+        ));
         let _ = AbciEvent::try_from(ibc_event);
     }
 }

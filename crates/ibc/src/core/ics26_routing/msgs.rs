@@ -139,16 +139,16 @@ impl TryFrom<Any> for Ics26Envelope {
             timeout::TYPE_URL => {
                 let domain_msg = timeout::MsgTimeout::decode_vec(&any_msg.value)
                     .map_err(Error::malformed_message_bytes)?;
-                Ok(Ics26Envelope::Ics4PacketMsg(PacketMsg::ToPacket(
+                Ok(Ics26Envelope::Ics4PacketMsg(PacketMsg::TimeoutPacket(
                     domain_msg,
                 )))
             }
             timeout_on_close::TYPE_URL => {
                 let domain_msg = timeout_on_close::MsgTimeoutOnClose::decode_vec(&any_msg.value)
                     .map_err(Error::malformed_message_bytes)?;
-                Ok(Ics26Envelope::Ics4PacketMsg(PacketMsg::ToClosePacket(
-                    domain_msg,
-                )))
+                Ok(Ics26Envelope::Ics4PacketMsg(
+                    PacketMsg::TimeoutOnClosePacket(domain_msg),
+                ))
             }
             _ => Err(Error::unknown_message_type_url(any_msg.type_url)),
         }

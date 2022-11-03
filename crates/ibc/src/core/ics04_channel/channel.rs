@@ -346,7 +346,8 @@ impl Order {
     /// Yields the Order as a string
     pub fn as_str(&self) -> &'static str {
         match self {
-            Self::None => "UNINITIALIZED",
+            // Note: taken from [ibc-go](https://github.com/cosmos/ibc-go/blob/e3a32a61098d463cd00b8937e18cb671bd20c6b7/modules/core/04-channel/types/channel.pb.go#L95-L97)
+            Self::None => "ORDER_NONE_UNSPECIFIED",
             Self::Unordered => "ORDER_UNORDERED",
             Self::Ordered => "ORDER_ORDERED",
         }

@@ -3,11 +3,9 @@ use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::Error;
-use crate::core::ics04_channel::events::Attributes;
 use crate::core::ics04_channel::handler::verify::verify_channel_proofs;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
-use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
@@ -71,7 +69,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         &msg.proofs,
     )?;
 
-    output.log("success: channel close confirm ");
+    output.log("success: channel close confirm");
 
     // Transition the channel end to the new state & pick a version.
     channel_end.set_state(State::Closed);
@@ -83,16 +81,6 @@ pub(crate) fn process<Ctx: ChannelReader>(
         channel_end,
     };
 
-    let event_attributes = Attributes {
-        channel_id: Some(msg.channel_id.clone()),
-        ..Default::default()
-    };
-    output.emit(IbcEvent::CloseConfirmChannel(
-        event_attributes
-            .try_into()
-            .map_err(|_| Error::missing_channel_id())?,
-    ));
-
     Ok(output.with_result(result))
 }
 
@@ -102,8 +90,6 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
     use crate::core::ics04_channel::msgs::ChannelMsg;
-    use crate::core::ics26_routing::handler::MsgReceipt;
-    use crate::events::IbcEvent;
     use crate::prelude::*;
 
     use crate::core::ics03_connection::connection::ConnectionEnd;
@@ -162,16 +148,10 @@ mod tests {
                 chan_end,
             );
 
-        let (MsgReceipt { events, log: _ }, _) = channel_dispatch(
+        channel_dispatch(
             &context,
             &ChannelMsg::ChannelCloseConfirm(msg_chan_close_confirm),
         )
         .unwrap();
-
-        assert!(!events.is_empty()); // Some events must exist.
-
-        for event in events.iter() {
-            assert!(matches!(event, &IbcEvent::CloseConfirmChannel(_)));
-        }
     }
 }

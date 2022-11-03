@@ -57,7 +57,8 @@ pub fn process<Ctx: ChannelReader>(
         ));
     }
 
-    let connection_end = ctx.connection_end(&dest_channel_end.connection_hops()[0])?;
+    let dest_connection_id = &dest_channel_end.connection_hops()[0];
+    let connection_end = ctx.connection_end(dest_connection_id)?;
 
     if !connection_end.state_matches(&ConnectionState::Open) {
         return Err(Error::connection_not_open(
@@ -91,9 +92,12 @@ pub fn process<Ctx: ChannelReader>(
             ctx.get_next_sequence_recv(&packet.destination_port, &packet.destination_channel)?;
 
         if packet.sequence < next_seq_recv {
-            output.emit(IbcEvent::ReceivePacket(ReceivePacket {
-                packet: msg.packet.clone(),
-            }));
+            output.emit(IbcEvent::ReceivePacket(ReceivePacket::new(
+                msg.packet.clone(),
+                dest_channel_end.ordering,
+                dest_connection_id.clone(),
+            )));
+
             return Ok(output.with_result(PacketResult::Recv(RecvPacketResult::NoOp)));
         } else if packet.sequence != next_seq_recv {
             return Err(Error::invalid_packet_sequence(
@@ -116,9 +120,12 @@ pub fn process<Ctx: ChannelReader>(
 
         match packet_rec {
             Ok(_receipt) => {
-                output.emit(IbcEvent::ReceivePacket(ReceivePacket {
-                    packet: msg.packet.clone(),
-                }));
+                output.emit(IbcEvent::ReceivePacket(ReceivePacket::new(
+                    msg.packet.clone(),
+                    dest_channel_end.ordering,
+                    dest_connection_id.clone(),
+                )));
+
                 return Ok(output.with_result(PacketResult::Recv(RecvPacketResult::NoOp)));
             }
             Err(e) if e.detail() == Error::packet_receipt_not_found(packet.sequence).detail() => {
@@ -136,9 +143,11 @@ pub fn process<Ctx: ChannelReader>(
 
     output.log("success: packet receive");
 
-    output.emit(IbcEvent::ReceivePacket(ReceivePacket {
-        packet: msg.packet.clone(),
-    }));
+    output.emit(IbcEvent::ReceivePacket(ReceivePacket::new(
+        msg.packet.clone(),
+        dest_channel_end.ordering,
+        dest_connection_id.clone(),
+    )));
 
     Ok(output.with_result(result))
 }

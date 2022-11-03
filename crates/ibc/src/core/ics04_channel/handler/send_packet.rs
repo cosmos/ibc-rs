@@ -39,8 +39,8 @@ pub fn send_packet(ctx: &dyn ChannelReader, packet: Packet) -> HandlerResult<Pac
             packet.destination_channel,
         ));
     }
-
-    let connection_end = ctx.connection_end(&source_channel_end.connection_hops()[0])?;
+    let source_connection_id = &source_channel_end.connection_hops()[0];
+    let connection_end = ctx.connection_end(source_connection_id)?;
 
     let client_id = connection_end.client_id().clone();
 
@@ -90,7 +90,11 @@ pub fn send_packet(ctx: &dyn ChannelReader, packet: Packet) -> HandlerResult<Pac
         ),
     });
 
-    output.emit(IbcEvent::SendPacket(SendPacket { packet }));
+    output.emit(IbcEvent::SendPacket(SendPacket::new(
+        packet,
+        source_channel_end.ordering,
+        source_connection_id.clone(),
+    )));
 
     Ok(output.with_result(result))
 }

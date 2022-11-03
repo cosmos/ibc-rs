@@ -235,7 +235,7 @@ pub trait ChannelKeeper {
             PacketResult::Timeout(res) => {
                 self.delete_packet_commitment(&res.port_id, &res.channel_id, res.seq)?;
                 if let Some(c) = res.channel {
-                    //Ordered Channel
+                    // Ordered Channel: closes channel
                     self.store_channel(res.port_id, res.channel_id, c)?;
                 }
             }

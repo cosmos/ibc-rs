@@ -45,7 +45,8 @@ pub fn process<Ctx: ChannelReader>(
         ));
     }
 
-    let connection_end = ctx.connection_end(&source_channel_end.connection_hops()[0])?;
+    let source_connection_id = &source_channel_end.connection_hops()[0];
+    let connection_end = ctx.connection_end(source_connection_id)?;
 
     if !connection_end.state_matches(&ConnectionState::Open) {
         return Err(Error::connection_not_open(
@@ -105,9 +106,11 @@ pub fn process<Ctx: ChannelReader>(
 
     output.log("success: packet ack");
 
-    output.emit(IbcEvent::AcknowledgePacket(AcknowledgePacket {
-        packet: packet.clone(),
-    }));
+    output.emit(IbcEvent::AcknowledgePacket(AcknowledgePacket::new(
+        packet.clone(),
+        source_channel_end.ordering,
+        source_connection_id.clone(),
+    )));
 
     Ok(output.with_result(result))
 }

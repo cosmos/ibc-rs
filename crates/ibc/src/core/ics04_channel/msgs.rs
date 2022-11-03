@@ -71,6 +71,6 @@ impl ChannelMsg {
 pub enum PacketMsg {
     RecvPacket(MsgRecvPacket),
     AckPacket(MsgAcknowledgement),
-    ToPacket(MsgTimeout),
-    ToClosePacket(MsgTimeoutOnClose),
+    TimeoutPacket(MsgTimeout),
+    TimeoutOnClosePacket(MsgTimeoutOnClose),
 }
