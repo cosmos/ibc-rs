@@ -482,6 +482,15 @@ impl Ics2ClientState for ClientState {
         })
     }
 
+    fn check_misbehaviour_and_update_state(
+        &self,
+        _ctx: &dyn ClientReader,
+        _client_id: ClientId,
+        _misbehaviour: Any,
+    ) -> Result<Box<dyn Ics2ClientState>, Ics02Error> {
+        todo!()
+    }
+
     fn verify_upgrade_and_update_state(
         &self,
         _consensus_state: Any,

@@ -190,6 +190,15 @@ impl ClientState for MockClientState {
         })
     }
 
+    fn check_misbehaviour_and_update_state(
+        &self,
+        _ctx: &dyn ClientReader,
+        _client_id: ClientId,
+        _misbehaviour: Any,
+    ) -> Result<Box<dyn ClientState>, Error> {
+        todo!()
+    }
+
     fn verify_upgrade_and_update_state(
         &self,
         consensus_state: Any,

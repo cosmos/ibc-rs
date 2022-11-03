@@ -84,6 +84,13 @@ pub trait ClientState:
         header: Any,
     ) -> Result<UpdatedState, Error>;
 
+    fn check_misbehaviour_and_update_state(
+        &self,
+        ctx: &dyn ClientReader,
+        client_id: ClientId,
+        misbehaviour: Any,
+    ) -> Result<Box<dyn ClientState>, Error>;
+
     fn verify_upgrade_and_update_state(
         &self,
         consensus_state: Any,
