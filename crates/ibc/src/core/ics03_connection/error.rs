@@ -6,6 +6,7 @@ use crate::proofs::ProofError;
 use crate::signer::SignerError;
 use crate::Height;
 
+use alloc::string::String;
 use flex_error::define_error;
 
 define_error! {
@@ -159,5 +160,11 @@ define_error! {
 
         ImplementationSpecific
             | _ | { "implementation specific error" },
+
+        InvalidClientState
+            {
+                reason: String,
+            }
+            | e | { format_args!("invalid client state: {0}", e.reason) },
     }
 }

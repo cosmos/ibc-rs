@@ -24,7 +24,7 @@ use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 use serde::{Deserialize, Serialize};
 use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
-use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThreshold;
+use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::{ProdVerifier, Verdict, Verifier};
@@ -51,14 +51,14 @@ pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClientState {
-    chain_id: ChainId,
-    trust_level: TrustThreshold,
-    trusting_period: Duration,
-    unbonding_period: Duration,
+    pub chain_id: ChainId,
+    pub trust_level: TrustThreshold,
+    pub trusting_period: Duration,
+    pub unbonding_period: Duration,
     max_clock_drift: Duration,
     latest_height: Height,
-    proof_specs: ProofSpecs,
-    upgrade_path: Vec<String>,
+    pub proof_specs: ProofSpecs,
+    pub upgrade_path: Vec<String>,
     allow_update: AllowUpdate,
     frozen_height: Option<Height>,
     #[serde(skip)]
@@ -101,8 +101,11 @@ impl ClientState {
             ));
         }
 
-        let _ = TendermintTrustThreshold::new(trust_level.numerator(), trust_level.denominator())
-            .map_err(Error::invalid_tendermint_trust_threshold)?;
+        let _ = TendermintTrustThresholdFraction::new(
+            trust_level.numerator(),
+            trust_level.denominator(),
+        )
+        .map_err(Error::invalid_tendermint_trust_threshold)?;
 
         // Basic validation of trusting period and unbonding period: each should be non-zero.
         if trusting_period <= Duration::new(0, 0) {
