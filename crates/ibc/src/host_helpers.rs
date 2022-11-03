@@ -13,7 +13,9 @@ use crate::core::ics24_host::identifier::ChainId;
 
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 
-pub trait TmValidateSelfClientContext {
+/// Provides an implementation of `ConnectionReader::validate_self_client` for
+/// Tendermint-based hosts. 
+pub trait TendermintValidateSelfClientContext {
     fn validate_self_client(
         &self,
         ctx: &dyn ConnectionReader,
