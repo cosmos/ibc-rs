@@ -67,6 +67,10 @@ define_error! {
             { reason: String }
             |e| { format_args!("invalid raw client state: {}", e.reason) },
 
+        InvalidRawClientId
+            { client_id: String }
+            |e| { format_args!("invalid raw client id: {}", e.client_id) },
+
         MissingValidatorSet
             |_| { "missing validator set" },
 

@@ -32,6 +32,7 @@ use tendermint_light_client_verifier::{ProdVerifier, Verdict, Verifier};
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
+use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::core::ics02_client::client_state::{
     ClientState as Ics2ClientState, UpdatedState, UpgradeOptions as CoreUpgradeOptions,
 };
@@ -486,8 +487,9 @@ impl Ics2ClientState for ClientState {
         &self,
         _ctx: &dyn ClientReader,
         _client_id: ClientId,
-        _misbehaviour: Any,
+        misbehaviour: Any,
     ) -> Result<Box<dyn Ics2ClientState>, Ics02Error> {
+        let _misbehaviour = TmMisbehaviour::try_from(misbehaviour)?;
         todo!()
     }
 
