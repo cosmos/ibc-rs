@@ -98,6 +98,9 @@ where
             let callback_extras = channel_callback(ctx, &module_id, &msg, &mut channel_result)
                 .map_err(Error::ics04_channel)?;
 
+            // We need to construct events here instead of directly in the
+            // `process` functions because we need to wait for the callback to
+            // give us the `version` in the case of `OpenInit` and `OpenTry`.
             let dispatch_events = channel_events(
                 &msg,
                 channel_result.channel_id.clone(),
