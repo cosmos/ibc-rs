@@ -39,6 +39,10 @@ define_error! {
             { client_id: ClientId }
             | e | { format_args!("client is frozen: {0}", e.client_id) },
 
+        ClientExpired
+            { client_id: ClientId, lastest_consensus_state_time: Timestamp, now: Timestamp }
+            | e | { format_args!("client has expired: {0}, latest consensus state time: {1}, now: {2}", e.client_id, e.lastest_consensus_state_time, e.now) },
+
         ConsensusStateNotFound
             { client_id: ClientId, height: Height }
             | e | {
@@ -94,6 +98,10 @@ define_error! {
                 format_args!("unknown misbehaviour type: {0}",
                     e.misbehavior_type)
             },
+
+        MisbehaviourHandlingFailure
+            { reason: String }
+            | e | { format_args!("misbehaviour handling failed with reason: {}", e.reason) },
 
         InvalidRawClientId
             { client_id: String }
