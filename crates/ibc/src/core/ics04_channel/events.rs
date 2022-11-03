@@ -655,20 +655,19 @@ impl TryFrom<AcknowledgePacket> for AbciEvent {
     type Error = Error;
 
     fn try_from(v: AcknowledgePacket) -> Result<Self, Self::Error> {
-        let mut attributes = Vec::with_capacity(9);
-        attributes.push(v.timeout_height.into());
-        attributes.push(v.timeout_timestamp.into());
-        attributes.push(v.sequence.into());
-        attributes.push(v.src_port_id.into());
-        attributes.push(v.src_channel_id.into());
-        attributes.push(v.dst_port_id.into());
-        attributes.push(v.dst_channel_id.into());
-        attributes.push(v.channel_ordering.into());
-        attributes.push(v.src_connection_id.into());
-
         Ok(AbciEvent {
             type_str: IbcEventType::AckPacket.as_str().to_string(),
-            attributes,
+            attributes: vec![
+                v.timeout_height.into(),
+                v.timeout_timestamp.into(),
+                v.sequence.into(),
+                v.src_port_id.into(),
+                v.src_channel_id.into(),
+                v.dst_port_id.into(),
+                v.dst_channel_id.into(),
+                v.channel_ordering.into(),
+                v.src_connection_id.into(),
+            ],
         })
     }
 }
@@ -704,19 +703,18 @@ impl TryFrom<TimeoutPacket> for AbciEvent {
     type Error = Error;
 
     fn try_from(v: TimeoutPacket) -> Result<Self, Self::Error> {
-        let mut attributes = Vec::with_capacity(8);
-        attributes.push(v.timeout_height.into());
-        attributes.push(v.timeout_timestamp.into());
-        attributes.push(v.sequence.into());
-        attributes.push(v.src_port_id.into());
-        attributes.push(v.src_channel_id.into());
-        attributes.push(v.dst_port_id.into());
-        attributes.push(v.dst_channel_id.into());
-        attributes.push(v.channel_ordering.into());
-
         Ok(AbciEvent {
             type_str: IbcEventType::Timeout.as_str().to_string(),
-            attributes,
+            attributes: vec![
+                v.timeout_height.into(),
+                v.timeout_timestamp.into(),
+                v.sequence.into(),
+                v.src_port_id.into(),
+                v.src_channel_id.into(),
+                v.dst_port_id.into(),
+                v.dst_channel_id.into(),
+                v.channel_ordering.into(),
+            ],
         })
     }
 }
