@@ -704,7 +704,7 @@ impl TryFrom<TimeoutPacket> for AbciEvent {
     type Error = Error;
 
     fn try_from(v: TimeoutPacket) -> Result<Self, Self::Error> {
-        let mut attributes = Vec::with_capacity(11);
+        let mut attributes = Vec::with_capacity(8);
         attributes.push(v.timeout_height.into());
         attributes.push(v.timeout_timestamp.into());
         attributes.push(v.sequence.into());
