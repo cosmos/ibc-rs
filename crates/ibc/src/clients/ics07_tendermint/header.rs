@@ -140,10 +140,6 @@ impl TryFrom<Any> for Header {
     fn try_from(raw: Any) -> Result<Self, Ics02Error> {
         use core::ops::Deref;
 
-        fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
-            RawHeader::decode(buf).map_err(Error::decode)?.try_into()
-        }
-
         match raw.type_url.as_str() {
             TENDERMINT_HEADER_TYPE_URL => decode_header(raw.value.deref()).map_err(Into::into),
             _ => Err(Ics02Error::unknown_header_type(raw.type_url)),
