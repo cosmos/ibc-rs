@@ -144,7 +144,7 @@
   ([#1706](https://github.com/informalsystems/ibc-rs/issues/1706))
 - Define CapabilityReader and CapabilityKeeper traits
   ([#1769](https://github.com/informalsystems/ibc-rs/issues/1769))
-- [Relayer Library](crates/relayer)
+- [Relayer Library](https://github.com/informalsystems/hermes/tree/master/crates/relayer)
   - Add two more health checks: tx indexing enabled and historical entries > 0
     ([#1388](https://github.com/informalsystems/ibc-rs/issues/1388))
   - Changed `ConnectionEnd::versions` method to be non-allocating by having it return a `&[Version]` instead of `Vec<Version>`
@@ -193,7 +193,7 @@
 
 - Delete packet commitment instead of acknowledgement in acknowledgePacket
   [#1573](https://github.com/informalsystems/ibc-rs/issues/1573)
-- Set the `counterparty_channel_id` correctly to fix ICS04 [`chanOpenAck` handler verification](https://github.com/informalsystems/ibc-rs/blob/master/modules/src/core/ics04_channel/handler/chan_open_ack.rs)
+- Set the `counterparty_channel_id` correctly to fix ICS04 [`chanOpenAck` handler verification](https://github.com/cosmos/ibc-rs/blob/main/crates/ibc/src/core/ics04_channel/handler/chan_open_ack.rs)
   ([#1649](https://github.com/informalsystems/ibc-rs/issues/1649))
 - Add missing assertion for non-zero trust-level in Tendermint client initialization.
   ([#1697](https://github.com/informalsystems/ibc-rs/issues/1697))
@@ -220,7 +220,7 @@
 - Set the connection counterparty in the ICS 003 [`connOpenAck` handler][conn-open-ack-handler]
   ([#1532](https://github.com/informalsystems/ibc-rs/issues/1532))
 
-[conn-open-ack-handler]: https://github.com/informalsystems/ibc-rs/blob/master/modules/src/core/ics03_connection/handler/conn_open_ack.rs
+[conn-open-ack-handler]: https://github.com/cosmos/ibc-rs/blob/main/crates/ibc/src/core/ics03_connection/handler/conn_open_ack.rs
 
 ### IMPROVEMENTS
 

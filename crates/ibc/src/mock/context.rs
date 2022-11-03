@@ -1174,7 +1174,7 @@ impl ConnectionKeeper for MockContext {
 impl ClientReader for MockContext {
     fn client_type(&self, client_id: &ClientId) -> Result<ClientType, Ics02Error> {
         match self.ibc_store.lock().unwrap().clients.get(client_id) {
-            Some(client_record) => Ok(client_record.client_type),
+            Some(client_record) => Ok(client_record.client_type.clone()),
             None => Err(Ics02Error::client_not_found(client_id.clone())),
         }
     }
@@ -1315,7 +1315,7 @@ impl ClientKeeper for MockContext {
             .clients
             .entry(client_id)
             .or_insert(MockClientRecord {
-                client_type,
+                client_type: client_type.clone(),
                 consensus_states: Default::default(),
                 client_state: Default::default(),
             });
