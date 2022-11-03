@@ -31,7 +31,7 @@ use super::Version;
 pub struct OpenInit {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
-    counterparty_port_id: PortIdAttribute,
+    counterparty_port_id: CounterpartyPortIdAttribute,
     connection_id: ConnectionIdAttribute,
     version: VersionAttribute,
 }
@@ -59,7 +59,7 @@ impl OpenInit {
         &self.channel_id.channel_id
     }
     pub fn counterparty_port_id(&self) -> &PortId {
-        &self.counterparty_port_id.port_id
+        &self.counterparty_port_id.counterparty_port_id
     }
     pub fn connection_id(&self) -> &ConnectionId {
         &self.connection_id.connection_id
@@ -92,8 +92,8 @@ impl From<OpenInit> for AbciEvent {
 pub struct OpenTry {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
-    counterparty_port_id: PortIdAttribute,
-    counterparty_channel_id: ChannelIdAttribute,
+    counterparty_port_id: CounterpartyPortIdAttribute,
+    counterparty_channel_id: CounterpartyChannelIdAttribute,
     connection_id: ConnectionIdAttribute,
     version: VersionAttribute,
 }
@@ -123,10 +123,10 @@ impl OpenTry {
         &self.channel_id.channel_id
     }
     pub fn counterparty_port_id(&self) -> &PortId {
-        &self.counterparty_port_id.port_id
+        &self.counterparty_port_id.counterparty_port_id
     }
     pub fn counterparty_channel_id(&self) -> &ChannelId {
-        &self.counterparty_channel_id.channel_id
+        &self.counterparty_channel_id.counterparty_channel_id
     }
     pub fn connection_id(&self) -> &ConnectionId {
         &self.connection_id.connection_id
@@ -156,8 +156,8 @@ impl From<OpenTry> for AbciEvent {
 pub struct OpenAck {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
-    counterparty_port_id: PortIdAttribute,
-    counterparty_channel_id: ChannelIdAttribute,
+    counterparty_port_id: CounterpartyPortIdAttribute,
+    counterparty_channel_id: CounterpartyChannelIdAttribute,
     connection_id: ConnectionIdAttribute,
 }
 
@@ -184,10 +184,10 @@ impl OpenAck {
         &self.channel_id.channel_id
     }
     pub fn counterparty_port_id(&self) -> &PortId {
-        &self.counterparty_port_id.port_id
+        &self.counterparty_port_id.counterparty_port_id
     }
     pub fn counterparty_channel_id(&self) -> &ChannelId {
-        &self.counterparty_channel_id.channel_id
+        &self.counterparty_channel_id.counterparty_channel_id
     }
     pub fn connection_id(&self) -> &ConnectionId {
         &self.connection_id.connection_id
@@ -213,8 +213,8 @@ impl From<OpenAck> for AbciEvent {
 pub struct OpenConfirm {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
-    counterparty_port_id: PortIdAttribute,
-    counterparty_channel_id: ChannelIdAttribute,
+    counterparty_port_id: CounterpartyPortIdAttribute,
+    counterparty_channel_id: CounterpartyChannelIdAttribute,
     connection_id: ConnectionIdAttribute,
 }
 
@@ -241,10 +241,10 @@ impl OpenConfirm {
         &self.channel_id.channel_id
     }
     pub fn counterparty_port_id(&self) -> &PortId {
-        &self.counterparty_port_id.port_id
+        &self.counterparty_port_id.counterparty_port_id
     }
     pub fn counterparty_channel_id(&self) -> &ChannelId {
-        &self.counterparty_channel_id.channel_id
+        &self.counterparty_channel_id.counterparty_channel_id
     }
     pub fn connection_id(&self) -> &ConnectionId {
         &self.connection_id.connection_id
@@ -270,8 +270,8 @@ impl From<OpenConfirm> for AbciEvent {
 pub struct CloseInit {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
-    counterparty_port_id: PortIdAttribute,
-    counterparty_channel_id: ChannelIdAttribute,
+    counterparty_port_id: CounterpartyPortIdAttribute,
+    counterparty_channel_id: CounterpartyChannelIdAttribute,
     connection_id: ConnectionIdAttribute,
 }
 
@@ -298,10 +298,10 @@ impl CloseInit {
         &self.channel_id.channel_id
     }
     pub fn counterparty_port_id(&self) -> &PortId {
-        &self.counterparty_port_id.port_id
+        &self.counterparty_port_id.counterparty_port_id
     }
     pub fn counterparty_channel_id(&self) -> &ChannelId {
-        &self.counterparty_channel_id.channel_id
+        &self.counterparty_channel_id.counterparty_channel_id
     }
     pub fn connection_id(&self) -> &ConnectionId {
         &self.connection_id.connection_id
@@ -327,8 +327,8 @@ impl From<CloseInit> for AbciEvent {
 pub struct CloseConfirm {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
-    counterparty_port_id: PortIdAttribute,
-    counterparty_channel_id: ChannelIdAttribute,
+    counterparty_port_id: CounterpartyPortIdAttribute,
+    counterparty_channel_id: CounterpartyChannelIdAttribute,
     connection_id: ConnectionIdAttribute,
 }
 
@@ -355,10 +355,10 @@ impl CloseConfirm {
         &self.channel_id.channel_id
     }
     pub fn counterparty_port_id(&self) -> &PortId {
-        &self.counterparty_port_id.port_id
+        &self.counterparty_port_id.counterparty_port_id
     }
     pub fn counterparty_channel_id(&self) -> &ChannelId {
-        &self.counterparty_channel_id.channel_id
+        &self.counterparty_channel_id.counterparty_channel_id
     }
     pub fn connection_id(&self) -> &ConnectionId {
         &self.connection_id.connection_id
