@@ -31,7 +31,7 @@ use tendermint_light_client_verifier::{ProdVerifier, Verdict, Verifier};
 
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
-use crate::clients::ics07_tendermint::header::Header as TmHeader;
+use crate::clients::ics07_tendermint::header::{Header as TmHeader, Header};
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::core::ics02_client::client_state::{
     ClientState as Ics2ClientState, UpdatedState, UpgradeOptions as CoreUpgradeOptions,
@@ -485,12 +485,106 @@ impl Ics2ClientState for ClientState {
 
     fn check_misbehaviour_and_update_state(
         &self,
-        _ctx: &dyn ClientReader,
-        _client_id: ClientId,
+        ctx: &dyn ClientReader,
+        client_id: ClientId,
         misbehaviour: Any,
     ) -> Result<Box<dyn Ics2ClientState>, Ics02Error> {
-        let _misbehaviour = TmMisbehaviour::try_from(misbehaviour)?;
-        todo!()
+        fn check_trusted_header(
+            consensus_state: &TmConsensusState,
+            header: &Header,
+        ) -> Result<(), Ics02Error> {
+            let trusted_val_hash = header.trusted_validator_set.hash();
+
+            if consensus_state.next_validators_hash != trusted_val_hash {
+                return Err(Ics02Error::client_specific(format!("trusted validators {:?}, does not hash to latest trusted validators. Expected: {:?}, got: {:?}", header.trusted_validator_set, consensus_state.next_validators_hash, trusted_val_hash)));
+            }
+
+            Ok(())
+        }
+
+        fn check_misbehaviour_header(
+            chain_id: &ChainId,
+            consensus_state: &TmConsensusState,
+            header: &Header,
+            trusting_period: Duration,
+            current_timestamp: Timestamp,
+        ) -> Result<(), Ics02Error> {
+            check_trusted_header(&consensus_state, header)?;
+
+            let duration_since_consensus_state = current_timestamp
+                .duration_since(&consensus_state.timestamp())
+                .ok_or_else(|| {
+                    Ics02Error::invalid_consensus_state_timestamp(
+                        consensus_state.timestamp(),
+                        current_timestamp,
+                    )
+                })?;
+
+            if duration_since_consensus_state >= trusting_period {
+                return Err(Ics02Error::client_specific(format!("current timestamp minus the latest consensus state timestamp is greater than or equal to the trusting period ({:?} >= {:?})", duration_since_consensus_state, trusting_period)));
+            }
+
+            let _chain_id = chain_id
+                .clone()
+                .with_version(header.height().revision_number());
+
+            // TODO(hu55a1n1): VerifyCommitLightTrusting()
+
+            Ok(())
+        }
+
+        let misbehaviour = TmMisbehaviour::try_from(misbehaviour)?;
+        let header_1 = misbehaviour.header1();
+        let header_2 = misbehaviour.header2();
+
+        if header_1.height() == header_2.height() {
+            // Fork
+            if header_1.signed_header.commit.block_id.hash
+                == header_2.signed_header.commit.block_id.hash
+            {
+                return Err(Ics02Error::client_specific(
+                    "headers block hashes are equal".to_string(),
+                ));
+            }
+        } else {
+            // BFT time violation
+            if header_1.signed_header.header.time > header_2.signed_header.header.time {
+                return Err(Ics02Error::client_specific(
+                    "headers are not at same height and are monotonically increasing".to_string(),
+                ));
+            }
+        }
+
+        let consensus_state_1 = {
+            let cs = ctx.consensus_state(&client_id, header_1.trusted_height)?;
+            downcast_tm_consensus_state(cs.as_ref())
+        }?;
+
+        let consensus_state_2 = {
+            let cs = ctx.consensus_state(&client_id, header_2.trusted_height)?;
+            downcast_tm_consensus_state(cs.as_ref())
+        }?;
+
+        let current_timestamp = ctx.host_timestamp();
+        check_misbehaviour_header(
+            &self.chain_id,
+            &consensus_state_1,
+            header_1,
+            self.trusting_period,
+            current_timestamp,
+        )?;
+        check_misbehaviour_header(
+            &self.chain_id,
+            &consensus_state_2,
+            header_2,
+            self.trusting_period,
+            current_timestamp,
+        )?;
+
+        let client_state = downcast_tm_client_state(self)?.clone();
+        Ok(client_state
+            .with_frozen_height(Height::new(0, 1).unwrap())
+            .into_box())
     }
 
     fn verify_upgrade_and_update_state(
