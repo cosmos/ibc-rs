@@ -253,6 +253,50 @@ impl ClientState {
             _ => Ok(()),
         }
     }
+
+    fn check_trusted_header(
+        consensus_state: &TmConsensusState,
+        header: &Header,
+    ) -> Result<(), Ics02Error> {
+        let trusted_val_hash = header.trusted_validator_set.hash();
+
+        if consensus_state.next_validators_hash != trusted_val_hash {
+            return Err(Ics02Error::client_specific(format!("trusted validators {:?}, does not hash to latest trusted validators. Expected: {:?}, got: {:?}", header.trusted_validator_set, consensus_state.next_validators_hash, trusted_val_hash)));
+        }
+
+        Ok(())
+    }
+
+    fn check_misbehaviour_header(
+        &self,
+        consensus_state: &TmConsensusState,
+        header: &Header,
+        current_timestamp: Timestamp,
+    ) -> Result<(), Ics02Error> {
+        Self::check_trusted_header(&consensus_state, header)?;
+
+        let duration_since_consensus_state = current_timestamp
+            .duration_since(&consensus_state.timestamp())
+            .ok_or_else(|| {
+                Ics02Error::invalid_consensus_state_timestamp(
+                    consensus_state.timestamp(),
+                    current_timestamp,
+                )
+            })?;
+
+        if duration_since_consensus_state >= self.trusting_period {
+            return Err(Ics02Error::client_specific(format!("current timestamp minus the latest consensus state timestamp is greater than or equal to the trusting period ({:?} >= {:?})", duration_since_consensus_state, self.trusting_period)));
+        }
+
+        let _chain_id = self
+            .chain_id
+            .clone()
+            .with_version(header.height().revision_number());
+
+        // TODO(hu55a1n1): VerifyCommitLightTrusting()
+
+        Ok(())
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -489,50 +533,6 @@ impl Ics2ClientState for ClientState {
         client_id: ClientId,
         misbehaviour: Any,
     ) -> Result<Box<dyn Ics2ClientState>, Ics02Error> {
-        fn check_trusted_header(
-            consensus_state: &TmConsensusState,
-            header: &Header,
-        ) -> Result<(), Ics02Error> {
-            let trusted_val_hash = header.trusted_validator_set.hash();
-
-            if consensus_state.next_validators_hash != trusted_val_hash {
-                return Err(Ics02Error::client_specific(format!("trusted validators {:?}, does not hash to latest trusted validators. Expected: {:?}, got: {:?}", header.trusted_validator_set, consensus_state.next_validators_hash, trusted_val_hash)));
-            }
-
-            Ok(())
-        }
-
-        fn check_misbehaviour_header(
-            chain_id: &ChainId,
-            consensus_state: &TmConsensusState,
-            header: &Header,
-            trusting_period: Duration,
-            current_timestamp: Timestamp,
-        ) -> Result<(), Ics02Error> {
-            check_trusted_header(&consensus_state, header)?;
-
-            let duration_since_consensus_state = current_timestamp
-                .duration_since(&consensus_state.timestamp())
-                .ok_or_else(|| {
-                    Ics02Error::invalid_consensus_state_timestamp(
-                        consensus_state.timestamp(),
-                        current_timestamp,
-                    )
-                })?;
-
-            if duration_since_consensus_state >= trusting_period {
-                return Err(Ics02Error::client_specific(format!("current timestamp minus the latest consensus state timestamp is greater than or equal to the trusting period ({:?} >= {:?})", duration_since_consensus_state, trusting_period)));
-            }
-
-            let _chain_id = chain_id
-                .clone()
-                .with_version(header.height().revision_number());
-
-            // TODO(hu55a1n1): VerifyCommitLightTrusting()
-
-            Ok(())
-        }
-
         let misbehaviour = TmMisbehaviour::try_from(misbehaviour)?;
         let header_1 = misbehaviour.header1();
         let header_2 = misbehaviour.header2();
@@ -566,20 +566,8 @@ impl Ics2ClientState for ClientState {
         }?;
 
         let current_timestamp = ctx.host_timestamp();
-        check_misbehaviour_header(
-            &self.chain_id,
-            &consensus_state_1,
-            header_1,
-            self.trusting_period,
-            current_timestamp,
-        )?;
-        check_misbehaviour_header(
-            &self.chain_id,
-            &consensus_state_2,
-            header_2,
-            self.trusting_period,
-            current_timestamp,
-        )?;
+        self.check_misbehaviour_header(&consensus_state_1, header_1, current_timestamp)?;
+        self.check_misbehaviour_header(&consensus_state_2, header_2, current_timestamp)?;
 
         let client_state = downcast_tm_client_state(self)?.clone();
         Ok(client_state
