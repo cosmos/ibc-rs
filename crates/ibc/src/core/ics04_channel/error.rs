@@ -251,7 +251,6 @@ define_error! {
             },
 
         InvalidCounterpartyChannelId
-            [ ValidationError ]
             | _ | { "Invalid channel id in counterparty" },
 
         InvalidChannelState

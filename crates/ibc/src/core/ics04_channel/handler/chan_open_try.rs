@@ -284,6 +284,7 @@ mod tests {
         }
     }
 
+    /// Addresses [issue 219](https://github.com/cosmos/ibc-rs/issues/219)
     #[test]
     fn chan_open_try_invalid_counterparty_channel_id() {
         let proof_height = 10;
