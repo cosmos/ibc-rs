@@ -283,4 +283,45 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn chan_open_try_invalid_counterparty_channel_id() {
+        let proof_height = 10;
+        let conn_id = ConnectionId::new(2);
+        let client_id = ClientId::new(mock_client_type(), 45).unwrap();
+
+        // This is the connection underlying the channel we're trying to open.
+        let conn_end = ConnectionEnd::new(
+            ConnectionState::Open,
+            client_id.clone(),
+            ConnectionCounterparty::try_from(get_dummy_raw_counterparty()).unwrap(),
+            get_compatible_versions(),
+            ZERO_DURATION,
+        );
+
+        // We're going to test message processing against this message.
+        // Note: we make the counterparty's channel_id `None`.
+        let mut msg =
+            MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(proof_height)).unwrap();
+        msg.channel.remote.channel_id = None;
+
+        let chan_id = ChannelId::new(24);
+        let hops = vec![conn_id.clone()];
+        msg.channel.connection_hops = hops;
+
+        let chan_end = ChannelEnd::new(
+            State::Init,
+            *msg.channel.ordering(),
+            msg.channel.counterparty().clone(),
+            msg.channel.connection_hops().clone(),
+            msg.channel.version().clone(),
+        );
+        let context = MockContext::default()
+            .with_client(&client_id, Height::new(0, proof_height).unwrap())
+            .with_connection(conn_id, conn_end)
+            .with_channel(msg.port_id.clone(), chan_id, chan_end);
+
+        // Makes sure we don't crash
+        let _ = chan_open_try::process(&context, &msg);
+    }
 }
