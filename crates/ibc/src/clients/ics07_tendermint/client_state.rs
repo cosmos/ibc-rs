@@ -278,7 +278,7 @@ impl ClientState {
         header: &Header,
         current_timestamp: Timestamp,
     ) -> Result<(), Ics02Error> {
-        Self::check_trusted_header(&consensus_state, header)?;
+        Self::check_trusted_header(consensus_state, header)?;
 
         let duration_since_consensus_state = current_timestamp
             .duration_since(&consensus_state.timestamp())
