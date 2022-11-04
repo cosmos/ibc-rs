@@ -4,7 +4,6 @@ use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::Error;
-use crate::core::ics04_channel::handler::verify::verify_channel_proofs;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
 use crate::core::ics04_channel::Version;
@@ -44,35 +43,55 @@ pub(crate) fn process<Ctx: ChannelReader>(
         return Err(Error::channel_feature_not_suported_by_connection());
     }
 
-    // Proof verification in two steps:
-    // 1. Setup: build the Channel as we expect to find it on the other party.
-    //      the port should be identical with the port we're using; the channel id should not be set
-    //      since the counterparty cannot know yet which ID did we choose.
-    let expected_counterparty = Counterparty::new(msg.port_id_on_b.clone(), None);
-    let counterparty = conn_end_on_b.counterparty();
-    let ccid = counterparty.connection_id().ok_or_else(|| {
-        Error::undefined_connection_counterparty(msg.chan_end_on_b.connection_hops()[0].clone())
-    })?;
-    let expected_connection_hops = vec![ccid.clone()];
+    // Verify proofs
+    {
+        let client_id_on_b = conn_end_on_b.client_id().clone();
+        let client_state_of_a_on_b = ctx.client_state(&client_id_on_b)?;
+        let consensus_state_of_a_on_b =
+            ctx.client_consensus_state(&client_id_on_b, msg.proofs.height())?;
+        let prefix_on_a = conn_end_on_b.counterparty().prefix();
+        let port_id_on_a = &msg.chan_end_on_b.counterparty().port_id;
+        let chan_id_on_a = msg
+            .chan_end_on_b
+            .counterparty()
+            .channel_id()
+            .ok_or_else(Error::invalid_counterparty_channel_id)?;
+        let conn_id_on_a = conn_end_on_b
+            .counterparty()
+            .connection_id()
+            .ok_or_else(|| {
+                Error::undefined_connection_counterparty(
+                    msg.chan_end_on_b.connection_hops()[0].clone(),
+                )
+            })?;
 
-    // The other party should be storing a channel end in this configuration.
-    let expected_channel_end = ChannelEnd::new(
-        State::Init,
-        *msg.chan_end_on_b.ordering(),
-        expected_counterparty,
-        expected_connection_hops,
-        msg.version_on_a.clone(),
-    );
+        // The client must not be frozen.
+        if client_state_of_a_on_b.is_frozen() {
+            return Err(Error::frozen_client(client_id_on_b));
+        }
 
-    // 2. Actual proofs are verified now.
-    verify_channel_proofs(
-        ctx,
-        msg.proofs.height(),
-        &msg.chan_end_on_b,
-        &conn_end_on_b,
-        &expected_channel_end,
-        &msg.proofs,
-    )?;
+        let expected_chan_end_on_a = ChannelEnd::new(
+            State::Init,
+            *msg.chan_end_on_b.ordering(),
+            Counterparty::new(msg.port_id_on_b.clone(), None),
+            vec![conn_id_on_a.clone()],
+            msg.version_on_a.clone(),
+        );
+
+        // Verify the proof for the channel state against the expected channel end.
+        // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
+        client_state_of_a_on_b
+            .verify_channel_state(
+                msg.proofs.height(),
+                prefix_on_a,
+                msg.proofs.object_proof(),
+                consensus_state_of_a_on_b.root(),
+                port_id_on_a,
+                chan_id_on_a,
+                &expected_chan_end_on_a,
+            )
+            .map_err(Error::verify_channel_failed)?;
+    }
 
     let chan_end_on_b = ChannelEnd::new(
         State::TryOpen,

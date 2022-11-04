@@ -31,7 +31,7 @@ pub struct MsgConnectionOpenTry {
     /// ClientId, ConnectionId and prefix of chain A
     pub counterparty: Counterparty,
     /// Versions supported by chain A
-    pub counterparty_versions: Vec<Version>,
+    pub versions_on_a: Vec<Version>,
     /// proof of ConnectionEnd stored on Chain A during ConnOpenInit
     pub proof_conn_end_on_a: CommitmentProofBytes,
     /// proof that chain A has stored ClientState of chain B on its client
@@ -87,7 +87,7 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
                 .counterparty
                 .ok_or_else(Error::missing_counterparty)?
                 .try_into()?,
-            counterparty_versions,
+            versions_on_a: counterparty_versions,
             proof_conn_end_on_a: msg.proof_init.try_into().map_err(Error::invalid_proof)?,
             proof_client_state_of_b_on_a: msg
                 .proof_client
@@ -119,11 +119,7 @@ impl From<MsgConnectionOpenTry> for RawMsgConnectionOpenTry {
             client_state: Some(msg.client_state_of_b_on_a),
             counterparty: Some(msg.counterparty.into()),
             delay_period: msg.delay_period.as_nanos() as u64,
-            counterparty_versions: msg
-                .counterparty_versions
-                .iter()
-                .map(|v| v.clone().into())
-                .collect(),
+            counterparty_versions: msg.versions_on_a.iter().map(|v| v.clone().into()).collect(),
             proof_height: Some(msg.proofs_height_on_a.into()),
             proof_init: msg.proof_conn_end_on_a.into(),
             proof_client: msg.proof_client_state_of_b_on_a.into(),
