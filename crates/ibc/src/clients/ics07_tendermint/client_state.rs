@@ -189,11 +189,11 @@ impl ClientState {
         })
     }
 
-    pub fn with_frozen_height(self, h: Height) -> Result<Self, Error> {
-        Ok(Self {
+    pub fn with_frozen_height(self, h: Height) -> Self {
+        Self {
             frozen_height: Some(h),
             ..self
-        })
+        }
     }
 
     /// Get the refresh time to ensure the state does not expire
@@ -424,7 +424,7 @@ impl Ics2ClientState for ClientState {
         if let Some(cs) = existing_consensus_state {
             if cs != header_consensus_state {
                 return Ok(UpdatedState {
-                    client_state: client_state.with_frozen_height(header.height())?.into_box(),
+                    client_state: client_state.with_frozen_height(header.height()).into_box(),
                     consensus_state: cs.into_box(),
                 });
             }
@@ -1255,9 +1255,7 @@ mod tests {
                 name: "Invalid, client is frozen below current height".to_string(),
                 height: Height::new(1, 6).unwrap(),
                 setup: Some(Box::new(|client_state| {
-                    client_state
-                        .with_frozen_height(Height::new(1, 5).unwrap())
-                        .unwrap()
+                    client_state.with_frozen_height(Height::new(1, 5).unwrap())
                 })),
                 want_pass: false,
             },
