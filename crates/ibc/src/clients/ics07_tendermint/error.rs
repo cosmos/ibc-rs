@@ -1,17 +1,19 @@
 use crate::prelude::*;
 
-use flex_error::{define_error, TraceError};
-
 use crate::core::ics02_client::error::Error as Ics02Error;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::timestamp::{Timestamp, TimestampOverflowError};
-
 use crate::Height;
+
+use core::time::Duration;
+
+use flex_error::{define_error, TraceError};
 use tendermint::account::Id;
 use tendermint::hash::Hash;
 use tendermint::Error as TendermintError;
 use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
+use tendermint_light_client_verifier::types::ValidatorSet;
 
 define_error! {
     #[derive(Debug, PartialEq, Eq)]
@@ -289,6 +291,31 @@ define_error! {
             }
             | e | {
                 format_args!("the client is frozen: frozen_height={0} target_height={1}", e.frozen_height, e.target_height)
+            },
+
+        MisbehaviourHeadersBlockHashesEqual
+            |_| { "headers block hashes are equal" },
+
+        MisbehaviourHeadersNotAtSameHeight
+            |_| { "headers are not at same height and are monotonically increasing" },
+
+        MisbehaviourTrustedValidatorHashMismatch
+            {
+                trusted_validator_set: ValidatorSet,
+                next_validators_hash: Hash,
+                trusted_val_hash: Hash,
+            }
+            | e | {
+                format_args!("trusted validators {:?}, does not hash to latest trusted validators. Expected: {:?}, got: {:?}", e.trusted_validator_set, e.next_validators_hash, e.trusted_val_hash)
+            },
+
+        MisbehaviourConsensusStateTimestampGteTrustingPeriod
+            {
+                duration_since_consensus_state: Duration,
+                trusting_period: Duration,
+            }
+            | e | {
+                format_args!("current timestamp minus the latest consensus state timestamp is greater than or equal to the trusting period ({:?} >= {:?})", e.duration_since_consensus_state, e.trusting_period)
             },
     }
 }

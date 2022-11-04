@@ -261,7 +261,12 @@ impl ClientState {
         let trusted_val_hash = header.trusted_validator_set.hash();
 
         if consensus_state.next_validators_hash != trusted_val_hash {
-            return Err(Ics02Error::client_specific(format!("trusted validators {:?}, does not hash to latest trusted validators. Expected: {:?}, got: {:?}", header.trusted_validator_set, consensus_state.next_validators_hash, trusted_val_hash)));
+            return Err(Error::misbehaviour_trusted_validator_hash_mismatch(
+                header.trusted_validator_set.clone(),
+                consensus_state.next_validators_hash,
+                trusted_val_hash,
+            )
+            .into());
         }
 
         Ok(())
@@ -285,7 +290,13 @@ impl ClientState {
             })?;
 
         if duration_since_consensus_state >= self.trusting_period {
-            return Err(Ics02Error::client_specific(format!("current timestamp minus the latest consensus state timestamp is greater than or equal to the trusting period ({:?} >= {:?})", duration_since_consensus_state, self.trusting_period)));
+            return Err(
+                Error::misbehaviour_consensus_state_timestamp_gte_trusting_period(
+                    duration_since_consensus_state,
+                    self.trusting_period,
+                )
+                .into(),
+            );
         }
 
         let _chain_id = self
@@ -542,16 +553,12 @@ impl Ics2ClientState for ClientState {
             if header_1.signed_header.commit.block_id.hash
                 == header_2.signed_header.commit.block_id.hash
             {
-                return Err(Ics02Error::client_specific(
-                    "headers block hashes are equal".to_string(),
-                ));
+                return Err(Error::misbehaviour_headers_block_hashes_equal().into());
             }
         } else {
             // BFT time violation
             if header_1.signed_header.header.time > header_2.signed_header.header.time {
-                return Err(Ics02Error::client_specific(
-                    "headers are not at same height and are monotonically increasing".to_string(),
-                ));
+                return Err(Error::misbehaviour_headers_not_at_same_height().into());
             }
         }
 
