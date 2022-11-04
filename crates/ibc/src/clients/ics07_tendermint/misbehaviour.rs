@@ -22,6 +22,20 @@ pub struct Misbehaviour {
     header2: Header,
 }
 
+impl Misbehaviour {
+    pub fn client_id(&self) -> &ClientId {
+        &self.client_id
+    }
+
+    pub fn header1(&self) -> &Header {
+        &self.header1
+    }
+
+    pub fn header2(&self) -> &Header {
+        &self.header2
+    }
+}
+
 impl crate::core::ics02_client::misbehaviour::Misbehaviour for Misbehaviour {
     fn client_id(&self) -> &ClientId {
         &self.client_id
