@@ -15,12 +15,13 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenTry";
 
 ///
 /// Message definition for the second step in the channel open handshake (`ChanOpenTry` datagram).
+/// Per our convention, this message is sent to chain B.
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelOpenTry {
-    pub port_id: PortId,
-    pub channel: ChannelEnd,
-    pub counterparty_version: Version,
+    pub port_id_on_b: PortId,
+    pub chan_end_on_b: ChannelEnd,
+    pub version_on_a: Version,
     pub proofs: Proofs,
     pub signer: Signer,
 
@@ -31,16 +32,16 @@ pub struct MsgChannelOpenTry {
 
 impl MsgChannelOpenTry {
     pub fn new(
-        port_id: PortId,
-        channel: ChannelEnd,
-        counterparty_version: Version,
+        port_id_on_b: PortId,
+        chan_end_on_b: ChannelEnd,
+        version_on_a: Version,
         proofs: Proofs,
         signer: Signer,
     ) -> Self {
         Self {
-            port_id,
-            channel,
-            counterparty_version,
+            port_id_on_b,
+            chan_end_on_b,
+            version_on_a,
             proofs,
             signer,
             previous_channel_id: "".to_string(),
@@ -61,7 +62,7 @@ impl Msg for MsgChannelOpenTry {
     }
 
     fn validate_basic(&self) -> Result<(), ValidationError> {
-        match self.channel.counterparty().channel_id() {
+        match self.chan_end_on_b.counterparty().channel_id() {
             None => Err(ValidationError::invalid_counterparty_channel_id()),
             Some(_c) => Ok(()),
         }
@@ -90,13 +91,13 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
         .map_err(ChannelError::invalid_proof)?;
 
         let msg = MsgChannelOpenTry {
-            port_id: raw_msg.port_id.parse().map_err(ChannelError::identifier)?,
+            port_id_on_b: raw_msg.port_id.parse().map_err(ChannelError::identifier)?,
             previous_channel_id: raw_msg.previous_channel_id,
-            channel: raw_msg
+            chan_end_on_b: raw_msg
                 .channel
                 .ok_or_else(ChannelError::missing_channel)?
                 .try_into()?,
-            counterparty_version: raw_msg.counterparty_version.into(),
+            version_on_a: raw_msg.counterparty_version.into(),
             proofs,
             signer: raw_msg.signer.parse().map_err(ChannelError::signer)?,
         };
@@ -111,10 +112,10 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
 impl From<MsgChannelOpenTry> for RawMsgChannelOpenTry {
     fn from(domain_msg: MsgChannelOpenTry) -> Self {
         RawMsgChannelOpenTry {
-            port_id: domain_msg.port_id.to_string(),
+            port_id: domain_msg.port_id_on_b.to_string(),
             previous_channel_id: domain_msg.previous_channel_id,
-            channel: Some(domain_msg.channel.into()),
-            counterparty_version: domain_msg.counterparty_version.to_string(),
+            channel: Some(domain_msg.chan_end_on_b.into()),
+            counterparty_version: domain_msg.version_on_a.to_string(),
             proof_init: domain_msg.proofs.object_proof().clone().into(),
             proof_height: Some(domain_msg.proofs.height().into()),
             signer: domain_msg.signer.to_string(),

@@ -129,12 +129,12 @@ where
         }
         ChannelMsg::ChannelOpenTry(msg) => {
             let (extras, version) = cb.on_chan_open_try(
-                msg.channel.ordering,
-                &msg.channel.connection_hops,
-                &msg.port_id,
+                msg.chan_end_on_b.ordering,
+                &msg.chan_end_on_b.connection_hops,
+                &msg.port_id_on_b,
                 &result.channel_id,
-                msg.channel.counterparty(),
-                &msg.counterparty_version,
+                msg.chan_end_on_b.counterparty(),
+                &msg.version_on_a,
             )?;
             result.channel_end.version = version;
 
@@ -172,7 +172,7 @@ pub fn channel_events(
             version.clone(),
         )),
         ChannelMsg::ChannelOpenTry(msg) => IbcEvent::OpenTryChannel(OpenTry::new(
-            msg.port_id.clone(),
+            msg.port_id_on_b.clone(),
             channel_id,
             counterparty.port_id,
             counterparty

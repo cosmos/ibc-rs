@@ -12,6 +12,7 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenInit";
 
 ///
 /// Message definition for the first step in the channel open handshake (`ChanOpenInit` datagram).
+/// Per our convention, this message is sent to chain A.
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelOpenInit {
@@ -21,10 +22,10 @@ pub struct MsgChannelOpenInit {
 }
 
 impl MsgChannelOpenInit {
-    pub fn new(port_id: PortId, channel: ChannelEnd, signer: Signer) -> Self {
+    pub fn new(port_id_on_a: PortId, chan_end_on_a: ChannelEnd, signer: Signer) -> Self {
         Self {
-            port_id_on_a: port_id,
-            chan_end_on_a: channel,
+            port_id_on_a,
+            chan_end_on_a,
             signer,
         }
     }
