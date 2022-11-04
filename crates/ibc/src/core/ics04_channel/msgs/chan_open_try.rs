@@ -1,12 +1,12 @@
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::error::Error as ChannelError;
 use crate::core::ics04_channel::Version;
+use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::PortId;
-use crate::prelude::*;
-use crate::proofs::Proofs;
 use crate::signer::Signer;
 use crate::tx_msg::Msg;
+use crate::{prelude::*, Height};
 
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenTry as RawMsgChannelOpenTry;
 use ibc_proto::protobuf::Protobuf;
@@ -22,7 +22,8 @@ pub struct MsgChannelOpenTry {
     pub port_id_on_b: PortId,
     pub chan_end_on_b: ChannelEnd,
     pub version_on_a: Version,
-    pub proofs: Proofs,
+    pub proof_chan_end_on_a: CommitmentProofBytes,
+    pub proof_height_on_a: Height,
     pub signer: Signer,
 
     #[deprecated(since = "0.22.0")]
@@ -35,14 +36,16 @@ impl MsgChannelOpenTry {
         port_id_on_b: PortId,
         chan_end_on_b: ChannelEnd,
         version_on_a: Version,
-        proofs: Proofs,
+        proof_chan_end_on_a: CommitmentProofBytes,
+        proof_height_on_a: Height,
         signer: Signer,
     ) -> Self {
         Self {
             port_id_on_b,
             chan_end_on_b,
             version_on_a,
-            proofs,
+            proof_chan_end_on_a,
+            proof_height_on_a,
             signer,
             previous_channel_id: "".to_string(),
         }
@@ -75,21 +78,6 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
     type Error = ChannelError;
 
     fn try_from(raw_msg: RawMsgChannelOpenTry) -> Result<Self, Self::Error> {
-        let proofs = Proofs::new(
-            raw_msg
-                .proof_init
-                .try_into()
-                .map_err(ChannelError::invalid_proof)?,
-            None,
-            None,
-            None,
-            raw_msg
-                .proof_height
-                .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(ChannelError::missing_height)?,
-        )
-        .map_err(ChannelError::invalid_proof)?;
-
         let msg = MsgChannelOpenTry {
             port_id_on_b: raw_msg.port_id.parse().map_err(ChannelError::identifier)?,
             previous_channel_id: raw_msg.previous_channel_id,
@@ -98,7 +86,14 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
                 .ok_or_else(ChannelError::missing_channel)?
                 .try_into()?,
             version_on_a: raw_msg.counterparty_version.into(),
-            proofs,
+            proof_chan_end_on_a: raw_msg
+                .proof_init
+                .try_into()
+                .map_err(ChannelError::invalid_proof)?,
+            proof_height_on_a: raw_msg
+                .proof_height
+                .and_then(|raw_height| raw_height.try_into().ok())
+                .ok_or_else(ChannelError::missing_height)?,
             signer: raw_msg.signer.parse().map_err(ChannelError::signer)?,
         };
 
@@ -116,8 +111,8 @@ impl From<MsgChannelOpenTry> for RawMsgChannelOpenTry {
             previous_channel_id: domain_msg.previous_channel_id,
             channel: Some(domain_msg.chan_end_on_b.into()),
             counterparty_version: domain_msg.version_on_a.to_string(),
-            proof_init: domain_msg.proofs.object_proof().clone().into(),
-            proof_height: Some(domain_msg.proofs.height().into()),
+            proof_init: domain_msg.proof_chan_end_on_a.clone().into(),
+            proof_height: Some(domain_msg.proof_height_on_a.into()),
             signer: domain_msg.signer.to_string(),
         }
     }

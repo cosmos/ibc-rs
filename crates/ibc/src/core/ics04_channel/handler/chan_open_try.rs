@@ -48,7 +48,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         let client_id_on_b = conn_end_on_b.client_id().clone();
         let client_state_of_a_on_b = ctx.client_state(&client_id_on_b)?;
         let consensus_state_of_a_on_b =
-            ctx.client_consensus_state(&client_id_on_b, msg.proofs.height())?;
+            ctx.client_consensus_state(&client_id_on_b, msg.proof_height_on_a)?;
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let port_id_on_a = &msg.chan_end_on_b.counterparty().port_id;
         let chan_id_on_a = msg
@@ -82,9 +82,9 @@ pub(crate) fn process<Ctx: ChannelReader>(
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
         client_state_of_a_on_b
             .verify_channel_state(
-                msg.proofs.height(),
+                msg.proof_height_on_a,
                 prefix_on_a,
-                msg.proofs.object_proof(),
+                &msg.proof_chan_end_on_a,
                 consensus_state_of_a_on_b.root(),
                 port_id_on_a,
                 chan_id_on_a,
