@@ -52,16 +52,30 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
     type Error = Error;
 
     fn try_from(raw: RawMisbehaviour) -> Result<Self, Self::Error> {
-        let header1 = raw
+        let header1: Header = raw
             .header_1
             .ok_or_else(|| Error::invalid_raw_misbehaviour("missing header1".into()))?
             .try_into()?;
-        let header2 = raw
+        let header2: Header = raw
             .header_2
             .ok_or_else(|| Error::invalid_raw_misbehaviour("missing header2".into()))?
             .try_into()?;
 
-        // TODO(hu55a1n1): ValidateBasic()
+        if header1.signed_header.header.chain_id != header2.signed_header.header.chain_id {
+            return Err(Error::invalid_raw_misbehaviour(
+                "headers must have identical chain_ids".into(),
+            ));
+        }
+
+        if header1.height() < header2.height() {
+            return Err(Error::invalid_raw_misbehaviour(format!(
+                "headers1 height is less than header2 height ({} < {})",
+                header1.height(),
+                header2.height()
+            )));
+        }
+
+        // TODO(hu55a1n1): validCommit()
 
         Ok(Self {
             client_id: raw
