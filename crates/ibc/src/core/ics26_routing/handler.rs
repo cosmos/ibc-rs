@@ -377,7 +377,10 @@ mod tests {
             res
         );
 
-        ctx.scope_port_to_module(msg_chan_init.port_id_on_a.clone(), transfer_module_id.clone());
+        ctx.scope_port_to_module(
+            msg_chan_init.port_id_on_a.clone(),
+            transfer_module_id.clone(),
+        );
 
         // Figure out the ID of the client that was just created.
         let events = res.unwrap().events;
