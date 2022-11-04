@@ -292,8 +292,6 @@ impl Ics2ClientState for ClientState {
         // Reset custom fields to zero values
         self.trusting_period = ZERO_DURATION;
         self.trust_level = TrustThreshold::ZERO;
-        self.allow_update.after_expiry = false;
-        self.allow_update.after_misbehaviour = false;
         self.frozen_height = None;
         self.max_clock_drift = ZERO_DURATION;
 
@@ -830,6 +828,9 @@ impl TryFrom<RawTmClientState> for ClientState {
             .frozen_height
             .and_then(|raw_height| raw_height.try_into().ok());
 
+        // We use set this deprecated field just so that we can properly convert
+        // it back in its raw form
+        #[allow(deprecated)]
         let allow_update = AllowUpdate {
             after_expiry: raw.allow_update_after_expiry,
             after_misbehaviour: raw.allow_update_after_misbehaviour,
