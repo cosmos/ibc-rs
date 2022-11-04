@@ -23,6 +23,30 @@ pub struct Misbehaviour {
 }
 
 impl Misbehaviour {
+    pub fn new(client_id: ClientId, header1: Header, header2: Header) -> Result<Self, Error> {
+        if header1.signed_header.header.chain_id != header2.signed_header.header.chain_id {
+            return Err(Error::invalid_raw_misbehaviour(
+                "headers must have identical chain_ids".into(),
+            ));
+        }
+
+        if header1.height() < header2.height() {
+            return Err(Error::invalid_raw_misbehaviour(format!(
+                "headers1 height is less than header2 height ({} < {})",
+                header1.height(),
+                header2.height()
+            )));
+        }
+
+        // TODO(hu55a1n1): validCommit()
+
+        Ok(Self {
+            client_id,
+            header1,
+            header2,
+        })
+    }
+
     pub fn client_id(&self) -> &ClientId {
         &self.client_id
     }
@@ -52,6 +76,10 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
     type Error = Error;
 
     fn try_from(raw: RawMisbehaviour) -> Result<Self, Self::Error> {
+        let client_id = raw
+            .client_id
+            .parse()
+            .map_err(|_| Error::invalid_raw_client_id(raw.client_id.clone()))?;
         let header1: Header = raw
             .header_1
             .ok_or_else(|| Error::invalid_raw_misbehaviour("missing header1".into()))?
@@ -61,30 +89,7 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
             .ok_or_else(|| Error::invalid_raw_misbehaviour("missing header2".into()))?
             .try_into()?;
 
-        if header1.signed_header.header.chain_id != header2.signed_header.header.chain_id {
-            return Err(Error::invalid_raw_misbehaviour(
-                "headers must have identical chain_ids".into(),
-            ));
-        }
-
-        if header1.height() < header2.height() {
-            return Err(Error::invalid_raw_misbehaviour(format!(
-                "headers1 height is less than header2 height ({} < {})",
-                header1.height(),
-                header2.height()
-            )));
-        }
-
-        // TODO(hu55a1n1): validCommit()
-
-        Ok(Self {
-            client_id: raw
-                .client_id
-                .parse()
-                .map_err(|_| Error::invalid_raw_client_id(raw.client_id.clone()))?,
-            header1,
-            header2,
-        })
+        Self::new(client_id, header1, header2)
     }
 }
 
