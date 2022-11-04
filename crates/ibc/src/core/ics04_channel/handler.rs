@@ -116,12 +116,12 @@ where
     match msg {
         ChannelMsg::ChannelOpenInit(msg) => {
             let (extras, version) = cb.on_chan_open_init(
-                msg.channel.ordering,
-                &msg.channel.connection_hops,
-                &msg.port_id,
+                msg.chan_end_on_a.ordering,
+                &msg.chan_end_on_a.connection_hops,
+                &msg.port_id_on_a,
                 &result.channel_id,
-                msg.channel.counterparty(),
-                &msg.channel.version,
+                msg.chan_end_on_a.counterparty(),
+                &msg.chan_end_on_a.version,
             )?;
             result.channel_end.version = version;
 
@@ -165,7 +165,7 @@ pub fn channel_events(
 ) -> Vec<IbcEvent> {
     let event = match msg {
         ChannelMsg::ChannelOpenInit(msg) => IbcEvent::OpenInitChannel(OpenInit::new(
-            msg.port_id.clone(),
+            msg.port_id_on_a.clone(),
             channel_id,
             counterparty.port_id,
             connection_id,

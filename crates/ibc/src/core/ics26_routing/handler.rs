@@ -314,7 +314,7 @@ mod tests {
 
         // The handler will fail to process this b/c the associated connection does not exist
         let mut incorrect_msg_chan_init = msg_chan_init.clone();
-        incorrect_msg_chan_init.channel.connection_hops = vec![ConnectionId::new(590)];
+        incorrect_msg_chan_init.chan_end_on_a.connection_hops = vec![ConnectionId::new(590)];
 
         let msg_chan_try =
             MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(client_height)).unwrap();
@@ -377,7 +377,7 @@ mod tests {
             res
         );
 
-        ctx.scope_port_to_module(msg_chan_init.port_id.clone(), transfer_module_id.clone());
+        ctx.scope_port_to_module(msg_chan_init.port_id_on_a.clone(), transfer_module_id.clone());
 
         // Figure out the ID of the client that was just created.
         let events = res.unwrap().events;

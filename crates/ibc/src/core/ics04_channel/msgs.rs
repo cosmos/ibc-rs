@@ -45,7 +45,7 @@ impl ChannelMsg {
     pub(super) fn lookup_module(&self, ctx: &impl Ics26Context) -> Result<ModuleId, Error> {
         let module_id = match self {
             ChannelMsg::ChannelOpenInit(msg) => ctx
-                .lookup_module_by_port(&msg.port_id)
+                .lookup_module_by_port(&msg.port_id_on_a)
                 .map_err(Error::ics05_port)?,
             ChannelMsg::ChannelOpenTry(msg) => ctx
                 .lookup_module_by_port(&msg.port_id)

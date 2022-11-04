@@ -9,53 +9,52 @@ use crate::core::ics24_host::identifier::ChannelId;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
+/// Per our convention, this message is processed on chain A.
 pub(crate) fn process<Ctx: ChannelReader>(
     ctx: &Ctx,
     msg: &MsgChannelOpenInit,
 ) -> HandlerResult<ChannelResult, Error> {
     let mut output = HandlerOutput::builder();
 
-    if msg.channel.connection_hops().len() != 1 {
+    if msg.chan_end_on_a.connection_hops().len() != 1 {
         return Err(Error::invalid_connection_hops_length(
             1,
-            msg.channel.connection_hops().len(),
+            msg.chan_end_on_a.connection_hops().len(),
         ));
     }
 
     // An IBC connection running on the local (host) chain should exist.
-    let conn = ctx.connection_end(&msg.channel.connection_hops()[0])?;
-    let get_versions = conn.versions();
-    let version = match get_versions {
+    let conn_end_on_a = ctx.connection_end(&msg.chan_end_on_a.connection_hops()[0])?;
+
+    let conn_version = match conn_end_on_a.versions() {
         [version] => version,
         _ => return Err(Error::invalid_version_length_connection()),
     };
 
-    let channel_feature = msg.channel.ordering().to_string();
-    if !version.is_supported_feature(channel_feature) {
+    let channel_feature = msg.chan_end_on_a.ordering().to_string();
+    if !conn_version.is_supported_feature(channel_feature) {
         return Err(Error::channel_feature_not_suported_by_connection());
     }
 
-    // Channel identifier construction.
-    let id_counter = ctx.channel_counter()?;
-    let chan_id = ChannelId::new(id_counter);
+    let chan_id_on_a = ChannelId::new(ctx.channel_counter()?);
 
-    let new_channel_end = ChannelEnd::new(
+    let chan_end_on_a = ChannelEnd::new(
         State::Init,
-        *msg.channel.ordering(),
-        msg.channel.counterparty().clone(),
-        msg.channel.connection_hops().clone(),
-        msg.channel.version().clone(),
+        *msg.chan_end_on_a.ordering(),
+        msg.chan_end_on_a.counterparty().clone(),
+        msg.chan_end_on_a.connection_hops().clone(),
+        msg.chan_end_on_a.version().clone(),
     );
 
     output.log(format!(
         "success: channel open init with channel identifier: {}",
-        chan_id
+        chan_id_on_a
     ));
 
     let result = ChannelResult {
-        port_id: msg.port_id.clone(),
-        channel_id: chan_id,
-        channel_end: new_channel_end,
+        port_id: msg.port_id_on_a.clone(),
+        channel_id: chan_id_on_a,
+        channel_end: chan_end_on_a,
         channel_id_state: ChannelIdState::Generated,
     };
 
@@ -143,7 +142,7 @@ mod tests {
                     let msg_init = test.msg;
 
                     if let ChannelMsg::ChannelOpenInit(msg_init) = msg_init {
-                        assert_eq!(res.port_id.clone(), msg_init.port_id.clone());
+                        assert_eq!(res.port_id.clone(), msg_init.port_id_on_a.clone());
                     }
                 }
                 Err(e) => {

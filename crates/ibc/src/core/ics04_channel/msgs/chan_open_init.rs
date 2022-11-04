@@ -15,16 +15,16 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenInit";
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelOpenInit {
-    pub port_id: PortId,
-    pub channel: ChannelEnd,
+    pub port_id_on_a: PortId,
+    pub chan_end_on_a: ChannelEnd,
     pub signer: Signer,
 }
 
 impl MsgChannelOpenInit {
     pub fn new(port_id: PortId, channel: ChannelEnd, signer: Signer) -> Self {
         Self {
-            port_id,
-            channel,
+            port_id_on_a: port_id,
+            chan_end_on_a: channel,
             signer,
         }
     }
@@ -50,8 +50,8 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
 
     fn try_from(raw_msg: RawMsgChannelOpenInit) -> Result<Self, Self::Error> {
         Ok(MsgChannelOpenInit {
-            port_id: raw_msg.port_id.parse().map_err(Error::identifier)?,
-            channel: raw_msg
+            port_id_on_a: raw_msg.port_id.parse().map_err(Error::identifier)?,
+            chan_end_on_a: raw_msg
                 .channel
                 .ok_or_else(Error::missing_channel)?
                 .try_into()?,
@@ -63,8 +63,8 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
 impl From<MsgChannelOpenInit> for RawMsgChannelOpenInit {
     fn from(domain_msg: MsgChannelOpenInit) -> Self {
         RawMsgChannelOpenInit {
-            port_id: domain_msg.port_id.to_string(),
-            channel: Some(domain_msg.channel.into()),
+            port_id: domain_msg.port_id_on_a.to_string(),
+            channel: Some(domain_msg.chan_end_on_a.into()),
             signer: domain_msg.signer.to_string(),
         }
     }
