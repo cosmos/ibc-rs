@@ -36,8 +36,6 @@ pub(crate) fn process<Ctx: ChannelReader>(
         return Err(Error::channel_feature_not_suported_by_connection());
     }
 
-    let chan_id_on_a = ChannelId::new(ctx.channel_counter()?);
-
     let chan_end_on_a = ChannelEnd::new(
         State::Init,
         *msg.chan_end_on_a.ordering(),
@@ -45,6 +43,8 @@ pub(crate) fn process<Ctx: ChannelReader>(
         msg.chan_end_on_a.connection_hops().clone(),
         msg.chan_end_on_a.version().clone(),
     );
+
+    let chan_id_on_a = ChannelId::new(ctx.channel_counter()?);
 
     output.log(format!(
         "success: channel open init with channel identifier: {}",
