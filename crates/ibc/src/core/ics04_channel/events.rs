@@ -438,10 +438,10 @@ impl From<ChannelClosed> for abci::Event {
                 ev.port_id.into(),
                 ev.channel_id.into(),
                 ev.counterparty_port_id.into(),
-                ev.maybe_counterparty_channel_id
-                    .map_or((COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY, "").into(), |c| {
-                        c.into()
-                    }),
+                ev.maybe_counterparty_channel_id.map_or_else(
+                    || (COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY, "").into(),
+                    |c| c.into(),
+                ),
                 ev.connection_id.into(),
                 ev.channel_ordering.into(),
             ],
