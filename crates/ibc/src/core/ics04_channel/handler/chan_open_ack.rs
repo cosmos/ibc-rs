@@ -9,6 +9,7 @@ use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
+/// Per our convention, this message is processed on chain A.
 pub(crate) fn process<Ctx: ChannelReader>(
     ctx: &Ctx,
     msg: &MsgChannelOpenAck,
@@ -16,12 +17,12 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let mut output = HandlerOutput::builder();
 
     // Unwrap the old channel end and validate it against the message.
-    let mut channel_end = ctx.channel_end(&msg.port_id, &msg.channel_id)?;
+    let mut channel_end = ctx.channel_end(&msg.port_id_on_a, &msg.chan_id_on_a)?;
 
     // Validate that the channel end is in a state where it can be ack.
     if !channel_end.state_matches(&State::Init) && !channel_end.state_matches(&State::TryOpen) {
         return Err(Error::invalid_channel_state(
-            msg.channel_id.clone(),
+            msg.chan_id_on_a.clone(),
             channel_end.state,
         ));
     }
@@ -47,7 +48,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
     // 1. Setup: build the Channel as we expect to find it on the other party.
 
     let expected_counterparty =
-        Counterparty::new(msg.port_id.clone(), Some(msg.channel_id.clone()));
+        Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone()));
 
     let counterparty = conn.counterparty();
     let ccid = counterparty.connection_id().ok_or_else(|| {
@@ -61,11 +62,11 @@ pub(crate) fn process<Ctx: ChannelReader>(
         *channel_end.ordering(),
         expected_counterparty,
         expected_connection_hops,
-        msg.counterparty_version.clone(),
+        msg.version_on_b.clone(),
     );
 
     // set the counterparty channel id to verify against it
-    channel_end.set_counterparty_channel_id(msg.counterparty_channel_id.clone());
+    channel_end.set_counterparty_channel_id(msg.chan_id_on_b.clone());
 
     //2. Verify proofs
     verify_channel_proofs(
@@ -81,11 +82,11 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     // Transition the channel end to the new state & pick a version.
     channel_end.set_state(State::Open);
-    channel_end.set_version(msg.counterparty_version.clone());
+    channel_end.set_version(msg.version_on_b.clone());
 
     let result = ChannelResult {
-        port_id: msg.port_id.clone(),
-        channel_id: msg.channel_id.clone(),
+        port_id: msg.port_id_on_a.clone(),
+        channel_id: msg.chan_id_on_a.clone(),
         channel_id_state: ChannelIdState::Reused,
         channel_end,
     };
@@ -181,8 +182,8 @@ mod tests {
             State::Init,
             *msg_chan_try.chan_end_on_b.ordering(),
             Counterparty::new(
-                msg_chan_ack.port_id.clone(),
-                Some(msg_chan_ack.channel_id.clone()),
+                msg_chan_ack.port_id_on_a.clone(),
+                Some(msg_chan_ack.chan_id_on_a.clone()),
             ),
             connection_vec0.clone(),
             msg_chan_try.chan_end_on_b.version().clone(),
@@ -192,8 +193,8 @@ mod tests {
             State::Open,
             *msg_chan_try.chan_end_on_b.ordering(),
             Counterparty::new(
-                msg_chan_ack.port_id.clone(),
-                Some(msg_chan_ack.channel_id.clone()),
+                msg_chan_ack.port_id_on_a.clone(),
+                Some(msg_chan_ack.chan_id_on_a.clone()),
             ),
             connection_vec0,
             msg_chan_try.chan_end_on_b.version().clone(),
@@ -215,8 +216,8 @@ mod tests {
                         Height::new(0, client_consensus_state_height).unwrap(),
                     )
                     .with_channel(
-                        msg_chan_ack.port_id.clone(),
-                        msg_chan_ack.channel_id.clone(),
+                        msg_chan_ack.port_id_on_a.clone(),
+                        msg_chan_ack.chan_id_on_a.clone(),
                         failed_chan_end,
                     ),
                 msg: ChannelMsg::ChannelOpenAck(msg_chan_ack.clone()),
@@ -231,8 +232,8 @@ mod tests {
                         Height::new(0, client_consensus_state_height).unwrap(),
                     )
                     .with_channel(
-                        msg_chan_ack.port_id.clone(),
-                        msg_chan_ack.channel_id.clone(),
+                        msg_chan_ack.port_id_on_a.clone(),
+                        msg_chan_ack.chan_id_on_a.clone(),
                         chan_end.clone(),
                     ),
                 msg: ChannelMsg::ChannelOpenAck(msg_chan_ack.clone()),
@@ -244,8 +245,8 @@ mod tests {
                     .clone()
                     .with_connection(cid.clone(), conn_end.clone())
                     .with_channel(
-                        msg_chan_ack.port_id.clone(),
-                        msg_chan_ack.channel_id.clone(),
+                        msg_chan_ack.port_id_on_a.clone(),
+                        msg_chan_ack.chan_id_on_a.clone(),
                         chan_end.clone(),
                     ),
                 msg: ChannelMsg::ChannelOpenAck(msg_chan_ack.clone()),
@@ -260,8 +261,8 @@ mod tests {
                     )
                     .with_connection(cid, conn_end)
                     .with_channel(
-                        msg_chan_ack.port_id.clone(),
-                        msg_chan_ack.channel_id.clone(),
+                        msg_chan_ack.port_id_on_a.clone(),
+                        msg_chan_ack.chan_id_on_a.clone(),
                         chan_end,
                     ),
                 msg: ChannelMsg::ChannelOpenAck(msg_chan_ack),

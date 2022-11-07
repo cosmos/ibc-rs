@@ -1,10 +1,10 @@
 use crate::core::ics04_channel::error::Error;
 use crate::core::ics04_channel::Version;
+use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
-use crate::prelude::*;
-use crate::proofs::Proofs;
 use crate::signer::Signer;
 use crate::tx_msg::Msg;
+use crate::{prelude::*, Height};
 
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenAck as RawMsgChannelOpenAck;
 use ibc_proto::protobuf::Protobuf;
@@ -12,33 +12,37 @@ use ibc_proto::protobuf::Protobuf;
 pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenAck";
 
 ///
+/// Per our convention, this message is sent to chain A.
 /// Message definition for the third step in the channel open handshake (`ChanOpenAck` datagram).
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelOpenAck {
-    pub port_id: PortId,
-    pub channel_id: ChannelId,
-    pub counterparty_channel_id: ChannelId,
-    pub counterparty_version: Version,
-    pub proofs: Proofs,
+    pub port_id_on_a: PortId,
+    pub chan_id_on_a: ChannelId,
+    pub chan_id_on_b: ChannelId,
+    pub version_on_b: Version,
+    pub proof_chan_end_on_b: CommitmentProofBytes,
+    pub proof_height_on_b: Height,
     pub signer: Signer,
 }
 
 impl MsgChannelOpenAck {
     pub fn new(
-        port_id: PortId,
-        channel_id: ChannelId,
-        counterparty_channel_id: ChannelId,
-        counterparty_version: Version,
-        proofs: Proofs,
+        port_id_on_a: PortId,
+        chan_id_on_a: ChannelId,
+        chan_id_on_b: ChannelId,
+        version_on_b: Version,
+        proof_chan_end_on_b: CommitmentProofBytes,
+        proof_height_on_b: Height,
         signer: Signer,
     ) -> Self {
         Self {
-            port_id,
-            channel_id,
-            counterparty_channel_id,
-            counterparty_version,
-            proofs,
+            port_id_on_a,
+            chan_id_on_a,
+            chan_id_on_b,
+            version_on_b,
+            proof_chan_end_on_b,
+            proof_height_on_b,
             signer,
         }
     }
@@ -63,27 +67,19 @@ impl TryFrom<RawMsgChannelOpenAck> for MsgChannelOpenAck {
     type Error = Error;
 
     fn try_from(raw_msg: RawMsgChannelOpenAck) -> Result<Self, Self::Error> {
-        let proofs = Proofs::new(
-            raw_msg.proof_try.try_into().map_err(Error::invalid_proof)?,
-            None,
-            None,
-            None,
-            raw_msg
-                .proof_height
-                .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_height)?,
-        )
-        .map_err(Error::invalid_proof)?;
-
         Ok(MsgChannelOpenAck {
-            port_id: raw_msg.port_id.parse().map_err(Error::identifier)?,
-            channel_id: raw_msg.channel_id.parse().map_err(Error::identifier)?,
-            counterparty_channel_id: raw_msg
+            port_id_on_a: raw_msg.port_id.parse().map_err(Error::identifier)?,
+            chan_id_on_a: raw_msg.channel_id.parse().map_err(Error::identifier)?,
+            chan_id_on_b: raw_msg
                 .counterparty_channel_id
                 .parse()
                 .map_err(Error::identifier)?,
-            counterparty_version: raw_msg.counterparty_version.into(),
-            proofs,
+            version_on_b: raw_msg.counterparty_version.into(),
+            proof_chan_end_on_b: raw_msg.proof_try.try_into().map_err(Error::invalid_proof)?,
+            proof_height_on_b: raw_msg
+                .proof_height
+                .and_then(|raw_height| raw_height.try_into().ok())
+                .ok_or_else(Error::missing_height)?,
             signer: raw_msg.signer.parse().map_err(Error::signer)?,
         })
     }
@@ -92,12 +88,12 @@ impl TryFrom<RawMsgChannelOpenAck> for MsgChannelOpenAck {
 impl From<MsgChannelOpenAck> for RawMsgChannelOpenAck {
     fn from(domain_msg: MsgChannelOpenAck) -> Self {
         RawMsgChannelOpenAck {
-            port_id: domain_msg.port_id.to_string(),
-            channel_id: domain_msg.channel_id.to_string(),
-            counterparty_channel_id: domain_msg.counterparty_channel_id.to_string(),
-            counterparty_version: domain_msg.counterparty_version.to_string(),
-            proof_try: domain_msg.proofs.object_proof().clone().into(),
-            proof_height: Some(domain_msg.proofs.height().into()),
+            port_id: domain_msg.port_id_on_a.to_string(),
+            channel_id: domain_msg.chan_id_on_a.to_string(),
+            counterparty_channel_id: domain_msg.chan_id_on_b.to_string(),
+            counterparty_version: domain_msg.version_on_b.to_string(),
+            proof_try: domain_msg.proof_chan_end_on_b.into(),
+            proof_height: Some(domain_msg.proof_height_on_b.into()),
             signer: domain_msg.signer.to_string(),
         }
     }

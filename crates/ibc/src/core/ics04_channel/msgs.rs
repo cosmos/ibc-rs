@@ -51,7 +51,7 @@ impl ChannelMsg {
                 .lookup_module_by_port(&msg.port_id_on_b)
                 .map_err(Error::ics05_port)?,
             ChannelMsg::ChannelOpenAck(msg) => ctx
-                .lookup_module_by_port(&msg.port_id)
+                .lookup_module_by_port(&msg.port_id_on_a)
                 .map_err(Error::ics05_port)?,
             ChannelMsg::ChannelOpenConfirm(msg) => ctx
                 .lookup_module_by_port(&msg.port_id)

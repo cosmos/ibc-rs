@@ -141,7 +141,7 @@ where
             Ok(extras)
         }
         ChannelMsg::ChannelOpenAck(msg) => {
-            cb.on_chan_open_ack(&msg.port_id, &result.channel_id, &msg.counterparty_version)
+            cb.on_chan_open_ack(&msg.port_id_on_a, &result.channel_id, &msg.version_on_b)
         }
         ChannelMsg::ChannelOpenConfirm(msg) => {
             cb.on_chan_open_confirm(&msg.port_id, &result.channel_id)
@@ -182,7 +182,7 @@ pub fn channel_events(
             version.clone(),
         )),
         ChannelMsg::ChannelOpenAck(msg) => IbcEvent::OpenAckChannel(OpenAck::new(
-            msg.port_id.clone(),
+            msg.port_id_on_a.clone(),
             channel_id,
             counterparty.port_id,
             counterparty
