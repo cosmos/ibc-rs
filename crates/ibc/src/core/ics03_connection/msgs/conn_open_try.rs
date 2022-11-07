@@ -79,6 +79,9 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
             return Err(Error::empty_versions());
         }
 
+        // We set the deprecated `previous_connection_id` field so that we can
+        // properly convert `MsgConnectionOpenTry` into its raw form
+        #[allow(deprecated)]
         Ok(Self {
             previous_connection_id: msg.previous_connection_id,
             client_id_on_b: msg.client_id.parse().map_err(Error::invalid_identifier)?,
@@ -113,6 +116,7 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
 
 impl From<MsgConnectionOpenTry> for RawMsgConnectionOpenTry {
     fn from(msg: MsgConnectionOpenTry) -> Self {
+        #[allow(deprecated)]
         RawMsgConnectionOpenTry {
             client_id: msg.client_id_on_b.as_str().to_string(),
             previous_connection_id: msg.previous_connection_id,
@@ -169,6 +173,8 @@ pub mod test_util {
         consensus_height: u64,
     ) -> RawMsgConnectionOpenTry {
         let client_state_height = Height::new(0, consensus_height).unwrap();
+
+        #[allow(deprecated)]
         RawMsgConnectionOpenTry {
             client_id: ClientId::default().to_string(),
             previous_connection_id: ConnectionId::default().to_string(),
