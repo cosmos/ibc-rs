@@ -16,7 +16,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let mut output = HandlerOutput::builder();
 
     // Unwrap the old channel end and validate it against the message.
-    let mut chan_end_on_a = ctx_a.channel_end(&msg.port_id_on_a, &msg.chan_id_on_a)?;
+    let chan_end_on_a = ctx_a.channel_end(&msg.port_id_on_a, &msg.chan_id_on_a)?;
 
     // Validate that the channel end is in a state where it can be ack.
     if !chan_end_on_a.state_matches(&State::Init) {
@@ -42,9 +42,6 @@ pub(crate) fn process<Ctx: ChannelReader>(
             chan_end_on_a.connection_hops()[0].clone(),
         ));
     }
-
-    // set the counterparty channel id to verify against it
-    chan_end_on_a.set_counterparty_channel_id(msg.chan_id_on_b.clone());
 
     // Verify proofs
     {
@@ -94,15 +91,21 @@ pub(crate) fn process<Ctx: ChannelReader>(
     output.log("success: channel open ack");
 
     // Transition the channel end to the new state & pick a version.
-    chan_end_on_a.set_state(State::Open);
-    chan_end_on_a.set_version(msg.version_on_b.clone());
-    chan_end_on_a.set_counterparty_channel_id(msg.chan_id_on_b.clone());
+    let new_chan_end_on_a = {
+        let mut chan_end_on_a = chan_end_on_a;
+
+        chan_end_on_a.set_state(State::Open);
+        chan_end_on_a.set_version(msg.version_on_b.clone());
+        chan_end_on_a.set_counterparty_channel_id(msg.chan_id_on_b.clone());
+
+        chan_end_on_a
+    };
 
     let result = ChannelResult {
         port_id: msg.port_id_on_a.clone(),
         channel_id: msg.chan_id_on_a.clone(),
         channel_id_state: ChannelIdState::Reused,
-        channel_end: chan_end_on_a,
+        channel_end: new_chan_end_on_a,
     };
 
     Ok(output.with_result(result))
