@@ -251,7 +251,6 @@ define_error! {
             },
 
         InvalidCounterpartyChannelId
-            [ ValidationError ]
             | _ | { "Invalid channel id in counterparty" },
 
         InvalidChannelState
@@ -351,7 +350,7 @@ define_error! {
 
         AbciConversionFailed
             { abci_event: String }
-            | e | { format_args!("Failed to convert abci event to IbcEvent: {}", e.abci_event)}
+            | e | { format_args!("Failed to convert abci event to IbcEvent: {}", e.abci_event)},
     }
 }
 

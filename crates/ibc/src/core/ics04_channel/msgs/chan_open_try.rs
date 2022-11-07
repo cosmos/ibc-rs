@@ -102,7 +102,7 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
         };
 
         msg.validate_basic()
-            .map_err(ChannelError::invalid_counterparty_channel_id)?;
+            .map_err(|_| ChannelError::invalid_counterparty_channel_id())?;
 
         Ok(msg)
     }

@@ -3,11 +3,9 @@ use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::Error;
-use crate::core::ics04_channel::events::Attributes;
 use crate::core::ics04_channel::handler::verify::verify_channel_proofs;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
-use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
@@ -92,16 +90,6 @@ pub(crate) fn process<Ctx: ChannelReader>(
         channel_end,
     };
 
-    let event_attributes = Attributes {
-        channel_id: Some(msg.channel_id.clone()),
-        ..Default::default()
-    };
-    output.emit(IbcEvent::OpenAckChannel(
-        event_attributes
-            .try_into()
-            .map_err(|_| Error::missing_channel_id())?,
-    ));
-
     Ok(output.with_result(result))
 }
 
@@ -127,8 +115,6 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics24_host::identifier::ConnectionId;
-    use crate::core::ics26_routing::handler::MsgReceipt;
-    use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::prelude::*;
     use crate::Height;
@@ -289,7 +275,7 @@ mod tests {
             let res = channel_dispatch(&test.ctx, &test.msg);
             // Additionally check the events and the output objects in the result.
             match res {
-                Ok((MsgReceipt { log: _, events }, res)) => {
+                Ok((_, res)) => {
                     assert!(
                             test.want_pass,
                             "chan_open_ack: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
@@ -298,15 +284,9 @@ mod tests {
                             test.ctx.clone()
                         );
 
-                    assert!(!events.is_empty()); // Some events must exist.
-
                     // The object in the output is a ConnectionEnd, should have init state.
                     //assert_eq!(res.channel_id, msg_chan_init.channel_id().clone());
                     assert_eq!(res.channel_end.state().clone(), State::Open);
-
-                    for e in events.iter() {
-                        assert!(matches!(e, &IbcEvent::OpenAckChannel(_)));
-                    }
                 }
                 Err(e) => {
                     assert!(

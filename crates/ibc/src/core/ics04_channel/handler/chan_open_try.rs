@@ -4,13 +4,11 @@ use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::Error;
-use crate::core::ics04_channel::events::Attributes;
 use crate::core::ics04_channel::handler::verify::verify_channel_proofs;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::ChannelId;
-use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
@@ -91,19 +89,9 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let result = ChannelResult {
         port_id: msg.port_id.clone(),
         channel_id_state: ChannelIdState::Generated,
-        channel_id: channel_id.clone(),
+        channel_id,
         channel_end,
     };
-
-    let event_attributes = Attributes {
-        channel_id: Some(channel_id),
-        ..Default::default()
-    };
-    output.emit(IbcEvent::OpenTryChannel(
-        event_attributes
-            .try_into()
-            .map_err(|_| Error::missing_channel_id())?,
-    ));
 
     Ok(output.with_result(result))
 }
@@ -129,7 +117,6 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId};
-    use crate::events::IbcEvent;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::timestamp::ZERO_DURATION;
@@ -275,17 +262,11 @@ mod tests {
                         test.ctx.clone()
                     );
 
-                    assert!(!proto_output.events.is_empty()); // Some events must exist.
-
                     // The object in the output is a channel end, should have TryOpen state.
                     assert_eq!(
                         proto_output.result.channel_end.state().clone(),
                         State::TryOpen
                     );
-
-                    for e in proto_output.events.iter() {
-                        assert!(matches!(e, &IbcEvent::OpenTryChannel(_)));
-                    }
                 }
                 Err(e) => {
                     assert!(
@@ -301,5 +282,47 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// Addresses [issue 219](https://github.com/cosmos/ibc-rs/issues/219)
+    #[test]
+    fn chan_open_try_invalid_counterparty_channel_id() {
+        let proof_height = 10;
+        let conn_id = ConnectionId::new(2);
+        let client_id = ClientId::new(mock_client_type(), 45).unwrap();
+
+        // This is the connection underlying the channel we're trying to open.
+        let conn_end = ConnectionEnd::new(
+            ConnectionState::Open,
+            client_id.clone(),
+            ConnectionCounterparty::try_from(get_dummy_raw_counterparty()).unwrap(),
+            get_compatible_versions(),
+            ZERO_DURATION,
+        );
+
+        // We're going to test message processing against this message.
+        // Note: we make the counterparty's channel_id `None`.
+        let mut msg =
+            MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(proof_height)).unwrap();
+        msg.channel.remote.channel_id = None;
+
+        let chan_id = ChannelId::new(24);
+        let hops = vec![conn_id.clone()];
+        msg.channel.connection_hops = hops;
+
+        let chan_end = ChannelEnd::new(
+            State::Init,
+            *msg.channel.ordering(),
+            msg.channel.counterparty().clone(),
+            msg.channel.connection_hops().clone(),
+            msg.channel.version().clone(),
+        );
+        let context = MockContext::default()
+            .with_client(&client_id, Height::new(0, proof_height).unwrap())
+            .with_connection(conn_id, conn_end)
+            .with_channel(msg.port_id.clone(), chan_id, chan_end);
+
+        // Makes sure we don't crash
+        let _ = chan_open_try::process(&context, &msg);
     }
 }

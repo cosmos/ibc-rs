@@ -1,6 +1,6 @@
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order};
-use crate::core::ics04_channel::events::TimeoutPacket;
+use crate::core::ics04_channel::events::{ChannelClosed, TimeoutPacket};
 use crate::core::ics04_channel::handler::verify::{
     verify_next_sequence_recv, verify_packet_receipt_absence,
 };
@@ -52,7 +52,8 @@ pub fn process<Ctx: ChannelReader>(
         ));
     }
 
-    let connection_end = ctx.connection_end(&source_channel_end.connection_hops()[0])?;
+    let source_connection_id = source_channel_end.connection_hops()[0].clone();
+    let connection_end = ctx.connection_end(&source_connection_id)?;
 
     let client_id = connection_end.client_id().clone();
 
@@ -112,7 +113,7 @@ pub fn process<Ctx: ChannelReader>(
             port_id: packet.source_port.clone(),
             channel_id: packet.source_channel.clone(),
             seq: packet.sequence,
-            channel: Some(source_channel_end),
+            channel: Some(source_channel_end.clone()),
         })
     } else {
         verify_packet_receipt_absence(
@@ -133,9 +134,21 @@ pub fn process<Ctx: ChannelReader>(
 
     output.log("success: packet timeout ");
 
-    output.emit(IbcEvent::TimeoutPacket(TimeoutPacket {
-        packet: packet.clone(),
-    }));
+    output.emit(IbcEvent::TimeoutPacket(TimeoutPacket::new(
+        packet.clone(),
+        source_channel_end.ordering,
+    )));
+
+    if source_channel_end.order_matches(&Order::Ordered) {
+        output.emit(IbcEvent::ChannelClosed(ChannelClosed::new(
+            msg.packet.source_port.clone(),
+            msg.packet.source_channel.clone(),
+            source_channel_end.counterparty().port_id.clone(),
+            source_channel_end.counterparty().channel_id.clone(),
+            source_connection_id,
+            source_channel_end.ordering,
+        )));
+    }
 
     Ok(output.with_result(result))
 }
@@ -279,7 +292,7 @@ mod tests {
                     .with_connection(ConnectionId::default(), connection_end)
                     .with_channel(
                         packet.source_port.clone(),
-                        packet.source_channel,
+                        packet.source_channel.clone(),
                         source_ordered_channel_end,
                     )
                     .with_packet_commitment(
@@ -313,10 +326,23 @@ mod tests {
                         test.ctx.clone()
                     );
 
-                    assert!(!proto_output.events.is_empty()); // Some events must exist.
+                    let events = proto_output.events;
+                    let src_channel_end = test
+                        .ctx
+                        .channel_end(&packet.source_port, &packet.source_channel)
+                        .unwrap();
 
-                    for e in proto_output.events.iter() {
-                        assert!(matches!(e, &IbcEvent::TimeoutPacket(_)));
+                    if src_channel_end.order_matches(&Order::Ordered) {
+                        assert_eq!(events.len(), 2);
+
+                        assert!(matches!(events[0], IbcEvent::TimeoutPacket(_)));
+                        assert!(matches!(events[1], IbcEvent::ChannelClosed(_)));
+                    } else {
+                        assert_eq!(events.len(), 1);
+                        assert!(matches!(
+                            events.first().unwrap(),
+                            &IbcEvent::TimeoutPacket(_)
+                        ));
                     }
                 }
                 Err(e) => {

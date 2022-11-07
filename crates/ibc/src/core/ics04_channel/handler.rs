@@ -1,6 +1,5 @@
 //! This module implements the processing logic for ICS4 (channel) messages.
-use crate::core::ics26_routing::handler::MsgReceipt;
-use crate::events::ModuleEvent;
+use crate::events::{IbcEvent, ModuleEvent};
 use crate::prelude::*;
 
 use crate::core::ics04_channel::channel::ChannelEnd;
@@ -9,11 +8,15 @@ use crate::core::ics04_channel::error::Error;
 use crate::core::ics04_channel::msgs::ChannelMsg;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::{msgs::PacketMsg, packet::PacketResult};
-use crate::core::ics24_host::identifier::{ChannelId, PortId};
+use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{
     Acknowledgement, Ics26Context, ModuleId, ModuleOutputBuilder, OnRecvPacketAck, Router,
 };
 use crate::handler::{HandlerOutput, HandlerOutputBuilder};
+
+use super::channel::Counterparty;
+use super::events::{CloseConfirm, CloseInit, OpenAck, OpenConfirm, OpenInit, OpenTry};
+use super::Version;
 
 pub mod acknowledgement;
 pub mod chan_close_confirm;
@@ -79,7 +82,7 @@ where
 pub fn channel_dispatch<Ctx>(
     ctx: &Ctx,
     msg: &ChannelMsg,
-) -> Result<(MsgReceipt, ChannelResult), Error>
+) -> Result<(Vec<String>, ChannelResult), Error>
 where
     Ctx: ChannelReader,
 {
@@ -91,12 +94,9 @@ where
         ChannelMsg::ChannelCloseInit(msg) => chan_close_init::process(ctx, msg),
         ChannelMsg::ChannelCloseConfirm(msg) => chan_close_confirm::process(ctx, msg),
     }?;
-    let HandlerOutput {
-        result,
-        log,
-        events,
-    } = output;
-    Ok((MsgReceipt { events, log }, result))
+
+    let HandlerOutput { result, log, .. } = output;
+    Ok((log, result))
 }
 
 pub fn channel_callback<Ctx>(
@@ -155,6 +155,73 @@ where
     }
 }
 
+/// Constructs the proper channel event
+pub fn channel_events(
+    msg: &ChannelMsg,
+    channel_id: ChannelId,
+    counterparty: Counterparty,
+    connection_id: ConnectionId,
+    version: &Version,
+) -> Vec<IbcEvent> {
+    let event = match msg {
+        ChannelMsg::ChannelOpenInit(msg) => IbcEvent::OpenInitChannel(OpenInit::new(
+            msg.port_id.clone(),
+            channel_id,
+            counterparty.port_id,
+            connection_id,
+            version.clone(),
+        )),
+        ChannelMsg::ChannelOpenTry(msg) => IbcEvent::OpenTryChannel(OpenTry::new(
+            msg.port_id.clone(),
+            channel_id,
+            counterparty.port_id,
+            counterparty
+                .channel_id
+                .expect("counterparty channel id must exist after channel open try"),
+            connection_id,
+            version.clone(),
+        )),
+        ChannelMsg::ChannelOpenAck(msg) => IbcEvent::OpenAckChannel(OpenAck::new(
+            msg.port_id.clone(),
+            channel_id,
+            counterparty.port_id,
+            counterparty
+                .channel_id
+                .expect("counterparty channel id must exist after channel open ack"),
+            connection_id,
+        )),
+        ChannelMsg::ChannelOpenConfirm(msg) => IbcEvent::OpenConfirmChannel(OpenConfirm::new(
+            msg.port_id.clone(),
+            channel_id,
+            counterparty.port_id,
+            counterparty
+                .channel_id
+                .expect("counterparty channel id must exist after channel open confirm"),
+            connection_id,
+        )),
+        ChannelMsg::ChannelCloseInit(msg) => IbcEvent::CloseInitChannel(CloseInit::new(
+            msg.port_id.clone(),
+            channel_id,
+            counterparty.port_id,
+            counterparty
+                .channel_id
+                .expect("counterparty channel id must exist after channel open ack"),
+            connection_id,
+        )),
+        ChannelMsg::ChannelCloseConfirm(msg) => IbcEvent::CloseConfirmChannel(CloseConfirm::new(
+            msg.port_id.clone(),
+            channel_id,
+            counterparty.port_id,
+            counterparty
+                .channel_id
+                .expect("counterparty channel id must exist after channel open ack"),
+            connection_id,
+        )),
+    };
+
+    vec![event]
+}
+
 pub fn get_module_for_packet_msg<Ctx>(ctx: &Ctx, msg: &PacketMsg) -> Result<ModuleId, Error>
 where
     Ctx: Ics26Context,
@@ -166,10 +233,10 @@ where
         PacketMsg::AckPacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.source_port)
             .map_err(Error::ics05_port)?,
-        PacketMsg::ToPacket(msg) => ctx
+        PacketMsg::TimeoutPacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.source_port)
             .map_err(Error::ics05_port)?,
-        PacketMsg::ToClosePacket(msg) => ctx
+        PacketMsg::TimeoutOnClosePacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.source_port)
             .map_err(Error::ics05_port)?,
     };
@@ -192,8 +259,8 @@ where
     let output = match msg {
         PacketMsg::RecvPacket(msg) => recv_packet::process(ctx, msg),
         PacketMsg::AckPacket(msg) => acknowledgement::process(ctx, msg),
-        PacketMsg::ToPacket(msg) => timeout::process(ctx, msg),
-        PacketMsg::ToClosePacket(msg) => timeout_on_close::process(ctx, msg),
+        PacketMsg::TimeoutPacket(msg) => timeout::process(ctx, msg),
+        PacketMsg::TimeoutOnClosePacket(msg) => timeout_on_close::process(ctx, msg),
     }?;
     let HandlerOutput {
         result,
@@ -258,8 +325,10 @@ fn do_packet_callback(
             &msg.acknowledgement,
             &msg.signer,
         ),
-        PacketMsg::ToPacket(msg) => cb.on_timeout_packet(module_output, &msg.packet, &msg.signer),
-        PacketMsg::ToClosePacket(msg) => {
+        PacketMsg::TimeoutPacket(msg) => {
+            cb.on_timeout_packet(module_output, &msg.packet, &msg.signer)
+        }
+        PacketMsg::TimeoutOnClosePacket(msg) => {
             cb.on_timeout_packet(module_output, &msg.packet, &msg.signer)
         }
     }

@@ -3,11 +3,9 @@
 use crate::core::ics04_channel::channel::{ChannelEnd, State};
 use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::Error;
-use crate::core::ics04_channel::events::Attributes;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
 use crate::core::ics24_host::identifier::ChannelId;
-use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
@@ -41,11 +39,6 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let id_counter = ctx.channel_counter()?;
     let chan_id = ChannelId::new(id_counter);
 
-    output.log(format!(
-        "success: generated new channel identifier: {}",
-        chan_id
-    ));
-
     let new_channel_end = ChannelEnd::new(
         State::Init,
         *msg.channel.ordering(),
@@ -54,31 +47,23 @@ pub(crate) fn process<Ctx: ChannelReader>(
         msg.channel.version().clone(),
     );
 
-    output.log("success: no channel found");
+    output.log(format!(
+        "success: channel open init with channel identifier: {}",
+        chan_id
+    ));
 
     let result = ChannelResult {
         port_id: msg.port_id.clone(),
-        channel_id: chan_id.clone(),
+        channel_id: chan_id,
         channel_end: new_channel_end,
         channel_id_state: ChannelIdState::Generated,
     };
-
-    let event_attributes = Attributes {
-        channel_id: Some(chan_id),
-        ..Default::default()
-    };
-    output.emit(IbcEvent::OpenInitChannel(
-        event_attributes
-            .try_into()
-            .map_err(|_| Error::missing_channel_id())?,
-    ));
 
     Ok(output.with_result(result))
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ics26_routing::handler::MsgReceipt;
     use crate::prelude::*;
 
     use test_log::test;
@@ -94,7 +79,6 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
     use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics24_host::identifier::ConnectionId;
-    use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
 
     #[test]
@@ -145,7 +129,7 @@ mod tests {
             let res = channel_dispatch(&test.ctx, &test.msg);
             // Additionally check the events and the output objects in the result.
             match res {
-                Ok((MsgReceipt { log: _, events }, res)) => {
+                Ok((_, res)) => {
                     assert!(
                         test.want_pass,
                         "chan_open_init: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
@@ -154,18 +138,12 @@ mod tests {
                         test.ctx.clone()
                     );
 
-                    assert!(!events.is_empty()); // Some events must exist.
-
                     // The object in the output is a ChannelEnd, should have init state.
                     assert_eq!(res.channel_end.state().clone(), State::Init);
                     let msg_init = test.msg;
 
                     if let ChannelMsg::ChannelOpenInit(msg_init) = msg_init {
                         assert_eq!(res.port_id.clone(), msg_init.port_id.clone());
-                    }
-
-                    for e in events.iter() {
-                        assert!(matches!(e, &IbcEvent::OpenInitChannel(_)));
                     }
                 }
                 Err(e) => {

@@ -9,7 +9,7 @@ use crate::core::ics04_channel::handler::{
     channel_callback, channel_dispatch, channel_validate, recv_packet::RecvPacketResult,
 };
 use crate::core::ics04_channel::handler::{
-    get_module_for_packet_msg, packet_callback as ics4_packet_callback,
+    channel_events, get_module_for_packet_msg, packet_callback as ics4_packet_callback,
     packet_dispatch as ics4_packet_msg_dispatcher,
 };
 use crate::core::ics04_channel::packet::PacketResult;
@@ -88,13 +88,8 @@ where
             let module_id = channel_validate(ctx, &msg).map_err(Error::ics04_channel)?;
             let dispatch_output = HandlerOutputBuilder::<()>::new();
 
-            let (
-                MsgReceipt {
-                    events: dispatch_events,
-                    log: dispatch_log,
-                },
-                mut channel_result,
-            ) = channel_dispatch(ctx, &msg).map_err(Error::ics04_channel)?;
+            let (dispatch_log, mut channel_result) =
+                channel_dispatch(ctx, &msg).map_err(Error::ics04_channel)?;
 
             // Note: `OpenInit` and `OpenTry` modify the `version` field of the `channel_result`,
             // so we must pass it mutably. We intend to clean this up with the implementation of
@@ -102,6 +97,17 @@ where
             // See issue [#190](https://github.com/cosmos/ibc-rs/issues/190)
             let callback_extras = channel_callback(ctx, &module_id, &msg, &mut channel_result)
                 .map_err(Error::ics04_channel)?;
+
+            // We need to construct events here instead of directly in the
+            // `process` functions because we need to wait for the callback to
+            // give us the `version` in the case of `OpenInit` and `OpenTry`.
+            let dispatch_events = channel_events(
+                &msg,
+                channel_result.channel_id.clone(),
+                channel_result.channel_end.counterparty().clone(),
+                channel_result.channel_end.connection_hops[0].clone(),
+                &channel_result.channel_end.version,
+            );
 
             // Apply any results to the host chain store.
             ctx.store_channel_result(channel_result)
@@ -147,6 +153,7 @@ where
 #[cfg(test)]
 mod tests {
     use core::default::Default;
+    use core::time::Duration;
 
     use test_log::test;
 
@@ -159,15 +166,25 @@ mod tests {
         create_client::MsgCreateClient, update_client::MsgUpdateClient,
         upgrade_client::MsgUpgradeClient, ClientMsg,
     };
+    use crate::core::ics03_connection::connection::{
+        ConnectionEnd, Counterparty as ConnCounterparty, State as ConnState,
+    };
     use crate::core::ics03_connection::msgs::{
         conn_open_ack::{test_util::get_dummy_raw_msg_conn_open_ack, MsgConnectionOpenAck},
         conn_open_init::{test_util::get_dummy_raw_msg_conn_open_init, MsgConnectionOpenInit},
         conn_open_try::{test_util::get_dummy_raw_msg_conn_open_try, MsgConnectionOpenTry},
         ConnectionMsg,
     };
+    use crate::core::ics03_connection::version::Version as ConnVersion;
+    use crate::core::ics04_channel::channel::ChannelEnd;
+    use crate::core::ics04_channel::channel::Counterparty as ChannelCounterparty;
+    use crate::core::ics04_channel::channel::Order as ChannelOrder;
+    use crate::core::ics04_channel::channel::State as ChannelState;
     use crate::core::ics04_channel::context::ChannelReader;
     use crate::core::ics04_channel::msgs::acknowledgement::test_util::get_dummy_raw_msg_ack_with_packet;
     use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
+    use crate::core::ics04_channel::msgs::chan_open_confirm::test_util::get_dummy_raw_msg_chan_open_confirm;
+    use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
     use crate::core::ics04_channel::msgs::{
         chan_close_confirm::{
             test_util::get_dummy_raw_msg_chan_close_confirm, MsgChannelCloseConfirm,
@@ -181,8 +198,10 @@ mod tests {
         ChannelMsg, PacketMsg,
     };
     use crate::core::ics04_channel::timeout::TimeoutHeight;
+    use crate::core::ics04_channel::Version as ChannelVersion;
     use crate::core::ics23_commitment::commitment::test_util::get_dummy_merkle_proof;
-    use crate::core::ics24_host::identifier::ConnectionId;
+    use crate::core::ics23_commitment::commitment::CommitmentPrefix;
+    use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
     use crate::core::ics26_routing::context::{Ics26Context, ModuleId, Router, RouterBuilder};
     use crate::core::ics26_routing::error::Error;
     use crate::core::ics26_routing::handler::dispatch;
@@ -565,7 +584,8 @@ mod tests {
             //ICS04-to_on_close
             Test {
                 name: "Timeout on close".to_string(),
-                msg: Ics26Envelope::Ics4PacketMsg(PacketMsg::ToClosePacket(msg_to_on_close)).into(),
+                msg: Ics26Envelope::Ics4PacketMsg(PacketMsg::TimeoutOnClosePacket(msg_to_on_close))
+                    .into(),
                 want_pass: true,
                 state_check: None,
             },
@@ -640,5 +660,195 @@ mod tests {
                 );
             }
         }
+    }
+
+    fn get_channel_events_ctx() -> MockContext {
+        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        let mut ctx = MockContext::default()
+            .with_client(&ClientId::default(), Height::new(0, 1).unwrap())
+            .with_connection(
+                ConnectionId::new(0),
+                ConnectionEnd::new(
+                    ConnState::Open,
+                    ClientId::default(),
+                    ConnCounterparty::new(
+                        ClientId::default(),
+                        Some(ConnectionId::new(0)),
+                        CommitmentPrefix::default(),
+                    ),
+                    vec![ConnVersion::default()],
+                    Duration::MAX,
+                ),
+            );
+        let module = DummyTransferModule::new(ctx.ibc_store_share());
+        let router = MockRouterBuilder::default()
+            .add_route(module_id.clone(), module)
+            .unwrap()
+            .build();
+
+        // Note: messages will be using the default port
+        ctx.scope_port_to_module(PortId::default(), module_id);
+
+        ctx.with_router(router)
+    }
+
+    #[test]
+    fn test_chan_open_init_event() {
+        let mut ctx = get_channel_events_ctx();
+
+        let msg_chan_open_init =
+            MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init()).unwrap();
+
+        let res = dispatch(
+            &mut ctx,
+            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelOpenInit(msg_chan_open_init)),
+        )
+        .unwrap();
+
+        assert_eq!(res.events.len(), 1);
+
+        let event = res.events.first().unwrap();
+
+        assert!(matches!(event, IbcEvent::OpenInitChannel(_)));
+    }
+
+    #[test]
+    fn test_chan_open_try_event() {
+        let mut ctx = get_channel_events_ctx();
+
+        let msg_chan_open_try =
+            MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(1)).unwrap();
+
+        let res = dispatch(
+            &mut ctx,
+            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelOpenTry(msg_chan_open_try)),
+        )
+        .unwrap();
+
+        assert_eq!(res.events.len(), 1);
+
+        let event = res.events.first().unwrap();
+
+        assert!(matches!(event, IbcEvent::OpenTryChannel(_)));
+    }
+
+    #[test]
+    fn test_chan_open_ack_event() {
+        let mut ctx = get_channel_events_ctx().with_channel(
+            PortId::default(),
+            ChannelId::default(),
+            ChannelEnd::new(
+                ChannelState::Init,
+                ChannelOrder::Unordered,
+                ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
+                vec![ConnectionId::new(0)],
+                ChannelVersion::default(),
+            ),
+        );
+
+        let msg_chan_open_ack =
+            MsgChannelOpenAck::try_from(get_dummy_raw_msg_chan_open_ack(1)).unwrap();
+
+        let res = dispatch(
+            &mut ctx,
+            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelOpenAck(msg_chan_open_ack)),
+        )
+        .unwrap();
+
+        assert_eq!(res.events.len(), 1);
+
+        let event = res.events.first().unwrap();
+
+        assert!(matches!(event, IbcEvent::OpenAckChannel(_)));
+    }
+
+    #[test]
+    fn test_chan_open_confirm_event() {
+        let mut ctx = get_channel_events_ctx().with_channel(
+            PortId::default(),
+            ChannelId::default(),
+            ChannelEnd::new(
+                ChannelState::TryOpen,
+                ChannelOrder::Unordered,
+                ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
+                vec![ConnectionId::new(0)],
+                ChannelVersion::default(),
+            ),
+        );
+
+        let msg_chan_open_confirm =
+            MsgChannelOpenConfirm::try_from(get_dummy_raw_msg_chan_open_confirm(1)).unwrap();
+
+        let res = dispatch(
+            &mut ctx,
+            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelOpenConfirm(msg_chan_open_confirm)),
+        )
+        .unwrap();
+
+        assert_eq!(res.events.len(), 1);
+
+        let event = res.events.first().unwrap();
+
+        assert!(matches!(event, IbcEvent::OpenConfirmChannel(_)));
+    }
+
+    #[test]
+    fn test_chan_close_init_event() {
+        let mut ctx = get_channel_events_ctx().with_channel(
+            PortId::default(),
+            ChannelId::default(),
+            ChannelEnd::new(
+                ChannelState::Open,
+                ChannelOrder::Unordered,
+                ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
+                vec![ConnectionId::new(0)],
+                ChannelVersion::default(),
+            ),
+        );
+
+        let msg_chan_close_init =
+            MsgChannelCloseInit::try_from(get_dummy_raw_msg_chan_close_init()).unwrap();
+
+        let res = dispatch(
+            &mut ctx,
+            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelCloseInit(msg_chan_close_init)),
+        )
+        .unwrap();
+
+        assert_eq!(res.events.len(), 1);
+
+        let event = res.events.first().unwrap();
+
+        assert!(matches!(event, IbcEvent::CloseInitChannel(_)));
+    }
+
+    #[test]
+    fn test_chan_close_confirm_event() {
+        let mut ctx = get_channel_events_ctx().with_channel(
+            PortId::default(),
+            ChannelId::default(),
+            ChannelEnd::new(
+                ChannelState::Open,
+                ChannelOrder::Unordered,
+                ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
+                vec![ConnectionId::new(0)],
+                ChannelVersion::default(),
+            ),
+        );
+
+        let msg_chan_close_confirm =
+            MsgChannelCloseConfirm::try_from(get_dummy_raw_msg_chan_close_confirm(1)).unwrap();
+
+        let res = dispatch(
+            &mut ctx,
+            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelCloseConfirm(msg_chan_close_confirm)),
+        )
+        .unwrap();
+
+        assert_eq!(res.events.len(), 1);
+
+        let event = res.events.first().unwrap();
+
+        assert!(matches!(event, IbcEvent::CloseConfirmChannel(_)));
     }
 }
