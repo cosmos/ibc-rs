@@ -13,19 +13,20 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCloseInit";
 
 ///
 /// Message definition for the first step in the channel close handshake (`ChanCloseInit` datagram).
+/// Per our convention, this message is sent to chain A.
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelCloseInit {
-    pub port_id: PortId,
-    pub channel_id: ChannelId,
+    pub port_id_on_a: PortId,
+    pub chan_id_on_a: ChannelId,
     pub signer: Signer,
 }
 
 impl MsgChannelCloseInit {
-    pub fn new(port_id: PortId, channel_id: ChannelId, signer: Signer) -> Self {
+    pub fn new(port_id_on_a: PortId, chan_id_on_a: ChannelId, signer: Signer) -> Self {
         Self {
-            port_id,
-            channel_id,
+            port_id_on_a,
+            chan_id_on_a,
             signer,
         }
     }
@@ -51,8 +52,8 @@ impl TryFrom<RawMsgChannelCloseInit> for MsgChannelCloseInit {
 
     fn try_from(raw_msg: RawMsgChannelCloseInit) -> Result<Self, Self::Error> {
         Ok(MsgChannelCloseInit {
-            port_id: raw_msg.port_id.parse().map_err(Error::identifier)?,
-            channel_id: raw_msg.channel_id.parse().map_err(Error::identifier)?,
+            port_id_on_a: raw_msg.port_id.parse().map_err(Error::identifier)?,
+            chan_id_on_a: raw_msg.channel_id.parse().map_err(Error::identifier)?,
             signer: raw_msg.signer.parse().map_err(Error::signer)?,
         })
     }
@@ -61,8 +62,8 @@ impl TryFrom<RawMsgChannelCloseInit> for MsgChannelCloseInit {
 impl From<MsgChannelCloseInit> for RawMsgChannelCloseInit {
     fn from(domain_msg: MsgChannelCloseInit) -> Self {
         RawMsgChannelCloseInit {
-            port_id: domain_msg.port_id.to_string(),
-            channel_id: domain_msg.channel_id.to_string(),
+            port_id: domain_msg.port_id_on_a.to_string(),
+            channel_id: domain_msg.chan_id_on_a.to_string(),
             signer: domain_msg.signer.to_string(),
         }
     }
