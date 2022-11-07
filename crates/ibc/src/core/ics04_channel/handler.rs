@@ -144,7 +144,7 @@ where
             cb.on_chan_open_ack(&msg.port_id_on_a, &result.channel_id, &msg.version_on_b)
         }
         ChannelMsg::ChannelOpenConfirm(msg) => {
-            cb.on_chan_open_confirm(&msg.port_id, &result.channel_id)
+            cb.on_chan_open_confirm(&msg.port_id_on_b, &result.channel_id)
         }
         ChannelMsg::ChannelCloseInit(msg) => {
             cb.on_chan_close_init(&msg.port_id, &result.channel_id)
@@ -191,7 +191,7 @@ pub fn channel_events(
             connection_id,
         )),
         ChannelMsg::ChannelOpenConfirm(msg) => IbcEvent::OpenConfirmChannel(OpenConfirm::new(
-            msg.port_id.clone(),
+            msg.port_id_on_b.clone(),
             channel_id,
             counterparty.port_id,
             counterparty
