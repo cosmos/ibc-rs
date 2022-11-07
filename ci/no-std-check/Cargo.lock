@@ -238,6 +238,9 @@ name = "bytes"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec8a7b6a70fde80372154c65702f00a0f56f3e1c36abbc6c440484be248856db"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "cc"
@@ -737,14 +740,14 @@ dependencies = [
 
 [[package]]
 name = "ibc"
-version = "0.19.0"
+version = "0.21.1"
 dependencies = [
  "bytes",
  "derive_more",
  "dyn-clone",
  "erased-serde",
  "flex-error",
- "ibc-proto",
+ "ibc-proto 0.21.0",
  "ics23",
  "num-traits",
  "primitive-types 0.12.0",
@@ -757,7 +760,7 @@ dependencies = [
  "subtle-encoding",
  "tendermint",
  "tendermint-light-client-verifier",
- "tendermint-proto",
+ "tendermint-proto 0.25.0",
  "time",
  "tracing",
  "uint",
@@ -774,7 +777,22 @@ dependencies = [
  "prost",
  "serde",
  "subtle-encoding",
- "tendermint-proto",
+ "tendermint-proto 0.25.0",
+]
+
+[[package]]
+name = "ibc-proto"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bf16b17e83004295df8f6cad5a08a447c37be1465f9b5d6e652dbed527172bd3"
+dependencies = [
+ "base64",
+ "bytes",
+ "flex-error",
+ "prost",
+ "serde",
+ "subtle-encoding",
+ "tendermint-proto 0.25.0",
 ]
 
 [[package]]
@@ -1021,14 +1039,14 @@ name = "no-std-check"
 version = "0.1.0"
 dependencies = [
  "ibc",
- "ibc-proto",
+ "ibc-proto 0.20.1",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
  "tendermint",
  "tendermint-light-client-verifier",
- "tendermint-proto",
+ "tendermint-proto 0.26.0",
 ]
 
 [[package]]
@@ -2175,7 +2193,7 @@ dependencies = [
  "signature",
  "subtle",
  "subtle-encoding",
- "tendermint-proto",
+ "tendermint-proto 0.25.0",
  "time",
  "zeroize",
 ]
@@ -2198,6 +2216,24 @@ name = "tendermint-proto"
 version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "41d7f0f8cba8816446b330eeb25f73c3ba7cb9b261677bf78e6ea560b8e1880b"
+dependencies = [
+ "bytes",
+ "flex-error",
+ "num-derive",
+ "num-traits",
+ "prost",
+ "prost-types",
+ "serde",
+ "serde_bytes",
+ "subtle-encoding",
+ "time",
+]
+
+[[package]]
+name = "tendermint-proto"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "974d6330a19dfa6720e9f663fc59101d207a817db3f9c730d3f31caaa565b574"
 dependencies = [
  "bytes",
  "flex-error",
