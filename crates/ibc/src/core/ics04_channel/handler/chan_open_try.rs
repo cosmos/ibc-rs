@@ -13,7 +13,7 @@ use crate::prelude::*;
 
 /// Per our convention, this message is processed on chain B.
 pub(crate) fn process<Ctx: ChannelReader>(
-    ctx: &Ctx,
+    ctx_b: &Ctx,
     msg: &MsgChannelOpenTry,
 ) -> HandlerResult<ChannelResult, Error> {
     let mut output = HandlerOutput::builder();
@@ -26,7 +26,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         ));
     }
 
-    let conn_end_on_b = ctx.connection_end(&msg.chan_end_on_b.connection_hops()[0])?;
+    let conn_end_on_b = ctx_b.connection_end(&msg.chan_end_on_b.connection_hops()[0])?;
     if !conn_end_on_b.state_matches(&ConnectionState::Open) {
         return Err(Error::connection_not_open(
             msg.chan_end_on_b.connection_hops()[0].clone(),
@@ -46,9 +46,9 @@ pub(crate) fn process<Ctx: ChannelReader>(
     // Verify proofs
     {
         let client_id_on_b = conn_end_on_b.client_id().clone();
-        let client_state_of_a_on_b = ctx.client_state(&client_id_on_b)?;
+        let client_state_of_a_on_b = ctx_b.client_state(&client_id_on_b)?;
         let consensus_state_of_a_on_b =
-            ctx.client_consensus_state(&client_id_on_b, msg.proof_height_on_a)?;
+            ctx_b.client_consensus_state(&client_id_on_b, msg.proof_height_on_a)?;
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let port_id_on_a = &msg.chan_end_on_b.counterparty().port_id;
         let chan_id_on_a = msg
@@ -102,7 +102,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         Version::empty(),
     );
 
-    let chan_id_on_b = ChannelId::new(ctx.channel_counter()?);
+    let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
 
     output.log(format!(
         "success: channel open try with channel identifier: {}",
