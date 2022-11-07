@@ -327,23 +327,23 @@ mod tests {
         // Note: we make the counterparty's channel_id `None`.
         let mut msg =
             MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(proof_height)).unwrap();
-        msg.channel.remote.channel_id = None;
+        msg.chan_end_on_b.remote.channel_id = None;
 
         let chan_id = ChannelId::new(24);
         let hops = vec![conn_id.clone()];
-        msg.channel.connection_hops = hops;
+        msg.chan_end_on_b.connection_hops = hops;
 
         let chan_end = ChannelEnd::new(
             State::Init,
-            *msg.channel.ordering(),
-            msg.channel.counterparty().clone(),
-            msg.channel.connection_hops().clone(),
-            msg.channel.version().clone(),
+            *msg.chan_end_on_b.ordering(),
+            msg.chan_end_on_b.counterparty().clone(),
+            msg.chan_end_on_b.connection_hops().clone(),
+            msg.chan_end_on_b.version().clone(),
         );
         let context = MockContext::default()
             .with_client(&client_id, Height::new(0, proof_height).unwrap())
             .with_connection(conn_id, conn_end)
-            .with_channel(msg.port_id.clone(), chan_id, chan_end);
+            .with_channel(msg.port_id_on_b.clone(), chan_id, chan_end);
 
         // Makes sure we don't crash
         let _ = chan_open_try::process(&context, &msg);
