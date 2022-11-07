@@ -64,10 +64,7 @@ impl TryFrom<RawMsgChannelOpenConfirm> for MsgChannelOpenConfirm {
         Ok(MsgChannelOpenConfirm {
             port_id_on_b: raw_msg.port_id.parse().map_err(Error::identifier)?,
             chan_id_on_b: raw_msg.channel_id.parse().map_err(Error::identifier)?,
-            proof_chan_end_on_a: raw_msg
-                .proof_ack
-                .try_into()
-                .map_err(Error::invalid_proof)?,
+            proof_chan_end_on_a: raw_msg.proof_ack.try_into().map_err(Error::invalid_proof)?,
             proof_height_on_a: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
