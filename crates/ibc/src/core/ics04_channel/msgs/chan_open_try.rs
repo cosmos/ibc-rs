@@ -40,6 +40,7 @@ impl MsgChannelOpenTry {
         proof_height_on_a: Height,
         signer: Signer,
     ) -> Self {
+        #[allow(deprecated)]
         Self {
             port_id_on_b,
             chan_end_on_b,
@@ -78,6 +79,7 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
     type Error = ChannelError;
 
     fn try_from(raw_msg: RawMsgChannelOpenTry) -> Result<Self, Self::Error> {
+        #[allow(deprecated)]
         let msg = MsgChannelOpenTry {
             port_id_on_b: raw_msg.port_id.parse().map_err(ChannelError::identifier)?,
             previous_channel_id: raw_msg.previous_channel_id,
@@ -106,6 +108,7 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
 
 impl From<MsgChannelOpenTry> for RawMsgChannelOpenTry {
     fn from(domain_msg: MsgChannelOpenTry) -> Self {
+        #[allow(deprecated)]
         RawMsgChannelOpenTry {
             port_id: domain_msg.port_id_on_b.to_string(),
             previous_channel_id: domain_msg.previous_channel_id,
@@ -130,6 +133,7 @@ pub mod test_util {
 
     /// Returns a dummy `RawMsgChannelOpenTry`, for testing only!
     pub fn get_dummy_raw_msg_chan_open_try(proof_height: u64) -> RawMsgChannelOpenTry {
+        #[allow(deprecated)]
         RawMsgChannelOpenTry {
             port_id: PortId::default().to_string(),
             previous_channel_id: ChannelId::default().to_string(),
