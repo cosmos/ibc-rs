@@ -231,9 +231,9 @@ Our release process is as follows:
    the anticipated release (e.g. `release/v0.18.0`) and open a **draft PR**.
 3. Bump all relevant versions in the codebase to the new version and push these
    changes to the release PR. This includes:
-   1. All `Cargo.toml` files (making sure dependencies' versions are updated
+   1. `crates/ibc/Cargo.toml` files (making sure dependencies' versions are updated
       too).
-   2. All crates' `lib.rs` files documentation references' `html_root_url`
+   2. `crates/ibc/lib.rs` files documentation references' `html_root_url`
       parameters must point to the new version.
 
 4. In the `crates/ibc/` directory, run `cargo doc --all-features --open` locally to double-check that all the
