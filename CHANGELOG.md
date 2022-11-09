@@ -12,6 +12,9 @@ This release includes major improvements in making the library compatible with i
   ([#145](https://github.com/cosmos/ibc-rs/issues/145))
 - Makes channel/packet events compatible with ibc-go
   ([#146](https://github.com/cosmos/ibc-rs/issues/146))
+- Remove crossing hellos logic from connection handshake. Breaking changes in 
+  connection message types.
+  ([#156](https://github.com/cosmos/ibc-rs/issues/156)).
 - Remove crossing hellos logic from channel handshake
   ([#157](https://github.com/cosmos/ibc-rs/issues/157))
 - call validate_self_client in conn_open_try and conn_open_ack,
