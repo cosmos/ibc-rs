@@ -4,9 +4,6 @@
 
 #![no_std]
 #![allow(clippy::large_enum_variant)]
-// We currently still have the crossing-hellos logic, which requires using
-// deprecated fields. See issue #143.
-#![allow(deprecated)]
 #![deny(
     warnings,
     trivial_casts,
@@ -16,7 +13,7 @@
     rust_2018_idioms
 )]
 #![forbid(unsafe_code)]
-#![doc(html_root_url = "https://docs.rs/ibc/0.21.1")]
+#![doc(html_root_url = "https://docs.rs/ibc/0.22.0")]
 
 //! This library implements the InterBlockchain Communication (IBC) protocol in Rust. IBC is
 //! a distributed protocol that enables communication between distinct sovereign blockchains.

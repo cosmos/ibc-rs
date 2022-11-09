@@ -7,49 +7,52 @@ use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
 use crate::handler::{HandlerOutput, HandlerResult};
 
+/// Per our convention, this message is processed on chain A.
 pub(crate) fn process<Ctx: ChannelReader>(
-    ctx: &Ctx,
+    ctx_a: &Ctx,
     msg: &MsgChannelCloseInit,
 ) -> HandlerResult<ChannelResult, Error> {
     let mut output = HandlerOutput::builder();
 
-    // Unwrap the old channel end and validate it against the message.
-    let mut channel_end = ctx.channel_end(&msg.port_id, &msg.channel_id)?;
+    let chan_end_on_a = ctx_a.channel_end(&msg.port_id_on_a, &msg.chan_id_on_a)?;
 
     // Validate that the channel end is in a state where it can be closed.
-    if channel_end.state_matches(&State::Closed) {
+    if chan_end_on_a.state_matches(&State::Closed) {
         return Err(Error::invalid_channel_state(
-            msg.channel_id.clone(),
-            channel_end.state,
+            msg.chan_id_on_a.clone(),
+            chan_end_on_a.state,
         ));
     }
 
     // An OPEN IBC connection running on the local (host) chain should exist.
-    if channel_end.connection_hops().len() != 1 {
+    if chan_end_on_a.connection_hops().len() != 1 {
         return Err(Error::invalid_connection_hops_length(
             1,
-            channel_end.connection_hops().len(),
+            chan_end_on_a.connection_hops().len(),
         ));
     }
 
-    let conn = ctx.connection_end(&channel_end.connection_hops()[0])?;
+    let conn_end_on_a = ctx_a.connection_end(&chan_end_on_a.connection_hops()[0])?;
 
-    if !conn.state_matches(&ConnectionState::Open) {
+    if !conn_end_on_a.state_matches(&ConnectionState::Open) {
         return Err(Error::connection_not_open(
-            channel_end.connection_hops()[0].clone(),
+            chan_end_on_a.connection_hops()[0].clone(),
         ));
     }
 
     output.log("success: channel close init");
 
-    // Transition the channel end to the new state & pick a version.
-    channel_end.set_state(State::Closed);
+    let new_chan_end_on_a = {
+        let mut chan_end_on_a = chan_end_on_a;
+        chan_end_on_a.set_state(State::Closed);
+        chan_end_on_a
+    };
 
     let result = ChannelResult {
-        port_id: msg.port_id.clone(),
-        channel_id: msg.channel_id.clone(),
+        port_id: msg.port_id_on_a.clone(),
+        channel_id: msg.chan_id_on_a.clone(),
         channel_id_state: ChannelIdState::Reused,
-        channel_end,
+        channel_end: new_chan_end_on_a,
     };
 
     Ok(output.with_result(result))
@@ -99,8 +102,8 @@ mod tests {
             ChannelState::Open,
             Order::default(),
             Counterparty::new(
-                msg_chan_close_init.port_id.clone(),
-                Some(msg_chan_close_init.channel_id.clone()),
+                msg_chan_close_init.port_id_on_a.clone(),
+                Some(msg_chan_close_init.chan_id_on_a.clone()),
             ),
             vec![conn_id.clone()],
             Version::default(),
@@ -114,8 +117,8 @@ mod tests {
                 .with_client(&client_id, client_consensus_state_height)
                 .with_connection(conn_id, conn_end)
                 .with_channel(
-                    msg_chan_close_init.port_id.clone(),
-                    msg_chan_close_init.channel_id.clone(),
+                    msg_chan_close_init.port_id_on_a.clone(),
+                    msg_chan_close_init.chan_id_on_a.clone(),
                     chan_end,
                 )
         };

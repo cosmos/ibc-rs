@@ -1,4 +1,5 @@
-use crate::prelude::*;
+use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
+use crate::{prelude::*, Height};
 
 use ibc_proto::protobuf::Protobuf;
 
@@ -6,7 +7,6 @@ use ibc_proto::ibc::core::channel::v1::MsgChannelCloseConfirm as RawMsgChannelCl
 
 use crate::core::ics04_channel::error::Error;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
-use crate::proofs::Proofs;
 use crate::signer::Signer;
 use crate::tx_msg::Msg;
 
@@ -15,21 +15,30 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCloseConfirm";
 ///
 /// Message definition for the second step in the channel close handshake (the `ChanCloseConfirm`
 /// datagram).
+/// Per our convention, this message is sent to chain B.
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelCloseConfirm {
-    pub port_id: PortId,
-    pub channel_id: ChannelId,
-    pub proofs: Proofs,
+    pub port_id_on_b: PortId,
+    pub chan_id_on_b: ChannelId,
+    pub proof_chan_end_on_a: CommitmentProofBytes,
+    pub proof_height_on_a: Height,
     pub signer: Signer,
 }
 
 impl MsgChannelCloseConfirm {
-    pub fn new(port_id: PortId, channel_id: ChannelId, proofs: Proofs, signer: Signer) -> Self {
+    pub fn new(
+        port_id_on_b: PortId,
+        chan_id_on_b: ChannelId,
+        proof_chan_end_on_a: CommitmentProofBytes,
+        proof_height_on_a: Height,
+        signer: Signer,
+    ) -> Self {
         Self {
-            port_id,
-            channel_id,
-            proofs,
+            port_id_on_b,
+            chan_id_on_b,
+            proof_chan_end_on_a,
+            proof_height_on_a,
             signer,
         }
     }
@@ -54,25 +63,17 @@ impl TryFrom<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {
     type Error = Error;
 
     fn try_from(raw_msg: RawMsgChannelCloseConfirm) -> Result<Self, Self::Error> {
-        let proofs = Proofs::new(
-            raw_msg
+        Ok(MsgChannelCloseConfirm {
+            port_id_on_b: raw_msg.port_id.parse().map_err(Error::identifier)?,
+            chan_id_on_b: raw_msg.channel_id.parse().map_err(Error::identifier)?,
+            proof_chan_end_on_a: raw_msg
                 .proof_init
                 .try_into()
                 .map_err(Error::invalid_proof)?,
-            None,
-            None,
-            None,
-            raw_msg
+            proof_height_on_a: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
                 .ok_or_else(Error::missing_height)?,
-        )
-        .map_err(Error::invalid_proof)?;
-
-        Ok(MsgChannelCloseConfirm {
-            port_id: raw_msg.port_id.parse().map_err(Error::identifier)?,
-            channel_id: raw_msg.channel_id.parse().map_err(Error::identifier)?,
-            proofs,
             signer: raw_msg.signer.parse().map_err(Error::signer)?,
         })
     }
@@ -81,10 +82,10 @@ impl TryFrom<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {
 impl From<MsgChannelCloseConfirm> for RawMsgChannelCloseConfirm {
     fn from(domain_msg: MsgChannelCloseConfirm) -> Self {
         RawMsgChannelCloseConfirm {
-            port_id: domain_msg.port_id.to_string(),
-            channel_id: domain_msg.channel_id.to_string(),
-            proof_init: domain_msg.proofs.object_proof().clone().into(),
-            proof_height: Some(domain_msg.proofs.height().into()),
+            port_id: domain_msg.port_id_on_b.to_string(),
+            channel_id: domain_msg.chan_id_on_b.to_string(),
+            proof_init: domain_msg.proof_chan_end_on_a.clone().into(),
+            proof_height: Some(domain_msg.proof_height_on_a.into()),
             signer: domain_msg.signer.to_string(),
         }
     }

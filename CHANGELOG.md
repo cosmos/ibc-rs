@@ -1,5 +1,46 @@
 # CHANGELOG
 
+## v0.22.0
+
+*November 9, 2022*
+
+This release includes major improvements in making the library compatible with ibc-go v5.0.1. This includes making ibc events compatible and removing the crossing-hellos logic from the connection and channel handshakes.
+
+### BREAKING CHANGES
+
+- Make connection events compatible with ibc-go
+  ([#145](https://github.com/cosmos/ibc-rs/issues/145))
+- Makes channel/packet events compatible with ibc-go
+  ([#146](https://github.com/cosmos/ibc-rs/issues/146))
+- Remove crossing hellos logic from connection handshake. Breaking changes in 
+  connection message types.
+  ([#156](https://github.com/cosmos/ibc-rs/issues/156)).
+- Remove crossing hellos logic from channel handshake
+  ([#157](https://github.com/cosmos/ibc-rs/issues/157))
+- call `validate_self_client` in `conn_open_try` and `conn_open_ack`,
+  and provide a tendermint implementation for `validate_self_client`
+  ([#162](https://github.com/cosmos/ibc-rs/issues/162))
+- Refactor channel handlers. Proof calls were inlined, and our handshake
+  variable naming convention was applied
+  ([#166](https://github.com/cosmos/ibc-rs/issues/166))
+- Change `ClientType` to contain a `String` instead of `&'static str`
+  ([#206](https://github.com/cosmos/ibc-rs/issues/206))
+
+### BUG FIXES
+
+- Connection consensus state proof verification now properly uses `consensus_height`
+  ([#168](https://github.com/cosmos/ibc-rs/issues/168)).
+- Allow one-letter chain names in `ChainId::is_epoch_format`
+  ([#211](https://github.com/cosmos/ibc-rs/issues/211))
+- Don't panic on user input in channel proof verification
+  ([#219](https://github.com/cosmos/ibc-rs/issues/219))
+
+### FEATURES
+
+- Add getter functions to SendPacket, ReceivePacket, WriteAcknowledgement,
+  AcknowledgePacket, TimeoutPacket to get the elements of the structure
+  ([#231](https://github.com/cosmos/ibc-rs/issues/231))
+
 ## v0.21.1
 
 *October 27, 2022*

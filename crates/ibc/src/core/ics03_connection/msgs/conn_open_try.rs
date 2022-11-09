@@ -31,7 +31,7 @@ pub struct MsgConnectionOpenTry {
     /// ClientId, ConnectionId and prefix of chain A
     pub counterparty: Counterparty,
     /// Versions supported by chain A
-    pub counterparty_versions: Vec<Version>,
+    pub versions_on_a: Vec<Version>,
     /// proof of ConnectionEnd stored on Chain A during ConnOpenInit
     pub proof_conn_end_on_a: CommitmentProofBytes,
     /// proof that chain A has stored ClientState of chain B on its client
@@ -79,6 +79,9 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
             return Err(Error::empty_versions());
         }
 
+        // We set the deprecated `previous_connection_id` field so that we can
+        // properly convert `MsgConnectionOpenTry` into its raw form
+        #[allow(deprecated)]
         Ok(Self {
             previous_connection_id: msg.previous_connection_id,
             client_id_on_b: msg.client_id.parse().map_err(Error::invalid_identifier)?,
@@ -87,7 +90,7 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
                 .counterparty
                 .ok_or_else(Error::missing_counterparty)?
                 .try_into()?,
-            counterparty_versions,
+            versions_on_a: counterparty_versions,
             proof_conn_end_on_a: msg.proof_init.try_into().map_err(Error::invalid_proof)?,
             proof_client_state_of_b_on_a: msg
                 .proof_client
@@ -113,17 +116,14 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
 
 impl From<MsgConnectionOpenTry> for RawMsgConnectionOpenTry {
     fn from(msg: MsgConnectionOpenTry) -> Self {
+        #[allow(deprecated)]
         RawMsgConnectionOpenTry {
             client_id: msg.client_id_on_b.as_str().to_string(),
             previous_connection_id: msg.previous_connection_id,
             client_state: Some(msg.client_state_of_b_on_a),
             counterparty: Some(msg.counterparty.into()),
             delay_period: msg.delay_period.as_nanos() as u64,
-            counterparty_versions: msg
-                .counterparty_versions
-                .iter()
-                .map(|v| v.clone().into())
-                .collect(),
+            counterparty_versions: msg.versions_on_a.iter().map(|v| v.clone().into()).collect(),
             proof_height: Some(msg.proofs_height_on_a.into()),
             proof_init: msg.proof_conn_end_on_a.into(),
             proof_client: msg.proof_client_state_of_b_on_a.into(),
@@ -169,6 +169,8 @@ pub mod test_util {
         consensus_height: u64,
     ) -> RawMsgConnectionOpenTry {
         let client_state_height = Height::new(0, consensus_height).unwrap();
+
+        #[allow(deprecated)]
         RawMsgConnectionOpenTry {
             client_id: ClientId::default().to_string(),
             previous_connection_id: ConnectionId::default().to_string(),

@@ -830,6 +830,9 @@ impl TryFrom<RawTmClientState> for ClientState {
             .frozen_height
             .and_then(|raw_height| raw_height.try_into().ok());
 
+        // We use set this deprecated field just so that we can properly convert
+        // it back in its raw form
+        #[allow(deprecated)]
         let allow_update = AllowUpdate {
             after_expiry: raw.allow_update_after_expiry,
             after_misbehaviour: raw.allow_update_after_misbehaviour,

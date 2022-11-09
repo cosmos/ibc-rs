@@ -45,7 +45,7 @@ pub(crate) fn process(
 
     // Proof verification.
     {
-        let client_state_of_b_on_a = ctx_a.client_state(conn_end_on_a.client_id())?;
+        let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
         let consensus_state_of_b_on_a =
             ctx_a.client_consensus_state(conn_end_on_a.client_id(), msg.proofs_height_on_b)?;
 

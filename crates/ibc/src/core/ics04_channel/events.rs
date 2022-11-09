@@ -10,6 +10,7 @@ use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::events::IbcEventType;
 use crate::prelude::*;
+use crate::timestamp::Timestamp;
 
 use self::channel_attributes::{
     ChannelIdAttribute, ConnectionIdAttribute, CounterpartyChannelIdAttribute,
@@ -24,6 +25,8 @@ use self::packet_attributes::{
 
 use super::channel::Order;
 use super::msgs::acknowledgement::Acknowledgement;
+use super::packet::Sequence;
+use super::timeout::TimeoutHeight;
 use super::Version;
 
 #[derive(Debug)]
@@ -478,6 +481,46 @@ impl SendPacket {
             src_connection_id: src_connection_id.into(),
         }
     }
+
+    pub fn packet_data(&self) -> &[u8] {
+        &self.packet_data.packet_data
+    }
+
+    pub fn timeout_height(&self) -> &TimeoutHeight {
+        &self.timeout_height.timeout_height
+    }
+
+    pub fn timeout_timestamp(&self) -> &Timestamp {
+        &self.timeout_timestamp.timeout_timestamp
+    }
+
+    pub fn sequence(&self) -> &Sequence {
+        &self.sequence.sequence
+    }
+
+    pub fn src_port_id(&self) -> &PortId {
+        &self.src_port_id.src_port_id
+    }
+
+    pub fn src_channel_id(&self) -> &ChannelId {
+        &self.src_channel_id.src_channel_id
+    }
+
+    pub fn dst_port_id(&self) -> &PortId {
+        &self.dst_port_id.dst_port_id
+    }
+
+    pub fn dst_channel_id(&self) -> &ChannelId {
+        &self.dst_channel_id.dst_channel_id
+    }
+
+    pub fn channel_ordering(&self) -> &Order {
+        &self.channel_ordering.order
+    }
+
+    pub fn src_connection_id(&self) -> &ConnectionId {
+        &self.src_connection_id.connection_id
+    }
 }
 
 impl TryFrom<SendPacket> for abci::Event {
@@ -531,6 +574,46 @@ impl ReceivePacket {
             channel_ordering: channel_ordering.into(),
             dst_connection_id: dst_connection_id.into(),
         }
+    }
+
+    pub fn packet_data(&self) -> &[u8] {
+        &self.packet_data.packet_data
+    }
+
+    pub fn timeout_height(&self) -> &TimeoutHeight {
+        &self.timeout_height.timeout_height
+    }
+
+    pub fn timeout_timestamp(&self) -> &Timestamp {
+        &self.timeout_timestamp.timeout_timestamp
+    }
+
+    pub fn sequence(&self) -> &Sequence {
+        &self.sequence.sequence
+    }
+
+    pub fn src_port_id(&self) -> &PortId {
+        &self.src_port_id.src_port_id
+    }
+
+    pub fn src_channel_id(&self) -> &ChannelId {
+        &self.src_channel_id.src_channel_id
+    }
+
+    pub fn dst_port_id(&self) -> &PortId {
+        &self.dst_port_id.dst_port_id
+    }
+
+    pub fn dst_channel_id(&self) -> &ChannelId {
+        &self.dst_channel_id.dst_channel_id
+    }
+
+    pub fn channel_ordering(&self) -> &Order {
+        &self.channel_ordering.order
+    }
+
+    pub fn dst_connection_id(&self) -> &ConnectionId {
+        &self.dst_connection_id.connection_id
     }
 }
 
@@ -590,6 +673,46 @@ impl WriteAcknowledgement {
             dst_connection_id: dst_connection_id.into(),
         }
     }
+
+    pub fn packet_data(&self) -> &[u8] {
+        &self.packet_data.packet_data
+    }
+
+    pub fn timeout_height(&self) -> &TimeoutHeight {
+        &self.timeout_height.timeout_height
+    }
+
+    pub fn timeout_timestamp(&self) -> &Timestamp {
+        &self.timeout_timestamp.timeout_timestamp
+    }
+
+    pub fn sequence(&self) -> &Sequence {
+        &self.sequence.sequence
+    }
+
+    pub fn src_port_id(&self) -> &PortId {
+        &self.src_port_id.src_port_id
+    }
+
+    pub fn src_channel_id(&self) -> &ChannelId {
+        &self.src_channel_id.src_channel_id
+    }
+
+    pub fn dst_port_id(&self) -> &PortId {
+        &self.dst_port_id.dst_port_id
+    }
+
+    pub fn dst_channel_id(&self) -> &ChannelId {
+        &self.dst_channel_id.dst_channel_id
+    }
+
+    pub fn acknowledgement(&self) -> &Acknowledgement {
+        &self.acknowledgement.acknowledgement
+    }
+
+    pub fn dst_connection_id(&self) -> &ConnectionId {
+        &self.dst_connection_id.connection_id
+    }
 }
 
 impl TryFrom<WriteAcknowledgement> for abci::Event {
@@ -642,6 +765,42 @@ impl AcknowledgePacket {
             src_connection_id: src_connection_id.into(),
         }
     }
+
+    pub fn timeout_height(&self) -> &TimeoutHeight {
+        &self.timeout_height.timeout_height
+    }
+
+    pub fn timeout_timestamp(&self) -> &Timestamp {
+        &self.timeout_timestamp.timeout_timestamp
+    }
+
+    pub fn sequence(&self) -> &Sequence {
+        &self.sequence.sequence
+    }
+
+    pub fn src_port_id(&self) -> &PortId {
+        &self.src_port_id.src_port_id
+    }
+
+    pub fn src_channel_id(&self) -> &ChannelId {
+        &self.src_channel_id.src_channel_id
+    }
+
+    pub fn dst_port_id(&self) -> &PortId {
+        &self.dst_port_id.dst_port_id
+    }
+
+    pub fn dst_channel_id(&self) -> &ChannelId {
+        &self.dst_channel_id.dst_channel_id
+    }
+
+    pub fn channel_ordering(&self) -> &Order {
+        &self.channel_ordering.order
+    }
+
+    pub fn src_connection_id(&self) -> &ConnectionId {
+        &self.src_connection_id.connection_id
+    }
 }
 
 impl TryFrom<AcknowledgePacket> for abci::Event {
@@ -689,6 +848,38 @@ impl TimeoutPacket {
             dst_channel_id: packet.destination_channel.into(),
             channel_ordering: channel_ordering.into(),
         }
+    }
+
+    pub fn timeout_height(&self) -> &TimeoutHeight {
+        &self.timeout_height.timeout_height
+    }
+
+    pub fn timeout_timestamp(&self) -> &Timestamp {
+        &self.timeout_timestamp.timeout_timestamp
+    }
+
+    pub fn sequence(&self) -> &Sequence {
+        &self.sequence.sequence
+    }
+
+    pub fn src_port_id(&self) -> &PortId {
+        &self.src_port_id.src_port_id
+    }
+
+    pub fn src_channel_id(&self) -> &ChannelId {
+        &self.src_channel_id.src_channel_id
+    }
+
+    pub fn dst_port_id(&self) -> &PortId {
+        &self.dst_port_id.dst_port_id
+    }
+
+    pub fn dst_channel_id(&self) -> &ChannelId {
+        &self.dst_channel_id.dst_channel_id
+    }
+
+    pub fn channel_ordering(&self) -> &Order {
+        &self.channel_ordering.order
     }
 }
 
