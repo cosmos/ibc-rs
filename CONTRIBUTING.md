@@ -222,8 +222,10 @@ Our release process is as follows:
    1. Running `unclog build -u` and copy pasting the output at the top
       of the `CHANGELOG.md` file, making sure to update the header with
       the new version.
-   1. Running `unclog release --editor <editor> --version vX.Y.Z` to create a summary of all of the changes
+   2. Running `unclog release --editor <editor> --version vX.Y.Z` to create a summary of all of the changes
       in this release.
+      1. Your text editor will open. Write the release summary, and close the editor.
+      2. Add this same summary to `CHANGELOG.md` as well.
    3. Committing the updated `CHANGELOG.md` file and `.changelog` directory to the repo.
 2. Push this to a branch `release/vX.Y.Z` according to the version number of
    the anticipated release (e.g. `release/v0.18.0`) and open a **draft PR**.
