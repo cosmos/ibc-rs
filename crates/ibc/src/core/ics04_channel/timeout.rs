@@ -55,7 +55,7 @@ impl TimeoutHeight {
     }
 
     /// Returns a string formatted for an ABCI event attribute value.
-    pub fn to_attribute_value(self) -> String {
+    pub fn to_event_attribute_value(self) -> String {
         match self {
             TimeoutHeight::At(height) => height.to_string(),
             TimeoutHeight::Never => "0-0".into(),
