@@ -116,12 +116,12 @@ where
     match msg {
         ChannelMsg::ChannelOpenInit(msg) => {
             let (extras, version) = cb.on_chan_open_init(
-                msg.channel.ordering,
-                &msg.channel.connection_hops,
-                &msg.port_id,
+                msg.chan_end_on_a.ordering,
+                &msg.chan_end_on_a.connection_hops,
+                &msg.port_id_on_a,
                 &result.channel_id,
-                msg.channel.counterparty(),
-                &msg.channel.version,
+                msg.chan_end_on_a.counterparty(),
+                &msg.chan_end_on_a.version,
             )?;
             result.channel_end.version = version;
 
@@ -129,28 +129,28 @@ where
         }
         ChannelMsg::ChannelOpenTry(msg) => {
             let (extras, version) = cb.on_chan_open_try(
-                msg.channel.ordering,
-                &msg.channel.connection_hops,
-                &msg.port_id,
+                msg.chan_end_on_b.ordering,
+                &msg.chan_end_on_b.connection_hops,
+                &msg.port_id_on_b,
                 &result.channel_id,
-                msg.channel.counterparty(),
-                &msg.counterparty_version,
+                msg.chan_end_on_b.counterparty(),
+                &msg.version_on_a,
             )?;
             result.channel_end.version = version;
 
             Ok(extras)
         }
         ChannelMsg::ChannelOpenAck(msg) => {
-            cb.on_chan_open_ack(&msg.port_id, &result.channel_id, &msg.counterparty_version)
+            cb.on_chan_open_ack(&msg.port_id_on_a, &result.channel_id, &msg.version_on_b)
         }
         ChannelMsg::ChannelOpenConfirm(msg) => {
-            cb.on_chan_open_confirm(&msg.port_id, &result.channel_id)
+            cb.on_chan_open_confirm(&msg.port_id_on_b, &result.channel_id)
         }
         ChannelMsg::ChannelCloseInit(msg) => {
-            cb.on_chan_close_init(&msg.port_id, &result.channel_id)
+            cb.on_chan_close_init(&msg.port_id_on_a, &result.channel_id)
         }
         ChannelMsg::ChannelCloseConfirm(msg) => {
-            cb.on_chan_close_confirm(&msg.port_id, &result.channel_id)
+            cb.on_chan_close_confirm(&msg.port_id_on_b, &result.channel_id)
         }
     }
 }
@@ -165,14 +165,14 @@ pub fn channel_events(
 ) -> Vec<IbcEvent> {
     let event = match msg {
         ChannelMsg::ChannelOpenInit(msg) => IbcEvent::OpenInitChannel(OpenInit::new(
-            msg.port_id.clone(),
+            msg.port_id_on_a.clone(),
             channel_id,
             counterparty.port_id,
             connection_id,
             version.clone(),
         )),
         ChannelMsg::ChannelOpenTry(msg) => IbcEvent::OpenTryChannel(OpenTry::new(
-            msg.port_id.clone(),
+            msg.port_id_on_b.clone(),
             channel_id,
             counterparty.port_id,
             counterparty
@@ -182,7 +182,7 @@ pub fn channel_events(
             version.clone(),
         )),
         ChannelMsg::ChannelOpenAck(msg) => IbcEvent::OpenAckChannel(OpenAck::new(
-            msg.port_id.clone(),
+            msg.port_id_on_a.clone(),
             channel_id,
             counterparty.port_id,
             counterparty
@@ -191,7 +191,7 @@ pub fn channel_events(
             connection_id,
         )),
         ChannelMsg::ChannelOpenConfirm(msg) => IbcEvent::OpenConfirmChannel(OpenConfirm::new(
-            msg.port_id.clone(),
+            msg.port_id_on_b.clone(),
             channel_id,
             counterparty.port_id,
             counterparty
@@ -200,7 +200,7 @@ pub fn channel_events(
             connection_id,
         )),
         ChannelMsg::ChannelCloseInit(msg) => IbcEvent::CloseInitChannel(CloseInit::new(
-            msg.port_id.clone(),
+            msg.port_id_on_a.clone(),
             channel_id,
             counterparty.port_id,
             counterparty
@@ -209,7 +209,7 @@ pub fn channel_events(
             connection_id,
         )),
         ChannelMsg::ChannelCloseConfirm(msg) => IbcEvent::CloseConfirmChannel(CloseConfirm::new(
-            msg.port_id.clone(),
+            msg.port_id_on_b.clone(),
             channel_id,
             counterparty.port_id,
             counterparty

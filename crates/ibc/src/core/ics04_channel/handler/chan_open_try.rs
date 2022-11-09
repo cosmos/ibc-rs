@@ -4,7 +4,6 @@ use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::Error;
-use crate::core::ics04_channel::handler::verify::verify_channel_proofs;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
 use crate::core::ics04_channel::Version;
@@ -12,85 +11,109 @@ use crate::core::ics24_host::identifier::ChannelId;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
+/// Per our convention, this message is processed on chain B.
 pub(crate) fn process<Ctx: ChannelReader>(
-    ctx: &Ctx,
+    ctx_b: &Ctx,
     msg: &MsgChannelOpenTry,
 ) -> HandlerResult<ChannelResult, Error> {
     let mut output = HandlerOutput::builder();
 
     // An IBC connection running on the local (host) chain should exist.
-    if msg.channel.connection_hops().len() != 1 {
+    if msg.chan_end_on_b.connection_hops().len() != 1 {
         return Err(Error::invalid_connection_hops_length(
             1,
-            msg.channel.connection_hops().len(),
+            msg.chan_end_on_b.connection_hops().len(),
         ));
     }
 
-    let conn = ctx.connection_end(&msg.channel.connection_hops()[0])?;
-    if !conn.state_matches(&ConnectionState::Open) {
+    let conn_end_on_b = ctx_b.connection_end(&msg.chan_end_on_b.connection_hops()[0])?;
+    if !conn_end_on_b.state_matches(&ConnectionState::Open) {
         return Err(Error::connection_not_open(
-            msg.channel.connection_hops()[0].clone(),
+            msg.chan_end_on_b.connection_hops()[0].clone(),
         ));
     }
 
-    let get_versions = conn.versions();
-    let version = match get_versions {
+    let conn_version = match conn_end_on_b.versions() {
         [version] => version,
         _ => return Err(Error::invalid_version_length_connection()),
     };
 
-    let channel_feature = msg.channel.ordering().to_string();
-    if !version.is_supported_feature(channel_feature) {
+    let channel_feature = msg.chan_end_on_b.ordering().to_string();
+    if !conn_version.is_supported_feature(channel_feature) {
         return Err(Error::channel_feature_not_suported_by_connection());
     }
 
-    // Proof verification in two steps:
-    // 1. Setup: build the Channel as we expect to find it on the other party.
-    //      the port should be identical with the port we're using; the channel id should not be set
-    //      since the counterparty cannot know yet which ID did we choose.
-    let expected_counterparty = Counterparty::new(msg.port_id.clone(), None);
-    let counterparty = conn.counterparty();
-    let ccid = counterparty.connection_id().ok_or_else(|| {
-        Error::undefined_connection_counterparty(msg.channel.connection_hops()[0].clone())
-    })?;
-    let expected_connection_hops = vec![ccid.clone()];
+    // Verify proofs
+    {
+        let client_id_on_b = conn_end_on_b.client_id().clone();
+        let client_state_of_a_on_b = ctx_b.client_state(&client_id_on_b)?;
+        let consensus_state_of_a_on_b =
+            ctx_b.client_consensus_state(&client_id_on_b, msg.proof_height_on_a)?;
+        let prefix_on_a = conn_end_on_b.counterparty().prefix();
+        let port_id_on_a = &msg.chan_end_on_b.counterparty().port_id;
+        let chan_id_on_a = msg
+            .chan_end_on_b
+            .counterparty()
+            .channel_id()
+            .ok_or_else(Error::invalid_counterparty_channel_id)?;
+        let conn_id_on_a = conn_end_on_b
+            .counterparty()
+            .connection_id()
+            .ok_or_else(|| {
+                Error::undefined_connection_counterparty(
+                    msg.chan_end_on_b.connection_hops()[0].clone(),
+                )
+            })?;
 
-    // The other party should be storing a channel end in this configuration.
-    let expected_channel_end = ChannelEnd::new(
-        State::Init,
-        *msg.channel.ordering(),
-        expected_counterparty,
-        expected_connection_hops,
-        msg.counterparty_version.clone(),
-    );
+        // The client must not be frozen.
+        if client_state_of_a_on_b.is_frozen() {
+            return Err(Error::frozen_client(client_id_on_b));
+        }
 
-    // 2. Actual proofs are verified now.
-    verify_channel_proofs(
-        ctx,
-        msg.proofs.height(),
-        &msg.channel,
-        &conn,
-        &expected_channel_end,
-        &msg.proofs,
-    )?;
+        let expected_chan_end_on_a = ChannelEnd::new(
+            State::Init,
+            *msg.chan_end_on_b.ordering(),
+            Counterparty::new(msg.port_id_on_b.clone(), None),
+            vec![conn_id_on_a.clone()],
+            msg.version_on_a.clone(),
+        );
 
-    output.log("success: channel open try");
+        // Verify the proof for the channel state against the expected channel end.
+        // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
+        client_state_of_a_on_b
+            .verify_channel_state(
+                msg.proof_height_on_a,
+                prefix_on_a,
+                &msg.proof_chan_end_on_a,
+                consensus_state_of_a_on_b.root(),
+                port_id_on_a,
+                chan_id_on_a,
+                &expected_chan_end_on_a,
+            )
+            .map_err(Error::verify_channel_failed)?;
+    }
 
-    let channel_id = ChannelId::new(ctx.channel_counter()?);
-    let channel_end = ChannelEnd::new(
+    let chan_end_on_b = ChannelEnd::new(
         State::TryOpen,
-        *msg.channel.ordering(),
-        msg.channel.counterparty().clone(),
-        msg.channel.connection_hops().clone(),
+        *msg.chan_end_on_b.ordering(),
+        msg.chan_end_on_b.counterparty().clone(),
+        msg.chan_end_on_b.connection_hops().clone(),
         // Note: This will be rewritten by the module callback
         Version::empty(),
     );
 
+    let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
+
+    output.log(format!(
+        "success: channel open try with channel identifier: {}",
+        chan_id_on_b
+    ));
+
     let result = ChannelResult {
-        port_id: msg.port_id.clone(),
+        port_id: msg.port_id_on_b.clone(),
+        channel_id: chan_id_on_b,
+        channel_end: chan_end_on_b,
         channel_id_state: ChannelIdState::Generated,
-        channel_id,
-        channel_end,
     };
 
     Ok(output.with_result(result))
@@ -155,16 +178,16 @@ mod tests {
 
         let chan_id = ChannelId::new(24);
         let hops = vec![conn_id.clone()];
-        msg.channel.connection_hops = hops;
+        msg.chan_end_on_b.connection_hops = hops;
 
         // A preloaded channel end that resides in the context. This is constructed so as to be
         // consistent with the incoming ChanOpenTry message `msg`.
         let correct_chan_end = ChannelEnd::new(
             State::Init,
-            *msg.channel.ordering(),
-            msg.channel.counterparty().clone(),
-            msg.channel.connection_hops().clone(),
-            msg.channel.version().clone(),
+            *msg.chan_end_on_b.ordering(),
+            msg.chan_end_on_b.counterparty().clone(),
+            msg.chan_end_on_b.connection_hops().clone(),
+            msg.chan_end_on_b.version().clone(),
         );
 
         let tests: Vec<Test> = vec![
@@ -174,7 +197,7 @@ mod tests {
                 msg: ChannelMsg::ChannelOpenTry(msg.clone()),
                 want_pass: false,
                 match_error: {
-                    let connection_id = msg.channel.connection_hops()[0].clone();
+                    let connection_id = msg.chan_end_on_b.connection_hops()[0].clone();
                     Box::new(move |e| match e {
                         error::ErrorDetail::Ics03Connection(e) => {
                             assert_eq!(
@@ -196,7 +219,7 @@ mod tests {
                     .clone()
                     .with_connection(conn_id.clone(), conn_end.clone())
                     .with_channel(
-                        msg.port_id.clone(),
+                        msg.port_id_on_b.clone(),
                         chan_id.clone(),
                         correct_chan_end.clone(),
                     ),
@@ -229,7 +252,7 @@ mod tests {
                     .clone()
                     .with_client(&client_id, Height::new(0, proof_height).unwrap())
                     .with_connection(conn_id.clone(), conn_end.clone())
-                    .with_channel(msg.port_id.clone(), chan_id, correct_chan_end),
+                    .with_channel(msg.port_id_on_b.clone(), chan_id, correct_chan_end),
                 msg: ChannelMsg::ChannelOpenTry(msg.clone()),
                 want_pass: true,
                 match_error: Box::new(|_| {}),
@@ -304,23 +327,23 @@ mod tests {
         // Note: we make the counterparty's channel_id `None`.
         let mut msg =
             MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(proof_height)).unwrap();
-        msg.channel.remote.channel_id = None;
+        msg.chan_end_on_b.remote.channel_id = None;
 
         let chan_id = ChannelId::new(24);
         let hops = vec![conn_id.clone()];
-        msg.channel.connection_hops = hops;
+        msg.chan_end_on_b.connection_hops = hops;
 
         let chan_end = ChannelEnd::new(
             State::Init,
-            *msg.channel.ordering(),
-            msg.channel.counterparty().clone(),
-            msg.channel.connection_hops().clone(),
-            msg.channel.version().clone(),
+            *msg.chan_end_on_b.ordering(),
+            msg.chan_end_on_b.counterparty().clone(),
+            msg.chan_end_on_b.connection_hops().clone(),
+            msg.chan_end_on_b.version().clone(),
         );
         let context = MockContext::default()
             .with_client(&client_id, Height::new(0, proof_height).unwrap())
             .with_connection(conn_id, conn_end)
-            .with_channel(msg.port_id.clone(), chan_id, chan_end);
+            .with_channel(msg.port_id_on_b.clone(), chan_id, chan_end);
 
         // Makes sure we don't crash
         let _ = chan_open_try::process(&context, &msg);

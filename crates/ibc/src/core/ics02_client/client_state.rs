@@ -119,20 +119,20 @@ pub trait ClientState:
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         counterparty_connection_id: &ConnectionId,
-        expected_connection_end: &ConnectionEnd,
+        expected_counterparty_connection_end: &ConnectionEnd,
     ) -> Result<(), Error>;
 
     /// Verify a `proof` that a channel state matches that of the input `channel_end`.
     #[allow(clippy::too_many_arguments)]
     fn verify_channel_state(
         &self,
-        height: Height,
-        prefix: &CommitmentPrefix,
+        proof_height: Height,
+        counterparty_prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        expected_channel_end: &ChannelEnd,
+        counterparty_port_id: &PortId,
+        counterparty_channel_id: &ChannelId,
+        expected_counterparty_channel_end: &ChannelEnd,
     ) -> Result<(), Error>;
 
     /// Verify the client state for this chain that it is stored on the counterparty chain.

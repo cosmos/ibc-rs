@@ -32,10 +32,8 @@ pub(crate) fn process(
         ));
     }
 
-    let version_on_b = ctx_b.pick_version(
-        ctx_b.get_compatible_versions(),
-        msg.counterparty_versions.clone(),
-    )?;
+    let version_on_b =
+        ctx_b.pick_version(ctx_b.get_compatible_versions(), msg.versions_on_a.clone())?;
 
     let conn_end_on_b = ConnectionEnd::new(
         State::TryOpen,
@@ -61,7 +59,7 @@ pub(crate) fn process(
         let prefix_on_b = ctx_b.commitment_prefix();
 
         {
-            let versions_on_a = msg.counterparty_versions;
+            let versions_on_a = msg.versions_on_a;
             let expected_conn_end_on_a = ConnectionEnd::new(
                 State::Init,
                 client_id_on_a.clone(),
