@@ -11,7 +11,7 @@ use crate::prelude::*;
 
 /// Per our convention, this message is processed on chain A.
 pub(crate) fn process<Ctx: ChannelReader>(
-    ctx: &Ctx,
+    ctx_a: &Ctx,
     msg: &MsgChannelOpenInit,
 ) -> HandlerResult<ChannelResult, Error> {
     let mut output = HandlerOutput::builder();
@@ -24,7 +24,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
     }
 
     // An IBC connection running on the local (host) chain should exist.
-    let conn_end_on_a = ctx.connection_end(&msg.chan_end_on_a.connection_hops()[0])?;
+    let conn_end_on_a = ctx_a.connection_end(&msg.chan_end_on_a.connection_hops()[0])?;
 
     let conn_version = match conn_end_on_a.versions() {
         [version] => version,
@@ -44,7 +44,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         msg.chan_end_on_a.version().clone(),
     );
 
-    let chan_id_on_a = ChannelId::new(ctx.channel_counter()?);
+    let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
 
     output.log(format!(
         "success: channel open init with channel identifier: {}",
