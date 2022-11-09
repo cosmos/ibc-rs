@@ -233,7 +233,7 @@ Our release process is as follows:
    changes to the release PR. This includes:
    1. `crates/ibc/Cargo.toml` file (making sure dependencies' versions are updated
       too).
-   2. `crates/ibc/lib.rs` files documentation references' `html_root_url`
+   2. `crates/ibc/lib.rs` file documentation references' `html_root_url`
       parameters must point to the new version.
 
 4. In the `crates/ibc/` directory, run `cargo doc --all-features --open` locally to double-check that all the
