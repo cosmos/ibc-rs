@@ -21,8 +21,8 @@ This release includes major improvements in making the library compatible with i
   and provide a tendermint implementation for validate_self_client
   ([#162](https://github.com/cosmos/ibc-rs/issues/162))
 - Refactor channel handlers. Proof calls were inlined, and our handshake
-  variable naming convention was applied ([#166](https://github.com/cosmos/ibc-
-  rs/issues/166))
+  variable naming convention was applied
+  ([#166](https://github.com/cosmos/ibc-rs/issues/166))
 - Change `ClientType` to contain a `String` instead of `&'static str`
   ([#206](https://github.com/cosmos/ibc-rs/issues/206))
 
