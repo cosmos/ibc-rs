@@ -1,0 +1,1 @@
+This release includes major improvements in making the library compatible with ibc-go v5.0.1. This includes making ibc events compatible and removing the crossing-hellos logic from the connection and channel handshakes.
