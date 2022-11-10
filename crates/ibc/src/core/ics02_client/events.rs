@@ -32,11 +32,7 @@ struct ClientIdAttribute {
 
 impl From<ClientIdAttribute> for abci::EventAttribute {
     fn from(attr: ClientIdAttribute) -> Self {
-        Self {
-            key: CLIENT_ID_ATTRIBUTE_KEY.to_owned(),
-            value: attr.client_id.into(),
-            index: false,
-        }
+        (CLIENT_ID_ATTRIBUTE_KEY, attr.client_id.as_str()).into()
     }
 }
 
