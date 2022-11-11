@@ -272,9 +272,9 @@ define_error! {
         ClientSpecific
             { description: String }
             | e | { format_args!("client specific error: {0}", e.description) },
-        
-        Other 
+
+        Other
             { description: String }
-            | e| { format_args!("other error: {0}", e.description) }, 
+            | e| { format_args!("other error: {0}", e.description) },
     }
 }
