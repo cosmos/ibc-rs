@@ -1,5 +1,6 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
+use crate::core::ValidationContext;
 use crate::prelude::*;
 
 use crate::core::ics02_client::client_state::ClientState;
@@ -19,13 +20,37 @@ use crate::timestamp::Timestamp;
 /// The result following the successful processing of a `MsgCreateClient` message. Preferably
 /// this data type should be used with a qualified name `create_client::Result` to avoid ambiguity.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Result {
+pub struct CreateClientResult {
     pub client_id: ClientId,
     pub client_type: ClientType,
     pub client_state: Box<dyn ClientState>,
     pub consensus_state: Box<dyn ConsensusState>,
     pub processed_time: Timestamp,
     pub processed_height: Height,
+}
+
+pub fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), Error>
+where
+    Ctx: ValidationContext,
+{
+    let MsgCreateClient {
+        client_state,
+        consensus_state: _,
+        signer: _,
+    } = msg;
+
+    // Construct this client's identifier
+    let id_counter = ctx.client_counter()?;
+
+    let client_state = ctx.decode_client_state(client_state)?;
+
+    let client_type = client_state.client_type();
+
+    let _client_id = ClientId::new(client_type, id_counter).map_err(|e| {
+        Error::client_identifier_constructor(client_state.client_type(), id_counter, e)
+    })?;
+
+    Ok(())
 }
 
 pub fn process(ctx: &dyn ClientReader, msg: MsgCreateClient) -> HandlerResult<ClientResult, Error> {
@@ -52,7 +77,7 @@ pub fn process(ctx: &dyn ClientReader, msg: MsgCreateClient) -> HandlerResult<Cl
 
     let consensus_height = client_state.latest_height();
 
-    let result = ClientResult::Create(Result {
+    let result = ClientResult::Create(CreateClientResult {
         client_id: client_id.clone(),
         client_type: client_type.clone(),
         client_state,

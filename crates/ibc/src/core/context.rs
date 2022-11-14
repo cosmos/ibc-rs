@@ -6,17 +6,51 @@ use crate::core::ics26_routing::error::Error as RouterError;
 
 use ibc_proto::google::protobuf::Any;
 
+use super::ics02_client::handler::create_client;
+use super::ics02_client::msgs::ClientMsg;
+use super::ics26_routing::msgs::Ics26Envelope;
 use super::{
-    ics02_client::{client_state::ClientState, consensus_state::ConsensusState, error::Error as ClientError},
-    ics03_connection::{connection::ConnectionEnd, error::Error as ConnectionError, version::{Version as ConnectionVersion, get_compatible_versions, pick_version}},
+    ics02_client::{
+        client_state::ClientState, consensus_state::ConsensusState, error::Error as ClientError,
+    },
+    ics03_connection::{
+        connection::ConnectionEnd,
+        error::Error as ConnectionError,
+        version::{get_compatible_versions, pick_version, Version as ConnectionVersion},
+    },
+    ics04_channel::{
+        channel::ChannelEnd,
+        commitment::{AcknowledgementCommitment, PacketCommitment},
+        context::calculate_block_delay,
+        error::Error as ChannelError,
+        msgs::acknowledgement::Acknowledgement,
+        packet::{Receipt, Sequence},
+        timeout::TimeoutHeight,
+    },
     ics23_commitment::commitment::CommitmentPrefix,
-    ics24_host::identifier::{ClientId, ConnectionId, PortId, ChannelId}, ics04_channel::{channel::ChannelEnd, error::Error as ChannelError, packet::{Sequence, Receipt}, commitment::{PacketCommitment, AcknowledgementCommitment}, timeout::TimeoutHeight, msgs::acknowledgement::Acknowledgement, context::calculate_block_delay}
+    ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId},
 };
 
 pub trait ValidationContext {
     /// Validation entrypoint.
-    fn validate(&self, _message: Any) -> Result<(), RouterError> {
-        todo!()
+    fn validate(&self, message: Any) -> Result<(), RouterError>
+    where
+        Self: Sized,
+    {
+        let envelope: Ics26Envelope = message.try_into()?;
+
+        match envelope {
+            Ics26Envelope::Ics2Msg(message) => match message {
+                ClientMsg::CreateClient(message) => create_client::validate(self, message),
+                ClientMsg::UpdateClient(_) => todo!(),
+                ClientMsg::Misbehaviour(_) => todo!(),
+                ClientMsg::UpgradeClient(_) => todo!(),
+            }
+            .map_err(RouterError::ics02_client),
+            Ics26Envelope::Ics3Msg(_) => todo!(),
+            Ics26Envelope::Ics4ChannelMsg(_) => todo!(),
+            Ics26Envelope::Ics4PacketMsg(_) => todo!(),
+        }
     }
 
     /// Returns the ClientState for the given identifier `client_id`.
@@ -99,9 +133,15 @@ pub trait ValidationContext {
     }
 
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
-    fn channel_end(&self, port_channel_id: &(PortId, ChannelId)) -> Result<ChannelEnd, ChannelError>;
+    fn channel_end(
+        &self,
+        port_channel_id: &(PortId, ChannelId),
+    ) -> Result<ChannelEnd, ChannelError>;
 
-    fn connection_channels(&self, cid: &ConnectionId) -> Result<Vec<(PortId, ChannelId)>, ChannelError>;
+    fn connection_channels(
+        &self,
+        cid: &ConnectionId,
+    ) -> Result<Vec<(PortId, ChannelId)>, ChannelError>;
 
     fn get_next_sequence_send(
         &self,
@@ -123,7 +163,10 @@ pub trait ValidationContext {
         key: &(PortId, ChannelId, Sequence),
     ) -> Result<PacketCommitment, ChannelError>;
 
-    fn get_packet_receipt(&self, key: &(PortId, ChannelId, Sequence)) -> Result<Receipt, ChannelError>;
+    fn get_packet_receipt(
+        &self,
+        key: &(PortId, ChannelId, Sequence),
+    ) -> Result<Receipt, ChannelError>;
 
     fn get_packet_acknowledgement(
         &self,
@@ -163,10 +206,18 @@ pub trait ValidationContext {
     fn hash(&self, value: Vec<u8>) -> Vec<u8>;
 
     /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_time(&self, client_id: &ClientId, height: Height) -> Result<Timestamp, ChannelError>;
+    fn client_update_time(
+        &self,
+        client_id: &ClientId,
+        height: Height,
+    ) -> Result<Timestamp, ChannelError>;
 
     /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_height(&self, client_id: &ClientId, height: Height) -> Result<Height, ChannelError>;
+    fn client_update_height(
+        &self,
+        client_id: &ClientId,
+        height: Height,
+    ) -> Result<Height, ChannelError>;
 
     /// Returns a counter on the number of channel ids have been created thus far.
     /// The value of this counter should increase only via method

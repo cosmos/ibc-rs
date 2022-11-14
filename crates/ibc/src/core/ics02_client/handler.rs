@@ -11,7 +11,7 @@ pub mod upgrade_client;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ClientResult {
-    Create(create_client::Result),
+    Create(create_client::CreateClientResult),
     Update(update_client::Result),
     Upgrade(upgrade_client::Result),
 }
