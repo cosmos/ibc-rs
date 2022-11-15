@@ -22,13 +22,6 @@ struct Attributes {
 }
 
 /// Convert attributes to Tendermint ABCI tags
-///
-/// # Note
-/// The parsing of `Key`s and `Value`s never fails, because the
-/// `FromStr` instance of `tendermint::abci::tag::{Key, Value}`
-/// is infallible, even if it is not represented in the error type.
-/// Once tendermint-rs improves the API of the `Key` and `Value` types,
-/// we will be able to remove the `.parse().unwrap()` calls.
 impl From<Attributes> for Vec<abci::EventAttribute> {
     fn from(a: Attributes) -> Self {
         let conn_id = (CONN_ID_ATTRIBUTE_KEY, a.connection_id.as_str()).into();
