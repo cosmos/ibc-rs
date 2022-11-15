@@ -166,5 +166,9 @@ define_error! {
                 reason: String,
             }
             | e | { format_args!("invalid client state: {0}", e.reason) },
+
+        Other
+            { description: String }
+            | e| { format_args!("other error: {0}", e.description) },
     }
 }
