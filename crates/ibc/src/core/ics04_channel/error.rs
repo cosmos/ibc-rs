@@ -351,6 +351,10 @@ define_error! {
         AbciConversionFailed
             { abci_event: String }
             | e | { format_args!("Failed to convert abci event to IbcEvent: {}", e.abci_event)},
+
+        Other
+            { description: String }
+            | e| { format_args!("other error: {0}", e.description) },
     }
 }
 
