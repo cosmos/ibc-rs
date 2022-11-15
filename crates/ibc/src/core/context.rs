@@ -6,7 +6,7 @@ use crate::core::ics26_routing::error::Error as RouterError;
 
 use ibc_proto::google::protobuf::Any;
 
-use super::ics02_client::handler::create_client;
+use super::ics02_client::handler::{create_client, update_client};
 use super::ics02_client::msgs::ClientMsg;
 use super::ics26_routing::msgs::Ics26Envelope;
 use super::{
@@ -42,7 +42,7 @@ pub trait ValidationContext {
         match envelope {
             Ics26Envelope::Ics2Msg(message) => match message {
                 ClientMsg::CreateClient(message) => create_client::validate(self, message),
-                ClientMsg::UpdateClient(_) => todo!(),
+                ClientMsg::UpdateClient(message) => update_client::validate(self, message),
                 ClientMsg::Misbehaviour(_) => todo!(),
                 ClientMsg::UpgradeClient(_) => todo!(),
             }
