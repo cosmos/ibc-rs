@@ -9,10 +9,13 @@ use crate::applications::transfer::relay::on_recv_packet::process_recv_packet;
 use crate::applications::transfer::relay::on_timeout_packet::process_timeout_packet;
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
-use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
+use crate::core::ics04_channel::commitment::PacketCommitment;
+use crate::core::ics04_channel::context::SendPacketReader;
+use crate::core::ics04_channel::error::Error as Ics04Error;
+use crate::core::ics04_channel::handler::send_packet::SendPacketResult;
 use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as GenericAcknowledgement;
-use crate::core::ics04_channel::packet::Packet;
+use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{ModuleOutputBuilder, OnRecvPacketAck};
@@ -20,12 +23,12 @@ use crate::prelude::*;
 use crate::signer::Signer;
 
 pub trait Ics20Keeper:
-    ChannelKeeper + BankKeeper<AccountId = <Self as Ics20Keeper>::AccountId>
+    Ics20ChannelKeeper + BankKeeper<AccountId = <Self as Ics20Keeper>::AccountId>
 {
     type AccountId;
 }
 
-pub trait Ics20Reader: ChannelReader {
+pub trait Ics20Reader: SendPacketReader {
     type AccountId: TryFrom<Signer>;
 
     /// get_port returns the portID for the transfer module.
@@ -49,6 +52,39 @@ pub trait Ics20Reader: ChannelReader {
     fn denom_hash_string(&self, _denom: &PrefixedDenom) -> Option<String> {
         None
     }
+}
+
+pub trait Ics20ChannelKeeper {
+    fn store_send_packet_result(&mut self, result: SendPacketResult) -> Result<(), Ics04Error> {
+        self.store_next_sequence_send(
+            result.port_id.clone(),
+            result.channel_id.clone(),
+            result.seq_number,
+        )?;
+
+        self.store_packet_commitment(
+            result.port_id,
+            result.channel_id,
+            result.seq,
+            result.commitment,
+        )?;
+        Ok(())
+    }
+
+    fn store_packet_commitment(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        sequence: Sequence,
+        commitment: PacketCommitment,
+    ) -> Result<(), Ics04Error>;
+
+    fn store_next_sequence_send(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        seq: Sequence,
+    ) -> Result<(), Ics04Error>;
 }
 
 // https://github.com/cosmos/cosmos-sdk/blob/master/docs/architecture/adr-028-public-key-addresses.md
@@ -197,7 +233,7 @@ pub fn on_recv_packet<Ctx: 'static + Ics20Context>(
         Err(_) => {
             return OnRecvPacketAck::Failed(Box::new(Acknowledgement::Error(
                 Ics20Error::packet_data_deserialization().to_string(),
-            )))
+            )));
         }
     };
 
