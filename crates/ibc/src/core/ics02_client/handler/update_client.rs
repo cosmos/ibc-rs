@@ -11,7 +11,8 @@ use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::height::Height;
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ValidationContext;
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
+use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
@@ -75,6 +76,58 @@ where
     let _ = client_state
         .check_header_and_update_state(ctx, client_id.clone(), header)
         .map_err(|e| Error::header_verification_failure(e.to_string()))?;
+
+    Ok(())
+}
+
+pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), Error>
+where
+    Ctx: ExecutionContext,
+{
+    let MsgUpdateClient {
+        client_id,
+        header,
+        signer: _,
+    } = msg;
+
+    // Read client type from the host chain store. The client should already exist.
+    // Read client state from the host chain store.
+    let client_state = ctx.client_state(&client_id)?;
+
+    let UpdatedState {
+        client_state,
+        consensus_state,
+    } = client_state
+        .check_header_and_update_state(ctx, client_id.clone(), header.clone())
+        .map_err(|e| Error::header_verification_failure(e.to_string()))?;
+
+    ctx.store_client_state(ClientStatePath(client_id.clone()), client_state.clone())?;
+    ctx.store_consensus_state(
+        ClientConsensusStatePath::new(client_id.clone(), client_state.latest_height()),
+        consensus_state,
+    )?;
+    ctx.store_update_time(
+        client_id.clone(),
+        client_state.latest_height(),
+        ctx.host_timestamp(),
+    )?;
+    ctx.store_update_height(
+        client_id.clone(),
+        client_state.latest_height(),
+        ctx.host_height(),
+    )?;
+
+    {
+        let consensus_height = client_state.latest_height();
+
+        ctx.emit_ibc_event(IbcEvent::UpdateClient(UpdateClient::new(
+            client_id,
+            client_state.client_type(),
+            consensus_height,
+            vec![consensus_height],
+            header,
+        )));
+    }
 
     Ok(())
 }
