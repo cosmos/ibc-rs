@@ -428,8 +428,8 @@ impl ChannelReader for DummyTransferModule {
         sha2::Sha256::digest(value).to_vec()
     }
 
-    fn host_height(&self) -> Height {
-        Height::new(0, 1).unwrap()
+    fn host_height(&self) -> Result<Height, Error> {
+        Height::new(0, 1).map_err(|e| Error::other(e.to_string()))
     }
 
     fn host_consensus_state(&self, _height: Height) -> Result<Box<dyn ConsensusState>, Error> {

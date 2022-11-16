@@ -57,8 +57,8 @@ pub fn process(ctx: &dyn ClientReader, msg: MsgCreateClient) -> HandlerResult<Cl
         client_type: client_type.clone(),
         client_state,
         consensus_state,
-        processed_time: ctx.host_timestamp(),
-        processed_height: ctx.host_height(),
+        processed_time: ctx.host_timestamp()?,
+        processed_height: ctx.host_height()?,
     });
 
     output.emit(IbcEvent::CreateClient(CreateClient::new(

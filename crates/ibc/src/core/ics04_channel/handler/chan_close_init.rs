@@ -111,7 +111,7 @@ mod tests {
 
         let context = {
             let default_context = MockContext::default();
-            let client_consensus_state_height = default_context.host_height();
+            let client_consensus_state_height = default_context.host_height().unwrap();
 
             default_context
                 .with_client(&client_id, client_consensus_state_height)

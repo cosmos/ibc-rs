@@ -845,12 +845,12 @@ impl ChannelReader for MockContext {
         sha2::Sha256::digest(value).to_vec()
     }
 
-    fn host_height(&self) -> Height {
-        self.latest_height()
+    fn host_height(&self) -> Result<Height, Ics04Error> {
+        Ok(self.latest_height())
     }
 
-    fn host_timestamp(&self) -> Timestamp {
-        ClientReader::host_timestamp(self)
+    fn host_timestamp(&self) -> Result<Timestamp, Ics04Error> {
+        ClientReader::host_timestamp(self).map_err(|e| Ics04Error::other(e.to_string()))
     }
 
     fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, Ics04Error> {
@@ -1103,13 +1103,13 @@ impl ConnectionReader for MockContext {
         ClientReader::decode_client_state(self, client_state).map_err(Ics03Error::ics02_client)
     }
 
-    fn host_current_height(&self) -> Height {
-        self.latest_height()
+    fn host_current_height(&self) -> Result<Height, Ics03Error> {
+        Ok(self.latest_height())
     }
 
-    fn host_oldest_height(&self) -> Height {
+    fn host_oldest_height(&self) -> Result<Height, Ics03Error> {
         // history must be non-empty, so `self.history[0]` is valid
-        self.history[0].height()
+        Ok(self.history[0].height())
     }
 
     fn commitment_prefix(&self) -> CommitmentPrefix {
@@ -1275,17 +1275,17 @@ impl ClientReader for MockContext {
         Ok(None)
     }
 
-    fn host_height(&self) -> Height {
-        self.latest_height()
+    fn host_height(&self) -> Result<Height, Ics02Error> {
+        Ok(self.latest_height())
     }
 
-    fn host_timestamp(&self) -> Timestamp {
-        self.history
+    fn host_timestamp(&self) -> Result<Timestamp, Ics02Error> {
+        Ok(self.history
             .last()
             .expect("history cannot be empty")
             .timestamp()
             .add(self.block_time)
-            .unwrap()
+            .unwrap())
     }
 
     fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, Ics02Error> {
@@ -1401,8 +1401,8 @@ impl ClientKeeper for MockContext {
 }
 
 impl Ics18Context for MockContext {
-    fn query_latest_height(&self) -> Height {
-        self.host_current_height()
+    fn query_latest_height(&self) -> Result<Height, Ics18Error> {
+        self.host_current_height().map_err(|e| Ics18Error::ics03(e))
     }
 
     fn query_client_full_state(&self, client_id: &ClientId) -> Option<Box<dyn ClientState>> {
@@ -1411,7 +1411,7 @@ impl Ics18Context for MockContext {
     }
 
     fn query_latest_header(&self) -> Option<Box<dyn Header>> {
-        let block_ref = self.host_block(self.host_current_height());
+        let block_ref = self.host_block(self.host_current_height().unwrap());
         block_ref.cloned().map(Header::into_box)
     }
 
