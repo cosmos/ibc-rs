@@ -1280,7 +1280,8 @@ impl ClientReader for MockContext {
     }
 
     fn host_timestamp(&self) -> Result<Timestamp, Ics02Error> {
-        Ok(self.history
+        Ok(self
+            .history
             .last()
             .expect("history cannot be empty")
             .timestamp()

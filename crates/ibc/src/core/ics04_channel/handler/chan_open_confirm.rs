@@ -140,7 +140,8 @@ mod tests {
         let client_id = ClientId::new(mock_client_type(), 24).unwrap();
         let conn_id = ConnectionId::new(2);
         let context = MockContext::default();
-        let client_consensus_state_height = context.host_current_height().unwrap().revision_height();
+        let client_consensus_state_height =
+            context.host_current_height().unwrap().revision_height();
 
         // The connection underlying the channel we're trying to open.
         let conn_end = ConnectionEnd::new(
