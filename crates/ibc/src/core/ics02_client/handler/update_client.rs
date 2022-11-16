@@ -28,7 +28,7 @@ pub struct UpdateClientResult {
     pub processed_height: Height,
 }
 
-pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), Error>
+pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), Error>
 where
     Ctx: ValidationContext,
 {
