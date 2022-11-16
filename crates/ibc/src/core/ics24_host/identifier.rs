@@ -2,6 +2,7 @@ use core::convert::{From, Infallible};
 use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
+use derive_more::Into;
 use serde::{Deserialize, Serialize};
 
 use super::validate::*;
@@ -141,7 +142,7 @@ impl From<String> for ChainId {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Into)]
 pub struct ClientId(String);
 
 impl ClientId {
