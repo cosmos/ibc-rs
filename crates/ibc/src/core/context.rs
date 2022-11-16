@@ -49,13 +49,13 @@ pub trait ValidationContext {
             Ics26Envelope::Ics2Msg(message) => match message {
                 ClientMsg::CreateClient(message) => create_client::validate(self, message),
                 ClientMsg::UpdateClient(message) => update_client::validate(self, message),
-                ClientMsg::Misbehaviour(_) => todo!(),
-                ClientMsg::UpgradeClient(_) => todo!(),
+                ClientMsg::Misbehaviour(_message) => todo!(),
+                ClientMsg::UpgradeClient(_message) => todo!(),
             }
             .map_err(RouterError::ics02_client),
-            Ics26Envelope::Ics3Msg(_) => todo!(),
-            Ics26Envelope::Ics4ChannelMsg(_) => todo!(),
-            Ics26Envelope::Ics4PacketMsg(_) => todo!(),
+            Ics26Envelope::Ics3Msg(_message) => todo!(),
+            Ics26Envelope::Ics4ChannelMsg(_message) => todo!(),
+            Ics26Envelope::Ics4PacketMsg(_message) => todo!(),
         }
     }
 
@@ -242,8 +242,23 @@ pub trait ValidationContext {
 
 trait ExecutionContext {
     /// Execution entrypoint
-    fn execute(&mut self, _message: Any) -> Result<(), RouterError> {
-        todo!()
+    fn execute(&mut self, message: Any) -> Result<(), RouterError>
+    where
+        Self: Sized,
+    {
+        let envelope: Ics26Envelope = message.try_into()?;
+
+        match envelope {
+            Ics26Envelope::Ics2Msg(message) => match message {
+                ClientMsg::CreateClient(_message) => todo!(),
+                ClientMsg::UpdateClient(_message) => todo!(),
+                ClientMsg::Misbehaviour(_message) => todo!(),
+                ClientMsg::UpgradeClient(_message) => todo!(),
+            },
+            Ics26Envelope::Ics3Msg(_message) => todo!(),
+            Ics26Envelope::Ics4ChannelMsg(_message) => todo!(),
+            Ics26Envelope::Ics4PacketMsg(_message) => todo!(),
+        }
     }
 
     /// Called upon successful client creation
