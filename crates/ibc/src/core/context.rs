@@ -1,13 +1,19 @@
 use core::time::Duration;
 
+use crate::events::IbcEvent;
 use crate::{prelude::*, timestamp::Timestamp, Height};
 
 use crate::core::ics26_routing::error::Error as RouterError;
 
 use ibc_proto::google::protobuf::Any;
 
+use super::ics02_client::client_type::ClientType;
 use super::ics02_client::handler::{create_client, update_client};
 use super::ics02_client::msgs::ClientMsg;
+use super::ics24_host::path::{
+    ClientConnectionsPath, ClientConsensusStatePath, ClientStatePath, ClientTypePath,
+    CommitmentsPath, ConnectionsPath, ReceiptsPath,
+};
 use super::ics26_routing::msgs::Ics26Envelope;
 use super::{
     ics02_client::{
@@ -232,4 +238,140 @@ pub trait ValidationContext {
     fn block_delay(&self, delay_period_time: Duration) -> u64 {
         calculate_block_delay(delay_period_time, self.max_expected_time_per_block())
     }
+}
+
+trait ExecutionContext {
+    /// Execution entrypoint
+    fn execute(&mut self, _message: Any) -> Result<(), RouterError> {
+        todo!()
+    }
+
+    /// Called upon successful client creation
+    fn store_client_type(
+        &mut self,
+        client_type_path: ClientTypePath,
+        client_type: ClientType,
+    ) -> Result<(), ClientError>;
+
+    /// Called upon successful client creation and update
+    fn store_client_state(
+        &mut self,
+        client_state_path: ClientStatePath,
+        client_state: Box<dyn ClientState>,
+    ) -> Result<(), ClientError>;
+
+    /// Called upon successful client creation and update
+    fn store_consensus_state(
+        &mut self,
+        consensus_state_path: ClientConsensusStatePath,
+        consensus_state: Box<dyn ConsensusState>,
+    ) -> Result<(), ClientError>;
+
+    /// Called upon client creation.
+    /// Increases the counter which keeps track of how many clients have been created.
+    /// Should never fail.
+    fn increase_client_counter(&mut self);
+
+    /// Called upon successful client update.
+    /// Implementations are expected to use this to record the specified time as the time at which
+    /// this update (or header) was processed.
+    fn store_update_time(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        timestamp: Timestamp,
+    ) -> Result<(), ClientError>;
+
+    /// Called upon successful client update.
+    /// Implementations are expected to use this to record the specified height as the height at
+    /// at which this update (or header) was processed.
+    fn store_update_height(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        host_height: Height,
+    ) -> Result<(), ClientError>;
+
+    /// Stores the given connection_end at path
+    fn store_connection(
+        &mut self,
+        connections_path: ConnectionsPath,
+        connection_end: &ConnectionEnd,
+    ) -> Result<(), ConnectionError>;
+
+    /// Stores the given connection_id at a path associated with the client_id.
+    fn store_connection_to_client(
+        &mut self,
+        client_connections_path: ClientConnectionsPath,
+        client_id: &ClientId,
+    ) -> Result<(), ConnectionError>;
+
+    /// Called upon connection identifier creation (Init or Try process).
+    /// Increases the counter which keeps track of how many connections have been created.
+    /// Should never fail.
+    fn increase_connection_counter(&mut self);
+
+    fn store_packet_commitment(
+        &mut self,
+        commitments_path: CommitmentsPath,
+        commitment: PacketCommitment,
+    ) -> Result<(), ChannelError>;
+
+    fn delete_packet_commitment(&mut self, key: CommitmentsPath) -> Result<(), ChannelError>;
+
+    fn store_packet_receipt(
+        &mut self,
+        path: ReceiptsPath,
+        receipt: Receipt,
+    ) -> Result<(), ChannelError>;
+
+    fn store_packet_acknowledgement(
+        &mut self,
+        key: (PortId, ChannelId, Sequence),
+        ack_commitment: AcknowledgementCommitment,
+    ) -> Result<(), ChannelError>;
+
+    fn delete_packet_acknowledgement(
+        &mut self,
+        key: (PortId, ChannelId, Sequence),
+    ) -> Result<(), ChannelError>;
+
+    fn store_connection_channels(
+        &mut self,
+        conn_id: ConnectionId,
+        port_channel_id: &(PortId, ChannelId),
+    ) -> Result<(), ChannelError>;
+
+    /// Stores the given channel_end at a path associated with the port_id and channel_id.
+    fn store_channel(
+        &mut self,
+        port_channel_id: (PortId, ChannelId),
+        channel_end: &ChannelEnd,
+    ) -> Result<(), ChannelError>;
+
+    fn store_next_sequence_send(
+        &mut self,
+        port_channel_id: (PortId, ChannelId),
+        seq: Sequence,
+    ) -> Result<(), ChannelError>;
+
+    fn store_next_sequence_recv(
+        &mut self,
+        port_channel_id: (PortId, ChannelId),
+        seq: Sequence,
+    ) -> Result<(), ChannelError>;
+
+    fn store_next_sequence_ack(
+        &mut self,
+        port_channel_id: (PortId, ChannelId),
+        seq: Sequence,
+    ) -> Result<(), ChannelError>;
+
+    /// Called upon channel identifier creation (Init or Try message processing).
+    /// Increases the counter which keeps track of how many channels have been created.
+    /// Should never fail.
+    fn increase_channel_counter(&mut self);
+
+    /// Ibc events
+    fn emit_ibc_event(event: IbcEvent);
 }
