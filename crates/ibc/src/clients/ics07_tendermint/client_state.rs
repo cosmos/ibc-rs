@@ -304,7 +304,27 @@ impl ClientState {
             .clone()
             .with_version(header.height().revision_number());
 
-        // TODO(hu55a1n1): VerifyCommitLightTrusting()
+        let untrusted_state = UntrustedBlockState {
+            signed_header: &header.signed_header,
+            validators: &header.validator_set,
+            next_validators: None,
+        };
+        let trust_threshold = self.trust_level.try_into()?;
+
+        let verdict = self
+            .verifier
+            .verify_light_trusting(untrusted_state, trust_threshold);
+        match verdict {
+            Verdict::Success => {}
+            Verdict::NotEnoughTrust(voting_power_tally) => {
+                return Err(Error::not_enough_trusted_vals_signed(format!(
+                    "voting power tally: {}",
+                    voting_power_tally
+                ))
+                .into());
+            }
+            Verdict::Invalid(detail) => return Err(Error::verification_error(detail).into()),
+        }
 
         Ok(())
     }
