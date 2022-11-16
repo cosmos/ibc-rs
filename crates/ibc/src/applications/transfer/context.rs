@@ -10,7 +10,7 @@ use crate::applications::transfer::relay::on_timeout_packet::process_timeout_pac
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::commitment::PacketCommitment;
-use crate::core::ics04_channel::context::SendPacketReader;
+use crate::core::ics04_channel::context::{ChannelKeeper, SendPacketReader};
 use crate::core::ics04_channel::error::Error as Ics04Error;
 use crate::core::ics04_channel::handler::send_packet::SendPacketResult;
 use crate::core::ics04_channel::handler::ModuleExtras;
@@ -85,6 +85,27 @@ pub trait Ics20ChannelKeeper {
         channel_id: ChannelId,
         seq: Sequence,
     ) -> Result<(), Ics04Error>;
+}
+
+impl<T: ChannelKeeper> Ics20ChannelKeeper for T {
+    fn store_packet_commitment(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        sequence: Sequence,
+        commitment: PacketCommitment,
+    ) -> Result<(), Ics04Error> {
+        ChannelKeeper::store_packet_commitment(self, port_id, channel_id, sequence, commitment)
+    }
+
+    fn store_next_sequence_send(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        seq: Sequence,
+    ) -> Result<(), Ics04Error> {
+        ChannelKeeper::store_next_sequence_send(self, port_id, channel_id, seq)
+    }
 }
 
 // https://github.com/cosmos/cosmos-sdk/blob/master/docs/architecture/adr-028-public-key-addresses.md
