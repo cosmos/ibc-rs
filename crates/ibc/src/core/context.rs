@@ -253,7 +253,7 @@ pub trait ExecutionContext: ValidationContext {
                 ClientMsg::CreateClient(message) => create_client::execute(self, message),
                 ClientMsg::UpdateClient(message) => update_client::execute(self, message),
                 ClientMsg::Misbehaviour(_message) => unimplemented!(),
-                ClientMsg::UpgradeClient(_message) => todo!(),
+                ClientMsg::UpgradeClient(message) => upgrade_client::execute(self, message),
             }
             .map_err(RouterError::ics02_client),
             Ics26Envelope::Ics3Msg(_message) => todo!(),

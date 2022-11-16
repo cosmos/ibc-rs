@@ -8,7 +8,8 @@ use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ValidationContext;
+use crate::core::ics24_host::path::{ClientStatePath, ClientConsensusStatePath};
+use crate::core::{ValidationContext, ExecutionContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
@@ -43,6 +44,41 @@ where
             upgrade_client_state.latest_height(),
         ));
     }
+
+    Ok(())
+}
+
+pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), Error>
+where
+    Ctx: ExecutionContext,
+{
+    let MsgUpgradeClient { client_id, .. } = msg;
+
+    let upgrade_client_state = ctx.decode_client_state(msg.client_state)?;
+
+    let UpdatedState {
+        client_state,
+        consensus_state,
+    } = upgrade_client_state.verify_upgrade_and_update_state(
+        msg.consensus_state.clone(),
+        msg.proof_upgrade_client.clone(),
+        msg.proof_upgrade_consensus_state,
+    )?;
+
+    // Not implemented yet: https://github.com/informalsystems/ibc-rs/issues/722
+    // todo!()
+
+    ctx.store_client_state(ClientStatePath(client_id.clone()), client_state.clone())?;
+    ctx.store_consensus_state(
+        ClientConsensusStatePath::new(client_id.clone(), client_state.latest_height()),
+        consensus_state,
+    )?;
+
+    ctx.emit_ibc_event(IbcEvent::UpgradeClient(UpgradeClient::new(
+        client_id,
+        client_state.client_type(),
+        client_state.latest_height(),
+    )));
 
     Ok(())
 }
