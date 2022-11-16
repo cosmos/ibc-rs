@@ -1403,7 +1403,7 @@ impl ClientKeeper for MockContext {
 
 impl Ics18Context for MockContext {
     fn query_latest_height(&self) -> Result<Height, Ics18Error> {
-        self.host_current_height().map_err(|e| Ics18Error::ics03(e))
+        self.host_current_height().map_err(Ics18Error::ics03)
     }
 
     fn query_client_full_state(&self, client_id: &ClientId) -> Option<Box<dyn ClientState>> {
