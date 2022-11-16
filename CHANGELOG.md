@@ -6,6 +6,8 @@
 
 This release includes major improvements in making the library compatible with ibc-go v5.0.1. This includes making ibc events compatible and removing the crossing-hellos logic from the connection and channel handshakes.
 
+There are consensus-breaking changes in the connection and channel handshakes. However, there are no consensus-breaking changes for already established channels.
+
 ### BREAKING CHANGES
 
 - Make connection events compatible with ibc-go

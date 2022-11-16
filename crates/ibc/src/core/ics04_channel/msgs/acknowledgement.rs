@@ -20,6 +20,11 @@ impl Acknowledgement {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    // Returns the data as a slice of bytes.
+    pub fn as_bytes(&self) -> &[u8] {
+        self.0.as_slice()
+    }
 }
 
 impl AsRef<[u8]> for Acknowledgement {
