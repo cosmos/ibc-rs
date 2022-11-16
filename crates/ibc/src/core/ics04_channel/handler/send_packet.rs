@@ -2,8 +2,8 @@ use crate::core::ics04_channel::channel::Counterparty;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::commitment::PacketCommitment;
 use crate::core::ics04_channel::events::SendPacket;
-use crate::core::ics04_channel::packet::{PacketResult, Sequence};
-use crate::core::ics04_channel::{context::ChannelReader, error::Error, packet::Packet};
+use crate::core::ics04_channel::packet::Sequence;
+use crate::core::ics04_channel::{context::SendPacketReader, error::Error, packet::Packet};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
@@ -19,7 +19,10 @@ pub struct SendPacketResult {
     pub commitment: PacketCommitment,
 }
 
-pub fn send_packet(ctx: &dyn ChannelReader, packet: Packet) -> HandlerResult<PacketResult, Error> {
+pub fn send_packet(
+    ctx: &dyn SendPacketReader,
+    packet: Packet,
+) -> HandlerResult<SendPacketResult, Error> {
     let mut output = HandlerOutput::builder();
 
     let source_channel_end = ctx.channel_end(&packet.source_port, &packet.source_channel)?;
@@ -78,7 +81,7 @@ pub fn send_packet(ctx: &dyn ChannelReader, packet: Packet) -> HandlerResult<Pac
 
     output.log("success: packet send ");
 
-    let result = PacketResult::Send(SendPacketResult {
+    let result = SendPacketResult {
         port_id: packet.source_port.clone(),
         channel_id: packet.source_channel.clone(),
         seq: packet.sequence,
@@ -88,7 +91,7 @@ pub fn send_packet(ctx: &dyn ChannelReader, packet: Packet) -> HandlerResult<Pac
             packet.timeout_height,
             packet.timeout_timestamp,
         ),
-    });
+    };
 
     output.emit(IbcEvent::SendPacket(SendPacket::new(
         packet,
