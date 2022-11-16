@@ -8,7 +8,7 @@ use crate::core::ics26_routing::error::Error as RouterError;
 use ibc_proto::google::protobuf::Any;
 
 use super::ics02_client::client_type::ClientType;
-use super::ics02_client::handler::{create_client, update_client};
+use super::ics02_client::handler::{create_client, update_client, upgrade_client};
 use super::ics02_client::msgs::ClientMsg;
 use super::ics24_host::path::{
     ClientConnectionsPath, ClientConsensusStatePath, ClientStatePath, ClientTypePath,
@@ -49,8 +49,8 @@ pub trait ValidationContext {
             Ics26Envelope::Ics2Msg(message) => match message {
                 ClientMsg::CreateClient(message) => create_client::validate(self, message),
                 ClientMsg::UpdateClient(message) => update_client::validate(self, message),
-                ClientMsg::Misbehaviour(_message) => todo!(),
-                ClientMsg::UpgradeClient(_message) => todo!(),
+                ClientMsg::Misbehaviour(_message) => unimplemented!(),
+                ClientMsg::UpgradeClient(message) => upgrade_client::validate(self, message),
             }
             .map_err(RouterError::ics02_client),
             Ics26Envelope::Ics3Msg(_message) => todo!(),

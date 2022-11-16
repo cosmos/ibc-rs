@@ -8,6 +8,7 @@ use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::core::ValidationContext;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
@@ -15,10 +16,35 @@ use crate::prelude::*;
 /// The result following the successful processing of a `MsgUpgradeAnyClient` message.
 /// This data type should be used with a qualified name `upgrade_client::Result` to avoid ambiguity.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Result {
+pub struct UpgradeClientResult {
     pub client_id: ClientId,
     pub client_state: Box<dyn ClientState>,
     pub consensus_state: Box<dyn ConsensusState>,
+}
+
+pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), Error>
+where
+    Ctx: ValidationContext,
+{
+    let MsgUpgradeClient { client_id, .. } = msg;
+
+    // Read client state from the host chain store.
+    let old_client_state = ctx.client_state(&client_id)?;
+
+    if old_client_state.is_frozen() {
+        return Err(Error::client_frozen(client_id));
+    }
+
+    let upgrade_client_state = ctx.decode_client_state(msg.client_state)?;
+
+    if old_client_state.latest_height() >= upgrade_client_state.latest_height() {
+        return Err(Error::low_upgrade_height(
+            old_client_state.latest_height(),
+            upgrade_client_state.latest_height(),
+        ));
+    }
+
+    Ok(())
 }
 
 pub fn process(
@@ -59,7 +85,7 @@ pub fn process(
     let client_type = client_state.client_type();
     let consensus_height = client_state.latest_height();
 
-    let result = ClientResult::Upgrade(Result {
+    let result = ClientResult::Upgrade(UpgradeClientResult {
         client_id: client_id.clone(),
         client_state,
         consensus_state,
