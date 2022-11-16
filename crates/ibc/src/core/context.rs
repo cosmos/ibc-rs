@@ -240,7 +240,7 @@ pub trait ValidationContext {
     }
 }
 
-trait ExecutionContext {
+pub trait ExecutionContext {
     /// Execution entrypoint
     fn execute(&mut self, message: Any) -> Result<(), RouterError>
     where
@@ -250,11 +250,12 @@ trait ExecutionContext {
 
         match envelope {
             Ics26Envelope::Ics2Msg(message) => match message {
-                ClientMsg::CreateClient(_message) => todo!(),
+                ClientMsg::CreateClient(message) => create_client::execute(self, message),
                 ClientMsg::UpdateClient(_message) => todo!(),
                 ClientMsg::Misbehaviour(_message) => todo!(),
                 ClientMsg::UpgradeClient(_message) => todo!(),
-            },
+            }
+            .map_err(RouterError::ics02_client),
             Ics26Envelope::Ics3Msg(_message) => todo!(),
             Ics26Envelope::Ics4ChannelMsg(_message) => todo!(),
             Ics26Envelope::Ics4PacketMsg(_message) => todo!(),
@@ -388,5 +389,29 @@ trait ExecutionContext {
     fn increase_channel_counter(&mut self);
 
     /// Ibc events
-    fn emit_ibc_event(event: IbcEvent);
+    fn emit_ibc_event(&mut self, event: IbcEvent);
+
+    /// Logging facility
+    fn log_message(&mut self, message: String);
+
+    /// Returns a natural number, counting how many clients have been created thus far.
+    /// The value of this counter should increase only via method `ClientKeeper::increase_client_counter`.
+    fn client_counter(&self) -> Result<u64, ClientError>;
+
+    /// Tries to decode the given `client_state` into a concrete light client state.
+    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ClientError>;
+
+    /// Returns the current timestamp of the local chain.
+    fn host_timestamp(&self) -> Timestamp {
+        let pending_consensus_state = self
+            .pending_host_consensus_state()
+            .expect("host must have pending consensus state");
+        pending_consensus_state.timestamp()
+    }
+
+    /// Returns the pending `ConsensusState` of the host (local) chain.
+    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ClientError>;
+
+    /// Returns the current height of the local chain.
+    fn host_height(&self) -> Height;
 }

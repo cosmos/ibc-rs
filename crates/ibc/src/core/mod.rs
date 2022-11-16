@@ -29,4 +29,5 @@ pub mod ics26_routing;
 
 pub mod context;
 
+pub use context::ExecutionContext;
 pub use context::ValidationContext;
