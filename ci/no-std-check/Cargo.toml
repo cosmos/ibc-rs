@@ -30,3 +30,9 @@ substrate-std = [
   "sp-runtime/std",
   "sp-std/std",
 ]
+
+[patch.crates-io]
+tendermint = { git = "https://github.com/informalsystems/tendermint-rs", branch = "hu55a1n1/1222-impl-verify-commit-light-trusting" }
+tendermint-proto = { git = "https://github.com/informalsystems/tendermint-rs", branch = "hu55a1n1/1222-impl-verify-commit-light-trusting" }
+tendermint-light-client-verifier = { git = "https://github.com/informalsystems/tendermint-rs", branch = "hu55a1n1/1222-impl-verify-commit-light-trusting" }
+tendermint-testgen = { git = "https://github.com/informalsystems/tendermint-rs", branch = "hu55a1n1/1222-impl-verify-commit-light-trusting" }
