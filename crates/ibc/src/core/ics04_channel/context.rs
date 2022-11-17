@@ -196,7 +196,10 @@ pub trait SendPacketReader {
     }
 }
 
-impl<T: ChannelReader> SendPacketReader for T {
+impl<T> SendPacketReader for T
+where
+    T: ChannelReader,
+{
     fn channel_end(&self, port_id: &PortId, channel_id: &ChannelId) -> Result<ChannelEnd, Error> {
         ChannelReader::channel_end(self, port_id, channel_id)
     }

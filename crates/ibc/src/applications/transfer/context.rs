@@ -87,7 +87,10 @@ pub trait Ics20ChannelKeeper {
     ) -> Result<(), Ics04Error>;
 }
 
-impl<T: ChannelKeeper> Ics20ChannelKeeper for T {
+impl<T> Ics20ChannelKeeper for T
+where
+    T: ChannelKeeper,
+{
     fn store_packet_commitment(
         &mut self,
         port_id: PortId,
