@@ -76,10 +76,9 @@ impl Misbehaviour {
                 return Err(Error::not_enough_trusted_vals_signed(format!(
                     "voting power tally: {}",
                     voting_power_tally
-                ))
-                .into());
+                )));
             }
-            Verdict::Invalid(detail) => return Err(Error::verification_error(detail).into()),
+            Verdict::Invalid(detail) => return Err(Error::verification_error(detail)),
         }
 
         Ok(())
