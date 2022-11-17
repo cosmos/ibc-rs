@@ -20,7 +20,7 @@ pub struct SendPacketResult {
 }
 
 pub fn send_packet(
-    ctx: &dyn SendPacketReader,
+    ctx: &impl SendPacketReader,
     packet: Packet,
 ) -> HandlerResult<SendPacketResult, Error> {
     let mut output = HandlerOutput::builder();
