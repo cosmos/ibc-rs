@@ -22,39 +22,7 @@ use crate::core::ics26_routing::context::{ModuleOutputBuilder, OnRecvPacketAck};
 use crate::prelude::*;
 use crate::signer::Signer;
 
-pub trait Ics20Keeper:
-    Ics20ChannelKeeper + BankKeeper<AccountId = <Self as Ics20Keeper>::AccountId>
-{
-    type AccountId;
-}
-
-pub trait Ics20Reader: SendPacketReader {
-    type AccountId: TryFrom<Signer>;
-
-    /// get_port returns the portID for the transfer module.
-    fn get_port(&self) -> Result<PortId, Ics20Error>;
-
-    /// Returns the escrow account id for a port and channel combination
-    fn get_channel_escrow_address(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<<Self as Ics20Reader>::AccountId, Ics20Error>;
-
-    /// Returns true iff send is enabled.
-    fn is_send_enabled(&self) -> bool;
-
-    /// Returns true iff receive is enabled.
-    fn is_receive_enabled(&self) -> bool;
-
-    /// Returns a hash of the prefixed denom.
-    /// Implement only if the host chain supports hashed denominations.
-    fn denom_hash_string(&self, _denom: &PrefixedDenom) -> Option<String> {
-        None
-    }
-}
-
-pub trait Ics20ChannelKeeper {
+pub trait Ics20Keeper: BankKeeper {
     fn store_send_packet_result(&mut self, result: SendPacketResult) -> Result<(), Ics04Error> {
         self.store_next_sequence_send(
             result.port_id.clone(),
@@ -87,9 +55,35 @@ pub trait Ics20ChannelKeeper {
     ) -> Result<(), Ics04Error>;
 }
 
-impl<T> Ics20ChannelKeeper for T
+pub trait Ics20Reader: SendPacketReader {
+    type AccountId: TryFrom<Signer>;
+
+    /// get_port returns the portID for the transfer module.
+    fn get_port(&self) -> Result<PortId, Ics20Error>;
+
+    /// Returns the escrow account id for a port and channel combination
+    fn get_channel_escrow_address(
+        &self,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+    ) -> Result<<Self as Ics20Reader>::AccountId, Ics20Error>;
+
+    /// Returns true iff send is enabled.
+    fn is_send_enabled(&self) -> bool;
+
+    /// Returns true iff receive is enabled.
+    fn is_receive_enabled(&self) -> bool;
+
+    /// Returns a hash of the prefixed denom.
+    /// Implement only if the host chain supports hashed denominations.
+    fn denom_hash_string(&self, _denom: &PrefixedDenom) -> Option<String> {
+        None
+    }
+}
+
+impl<T> Ics20Keeper for T
 where
-    T: ChannelKeeper,
+    T: ChannelKeeper + BankKeeper,
 {
     fn store_packet_commitment(
         &mut self,
