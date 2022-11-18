@@ -5,7 +5,7 @@ use subtle_encoding::bech32;
 use tendermint::{block, consensus, evidence, public_key::Algorithm};
 
 use crate::applications::transfer::context::{
-    cosmos_adr028_escrow_address, BankKeeper, Ics20Context, Ics20Keeper, Ics20Reader,
+    cosmos_adr028_escrow_address, BankKeeper, TransferContext, TransferKeeper, TransferReader,
 };
 use crate::applications::transfer::{error::Error as Ics20Error, PrefixedCoin};
 use crate::core::ics02_client::client_state::ClientState;
@@ -117,7 +117,7 @@ impl Module for DummyTransferModule {
     }
 }
 
-impl Ics20Keeper for DummyTransferModule {
+impl TransferKeeper for DummyTransferModule {
     type AccountId = Signer;
 }
 
@@ -271,7 +271,7 @@ impl BankKeeper for DummyTransferModule {
     }
 }
 
-impl Ics20Reader for DummyTransferModule {
+impl TransferReader for DummyTransferModule {
     type AccountId = Signer;
 
     fn get_port(&self) -> Result<PortId, Ics20Error> {
@@ -282,7 +282,7 @@ impl Ics20Reader for DummyTransferModule {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<<Self as Ics20Reader>::AccountId, Ics20Error> {
+    ) -> Result<<Self as TransferReader>::AccountId, Ics20Error> {
         let addr = cosmos_adr028_escrow_address(port_id, channel_id);
         Ok(bech32::encode("cosmos", addr).parse().unwrap())
     }
@@ -465,6 +465,6 @@ impl ChannelReader for DummyTransferModule {
     }
 }
 
-impl Ics20Context for DummyTransferModule {
+impl TransferContext for DummyTransferModule {
     type AccountId = Signer;
 }
