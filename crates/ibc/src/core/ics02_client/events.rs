@@ -3,8 +3,7 @@
 use derive_more::From;
 use ibc_proto::google::protobuf::Any;
 use subtle_encoding::hex;
-use tendermint::abci::tag::Tag;
-use tendermint::abci::Event as AbciEvent;
+use tendermint::abci;
 
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::height::Height;
@@ -31,12 +30,9 @@ struct ClientIdAttribute {
     client_id: ClientId,
 }
 
-impl From<ClientIdAttribute> for Tag {
+impl From<ClientIdAttribute> for abci::EventAttribute {
     fn from(attr: ClientIdAttribute) -> Self {
-        Tag {
-            key: CLIENT_ID_ATTRIBUTE_KEY.parse().unwrap(),
-            value: attr.client_id.to_string().parse().unwrap(),
-        }
+        (CLIENT_ID_ATTRIBUTE_KEY, attr.client_id.as_str()).into()
     }
 }
 
@@ -45,12 +41,9 @@ struct ClientTypeAttribute {
     client_type: ClientType,
 }
 
-impl From<ClientTypeAttribute> for Tag {
+impl From<ClientTypeAttribute> for abci::EventAttribute {
     fn from(attr: ClientTypeAttribute) -> Self {
-        Tag {
-            key: CLIENT_TYPE_ATTRIBUTE_KEY.parse().unwrap(),
-            value: attr.client_type.to_string().parse().unwrap(),
-        }
+        (CLIENT_TYPE_ATTRIBUTE_KEY, attr.client_type.as_str()).into()
     }
 }
 
@@ -59,12 +52,9 @@ struct ConsensusHeightAttribute {
     consensus_height: Height,
 }
 
-impl From<ConsensusHeightAttribute> for Tag {
+impl From<ConsensusHeightAttribute> for abci::EventAttribute {
     fn from(attr: ConsensusHeightAttribute) -> Self {
-        Tag {
-            key: CONSENSUS_HEIGHT_ATTRIBUTE_KEY.parse().unwrap(),
-            value: attr.consensus_height.to_string().parse().unwrap(),
-        }
+        (CONSENSUS_HEIGHT_ATTRIBUTE_KEY, attr.consensus_height).into()
     }
 }
 
@@ -73,17 +63,14 @@ struct ConsensusHeightsAttribute {
     consensus_heights: Vec<Height>,
 }
 
-impl From<ConsensusHeightsAttribute> for Tag {
+impl From<ConsensusHeightsAttribute> for abci::EventAttribute {
     fn from(attr: ConsensusHeightsAttribute) -> Self {
         let consensus_heights: Vec<String> = attr
             .consensus_heights
             .into_iter()
             .map(|consensus_height| consensus_height.to_string())
             .collect();
-        Tag {
-            key: CONSENSUS_HEIGHTS_ATTRIBUTE_KEY.parse().unwrap(),
-            value: consensus_heights.join(",").parse().unwrap(),
-        }
+        (CONSENSUS_HEIGHTS_ATTRIBUTE_KEY, consensus_heights.join(",")).into()
     }
 }
 
@@ -92,15 +79,13 @@ struct HeaderAttribute {
     header: Any,
 }
 
-impl From<HeaderAttribute> for Tag {
+impl From<HeaderAttribute> for abci::EventAttribute {
     fn from(attr: HeaderAttribute) -> Self {
-        Tag {
-            key: HEADER_ATTRIBUTE_KEY.parse().unwrap(),
-            value: String::from_utf8(hex::encode(attr.header.value))
-                .unwrap()
-                .parse()
-                .unwrap(),
-        }
+        (
+            HEADER_ATTRIBUTE_KEY,
+            String::from_utf8(hex::encode(attr.header.value)).unwrap(),
+        )
+            .into()
     }
 }
 
@@ -134,10 +119,10 @@ impl CreateClient {
     }
 }
 
-impl From<CreateClient> for AbciEvent {
+impl From<CreateClient> for abci::Event {
     fn from(c: CreateClient) -> Self {
-        AbciEvent {
-            type_str: IbcEventType::CreateClient.as_str().to_string(),
+        Self {
+            kind: IbcEventType::CreateClient.as_str().to_owned(),
             attributes: vec![
                 c.client_id.into(),
                 c.client_type.into(),
@@ -197,10 +182,10 @@ impl UpdateClient {
     }
 }
 
-impl From<UpdateClient> for AbciEvent {
+impl From<UpdateClient> for abci::Event {
     fn from(u: UpdateClient) -> Self {
-        AbciEvent {
-            type_str: IbcEventType::UpdateClient.as_str().to_string(),
+        Self {
+            kind: IbcEventType::UpdateClient.as_str().to_owned(),
             attributes: vec![
                 u.client_id.into(),
                 u.client_type.into(),
@@ -237,10 +222,10 @@ impl ClientMisbehaviour {
     }
 }
 
-impl From<ClientMisbehaviour> for AbciEvent {
+impl From<ClientMisbehaviour> for abci::Event {
     fn from(c: ClientMisbehaviour) -> Self {
-        AbciEvent {
-            type_str: IbcEventType::ClientMisbehaviour.as_str().to_string(),
+        Self {
+            kind: IbcEventType::ClientMisbehaviour.as_str().to_owned(),
             attributes: vec![c.client_id.into(), c.client_type.into()],
         }
     }
@@ -276,10 +261,10 @@ impl UpgradeClient {
     }
 }
 
-impl From<UpgradeClient> for AbciEvent {
+impl From<UpgradeClient> for abci::Event {
     fn from(u: UpgradeClient) -> Self {
-        AbciEvent {
-            type_str: IbcEventType::UpgradeClient.as_str().to_string(),
+        Self {
+            kind: IbcEventType::UpgradeClient.as_str().to_owned(),
             attributes: vec![
                 u.client_id.into(),
                 u.client_type.into(),
