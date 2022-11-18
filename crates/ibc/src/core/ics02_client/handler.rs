@@ -11,9 +11,9 @@ pub mod upgrade_client;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ClientResult {
-    Create(create_client::Result),
-    Update(update_client::Result),
-    Upgrade(upgrade_client::Result),
+    Create(create_client::CreateClientResult),
+    Update(update_client::UpdateClientResult),
+    Upgrade(upgrade_client::UpgradeClientResult),
 }
 
 /// General entry point for processing any message related to ICS2 (client functions) protocols.

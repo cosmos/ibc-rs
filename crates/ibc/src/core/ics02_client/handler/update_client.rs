@@ -11,6 +11,8 @@ use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::height::Height;
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
+use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
@@ -19,12 +21,115 @@ use crate::timestamp::Timestamp;
 /// The result following the successful processing of a `MsgUpdateAnyClient` message. Preferably
 /// this data type should be used with a qualified name `update_client::Result` to avoid ambiguity.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Result {
+pub struct UpdateClientResult {
     pub client_id: ClientId,
     pub client_state: Box<dyn ClientState>,
     pub consensus_state: Box<dyn ConsensusState>,
     pub processed_time: Timestamp,
     pub processed_height: Height,
+}
+
+pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), Error>
+where
+    Ctx: ValidationContext,
+{
+    let MsgUpdateClient {
+        client_id,
+        header,
+        signer: _,
+    } = msg;
+
+    // Read client type from the host chain store. The client should already exist.
+    // Read client state from the host chain store.
+    let client_state = ctx.client_state(&client_id)?;
+
+    if client_state.is_frozen() {
+        return Err(Error::client_frozen(client_id));
+    }
+
+    // Read consensus state from the host chain store.
+    let latest_consensus_state = ctx
+        .consensus_state(&client_id, client_state.latest_height())
+        .map_err(|_| {
+            Error::consensus_state_not_found(client_id.clone(), client_state.latest_height())
+        })?;
+
+    debug!("latest consensus state: {:?}", latest_consensus_state);
+
+    let now = ctx.host_timestamp();
+    let duration = now
+        .duration_since(&latest_consensus_state.timestamp())
+        .ok_or_else(|| {
+            Error::invalid_consensus_state_timestamp(latest_consensus_state.timestamp(), now)
+        })?;
+
+    if client_state.expired(duration) {
+        return Err(Error::header_not_within_trust_period(
+            latest_consensus_state.timestamp(),
+            now,
+        ));
+    }
+
+    // Use client_state to validate the new header against the latest consensus_state.
+    // This function will return the new client_state (its latest_height changed) and a
+    // consensus_state obtained from header. These will be later persisted by the keeper.
+    let _ = client_state
+        .check_header_and_update_state(ctx, client_id.clone(), header)
+        .map_err(|e| Error::header_verification_failure(e.to_string()))?;
+
+    Ok(())
+}
+
+pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), Error>
+where
+    Ctx: ExecutionContext,
+{
+    let MsgUpdateClient {
+        client_id,
+        header,
+        signer: _,
+    } = msg;
+
+    // Read client type from the host chain store. The client should already exist.
+    // Read client state from the host chain store.
+    let client_state = ctx.client_state(&client_id)?;
+
+    let UpdatedState {
+        client_state,
+        consensus_state,
+    } = client_state
+        .check_header_and_update_state(ctx, client_id.clone(), header.clone())
+        .map_err(|e| Error::header_verification_failure(e.to_string()))?;
+
+    ctx.store_client_state(ClientStatePath(client_id.clone()), client_state.clone())?;
+    ctx.store_consensus_state(
+        ClientConsensusStatePath::new(client_id.clone(), client_state.latest_height()),
+        consensus_state,
+    )?;
+    ctx.store_update_time(
+        client_id.clone(),
+        client_state.latest_height(),
+        ctx.host_timestamp(),
+    )?;
+    ctx.store_update_height(
+        client_id.clone(),
+        client_state.latest_height(),
+        ctx.host_height(),
+    )?;
+
+    {
+        let consensus_height = client_state.latest_height();
+
+        ctx.emit_ibc_event(IbcEvent::UpdateClient(UpdateClient::new(
+            client_id,
+            client_state.client_type(),
+            consensus_height,
+            vec![consensus_height],
+            header,
+        )));
+    }
+
+    Ok(())
 }
 
 pub fn process<Ctx: ClientReader>(
@@ -76,13 +181,13 @@ pub fn process<Ctx: ClientReader>(
         client_state,
         consensus_state,
     } = client_state
-        .check_header_and_update_state(ctx, client_id.clone(), header.clone())
+        .old_check_header_and_update_state(ctx, client_id.clone(), header.clone())
         .map_err(|e| Error::header_verification_failure(e.to_string()))?;
 
     let client_type = client_state.client_type();
     let consensus_height = client_state.latest_height();
 
-    let result = ClientResult::Update(Result {
+    let result = ClientResult::Update(UpdateClientResult {
         client_id: client_id.clone(),
         client_state,
         consensus_state,

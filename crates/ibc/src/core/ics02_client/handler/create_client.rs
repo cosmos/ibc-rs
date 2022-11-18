@@ -1,6 +1,12 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
+use crate::core::ics24_host::path::ClientConsensusStatePath;
+use crate::core::ics24_host::path::ClientStatePath;
+use crate::core::ics24_host::path::ClientTypePath;
 use crate::prelude::*;
+
+use crate::core::ExecutionContext;
+use crate::core::ValidationContext;
 
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
@@ -19,13 +25,91 @@ use crate::timestamp::Timestamp;
 /// The result following the successful processing of a `MsgCreateClient` message. Preferably
 /// this data type should be used with a qualified name `create_client::Result` to avoid ambiguity.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Result {
+pub struct CreateClientResult {
     pub client_id: ClientId,
     pub client_type: ClientType,
     pub client_state: Box<dyn ClientState>,
     pub consensus_state: Box<dyn ConsensusState>,
     pub processed_time: Timestamp,
     pub processed_height: Height,
+}
+
+pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), Error>
+where
+    Ctx: ValidationContext,
+{
+    let MsgCreateClient {
+        client_state,
+        consensus_state: _,
+        signer: _,
+    } = msg;
+
+    // Construct this client's identifier
+    let id_counter = ctx.client_counter()?;
+
+    let client_state = ctx.decode_client_state(client_state)?;
+
+    let client_type = client_state.client_type();
+
+    let _client_id = ClientId::new(client_type, id_counter).map_err(|e| {
+        Error::client_identifier_constructor(client_state.client_type(), id_counter, e)
+    })?;
+
+    Ok(())
+}
+
+pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), Error>
+where
+    Ctx: ExecutionContext,
+{
+    let MsgCreateClient {
+        client_state,
+        consensus_state,
+        signer: _,
+    } = msg;
+
+    // Construct this client's identifier
+    let id_counter = ctx.client_counter()?;
+
+    let client_state = ctx.decode_client_state(client_state)?;
+
+    let client_type = client_state.client_type();
+
+    let client_id = ClientId::new(client_type.clone(), id_counter).map_err(|e| {
+        Error::client_identifier_constructor(client_state.client_type(), id_counter, e)
+    })?;
+    let consensus_state = client_state.initialise(consensus_state)?;
+
+    ctx.store_client_type(ClientTypePath(client_id.clone()), client_type.clone())?;
+    ctx.store_client_state(ClientStatePath(client_id.clone()), client_state.clone())?;
+    ctx.store_consensus_state(
+        ClientConsensusStatePath::new(client_id.clone(), client_state.latest_height()),
+        consensus_state,
+    )?;
+    ctx.increase_client_counter();
+    ctx.store_update_time(
+        client_id.clone(),
+        client_state.latest_height(),
+        ctx.host_timestamp(),
+    )?;
+    ctx.store_update_height(
+        client_id.clone(),
+        client_state.latest_height(),
+        ctx.host_height(),
+    )?;
+
+    ctx.emit_ibc_event(IbcEvent::CreateClient(CreateClient::new(
+        client_id.clone(),
+        client_type,
+        client_state.latest_height(),
+    )));
+
+    ctx.log_message(format!(
+        "success: generated new client identifier: {}",
+        client_id
+    ));
+
+    Ok(())
 }
 
 pub fn process(ctx: &dyn ClientReader, msg: MsgCreateClient) -> HandlerResult<ClientResult, Error> {
@@ -52,7 +136,7 @@ pub fn process(ctx: &dyn ClientReader, msg: MsgCreateClient) -> HandlerResult<Cl
 
     let consensus_height = client_state.latest_height();
 
-    let result = ClientResult::Create(Result {
+    let result = ClientResult::Create(CreateClientResult {
         client_id: client_id.clone(),
         client_type: client_type.clone(),
         client_state,
