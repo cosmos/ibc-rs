@@ -55,7 +55,7 @@ pub trait TokenTransferKeeper: BankKeeper {
     ) -> Result<(), Ics04Error>;
 }
 
-pub trait Ics20Reader: SendPacketReader {
+pub trait TokenTransferReader: SendPacketReader {
     type AccountId: TryFrom<Signer>;
 
     /// get_port returns the portID for the transfer module.
@@ -66,7 +66,7 @@ pub trait Ics20Reader: SendPacketReader {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<<Self as Ics20Reader>::AccountId, Ics20Error>;
+    ) -> Result<<Self as TokenTransferReader>::AccountId, Ics20Error>;
 
     /// Returns true iff send is enabled.
     fn is_send_enabled(&self) -> bool;
@@ -149,7 +149,7 @@ pub trait BankKeeper {
 /// process IBC messages.
 pub trait Ics20Context:
     TokenTransferKeeper<AccountId = <Self as Ics20Context>::AccountId>
-    + Ics20Reader<AccountId = <Self as Ics20Context>::AccountId>
+    + TokenTransferReader<AccountId = <Self as Ics20Context>::AccountId>
 {
     type AccountId: TryFrom<Signer>;
 }

@@ -4,7 +4,8 @@ use subtle_encoding::bech32;
 use tendermint::{block, consensus, evidence, public_key::Algorithm};
 
 use crate::applications::transfer::context::{
-    cosmos_adr028_escrow_address, BankKeeper, Ics20Context, Ics20Reader, TokenTransferKeeper,
+    cosmos_adr028_escrow_address, BankKeeper, Ics20Context, TokenTransferKeeper,
+    TokenTransferReader,
 };
 use crate::applications::transfer::{error::Error as Ics20Error, PrefixedCoin};
 use crate::core::ics02_client::client_state::ClientState;
@@ -187,7 +188,7 @@ impl BankKeeper for DummyTransferModule {
     }
 }
 
-impl Ics20Reader for DummyTransferModule {
+impl TokenTransferReader for DummyTransferModule {
     type AccountId = Signer;
 
     fn get_port(&self) -> Result<PortId, Ics20Error> {
@@ -198,7 +199,7 @@ impl Ics20Reader for DummyTransferModule {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<<Self as Ics20Reader>::AccountId, Ics20Error> {
+    ) -> Result<<Self as TokenTransferReader>::AccountId, Ics20Error> {
         let addr = cosmos_adr028_escrow_address(port_id, channel_id);
         Ok(bech32::encode("cosmos", addr).parse().unwrap())
     }
