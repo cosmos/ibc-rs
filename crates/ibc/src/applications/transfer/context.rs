@@ -93,16 +93,16 @@ pub trait BankKeeper {
 
 /// Captures all the dependencies which the ICS20 module requires to be able to dispatch and
 /// process IBC messages.
-pub trait Ics20Context:
-    Ics20Keeper<AccountId = <Self as Ics20Context>::AccountId>
-    + Ics20Reader<AccountId = <Self as Ics20Context>::AccountId>
+pub trait TransferContext:
+    Ics20Keeper<AccountId = <Self as TransferContext>::AccountId>
+    + Ics20Reader<AccountId = <Self as TransferContext>::AccountId>
 {
     type AccountId: TryFrom<Signer>;
 }
 
 #[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_init(
-    ctx: &mut impl Ics20Context,
+    ctx: &mut impl TransferContext,
     order: Order,
     _connection_hops: &[ConnectionId],
     port_id: &PortId,
@@ -127,7 +127,7 @@ pub fn on_chan_open_init(
 
 #[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_try(
-    _ctx: &mut impl Ics20Context,
+    _ctx: &mut impl TransferContext,
     order: Order,
     _connection_hops: &[ConnectionId],
     _port_id: &PortId,
@@ -148,7 +148,7 @@ pub fn on_chan_open_try(
 }
 
 pub fn on_chan_open_ack(
-    _ctx: &mut impl Ics20Context,
+    _ctx: &mut impl TransferContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
     counterparty_version: &Version,
@@ -163,7 +163,7 @@ pub fn on_chan_open_ack(
 }
 
 pub fn on_chan_open_confirm(
-    _ctx: &mut impl Ics20Context,
+    _ctx: &mut impl TransferContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, Ics20Error> {
@@ -171,7 +171,7 @@ pub fn on_chan_open_confirm(
 }
 
 pub fn on_chan_close_init(
-    _ctx: &mut impl Ics20Context,
+    _ctx: &mut impl TransferContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, Ics20Error> {
@@ -179,14 +179,14 @@ pub fn on_chan_close_init(
 }
 
 pub fn on_chan_close_confirm(
-    _ctx: &mut impl Ics20Context,
+    _ctx: &mut impl TransferContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, Ics20Error> {
     Ok(ModuleExtras::empty())
 }
 
-pub fn on_recv_packet<Ctx: 'static + Ics20Context>(
+pub fn on_recv_packet<Ctx: 'static + TransferContext>(
     ctx: &Ctx,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
@@ -218,7 +218,7 @@ pub fn on_recv_packet<Ctx: 'static + Ics20Context>(
 }
 
 pub fn on_acknowledgement_packet(
-    ctx: &mut impl Ics20Context,
+    ctx: &mut impl TransferContext,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
     acknowledgement: &GenericAcknowledgement,
@@ -245,7 +245,7 @@ pub fn on_acknowledgement_packet(
 }
 
 pub fn on_timeout_packet(
-    ctx: &mut impl Ics20Context,
+    ctx: &mut impl TransferContext,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
     _relayer: &Signer,
