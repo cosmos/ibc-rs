@@ -4,7 +4,7 @@ use subtle_encoding::bech32;
 use tendermint::{block, consensus, evidence, public_key::Algorithm};
 
 use crate::applications::transfer::context::{
-    cosmos_adr028_escrow_address, BankKeeper, Ics20Context, Ics20Keeper, Ics20Reader,
+    cosmos_adr028_escrow_address, BankKeeper, Ics20Context, Ics20Reader, TokenTransferKeeper,
 };
 use crate::applications::transfer::{error::Error as Ics20Error, PrefixedCoin};
 use crate::core::ics02_client::client_state::ClientState;
@@ -115,7 +115,7 @@ impl Module for DummyTransferModule {
     }
 }
 
-impl Ics20Keeper for DummyTransferModule {
+impl TokenTransferKeeper for DummyTransferModule {
     fn store_packet_commitment(
         &mut self,
         port_id: PortId,

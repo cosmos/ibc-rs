@@ -22,7 +22,7 @@ use crate::core::ics26_routing::context::{ModuleOutputBuilder, OnRecvPacketAck};
 use crate::prelude::*;
 use crate::signer::Signer;
 
-pub trait Ics20Keeper: BankKeeper {
+pub trait TokenTransferKeeper: BankKeeper {
     fn store_send_packet_result(&mut self, result: SendPacketResult) -> Result<(), Ics04Error> {
         self.store_next_sequence_send(
             result.port_id.clone(),
@@ -81,7 +81,7 @@ pub trait Ics20Reader: SendPacketReader {
     }
 }
 
-impl<T> Ics20Keeper for T
+impl<T> TokenTransferKeeper for T
 where
     T: ChannelKeeper + BankKeeper,
 {
@@ -148,7 +148,7 @@ pub trait BankKeeper {
 /// Captures all the dependencies which the ICS20 module requires to be able to dispatch and
 /// process IBC messages.
 pub trait Ics20Context:
-    Ics20Keeper<AccountId = <Self as Ics20Context>::AccountId>
+    TokenTransferKeeper<AccountId = <Self as Ics20Context>::AccountId>
     + Ics20Reader<AccountId = <Self as Ics20Context>::AccountId>
 {
     type AccountId: TryFrom<Signer>;
