@@ -37,7 +37,7 @@ use crate::core::ics05_port::error::Error as Ics05Error;
 use crate::core::ics05_port::error::Error;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ics26_routing::context::{Ics26Context, Module, ModuleId, Router, RouterBuilder};
+use crate::core::ics26_routing::context::{RouterContext, Module, ModuleId, Router, RouterBuilder};
 use crate::core::ics26_routing::handler::{deliver, dispatch, MsgReceipt};
 use crate::core::ics26_routing::msgs::Ics26Envelope;
 use crate::events::IbcEvent;
@@ -647,7 +647,7 @@ impl Router for MockRouter {
     }
 }
 
-impl Ics26Context for MockContext {
+impl RouterContext for MockContext {
     type Router = MockRouter;
 
     fn router(&self) -> &Self::Router {

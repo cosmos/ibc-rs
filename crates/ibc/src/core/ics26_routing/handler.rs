@@ -13,7 +13,7 @@ use crate::core::ics04_channel::handler::{
     packet_dispatch as ics4_packet_msg_dispatcher,
 };
 use crate::core::ics04_channel::packet::PacketResult;
-use crate::core::ics26_routing::context::Ics26Context;
+use crate::core::ics26_routing::context::RouterContext;
 use crate::core::ics26_routing::error::Error;
 use crate::core::ics26_routing::msgs::Ics26Envelope::{
     self, Ics2Msg, Ics3Msg, Ics4ChannelMsg, Ics4PacketMsg,
@@ -32,7 +32,7 @@ pub struct MsgReceipt {
 /// Returns a vector of all events that got generated as a byproduct of processing `message`.
 pub fn deliver<Ctx>(ctx: &mut Ctx, message: Any) -> Result<MsgReceipt, Error>
 where
-    Ctx: Ics26Context,
+    Ctx: RouterContext,
 {
     // Decode the proto message into a domain message, creating an ICS26 envelope.
     let envelope = decode(message)?;
@@ -55,7 +55,7 @@ pub fn decode(message: Any) -> Result<Ics26Envelope, Error> {
 /// the `Ctx` caused by all messages from the transaction that this `msg` is a part of.
 pub fn dispatch<Ctx>(ctx: &mut Ctx, msg: Ics26Envelope) -> Result<HandlerOutput<()>, Error>
 where
-    Ctx: Ics26Context,
+    Ctx: RouterContext,
 {
     let output = match msg {
         Ics2Msg(msg) => {
@@ -202,7 +202,7 @@ mod tests {
     use crate::core::ics23_commitment::commitment::test_util::get_dummy_merkle_proof;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::ics26_routing::context::{Ics26Context, ModuleId, Router, RouterBuilder};
+    use crate::core::ics26_routing::context::{RouterContext, ModuleId, Router, RouterBuilder};
     use crate::core::ics26_routing::error::Error;
     use crate::core::ics26_routing::handler::dispatch;
     use crate::core::ics26_routing::msgs::Ics26Envelope;

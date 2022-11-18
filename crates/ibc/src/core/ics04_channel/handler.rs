@@ -10,7 +10,7 @@ use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::{msgs::PacketMsg, packet::PacketResult};
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{
-    Acknowledgement, Ics26Context, ModuleId, ModuleOutputBuilder, OnRecvPacketAck, Router,
+    Acknowledgement, RouterContext, ModuleId, ModuleOutputBuilder, OnRecvPacketAck, Router,
 };
 use crate::handler::{HandlerOutput, HandlerOutputBuilder};
 
@@ -67,7 +67,7 @@ impl ModuleExtras {
 
 pub fn channel_validate<Ctx>(ctx: &Ctx, msg: &ChannelMsg) -> Result<ModuleId, Error>
 where
-    Ctx: Ics26Context,
+    Ctx: RouterContext,
 {
     let module_id = msg.lookup_module(ctx)?;
     if ctx.router().has_route(&module_id) {
@@ -106,7 +106,7 @@ pub fn channel_callback<Ctx>(
     result: &mut ChannelResult,
 ) -> Result<ModuleExtras, Error>
 where
-    Ctx: Ics26Context,
+    Ctx: RouterContext,
 {
     let cb = ctx
         .router_mut()
@@ -224,7 +224,7 @@ pub fn channel_events(
 
 pub fn get_module_for_packet_msg<Ctx>(ctx: &Ctx, msg: &PacketMsg) -> Result<ModuleId, Error>
 where
-    Ctx: Ics26Context,
+    Ctx: RouterContext,
 {
     let module_id = match msg {
         PacketMsg::RecvPacket(msg) => ctx
@@ -278,7 +278,7 @@ pub fn packet_callback<Ctx>(
     output: &mut HandlerOutputBuilder<()>,
 ) -> Result<(), Error>
 where
-    Ctx: Ics26Context,
+    Ctx: RouterContext,
 {
     let mut module_output = ModuleOutputBuilder::new();
     let mut core_output = HandlerOutputBuilder::new();
@@ -291,7 +291,7 @@ where
 }
 
 fn do_packet_callback(
-    ctx: &mut impl Ics26Context,
+    ctx: &mut impl RouterContext,
     module_id: &ModuleId,
     msg: &PacketMsg,
     module_output: &mut ModuleOutputBuilder,
@@ -335,7 +335,7 @@ fn do_packet_callback(
 }
 
 fn process_write_ack(
-    ctx: &mut impl Ics26Context,
+    ctx: &mut impl RouterContext,
     packet: Packet,
     acknowledgement: &dyn Acknowledgement,
     core_output: &mut HandlerOutputBuilder<()>,

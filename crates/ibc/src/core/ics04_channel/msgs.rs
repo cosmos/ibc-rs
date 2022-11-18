@@ -12,7 +12,7 @@ use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
 use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
 use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
-use crate::core::ics26_routing::context::{Ics26Context, ModuleId};
+use crate::core::ics26_routing::context::{RouterContext, ModuleId};
 
 // Opening handshake messages.
 pub mod chan_open_ack;
@@ -42,7 +42,7 @@ pub enum ChannelMsg {
 }
 
 impl ChannelMsg {
-    pub(super) fn lookup_module(&self, ctx: &impl Ics26Context) -> Result<ModuleId, Error> {
+    pub(super) fn lookup_module(&self, ctx: &impl RouterContext) -> Result<ModuleId, Error> {
         let module_id = match self {
             ChannelMsg::ChannelOpenInit(msg) => ctx
                 .lookup_module_by_port(&msg.port_id_on_a)
