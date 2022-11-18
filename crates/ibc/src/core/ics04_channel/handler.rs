@@ -10,7 +10,7 @@ use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::{msgs::PacketMsg, packet::PacketResult};
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{
-    Acknowledgement, RouterContext, ModuleId, ModuleOutputBuilder, OnRecvPacketAck, Router,
+    Acknowledgement, ModuleId, ModuleOutputBuilder, OnRecvPacketAck, Router, RouterContext,
 };
 use crate::handler::{HandlerOutput, HandlerOutputBuilder};
 

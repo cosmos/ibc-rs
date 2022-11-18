@@ -12,7 +12,7 @@ use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
 use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
 use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
-use crate::core::ics26_routing::context::{RouterContext, ModuleId};
+use crate::core::ics26_routing::context::{ModuleId, RouterContext};
 
 // Opening handshake messages.
 pub mod chan_open_ack;
