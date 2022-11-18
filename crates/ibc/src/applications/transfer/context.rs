@@ -19,13 +19,13 @@ use crate::core::ics26_routing::context::{ModuleOutputBuilder, OnRecvPacketAck};
 use crate::prelude::*;
 use crate::signer::Signer;
 
-pub trait Ics20Keeper:
-    ChannelKeeper + BankKeeper<AccountId = <Self as Ics20Keeper>::AccountId>
+pub trait TransferKeeper:
+    ChannelKeeper + BankKeeper<AccountId = <Self as TransferKeeper>::AccountId>
 {
     type AccountId;
 }
 
-pub trait Ics20Reader: ChannelReader {
+pub trait TransferReader: ChannelReader {
     type AccountId: TryFrom<Signer>;
 
     /// get_port returns the portID for the transfer module.
@@ -36,7 +36,7 @@ pub trait Ics20Reader: ChannelReader {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<<Self as Ics20Reader>::AccountId, Ics20Error>;
+    ) -> Result<<Self as TransferReader>::AccountId, Ics20Error>;
 
     /// Returns true iff send is enabled.
     fn is_send_enabled(&self) -> bool;
@@ -94,8 +94,8 @@ pub trait BankKeeper {
 /// Captures all the dependencies which the ICS20 module requires to be able to dispatch and
 /// process IBC messages.
 pub trait TransferContext:
-    Ics20Keeper<AccountId = <Self as TransferContext>::AccountId>
-    + Ics20Reader<AccountId = <Self as TransferContext>::AccountId>
+    TransferKeeper<AccountId = <Self as TransferContext>::AccountId>
+    + TransferReader<AccountId = <Self as TransferContext>::AccountId>
 {
     type AccountId: TryFrom<Signer>;
 }
