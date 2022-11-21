@@ -1,5 +1,5 @@
 //! This module implements the processing logic for ICS20 (token transfer) message.
-use crate::applications::transfer::context::TransferContext;
+use crate::applications::transfer::context::TokenTransferContext;
 use crate::applications::transfer::error::Error as Ics20Error;
 use crate::applications::transfer::is_sender_chain_source;
 use crate::applications::transfer::packet::PacketData;
@@ -12,7 +12,7 @@ pub mod on_timeout_packet;
 pub mod send_transfer;
 
 fn refund_packet_token(
-    ctx: &mut impl TransferContext,
+    ctx: &mut impl TokenTransferContext,
     packet: &Packet,
     data: &PacketData,
 ) -> Result<(), Ics20Error> {

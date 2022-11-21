@@ -1,4 +1,4 @@
-use crate::applications::transfer::context::TransferContext;
+use crate::applications::transfer::context::TokenTransferContext;
 use crate::applications::transfer::error::Error as Ics20Error;
 use crate::applications::transfer::events::DenomTraceEvent;
 use crate::applications::transfer::packet::PacketData;
@@ -7,7 +7,7 @@ use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics26_routing::context::{ModuleOutputBuilder, WriteFn};
 use crate::prelude::*;
 
-pub fn process_recv_packet<Ctx: 'static + TransferContext>(
+pub fn process_recv_packet<Ctx: 'static + TokenTransferContext>(
     ctx: &Ctx,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,

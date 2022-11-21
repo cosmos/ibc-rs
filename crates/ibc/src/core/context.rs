@@ -14,7 +14,7 @@ use super::ics24_host::path::{
     ClientConnectionsPath, ClientConsensusStatePath, ClientStatePath, ClientTypePath,
     CommitmentsPath, ConnectionsPath, ReceiptsPath,
 };
-use super::ics26_routing::msgs::Ics26Envelope;
+use super::ics26_routing::msgs::MsgEnvelope;
 use super::{
     ics02_client::{
         client_state::ClientState, consensus_state::ConsensusState, error::Error as ClientError,
@@ -43,19 +43,19 @@ pub trait ValidationContext {
     where
         Self: Sized,
     {
-        let envelope: Ics26Envelope = message.try_into()?;
+        let envelope: MsgEnvelope = message.try_into()?;
 
         match envelope {
-            Ics26Envelope::Ics2Msg(message) => match message {
+            MsgEnvelope::ClientMsg(message) => match message {
                 ClientMsg::CreateClient(message) => create_client::validate(self, message),
                 ClientMsg::UpdateClient(message) => update_client::validate(self, message),
                 ClientMsg::Misbehaviour(_message) => unimplemented!(),
                 ClientMsg::UpgradeClient(message) => upgrade_client::validate(self, message),
             }
             .map_err(RouterError::ics02_client),
-            Ics26Envelope::Ics3Msg(_message) => todo!(),
-            Ics26Envelope::Ics4ChannelMsg(_message) => todo!(),
-            Ics26Envelope::Ics4PacketMsg(_message) => todo!(),
+            MsgEnvelope::ConnectionMsg(_message) => todo!(),
+            MsgEnvelope::ChannelMsg(_message) => todo!(),
+            MsgEnvelope::PacketMsg(_message) => todo!(),
         }
     }
 
@@ -246,19 +246,19 @@ pub trait ExecutionContext: ValidationContext {
     where
         Self: Sized,
     {
-        let envelope: Ics26Envelope = message.try_into()?;
+        let envelope: MsgEnvelope = message.try_into()?;
 
         match envelope {
-            Ics26Envelope::Ics2Msg(message) => match message {
+            MsgEnvelope::ClientMsg(message) => match message {
                 ClientMsg::CreateClient(message) => create_client::execute(self, message),
                 ClientMsg::UpdateClient(message) => update_client::execute(self, message),
                 ClientMsg::Misbehaviour(_message) => unimplemented!(),
                 ClientMsg::UpgradeClient(message) => upgrade_client::execute(self, message),
             }
             .map_err(RouterError::ics02_client),
-            Ics26Envelope::Ics3Msg(_message) => todo!(),
-            Ics26Envelope::Ics4ChannelMsg(_message) => todo!(),
-            Ics26Envelope::Ics4PacketMsg(_message) => todo!(),
+            MsgEnvelope::ConnectionMsg(_message) => todo!(),
+            MsgEnvelope::ChannelMsg(_message) => todo!(),
+            MsgEnvelope::PacketMsg(_message) => todo!(),
         }
     }
 

@@ -1,4 +1,4 @@
-use crate::applications::transfer::context::TransferContext;
+use crate::applications::transfer::context::TokenTransferContext;
 use crate::applications::transfer::error::Error;
 use crate::applications::transfer::events::TransferEvent;
 use crate::applications::transfer::msgs::transfer::MsgTransfer;
@@ -19,7 +19,7 @@ pub fn send_transfer<Ctx, C>(
     msg: MsgTransfer<C>,
 ) -> Result<(), Error>
 where
-    Ctx: TransferContext,
+    Ctx: TokenTransferContext,
     C: TryInto<PrefixedCoin>,
 {
     if !ctx.is_send_enabled() {
