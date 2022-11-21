@@ -52,7 +52,7 @@ mod tests {
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::core::ics02_client::header::{downcast_header, Header};
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
-    use crate::core::ics26_routing::msgs::Ics26Envelope;
+    use crate::core::ics26_routing::msgs::MsgEnvelope;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::mock::host::{HostBlock, HostType};
@@ -130,7 +130,7 @@ mod tests {
 
             // - send the message to B. We bypass ICS18 interface and call directly into
             // MockContext `recv` method (to avoid additional serialization steps).
-            let dispatch_res_b = ctx_b.deliver(Ics26Envelope::Ics2Msg(client_msg_b));
+            let dispatch_res_b = ctx_b.deliver(MsgEnvelope::ClientMsg(client_msg_b));
             let validation_res = ctx_b.validate();
             assert!(
                 validation_res.is_ok(),
@@ -187,7 +187,7 @@ mod tests {
             debug!("client_msg_a = {:?}", client_msg_a);
 
             // - send the message to A
-            let dispatch_res_a = ctx_a.deliver(Ics26Envelope::Ics2Msg(client_msg_a));
+            let dispatch_res_a = ctx_a.deliver(MsgEnvelope::ClientMsg(client_msg_a));
             let validation_res = ctx_a.validate();
             assert!(
                 validation_res.is_ok(),

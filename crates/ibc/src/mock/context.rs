@@ -39,7 +39,7 @@ use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{Module, ModuleId, Router, RouterBuilder, RouterContext};
 use crate::core::ics26_routing::handler::{deliver, dispatch, MsgReceipt};
-use crate::core::ics26_routing::msgs::Ics26Envelope;
+use crate::core::ics26_routing::msgs::MsgEnvelope;
 use crate::events::IbcEvent;
 use crate::mock::client_state::{
     client_type as mock_client_type, MockClientRecord, MockClientState,
@@ -466,7 +466,7 @@ impl MockContext {
     /// A datagram passes from the relayer to the IBC module (on host chain).
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
     /// Used in testing the Ics18 algorithms, hence this may return a Ics18Error.
-    pub fn deliver(&mut self, msg: Ics26Envelope) -> Result<(), Ics18Error> {
+    pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), Ics18Error> {
         dispatch(self, msg).map_err(Ics18Error::transaction_failed)?;
         // Create a new block.
         self.advance_host_chain_height();
