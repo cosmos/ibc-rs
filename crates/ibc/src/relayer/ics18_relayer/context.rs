@@ -15,7 +15,7 @@ use crate::Height;
 /// Most of the functions in this represent wrappers over the ABCI interface.
 /// This trait mimics the `Chain` trait, but at a lower level of abstraction (no networking, header
 /// types, light client, RPC client, etc.)
-pub trait Ics18Context {
+pub trait RelayerContext {
     /// Returns the latest height of the chain.
     fn query_latest_height(&self) -> Height;
 
