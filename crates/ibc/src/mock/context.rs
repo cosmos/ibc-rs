@@ -47,7 +47,7 @@ use crate::mock::client_state::{
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::mock::host::{HostBlock, HostType};
-use crate::relayer::ics18_relayer::context::Ics18Context;
+use crate::relayer::ics18_relayer::context::RelayerContext;
 use crate::relayer::ics18_relayer::error::Error as Ics18Error;
 use crate::signer::Signer;
 use crate::timestamp::Timestamp;
@@ -1400,7 +1400,7 @@ impl ClientKeeper for MockContext {
     }
 }
 
-impl Ics18Context for MockContext {
+impl RelayerContext for MockContext {
     fn query_latest_height(&self) -> Height {
         self.host_current_height()
     }

@@ -2,7 +2,7 @@ use crate::core::ics02_client::header::Header;
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
 use crate::core::ics02_client::msgs::ClientMsg;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::relayer::ics18_relayer::context::Ics18Context;
+use crate::relayer::ics18_relayer::context::RelayerContext;
 use crate::relayer::ics18_relayer::error::Error;
 
 /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
@@ -13,7 +13,7 @@ pub fn build_client_update_datagram<Ctx>(
     src_header: &dyn Header,
 ) -> Result<ClientMsg, Error>
 where
-    Ctx: Ics18Context,
+    Ctx: RelayerContext,
 {
     // Check if client for ibc0 on ibc1 has been updated to latest height:
     // - query client state on destination chain
@@ -57,7 +57,7 @@ mod tests {
     use crate::mock::context::MockContext;
     use crate::mock::host::{HostBlock, HostType};
     use crate::prelude::*;
-    use crate::relayer::ics18_relayer::context::Ics18Context;
+    use crate::relayer::ics18_relayer::context::RelayerContext;
     use crate::relayer::ics18_relayer::utils::build_client_update_datagram;
     use crate::Height;
 
