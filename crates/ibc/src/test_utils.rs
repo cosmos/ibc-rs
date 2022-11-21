@@ -1,11 +1,11 @@
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 
 use subtle_encoding::bech32;
 use tendermint::{block, consensus, evidence, public_key::Algorithm};
 
 use crate::applications::transfer::context::{
-    cosmos_adr028_escrow_address, BankKeeper, TransferContext, TransferKeeper, TransferReader,
+    cosmos_adr028_escrow_address, BankKeeper, Ics20Context, TokenTransferKeeper,
+    TokenTransferReader,
 };
 use crate::applications::transfer::{error::Error as Ics20Error, PrefixedCoin};
 use crate::core::ics02_client::client_state::ClientState;
@@ -14,11 +14,11 @@ use crate::core::ics02_client::error::Error as Ics02Error;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::error::Error as Ics03Error;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order};
-use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
-use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
+use crate::core::ics04_channel::commitment::PacketCommitment;
+use crate::core::ics04_channel::context::SendPacketReader;
 use crate::core::ics04_channel::error::Error;
 use crate::core::ics04_channel::handler::ModuleExtras;
-use crate::core::ics04_channel::packet::{Receipt, Sequence};
+use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics04_channel::Version;
 use crate::core::ics05_port::context::PortReader;
 use crate::core::ics05_port::error::Error as PortError;
@@ -27,7 +27,6 @@ use crate::core::ics26_routing::context::{Module, ModuleId};
 use crate::mock::context::MockIbcStore;
 use crate::prelude::*;
 use crate::signer::Signer;
-use crate::timestamp::Timestamp;
 use crate::Height;
 
 // Needed in mocks.
@@ -117,11 +116,7 @@ impl Module for DummyTransferModule {
     }
 }
 
-impl TransferKeeper for DummyTransferModule {
-    type AccountId = Signer;
-}
-
-impl ChannelKeeper for DummyTransferModule {
+impl TokenTransferKeeper for DummyTransferModule {
     fn store_packet_commitment(
         &mut self,
         port_id: PortId,
@@ -141,62 +136,6 @@ impl ChannelKeeper for DummyTransferModule {
         Ok(())
     }
 
-    fn delete_packet_commitment(
-        &mut self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _seq: Sequence,
-    ) -> Result<(), Error> {
-        unimplemented!()
-    }
-
-    fn store_packet_receipt(
-        &mut self,
-        _port_id: PortId,
-        _channel_id: ChannelId,
-        _seq: Sequence,
-        _receipt: Receipt,
-    ) -> Result<(), Error> {
-        unimplemented!()
-    }
-
-    fn store_packet_acknowledgement(
-        &mut self,
-        _port_id: PortId,
-        _channel_id: ChannelId,
-        _seq: Sequence,
-        _ack: AcknowledgementCommitment,
-    ) -> Result<(), Error> {
-        unimplemented!()
-    }
-
-    fn delete_packet_acknowledgement(
-        &mut self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _seq: Sequence,
-    ) -> Result<(), Error> {
-        unimplemented!()
-    }
-
-    fn store_connection_channels(
-        &mut self,
-        _conn_id: ConnectionId,
-        _port_id: PortId,
-        _channel_id: ChannelId,
-    ) -> Result<(), Error> {
-        unimplemented!()
-    }
-
-    fn store_channel(
-        &mut self,
-        _port_id: PortId,
-        _channel_id: ChannelId,
-        _channel_end: ChannelEnd,
-    ) -> Result<(), Error> {
-        unimplemented!()
-    }
-
     fn store_next_sequence_send(
         &mut self,
         port_id: PortId,
@@ -211,28 +150,6 @@ impl ChannelKeeper for DummyTransferModule {
             .or_default()
             .insert(channel_id, seq);
         Ok(())
-    }
-
-    fn store_next_sequence_recv(
-        &mut self,
-        _port_id: PortId,
-        _channel_id: ChannelId,
-        _seq: Sequence,
-    ) -> Result<(), Error> {
-        unimplemented!()
-    }
-
-    fn store_next_sequence_ack(
-        &mut self,
-        _port_id: PortId,
-        _channel_id: ChannelId,
-        _seq: Sequence,
-    ) -> Result<(), Error> {
-        unimplemented!()
-    }
-
-    fn increase_channel_counter(&mut self) {
-        unimplemented!()
     }
 }
 
@@ -271,7 +188,8 @@ impl BankKeeper for DummyTransferModule {
     }
 }
 
-impl TransferReader for DummyTransferModule {
+
+impl TokenTransferReader for DummyTransferModule {
     type AccountId = Signer;
 
     fn get_port(&self) -> Result<PortId, Ics20Error> {
@@ -282,7 +200,7 @@ impl TransferReader for DummyTransferModule {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<<Self as TransferReader>::AccountId, Ics20Error> {
+    ) -> Result<<Self as TokenTransferReader>::AccountId, Ics20Error> {
         let addr = cosmos_adr028_escrow_address(port_id, channel_id);
         Ok(bech32::encode("cosmos", addr).parse().unwrap())
     }
@@ -296,7 +214,7 @@ impl TransferReader for DummyTransferModule {
     }
 }
 
-impl ChannelReader for DummyTransferModule {
+impl SendPacketReader for DummyTransferModule {
     fn channel_end(&self, port_id: &PortId, channel_id: &ChannelId) -> Result<ChannelEnd, Error> {
         match self
             .ibc_store
@@ -320,10 +238,6 @@ impl ChannelReader for DummyTransferModule {
             None => Err(Ics03Error::connection_not_found(cid.clone())),
         }
         .map_err(Error::ics03_connection)
-    }
-
-    fn connection_channels(&self, _cid: &ConnectionId) -> Result<Vec<(PortId, ChannelId)>, Error> {
-        unimplemented!()
     }
 
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Error> {
@@ -379,89 +293,10 @@ impl ChannelReader for DummyTransferModule {
         }
     }
 
-    fn get_next_sequence_recv(
-        &self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<Sequence, Error> {
-        unimplemented!()
-    }
-
-    fn get_next_sequence_ack(
-        &self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<Sequence, Error> {
-        unimplemented!()
-    }
-
-    fn get_packet_commitment(
-        &self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _seq: Sequence,
-    ) -> Result<PacketCommitment, Error> {
-        unimplemented!()
-    }
-
-    fn get_packet_receipt(
-        &self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _seq: Sequence,
-    ) -> Result<Receipt, Error> {
-        unimplemented!()
-    }
-
-    fn get_packet_acknowledgement(
-        &self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _seq: Sequence,
-    ) -> Result<AcknowledgementCommitment, Error> {
-        unimplemented!()
-    }
-
     fn hash(&self, value: Vec<u8>) -> Vec<u8> {
         use sha2::Digest;
 
         sha2::Sha256::digest(value).to_vec()
-    }
-
-    fn host_height(&self) -> Height {
-        Height::new(0, 1).unwrap()
-    }
-
-    fn host_consensus_state(&self, _height: Height) -> Result<Box<dyn ConsensusState>, Error> {
-        unimplemented!()
-    }
-
-    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, Error> {
-        unimplemented!()
-    }
-
-    fn client_update_time(
-        &self,
-        _client_id: &ClientId,
-        _height: Height,
-    ) -> Result<Timestamp, Error> {
-        unimplemented!()
-    }
-
-    fn client_update_height(
-        &self,
-        _client_id: &ClientId,
-        _height: Height,
-    ) -> Result<Height, Error> {
-        unimplemented!()
-    }
-
-    fn channel_counter(&self) -> Result<u64, Error> {
-        unimplemented!()
-    }
-
-    fn max_expected_time_per_block(&self) -> Duration {
-        unimplemented!()
     }
 }
 

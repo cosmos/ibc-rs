@@ -94,7 +94,7 @@ where
         events,
     } = send_packet(ctx, packet).map_err(Error::ics04_channel)?;
 
-    ctx.store_packet_result(result)
+    ctx.store_send_packet_result(result)
         .map_err(Error::ics04_channel)?;
 
     output.merge_output(

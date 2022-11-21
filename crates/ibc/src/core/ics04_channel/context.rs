@@ -150,6 +150,89 @@ pub trait ChannelReader {
     }
 }
 
+pub trait SendPacketReader {
+    /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
+    fn channel_end(&self, port_id: &PortId, channel_id: &ChannelId) -> Result<ChannelEnd, Error>;
+
+    /// Returns the ConnectionState for the given identifier `connection_id`.
+    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, Error>;
+
+    /// Returns the ClientState for the given identifier `client_id`. Necessary dependency towards
+    /// proof verification.
+    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Error>;
+
+    fn client_consensus_state(
+        &self,
+        client_id: &ClientId,
+        height: Height,
+    ) -> Result<Box<dyn ConsensusState>, Error>;
+
+    fn get_next_sequence_send(
+        &self,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+    ) -> Result<Sequence, Error>;
+
+    fn hash(&self, value: Vec<u8>) -> Vec<u8>;
+
+    fn packet_commitment(
+        &self,
+        packet_data: Vec<u8>,
+        timeout_height: TimeoutHeight,
+        timeout_timestamp: Timestamp,
+    ) -> PacketCommitment {
+        let mut hash_input = timeout_timestamp.nanoseconds().to_be_bytes().to_vec();
+
+        let revision_number = timeout_height.commitment_revision_number().to_be_bytes();
+        hash_input.append(&mut revision_number.to_vec());
+
+        let revision_height = timeout_height.commitment_revision_height().to_be_bytes();
+        hash_input.append(&mut revision_height.to_vec());
+
+        let packet_data_hash = self.hash(packet_data);
+        hash_input.append(&mut packet_data_hash.to_vec());
+
+        self.hash(hash_input).into()
+    }
+}
+
+impl<T> SendPacketReader for T
+where
+    T: ChannelReader,
+{
+    fn channel_end(&self, port_id: &PortId, channel_id: &ChannelId) -> Result<ChannelEnd, Error> {
+        ChannelReader::channel_end(self, port_id, channel_id)
+    }
+
+    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, Error> {
+        ChannelReader::connection_end(self, connection_id)
+    }
+
+    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Error> {
+        ChannelReader::client_state(self, client_id)
+    }
+
+    fn client_consensus_state(
+        &self,
+        client_id: &ClientId,
+        height: Height,
+    ) -> Result<Box<dyn ConsensusState>, Error> {
+        ChannelReader::client_consensus_state(self, client_id, height)
+    }
+
+    fn get_next_sequence_send(
+        &self,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+    ) -> Result<Sequence, Error> {
+        ChannelReader::get_next_sequence_send(self, port_id, channel_id)
+    }
+
+    fn hash(&self, value: Vec<u8>) -> Vec<u8> {
+        ChannelReader::hash(self, value)
+    }
+}
+
 /// A context supplying all the necessary write-only dependencies (i.e., storage writing facility)
 /// for processing any `ChannelMsg`.
 pub trait ChannelKeeper {

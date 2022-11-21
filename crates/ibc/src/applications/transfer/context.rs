@@ -9,23 +9,53 @@ use crate::applications::transfer::relay::on_recv_packet::process_recv_packet;
 use crate::applications::transfer::relay::on_timeout_packet::process_timeout_packet;
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
-use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
+use crate::core::ics04_channel::commitment::PacketCommitment;
+use crate::core::ics04_channel::context::{ChannelKeeper, SendPacketReader};
+use crate::core::ics04_channel::error::Error as Ics04Error;
+use crate::core::ics04_channel::handler::send_packet::SendPacketResult;
 use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as GenericAcknowledgement;
-use crate::core::ics04_channel::packet::Packet;
+use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{ModuleOutputBuilder, OnRecvPacketAck};
 use crate::prelude::*;
 use crate::signer::Signer;
 
-pub trait TransferKeeper:
-    ChannelKeeper + BankKeeper<AccountId = <Self as TransferKeeper>::AccountId>
-{
-    type AccountId;
+pub trait TokenTransferKeeper: BankKeeper {
+    fn store_send_packet_result(&mut self, result: SendPacketResult) -> Result<(), Ics04Error> {
+        self.store_next_sequence_send(
+            result.port_id.clone(),
+            result.channel_id.clone(),
+            result.seq_number,
+        )?;
+
+        self.store_packet_commitment(
+            result.port_id,
+            result.channel_id,
+            result.seq,
+            result.commitment,
+        )?;
+        Ok(())
+    }
+
+    fn store_packet_commitment(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        sequence: Sequence,
+        commitment: PacketCommitment,
+    ) -> Result<(), Ics04Error>;
+
+    fn store_next_sequence_send(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        seq: Sequence,
+    ) -> Result<(), Ics04Error>;
 }
 
-pub trait TransferReader: ChannelReader {
+pub trait TokenTransferReader: SendPacketReader {
     type AccountId: TryFrom<Signer>;
 
     /// get_port returns the portID for the transfer module.
@@ -36,7 +66,7 @@ pub trait TransferReader: ChannelReader {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<<Self as TransferReader>::AccountId, Ics20Error>;
+    ) -> Result<<Self as TokenTransferReader>::AccountId, Ics20Error>;
 
     /// Returns true iff send is enabled.
     fn is_send_enabled(&self) -> bool;
@@ -48,6 +78,30 @@ pub trait TransferReader: ChannelReader {
     /// Implement only if the host chain supports hashed denominations.
     fn denom_hash_string(&self, _denom: &PrefixedDenom) -> Option<String> {
         None
+    }
+}
+
+impl<T> TokenTransferKeeper for T
+where
+    T: ChannelKeeper + BankKeeper,
+{
+    fn store_packet_commitment(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        sequence: Sequence,
+        commitment: PacketCommitment,
+    ) -> Result<(), Ics04Error> {
+        ChannelKeeper::store_packet_commitment(self, port_id, channel_id, sequence, commitment)
+    }
+
+    fn store_next_sequence_send(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        seq: Sequence,
+    ) -> Result<(), Ics04Error> {
+        ChannelKeeper::store_next_sequence_send(self, port_id, channel_id, seq)
     }
 }
 
@@ -93,9 +147,9 @@ pub trait BankKeeper {
 
 /// Captures all the dependencies which the ICS20 module requires to be able to dispatch and
 /// process IBC messages.
-pub trait TransferContext:
-    TransferKeeper<AccountId = <Self as TransferContext>::AccountId>
-    + TransferReader<AccountId = <Self as TransferContext>::AccountId>
+pub trait Ics20Context:
+    TokenTransferKeeper<AccountId = <Self as Ics20Context>::AccountId>
+    + TokenTransferReader<AccountId = <Self as Ics20Context>::AccountId>
 {
     type AccountId: TryFrom<Signer>;
 }
@@ -197,7 +251,7 @@ pub fn on_recv_packet<Ctx: 'static + TransferContext>(
         Err(_) => {
             return OnRecvPacketAck::Failed(Box::new(Acknowledgement::Error(
                 Ics20Error::packet_data_deserialization().to_string(),
-            )))
+            )));
         }
     };
 
