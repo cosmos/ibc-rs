@@ -56,7 +56,7 @@ where
 
     debug!("latest consensus state: {:?}", latest_consensus_state);
 
-    let now = ctx.host_timestamp();
+    let now = ctx.host_timestamp()?;
     let duration = now
         .duration_since(&latest_consensus_state.timestamp())
         .ok_or_else(|| {
@@ -109,12 +109,12 @@ where
     ctx.store_update_time(
         client_id.clone(),
         client_state.latest_height(),
-        ctx.host_timestamp(),
+        ctx.host_timestamp()?,
     )?;
     ctx.store_update_height(
         client_id.clone(),
         client_state.latest_height(),
-        ctx.host_height(),
+        ctx.host_height()?,
     )?;
 
     {

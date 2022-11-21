@@ -574,7 +574,7 @@ impl Ics2ClientState for ClientState {
             untrusted_state,
             trusted_state,
             &options,
-            ctx.host_timestamp().into_tm_time().unwrap(),
+            ctx.host_timestamp()?.into_tm_time().unwrap(),
         );
 
         match verdict {

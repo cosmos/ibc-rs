@@ -90,12 +90,12 @@ where
     ctx.store_update_time(
         client_id.clone(),
         client_state.latest_height(),
-        ctx.host_timestamp(),
+        ctx.host_timestamp()?,
     )?;
     ctx.store_update_height(
         client_id.clone(),
         client_state.latest_height(),
-        ctx.host_height(),
+        ctx.host_height()?,
     )?;
 
     ctx.emit_ibc_event(IbcEvent::CreateClient(CreateClient::new(
