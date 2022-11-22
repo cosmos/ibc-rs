@@ -1,4 +1,4 @@
-//! Protocol logic specific to processing ICS2 messages of type `MsgUpgradeAnyClient`.
+//! Protocol logic specific to processing ICS2 messages of type `MsgSubmitMisbehaviour`.
 //!
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::context::ClientReader;
@@ -12,9 +12,8 @@ use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
 /// The result following the successful processing of a `MsgSubmitMisbehaviour` message.
-/// This data type should be used with a qualified name `misbehaviour::Result` to avoid ambiguity.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Result {
+pub struct MisbehaviourResult {
     pub client_id: ClientId,
     pub client_state: Box<dyn ClientState>,
 }
@@ -69,7 +68,7 @@ pub fn process(
         client_state.client_type(),
     )));
 
-    let result = ClientResult::Misbehaviour(Result {
+    let result = ClientResult::Misbehaviour(MisbehaviourResult {
         client_id,
         client_state,
     });

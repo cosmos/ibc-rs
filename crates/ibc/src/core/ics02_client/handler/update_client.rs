@@ -18,8 +18,7 @@ use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 use crate::timestamp::Timestamp;
 
-/// The result following the successful processing of a `MsgUpdateAnyClient` message. Preferably
-/// this data type should be used with a qualified name `update_client::Result` to avoid ambiguity.
+/// The result following the successful processing of a `MsgUpdateAnyClient` message.
 #[derive(Clone, Debug, PartialEq)]
 pub struct UpdateClientResult {
     pub client_id: ClientId,

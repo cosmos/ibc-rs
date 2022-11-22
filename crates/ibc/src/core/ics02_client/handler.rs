@@ -15,7 +15,7 @@ pub enum ClientResult {
     Create(create_client::CreateClientResult),
     Update(update_client::UpdateClientResult),
     Upgrade(upgrade_client::UpgradeClientResult),
-    Misbehaviour(misbehaviour::Result),
+    Misbehaviour(misbehaviour::MisbehaviourResult),
 }
 
 /// General entry point for processing any message related to ICS2 (client functions) protocols.
