@@ -57,7 +57,7 @@ where
 
     debug!("latest consensus state: {:?}", latest_consensus_state);
 
-    let now = ctx.host_timestamp();
+    let now = ctx.host_timestamp()?;
     let duration = now
         .duration_since(&latest_consensus_state.timestamp())
         .ok_or_else(|| Error::InvalidConsensusStateTimestamp {
@@ -115,12 +115,12 @@ where
     ctx.store_update_time(
         client_id.clone(),
         client_state.latest_height(),
-        ctx.host_timestamp(),
+        ctx.host_timestamp()?,
     )?;
     ctx.store_update_height(
         client_id.clone(),
         client_state.latest_height(),
-        ctx.host_height(),
+        ctx.host_height()?,
     )?;
 
     {
@@ -169,7 +169,7 @@ pub fn process<Ctx: ClientReader>(
 
     debug!("latest consensus state: {:?}", latest_consensus_state);
 
-    let now = ClientReader::host_timestamp(ctx);
+    let now = ClientReader::host_timestamp(ctx)?;
     let duration = now
         .duration_since(&latest_consensus_state.timestamp())
         .ok_or_else(|| Error::InvalidConsensusStateTimestamp {
@@ -203,8 +203,8 @@ pub fn process<Ctx: ClientReader>(
         client_id: client_id.clone(),
         client_state,
         consensus_state,
-        processed_time: ClientReader::host_timestamp(ctx),
-        processed_height: ctx.host_height(),
+        processed_time: ClientReader::host_timestamp(ctx)?,
+        processed_height: ctx.host_height()?,
     });
 
     output.emit(IbcEvent::UpdateClient(UpdateClient::new(

@@ -17,7 +17,7 @@ use crate::Height;
 /// types, light client, RPC client, etc.)
 pub trait RelayerContext {
     /// Returns the latest height of the chain.
-    fn query_latest_height(&self) -> Height;
+    fn query_latest_height(&self) -> Result<Height, Error>;
 
     /// Returns this client state for the given `client_id` on this chain.
     /// Wrapper over the `/abci_query?path=..` endpoint.

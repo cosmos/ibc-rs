@@ -24,11 +24,11 @@ pub(crate) fn process(
 
     ctx_b.validate_self_client(msg.client_state_of_b_on_a.clone())?;
 
-    if msg.consensus_height_of_b_on_a > ctx_b.host_current_height() {
+    if msg.consensus_height_of_b_on_a > ctx_b.host_current_height()? {
         // Fail if the consensus height is too advanced.
         return Err(Error::invalid_consensus_height(
             msg.consensus_height_of_b_on_a,
-            ctx_b.host_current_height(),
+            ctx_b.host_current_height()?,
         ));
     }
 

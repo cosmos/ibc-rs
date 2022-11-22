@@ -149,7 +149,7 @@ mod tests {
                 .query_client_full_state(&client_on_b_for_a)
                 .unwrap()
                 .latest_height();
-            assert_eq!(client_height_b, ctx_a.query_latest_height());
+            assert_eq!(client_height_b, ctx_a.query_latest_height().unwrap());
 
             // Update client on chain B to latest height of B.
             // - create the client update message with the latest header from B
@@ -206,7 +206,7 @@ mod tests {
                 .query_client_full_state(&client_on_a_for_b)
                 .unwrap()
                 .latest_height();
-            assert_eq!(client_height_a, ctx_b.query_latest_height());
+            assert_eq!(client_height_a, ctx_b.query_latest_height().unwrap());
         }
     }
 }
