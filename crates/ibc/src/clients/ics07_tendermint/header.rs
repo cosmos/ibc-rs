@@ -10,7 +10,9 @@ use prost::Message;
 use serde_derive::{Deserialize, Serialize};
 use tendermint::block::signed_header::SignedHeader;
 use tendermint::validator::Set as ValidatorSet;
+use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 
+use crate::clients::ics07_tendermint::consensus_state::ConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::Error as Ics02Error;
@@ -56,6 +58,30 @@ impl Header {
 
     pub fn compatible_with(&self, other_header: &Header) -> bool {
         headers_compatible(&self.signed_header, &other_header.signed_header)
+    }
+
+    pub(crate) fn as_untrusted_block_state(&self) -> UntrustedBlockState<'_> {
+        UntrustedBlockState {
+            signed_header: &self.signed_header,
+            validators: &self.validator_set,
+            next_validators: None,
+        }
+    }
+
+    pub(crate) fn as_trusted_block_state(
+        &self,
+        consensus_state: &ConsensusState,
+    ) -> Result<TrustedBlockState<'_>, Error> {
+        Ok(TrustedBlockState {
+            header_time: consensus_state.timestamp,
+            height: self
+                .trusted_height
+                .revision_height()
+                .try_into()
+                .map_err(|_| Error::invalid_header_height(self.trusted_height.revision_height()))?,
+            next_validators: &self.trusted_validator_set,
+            next_validators_hash: consensus_state.next_validators_hash,
+        })
     }
 }
 
