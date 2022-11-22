@@ -6,7 +6,8 @@ use crate::core::ics03_connection::error::Error;
 use crate::core::ics03_connection::events::OpenConfirm;
 use crate::core::ics03_connection::handler::{ConnectionIdState, ConnectionResult};
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
-use crate::core::ValidationContext;
+use crate::core::ics24_host::path::ConnectionsPath;
+use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
@@ -61,6 +62,40 @@ where
                 &expected_conn_end_on_a,
             )
             .map_err(Error::verify_connection_state)?;
+    }
+
+    Ok(())
+}
+
+pub(crate) fn execute<Ctx>(ctx_b: &mut Ctx, msg: MsgConnectionOpenConfirm) -> Result<(), Error>
+where
+    Ctx: ExecutionContext,
+{
+    let conn_end_on_b = ctx_b.connection_end(&msg.conn_id_on_b)?;
+    let client_id_on_a = conn_end_on_b.counterparty().client_id();
+    let client_id_on_b = conn_end_on_b.client_id();
+    let conn_id_on_a = conn_end_on_b
+        .counterparty()
+        .connection_id()
+        .ok_or_else(Error::invalid_counterparty)?;
+
+    ctx_b.emit_ibc_event(IbcEvent::OpenConfirmConnection(OpenConfirm::new(
+        msg.conn_id_on_b.clone(),
+        client_id_on_b.clone(),
+        conn_id_on_a.clone(),
+        client_id_on_a.clone(),
+    )));
+    ctx_b.log_message("success: conn_open_confirm verification passed".to_string());
+
+    {
+        let new_conn_end_on_b = {
+            let mut new_conn_end_on_b = conn_end_on_b;
+
+            new_conn_end_on_b.set_state(State::Open);
+            new_conn_end_on_b
+        };
+
+        ctx_b.store_connection(ConnectionsPath(msg.conn_id_on_b), &new_conn_end_on_b)?;
     }
 
     Ok(())

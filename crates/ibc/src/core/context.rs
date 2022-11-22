@@ -283,7 +283,9 @@ pub trait ExecutionContext: ValidationContext {
                 }
                 ConnectionMsg::ConnectionOpenTry(message) => conn_open_try::execute(self, *message),
                 ConnectionMsg::ConnectionOpenAck(message) => conn_open_ack::execute(self, *message),
-                ConnectionMsg::ConnectionOpenConfirm(_) => todo!(),
+                ConnectionMsg::ConnectionOpenConfirm(message) => {
+                    conn_open_confirm::execute(self, message)
+                }
             }
             .map_err(RouterError::ics03_connection),
             MsgEnvelope::ChannelMsg(_message) => todo!(),
