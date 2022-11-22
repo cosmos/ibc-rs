@@ -1401,7 +1401,7 @@ impl ClientKeeper for MockContext {
     }
 }
 
-impl Ics18Context for MockContext {
+impl RelayerContext for MockContext {
     fn query_latest_height(&self) -> Result<Height, Ics18Error> {
         self.host_current_height().map_err(Ics18Error::ics03)
     }
