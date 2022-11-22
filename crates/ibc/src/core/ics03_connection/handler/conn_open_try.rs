@@ -7,11 +7,150 @@ use crate::core::ics03_connection::events::OpenTry;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
 use crate::core::ics24_host::identifier::ConnectionId;
+use crate::core::ics24_host::path::{ClientConnectionsPath, ConnectionsPath};
+use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
 use super::ConnectionIdState;
+
+pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), Error>
+where
+    Ctx: ValidationContext,
+{
+    let _conn_id_on_b = ConnectionId::new(ctx_b.connection_counter()?);
+
+    ctx_b.validate_self_client(msg.client_state_of_b_on_a.clone())?;
+
+    let host_height = ctx_b
+        .host_height()
+        .map_err(|_| Error::other("failed to get host height".to_string()))?;
+    if msg.consensus_height_of_b_on_a > host_height {
+        // Fail if the consensus height is too advanced.
+        return Err(Error::invalid_consensus_height(
+            msg.consensus_height_of_b_on_a,
+            host_height,
+        ));
+    }
+
+    let version_on_b =
+        ctx_b.pick_version(ctx_b.get_compatible_versions(), msg.versions_on_a.clone())?;
+
+    let conn_end_on_b = ConnectionEnd::new(
+        State::TryOpen,
+        msg.client_id_on_b.clone(),
+        msg.counterparty.clone(),
+        vec![version_on_b],
+        msg.delay_period,
+    );
+
+    let client_id_on_a = msg.counterparty.client_id();
+    let conn_id_on_a = conn_end_on_b
+        .counterparty()
+        .connection_id()
+        .ok_or_else(Error::invalid_counterparty)?;
+
+    // Verify proofs
+    {
+        let client_state_of_a_on_b = ctx_b
+            .client_state(conn_end_on_b.client_id())
+            .map_err(|_| Error::other("failed to fetch client state".to_string()))?;
+        let consensus_state_of_a_on_b = ctx_b
+            .consensus_state(&msg.client_id_on_b, msg.proofs_height_on_a)
+            .map_err(|_| Error::other("failed to fetch client consensus state".to_string()))?;
+
+        let prefix_on_a = conn_end_on_b.counterparty().prefix();
+        let prefix_on_b = ctx_b.commitment_prefix();
+
+        {
+            let versions_on_a = msg.versions_on_a;
+            let expected_conn_end_on_a = ConnectionEnd::new(
+                State::Init,
+                client_id_on_a.clone(),
+                Counterparty::new(msg.client_id_on_b.clone(), None, prefix_on_b),
+                versions_on_a,
+                msg.delay_period,
+            );
+
+            client_state_of_a_on_b
+                .verify_connection_state(
+                    msg.proofs_height_on_a,
+                    prefix_on_a,
+                    &msg.proof_conn_end_on_a,
+                    consensus_state_of_a_on_b.root(),
+                    conn_id_on_a,
+                    &expected_conn_end_on_a,
+                )
+                .map_err(Error::verify_connection_state)?;
+        }
+
+        client_state_of_a_on_b
+            .verify_client_full_state(
+                msg.proofs_height_on_a,
+                prefix_on_a,
+                &msg.proof_client_state_of_b_on_a,
+                consensus_state_of_a_on_b.root(),
+                client_id_on_a,
+                msg.client_state_of_b_on_a,
+            )
+            .map_err(|e| {
+                Error::client_state_verification_failure(conn_end_on_b.client_id().clone(), e)
+            })?;
+
+        let expected_consensus_state_of_b_on_a = ctx_b
+            .host_consensus_state(msg.consensus_height_of_b_on_a)
+            .map_err(|_| Error::other("failed to fetch host consensus state".to_string()))?;
+        client_state_of_a_on_b
+            .verify_client_consensus_state(
+                msg.proofs_height_on_a,
+                prefix_on_a,
+                &msg.proof_consensus_state_of_b_on_a,
+                consensus_state_of_a_on_b.root(),
+                client_id_on_a,
+                msg.consensus_height_of_b_on_a,
+                expected_consensus_state_of_b_on_a.as_ref(),
+            )
+            .map_err(|e| Error::consensus_state_verification_failure(msg.proofs_height_on_a, e))?;
+    }
+
+    Ok(())
+}
+
+pub(crate) fn execute<Ctx>(ctx_b: &mut Ctx, msg: MsgConnectionOpenTry) -> Result<(), Error>
+where
+    Ctx: ExecutionContext,
+{
+    let conn_id_on_b = ConnectionId::new(ctx_b.connection_counter()?);
+    let version_on_b =
+        ctx_b.pick_version(ctx_b.get_compatible_versions(), msg.versions_on_a.clone())?;
+    let conn_end_on_b = ConnectionEnd::new(
+        State::TryOpen,
+        msg.client_id_on_b.clone(),
+        msg.counterparty.clone(),
+        vec![version_on_b],
+        msg.delay_period,
+    );
+
+    let client_id_on_a = msg.counterparty.client_id();
+    let conn_id_on_a = conn_end_on_b
+        .counterparty()
+        .connection_id()
+        .ok_or_else(Error::invalid_counterparty)?;
+    ctx_b.emit_ibc_event(IbcEvent::OpenTryConnection(OpenTry::new(
+        conn_id_on_b.clone(),
+        msg.client_id_on_b.clone(),
+        conn_id_on_a.clone(),
+        client_id_on_a.clone(),
+    )));
+    ctx_b.log_message("success: conn_open_try verification passed".to_string());
+
+    ctx_b.increase_connection_counter();
+    ctx_b.store_connection_to_client(ClientConnectionsPath(msg.client_id_on_b), &conn_id_on_b)?;
+    ctx_b.store_connection(ConnectionsPath(conn_id_on_b), &conn_end_on_b)?;
+
+    Ok(())
+}
 
 /// Per our convention, this message is processed on chain B.
 pub(crate) fn process(
@@ -53,7 +192,7 @@ pub(crate) fn process(
     {
         let client_state_of_a_on_b = ctx_b.client_state(conn_end_on_b.client_id())?;
         let consensus_state_of_a_on_b =
-            ctx_b.client_consensus_state(conn_end_on_b.client_id(), msg.proofs_height_on_a)?;
+            ctx_b.client_consensus_state(&msg.client_id_on_b, msg.proofs_height_on_a)?;
 
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let prefix_on_b = ctx_b.commitment_prefix();

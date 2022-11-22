@@ -13,7 +13,7 @@ use crate::Height;
 
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 
-/// Provides an implementation of `ConnectionReader::validate_self_client` for
+/// Provides an implementation of `ValidationContext::validate_self_client` for
 /// Tendermint-based hosts.
 pub trait ValidateSelfClientContext {
     fn validate_self_client(&self, counterparty_client_state: Any) -> Result<(), Error> {

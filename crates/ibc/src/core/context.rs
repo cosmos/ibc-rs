@@ -10,7 +10,7 @@ use ibc_proto::google::protobuf::Any;
 use super::ics02_client::client_type::ClientType;
 use super::ics02_client::handler::{create_client, update_client, upgrade_client};
 use super::ics02_client::msgs::ClientMsg;
-use super::ics03_connection::handler::conn_open_init;
+use super::ics03_connection::handler::{conn_open_init, conn_open_try};
 use super::ics03_connection::msgs::ConnectionMsg;
 use super::ics24_host::path::{
     ClientConnectionsPath, ClientConsensusStatePath, ClientStatePath, ClientTypePath,
@@ -59,7 +59,9 @@ pub trait ValidationContext {
                 ConnectionMsg::ConnectionOpenInit(message) => {
                     conn_open_init::validate(self, message)
                 }
-                ConnectionMsg::ConnectionOpenTry(_) => todo!(),
+                ConnectionMsg::ConnectionOpenTry(message) => {
+                    conn_open_try::validate(self, *message)
+                }
                 ConnectionMsg::ConnectionOpenAck(_) => todo!(),
                 ConnectionMsg::ConnectionOpenConfirm(_) => todo!(),
             }
@@ -125,6 +127,9 @@ pub trait ValidationContext {
 
     /// Returns the oldest height available on the local chain.
     fn host_oldest_height(&self) -> Height;
+
+    /// Validates the `ClientState` of the client on the counterparty chain.
+    fn validate_self_client(&self, counterparty_client_state: Any) -> Result<(), ConnectionError>;
 
     /// Returns the prefix that the local chain uses in the KV store.
     fn commitment_prefix(&self) -> CommitmentPrefix;
@@ -270,7 +275,7 @@ pub trait ExecutionContext: ValidationContext {
                 ConnectionMsg::ConnectionOpenInit(message) => {
                     conn_open_init::execute(self, message)
                 }
-                ConnectionMsg::ConnectionOpenTry(_) => todo!(),
+                ConnectionMsg::ConnectionOpenTry(message) => conn_open_try::execute(self, *message),
                 ConnectionMsg::ConnectionOpenAck(_) => todo!(),
                 ConnectionMsg::ConnectionOpenConfirm(_) => todo!(),
             }
