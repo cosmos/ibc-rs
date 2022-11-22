@@ -93,10 +93,10 @@ define_error! {
             },
 
         UnknownMisbehaviourType
-            { misbehavior_type: String }
+            { misbehaviour_type: String }
             | e | {
                 format_args!("unknown misbehaviour type: {0}",
-                    e.misbehavior_type)
+                    e.misbehaviour_type)
             },
 
         MisbehaviourHandlingFailure

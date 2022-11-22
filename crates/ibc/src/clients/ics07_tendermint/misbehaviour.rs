@@ -14,7 +14,7 @@ use crate::core::ics02_client::error::Error as Ics02Error;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::Height;
 
-pub const TENDERMINT_MISBEHAVIOR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
+pub const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Misbehaviour {
@@ -128,7 +128,7 @@ impl TryFrom<Any> for Misbehaviour {
         }
 
         match raw.type_url.as_str() {
-            TENDERMINT_MISBEHAVIOR_TYPE_URL => {
+            TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
                 decode_misbehaviour(raw.value.deref()).map_err(Into::into)
             }
             _ => Err(Ics02Error::unknown_misbehaviour_type(raw.type_url)),
@@ -139,7 +139,7 @@ impl TryFrom<Any> for Misbehaviour {
 impl From<Misbehaviour> for Any {
     fn from(misbehaviour: Misbehaviour) -> Self {
         Any {
-            type_url: TENDERMINT_MISBEHAVIOR_TYPE_URL.to_string(),
+            type_url: TENDERMINT_MISBEHAVIOUR_TYPE_URL.to_string(),
             value: Protobuf::<RawMisbehaviour>::encode_vec(&misbehaviour)
                 .expect("encoding to `Any` from `TmMisbehaviour`"),
         }
