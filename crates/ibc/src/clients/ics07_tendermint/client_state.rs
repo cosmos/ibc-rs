@@ -1,16 +1,3 @@
-use crate::core::ics02_client::context::ClientReader;
-use crate::core::ics03_connection::connection::ConnectionEnd;
-use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
-use crate::core::ics04_channel::packet::Sequence;
-use crate::core::ics23_commitment::commitment::{
-    CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
-};
-use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
-use crate::core::ics24_host::path::{
-    AcksPath, ChannelEndsPath, ClientConsensusStatePath, ClientStatePath, CommitmentsPath,
-    ConnectionsPath, ReceiptsPath, SeqRecvsPath,
-};
-use crate::core::ics24_host::Path;
 use crate::prelude::*;
 
 use core::convert::{TryFrom, TryInto};
@@ -38,11 +25,24 @@ use crate::core::ics02_client::client_state::{
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::{Error as Ics02Error, ErrorDetail as Ics02ErrorDetail};
 use crate::core::ics02_client::trust_threshold::TrustThreshold;
+use crate::core::ics03_connection::connection::ConnectionEnd;
+use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::context::ChannelReader;
+use crate::core::ics04_channel::packet::Sequence;
+use crate::core::ics23_commitment::commitment::{
+    CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
+};
+use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
+use crate::core::ics24_host::path::{
+    AcksPath, ChannelEndsPath, ClientConsensusStatePath, ClientStatePath, CommitmentsPath,
+    ConnectionsPath, ReceiptsPath, SeqRecvsPath,
+};
+use crate::core::ics24_host::Path;
 use crate::timestamp::{Timestamp, ZERO_DURATION};
 use crate::Height;
 
@@ -274,8 +274,8 @@ impl ClientState {
 
     fn check_misbehaviour_header(
         &self,
-        consensus_state: &TmConsensusState,
         header: &Header,
+        consensus_state: &TmConsensusState,
         current_timestamp: Timestamp,
     ) -> Result<(), Ics02Error> {
         Self::check_trusted_header(consensus_state, header)?;
@@ -304,27 +304,34 @@ impl ClientState {
             .clone()
             .with_version(header.height().revision_number());
 
-        let untrusted_state = UntrustedBlockState {
-            signed_header: &header.signed_header,
-            validators: &header.validator_set,
-            next_validators: None,
-        };
-        let trust_threshold = self.trust_level.try_into()?;
+        let untrusted_state = header.as_untrusted_block_state();
+        let trusted_state = header.as_trusted_block_state(consensus_state)?;
+        let options = self.as_light_client_options()?;
 
-        let verdict = self
-            .verifier
-            .verify_light_trusting(untrusted_state, trust_threshold);
-        match verdict {
-            Verdict::Success => {}
-            Verdict::NotEnoughTrust(voting_power_tally) => {
-                return Err(Error::not_enough_trusted_vals_signed(format!(
-                    "voting power tally: {}",
-                    voting_power_tally
-                ))
-                .into());
-            }
-            Verdict::Invalid(detail) => return Err(Error::verification_error(detail).into()),
-        }
+        self.verifier
+            .validate_against_trusted(
+                &untrusted_state,
+                &trusted_state,
+                &options,
+                current_timestamp.into_tm_time().unwrap(),
+            )
+            .map_err(Error::from)?;
+
+        Ok(())
+    }
+
+    fn verify_misbehaviour_header_commit(
+        &self,
+        header: &Header,
+        consensus_state: &TmConsensusState,
+    ) -> Result<(), Ics02Error> {
+        let untrusted_state = header.as_untrusted_block_state();
+        let trusted_state = header.as_trusted_block_state(consensus_state)?;
+        let options = self.as_light_client_options()?;
+
+        self.verifier
+            .verify_commit_against_trusted(&untrusted_state, &trusted_state, &options)
+            .map_err(Error::from)?;
 
         Ok(())
     }
@@ -586,15 +593,17 @@ impl Ics2ClientState for ClientState {
             let cs = ctx.consensus_state(&client_id, header_1.trusted_height)?;
             downcast_tm_consensus_state(cs.as_ref())
         }?;
-
         let consensus_state_2 = {
             let cs = ctx.consensus_state(&client_id, header_2.trusted_height)?;
             downcast_tm_consensus_state(cs.as_ref())
         }?;
 
         let current_timestamp = ctx.host_timestamp();
-        self.check_misbehaviour_header(&consensus_state_1, header_1, current_timestamp)?;
-        self.check_misbehaviour_header(&consensus_state_2, header_2, current_timestamp)?;
+        self.check_misbehaviour_header(header_1, &consensus_state_1, current_timestamp)?;
+        self.check_misbehaviour_header(header_2, &consensus_state_2, current_timestamp)?;
+
+        self.verify_misbehaviour_header_commit(header_1, &consensus_state_1)?;
+        self.verify_misbehaviour_header_commit(header_2, &consensus_state_2)?;
 
         let client_state = downcast_tm_client_state(self)?.clone();
         Ok(client_state
