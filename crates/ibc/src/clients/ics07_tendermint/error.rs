@@ -12,11 +12,10 @@ use flex_error::{define_error, TraceError};
 use tendermint::account::Id;
 use tendermint::hash::Hash;
 use tendermint::Error as TendermintError;
-use tendermint_light_client_verifier::errors::{
-    ErrorExt, VerificationError as LightClientError,
-    VerificationErrorDetail as LightClientErrorDetail,
-};
+use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
+use tendermint_light_client_verifier::operations::VotingPowerTally;
 use tendermint_light_client_verifier::types::ValidatorSet;
+use tendermint_light_client_verifier::Verdict;
 
 define_error! {
     #[derive(Debug, PartialEq, Eq)]
@@ -245,9 +244,9 @@ define_error! {
             },
 
         NotEnoughTrustedValsSigned
-            { reason: String }
+            { tally: VotingPowerTally }
             | e | {
-                format_args!("not enough trust because insufficient validators overlap: {}", e.reason)
+                format_args!("not enough trust because insufficient validators overlap: {:?}", e.tally)
             },
 
         VerificationError
@@ -355,14 +354,16 @@ impl From<Error> for Ics02Error {
     }
 }
 
-impl From<LightClientError> for Error {
-    fn from(error: LightClientError) -> Self {
-        let LightClientError(error, _) = error;
+pub(crate) trait IntoResult<T, E> {
+    fn into_result(self) -> Result<T, E>;
+}
 
-        if let Some(trust) = error.not_enough_trust() {
-            Error::not_enough_trusted_vals_signed(format!("voting power tally: {}", trust))
-        } else {
-            Error::verification_error(error)
+impl IntoResult<(), Error> for Verdict {
+    fn into_result(self) -> Result<(), Error> {
+        match self {
+            Verdict::Success => Ok(()),
+            Verdict::NotEnoughTrust(tally) => Err(Error::not_enough_trusted_vals_signed(tally)),
+            Verdict::Invalid(error) => Err(Error::verification_error(error)),
         }
     }
 }

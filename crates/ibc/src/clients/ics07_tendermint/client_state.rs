@@ -14,10 +14,10 @@ use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
-use tendermint_light_client_verifier::{ProdVerifier, Verdict, Verifier};
+use tendermint_light_client_verifier::{ProdVerifier, Verifier};
 
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
-use crate::clients::ics07_tendermint::error::Error;
+use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::{Header as TmHeader, Header};
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::core::ics02_client::client_state::{
@@ -311,7 +311,7 @@ impl ClientState {
                 &options,
                 current_timestamp.into_tm_time().unwrap(),
             )
-            .map_err(Error::from)?;
+            .into_result()?;
 
         Ok(())
     }
@@ -327,7 +327,7 @@ impl ClientState {
 
         self.verifier
             .verify_commit_against_trusted(&untrusted_state, &trusted_state, &options)
-            .map_err(Error::from)?;
+            .into_result()?;
 
         Ok(())
     }
@@ -477,24 +477,14 @@ impl Ics2ClientState for ClientState {
 
         let options = client_state.as_light_client_options()?;
 
-        let verdict = self.verifier.verify(
-            untrusted_state,
-            trusted_state,
-            &options,
-            ctx.host_timestamp()?.into_tm_time().unwrap(),
-        );
-
-        match verdict {
-            Verdict::Success => {}
-            Verdict::NotEnoughTrust(voting_power_tally) => {
-                return Err(Error::not_enough_trusted_vals_signed(format!(
-                    "voting power tally: {}",
-                    voting_power_tally
-                ))
-                .into());
-            }
-            Verdict::Invalid(detail) => return Err(Error::verification_error(detail).into()),
-        }
+        self.verifier
+            .verify(
+                untrusted_state,
+                trusted_state,
+                &options,
+                ctx.host_timestamp()?.into_tm_time().unwrap(),
+            )
+            .into_result()?;
 
         // If the header has verified, but its corresponding consensus state
         // differs from the existing consensus state for that height, freeze the
@@ -707,24 +697,14 @@ impl Ics2ClientState for ClientState {
 
         let options = client_state.as_light_client_options()?;
 
-        let verdict = self.verifier.verify(
-            untrusted_state,
-            trusted_state,
-            &options,
-            ctx.host_timestamp()?.into_tm_time().unwrap(),
-        );
-
-        match verdict {
-            Verdict::Success => {}
-            Verdict::NotEnoughTrust(voting_power_tally) => {
-                return Err(Error::not_enough_trusted_vals_signed(format!(
-                    "voting power tally: {}",
-                    voting_power_tally
-                ))
-                .into());
-            }
-            Verdict::Invalid(detail) => return Err(Error::verification_error(detail).into()),
-        }
+        self.verifier
+            .verify(
+                untrusted_state,
+                trusted_state,
+                &options,
+                ctx.host_timestamp()?.into_tm_time().unwrap(),
+            )
+            .into_result()?;
 
         // If the header has verified, but its corresponding consensus state
         // differs from the existing consensus state for that height, freeze the

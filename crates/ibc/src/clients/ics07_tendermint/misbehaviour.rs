@@ -8,7 +8,7 @@ use prost::Message;
 use serde::{Deserialize, Serialize};
 use tendermint_light_client_verifier::ProdVerifier;
 
-use crate::clients::ics07_tendermint::error::Error;
+use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::Header;
 use crate::core::ics02_client::error::Error as Ics02Error;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
@@ -44,11 +44,11 @@ impl Misbehaviour {
 
         let verifier = ProdVerifier::default();
 
-        verifier.validate(&untrusted_state_1)?;
-        verifier.validate(&untrusted_state_2)?;
+        verifier.validate(&untrusted_state_1).into_result()?;
+        verifier.validate(&untrusted_state_2).into_result()?;
 
-        verifier.verify_commit(&untrusted_state_1)?;
-        verifier.verify_commit(&untrusted_state_2)?;
+        verifier.verify_commit(&untrusted_state_1).into_result()?;
+        verifier.verify_commit(&untrusted_state_2).into_result()?;
 
         Ok(Self {
             client_id,
