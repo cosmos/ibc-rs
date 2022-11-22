@@ -6,9 +6,65 @@ use crate::core::ics03_connection::error::Error;
 use crate::core::ics03_connection::events::OpenConfirm;
 use crate::core::ics03_connection::handler::{ConnectionIdState, ConnectionResult};
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
+use crate::core::ValidationContext;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
+
+pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenConfirm) -> Result<(), Error>
+where
+    Ctx: ValidationContext,
+{
+    let conn_end_on_b = ctx_b.connection_end(&msg.conn_id_on_b)?;
+    if !conn_end_on_b.state_matches(&State::TryOpen) {
+        return Err(Error::connection_mismatch(msg.conn_id_on_b));
+    }
+
+    let client_id_on_a = conn_end_on_b.counterparty().client_id();
+    let client_id_on_b = conn_end_on_b.client_id();
+    let conn_id_on_a = conn_end_on_b
+        .counterparty()
+        .connection_id()
+        .ok_or_else(Error::invalid_counterparty)?;
+
+    // Verify proofs
+    {
+        let client_state_of_a_on_b = ctx_b
+            .client_state(client_id_on_b)
+            .map_err(|_| Error::other("failed to fetch client state".to_string()))?;
+        let consensus_state_of_a_on_b = ctx_b
+            .consensus_state(client_id_on_b, msg.proof_height_on_a)
+            .map_err(|_| Error::other("failed to fetch client consensus state".to_string()))?;
+
+        let prefix_on_a = conn_end_on_b.counterparty().prefix();
+        let prefix_on_b = ctx_b.commitment_prefix();
+
+        let expected_conn_end_on_a = ConnectionEnd::new(
+            State::Open,
+            client_id_on_a.clone(),
+            Counterparty::new(
+                client_id_on_b.clone(),
+                Some(msg.conn_id_on_b.clone()),
+                prefix_on_b,
+            ),
+            conn_end_on_b.versions().to_vec(),
+            conn_end_on_b.delay_period(),
+        );
+
+        client_state_of_a_on_b
+            .verify_connection_state(
+                msg.proof_height_on_a,
+                prefix_on_a,
+                &msg.proof_conn_end_on_a,
+                consensus_state_of_a_on_b.root(),
+                conn_id_on_a,
+                &expected_conn_end_on_a,
+            )
+            .map_err(Error::verify_connection_state)?;
+    }
+
+    Ok(())
+}
 
 /// Per our convention, this message is processed on chain B.
 pub(crate) fn process(
@@ -30,9 +86,9 @@ pub(crate) fn process(
 
     // Verify proofs
     {
-        let client_state_of_a_on_b = ctx_b.client_state(conn_end_on_b.client_id())?;
+        let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
         let consensus_state_of_a_on_b =
-            ctx_b.client_consensus_state(conn_end_on_b.client_id(), msg.proof_height_on_a)?;
+            ctx_b.client_consensus_state(client_id_on_b, msg.proof_height_on_a)?;
 
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let prefix_on_b = ctx_b.commitment_prefix();
