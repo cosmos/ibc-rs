@@ -11,7 +11,7 @@ use tendermint_light_client_verifier::ProdVerifier;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
 use crate::core::ics02_client::error::Error as Ics02Error;
-use crate::core::ics24_host::identifier::ClientId;
+use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::Height;
 
 pub const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
@@ -67,6 +67,15 @@ impl Misbehaviour {
 
     pub fn header2(&self) -> &Header {
         &self.header2
+    }
+
+    pub fn chain_id_matches(&self, chain_id: &ChainId) -> bool {
+        assert_eq!(
+            self.header1.signed_header.header.chain_id, self.header2.signed_header.header.chain_id,
+            "this is enforced by the ctor"
+        );
+
+        self.header1.signed_header.header.chain_id.as_str() == chain_id.as_str()
     }
 }
 

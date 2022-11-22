@@ -299,11 +299,6 @@ impl ClientState {
             );
         }
 
-        let _chain_id = self
-            .chain_id
-            .clone()
-            .with_version(header.height().revision_number());
-
         let untrusted_state = header.as_untrusted_block_state();
         let trusted_state = header.as_trusted_block_state(consensus_state)?;
         let options = self.as_light_client_options()?;
@@ -598,7 +593,20 @@ impl Ics2ClientState for ClientState {
             downcast_tm_consensus_state(cs.as_ref())
         }?;
 
+        let chain_id = self
+            .chain_id
+            .clone()
+            .with_version(header_1.height().revision_number());
+        if !misbehaviour.chain_id_matches(&chain_id) {
+            return Err(Error::misbehaviour_headers_chain_id_mismatch(
+                header_1.signed_header.header.chain_id.to_string(),
+                self.chain_id.to_string(),
+            )
+            .into());
+        }
+
         let current_timestamp = ctx.host_timestamp();
+
         self.check_misbehaviour_header(header_1, &consensus_state_1, current_timestamp)?;
         self.check_misbehaviour_header(header_2, &consensus_state_2, current_timestamp)?;
 

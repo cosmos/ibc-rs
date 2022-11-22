@@ -296,6 +296,12 @@ define_error! {
                 format_args!("the client is frozen: frozen_height={0} target_height={1}", e.frozen_height, e.target_height)
             },
 
+        MisbehaviourHeadersChainIdMismatch {
+                header_chain_id: String,
+                chain_id: String,
+            }
+            | e | { format_args!("header chain-id ('{0}') does not match the light client's chain-id ('{1}')", e.header_chain_id, e.chain_id) },
+
         MisbehaviourHeadersBlockHashesEqual
             |_| { "headers block hashes are equal" },
 
