@@ -37,9 +37,9 @@ use crate::core::ics05_port::error::Error as Ics05Error;
 use crate::core::ics05_port::error::Error;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ics26_routing::context::{Ics26Context, Module, ModuleId, Router, RouterBuilder};
+use crate::core::ics26_routing::context::{Module, ModuleId, Router, RouterBuilder, RouterContext};
 use crate::core::ics26_routing::handler::{deliver, dispatch, MsgReceipt};
-use crate::core::ics26_routing::msgs::Ics26Envelope;
+use crate::core::ics26_routing::msgs::MsgEnvelope;
 use crate::events::IbcEvent;
 use crate::mock::client_state::{
     client_type as mock_client_type, MockClientRecord, MockClientState,
@@ -47,7 +47,7 @@ use crate::mock::client_state::{
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::mock::host::{HostBlock, HostType};
-use crate::relayer::ics18_relayer::context::Ics18Context;
+use crate::relayer::ics18_relayer::context::RelayerContext;
 use crate::relayer::ics18_relayer::error::Error as Ics18Error;
 use crate::signer::Signer;
 use crate::timestamp::Timestamp;
@@ -466,7 +466,7 @@ impl MockContext {
     /// A datagram passes from the relayer to the IBC module (on host chain).
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
     /// Used in testing the Ics18 algorithms, hence this may return a Ics18Error.
-    pub fn deliver(&mut self, msg: Ics26Envelope) -> Result<(), Ics18Error> {
+    pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), Ics18Error> {
         dispatch(self, msg).map_err(Ics18Error::transaction_failed)?;
         // Create a new block.
         self.advance_host_chain_height();
@@ -647,7 +647,7 @@ impl Router for MockRouter {
     }
 }
 
-impl Ics26Context for MockContext {
+impl RouterContext for MockContext {
     type Router = MockRouter;
 
     fn router(&self) -> &Self::Router {

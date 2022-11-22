@@ -4,7 +4,7 @@ use subtle_encoding::bech32;
 use tendermint::{block, consensus, evidence, public_key::Algorithm};
 
 use crate::applications::transfer::context::{
-    cosmos_adr028_escrow_address, BankKeeper, Ics20Context, TokenTransferKeeper,
+    cosmos_adr028_escrow_address, BankKeeper, TokenTransferContext, TokenTransferKeeper,
     TokenTransferReader,
 };
 use crate::applications::transfer::{error::Error as Ics20Error, PrefixedCoin};
@@ -299,6 +299,6 @@ impl SendPacketReader for DummyTransferModule {
     }
 }
 
-impl Ics20Context for DummyTransferModule {
+impl TokenTransferContext for DummyTransferModule {
     type AccountId = Signer;
 }
