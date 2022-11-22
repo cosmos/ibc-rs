@@ -28,11 +28,11 @@ pub trait ConnectionReader {
     fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, Error>;
 
     /// Returns the current height of the local chain.
-    fn host_current_height(&self) -> Height;
+    fn host_current_height(&self) -> Result<Height, Error>;
 
     #[deprecated(since = "0.20.0")]
     /// Returns the oldest height available on the local chain.
-    fn host_oldest_height(&self) -> Height;
+    fn host_oldest_height(&self) -> Result<Height, Error>;
 
     /// Returns the prefix that the local chain uses in the KV store.
     fn commitment_prefix(&self) -> CommitmentPrefix;

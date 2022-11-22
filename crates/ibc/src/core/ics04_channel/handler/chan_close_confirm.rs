@@ -133,7 +133,7 @@ mod tests {
         let client_id = ClientId::new(mock_client_type(), 24).unwrap();
         let conn_id = ConnectionId::new(2);
         let default_context = MockContext::default();
-        let client_consensus_state_height = default_context.host_height();
+        let client_consensus_state_height = default_context.host_height().unwrap();
 
         let conn_end = ConnectionEnd::new(
             ConnectionState::Open,

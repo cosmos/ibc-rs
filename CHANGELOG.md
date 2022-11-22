@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## v0.23.0
+
+*November 21, 2022*
+
+This release mainly updates the tendermint-rs dependency to v0.26.0.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Update to tendermint-rs 0.26 and ibc-proto 0.22
+  ([#208](https://github.com/cosmos/ibc-rs/issues/208))
+
+### FEATURES
+
+- Add Other Item for Ics02Client,Ics03connection, Ics04Channel Error
+  ([#237](https://github.com/cosmos/ibc-rs/issues/237))
+
 ## v0.22.0
 
 *November 9, 2022*
