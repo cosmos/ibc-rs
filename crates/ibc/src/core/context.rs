@@ -10,7 +10,7 @@ use ibc_proto::google::protobuf::Any;
 use super::ics02_client::client_type::ClientType;
 use super::ics02_client::handler::{create_client, update_client, upgrade_client};
 use super::ics02_client::msgs::ClientMsg;
-use super::ics03_connection::handler::{conn_open_init, conn_open_try};
+use super::ics03_connection::handler::{conn_open_ack, conn_open_init, conn_open_try};
 use super::ics03_connection::msgs::ConnectionMsg;
 use super::ics24_host::path::{
     ClientConnectionsPath, ClientConsensusStatePath, ClientStatePath, ClientTypePath,
@@ -62,7 +62,9 @@ pub trait ValidationContext {
                 ConnectionMsg::ConnectionOpenTry(message) => {
                     conn_open_try::validate(self, *message)
                 }
-                ConnectionMsg::ConnectionOpenAck(_) => todo!(),
+                ConnectionMsg::ConnectionOpenAck(message) => {
+                    conn_open_ack::validate(self, *message)
+                }
                 ConnectionMsg::ConnectionOpenConfirm(_) => todo!(),
             }
             .map_err(RouterError::ics03_connection),

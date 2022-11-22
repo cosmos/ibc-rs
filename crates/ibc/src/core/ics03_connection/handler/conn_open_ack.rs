@@ -6,11 +6,113 @@ use crate::core::ics03_connection::error::Error;
 use crate::core::ics03_connection::events::OpenAck;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
+use crate::core::ValidationContext;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
 use super::ConnectionIdState;
+
+pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), Error>
+where
+    Ctx: ValidationContext,
+{
+    let host_height = ctx_a
+        .host_height()
+        .map_err(|_| Error::other("failed to get host height".to_string()))?;
+    if msg.consensus_height_of_a_on_b > host_height {
+        return Err(Error::invalid_consensus_height(
+            msg.consensus_height_of_a_on_b,
+            host_height,
+        ));
+    }
+
+    ctx_a.validate_self_client(msg.client_state_of_a_on_b.clone())?;
+
+    let conn_end_on_a = ctx_a.connection_end(&msg.conn_id_on_a)?;
+    if !(conn_end_on_a.state_matches(&State::Init)
+        && conn_end_on_a.versions().contains(&msg.version))
+    {
+        return Err(Error::connection_mismatch(msg.conn_id_on_a));
+    }
+
+    let client_id_on_a = conn_end_on_a.client_id();
+    let client_id_on_b = conn_end_on_a.counterparty().client_id();
+
+    let conn_id_on_b = conn_end_on_a
+        .counterparty()
+        .connection_id()
+        .ok_or_else(Error::invalid_counterparty)?;
+
+    // Proof verification.
+    {
+        let client_state_of_b_on_a = ctx_a
+            .client_state(client_id_on_a)
+            .map_err(|_| Error::other("failed to fetch client state".to_string()))?;
+        let consensus_state_of_b_on_a = ctx_a
+            .consensus_state(conn_end_on_a.client_id(), msg.proofs_height_on_b)
+            .map_err(|_| Error::other("failed to fetch client consensus state".to_string()))?;
+
+        let prefix_on_a = ctx_a.commitment_prefix();
+        let prefix_on_b = conn_end_on_a.counterparty().prefix();
+
+        {
+            let expected_conn_end_on_b = ConnectionEnd::new(
+                State::TryOpen,
+                client_id_on_b.clone(),
+                Counterparty::new(
+                    client_id_on_a.clone(),
+                    Some(msg.conn_id_on_a.clone()),
+                    prefix_on_a,
+                ),
+                vec![msg.version.clone()],
+                conn_end_on_a.delay_period(),
+            );
+
+            client_state_of_b_on_a
+                .verify_connection_state(
+                    msg.proofs_height_on_b,
+                    prefix_on_b,
+                    &msg.proof_conn_end_on_b,
+                    consensus_state_of_b_on_a.root(),
+                    conn_id_on_b,
+                    &expected_conn_end_on_b,
+                )
+                .map_err(Error::verify_connection_state)?;
+        }
+
+        client_state_of_b_on_a
+            .verify_client_full_state(
+                msg.proofs_height_on_b,
+                prefix_on_b,
+                &msg.proof_client_state_of_a_on_b,
+                consensus_state_of_b_on_a.root(),
+                client_id_on_b,
+                msg.client_state_of_a_on_b,
+            )
+            .map_err(|e| {
+                Error::client_state_verification_failure(conn_end_on_a.client_id().clone(), e)
+            })?;
+
+        let expected_consensus_state_of_a_on_b = ctx_a
+            .host_consensus_state(msg.consensus_height_of_a_on_b)
+            .map_err(|_| Error::other("failed to fetch host consensus state".to_string()))?;
+
+        client_state_of_b_on_a
+            .verify_client_consensus_state(
+                msg.proofs_height_on_b,
+                prefix_on_b,
+                &msg.proof_consensus_state_of_a_on_b,
+                consensus_state_of_b_on_a.root(),
+                conn_end_on_a.counterparty().client_id(),
+                msg.consensus_height_of_a_on_b,
+                expected_consensus_state_of_a_on_b.as_ref(),
+            )
+            .map_err(|e| Error::consensus_state_verification_failure(msg.proofs_height_on_b, e))?;
+    }
+
+    Ok(())
+}
 
 /// Per our convention, this message is processed on chain A.
 pub(crate) fn process(
