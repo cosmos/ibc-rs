@@ -121,7 +121,7 @@ pub trait ValidationContext {
     fn client_counter(&self) -> Result<u64, ClientError>;
 
     /// Returns the ConnectionEnd for the given identifier `conn_id`.
-    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ClientError>;
+    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ConnectionError>;
 
     /// Returns the oldest height available on the local chain.
     fn host_oldest_height(&self) -> Height;
@@ -130,7 +130,7 @@ pub trait ValidationContext {
     fn commitment_prefix(&self) -> CommitmentPrefix;
 
     /// Returns a counter on how many connections have been created thus far.
-    fn connection_counter(&self) -> Result<u64, ClientError>;
+    fn connection_counter(&self) -> Result<u64, ConnectionError>;
 
     /// Function required by ICS 03. Returns the list of all possible versions that the connection
     /// handshake protocol supports.
@@ -266,7 +266,15 @@ pub trait ExecutionContext: ValidationContext {
                 ClientMsg::UpgradeClient(message) => upgrade_client::execute(self, message),
             }
             .map_err(RouterError::ics02_client),
-            MsgEnvelope::ConnectionMsg(_message) => todo!(),
+            MsgEnvelope::ConnectionMsg(message) => match message {
+                ConnectionMsg::ConnectionOpenInit(message) => {
+                    conn_open_init::execute(self, message)
+                }
+                ConnectionMsg::ConnectionOpenTry(_) => todo!(),
+                ConnectionMsg::ConnectionOpenAck(_) => todo!(),
+                ConnectionMsg::ConnectionOpenConfirm(_) => todo!(),
+            }
+            .map_err(RouterError::ics03_connection),
             MsgEnvelope::ChannelMsg(_message) => todo!(),
             MsgEnvelope::PacketMsg(_message) => todo!(),
         }
@@ -329,7 +337,7 @@ pub trait ExecutionContext: ValidationContext {
     fn store_connection_to_client(
         &mut self,
         client_connections_path: ClientConnectionsPath,
-        client_id: &ClientId,
+        conn_id: &ConnectionId,
     ) -> Result<(), ConnectionError>;
 
     /// Called upon connection identifier creation (Init or Try process).

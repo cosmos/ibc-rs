@@ -7,7 +7,8 @@ use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics24_host::identifier::ConnectionId;
-use crate::core::ValidationContext;
+use crate::core::ics24_host::path::{ClientConnectionsPath, ConnectionsPath};
+use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
@@ -33,6 +34,54 @@ where
         }
         None => Ok(ctx_a.get_compatible_versions()),
     }?;
+
+    Ok(())
+}
+
+pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenInit) -> Result<(), Error>
+where
+    Ctx: ExecutionContext,
+{
+    let versions = match msg.version {
+        Some(version) => {
+            if ctx_a.get_compatible_versions().contains(&version) {
+                Ok(vec![version])
+            } else {
+                Err(Error::version_not_supported(version))
+            }
+        }
+        None => Ok(ctx_a.get_compatible_versions()),
+    }?;
+
+    let conn_end_on_a = ConnectionEnd::new(
+        State::Init,
+        msg.client_id_on_a.clone(),
+        msg.counterparty.clone(),
+        versions,
+        msg.delay_period,
+    );
+
+    // Construct the identifier for the new connection.
+    let conn_id_on_a = ConnectionId::new(ctx_a.connection_counter()?);
+
+    ctx_a.log_message(format!(
+        "success: conn_open_init: generated new connection identifier: {}",
+        conn_id_on_a
+    ));
+
+    {
+        let client_id_on_b = msg.counterparty.client_id().clone();
+
+        ctx_a.emit_ibc_event(IbcEvent::OpenInitConnection(OpenInit::new(
+            conn_id_on_a.clone(),
+            msg.client_id_on_a.clone(),
+            client_id_on_b,
+        )));
+    }
+
+    ctx_a.increase_connection_counter();
+    ctx_a.store_connection_to_client(ClientConnectionsPath(msg.client_id_on_a), &conn_id_on_a)?;
+    ctx_a.store_connection(ConnectionsPath(conn_id_on_a), &conn_end_on_a)?;
 
     Ok(())
 }
