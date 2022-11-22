@@ -12,7 +12,10 @@ use flex_error::{define_error, TraceError};
 use tendermint::account::Id;
 use tendermint::hash::Hash;
 use tendermint::Error as TendermintError;
-use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
+use tendermint_light_client_verifier::errors::{
+    ErrorExt, VerificationError as LightClientError,
+    VerificationErrorDetail as LightClientErrorDetail,
+};
 use tendermint_light_client_verifier::types::ValidatorSet;
 
 define_error! {
@@ -343,5 +346,17 @@ define_error! {
 impl From<Error> for Ics02Error {
     fn from(e: Error) -> Self {
         Self::client_specific(e.to_string())
+    }
+}
+
+impl From<LightClientError> for Error {
+    fn from(error: LightClientError) -> Self {
+        let LightClientError(error, _) = error;
+
+        if let Some(trust) = error.not_enough_trust() {
+            Error::not_enough_trusted_vals_signed(format!("voting power tally: {}", trust))
+        } else {
+            Error::verification_error(error)
+        }
     }
 }
