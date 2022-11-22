@@ -112,7 +112,7 @@ impl TryFrom<Any> for MockClientState {
 
         fn decode_client_state<B: Buf>(buf: B) -> Result<MockClientState, Error> {
             RawMockClientState::decode(buf)
-                .map_err(Error::decode)?
+                .map_err(Error::Decode)?
                 .try_into()
         }
 
@@ -120,7 +120,9 @@ impl TryFrom<Any> for MockClientState {
             MOCK_CLIENT_STATE_TYPE_URL => {
                 decode_client_state(raw.value.deref()).map_err(Into::into)
             }
-            _ => Err(Error::unknown_client_state_type(raw.type_url)),
+            _ => Err(Error::UnknownClientStateType {
+                client_state_type: raw.type_url,
+            }),
         }
     }
 }
@@ -178,10 +180,10 @@ impl ClientState for MockClientState {
         let header = MockHeader::try_from(header)?;
 
         if self.latest_height() >= header.height() {
-            return Err(Error::low_header_height(
-                header.height(),
-                self.latest_height(),
-            ));
+            return Err(Error::LowHeaderHeight {
+                header_height: header.height(),
+                latest_height: self.latest_height(),
+            });
         }
 
         Ok(UpdatedState {
@@ -199,10 +201,10 @@ impl ClientState for MockClientState {
         let header = MockHeader::try_from(header)?;
 
         if self.latest_height() >= header.height() {
-            return Err(Error::low_header_height(
-                header.height(),
-                self.latest_height(),
-            ));
+            return Err(Error::LowHeaderHeight {
+                header_height: header.height(),
+                latest_height: self.latest_height(),
+            });
         }
 
         Ok(UpdatedState {

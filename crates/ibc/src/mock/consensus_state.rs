@@ -40,7 +40,7 @@ impl TryFrom<RawMockConsensusState> for MockConsensusState {
     type Error = Error;
 
     fn try_from(raw: RawMockConsensusState) -> Result<Self, Self::Error> {
-        let raw_header = raw.header.ok_or_else(Error::missing_raw_consensus_state)?;
+        let raw_header = raw.header.ok_or(Error::MissingRawConsensusState)?;
 
         Ok(Self {
             header: MockHeader::try_from(raw_header)?,
@@ -72,7 +72,7 @@ impl TryFrom<Any> for MockConsensusState {
 
         fn decode_consensus_state<B: Buf>(buf: B) -> Result<MockConsensusState, Error> {
             RawMockConsensusState::decode(buf)
-                .map_err(Error::decode)?
+                .map_err(Error::Decode)?
                 .try_into()
         }
 
@@ -80,7 +80,9 @@ impl TryFrom<Any> for MockConsensusState {
             MOCK_CONSENSUS_STATE_TYPE_URL => {
                 decode_consensus_state(raw.value.deref()).map_err(Into::into)
             }
-            _ => Err(Error::unknown_consensus_state_type(raw.type_url)),
+            _ => Err(Error::UnknownConsensusStateType {
+                consensus_state_type: raw.type_url,
+            }),
         }
     }
 }

@@ -118,7 +118,9 @@ impl TryFrom<Any> for ConsensusState {
             TENDERMINT_CONSENSUS_STATE_TYPE_URL => {
                 decode_consensus_state(raw.value.deref()).map_err(Into::into)
             }
-            _ => Err(Ics02Error::unknown_consensus_state_type(raw.type_url)),
+            _ => Err(Ics02Error::UnknownConsensusStateType {
+                consensus_state_type: raw.type_url,
+            }),
         }
     }
 }

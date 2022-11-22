@@ -44,14 +44,15 @@ where
     let client_state = ctx.client_state(&client_id)?;
 
     if client_state.is_frozen() {
-        return Err(Error::client_frozen(client_id));
+        return Err(Error::ClientFrozen { client_id });
     }
 
     // Read consensus state from the host chain store.
     let latest_consensus_state = ctx
         .consensus_state(&client_id, client_state.latest_height())
-        .map_err(|_| {
-            Error::consensus_state_not_found(client_id.clone(), client_state.latest_height())
+        .map_err(|_| Error::ConsensusStateNotFound {
+            client_id: client_id.clone(),
+            height: client_state.latest_height(),
         })?;
 
     debug!("latest consensus state: {:?}", latest_consensus_state);
@@ -59,15 +60,16 @@ where
     let now = ctx.host_timestamp();
     let duration = now
         .duration_since(&latest_consensus_state.timestamp())
-        .ok_or_else(|| {
-            Error::invalid_consensus_state_timestamp(latest_consensus_state.timestamp(), now)
+        .ok_or_else(|| Error::InvalidConsensusStateTimestamp {
+            time1: latest_consensus_state.timestamp(),
+            time2: now,
         })?;
 
     if client_state.expired(duration) {
-        return Err(Error::header_not_within_trust_period(
-            latest_consensus_state.timestamp(),
-            now,
-        ));
+        return Err(Error::HeaderNotWithinTrustPeriod {
+            latest_time: latest_consensus_state.timestamp(),
+            update_time: now,
+        });
     }
 
     // Use client_state to validate the new header against the latest consensus_state.
@@ -75,7 +77,9 @@ where
     // consensus_state obtained from header. These will be later persisted by the keeper.
     let _ = client_state
         .check_header_and_update_state(ctx, client_id.clone(), header)
-        .map_err(|e| Error::header_verification_failure(e.to_string()))?;
+        .map_err(|e| Error::HeaderVerificationFailure {
+            reaseon: e.to_string(),
+        })?;
 
     Ok(())
 }
@@ -99,7 +103,9 @@ where
         consensus_state,
     } = client_state
         .check_header_and_update_state(ctx, client_id.clone(), header.clone())
-        .map_err(|e| Error::header_verification_failure(e.to_string()))?;
+        .map_err(|e| Error::HeaderVerificationFailure {
+            reaseon: e.to_string(),
+        })?;
 
     ctx.store_client_state(ClientStatePath(client_id.clone()), client_state.clone())?;
     ctx.store_consensus_state(
@@ -149,13 +155,16 @@ pub fn process<Ctx: ClientReader>(
     let client_state = ctx.client_state(&client_id)?;
 
     if client_state.is_frozen() {
-        return Err(Error::client_frozen(client_id));
+        return Err(Error::ClientFrozen { client_id });
     }
 
     // Read consensus state from the host chain store.
     let latest_consensus_state =
         ClientReader::consensus_state(ctx, &client_id, client_state.latest_height()).map_err(
-            |_| Error::consensus_state_not_found(client_id.clone(), client_state.latest_height()),
+            |_| Error::ConsensusStateNotFound {
+                client_id: client_id.clone(),
+                height: client_state.latest_height(),
+            },
         )?;
 
     debug!("latest consensus state: {:?}", latest_consensus_state);
@@ -163,15 +172,16 @@ pub fn process<Ctx: ClientReader>(
     let now = ClientReader::host_timestamp(ctx);
     let duration = now
         .duration_since(&latest_consensus_state.timestamp())
-        .ok_or_else(|| {
-            Error::invalid_consensus_state_timestamp(latest_consensus_state.timestamp(), now)
+        .ok_or_else(|| Error::InvalidConsensusStateTimestamp {
+            time1: latest_consensus_state.timestamp(),
+            time2: now,
         })?;
 
     if client_state.expired(duration) {
-        return Err(Error::header_not_within_trust_period(
-            latest_consensus_state.timestamp(),
-            now,
-        ));
+        return Err(Error::HeaderNotWithinTrustPeriod {
+            latest_time: latest_consensus_state.timestamp(),
+            update_time: now,
+        });
     }
 
     // Use client_state to validate the new header against the latest consensus_state.
@@ -182,7 +192,9 @@ pub fn process<Ctx: ClientReader>(
         consensus_state,
     } = client_state
         .old_check_header_and_update_state(ctx, client_id.clone(), header.clone())
-        .map_err(|e| Error::header_verification_failure(e.to_string()))?;
+        .map_err(|e| Error::HeaderVerificationFailure {
+            reaseon: e.to_string(),
+        })?;
 
     let client_type = client_state.client_type();
     let consensus_height = client_state.latest_height();
@@ -216,7 +228,7 @@ mod tests {
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::core::ics02_client::client_state::ClientState;
     use crate::core::ics02_client::consensus_state::downcast_consensus_state;
-    use crate::core::ics02_client::error::{Error, ErrorDetail};
+    use crate::core::ics02_client::error::Error;
     use crate::core::ics02_client::handler::dispatch;
     use crate::core::ics02_client::handler::ClientResult::Update;
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
@@ -272,7 +284,7 @@ mod tests {
                 }
             }
             Err(err) => {
-                panic!("unexpected error: {}", err);
+                panic!("unexpected error: {:?}", err);
             }
         }
     }
@@ -293,8 +305,8 @@ mod tests {
         let output = dispatch(&ctx, ClientMsg::UpdateClient(msg.clone()));
 
         match output {
-            Err(Error(ErrorDetail::ClientNotFound(e), _)) => {
-                assert_eq!(e.client_id, msg.client_id);
+            Err(Error::ClientNotFound { client_id }) => {
+                assert_eq!(client_id, msg.client_id);
             }
             _ => {
                 panic!("expected ClientNotFound error, instead got {:?}", output)
@@ -337,7 +349,7 @@ mod tests {
                     assert!(log.is_empty());
                 }
                 Err(err) => {
-                    panic!("unexpected error: {}", err);
+                    panic!("unexpected error: {:?}", err);
                 }
             }
         }
@@ -401,7 +413,7 @@ mod tests {
                 }
             }
             Err(err) => {
-                panic!("unexpected error: {}", err);
+                panic!("unexpected error: {:?}", err);
             }
         }
     }
@@ -465,7 +477,7 @@ mod tests {
                 }
             }
             Err(err) => {
-                panic!("unexpected error: {}", err);
+                panic!("unexpected error: {:?}", err);
             }
         }
     }
@@ -591,8 +603,8 @@ mod tests {
             Ok(_) => {
                 panic!("update handler result has incorrect type");
             }
-            Err(err) => match err.detail() {
-                ErrorDetail::HeaderVerificationFailure(_) => {}
+            Err(err) => match err {
+                Error::HeaderVerificationFailure { reaseon: _ } => {}
                 _ => panic!("unexpected error: {:?}", err),
             },
         }

@@ -26,7 +26,7 @@ define_error! {
             | _ | { "parse error" },
 
         Client
-            [ client_error::Error ]
+            [ TraceError<client_error::Error> ]
             | _ | { "ICS02 client error" },
 
         Connection

@@ -1175,17 +1175,25 @@ impl ClientReader for MockContext {
     fn client_type(&self, client_id: &ClientId) -> Result<ClientType, Ics02Error> {
         match self.ibc_store.lock().unwrap().clients.get(client_id) {
             Some(client_record) => Ok(client_record.client_type.clone()),
-            None => Err(Ics02Error::client_not_found(client_id.clone())),
+            None => Err(Ics02Error::ClientNotFound {
+                client_id: client_id.clone(),
+            }),
         }
     }
 
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Ics02Error> {
         match self.ibc_store.lock().unwrap().clients.get(client_id) {
-            Some(client_record) => client_record
-                .client_state
-                .clone()
-                .ok_or_else(|| Ics02Error::client_not_found(client_id.clone())),
-            None => Err(Ics02Error::client_not_found(client_id.clone())),
+            Some(client_record) => {
+                client_record
+                    .client_state
+                    .clone()
+                    .ok_or_else(|| Ics02Error::ClientNotFound {
+                        client_id: client_id.clone(),
+                    })
+            }
+            None => Err(Ics02Error::ClientNotFound {
+                client_id: client_id.clone(),
+            }),
         }
     }
 
@@ -1195,7 +1203,9 @@ impl ClientReader for MockContext {
         } else if let Ok(client_state) = MockClientState::try_from(client_state.clone()) {
             Ok(client_state.into_box())
         } else {
-            Err(Ics02Error::unknown_client_state_type(client_state.type_url))
+            Err(Ics02Error::UnknownClientStateType {
+                client_state_type: client_state.type_url,
+            })
         }
     }
 
@@ -1207,15 +1217,15 @@ impl ClientReader for MockContext {
         match self.ibc_store.lock().unwrap().clients.get(client_id) {
             Some(client_record) => match client_record.consensus_states.get(&height) {
                 Some(consensus_state) => Ok(consensus_state.clone()),
-                None => Err(Ics02Error::consensus_state_not_found(
-                    client_id.clone(),
+                None => Err(Ics02Error::ConsensusStateNotFound {
+                    client_id: client_id.clone(),
                     height,
-                )),
+                }),
             },
-            None => Err(Ics02Error::consensus_state_not_found(
-                client_id.clone(),
+            None => Err(Ics02Error::ConsensusStateNotFound {
+                client_id: client_id.clone(),
                 height,
-            )),
+            }),
         }
     }
 
@@ -1226,10 +1236,13 @@ impl ClientReader for MockContext {
         height: Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, Ics02Error> {
         let ibc_store = self.ibc_store.lock().unwrap();
-        let client_record = ibc_store
-            .clients
-            .get(client_id)
-            .ok_or_else(|| Ics02Error::client_not_found(client_id.clone()))?;
+        let client_record =
+            ibc_store
+                .clients
+                .get(client_id)
+                .ok_or_else(|| Ics02Error::ClientNotFound {
+                    client_id: client_id.clone(),
+                })?;
 
         // Get the consensus state heights and sort them in ascending order.
         let mut heights: Vec<Height> = client_record.consensus_states.keys().cloned().collect();
@@ -1254,10 +1267,13 @@ impl ClientReader for MockContext {
         height: Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, Ics02Error> {
         let ibc_store = self.ibc_store.lock().unwrap();
-        let client_record = ibc_store
-            .clients
-            .get(client_id)
-            .ok_or_else(|| Ics02Error::client_not_found(client_id.clone()))?;
+        let client_record =
+            ibc_store
+                .clients
+                .get(client_id)
+                .ok_or_else(|| Ics02Error::ClientNotFound {
+                    client_id: client_id.clone(),
+                })?;
 
         // Get the consensus state heights and sort them in descending order.
         let mut heights: Vec<Height> = client_record.consensus_states.keys().cloned().collect();
@@ -1291,12 +1307,12 @@ impl ClientReader for MockContext {
     fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, Ics02Error> {
         match self.host_block(height) {
             Some(block_ref) => Ok(block_ref.clone().into()),
-            None => Err(Ics02Error::missing_local_consensus_state(height)),
+            None => Err(Ics02Error::MissingLocalConsensusState { height }),
         }
     }
 
     fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, Ics02Error> {
-        Err(Ics02Error::implementation_specific())
+        Err(Ics02Error::ImplementationSpecific)
     }
 
     fn client_counter(&self) -> Result<u64, Ics02Error> {

@@ -311,6 +311,8 @@ define_error! {
 
 impl From<Error> for Ics02Error {
     fn from(e: Error) -> Self {
-        Self::client_specific(e.to_string())
+        Self::ClientSpecific {
+            description: e.to_string(),
+        }
     }
 }

@@ -33,16 +33,16 @@ where
     let old_client_state = ctx.client_state(&client_id)?;
 
     if old_client_state.is_frozen() {
-        return Err(Error::client_frozen(client_id));
+        return Err(Error::ClientFrozen { client_id });
     }
 
     let upgrade_client_state = ctx.decode_client_state(msg.client_state)?;
 
     if old_client_state.latest_height() >= upgrade_client_state.latest_height() {
-        return Err(Error::low_upgrade_height(
-            old_client_state.latest_height(),
-            upgrade_client_state.latest_height(),
-        ));
+        return Err(Error::LowUpgradeHeight {
+            upgraded_height: old_client_state.latest_height(),
+            client_height: upgrade_client_state.latest_height(),
+        });
     }
 
     Ok(())
@@ -94,16 +94,16 @@ pub fn process(
     let old_client_state = ctx.client_state(&client_id)?;
 
     if old_client_state.is_frozen() {
-        return Err(Error::client_frozen(client_id));
+        return Err(Error::ClientFrozen { client_id });
     }
 
     let upgrade_client_state = ctx.decode_client_state(msg.client_state)?;
 
     if old_client_state.latest_height() >= upgrade_client_state.latest_height() {
-        return Err(Error::low_upgrade_height(
-            old_client_state.latest_height(),
-            upgrade_client_state.latest_height(),
-        ));
+        return Err(Error::LowUpgradeHeight {
+            upgraded_height: old_client_state.latest_height(),
+            client_height: upgrade_client_state.latest_height(),
+        });
     }
 
     let UpdatedState {
@@ -143,7 +143,7 @@ mod tests {
 
     use core::str::FromStr;
 
-    use crate::core::ics02_client::error::{Error, ErrorDetail};
+    use crate::core::ics02_client::error::Error;
     use crate::core::ics02_client::handler::dispatch;
     use crate::core::ics02_client::handler::ClientResult::Upgrade;
     use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
@@ -219,8 +219,8 @@ mod tests {
         let output = dispatch(&ctx, ClientMsg::UpgradeClient(msg.clone()));
 
         match output {
-            Err(Error(ErrorDetail::ClientNotFound(e), _)) => {
-                assert_eq!(e.client_id, msg.client_id);
+            Err(Error::ClientNotFound { client_id }) => {
+                assert_eq!(client_id, msg.client_id);
             }
             _ => {
                 panic!("expected ClientNotFound error, instead got {:?}", output);
@@ -248,10 +248,13 @@ mod tests {
         let output = dispatch(&ctx, ClientMsg::UpgradeClient(msg.clone()));
 
         match output {
-            Err(Error(ErrorDetail::LowUpgradeHeight(e), _)) => {
-                assert_eq!(e.upgraded_height, Height::new(0, 42).unwrap());
+            Err(Error::LowUpgradeHeight {
+                upgraded_height,
+                client_height,
+            }) => {
+                assert_eq!(upgraded_height, Height::new(0, 42).unwrap());
                 assert_eq!(
-                    e.client_height,
+                    client_height,
                     MockClientState::try_from(msg.client_state)
                         .unwrap()
                         .latest_height()

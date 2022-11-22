@@ -241,11 +241,17 @@ impl SendPacketReader for DummyTransferModule {
 
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Error> {
         match self.ibc_store.lock().unwrap().clients.get(client_id) {
-            Some(client_record) => client_record
-                .client_state
-                .clone()
-                .ok_or_else(|| Ics02Error::client_not_found(client_id.clone())),
-            None => Err(Ics02Error::client_not_found(client_id.clone())),
+            Some(client_record) => {
+                client_record
+                    .client_state
+                    .clone()
+                    .ok_or_else(|| Ics02Error::ClientNotFound {
+                        client_id: client_id.clone(),
+                    })
+            }
+            None => Err(Ics02Error::ClientNotFound {
+                client_id: client_id.clone(),
+            }),
         }
         .map_err(|e| Error::ics03_connection(Ics03Error::ics02_client(e)))
     }
@@ -258,15 +264,15 @@ impl SendPacketReader for DummyTransferModule {
         match self.ibc_store.lock().unwrap().clients.get(client_id) {
             Some(client_record) => match client_record.consensus_states.get(&height) {
                 Some(consensus_state) => Ok(consensus_state.clone()),
-                None => Err(Ics02Error::consensus_state_not_found(
-                    client_id.clone(),
+                None => Err(Ics02Error::ConsensusStateNotFound {
+                    client_id: client_id.clone(),
                     height,
-                )),
+                }),
             },
-            None => Err(Ics02Error::consensus_state_not_found(
-                client_id.clone(),
+            None => Err(Ics02Error::ConsensusStateNotFound {
+                client_id: client_id.clone(),
                 height,
-            )),
+            }),
         }
         .map_err(|e| Error::ics03_connection(Ics03Error::ics02_client(e)))
     }

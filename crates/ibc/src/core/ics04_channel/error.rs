@@ -16,7 +16,7 @@ use flex_error::{define_error, TraceError};
 use ibc_proto::protobuf::Error as TendermintError;
 
 define_error! {
-    #[derive(Debug, PartialEq, Eq)]
+    #[derive(Debug)]
     Error {
         Ics03Connection
             [ connection_error::Error ]
@@ -147,7 +147,7 @@ define_error! {
 
         PacketVerificationFailed
             { sequence: Sequence }
-            [ client_error::Error ]
+            [ TraceError<client_error::Error> ]
             | e | {
                 format_args!(
                     "Verification fails for the packet with the sequence number {0}",
@@ -155,7 +155,7 @@ define_error! {
             },
 
         VerifyChannelFailed
-            [ client_error::Error ]
+            [ TraceError<client_error::Error> ]
             | _ | {
                 "Error verifying channel state"
             },

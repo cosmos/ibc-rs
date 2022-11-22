@@ -269,7 +269,7 @@ impl TryFrom<RawCounterparty> for Counterparty {
                 .ok_or_else(Error::missing_counterparty)?
                 .key_prefix
                 .try_into()
-                .map_err(|_| Error::ics02_client(ClientError::empty_prefix()))?,
+                .map_err(|_| Error::ics02_client(ClientError::EmptyPrefix))?,
         ))
     }
 }

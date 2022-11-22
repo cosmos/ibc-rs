@@ -86,31 +86,29 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
     type Error = Error;
 
     fn try_from(proto_msg: RawMsgUpgradeClient) -> Result<Self, Self::Error> {
-        let raw_client_state = proto_msg
-            .client_state
-            .ok_or_else(Error::missing_raw_client_state)?;
+        let raw_client_state = proto_msg.client_state.ok_or(Error::MissingRawClientState)?;
 
         let raw_consensus_state = proto_msg
             .consensus_state
-            .ok_or_else(Error::missing_raw_client_state)?;
+            .ok_or(Error::MissingRawConsensusState)?;
 
         let c_bytes = CommitmentProofBytes::try_from(proto_msg.proof_upgrade_client)
-            .map_err(|_| Error::invalid_upgrade_client_proof(Ics23Error::empty_merkle_proof()))?;
+            .map_err(|_| Error::InvalidUpgradeClientProof(Ics23Error::empty_merkle_proof()))?;
         let cs_bytes = CommitmentProofBytes::try_from(proto_msg.proof_upgrade_consensus_state)
             .map_err(|_| {
-                Error::invalid_upgrade_consensus_state_proof(Ics23Error::empty_merkle_proof())
+                Error::InvalidUpgradeConsensusStateProof(Ics23Error::empty_merkle_proof())
             })?;
 
         Ok(MsgUpgradeClient {
             client_id: ClientId::from_str(&proto_msg.client_id)
-                .map_err(Error::invalid_client_identifier)?,
+                .map_err(Error::InvalidClientIdentifier)?,
             client_state: raw_client_state,
             consensus_state: raw_consensus_state,
             proof_upgrade_client: RawMerkleProof::try_from(c_bytes)
-                .map_err(Error::invalid_upgrade_client_proof)?,
+                .map_err(Error::InvalidUpgradeClientProof)?,
             proof_upgrade_consensus_state: RawMerkleProof::try_from(cs_bytes)
-                .map_err(Error::invalid_upgrade_consensus_state_proof)?,
-            signer: proto_msg.signer.parse().map_err(Error::signer)?,
+                .map_err(Error::InvalidUpgradeConsensusStateProof)?,
+            signer: proto_msg.signer.parse().map_err(Error::Signer)?,
         })
     }
 }

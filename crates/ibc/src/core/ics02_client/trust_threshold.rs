@@ -59,7 +59,10 @@ impl TrustThreshold {
             || (denominator == 0 && numerator != 0)
             || (numerator == denominator && numerator != 0)
         {
-            return Err(Error::invalid_trust_threshold(numerator, denominator));
+            return Err(Error::InvalidTrustThreshold {
+                numerator,
+                denominator,
+            });
         }
 
         Ok(Self {
@@ -96,8 +99,10 @@ impl TryFrom<TrustThreshold> for TrustThresholdFraction {
     type Error = Error;
 
     fn try_from(t: TrustThreshold) -> Result<TrustThresholdFraction, Error> {
-        Self::new(t.numerator, t.denominator)
-            .map_err(|_| Error::failed_trust_threshold_conversion(t.numerator, t.denominator))
+        Self::new(t.numerator, t.denominator).map_err(|_| Error::FailedTrustThresholdConversion {
+            numerator: t.numerator,
+            denominator: t.denominator,
+        })
     }
 }
 

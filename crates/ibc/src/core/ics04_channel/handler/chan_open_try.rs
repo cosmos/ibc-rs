@@ -201,10 +201,11 @@ mod tests {
                     Box::new(move |e| match e {
                         error::ErrorDetail::Ics03Connection(e) => {
                             assert_eq!(
-                                e.source,
+                                e.source.to_string(),
                                 ics03_error::ErrorDetail::ConnectionNotFound(
                                     ics03_error::ConnectionNotFoundSubdetail { connection_id }
                                 )
+                                .to_string()
                             );
                         }
                         _ => {
@@ -228,17 +229,15 @@ mod tests {
                 match_error: Box::new(|e| match e {
                     error::ErrorDetail::Ics03Connection(e) => {
                         assert_eq!(
-                            e.source,
+                            e.source.to_string(),
                             ics03_error::ErrorDetail::Ics02Client(
                                 ics03_error::Ics02ClientSubdetail {
-                                    source: ics02_error::ErrorDetail::ClientNotFound(
-                                        ics02_error::ClientNotFoundSubdetail {
-                                            client_id: ClientId::new(mock_client_type(), 45)
-                                                .unwrap()
-                                        }
-                                    )
+                                    source: ics02_error::Error::ClientNotFound {
+                                        client_id: ClientId::new(mock_client_type(), 45).unwrap()
+                                    }
                                 }
                             )
+                            .to_string()
                         );
                     }
                     _ => {

@@ -51,9 +51,12 @@ where
 
     let client_type = client_state.client_type();
 
-    let _client_id = ClientId::new(client_type, id_counter).map_err(|e| {
-        Error::client_identifier_constructor(client_state.client_type(), id_counter, e)
-    })?;
+    let _client_id =
+        ClientId::new(client_type, id_counter).map_err(|e| Error::ClientIdentifierConstructor {
+            client_type: client_state.client_type(),
+            counter: id_counter,
+            validation_error: e,
+        })?;
 
     Ok(())
 }
@@ -76,7 +79,11 @@ where
     let client_type = client_state.client_type();
 
     let client_id = ClientId::new(client_type.clone(), id_counter).map_err(|e| {
-        Error::client_identifier_constructor(client_state.client_type(), id_counter, e)
+        Error::ClientIdentifierConstructor {
+            client_type: client_state.client_type(),
+            counter: id_counter,
+            validation_error: e,
+        }
     })?;
     let consensus_state = client_state.initialise(consensus_state)?;
 
@@ -129,7 +136,11 @@ pub fn process(ctx: &dyn ClientReader, msg: MsgCreateClient) -> HandlerResult<Cl
     let client_type = client_state.client_type();
 
     let client_id = ClientId::new(client_type.clone(), id_counter).map_err(|e| {
-        Error::client_identifier_constructor(client_state.client_type(), id_counter, e)
+        Error::ClientIdentifierConstructor {
+            client_type: client_state.client_type(),
+            counter: id_counter,
+            validation_error: e,
+        }
     })?;
 
     let consensus_state = client_state.initialise(consensus_state)?;

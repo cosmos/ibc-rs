@@ -10,6 +10,7 @@ use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::timestamp::Expiry;
+use alloc::string::ToString;
 
 #[derive(Clone, Debug)]
 pub enum RecvPacketResult {
@@ -128,7 +129,12 @@ pub fn process<Ctx: ChannelReader>(
 
                 return Ok(output.with_result(PacketResult::Recv(RecvPacketResult::NoOp)));
             }
-            Err(e) if e.detail() == Error::packet_receipt_not_found(packet.sequence).detail() => {
+            Err(e)
+                if e.detail().to_string()
+                    == Error::packet_receipt_not_found(packet.sequence)
+                        .detail()
+                        .to_string() =>
+            {
                 // store a receipt that does not contain any data
                 PacketResult::Recv(RecvPacketResult::Unordered {
                     port_id: packet.destination_port.clone(),

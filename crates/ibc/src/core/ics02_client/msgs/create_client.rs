@@ -49,18 +49,14 @@ impl TryFrom<RawMsgCreateClient> for MsgCreateClient {
     type Error = Error;
 
     fn try_from(raw: RawMsgCreateClient) -> Result<Self, Error> {
-        let raw_client_state = raw
-            .client_state
-            .ok_or_else(Error::missing_raw_client_state)?;
+        let raw_client_state = raw.client_state.ok_or(Error::MissingRawClientState)?;
 
-        let raw_consensus_state = raw
-            .consensus_state
-            .ok_or_else(Error::missing_raw_client_state)?;
+        let raw_consensus_state = raw.consensus_state.ok_or(Error::MissingRawConsensusState)?;
 
         MsgCreateClient::new(
             raw_client_state,
             raw_consensus_state,
-            raw.signer.parse().map_err(Error::signer)?,
+            raw.signer.parse().map_err(Error::Signer)?,
         )
     }
 }

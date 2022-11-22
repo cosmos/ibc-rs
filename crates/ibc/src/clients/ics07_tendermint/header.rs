@@ -146,7 +146,9 @@ impl TryFrom<Any> for Header {
 
         match raw.type_url.as_str() {
             TENDERMINT_HEADER_TYPE_URL => decode_header(raw.value.deref()).map_err(Into::into),
-            _ => Err(Ics02Error::unknown_header_type(raw.type_url)),
+            _ => Err(Ics02Error::UnknownHeaderType {
+                header_type: raw.type_url,
+            }),
         }
     }
 }

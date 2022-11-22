@@ -41,17 +41,15 @@ impl TryFrom<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {
     type Error = Error;
 
     fn try_from(raw: RawMsgSubmitMisbehaviour) -> Result<Self, Self::Error> {
-        let raw_misbehaviour = raw
-            .misbehaviour
-            .ok_or_else(Error::missing_raw_misbehaviour)?;
+        let raw_misbehaviour = raw.misbehaviour.ok_or(Error::MissingRawMisbehaviour)?;
 
         Ok(MsgSubmitMisbehaviour {
             client_id: raw
                 .client_id
                 .parse()
-                .map_err(Error::invalid_raw_misbehaviour)?,
+                .map_err(Error::InvalidRawMisbehaviour)?,
             misbehaviour: raw_misbehaviour,
-            signer: raw.signer.parse().map_err(Error::signer)?,
+            signer: raw.signer.parse().map_err(Error::Signer)?,
         })
     }
 }

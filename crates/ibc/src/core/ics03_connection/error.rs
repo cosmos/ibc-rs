@@ -7,13 +7,13 @@ use crate::signer::SignerError;
 use crate::Height;
 
 use alloc::string::String;
-use flex_error::define_error;
+use flex_error::{define_error, DisplayError};
 
 define_error! {
-    #[derive(Debug, PartialEq, Eq)]
+    #[derive(Debug)]
     Error {
         Ics02Client
-            [ client_error::Error ]
+            [ DisplayError<client_error::Error> ]
             | _ | { "ics02 client error" },
 
         InvalidState
@@ -90,7 +90,7 @@ define_error! {
             | _ | { "invalid connection proof" },
 
         VerifyConnectionState
-            [ client_error::Error ]
+            [ DisplayError<client_error::Error> ]
             | _ | { "error verifying connnection state" },
 
         Signer
@@ -141,7 +141,7 @@ define_error! {
 
         ConsensusStateVerificationFailure
             { height: Height }
-            [ client_error::Error ]
+            [ DisplayError<client_error::Error> ]
             | e | {
                 format_args!("the consensus proof verification failed (height: {0})",
                     e.height)
@@ -152,7 +152,7 @@ define_error! {
             {
                 client_id: ClientId,
             }
-            [ client_error::Error ]
+            [ DisplayError<client_error::Error> ]
             | e | {
                 format_args!("the client state proof verification failed for client id {0}",
                     e.client_id)

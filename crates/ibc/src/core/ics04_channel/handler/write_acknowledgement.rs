@@ -46,7 +46,10 @@ pub fn process<Ctx: ChannelReader>(
     ) {
         Ok(_) => return Err(Error::acknowledgement_exists(packet.sequence)),
         Err(e)
-            if e.detail() == Error::packet_acknowledgement_not_found(packet.sequence).detail() => {}
+            if e.detail().to_string()
+                == Error::packet_acknowledgement_not_found(packet.sequence)
+                    .detail()
+                    .to_string() => {}
         Err(e) => return Err(e),
     }
 

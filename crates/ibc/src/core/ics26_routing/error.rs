@@ -6,10 +6,10 @@ use crate::core::ics03_connection;
 use crate::core::ics04_channel;
 
 define_error! {
-    #[derive(Debug, PartialEq, Eq)]
+    #[derive(Debug)]
     Error {
         Ics02Client
-            [ ics02_client::error::Error ]
+            [ TraceError<ics02_client::error::Error> ]
             | _ | { "ICS02 client error" },
 
         Ics03Connection

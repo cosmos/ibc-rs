@@ -24,7 +24,7 @@ pub struct Height {
 impl Height {
     pub fn new(revision_number: u64, revision_height: u64) -> Result<Self, Error> {
         if revision_height == 0 {
-            return Err(Error::invalid_height());
+            return Err(Error::InvalidHeight);
         }
 
         Ok(Self {
@@ -54,7 +54,7 @@ impl Height {
 
     pub fn sub(&self, delta: u64) -> Result<Height, Error> {
         if self.revision_height <= delta {
-            return Err(Error::invalid_height_result());
+            return Err(Error::InvalidHeightResult);
         }
 
         Ok(Height {

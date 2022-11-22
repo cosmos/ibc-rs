@@ -50,10 +50,10 @@ impl TryFrom<RawMockHeader> for MockHeader {
             height: raw
                 .height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_raw_header)?,
+                .ok_or(Error::MissingRawHeader)?,
 
             timestamp: Timestamp::from_nanoseconds(raw.timestamp)
-                .map_err(Error::invalid_packet_timestamp)?,
+                .map_err(Error::InvalidPacketTimestamp)?,
         })
     }
 }
@@ -106,8 +106,10 @@ impl TryFrom<Any> for MockHeader {
     fn try_from(raw: Any) -> Result<Self, Error> {
         match raw.type_url.as_str() {
             MOCK_HEADER_TYPE_URL => Ok(Protobuf::<RawMockHeader>::decode_vec(&raw.value)
-                .map_err(Error::invalid_raw_header)?),
-            _ => Err(Error::unknown_header_type(raw.type_url)),
+                .map_err(Error::InvalidRawHeader)?),
+            _ => Err(Error::UnknownHeaderType {
+                header_type: raw.type_url,
+            }),
         }
     }
 }
