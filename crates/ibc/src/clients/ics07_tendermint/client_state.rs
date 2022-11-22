@@ -481,7 +481,7 @@ impl Ics2ClientState for ClientState {
             untrusted_state,
             trusted_state,
             &options,
-            ctx.host_timestamp().into_tm_time().unwrap(),
+            ctx.host_timestamp()?.into_tm_time().unwrap(),
         );
 
         match verdict {
@@ -711,7 +711,7 @@ impl Ics2ClientState for ClientState {
             untrusted_state,
             trusted_state,
             &options,
-            ctx.host_timestamp().into_tm_time().unwrap(),
+            ctx.host_timestamp()?.into_tm_time().unwrap(),
         );
 
         match verdict {
@@ -1052,8 +1052,12 @@ fn verify_delay_passed(
     height: Height,
     connection_end: &ConnectionEnd,
 ) -> Result<(), Ics02Error> {
-    let current_timestamp = ctx.host_timestamp();
-    let current_height = ctx.host_height();
+    let current_timestamp = ctx
+        .host_timestamp()
+        .map_err(|e| Ics02Error::other(e.to_string()))?;
+    let current_height = ctx
+        .host_height()
+        .map_err(|e| Ics02Error::other(e.to_string()))?;
 
     let client_id = connection_end.client_id();
     let processed_time = ctx

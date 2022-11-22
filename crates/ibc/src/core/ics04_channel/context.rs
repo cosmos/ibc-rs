@@ -113,14 +113,14 @@ pub trait ChannelReader {
     fn hash(&self, value: Vec<u8>) -> Vec<u8>;
 
     /// Returns the current height of the local chain.
-    fn host_height(&self) -> Height;
+    fn host_height(&self) -> Result<Height, Error>;
 
     /// Returns the current timestamp of the local chain.
-    fn host_timestamp(&self) -> Timestamp {
+    fn host_timestamp(&self) -> Result<Timestamp, Error> {
         let pending_consensus_state = self
             .pending_host_consensus_state()
             .expect("host must have pending consensus state");
-        pending_consensus_state.timestamp()
+        Ok(pending_consensus_state.timestamp())
     }
 
     /// Returns the `ConsensusState` of the host (local) chain at a specific height.
