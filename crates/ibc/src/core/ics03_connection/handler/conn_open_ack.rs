@@ -19,10 +19,10 @@ pub(crate) fn process(
 ) -> HandlerResult<ConnectionResult, Error> {
     let mut output = HandlerOutput::builder();
 
-    if msg.consensus_height_of_a_on_b > ctx_a.host_current_height() {
+    if msg.consensus_height_of_a_on_b > ctx_a.host_current_height()? {
         return Err(Error::invalid_consensus_height(
             msg.consensus_height_of_a_on_b,
-            ctx_a.host_current_height(),
+            ctx_a.host_current_height()?,
         ));
     }
 
