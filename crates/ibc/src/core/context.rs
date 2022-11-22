@@ -10,6 +10,8 @@ use ibc_proto::google::protobuf::Any;
 use super::ics02_client::client_type::ClientType;
 use super::ics02_client::handler::{create_client, update_client, upgrade_client};
 use super::ics02_client::msgs::ClientMsg;
+use super::ics03_connection::handler::conn_open_init;
+use super::ics03_connection::msgs::ConnectionMsg;
 use super::ics24_host::path::{
     ClientConnectionsPath, ClientConsensusStatePath, ClientStatePath, ClientTypePath,
     CommitmentsPath, ConnectionsPath, ReceiptsPath,
@@ -53,7 +55,15 @@ pub trait ValidationContext {
                 ClientMsg::UpgradeClient(message) => upgrade_client::validate(self, message),
             }
             .map_err(RouterError::ics02_client),
-            MsgEnvelope::ConnectionMsg(_message) => todo!(),
+            MsgEnvelope::ConnectionMsg(message) => match message {
+                ConnectionMsg::ConnectionOpenInit(message) => {
+                    conn_open_init::validate(self, message)
+                }
+                ConnectionMsg::ConnectionOpenTry(_) => todo!(),
+                ConnectionMsg::ConnectionOpenAck(_) => todo!(),
+                ConnectionMsg::ConnectionOpenConfirm(_) => todo!(),
+            }
+            .map_err(RouterError::ics03_connection),
             MsgEnvelope::ChannelMsg(_message) => todo!(),
             MsgEnvelope::PacketMsg(_message) => todo!(),
         }

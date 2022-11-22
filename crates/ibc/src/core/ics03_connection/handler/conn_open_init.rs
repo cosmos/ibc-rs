@@ -7,11 +7,35 @@ use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics24_host::identifier::ConnectionId;
+use crate::core::ValidationContext;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
 use super::ConnectionIdState;
+
+pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), Error>
+where
+    Ctx: ValidationContext,
+{
+    // An IBC client running on the local (host) chain should exist.
+    ctx_a
+        .client_state(&msg.client_id_on_a)
+        .map_err(|error| Error::client_state_verification_failure(msg.client_id_on_a, error))?;
+
+    let _versions = match msg.version {
+        Some(version) => {
+            if ctx_a.get_compatible_versions().contains(&version) {
+                Ok(vec![version])
+            } else {
+                Err(Error::version_not_supported(version))
+            }
+        }
+        None => Ok(ctx_a.get_compatible_versions()),
+    }?;
+
+    Ok(())
+}
 
 /// Per our convention, this message is processed on chain A.
 pub(crate) fn process(
