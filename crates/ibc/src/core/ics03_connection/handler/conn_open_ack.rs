@@ -6,7 +6,8 @@ use crate::core::ics03_connection::error::Error;
 use crate::core::ics03_connection::events::OpenAck;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
-use crate::core::ValidationContext;
+use crate::core::ics24_host::path::ConnectionsPath;
+use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
@@ -109,6 +110,46 @@ where
                 expected_consensus_state_of_a_on_b.as_ref(),
             )
             .map_err(|e| Error::consensus_state_verification_failure(msg.proofs_height_on_b, e))?;
+    }
+
+    Ok(())
+}
+
+pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), Error>
+where
+    Ctx: ExecutionContext,
+{
+    let conn_end_on_a = ctx_a.connection_end(&msg.conn_id_on_a)?;
+    let client_id_on_a = conn_end_on_a.client_id();
+    let client_id_on_b = conn_end_on_a.counterparty().client_id();
+
+    let conn_id_on_b = conn_end_on_a
+        .counterparty()
+        .connection_id()
+        .ok_or_else(Error::invalid_counterparty)?;
+
+    ctx_a.emit_ibc_event(IbcEvent::OpenAckConnection(OpenAck::new(
+        msg.conn_id_on_a.clone(),
+        client_id_on_a.clone(),
+        conn_id_on_b.clone(),
+        client_id_on_b.clone(),
+    )));
+
+    ctx_a.log_message("success: conn_open_ack verification passed".to_string());
+
+    {
+        let new_conn_end_on_a = {
+            let mut counterparty = conn_end_on_a.counterparty().clone();
+            counterparty.connection_id = Some(msg.conn_id_on_b.clone());
+
+            let mut new_conn_end_on_a = conn_end_on_a;
+            new_conn_end_on_a.set_state(State::Open);
+            new_conn_end_on_a.set_version(msg.version.clone());
+            new_conn_end_on_a.set_counterparty(counterparty);
+            new_conn_end_on_a
+        };
+
+        ctx_a.store_connection(ConnectionsPath(msg.conn_id_on_a), &new_conn_end_on_a)?;
     }
 
     Ok(())
