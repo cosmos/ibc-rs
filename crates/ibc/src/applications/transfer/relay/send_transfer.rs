@@ -1,4 +1,4 @@
-use crate::applications::transfer::context::Ics20Context;
+use crate::applications::transfer::context::TokenTransferContext;
 use crate::applications::transfer::error::Error;
 use crate::applications::transfer::events::TransferEvent;
 use crate::applications::transfer::msgs::transfer::MsgTransfer;
@@ -19,7 +19,7 @@ pub fn send_transfer<Ctx, C>(
     msg: MsgTransfer<C>,
 ) -> Result<(), Error>
 where
-    Ctx: Ics20Context,
+    Ctx: TokenTransferContext,
     C: TryInto<PrefixedCoin>,
 {
     if !ctx.is_send_enabled() {
@@ -94,7 +94,7 @@ where
         events,
     } = send_packet(ctx, packet).map_err(Error::ics04_channel)?;
 
-    ctx.store_packet_result(result)
+    ctx.store_send_packet_result(result)
         .map_err(Error::ics04_channel)?;
 
     output.merge_output(

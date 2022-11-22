@@ -66,7 +66,7 @@ pub fn process<Ctx: ChannelReader>(
         ));
     }
 
-    let latest_height = ChannelReader::host_height(ctx);
+    let latest_height = ChannelReader::host_height(ctx)?;
     if packet.timeout_height.has_expired(latest_height) {
         return Err(Error::low_packet_height(
             latest_height,
@@ -74,7 +74,7 @@ pub fn process<Ctx: ChannelReader>(
         ));
     }
 
-    let latest_timestamp = ChannelReader::host_timestamp(ctx);
+    let latest_timestamp = ChannelReader::host_timestamp(ctx)?;
     if let Expiry::Expired = latest_timestamp.check_expiry(&packet.timeout_timestamp) {
         return Err(Error::low_packet_timestamp());
     }
@@ -169,7 +169,7 @@ mod tests {
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
     use crate::mock::context::MockContext;
-    use crate::relayer::ics18_relayer::context::Ics18Context;
+    use crate::relayer::ics18_relayer::context::RelayerContext;
     use crate::test_utils::get_dummy_account_id;
     use crate::timestamp::Timestamp;
     use crate::timestamp::ZERO_DURATION;
@@ -186,7 +186,7 @@ mod tests {
 
         let context = MockContext::default();
 
-        let host_height = context.query_latest_height().increment();
+        let host_height = context.query_latest_height().unwrap().increment();
 
         let client_height = host_height.increment();
 

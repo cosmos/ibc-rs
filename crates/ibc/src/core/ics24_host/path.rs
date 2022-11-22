@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, Height};
 
 /// Path-space as listed in ICS-024
 /// https://github.com/cosmos/ibc/tree/master/spec/core/ics-024-host-requirements#path-space
@@ -65,6 +65,16 @@ pub struct ClientConsensusStatePath {
     pub client_id: ClientId,
     pub epoch: u64,
     pub height: u64,
+}
+
+impl ClientConsensusStatePath {
+    pub fn new(client_id: ClientId, height: Height) -> ClientConsensusStatePath {
+        ClientConsensusStatePath {
+            client_id,
+            epoch: height.revision_number(),
+            height: height.revision_height(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]

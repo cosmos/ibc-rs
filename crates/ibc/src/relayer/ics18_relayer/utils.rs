@@ -2,7 +2,7 @@ use crate::core::ics02_client::header::Header;
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
 use crate::core::ics02_client::msgs::ClientMsg;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::relayer::ics18_relayer::context::Ics18Context;
+use crate::relayer::ics18_relayer::context::RelayerContext;
 use crate::relayer::ics18_relayer::error::Error;
 
 /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
@@ -13,7 +13,7 @@ pub fn build_client_update_datagram<Ctx>(
     src_header: &dyn Header,
 ) -> Result<ClientMsg, Error>
 where
-    Ctx: Ics18Context,
+    Ctx: RelayerContext,
 {
     // Check if client for ibc0 on ibc1 has been updated to latest height:
     // - query client state on destination chain
@@ -52,12 +52,12 @@ mod tests {
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::core::ics02_client::header::{downcast_header, Header};
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
-    use crate::core::ics26_routing::msgs::Ics26Envelope;
+    use crate::core::ics26_routing::msgs::MsgEnvelope;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::mock::host::{HostBlock, HostType};
     use crate::prelude::*;
-    use crate::relayer::ics18_relayer::context::Ics18Context;
+    use crate::relayer::ics18_relayer::context::RelayerContext;
     use crate::relayer::ics18_relayer::utils::build_client_update_datagram;
     use crate::Height;
 
@@ -130,7 +130,7 @@ mod tests {
 
             // - send the message to B. We bypass ICS18 interface and call directly into
             // MockContext `recv` method (to avoid additional serialization steps).
-            let dispatch_res_b = ctx_b.deliver(Ics26Envelope::Ics2Msg(client_msg_b));
+            let dispatch_res_b = ctx_b.deliver(MsgEnvelope::ClientMsg(client_msg_b));
             let validation_res = ctx_b.validate();
             assert!(
                 validation_res.is_ok(),
@@ -149,7 +149,7 @@ mod tests {
                 .query_client_full_state(&client_on_b_for_a)
                 .unwrap()
                 .latest_height();
-            assert_eq!(client_height_b, ctx_a.query_latest_height());
+            assert_eq!(client_height_b, ctx_a.query_latest_height().unwrap());
 
             // Update client on chain B to latest height of B.
             // - create the client update message with the latest header from B
@@ -187,7 +187,7 @@ mod tests {
             debug!("client_msg_a = {:?}", client_msg_a);
 
             // - send the message to A
-            let dispatch_res_a = ctx_a.deliver(Ics26Envelope::Ics2Msg(client_msg_a));
+            let dispatch_res_a = ctx_a.deliver(MsgEnvelope::ClientMsg(client_msg_a));
             let validation_res = ctx_a.validate();
             assert!(
                 validation_res.is_ok(),
@@ -206,7 +206,7 @@ mod tests {
                 .query_client_full_state(&client_on_a_for_b)
                 .unwrap()
                 .latest_height();
-            assert_eq!(client_height_a, ctx_b.query_latest_height());
+            assert_eq!(client_height_a, ctx_b.query_latest_height().unwrap());
         }
     }
 }

@@ -37,9 +37,9 @@ use crate::core::ics05_port::error::Error as Ics05Error;
 use crate::core::ics05_port::error::Error;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ics26_routing::context::{Ics26Context, Module, ModuleId, Router, RouterBuilder};
+use crate::core::ics26_routing::context::{Module, ModuleId, Router, RouterBuilder, RouterContext};
 use crate::core::ics26_routing::handler::{deliver, dispatch, MsgReceipt};
-use crate::core::ics26_routing::msgs::Ics26Envelope;
+use crate::core::ics26_routing::msgs::MsgEnvelope;
 use crate::events::IbcEvent;
 use crate::mock::client_state::{
     client_type as mock_client_type, MockClientRecord, MockClientState,
@@ -47,7 +47,7 @@ use crate::mock::client_state::{
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::mock::host::{HostBlock, HostType};
-use crate::relayer::ics18_relayer::context::Ics18Context;
+use crate::relayer::ics18_relayer::context::RelayerContext;
 use crate::relayer::ics18_relayer::error::Error as Ics18Error;
 use crate::signer::Signer;
 use crate::timestamp::Timestamp;
@@ -466,7 +466,7 @@ impl MockContext {
     /// A datagram passes from the relayer to the IBC module (on host chain).
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
     /// Used in testing the Ics18 algorithms, hence this may return a Ics18Error.
-    pub fn deliver(&mut self, msg: Ics26Envelope) -> Result<(), Ics18Error> {
+    pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), Ics18Error> {
         dispatch(self, msg).map_err(Ics18Error::transaction_failed)?;
         // Create a new block.
         self.advance_host_chain_height();
@@ -647,7 +647,7 @@ impl Router for MockRouter {
     }
 }
 
-impl Ics26Context for MockContext {
+impl RouterContext for MockContext {
     type Router = MockRouter;
 
     fn router(&self) -> &Self::Router {
@@ -845,12 +845,12 @@ impl ChannelReader for MockContext {
         sha2::Sha256::digest(value).to_vec()
     }
 
-    fn host_height(&self) -> Height {
-        self.latest_height()
+    fn host_height(&self) -> Result<Height, Ics04Error> {
+        Ok(self.latest_height())
     }
 
-    fn host_timestamp(&self) -> Timestamp {
-        ClientReader::host_timestamp(self)
+    fn host_timestamp(&self) -> Result<Timestamp, Ics04Error> {
+        ClientReader::host_timestamp(self).map_err(|e| Ics04Error::other(e.to_string()))
     }
 
     fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, Ics04Error> {
@@ -1103,13 +1103,13 @@ impl ConnectionReader for MockContext {
         ClientReader::decode_client_state(self, client_state).map_err(Ics03Error::ics02_client)
     }
 
-    fn host_current_height(&self) -> Height {
-        self.latest_height()
+    fn host_current_height(&self) -> Result<Height, Ics03Error> {
+        Ok(self.latest_height())
     }
 
-    fn host_oldest_height(&self) -> Height {
+    fn host_oldest_height(&self) -> Result<Height, Ics03Error> {
         // history must be non-empty, so `self.history[0]` is valid
-        self.history[0].height()
+        Ok(self.history[0].height())
     }
 
     fn commitment_prefix(&self) -> CommitmentPrefix {
@@ -1275,17 +1275,18 @@ impl ClientReader for MockContext {
         Ok(None)
     }
 
-    fn host_height(&self) -> Height {
-        self.latest_height()
+    fn host_height(&self) -> Result<Height, Ics02Error> {
+        Ok(self.latest_height())
     }
 
-    fn host_timestamp(&self) -> Timestamp {
-        self.history
+    fn host_timestamp(&self) -> Result<Timestamp, Ics02Error> {
+        Ok(self
+            .history
             .last()
             .expect("history cannot be empty")
             .timestamp()
             .add(self.block_time)
-            .unwrap()
+            .unwrap())
     }
 
     fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, Ics02Error> {
@@ -1400,9 +1401,9 @@ impl ClientKeeper for MockContext {
     }
 }
 
-impl Ics18Context for MockContext {
-    fn query_latest_height(&self) -> Height {
-        self.host_current_height()
+impl RelayerContext for MockContext {
+    fn query_latest_height(&self) -> Result<Height, Ics18Error> {
+        self.host_current_height().map_err(Ics18Error::ics03)
     }
 
     fn query_client_full_state(&self, client_id: &ClientId) -> Option<Box<dyn ClientState>> {
@@ -1411,7 +1412,7 @@ impl Ics18Context for MockContext {
     }
 
     fn query_latest_header(&self) -> Option<Box<dyn Header>> {
-        let block_ref = self.host_block(self.host_current_height());
+        let block_ref = self.host_block(self.host_current_height().unwrap());
         block_ref.cloned().map(Header::into_box)
     }
 
