@@ -20,7 +20,7 @@ fn refund_packet_token(
         .sender
         .clone()
         .try_into()
-        .map_err(|_| Ics20Error::parse_account_failure())?;
+        .map_err(|_| Ics20Error::ParseAccountFailure)?;
 
     if is_sender_chain_source(
         packet.source_port.clone(),

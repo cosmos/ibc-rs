@@ -51,14 +51,17 @@ where
         // https://github.com/cosmos/cosmos-sdk/blob/v0.45.5/types/coin.go#L760-L762
         let matcher = regex!(br"([0-9]+)([a-zA-Z0-9/:\\._\x2d]+)");
 
-        let (m1, m2) = matcher
-            .match_slices(coin_str.as_bytes())
-            .ok_or_else(|| Error::invalid_coin(coin_str.to_string()))?;
+        let (m1, m2) =
+            matcher
+                .match_slices(coin_str.as_bytes())
+                .ok_or_else(|| Error::InvalidCoin {
+                    coin: coin_str.to_string(),
+                })?;
 
-        let amount = from_utf8(m1).map_err(Error::utf8_decode)?.parse()?;
+        let amount = from_utf8(m1).map_err(Error::Utf8Decode)?.parse()?;
 
         let denom = from_utf8(m2)
-            .map_err(Error::utf8_decode)?
+            .map_err(Error::Utf8Decode)?
             .parse()
             .map_err(Into::into)?;
 

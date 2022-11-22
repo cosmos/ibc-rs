@@ -165,15 +165,24 @@ pub fn on_chan_open_init(
     version: &Version,
 ) -> Result<(ModuleExtras, Version), Ics20Error> {
     if order != Order::Unordered {
-        return Err(Ics20Error::channel_not_unordered(order));
+        return Err(Ics20Error::ChannelNotUnordered {
+            expect_order: Order::Unordered,
+            got_order: order,
+        });
     }
     let bound_port = ctx.get_port()?;
     if port_id != &bound_port {
-        return Err(Ics20Error::invalid_port(port_id.clone(), bound_port));
+        return Err(Ics20Error::InvalidPort {
+            port_id: port_id.clone(),
+            exp_port_id: bound_port,
+        });
     }
 
     if !version.is_empty() && version != &Version::ics20() {
-        return Err(Ics20Error::invalid_version(version.clone()));
+        return Err(Ics20Error::InvalidVersion {
+            expect_version: Version::ics20(),
+            got_version: version.clone(),
+        });
     }
 
     Ok((ModuleExtras::empty(), Version::ics20()))
@@ -190,12 +199,16 @@ pub fn on_chan_open_try(
     counterparty_version: &Version,
 ) -> Result<(ModuleExtras, Version), Ics20Error> {
     if order != Order::Unordered {
-        return Err(Ics20Error::channel_not_unordered(order));
+        return Err(Ics20Error::ChannelNotUnordered {
+            expect_order: Order::Unordered,
+            got_order: order,
+        });
     }
     if counterparty_version != &Version::ics20() {
-        return Err(Ics20Error::invalid_counterparty_version(
-            counterparty_version.clone(),
-        ));
+        return Err(Ics20Error::InvalidCounterpartyVersion {
+            expect_version: Version::ics20(),
+            got_version: counterparty_version.clone(),
+        });
     }
 
     Ok((ModuleExtras::empty(), Version::ics20()))
@@ -208,9 +221,10 @@ pub fn on_chan_open_ack(
     counterparty_version: &Version,
 ) -> Result<ModuleExtras, Ics20Error> {
     if counterparty_version != &Version::ics20() {
-        return Err(Ics20Error::invalid_counterparty_version(
-            counterparty_version.clone(),
-        ));
+        return Err(Ics20Error::InvalidCounterpartyVersion {
+            expect_version: Version::ics20(),
+            got_version: counterparty_version.clone(),
+        });
     }
 
     Ok(ModuleExtras::empty())
@@ -229,7 +243,7 @@ pub fn on_chan_close_init(
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, Ics20Error> {
-    Err(Ics20Error::cant_close_channel())
+    Err(Ics20Error::CantCloseChannel)
 }
 
 pub fn on_chan_close_confirm(
@@ -250,7 +264,7 @@ pub fn on_recv_packet<Ctx: 'static + TokenTransferContext>(
         Ok(data) => data,
         Err(_) => {
             return OnRecvPacketAck::Failed(Box::new(Acknowledgement::Error(
-                Ics20Error::packet_data_deserialization().to_string(),
+                Ics20Error::PacketDataDeserialization.to_string(),
             )));
         }
     };
@@ -279,10 +293,10 @@ pub fn on_acknowledgement_packet(
     _relayer: &Signer,
 ) -> Result<(), Ics20Error> {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
-        .map_err(|_| Ics20Error::packet_data_deserialization())?;
+        .map_err(|_| Ics20Error::PacketDataDeserialization)?;
 
     let acknowledgement = serde_json::from_slice::<Acknowledgement>(acknowledgement.as_ref())
-        .map_err(|_| Ics20Error::ack_deserialization())?;
+        .map_err(|_| Ics20Error::AckDeserialization)?;
 
     process_ack_packet(ctx, packet, &data, &acknowledgement)?;
 
@@ -305,7 +319,7 @@ pub fn on_timeout_packet(
     _relayer: &Signer,
 ) -> Result<(), Ics20Error> {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
-        .map_err(|_| Ics20Error::packet_data_deserialization())?;
+        .map_err(|_| Ics20Error::PacketDataDeserialization)?;
 
     process_timeout_packet(ctx, packet, &data)?;
 

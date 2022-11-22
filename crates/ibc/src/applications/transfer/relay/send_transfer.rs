@@ -23,31 +23,29 @@ where
     C: TryInto<PrefixedCoin>,
 {
     if !ctx.is_send_enabled() {
-        return Err(Error::send_disabled());
+        return Err(Error::SendDisabled);
     }
 
     let source_channel_end = ctx
         .channel_end(&msg.source_port, &msg.source_channel)
-        .map_err(Error::ics04_channel)?;
+        .map_err(Error::Ics04Channel)?;
 
     let destination_port = source_channel_end.counterparty().port_id().clone();
     let destination_channel = source_channel_end
         .counterparty()
         .channel_id()
-        .ok_or_else(|| {
-            Error::destination_channel_not_found(
-                msg.source_port.clone(),
-                msg.source_channel.clone(),
-            )
+        .ok_or_else(|| Error::DestinationChannelNotFound {
+            port_id: msg.source_port.clone(),
+            channel_id: msg.source_channel.clone(),
         })?
         .clone();
 
     // get the next sequence
     let sequence = ctx
         .get_next_sequence_send(&msg.source_port, &msg.source_channel)
-        .map_err(Error::ics04_channel)?;
+        .map_err(Error::Ics04Channel)?;
 
-    let token = msg.token.try_into().map_err(|_| Error::invalid_token())?;
+    let token = msg.token.try_into().map_err(|_| Error::InvalidToken)?;
     let denom = token.denom.clone();
     let coin = Coin {
         denom: denom.clone(),
@@ -58,7 +56,7 @@ where
         .sender
         .clone()
         .try_into()
-        .map_err(|_| Error::parse_account_failure())?;
+        .map_err(|_| Error::ParseAccountFailure)?;
 
     if is_sender_chain_source(msg.source_port.clone(), msg.source_channel.clone(), &denom) {
         let escrow_address =
@@ -92,10 +90,10 @@ where
         result,
         log,
         events,
-    } = send_packet(ctx, packet).map_err(Error::ics04_channel)?;
+    } = send_packet(ctx, packet).map_err(Error::Ics04Channel)?;
 
     ctx.store_send_packet_result(result)
-        .map_err(Error::ics04_channel)?;
+        .map_err(Error::Ics04Channel)?;
 
     output.merge_output(
         HandlerOutput::builder()

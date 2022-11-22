@@ -60,25 +60,38 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
     type Error = Error;
 
     fn try_from(raw_msg: RawMsgTransfer) -> Result<Self, Self::Error> {
-        let timeout_timestamp = Timestamp::from_nanoseconds(raw_msg.timeout_timestamp)
-            .map_err(|_| Error::invalid_packet_timeout_timestamp(raw_msg.timeout_timestamp))?;
+        let timeout_timestamp =
+            Timestamp::from_nanoseconds(raw_msg.timeout_timestamp).map_err(|_| {
+                Error::InvalidPacketTimeoutTimestamp {
+                    timestamp: raw_msg.timeout_timestamp,
+                }
+            })?;
 
-        let timeout_height: TimeoutHeight = raw_msg.timeout_height.try_into().map_err(|e| {
-            Error::invalid_packet_timeout_height(format!("invalid timeout height {}", e))
-        })?;
+        let timeout_height: TimeoutHeight =
+            raw_msg
+                .timeout_height
+                .try_into()
+                .map_err(|e| Error::InvalidPacketTimeoutHeight {
+                    context: format!("invalid timeout height {}", e),
+                })?;
 
         Ok(MsgTransfer {
             source_port: raw_msg
                 .source_port
                 .parse()
-                .map_err(|e| Error::invalid_port_id(raw_msg.source_port.clone(), e))?,
-            source_channel: raw_msg
-                .source_channel
-                .parse()
-                .map_err(|e| Error::invalid_channel_id(raw_msg.source_channel.clone(), e))?,
-            token: raw_msg.token.ok_or_else(Error::invalid_token)?,
-            sender: raw_msg.sender.parse().map_err(Error::signer)?,
-            receiver: raw_msg.receiver.parse().map_err(Error::signer)?,
+                .map_err(|e| Error::InvalidPortId {
+                    context: raw_msg.source_port.clone(),
+                    validation_error: e,
+                })?,
+            source_channel: raw_msg.source_channel.parse().map_err(|e| {
+                Error::InvalidChannelId {
+                    context: raw_msg.source_channel.clone(),
+                    validation_error: e,
+                }
+            })?,
+            token: raw_msg.token.ok_or(Error::InvalidToken)?,
+            sender: raw_msg.sender.parse().map_err(Error::Signer)?,
+            receiver: raw_msg.receiver.parse().map_err(Error::Signer)?,
             timeout_height,
             timeout_timestamp,
         })
@@ -106,8 +119,10 @@ impl TryFrom<Any> for MsgTransfer {
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         match raw.type_url.as_str() {
-            TYPE_URL => MsgTransfer::decode_vec(&raw.value).map_err(Error::decode_raw_msg),
-            _ => Err(Error::unknown_msg_type(raw.type_url)),
+            TYPE_URL => MsgTransfer::decode_vec(&raw.value).map_err(Error::DecodeRawMsg),
+            _ => Err(Error::UnknownMsgType {
+                msg_type: raw.type_url,
+            }),
         }
     }
 }

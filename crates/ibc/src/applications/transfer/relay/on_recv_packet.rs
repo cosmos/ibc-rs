@@ -14,14 +14,14 @@ pub fn process_recv_packet<Ctx: 'static + TokenTransferContext>(
     data: PacketData,
 ) -> Result<Box<WriteFn>, Ics20Error> {
     if !ctx.is_receive_enabled() {
-        return Err(Ics20Error::receive_disabled());
+        return Err(Ics20Error::ReceiveDisabled);
     }
 
     let receiver_account = data
         .receiver
         .clone()
         .try_into()
-        .map_err(|_| Ics20Error::parse_account_failure())?;
+        .map_err(|_| Ics20Error::ParseAccountFailure)?;
 
     if is_receiver_chain_source(
         packet.source_port.clone(),

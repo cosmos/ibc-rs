@@ -26,7 +26,7 @@ impl FromStr for BaseDenom {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.trim().is_empty() {
-            Err(Error::empty_base_denom())
+            Err(Error::EmptyBaseDenom)
         } else {
             Ok(BaseDenom(s.to_owned()))
         }
@@ -90,16 +90,21 @@ impl<'a> TryFrom<Vec<&'a str>> for TracePath {
 
     fn try_from(v: Vec<&'a str>) -> Result<Self, Self::Error> {
         if v.len() % 2 != 0 {
-            return Err(Error::invalid_trace_length(v.len()));
+            return Err(Error::InvalidTraceLength { len: v.len() });
         }
 
         let mut trace = vec![];
         let id_pairs = v.chunks_exact(2).map(|paths| (paths[0], paths[1]));
         for (pos, (port_id, channel_id)) in id_pairs.rev().enumerate() {
-            let port_id =
-                PortId::from_str(port_id).map_err(|e| Error::invalid_trace_port_id(pos, e))?;
-            let channel_id = ChannelId::from_str(channel_id)
-                .map_err(|e| Error::invalid_trace_channel_id(pos, e))?;
+            let port_id = PortId::from_str(port_id).map_err(|e| Error::InvalidTracePortId {
+                pos,
+                validation_error: e,
+            })?;
+            let channel_id =
+                ChannelId::from_str(channel_id).map_err(|e| Error::InvalidTraceChannelId {
+                    pos,
+                    validation_error: e,
+                })?;
             trace.push(TracePrefix {
                 port_id,
                 channel_id,

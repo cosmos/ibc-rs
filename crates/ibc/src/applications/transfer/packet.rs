@@ -26,8 +26,8 @@ impl TryFrom<RawPacketData> for PacketData {
         let amount = Amount::from_str(&raw_pkt_data.amount)?;
         Ok(Self {
             token: PrefixedCoin { denom, amount },
-            sender: raw_pkt_data.sender.parse().map_err(Error::signer)?,
-            receiver: raw_pkt_data.receiver.parse().map_err(Error::signer)?,
+            sender: raw_pkt_data.sender.parse().map_err(Error::Signer)?,
+            receiver: raw_pkt_data.receiver.parse().map_err(Error::Signer)?,
         })
     }
 }
