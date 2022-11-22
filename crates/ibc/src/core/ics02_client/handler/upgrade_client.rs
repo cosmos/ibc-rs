@@ -8,6 +8,8 @@ use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
+use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
@@ -15,10 +17,70 @@ use crate::prelude::*;
 /// The result following the successful processing of a `MsgUpgradeAnyClient` message.
 /// This data type should be used with a qualified name `upgrade_client::Result` to avoid ambiguity.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Result {
+pub struct UpgradeClientResult {
     pub client_id: ClientId,
     pub client_state: Box<dyn ClientState>,
     pub consensus_state: Box<dyn ConsensusState>,
+}
+
+pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), Error>
+where
+    Ctx: ValidationContext,
+{
+    let MsgUpgradeClient { client_id, .. } = msg;
+
+    // Read client state from the host chain store.
+    let old_client_state = ctx.client_state(&client_id)?;
+
+    if old_client_state.is_frozen() {
+        return Err(Error::client_frozen(client_id));
+    }
+
+    let upgrade_client_state = ctx.decode_client_state(msg.client_state)?;
+
+    if old_client_state.latest_height() >= upgrade_client_state.latest_height() {
+        return Err(Error::low_upgrade_height(
+            old_client_state.latest_height(),
+            upgrade_client_state.latest_height(),
+        ));
+    }
+
+    Ok(())
+}
+
+pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), Error>
+where
+    Ctx: ExecutionContext,
+{
+    let MsgUpgradeClient { client_id, .. } = msg;
+
+    let upgrade_client_state = ctx.decode_client_state(msg.client_state)?;
+
+    let UpdatedState {
+        client_state,
+        consensus_state,
+    } = upgrade_client_state.verify_upgrade_and_update_state(
+        msg.consensus_state.clone(),
+        msg.proof_upgrade_client.clone(),
+        msg.proof_upgrade_consensus_state,
+    )?;
+
+    // Not implemented yet: https://github.com/informalsystems/ibc-rs/issues/722
+    // todo!()
+
+    ctx.store_client_state(ClientStatePath(client_id.clone()), client_state.clone())?;
+    ctx.store_consensus_state(
+        ClientConsensusStatePath::new(client_id.clone(), client_state.latest_height()),
+        consensus_state,
+    )?;
+
+    ctx.emit_ibc_event(IbcEvent::UpgradeClient(UpgradeClient::new(
+        client_id,
+        client_state.client_type(),
+        client_state.latest_height(),
+    )));
+
+    Ok(())
 }
 
 pub fn process(
@@ -59,7 +121,7 @@ pub fn process(
     let client_type = client_state.client_type();
     let consensus_height = client_state.latest_height();
 
-    let result = ClientResult::Upgrade(Result {
+    let result = ClientResult::Upgrade(UpgradeClientResult {
         client_id: client_id.clone(),
         client_state,
         consensus_state,

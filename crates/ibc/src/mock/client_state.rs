@@ -169,9 +169,30 @@ impl ClientState for MockClientState {
         MockConsensusState::try_from(consensus_state).map(MockConsensusState::into_box)
     }
 
-    fn check_header_and_update_state(
+    fn old_check_header_and_update_state(
         &self,
         _ctx: &dyn ClientReader,
+        _client_id: ClientId,
+        header: Any,
+    ) -> Result<UpdatedState, Error> {
+        let header = MockHeader::try_from(header)?;
+
+        if self.latest_height() >= header.height() {
+            return Err(Error::low_header_height(
+                header.height(),
+                self.latest_height(),
+            ));
+        }
+
+        Ok(UpdatedState {
+            client_state: MockClientState::new(header).into_box(),
+            consensus_state: MockConsensusState::new(header).into_box(),
+        })
+    }
+
+    fn check_header_and_update_state(
+        &self,
+        _ctx: &dyn crate::core::ValidationContext,
         _client_id: ClientId,
         header: Any,
     ) -> Result<UpdatedState, Error> {

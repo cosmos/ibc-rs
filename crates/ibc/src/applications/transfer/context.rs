@@ -9,23 +9,53 @@ use crate::applications::transfer::relay::on_recv_packet::process_recv_packet;
 use crate::applications::transfer::relay::on_timeout_packet::process_timeout_packet;
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
-use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
+use crate::core::ics04_channel::commitment::PacketCommitment;
+use crate::core::ics04_channel::context::{ChannelKeeper, SendPacketReader};
+use crate::core::ics04_channel::error::Error as Ics04Error;
+use crate::core::ics04_channel::handler::send_packet::SendPacketResult;
 use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as GenericAcknowledgement;
-use crate::core::ics04_channel::packet::Packet;
+use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{ModuleOutputBuilder, OnRecvPacketAck};
 use crate::prelude::*;
 use crate::signer::Signer;
 
-pub trait Ics20Keeper:
-    ChannelKeeper + BankKeeper<AccountId = <Self as Ics20Keeper>::AccountId>
-{
-    type AccountId;
+pub trait TokenTransferKeeper: BankKeeper {
+    fn store_send_packet_result(&mut self, result: SendPacketResult) -> Result<(), Ics04Error> {
+        self.store_next_sequence_send(
+            result.port_id.clone(),
+            result.channel_id.clone(),
+            result.seq_number,
+        )?;
+
+        self.store_packet_commitment(
+            result.port_id,
+            result.channel_id,
+            result.seq,
+            result.commitment,
+        )?;
+        Ok(())
+    }
+
+    fn store_packet_commitment(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        sequence: Sequence,
+        commitment: PacketCommitment,
+    ) -> Result<(), Ics04Error>;
+
+    fn store_next_sequence_send(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        seq: Sequence,
+    ) -> Result<(), Ics04Error>;
 }
 
-pub trait Ics20Reader: ChannelReader {
+pub trait TokenTransferReader: SendPacketReader {
     type AccountId: TryFrom<Signer>;
 
     /// get_port returns the portID for the transfer module.
@@ -36,7 +66,7 @@ pub trait Ics20Reader: ChannelReader {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<<Self as Ics20Reader>::AccountId, Ics20Error>;
+    ) -> Result<<Self as TokenTransferReader>::AccountId, Ics20Error>;
 
     /// Returns true iff send is enabled.
     fn is_send_enabled(&self) -> bool;
@@ -48,6 +78,30 @@ pub trait Ics20Reader: ChannelReader {
     /// Implement only if the host chain supports hashed denominations.
     fn denom_hash_string(&self, _denom: &PrefixedDenom) -> Option<String> {
         None
+    }
+}
+
+impl<T> TokenTransferKeeper for T
+where
+    T: ChannelKeeper + BankKeeper,
+{
+    fn store_packet_commitment(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        sequence: Sequence,
+        commitment: PacketCommitment,
+    ) -> Result<(), Ics04Error> {
+        ChannelKeeper::store_packet_commitment(self, port_id, channel_id, sequence, commitment)
+    }
+
+    fn store_next_sequence_send(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        seq: Sequence,
+    ) -> Result<(), Ics04Error> {
+        ChannelKeeper::store_next_sequence_send(self, port_id, channel_id, seq)
     }
 }
 
@@ -93,16 +147,16 @@ pub trait BankKeeper {
 
 /// Captures all the dependencies which the ICS20 module requires to be able to dispatch and
 /// process IBC messages.
-pub trait Ics20Context:
-    Ics20Keeper<AccountId = <Self as Ics20Context>::AccountId>
-    + Ics20Reader<AccountId = <Self as Ics20Context>::AccountId>
+pub trait TokenTransferContext:
+    TokenTransferKeeper<AccountId = <Self as TokenTransferContext>::AccountId>
+    + TokenTransferReader<AccountId = <Self as TokenTransferContext>::AccountId>
 {
     type AccountId: TryFrom<Signer>;
 }
 
 #[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_init(
-    ctx: &mut impl Ics20Context,
+    ctx: &mut impl TokenTransferContext,
     order: Order,
     _connection_hops: &[ConnectionId],
     port_id: &PortId,
@@ -127,7 +181,7 @@ pub fn on_chan_open_init(
 
 #[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_try(
-    _ctx: &mut impl Ics20Context,
+    _ctx: &mut impl TokenTransferContext,
     order: Order,
     _connection_hops: &[ConnectionId],
     _port_id: &PortId,
@@ -148,7 +202,7 @@ pub fn on_chan_open_try(
 }
 
 pub fn on_chan_open_ack(
-    _ctx: &mut impl Ics20Context,
+    _ctx: &mut impl TokenTransferContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
     counterparty_version: &Version,
@@ -163,7 +217,7 @@ pub fn on_chan_open_ack(
 }
 
 pub fn on_chan_open_confirm(
-    _ctx: &mut impl Ics20Context,
+    _ctx: &mut impl TokenTransferContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, Ics20Error> {
@@ -171,7 +225,7 @@ pub fn on_chan_open_confirm(
 }
 
 pub fn on_chan_close_init(
-    _ctx: &mut impl Ics20Context,
+    _ctx: &mut impl TokenTransferContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, Ics20Error> {
@@ -179,14 +233,14 @@ pub fn on_chan_close_init(
 }
 
 pub fn on_chan_close_confirm(
-    _ctx: &mut impl Ics20Context,
+    _ctx: &mut impl TokenTransferContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, Ics20Error> {
     Ok(ModuleExtras::empty())
 }
 
-pub fn on_recv_packet<Ctx: 'static + Ics20Context>(
+pub fn on_recv_packet<Ctx: 'static + TokenTransferContext>(
     ctx: &Ctx,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
@@ -197,7 +251,7 @@ pub fn on_recv_packet<Ctx: 'static + Ics20Context>(
         Err(_) => {
             return OnRecvPacketAck::Failed(Box::new(Acknowledgement::Error(
                 Ics20Error::packet_data_deserialization().to_string(),
-            )))
+            )));
         }
     };
 
@@ -218,7 +272,7 @@ pub fn on_recv_packet<Ctx: 'static + Ics20Context>(
 }
 
 pub fn on_acknowledgement_packet(
-    ctx: &mut impl Ics20Context,
+    ctx: &mut impl TokenTransferContext,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
     acknowledgement: &GenericAcknowledgement,
@@ -245,7 +299,7 @@ pub fn on_acknowledgement_packet(
 }
 
 pub fn on_timeout_packet(
-    ctx: &mut impl Ics20Context,
+    ctx: &mut impl TokenTransferContext,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
     _relayer: &Signer,
