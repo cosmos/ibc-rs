@@ -606,7 +606,7 @@ impl Ics2ClientState for ClientState {
             .into());
         }
 
-        let current_timestamp = ctx.host_timestamp();
+        let current_timestamp = ctx.host_timestamp()?;
 
         self.check_misbehaviour_header(header_1, &consensus_state_1, current_timestamp)?;
         self.check_misbehaviour_header(header_2, &consensus_state_2, current_timestamp)?;

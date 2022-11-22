@@ -45,7 +45,7 @@ pub fn process(
             Error::consensus_state_not_found(client_id.clone(), client_state.latest_height())
         })?;
 
-    let now = ClientReader::host_timestamp(ctx);
+    let now = ClientReader::host_timestamp(ctx)?;
     let duration = now
         .duration_since(&latest_consensus_state.timestamp())
         .ok_or_else(|| {
