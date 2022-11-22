@@ -6,8 +6,7 @@ use ibc_proto::ibc::lightclients::tendermint::v1::Misbehaviour as RawMisbehaviou
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 use serde::{Deserialize, Serialize};
-use tendermint_light_client_verifier::types::UntrustedBlockState;
-use tendermint_light_client_verifier::{ProdVerifier, Verdict, Verifier};
+use tendermint_light_client_verifier::ProdVerifier;
 
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
@@ -40,8 +39,16 @@ impl Misbehaviour {
             )));
         }
 
-        Self::ensure_valid_commit(&header1)?;
-        Self::ensure_valid_commit(&header2)?;
+        let untrusted_state_1 = header1.as_untrusted_block_state();
+        let untrusted_state_2 = header2.as_untrusted_block_state();
+
+        let verifier = ProdVerifier::default();
+
+        verifier.validate(&untrusted_state_1)?;
+        verifier.validate(&untrusted_state_2)?;
+
+        verifier.verify_commit(&untrusted_state_1)?;
+        verifier.verify_commit(&untrusted_state_2)?;
 
         Ok(Self {
             client_id,
@@ -60,28 +67,6 @@ impl Misbehaviour {
 
     pub fn header2(&self) -> &Header {
         &self.header2
-    }
-
-    fn ensure_valid_commit(header: &Header) -> Result<(), Error> {
-        let untrusted_state = UntrustedBlockState {
-            signed_header: &header.signed_header,
-            validators: &header.validator_set,
-            next_validators: None,
-        };
-
-        let verdict = ProdVerifier::default().verify_light(untrusted_state);
-        match verdict {
-            Verdict::Success => {}
-            Verdict::NotEnoughTrust(voting_power_tally) => {
-                return Err(Error::not_enough_trusted_vals_signed(format!(
-                    "voting power tally: {}",
-                    voting_power_tally
-                )));
-            }
-            Verdict::Invalid(detail) => return Err(Error::verification_error(detail)),
-        }
-
-        Ok(())
     }
 }
 
