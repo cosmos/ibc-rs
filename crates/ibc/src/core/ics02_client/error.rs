@@ -12,6 +12,9 @@ use crate::signer::SignerError;
 use crate::timestamp::Timestamp;
 use crate::Height;
 
+#[cfg(feature = "std")]
+impl std::error::Error for Error {}
+
 #[derive(Debug, Display)]
 pub enum Error {
     /// unknown client type: `{client_type}`

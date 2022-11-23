@@ -56,27 +56,32 @@ impl TryFrom<RawConsensusState> for ConsensusState {
     type Error = Error;
 
     fn try_from(raw: RawConsensusState) -> Result<Self, Self::Error> {
-        let ibc_proto::google::protobuf::Timestamp { seconds, nanos } = raw
-            .timestamp
-            .ok_or_else(|| Error::invalid_raw_consensus_state("missing timestamp".into()))?;
+        let ibc_proto::google::protobuf::Timestamp { seconds, nanos } =
+            raw.timestamp.ok_or(Error::InvalidRawClientState {
+                reason: "missing timestamp".into(),
+            })?;
         // FIXME: shunts like this are necessary due to
         // https://github.com/informalsystems/tendermint-rs/issues/1053
         let proto_timestamp = tpb::Timestamp { seconds, nanos };
         let timestamp = proto_timestamp
             .try_into()
-            .map_err(|e| Error::invalid_raw_consensus_state(format!("invalid timestamp: {}", e)))?;
+            .map_err(|e| Error::InvalidRawClientState {
+                reason: format!("invalid timestamp: {}", e),
+            })?;
 
         Ok(Self {
             root: raw
                 .root
-                .ok_or_else(|| {
-                    Error::invalid_raw_consensus_state("missing commitment root".into())
+                .ok_or(Error::InvalidRawClientState {
+                    reason: "missing commitment root".into(),
                 })?
                 .hash
                 .into(),
             timestamp,
             next_validators_hash: Hash::from_bytes(Algorithm::Sha256, &raw.next_validators_hash)
-                .map_err(|e| Error::invalid_raw_consensus_state(e.to_string()))?,
+                .map_err(|e| Error::InvalidRawClientState {
+                    reason: e.to_string(),
+                })?,
         })
     }
 }
@@ -110,7 +115,7 @@ impl TryFrom<Any> for ConsensusState {
 
         fn decode_consensus_state<B: Buf>(buf: B) -> Result<ConsensusState, Error> {
             RawConsensusState::decode(buf)
-                .map_err(Error::decode)?
+                .map_err(Error::Decode)?
                 .try_into()
         }
 

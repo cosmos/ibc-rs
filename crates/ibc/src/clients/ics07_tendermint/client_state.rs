@@ -87,75 +87,84 @@ impl ClientState {
         frozen_height: Option<Height>,
     ) -> Result<ClientState, Error> {
         if chain_id.as_str().len() > MaxChainIdLen {
-            return Err(Error::chain_id_too_long(
-                chain_id.to_string(),
-                chain_id.as_str().len(),
-                MaxChainIdLen,
-            ));
+            return Err(Error::ChainIdTooLong {
+                chain_id: chain_id.clone(),
+                len: chain_id.as_str().len(),
+                max_len: MaxChainIdLen,
+            });
         }
 
         // `TrustThreshold` is guaranteed to be in the range `[0, 1)`, but a `TrustThreshold::ZERO`
         // value is invalid in this context
         if trust_level == TrustThreshold::ZERO {
-            return Err(Error::invalid_trust_threshold(
-                "ClientState trust-level cannot be zero".to_string(),
-            ));
+            return Err(Error::InvalidTrustThreshold {
+                reason: "ClientState trust-level cannot be zero".to_string(),
+            });
         }
 
         let _ = TendermintTrustThresholdFraction::new(
             trust_level.numerator(),
             trust_level.denominator(),
         )
-        .map_err(Error::invalid_tendermint_trust_threshold)?;
+        .map_err(Error::InvalidTendermintTrustThreshold)?;
 
         // Basic validation of trusting period and unbonding period: each should be non-zero.
         if trusting_period <= Duration::new(0, 0) {
-            return Err(Error::invalid_trusting_period(format!(
-                "ClientState trusting period ({:?}) must be greater than zero",
-                trusting_period
-            )));
+            return Err(Error::InvalidTrustThreshold {
+                reason: format!(
+                    "ClientState trusting period ({:?}) must be greater than zero",
+                    trusting_period
+                ),
+            });
         }
 
         if unbonding_period <= Duration::new(0, 0) {
-            return Err(Error::invalid_unbonding_period(format!(
-                "ClientState unbonding period ({:?}) must be greater than zero",
-                unbonding_period
-            )));
+            return Err(Error::InvalidTrustThreshold {
+                reason: format!(
+                    "ClientState unbonding period ({:?}) must be greater than zero",
+                    unbonding_period
+                ),
+            });
         }
 
         if trusting_period >= unbonding_period {
-            return Err(Error::invalid_trusting_period(format!(
+            return Err(Error::InvalidTrustThreshold {
+                reason: format!(
                 "ClientState trusting period ({:?}) must be smaller than unbonding period ({:?})",
                 trusting_period, unbonding_period,
-            )));
+            ),
+            });
         }
 
         if max_clock_drift <= Duration::new(0, 0) {
-            return Err(Error::invalid_max_clock_drift(
-                "ClientState max-clock-drift must be greater than zero".to_string(),
-            ));
+            return Err(Error::InvalidMaxClockDrift {
+                reason: "ClientState max-clock-drift must be greater than zero".to_string(),
+            });
         }
 
         if latest_height.revision_number() != chain_id.version() {
-            return Err(Error::invalid_latest_height(
-                "ClientState latest-height revision number must match chain-id version".to_string(),
-            ));
+            return Err(Error::InvalidLatestHeight {
+                reason: "ClientState latest-height revision number must match chain-id version"
+                    .to_string(),
+            });
         }
 
         // Disallow empty proof-specs
         if proof_specs.is_empty() {
-            return Err(Error::validation(
-                "ClientState proof-specs cannot be empty".to_string(),
-            ));
+            return Err(Error::Validation {
+                reason: "ClientState proof-specs cannot be empty".to_string(),
+            });
         }
 
         // `upgrade_path` itself may be empty, but if not then each key must be non-empty
         for (idx, key) in upgrade_path.iter().enumerate() {
             if key.trim().is_empty() {
-                return Err(Error::validation(format!(
-                    "ClientState upgrade-path key at index {:?} cannot be empty",
-                    idx
-                )));
+                return Err(Error::Validation {
+                    reason: format!(
+                        "ClientState upgrade-path key at index {:?} cannot be empty",
+                        idx
+                    ),
+                });
             }
         }
 
@@ -184,7 +193,9 @@ impl ClientState {
                 self.latest_height.revision_number(),
                 h.signed_header.header.height.into(),
             )
-            .map_err(|_| Error::invalid_header_height(h.signed_header.header.height.value()))?,
+            .map_err(|_| Error::InvalidHeaderHeight {
+                height: h.signed_header.header.height.value(),
+            })?,
             ..self
         })
     }
@@ -205,10 +216,11 @@ impl ClientState {
     /// Tendermint-specific light client verification.
     pub fn as_light_client_options(&self) -> Result<Options, Error> {
         Ok(Options {
-            trust_threshold: self
-                .trust_level
-                .try_into()
-                .map_err(|e: Ics02Error| Error::invalid_trust_threshold(e.to_string()))?,
+            trust_threshold: self.trust_level.try_into().map_err(|e: Ics02Error| {
+                Error::InvalidTrustThreshold {
+                    reason: e.to_string(),
+                }
+            })?,
             trusting_period: self.trusting_period,
             clock_drift: self.max_clock_drift,
         })
@@ -224,17 +236,20 @@ impl ClientState {
         delay_period_blocks: u64,
     ) -> Result<(), Error> {
         let earliest_time =
-            (processed_time + delay_period_time).map_err(Error::timestamp_overflow)?;
+            (processed_time + delay_period_time).map_err(Error::TimestampOverflow)?;
         if !(current_time == earliest_time || current_time.after(&earliest_time)) {
-            return Err(Error::not_enough_time_elapsed(current_time, earliest_time));
+            return Err(Error::NotEnoughTimeElapsed {
+                current_time,
+                earliest_time,
+            });
         }
 
         let earliest_height = processed_height.add(delay_period_blocks);
         if current_height < earliest_height {
-            return Err(Error::not_enough_blocks_elapsed(
+            return Err(Error::NotEnoughBlocksElapsed {
                 current_height,
                 earliest_height,
-            ));
+            });
         }
 
         Ok(())
@@ -243,13 +258,17 @@ impl ClientState {
     /// Verify that the client is at a sufficient height and unfrozen at the given height
     pub fn verify_height(&self, height: Height) -> Result<(), Error> {
         if self.latest_height < height {
-            return Err(Error::insufficient_height(self.latest_height(), height));
+            return Err(Error::InsufficientHeight {
+                latest_height: self.latest_height(),
+                target_height: height,
+            });
         }
 
         match self.frozen_height {
-            Some(frozen_height) if frozen_height <= height => {
-                Err(Error::client_frozen(frozen_height, height))
-            }
+            Some(frozen_height) if frozen_height <= height => Err(Error::ClientFrozen {
+                frozen_height,
+                target_height: height,
+            }),
             _ => Ok(()),
         }
     }
@@ -340,10 +359,10 @@ impl Ics2ClientState for ClientState {
 
         if header.height().revision_number() != client_state.chain_id().version() {
             return Err(Ics02Error::ClientSpecific {
-                description: Error::mismatched_revisions(
-                    client_state.chain_id().version(),
-                    header.height().revision_number(),
-                )
+                description: Error::MismatchedRevisions {
+                    current_revision: client_state.chain_id().version(),
+                    update_revision: header.height().revision_number(),
+                }
                 .to_string(),
             });
         }
@@ -382,9 +401,9 @@ impl Ics2ClientState for ClientState {
                 .revision_height()
                 .try_into()
                 .map_err(|_| Ics02Error::ClientSpecific {
-                    description: Error::invalid_header_height(
-                        header.trusted_height.revision_height(),
-                    )
+                    description: Error::InvalidHeaderHeight {
+                        height: header.trusted_height.revision_height(),
+                    }
                     .to_string(),
                 })?,
             next_validators: &header.trusted_validator_set,
@@ -412,13 +431,12 @@ impl Ics2ClientState for ClientState {
         match verdict {
             Verdict::Success => {}
             Verdict::NotEnoughTrust(voting_power_tally) => {
-                return Err(Error::not_enough_trusted_vals_signed(format!(
-                    "voting power tally: {}",
-                    voting_power_tally
-                ))
+                return Err(Error::NotEnoughTrustedValsSigned {
+                    reason: format!("voting power tally: {}", voting_power_tally),
+                }
                 .into());
             }
-            Verdict::Invalid(detail) => return Err(Error::verification_error(detail).into()),
+            Verdict::Invalid(detail) => return Err(Error::VerificationError { detail }.into()),
         }
 
         // If the header has verified, but its corresponding consensus state
@@ -447,10 +465,10 @@ impl Ics2ClientState for ClientState {
                 // consensus state's height
                 if header.signed_header.header().time > next_cs.timestamp {
                     return Err(Ics02Error::ClientSpecific {
-                        description: Error::header_timestamp_too_high(
-                            header.signed_header.header().time.to_string(),
-                            next_cs.timestamp.to_string(),
-                        )
+                        description: Error::HeaderTimestampTooHigh {
+                            actual: header.signed_header.header().time.to_string(),
+                            max: next_cs.timestamp.to_string(),
+                        }
                         .to_string(),
                     });
                 }
@@ -470,10 +488,10 @@ impl Ics2ClientState for ClientState {
                 // previous consensus state's height
                 if header.signed_header.header().time < prev_cs.timestamp {
                     return Err(Ics02Error::ClientSpecific {
-                        description: Error::header_timestamp_too_low(
-                            header.signed_header.header().time.to_string(),
-                            prev_cs.timestamp.to_string(),
-                        )
+                        description: Error::HeaderTimestampTooLow {
+                            actual: header.signed_header.header().time.to_string(),
+                            min: prev_cs.timestamp.to_string(),
+                        }
                         .to_string(),
                     });
                 }
@@ -514,10 +532,10 @@ impl Ics2ClientState for ClientState {
 
         if header.height().revision_number() != client_state.chain_id().version() {
             return Err(Ics02Error::ClientSpecific {
-                description: Error::mismatched_revisions(
-                    client_state.chain_id().version(),
-                    header.height().revision_number(),
-                )
+                description: Error::MismatchedRevisions {
+                    current_revision: client_state.chain_id().version(),
+                    update_revision: header.height().revision_number(),
+                }
                 .to_string(),
             });
         }
@@ -556,9 +574,9 @@ impl Ics2ClientState for ClientState {
                 .revision_height()
                 .try_into()
                 .map_err(|_| Ics02Error::ClientSpecific {
-                    description: Error::invalid_header_height(
-                        header.trusted_height.revision_height(),
-                    )
+                    description: Error::InvalidHeaderHeight {
+                        height: header.trusted_height.revision_height(),
+                    }
                     .to_string(),
                 })?,
             next_validators: &header.trusted_validator_set,
@@ -586,13 +604,12 @@ impl Ics2ClientState for ClientState {
         match verdict {
             Verdict::Success => {}
             Verdict::NotEnoughTrust(voting_power_tally) => {
-                return Err(Error::not_enough_trusted_vals_signed(format!(
-                    "voting power tally: {}",
-                    voting_power_tally
-                ))
+                return Err(Error::NotEnoughTrustedValsSigned {
+                    reason: format!("voting power tally: {}", voting_power_tally),
+                }
                 .into());
             }
-            Verdict::Invalid(detail) => return Err(Error::verification_error(detail).into()),
+            Verdict::Invalid(detail) => return Err(Error::VerificationError { detail }.into()),
         }
 
         // If the header has verified, but its corresponding consensus state
@@ -621,10 +638,10 @@ impl Ics2ClientState for ClientState {
                 // consensus state's height
                 if header.signed_header.header().time > next_cs.timestamp {
                     return Err(Ics02Error::ClientSpecific {
-                        description: Error::header_timestamp_too_high(
-                            header.signed_header.header().time.to_string(),
-                            next_cs.timestamp.to_string(),
-                        )
+                        description: Error::HeaderTimestampTooHigh {
+                            actual: header.signed_header.header().time.to_string(),
+                            max: next_cs.timestamp.to_string(),
+                        }
                         .to_string(),
                     });
                 }
@@ -644,10 +661,10 @@ impl Ics2ClientState for ClientState {
                 // previous consensus state's height
                 if header.signed_header.header().time < prev_cs.timestamp {
                     return Err(Ics02Error::ClientSpecific {
-                        description: Error::header_timestamp_too_low(
-                            header.signed_header.header().time.to_string(),
-                            prev_cs.timestamp.to_string(),
-                        )
+                        description: Error::HeaderTimestampTooLow {
+                            actual: header.signed_header.header().time.to_string(),
+                            min: prev_cs.timestamp.to_string(),
+                        }
                         .to_string(),
                     });
                 }
@@ -929,12 +946,18 @@ fn verify_delay_passed(
     })?;
 
     let client_id = connection_end.client_id();
-    let processed_time = ctx
-        .client_update_time(client_id, height)
-        .map_err(|_| Error::processed_time_not_found(client_id.clone(), height))?;
-    let processed_height = ctx
-        .client_update_height(client_id, height)
-        .map_err(|_| Error::processed_height_not_found(client_id.clone(), height))?;
+    let processed_time =
+        ctx.client_update_time(client_id, height)
+            .map_err(|_| Error::ProcessedTimeNotFound {
+                client_id: client_id.clone(),
+                height,
+            })?;
+    let processed_height = ctx.client_update_height(client_id, height).map_err(|_| {
+        Error::ProcessedHeightNotFound {
+            client_id: client_id.clone(),
+            height,
+        }
+    })?;
 
     let delay_period_time = connection_end.delay_period();
     let delay_period_height = ctx.block_delay(delay_period_time);
@@ -979,35 +1002,37 @@ impl TryFrom<RawTmClientState> for ClientState {
             let trust_level = raw
                 .trust_level
                 .clone()
-                .ok_or_else(Error::missing_trusting_period)?;
+                .ok_or(Error::MissingTrustingPeriod)?;
             trust_level
                 .try_into()
-                .map_err(|e| Error::invalid_trust_threshold(format!("{}", e)))?
+                .map_err(|e| Error::InvalidTrustThreshold {
+                    reason: format!("{}", e),
+                })?
         };
 
         let trusting_period = raw
             .trusting_period
-            .ok_or_else(Error::missing_trusting_period)?
+            .ok_or(Error::MissingTrustingPeriod)?
             .try_into()
-            .map_err(|_| Error::negative_trusting_period())?;
+            .map_err(|_| Error::MissingTrustingPeriod)?;
 
         let unbonding_period = raw
             .unbonding_period
-            .ok_or_else(Error::missing_unbonding_period)?
+            .ok_or(Error::MissingUnbondingPeriod)?
             .try_into()
-            .map_err(|_| Error::negative_unbonding_period())?;
+            .map_err(|_| Error::MissingUnbondingPeriod)?;
 
         let max_clock_drift = raw
             .max_clock_drift
-            .ok_or_else(Error::missing_max_clock_drift)?
+            .ok_or(Error::NegativeMaxClockDrift)?
             .try_into()
-            .map_err(|_| Error::negative_max_clock_drift())?;
+            .map_err(|_| Error::NegativeMaxClockDrift)?;
 
         let latest_height = raw
             .latest_height
-            .ok_or_else(Error::missing_latest_height)?
+            .ok_or(Error::MissingLatestHeight)?
             .try_into()
-            .map_err(|_| Error::missing_latest_height())?;
+            .map_err(|_| Error::MissingLatestHeight)?;
 
         // In `RawClientState`, a `frozen_height` of `0` means "not frozen".
         // See:
@@ -1076,7 +1101,7 @@ impl TryFrom<Any> for ClientState {
 
         fn decode_client_state<B: Buf>(buf: B) -> Result<ClientState, Error> {
             RawTmClientState::decode(buf)
-                .map_err(Error::decode)?
+                .map_err(Error::Decode)?
                 .try_into()
         }
 

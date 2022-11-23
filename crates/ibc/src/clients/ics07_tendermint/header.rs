@@ -102,30 +102,33 @@ impl TryFrom<RawHeader> for Header {
         let header = Self {
             signed_header: raw
                 .signed_header
-                .ok_or_else(Error::missing_signed_header)?
+                .ok_or(Error::MissingSignedHeader)?
                 .try_into()
-                .map_err(|e| Error::invalid_header("signed header conversion".to_string(), e))?,
+                .map_err(|e| Error::InvalidHeader {
+                    reason: "signed header conversion".to_string(),
+                    error: e,
+                })?,
             validator_set: raw
                 .validator_set
-                .ok_or_else(Error::missing_validator_set)?
+                .ok_or(Error::MissingValidatorSet)?
                 .try_into()
-                .map_err(Error::invalid_raw_header)?,
+                .map_err(Error::InvalidRawHeader)?,
             trusted_height: raw
                 .trusted_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_trusted_height)?,
+                .ok_or(Error::MissingTrustedHeight)?,
             trusted_validator_set: raw
                 .trusted_validators
-                .ok_or_else(Error::missing_trusted_validator_set)?
+                .ok_or(Error::MissingTrustedValidatorSet)?
                 .try_into()
-                .map_err(Error::invalid_raw_header)?,
+                .map_err(Error::InvalidRawHeader)?,
         };
 
         if header.height().revision_number() != header.trusted_height.revision_number() {
-            return Err(Error::mismatched_revisions(
-                header.trusted_height.revision_number(),
-                header.height().revision_number(),
-            ));
+            return Err(Error::MismatchedRevisions {
+                current_revision: header.trusted_height.revision_number(),
+                update_revision: header.height().revision_number(),
+            });
         }
 
         Ok(header)
@@ -141,7 +144,7 @@ impl TryFrom<Any> for Header {
         use core::ops::Deref;
 
         fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
-            RawHeader::decode(buf).map_err(Error::decode)?.try_into()
+            RawHeader::decode(buf).map_err(Error::Decode)?.try_into()
         }
 
         match raw.type_url.as_str() {
@@ -164,7 +167,7 @@ impl From<Header> for Any {
 }
 
 pub fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
-    RawHeader::decode(buf).map_err(Error::decode)?.try_into()
+    RawHeader::decode(buf).map_err(Error::Decode)?.try_into()
 }
 
 impl From<Header> for RawHeader {

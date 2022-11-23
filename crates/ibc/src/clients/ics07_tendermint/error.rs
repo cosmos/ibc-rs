@@ -1,11 +1,10 @@
 use crate::prelude::*;
 
-use flex_error::{define_error, TraceError};
-
 use crate::core::ics02_client::error::Error as Ics02Error;
 use crate::core::ics24_host::error::ValidationError;
-use crate::core::ics24_host::identifier::ClientId;
+use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::timestamp::{Timestamp, TimestampOverflowError};
+use displaydoc::Display;
 
 use crate::Height;
 use tendermint::account::Id;
@@ -13,300 +12,150 @@ use tendermint::hash::Hash;
 use tendermint::Error as TendermintError;
 use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
 
-define_error! {
-    #[derive(Debug, PartialEq, Eq)]
-    Error {
-        ChainIdTooLong
-            {
-                chain_id: String,
-                len: usize,
-                max_len: usize,
-            }
-            |e| { format_args!("chain-id is ({0}) is too long, got: {1}, max allowed: {2}", e.chain_id, e.len, e.max_len) },
+#[cfg(feature = "std")]
+impl std::error::Error for Error {}
 
-        InvalidTrustingPeriod
-            { reason: String }
-            |e| { format_args!("invalid trusting period: {}", e.reason) },
-
-        InvalidUnbondingPeriod
-            { reason: String }
-            |e| { format_args!("invalid unbonding period: {}", e.reason) },
-
-        InvalidAddress
-            |_| { "invalid address" },
-
-        InvalidHeader
-            { reason: String }
-            [ TendermintError ]
-            |e| { format_args!("invalid header, failed basic validation: {}", e.reason) },
-
-        InvalidTrustThreshold
-            { reason: String }
-            |e| { format_args!("invalid client state trust threshold: {}", e.reason) },
-
-        InvalidTendermintTrustThreshold
-            [ TendermintError ]
-            |_| { "invalid tendermint client state trust threshold" },
-
-        InvalidMaxClockDrift
-            { reason: String }
-            |e| { format_args!("invalid client state max clock drift: {}", e.reason) },
-
-        InvalidLatestHeight
-            { reason: String }
-            |e| { format_args!("invalid client state latest height: {}", e.reason) },
-
-        MissingSignedHeader
-            |_| { "missing signed header" },
-
-        Validation
-            { reason: String }
-            |e| { format_args!("invalid header, failed basic validation: {}", e.reason) },
-
-        InvalidRawClientState
-            { reason: String }
-            |e| { format_args!("invalid raw client state: {}", e.reason) },
-
-        MissingValidatorSet
-            |_| { "missing validator set" },
-
-        MissingTrustedValidatorSet
-            |_| { "missing trusted validator set" },
-
-        MissingTrustedHeight
-            |_| { "missing trusted height" },
-
-        MissingTrustingPeriod
-            |_| { "missing trusting period" },
-
-        MissingUnbondingPeriod
-            |_| { "missing unbonding period" },
-
-        InvalidChainIdentifier
-            [ ValidationError ]
-            |_| { "invalid chain identifier" },
-
-        NegativeTrustingPeriod
-            |_| { "negative trusting period" },
-
-        NegativeUnbondingPeriod
-            |_| { "negative unbonding period" },
-
-        MissingMaxClockDrift
-            |_| { "missing max clock drift" },
-
-        NegativeMaxClockDrift
-            |_| {  "negative max clock drift" },
-
-        MissingLatestHeight
-            |_| { "missing latest height" },
-
-        InvalidFrozenHeight
-            |_| { "invalid frozen height" },
-
-        InvalidChainId
-            { raw_value: String }
-            [ ValidationError ]
-            |e| { format_args!("invalid chain identifier: {}", e.raw_value) },
-
-        InvalidRawHeight
-            { raw_height: u64 }
-            |e| { format_args!("invalid raw height: {}", e.raw_height) },
-
-        InvalidRawConsensusState
-            { reason: String }
-            | e | { format_args!("invalid raw client consensus state: {}", e.reason) },
-
-        InvalidRawHeader
-            [ TendermintError ]
-            | _ | { "invalid raw header" },
-
-        InvalidRawMisbehaviour
-            { reason: String }
-            | e | { format_args!("invalid raw misbehaviour: {}", e.reason) },
-
-        Decode
-            [ TraceError<prost::DecodeError> ]
-            | _ | { "decode error" },
-
-        InsufficientVotingPower
-            { reason: String }
-            | e | {
-                format_args!("insufficient overlap: {}", e.reason)
-            },
-
-        LowUpdateTimestamp
-            {
-                low: String,
-                high: String
-            }
-            | e | {
-                format_args!("header timestamp {0} must be greater than current client consensus state timestamp {1}", e.low, e.high)
-            },
-
-        HeaderTimestampOutsideTrustingTime
-            {
-                low: String,
-                high: String
-            }
-            | e | {
-                format_args!("header timestamp {0} is outside the trusting period w.r.t. consensus state timestamp {1}", e.low, e.high)
-            },
-
-        HeaderTimestampTooHigh
-            {
-                actual: String,
-                max: String,
-            }
-            | e | {
-                format_args!("given other previous updates, header timestamp should be at most {0}, but was {1}", e.max, e.actual)
-            },
-
-        HeaderTimestampTooLow
-            {
-                actual: String,
-                min: String,
-            }
-            | e | {
-                format_args!("given other previous updates, header timestamp should be at least {0}, but was {1}", e.min, e.actual)
-            },
-
-        TimestampOverflow
-            [ TimestampOverflowError ]
-            |_| { "timestamp overflowed" },
-
-        NotEnoughTimeElapsed
-            {
-                current_time: Timestamp,
-                earliest_time: Timestamp,
-            }
-            | e | {
-                format_args!("not enough time elapsed, current timestamp {0} is still less than earliest acceptable timestamp {1}", e.current_time, e.earliest_time)
-            },
-
-        NotEnoughBlocksElapsed
-            {
-                current_height: Height,
-                earliest_height: Height,
-            }
-            | e | {
-                format_args!("not enough blocks elapsed, current height {0} is still less than earliest acceptable height {1}", e.current_height, e.earliest_height)
-            },
-
-        InvalidHeaderHeight
-            { height: u64 }
-            | e | {
-                format_args!("header revision height = {0} is invalid", e.height)
-            },
-
-        InvalidTrustedHeaderHeight
-            {
-                trusted_header_height: Height,
-                height_header: Height
-            }
-            | e | {
-                format_args!("header height is {0} and is lower than the trusted header height, which is {1} ", e.height_header, e.trusted_header_height)
-            },
-
-        LowUpdateHeight
-            {
-                low: Height,
-                high: Height
-            }
-            | e | {
-                format_args!("header height is {0} but it must be greater than the current client height which is {1}", e.low, e.high)
-            },
-
-        MismatchedRevisions
-            {
-                current_revision: u64,
-                update_revision: u64,
-            }
-            | e | {
-                format_args!("the header's current/trusted revision number ({0}) and the update's revision number ({1}) should be the same", e.current_revision, e.update_revision)
-            },
-
-        InvalidValidatorSet
-            {
-                hash1: Hash,
-                hash2: Hash,
-            }
-            | e | {
-                format_args!("invalid validator set: header_validators_hash={} and validators_hash={}", e.hash1, e.hash2)
-            },
-
-        NotEnoughTrustedValsSigned
-            { reason: String }
-            | e | {
-                format_args!("not enough trust because insufficient validators overlap: {}", e.reason)
-            },
-
-        VerificationError
-            { detail: LightClientErrorDetail }
-            | e | {
-                format_args!("verification failed: {}", e.detail)
-            },
-
-        ProcessedTimeNotFound
-            {
-                client_id: ClientId,
-                height: Height,
-            }
-            | e | {
-                format_args!(
-                    "Processed time for the client {0} at height {1} not found",
-                    e.client_id, e.height)
-            },
-
-        ProcessedHeightNotFound
-            {
-                client_id: ClientId,
-                height: Height,
-            }
-            | e | {
-                format_args!(
-                    "Processed height for the client {0} at height {1} not found",
-                    e.client_id, e.height)
-            },
-
-        InsufficientHeight
-            {
-                latest_height: Height,
-                target_height: Height,
-            }
-            | e | {
-                format_args!("the height is insufficient: latest_height={0} target_height={1}", e.latest_height, e.target_height)
-            },
-
-        ClientFrozen
-            {
-                frozen_height: Height,
-                target_height: Height,
-            }
-            | e | {
-                format_args!("the client is frozen: frozen_height={0} target_height={1}", e.frozen_height, e.target_height)
-            },
-    }
+#[derive(Debug, Display)]
+pub enum Error {
+    /// chain-id is (`{chain_id}`) is too long, got: `{len}`, max allowed: `{max_len}`
+    ChainIdTooLong {
+        chain_id: ChainId,
+        len: usize,
+        max_len: usize,
+    },
+    /// invalid trusting period: `{reason}`
+    InvalidTrustingPeriod { reason: String },
+    /// invalid unbonding period: `{reason}`
+    InvalidUnbondingPeriod { reason: String },
+    /// invalid address
+    InvalidAddress,
+    /// invalid header, failed basic validation: `{reason}`, error(`{error}`)
+    InvalidHeader {
+        reason: String,
+        error: TendermintError,
+    },
+    /// invalid client state trust threshold: `{reason}`
+    InvalidTrustThreshold { reason: String },
+    /// invalid tendermint client state trust threshold, error(`{0}`)
+    InvalidTendermintTrustThreshold(TendermintError),
+    /// invalid client state max clock drift: `{reason}`
+    InvalidMaxClockDrift { reason: String },
+    /// invalid client state latest height: `{reason}`
+    InvalidLatestHeight { reason: String },
+    /// missing signed header
+    MissingSignedHeader,
+    /// invalid header, failed basic validation: `{reason}`
+    Validation { reason: String },
+    /// invalid raw client state: `{reason}`
+    InvalidRawClientState { reason: String },
+    /// missing validator set
+    MissingValidatorSet,
+    /// missing trusted validator set
+    MissingTrustedValidatorSet,
+    /// missing trusted height
+    MissingTrustedHeight,
+    /// missing trusting period
+    MissingTrustingPeriod,
+    /// missing unbonding period
+    MissingUnbondingPeriod,
+    /// invalid chain identifier, error(`{0}`)
+    InvalidChainIdentifier(ValidationError),
+    /// negative trusting period
+    NegativeTrustingPeriod,
+    /// negative unbonding period
+    NegativeUnbondingPeriod,
+    /// missing max clock drift
+    MissingMaxClockDrift,
+    /// negative max clock drift
+    NegativeMaxClockDrift,
+    /// missing latest height
+    MissingLatestHeight,
+    /// invalid frozen height
+    InvalidFrozenHeight,
+    /// invalid chain identifier: `{raw_value}`, error(`{error}`)
+    InvalidChainId {
+        raw_value: String,
+        error: ValidationError,
+    },
+    /// invalid raw height: `{raw_height}`
+    InvalidRawHeight { raw_height: u64 },
+    /// invalid raw client consensus state: `{reason}`
+    InvalidRawConsensusState { reason: String },
+    /// invalid raw header, error(`{0}`)
+    InvalidRawHeader(TendermintError),
+    /// invalid raw misbehaviour: `{reason}`
+    InvalidRawMisbehaviour { reason: String },
+    /// decode error, error(`{0}`)
+    Decode(prost::DecodeError),
+    /// insufficient overlap: `{reason}`
+    InsufficientVotingPower { reason: String },
+    /// header timestamp `{low}` must be greater than current client consensus state timestamp `{high}`
+    LowUpdateTimestamp { low: String, high: String },
+    /// header timestamp `{low}` is outside the trusting period w.r.t. consensus state timestamp `{high}`
+    HeaderTimestampOutsideTrustingTime { low: String, high: String },
+    /// given other previous updates, header timestamp should be at most `{max}`, but was `{actual}`
+    HeaderTimestampTooHigh { actual: String, max: String },
+    /// given other previous updates, header timestamp should be at least `{min}`, but was `{actual}`
+    HeaderTimestampTooLow { actual: String, min: String },
+    /// timestamp overflowed, error(`{0}`)
+    TimestampOverflow(TimestampOverflowError),
+    /// not enough time elapsed, current timestamp `{current_time}` is still less than earliest acceptable timestamp `{earliest_time}`
+    NotEnoughTimeElapsed {
+        current_time: Timestamp,
+        earliest_time: Timestamp,
+    },
+    /// not enough blocks elapsed, current height `{current_height}` is still less than earliest acceptable height `{earliest_height}`
+    NotEnoughBlocksElapsed {
+        current_height: Height,
+        earliest_height: Height,
+    },
+    /// header revision height = `{height}` is invalid
+    InvalidHeaderHeight { height: u64 },
+    /// header height is `{height_header}` and is lower than the trusted header height, which is `{trusted_header_height}`
+    InvalidTrustedHeaderHeight {
+        trusted_header_height: Height,
+        height_header: Height,
+    },
+    /// header height is `{low}` but it must be greater than the current client height which is `{high}`
+    LowUpdateHeight { low: Height, high: Height },
+    /// the header's current/trusted revision number (`{current_revision}`) and the update's revision number (`{update_revision}`) should be the same
+    MismatchedRevisions {
+        current_revision: u64,
+        update_revision: u64,
+    },
+    /// invalid validator set: header_validators_hash=`{hash1}` and validators_hash=`{hash2}`
+    InvalidValidatorSet { hash1: Hash, hash2: Hash },
+    /// not enough trust because insufficient validators overlap: `{reason}`
+    NotEnoughTrustedValsSigned { reason: String },
+    /// verification failed: `{detail}`
+    VerificationError { detail: LightClientErrorDetail },
+    /// Processed time for the client `{client_id}` at height `{height}` not found
+    ProcessedTimeNotFound { client_id: ClientId, height: Height },
+    /// Processed height for the client `{client_id}` at height `{height}` not found
+    ProcessedHeightNotFound { client_id: ClientId, height: Height },
+    /// the height is insufficient: latest_height=`{latest_height}` target_height=`{target_height}`
+    InsufficientHeight {
+        latest_height: Height,
+        target_height: Height,
+    },
+    /// the client is frozen: frozen_height=`{frozen_height}` target_height=`{target_height}`
+    ClientFrozen {
+        frozen_height: Height,
+        target_height: Height,
+    },
 }
 
-define_error! {
-    #[derive(Debug, PartialEq, Eq)]
-    VerificationError {
-        InvalidSignature
-            | _ | { "couldn't verify validator signature" },
+#[cfg(feature = "std")]
+impl std::error::Error for VerificationError {}
 
-        DuplicateValidator
-            { id: Id }
-            | e | {
-                format_args!("duplicate validator in commit signatures with address {}", e.id)
-            },
-
-        InsufficientOverlap
-            { q1: u64, q2: u64 }
-            | e | {
-                format_args!("insufficient signers overlap between {0} and {1}", e.q1, e.q2)
-            },
-    }
+#[derive(Debug, Display)]
+pub enum VerificationError {
+    /// couldn't verify validator signature
+    InvalidSignature,
+    /// duplicate validator in commit signatures with address `{id}`
+    DuplicateValidator { id: Id },
+    /// insufficient signers overlap between `{q1}` and `{q2}`
+    InsufficientOverlap { q1: u64, q2: u64 },
 }
 
 impl From<Error> for Ics02Error {
