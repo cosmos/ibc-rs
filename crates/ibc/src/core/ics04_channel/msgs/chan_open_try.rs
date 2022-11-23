@@ -67,7 +67,7 @@ impl Msg for MsgChannelOpenTry {
 
     fn validate_basic(&self) -> Result<(), ValidationError> {
         match self.chan_end_on_b.counterparty().channel_id() {
-            None => Err(ValidationError::invalid_counterparty_channel_id()),
+            None => Err(ValidationError::InvalidCounterpartyChannelId),
             Some(_c) => Ok(()),
         }
     }

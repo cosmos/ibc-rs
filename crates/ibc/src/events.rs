@@ -22,7 +22,7 @@ define_error! {
             | _ | { "error parsing height" },
 
         Parse
-            [ ValidationError ]
+            [ TraceError<ValidationError> ]
             | _ | { "parse error" },
 
         Client
