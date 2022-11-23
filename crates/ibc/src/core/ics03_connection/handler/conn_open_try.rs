@@ -26,10 +26,10 @@ pub(crate) fn process(
 
     if msg.consensus_height_of_b_on_a > ctx_b.host_current_height()? {
         // Fail if the consensus height is too advanced.
-        return Err(Error::invalid_consensus_height(
-            msg.consensus_height_of_b_on_a,
-            ctx_b.host_current_height()?,
-        ));
+        return Err(Error::InvalidConsensusHeight {
+            target_height: msg.consensus_height_of_b_on_a,
+            current_height: ctx_b.host_current_height()?,
+        });
     }
 
     let version_on_b =
@@ -47,7 +47,7 @@ pub(crate) fn process(
     let conn_id_on_a = conn_end_on_b
         .counterparty()
         .connection_id()
-        .ok_or_else(Error::invalid_counterparty)?;
+        .ok_or(Error::InvalidCounterparty)?;
 
     // Verify proofs
     {
@@ -77,7 +77,7 @@ pub(crate) fn process(
                     conn_id_on_a,
                     &expected_conn_end_on_a,
                 )
-                .map_err(Error::verify_connection_state)?;
+                .map_err(Error::VerifyConnectionState)?;
         }
 
         client_state_of_a_on_b
@@ -89,8 +89,9 @@ pub(crate) fn process(
                 client_id_on_a,
                 msg.client_state_of_b_on_a,
             )
-            .map_err(|e| {
-                Error::client_state_verification_failure(conn_end_on_b.client_id().clone(), e)
+            .map_err(|e| Error::ClientStateVerificationFailure {
+                client_id: conn_end_on_b.client_id().clone(),
+                client_error: e,
             })?;
 
         let expected_consensus_state_of_b_on_a =
@@ -105,7 +106,10 @@ pub(crate) fn process(
                 msg.consensus_height_of_b_on_a,
                 expected_consensus_state_of_b_on_a.as_ref(),
             )
-            .map_err(|e| Error::consensus_state_verification_failure(msg.proofs_height_on_a, e))?;
+            .map_err(|e| Error::ConsensusStateVerificationFailure {
+                height: msg.proofs_height_on_a,
+                client_error: e,
+            })?;
     }
 
     // Success

@@ -202,10 +202,8 @@ mod tests {
                         error::ErrorDetail::Ics03Connection(e) => {
                             assert_eq!(
                                 e.source.to_string(),
-                                ics03_error::ErrorDetail::ConnectionNotFound(
-                                    ics03_error::ConnectionNotFoundSubdetail { connection_id }
-                                )
-                                .to_string()
+                                ics03_error::Error::ConnectionNotFound { connection_id }
+                                    .to_string()
                             );
                         }
                         _ => {
@@ -230,13 +228,9 @@ mod tests {
                     error::ErrorDetail::Ics03Connection(e) => {
                         assert_eq!(
                             e.source.to_string(),
-                            ics03_error::ErrorDetail::Ics02Client(
-                                ics03_error::Ics02ClientSubdetail {
-                                    source: ics02_error::Error::ClientNotFound {
-                                        client_id: ClientId::new(mock_client_type(), 45).unwrap()
-                                    }
-                                }
-                            )
+                            ics03_error::Error::Ics02Client(ics02_error::Error::ClientNotFound {
+                                client_id: ClientId::new(mock_client_type(), 45).unwrap()
+                            })
                             .to_string()
                         );
                     }

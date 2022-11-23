@@ -2,7 +2,7 @@ use crate::core::ics03_connection;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics26_routing::error::Error as RoutingError;
 use crate::Height;
-use flex_error::define_error;
+use flex_error::{define_error, TraceError};
 
 define_error! {
     Error {
@@ -37,7 +37,7 @@ define_error! {
             | _ | { "transaction processing by modules failed" },
 
         Ics03
-            [ ics03_connection::error::Error ]
+            [ TraceError<ics03_connection::error::Error> ]
             | _ | { "ics03 connection error" }
     }
 }

@@ -12,14 +12,14 @@ use crate::signer::SignerError;
 use crate::timestamp::Timestamp;
 use crate::Height;
 
-use flex_error::{define_error, TraceError};
+use flex_error::{define_error, DisplayError, TraceError};
 use ibc_proto::protobuf::Error as TendermintError;
 
 define_error! {
     #[derive(Debug)]
     Error {
         Ics03Connection
-            [ connection_error::Error ]
+            [ DisplayError<connection_error::Error> ]
             | _ | { "ics03 connection error" },
 
         Ics05Port

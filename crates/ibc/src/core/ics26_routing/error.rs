@@ -13,7 +13,7 @@ define_error! {
             | _ | { "ICS02 client error" },
 
         Ics03Connection
-            [ ics03_connection::error::Error ]
+            [ TraceError<ics03_connection::error::Error> ]
             | _ | { "ICS03 connection error" },
 
         Ics04Channel

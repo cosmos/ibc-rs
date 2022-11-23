@@ -61,31 +61,31 @@ impl TryFrom<RawMsgConnectionOpenAck> for MsgConnectionOpenAck {
             conn_id_on_a: msg
                 .connection_id
                 .parse()
-                .map_err(Error::invalid_identifier)?,
+                .map_err(Error::InvalidIdentifier)?,
             conn_id_on_b: msg
                 .counterparty_connection_id
                 .parse()
-                .map_err(Error::invalid_identifier)?,
-            client_state_of_a_on_b: msg.client_state.ok_or_else(Error::missing_client_state)?,
-            version: msg.version.ok_or_else(Error::empty_versions)?.try_into()?,
-            proof_conn_end_on_b: msg.proof_try.try_into().map_err(Error::invalid_proof)?,
+                .map_err(Error::InvalidIdentifier)?,
+            client_state_of_a_on_b: msg.client_state.ok_or(Error::MissingClientState)?,
+            version: msg.version.ok_or(Error::EmptyVersions)?.try_into()?,
+            proof_conn_end_on_b: msg.proof_try.try_into().map_err(Error::InvalidProof)?,
             proof_client_state_of_a_on_b: msg
                 .proof_client
                 .try_into()
-                .map_err(Error::invalid_proof)?,
+                .map_err(Error::InvalidProof)?,
             proof_consensus_state_of_a_on_b: msg
                 .proof_consensus
                 .try_into()
-                .map_err(Error::invalid_proof)?,
+                .map_err(Error::InvalidProof)?,
             proofs_height_on_b: msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_proof_height)?,
+                .ok_or(Error::MissingProofHeight)?,
             consensus_height_of_a_on_b: msg
                 .consensus_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_consensus_height)?,
-            signer: msg.signer.parse().map_err(Error::signer)?,
+                .ok_or(Error::MissingConsensusHeight)?,
+            signer: msg.signer.parse().map_err(Error::Signer)?,
         })
     }
 }

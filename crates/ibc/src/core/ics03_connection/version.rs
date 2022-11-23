@@ -32,11 +32,11 @@ impl TryFrom<RawVersion> for Version {
     type Error = Error;
     fn try_from(value: RawVersion) -> Result<Self, Self::Error> {
         if value.identifier.trim().is_empty() {
-            return Err(Error::empty_versions());
+            return Err(Error::EmptyVersions);
         }
         for feature in value.features.iter() {
             if feature.trim().is_empty() {
-                return Err(Error::empty_features());
+                return Err(Error::EmptyFeatures);
             }
         }
         Ok(Version {
@@ -96,7 +96,7 @@ pub fn pick_version(
             }
             for feature in c.features.iter() {
                 if feature.trim().is_empty() {
-                    return Err(Error::empty_features());
+                    return Err(Error::EmptyFeatures);
                 }
             }
             intersection.append(&mut vec![s.clone()]);
@@ -104,7 +104,7 @@ pub fn pick_version(
     }
     intersection.sort_by(|a, b| a.identifier.cmp(&b.identifier));
     if intersection.is_empty() {
-        return Err(Error::no_common_version());
+        return Err(Error::NoCommonVersion);
     }
     Ok(intersection[0].clone())
 }
@@ -285,7 +285,7 @@ mod tests {
                 name: "Disjoint versions".to_string(),
                 supported: disjoint().0,
                 counterparty: disjoint().1,
-                picked: Err(Error::no_common_version()),
+                picked: Err(Error::NoCommonVersion),
                 want_pass: false,
             },
         ];

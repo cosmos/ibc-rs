@@ -46,14 +46,14 @@ impl TryFrom<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {
 
     fn try_from(msg: RawMsgConnectionOpenInit) -> Result<Self, Self::Error> {
         Ok(Self {
-            client_id_on_a: msg.client_id.parse().map_err(Error::invalid_identifier)?,
+            client_id_on_a: msg.client_id.parse().map_err(Error::InvalidIdentifier)?,
             counterparty: msg
                 .counterparty
-                .ok_or_else(Error::missing_counterparty)?
+                .ok_or(Error::MissingCounterparty)?
                 .try_into()?,
             version: msg.version.map(|version| version.try_into()).transpose()?,
             delay_period: Duration::from_nanos(msg.delay_period),
-            signer: msg.signer.parse().map_err(Error::signer)?,
+            signer: msg.signer.parse().map_err(Error::Signer)?,
         })
     }
 }

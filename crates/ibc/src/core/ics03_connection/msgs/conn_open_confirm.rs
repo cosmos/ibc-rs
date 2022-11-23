@@ -48,13 +48,13 @@ impl TryFrom<RawMsgConnectionOpenConfirm> for MsgConnectionOpenConfirm {
             conn_id_on_b: msg
                 .connection_id
                 .parse()
-                .map_err(Error::invalid_identifier)?,
-            proof_conn_end_on_a: msg.proof_ack.try_into().map_err(Error::invalid_proof)?,
+                .map_err(Error::InvalidIdentifier)?,
+            proof_conn_end_on_a: msg.proof_ack.try_into().map_err(Error::InvalidProof)?,
             proof_height_on_a: msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_proof_height)?,
-            signer: msg.signer.parse().map_err(Error::signer)?,
+                .ok_or(Error::MissingProofHeight)?,
+            signer: msg.signer.parse().map_err(Error::Signer)?,
         })
     }
 }

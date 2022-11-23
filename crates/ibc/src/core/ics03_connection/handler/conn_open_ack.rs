@@ -20,10 +20,10 @@ pub(crate) fn process(
     let mut output = HandlerOutput::builder();
 
     if msg.consensus_height_of_a_on_b > ctx_a.host_current_height()? {
-        return Err(Error::invalid_consensus_height(
-            msg.consensus_height_of_a_on_b,
-            ctx_a.host_current_height()?,
-        ));
+        return Err(Error::InvalidConsensusHeight {
+            target_height: msg.consensus_height_of_a_on_b,
+            current_height: ctx_a.host_current_height()?,
+        });
     }
 
     ctx_a.validate_self_client(msg.client_state_of_a_on_b.clone())?;
@@ -32,7 +32,9 @@ pub(crate) fn process(
     if !(conn_end_on_a.state_matches(&State::Init)
         && conn_end_on_a.versions().contains(&msg.version))
     {
-        return Err(Error::connection_mismatch(msg.conn_id_on_a));
+        return Err(Error::ConnectionMismatch {
+            connection_id: msg.conn_id_on_a,
+        });
     }
 
     let client_id_on_a = conn_end_on_a.client_id();
@@ -41,7 +43,7 @@ pub(crate) fn process(
     let conn_id_on_b = conn_end_on_a
         .counterparty()
         .connection_id()
-        .ok_or_else(Error::invalid_counterparty)?;
+        .ok_or(Error::InvalidCounterparty)?;
 
     // Proof verification.
     {
@@ -74,7 +76,7 @@ pub(crate) fn process(
                     conn_id_on_b,
                     &expected_conn_end_on_b,
                 )
-                .map_err(Error::verify_connection_state)?;
+                .map_err(Error::VerifyConnectionState)?;
         }
 
         client_state_of_b_on_a
@@ -86,8 +88,9 @@ pub(crate) fn process(
                 client_id_on_b,
                 msg.client_state_of_a_on_b,
             )
-            .map_err(|e| {
-                Error::client_state_verification_failure(conn_end_on_a.client_id().clone(), e)
+            .map_err(|e| Error::ClientStateVerificationFailure {
+                client_id: conn_end_on_a.client_id().clone(),
+                client_error: e,
             })?;
 
         let expected_consensus_state_of_a_on_b =
@@ -102,7 +105,10 @@ pub(crate) fn process(
                 msg.consensus_height_of_a_on_b,
                 expected_consensus_state_of_a_on_b.as_ref(),
             )
-            .map_err(|e| Error::consensus_state_verification_failure(msg.proofs_height_on_b, e))?;
+            .map_err(|e| Error::ConsensusStateVerificationFailure {
+                height: msg.proofs_height_on_b,
+                client_error: e,
+            })?;
     }
 
     // Success
@@ -221,10 +227,10 @@ mod tests {
                 msg: ConnectionMsg::ConnectionOpenAck(Box::new(msg_ack.clone())),
                 want_pass: false,
                 match_error: {
-                    let connection_id = conn_id.clone();
-                    Box::new(move |e| match e.detail() {
-                        error::ErrorDetail::ConnectionNotFound(e) => {
-                            assert_eq!(e.connection_id, connection_id)
+                    let right_connection_id = conn_id.clone();
+                    Box::new(move |e| match e {
+                        error::Error::ConnectionNotFound { connection_id } => {
+                            assert_eq!(connection_id, right_connection_id)
                         }
                         _ => {
                             panic!("Expected ConnectionNotFound error");
@@ -241,10 +247,10 @@ mod tests {
                 msg: ConnectionMsg::ConnectionOpenAck(Box::new(msg_ack)),
                 want_pass: false,
                 match_error: {
-                    let connection_id = conn_id;
-                    Box::new(move |e| match e.detail() {
-                        error::ErrorDetail::ConnectionMismatch(e) => {
-                            assert_eq!(e.connection_id, connection_id);
+                    let right_connection_id = conn_id;
+                    Box::new(move |e| match e {
+                        error::Error::ConnectionMismatch { connection_id } => {
+                            assert_eq!(connection_id, right_connection_id);
                         }
                         _ => {
                             panic!("Expected ConnectionMismatch error");

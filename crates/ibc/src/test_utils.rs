@@ -234,7 +234,7 @@ impl SendPacketReader for DummyTransferModule {
     fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, Error> {
         match self.ibc_store.lock().unwrap().connections.get(cid) {
             Some(connection_end) => Ok(connection_end.clone()),
-            None => Err(Ics03Error::connection_not_found(cid.clone())),
+            None => Err(Ics03Error::ConnectionNotFound { connection_id: cid.clone() }),
         }
         .map_err(Error::ics03_connection)
     }
@@ -253,7 +253,7 @@ impl SendPacketReader for DummyTransferModule {
                 client_id: client_id.clone(),
             }),
         }
-        .map_err(|e| Error::ics03_connection(Ics03Error::ics02_client(e)))
+        .map_err(|e| Error::ics03_connection(Ics03Error::Ics02Client(e)))
     }
 
     fn client_consensus_state(
@@ -274,7 +274,7 @@ impl SendPacketReader for DummyTransferModule {
                 height,
             }),
         }
-        .map_err(|e| Error::ics03_connection(Ics03Error::ics02_client(e)))
+        .map_err(|e| Error::ics03_connection(Ics03Error::Ics02Client(e)))
     }
 
     fn get_next_sequence_send(

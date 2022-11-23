@@ -19,14 +19,16 @@ pub(crate) fn process(
 
     let conn_end_on_b = ctx_b.connection_end(&msg.conn_id_on_b)?;
     if !conn_end_on_b.state_matches(&State::TryOpen) {
-        return Err(Error::connection_mismatch(msg.conn_id_on_b));
+        return Err(Error::ConnectionMismatch {
+            connection_id: msg.conn_id_on_b,
+        });
     }
     let client_id_on_a = conn_end_on_b.counterparty().client_id();
     let client_id_on_b = conn_end_on_b.client_id();
     let conn_id_on_a = conn_end_on_b
         .counterparty()
         .connection_id()
-        .ok_or_else(Error::invalid_counterparty)?;
+        .ok_or(Error::InvalidCounterparty)?;
 
     // Verify proofs
     {
@@ -58,7 +60,7 @@ pub(crate) fn process(
                 conn_id_on_a,
                 &expected_conn_end_on_a,
             )
-            .map_err(Error::verify_connection_state)?;
+            .map_err(Error::VerifyConnectionState)?;
     }
 
     // Success

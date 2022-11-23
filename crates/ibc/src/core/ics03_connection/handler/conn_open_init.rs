@@ -28,7 +28,7 @@ pub(crate) fn process(
             if ctx_a.get_compatible_versions().contains(&version) {
                 Ok(vec![version])
             } else {
-                Err(Error::version_not_supported(version))
+                Err(Error::VersionNotSupported { version })
             }
         }
         None => Ok(ctx_a.get_compatible_versions()),

@@ -30,7 +30,7 @@ define_error! {
             | _ | { "ICS02 client error" },
 
         Connection
-            [ connection_error::Error ]
+            [ TraceError<connection_error::Error> ]
             | _ | { "connection error" },
 
         Channel

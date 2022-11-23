@@ -76,7 +76,7 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
             .collect::<Result<Vec<_>, _>>()?;
 
         if counterparty_versions.is_empty() {
-            return Err(Error::empty_versions());
+            return Err(Error::EmptyVersions);
         }
 
         // We set the deprecated `previous_connection_id` field so that we can
@@ -84,32 +84,32 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
         #[allow(deprecated)]
         Ok(Self {
             previous_connection_id: msg.previous_connection_id,
-            client_id_on_b: msg.client_id.parse().map_err(Error::invalid_identifier)?,
-            client_state_of_b_on_a: msg.client_state.ok_or_else(Error::missing_client_state)?,
+            client_id_on_b: msg.client_id.parse().map_err(Error::InvalidIdentifier)?,
+            client_state_of_b_on_a: msg.client_state.ok_or(Error::MissingClientState)?,
             counterparty: msg
                 .counterparty
-                .ok_or_else(Error::missing_counterparty)?
+                .ok_or(Error::MissingCounterparty)?
                 .try_into()?,
             versions_on_a: counterparty_versions,
-            proof_conn_end_on_a: msg.proof_init.try_into().map_err(Error::invalid_proof)?,
+            proof_conn_end_on_a: msg.proof_init.try_into().map_err(Error::InvalidProof)?,
             proof_client_state_of_b_on_a: msg
                 .proof_client
                 .try_into()
-                .map_err(Error::invalid_proof)?,
+                .map_err(Error::InvalidProof)?,
             proof_consensus_state_of_b_on_a: msg
                 .proof_consensus
                 .try_into()
-                .map_err(Error::invalid_proof)?,
+                .map_err(Error::InvalidProof)?,
             proofs_height_on_a: msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_proof_height)?,
+                .ok_or(Error::MissingProofHeight)?,
             consensus_height_of_b_on_a: msg
                 .consensus_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_consensus_height)?,
+                .ok_or(Error::MissingConsensusHeight)?,
             delay_period: Duration::from_nanos(msg.delay_period),
-            signer: msg.signer.parse().map_err(Error::signer)?,
+            signer: msg.signer.parse().map_err(Error::Signer)?,
         })
     }
 }

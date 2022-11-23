@@ -61,7 +61,7 @@ impl TryFrom<RawIdentifiedConnection> for IdentifiedConnectionEnd {
         };
 
         Ok(IdentifiedConnectionEnd {
-            connection_id: value.id.parse().map_err(Error::invalid_identifier)?,
+            connection_id: value.id.parse().map_err(Error::InvalidIdentifier)?,
             connection_end: raw_connection_end.try_into()?,
         })
     }
@@ -116,15 +116,15 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
             return Ok(ConnectionEnd::default());
         }
         if value.client_id.is_empty() {
-            return Err(Error::empty_proto_connection_end());
+            return Err(Error::EmptyProtoConnectionEnd);
         }
 
         Ok(Self::new(
             state,
-            value.client_id.parse().map_err(Error::invalid_identifier)?,
+            value.client_id.parse().map_err(Error::InvalidIdentifier)?,
             value
                 .counterparty
-                .ok_or_else(Error::missing_counterparty)?
+                .ok_or(Error::MissingCounterparty)?
                 .try_into()?,
             value
                 .versions
@@ -260,16 +260,16 @@ impl TryFrom<RawCounterparty> for Counterparty {
             .filter(|x| !x.is_empty())
             .map(|v| FromStr::from_str(v.as_str()))
             .transpose()
-            .map_err(Error::invalid_identifier)?;
+            .map_err(Error::InvalidIdentifier)?;
         Ok(Counterparty::new(
-            value.client_id.parse().map_err(Error::invalid_identifier)?,
+            value.client_id.parse().map_err(Error::InvalidIdentifier)?,
             connection_id,
             value
                 .prefix
-                .ok_or_else(Error::missing_counterparty)?
+                .ok_or(Error::MissingCounterparty)?
                 .key_prefix
                 .try_into()
-                .map_err(|_| Error::ics02_client(ClientError::EmptyPrefix))?,
+                .map_err(|_| Error::Ics02Client(ClientError::EmptyPrefix))?,
         ))
     }
 }
@@ -346,7 +346,7 @@ impl State {
             1 => Ok(Self::Init),
             2 => Ok(Self::TryOpen),
             3 => Ok(Self::Open),
-            _ => Err(Error::invalid_state(s)),
+            _ => Err(Error::InvalidState { state: s }),
         }
     }
 
@@ -383,7 +383,7 @@ impl TryFrom<i32> for State {
             1 => Ok(Self::Init),
             2 => Ok(Self::TryOpen),
             3 => Ok(Self::Open),
-            _ => Err(Error::invalid_state(value)),
+            _ => Err(Error::InvalidState { state: value }),
         }
     }
 }
