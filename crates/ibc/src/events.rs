@@ -38,7 +38,7 @@ define_error! {
             | _ | { "channel error" },
 
         Timestamp
-            [ ParseTimestampError ]
+            [ TraceError<ParseTimestampError> ]
             | _ | { "error parsing timestamp" },
 
         MissingKey
