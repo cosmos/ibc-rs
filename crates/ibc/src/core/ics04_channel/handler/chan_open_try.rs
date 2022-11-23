@@ -20,27 +20,27 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     // An IBC connection running on the local (host) chain should exist.
     if msg.chan_end_on_b.connection_hops().len() != 1 {
-        return Err(Error::invalid_connection_hops_length(
-            1,
-            msg.chan_end_on_b.connection_hops().len(),
-        ));
+        return Err(Error::InvalidConnectionHopsLength {
+            expected: 1,
+            actual: msg.chan_end_on_b.connection_hops().len(),
+        });
     }
 
     let conn_end_on_b = ctx_b.connection_end(&msg.chan_end_on_b.connection_hops()[0])?;
     if !conn_end_on_b.state_matches(&ConnectionState::Open) {
-        return Err(Error::connection_not_open(
-            msg.chan_end_on_b.connection_hops()[0].clone(),
-        ));
+        return Err(Error::ConnectionNotOpen {
+            connection_id: msg.chan_end_on_b.connection_hops()[0].clone(),
+        });
     }
 
     let conn_version = match conn_end_on_b.versions() {
         [version] => version,
-        _ => return Err(Error::invalid_version_length_connection()),
+        _ => return Err(Error::InvalidVersionLengthConnection),
     };
 
     let channel_feature = msg.chan_end_on_b.ordering().to_string();
     if !conn_version.is_supported_feature(channel_feature) {
-        return Err(Error::channel_feature_not_suported_by_connection());
+        return Err(Error::ChannelFeatureNotSuportedByConnection);
     }
 
     // Verify proofs
@@ -55,19 +55,18 @@ pub(crate) fn process<Ctx: ChannelReader>(
             .chan_end_on_b
             .counterparty()
             .channel_id()
-            .ok_or_else(Error::invalid_counterparty_channel_id)?;
-        let conn_id_on_a = conn_end_on_b
-            .counterparty()
-            .connection_id()
-            .ok_or_else(|| {
-                Error::undefined_connection_counterparty(
-                    msg.chan_end_on_b.connection_hops()[0].clone(),
-                )
-            })?;
+            .ok_or(Error::InvalidCounterpartyChannelId)?;
+        let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
+            Error::UndefinedConnectionCounterparty {
+                connection_id: msg.chan_end_on_b.connection_hops()[0].clone(),
+            },
+        )?;
 
         // The client must not be frozen.
         if client_state_of_a_on_b.is_frozen() {
-            return Err(Error::frozen_client(client_id_on_b));
+            return Err(Error::FrozenClient {
+                client_id: client_id_on_b,
+            });
         }
 
         let expected_chan_end_on_a = ChannelEnd::new(
@@ -90,7 +89,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
                 chan_id_on_a,
                 &expected_chan_end_on_a,
             )
-            .map_err(Error::verify_channel_failed)?;
+            .map_err(Error::VerifyChannelFailed)?;
     }
 
     let chan_end_on_b = ChannelEnd::new(
@@ -152,7 +151,7 @@ mod tests {
             ctx: MockContext,
             msg: ChannelMsg,
             want_pass: bool,
-            match_error: Box<dyn FnOnce(error::ErrorDetail)>,
+            match_error: Box<dyn FnOnce(error::Error)>,
         }
 
         // Some general-purpose variable to parametrize the messages and the context.
@@ -199,9 +198,9 @@ mod tests {
                 match_error: {
                     let connection_id = msg.chan_end_on_b.connection_hops()[0].clone();
                     Box::new(move |e| match e {
-                        error::ErrorDetail::Ics03Connection(e) => {
+                        error::Error::Ics03Connection(e) => {
                             assert_eq!(
-                                e.source.to_string(),
+                                e.to_string(),
                                 ics03_error::Error::ConnectionNotFound { connection_id }
                                     .to_string()
                             );
@@ -225,9 +224,9 @@ mod tests {
                 msg: ChannelMsg::ChannelOpenTry(msg.clone()),
                 want_pass: false,
                 match_error: Box::new(|e| match e {
-                    error::ErrorDetail::Ics03Connection(e) => {
+                    error::Error::Ics03Connection(e) => {
                         assert_eq!(
-                            e.source.to_string(),
+                            e.to_string(),
                             ics03_error::Error::Ics02Client(ics02_error::Error::ClientNotFound {
                                 client_id: ClientId::new(mock_client_type(), 45).unwrap()
                             })
@@ -294,7 +293,7 @@ mod tests {
                         e,
                     );
 
-                    (test.match_error)(e.0);
+                    (test.match_error)(e);
                 }
             }
         }

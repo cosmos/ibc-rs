@@ -51,12 +51,9 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
 
     fn try_from(raw_msg: RawMsgChannelOpenInit) -> Result<Self, Self::Error> {
         Ok(MsgChannelOpenInit {
-            port_id_on_a: raw_msg.port_id.parse().map_err(Error::identifier)?,
-            chan_end_on_a: raw_msg
-                .channel
-                .ok_or_else(Error::missing_channel)?
-                .try_into()?,
-            signer: raw_msg.signer.parse().map_err(Error::signer)?,
+            port_id_on_a: raw_msg.port_id.parse().map_err(Error::Identifier)?,
+            chan_end_on_a: raw_msg.channel.ok_or(Error::MissingChannel)?.try_into()?,
+            signer: raw_msg.signer.parse().map_err(Error::Signer)?,
         })
     }
 }

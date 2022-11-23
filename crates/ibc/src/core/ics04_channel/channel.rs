@@ -47,8 +47,8 @@ impl TryFrom<RawIdentifiedChannel> for IdentifiedChannelEnd {
         };
 
         Ok(IdentifiedChannelEnd {
-            port_id: value.port_id.parse().map_err(Error::identifier)?,
-            channel_id: value.channel_id.parse().map_err(Error::identifier)?,
+            port_id: value.port_id.parse().map_err(Error::Identifier)?,
+            channel_id: value.channel_id.parse().map_err(Error::Identifier)?,
             channel_end: raw_channel_end.try_into()?,
         })
     }
@@ -121,7 +121,7 @@ impl TryFrom<RawChannel> for ChannelEnd {
         // Assemble the 'remote' attribute of the Channel, which represents the Counterparty.
         let remote = value
             .counterparty
-            .ok_or_else(Error::missing_counterparty)?
+            .ok_or(Error::MissingCounterparty)?
             .try_into()?;
 
         // Parse each item in connection_hops into a ConnectionId.
@@ -130,7 +130,7 @@ impl TryFrom<RawChannel> for ChannelEnd {
             .into_iter()
             .map(|conn_id| ConnectionId::from_str(conn_id.as_str()))
             .collect::<Result<Vec<_>, _>>()
-            .map_err(Error::identifier)?;
+            .map_err(Error::Identifier)?;
 
         let version = value.version.into();
 
@@ -218,10 +218,10 @@ impl ChannelEnd {
 
     pub fn validate_basic(&self) -> Result<(), Error> {
         if self.connection_hops.len() != 1 {
-            return Err(Error::invalid_connection_hops_length(
-                1,
-                self.connection_hops.len(),
-            ));
+            return Err(Error::InvalidConnectionHopsLength {
+                expected: 1,
+                actual: self.connection_hops.len(),
+            });
         }
         self.counterparty().validate_basic()
     }
@@ -304,9 +304,9 @@ impl TryFrom<RawCounterparty> for Counterparty {
             .filter(|x| !x.is_empty())
             .map(|v| FromStr::from_str(v.as_str()))
             .transpose()
-            .map_err(Error::identifier)?;
+            .map_err(Error::Identifier)?;
         Ok(Counterparty::new(
-            value.port_id.parse().map_err(Error::identifier)?,
+            value.port_id.parse().map_err(Error::Identifier)?,
             channel_id,
         ))
     }
@@ -359,7 +359,9 @@ impl Order {
             0 => Ok(Self::None),
             1 => Ok(Self::Unordered),
             2 => Ok(Self::Ordered),
-            _ => Err(Error::unknown_order_type(nr.to_string())),
+            _ => Err(Error::UnknownOrderType {
+                type_id: nr.to_string(),
+            }),
         }
     }
 }
@@ -372,7 +374,9 @@ impl FromStr for Order {
             "uninitialized" => Ok(Self::None),
             "unordered" => Ok(Self::Unordered),
             "ordered" => Ok(Self::Ordered),
-            _ => Err(Error::unknown_order_type(s.to_string())),
+            _ => Err(Error::UnknownOrderType {
+                type_id: s.to_string(),
+            }),
         }
     }
 }
@@ -406,7 +410,7 @@ impl State {
             2 => Ok(Self::TryOpen),
             3 => Ok(Self::Open),
             4 => Ok(Self::Closed),
-            _ => Err(Error::unknown_state(s)),
+            _ => Err(Error::UnknownState { state: s }),
         }
     }
 

@@ -30,7 +30,9 @@ pub fn process<Ctx: ChannelReader>(
     let source_channel_end = ctx.channel_end(&packet.source_port, &packet.source_channel)?;
 
     if !source_channel_end.state_matches(&State::Open) {
-        return Err(Error::channel_closed(packet.source_channel.clone()));
+        return Err(Error::ChannelClosed {
+            channel_id: packet.source_channel.clone(),
+        });
     }
 
     let counterparty = Counterparty::new(
@@ -39,19 +41,19 @@ pub fn process<Ctx: ChannelReader>(
     );
 
     if !source_channel_end.counterparty_matches(&counterparty) {
-        return Err(Error::invalid_packet_counterparty(
-            packet.destination_port.clone(),
-            packet.destination_channel.clone(),
-        ));
+        return Err(Error::InvalidPacketCounterparty {
+            port_id: packet.destination_port.clone(),
+            channel_id: packet.destination_channel.clone(),
+        });
     }
 
     let source_connection_id = &source_channel_end.connection_hops()[0];
     let connection_end = ctx.connection_end(source_connection_id)?;
 
     if !connection_end.state_matches(&ConnectionState::Open) {
-        return Err(Error::connection_not_open(
-            source_channel_end.connection_hops()[0].clone(),
-        ));
+        return Err(Error::ConnectionNotOpen {
+            connection_id: source_channel_end.connection_hops()[0].clone(),
+        });
     }
 
     // Verify packet commitment
@@ -65,7 +67,9 @@ pub fn process<Ctx: ChannelReader>(
             packet.timeout_timestamp,
         )
     {
-        return Err(Error::incorrect_packet_commitment(packet.sequence));
+        return Err(Error::IncorrectPacketCommitment {
+            sequence: packet.sequence,
+        });
     }
 
     // Verify the acknowledgement proof
@@ -83,10 +87,10 @@ pub fn process<Ctx: ChannelReader>(
             ctx.get_next_sequence_ack(&packet.source_port, &packet.source_channel)?;
 
         if packet.sequence != next_seq_ack {
-            return Err(Error::invalid_packet_sequence(
-                packet.sequence,
-                next_seq_ack,
-            ));
+            return Err(Error::InvalidPacketSequence {
+                given_sequence: packet.sequence,
+                next_sequence: next_seq_ack,
+            });
         }
 
         PacketResult::Ack(AckPacketResult {

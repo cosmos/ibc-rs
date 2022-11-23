@@ -64,17 +64,14 @@ impl TryFrom<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {
 
     fn try_from(raw_msg: RawMsgChannelCloseConfirm) -> Result<Self, Self::Error> {
         Ok(MsgChannelCloseConfirm {
-            port_id_on_b: raw_msg.port_id.parse().map_err(Error::identifier)?,
-            chan_id_on_b: raw_msg.channel_id.parse().map_err(Error::identifier)?,
-            proof_chan_end_on_a: raw_msg
-                .proof_init
-                .try_into()
-                .map_err(Error::invalid_proof)?,
+            port_id_on_b: raw_msg.port_id.parse().map_err(Error::Identifier)?,
+            chan_id_on_b: raw_msg.channel_id.parse().map_err(Error::Identifier)?,
+            proof_chan_end_on_a: raw_msg.proof_init.try_into().map_err(Error::InvalidProof)?,
             proof_height_on_a: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_height)?,
-            signer: raw_msg.signer.parse().map_err(Error::signer)?,
+                .ok_or(Error::MissingHeight)?,
+            signer: raw_msg.signer.parse().map_err(Error::Signer)?,
         })
     }
 }

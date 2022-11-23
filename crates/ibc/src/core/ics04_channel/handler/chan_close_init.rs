@@ -18,26 +18,26 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     // Validate that the channel end is in a state where it can be closed.
     if chan_end_on_a.state_matches(&State::Closed) {
-        return Err(Error::invalid_channel_state(
-            msg.chan_id_on_a.clone(),
-            chan_end_on_a.state,
-        ));
+        return Err(Error::InvalidChannelState {
+            channel_id: msg.chan_id_on_a.clone(),
+            state: chan_end_on_a.state,
+        });
     }
 
     // An OPEN IBC connection running on the local (host) chain should exist.
     if chan_end_on_a.connection_hops().len() != 1 {
-        return Err(Error::invalid_connection_hops_length(
-            1,
-            chan_end_on_a.connection_hops().len(),
-        ));
+        return Err(Error::InvalidConnectionHopsLength {
+            expected: 1,
+            actual: chan_end_on_a.connection_hops().len(),
+        });
     }
 
     let conn_end_on_a = ctx_a.connection_end(&chan_end_on_a.connection_hops()[0])?;
 
     if !conn_end_on_a.state_matches(&ConnectionState::Open) {
-        return Err(Error::connection_not_open(
-            chan_end_on_a.connection_hops()[0].clone(),
-        ));
+        return Err(Error::ConnectionNotOpen {
+            connection_id: chan_end_on_a.connection_hops()[0].clone(),
+        });
     }
 
     output.log("success: channel close init");

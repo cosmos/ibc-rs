@@ -30,10 +30,10 @@ pub fn process<Ctx: ChannelReader>(
         ctx.channel_end(&packet.destination_port, &packet.destination_channel)?;
 
     if !dest_channel_end.state_matches(&State::Open) {
-        return Err(Error::invalid_channel_state(
-            packet.source_channel,
-            dest_channel_end.state,
-        ));
+        return Err(Error::InvalidChannelState {
+            channel_id: packet.source_channel,
+            state: dest_channel_end.state,
+        });
     }
 
     // NOTE: IBC app modules might have written the acknowledgement synchronously on
@@ -44,17 +44,22 @@ pub fn process<Ctx: ChannelReader>(
         &packet.destination_channel,
         packet.sequence,
     ) {
-        Ok(_) => return Err(Error::acknowledgement_exists(packet.sequence)),
+        Ok(_) => {
+            return Err(Error::AcknowledgementExists {
+                sequence: packet.sequence,
+            })
+        }
         Err(e)
-            if e.detail().to_string()
-                == Error::packet_acknowledgement_not_found(packet.sequence)
-                    .detail()
-                    .to_string() => {}
+            if e.to_string()
+                == Error::PacketAcknowledgementNotFound {
+                    sequence: packet.sequence,
+                }
+                .to_string() => {}
         Err(e) => return Err(e),
     }
 
     if ack.is_empty() {
-        return Err(Error::invalid_acknowledgement());
+        return Err(Error::InvalidAcknowledgement);
     }
 
     let result = PacketResult::WriteAck(WriteAckPacketResult {

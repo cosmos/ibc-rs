@@ -357,7 +357,9 @@ pub(crate) mod test {
         output: &mut HandlerOutputBuilder<()>,
         msg: MsgTransfer<PrefixedCoin>,
     ) -> Result<(), Error> {
-        send_transfer(ctx, output, msg).map_err(|e: Ics20Error| Error::app_module(e.to_string()))
+        send_transfer(ctx, output, msg).map_err(|e: Ics20Error| Error::AppModule {
+            description: e.to_string(),
+        })
     }
 
     fn get_defaults() -> (

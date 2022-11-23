@@ -683,15 +683,15 @@ impl ChannelReader for MockContext {
             .and_then(|map| map.get(channel_id))
         {
             Some(channel_end) => Ok(channel_end.clone()),
-            None => Err(Ics04Error::channel_not_found(
-                port_id.clone(),
-                channel_id.clone(),
-            )),
+            None => Err(Ics04Error::ChannelNotFound {
+                port_id: port_id.clone(),
+                channel_id: channel_id.clone(),
+            }),
         }
     }
 
     fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, Ics04Error> {
-        ConnectionReader::connection_end(self, cid).map_err(Ics04Error::ics03_connection)
+        ConnectionReader::connection_end(self, cid).map_err(Ics04Error::Ics03Connection)
     }
 
     fn connection_channels(
@@ -700,13 +700,13 @@ impl ChannelReader for MockContext {
     ) -> Result<Vec<(PortId, ChannelId)>, Ics04Error> {
         match self.ibc_store.lock().unwrap().connection_channels.get(cid) {
             Some(pcid) => Ok(pcid.clone()),
-            None => Err(Ics04Error::missing_channel()),
+            None => Err(Ics04Error::MissingChannel),
         }
     }
 
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Ics04Error> {
         ClientReader::client_state(self, client_id)
-            .map_err(|e| Ics04Error::ics03_connection(Ics03Error::Ics02Client(e)))
+            .map_err(|e| Ics04Error::Ics03Connection(Ics03Error::Ics02Client(e)))
     }
 
     fn client_consensus_state(
@@ -715,7 +715,7 @@ impl ChannelReader for MockContext {
         height: Height,
     ) -> Result<Box<dyn ConsensusState>, Ics04Error> {
         ClientReader::consensus_state(self, client_id, height)
-            .map_err(|e| Ics04Error::ics03_connection(Ics03Error::Ics02Client(e)))
+            .map_err(|e| Ics04Error::Ics03Connection(Ics03Error::Ics02Client(e)))
     }
 
     fn get_next_sequence_send(
@@ -732,10 +732,10 @@ impl ChannelReader for MockContext {
             .and_then(|map| map.get(channel_id))
         {
             Some(sequence) => Ok(*sequence),
-            None => Err(Ics04Error::missing_next_send_seq(
-                port_id.clone(),
-                channel_id.clone(),
-            )),
+            None => Err(Ics04Error::MissingNextSendSeq {
+                port_id: port_id.clone(),
+                channel_id: channel_id.clone(),
+            }),
         }
     }
 
@@ -753,10 +753,10 @@ impl ChannelReader for MockContext {
             .and_then(|map| map.get(channel_id))
         {
             Some(sequence) => Ok(*sequence),
-            None => Err(Ics04Error::missing_next_recv_seq(
-                port_id.clone(),
-                channel_id.clone(),
-            )),
+            None => Err(Ics04Error::MissingNextRecvSeq {
+                port_id: port_id.clone(),
+                channel_id: channel_id.clone(),
+            }),
         }
     }
 
@@ -774,10 +774,10 @@ impl ChannelReader for MockContext {
             .and_then(|map| map.get(channel_id))
         {
             Some(sequence) => Ok(*sequence),
-            None => Err(Ics04Error::missing_next_ack_seq(
-                port_id.clone(),
-                channel_id.clone(),
-            )),
+            None => Err(Ics04Error::MissingNextAckSeq {
+                port_id: port_id.clone(),
+                channel_id: channel_id.clone(),
+            }),
         }
     }
 
@@ -797,7 +797,7 @@ impl ChannelReader for MockContext {
             .and_then(|map| map.get(&seq))
         {
             Some(commitment) => Ok(commitment.clone()),
-            None => Err(Ics04Error::packet_commitment_not_found(seq)),
+            None => Err(Ics04Error::PacketCommitmentNotFound { sequence: seq }),
         }
     }
 
@@ -817,7 +817,7 @@ impl ChannelReader for MockContext {
             .and_then(|map| map.get(&seq))
         {
             Some(receipt) => Ok(receipt.clone()),
-            None => Err(Ics04Error::packet_receipt_not_found(seq)),
+            None => Err(Ics04Error::PacketReceiptNotFound { sequence: seq }),
         }
     }
 
@@ -837,7 +837,7 @@ impl ChannelReader for MockContext {
             .and_then(|map| map.get(&seq))
         {
             Some(ack) => Ok(ack.clone()),
-            None => Err(Ics04Error::packet_acknowledgement_not_found(seq)),
+            None => Err(Ics04Error::PacketAcknowledgementNotFound { sequence: seq }),
         }
     }
 
@@ -850,16 +850,18 @@ impl ChannelReader for MockContext {
     }
 
     fn host_timestamp(&self) -> Result<Timestamp, Ics04Error> {
-        ClientReader::host_timestamp(self).map_err(|e| Ics04Error::other(e.to_string()))
+        ClientReader::host_timestamp(self).map_err(|e| Ics04Error::Other {
+            description: e.to_string(),
+        })
     }
 
     fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, Ics04Error> {
-        ConnectionReader::host_consensus_state(self, height).map_err(Ics04Error::ics03_connection)
+        ConnectionReader::host_consensus_state(self, height).map_err(Ics04Error::Ics03Connection)
     }
 
     fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, Ics04Error> {
         ClientReader::pending_host_consensus_state(self)
-            .map_err(|e| Ics04Error::ics03_connection(Ics03Error::Ics02Client(e)))
+            .map_err(|e| Ics04Error::Ics03Connection(Ics03Error::Ics02Client(e)))
     }
 
     fn client_update_time(
@@ -875,10 +877,10 @@ impl ChannelReader for MockContext {
             .get(&(client_id.clone(), height))
         {
             Some(time) => Ok(*time),
-            None => Err(Ics04Error::processed_time_not_found(
-                client_id.clone(),
+            None => Err(Ics04Error::ProcessedTimeNotFound {
+                client_id: client_id.clone(),
                 height,
-            )),
+            }),
         }
     }
 
@@ -895,10 +897,10 @@ impl ChannelReader for MockContext {
             .get(&(client_id.clone(), height))
         {
             Some(height) => Ok(*height),
-            None => Err(Ics04Error::processed_height_not_found(
-                client_id.clone(),
+            None => Err(Ics04Error::ProcessedHeightNotFound {
+                client_id: client_id.clone(),
                 height,
-            )),
+            }),
         }
     }
 

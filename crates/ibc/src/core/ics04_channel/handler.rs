@@ -73,7 +73,7 @@ where
     if ctx.router().has_route(&module_id) {
         Ok(module_id)
     } else {
-        Err(Error::route_not_found())
+        Err(Error::RouteNotFound)
     }
 }
 
@@ -111,7 +111,7 @@ where
     let cb = ctx
         .router_mut()
         .get_route_mut(module_id)
-        .ok_or_else(Error::route_not_found)?;
+        .ok_or(Error::RouteNotFound)?;
 
     match msg {
         ChannelMsg::ChannelOpenInit(msg) => {
@@ -229,22 +229,22 @@ where
     let module_id = match msg {
         PacketMsg::RecvPacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.destination_port)
-            .map_err(Error::ics05_port)?,
+            .map_err(Error::Ics05Port)?,
         PacketMsg::AckPacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.source_port)
-            .map_err(Error::ics05_port)?,
+            .map_err(Error::Ics05Port)?,
         PacketMsg::TimeoutPacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.source_port)
-            .map_err(Error::ics05_port)?,
+            .map_err(Error::Ics05Port)?,
         PacketMsg::TimeoutOnClosePacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.source_port)
-            .map_err(Error::ics05_port)?,
+            .map_err(Error::Ics05Port)?,
     };
 
     if ctx.router().has_route(&module_id) {
         Ok(module_id)
     } else {
-        Err(Error::route_not_found())
+        Err(Error::RouteNotFound)
     }
 }
 
@@ -300,17 +300,17 @@ fn do_packet_callback(
     let cb = ctx
         .router_mut()
         .get_route_mut(module_id)
-        .ok_or_else(Error::route_not_found)?;
+        .ok_or(Error::RouteNotFound)?;
 
     match msg {
         PacketMsg::RecvPacket(msg) => {
             let result = cb.on_recv_packet(module_output, &msg.packet, &msg.signer);
             match result {
                 OnRecvPacketAck::Nil(write_fn) => {
-                    write_fn(cb.as_any_mut()).map_err(Error::app_module)
+                    write_fn(cb.as_any_mut()).map_err(|e| Error::AppModule { description: e })
                 }
                 OnRecvPacketAck::Successful(ack, write_fn) => {
-                    write_fn(cb.as_any_mut()).map_err(Error::app_module)?;
+                    write_fn(cb.as_any_mut()).map_err(|e| Error::AppModule { description: e })?;
 
                     process_write_ack(ctx, msg.packet.clone(), ack.as_ref(), core_output)
                 }

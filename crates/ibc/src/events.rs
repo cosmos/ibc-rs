@@ -34,7 +34,7 @@ define_error! {
             | _ | { "connection error" },
 
         Channel
-            [ channel_error::Error ]
+            [ TraceError<channel_error::Error> ]
             | _ | { "channel error" },
 
         Timestamp

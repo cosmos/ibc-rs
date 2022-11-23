@@ -52,9 +52,9 @@ impl TryFrom<RawMsgChannelCloseInit> for MsgChannelCloseInit {
 
     fn try_from(raw_msg: RawMsgChannelCloseInit) -> Result<Self, Self::Error> {
         Ok(MsgChannelCloseInit {
-            port_id_on_a: raw_msg.port_id.parse().map_err(Error::identifier)?,
-            chan_id_on_a: raw_msg.channel_id.parse().map_err(Error::identifier)?,
-            signer: raw_msg.signer.parse().map_err(Error::signer)?,
+            port_id_on_a: raw_msg.port_id.parse().map_err(Error::Identifier)?,
+            chan_id_on_a: raw_msg.channel_id.parse().map_err(Error::Identifier)?,
+            signer: raw_msg.signer.parse().map_err(Error::Signer)?,
         })
     }
 }

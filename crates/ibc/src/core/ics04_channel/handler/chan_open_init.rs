@@ -17,10 +17,10 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let mut output = HandlerOutput::builder();
 
     if msg.chan_end_on_a.connection_hops().len() != 1 {
-        return Err(Error::invalid_connection_hops_length(
-            1,
-            msg.chan_end_on_a.connection_hops().len(),
-        ));
+        return Err(Error::InvalidConnectionHopsLength {
+            expected: 1,
+            actual: msg.chan_end_on_a.connection_hops().len(),
+        });
     }
 
     // An IBC connection running on the local (host) chain should exist.
@@ -28,12 +28,12 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     let conn_version = match conn_end_on_a.versions() {
         [version] => version,
-        _ => return Err(Error::invalid_version_length_connection()),
+        _ => return Err(Error::InvalidVersionLengthConnection),
     };
 
     let channel_feature = msg.chan_end_on_a.ordering().to_string();
     if !conn_version.is_supported_feature(channel_feature) {
-        return Err(Error::channel_feature_not_suported_by_connection());
+        return Err(Error::ChannelFeatureNotSuportedByConnection);
     }
 
     let chan_end_on_a = ChannelEnd::new(

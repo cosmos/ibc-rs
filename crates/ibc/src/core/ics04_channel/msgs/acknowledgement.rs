@@ -91,24 +91,21 @@ impl TryFrom<RawMsgAcknowledgement> for MsgAcknowledgement {
             raw_msg
                 .proof_acked
                 .try_into()
-                .map_err(Error::invalid_proof)?,
+                .map_err(Error::InvalidProof)?,
             None,
             None,
             None,
             raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_height)?,
+                .ok_or(Error::MissingHeight)?,
         )
-        .map_err(Error::invalid_proof)?;
+        .map_err(Error::InvalidProof)?;
 
         Ok(MsgAcknowledgement {
-            packet: raw_msg
-                .packet
-                .ok_or_else(Error::missing_packet)?
-                .try_into()?,
+            packet: raw_msg.packet.ok_or(Error::MissingPacket)?.try_into()?,
             acknowledgement: raw_msg.acknowledgement.into(),
-            signer: raw_msg.signer.parse().map_err(Error::signer)?,
+            signer: raw_msg.signer.parse().map_err(Error::Signer)?,
             proofs,
         })
     }

@@ -17,7 +17,7 @@ define_error! {
             | _ | { "ICS03 connection error" },
 
         Ics04Channel
-            [ ics04_channel::error::Error ]
+            [ TraceError<ics04_channel::error::Error> ]
             | _ | { "ICS04 channel error" },
 
         UnknownMessageTypeUrl

@@ -31,10 +31,10 @@ pub fn process<Ctx: ChannelReader>(
     );
 
     if !source_channel_end.counterparty_matches(&counterparty) {
-        return Err(Error::invalid_packet_counterparty(
-            packet.destination_port.clone(),
-            packet.destination_channel.clone(),
-        ));
+        return Err(Error::InvalidPacketCounterparty {
+            port_id: packet.destination_port.clone(),
+            channel_id: packet.destination_channel.clone(),
+        });
     }
 
     let source_connection_id = source_channel_end.connection_hops()[0].clone();
@@ -50,7 +50,9 @@ pub fn process<Ctx: ChannelReader>(
         packet.timeout_timestamp,
     );
     if packet_commitment != expected_commitment {
-        return Err(Error::incorrect_packet_commitment(packet.sequence));
+        return Err(Error::IncorrectPacketCommitment {
+            sequence: packet.sequence,
+        });
     }
 
     let expected_counterparty = Counterparty::new(
@@ -59,9 +61,11 @@ pub fn process<Ctx: ChannelReader>(
     );
 
     let counterparty = connection_end.counterparty();
-    let ccid = counterparty.connection_id().ok_or_else(|| {
-        Error::undefined_connection_counterparty(source_channel_end.connection_hops()[0].clone())
-    })?;
+    let ccid = counterparty
+        .connection_id()
+        .ok_or(Error::UndefinedConnectionCounterparty {
+            connection_id: source_channel_end.connection_hops()[0].clone(),
+        })?;
 
     let expected_connection_hops = vec![ccid.clone()];
 
@@ -76,10 +80,10 @@ pub fn process<Ctx: ChannelReader>(
     // The message's proofs have the channel proof as `other_proof`
     let proof_close = match msg.proofs.other_proof() {
         Some(p) => p.clone(),
-        None => return Err(Error::invalid_proof(ProofError::empty_proof())),
+        None => return Err(Error::InvalidProof(ProofError::empty_proof())),
     };
     let proofs = Proofs::new(proof_close, None, None, None, msg.proofs.height())
-        .map_err(Error::invalid_proof)?;
+        .map_err(Error::InvalidProof)?;
     verify_channel_proofs(
         ctx,
         msg.proofs.height(),
@@ -91,10 +95,10 @@ pub fn process<Ctx: ChannelReader>(
 
     let result = if source_channel_end.order_matches(&Order::Ordered) {
         if packet.sequence < msg.next_sequence_recv {
-            return Err(Error::invalid_packet_sequence(
-                packet.sequence,
-                msg.next_sequence_recv,
-            ));
+            return Err(Error::InvalidPacketSequence {
+                given_sequence: packet.sequence,
+                next_sequence: msg.next_sequence_recv,
+            });
         }
         verify_next_sequence_recv(
             ctx,

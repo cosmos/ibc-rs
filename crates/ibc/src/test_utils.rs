@@ -224,19 +224,21 @@ impl SendPacketReader for DummyTransferModule {
             .and_then(|map| map.get(channel_id))
         {
             Some(channel_end) => Ok(channel_end.clone()),
-            None => Err(Error::channel_not_found(
-                port_id.clone(),
-                channel_id.clone(),
-            )),
+            None => Err(Error::ChannelNotFound {
+                port_id: port_id.clone(),
+                channel_id: channel_id.clone(),
+            }),
         }
     }
 
     fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, Error> {
         match self.ibc_store.lock().unwrap().connections.get(cid) {
             Some(connection_end) => Ok(connection_end.clone()),
-            None => Err(Ics03Error::ConnectionNotFound { connection_id: cid.clone() }),
+            None => Err(Ics03Error::ConnectionNotFound {
+                connection_id: cid.clone(),
+            }),
         }
-        .map_err(Error::ics03_connection)
+        .map_err(Error::Ics03Connection)
     }
 
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Error> {
@@ -253,7 +255,7 @@ impl SendPacketReader for DummyTransferModule {
                 client_id: client_id.clone(),
             }),
         }
-        .map_err(|e| Error::ics03_connection(Ics03Error::Ics02Client(e)))
+        .map_err(|e| Error::Ics03Connection(Ics03Error::Ics02Client(e)))
     }
 
     fn client_consensus_state(
@@ -274,7 +276,7 @@ impl SendPacketReader for DummyTransferModule {
                 height,
             }),
         }
-        .map_err(|e| Error::ics03_connection(Ics03Error::Ics02Client(e)))
+        .map_err(|e| Error::Ics03Connection(Ics03Error::Ics02Client(e)))
     }
 
     fn get_next_sequence_send(
@@ -291,10 +293,10 @@ impl SendPacketReader for DummyTransferModule {
             .and_then(|map| map.get(channel_id))
         {
             Some(sequence) => Ok(*sequence),
-            None => Err(Error::missing_next_send_seq(
-                port_id.clone(),
-                channel_id.clone(),
-            )),
+            None => Err(Error::MissingNextSendSeq {
+                port_id: port_id.clone(),
+                channel_id: channel_id.clone(),
+            }),
         }
     }
 

@@ -63,7 +63,10 @@ impl FromStr for Sequence {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self::from(s.parse::<u64>().map_err(|e| {
-            Error::invalid_string_as_sequence(s.to_string(), e)
+            Error::InvalidStringAsSequence {
+                value: s.to_string(),
+                error: e,
+            }
         })?))
     }
 }
@@ -195,7 +198,7 @@ impl TryFrom<RawPacket> for Packet {
 
     fn try_from(raw_pkt: RawPacket) -> Result<Self, Self::Error> {
         if Sequence::from(raw_pkt.sequence).is_zero() {
-            return Err(Error::zero_packet_sequence());
+            return Err(Error::ZeroPacketSequence);
         }
 
         // Note: ibc-go currently (July 2022) incorrectly treats the timeout
@@ -209,27 +212,27 @@ impl TryFrom<RawPacket> for Packet {
         let packet_timeout_height: TimeoutHeight = raw_pkt
             .timeout_height
             .try_into()
-            .map_err(|_| Error::invalid_timeout_height())?;
+            .map_err(|_| Error::InvalidTimeoutHeight)?;
 
         if raw_pkt.data.is_empty() {
-            return Err(Error::zero_packet_data());
+            return Err(Error::ZeroPacketData);
         }
 
         let timeout_timestamp = Timestamp::from_nanoseconds(raw_pkt.timeout_timestamp)
-            .map_err(Error::invalid_packet_timestamp)?;
+            .map_err(Error::InvalidPacketTimestamp)?;
 
         Ok(Packet {
             sequence: Sequence::from(raw_pkt.sequence),
-            source_port: raw_pkt.source_port.parse().map_err(Error::identifier)?,
-            source_channel: raw_pkt.source_channel.parse().map_err(Error::identifier)?,
+            source_port: raw_pkt.source_port.parse().map_err(Error::Identifier)?,
+            source_channel: raw_pkt.source_channel.parse().map_err(Error::Identifier)?,
             destination_port: raw_pkt
                 .destination_port
                 .parse()
-                .map_err(Error::identifier)?,
+                .map_err(Error::Identifier)?,
             destination_channel: raw_pkt
                 .destination_channel
                 .parse()
-                .map_err(Error::identifier)?,
+                .map_err(Error::Identifier)?,
             data: raw_pkt.data,
             timeout_height: packet_timeout_height,
             timeout_timestamp,

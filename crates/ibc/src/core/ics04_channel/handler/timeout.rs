@@ -37,7 +37,9 @@ pub fn process<Ctx: ChannelReader>(
     let mut source_channel_end = ctx.channel_end(&packet.source_port, &packet.source_channel)?;
 
     if !source_channel_end.state_matches(&State::Open) {
-        return Err(Error::channel_closed(packet.source_channel.clone()));
+        return Err(Error::ChannelClosed {
+            channel_id: packet.source_channel.clone(),
+        });
     }
 
     let counterparty = Counterparty::new(
@@ -46,10 +48,10 @@ pub fn process<Ctx: ChannelReader>(
     );
 
     if !source_channel_end.counterparty_matches(&counterparty) {
-        return Err(Error::invalid_packet_counterparty(
-            packet.destination_port.clone(),
-            packet.destination_channel.clone(),
-        ));
+        return Err(Error::InvalidPacketCounterparty {
+            port_id: packet.destination_port.clone(),
+            channel_id: packet.destination_channel.clone(),
+        });
     }
 
     let source_connection_id = source_channel_end.connection_hops()[0].clone();
@@ -61,10 +63,10 @@ pub fn process<Ctx: ChannelReader>(
     let proof_height = msg.proofs.height();
 
     if packet.timeout_height.has_expired(proof_height) {
-        return Err(Error::packet_timeout_height_not_reached(
-            packet.timeout_height,
-            proof_height,
-        ));
+        return Err(Error::PacketTimeoutHeightNotReached {
+            timeout_height: packet.timeout_height,
+            chain_height: proof_height,
+        });
     }
 
     let consensus_state = ctx.client_consensus_state(&client_id, proof_height)?;
@@ -73,10 +75,10 @@ pub fn process<Ctx: ChannelReader>(
 
     let packet_timestamp = packet.timeout_timestamp;
     if let Expiry::Expired = packet_timestamp.check_expiry(&proof_timestamp) {
-        return Err(Error::packet_timeout_timestamp_not_reached(
-            packet_timestamp,
-            proof_timestamp,
-        ));
+        return Err(Error::PacketTimeoutTimestampNotReached {
+            timeout_timestamp: packet_timestamp,
+            chain_timestamp: proof_timestamp,
+        });
     }
 
     //verify packet commitment
@@ -89,15 +91,17 @@ pub fn process<Ctx: ChannelReader>(
         packet.timeout_timestamp,
     );
     if packet_commitment != expected_commitment {
-        return Err(Error::incorrect_packet_commitment(packet.sequence));
+        return Err(Error::IncorrectPacketCommitment {
+            sequence: packet.sequence,
+        });
     }
 
     let result = if source_channel_end.order_matches(&Order::Ordered) {
         if packet.sequence < msg.next_sequence_recv {
-            return Err(Error::invalid_packet_sequence(
-                packet.sequence,
-                msg.next_sequence_recv,
-            ));
+            return Err(Error::InvalidPacketSequence {
+                given_sequence: packet.sequence,
+                next_sequence: msg.next_sequence_recv,
+            });
         }
         verify_next_sequence_recv(
             ctx,

@@ -44,7 +44,7 @@ impl TryFrom<PacketDataAttribute> for Vec<abci::EventAttribute> {
         let tags = vec![
             (
                 PKT_DATA_ATTRIBUTE_KEY,
-                str::from_utf8(&attr.packet_data).map_err(|_| Error::non_utf8_packet_data())?,
+                str::from_utf8(&attr.packet_data).map_err(|_| Error::NonUtf8PacketData)?,
             )
                 .into(),
             (
@@ -183,7 +183,7 @@ impl TryFrom<AcknowledgementAttribute> for Vec<abci::EventAttribute> {
                 // it. It has been deprecated in ibc-go. It will be removed
                 // in the future.
                 str::from_utf8(attr.acknowledgement.as_bytes())
-                    .map_err(|_| Error::non_utf8_packet_data())?,
+                    .map_err(|_| Error::NonUtf8PacketData)?,
             )
                 .into(),
             (

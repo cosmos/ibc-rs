@@ -20,23 +20,25 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     // Validate that the channel end is in a state where it can be closed.
     if chan_end_on_b.state_matches(&State::Closed) {
-        return Err(Error::channel_closed(msg.chan_id_on_b.clone()));
+        return Err(Error::ChannelClosed {
+            channel_id: msg.chan_id_on_b.clone(),
+        });
     }
 
     // An OPEN IBC connection running on the local (host) chain should exist.
     if chan_end_on_b.connection_hops().len() != 1 {
-        return Err(Error::invalid_connection_hops_length(
-            1,
-            chan_end_on_b.connection_hops().len(),
-        ));
+        return Err(Error::InvalidConnectionHopsLength {
+            expected: 1,
+            actual: chan_end_on_b.connection_hops().len(),
+        });
     }
 
     let conn_end_on_b = ctx_b.connection_end(&chan_end_on_b.connection_hops()[0])?;
 
     if !conn_end_on_b.state_matches(&ConnectionState::Open) {
-        return Err(Error::connection_not_open(
-            chan_end_on_b.connection_hops()[0].clone(),
-        ));
+        return Err(Error::ConnectionNotOpen {
+            connection_id: chan_end_on_b.connection_hops()[0].clone(),
+        });
     }
 
     // Verify proofs
@@ -50,17 +52,18 @@ pub(crate) fn process<Ctx: ChannelReader>(
         let chan_id_on_a = chan_end_on_b
             .counterparty()
             .channel_id()
-            .ok_or_else(Error::invalid_counterparty_channel_id)?;
-        let conn_id_on_a = conn_end_on_b
-            .counterparty()
-            .connection_id()
-            .ok_or_else(|| {
-                Error::undefined_connection_counterparty(chan_end_on_b.connection_hops()[0].clone())
-            })?;
+            .ok_or(Error::InvalidCounterpartyChannelId)?;
+        let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
+            Error::UndefinedConnectionCounterparty {
+                connection_id: chan_end_on_b.connection_hops()[0].clone(),
+            },
+        )?;
 
         // The client must not be frozen.
         if client_state_of_a_on_b.is_frozen() {
-            return Err(Error::frozen_client(client_id_on_b));
+            return Err(Error::FrozenClient {
+                client_id: client_id_on_b,
+            });
         }
 
         let expected_chan_end_on_a = ChannelEnd::new(
@@ -83,7 +86,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
                 chan_id_on_a,
                 &expected_chan_end_on_a,
             )
-            .map_err(Error::verify_channel_failed)?;
+            .map_err(Error::VerifyChannelFailed)?;
     }
 
     output.log("success: channel close confirm");

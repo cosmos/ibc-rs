@@ -81,26 +81,26 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
     fn try_from(raw_msg: RawMsgChannelOpenTry) -> Result<Self, Self::Error> {
         #[allow(deprecated)]
         let msg = MsgChannelOpenTry {
-            port_id_on_b: raw_msg.port_id.parse().map_err(ChannelError::identifier)?,
+            port_id_on_b: raw_msg.port_id.parse().map_err(ChannelError::Identifier)?,
             previous_channel_id: raw_msg.previous_channel_id,
             chan_end_on_b: raw_msg
                 .channel
-                .ok_or_else(ChannelError::missing_channel)?
+                .ok_or(ChannelError::MissingChannel)?
                 .try_into()?,
             version_on_a: raw_msg.counterparty_version.into(),
             proof_chan_end_on_a: raw_msg
                 .proof_init
                 .try_into()
-                .map_err(ChannelError::invalid_proof)?,
+                .map_err(ChannelError::InvalidProof)?,
             proof_height_on_a: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(ChannelError::missing_height)?,
-            signer: raw_msg.signer.parse().map_err(ChannelError::signer)?,
+                .ok_or(ChannelError::MissingHeight)?,
+            signer: raw_msg.signer.parse().map_err(ChannelError::Signer)?,
         };
 
         msg.validate_basic()
-            .map_err(|_| ChannelError::invalid_counterparty_channel_id())?;
+            .map_err(|_| ChannelError::InvalidCounterpartyChannelId)?;
 
         Ok(msg)
     }

@@ -61,31 +61,28 @@ impl TryFrom<RawMsgTimeoutOnClose> for MsgTimeoutOnClose {
             raw_msg
                 .proof_unreceived
                 .try_into()
-                .map_err(Error::invalid_proof)?,
+                .map_err(Error::InvalidProof)?,
             None,
             None,
             Some(
                 raw_msg
                     .proof_close
                     .try_into()
-                    .map_err(Error::invalid_proof)?,
+                    .map_err(Error::InvalidProof)?,
             ),
             raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_height)?,
+                .ok_or(Error::MissingHeight)?,
         )
-        .map_err(Error::invalid_proof)?;
+        .map_err(Error::InvalidProof)?;
 
         // TODO: Domain type verification for the next sequence: this should probably be > 0.
 
         Ok(MsgTimeoutOnClose {
-            packet: raw_msg
-                .packet
-                .ok_or_else(Error::missing_packet)?
-                .try_into()?,
+            packet: raw_msg.packet.ok_or(Error::MissingPacket)?.try_into()?,
             next_sequence_recv: Sequence::from(raw_msg.next_sequence_recv),
-            signer: raw_msg.signer.parse().map_err(Error::signer)?,
+            signer: raw_msg.signer.parse().map_err(Error::Signer)?,
             proofs,
         })
     }

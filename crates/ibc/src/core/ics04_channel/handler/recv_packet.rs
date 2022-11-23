@@ -40,10 +40,10 @@ pub fn process<Ctx: ChannelReader>(
         ctx.channel_end(&packet.destination_port, &packet.destination_channel)?;
 
     if !dest_channel_end.state_matches(&State::Open) {
-        return Err(Error::invalid_channel_state(
-            packet.source_channel.clone(),
-            dest_channel_end.state,
-        ));
+        return Err(Error::InvalidChannelState {
+            channel_id: packet.source_channel.clone(),
+            state: dest_channel_end.state,
+        });
     }
 
     let counterparty = Counterparty::new(
@@ -52,32 +52,32 @@ pub fn process<Ctx: ChannelReader>(
     );
 
     if !dest_channel_end.counterparty_matches(&counterparty) {
-        return Err(Error::invalid_packet_counterparty(
-            packet.source_port.clone(),
-            packet.source_channel.clone(),
-        ));
+        return Err(Error::InvalidPacketCounterparty {
+            port_id: packet.source_port.clone(),
+            channel_id: packet.source_channel.clone(),
+        });
     }
 
     let dest_connection_id = &dest_channel_end.connection_hops()[0];
     let connection_end = ctx.connection_end(dest_connection_id)?;
 
     if !connection_end.state_matches(&ConnectionState::Open) {
-        return Err(Error::connection_not_open(
-            dest_channel_end.connection_hops()[0].clone(),
-        ));
+        return Err(Error::ConnectionNotOpen {
+            connection_id: dest_channel_end.connection_hops()[0].clone(),
+        });
     }
 
     let latest_height = ChannelReader::host_height(ctx)?;
     if packet.timeout_height.has_expired(latest_height) {
-        return Err(Error::low_packet_height(
-            latest_height,
-            packet.timeout_height,
-        ));
+        return Err(Error::LowPacketHeight {
+            chain_height: latest_height,
+            timeout_height: packet.timeout_height,
+        });
     }
 
     let latest_timestamp = ChannelReader::host_timestamp(ctx)?;
     if let Expiry::Expired = latest_timestamp.check_expiry(&packet.timeout_timestamp) {
-        return Err(Error::low_packet_timestamp());
+        return Err(Error::LowPacketTimestamp);
     }
 
     verify_packet_recv_proofs(
@@ -101,10 +101,10 @@ pub fn process<Ctx: ChannelReader>(
 
             return Ok(output.with_result(PacketResult::Recv(RecvPacketResult::NoOp)));
         } else if packet.sequence != next_seq_recv {
-            return Err(Error::invalid_packet_sequence(
-                packet.sequence,
-                next_seq_recv,
-            ));
+            return Err(Error::InvalidPacketSequence {
+                given_sequence: packet.sequence,
+                next_sequence: next_seq_recv,
+            });
         }
 
         PacketResult::Recv(RecvPacketResult::Ordered {
@@ -130,10 +130,11 @@ pub fn process<Ctx: ChannelReader>(
                 return Ok(output.with_result(PacketResult::Recv(RecvPacketResult::NoOp)));
             }
             Err(e)
-                if e.detail().to_string()
-                    == Error::packet_receipt_not_found(packet.sequence)
-                        .detail()
-                        .to_string() =>
+                if e.to_string()
+                    == Error::PacketReceiptNotFound {
+                        sequence: packet.sequence,
+                    }
+                    .to_string() =>
             {
                 // store a receipt that does not contain any data
                 PacketResult::Recv(RecvPacketResult::Unordered {
@@ -143,7 +144,7 @@ pub fn process<Ctx: ChannelReader>(
                     receipt: Receipt::Ok,
                 })
             }
-            Err(_) => return Err(Error::implementation_specific()),
+            Err(_) => return Err(Error::ImplementationSpecific),
         }
     };
 
