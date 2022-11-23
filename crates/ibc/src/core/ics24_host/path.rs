@@ -177,15 +177,11 @@ impl Path {
     }
 }
 
-
 #[derive(Debug, displaydoc::Display)]
 pub enum PathError {
     /// `{path}` could not be parsed into a Path
-    ParseFailure {
-        path: String,
-    },
+    ParseFailure { path: String },
 }
-
 
 /// The FromStr trait allows paths encoded as strings to be parsed into Paths.
 impl FromStr for Path {
@@ -203,7 +199,9 @@ impl FromStr for Path {
             .or_else(|| parse_acks(&components))
             .or_else(|| parse_receipts(&components))
             .or_else(|| parse_upgrades(&components))
-            .ok_or(PathError::ParseFailure{path : s.to_string() })
+            .ok_or(PathError::ParseFailure {
+                path: s.to_string(),
+            })
     }
 }
 

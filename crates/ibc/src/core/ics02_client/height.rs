@@ -128,9 +128,9 @@ impl core::fmt::Display for Height {
 #[derive(Debug, Display)]
 pub enum HeightError {
     /// cannot convert into a `Height` type from string `{height}`, error(`{error}`)
-    HeightConversion
-    { height: String ,
-        error: ParseIntError
+    HeightConversion {
+        height: String,
+        error: ParseIntError,
     },
     /// attempted to parse an invalid zero height
     ZeroHeight,
@@ -142,12 +142,20 @@ impl TryFrom<&str> for Height {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let split: Vec<&str> = value.split('-').collect();
 
-        let revision_number = split[0]
-            .parse::<u64>()
-            .map_err(|e| HeightError::HeightConversion{ height: value.to_owned(), error: e })?;
-        let revision_height = split[1]
-            .parse::<u64>()
-            .map_err(|e| HeightError::HeightConversion{ height: value.to_owned(), error: e })?;
+        let revision_number =
+            split[0]
+                .parse::<u64>()
+                .map_err(|e| HeightError::HeightConversion {
+                    height: value.to_owned(),
+                    error: e,
+                })?;
+        let revision_height =
+            split[1]
+                .parse::<u64>()
+                .map_err(|e| HeightError::HeightConversion {
+                    height: value.to_owned(),
+                    error: e,
+                })?;
 
         Height::new(revision_number, revision_height).map_err(|_| HeightError::ZeroHeight)
     }

@@ -80,7 +80,7 @@ pub fn process<Ctx: ChannelReader>(
     // The message's proofs have the channel proof as `other_proof`
     let proof_close = match msg.proofs.other_proof() {
         Some(p) => p.clone(),
-        None => return Err(Error::InvalidProof(ProofError::empty_proof())),
+        None => return Err(Error::InvalidProof(ProofError::EmptyProof)),
     };
     let proofs = Proofs::new(proof_close, None, None, None, msg.proofs.height())
         .map_err(Error::InvalidProof)?;
