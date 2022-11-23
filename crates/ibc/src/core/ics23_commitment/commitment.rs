@@ -104,7 +104,7 @@ impl TryFrom<CommitmentProofBytes> for RawMerkleProof {
     fn try_from(value: CommitmentProofBytes) -> Result<Self, Self::Error> {
         let value: Vec<u8> = value.into();
         let res: RawMerkleProof =
-            prost::Message::decode(value.as_ref()).map_err(Error::invalid_raw_merkle_proof)?;
+            prost::Message::decode(value.as_ref()).map_err(Error::InvalidRawMerkleProof)?;
         Ok(res)
     }
 }
@@ -129,7 +129,7 @@ impl TryFrom<Vec<u8>> for CommitmentPrefix {
 
     fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
         if bytes.is_empty() {
-            Err(Self::Error::empty_commitment_prefix())
+            Err(Self::Error::EmptyCommitmentPrefix)
         } else {
             Ok(Self { bytes })
         }

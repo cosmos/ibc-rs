@@ -93,11 +93,9 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
             .ok_or(Error::MissingRawConsensusState)?;
 
         let c_bytes = CommitmentProofBytes::try_from(proto_msg.proof_upgrade_client)
-            .map_err(|_| Error::InvalidUpgradeClientProof(Ics23Error::empty_merkle_proof()))?;
+            .map_err(|_| Error::InvalidUpgradeClientProof(Ics23Error::EmptyMerkleProof))?;
         let cs_bytes = CommitmentProofBytes::try_from(proto_msg.proof_upgrade_consensus_state)
-            .map_err(|_| {
-                Error::InvalidUpgradeConsensusStateProof(Ics23Error::empty_merkle_proof())
-            })?;
+            .map_err(|_| Error::InvalidUpgradeConsensusStateProof(Ics23Error::EmptyMerkleProof))?;
 
         Ok(MsgUpgradeClient {
             client_id: ClientId::from_str(&proto_msg.client_id)

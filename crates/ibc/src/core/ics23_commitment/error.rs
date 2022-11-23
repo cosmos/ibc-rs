@@ -1,39 +1,26 @@
-use flex_error::{define_error, TraceError};
+use displaydoc::Display;
 use prost::DecodeError;
 
-define_error! {
-    #[derive(Debug, PartialEq, Eq)]
-    Error {
-        InvalidRawMerkleProof
-            [ TraceError<DecodeError> ]
-            |_| { "invalid raw merkle proof" },
-
-        CommitmentProofDecodingFailed
-            [ TraceError<DecodeError> ]
-            |_| { "failed to decode commitment proof" },
-
-        EmptyCommitmentPrefix
-            |_| { "empty commitment prefix" },
-
-        EmptyMerkleProof
-            |_| { "empty merkle proof" },
-
-        EmptyMerkleRoot
-            |_| { "empty merkle root" },
-
-        EmptyVerifiedValue
-            |_| { "empty verified value" },
-
-        NumberOfSpecsMismatch
-            |_| { "mismatch between the number of proofs with that of specs" },
-
-        NumberOfKeysMismatch
-            |_| { "mismatch between the number of proofs with that of keys" },
-
-        InvalidMerkleProof
-            |_| { "invalid merkle proof" },
-
-        VerificationFailure
-            |_| { "proof verification failed" }
-    }
+#[derive(Debug, Display)]
+pub enum Error {
+    /// invalid raw merkle proof, error(`{0}`)
+    InvalidRawMerkleProof(DecodeError),
+    /// failed to decode commitment proof, error(`{0}`)
+    CommitmentProofDecodingFailed(DecodeError),
+    /// empty commitment prefix
+    EmptyCommitmentPrefix,
+    /// empty merkle proof
+    EmptyMerkleProof,
+    /// empty merkle root
+    EmptyMerkleRoot,
+    /// empty verified value
+    EmptyVerifiedValue,
+    /// mismatch between the number of proofs with that of specs
+    NumberOfSpecsMismatch,
+    /// mismatch between the number of proofs with that of keys
+    NumberOfKeysMismatch,
+    /// invalid merkle proof
+    InvalidMerkleProof,
+    /// proof verification failed
+    VerificationFailure,
 }
