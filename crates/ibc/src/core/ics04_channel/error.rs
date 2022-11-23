@@ -167,9 +167,3 @@ pub enum Error {
     /// other error: `{description}`
     Other { description: String },
 }
-
-// impl Error {
-//     pub fn chan_open_confirm_proof_verification(e: Error) -> Error {
-//         e.add_trace(&"Handshake proof verification fails at ChannelOpenConfirm")
-//     }
-// }
