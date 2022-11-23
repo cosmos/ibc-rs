@@ -4,7 +4,7 @@ use core::cmp::Ordering;
 use core::num::ParseIntError;
 use core::str::FromStr;
 
-use flex_error::{define_error, TraceError};
+use displaydoc::Display;
 use ibc_proto::protobuf::Protobuf;
 use serde_derive::{Deserialize, Serialize};
 
@@ -125,19 +125,15 @@ impl core::fmt::Display for Height {
     }
 }
 
-define_error! {
-    #[derive(Debug, PartialEq, Eq)]
-    HeightError {
-        HeightConversion
-            { height: String }
-            [ TraceError<ParseIntError> ]
-            | e | {
-                format_args!("cannot convert into a `Height` type from string {0}",
-                    e.height)
-            },
-        ZeroHeight
-            |_| { "attempted to parse an invalid zero height" }
-    }
+#[derive(Debug, Display)]
+pub enum HeightError {
+    /// cannot convert into a `Height` type from string `{height}`, error(`{error}`)
+    HeightConversion
+    { height: String ,
+        error: ParseIntError
+    },
+    /// attempted to parse an invalid zero height
+    ZeroHeight,
 }
 
 impl TryFrom<&str> for Height {
@@ -148,12 +144,12 @@ impl TryFrom<&str> for Height {
 
         let revision_number = split[0]
             .parse::<u64>()
-            .map_err(|e| HeightError::height_conversion(value.to_owned(), e))?;
+            .map_err(|e| HeightError::HeightConversion{ height: value.to_owned(), error: e })?;
         let revision_height = split[1]
             .parse::<u64>()
-            .map_err(|e| HeightError::height_conversion(value.to_owned(), e))?;
+            .map_err(|e| HeightError::HeightConversion{ height: value.to_owned(), error: e })?;
 
-        Height::new(revision_number, revision_height).map_err(|_| HeightError::zero_height())
+        Height::new(revision_number, revision_height).map_err(|_| HeightError::ZeroHeight)
     }
 }
 

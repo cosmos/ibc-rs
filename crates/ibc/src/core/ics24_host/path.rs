@@ -179,15 +179,17 @@ impl Path {
 
 
 #[derive(Debug, displaydoc::Display)]
-/// `{path}` could not be parsed into a Path
-pub struct ParseFailure {
-    path: String,
+pub enum PathError {
+    /// `{path}` could not be parsed into a Path
+    ParseFailure {
+        path: String,
+    },
 }
 
 
 /// The FromStr trait allows paths encoded as strings to be parsed into Paths.
 impl FromStr for Path {
-    type Err = ParseFailure;
+    type Err = PathError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let components: Vec<&str> = s.split('/').collect();
@@ -201,7 +203,7 @@ impl FromStr for Path {
             .or_else(|| parse_acks(&components))
             .or_else(|| parse_receipts(&components))
             .or_else(|| parse_upgrades(&components))
-            .ok_or(ParseFailure{path : s.to_string() })
+            .ok_or(PathError::ParseFailure{path : s.to_string() })
     }
 }
 
