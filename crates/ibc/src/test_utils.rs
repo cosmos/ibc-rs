@@ -255,7 +255,7 @@ impl SendPacketReader for DummyTransferModule {
                 client_id: client_id.clone(),
             }),
         }
-        .map_err(|e| Error::Ics03Connection(Ics03Error::Ics02Client(e)))
+        .map_err(|e| Error::Ics03Connection(Ics03Error::Client(e)))
     }
 
     fn client_consensus_state(
@@ -276,7 +276,7 @@ impl SendPacketReader for DummyTransferModule {
                 height,
             }),
         }
-        .map_err(|e| Error::Ics03Connection(Ics03Error::Ics02Client(e)))
+        .map_err(|e| Error::Ics03Connection(Ics03Error::Client(e)))
     }
 
     fn get_next_sequence_send(

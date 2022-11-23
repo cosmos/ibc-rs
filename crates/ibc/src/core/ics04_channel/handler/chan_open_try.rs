@@ -227,7 +227,7 @@ mod tests {
                     error::Error::Ics03Connection(e) => {
                         assert_eq!(
                             e.to_string(),
-                            ics03_error::Error::Ics02Client(ics02_error::Error::ClientNotFound {
+                            ics03_error::Error::Client(ics02_error::Error::ClientNotFound {
                                 client_id: ClientId::new(mock_client_type(), 45).unwrap()
                             })
                             .to_string()
