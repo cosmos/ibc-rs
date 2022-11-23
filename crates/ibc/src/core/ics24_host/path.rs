@@ -10,7 +10,6 @@ use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
 
 use derive_more::{Display, From};
-use flex_error::define_error;
 
 /// ABCI Query path for the IBC sub-store
 pub const IBC_QUERY_PATH: &str = "store/ibc/key";
@@ -178,18 +177,17 @@ impl Path {
     }
 }
 
-define_error! {
-    #[derive(Eq, PartialEq)]
-    PathError {
-        ParseFailure
-            { path: String }
-            | e | { format!("'{}' could not be parsed into a Path", e.path) },
-    }
+
+#[derive(Debug, displaydoc::Display)]
+/// `{path}` could not be parsed into a Path
+pub struct ParseFailure {
+    path: String,
 }
+
 
 /// The FromStr trait allows paths encoded as strings to be parsed into Paths.
 impl FromStr for Path {
-    type Err = PathError;
+    type Err = ParseFailure;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let components: Vec<&str> = s.split('/').collect();
@@ -203,7 +201,7 @@ impl FromStr for Path {
             .or_else(|| parse_acks(&components))
             .or_else(|| parse_receipts(&components))
             .or_else(|| parse_upgrades(&components))
-            .ok_or_else(|| PathError::parse_failure(s.to_string()))
+            .ok_or(ParseFailure{path : s.to_string() })
     }
 }
 
