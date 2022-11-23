@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 use core::convert::{TryFrom, TryInto};
 use core::str::FromStr;
-use flex_error::{define_error, TraceError};
+use displaydoc::Display;
 use serde_derive::{Deserialize, Serialize};
 use tendermint::abci;
 
@@ -16,58 +16,34 @@ use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics26_routing::context::ModuleId;
 use crate::timestamp::ParseTimestampError;
 
-define_error! {
-    Error {
-        Height
-            | _ | { "error parsing height" },
-
-        Parse
-            [ TraceError<ValidationError> ]
-            | _ | { "parse error" },
-
-        Client
-            [ TraceError<client_error::Error> ]
-            | _ | { "ICS02 client error" },
-
-        Connection
-            [ TraceError<connection_error::Error> ]
-            | _ | { "connection error" },
-
-        Channel
-            [ TraceError<channel_error::Error> ]
-            | _ | { "channel error" },
-
-        Timestamp
-            [ TraceError<ParseTimestampError> ]
-            | _ | { "error parsing timestamp" },
-
-        MissingKey
-            { key: String }
-            | e | { format_args!("missing event key {}", e.key) },
-
-        Decode
-            [ TraceError<prost::DecodeError> ]
-            | _ | { "error decoding protobuf" },
-
-        SubtleEncoding
-            [ TraceError<subtle_encoding::Error> ]
-            | _ | { "error decoding hex" },
-
-        MissingActionString
-            | _ | { "missing action string" },
-
-        IncorrectEventType
-            { event: String }
-            | e | { format_args!("incorrect event type: {}", e.event) },
-
-        MalformedModuleEvent
-            { event: ModuleEvent }
-            | e | { format_args!("module event cannot use core event types: {:?}", e.event) },
-
-        UnsupportedAbciEvent
-            {event_type: String}
-            |e| { format_args!("Unable to parse abci event type '{}' into IbcEvent", e.event_type)}
-    }
+#[derive(Debug, Display)]
+pub enum Error {
+    /// error parsing height
+    Height,
+    /// parse error, error(`{0}`)
+    Parse(ValidationError),
+    /// ICS02 client error, error(`{0}`)
+    Client(client_error::Error),
+    /// connection error, error(`{0}`)
+    Connection(connection_error::Error),
+    /// channel error, error(`{0}`)
+    Channel(channel_error::Error),
+    /// error parsing timestamp, error(`{0}`)
+    Timestamp(ParseTimestampError),
+    /// missing event key `{key}`
+    MissingKey { key: String },
+    /// error decoding protobuf, error(`{0}`)
+    Decode(prost::DecodeError),
+    /// error decoding hex, error(`{0}`)
+    SubtleEncoding(subtle_encoding::Error),
+    /// missing action string
+    MissingActionString,
+    /// incorrect event type: `{event}`
+    IncorrectEventType { event: String },
+    /// module event cannot use core event types: `{event:?}`
+    MalformedModuleEvent { event: ModuleEvent },
+    /// Unable to parse abci event type `{event_type}` into IbcEvent"
+    UnsupportedAbciEvent { event_type: String },
 }
 
 /// Events whose data is not included in the app state and must be extracted using tendermint RPCs
@@ -197,7 +173,9 @@ impl FromStr for IbcEventType {
             TIMEOUT_EVENT => Ok(IbcEventType::Timeout),
             CHANNEL_CLOSED_EVENT => Ok(IbcEventType::ChannelClosed),
             // from_str() for `APP_MODULE_EVENT` MUST fail because a `ModuleEvent`'s type isn't constant
-            _ => Err(Error::incorrect_event_type(s.to_string())),
+            _ => Err(Error::IncorrectEventType {
+                event: s.to_string(),
+            }),
         }
     }
 }
@@ -251,11 +229,11 @@ impl TryFrom<IbcEvent> for abci::Event {
             IbcEvent::OpenConfirmChannel(event) => event.into(),
             IbcEvent::CloseInitChannel(event) => event.into(),
             IbcEvent::CloseConfirmChannel(event) => event.into(),
-            IbcEvent::SendPacket(event) => event.try_into().map_err(Error::channel)?,
-            IbcEvent::ReceivePacket(event) => event.try_into().map_err(Error::channel)?,
-            IbcEvent::WriteAcknowledgement(event) => event.try_into().map_err(Error::channel)?,
-            IbcEvent::AcknowledgePacket(event) => event.try_into().map_err(Error::channel)?,
-            IbcEvent::TimeoutPacket(event) => event.try_into().map_err(Error::channel)?,
+            IbcEvent::SendPacket(event) => event.try_into().map_err(Error::Channel)?,
+            IbcEvent::ReceivePacket(event) => event.try_into().map_err(Error::Channel)?,
+            IbcEvent::WriteAcknowledgement(event) => event.try_into().map_err(Error::Channel)?,
+            IbcEvent::AcknowledgePacket(event) => event.try_into().map_err(Error::Channel)?,
+            IbcEvent::TimeoutPacket(event) => event.try_into().map_err(Error::Channel)?,
             IbcEvent::ChannelClosed(event) => event.into(),
             IbcEvent::AppModule(event) => event.try_into()?,
         })
@@ -302,7 +280,7 @@ impl TryFrom<ModuleEvent> for abci::Event {
 
     fn try_from(event: ModuleEvent) -> Result<Self, Self::Error> {
         if IbcEventType::from_str(event.kind.as_str()).is_ok() {
-            return Err(Error::malformed_module_event(event));
+            return Err(Error::MalformedModuleEvent { event });
         }
 
         let attributes = event.attributes.into_iter().map(Into::into).collect();
