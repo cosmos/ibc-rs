@@ -663,7 +663,9 @@ impl PortReader for MockContext {
     fn lookup_module_by_port(&self, port_id: &PortId) -> Result<ModuleId, Error> {
         match self.ibc_store.lock().unwrap().port_to_module.get(port_id) {
             Some(mod_id) => Ok(mod_id.clone()),
-            None => Err(Ics05Error::unknown_port(port_id.clone())),
+            None => Err(Ics05Error::UnknownPort {
+                port_id: port_id.clone(),
+            }),
         }
     }
 }
