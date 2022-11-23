@@ -1,0 +1,1 @@
+- Refactor error system ([#164](https://github.com/cosmos/ibc-rs/issues/164))
