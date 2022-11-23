@@ -11,7 +11,7 @@ use displaydoc::Display;
 
 #[derive(Debug, Display)]
 pub enum Error {
-    /// ics02 client error(`{0}`)
+    /// ICS02 client error(`{0}`)
     Client(client_error::Error),
     /// connection state is unknown: `{state}`
     InvalidState { state: i32 },

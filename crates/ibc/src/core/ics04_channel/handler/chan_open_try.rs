@@ -198,7 +198,7 @@ mod tests {
                 match_error: {
                     let connection_id = msg.chan_end_on_b.connection_hops()[0].clone();
                     Box::new(move |e| match e {
-                        error::Error::Ics03Connection(e) => {
+                        error::Error::Connection(e) => {
                             assert_eq!(
                                 e.to_string(),
                                 ics03_error::Error::ConnectionNotFound { connection_id }
@@ -224,7 +224,7 @@ mod tests {
                 msg: ChannelMsg::ChannelOpenTry(msg.clone()),
                 want_pass: false,
                 match_error: Box::new(|e| match e {
-                    error::Error::Ics03Connection(e) => {
+                    error::Error::Connection(e) => {
                         assert_eq!(
                             e.to_string(),
                             ics03_error::Error::Client(ics02_error::Error::ClientNotFound {

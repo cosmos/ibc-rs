@@ -17,10 +17,10 @@ use ibc_proto::protobuf::Error as TendermintError;
 
 #[derive(Debug, Display)]
 pub enum Error {
-    /// ics03 connection error(`{0}`)
-    Ics03Connection(connection_error::Error),
-    /// ics05 port error(`{0}`)
-    Ics05Port(port_error::Error),
+    /// ICS03 connection error(`{0}`)
+    Connection(connection_error::Error),
+    /// ICS05 port error(`{0}`)
+    Port(port_error::Error),
     /// channel state unknown: `{state}`
     UnknownState { state: i32 },
     /// identifier error(`{0}`)

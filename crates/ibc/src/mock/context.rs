@@ -693,7 +693,7 @@ impl ChannelReader for MockContext {
     }
 
     fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, Ics04Error> {
-        ConnectionReader::connection_end(self, cid).map_err(Ics04Error::Ics03Connection)
+        ConnectionReader::connection_end(self, cid).map_err(Ics04Error::Connection)
     }
 
     fn connection_channels(
@@ -708,7 +708,7 @@ impl ChannelReader for MockContext {
 
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Ics04Error> {
         ClientReader::client_state(self, client_id)
-            .map_err(|e| Ics04Error::Ics03Connection(Ics03Error::Client(e)))
+            .map_err(|e| Ics04Error::Connection(Ics03Error::Client(e)))
     }
 
     fn client_consensus_state(
@@ -717,7 +717,7 @@ impl ChannelReader for MockContext {
         height: Height,
     ) -> Result<Box<dyn ConsensusState>, Ics04Error> {
         ClientReader::consensus_state(self, client_id, height)
-            .map_err(|e| Ics04Error::Ics03Connection(Ics03Error::Client(e)))
+            .map_err(|e| Ics04Error::Connection(Ics03Error::Client(e)))
     }
 
     fn get_next_sequence_send(
@@ -858,12 +858,12 @@ impl ChannelReader for MockContext {
     }
 
     fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, Ics04Error> {
-        ConnectionReader::host_consensus_state(self, height).map_err(Ics04Error::Ics03Connection)
+        ConnectionReader::host_consensus_state(self, height).map_err(Ics04Error::Connection)
     }
 
     fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, Ics04Error> {
         ClientReader::pending_host_consensus_state(self)
-            .map_err(|e| Ics04Error::Ics03Connection(Ics03Error::Client(e)))
+            .map_err(|e| Ics04Error::Connection(Ics03Error::Client(e)))
     }
 
     fn client_update_time(

@@ -46,22 +46,22 @@ impl ChannelMsg {
         let module_id = match self {
             ChannelMsg::ChannelOpenInit(msg) => ctx
                 .lookup_module_by_port(&msg.port_id_on_a)
-                .map_err(Error::Ics05Port)?,
+                .map_err(Error::Port)?,
             ChannelMsg::ChannelOpenTry(msg) => ctx
                 .lookup_module_by_port(&msg.port_id_on_b)
-                .map_err(Error::Ics05Port)?,
+                .map_err(Error::Port)?,
             ChannelMsg::ChannelOpenAck(msg) => ctx
                 .lookup_module_by_port(&msg.port_id_on_a)
-                .map_err(Error::Ics05Port)?,
+                .map_err(Error::Port)?,
             ChannelMsg::ChannelOpenConfirm(msg) => ctx
                 .lookup_module_by_port(&msg.port_id_on_b)
-                .map_err(Error::Ics05Port)?,
+                .map_err(Error::Port)?,
             ChannelMsg::ChannelCloseInit(msg) => ctx
                 .lookup_module_by_port(&msg.port_id_on_a)
-                .map_err(Error::Ics05Port)?,
+                .map_err(Error::Port)?,
             ChannelMsg::ChannelCloseConfirm(msg) => ctx
                 .lookup_module_by_port(&msg.port_id_on_b)
-                .map_err(Error::Ics05Port)?,
+                .map_err(Error::Port)?,
         };
         Ok(module_id)
     }
