@@ -467,7 +467,7 @@ impl MockContext {
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
     /// Used in testing the Ics18 algorithms, hence this may return a Ics18Error.
     pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), Ics18Error> {
-        dispatch(self, msg).map_err(Ics18Error::transaction_failed)?;
+        dispatch(self, msg).map_err(Ics18Error::TransactionFailed)?;
         // Create a new block.
         self.advance_host_chain_height();
         Ok(())
@@ -1425,7 +1425,7 @@ impl ClientKeeper for MockContext {
 
 impl RelayerContext for MockContext {
     fn query_latest_height(&self) -> Result<Height, Ics18Error> {
-        self.host_current_height().map_err(Ics18Error::ics03)
+        self.host_current_height().map_err(Ics18Error::Ics03)
     }
 
     fn query_client_full_state(&self, client_id: &ClientId) -> Option<Box<dyn ClientState>> {
@@ -1443,7 +1443,7 @@ impl RelayerContext for MockContext {
         let mut all_events = vec![];
         for msg in msgs {
             let MsgReceipt { mut events, .. } =
-                deliver(self, msg).map_err(Ics18Error::transaction_failed)?;
+                deliver(self, msg).map_err(Ics18Error::TransactionFailed)?;
             all_events.append(&mut events);
         }
         self.advance_host_chain_height(); // Advance chain height
