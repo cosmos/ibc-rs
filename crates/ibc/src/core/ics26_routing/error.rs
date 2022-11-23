@@ -1,31 +1,20 @@
 use crate::prelude::*;
-use flex_error::{define_error, TraceError};
 
 use crate::core::ics02_client;
 use crate::core::ics03_connection;
 use crate::core::ics04_channel;
+use displaydoc::Display;
 
-define_error! {
-    #[derive(Debug)]
-    Error {
-        Ics02Client
-            [ TraceError<ics02_client::error::Error> ]
-            | _ | { "ICS02 client error" },
-
-        Ics03Connection
-            [ TraceError<ics03_connection::error::Error> ]
-            | _ | { "ICS03 connection error" },
-
-        Ics04Channel
-            [ TraceError<ics04_channel::error::Error> ]
-            | _ | { "ICS04 channel error" },
-
-        UnknownMessageTypeUrl
-            { url: String }
-            | e | { format_args!("unknown type URL {0}", e.url) },
-
-        MalformedMessageBytes
-            [ TraceError<ibc_proto::protobuf::Error> ]
-            | _ | { "the message is malformed and cannot be decoded" },
-    }
+#[derive(Debug, Display)]
+pub enum Error {
+    /// ICS02 client error(`{0}`)
+    Ics02Client(ics02_client::error::Error),
+    /// ICS03 connection error(`{0}`)
+    Ics03Connection(ics03_connection::error::Error),
+    /// ICS04 channel error(`{0}`)
+    Ics04Channel(ics04_channel::error::Error),
+    /// unknown type URL `{url}`
+    UnknownMessageTypeUrl { url: String },
+    /// the message is malformed and cannot be decoded, error(`{0}`)
+    MalformedMessageBytes(ibc_proto::protobuf::Error),
 }

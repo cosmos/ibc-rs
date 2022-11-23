@@ -33,7 +33,7 @@ define_error! {
             },
 
         TransactionFailed
-            [ RoutingError ]
+            [ TraceError<RoutingError> ]
             | _ | { "transaction processing by modules failed" },
 
         Ics03
