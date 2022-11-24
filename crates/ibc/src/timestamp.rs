@@ -182,6 +182,9 @@ pub enum TimestampOverflowError {
     TimestampOverflow,
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for TimestampOverflowError {}
+
 impl Add<Duration> for Timestamp {
     type Output = Result<Timestamp, TimestampOverflowError>;
 
@@ -214,8 +217,17 @@ impl Sub<Duration> for Timestamp {
 
 #[derive(Debug, Display)]
 pub enum ParseTimestampError {
-    /// error parsing u64 integer from string, error(`{0}`)
+    /// error parsing u64 integer from string
     ParseInt(ParseIntError),
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for ParseTimestampError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            ParseTimestampError::ParseInt(e) => Some(e),
+        }
+    }
 }
 
 impl FromStr for Timestamp {

@@ -12,3 +12,6 @@ pub enum Error {
     /// implementation specific error
     ImplementationSpecific,
 }
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {}

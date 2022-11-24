@@ -11,7 +11,7 @@ use displaydoc::Display;
 
 #[derive(Debug, Display)]
 pub enum Error {
-    /// ICS02 client error(`{0}`)
+    /// ICS02 client error
     Client(client_error::Error),
     /// connection state is unknown: `{state}`
     InvalidState { state: i32 },
@@ -29,7 +29,7 @@ pub enum Error {
         target_height: Height,
         oldest_height: Height,
     },
-    /// identifier error(`{0}`)
+    /// identifier error
     InvalidIdentifier(ValidationError),
     /// ConnectionEnd domain object could not be constructed out of empty proto object
     EmptyProtoConnectionEnd,
@@ -47,11 +47,11 @@ pub enum Error {
     MissingProofHeight,
     /// missing consensus height
     MissingConsensusHeight,
-    /// invalid connection proof, error(`{0}`)
+    /// invalid connection proof
     InvalidProof(ProofError),
-    /// error verifying connnection state, error(`{0}`)
+    /// error verifying connnection state
     VerifyConnectionState(client_error::Error),
-    /// invalid signer, error(`{0}`)
+    /// invalid signer
     Signer(SignerError),
     /// no connection was found for the previous connection id provided `{connection_id}`
     ConnectionNotFound { connection_id: ConnectionId },
@@ -74,12 +74,12 @@ pub enum Error {
     FrozenClient { client_id: ClientId },
     /// the connection proof verification failed
     ConnectionVerificationFailure,
-    /// the consensus proof verification failed (height: `{height}`), error(`{client_error}`)
+    /// the consensus proof verification failed (height: `{height}`)
     ConsensusStateVerificationFailure {
         height: Height,
         client_error: client_error::Error,
     },
-    /// the client state proof verification failed for client id `{client_id}`, error(`{client_error}`)
+    /// the client state proof verification failed for client id `{client_id}`
     ClientStateVerificationFailure {
         // TODO: use more specific error source
         client_id: ClientId,
@@ -91,4 +91,24 @@ pub enum Error {
     InvalidClientState { reason: String },
     /// other error: `{description}`
     Other { description: String },
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Error::Client(e) => Some(e),
+            Error::InvalidIdentifier(e) => Some(e),
+            Error::InvalidProof(e) => Some(e),
+            Error::VerifyConnectionState(e) => Some(e),
+            Error::Signer(e) => Some(e),
+            Error::ConsensusStateVerificationFailure {
+                client_error: e, ..
+            } => Some(e),
+            Error::ClientStateVerificationFailure {
+                client_error: e, ..
+            } => Some(e),
+            _ => None,
+        }
+    }
 }

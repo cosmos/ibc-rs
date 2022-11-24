@@ -22,3 +22,6 @@ pub enum ValidationError {
     /// Invalid channel id in counterparty
     InvalidCounterpartyChannelId,
 }
+
+#[cfg(feature = "std")]
+impl std::error::Error for ValidationError {}

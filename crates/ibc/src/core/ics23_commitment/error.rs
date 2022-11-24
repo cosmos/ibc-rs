@@ -3,9 +3,9 @@ use prost::DecodeError;
 
 #[derive(Debug, Display)]
 pub enum Error {
-    /// invalid raw merkle proof, error(`{0}`)
+    /// invalid raw merkle proof
     InvalidRawMerkleProof(DecodeError),
-    /// failed to decode commitment proof, error(`{0}`)
+    /// failed to decode commitment proof
     CommitmentProofDecodingFailed(DecodeError),
     /// empty commitment prefix
     EmptyCommitmentPrefix,
@@ -23,4 +23,15 @@ pub enum Error {
     InvalidMerkleProof,
     /// proof verification failed
     VerificationFailure,
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Error::InvalidRawMerkleProof(e) => Some(e),
+            Error::CommitmentProofDecodingFailed(e) => Some(e),
+            _ => None,
+        }
+    }
 }

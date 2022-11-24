@@ -16,25 +16,54 @@ use crate::prelude::*;
 use crate::signer::SignerError;
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {}
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Error::ChannelError(e) => Some(e),
+            Error::InvalidPortId {
+                validation_error: e,
+                ..
+            } => Some(e),
+            Error::InvalidChannelId {
+                validation_error: e,
+                ..
+            } => Some(e),
+            Error::Utf8(e) => Some(e),
+            Error::InvalidTracePortId {
+                validation_error: e,
+                ..
+            } => Some(e),
+            Error::InvalidTraceChannelId {
+                validation_error: e,
+                ..
+            } => Some(e),
+            Error::InvalidAmount(e) => Some(e),
+            Error::Signer(e) => Some(e),
+            Error::ParseHex(e) => Some(e),
+            Error::DecodeRawMsg(e) => Some(e),
+            Error::Utf8Decode(e) => Some(e),
+            _ => None,
+        }
+    }
+}
 
 #[derive(Display, Debug)]
 pub enum Error {
     /// unrecognized ICS-20 transfer message type URL `{url}`
     UnknowMessageTypeUrl { url: String },
-    /// Ics04 channel error(`{0}`)
-    Ics04Channel(channel_error::Error),
+    /// ICS04 channel error
+    ChannelError(channel_error::Error),
     /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
     DestinationChannelNotFound {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// invalid port identifier `{context}` error(`{validation_error}`)
+    /// invalid port identifier `{context}`
     InvalidPortId {
         context: String,
         validation_error: ValidationError,
     },
-    /// invalid channel identifier `{context}` error(`{validation_error}`)
+    /// invalid channel identifier `{context}`
     InvalidChannelId {
         context: String,
         validation_error: ValidationError,
@@ -43,33 +72,33 @@ pub enum Error {
     InvalidPacketTimeoutHeight { context: String },
     /// invalid packet timeout timestamp value `{timestamp}`
     InvalidPacketTimeoutTimestamp { timestamp: u64 },
-    /// utf8 decoding error(`{0}`)
+    /// utf8 decoding error
     Utf8(FromUtf8Error),
     /// base denomination is empty
     EmptyBaseDenom,
-    /// invalid prot id n trace at postion: `{pos}`, error(`{validation_error}`)
+    /// invalid prot id n trace at postion: `{pos}`
     InvalidTracePortId {
         pos: usize,
         validation_error: ValidationError,
     },
-    /// invalid channel id in trace at position: `{pos}`, error(`{validation_error}`)
+    /// invalid channel id in trace at position: `{pos}`
     InvalidTraceChannelId {
         pos: usize,
         validation_error: ValidationError,
     },
     /// trace length must be even but got: `{len}`
     InvalidTraceLength { len: usize },
-    /// invalid amount error(`{0}`)
+    /// invalid amount error
     InvalidAmount(FromDecStrErr),
     /// invalid token
     InvalidToken,
-    /// failed to parse signer error(`{0}`)
+    /// failed to parse signer error
     Signer(SignerError),
     /// missing 'ibc/' prefix in denomination
     MissingDenomIbcPrefix,
     /// hashed denom must be of the form 'ibc/Hash'
     MalformedHashDenom,
-    /// invalid hex string error(`{0}`)
+    /// invalid hex string error
     ParseHex(EncodingError),
     /// expected `{expect_order}` channel, got `{got_order}`
     ChannelNotUnordered {
@@ -105,13 +134,13 @@ pub enum Error {
     },
     /// no trace associated with specified hash
     TraceNotFound,
-    /// error decoding raw msg error(`{0}`)
+    /// error decoding raw msg
     DecodeRawMsg(TendermintProtoError),
     /// unknown msg type: `{msg_type}`
     UnknownMsgType { msg_type: String },
     /// invalid coin string: `{coin}`
     InvalidCoin { coin: String },
-    /// error decoding raw bytes as UTF8 string error(`{0}`)
+    /// error decoding raw bytes as UTF8 string
     Utf8Decode(Utf8Error),
 }
 

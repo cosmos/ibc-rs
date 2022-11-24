@@ -127,13 +127,23 @@ impl core::fmt::Display for Height {
 
 #[derive(Debug, Display)]
 pub enum HeightError {
-    /// cannot convert into a `Height` type from string `{height}`, error(`{error}`)
+    /// cannot convert into a `Height` type from string `{height}`
     HeightConversion {
         height: String,
         error: ParseIntError,
     },
     /// attempted to parse an invalid zero height
     ZeroHeight,
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for HeightError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            HeightError::HeightConversion { error: e, .. } => Some(e),
+            HeightError::ZeroHeight => None,
+        }
+    }
 }
 
 impl TryFrom<&str> for Height {

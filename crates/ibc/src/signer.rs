@@ -11,6 +11,9 @@ pub enum SignerError {
     EmptySigner,
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for SignerError {}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Display)]
 pub struct Signer(String);
 

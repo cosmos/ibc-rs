@@ -17,13 +17,13 @@ use ibc_proto::protobuf::Error as TendermintError;
 
 #[derive(Debug, Display)]
 pub enum Error {
-    /// ICS03 connection error(`{0}`)
+    /// ICS03 connection error
     Connection(connection_error::Error),
-    /// ICS05 port error(`{0}`)
+    /// ICS05 port error
     Port(port_error::Error),
     /// channel state unknown: `{state}`
     UnknownState { state: i32 },
-    /// identifier error(`{0}`)
+    /// identifier error
     Identifier(ValidationError),
     /// channel order type unknown: `{type_id}`
     UnknownOrderType { type_id: String },
@@ -34,11 +34,11 @@ pub enum Error {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// invalid version, error(`{0}`)
+    /// invalid version
     InvalidVersion(TendermintError),
-    /// invalid signer address, error(`{0}`)
+    /// invalid signer address
     Signer(SignerError),
-    /// invalid proof, error(`{0}`)
+    /// invalid proof
     InvalidProof(ProofError),
     /// invalid proof: missing height
     MissingHeight,
@@ -87,7 +87,7 @@ pub enum Error {
         sequence: Sequence,
         ics02_error: client_error::Error,
     },
-    /// Error verifying channel state, error(`{0}`)
+    /// Error verifying channel state
     VerifyChannelFailed(client_error::Error),
     /// Acknowledgment cannot be empty
     InvalidAcknowledgement,
@@ -98,7 +98,7 @@ pub enum Error {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// String `{value}` cannot be converted to packet sequence, error(`{error}`)
+    /// String `{value}` cannot be converted to packet sequence
     InvalidStringAsSequence {
         value: String,
         error: core::num::ParseIntError,
@@ -125,7 +125,7 @@ pub enum Error {
     },
     /// Receiving chain block timestamp >= packet timeout timestamp
     LowPacketTimestamp,
-    /// Invalid packet timeout timestamp value, error(`{0}`)
+    /// Invalid packet timeout timestamp value
     InvalidPacketTimestamp(crate::timestamp::ParseTimestampError),
     /// Invalid timestamp in consensus state; timestamp must be a positive value
     ErrorInvalidConsensusState,
@@ -166,4 +166,22 @@ pub enum Error {
     AbciConversionFailed { abci_event: String },
     /// other error: `{description}`
     Other { description: String },
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Error::Connection(e) => Some(e),
+            Error::Port(e) => Some(e),
+            Error::Identifier(e) => Some(e),
+            Error::InvalidVersion(e) => Some(e),
+            Error::Signer(e) => Some(e),
+            Error::InvalidProof(e) => Some(e),
+            Error::PacketVerificationFailed { ics02_error: e, .. } => Some(e),
+            Error::InvalidStringAsSequence { error: e, .. } => Some(e),
+            Error::InvalidPacketTimestamp(e) => Some(e),
+            _ => None,
+        }
+    }
 }

@@ -20,21 +20,21 @@ use crate::timestamp::ParseTimestampError;
 pub enum Error {
     /// error parsing height
     Height,
-    /// parse error, error(`{0}`)
+    /// parse error
     Parse(ValidationError),
-    /// ICS02 client error, error(`{0}`)
+    /// ICS02 client error
     Client(client_error::Error),
-    /// connection error, error(`{0}`)
+    /// connection error
     Connection(connection_error::Error),
-    /// channel error, error(`{0}`)
+    /// channel error
     Channel(channel_error::Error),
-    /// error parsing timestamp, error(`{0}`)
+    /// error parsing timestamp
     Timestamp(ParseTimestampError),
     /// missing event key `{key}`
     MissingKey { key: String },
-    /// error decoding protobuf, error(`{0}`)
+    /// error decoding protobuf
     Decode(prost::DecodeError),
-    /// error decoding hex, error(`{0}`)
+    /// error decoding hex
     SubtleEncoding(subtle_encoding::Error),
     /// missing action string
     MissingActionString,
@@ -44,6 +44,22 @@ pub enum Error {
     MalformedModuleEvent { event: ModuleEvent },
     /// Unable to parse abci event type `{event_type}` into IbcEvent"
     UnsupportedAbciEvent { event_type: String },
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Error::Parse(e) => Some(e),
+            Error::Client(e) => Some(e),
+            Error::Connection(e) => Some(e),
+            Error::Channel(e) => Some(e),
+            Error::Timestamp(e) => Some(e),
+            Error::Decode(e) => Some(e),
+            Error::SubtleEncoding(e) => Some(e),
+            _ => None,
+        }
+    }
 }
 
 /// Events whose data is not included in the app state and must be extracted using tendermint RPCs

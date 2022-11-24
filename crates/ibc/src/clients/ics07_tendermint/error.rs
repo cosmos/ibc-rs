@@ -12,9 +12,6 @@ use tendermint::hash::Hash;
 use tendermint::Error as TendermintError;
 use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
 
-#[cfg(feature = "std")]
-impl std::error::Error for Error {}
-
 #[derive(Debug, Display)]
 pub enum Error {
     /// chain-id is (`{chain_id}`) is too long, got: `{len}`, max allowed: `{max_len}`
@@ -29,14 +26,14 @@ pub enum Error {
     InvalidUnbondingPeriod { reason: String },
     /// invalid address
     InvalidAddress,
-    /// invalid header, failed basic validation: `{reason}`, error(`{error}`)
+    /// invalid header, failed basic validation: `{reason}`
     InvalidHeader {
         reason: String,
         error: TendermintError,
     },
     /// invalid client state trust threshold: `{reason}`
     InvalidTrustThreshold { reason: String },
-    /// invalid tendermint client state trust threshold, error(`{0}`)
+    /// invalid tendermint client state trust threshold
     InvalidTendermintTrustThreshold(TendermintError),
     /// invalid client state max clock drift: `{reason}`
     InvalidMaxClockDrift { reason: String },
@@ -58,7 +55,7 @@ pub enum Error {
     MissingTrustingPeriod,
     /// missing unbonding period
     MissingUnbondingPeriod,
-    /// invalid chain identifier, error(`{0}`)
+    /// invalid chain identifier
     InvalidChainIdentifier(ValidationError),
     /// negative trusting period
     NegativeTrustingPeriod,
@@ -72,7 +69,7 @@ pub enum Error {
     MissingLatestHeight,
     /// invalid frozen height
     InvalidFrozenHeight,
-    /// invalid chain identifier: `{raw_value}`, error(`{error}`)
+    /// invalid chain identifier: `{raw_value}`
     InvalidChainId {
         raw_value: String,
         error: ValidationError,
@@ -81,11 +78,11 @@ pub enum Error {
     InvalidRawHeight { raw_height: u64 },
     /// invalid raw client consensus state: `{reason}`
     InvalidRawConsensusState { reason: String },
-    /// invalid raw header, error(`{0}`)
+    /// invalid raw header
     InvalidRawHeader(TendermintError),
     /// invalid raw misbehaviour: `{reason}`
     InvalidRawMisbehaviour { reason: String },
-    /// decode error, error(`{0}`)
+    /// decode error
     Decode(prost::DecodeError),
     /// insufficient overlap: `{reason}`
     InsufficientVotingPower { reason: String },
@@ -97,7 +94,7 @@ pub enum Error {
     HeaderTimestampTooHigh { actual: String, max: String },
     /// given other previous updates, header timestamp should be at least `{min}`, but was `{actual}`
     HeaderTimestampTooLow { actual: String, min: String },
-    /// timestamp overflowed, error(`{0}`)
+    /// timestamp overflowed
     TimestampOverflow(TimestampOverflowError),
     /// not enough time elapsed, current timestamp `{current_time}` is still less than earliest acceptable timestamp `{earliest_time}`
     NotEnoughTimeElapsed {
@@ -143,6 +140,22 @@ pub enum Error {
         frozen_height: Height,
         target_height: Height,
     },
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Error::InvalidHeader { error: e, .. } => Some(e),
+            Error::InvalidTendermintTrustThreshold(e) => Some(e),
+            Error::InvalidChainIdentifier(e) => Some(e),
+            Error::InvalidChainId { error: e, .. } => Some(e),
+            Error::InvalidRawHeader(e) => Some(e),
+            Error::Decode(e) => Some(e),
+            Error::TimestampOverflow(e) => Some(e),
+            _ => None,
+        }
+    }
 }
 
 #[cfg(feature = "std")]

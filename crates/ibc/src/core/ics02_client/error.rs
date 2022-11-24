@@ -1,5 +1,4 @@
 use crate::prelude::*;
-
 use displaydoc::Display;
 use ibc_proto::protobuf::Error as TendermintProtoError;
 
@@ -12,14 +11,11 @@ use crate::signer::SignerError;
 use crate::timestamp::Timestamp;
 use crate::Height;
 
-#[cfg(feature = "std")]
-impl std::error::Error for Error {}
-
 #[derive(Debug, Display)]
 pub enum Error {
     /// unknown client type: `{client_type}`
     UnknownClientType { client_type: String },
-    /// Client identifier constructor failed for type `{client_type}` with counter `{counter}`, error(`{validation_error}`)
+    /// Client identifier constructor failed for type `{client_type}` with counter `{counter}`
     ClientIdentifierConstructor {
         client_type: ClientType,
         counter: u64,
@@ -55,38 +51,38 @@ pub enum Error {
     UnknownHeaderType { header_type: String },
     /// unknown misbehaviour type: `{misbehavior_type}`
     UnknownMisbehaviourType { misbehavior_type: String },
-    /// invalid raw client identifier `{client_id}`, error(`{validation_error}`)
+    /// invalid raw client identifier `{client_id}`
     InvalidRawClientId {
         client_id: String,
         validation_error: ValidationError,
     },
-    /// error decoding raw client state, error(`{0}`)
+    /// error decoding raw client state
     DecodeRawClientState(TendermintProtoError),
     /// missing raw client state
     MissingRawClientState,
-    /// invalid raw client consensus state, error(`{0}`)
+    /// invalid raw client consensus state
     InvalidRawConsensusState(TendermintProtoError),
     /// missing raw client consensus state
     MissingRawConsensusState,
-    /// invalid client id in the update client message, error(`{0}`)
+    /// invalid client id in the update client message
     InvalidMsgUpdateClientId(ValidationError),
-    /// decode error(`{0}`)
+    /// decode error
     Decode(prost::DecodeError),
     /// invalid raw client consensus state: the height field is missing
     MissingHeight,
-    /// invalid client identifier, error(`{0}`)
+    /// invalid client identifier
     InvalidClientIdentifier(ValidationError),
-    /// invalid raw header, error(`{0}`)
+    /// invalid raw header
     InvalidRawHeader(TendermintProtoError),
     /// missing raw header
     MissingRawHeader,
-    /// invalid raw misbehaviour, error(`{0}`)
+    /// invalid raw misbehaviour
     DecodeRawMisbehaviour(TendermintProtoError),
-    /// invalid raw misbehaviour, error(`{0}`)
+    /// invalid raw misbehaviour
     InvalidRawMisbehaviour(ValidationError),
     /// missing raw misbehaviour
     MissingRawMisbehaviour,
-    /// String `{value}` cannnot be converted to height, error(`{height_error}`)
+    /// String `{value}` cannnot be converted to height
     InvalidStringAsHeight {
         value: String,
         height_error: HeightError,
@@ -97,15 +93,15 @@ pub enum Error {
     InvalidHeightResult,
     /// invalid address
     InvalidAddress,
-    /// invalid proof for the upgraded client state, error(`{0}`)
+    /// invalid proof for the upgraded client state
     InvalidUpgradeClientProof(Ics23Error),
-    /// invalid proof for the upgraded consensus state, error(`{0}`)
+    /// invalid proof for the upgraded consensus state
     InvalidUpgradeConsensusStateProof(Ics23Error),
-    /// invalid commitment proof bytes, error(`{0}`)
+    /// invalid commitment proof bytes
     InvalidCommitmentProof(Ics23Error),
-    /// invalid packet timeout timestamp value, error(`{0}`)
+    /// invalid packet timeout timestamp value
     InvalidPacketTimestamp(crate::timestamp::ParseTimestampError),
-    /// mismatch between client and arguments types, expected: `{client_type}`
+    /// mismatch between client and arguments types
     ClientArgsTypeMismatch { client_type: ClientType },
     /// Insufficient overlap `{reason}`
     InsufficientVotingPower { reason: String },
@@ -133,20 +129,58 @@ pub enum Error {
     },
     /// the local consensus state could not be retrieved for height `{height}`
     MissingLocalConsensusState { height: Height },
-    /// invalid connection end, error(`{0}`)
+    /// invalid connection end
     InvalidConnectionEnd(TendermintProtoError),
-    /// invalid channel end, error(`{0}`)
+    /// invalid channel end
     InvalidChannelEnd(TendermintProtoError),
-    /// invalid any client state, error(`{0}`)
+    /// invalid any client state
     InvalidAnyClientState(TendermintProtoError),
-    /// invalid any client consensus state, error(`{0}`)
+    /// invalid any client consensus state
     InvalidAnyConsensusState(TendermintProtoError),
-    /// failed to parse signer, error(`{0}`)
+    /// failed to parse signer
     Signer(SignerError),
-    /// ics23 verification failure, error(`{0}`)
+    /// ics23 verification failure
     Ics23Verification(Ics23Error),
     /// client specific error: `{description}`
     ClientSpecific { description: String },
     /// other error: `{description}`
     Other { description: String },
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Error::ClientIdentifierConstructor {
+                validation_error: e,
+                ..
+            } => Some(e),
+            Error::InvalidRawClientId {
+                validation_error: e,
+                ..
+            } => Some(e),
+            Error::DecodeRawClientState(e) => Some(e),
+            Error::InvalidRawConsensusState(e) => Some(e),
+            Error::InvalidMsgUpdateClientId(e) => Some(e),
+            Error::Decode(e) => Some(e),
+            Error::InvalidClientIdentifier(e) => Some(e),
+            Error::InvalidRawHeader(e) => Some(e),
+            Error::DecodeRawMisbehaviour(e) => Some(e),
+            Error::InvalidRawMisbehaviour(e) => Some(e),
+            Error::InvalidStringAsHeight {
+                height_error: e, ..
+            } => Some(e),
+            Error::InvalidUpgradeClientProof(e) => Some(e),
+            Error::InvalidUpgradeConsensusStateProof(e) => Some(e),
+            Error::InvalidCommitmentProof(e) => Some(e),
+            Error::InvalidPacketTimestamp(e) => Some(e),
+            Error::InvalidConnectionEnd(e) => Some(e),
+            Error::InvalidChannelEnd(e) => Some(e),
+            Error::InvalidAnyClientState(e) => Some(e),
+            Error::InvalidAnyConsensusState(e) => Some(e),
+            Error::Signer(e) => Some(e),
+            Error::Ics23Verification(e) => Some(e),
+            _ => None,
+        }
+    }
 }

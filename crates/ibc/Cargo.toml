@@ -18,7 +18,24 @@ all-features = true
 
 [features]
 default = ["std"]
-std = ["ibc-proto/std", "clock", "displaydoc/std" ]
+std = [ 
+    "ibc-proto/std",
+    "ics23/std",
+    "serde/std",
+    "serde_json/std",
+    "erased-serde/std",
+    "tracing/std",
+    "prost/std",
+    "bytes/std",
+    "subtle-encoding/std",
+    "sha2/std",
+    "displaydoc/std",
+    "num-traits/std",
+    "uint/std",
+    "primitive-types/std",
+    "clock",
+    "tendermint/std",
+]
 clock = ["tendermint/clock", "time/std"]
 
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
@@ -27,7 +44,7 @@ mocks = ["tendermint-testgen", "clock", "std"]
 
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
-ibc-proto = { version = "0.22.0", default-features = false }
+ibc-proto = { version = "0.22.0", default-features = false, git = "https://github.com/octopus-network/ibc-proto-rs.git", branch = "refactor-error-system" }
 ics23 = { version = "=0.8.1", default-features = false, features = ["host-functions"] }
 time = { version = ">=0.3.0, <0.3.18", default-features = false }
 serde_derive = { version = "1.0.104", default-features = false }

@@ -183,6 +183,9 @@ pub enum PathError {
     ParseFailure { path: String },
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for PathError {}
+
 /// The FromStr trait allows paths encoded as strings to be parsed into Paths.
 impl FromStr for Path {
     type Err = PathError;
