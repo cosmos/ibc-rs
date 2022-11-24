@@ -4,6 +4,7 @@
 
 #![no_std]
 #![allow(clippy::large_enum_variant)]
+#![allow(clippy::result_large_err)]
 #![deny(
     warnings,
     trivial_casts,
