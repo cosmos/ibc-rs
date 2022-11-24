@@ -8,7 +8,7 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 
 use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::dynamic_typing::AsAny;
 use crate::timestamp::Timestamp;
@@ -25,7 +25,7 @@ pub trait ConsensusState:
     + sealed::ErasedPartialEqConsensusState
     + DynClone
     + ErasedSerialize
-    + ErasedProtobuf<Any, Error = Error>
+    + ErasedProtobuf<Any, Error = ClientError>
     + core::fmt::Debug
     + Send
     + Sync

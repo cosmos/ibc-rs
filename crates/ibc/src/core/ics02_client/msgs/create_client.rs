@@ -6,7 +6,7 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgCreateClient as RawMsgCreateClient;
 use ibc_proto::protobuf::Protobuf;
 
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::signer::Signer;
 use crate::tx_msg::Msg;
 
@@ -21,7 +21,11 @@ pub struct MsgCreateClient {
 }
 
 impl MsgCreateClient {
-    pub fn new(client_state: Any, consensus_state: Any, signer: Signer) -> Result<Self, Error> {
+    pub fn new(
+        client_state: Any,
+        consensus_state: Any,
+        signer: Signer,
+    ) -> Result<Self, ClientError> {
         Ok(MsgCreateClient {
             client_state,
             consensus_state,
@@ -46,17 +50,19 @@ impl Msg for MsgCreateClient {
 impl Protobuf<RawMsgCreateClient> for MsgCreateClient {}
 
 impl TryFrom<RawMsgCreateClient> for MsgCreateClient {
-    type Error = Error;
+    type Error = ClientError;
 
-    fn try_from(raw: RawMsgCreateClient) -> Result<Self, Error> {
-        let raw_client_state = raw.client_state.ok_or(Error::MissingRawClientState)?;
+    fn try_from(raw: RawMsgCreateClient) -> Result<Self, Self::Error> {
+        let raw_client_state = raw.client_state.ok_or(ClientError::MissingRawClientState)?;
 
-        let raw_consensus_state = raw.consensus_state.ok_or(Error::MissingRawConsensusState)?;
+        let raw_consensus_state = raw
+            .consensus_state
+            .ok_or(ClientError::MissingRawConsensusState)?;
 
         MsgCreateClient::new(
             raw_client_state,
             raw_consensus_state,
-            raw.signer.parse().map_err(Error::Signer)?,
+            raw.signer.parse().map_err(ClientError::Signer)?,
         )
     }
 }

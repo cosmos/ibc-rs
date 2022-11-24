@@ -1,7 +1,7 @@
 //! This module implements the processing logic for ICS2 (client abstractions and functions) msgs.
 
 use crate::core::ics02_client::context::ClientReader;
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::msgs::ClientMsg;
 use crate::handler::HandlerOutput;
 
@@ -17,7 +17,7 @@ pub enum ClientResult {
 }
 
 /// General entry point for processing any message related to ICS2 (client functions) protocols.
-pub fn dispatch<Ctx>(ctx: &Ctx, msg: ClientMsg) -> Result<HandlerOutput<ClientResult>, Error>
+pub fn dispatch<Ctx>(ctx: &Ctx, msg: ClientMsg) -> Result<HandlerOutput<ClientResult>, ClientError>
 where
     Ctx: ClientReader,
 {

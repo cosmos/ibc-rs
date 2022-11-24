@@ -6,7 +6,7 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;
 use ibc_proto::protobuf::Protobuf;
 
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::signer::Signer;
@@ -48,16 +48,16 @@ impl Msg for MsgUpdateClient {
 impl Protobuf<RawMsgUpdateClient> for MsgUpdateClient {}
 
 impl TryFrom<RawMsgUpdateClient> for MsgUpdateClient {
-    type Error = Error;
+    type Error = ClientError;
 
     fn try_from(raw: RawMsgUpdateClient) -> Result<Self, Self::Error> {
         Ok(MsgUpdateClient {
             client_id: raw
                 .client_id
                 .parse()
-                .map_err(Error::InvalidMsgUpdateClientId)?,
-            header: raw.header.ok_or(Error::MissingRawHeader)?,
-            signer: raw.signer.parse().map_err(Error::Signer)?,
+                .map_err(ClientError::InvalidMsgUpdateClientId)?,
+            header: raw.header.ok_or(ClientError::MissingRawHeader)?,
+            signer: raw.signer.parse().map_err(ClientError::Signer)?,
         })
     }
 }

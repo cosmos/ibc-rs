@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::mock::client_state::client_type as mock_client_type;
 use crate::mock::header::MockHeader;
@@ -37,10 +37,10 @@ impl MockConsensusState {
 impl Protobuf<RawMockConsensusState> for MockConsensusState {}
 
 impl TryFrom<RawMockConsensusState> for MockConsensusState {
-    type Error = Error;
+    type Error = ClientError;
 
     fn try_from(raw: RawMockConsensusState) -> Result<Self, Self::Error> {
-        let raw_header = raw.header.ok_or(Error::MissingRawConsensusState)?;
+        let raw_header = raw.header.ok_or(ClientError::MissingRawConsensusState)?;
 
         Ok(Self {
             header: MockHeader::try_from(raw_header)?,
@@ -63,16 +63,16 @@ impl From<MockConsensusState> for RawMockConsensusState {
 impl Protobuf<Any> for MockConsensusState {}
 
 impl TryFrom<Any> for MockConsensusState {
-    type Error = Error;
+    type Error = ClientError;
 
-    fn try_from(raw: Any) -> Result<Self, Error> {
+    fn try_from(raw: Any) -> Result<Self, Self::Error> {
         use bytes::Buf;
         use core::ops::Deref;
         use prost::Message;
 
-        fn decode_consensus_state<B: Buf>(buf: B) -> Result<MockConsensusState, Error> {
+        fn decode_consensus_state<B: Buf>(buf: B) -> Result<MockConsensusState, ClientError> {
             RawMockConsensusState::decode(buf)
-                .map_err(Error::Decode)?
+                .map_err(ClientError::Decode)?
                 .try_into()
         }
 
@@ -80,7 +80,7 @@ impl TryFrom<Any> for MockConsensusState {
             MOCK_CONSENSUS_STATE_TYPE_URL => {
                 decode_consensus_state(raw.value.deref()).map_err(Into::into)
             }
-            _ => Err(Error::UnknownConsensusStateType {
+            _ => Err(ClientError::UnknownConsensusStateType {
                 consensus_state_type: raw.type_url,
             }),
         }

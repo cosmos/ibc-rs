@@ -10,7 +10,7 @@ use serde_derive::{Deserialize, Serialize};
 
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Height {
@@ -22,9 +22,9 @@ pub struct Height {
 }
 
 impl Height {
-    pub fn new(revision_number: u64, revision_height: u64) -> Result<Self, Error> {
+    pub fn new(revision_number: u64, revision_height: u64) -> Result<Self, ClientError> {
         if revision_height == 0 {
-            return Err(Error::InvalidHeight);
+            return Err(ClientError::InvalidHeight);
         }
 
         Ok(Self {
@@ -52,9 +52,9 @@ impl Height {
         self.add(1)
     }
 
-    pub fn sub(&self, delta: u64) -> Result<Height, Error> {
+    pub fn sub(&self, delta: u64) -> Result<Height, ClientError> {
         if self.revision_height <= delta {
-            return Err(Error::InvalidHeightResult);
+            return Err(ClientError::InvalidHeightResult);
         }
 
         Ok(Height {
@@ -63,7 +63,7 @@ impl Height {
         })
     }
 
-    pub fn decrement(&self) -> Result<Height, Error> {
+    pub fn decrement(&self) -> Result<Height, ClientError> {
         self.sub(1)
     }
 }
@@ -93,7 +93,7 @@ impl Ord for Height {
 impl Protobuf<RawHeight> for Height {}
 
 impl TryFrom<RawHeight> for Height {
-    type Error = Error;
+    type Error = ClientError;
 
     fn try_from(raw_height: RawHeight) -> Result<Self, Self::Error> {
         Height::new(raw_height.revision_number, raw_height.revision_height)

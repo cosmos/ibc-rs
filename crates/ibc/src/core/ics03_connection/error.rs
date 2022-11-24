@@ -12,7 +12,7 @@ use displaydoc::Display;
 #[derive(Debug, Display)]
 pub enum Error {
     /// ICS02 client error
-    Client(client_error::Error),
+    Client(client_error::ClientError),
     /// connection state is unknown: `{state}`
     InvalidState { state: i32 },
     /// connection exists (was initialized) already: `{connection_id}`
@@ -50,7 +50,7 @@ pub enum Error {
     /// invalid connection proof
     InvalidProof(ProofError),
     /// error verifying connnection state
-    VerifyConnectionState(client_error::Error),
+    VerifyConnectionState(client_error::ClientError),
     /// invalid signer
     Signer(SignerError),
     /// no connection was found for the previous connection id provided `{connection_id}`
@@ -77,13 +77,13 @@ pub enum Error {
     /// the consensus proof verification failed (height: `{height}`)
     ConsensusStateVerificationFailure {
         height: Height,
-        client_error: client_error::Error,
+        client_error: client_error::ClientError,
     },
     /// the client state proof verification failed for client id `{client_id}`
     ClientStateVerificationFailure {
         // TODO: use more specific error source
         client_id: ClientId,
-        client_error: client_error::Error,
+        client_error: client_error::ClientError,
     },
     /// implementation specific error
     ImplementationSpecific,

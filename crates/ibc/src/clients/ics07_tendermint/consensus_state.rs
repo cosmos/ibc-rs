@@ -10,7 +10,7 @@ use tendermint_proto::google::protobuf as tpb;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
 use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::error::Error as Ics02Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::timestamp::Timestamp;
 
@@ -106,7 +106,7 @@ impl From<ConsensusState> for RawConsensusState {
 impl Protobuf<Any> for ConsensusState {}
 
 impl TryFrom<Any> for ConsensusState {
-    type Error = Ics02Error;
+    type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         use bytes::Buf;
@@ -123,7 +123,7 @@ impl TryFrom<Any> for ConsensusState {
             TENDERMINT_CONSENSUS_STATE_TYPE_URL => {
                 decode_consensus_state(raw.value.deref()).map_err(Into::into)
             }
-            _ => Err(Ics02Error::UnknownConsensusStateType {
+            _ => Err(ClientError::UnknownConsensusStateType {
                 consensus_state_type: raw.type_url,
             }),
         }

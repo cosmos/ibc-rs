@@ -23,7 +23,7 @@ pub enum Error {
     /// parse error
     Parse(ValidationError),
     /// ICS02 client error
-    Client(client_error::Error),
+    Client(client_error::ClientError),
     /// connection error
     Connection(connection_error::Error),
     /// channel error

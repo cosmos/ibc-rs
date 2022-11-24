@@ -12,7 +12,7 @@ use crate::timestamp::Timestamp;
 use crate::Height;
 
 #[derive(Debug, Display)]
-pub enum Error {
+pub enum ClientError {
     /// unknown client type: `{client_type}`
     UnknownClientType { client_type: String },
     /// Client identifier constructor failed for type `{client_type}` with counter `{counter}`
@@ -148,38 +148,38 @@ pub enum Error {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {
+impl std::error::Error for ClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Error::ClientIdentifierConstructor {
+            Self::ClientIdentifierConstructor {
                 validation_error: e,
                 ..
             } => Some(e),
-            Error::InvalidRawClientId {
+            Self::InvalidRawClientId {
                 validation_error: e,
                 ..
             } => Some(e),
-            Error::DecodeRawClientState(e) => Some(e),
-            Error::InvalidRawConsensusState(e) => Some(e),
-            Error::InvalidMsgUpdateClientId(e) => Some(e),
-            Error::Decode(e) => Some(e),
-            Error::InvalidClientIdentifier(e) => Some(e),
-            Error::InvalidRawHeader(e) => Some(e),
-            Error::DecodeRawMisbehaviour(e) => Some(e),
-            Error::InvalidRawMisbehaviour(e) => Some(e),
-            Error::InvalidStringAsHeight {
+            Self::DecodeRawClientState(e) => Some(e),
+            Self::InvalidRawConsensusState(e) => Some(e),
+            Self::InvalidMsgUpdateClientId(e) => Some(e),
+            Self::Decode(e) => Some(e),
+            Self::InvalidClientIdentifier(e) => Some(e),
+            Self::InvalidRawHeader(e) => Some(e),
+            Self::DecodeRawMisbehaviour(e) => Some(e),
+            Self::InvalidRawMisbehaviour(e) => Some(e),
+            Self::InvalidStringAsHeight {
                 height_error: e, ..
             } => Some(e),
-            Error::InvalidUpgradeClientProof(e) => Some(e),
-            Error::InvalidUpgradeConsensusStateProof(e) => Some(e),
-            Error::InvalidCommitmentProof(e) => Some(e),
-            Error::InvalidPacketTimestamp(e) => Some(e),
-            Error::InvalidConnectionEnd(e) => Some(e),
-            Error::InvalidChannelEnd(e) => Some(e),
-            Error::InvalidAnyClientState(e) => Some(e),
-            Error::InvalidAnyConsensusState(e) => Some(e),
-            Error::Signer(e) => Some(e),
-            Error::Ics23Verification(e) => Some(e),
+            Self::InvalidUpgradeClientProof(e) => Some(e),
+            Self::InvalidUpgradeConsensusStateProof(e) => Some(e),
+            Self::InvalidCommitmentProof(e) => Some(e),
+            Self::InvalidPacketTimestamp(e) => Some(e),
+            Self::InvalidConnectionEnd(e) => Some(e),
+            Self::InvalidChannelEnd(e) => Some(e),
+            Self::InvalidAnyClientState(e) => Some(e),
+            Self::InvalidAnyConsensusState(e) => Some(e),
+            Self::Signer(e) => Some(e),
+            Self::Ics23Verification(e) => Some(e),
             _ => None,
         }
     }

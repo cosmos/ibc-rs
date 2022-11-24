@@ -15,7 +15,7 @@ use ibc_proto::ibc::core::connection::v1::{
     IdentifiedConnection as RawIdentifiedConnection,
 };
 
-use crate::core::ics02_client::error::Error as ClientError;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::error::Error;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;

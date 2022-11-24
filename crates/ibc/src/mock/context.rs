@@ -22,7 +22,7 @@ use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::{ClientKeeper, ClientReader};
-use crate::core::ics02_client::error::Error as Ics02Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::context::{ConnectionKeeper, ConnectionReader};
@@ -1178,38 +1178,38 @@ impl ConnectionKeeper for MockContext {
 }
 
 impl ClientReader for MockContext {
-    fn client_type(&self, client_id: &ClientId) -> Result<ClientType, Ics02Error> {
+    fn client_type(&self, client_id: &ClientId) -> Result<ClientType, ClientError> {
         match self.ibc_store.lock().unwrap().clients.get(client_id) {
             Some(client_record) => Ok(client_record.client_type.clone()),
-            None => Err(Ics02Error::ClientNotFound {
+            None => Err(ClientError::ClientNotFound {
                 client_id: client_id.clone(),
             }),
         }
     }
 
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Ics02Error> {
+    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ClientError> {
         match self.ibc_store.lock().unwrap().clients.get(client_id) {
             Some(client_record) => {
                 client_record
                     .client_state
                     .clone()
-                    .ok_or_else(|| Ics02Error::ClientNotFound {
+                    .ok_or_else(|| ClientError::ClientNotFound {
                         client_id: client_id.clone(),
                     })
             }
-            None => Err(Ics02Error::ClientNotFound {
+            None => Err(ClientError::ClientNotFound {
                 client_id: client_id.clone(),
             }),
         }
     }
 
-    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, Ics02Error> {
+    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ClientError> {
         if let Ok(client_state) = TmClientState::try_from(client_state.clone()) {
             Ok(client_state.into_box())
         } else if let Ok(client_state) = MockClientState::try_from(client_state.clone()) {
             Ok(client_state.into_box())
         } else {
-            Err(Ics02Error::UnknownClientStateType {
+            Err(ClientError::UnknownClientStateType {
                 client_state_type: client_state.type_url,
             })
         }
@@ -1219,16 +1219,16 @@ impl ClientReader for MockContext {
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Box<dyn ConsensusState>, Ics02Error> {
+    ) -> Result<Box<dyn ConsensusState>, ClientError> {
         match self.ibc_store.lock().unwrap().clients.get(client_id) {
             Some(client_record) => match client_record.consensus_states.get(&height) {
                 Some(consensus_state) => Ok(consensus_state.clone()),
-                None => Err(Ics02Error::ConsensusStateNotFound {
+                None => Err(ClientError::ConsensusStateNotFound {
                     client_id: client_id.clone(),
                     height,
                 }),
             },
-            None => Err(Ics02Error::ConsensusStateNotFound {
+            None => Err(ClientError::ConsensusStateNotFound {
                 client_id: client_id.clone(),
                 height,
             }),
@@ -1240,13 +1240,13 @@ impl ClientReader for MockContext {
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Option<Box<dyn ConsensusState>>, Ics02Error> {
+    ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
         let ibc_store = self.ibc_store.lock().unwrap();
         let client_record =
             ibc_store
                 .clients
                 .get(client_id)
-                .ok_or_else(|| Ics02Error::ClientNotFound {
+                .ok_or_else(|| ClientError::ClientNotFound {
                     client_id: client_id.clone(),
                 })?;
 
@@ -1271,13 +1271,13 @@ impl ClientReader for MockContext {
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Option<Box<dyn ConsensusState>>, Ics02Error> {
+    ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
         let ibc_store = self.ibc_store.lock().unwrap();
         let client_record =
             ibc_store
                 .clients
                 .get(client_id)
-                .ok_or_else(|| Ics02Error::ClientNotFound {
+                .ok_or_else(|| ClientError::ClientNotFound {
                     client_id: client_id.clone(),
                 })?;
 
@@ -1297,11 +1297,11 @@ impl ClientReader for MockContext {
         Ok(None)
     }
 
-    fn host_height(&self) -> Result<Height, Ics02Error> {
+    fn host_height(&self) -> Result<Height, ClientError> {
         Ok(self.latest_height())
     }
 
-    fn host_timestamp(&self) -> Result<Timestamp, Ics02Error> {
+    fn host_timestamp(&self) -> Result<Timestamp, ClientError> {
         Ok(self
             .history
             .last()
@@ -1311,18 +1311,18 @@ impl ClientReader for MockContext {
             .unwrap())
     }
 
-    fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, Ics02Error> {
+    fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, ClientError> {
         match self.host_block(height) {
             Some(block_ref) => Ok(block_ref.clone().into()),
-            None => Err(Ics02Error::MissingLocalConsensusState { height }),
+            None => Err(ClientError::MissingLocalConsensusState { height }),
         }
     }
 
-    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, Ics02Error> {
-        Err(Ics02Error::ImplementationSpecific)
+    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ClientError> {
+        Err(ClientError::ImplementationSpecific)
     }
 
-    fn client_counter(&self) -> Result<u64, Ics02Error> {
+    fn client_counter(&self) -> Result<u64, ClientError> {
         Ok(self.ibc_store.lock().unwrap().client_ids_counter)
     }
 }
@@ -1332,7 +1332,7 @@ impl ClientKeeper for MockContext {
         &mut self,
         client_id: ClientId,
         client_type: ClientType,
-    ) -> Result<(), Ics02Error> {
+    ) -> Result<(), ClientError> {
         let mut ibc_store = self.ibc_store.lock().unwrap();
         let client_record = ibc_store
             .clients
@@ -1351,7 +1351,7 @@ impl ClientKeeper for MockContext {
         &mut self,
         client_id: ClientId,
         client_state: Box<dyn ClientState>,
-    ) -> Result<(), Ics02Error> {
+    ) -> Result<(), ClientError> {
         let mut ibc_store = self.ibc_store.lock().unwrap();
         let client_record = ibc_store
             .clients
@@ -1371,7 +1371,7 @@ impl ClientKeeper for MockContext {
         client_id: ClientId,
         height: Height,
         consensus_state: Box<dyn ConsensusState>,
-    ) -> Result<(), Ics02Error> {
+    ) -> Result<(), ClientError> {
         let mut ibc_store = self.ibc_store.lock().unwrap();
         let client_record = ibc_store
             .clients
@@ -1397,7 +1397,7 @@ impl ClientKeeper for MockContext {
         client_id: ClientId,
         height: Height,
         timestamp: Timestamp,
-    ) -> Result<(), Ics02Error> {
+    ) -> Result<(), ClientError> {
         let _ = self
             .ibc_store
             .lock()
@@ -1412,7 +1412,7 @@ impl ClientKeeper for MockContext {
         client_id: ClientId,
         height: Height,
         host_height: Height,
-    ) -> Result<(), Ics02Error> {
+    ) -> Result<(), ClientError> {
         let _ = self
             .ibc_store
             .lock()

@@ -13,7 +13,7 @@ use tendermint::validator::Set as ValidatorSet;
 
 use crate::clients::ics07_tendermint::error::Error;
 use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::error::Error as Ics02Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ChainId;
 use crate::timestamp::Timestamp;
 use crate::utils::pretty::{PrettySignedHeader, PrettyValidatorSet};
@@ -138,9 +138,9 @@ impl TryFrom<RawHeader> for Header {
 impl Protobuf<Any> for Header {}
 
 impl TryFrom<Any> for Header {
-    type Error = Ics02Error;
+    type Error = ClientError;
 
-    fn try_from(raw: Any) -> Result<Self, Ics02Error> {
+    fn try_from(raw: Any) -> Result<Self, Self::Error> {
         use core::ops::Deref;
 
         fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
@@ -149,7 +149,7 @@ impl TryFrom<Any> for Header {
 
         match raw.type_url.as_str() {
             TENDERMINT_HEADER_TYPE_URL => decode_header(raw.value.deref()).map_err(Into::into),
-            _ => Err(Ics02Error::UnknownHeaderType {
+            _ => Err(ClientError::UnknownHeaderType {
                 header_type: raw.type_url,
             }),
         }

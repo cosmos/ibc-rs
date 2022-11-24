@@ -38,7 +38,7 @@ use crate::core::ics02_client::client_state::{
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::error::Error as Ics02Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::trust_threshold::TrustThreshold;
 use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics23_commitment::specs::ProofSpecs;
@@ -216,7 +216,7 @@ impl ClientState {
     /// Tendermint-specific light client verification.
     pub fn as_light_client_options(&self) -> Result<Options, Error> {
         Ok(Options {
-            trust_threshold: self.trust_level.try_into().map_err(|e: Ics02Error| {
+            trust_threshold: self.trust_level.try_into().map_err(|e: ClientError| {
                 Error::InvalidTrustThreshold {
                     reason: e.to_string(),
                 }
@@ -327,7 +327,7 @@ impl Ics2ClientState for ClientState {
         elapsed > self.trusting_period
     }
 
-    fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, Ics02Error> {
+    fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError> {
         TmConsensusState::try_from(consensus_state).map(TmConsensusState::into_box)
     }
 
@@ -336,16 +336,16 @@ impl Ics2ClientState for ClientState {
         ctx: &dyn ClientReader,
         client_id: ClientId,
         header: Any,
-    ) -> Result<UpdatedState, Ics02Error> {
+    ) -> Result<UpdatedState, ClientError> {
         fn maybe_consensus_state(
             ctx: &dyn ClientReader,
             client_id: &ClientId,
             height: Height,
-        ) -> Result<Option<Box<dyn ConsensusState>>, Ics02Error> {
+        ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
             match ctx.consensus_state(client_id, height) {
                 Ok(cs) => Ok(Some(cs)),
                 Err(e) => match e {
-                    Ics02Error::ConsensusStateNotFound {
+                    ClientError::ConsensusStateNotFound {
                         client_id: _,
                         height: _,
                     } => Ok(None),
@@ -358,7 +358,7 @@ impl Ics2ClientState for ClientState {
         let header = TmHeader::try_from(header)?;
 
         if header.height().revision_number() != client_state.chain_id().version() {
-            return Err(Ics02Error::ClientSpecific {
+            return Err(ClientError::ClientSpecific {
                 description: Error::MismatchedRevisions {
                     current_revision: client_state.chain_id().version(),
                     update_revision: header.height().revision_number(),
@@ -400,7 +400,7 @@ impl Ics2ClientState for ClientState {
                 .trusted_height
                 .revision_height()
                 .try_into()
-                .map_err(|_| Ics02Error::ClientSpecific {
+                .map_err(|_| ClientError::ClientSpecific {
                     description: Error::InvalidHeaderHeight {
                         height: header.trusted_height.revision_height(),
                     }
@@ -464,7 +464,7 @@ impl Ics2ClientState for ClientState {
                 // New (untrusted) header timestamp cannot occur after next
                 // consensus state's height
                 if header.signed_header.header().time > next_cs.timestamp {
-                    return Err(Ics02Error::ClientSpecific {
+                    return Err(ClientError::ClientSpecific {
                         description: Error::HeaderTimestampTooHigh {
                             actual: header.signed_header.header().time.to_string(),
                             max: next_cs.timestamp.to_string(),
@@ -487,7 +487,7 @@ impl Ics2ClientState for ClientState {
                 // New (untrusted) header timestamp cannot occur before the
                 // previous consensus state's height
                 if header.signed_header.header().time < prev_cs.timestamp {
-                    return Err(Ics02Error::ClientSpecific {
+                    return Err(ClientError::ClientSpecific {
                         description: Error::HeaderTimestampTooLow {
                             actual: header.signed_header.header().time.to_string(),
                             min: prev_cs.timestamp.to_string(),
@@ -509,16 +509,16 @@ impl Ics2ClientState for ClientState {
         ctx: &dyn ValidationContext,
         client_id: ClientId,
         header: Any,
-    ) -> Result<UpdatedState, Ics02Error> {
+    ) -> Result<UpdatedState, ClientError> {
         fn maybe_consensus_state(
             ctx: &dyn ValidationContext,
             client_id: &ClientId,
             height: Height,
-        ) -> Result<Option<Box<dyn ConsensusState>>, Ics02Error> {
+        ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
             match ctx.consensus_state(client_id, height) {
                 Ok(cs) => Ok(Some(cs)),
                 Err(e) => match e {
-                    Ics02Error::ConsensusStateNotFound {
+                    ClientError::ConsensusStateNotFound {
                         client_id: _,
                         height: _,
                     } => Ok(None),
@@ -531,7 +531,7 @@ impl Ics2ClientState for ClientState {
         let header = TmHeader::try_from(header)?;
 
         if header.height().revision_number() != client_state.chain_id().version() {
-            return Err(Ics02Error::ClientSpecific {
+            return Err(ClientError::ClientSpecific {
                 description: Error::MismatchedRevisions {
                     current_revision: client_state.chain_id().version(),
                     update_revision: header.height().revision_number(),
@@ -573,7 +573,7 @@ impl Ics2ClientState for ClientState {
                 .trusted_height
                 .revision_height()
                 .try_into()
-                .map_err(|_| Ics02Error::ClientSpecific {
+                .map_err(|_| ClientError::ClientSpecific {
                     description: Error::InvalidHeaderHeight {
                         height: header.trusted_height.revision_height(),
                     }
@@ -637,7 +637,7 @@ impl Ics2ClientState for ClientState {
                 // New (untrusted) header timestamp cannot occur after next
                 // consensus state's height
                 if header.signed_header.header().time > next_cs.timestamp {
-                    return Err(Ics02Error::ClientSpecific {
+                    return Err(ClientError::ClientSpecific {
                         description: Error::HeaderTimestampTooHigh {
                             actual: header.signed_header.header().time.to_string(),
                             max: next_cs.timestamp.to_string(),
@@ -660,7 +660,7 @@ impl Ics2ClientState for ClientState {
                 // New (untrusted) header timestamp cannot occur before the
                 // previous consensus state's height
                 if header.signed_header.header().time < prev_cs.timestamp {
-                    return Err(Ics02Error::ClientSpecific {
+                    return Err(ClientError::ClientSpecific {
                         description: Error::HeaderTimestampTooLow {
                             actual: header.signed_header.header().time.to_string(),
                             min: prev_cs.timestamp.to_string(),
@@ -682,7 +682,7 @@ impl Ics2ClientState for ClientState {
         _consensus_state: Any,
         _proof_upgrade_client: RawMerkleProof,
         _proof_upgrade_consensus_state: RawMerkleProof,
-    ) -> Result<UpdatedState, Ics02Error> {
+    ) -> Result<UpdatedState, ClientError> {
         unimplemented!()
     }
 
@@ -695,7 +695,7 @@ impl Ics2ClientState for ClientState {
         client_id: &ClientId,
         consensus_height: Height,
         expected_consensus_state: &dyn ConsensusState,
-    ) -> Result<(), Ics02Error> {
+    ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
 
@@ -706,7 +706,7 @@ impl Ics2ClientState for ClientState {
         };
         let value = expected_consensus_state
             .encode_vec()
-            .map_err(Ics02Error::InvalidAnyConsensusState)?;
+            .map_err(ClientError::InvalidAnyConsensusState)?;
 
         verify_membership(client_state, prefix, proof, root, path, value)
     }
@@ -719,14 +719,14 @@ impl Ics2ClientState for ClientState {
         root: &CommitmentRoot,
         connection_id: &ConnectionId,
         expected_connection_end: &ConnectionEnd,
-    ) -> Result<(), Ics02Error> {
+    ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
 
         let path = ConnectionsPath(connection_id.clone());
         let value = expected_connection_end
             .encode_vec()
-            .map_err(Ics02Error::InvalidConnectionEnd)?;
+            .map_err(ClientError::InvalidConnectionEnd)?;
         verify_membership(client_state, prefix, proof, root, path, value)
     }
 
@@ -739,14 +739,14 @@ impl Ics2ClientState for ClientState {
         port_id: &PortId,
         channel_id: &ChannelId,
         expected_channel_end: &crate::core::ics04_channel::channel::ChannelEnd,
-    ) -> Result<(), Ics02Error> {
+    ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
 
         let path = ChannelEndsPath(port_id.clone(), channel_id.clone());
         let value = expected_channel_end
             .encode_vec()
-            .map_err(Ics02Error::InvalidChannelEnd)?;
+            .map_err(ClientError::InvalidChannelEnd)?;
         verify_membership(client_state, prefix, proof, root, path, value)
     }
 
@@ -758,7 +758,7 @@ impl Ics2ClientState for ClientState {
         root: &CommitmentRoot,
         client_id: &ClientId,
         expected_client_state: Any,
-    ) -> Result<(), Ics02Error> {
+    ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
 
@@ -778,7 +778,7 @@ impl Ics2ClientState for ClientState {
         channel_id: &ChannelId,
         sequence: Sequence,
         commitment: PacketCommitment,
-    ) -> Result<(), Ics02Error> {
+    ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
         verify_delay_passed(ctx, height, connection_end)?;
@@ -810,7 +810,7 @@ impl Ics2ClientState for ClientState {
         channel_id: &ChannelId,
         sequence: Sequence,
         ack_commitment: AcknowledgementCommitment,
-    ) -> Result<(), Ics02Error> {
+    ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
         verify_delay_passed(ctx, height, connection_end)?;
@@ -840,7 +840,7 @@ impl Ics2ClientState for ClientState {
         port_id: &PortId,
         channel_id: &ChannelId,
         sequence: Sequence,
-    ) -> Result<(), Ics02Error> {
+    ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
         verify_delay_passed(ctx, height, connection_end)?;
@@ -872,7 +872,7 @@ impl Ics2ClientState for ClientState {
         port_id: &PortId,
         channel_id: &ChannelId,
         sequence: Sequence,
-    ) -> Result<(), Ics02Error> {
+    ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
         verify_delay_passed(ctx, height, connection_end)?;
@@ -899,10 +899,10 @@ fn verify_membership(
     root: &CommitmentRoot,
     path: impl Into<Path>,
     value: Vec<u8>,
-) -> Result<(), Ics02Error> {
+) -> Result<(), ClientError> {
     let merkle_path = apply_prefix(prefix, vec![path.into().to_string()]);
     let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
-        .map_err(Ics02Error::InvalidCommitmentProof)?
+        .map_err(ClientError::InvalidCommitmentProof)?
         .into();
 
     merkle_proof
@@ -913,7 +913,7 @@ fn verify_membership(
             value,
             0,
         )
-        .map_err(Ics02Error::Ics23Verification)
+        .map_err(ClientError::Ics23Verification)
 }
 
 fn verify_non_membership(
@@ -922,26 +922,26 @@ fn verify_non_membership(
     proof: &CommitmentProofBytes,
     root: &CommitmentRoot,
     path: impl Into<Path>,
-) -> Result<(), Ics02Error> {
+) -> Result<(), ClientError> {
     let merkle_path = apply_prefix(prefix, vec![path.into().to_string()]);
     let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
-        .map_err(Ics02Error::InvalidCommitmentProof)?
+        .map_err(ClientError::InvalidCommitmentProof)?
         .into();
 
     merkle_proof
         .verify_non_membership(&client_state.proof_specs, root.clone().into(), merkle_path)
-        .map_err(Ics02Error::Ics23Verification)
+        .map_err(ClientError::Ics23Verification)
 }
 
 fn verify_delay_passed(
     ctx: &dyn ChannelReader,
     height: Height,
     connection_end: &ConnectionEnd,
-) -> Result<(), Ics02Error> {
-    let current_timestamp = ctx.host_timestamp().map_err(|e| Ics02Error::Other {
+) -> Result<(), ClientError> {
+    let current_timestamp = ctx.host_timestamp().map_err(|e| ClientError::Other {
         description: e.to_string(),
     })?;
-    let current_height = ctx.host_height().map_err(|e| Ics02Error::Other {
+    let current_height = ctx.host_height().map_err(|e| ClientError::Other {
         description: e.to_string(),
     })?;
 
@@ -973,18 +973,18 @@ fn verify_delay_passed(
     .map_err(|e| e.into())
 }
 
-fn downcast_tm_client_state(cs: &dyn Ics2ClientState) -> Result<&ClientState, Ics02Error> {
+fn downcast_tm_client_state(cs: &dyn Ics2ClientState) -> Result<&ClientState, ClientError> {
     cs.as_any()
         .downcast_ref::<ClientState>()
-        .ok_or_else(|| Ics02Error::ClientArgsTypeMismatch {
+        .ok_or_else(|| ClientError::ClientArgsTypeMismatch {
             client_type: tm_client_type(),
         })
 }
 
-fn downcast_tm_consensus_state(cs: &dyn ConsensusState) -> Result<TmConsensusState, Ics02Error> {
+fn downcast_tm_consensus_state(cs: &dyn ConsensusState) -> Result<TmConsensusState, ClientError> {
     cs.as_any()
         .downcast_ref::<TmConsensusState>()
-        .ok_or_else(|| Ics02Error::ClientArgsTypeMismatch {
+        .ok_or_else(|| ClientError::ClientArgsTypeMismatch {
             client_type: tm_client_type(),
         })
         .map(Clone::clone)
@@ -1093,7 +1093,7 @@ impl From<ClientState> for RawTmClientState {
 impl Protobuf<Any> for ClientState {}
 
 impl TryFrom<Any> for ClientState {
-    type Error = Ics02Error;
+    type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         use bytes::Buf;
@@ -1109,7 +1109,7 @@ impl TryFrom<Any> for ClientState {
             TENDERMINT_CLIENT_STATE_TYPE_URL => {
                 decode_client_state(raw.value.deref()).map_err(Into::into)
             }
-            _ => Err(Ics02Error::UnknownClientStateType {
+            _ => Err(ClientError::UnknownClientStateType {
                 client_state_type: raw.type_url,
             }),
         }

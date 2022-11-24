@@ -10,7 +10,7 @@ use crate::applications::transfer::context::{
 use crate::applications::transfer::{error::Error as Ics20Error, PrefixedCoin};
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::error::Error as Ics02Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::error::Error as Ics03Error;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order};
@@ -247,11 +247,11 @@ impl SendPacketReader for DummyTransferModule {
                 client_record
                     .client_state
                     .clone()
-                    .ok_or_else(|| Ics02Error::ClientNotFound {
+                    .ok_or_else(|| ClientError::ClientNotFound {
                         client_id: client_id.clone(),
                     })
             }
-            None => Err(Ics02Error::ClientNotFound {
+            None => Err(ClientError::ClientNotFound {
                 client_id: client_id.clone(),
             }),
         }
@@ -266,12 +266,12 @@ impl SendPacketReader for DummyTransferModule {
         match self.ibc_store.lock().unwrap().clients.get(client_id) {
             Some(client_record) => match client_record.consensus_states.get(&height) {
                 Some(consensus_state) => Ok(consensus_state.clone()),
-                None => Err(Ics02Error::ConsensusStateNotFound {
+                None => Err(ClientError::ConsensusStateNotFound {
                     client_id: client_id.clone(),
                     height,
                 }),
             },
-            None => Err(Ics02Error::ConsensusStateNotFound {
+            None => Err(ClientError::ConsensusStateNotFound {
                 client_id: client_id.clone(),
                 height,
             }),

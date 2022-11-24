@@ -8,7 +8,7 @@ use displaydoc::Display;
 #[derive(Debug, Display)]
 pub enum Error {
     /// ICS02 client error
-    Client(ics02_client::error::Error),
+    Client(ics02_client::error::ClientError),
     /// ICS03 connection error
     Connection(ics03_connection::error::Error),
     /// ICS04 channel error

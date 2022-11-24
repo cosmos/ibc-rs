@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-use crate::core::ics02_client::error::Error as Ics02Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::timestamp::{Timestamp, TimestampOverflowError};
@@ -171,7 +171,7 @@ pub enum VerificationError {
     InsufficientOverlap { q1: u64, q2: u64 },
 }
 
-impl From<Error> for Ics02Error {
+impl From<Error> for ClientError {
     fn from(e: Error) -> Self {
         Self::ClientSpecific {
             description: e.to_string(),

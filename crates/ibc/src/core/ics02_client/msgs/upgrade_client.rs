@@ -9,7 +9,7 @@ use ibc_proto::ibc::core::client::v1::MsgUpgradeClient as RawMsgUpgradeClient;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
 use ibc_proto::protobuf::Protobuf;
 
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics23_commitment::error::Error as Ics23Error;
 use crate::core::ics24_host::identifier::ClientId;
@@ -83,30 +83,34 @@ impl From<MsgUpgradeClient> for RawMsgUpgradeClient {
 }
 
 impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
-    type Error = Error;
+    type Error = ClientError;
 
     fn try_from(proto_msg: RawMsgUpgradeClient) -> Result<Self, Self::Error> {
-        let raw_client_state = proto_msg.client_state.ok_or(Error::MissingRawClientState)?;
+        let raw_client_state = proto_msg
+            .client_state
+            .ok_or(ClientError::MissingRawClientState)?;
 
         let raw_consensus_state = proto_msg
             .consensus_state
-            .ok_or(Error::MissingRawConsensusState)?;
+            .ok_or(ClientError::MissingRawConsensusState)?;
 
         let c_bytes = CommitmentProofBytes::try_from(proto_msg.proof_upgrade_client)
-            .map_err(|_| Error::InvalidUpgradeClientProof(Ics23Error::EmptyMerkleProof))?;
+            .map_err(|_| ClientError::InvalidUpgradeClientProof(Ics23Error::EmptyMerkleProof))?;
         let cs_bytes = CommitmentProofBytes::try_from(proto_msg.proof_upgrade_consensus_state)
-            .map_err(|_| Error::InvalidUpgradeConsensusStateProof(Ics23Error::EmptyMerkleProof))?;
+            .map_err(|_| {
+                ClientError::InvalidUpgradeConsensusStateProof(Ics23Error::EmptyMerkleProof)
+            })?;
 
         Ok(MsgUpgradeClient {
             client_id: ClientId::from_str(&proto_msg.client_id)
-                .map_err(Error::InvalidClientIdentifier)?,
+                .map_err(ClientError::InvalidClientIdentifier)?,
             client_state: raw_client_state,
             consensus_state: raw_consensus_state,
             proof_upgrade_client: RawMerkleProof::try_from(c_bytes)
-                .map_err(Error::InvalidUpgradeClientProof)?,
+                .map_err(ClientError::InvalidUpgradeClientProof)?,
             proof_upgrade_consensus_state: RawMerkleProof::try_from(cs_bytes)
-                .map_err(Error::InvalidUpgradeConsensusStateProof)?,
-            signer: proto_msg.signer.parse().map_err(Error::Signer)?,
+                .map_err(ClientError::InvalidUpgradeConsensusStateProof)?,
+            signer: proto_msg.signer.parse().map_err(ClientError::Signer)?,
         })
     }
 }

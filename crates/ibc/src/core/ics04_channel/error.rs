@@ -85,10 +85,10 @@ pub enum Error {
     /// Verification fails for the packet with the sequence number `{sequence}`, error(`{ics02_error}`)
     PacketVerificationFailed {
         sequence: Sequence,
-        ics02_error: client_error::Error,
+        ics02_error: client_error::ClientError,
     },
     /// Error verifying channel state
-    VerifyChannelFailed(client_error::Error),
+    VerifyChannelFailed(client_error::ClientError),
     /// Acknowledgment cannot be empty
     InvalidAcknowledgement,
     /// Packet acknowledgement exists for the packet with the sequence `{sequence}`

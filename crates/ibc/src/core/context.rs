@@ -17,7 +17,7 @@ use super::ics24_host::path::{
 use super::ics26_routing::msgs::MsgEnvelope;
 use super::{
     ics02_client::{
-        client_state::ClientState, consensus_state::ConsensusState, error::Error as ClientError,
+        client_state::ClientState, consensus_state::ConsensusState, error::ClientError,
     },
     ics03_connection::{
         connection::ConnectionEnd,
