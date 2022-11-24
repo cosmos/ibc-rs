@@ -37,28 +37,6 @@ pub fn process(
         return Err(Error::client_frozen(client_id));
     }
 
-    // Read consensus state from the host chain store.
-    let latest_consensus_state = ctx
-        .consensus_state(&client_id, client_state.latest_height())
-        .map_err(|_| {
-            Error::consensus_state_not_found(client_id.clone(), client_state.latest_height())
-        })?;
-
-    let now = ClientReader::host_timestamp(ctx)?;
-    let duration = now
-        .duration_since(&latest_consensus_state.timestamp())
-        .ok_or_else(|| {
-            Error::invalid_consensus_state_timestamp(latest_consensus_state.timestamp(), now)
-        })?;
-
-    if client_state.expired(duration) {
-        return Err(Error::client_expired(
-            client_id,
-            latest_consensus_state.timestamp(),
-            now,
-        ));
-    }
-
     let client_state = client_state
         .check_misbehaviour_and_update_state(ctx, client_id.clone(), misbehaviour)
         .map_err(|e| Error::misbehaviour_handling_failure(e.to_string()))?;
