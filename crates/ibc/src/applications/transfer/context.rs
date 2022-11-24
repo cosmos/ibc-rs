@@ -11,7 +11,7 @@ use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::commitment::PacketCommitment;
 use crate::core::ics04_channel::context::{ChannelKeeper, SendPacketReader};
-use crate::core::ics04_channel::error::Error as Ics04Error;
+use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::handler::send_packet::SendPacketResult;
 use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as GenericAcknowledgement;
@@ -23,7 +23,7 @@ use crate::prelude::*;
 use crate::signer::Signer;
 
 pub trait TokenTransferKeeper: BankKeeper {
-    fn store_send_packet_result(&mut self, result: SendPacketResult) -> Result<(), Ics04Error> {
+    fn store_send_packet_result(&mut self, result: SendPacketResult) -> Result<(), PacketError> {
         self.store_next_sequence_send(
             result.port_id.clone(),
             result.channel_id.clone(),
@@ -45,14 +45,14 @@ pub trait TokenTransferKeeper: BankKeeper {
         channel_id: ChannelId,
         sequence: Sequence,
         commitment: PacketCommitment,
-    ) -> Result<(), Ics04Error>;
+    ) -> Result<(), PacketError>;
 
     fn store_next_sequence_send(
         &mut self,
         port_id: PortId,
         channel_id: ChannelId,
         seq: Sequence,
-    ) -> Result<(), Ics04Error>;
+    ) -> Result<(), PacketError>;
 }
 
 pub trait TokenTransferReader: SendPacketReader {
@@ -91,7 +91,7 @@ where
         channel_id: ChannelId,
         sequence: Sequence,
         commitment: PacketCommitment,
-    ) -> Result<(), Ics04Error> {
+    ) -> Result<(), PacketError> {
         ChannelKeeper::store_packet_commitment(self, port_id, channel_id, sequence, commitment)
     }
 
@@ -100,7 +100,7 @@ where
         port_id: PortId,
         channel_id: ChannelId,
         seq: Sequence,
-    ) -> Result<(), Ics04Error> {
+    ) -> Result<(), PacketError> {
         ChannelKeeper::store_next_sequence_send(self, port_id, channel_id, seq)
     }
 }

@@ -19,7 +19,7 @@ use crate::signer::SignerError;
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Error::ChannelError(e) => Some(e),
+            Error::PacketError(e) => Some(e),
             Error::InvalidPortId {
                 validation_error: e,
                 ..
@@ -51,8 +51,8 @@ impl std::error::Error for Error {
 pub enum Error {
     /// unrecognized ICS-20 transfer message type URL `{url}`
     UnknowMessageTypeUrl { url: String },
-    /// ICS04 channel error
-    ChannelError(channel_error::Error),
+    /// ICS04 Packet error
+    PacketError(channel_error::PacketError),
     /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
     DestinationChannelNotFound {
         port_id: PortId,

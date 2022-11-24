@@ -3,7 +3,7 @@ use crate::prelude::*;
 use ibc_proto::ibc::core::channel::v1::MsgTimeoutOnClose as RawMsgTimeoutOnClose;
 use ibc_proto::protobuf::Protobuf;
 
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::proofs::Proofs;
 use crate::signer::Signer;
@@ -39,7 +39,7 @@ impl MsgTimeoutOnClose {
 }
 
 impl Msg for MsgTimeoutOnClose {
-    type ValidationError = Error;
+    type ValidationError = PacketError;
     type Raw = RawMsgTimeoutOnClose;
 
     fn route(&self) -> String {
@@ -54,35 +54,38 @@ impl Msg for MsgTimeoutOnClose {
 impl Protobuf<RawMsgTimeoutOnClose> for MsgTimeoutOnClose {}
 
 impl TryFrom<RawMsgTimeoutOnClose> for MsgTimeoutOnClose {
-    type Error = Error;
+    type Error = PacketError;
 
     fn try_from(raw_msg: RawMsgTimeoutOnClose) -> Result<Self, Self::Error> {
         let proofs = Proofs::new(
             raw_msg
                 .proof_unreceived
                 .try_into()
-                .map_err(Error::InvalidProof)?,
+                .map_err(PacketError::InvalidProof)?,
             None,
             None,
             Some(
                 raw_msg
                     .proof_close
                     .try_into()
-                    .map_err(Error::InvalidProof)?,
+                    .map_err(PacketError::InvalidProof)?,
             ),
             raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(Error::MissingHeight)?,
+                .ok_or(PacketError::MissingHeight)?,
         )
-        .map_err(Error::InvalidProof)?;
+        .map_err(PacketError::InvalidProof)?;
 
         // TODO: Domain type verification for the next sequence: this should probably be > 0.
 
         Ok(MsgTimeoutOnClose {
-            packet: raw_msg.packet.ok_or(Error::MissingPacket)?.try_into()?,
+            packet: raw_msg
+                .packet
+                .ok_or(PacketError::MissingPacket)?
+                .try_into()?,
             next_sequence_recv: Sequence::from(raw_msg.next_sequence_recv),
-            signer: raw_msg.signer.parse().map_err(Error::Signer)?,
+            signer: raw_msg.signer.parse().map_err(PacketError::Signer)?,
             proofs,
         })
     }

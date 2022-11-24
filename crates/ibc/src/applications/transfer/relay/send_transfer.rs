@@ -28,7 +28,7 @@ where
 
     let source_channel_end = ctx
         .channel_end(&msg.source_port, &msg.source_channel)
-        .map_err(Error::ChannelError)?;
+        .map_err(Error::PacketError)?;
 
     let destination_port = source_channel_end.counterparty().port_id().clone();
     let destination_channel = source_channel_end
@@ -43,7 +43,7 @@ where
     // get the next sequence
     let sequence = ctx
         .get_next_sequence_send(&msg.source_port, &msg.source_channel)
-        .map_err(Error::ChannelError)?;
+        .map_err(Error::PacketError)?;
 
     let token = msg.token.try_into().map_err(|_| Error::InvalidToken)?;
     let denom = token.denom.clone();
@@ -90,10 +90,10 @@ where
         result,
         log,
         events,
-    } = send_packet(ctx, packet).map_err(Error::ChannelError)?;
+    } = send_packet(ctx, packet).map_err(Error::PacketError)?;
 
     ctx.store_send_packet_result(result)
-        .map_err(Error::ChannelError)?;
+        .map_err(Error::PacketError)?;
 
     output.merge_output(
         HandlerOutput::builder()

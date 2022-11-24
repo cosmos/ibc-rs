@@ -30,7 +30,7 @@ use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
-use crate::core::ics04_channel::error::Error as Ics04Error;
+use crate::core::ics04_channel::error::{Error as Ics04Error, PacketError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics05_port::context::PortReader;
 use crate::core::ics05_port::error::Error as Ics05Error;
@@ -724,7 +724,7 @@ impl ChannelReader for MockContext {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<Sequence, Ics04Error> {
+    ) -> Result<Sequence, PacketError> {
         match self
             .ibc_store
             .lock()
@@ -734,7 +734,7 @@ impl ChannelReader for MockContext {
             .and_then(|map| map.get(channel_id))
         {
             Some(sequence) => Ok(*sequence),
-            None => Err(Ics04Error::MissingNextSendSeq {
+            None => Err(PacketError::MissingNextSendSeq {
                 port_id: port_id.clone(),
                 channel_id: channel_id.clone(),
             }),
@@ -745,7 +745,7 @@ impl ChannelReader for MockContext {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<Sequence, Ics04Error> {
+    ) -> Result<Sequence, PacketError> {
         match self
             .ibc_store
             .lock()
@@ -755,7 +755,7 @@ impl ChannelReader for MockContext {
             .and_then(|map| map.get(channel_id))
         {
             Some(sequence) => Ok(*sequence),
-            None => Err(Ics04Error::MissingNextRecvSeq {
+            None => Err(PacketError::MissingNextRecvSeq {
                 port_id: port_id.clone(),
                 channel_id: channel_id.clone(),
             }),
@@ -766,7 +766,7 @@ impl ChannelReader for MockContext {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<Sequence, Ics04Error> {
+    ) -> Result<Sequence, PacketError> {
         match self
             .ibc_store
             .lock()
@@ -776,7 +776,7 @@ impl ChannelReader for MockContext {
             .and_then(|map| map.get(channel_id))
         {
             Some(sequence) => Ok(*sequence),
-            None => Err(Ics04Error::MissingNextAckSeq {
+            None => Err(PacketError::MissingNextAckSeq {
                 port_id: port_id.clone(),
                 channel_id: channel_id.clone(),
             }),
@@ -788,7 +788,7 @@ impl ChannelReader for MockContext {
         port_id: &PortId,
         channel_id: &ChannelId,
         seq: Sequence,
-    ) -> Result<PacketCommitment, Ics04Error> {
+    ) -> Result<PacketCommitment, PacketError> {
         match self
             .ibc_store
             .lock()
@@ -799,7 +799,7 @@ impl ChannelReader for MockContext {
             .and_then(|map| map.get(&seq))
         {
             Some(commitment) => Ok(commitment.clone()),
-            None => Err(Ics04Error::PacketCommitmentNotFound { sequence: seq }),
+            None => Err(PacketError::PacketCommitmentNotFound { sequence: seq }),
         }
     }
 
@@ -808,7 +808,7 @@ impl ChannelReader for MockContext {
         port_id: &PortId,
         channel_id: &ChannelId,
         seq: Sequence,
-    ) -> Result<Receipt, Ics04Error> {
+    ) -> Result<Receipt, PacketError> {
         match self
             .ibc_store
             .lock()
@@ -819,7 +819,7 @@ impl ChannelReader for MockContext {
             .and_then(|map| map.get(&seq))
         {
             Some(receipt) => Ok(receipt.clone()),
-            None => Err(Ics04Error::PacketReceiptNotFound { sequence: seq }),
+            None => Err(PacketError::PacketReceiptNotFound { sequence: seq }),
         }
     }
 
@@ -828,7 +828,7 @@ impl ChannelReader for MockContext {
         port_id: &PortId,
         channel_id: &ChannelId,
         seq: Sequence,
-    ) -> Result<AcknowledgementCommitment, Ics04Error> {
+    ) -> Result<AcknowledgementCommitment, PacketError> {
         match self
             .ibc_store
             .lock()
@@ -839,7 +839,7 @@ impl ChannelReader for MockContext {
             .and_then(|map| map.get(&seq))
         {
             Some(ack) => Ok(ack.clone()),
-            None => Err(Ics04Error::PacketAcknowledgementNotFound { sequence: seq }),
+            None => Err(PacketError::PacketAcknowledgementNotFound { sequence: seq }),
         }
     }
 
@@ -922,7 +922,7 @@ impl ChannelKeeper for MockContext {
         channel_id: ChannelId,
         seq: Sequence,
         commitment: PacketCommitment,
-    ) -> Result<(), Ics04Error> {
+    ) -> Result<(), PacketError> {
         self.ibc_store
             .lock()
             .unwrap()
@@ -941,7 +941,7 @@ impl ChannelKeeper for MockContext {
         channel_id: ChannelId,
         seq: Sequence,
         ack_commitment: AcknowledgementCommitment,
-    ) -> Result<(), Ics04Error> {
+    ) -> Result<(), PacketError> {
         self.ibc_store
             .lock()
             .unwrap()
@@ -959,7 +959,7 @@ impl ChannelKeeper for MockContext {
         port_id: &PortId,
         channel_id: &ChannelId,
         seq: Sequence,
-    ) -> Result<(), Ics04Error> {
+    ) -> Result<(), PacketError> {
         self.ibc_store
             .lock()
             .unwrap()
@@ -1007,7 +1007,7 @@ impl ChannelKeeper for MockContext {
         port_id: PortId,
         channel_id: ChannelId,
         seq: Sequence,
-    ) -> Result<(), Ics04Error> {
+    ) -> Result<(), PacketError> {
         self.ibc_store
             .lock()
             .unwrap()
@@ -1023,7 +1023,7 @@ impl ChannelKeeper for MockContext {
         port_id: PortId,
         channel_id: ChannelId,
         seq: Sequence,
-    ) -> Result<(), Ics04Error> {
+    ) -> Result<(), PacketError> {
         self.ibc_store
             .lock()
             .unwrap()
@@ -1039,7 +1039,7 @@ impl ChannelKeeper for MockContext {
         port_id: PortId,
         channel_id: ChannelId,
         seq: Sequence,
-    ) -> Result<(), Ics04Error> {
+    ) -> Result<(), PacketError> {
         self.ibc_store
             .lock()
             .unwrap()
@@ -1059,7 +1059,7 @@ impl ChannelKeeper for MockContext {
         port_id: &PortId,
         channel_id: &ChannelId,
         seq: Sequence,
-    ) -> Result<(), Ics04Error> {
+    ) -> Result<(), PacketError> {
         self.ibc_store
             .lock()
             .unwrap()
@@ -1076,7 +1076,7 @@ impl ChannelKeeper for MockContext {
         channel_id: ChannelId,
         seq: Sequence,
         receipt: Receipt,
-    ) -> Result<(), Ics04Error> {
+    ) -> Result<(), PacketError> {
         self.ibc_store
             .lock()
             .unwrap()

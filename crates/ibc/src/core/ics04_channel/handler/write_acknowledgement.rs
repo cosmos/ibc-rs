@@ -3,7 +3,7 @@ use crate::core::ics04_channel::commitment::AcknowledgementCommitment;
 use crate::core::ics04_channel::events::WriteAcknowledgement;
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::packet::{Packet, PacketResult, Sequence};
-use crate::core::ics04_channel::{context::ChannelReader, error::Error};
+use crate::core::ics04_channel::{context::ChannelReader, error::PacketError};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::prelude::*;
 use crate::{
@@ -23,14 +23,15 @@ pub fn process<Ctx: ChannelReader>(
     ctx: &Ctx,
     packet: Packet,
     ack: Acknowledgement,
-) -> HandlerResult<PacketResult, Error> {
+) -> HandlerResult<PacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
-    let dest_channel_end =
-        ctx.channel_end(&packet.destination_port, &packet.destination_channel)?;
+    let dest_channel_end = ctx
+        .channel_end(&packet.destination_port, &packet.destination_channel)
+        .map_err(PacketError::Channel)?;
 
     if !dest_channel_end.state_matches(&State::Open) {
-        return Err(Error::InvalidChannelState {
+        return Err(PacketError::InvalidChannelState {
             channel_id: packet.source_channel,
             state: dest_channel_end.state,
         });
@@ -45,13 +46,13 @@ pub fn process<Ctx: ChannelReader>(
         packet.sequence,
     ) {
         Ok(_) => {
-            return Err(Error::AcknowledgementExists {
+            return Err(PacketError::AcknowledgementExists {
                 sequence: packet.sequence,
             })
         }
         Err(e)
             if e.to_string()
-                == Error::PacketAcknowledgementNotFound {
+                == PacketError::PacketAcknowledgementNotFound {
                     sequence: packet.sequence,
                 }
                 .to_string() => {}
@@ -59,7 +60,7 @@ pub fn process<Ctx: ChannelReader>(
     }
 
     if ack.is_empty() {
-        return Err(Error::InvalidAcknowledgement);
+        return Err(PacketError::InvalidAcknowledgement);
     }
 
     let result = PacketResult::WriteAck(WriteAckPacketResult {

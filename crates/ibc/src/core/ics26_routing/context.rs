@@ -14,7 +14,7 @@ use crate::core::ics02_client::context::{ClientKeeper, ClientReader};
 use crate::core::ics03_connection::context::{ConnectionKeeper, ConnectionReader};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::{Error, PacketError};
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as GenericAcknowledgement;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
@@ -169,7 +169,7 @@ pub trait Module: Send + Sync + AsAnyMut {
         _packet: &Packet,
         _acknowledgement: &GenericAcknowledgement,
         _relayer: &Signer,
-    ) -> Result<(), Error> {
+    ) -> Result<(), PacketError> {
         Ok(())
     }
 
@@ -178,7 +178,7 @@ pub trait Module: Send + Sync + AsAnyMut {
         _output: &mut ModuleOutputBuilder,
         _packet: &Packet,
         _relayer: &Signer,
-    ) -> Result<(), Error> {
+    ) -> Result<(), PacketError> {
         Ok(())
     }
 }

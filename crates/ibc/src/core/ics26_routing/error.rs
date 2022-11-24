@@ -13,6 +13,8 @@ pub enum Error {
     Connection(ics03_connection::error::ConnectionError),
     /// ICS04 channel error
     Channel(ics04_channel::error::Error),
+    /// ICS04 Packet error
+    Packet(ics04_channel::error::PacketError),
     /// unknown type URL `{url}`
     UnknownMessageTypeUrl { url: String },
     /// the message is malformed and cannot be decoded
@@ -28,6 +30,7 @@ impl std::error::Error for Error {
             Error::Channel(e) => Some(e),
             Error::UnknownMessageTypeUrl { .. } => None,
             Error::MalformedMessageBytes(e) => Some(e),
+            Error::Packet(e) => Some(e),
         }
     }
 }

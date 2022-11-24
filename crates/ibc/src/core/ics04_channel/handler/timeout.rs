@@ -6,7 +6,7 @@ use crate::core::ics04_channel::handler::verify::{
 };
 use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics04_channel::packet::{PacketResult, Sequence};
-use crate::core::ics04_channel::{context::ChannelReader, error::Error};
+use crate::core::ics04_channel::{context::ChannelReader, error::PacketError};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
@@ -29,15 +29,17 @@ pub struct TimeoutPacketResult {
 pub fn process<Ctx: ChannelReader>(
     ctx: &Ctx,
     msg: &MsgTimeout,
-) -> HandlerResult<PacketResult, Error> {
+) -> HandlerResult<PacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
     let packet = &msg.packet;
 
-    let mut source_channel_end = ctx.channel_end(&packet.source_port, &packet.source_channel)?;
+    let mut source_channel_end = ctx
+        .channel_end(&packet.source_port, &packet.source_channel)
+        .map_err(PacketError::Channel)?;
 
     if !source_channel_end.state_matches(&State::Open) {
-        return Err(Error::ChannelClosed {
+        return Err(PacketError::ChannelClosed {
             channel_id: packet.source_channel.clone(),
         });
     }
@@ -48,14 +50,16 @@ pub fn process<Ctx: ChannelReader>(
     );
 
     if !source_channel_end.counterparty_matches(&counterparty) {
-        return Err(Error::InvalidPacketCounterparty {
+        return Err(PacketError::InvalidPacketCounterparty {
             port_id: packet.destination_port.clone(),
             channel_id: packet.destination_channel.clone(),
         });
     }
 
     let source_connection_id = source_channel_end.connection_hops()[0].clone();
-    let connection_end = ctx.connection_end(&source_connection_id)?;
+    let connection_end = ctx
+        .connection_end(&source_connection_id)
+        .map_err(PacketError::Channel)?;
 
     let client_id = connection_end.client_id().clone();
 
@@ -63,19 +67,21 @@ pub fn process<Ctx: ChannelReader>(
     let proof_height = msg.proofs.height();
 
     if packet.timeout_height.has_expired(proof_height) {
-        return Err(Error::PacketTimeoutHeightNotReached {
+        return Err(PacketError::PacketTimeoutHeightNotReached {
             timeout_height: packet.timeout_height,
             chain_height: proof_height,
         });
     }
 
-    let consensus_state = ctx.client_consensus_state(&client_id, proof_height)?;
+    let consensus_state = ctx
+        .client_consensus_state(&client_id, proof_height)
+        .map_err(PacketError::Channel)?;
 
     let proof_timestamp = consensus_state.timestamp();
 
     let packet_timestamp = packet.timeout_timestamp;
     if let Expiry::Expired = packet_timestamp.check_expiry(&proof_timestamp) {
-        return Err(Error::PacketTimeoutTimestampNotReached {
+        return Err(PacketError::PacketTimeoutTimestampNotReached {
             timeout_timestamp: packet_timestamp,
             chain_timestamp: proof_timestamp,
         });
@@ -91,14 +97,14 @@ pub fn process<Ctx: ChannelReader>(
         packet.timeout_timestamp,
     );
     if packet_commitment != expected_commitment {
-        return Err(Error::IncorrectPacketCommitment {
+        return Err(PacketError::IncorrectPacketCommitment {
             sequence: packet.sequence,
         });
     }
 
     let result = if source_channel_end.order_matches(&Order::Ordered) {
         if packet.sequence < msg.next_sequence_recv {
-            return Err(Error::InvalidPacketSequence {
+            return Err(PacketError::InvalidPacketSequence {
                 given_sequence: packet.sequence,
                 next_sequence: msg.next_sequence_recv,
             });
@@ -110,7 +116,8 @@ pub fn process<Ctx: ChannelReader>(
             packet.clone(),
             msg.next_sequence_recv,
             &msg.proofs,
-        )?;
+        )
+        .map_err(PacketError::Channel)?;
 
         source_channel_end.state = State::Closed;
         PacketResult::Timeout(TimeoutPacketResult {
@@ -126,7 +133,8 @@ pub fn process<Ctx: ChannelReader>(
             &connection_end,
             packet.clone(),
             &msg.proofs,
-        )?;
+        )
+        .map_err(PacketError::Channel)?;
 
         PacketResult::Timeout(TimeoutPacketResult {
             port_id: packet.source_port.clone(),

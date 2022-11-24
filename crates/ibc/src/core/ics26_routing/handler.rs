@@ -111,7 +111,7 @@ where
 
             // Apply any results to the host chain store.
             ctx.store_channel_result(channel_result)
-                .map_err(Error::Channel)?;
+                .map_err(Error::Packet)?;
 
             dispatch_output
                 .with_events(dispatch_events)
@@ -130,18 +130,18 @@ where
         PacketMsg(msg) => {
             let module_id = get_module_for_packet_msg(ctx, &msg).map_err(Error::Channel)?;
             let (mut handler_builder, packet_result) =
-                ics4_packet_msg_dispatcher(ctx, &msg).map_err(Error::Channel)?;
+                ics4_packet_msg_dispatcher(ctx, &msg).map_err(Error::Packet)?;
 
             if matches!(packet_result, PacketResult::Recv(RecvPacketResult::NoOp)) {
                 return Ok(handler_builder.with_result(()));
             }
 
             let cb_result = ics4_packet_callback(ctx, &module_id, &msg, &mut handler_builder);
-            cb_result.map_err(Error::Channel)?;
+            cb_result.map_err(Error::Packet)?;
 
             // Apply any results to the host chain store.
             ctx.store_packet_result(packet_result)
-                .map_err(Error::Channel)?;
+                .map_err(Error::Packet)?;
 
             handler_builder.with_result(())
         }

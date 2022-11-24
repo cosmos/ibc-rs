@@ -8,7 +8,7 @@ use crate::core::ics04_channel::handler::verify::{
 use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
 use crate::core::ics04_channel::packet::PacketResult;
 use crate::core::ics04_channel::{
-    context::ChannelReader, error::Error, handler::timeout::TimeoutPacketResult,
+    context::ChannelReader, error::PacketError, handler::timeout::TimeoutPacketResult,
 };
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
@@ -18,12 +18,14 @@ use crate::proofs::{ProofError, Proofs};
 pub fn process<Ctx: ChannelReader>(
     ctx: &Ctx,
     msg: &MsgTimeoutOnClose,
-) -> HandlerResult<PacketResult, Error> {
+) -> HandlerResult<PacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
     let packet = &msg.packet;
 
-    let source_channel_end = ctx.channel_end(&packet.source_port, &packet.source_channel)?;
+    let source_channel_end = ctx
+        .channel_end(&packet.source_port, &packet.source_channel)
+        .map_err(PacketError::Channel)?;
 
     let counterparty = Counterparty::new(
         packet.destination_port.clone(),
@@ -31,14 +33,16 @@ pub fn process<Ctx: ChannelReader>(
     );
 
     if !source_channel_end.counterparty_matches(&counterparty) {
-        return Err(Error::InvalidPacketCounterparty {
+        return Err(PacketError::InvalidPacketCounterparty {
             port_id: packet.destination_port.clone(),
             channel_id: packet.destination_channel.clone(),
         });
     }
 
     let source_connection_id = source_channel_end.connection_hops()[0].clone();
-    let connection_end = ctx.connection_end(&source_connection_id)?;
+    let connection_end = ctx
+        .connection_end(&source_connection_id)
+        .map_err(PacketError::Channel)?;
 
     //verify the packet was sent, check the store
     let packet_commitment =
@@ -50,7 +54,7 @@ pub fn process<Ctx: ChannelReader>(
         packet.timeout_timestamp,
     );
     if packet_commitment != expected_commitment {
-        return Err(Error::IncorrectPacketCommitment {
+        return Err(PacketError::IncorrectPacketCommitment {
             sequence: packet.sequence,
         });
     }
@@ -61,11 +65,12 @@ pub fn process<Ctx: ChannelReader>(
     );
 
     let counterparty = connection_end.counterparty();
-    let ccid = counterparty
-        .connection_id()
-        .ok_or(Error::UndefinedConnectionCounterparty {
-            connection_id: source_channel_end.connection_hops()[0].clone(),
-        })?;
+    let ccid =
+        counterparty
+            .connection_id()
+            .ok_or(PacketError::UndefinedConnectionCounterparty {
+                connection_id: source_channel_end.connection_hops()[0].clone(),
+            })?;
 
     let expected_connection_hops = vec![ccid.clone()];
 
@@ -80,10 +85,10 @@ pub fn process<Ctx: ChannelReader>(
     // The message's proofs have the channel proof as `other_proof`
     let proof_close = match msg.proofs.other_proof() {
         Some(p) => p.clone(),
-        None => return Err(Error::InvalidProof(ProofError::EmptyProof)),
+        None => return Err(PacketError::InvalidProof(ProofError::EmptyProof)),
     };
     let proofs = Proofs::new(proof_close, None, None, None, msg.proofs.height())
-        .map_err(Error::InvalidProof)?;
+        .map_err(PacketError::InvalidProof)?;
     verify_channel_proofs(
         ctx,
         msg.proofs.height(),
@@ -91,11 +96,12 @@ pub fn process<Ctx: ChannelReader>(
         &connection_end,
         &expected_channel_end,
         &proofs,
-    )?;
+    )
+    .map_err(PacketError::Channel)?;
 
     let result = if source_channel_end.order_matches(&Order::Ordered) {
         if packet.sequence < msg.next_sequence_recv {
-            return Err(Error::InvalidPacketSequence {
+            return Err(PacketError::InvalidPacketSequence {
                 given_sequence: packet.sequence,
                 next_sequence: msg.next_sequence_recv,
             });
@@ -107,7 +113,8 @@ pub fn process<Ctx: ChannelReader>(
             packet.clone(),
             msg.next_sequence_recv,
             &msg.proofs,
-        )?;
+        )
+        .map_err(PacketError::Channel)?;
 
         PacketResult::Timeout(TimeoutPacketResult {
             port_id: packet.source_port.clone(),
@@ -122,7 +129,8 @@ pub fn process<Ctx: ChannelReader>(
             &connection_end,
             packet.clone(),
             &msg.proofs,
-        )?;
+        )
+        .map_err(PacketError::Channel)?;
 
         PacketResult::Timeout(TimeoutPacketResult {
             port_id: packet.source_port.clone(),

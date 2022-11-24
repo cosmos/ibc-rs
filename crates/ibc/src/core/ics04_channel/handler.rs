@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::context::ChannelReader;
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::{Error, PacketError};
 use crate::core::ics04_channel::msgs::ChannelMsg;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::{msgs::PacketMsg, packet::PacketResult};
@@ -252,7 +252,7 @@ where
 pub fn packet_dispatch<Ctx>(
     ctx: &Ctx,
     msg: &PacketMsg,
-) -> Result<(HandlerOutputBuilder<()>, PacketResult), Error>
+) -> Result<(HandlerOutputBuilder<()>, PacketResult), PacketError>
 where
     Ctx: ChannelReader,
 {
@@ -276,7 +276,7 @@ pub fn packet_callback<Ctx>(
     module_id: &ModuleId,
     msg: &PacketMsg,
     output: &mut HandlerOutputBuilder<()>,
-) -> Result<(), Error>
+) -> Result<(), PacketError>
 where
     Ctx: RouterContext,
 {
@@ -296,21 +296,22 @@ fn do_packet_callback(
     msg: &PacketMsg,
     module_output: &mut ModuleOutputBuilder,
     core_output: &mut HandlerOutputBuilder<()>,
-) -> Result<(), Error> {
+) -> Result<(), PacketError> {
     let cb = ctx
         .router_mut()
         .get_route_mut(module_id)
-        .ok_or(Error::RouteNotFound)?;
+        .ok_or(PacketError::RouteNotFound)?;
 
     match msg {
         PacketMsg::RecvPacket(msg) => {
             let result = cb.on_recv_packet(module_output, &msg.packet, &msg.signer);
             match result {
                 OnRecvPacketAck::Nil(write_fn) => {
-                    write_fn(cb.as_any_mut()).map_err(|e| Error::AppModule { description: e })
+                    write_fn(cb.as_any_mut()).map_err(|e| PacketError::AppModule { description: e })
                 }
                 OnRecvPacketAck::Successful(ack, write_fn) => {
-                    write_fn(cb.as_any_mut()).map_err(|e| Error::AppModule { description: e })?;
+                    write_fn(cb.as_any_mut())
+                        .map_err(|e| PacketError::AppModule { description: e })?;
 
                     process_write_ack(ctx, msg.packet.clone(), ack.as_ref(), core_output)
                 }
@@ -339,7 +340,7 @@ fn process_write_ack(
     packet: Packet,
     acknowledgement: &dyn Acknowledgement,
     core_output: &mut HandlerOutputBuilder<()>,
-) -> Result<(), Error> {
+) -> Result<(), PacketError> {
     let HandlerOutput {
         result,
         log,
