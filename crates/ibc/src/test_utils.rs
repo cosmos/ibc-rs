@@ -16,7 +16,7 @@ use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order};
 use crate::core::ics04_channel::commitment::PacketCommitment;
 use crate::core::ics04_channel::context::SendPacketReader;
-use crate::core::ics04_channel::error::{Error, PacketError};
+use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics04_channel::Version;
@@ -87,7 +87,7 @@ impl Module for DummyTransferModule {
         _channel_id: &ChannelId,
         _counterparty: &Counterparty,
         version: &Version,
-    ) -> Result<(ModuleExtras, Version), Error> {
+    ) -> Result<(ModuleExtras, Version), ChannelError> {
         Ok((
             ModuleExtras {
                 events: Vec::new(),
@@ -105,7 +105,7 @@ impl Module for DummyTransferModule {
         _channel_id: &ChannelId,
         _counterparty: &Counterparty,
         counterparty_version: &Version,
-    ) -> Result<(ModuleExtras, Version), Error> {
+    ) -> Result<(ModuleExtras, Version), ChannelError> {
         Ok((
             ModuleExtras {
                 events: Vec::new(),

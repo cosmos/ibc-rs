@@ -28,7 +28,7 @@ use super::{
         channel::ChannelEnd,
         commitment::{AcknowledgementCommitment, PacketCommitment},
         context::calculate_block_delay,
-        error::Error as ChannelError,
+        error::ChannelError,
         msgs::acknowledgement::Acknowledgement,
         packet::{Receipt, Sequence},
         timeout::TimeoutHeight,

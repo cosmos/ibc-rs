@@ -2,7 +2,7 @@
 
 use crate::core::ics04_channel::channel::{ChannelEnd, State};
 use crate::core::ics04_channel::context::ChannelReader;
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
 use crate::core::ics24_host::identifier::ChannelId;
@@ -13,11 +13,11 @@ use crate::prelude::*;
 pub(crate) fn process<Ctx: ChannelReader>(
     ctx_a: &Ctx,
     msg: &MsgChannelOpenInit,
-) -> HandlerResult<ChannelResult, Error> {
+) -> HandlerResult<ChannelResult, ChannelError> {
     let mut output = HandlerOutput::builder();
 
     if msg.chan_end_on_a.connection_hops().len() != 1 {
-        return Err(Error::InvalidConnectionHopsLength {
+        return Err(ChannelError::InvalidConnectionHopsLength {
             expected: 1,
             actual: msg.chan_end_on_a.connection_hops().len(),
         });
@@ -28,12 +28,12 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     let conn_version = match conn_end_on_a.versions() {
         [version] => version,
-        _ => return Err(Error::InvalidVersionLengthConnection),
+        _ => return Err(ChannelError::InvalidVersionLengthConnection),
     };
 
     let channel_feature = msg.chan_end_on_a.ordering().to_string();
     if !conn_version.is_supported_feature(channel_feature) {
-        return Err(Error::ChannelFeatureNotSuportedByConnection);
+        return Err(ChannelError::ChannelFeatureNotSuportedByConnection);
     }
 
     let chan_end_on_a = ChannelEnd::new(

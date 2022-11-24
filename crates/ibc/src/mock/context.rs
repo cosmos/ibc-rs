@@ -30,7 +30,7 @@ use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
-use crate::core::ics04_channel::error::{Error as Ics04Error, PacketError};
+use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics05_port::context::PortReader;
 use crate::core::ics05_port::error::Error as Ics05Error;
@@ -675,7 +675,7 @@ impl ChannelReader for MockContext {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<ChannelEnd, Ics04Error> {
+    ) -> Result<ChannelEnd, ChannelError> {
         match self
             .ibc_store
             .lock()
@@ -685,39 +685,39 @@ impl ChannelReader for MockContext {
             .and_then(|map| map.get(channel_id))
         {
             Some(channel_end) => Ok(channel_end.clone()),
-            None => Err(Ics04Error::ChannelNotFound {
+            None => Err(ChannelError::ChannelNotFound {
                 port_id: port_id.clone(),
                 channel_id: channel_id.clone(),
             }),
         }
     }
 
-    fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, Ics04Error> {
-        ConnectionReader::connection_end(self, cid).map_err(Ics04Error::Connection)
+    fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, ChannelError> {
+        ConnectionReader::connection_end(self, cid).map_err(ChannelError::Connection)
     }
 
     fn connection_channels(
         &self,
         cid: &ConnectionId,
-    ) -> Result<Vec<(PortId, ChannelId)>, Ics04Error> {
+    ) -> Result<Vec<(PortId, ChannelId)>, ChannelError> {
         match self.ibc_store.lock().unwrap().connection_channels.get(cid) {
             Some(pcid) => Ok(pcid.clone()),
-            None => Err(Ics04Error::MissingChannel),
+            None => Err(ChannelError::MissingChannel),
         }
     }
 
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Ics04Error> {
+    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ChannelError> {
         ClientReader::client_state(self, client_id)
-            .map_err(|e| Ics04Error::Connection(ConnectionError::Client(e)))
+            .map_err(|e| ChannelError::Connection(ConnectionError::Client(e)))
     }
 
     fn client_consensus_state(
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Box<dyn ConsensusState>, Ics04Error> {
+    ) -> Result<Box<dyn ConsensusState>, ChannelError> {
         ClientReader::consensus_state(self, client_id, height)
-            .map_err(|e| Ics04Error::Connection(ConnectionError::Client(e)))
+            .map_err(|e| ChannelError::Connection(ConnectionError::Client(e)))
     }
 
     fn get_next_sequence_send(
@@ -847,30 +847,33 @@ impl ChannelReader for MockContext {
         sha2::Sha256::digest(value).to_vec()
     }
 
-    fn host_height(&self) -> Result<Height, Ics04Error> {
+    fn host_height(&self) -> Result<Height, ChannelError> {
         Ok(self.latest_height())
     }
 
-    fn host_timestamp(&self) -> Result<Timestamp, Ics04Error> {
-        ClientReader::host_timestamp(self).map_err(|e| Ics04Error::Other {
+    fn host_timestamp(&self) -> Result<Timestamp, ChannelError> {
+        ClientReader::host_timestamp(self).map_err(|e| ChannelError::Other {
             description: e.to_string(),
         })
     }
 
-    fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, Ics04Error> {
-        ConnectionReader::host_consensus_state(self, height).map_err(Ics04Error::Connection)
+    fn host_consensus_state(
+        &self,
+        height: Height,
+    ) -> Result<Box<dyn ConsensusState>, ChannelError> {
+        ConnectionReader::host_consensus_state(self, height).map_err(ChannelError::Connection)
     }
 
-    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, Ics04Error> {
+    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ChannelError> {
         ClientReader::pending_host_consensus_state(self)
-            .map_err(|e| Ics04Error::Connection(ConnectionError::Client(e)))
+            .map_err(|e| ChannelError::Connection(ConnectionError::Client(e)))
     }
 
     fn client_update_time(
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Timestamp, Ics04Error> {
+    ) -> Result<Timestamp, ChannelError> {
         match self
             .ibc_store
             .lock()
@@ -879,7 +882,7 @@ impl ChannelReader for MockContext {
             .get(&(client_id.clone(), height))
         {
             Some(time) => Ok(*time),
-            None => Err(Ics04Error::ProcessedTimeNotFound {
+            None => Err(ChannelError::ProcessedTimeNotFound {
                 client_id: client_id.clone(),
                 height,
             }),
@@ -890,7 +893,7 @@ impl ChannelReader for MockContext {
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Height, Ics04Error> {
+    ) -> Result<Height, ChannelError> {
         match self
             .ibc_store
             .lock()
@@ -899,14 +902,14 @@ impl ChannelReader for MockContext {
             .get(&(client_id.clone(), height))
         {
             Some(height) => Ok(*height),
-            None => Err(Ics04Error::ProcessedHeightNotFound {
+            None => Err(ChannelError::ProcessedHeightNotFound {
                 client_id: client_id.clone(),
                 height,
             }),
         }
     }
 
-    fn channel_counter(&self) -> Result<u64, Ics04Error> {
+    fn channel_counter(&self) -> Result<u64, ChannelError> {
         Ok(self.ibc_store.lock().unwrap().channel_ids_counter)
     }
 
@@ -975,7 +978,7 @@ impl ChannelKeeper for MockContext {
         cid: ConnectionId,
         port_id: PortId,
         channel_id: ChannelId,
-    ) -> Result<(), Ics04Error> {
+    ) -> Result<(), ChannelError> {
         self.ibc_store
             .lock()
             .unwrap()
@@ -991,7 +994,7 @@ impl ChannelKeeper for MockContext {
         port_id: PortId,
         channel_id: ChannelId,
         channel_end: ChannelEnd,
-    ) -> Result<(), Ics04Error> {
+    ) -> Result<(), ChannelError> {
         self.ibc_store
             .lock()
             .unwrap()
@@ -1468,7 +1471,7 @@ mod tests {
     use alloc::str::FromStr;
 
     use crate::core::ics04_channel::channel::{Counterparty, Order};
-    use crate::core::ics04_channel::error::Error;
+    use crate::core::ics04_channel::error::ChannelError;
     use crate::core::ics04_channel::handler::ModuleExtras;
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
@@ -1652,7 +1655,7 @@ mod tests {
                 _channel_id: &ChannelId,
                 _counterparty: &Counterparty,
                 version: &Version,
-            ) -> Result<(ModuleExtras, Version), Error> {
+            ) -> Result<(ModuleExtras, Version), ChannelError> {
                 Ok((ModuleExtras::empty(), version.clone()))
             }
 
@@ -1664,7 +1667,7 @@ mod tests {
                 _channel_id: &ChannelId,
                 _counterparty: &Counterparty,
                 counterparty_version: &Version,
-            ) -> Result<(ModuleExtras, Version), Error> {
+            ) -> Result<(ModuleExtras, Version), ChannelError> {
                 Ok((ModuleExtras::empty(), counterparty_version.clone()))
             }
 
@@ -1697,7 +1700,7 @@ mod tests {
                 _channel_id: &ChannelId,
                 _counterparty: &Counterparty,
                 version: &Version,
-            ) -> Result<(ModuleExtras, Version), Error> {
+            ) -> Result<(ModuleExtras, Version), ChannelError> {
                 Ok((ModuleExtras::empty(), version.clone()))
             }
 
@@ -1709,7 +1712,7 @@ mod tests {
                 _channel_id: &ChannelId,
                 _counterparty: &Counterparty,
                 counterparty_version: &Version,
-            ) -> Result<(ModuleExtras, Version), Error> {
+            ) -> Result<(ModuleExtras, Version), ChannelError> {
                 Ok((ModuleExtras::empty(), counterparty_version.clone()))
             }
         }

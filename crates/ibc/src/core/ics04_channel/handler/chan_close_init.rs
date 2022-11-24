@@ -2,7 +2,7 @@
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::context::ChannelReader;
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
 use crate::handler::{HandlerOutput, HandlerResult};
@@ -11,14 +11,14 @@ use crate::handler::{HandlerOutput, HandlerResult};
 pub(crate) fn process<Ctx: ChannelReader>(
     ctx_a: &Ctx,
     msg: &MsgChannelCloseInit,
-) -> HandlerResult<ChannelResult, Error> {
+) -> HandlerResult<ChannelResult, ChannelError> {
     let mut output = HandlerOutput::builder();
 
     let chan_end_on_a = ctx_a.channel_end(&msg.port_id_on_a, &msg.chan_id_on_a)?;
 
     // Validate that the channel end is in a state where it can be closed.
     if chan_end_on_a.state_matches(&State::Closed) {
-        return Err(Error::InvalidChannelState {
+        return Err(ChannelError::InvalidChannelState {
             channel_id: msg.chan_id_on_a.clone(),
             state: chan_end_on_a.state,
         });
@@ -26,7 +26,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     // An OPEN IBC connection running on the local (host) chain should exist.
     if chan_end_on_a.connection_hops().len() != 1 {
-        return Err(Error::InvalidConnectionHopsLength {
+        return Err(ChannelError::InvalidConnectionHopsLength {
             expected: 1,
             actual: chan_end_on_a.connection_hops().len(),
         });
@@ -35,7 +35,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let conn_end_on_a = ctx_a.connection_end(&chan_end_on_a.connection_hops()[0])?;
 
     if !conn_end_on_a.state_matches(&ConnectionState::Open) {
-        return Err(Error::ConnectionNotOpen {
+        return Err(ChannelError::ConnectionNotOpen {
             connection_id: chan_end_on_a.connection_hops()[0].clone(),
         });
     }

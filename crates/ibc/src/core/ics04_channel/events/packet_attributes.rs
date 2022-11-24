@@ -1,8 +1,8 @@
 use crate::{
     core::{
         ics04_channel::{
-            channel::Order, error::Error, msgs::acknowledgement::Acknowledgement, packet::Sequence,
-            timeout::TimeoutHeight,
+            channel::Order, error::ChannelError, msgs::acknowledgement::Acknowledgement,
+            packet::Sequence, timeout::TimeoutHeight,
         },
         ics24_host::identifier::{ChannelId, ConnectionId, PortId},
     },
@@ -38,13 +38,13 @@ pub struct PacketDataAttribute {
 }
 
 impl TryFrom<PacketDataAttribute> for Vec<abci::EventAttribute> {
-    type Error = Error;
+    type Error = ChannelError;
 
     fn try_from(attr: PacketDataAttribute) -> Result<Self, Self::Error> {
         let tags = vec![
             (
                 PKT_DATA_ATTRIBUTE_KEY,
-                str::from_utf8(&attr.packet_data).map_err(|_| Error::NonUtf8PacketData)?,
+                str::from_utf8(&attr.packet_data).map_err(|_| ChannelError::NonUtf8PacketData)?,
             )
                 .into(),
             (
@@ -172,7 +172,7 @@ pub struct AcknowledgementAttribute {
 }
 
 impl TryFrom<AcknowledgementAttribute> for Vec<abci::EventAttribute> {
-    type Error = Error;
+    type Error = ChannelError;
 
     fn try_from(attr: AcknowledgementAttribute) -> Result<Self, Self::Error> {
         let tags = vec![
@@ -183,7 +183,7 @@ impl TryFrom<AcknowledgementAttribute> for Vec<abci::EventAttribute> {
                 // it. It has been deprecated in ibc-go. It will be removed
                 // in the future.
                 str::from_utf8(attr.acknowledgement.as_bytes())
-                    .map_err(|_| Error::NonUtf8PacketData)?,
+                    .map_err(|_| ChannelError::NonUtf8PacketData)?,
             )
                 .into(),
             (

@@ -16,7 +16,7 @@ use displaydoc::Display;
 use ibc_proto::protobuf::Error as TendermintError;
 
 #[derive(Debug, Display)]
-pub enum Error {
+pub enum ChannelError {
     /// ICS03 connection error
     Connection(connection_error::ConnectionError),
     /// ICS05 port error
@@ -125,7 +125,7 @@ pub enum PacketError {
     /// ICS03 connection error
     Connection(connection_error::ConnectionError),
     /// ICS04 channel error
-    Channel(Error),
+    Channel(ChannelError),
     /// Channel `{channel_id}` is Closed
     ChannelClosed { channel_id: ChannelId },
     /// packet destination port `{port_id}` and channel `{channel_id}` doesn't match the counterparty's port/channel
@@ -225,29 +225,28 @@ pub enum PacketError {
 impl std::error::Error for PacketError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            PacketError::Connection(e) => Some(e),
-            PacketError::Channel(e) => Some(e),
-            PacketError::InvalidProof(e) => Some(e),
-            PacketError::Signer(e) => Some(e),
-            PacketError::Identifier(e) => Some(e),
+            Self::Connection(e) => Some(e),
+            Self::Channel(e) => Some(e),
+            Self::InvalidProof(e) => Some(e),
+            Self::Signer(e) => Some(e),
+            Self::Identifier(e) => Some(e),
             _ => None,
         }
     }
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {
+impl std::error::Error for ChannelError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Error::Connection(e) => Some(e),
-            Error::Port(e) => Some(e),
-            // Error::Identifier(e) => Some(e),
-            Error::InvalidVersion(e) => Some(e),
-            Error::Signer(e) => Some(e),
-            Error::InvalidProof(e) => Some(e),
-            Error::PacketVerificationFailed { ics02_error: e, .. } => Some(e),
-            Error::InvalidStringAsSequence { error: e, .. } => Some(e),
-            // Error::InvalidPacketTimestamp(e) => Some(e),
+            Self::Connection(e) => Some(e),
+            Self::Port(e) => Some(e),
+            Self::Identifier(e) => Some(e),
+            Self::InvalidVersion(e) => Some(e),
+            Self::Signer(e) => Some(e),
+            Self::InvalidProof(e) => Some(e),
+            Self::PacketVerificationFailed { ics02_error: e, .. } => Some(e),
+            Self::InvalidStringAsSequence { error: e, .. } => Some(e),
             _ => None,
         }
     }

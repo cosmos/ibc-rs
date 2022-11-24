@@ -11,7 +11,7 @@ use super::handler::{
     timeout::TimeoutPacketResult, write_acknowledgement::WriteAckPacketResult,
 };
 use super::timeout::TimeoutHeight;
-use crate::core::ics04_channel::error::{Error, PacketError};
+use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::timestamp::{Expiry::Expired, Timestamp};
 use crate::Height;
@@ -59,11 +59,11 @@ impl core::fmt::Display for PacketMsgType {
 pub struct Sequence(u64);
 
 impl FromStr for Sequence {
-    type Err = Error;
+    type Err = ChannelError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self::from(s.parse::<u64>().map_err(|e| {
-            Error::InvalidStringAsSequence {
+            ChannelError::InvalidStringAsSequence {
                 value: s.to_string(),
                 error: e,
             }

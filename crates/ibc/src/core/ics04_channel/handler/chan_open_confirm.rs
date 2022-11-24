@@ -2,7 +2,7 @@
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::context::ChannelReader;
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
 use crate::handler::{HandlerOutput, HandlerResult};
@@ -12,7 +12,7 @@ use crate::prelude::*;
 pub(crate) fn process<Ctx: ChannelReader>(
     ctx_b: &Ctx,
     msg: &MsgChannelOpenConfirm,
-) -> HandlerResult<ChannelResult, Error> {
+) -> HandlerResult<ChannelResult, ChannelError> {
     let mut output = HandlerOutput::builder();
 
     // Unwrap the old channel end and validate it against the message.
@@ -20,7 +20,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     // Validate that the channel end is in a state where it can be confirmed.
     if !chan_end_on_b.state_matches(&State::TryOpen) {
-        return Err(Error::InvalidChannelState {
+        return Err(ChannelError::InvalidChannelState {
             channel_id: msg.chan_id_on_b.clone(),
             state: chan_end_on_b.state,
         });
@@ -28,7 +28,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     // An OPEN IBC connection running on the local (host) chain should exist.
     if chan_end_on_b.connection_hops().len() != 1 {
-        return Err(Error::InvalidConnectionHopsLength {
+        return Err(ChannelError::InvalidConnectionHopsLength {
             expected: 1,
             actual: chan_end_on_b.connection_hops().len(),
         });
@@ -37,7 +37,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let conn_end_on_b = ctx_b.connection_end(&chan_end_on_b.connection_hops()[0])?;
 
     if !conn_end_on_b.state_matches(&ConnectionState::Open) {
-        return Err(Error::ConnectionNotOpen {
+        return Err(ChannelError::ConnectionNotOpen {
             connection_id: chan_end_on_b.connection_hops()[0].clone(),
         });
     }
@@ -53,16 +53,16 @@ pub(crate) fn process<Ctx: ChannelReader>(
         let chan_id_on_a = chan_end_on_b
             .counterparty()
             .channel_id()
-            .ok_or(Error::InvalidCounterpartyChannelId)?;
+            .ok_or(ChannelError::InvalidCounterpartyChannelId)?;
         let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
-            Error::UndefinedConnectionCounterparty {
+            ChannelError::UndefinedConnectionCounterparty {
                 connection_id: chan_end_on_b.connection_hops()[0].clone(),
             },
         )?;
 
         // The client must not be frozen.
         if client_state_of_a_on_b.is_frozen() {
-            return Err(Error::FrozenClient {
+            return Err(ChannelError::FrozenClient {
                 client_id: client_id_on_b,
             });
         }
@@ -87,7 +87,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
                 chan_id_on_a,
                 &expected_chan_end_on_a,
             )
-            .map_err(Error::VerifyChannelFailed)?;
+            .map_err(ChannelError::VerifyChannelFailed)?;
     }
 
     output.log("success: channel open confirm ");

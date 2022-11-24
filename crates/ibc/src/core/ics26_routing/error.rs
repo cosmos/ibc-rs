@@ -12,7 +12,7 @@ pub enum Error {
     /// ICS03 connection error
     Connection(ics03_connection::error::ConnectionError),
     /// ICS04 channel error
-    Channel(ics04_channel::error::Error),
+    Channel(ics04_channel::error::ChannelError),
     /// ICS04 Packet error
     Packet(ics04_channel::error::PacketError),
     /// unknown type URL `{url}`

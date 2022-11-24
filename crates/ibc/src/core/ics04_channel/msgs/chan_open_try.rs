@@ -1,5 +1,5 @@
 use crate::core::ics04_channel::channel::ChannelEnd;
-use crate::core::ics04_channel::error::Error as ChannelError;
+use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::Version;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics24_host::error::ValidationError;

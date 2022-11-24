@@ -343,7 +343,7 @@ pub(crate) mod test {
     use crate::applications::transfer::relay::send_transfer::send_transfer;
     use crate::applications::transfer::PrefixedCoin;
     use crate::core::ics04_channel::channel::{Counterparty, Order};
-    use crate::core::ics04_channel::error::Error;
+    use crate::core::ics04_channel::error::ChannelError;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
     use crate::handler::HandlerOutputBuilder;
@@ -356,8 +356,8 @@ pub(crate) mod test {
         ctx: &mut DummyTransferModule,
         output: &mut HandlerOutputBuilder<()>,
         msg: MsgTransfer<PrefixedCoin>,
-    ) -> Result<(), Error> {
-        send_transfer(ctx, output, msg).map_err(|e: Ics20Error| Error::AppModule {
+    ) -> Result<(), ChannelError> {
+        send_transfer(ctx, output, msg).map_err(|e: Ics20Error| ChannelError::AppModule {
             description: e.to_string(),
         })
     }

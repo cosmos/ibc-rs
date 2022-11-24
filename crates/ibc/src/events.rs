@@ -27,7 +27,7 @@ pub enum Error {
     /// connection error
     Connection(connection_error::ConnectionError),
     /// channel error
-    Channel(channel_error::Error),
+    Channel(channel_error::ChannelError),
     /// error parsing timestamp
     Timestamp(ParseTimestampError),
     /// missing event key `{key}`
@@ -50,13 +50,13 @@ pub enum Error {
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Error::Parse(e) => Some(e),
-            Error::Client(e) => Some(e),
-            Error::Connection(e) => Some(e),
-            Error::Channel(e) => Some(e),
-            Error::Timestamp(e) => Some(e),
-            Error::Decode(e) => Some(e),
-            Error::SubtleEncoding(e) => Some(e),
+            Self::Parse(e) => Some(e),
+            Self::Client(e) => Some(e),
+            Self::Connection(e) => Some(e),
+            Self::Channel(e) => Some(e),
+            Self::Timestamp(e) => Some(e),
+            Self::Decode(e) => Some(e),
+            Self::SubtleEncoding(e) => Some(e),
             _ => None,
         }
     }

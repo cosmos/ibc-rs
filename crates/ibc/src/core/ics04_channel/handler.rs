@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::context::ChannelReader;
-use crate::core::ics04_channel::error::{Error, PacketError};
+use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::msgs::ChannelMsg;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::{msgs::PacketMsg, packet::PacketResult};
@@ -65,7 +65,7 @@ impl ModuleExtras {
     }
 }
 
-pub fn channel_validate<Ctx>(ctx: &Ctx, msg: &ChannelMsg) -> Result<ModuleId, Error>
+pub fn channel_validate<Ctx>(ctx: &Ctx, msg: &ChannelMsg) -> Result<ModuleId, ChannelError>
 where
     Ctx: RouterContext,
 {
@@ -73,7 +73,7 @@ where
     if ctx.router().has_route(&module_id) {
         Ok(module_id)
     } else {
-        Err(Error::RouteNotFound)
+        Err(ChannelError::RouteNotFound)
     }
 }
 
@@ -82,7 +82,7 @@ where
 pub fn channel_dispatch<Ctx>(
     ctx: &Ctx,
     msg: &ChannelMsg,
-) -> Result<(Vec<String>, ChannelResult), Error>
+) -> Result<(Vec<String>, ChannelResult), ChannelError>
 where
     Ctx: ChannelReader,
 {
@@ -104,14 +104,14 @@ pub fn channel_callback<Ctx>(
     module_id: &ModuleId,
     msg: &ChannelMsg,
     result: &mut ChannelResult,
-) -> Result<ModuleExtras, Error>
+) -> Result<ModuleExtras, ChannelError>
 where
     Ctx: RouterContext,
 {
     let cb = ctx
         .router_mut()
         .get_route_mut(module_id)
-        .ok_or(Error::RouteNotFound)?;
+        .ok_or(ChannelError::RouteNotFound)?;
 
     match msg {
         ChannelMsg::ChannelOpenInit(msg) => {
@@ -222,29 +222,29 @@ pub fn channel_events(
     vec![event]
 }
 
-pub fn get_module_for_packet_msg<Ctx>(ctx: &Ctx, msg: &PacketMsg) -> Result<ModuleId, Error>
+pub fn get_module_for_packet_msg<Ctx>(ctx: &Ctx, msg: &PacketMsg) -> Result<ModuleId, ChannelError>
 where
     Ctx: RouterContext,
 {
     let module_id = match msg {
         PacketMsg::RecvPacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.destination_port)
-            .map_err(Error::Port)?,
+            .map_err(ChannelError::Port)?,
         PacketMsg::AckPacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.source_port)
-            .map_err(Error::Port)?,
+            .map_err(ChannelError::Port)?,
         PacketMsg::TimeoutPacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.source_port)
-            .map_err(Error::Port)?,
+            .map_err(ChannelError::Port)?,
         PacketMsg::TimeoutOnClosePacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.source_port)
-            .map_err(Error::Port)?,
+            .map_err(ChannelError::Port)?,
     };
 
     if ctx.router().has_route(&module_id) {
         Ok(module_id)
     } else {
-        Err(Error::RouteNotFound)
+        Err(ChannelError::RouteNotFound)
     }
 }
 
