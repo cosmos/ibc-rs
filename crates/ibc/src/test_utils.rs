@@ -7,7 +7,7 @@ use crate::applications::transfer::context::{
     cosmos_adr028_escrow_address, BankKeeper, TokenTransferContext, TokenTransferKeeper,
     TokenTransferReader,
 };
-use crate::applications::transfer::{error::Error as Ics20Error, PrefixedCoin};
+use crate::applications::transfer::{error::TokenTransferError, PrefixedCoin};
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
@@ -167,7 +167,7 @@ impl BankKeeper for DummyTransferModule {
         _from: &Self::AccountId,
         _to: &Self::AccountId,
         _amt: &PrefixedCoin,
-    ) -> Result<(), Ics20Error> {
+    ) -> Result<(), TokenTransferError> {
         Ok(())
     }
 
@@ -175,7 +175,7 @@ impl BankKeeper for DummyTransferModule {
         &mut self,
         _account: &Self::AccountId,
         _amt: &PrefixedCoin,
-    ) -> Result<(), Ics20Error> {
+    ) -> Result<(), TokenTransferError> {
         Ok(())
     }
 
@@ -183,7 +183,7 @@ impl BankKeeper for DummyTransferModule {
         &mut self,
         _account: &Self::AccountId,
         _amt: &PrefixedCoin,
-    ) -> Result<(), Ics20Error> {
+    ) -> Result<(), TokenTransferError> {
         Ok(())
     }
 }
@@ -191,7 +191,7 @@ impl BankKeeper for DummyTransferModule {
 impl TokenTransferReader for DummyTransferModule {
     type AccountId = Signer;
 
-    fn get_port(&self) -> Result<PortId, Ics20Error> {
+    fn get_port(&self) -> Result<PortId, TokenTransferError> {
         Ok(PortId::transfer())
     }
 
@@ -199,7 +199,7 @@ impl TokenTransferReader for DummyTransferModule {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<<Self as TokenTransferReader>::AccountId, Ics20Error> {
+    ) -> Result<<Self as TokenTransferReader>::AccountId, TokenTransferError> {
         let addr = cosmos_adr028_escrow_address(port_id, channel_id);
         Ok(bech32::encode("cosmos", addr).parse().unwrap())
     }

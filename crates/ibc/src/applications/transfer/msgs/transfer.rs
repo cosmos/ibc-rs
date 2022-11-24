@@ -7,7 +7,7 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::applications::transfer::v1::MsgTransfer as RawMsgTransfer;
 use ibc_proto::protobuf::Protobuf;
 
-use crate::applications::transfer::error::Error;
+use crate::applications::transfer::error::TokenTransferError;
 use crate::core::ics04_channel::timeout::TimeoutHeight;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::signer::Signer;
@@ -44,7 +44,7 @@ pub struct MsgTransfer<C = Coin> {
 }
 
 impl Msg for MsgTransfer {
-    type ValidationError = Error;
+    type ValidationError = TokenTransferError;
     type Raw = RawMsgTransfer;
 
     fn route(&self) -> String {
@@ -57,41 +57,41 @@ impl Msg for MsgTransfer {
 }
 
 impl TryFrom<RawMsgTransfer> for MsgTransfer {
-    type Error = Error;
+    type Error = TokenTransferError;
 
     fn try_from(raw_msg: RawMsgTransfer) -> Result<Self, Self::Error> {
         let timeout_timestamp =
             Timestamp::from_nanoseconds(raw_msg.timeout_timestamp).map_err(|_| {
-                Error::InvalidPacketTimeoutTimestamp {
+                TokenTransferError::InvalidPacketTimeoutTimestamp {
                     timestamp: raw_msg.timeout_timestamp,
                 }
             })?;
 
-        let timeout_height: TimeoutHeight =
-            raw_msg
-                .timeout_height
-                .try_into()
-                .map_err(|e| Error::InvalidPacketTimeoutHeight {
-                    context: format!("invalid timeout height {}", e),
-                })?;
+        let timeout_height: TimeoutHeight = raw_msg.timeout_height.try_into().map_err(|e| {
+            TokenTransferError::InvalidPacketTimeoutHeight {
+                context: format!("invalid timeout height {}", e),
+            }
+        })?;
 
         Ok(MsgTransfer {
-            source_port: raw_msg
-                .source_port
-                .parse()
-                .map_err(|e| Error::InvalidPortId {
+            source_port: raw_msg.source_port.parse().map_err(|e| {
+                TokenTransferError::InvalidPortId {
                     context: raw_msg.source_port.clone(),
                     validation_error: e,
-                })?,
+                }
+            })?,
             source_channel: raw_msg.source_channel.parse().map_err(|e| {
-                Error::InvalidChannelId {
+                TokenTransferError::InvalidChannelId {
                     context: raw_msg.source_channel.clone(),
                     validation_error: e,
                 }
             })?,
-            token: raw_msg.token.ok_or(Error::InvalidToken)?,
-            sender: raw_msg.sender.parse().map_err(Error::Signer)?,
-            receiver: raw_msg.receiver.parse().map_err(Error::Signer)?,
+            token: raw_msg.token.ok_or(TokenTransferError::InvalidToken)?,
+            sender: raw_msg.sender.parse().map_err(TokenTransferError::Signer)?,
+            receiver: raw_msg
+                .receiver
+                .parse()
+                .map_err(TokenTransferError::Signer)?,
             timeout_height,
             timeout_timestamp,
         })
@@ -115,12 +115,14 @@ impl From<MsgTransfer> for RawMsgTransfer {
 impl Protobuf<RawMsgTransfer> for MsgTransfer {}
 
 impl TryFrom<Any> for MsgTransfer {
-    type Error = Error;
+    type Error = TokenTransferError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         match raw.type_url.as_str() {
-            TYPE_URL => MsgTransfer::decode_vec(&raw.value).map_err(Error::DecodeRawMsg),
-            _ => Err(Error::UnknownMsgType {
+            TYPE_URL => {
+                MsgTransfer::decode_vec(&raw.value).map_err(TokenTransferError::DecodeRawMsg)
+            }
+            _ => Err(TokenTransferError::UnknownMsgType {
                 msg_type: raw.type_url,
             }),
         }

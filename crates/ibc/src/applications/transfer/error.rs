@@ -15,40 +15,8 @@ use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::prelude::*;
 use crate::signer::SignerError;
 
-#[cfg(feature = "std")]
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match &self {
-            Error::PacketError(e) => Some(e),
-            Error::InvalidPortId {
-                validation_error: e,
-                ..
-            } => Some(e),
-            Error::InvalidChannelId {
-                validation_error: e,
-                ..
-            } => Some(e),
-            Error::Utf8(e) => Some(e),
-            Error::InvalidTracePortId {
-                validation_error: e,
-                ..
-            } => Some(e),
-            Error::InvalidTraceChannelId {
-                validation_error: e,
-                ..
-            } => Some(e),
-            Error::InvalidAmount(e) => Some(e),
-            Error::Signer(e) => Some(e),
-            Error::ParseHex(e) => Some(e),
-            Error::DecodeRawMsg(e) => Some(e),
-            Error::Utf8Decode(e) => Some(e),
-            _ => None,
-        }
-    }
-}
-
 #[derive(Display, Debug)]
-pub enum Error {
+pub enum TokenTransferError {
     /// unrecognized ICS-20 transfer message type URL `{url}`
     UnknowMessageTypeUrl { url: String },
     /// ICS04 Packet error
@@ -144,7 +112,39 @@ pub enum Error {
     Utf8Decode(Utf8Error),
 }
 
-impl From<Infallible> for Error {
+#[cfg(feature = "std")]
+impl std::error::Error for TokenTransferError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Self::PacketError(e) => Some(e),
+            Self::InvalidPortId {
+                validation_error: e,
+                ..
+            } => Some(e),
+            Self::InvalidChannelId {
+                validation_error: e,
+                ..
+            } => Some(e),
+            Self::Utf8(e) => Some(e),
+            Self::InvalidTracePortId {
+                validation_error: e,
+                ..
+            } => Some(e),
+            Self::InvalidTraceChannelId {
+                validation_error: e,
+                ..
+            } => Some(e),
+            Self::InvalidAmount(e) => Some(e),
+            Self::Signer(e) => Some(e),
+            Self::ParseHex(e) => Some(e),
+            Self::DecodeRawMsg(e) => Some(e),
+            Self::Utf8Decode(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+impl From<Infallible> for TokenTransferError {
     fn from(e: Infallible) -> Self {
         match e {}
     }

@@ -1,5 +1,5 @@
 use crate::applications::transfer::context::TokenTransferContext;
-use crate::applications::transfer::error::Error;
+use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::events::TransferEvent;
 use crate::applications::transfer::msgs::transfer::MsgTransfer;
 use crate::applications::transfer::packet::PacketData;
@@ -17,24 +17,24 @@ pub fn send_transfer<Ctx, C>(
     ctx: &mut Ctx,
     output: &mut HandlerOutputBuilder<()>,
     msg: MsgTransfer<C>,
-) -> Result<(), Error>
+) -> Result<(), TokenTransferError>
 where
     Ctx: TokenTransferContext,
     C: TryInto<PrefixedCoin>,
 {
     if !ctx.is_send_enabled() {
-        return Err(Error::SendDisabled);
+        return Err(TokenTransferError::SendDisabled);
     }
 
     let source_channel_end = ctx
         .channel_end(&msg.source_port, &msg.source_channel)
-        .map_err(Error::PacketError)?;
+        .map_err(TokenTransferError::PacketError)?;
 
     let destination_port = source_channel_end.counterparty().port_id().clone();
     let destination_channel = source_channel_end
         .counterparty()
         .channel_id()
-        .ok_or_else(|| Error::DestinationChannelNotFound {
+        .ok_or_else(|| TokenTransferError::DestinationChannelNotFound {
             port_id: msg.source_port.clone(),
             channel_id: msg.source_channel.clone(),
         })?
@@ -43,9 +43,12 @@ where
     // get the next sequence
     let sequence = ctx
         .get_next_sequence_send(&msg.source_port, &msg.source_channel)
-        .map_err(Error::PacketError)?;
+        .map_err(TokenTransferError::PacketError)?;
 
-    let token = msg.token.try_into().map_err(|_| Error::InvalidToken)?;
+    let token = msg
+        .token
+        .try_into()
+        .map_err(|_| TokenTransferError::InvalidToken)?;
     let denom = token.denom.clone();
     let coin = Coin {
         denom: denom.clone(),
@@ -56,7 +59,7 @@ where
         .sender
         .clone()
         .try_into()
-        .map_err(|_| Error::ParseAccountFailure)?;
+        .map_err(|_| TokenTransferError::ParseAccountFailure)?;
 
     if is_sender_chain_source(msg.source_port.clone(), msg.source_channel.clone(), &denom) {
         let escrow_address =
@@ -90,10 +93,10 @@ where
         result,
         log,
         events,
-    } = send_packet(ctx, packet).map_err(Error::PacketError)?;
+    } = send_packet(ctx, packet).map_err(TokenTransferError::PacketError)?;
 
     ctx.store_send_packet_result(result)
-        .map_err(Error::PacketError)?;
+        .map_err(TokenTransferError::PacketError)?;
 
     output.merge_output(
         HandlerOutput::builder()

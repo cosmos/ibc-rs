@@ -5,7 +5,7 @@ use core::str::FromStr;
 use ibc_proto::ibc::applications::transfer::v2::FungibleTokenPacketData as RawPacketData;
 use serde::{Deserialize, Serialize};
 
-use super::error::Error;
+use super::error::TokenTransferError;
 use super::{Amount, PrefixedCoin, PrefixedDenom};
 use crate::signer::Signer;
 
@@ -18,7 +18,7 @@ pub struct PacketData {
 }
 
 impl TryFrom<RawPacketData> for PacketData {
-    type Error = Error;
+    type Error = TokenTransferError;
 
     fn try_from(raw_pkt_data: RawPacketData) -> Result<Self, Self::Error> {
         // This denom may be prefixed or unprefixed.
@@ -26,8 +26,14 @@ impl TryFrom<RawPacketData> for PacketData {
         let amount = Amount::from_str(&raw_pkt_data.amount)?;
         Ok(Self {
             token: PrefixedCoin { denom, amount },
-            sender: raw_pkt_data.sender.parse().map_err(Error::Signer)?,
-            receiver: raw_pkt_data.receiver.parse().map_err(Error::Signer)?,
+            sender: raw_pkt_data
+                .sender
+                .parse()
+                .map_err(TokenTransferError::Signer)?,
+            receiver: raw_pkt_data
+                .receiver
+                .parse()
+                .map_err(TokenTransferError::Signer)?,
         })
     }
 }

@@ -1,6 +1,6 @@
 use sha2::{Digest, Sha256};
 
-use super::error::Error as Ics20Error;
+use super::error::TokenTransferError;
 use crate::applications::transfer::acknowledgement::Acknowledgement;
 use crate::applications::transfer::events::{AckEvent, AckStatusEvent, RecvEvent, TimeoutEvent};
 use crate::applications::transfer::packet::PacketData;
@@ -59,14 +59,14 @@ pub trait TokenTransferReader: SendPacketReader {
     type AccountId: TryFrom<Signer>;
 
     /// get_port returns the portID for the transfer module.
-    fn get_port(&self) -> Result<PortId, Ics20Error>;
+    fn get_port(&self) -> Result<PortId, TokenTransferError>;
 
     /// Returns the escrow account id for a port and channel combination
     fn get_channel_escrow_address(
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<<Self as TokenTransferReader>::AccountId, Ics20Error>;
+    ) -> Result<<Self as TokenTransferReader>::AccountId, TokenTransferError>;
 
     /// Returns true iff send is enabled.
     fn is_send_enabled(&self) -> bool;
@@ -128,21 +128,21 @@ pub trait BankKeeper {
         from: &Self::AccountId,
         to: &Self::AccountId,
         amt: &PrefixedCoin,
-    ) -> Result<(), Ics20Error>;
+    ) -> Result<(), TokenTransferError>;
 
     /// This function to enable minting ibc tokens to a user account
     fn mint_coins(
         &mut self,
         account: &Self::AccountId,
         amt: &PrefixedCoin,
-    ) -> Result<(), Ics20Error>;
+    ) -> Result<(), TokenTransferError>;
 
     /// This function should enable burning of minted tokens in a user account
     fn burn_coins(
         &mut self,
         account: &Self::AccountId,
         amt: &PrefixedCoin,
-    ) -> Result<(), Ics20Error>;
+    ) -> Result<(), TokenTransferError>;
 }
 
 /// Captures all the dependencies which the ICS20 module requires to be able to dispatch and
@@ -163,23 +163,23 @@ pub fn on_chan_open_init(
     _channel_id: &ChannelId,
     _counterparty: &Counterparty,
     version: &Version,
-) -> Result<(ModuleExtras, Version), Ics20Error> {
+) -> Result<(ModuleExtras, Version), TokenTransferError> {
     if order != Order::Unordered {
-        return Err(Ics20Error::ChannelNotUnordered {
+        return Err(TokenTransferError::ChannelNotUnordered {
             expect_order: Order::Unordered,
             got_order: order,
         });
     }
     let bound_port = ctx.get_port()?;
     if port_id != &bound_port {
-        return Err(Ics20Error::InvalidPort {
+        return Err(TokenTransferError::InvalidPort {
             port_id: port_id.clone(),
             exp_port_id: bound_port,
         });
     }
 
     if !version.is_empty() && version != &Version::ics20() {
-        return Err(Ics20Error::InvalidVersion {
+        return Err(TokenTransferError::InvalidVersion {
             expect_version: Version::ics20(),
             got_version: version.clone(),
         });
@@ -197,15 +197,15 @@ pub fn on_chan_open_try(
     _channel_id: &ChannelId,
     _counterparty: &Counterparty,
     counterparty_version: &Version,
-) -> Result<(ModuleExtras, Version), Ics20Error> {
+) -> Result<(ModuleExtras, Version), TokenTransferError> {
     if order != Order::Unordered {
-        return Err(Ics20Error::ChannelNotUnordered {
+        return Err(TokenTransferError::ChannelNotUnordered {
             expect_order: Order::Unordered,
             got_order: order,
         });
     }
     if counterparty_version != &Version::ics20() {
-        return Err(Ics20Error::InvalidCounterpartyVersion {
+        return Err(TokenTransferError::InvalidCounterpartyVersion {
             expect_version: Version::ics20(),
             got_version: counterparty_version.clone(),
         });
@@ -219,9 +219,9 @@ pub fn on_chan_open_ack(
     _port_id: &PortId,
     _channel_id: &ChannelId,
     counterparty_version: &Version,
-) -> Result<ModuleExtras, Ics20Error> {
+) -> Result<ModuleExtras, TokenTransferError> {
     if counterparty_version != &Version::ics20() {
-        return Err(Ics20Error::InvalidCounterpartyVersion {
+        return Err(TokenTransferError::InvalidCounterpartyVersion {
             expect_version: Version::ics20(),
             got_version: counterparty_version.clone(),
         });
@@ -234,7 +234,7 @@ pub fn on_chan_open_confirm(
     _ctx: &mut impl TokenTransferContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
-) -> Result<ModuleExtras, Ics20Error> {
+) -> Result<ModuleExtras, TokenTransferError> {
     Ok(ModuleExtras::empty())
 }
 
@@ -242,15 +242,15 @@ pub fn on_chan_close_init(
     _ctx: &mut impl TokenTransferContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
-) -> Result<ModuleExtras, Ics20Error> {
-    Err(Ics20Error::CantCloseChannel)
+) -> Result<ModuleExtras, TokenTransferError> {
+    Err(TokenTransferError::CantCloseChannel)
 }
 
 pub fn on_chan_close_confirm(
     _ctx: &mut impl TokenTransferContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
-) -> Result<ModuleExtras, Ics20Error> {
+) -> Result<ModuleExtras, TokenTransferError> {
     Ok(ModuleExtras::empty())
 }
 
@@ -264,7 +264,7 @@ pub fn on_recv_packet<Ctx: 'static + TokenTransferContext>(
         Ok(data) => data,
         Err(_) => {
             return OnRecvPacketAck::Failed(Box::new(Acknowledgement::Error(
-                Ics20Error::PacketDataDeserialization.to_string(),
+                TokenTransferError::PacketDataDeserialization.to_string(),
             )));
         }
     };
@@ -291,12 +291,12 @@ pub fn on_acknowledgement_packet(
     packet: &Packet,
     acknowledgement: &GenericAcknowledgement,
     _relayer: &Signer,
-) -> Result<(), Ics20Error> {
+) -> Result<(), TokenTransferError> {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
-        .map_err(|_| Ics20Error::PacketDataDeserialization)?;
+        .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
 
     let acknowledgement = serde_json::from_slice::<Acknowledgement>(acknowledgement.as_ref())
-        .map_err(|_| Ics20Error::AckDeserialization)?;
+        .map_err(|_| TokenTransferError::AckDeserialization)?;
 
     process_ack_packet(ctx, packet, &data, &acknowledgement)?;
 
@@ -317,9 +317,9 @@ pub fn on_timeout_packet(
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
     _relayer: &Signer,
-) -> Result<(), Ics20Error> {
+) -> Result<(), TokenTransferError> {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
-        .map_err(|_| Ics20Error::PacketDataDeserialization)?;
+        .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
 
     process_timeout_packet(ctx, packet, &data)?;
 
@@ -338,7 +338,7 @@ pub(crate) mod test {
     use subtle_encoding::bech32;
 
     use crate::applications::transfer::context::{cosmos_adr028_escrow_address, on_chan_open_try};
-    use crate::applications::transfer::error::Error as Ics20Error;
+    use crate::applications::transfer::error::TokenTransferError;
     use crate::applications::transfer::msgs::transfer::MsgTransfer;
     use crate::applications::transfer::relay::send_transfer::send_transfer;
     use crate::applications::transfer::PrefixedCoin;
@@ -357,7 +357,7 @@ pub(crate) mod test {
         output: &mut HandlerOutputBuilder<()>,
         msg: MsgTransfer<PrefixedCoin>,
     ) -> Result<(), ChannelError> {
-        send_transfer(ctx, output, msg).map_err(|e: Ics20Error| ChannelError::AppModule {
+        send_transfer(ctx, output, msg).map_err(|e: TokenTransferError| ChannelError::AppModule {
             description: e.to_string(),
         })
     }

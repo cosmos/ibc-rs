@@ -2,7 +2,7 @@ use core::str::FromStr;
 use derive_more::{Display, From, Into};
 use serde::{Deserialize, Serialize};
 
-use super::error::Error;
+use super::error::TokenTransferError;
 use crate::bigint::U256;
 
 /// A type for representing token transfer amounts.
@@ -22,10 +22,10 @@ impl Amount {
 }
 
 impl FromStr for Amount {
-    type Err = Error;
+    type Err = TokenTransferError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let amount = U256::from_dec_str(s).map_err(Error::InvalidAmount)?;
+        let amount = U256::from_dec_str(s).map_err(TokenTransferError::InvalidAmount)?;
         Ok(Self(amount))
     }
 }
