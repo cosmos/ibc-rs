@@ -255,16 +255,16 @@ impl ClientState {
         }
     }
 
-    fn check_trusted_header(
-        consensus_state: &TmConsensusState,
+    fn check_header_validator_set(
+        trusted_consensus_state: &TmConsensusState,
         header: &Header,
     ) -> Result<(), Ics02Error> {
         let trusted_val_hash = header.trusted_validator_set.hash();
 
-        if consensus_state.next_validators_hash != trusted_val_hash {
+        if trusted_consensus_state.next_validators_hash != trusted_val_hash {
             return Err(Error::misbehaviour_trusted_validator_hash_mismatch(
                 header.trusted_validator_set.clone(),
-                consensus_state.next_validators_hash,
+                trusted_consensus_state.next_validators_hash,
                 trusted_val_hash,
             )
             .into());
@@ -279,7 +279,7 @@ impl ClientState {
         consensus_state: &TmConsensusState,
         current_timestamp: Timestamp,
     ) -> Result<(), Ics02Error> {
-        Self::check_trusted_header(consensus_state, header)?;
+        Self::check_header_validator_set(consensus_state, header)?;
 
         let duration_since_consensus_state = current_timestamp
             .duration_since(&consensus_state.timestamp())
