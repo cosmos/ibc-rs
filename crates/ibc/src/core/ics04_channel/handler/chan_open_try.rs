@@ -201,7 +201,7 @@ mod tests {
                         error::Error::Connection(e) => {
                             assert_eq!(
                                 e.to_string(),
-                                ics03_error::Error::ConnectionNotFound { connection_id }
+                                ics03_error::ConnectionError::ConnectionNotFound { connection_id }
                                     .to_string()
                             );
                         }
@@ -227,9 +227,11 @@ mod tests {
                     error::Error::Connection(e) => {
                         assert_eq!(
                             e.to_string(),
-                            ics03_error::Error::Client(ics02_error::ClientError::ClientNotFound {
-                                client_id: ClientId::new(mock_client_type(), 45).unwrap()
-                            })
+                            ics03_error::ConnectionError::Client(
+                                ics02_error::ClientError::ClientNotFound {
+                                    client_id: ClientId::new(mock_client_type(), 45).unwrap()
+                                }
+                            )
                             .to_string()
                         );
                     }

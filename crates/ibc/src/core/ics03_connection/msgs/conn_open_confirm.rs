@@ -5,7 +5,7 @@ use ibc_proto::protobuf::Protobuf;
 
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenConfirm as RawMsgConnectionOpenConfirm;
 
-use crate::core::ics03_connection::error::Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::signer::Signer;
 use crate::tx_msg::Msg;
@@ -26,7 +26,7 @@ pub struct MsgConnectionOpenConfirm {
 }
 
 impl Msg for MsgConnectionOpenConfirm {
-    type ValidationError = Error;
+    type ValidationError = ConnectionError;
     type Raw = RawMsgConnectionOpenConfirm;
 
     fn route(&self) -> String {
@@ -41,20 +41,23 @@ impl Msg for MsgConnectionOpenConfirm {
 impl Protobuf<RawMsgConnectionOpenConfirm> for MsgConnectionOpenConfirm {}
 
 impl TryFrom<RawMsgConnectionOpenConfirm> for MsgConnectionOpenConfirm {
-    type Error = Error;
+    type Error = ConnectionError;
 
     fn try_from(msg: RawMsgConnectionOpenConfirm) -> Result<Self, Self::Error> {
         Ok(Self {
             conn_id_on_b: msg
                 .connection_id
                 .parse()
-                .map_err(Error::InvalidIdentifier)?,
-            proof_conn_end_on_a: msg.proof_ack.try_into().map_err(Error::InvalidProof)?,
+                .map_err(ConnectionError::InvalidIdentifier)?,
+            proof_conn_end_on_a: msg
+                .proof_ack
+                .try_into()
+                .map_err(ConnectionError::InvalidProof)?,
             proof_height_on_a: msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(Error::MissingProofHeight)?,
-            signer: msg.signer.parse().map_err(Error::Signer)?,
+                .ok_or(ConnectionError::MissingProofHeight)?,
+            signer: msg.signer.parse().map_err(ConnectionError::Signer)?,
         })
     }
 }

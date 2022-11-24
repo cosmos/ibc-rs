@@ -18,7 +18,7 @@ use ibc_proto::protobuf::Error as TendermintError;
 #[derive(Debug, Display)]
 pub enum Error {
     /// ICS03 connection error
-    Connection(connection_error::Error),
+    Connection(connection_error::ConnectionError),
     /// ICS05 port error
     Port(port_error::Error),
     /// channel state unknown: `{state}`

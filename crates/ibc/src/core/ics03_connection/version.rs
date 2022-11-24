@@ -7,7 +7,7 @@ use ibc_proto::ibc::core::connection::v1::Version as RawVersion;
 use ibc_proto::protobuf::Protobuf;
 use serde::{Deserialize, Serialize};
 
-use crate::core::ics03_connection::error::Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::channel::Order;
 
 /// Stores the identifier and the features supported by a version
@@ -29,14 +29,14 @@ impl Version {
 impl Protobuf<RawVersion> for Version {}
 
 impl TryFrom<RawVersion> for Version {
-    type Error = Error;
+    type Error = ConnectionError;
     fn try_from(value: RawVersion) -> Result<Self, Self::Error> {
         if value.identifier.trim().is_empty() {
-            return Err(Error::EmptyVersions);
+            return Err(ConnectionError::EmptyVersions);
         }
         for feature in value.features.iter() {
             if feature.trim().is_empty() {
-                return Err(Error::EmptyFeatures);
+                return Err(ConnectionError::EmptyFeatures);
             }
         }
         Ok(Version {
@@ -87,7 +87,7 @@ pub fn get_compatible_versions() -> Vec<Version> {
 pub fn pick_version(
     supported_versions: Vec<Version>,
     counterparty_versions: Vec<Version>,
-) -> Result<Version, Error> {
+) -> Result<Version, ConnectionError> {
     let mut intersection: Vec<Version> = Vec::new();
     for s in supported_versions.iter() {
         for c in counterparty_versions.iter() {
@@ -96,7 +96,7 @@ pub fn pick_version(
             }
             for feature in c.features.iter() {
                 if feature.trim().is_empty() {
-                    return Err(Error::EmptyFeatures);
+                    return Err(ConnectionError::EmptyFeatures);
                 }
             }
             intersection.append(&mut vec![s.clone()]);
@@ -104,7 +104,7 @@ pub fn pick_version(
     }
     intersection.sort_by(|a, b| a.identifier.cmp(&b.identifier));
     if intersection.is_empty() {
-        return Err(Error::NoCommonVersion);
+        return Err(ConnectionError::NoCommonVersion);
     }
     Ok(intersection[0].clone())
 }
@@ -117,7 +117,7 @@ mod tests {
 
     use ibc_proto::ibc::core::connection::v1::Version as RawVersion;
 
-    use crate::core::ics03_connection::error::Error;
+    use crate::core::ics03_connection::error::ConnectionError;
     use crate::core::ics03_connection::version::{get_compatible_versions, pick_version, Version};
 
     fn good_versions() -> Vec<RawVersion> {
@@ -263,7 +263,7 @@ mod tests {
             name: String,
             supported: Vec<Version>,
             counterparty: Vec<Version>,
-            picked: Result<Version, Error>,
+            picked: Result<Version, ConnectionError>,
             want_pass: bool,
         }
         let tests: Vec<Test> = vec![
@@ -285,7 +285,7 @@ mod tests {
                 name: "Disjoint versions".to_string(),
                 supported: disjoint().0,
                 counterparty: disjoint().1,
-                picked: Err(Error::NoCommonVersion),
+                picked: Err(ConnectionError::NoCommonVersion),
                 want_pass: false,
             },
         ];

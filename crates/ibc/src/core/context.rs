@@ -21,7 +21,7 @@ use super::{
     },
     ics03_connection::{
         connection::ConnectionEnd,
-        error::Error as ConnectionError,
+        error::ConnectionError,
         version::{get_compatible_versions, pick_version, Version as ConnectionVersion},
     },
     ics04_channel::{

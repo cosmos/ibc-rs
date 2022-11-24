@@ -10,7 +10,7 @@ pub enum Error {
     /// ICS02 client error
     Client(ics02_client::error::ClientError),
     /// ICS03 connection error
-    Connection(ics03_connection::error::Error),
+    Connection(ics03_connection::error::ConnectionError),
     /// ICS04 channel error
     Channel(ics04_channel::error::Error),
     /// unknown type URL `{url}`

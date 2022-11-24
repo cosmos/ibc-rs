@@ -10,7 +10,7 @@ use alloc::string::String;
 use displaydoc::Display;
 
 #[derive(Debug, Display)]
-pub enum Error {
+pub enum ConnectionError {
     /// ICS02 client error
     Client(client_error::ClientError),
     /// connection state is unknown: `{state}`
@@ -94,18 +94,18 @@ pub enum Error {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {
+impl std::error::Error for ConnectionError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Error::Client(e) => Some(e),
-            Error::InvalidIdentifier(e) => Some(e),
-            Error::InvalidProof(e) => Some(e),
-            Error::VerifyConnectionState(e) => Some(e),
-            Error::Signer(e) => Some(e),
-            Error::ConsensusStateVerificationFailure {
+            Self::Client(e) => Some(e),
+            Self::InvalidIdentifier(e) => Some(e),
+            Self::InvalidProof(e) => Some(e),
+            Self::VerifyConnectionState(e) => Some(e),
+            Self::Signer(e) => Some(e),
+            Self::ConsensusStateVerificationFailure {
                 client_error: e, ..
             } => Some(e),
-            Error::ClientStateVerificationFailure {
+            Self::ClientStateVerificationFailure {
                 client_error: e, ..
             } => Some(e),
             _ => None,

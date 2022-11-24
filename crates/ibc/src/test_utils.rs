@@ -12,7 +12,7 @@ use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::ConnectionEnd;
-use crate::core::ics03_connection::error::Error as Ics03Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order};
 use crate::core::ics04_channel::commitment::PacketCommitment;
 use crate::core::ics04_channel::context::SendPacketReader;
@@ -234,7 +234,7 @@ impl SendPacketReader for DummyTransferModule {
     fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, Error> {
         match self.ibc_store.lock().unwrap().connections.get(cid) {
             Some(connection_end) => Ok(connection_end.clone()),
-            None => Err(Ics03Error::ConnectionNotFound {
+            None => Err(ConnectionError::ConnectionNotFound {
                 connection_id: cid.clone(),
             }),
         }
@@ -255,7 +255,7 @@ impl SendPacketReader for DummyTransferModule {
                 client_id: client_id.clone(),
             }),
         }
-        .map_err(|e| Error::Connection(Ics03Error::Client(e)))
+        .map_err(|e| Error::Connection(ConnectionError::Client(e)))
     }
 
     fn client_consensus_state(
@@ -276,7 +276,7 @@ impl SendPacketReader for DummyTransferModule {
                 height,
             }),
         }
-        .map_err(|e| Error::Connection(Ics03Error::Client(e)))
+        .map_err(|e| Error::Connection(ConnectionError::Client(e)))
     }
 
     fn get_next_sequence_send(

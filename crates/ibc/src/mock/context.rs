@@ -26,7 +26,7 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::context::{ConnectionKeeper, ConnectionReader};
-use crate::core::ics03_connection::error::Error as Ics03Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
@@ -708,7 +708,7 @@ impl ChannelReader for MockContext {
 
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Ics04Error> {
         ClientReader::client_state(self, client_id)
-            .map_err(|e| Ics04Error::Connection(Ics03Error::Client(e)))
+            .map_err(|e| Ics04Error::Connection(ConnectionError::Client(e)))
     }
 
     fn client_consensus_state(
@@ -717,7 +717,7 @@ impl ChannelReader for MockContext {
         height: Height,
     ) -> Result<Box<dyn ConsensusState>, Ics04Error> {
         ClientReader::consensus_state(self, client_id, height)
-            .map_err(|e| Ics04Error::Connection(Ics03Error::Client(e)))
+            .map_err(|e| Ics04Error::Connection(ConnectionError::Client(e)))
     }
 
     fn get_next_sequence_send(
@@ -863,7 +863,7 @@ impl ChannelReader for MockContext {
 
     fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, Ics04Error> {
         ClientReader::pending_host_consensus_state(self)
-            .map_err(|e| Ics04Error::Connection(Ics03Error::Client(e)))
+            .map_err(|e| Ics04Error::Connection(ConnectionError::Client(e)))
     }
 
     fn client_update_time(
@@ -1091,29 +1091,32 @@ impl ChannelKeeper for MockContext {
 }
 
 impl ConnectionReader for MockContext {
-    fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, Ics03Error> {
+    fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, ConnectionError> {
         match self.ibc_store.lock().unwrap().connections.get(cid) {
             Some(connection_end) => Ok(connection_end.clone()),
-            None => Err(Ics03Error::ConnectionNotFound {
+            None => Err(ConnectionError::ConnectionNotFound {
                 connection_id: cid.clone(),
             }),
         }
     }
 
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Ics03Error> {
+    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ConnectionError> {
         // Forward method call to the Ics2 Client-specific method.
-        ClientReader::client_state(self, client_id).map_err(Ics03Error::Client)
+        ClientReader::client_state(self, client_id).map_err(ConnectionError::Client)
     }
 
-    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, Ics03Error> {
-        ClientReader::decode_client_state(self, client_state).map_err(Ics03Error::Client)
+    fn decode_client_state(
+        &self,
+        client_state: Any,
+    ) -> Result<Box<dyn ClientState>, ConnectionError> {
+        ClientReader::decode_client_state(self, client_state).map_err(ConnectionError::Client)
     }
 
-    fn host_current_height(&self) -> Result<Height, Ics03Error> {
+    fn host_current_height(&self) -> Result<Height, ConnectionError> {
         Ok(self.latest_height())
     }
 
-    fn host_oldest_height(&self) -> Result<Height, Ics03Error> {
+    fn host_oldest_height(&self) -> Result<Height, ConnectionError> {
         // history must be non-empty, so `self.history[0]` is valid
         Ok(self.history[0].height())
     }
@@ -1126,21 +1129,24 @@ impl ConnectionReader for MockContext {
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Box<dyn ConsensusState>, Ics03Error> {
+    ) -> Result<Box<dyn ConsensusState>, ConnectionError> {
         // Forward method call to the Ics2Client-specific method.
         self.consensus_state(client_id, height)
-            .map_err(Ics03Error::Client)
+            .map_err(ConnectionError::Client)
     }
 
-    fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, Ics03Error> {
-        ClientReader::host_consensus_state(self, height).map_err(Ics03Error::Client)
+    fn host_consensus_state(
+        &self,
+        height: Height,
+    ) -> Result<Box<dyn ConsensusState>, ConnectionError> {
+        ClientReader::host_consensus_state(self, height).map_err(ConnectionError::Client)
     }
 
-    fn connection_counter(&self) -> Result<u64, Ics03Error> {
+    fn connection_counter(&self) -> Result<u64, ConnectionError> {
         Ok(self.ibc_store.lock().unwrap().connection_ids_counter)
     }
 
-    fn validate_self_client(&self, _counterparty_client_state: Any) -> Result<(), Ics03Error> {
+    fn validate_self_client(&self, _counterparty_client_state: Any) -> Result<(), ConnectionError> {
         Ok(())
     }
 }
@@ -1150,7 +1156,7 @@ impl ConnectionKeeper for MockContext {
         &mut self,
         connection_id: ConnectionId,
         connection_end: &ConnectionEnd,
-    ) -> Result<(), Ics03Error> {
+    ) -> Result<(), ConnectionError> {
         self.ibc_store
             .lock()
             .unwrap()
@@ -1163,7 +1169,7 @@ impl ConnectionKeeper for MockContext {
         &mut self,
         connection_id: ConnectionId,
         client_id: &ClientId,
-    ) -> Result<(), Ics03Error> {
+    ) -> Result<(), ConnectionError> {
         self.ibc_store
             .lock()
             .unwrap()

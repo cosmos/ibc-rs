@@ -23,5 +23,5 @@ pub enum Error {
     /// transaction processing by modules failed, error(`{0}`)
     TransactionFailed(RoutingError),
     /// ics03 connection error(`{0}`)
-    Ics03(ics03_connection::error::Error),
+    Ics03(ics03_connection::error::ConnectionError),
 }

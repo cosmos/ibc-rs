@@ -2,7 +2,7 @@
 
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::context::ConnectionReader;
-use crate::core::ics03_connection::error::Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenTry;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
@@ -17,7 +17,7 @@ use super::ConnectionIdState;
 pub(crate) fn process(
     ctx_b: &dyn ConnectionReader,
     msg: MsgConnectionOpenTry,
-) -> HandlerResult<ConnectionResult, Error> {
+) -> HandlerResult<ConnectionResult, ConnectionError> {
     let mut output = HandlerOutput::builder();
 
     let conn_id_on_b = ConnectionId::new(ctx_b.connection_counter()?);
@@ -26,7 +26,7 @@ pub(crate) fn process(
 
     if msg.consensus_height_of_b_on_a > ctx_b.host_current_height()? {
         // Fail if the consensus height is too advanced.
-        return Err(Error::InvalidConsensusHeight {
+        return Err(ConnectionError::InvalidConsensusHeight {
             target_height: msg.consensus_height_of_b_on_a,
             current_height: ctx_b.host_current_height()?,
         });
@@ -47,7 +47,7 @@ pub(crate) fn process(
     let conn_id_on_a = conn_end_on_b
         .counterparty()
         .connection_id()
-        .ok_or(Error::InvalidCounterparty)?;
+        .ok_or(ConnectionError::InvalidCounterparty)?;
 
     // Verify proofs
     {
@@ -77,7 +77,7 @@ pub(crate) fn process(
                     conn_id_on_a,
                     &expected_conn_end_on_a,
                 )
-                .map_err(Error::VerifyConnectionState)?;
+                .map_err(ConnectionError::VerifyConnectionState)?;
         }
 
         client_state_of_a_on_b
@@ -89,7 +89,7 @@ pub(crate) fn process(
                 client_id_on_a,
                 msg.client_state_of_b_on_a,
             )
-            .map_err(|e| Error::ClientStateVerificationFailure {
+            .map_err(|e| ConnectionError::ClientStateVerificationFailure {
                 client_id: conn_end_on_b.client_id().clone(),
                 client_error: e,
             })?;
@@ -106,7 +106,7 @@ pub(crate) fn process(
                 msg.consensus_height_of_b_on_a,
                 expected_consensus_state_of_b_on_a.as_ref(),
             )
-            .map_err(|e| Error::ConsensusStateVerificationFailure {
+            .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
                 height: msg.proofs_height_on_a,
                 client_error: e,
             })?;

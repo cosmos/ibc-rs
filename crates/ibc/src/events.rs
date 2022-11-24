@@ -25,7 +25,7 @@ pub enum Error {
     /// ICS02 client error
     Client(client_error::ClientError),
     /// connection error
-    Connection(connection_error::Error),
+    Connection(connection_error::ConnectionError),
     /// channel error
     Channel(channel_error::Error),
     /// error parsing timestamp
