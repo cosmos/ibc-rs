@@ -47,7 +47,7 @@ use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::mock::host::{HostBlock, HostType};
 use crate::relayer::ics18_relayer::context::RelayerContext;
-use crate::relayer::ics18_relayer::error::Error as Ics18Error;
+use crate::relayer::ics18_relayer::error::RelayerError;
 use crate::signer::Signer;
 use crate::timestamp::Timestamp;
 use crate::Height;
@@ -465,8 +465,8 @@ impl MockContext {
     /// A datagram passes from the relayer to the IBC module (on host chain).
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
     /// Used in testing the Ics18 algorithms, hence this may return a Ics18Error.
-    pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), Ics18Error> {
-        dispatch(self, msg).map_err(Ics18Error::TransactionFailed)?;
+    pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), RelayerError> {
+        dispatch(self, msg).map_err(RelayerError::TransactionFailed)?;
         // Create a new block.
         self.advance_host_chain_height();
         Ok(())
@@ -1432,8 +1432,8 @@ impl ClientKeeper for MockContext {
 }
 
 impl RelayerContext for MockContext {
-    fn query_latest_height(&self) -> Result<Height, Ics18Error> {
-        self.host_current_height().map_err(Ics18Error::Ics03)
+    fn query_latest_height(&self) -> Result<Height, RelayerError> {
+        self.host_current_height().map_err(RelayerError::Connection)
     }
 
     fn query_client_full_state(&self, client_id: &ClientId) -> Option<Box<dyn ClientState>> {
@@ -1446,12 +1446,12 @@ impl RelayerContext for MockContext {
         block_ref.cloned().map(Header::into_box)
     }
 
-    fn send(&mut self, msgs: Vec<Any>) -> Result<Vec<IbcEvent>, Ics18Error> {
+    fn send(&mut self, msgs: Vec<Any>) -> Result<Vec<IbcEvent>, RelayerError> {
         // Forward call to Ics26 delivery method.
         let mut all_events = vec![];
         for msg in msgs {
             let MsgReceipt { mut events, .. } =
-                deliver(self, msg).map_err(Ics18Error::TransactionFailed)?;
+                deliver(self, msg).map_err(RelayerError::TransactionFailed)?;
             all_events.append(&mut events);
         }
         self.advance_host_chain_height(); // Advance chain height

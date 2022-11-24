@@ -3,7 +3,7 @@ use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
 use crate::core::ics02_client::msgs::ClientMsg;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::relayer::ics18_relayer::context::RelayerContext;
-use crate::relayer::ics18_relayer::error::Error;
+use crate::relayer::ics18_relayer::error::RelayerError;
 
 /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
 /// context, assuming that the latest header on the source context is `src_header`.
@@ -11,22 +11,22 @@ pub fn build_client_update_datagram<Ctx>(
     dest: &Ctx,
     client_id: &ClientId,
     src_header: &dyn Header,
-) -> Result<ClientMsg, Error>
+) -> Result<ClientMsg, RelayerError>
 where
     Ctx: RelayerContext,
 {
     // Check if client for ibc0 on ibc1 has been updated to latest height:
     // - query client state on destination chain
-    let dest_client_state =
-        dest.query_client_full_state(client_id)
-            .ok_or_else(|| Error::ClientStateNotFound {
-                client_id: client_id.clone(),
-            })?;
+    let dest_client_state = dest.query_client_full_state(client_id).ok_or_else(|| {
+        RelayerError::ClientStateNotFound {
+            client_id: client_id.clone(),
+        }
+    })?;
 
     let dest_client_latest_height = dest_client_state.latest_height();
 
     if src_header.height() == dest_client_latest_height {
-        return Err(Error::ClientAlreadyUpToDate {
+        return Err(RelayerError::ClientAlreadyUpToDate {
             client_id: client_id.clone(),
             source_height: src_header.height(),
             destination_height: dest_client_latest_height,
@@ -34,7 +34,7 @@ where
     };
 
     if dest_client_latest_height > src_header.height() {
-        return Err(Error::ClientAtHigherHeight {
+        return Err(RelayerError::ClientAtHigherHeight {
             client_id: client_id.clone(),
             source_height: src_header.height(),
             destination_height: dest_client_latest_height,

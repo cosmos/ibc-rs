@@ -5,7 +5,7 @@ use crate::Height;
 use displaydoc::Display;
 
 #[derive(Debug, Display)]
-pub enum Error {
+pub enum RelayerError {
     /// client state on destination chain not found, (client id: `{client_id}`)
     ClientStateNotFound { client_id: ClientId },
     /// the client on destination chain is already up-to-date (client id: `{client_id}`, source height: `{source_height}`, dest height: `{destination_height}`)
@@ -22,16 +22,16 @@ pub enum Error {
     },
     /// transaction processing by modules failed
     TransactionFailed(RouterError),
-    /// ics03 connection error(`{0}`)
-    Ics03(ics03_connection::error::ConnectionError),
+    /// ICS03 connection error(`{0}`)
+    Connection(ics03_connection::error::ConnectionError),
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {
+impl std::error::Error for RelayerError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Error::TransactionFailed(e) => Some(e),
-            Error::Ics03(e) => Some(e),
+            Self::TransactionFailed(e) => Some(e),
+            Self::Connection(e) => Some(e),
             _ => None,
         }
     }
