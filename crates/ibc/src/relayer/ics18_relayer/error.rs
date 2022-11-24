@@ -1,6 +1,6 @@
 use crate::core::ics03_connection;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics26_routing::error::Error as RoutingError;
+use crate::core::ics26_routing::error::RouterError;
 use crate::Height;
 use displaydoc::Display;
 
@@ -20,8 +20,19 @@ pub enum Error {
         source_height: Height,
         destination_height: Height,
     },
-    /// transaction processing by modules failed, error(`{0}`)
-    TransactionFailed(RoutingError),
+    /// transaction processing by modules failed
+    TransactionFailed(RouterError),
     /// ics03 connection error(`{0}`)
     Ics03(ics03_connection::error::ConnectionError),
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Error::TransactionFailed(e) => Some(e),
+            Error::Ics03(e) => Some(e),
+            _ => None,
+        }
+    }
 }

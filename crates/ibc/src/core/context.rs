@@ -3,7 +3,7 @@ use core::time::Duration;
 use crate::events::IbcEvent;
 use crate::{prelude::*, timestamp::Timestamp, Height};
 
-use crate::core::ics26_routing::error::Error as RouterError;
+use crate::core::ics26_routing::error::RouterError;
 
 use ibc_proto::google::protobuf::Any;
 

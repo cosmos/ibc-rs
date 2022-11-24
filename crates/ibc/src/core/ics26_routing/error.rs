@@ -6,7 +6,7 @@ use crate::core::ics04_channel;
 use displaydoc::Display;
 
 #[derive(Debug, Display)]
-pub enum Error {
+pub enum RouterError {
     /// ICS02 client error
     Client(ics02_client::error::ClientError),
     /// ICS03 connection error
@@ -22,15 +22,15 @@ pub enum Error {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {
+impl std::error::Error for RouterError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Error::Client(e) => Some(e),
-            Error::Connection(e) => Some(e),
-            Error::Channel(e) => Some(e),
-            Error::UnknownMessageTypeUrl { .. } => None,
-            Error::MalformedMessageBytes(e) => Some(e),
-            Error::Packet(e) => Some(e),
+            Self::Client(e) => Some(e),
+            Self::Connection(e) => Some(e),
+            Self::Channel(e) => Some(e),
+            Self::UnknownMessageTypeUrl { .. } => None,
+            Self::MalformedMessageBytes(e) => Some(e),
+            Self::Packet(e) => Some(e),
         }
     }
 }
