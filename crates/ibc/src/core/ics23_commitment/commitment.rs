@@ -1,4 +1,4 @@
-use crate::core::ics23_commitment::error::Error;
+use crate::core::ics23_commitment::error::CommitmentError;
 use crate::prelude::*;
 use crate::proofs::ProofError;
 
@@ -99,12 +99,12 @@ impl TryFrom<MerkleProof> for CommitmentProofBytes {
 }
 
 impl TryFrom<CommitmentProofBytes> for RawMerkleProof {
-    type Error = Error;
+    type Error = CommitmentError;
 
     fn try_from(value: CommitmentProofBytes) -> Result<Self, Self::Error> {
         let value: Vec<u8> = value.into();
-        let res: RawMerkleProof =
-            prost::Message::decode(value.as_ref()).map_err(Error::InvalidRawMerkleProof)?;
+        let res: RawMerkleProof = prost::Message::decode(value.as_ref())
+            .map_err(CommitmentError::InvalidRawMerkleProof)?;
         Ok(res)
     }
 }
@@ -125,7 +125,7 @@ impl CommitmentPrefix {
 }
 
 impl TryFrom<Vec<u8>> for CommitmentPrefix {
-    type Error = Error;
+    type Error = CommitmentError;
 
     fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
         if bytes.is_empty() {

@@ -4,7 +4,7 @@ use ibc_proto::protobuf::Error as TendermintProtoError;
 
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::height::HeightError;
-use crate::core::ics23_commitment::error::Error as Ics23Error;
+use crate::core::ics23_commitment::error::CommitmentError;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::signer::SignerError;
@@ -94,11 +94,11 @@ pub enum ClientError {
     /// invalid address
     InvalidAddress,
     /// invalid proof for the upgraded client state
-    InvalidUpgradeClientProof(Ics23Error),
+    InvalidUpgradeClientProof(CommitmentError),
     /// invalid proof for the upgraded consensus state
-    InvalidUpgradeConsensusStateProof(Ics23Error),
+    InvalidUpgradeConsensusStateProof(CommitmentError),
     /// invalid commitment proof bytes
-    InvalidCommitmentProof(Ics23Error),
+    InvalidCommitmentProof(CommitmentError),
     /// invalid packet timeout timestamp value
     InvalidPacketTimestamp(crate::timestamp::ParseTimestampError),
     /// mismatch between client and arguments types
@@ -140,7 +140,7 @@ pub enum ClientError {
     /// failed to parse signer
     Signer(SignerError),
     /// ics23 verification failure
-    Ics23Verification(Ics23Error),
+    Ics23Verification(CommitmentError),
     /// client specific error: `{description}`
     ClientSpecific { description: String },
     /// other error: `{description}`

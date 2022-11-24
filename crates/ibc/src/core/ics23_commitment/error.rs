@@ -2,7 +2,7 @@ use displaydoc::Display;
 use prost::DecodeError;
 
 #[derive(Debug, Display)]
-pub enum Error {
+pub enum CommitmentError {
     /// invalid raw merkle proof
     InvalidRawMerkleProof(DecodeError),
     /// failed to decode commitment proof
@@ -26,11 +26,11 @@ pub enum Error {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {
+impl std::error::Error for CommitmentError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Error::InvalidRawMerkleProof(e) => Some(e),
-            Error::CommitmentProofDecodingFailed(e) => Some(e),
+            Self::InvalidRawMerkleProof(e) => Some(e),
+            Self::CommitmentProofDecodingFailed(e) => Some(e),
             _ => None,
         }
     }
