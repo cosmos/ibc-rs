@@ -273,7 +273,7 @@ impl ClientState {
         Ok(())
     }
 
-    fn check_misbehaviour_header(
+    fn check_header_and_validator_set(
         &self,
         header: &Header,
         consensus_state: &TmConsensusState,
@@ -598,8 +598,8 @@ impl Ics2ClientState for ClientState {
 
         let current_timestamp = ctx.host_timestamp()?;
 
-        self.check_misbehaviour_header(header_1, &consensus_state_1, current_timestamp)?;
-        self.check_misbehaviour_header(header_2, &consensus_state_2, current_timestamp)?;
+        self.check_header_and_validator_set(header_1, &consensus_state_1, current_timestamp)?;
+        self.check_header_and_validator_set(header_2, &consensus_state_2, current_timestamp)?;
 
         self.verify_misbehaviour_header_commit(header_1, &consensus_state_1)?;
         self.verify_misbehaviour_header_commit(header_2, &consensus_state_2)?;
