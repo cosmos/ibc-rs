@@ -50,6 +50,30 @@ pub enum ContextError {
     PacketError(PacketError),
 }
 
+impl From<ClientError> for ContextError {
+    fn from(err: ClientError) -> ContextError {
+        Self::ClientError(err)
+    }
+}
+
+impl From<ConnectionError> for ContextError {
+    fn from(err: ConnectionError) -> ContextError {
+        Self::ConnectionError(err)
+    }
+}
+
+impl From<ChannelError> for ContextError {
+    fn from(err: ChannelError) -> ContextError {
+        Self::ChannelError(err)
+    }
+}
+
+impl From<PacketError> for ContextError {
+    fn from(err: PacketError) -> ContextError {
+        Self::PacketError(err)
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for ContextError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
@@ -77,7 +101,7 @@ pub trait ValidationContext {
                 ClientMsg::Misbehaviour(_message) => unimplemented!(),
                 ClientMsg::UpgradeClient(message) => upgrade_client::validate(self, message),
             }
-            .map_err(RouterError::Client),
+            .map_err(|e| RouterError::ContextError(e)),
             MsgEnvelope::ConnectionMsg(_message) => todo!(),
             MsgEnvelope::ChannelMsg(_message) => todo!(),
             MsgEnvelope::PacketMsg(_message) => todo!(),
@@ -282,7 +306,7 @@ pub trait ExecutionContext: ValidationContext {
                 ClientMsg::Misbehaviour(_message) => unimplemented!(),
                 ClientMsg::UpgradeClient(message) => upgrade_client::execute(self, message),
             }
-            .map_err(RouterError::Client),
+            .map_err(|e| RouterError::ContextError(e)),
             MsgEnvelope::ConnectionMsg(_message) => todo!(),
             MsgEnvelope::ChannelMsg(_message) => todo!(),
             MsgEnvelope::PacketMsg(_message) => todo!(),

@@ -1,5 +1,6 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpgradeAnyClient`.
 //!
+use crate::core::context::ContextError;
 use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::ClientReader;
@@ -23,7 +24,7 @@ pub struct UpgradeClientResult {
     pub consensus_state: Box<dyn ConsensusState>,
 }
 
-pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ClientError>
+pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
@@ -33,7 +34,7 @@ where
     let old_client_state = ctx.client_state(&client_id)?;
 
     if old_client_state.is_frozen() {
-        return Err(ClientError::ClientFrozen { client_id });
+        return Err(ClientError::ClientFrozen { client_id }.into());
     }
 
     let upgrade_client_state = ctx.decode_client_state(msg.client_state)?;
@@ -42,13 +43,14 @@ where
         return Err(ClientError::LowUpgradeHeight {
             upgraded_height: old_client_state.latest_height(),
             client_height: upgrade_client_state.latest_height(),
-        });
+        }
+        .into());
     }
 
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), ClientError>
+pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
 {

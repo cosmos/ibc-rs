@@ -59,11 +59,12 @@ where
 {
     let output = match msg {
         ClientMsg(msg) => {
-            let handler_output = ics2_msg_dispatcher(ctx, msg).map_err(RouterError::Client)?;
+            let handler_output =
+                ics2_msg_dispatcher(ctx, msg).map_err(|e| RouterError::ContextError(e.into()))?;
 
             // Apply the result to the context (host chain store).
             ctx.store_client_result(handler_output.result)
-                .map_err(RouterError::Client)?;
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             HandlerOutput::builder()
                 .with_log(handler_output.log)
@@ -72,11 +73,12 @@ where
         }
 
         ConnectionMsg(msg) => {
-            let handler_output = ics3_msg_dispatcher(ctx, msg).map_err(RouterError::Connection)?;
+            let handler_output =
+                ics3_msg_dispatcher(ctx, msg).map_err(|e| RouterError::ContextError(e.into()))?;
 
             // Apply any results to the host chain store.
             ctx.store_connection_result(handler_output.result)
-                .map_err(RouterError::Connection)?;
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             HandlerOutput::builder()
                 .with_log(handler_output.log)
@@ -85,18 +87,19 @@ where
         }
 
         ChannelMsg(msg) => {
-            let module_id = channel_validate(ctx, &msg).map_err(RouterError::Channel)?;
+            let module_id =
+                channel_validate(ctx, &msg).map_err(|e| RouterError::ContextError(e.into()))?;
             let dispatch_output = HandlerOutputBuilder::<()>::new();
 
             let (dispatch_log, mut channel_result) =
-                channel_dispatch(ctx, &msg).map_err(RouterError::Channel)?;
+                channel_dispatch(ctx, &msg).map_err(|e| RouterError::ContextError(e.into()))?;
 
             // Note: `OpenInit` and `OpenTry` modify the `version` field of the `channel_result`,
             // so we must pass it mutably. We intend to clean this up with the implementation of
             // ADR 5.
             // See issue [#190](https://github.com/cosmos/ibc-rs/issues/190)
             let callback_extras = channel_callback(ctx, &module_id, &msg, &mut channel_result)
-                .map_err(RouterError::Channel)?;
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             // We need to construct events here instead of directly in the
             // `process` functions because we need to wait for the callback to
@@ -111,7 +114,7 @@ where
 
             // Apply any results to the host chain store.
             ctx.store_channel_result(channel_result)
-                .map_err(RouterError::Packet)?;
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             dispatch_output
                 .with_events(dispatch_events)
@@ -128,20 +131,21 @@ where
         }
 
         PacketMsg(msg) => {
-            let module_id = get_module_for_packet_msg(ctx, &msg).map_err(RouterError::Channel)?;
-            let (mut handler_builder, packet_result) =
-                ics4_packet_msg_dispatcher(ctx, &msg).map_err(RouterError::Packet)?;
+            let module_id = get_module_for_packet_msg(ctx, &msg)
+                .map_err(|e| RouterError::ContextError(e.into()))?;
+            let (mut handler_builder, packet_result) = ics4_packet_msg_dispatcher(ctx, &msg)
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             if matches!(packet_result, PacketResult::Recv(RecvPacketResult::NoOp)) {
                 return Ok(handler_builder.with_result(()));
             }
 
             let cb_result = ics4_packet_callback(ctx, &module_id, &msg, &mut handler_builder);
-            cb_result.map_err(RouterError::Packet)?;
+            cb_result.map_err(|e| RouterError::ContextError(e.into()))?;
 
             // Apply any results to the host chain store.
             ctx.store_packet_result(packet_result)
-                .map_err(RouterError::Packet)?;
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             handler_builder.with_result(())
         }
@@ -632,7 +636,7 @@ mod tests {
                         msg,
                     )
                     .map(|_| ())
-                    .map_err(RouterError::Channel)
+                    .map_err(|e| RouterError::ContextError(e.into()))
                 }
             };
 

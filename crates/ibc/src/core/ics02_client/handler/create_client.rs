@@ -1,5 +1,6 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
+use crate::core::context::ContextError;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::ics24_host::path::ClientStatePath;
 use crate::core::ics24_host::path::ClientTypePath;
@@ -34,7 +35,7 @@ pub struct CreateClientResult {
     pub processed_height: Height,
 }
 
-pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ClientError>
+pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
@@ -62,7 +63,7 @@ where
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), ClientError>
+pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
 {
@@ -80,11 +81,11 @@ where
     let client_type = client_state.client_type();
 
     let client_id = ClientId::new(client_type.clone(), id_counter).map_err(|e| {
-        ClientError::ClientIdentifierConstructor {
+        ContextError::from(ClientError::ClientIdentifierConstructor {
             client_type: client_state.client_type(),
             counter: id_counter,
             validation_error: e,
-        }
+        })
     })?;
     let consensus_state = client_state.initialise(consensus_state)?;
 

@@ -2,6 +2,7 @@
 
 use tracing::debug;
 
+use crate::core::context::ContextError;
 use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::ClientReader;
@@ -29,7 +30,7 @@ pub struct UpdateClientResult {
     pub processed_height: Height,
 }
 
-pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), ClientError>
+pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
@@ -44,7 +45,7 @@ where
     let client_state = ctx.client_state(&client_id)?;
 
     if client_state.is_frozen() {
-        return Err(ClientError::ClientFrozen { client_id });
+        return Err(ClientError::ClientFrozen { client_id }.into());
     }
 
     // Read consensus state from the host chain store.
@@ -69,7 +70,8 @@ where
         return Err(ClientError::HeaderNotWithinTrustPeriod {
             latest_time: latest_consensus_state.timestamp(),
             update_time: now,
-        });
+        }
+        .into());
     }
 
     // Use client_state to validate the new header against the latest consensus_state.
@@ -84,7 +86,7 @@ where
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), ClientError>
+pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
 {

@@ -1,3 +1,4 @@
+use crate::core::context::ContextError;
 use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
@@ -518,11 +519,8 @@ impl Ics2ClientState for ClientState {
             match ctx.consensus_state(client_id, height) {
                 Ok(cs) => Ok(Some(cs)),
                 Err(e) => match e {
-                    ClientError::ConsensusStateNotFound {
-                        client_id: _,
-                        height: _,
-                    } => Ok(None),
-                    _ => Err(e),
+                    ContextError::ClientError(e) => Err(e),
+                    _ => Ok(None),
                 },
             }
         }
@@ -563,7 +561,11 @@ impl Ics2ClientState for ClientState {
             };
 
         let trusted_consensus_state = downcast_tm_consensus_state(
-            ctx.consensus_state(&client_id, header.trusted_height)?
+            ctx.consensus_state(&client_id, header.trusted_height)
+                .map_err(|e| match e {
+                    ContextError::ClientError(e) => e,
+                    _ => todo!(),
+                })?
                 .as_ref(),
         )?;
 
@@ -598,7 +600,13 @@ impl Ics2ClientState for ClientState {
             untrusted_state,
             trusted_state,
             &options,
-            ctx.host_timestamp()?.into_tm_time().unwrap(),
+            ctx.host_timestamp()
+                .map_err(|e| match e {
+                    ContextError::ClientError(e) => e,
+                    _ => todo!(),
+                })?
+                .into_tm_time()
+                .unwrap(),
         );
 
         match verdict {
@@ -628,7 +636,11 @@ impl Ics2ClientState for ClientState {
         // (cs-new, cs-next, cs-latest)
         if header.height() < client_state.latest_height() {
             let maybe_next_cs = ctx
-                .next_consensus_state(&client_id, header.height())?
+                .next_consensus_state(&client_id, header.height())
+                .map_err(|e| match e {
+                    ContextError::ClientError(e) => e,
+                    _ => todo!(),
+                })?
                 .as_ref()
                 .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
                 .transpose()?;
@@ -651,7 +663,11 @@ impl Ics2ClientState for ClientState {
         // (cs-trusted, cs-prev, cs-new)
         if header.trusted_height < header.height() {
             let maybe_prev_cs = ctx
-                .prev_consensus_state(&client_id, header.height())?
+                .prev_consensus_state(&client_id, header.height())
+                .map_err(|e| match e {
+                    ContextError::ClientError(e) => e,
+                    _ => todo!(),
+                })?
                 .as_ref()
                 .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
                 .transpose()?;
