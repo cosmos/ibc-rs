@@ -21,7 +21,7 @@ use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics04_channel::Version;
 use crate::core::ics05_port::context::PortReader;
-use crate::core::ics05_port::error::Error as PortError;
+use crate::core::ics05_port::error::PortError;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{Module, ModuleId};
 use crate::mock::context::MockIbcStore;

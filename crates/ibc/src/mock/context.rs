@@ -33,8 +33,7 @@ use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics05_port::context::PortReader;
-use crate::core::ics05_port::error::Error as Ics05Error;
-use crate::core::ics05_port::error::Error;
+use crate::core::ics05_port::error::PortError;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{Module, ModuleId, Router, RouterBuilder, RouterContext};
@@ -660,10 +659,10 @@ impl RouterContext for MockContext {
 }
 
 impl PortReader for MockContext {
-    fn lookup_module_by_port(&self, port_id: &PortId) -> Result<ModuleId, Error> {
+    fn lookup_module_by_port(&self, port_id: &PortId) -> Result<ModuleId, PortError> {
         match self.ibc_store.lock().unwrap().port_to_module.get(port_id) {
             Some(mod_id) => Ok(mod_id.clone()),
-            None => Err(Ics05Error::UnknownPort {
+            None => Err(PortError::UnknownPort {
                 port_id: port_id.clone(),
             }),
         }

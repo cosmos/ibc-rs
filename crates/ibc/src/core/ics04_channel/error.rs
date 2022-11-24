@@ -20,7 +20,7 @@ pub enum ChannelError {
     /// ICS03 connection error
     Connection(connection_error::ConnectionError),
     /// ICS05 port error
-    Port(port_error::Error),
+    Port(port_error::PortError),
     /// channel state unknown: `{state}`
     UnknownState { state: i32 },
 

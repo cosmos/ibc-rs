@@ -2,7 +2,7 @@ use crate::core::ics24_host::identifier::PortId;
 use displaydoc::Display;
 
 #[derive(Debug, Display)]
-pub enum Error {
+pub enum PortError {
     /// port `{port_id}` is unknown
     UnknownPort { port_id: PortId },
     /// port `{port_id}` is already bound
@@ -14,4 +14,4 @@ pub enum Error {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {}
+impl std::error::Error for PortError {}
