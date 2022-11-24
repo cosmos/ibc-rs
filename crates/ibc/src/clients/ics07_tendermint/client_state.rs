@@ -291,13 +291,11 @@ impl ClientState {
             })?;
 
         if duration_since_consensus_state >= self.trusting_period {
-            return Err(
-                Error::consensus_state_timestamp_gte_trusting_period(
-                    duration_since_consensus_state,
-                    self.trusting_period,
-                )
-                .into(),
-            );
+            return Err(Error::consensus_state_timestamp_gte_trusting_period(
+                duration_since_consensus_state,
+                self.trusting_period,
+            )
+            .into());
         }
 
         let untrusted_state = header.as_untrusted_block_state();
@@ -316,7 +314,7 @@ impl ClientState {
         Ok(())
     }
 
-    fn verify_misbehaviour_header_commit(
+    fn verify_header_commit_against_trusted(
         &self,
         header: &Header,
         consensus_state: &TmConsensusState,
@@ -601,8 +599,8 @@ impl Ics2ClientState for ClientState {
         self.check_header_and_validator_set(header_1, &consensus_state_1, current_timestamp)?;
         self.check_header_and_validator_set(header_2, &consensus_state_2, current_timestamp)?;
 
-        self.verify_misbehaviour_header_commit(header_1, &consensus_state_1)?;
-        self.verify_misbehaviour_header_commit(header_2, &consensus_state_2)?;
+        self.verify_header_commit_against_trusted(header_1, &consensus_state_1)?;
+        self.verify_header_commit_against_trusted(header_2, &consensus_state_2)?;
 
         let client_state = downcast_tm_client_state(self)?.clone();
         Ok(client_state
