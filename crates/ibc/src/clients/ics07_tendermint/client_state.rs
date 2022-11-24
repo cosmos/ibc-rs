@@ -292,7 +292,7 @@ impl ClientState {
 
         if duration_since_consensus_state >= self.trusting_period {
             return Err(
-                Error::misbehaviour_consensus_state_timestamp_gte_trusting_period(
+                Error::consensus_state_timestamp_gte_trusting_period(
                     duration_since_consensus_state,
                     self.trusting_period,
                 )

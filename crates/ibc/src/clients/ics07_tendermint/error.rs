@@ -317,7 +317,7 @@ define_error! {
                 format_args!("trusted validators {:?}, does not hash to latest trusted validators. Expected: {:?}, got: {:?}", e.trusted_validator_set, e.next_validators_hash, e.trusted_val_hash)
             },
 
-        MisbehaviourConsensusStateTimestampGteTrustingPeriod
+        ConsensusStateTimestampGteTrustingPeriod
             {
                 duration_since_consensus_state: Duration,
                 trusting_period: Duration,
