@@ -306,7 +306,7 @@ pub trait ExecutionContext: ValidationContext {
                 ClientMsg::Misbehaviour(_message) => unimplemented!(),
                 ClientMsg::UpgradeClient(message) => upgrade_client::execute(self, message),
             }
-            .map_err( RouterError::ContextError),
+            .map_err(RouterError::ContextError),
             MsgEnvelope::ConnectionMsg(_message) => todo!(),
             MsgEnvelope::ChannelMsg(_message) => todo!(),
             MsgEnvelope::PacketMsg(_message) => todo!(),
