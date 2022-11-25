@@ -7,6 +7,8 @@ use core::ops::{Add, Sub};
 use core::str::FromStr;
 use core::time::Duration;
 
+#[cfg(feature = "codec")]
+use alloc::string::FromUtf8Error;
 use flex_error::{define_error, TraceError};
 use serde_derive::{Deserialize, Serialize};
 use tendermint::Time;
@@ -24,6 +26,50 @@ pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Timestamp {
     time: Option<Time>,
+}
+
+#[cfg(feature = "codec")]
+#[derive(
+    PartialEq,
+    Eq,
+    Clone,
+    Default,
+    Deserialize,
+    Serialize,
+    codec::Encode,
+    codec::Decode,
+    sp_runtime::RuntimeDebug,
+    scale_info::TypeInfo,
+)]
+pub struct CodecTimestamp {
+    time: Vec<u8>,
+}
+
+#[cfg(feature = "codec")]
+impl From<Timestamp> for CodecTimestamp {
+	fn from(val: Timestamp) -> Self {
+		Self { time: val.nanoseconds().to_string().as_bytes().to_vec() }
+	}
+}
+
+#[cfg(feature = "codec")]
+#[derive(Debug, displaydoc::Display)]
+pub enum Error {
+    /// parse string error
+    ParseString(FromUtf8Error),
+    /// parse timestamp error 
+    ParseTimestampError(ParseTimestampError),
+}
+
+
+#[cfg(feature = "codec")]
+impl TryFrom<CodecTimestamp> for Timestamp {
+    type Error = Error; 
+
+	fn try_from(value: CodecTimestamp) -> Result<Self, Self::Error> {
+		let value = String::from_utf8(value.time).map_err(Self::Error::ParseString)?;
+		Self::from_str(&value).map_err(Self::Error::ParseTimestampError)
+	}
 }
 
 // TODO: derive when tendermint::Time supports it:

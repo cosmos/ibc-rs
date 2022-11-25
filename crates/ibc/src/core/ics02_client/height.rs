@@ -12,7 +12,31 @@ use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 
 use crate::core::ics02_client::error::Error;
 
+#[cfg(not(feature = "codec"))]
+#[cfg(not(feature = "borsh"))]
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Height {
+    /// Previously known as "epoch"
+    revision_number: u64,
+
+    /// The height of a block
+    revision_height: u64,
+}
+
+#[cfg(feature = "codec")]
+#[derive(
+    Copy,
+    Clone,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+    codec::Encode,
+    codec::Decode,
+    sp_runtime::RuntimeDebug,
+    scale_info::TypeInfo,
+)]
 pub struct Height {
     /// Previously known as "epoch"
     revision_number: u64,
@@ -109,6 +133,8 @@ impl From<Height> for RawHeight {
     }
 }
 
+#[cfg(not(feature = "codec"))]
+#[cfg(not(feature = "borsh"))]
 impl core::fmt::Debug for Height {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
         f.debug_struct("Height")

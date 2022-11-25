@@ -15,6 +15,7 @@ use crate::core::ics04_channel::error::Error;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::timestamp::{Expiry::Expired, Timestamp};
 use crate::Height;
+use crate::timestamp::CodecTimestamp;
 
 /// Enumeration of proof carrying ICS4 message, helper for relayer.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -52,9 +53,30 @@ impl core::fmt::Display for PacketMsgType {
     }
 }
 
+#[cfg(not(feature = "codec"))]
+#[cfg(not(feature = "borsh"))]
 /// The sequence number of a packet enforces ordering among packets from the same source.
 #[derive(
     Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Deserialize, Serialize,
+)]
+pub struct Sequence(u64);
+
+#[cfg(feature = "codec")]
+#[derive(
+    Copy,
+    Clone,
+    Default,
+    PartialEq,
+    Eq,
+    Hash,
+    PartialOrd,
+    Ord,
+    Deserialize,
+    Serialize,
+    codec::Encode,
+    codec::Decode,
+    sp_runtime::RuntimeDebug,
+    scale_info::TypeInfo,
 )]
 pub struct Sequence(u64);
 
@@ -96,6 +118,8 @@ impl core::fmt::Display for Sequence {
     }
 }
 
+#[cfg(not(feature = "codec"))]
+#[cfg(not(feature = "borsh"))]
 #[derive(Clone, Default, Hash, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Packet {
     pub sequence: Sequence,
@@ -109,6 +133,32 @@ pub struct Packet {
     pub timeout_timestamp: Timestamp,
 }
 
+#[cfg(feature = "codec")]
+#[derive(
+    Clone,
+    Default,
+    Hash,
+    PartialEq,
+    Eq,
+    Deserialize,
+    Serialize,
+    codec::Encode,
+    codec::Decode,
+    sp_runtime::RuntimeDebug,
+    scale_info::TypeInfo,
+)]
+pub struct Packet {
+    pub sequence: Sequence,
+    pub source_port: PortId,
+    pub source_channel: ChannelId,
+    pub destination_port: PortId,
+    pub destination_channel: ChannelId,
+    #[serde(serialize_with = "crate::serializers::ser_hex_upper")]
+    pub data: Vec<u8>,
+    pub timeout_height: TimeoutHeight,
+    pub timeout_timestamp: CodecTimestamp,
+}
+
 struct PacketData<'a>(&'a [u8]);
 
 impl<'a> core::fmt::Debug for PacketData<'a> {
@@ -117,6 +167,8 @@ impl<'a> core::fmt::Debug for PacketData<'a> {
     }
 }
 
+#[cfg(not(feature = "codec"))]
+#[cfg(not(feature = "borsh"))]
 impl core::fmt::Debug for Packet {
     fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
         // Remember: if you alter the definition of `Packet`,

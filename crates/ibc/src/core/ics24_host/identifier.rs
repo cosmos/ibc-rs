@@ -11,6 +11,8 @@ use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics24_host::error::ValidationError;
 use crate::prelude::*;
 
+#[cfg(not(feature = "codec"))]
+#[cfg(not(feature = "borsh"))]
 /// This type is subject to future changes.
 ///
 /// TODO: ChainId validation is not standardized yet.
@@ -19,6 +21,27 @@ use crate::prelude::*;
 ///
 /// Also, contrast with tendermint-rs `ChainId` type.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(from = "tendermint::chain::Id", into = "tendermint::chain::Id")]
+pub struct ChainId {
+    id: String,
+    version: u64,
+}
+
+#[cfg(feature = "codec")]
+#[derive(
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+    codec::Encode,
+    codec::Decode,
+    sp_runtime::RuntimeDebug,
+    scale_info::TypeInfo,
+)]
 #[serde(from = "tendermint::chain::Id", into = "tendermint::chain::Id")]
 pub struct ChainId {
     id: String,
@@ -142,7 +165,27 @@ impl From<String> for ChainId {
     }
 }
 
+#[cfg(not(feature = "codec"))]
+#[cfg(not(feature = "borsh"))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Into)]
+pub struct ClientId(String);
+
+#[cfg(feature = "codec")]
+#[derive(
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+    Into,
+    codec::Encode,
+    codec::Decode,
+    sp_runtime::RuntimeDebug,
+    scale_info::TypeInfo,
+)]
 pub struct ClientId(String);
 
 impl ClientId {
@@ -209,7 +252,26 @@ impl PartialEq<str> for ClientId {
     }
 }
 
+#[cfg(not(feature = "codec"))]
+#[cfg(not(feature = "borsh"))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub struct ConnectionId(String);
+
+#[cfg(feature = "codec")]
+#[derive(
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+    codec::Encode,
+    codec::Decode,
+    sp_runtime::RuntimeDebug,
+    scale_info::TypeInfo,
+)]
 pub struct ConnectionId(String);
 
 impl ConnectionId {
@@ -279,7 +341,26 @@ impl PartialEq<str> for ConnectionId {
     }
 }
 
+#[cfg(not(feature = "codec"))]
+#[cfg(not(feature = "borsh"))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub struct PortId(String);
+
+#[cfg(feature = "codec")]
+#[derive(
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+    codec::Encode,
+    codec::Decode,
+    sp_runtime::RuntimeDebug,
+    scale_info::TypeInfo,
+)]
 pub struct PortId(String);
 
 impl PortId {
@@ -326,7 +407,26 @@ impl Default for PortId {
     }
 }
 
+#[cfg(not(feature = "codec"))]
+#[cfg(not(feature = "borsh"))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub struct ChannelId(String);
+
+#[cfg(feature = "codec")]
+#[derive(
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+    codec::Encode,
+    codec::Decode,
+    sp_runtime::RuntimeDebug,
+    scale_info::TypeInfo,
+)]
 pub struct ChannelId(String);
 
 impl ChannelId {
@@ -400,8 +500,30 @@ impl PartialEq<str> for ChannelId {
     }
 }
 
+#[cfg(not(feature = "codec"))]
+#[cfg(not(feature = "borsh"))]
 /// A pair of [`PortId`] and [`ChannelId`] are used together for sending IBC packets.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub struct PortChannelId {
+    pub channel_id: ChannelId,
+    pub port_id: PortId,
+}
+
+#[cfg(feature = "codec")]
+#[derive(
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+    codec::Encode,
+    codec::Decode,
+    sp_runtime::RuntimeDebug,
+    scale_info::TypeInfo,
+)]
 pub struct PortChannelId {
     pub channel_id: ChannelId,
     pub port_id: PortId,

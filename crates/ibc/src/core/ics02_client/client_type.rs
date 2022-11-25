@@ -2,8 +2,27 @@ use crate::prelude::*;
 use core::fmt::{Display, Error as FmtError, Formatter};
 use serde_derive::{Deserialize, Serialize};
 
+#[cfg(not(feature = "codec"))]
+#[cfg(not(feature = "borsh"))]
 /// Type of the client, depending on the specific consensus algorithm.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub struct ClientType(String);
+
+#[cfg(feature = "codec")]
+#[derive(
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+    codec::Encode,
+    codec::Decode,
+    sp_runtime::RuntimeDebug,
+    scale_info::TypeInfo,
+)]
 pub struct ClientType(String);
 
 impl ClientType {
