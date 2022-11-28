@@ -1,15 +1,3 @@
-use crate::core::ics02_client::context::ClientReader;
-use crate::core::ics03_connection::connection::ConnectionEnd;
-use crate::core::ics04_channel::channel::ChannelEnd;
-use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
-use crate::core::ics04_channel::context::ChannelReader;
-use crate::core::ics04_channel::packet::Sequence;
-use crate::core::ics23_commitment::commitment::{
-    CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
-};
-use crate::core::ics23_commitment::merkle::apply_prefix;
-use crate::core::ics24_host::path::ClientConsensusStatePath;
-use crate::core::ics24_host::Path;
 use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap as HashMap;
@@ -25,11 +13,24 @@ use serde::{Deserialize, Serialize};
 use crate::core::ics02_client::client_state::{ClientState, UpdatedState, UpgradeOptions};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::Error;
+use crate::core::ics03_connection::connection::ConnectionEnd;
+use crate::core::ics04_channel::channel::ChannelEnd;
+use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
+use crate::core::ics04_channel::context::ChannelReader;
+use crate::core::ics04_channel::packet::Sequence;
+use crate::core::ics23_commitment::commitment::{
+    CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
+};
+use crate::core::ics23_commitment::merkle::apply_prefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
+use crate::core::ics24_host::path::ClientConsensusStatePath;
+use crate::core::ics24_host::Path;
 use crate::mock::client_state::client_type as mock_client_type;
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
+use crate::mock::misbehaviour::Misbehaviour;
 use crate::Height;
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
@@ -215,9 +216,27 @@ impl ClientState for MockClientState {
         &self,
         _ctx: &dyn ClientReader,
         _client_id: ClientId,
-        _misbehaviour: Any,
+        misbehaviour: Any,
     ) -> Result<Box<dyn ClientState>, Error> {
-        todo!()
+        let misbehaviour = Misbehaviour::try_from(misbehaviour)?;
+        let header_1 = misbehaviour.header1;
+        let header_2 = misbehaviour.header2;
+
+        if header_1.height() != header_2.height() {
+            return Err(Error::invalid_height());
+        }
+
+        if self.latest_height() >= header_1.height() {
+            return Err(Error::low_header_height(
+                header_1.height(),
+                self.latest_height(),
+            ));
+        }
+
+        let mut new_state = MockClientState::new(header_1);
+        new_state.frozen_height = Some(Height::new(0, 1).unwrap());
+
+        Ok(new_state.into_box())
     }
 
     fn verify_upgrade_and_update_state(
