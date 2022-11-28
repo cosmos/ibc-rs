@@ -9,3 +9,6 @@ members = [
 exclude = [
     "ci/no-std-check",
 ]
+
+[patch.crates-io]
+ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs.git", branch = "mikhail/tendermint-0.27" }
