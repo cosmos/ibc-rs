@@ -4,7 +4,6 @@ use core::convert::Infallible;
 use core::str::Utf8Error;
 use displaydoc::Display;
 use ibc_proto::protobuf::Error as TendermintProtoError;
-use subtle_encoding::Error as EncodingError;
 use uint::FromDecStrErr;
 
 use crate::core::ics04_channel::channel::Order;
@@ -17,8 +16,6 @@ use crate::signer::SignerError;
 
 #[derive(Display, Debug)]
 pub enum TokenTransferError {
-    /// unrecognized ICS-20 transfer message type URL `{url}`
-    UnknowMessageTypeUrl { url: String },
     /// packet error: `{0}`
     PacketError(channel_error::PacketError),
     /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
@@ -62,12 +59,6 @@ pub enum TokenTransferError {
     InvalidToken,
     /// failed to parse signer error: `{0}`
     Signer(SignerError),
-    /// missing 'ibc/' prefix in denomination
-    MissingDenomIbcPrefix,
-    /// hashed denom must be of the form 'ibc/Hash'
-    MalformedHashDenom,
-    /// invalid hex string error: `{0}`
-    ParseHex(EncodingError),
     /// expected `{expect_order}` channel, got `{got_order}`
     ChannelNotUnordered {
         expect_order: Order,
@@ -100,8 +91,6 @@ pub enum TokenTransferError {
         port_id: PortId,
         exp_port_id: PortId,
     },
-    /// no trace associated with specified hash
-    TraceNotFound,
     /// decoding raw msg error: `{0}`
     DecodeRawMsg(TendermintProtoError),
     /// unknown msg type: `{msg_type}`
@@ -136,7 +125,6 @@ impl std::error::Error for TokenTransferError {
             } => Some(e),
             Self::InvalidAmount(e) => Some(e),
             Self::Signer(e) => Some(e),
-            Self::ParseHex(e) => Some(e),
             Self::DecodeRawMsg(e) => Some(e),
             Self::Utf8Decode(e) => Some(e),
             _ => None,

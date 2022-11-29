@@ -23,7 +23,6 @@ pub enum ChannelError {
     Port(port_error::PortError),
     /// channel state unknown: `{state}`
     UnknownState { state: i32 },
-
     /// channel order type unknown: `{type_id}`
     UnknownOrderType { type_id: String },
     /// invalid connection hops length: expected `{expected}`; actual `{actual}`
@@ -32,19 +31,14 @@ pub enum ChannelError {
     InvalidVersion(TendermintError),
     /// invalid signer address
     Signer(SignerError),
-
     /// invalid proof: missing height
     MissingHeight,
-
     /// packet data bytes must be valid UTF-8 (this restriction will be lifted in the future)
     NonUtf8PacketData,
-
     /// invalid packet
     InvalidPacket,
     /// there is no packet in this message
     MissingPacket,
-    /// missing channel id
-    MissingChannelId,
     /// missing counterparty
     MissingCounterparty,
     /// no commong version
@@ -60,9 +54,6 @@ pub enum ChannelError {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// a different channel exists (was initialized) already for the same channel identifier `{channel_id}`
-    ChannelMismatch { channel_id: ChannelId },
-
     /// Verification fails for the packet with the sequence number `{sequence}`, error(`{ics02_error}`)
     PacketVerificationFailed {
         sequence: Sequence,
@@ -70,33 +61,21 @@ pub enum ChannelError {
     },
     /// Error verifying channel state
     VerifyChannelFailed(client_error::ClientError),
-
     /// String `{value}` cannot be converted to packet sequence
     InvalidStringAsSequence {
         value: String,
         error: core::num::ParseIntError,
     },
-
-    /// Invalid timestamp in consensus state; timestamp must be a positive value
-    ErrorInvalidConsensusState,
-
     /// Invalid channel id in counterparty
     InvalidCounterpartyChannelId,
-
-    /// Handshake proof verification fails at ChannelOpenAck
-    ChanOpenAckProofVerification,
-
     /// Processed time for the client `{client_id}` at height `{height}` not found
     ProcessedTimeNotFound { client_id: ClientId, height: Height },
     /// Processed height for the client `{client_id}` at height `{height}` not found
     ProcessedHeightNotFound { client_id: ClientId, height: Height },
     /// route not found
     RouteNotFound,
-
     /// application module error: `{description}`
     AppModule { description: String },
-    /// Failed to convert abci event to IbcEvent: `{abci_event}`
-    AbciConversionFailed { abci_event: String },
     /// other error: `{description}`
     Other { description: String },
     /// Channel `{channel_id}` is Closed

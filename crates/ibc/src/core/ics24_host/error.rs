@@ -17,8 +17,6 @@ pub enum ValidationError {
     InvalidCharacter { id: String },
     /// identifier cannot be empty
     Empty,
-    /// chain identifiers are expected to be in epoch format `{id}`
-    ChainIdInvalidFormat { id: String },
     /// Invalid channel id in counterparty
     InvalidCounterpartyChannelId,
 }

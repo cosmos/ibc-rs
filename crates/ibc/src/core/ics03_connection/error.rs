@@ -15,19 +15,12 @@ pub enum ConnectionError {
     Client(client_error::ClientError),
     /// connection state is unknown: `{state}`
     InvalidState { state: i32 },
-    /// connection exists (was initialized) already: `{connection_id}`
-    ConnectionExistsAlready { connection_id: ConnectionId },
     /// connection end for identifier `{connection_id}` was never initialized
     ConnectionMismatch { connection_id: ConnectionId },
     /// consensus height claimed by the client on the other party is too advanced: `{target_height}` (host chain current height: `{current_height}`)
     InvalidConsensusHeight {
         target_height: Height,
         current_height: Height,
-    },
-    /// consensus height claimed by the client on the other party has been pruned: `{target_height}` (host chain oldest height: `{oldest_height}`)
-    StaleConsensusHeight {
-        target_height: Height,
-        oldest_height: Height,
     },
     /// identifier error: `{0}`
     InvalidIdentifier(ValidationError),
@@ -41,8 +34,6 @@ pub enum ConnectionError {
     NoCommonVersion,
     /// version \"`{version}`\" not supported
     VersionNotSupported { version: Version },
-    /// invalid address
-    InvalidAddress,
     /// missing proof height
     MissingProofHeight,
     /// missing consensus height
@@ -57,23 +48,12 @@ pub enum ConnectionError {
     ConnectionNotFound { connection_id: ConnectionId },
     /// invalid counterparty
     InvalidCounterparty,
-    /// counterparty chosen connection id `{connection_id}` is different than the connection id `{counterparty_connection_id}`
-    ConnectionIdMismatch {
-        connection_id: ConnectionId,
-        counterparty_connection_id: ConnectionId,
-    },
     /// missing counterparty
     MissingCounterparty,
-    /// missing counterparty prefix
-    MissingCounterpartyPrefix,
     /// missing client state
     MissingClientState,
-    /// client proof must be present
-    NullClientProof,
     /// the client id does not match any client state: `{client_id}`
     FrozenClient { client_id: ClientId },
-    /// the connection proof verification failed
-    ConnectionVerificationFailure,
     /// the consensus proof verification failed (height: `{height}`), client error: `{client_error}`
     ConsensusStateVerificationFailure {
         height: Height,

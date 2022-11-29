@@ -30,20 +30,12 @@ pub enum Error {
     Channel(channel_error::ChannelError),
     /// parsing timestamp error: `{0}`
     Timestamp(ParseTimestampError),
-    /// missing event key `{key}`
-    MissingKey { key: String },
     /// decoding protobuf error: `{0}`
     Decode(prost::DecodeError),
-    /// decoding hex error: `{0}`
-    SubtleEncoding(subtle_encoding::Error),
-    /// missing action string
-    MissingActionString,
     /// incorrect event type: `{event}`
     IncorrectEventType { event: String },
     /// module event cannot use core event types: `{event:?}`
     MalformedModuleEvent { event: ModuleEvent },
-    /// Unable to parse abci event type `{event_type}` into IbcEvent"
-    UnsupportedAbciEvent { event_type: String },
 }
 
 #[cfg(feature = "std")]
@@ -56,7 +48,6 @@ impl std::error::Error for Error {
             Self::Channel(e) => Some(e),
             Self::Timestamp(e) => Some(e),
             Self::Decode(e) => Some(e),
-            Self::SubtleEncoding(e) => Some(e),
             _ => None,
         }
     }

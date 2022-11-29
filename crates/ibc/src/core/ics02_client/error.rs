@@ -3,7 +3,6 @@ use displaydoc::Display;
 use ibc_proto::protobuf::Error as TendermintProtoError;
 
 use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::height::HeightError;
 use crate::core::ics23_commitment::error::CommitmentError;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::ClientId;
@@ -13,16 +12,12 @@ use crate::Height;
 
 #[derive(Debug, Display)]
 pub enum ClientError {
-    /// unknown client type: `{client_type}`
-    UnknownClientType { client_type: String },
     /// Client identifier constructor failed for type `{client_type}` with counter `{counter}`, validation error: `{validation_error}`
     ClientIdentifierConstructor {
         client_type: ClientType,
         counter: u64,
         validation_error: ValidationError,
     },
-    /// client already exists: `{client_id}`
-    ClientAlreadyExists { client_id: ClientId },
     /// client not found: `{client_id}`
     ClientNotFound { client_id: ClientId },
     /// client is frozen: `{client_id}`
@@ -39,25 +34,12 @@ pub enum ClientError {
     FailedTrustThresholdConversion { numerator: u64, denominator: u64 },
     /// unknown client state type: `{client_state_type}`
     UnknownClientStateType { client_state_type: String },
-    /// the client state was not found
-    EmptyClientStateResponse,
     /// empty prefix
     EmptyPrefix,
     /// unknown client consensus state type: `{consensus_state_type}`
     UnknownConsensusStateType { consensus_state_type: String },
-    /// the client consensus state was not found
-    EmptyConsensusStateResponse,
     /// unknown header type: `{header_type}`
     UnknownHeaderType { header_type: String },
-    /// unknown misbehaviour type: `{misbehavior_type}`
-    UnknownMisbehaviourType { misbehavior_type: String },
-    /// invalid raw client identifier `{client_id}`, validation error: `{validation_error}`
-    InvalidRawClientId {
-        client_id: String,
-        validation_error: ValidationError,
-    },
-    /// decoding raw client state error: `{0}`
-    DecodeRawClientState(TendermintProtoError),
     /// missing raw client state
     MissingRawClientState,
     /// invalid raw client consensus state error: `{0}`
@@ -77,22 +59,13 @@ pub enum ClientError {
     /// missing raw header
     MissingRawHeader,
     /// invalid raw misbehaviour error: `{0}`
-    DecodeRawMisbehaviour(TendermintProtoError),
-    /// invalid raw misbehaviour error: `{0}`
     InvalidRawMisbehaviour(ValidationError),
     /// missing raw misbehaviour
     MissingRawMisbehaviour,
-    /// String `{value}` cannnot be converted to height, height error: `{height_error}`
-    InvalidStringAsHeight {
-        value: String,
-        height_error: HeightError,
-    },
     /// revision height cannot be zero
     InvalidHeight,
     /// height cannot end up zero or negative
     InvalidHeightResult,
-    /// invalid address
-    InvalidAddress,
     /// invalid proof for the upgraded client state error: `{0}`
     InvalidUpgradeClientProof(CommitmentError),
     /// invalid proof for the upgraded consensus state error: `{0}`
@@ -103,13 +76,6 @@ pub enum ClientError {
     InvalidPacketTimestamp(crate::timestamp::ParseTimestampError),
     /// mismatch between client and arguments types
     ClientArgsTypeMismatch { client_type: ClientType },
-    /// Insufficient overlap `{reason}`
-    InsufficientVotingPower { reason: String },
-    /// mismatch in raw client consensus state `{state_type}` with expected state `{consensus_type}`
-    RawClientAndConsensusStateTypesMismatch {
-        state_type: ClientType,
-        consensus_type: ClientType,
-    },
     /// received header height (`{header_height}`) is lower than (or equal to) client latest height (`{latest_height}`)
     LowHeaderHeight {
         header_height: Height,
@@ -133,8 +99,6 @@ pub enum ClientError {
     InvalidConnectionEnd(TendermintProtoError),
     /// invalid channel end error: `{0}`
     InvalidChannelEnd(TendermintProtoError),
-    /// invalid any client state error: `{0}`
-    InvalidAnyClientState(TendermintProtoError),
     /// invalid any client consensus state error: `{0}`
     InvalidAnyConsensusState(TendermintProtoError),
     /// failed to parse signer error: `{0}`
@@ -155,28 +119,18 @@ impl std::error::Error for ClientError {
                 validation_error: e,
                 ..
             } => Some(e),
-            Self::InvalidRawClientId {
-                validation_error: e,
-                ..
-            } => Some(e),
-            Self::DecodeRawClientState(e) => Some(e),
             Self::InvalidRawConsensusState(e) => Some(e),
             Self::InvalidMsgUpdateClientId(e) => Some(e),
             Self::Decode(e) => Some(e),
             Self::InvalidClientIdentifier(e) => Some(e),
             Self::InvalidRawHeader(e) => Some(e),
-            Self::DecodeRawMisbehaviour(e) => Some(e),
             Self::InvalidRawMisbehaviour(e) => Some(e),
-            Self::InvalidStringAsHeight {
-                height_error: e, ..
-            } => Some(e),
             Self::InvalidUpgradeClientProof(e) => Some(e),
             Self::InvalidUpgradeConsensusStateProof(e) => Some(e),
             Self::InvalidCommitmentProof(e) => Some(e),
             Self::InvalidPacketTimestamp(e) => Some(e),
             Self::InvalidConnectionEnd(e) => Some(e),
             Self::InvalidChannelEnd(e) => Some(e),
-            Self::InvalidAnyClientState(e) => Some(e),
             Self::InvalidAnyConsensusState(e) => Some(e),
             Self::Signer(e) => Some(e),
             Self::Ics23Verification(e) => Some(e),
