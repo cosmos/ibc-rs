@@ -6,6 +6,7 @@ use crate::core::ics03_connection::error::Error;
 use crate::core::ics03_connection::events::OpenConfirm;
 use crate::core::ics03_connection::handler::{ConnectionIdState, ConnectionResult};
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
+use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::core::ics24_host::path::ConnectionsPath;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
@@ -16,17 +17,15 @@ pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenConfirm) -> Resul
 where
     Ctx: ValidationContext,
 {
-    let conn_end_on_b = ctx_b.connection_end(&msg.conn_id_on_b)?;
+    let vars = LocalVars::new(ctx_b, &msg)?;
+    let conn_end_on_b = vars.conn_end_on_b();
     if !conn_end_on_b.state_matches(&State::TryOpen) {
         return Err(Error::connection_mismatch(msg.conn_id_on_b));
     }
 
-    let client_id_on_a = conn_end_on_b.counterparty().client_id();
-    let client_id_on_b = conn_end_on_b.client_id();
-    let conn_id_on_a = conn_end_on_b
-        .counterparty()
-        .connection_id()
-        .ok_or_else(Error::invalid_counterparty)?;
+    let client_id_on_a = vars.client_id_on_a();
+    let client_id_on_b = vars.client_id_on_b();
+    let conn_id_on_a = vars.conn_id_on_a()?;
 
     // Verify proofs
     {
@@ -71,13 +70,11 @@ pub(crate) fn execute<Ctx>(ctx_b: &mut Ctx, msg: MsgConnectionOpenConfirm) -> Re
 where
     Ctx: ExecutionContext,
 {
-    let conn_end_on_b = ctx_b.connection_end(&msg.conn_id_on_b)?;
-    let client_id_on_a = conn_end_on_b.counterparty().client_id();
-    let client_id_on_b = conn_end_on_b.client_id();
-    let conn_id_on_a = conn_end_on_b
-        .counterparty()
-        .connection_id()
-        .ok_or_else(Error::invalid_counterparty)?;
+    let vars = LocalVars::new(ctx_b, &msg)?;
+
+    let client_id_on_a = vars.client_id_on_a();
+    let client_id_on_b = vars.client_id_on_b();
+    let conn_id_on_a = vars.conn_id_on_a()?;
 
     ctx_b.emit_ibc_event(IbcEvent::OpenConfirmConnection(OpenConfirm::new(
         msg.conn_id_on_b.clone(),
@@ -89,7 +86,7 @@ where
 
     {
         let new_conn_end_on_b = {
-            let mut new_conn_end_on_b = conn_end_on_b;
+            let mut new_conn_end_on_b = vars.conn_end_on_b;
 
             new_conn_end_on_b.set_state(State::Open);
             new_conn_end_on_b
@@ -177,6 +174,40 @@ pub(crate) fn process(
     };
 
     Ok(output.with_result(result))
+}
+
+struct LocalVars {
+    conn_end_on_b: ConnectionEnd,
+}
+
+impl LocalVars {
+    fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<Self, Error>
+    where
+        Ctx: ValidationContext,
+    {
+        Ok(Self {
+            conn_end_on_b: ctx_b.connection_end(&msg.conn_id_on_b)?,
+        })
+    }
+
+    fn conn_end_on_b(&self) -> &ConnectionEnd {
+        &self.conn_end_on_b
+    }
+
+    fn client_id_on_a(&self) -> &ClientId {
+        self.conn_end_on_b.counterparty().client_id()
+    }
+
+    fn client_id_on_b(&self) -> &ClientId {
+        self.conn_end_on_b.client_id()
+    }
+
+    fn conn_id_on_a(&self) -> Result<&ConnectionId, Error> {
+        self.conn_end_on_b
+            .counterparty()
+            .connection_id()
+            .ok_or_else(Error::invalid_counterparty)
+    }
 }
 
 #[cfg(test)]
