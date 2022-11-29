@@ -18,6 +18,17 @@ where
     Ctx: ValidationContext,
 {
     let vars = LocalVars::new(ctx_b, &msg)?;
+    validate_impl(ctx_b, msg, &vars)
+}
+
+fn validate_impl<Ctx>(
+    ctx_b: &Ctx,
+    msg: MsgConnectionOpenConfirm,
+    vars: &LocalVars,
+) -> Result<(), Error>
+where
+    Ctx: ValidationContext,
+{
     let conn_end_on_b = vars.conn_end_on_b();
     if !conn_end_on_b.state_matches(&State::TryOpen) {
         return Err(Error::connection_mismatch(msg.conn_id_on_b));
@@ -71,7 +82,17 @@ where
     Ctx: ExecutionContext,
 {
     let vars = LocalVars::new(ctx_b, &msg)?;
+    execute_impl(ctx_b, msg, vars)
+}
 
+fn execute_impl<Ctx>(
+    ctx_b: &mut Ctx,
+    msg: MsgConnectionOpenConfirm,
+    vars: LocalVars,
+) -> Result<(), Error>
+where
+    Ctx: ExecutionContext,
+{
     let client_id_on_a = vars.client_id_on_a();
     let client_id_on_b = vars.client_id_on_b();
     let conn_id_on_a = vars.conn_id_on_a()?;
