@@ -15,7 +15,7 @@ use crate::Height;
 pub enum ClientError {
     /// unknown client type: `{client_type}`
     UnknownClientType { client_type: String },
-    /// Client identifier constructor failed for type `{client_type}` with counter `{counter}`
+    /// Client identifier constructor failed for type `{client_type}` with counter `{counter}`, validation error: `{validation_error}`
     ClientIdentifierConstructor {
         client_type: ClientType,
         counter: u64,
@@ -51,38 +51,38 @@ pub enum ClientError {
     UnknownHeaderType { header_type: String },
     /// unknown misbehaviour type: `{misbehavior_type}`
     UnknownMisbehaviourType { misbehavior_type: String },
-    /// invalid raw client identifier `{client_id}`
+    /// invalid raw client identifier `{client_id}`, validation error: `{validation_error}`
     InvalidRawClientId {
         client_id: String,
         validation_error: ValidationError,
     },
-    /// error decoding raw client state
+    /// decoding raw client state error: `{0}`
     DecodeRawClientState(TendermintProtoError),
     /// missing raw client state
     MissingRawClientState,
-    /// invalid raw client consensus state
+    /// invalid raw client consensus state error: `{0}`
     InvalidRawConsensusState(TendermintProtoError),
     /// missing raw client consensus state
     MissingRawConsensusState,
-    /// invalid client id in the update client message
+    /// invalid client id in the update client message: `{0}`
     InvalidMsgUpdateClientId(ValidationError),
-    /// decode error
+    /// decode error: `{0}`
     Decode(prost::DecodeError),
     /// invalid raw client consensus state: the height field is missing
     MissingHeight,
-    /// invalid client identifier
+    /// invalid client identifier error: `{0}`
     InvalidClientIdentifier(ValidationError),
-    /// invalid raw header
+    /// invalid raw header error: `{0}`
     InvalidRawHeader(TendermintProtoError),
     /// missing raw header
     MissingRawHeader,
-    /// invalid raw misbehaviour
+    /// invalid raw misbehaviour error: `{0}`
     DecodeRawMisbehaviour(TendermintProtoError),
-    /// invalid raw misbehaviour
+    /// invalid raw misbehaviour error: `{0}`
     InvalidRawMisbehaviour(ValidationError),
     /// missing raw misbehaviour
     MissingRawMisbehaviour,
-    /// String `{value}` cannnot be converted to height
+    /// String `{value}` cannnot be converted to height, height error: `{height_error}`
     InvalidStringAsHeight {
         value: String,
         height_error: HeightError,
@@ -93,13 +93,13 @@ pub enum ClientError {
     InvalidHeightResult,
     /// invalid address
     InvalidAddress,
-    /// invalid proof for the upgraded client state
+    /// invalid proof for the upgraded client state error: `{0}`
     InvalidUpgradeClientProof(CommitmentError),
-    /// invalid proof for the upgraded consensus state
+    /// invalid proof for the upgraded consensus state error: `{0}`
     InvalidUpgradeConsensusStateProof(CommitmentError),
-    /// invalid commitment proof bytes
+    /// invalid commitment proof bytes error: `{0}`
     InvalidCommitmentProof(CommitmentError),
-    /// invalid packet timeout timestamp value
+    /// invalid packet timeout timestamp value error: `{0}`
     InvalidPacketTimestamp(crate::timestamp::ParseTimestampError),
     /// mismatch between client and arguments types
     ClientArgsTypeMismatch { client_type: ClientType },
@@ -129,17 +129,17 @@ pub enum ClientError {
     },
     /// the local consensus state could not be retrieved for height `{height}`
     MissingLocalConsensusState { height: Height },
-    /// invalid connection end
+    /// invalid connection end error: `{0}`
     InvalidConnectionEnd(TendermintProtoError),
-    /// invalid channel end
+    /// invalid channel end error: `{0}`
     InvalidChannelEnd(TendermintProtoError),
-    /// invalid any client state
+    /// invalid any client state error: `{0}`
     InvalidAnyClientState(TendermintProtoError),
-    /// invalid any client consensus state
+    /// invalid any client consensus state error: `{0}`
     InvalidAnyConsensusState(TendermintProtoError),
-    /// failed to parse signer
+    /// failed to parse signer error: `{0}`
     Signer(SignerError),
-    /// ics23 verification failure
+    /// ics23 verification failure error: `{0}`
     Ics23Verification(CommitmentError),
     /// client specific error: `{description}`
     ClientSpecific { description: String },

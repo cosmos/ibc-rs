@@ -11,7 +11,7 @@ use displaydoc::Display;
 
 #[derive(Debug, Display)]
 pub enum ConnectionError {
-    /// ICS02 client error
+    /// client error: `{0}`
     Client(client_error::ClientError),
     /// connection state is unknown: `{state}`
     InvalidState { state: i32 },
@@ -29,7 +29,7 @@ pub enum ConnectionError {
         target_height: Height,
         oldest_height: Height,
     },
-    /// identifier error
+    /// identifier error: `{0}`
     InvalidIdentifier(ValidationError),
     /// ConnectionEnd domain object could not be constructed out of empty proto object
     EmptyProtoConnectionEnd,
@@ -47,11 +47,11 @@ pub enum ConnectionError {
     MissingProofHeight,
     /// missing consensus height
     MissingConsensusHeight,
-    /// invalid connection proof
+    /// invalid connection proof error: `{0}`
     InvalidProof(ProofError),
-    /// error verifying connnection state
+    /// verifying connnection state error: `{0}`
     VerifyConnectionState(client_error::ClientError),
-    /// invalid signer
+    /// invalid signer error: `{0}`
     Signer(SignerError),
     /// no connection was found for the previous connection id provided `{connection_id}`
     ConnectionNotFound { connection_id: ConnectionId },
@@ -74,12 +74,12 @@ pub enum ConnectionError {
     FrozenClient { client_id: ClientId },
     /// the connection proof verification failed
     ConnectionVerificationFailure,
-    /// the consensus proof verification failed (height: `{height}`)
+    /// the consensus proof verification failed (height: `{height}`), client error: `{client_error}`
     ConsensusStateVerificationFailure {
         height: Height,
         client_error: client_error::ClientError,
     },
-    /// the client state proof verification failed for client id `{client_id}`
+    /// the client state proof verification failed for client id `{client_id}`, client error: `{client_error}`
     ClientStateVerificationFailure {
         // TODO: use more specific error source
         client_id: ClientId,

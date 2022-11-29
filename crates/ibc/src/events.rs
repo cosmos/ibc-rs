@@ -20,21 +20,21 @@ use crate::timestamp::ParseTimestampError;
 pub enum Error {
     /// error parsing height
     Height,
-    /// parse error
+    /// parse error: `{0}`
     Parse(ValidationError),
-    /// ICS02 client error
+    /// client error: `{0}`
     Client(client_error::ClientError),
-    /// connection error
+    /// connection error: `{0}`
     Connection(connection_error::ConnectionError),
-    /// channel error
+    /// channel error: `{0}`
     Channel(channel_error::ChannelError),
-    /// error parsing timestamp
+    /// parsing timestamp error: `{0}`
     Timestamp(ParseTimestampError),
     /// missing event key `{key}`
     MissingKey { key: String },
-    /// error decoding protobuf
+    /// decoding protobuf error: `{0}`
     Decode(prost::DecodeError),
-    /// error decoding hex
+    /// decoding hex error: `{0}`
     SubtleEncoding(subtle_encoding::Error),
     /// missing action string
     MissingActionString,

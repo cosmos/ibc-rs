@@ -5,11 +5,11 @@ use displaydoc::Display;
 
 #[derive(Debug, Display)]
 pub enum RouterError {
-    /// context error
+    /// context error: `{0}`
     ContextError(ContextError),
     /// unknown type URL `{url}`
     UnknownMessageTypeUrl { url: String },
-    /// the message is malformed and cannot be decoded
+    /// the message is malformed and cannot be decoded error: `{0}`
     MalformedMessageBytes(ibc_proto::protobuf::Error),
 }
 

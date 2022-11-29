@@ -26,14 +26,14 @@ pub enum Error {
     InvalidUnbondingPeriod { reason: String },
     /// invalid address
     InvalidAddress,
-    /// invalid header, failed basic validation: `{reason}`
+    /// invalid header, failed basic validation: `{reason}`, error: `{error}`
     InvalidHeader {
         reason: String,
         error: TendermintError,
     },
     /// invalid client state trust threshold: `{reason}`
     InvalidTrustThreshold { reason: String },
-    /// invalid tendermint client state trust threshold
+    /// invalid tendermint client state trust threshold error: `{0}`
     InvalidTendermintTrustThreshold(TendermintError),
     /// invalid client state max clock drift: `{reason}`
     InvalidMaxClockDrift { reason: String },
@@ -55,7 +55,7 @@ pub enum Error {
     MissingTrustingPeriod,
     /// missing unbonding period
     MissingUnbondingPeriod,
-    /// invalid chain identifier
+    /// invalid chain identifier error: `{0}`
     InvalidChainIdentifier(ValidationError),
     /// negative trusting period
     NegativeTrustingPeriod,
@@ -69,7 +69,7 @@ pub enum Error {
     MissingLatestHeight,
     /// invalid frozen height
     InvalidFrozenHeight,
-    /// invalid chain identifier: `{raw_value}`
+    /// invalid chain identifier: `{raw_value}`, validation error: `{error}`
     InvalidChainId {
         raw_value: String,
         error: ValidationError,
@@ -78,11 +78,11 @@ pub enum Error {
     InvalidRawHeight { raw_height: u64 },
     /// invalid raw client consensus state: `{reason}`
     InvalidRawConsensusState { reason: String },
-    /// invalid raw header
+    /// invalid raw header error: `{0}`
     InvalidRawHeader(TendermintError),
     /// invalid raw misbehaviour: `{reason}`
     InvalidRawMisbehaviour { reason: String },
-    /// decode error
+    /// decode error: `{0}`
     Decode(prost::DecodeError),
     /// insufficient overlap: `{reason}`
     InsufficientVotingPower { reason: String },
@@ -94,7 +94,7 @@ pub enum Error {
     HeaderTimestampTooHigh { actual: String, max: String },
     /// given other previous updates, header timestamp should be at least `{min}`, but was `{actual}`
     HeaderTimestampTooLow { actual: String, min: String },
-    /// timestamp overflowed
+    /// timestamp overflowed error: `{0}`
     TimestampOverflow(TimestampOverflowError),
     /// not enough time elapsed, current timestamp `{current_time}` is still less than earliest acceptable timestamp `{earliest_time}`
     NotEnoughTimeElapsed {

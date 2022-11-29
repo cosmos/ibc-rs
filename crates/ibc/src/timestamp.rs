@@ -217,7 +217,7 @@ impl Sub<Duration> for Timestamp {
 
 #[derive(Debug, Display)]
 pub enum ParseTimestampError {
-    /// error parsing u64 integer from string
+    /// parsing u64 integer from string error: `{0}`
     ParseInt(ParseIntError),
 }
 

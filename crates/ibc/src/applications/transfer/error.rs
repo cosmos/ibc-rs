@@ -19,19 +19,19 @@ use crate::signer::SignerError;
 pub enum TokenTransferError {
     /// unrecognized ICS-20 transfer message type URL `{url}`
     UnknowMessageTypeUrl { url: String },
-    /// ICS04 Packet error
+    /// packet error: `{0}`
     PacketError(channel_error::PacketError),
     /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
     DestinationChannelNotFound {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// invalid port identifier `{context}`
+    /// invalid port identifier `{context}`, validation error: `{validation_error}`
     InvalidPortId {
         context: String,
         validation_error: ValidationError,
     },
-    /// invalid channel identifier `{context}`
+    /// invalid channel identifier `{context}`, validation error: `{validation_error}`
     InvalidChannelId {
         context: String,
         validation_error: ValidationError,
@@ -40,33 +40,33 @@ pub enum TokenTransferError {
     InvalidPacketTimeoutHeight { context: String },
     /// invalid packet timeout timestamp value `{timestamp}`
     InvalidPacketTimeoutTimestamp { timestamp: u64 },
-    /// utf8 decoding error
+    /// utf8 decoding error: `{0}`
     Utf8(FromUtf8Error),
     /// base denomination is empty
     EmptyBaseDenom,
-    /// invalid prot id n trace at postion: `{pos}`
+    /// invalid prot id n trace at postion: `{pos}`, validation error: `{validation_error}`
     InvalidTracePortId {
         pos: usize,
         validation_error: ValidationError,
     },
-    /// invalid channel id in trace at position: `{pos}`
+    /// invalid channel id in trace at position: `{pos}`, validation error: `{validation_error}`
     InvalidTraceChannelId {
         pos: usize,
         validation_error: ValidationError,
     },
     /// trace length must be even but got: `{len}`
     InvalidTraceLength { len: usize },
-    /// invalid amount error
+    /// invalid amount error: `{0}`
     InvalidAmount(FromDecStrErr),
     /// invalid token
     InvalidToken,
-    /// failed to parse signer error
+    /// failed to parse signer error: `{0}`
     Signer(SignerError),
     /// missing 'ibc/' prefix in denomination
     MissingDenomIbcPrefix,
     /// hashed denom must be of the form 'ibc/Hash'
     MalformedHashDenom,
-    /// invalid hex string error
+    /// invalid hex string error: `{0}`
     ParseHex(EncodingError),
     /// expected `{expect_order}` channel, got `{got_order}`
     ChannelNotUnordered {
@@ -102,13 +102,13 @@ pub enum TokenTransferError {
     },
     /// no trace associated with specified hash
     TraceNotFound,
-    /// error decoding raw msg
+    /// decoding raw msg error: `{0}`
     DecodeRawMsg(TendermintProtoError),
     /// unknown msg type: `{msg_type}`
     UnknownMsgType { msg_type: String },
     /// invalid coin string: `{coin}`
     InvalidCoin { coin: String },
-    /// error decoding raw bytes as UTF8 string
+    /// decoding raw bytes as UTF8 string error: `{0}`
     Utf8Decode(Utf8Error),
 }
 

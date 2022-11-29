@@ -20,9 +20,9 @@ pub enum RelayerError {
         source_height: Height,
         destination_height: Height,
     },
-    /// transaction processing by modules failed
+    /// transaction processing by modules failed error: `{0}`
     TransactionFailed(RouterError),
-    /// ICS03 connection error(`{0}`)
+    /// connection error: `{0}`
     Connection(ics03_connection::error::ConnectionError),
 }
 

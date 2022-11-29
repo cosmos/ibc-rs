@@ -122,9 +122,9 @@ pub enum ChannelError {
 
 #[derive(Debug, Display)]
 pub enum PacketError {
-    /// ICS03 connection error
+    /// connection error: `{0}`
     Connection(connection_error::ConnectionError),
-    /// ICS04 channel error
+    /// channel error: `{0}`
     Channel(ChannelError),
     /// Channel `{channel_id}` is Closed
     ChannelClosed { channel_id: ChannelId },
@@ -181,7 +181,7 @@ pub enum PacketError {
     MissingHeight,
     /// there is no packet in this message
     MissingPacket,
-    /// invalid signer address
+    /// invalid signer address error: `{0}`
     Signer(SignerError),
     /// application module error: `{description}`
     AppModule { description: String },
@@ -193,9 +193,9 @@ pub enum PacketError {
     InvalidTimeoutHeight,
     /// packet data bytes cannot be empty
     ZeroPacketData,
-    /// Invalid packet timeout timestamp value
+    /// Invalid packet timeout timestamp value error: `{0}`
     InvalidPacketTimestamp(crate::timestamp::ParseTimestampError),
-    /// identifier error
+    /// identifier error: `{0}`
     Identifier(ValidationError),
     /// Missing sequence number for sending packets on port `{port_id}` and channel `{channel_id}`
     MissingNextSendSeq {

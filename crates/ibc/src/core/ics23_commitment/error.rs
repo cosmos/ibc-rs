@@ -3,9 +3,9 @@ use prost::DecodeError;
 
 #[derive(Debug, Display)]
 pub enum CommitmentError {
-    /// invalid raw merkle proof
+    /// invalid raw merkle proof error: `{0}`
     InvalidRawMerkleProof(DecodeError),
-    /// failed to decode commitment proof
+    /// failed to decode commitment proof error: `{0}`
     CommitmentProofDecodingFailed(DecodeError),
     /// empty commitment prefix
     EmptyCommitmentPrefix,
