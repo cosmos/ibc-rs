@@ -15,7 +15,6 @@ use crate::core::ics04_channel::error::Error;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::timestamp::{Expiry::Expired, Timestamp};
 use crate::Height;
-use crate::timestamp::CodecTimestamp;
 
 /// Enumeration of proof carrying ICS4 message, helper for relayer.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -144,7 +143,6 @@ pub struct Packet {
     Serialize,
     codec::Encode,
     codec::Decode,
-    sp_runtime::RuntimeDebug,
     scale_info::TypeInfo,
 )]
 pub struct Packet {
@@ -156,7 +154,7 @@ pub struct Packet {
     #[serde(serialize_with = "crate::serializers::ser_hex_upper")]
     pub data: Vec<u8>,
     pub timeout_height: TimeoutHeight,
-    pub timeout_timestamp: CodecTimestamp,
+    pub timeout_timestamp: Timestamp,
 }
 
 struct PacketData<'a>(&'a [u8]);
@@ -167,8 +165,6 @@ impl<'a> core::fmt::Debug for PacketData<'a> {
     }
 }
 
-#[cfg(not(feature = "codec"))]
-#[cfg(not(feature = "borsh"))]
 impl core::fmt::Debug for Packet {
     fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
         // Remember: if you alter the definition of `Packet`,

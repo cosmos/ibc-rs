@@ -30,6 +30,7 @@ pub struct ChainId {
 #[cfg(feature = "codec")]
 #[derive(
     Clone,
+    Debug,
     PartialEq,
     Eq,
     PartialOrd,
@@ -39,7 +40,6 @@ pub struct ChainId {
     Deserialize,
     codec::Encode,
     codec::Decode,
-    sp_runtime::RuntimeDebug,
     scale_info::TypeInfo,
 )]
 #[serde(from = "tendermint::chain::Id", into = "tendermint::chain::Id")]
@@ -173,6 +173,7 @@ pub struct ClientId(String);
 #[cfg(feature = "codec")]
 #[derive(
     Clone,
+    Debug,
     PartialEq,
     Eq,
     PartialOrd,
@@ -183,7 +184,6 @@ pub struct ClientId(String);
     Into,
     codec::Encode,
     codec::Decode,
-    sp_runtime::RuntimeDebug,
     scale_info::TypeInfo,
 )]
 pub struct ClientId(String);
@@ -260,6 +260,7 @@ pub struct ConnectionId(String);
 #[cfg(feature = "codec")]
 #[derive(
     Clone,
+    Debug,
     PartialEq,
     Eq,
     PartialOrd,
@@ -269,7 +270,6 @@ pub struct ConnectionId(String);
     Deserialize,
     codec::Encode,
     codec::Decode,
-    sp_runtime::RuntimeDebug,
     scale_info::TypeInfo,
 )]
 pub struct ConnectionId(String);
@@ -349,6 +349,7 @@ pub struct PortId(String);
 #[cfg(feature = "codec")]
 #[derive(
     Clone,
+    Debug,
     PartialEq,
     Eq,
     PartialOrd,
@@ -358,7 +359,6 @@ pub struct PortId(String);
     Deserialize,
     codec::Encode,
     codec::Decode,
-    sp_runtime::RuntimeDebug,
     scale_info::TypeInfo,
 )]
 pub struct PortId(String);
@@ -415,6 +415,7 @@ pub struct ChannelId(String);
 #[cfg(feature = "codec")]
 #[derive(
     Clone,
+    Debug,
     PartialEq,
     Eq,
     PartialOrd,
@@ -424,7 +425,6 @@ pub struct ChannelId(String);
     Deserialize,
     codec::Encode,
     codec::Decode,
-    sp_runtime::RuntimeDebug,
     scale_info::TypeInfo,
 )]
 pub struct ChannelId(String);
@@ -512,6 +512,7 @@ pub struct PortChannelId {
 #[cfg(feature = "codec")]
 #[derive(
     Clone,
+    Debug,
     PartialEq,
     Eq,
     PartialOrd,
@@ -521,7 +522,6 @@ pub struct PortChannelId {
     Deserialize,
     codec::Encode,
     codec::Decode,
-    sp_runtime::RuntimeDebug,
     scale_info::TypeInfo,
 )]
 pub struct PortChannelId {
