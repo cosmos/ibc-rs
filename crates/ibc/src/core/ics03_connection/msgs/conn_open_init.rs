@@ -6,7 +6,7 @@ use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenInit as RawMsgConnect
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics03_connection::connection::Counterparty;
-use crate::core::ics03_connection::error::Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::signer::Signer;
@@ -27,7 +27,7 @@ pub struct MsgConnectionOpenInit {
 }
 
 impl Msg for MsgConnectionOpenInit {
-    type ValidationError = Error;
+    type ValidationError = ConnectionError;
     type Raw = RawMsgConnectionOpenInit;
 
     fn route(&self) -> String {
@@ -42,18 +42,21 @@ impl Msg for MsgConnectionOpenInit {
 impl Protobuf<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {}
 
 impl TryFrom<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {
-    type Error = Error;
+    type Error = ConnectionError;
 
     fn try_from(msg: RawMsgConnectionOpenInit) -> Result<Self, Self::Error> {
         Ok(Self {
-            client_id_on_a: msg.client_id.parse().map_err(Error::invalid_identifier)?,
+            client_id_on_a: msg
+                .client_id
+                .parse()
+                .map_err(ConnectionError::InvalidIdentifier)?,
             counterparty: msg
                 .counterparty
-                .ok_or_else(Error::missing_counterparty)?
+                .ok_or(ConnectionError::MissingCounterparty)?
                 .try_into()?,
             version: msg.version.map(|version| version.try_into()).transpose()?,
             delay_period: Duration::from_nanos(msg.delay_period),
-            signer: msg.signer.parse().map_err(Error::signer)?,
+            signer: msg.signer.parse().map_err(ConnectionError::Signer)?,
         })
     }
 }

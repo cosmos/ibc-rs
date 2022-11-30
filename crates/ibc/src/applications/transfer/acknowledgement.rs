@@ -2,7 +2,7 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 
 use serde::{Deserialize, Serialize};
 
-use super::error::Error;
+use super::error::TokenTransferError;
 use crate::core::ics26_routing::context::Acknowledgement as AckTrait;
 use crate::prelude::*;
 
@@ -36,7 +36,7 @@ impl Acknowledgement {
         Self::Success(ConstAckSuccess::Success)
     }
 
-    pub fn from_error(err: Error) -> Self {
+    pub fn from_error(err: TokenTransferError) -> Self {
         Self::Error(format!("{}: {}", ACK_ERR_STR, err))
     }
 }

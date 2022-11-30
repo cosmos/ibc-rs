@@ -12,7 +12,10 @@ use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCo
 use crate::core::ics04_channel::handler::recv_packet::RecvPacketResult;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
-use crate::core::ics04_channel::{error::Error, packet::Receipt};
+use crate::core::ics04_channel::{
+    error::{ChannelError, PacketError},
+    packet::Receipt,
+};
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
 use crate::prelude::*;
 use crate::timestamp::Timestamp;
@@ -24,61 +27,68 @@ use super::timeout::TimeoutHeight;
 /// A context supplying all the necessary read-only dependencies for processing any `ChannelMsg`.
 pub trait ChannelReader {
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
-    fn channel_end(&self, port_id: &PortId, channel_id: &ChannelId) -> Result<ChannelEnd, Error>;
+    fn channel_end(
+        &self,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+    ) -> Result<ChannelEnd, ChannelError>;
 
     /// Returns the ConnectionState for the given identifier `connection_id`.
-    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, Error>;
+    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, ChannelError>;
 
-    fn connection_channels(&self, cid: &ConnectionId) -> Result<Vec<(PortId, ChannelId)>, Error>;
+    fn connection_channels(
+        &self,
+        cid: &ConnectionId,
+    ) -> Result<Vec<(PortId, ChannelId)>, ChannelError>;
 
     /// Returns the ClientState for the given identifier `client_id`. Necessary dependency towards
     /// proof verification.
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Error>;
+    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ChannelError>;
 
     fn client_consensus_state(
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Box<dyn ConsensusState>, Error>;
+    ) -> Result<Box<dyn ConsensusState>, ChannelError>;
 
     fn get_next_sequence_send(
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<Sequence, Error>;
+    ) -> Result<Sequence, PacketError>;
 
     fn get_next_sequence_recv(
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<Sequence, Error>;
+    ) -> Result<Sequence, PacketError>;
 
     fn get_next_sequence_ack(
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<Sequence, Error>;
+    ) -> Result<Sequence, PacketError>;
 
     fn get_packet_commitment(
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
         sequence: Sequence,
-    ) -> Result<PacketCommitment, Error>;
+    ) -> Result<PacketCommitment, PacketError>;
 
     fn get_packet_receipt(
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
         sequence: Sequence,
-    ) -> Result<Receipt, Error>;
+    ) -> Result<Receipt, PacketError>;
 
     fn get_packet_acknowledgement(
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
         sequence: Sequence,
-    ) -> Result<AcknowledgementCommitment, Error>;
+    ) -> Result<AcknowledgementCommitment, PacketError>;
 
     /// Compute the commitment for a packet.
     /// Note that the absence of `timeout_height` is treated as
@@ -113,10 +123,10 @@ pub trait ChannelReader {
     fn hash(&self, value: Vec<u8>) -> Vec<u8>;
 
     /// Returns the current height of the local chain.
-    fn host_height(&self) -> Result<Height, Error>;
+    fn host_height(&self) -> Result<Height, ChannelError>;
 
     /// Returns the current timestamp of the local chain.
-    fn host_timestamp(&self) -> Result<Timestamp, Error> {
+    fn host_timestamp(&self) -> Result<Timestamp, ChannelError> {
         let pending_consensus_state = self
             .pending_host_consensus_state()
             .expect("host must have pending consensus state");
@@ -124,21 +134,30 @@ pub trait ChannelReader {
     }
 
     /// Returns the `ConsensusState` of the host (local) chain at a specific height.
-    fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, Error>;
+    fn host_consensus_state(&self, height: Height)
+        -> Result<Box<dyn ConsensusState>, ChannelError>;
 
     /// Returns the pending `ConsensusState` of the host (local) chain.
-    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, Error>;
+    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ChannelError>;
 
     /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_time(&self, client_id: &ClientId, height: Height) -> Result<Timestamp, Error>;
+    fn client_update_time(
+        &self,
+        client_id: &ClientId,
+        height: Height,
+    ) -> Result<Timestamp, ChannelError>;
 
     /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_height(&self, client_id: &ClientId, height: Height) -> Result<Height, Error>;
+    fn client_update_height(
+        &self,
+        client_id: &ClientId,
+        height: Height,
+    ) -> Result<Height, ChannelError>;
 
     /// Returns a counter on the number of channel ids have been created thus far.
     /// The value of this counter should increase only via method
     /// `ChannelKeeper::increase_channel_counter`.
-    fn channel_counter(&self) -> Result<u64, Error>;
+    fn channel_counter(&self) -> Result<u64, ChannelError>;
 
     /// Returns the maximum expected time per block
     fn max_expected_time_per_block(&self) -> Duration;
@@ -152,26 +171,30 @@ pub trait ChannelReader {
 
 pub trait SendPacketReader {
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
-    fn channel_end(&self, port_id: &PortId, channel_id: &ChannelId) -> Result<ChannelEnd, Error>;
+    fn channel_end(
+        &self,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+    ) -> Result<ChannelEnd, PacketError>;
 
     /// Returns the ConnectionState for the given identifier `connection_id`.
-    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, Error>;
+    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, PacketError>;
 
     /// Returns the ClientState for the given identifier `client_id`. Necessary dependency towards
     /// proof verification.
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Error>;
+    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, PacketError>;
 
     fn client_consensus_state(
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Box<dyn ConsensusState>, Error>;
+    ) -> Result<Box<dyn ConsensusState>, PacketError>;
 
     fn get_next_sequence_send(
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<Sequence, Error>;
+    ) -> Result<Sequence, PacketError>;
 
     fn hash(&self, value: Vec<u8>) -> Vec<u8>;
 
@@ -200,31 +223,35 @@ impl<T> SendPacketReader for T
 where
     T: ChannelReader,
 {
-    fn channel_end(&self, port_id: &PortId, channel_id: &ChannelId) -> Result<ChannelEnd, Error> {
-        ChannelReader::channel_end(self, port_id, channel_id)
+    fn channel_end(
+        &self,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+    ) -> Result<ChannelEnd, PacketError> {
+        ChannelReader::channel_end(self, port_id, channel_id).map_err(PacketError::Channel)
     }
 
-    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, Error> {
-        ChannelReader::connection_end(self, connection_id)
+    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, PacketError> {
+        ChannelReader::connection_end(self, connection_id).map_err(PacketError::Channel)
     }
 
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Error> {
-        ChannelReader::client_state(self, client_id)
+    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, PacketError> {
+        ChannelReader::client_state(self, client_id).map_err(PacketError::Channel)
     }
 
     fn client_consensus_state(
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Box<dyn ConsensusState>, Error> {
-        ChannelReader::client_consensus_state(self, client_id, height)
+    ) -> Result<Box<dyn ConsensusState>, PacketError> {
+        ChannelReader::client_consensus_state(self, client_id, height).map_err(PacketError::Channel)
     }
 
     fn get_next_sequence_send(
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<Sequence, Error> {
+    ) -> Result<Sequence, PacketError> {
         ChannelReader::get_next_sequence_send(self, port_id, channel_id)
     }
 
@@ -236,7 +263,7 @@ where
 /// A context supplying all the necessary write-only dependencies (i.e., storage writing facility)
 /// for processing any `ChannelMsg`.
 pub trait ChannelKeeper {
-    fn store_channel_result(&mut self, result: ChannelResult) -> Result<(), Error> {
+    fn store_channel_result(&mut self, result: ChannelResult) -> Result<(), PacketError> {
         let connection_id = result.channel_end.connection_hops()[0].clone();
 
         // The handler processed this channel & some modifications occurred, store the new end.
@@ -244,7 +271,8 @@ pub trait ChannelKeeper {
             result.port_id.clone(),
             result.channel_id.clone(),
             result.channel_end,
-        )?;
+        )
+        .map_err(PacketError::Channel)?;
 
         // The channel identifier was freshly brewed.
         // Increase counter & initialize seq. nrs.
@@ -256,7 +284,8 @@ pub trait ChannelKeeper {
                 connection_id,
                 result.port_id.clone(),
                 result.channel_id.clone(),
-            )?;
+            )
+            .map_err(PacketError::Channel)?;
 
             // Initialize send, recv, and ack sequence numbers.
             self.store_next_sequence_send(
@@ -275,7 +304,7 @@ pub trait ChannelKeeper {
         Ok(())
     }
 
-    fn store_packet_result(&mut self, general_result: PacketResult) -> Result<(), Error> {
+    fn store_packet_result(&mut self, general_result: PacketResult) -> Result<(), PacketError> {
         match general_result {
             PacketResult::Send(res) => {
                 self.store_next_sequence_send(
@@ -319,7 +348,8 @@ pub trait ChannelKeeper {
                 self.delete_packet_commitment(&res.port_id, &res.channel_id, res.seq)?;
                 if let Some(c) = res.channel {
                     // Ordered Channel: closes channel
-                    self.store_channel(res.port_id, res.channel_id, c)?;
+                    self.store_channel(res.port_id, res.channel_id, c)
+                        .map_err(PacketError::Channel)?;
                 }
             }
         }
@@ -332,14 +362,14 @@ pub trait ChannelKeeper {
         channel_id: ChannelId,
         sequence: Sequence,
         commitment: PacketCommitment,
-    ) -> Result<(), Error>;
+    ) -> Result<(), PacketError>;
 
     fn delete_packet_commitment(
         &mut self,
         port_id: &PortId,
         channel_id: &ChannelId,
         seq: Sequence,
-    ) -> Result<(), Error>;
+    ) -> Result<(), PacketError>;
 
     fn store_packet_receipt(
         &mut self,
@@ -347,7 +377,7 @@ pub trait ChannelKeeper {
         channel_id: ChannelId,
         sequence: Sequence,
         receipt: Receipt,
-    ) -> Result<(), Error>;
+    ) -> Result<(), PacketError>;
 
     fn store_packet_acknowledgement(
         &mut self,
@@ -355,21 +385,21 @@ pub trait ChannelKeeper {
         channel_id: ChannelId,
         sequence: Sequence,
         ack_commitment: AcknowledgementCommitment,
-    ) -> Result<(), Error>;
+    ) -> Result<(), PacketError>;
 
     fn delete_packet_acknowledgement(
         &mut self,
         port_id: &PortId,
         channel_id: &ChannelId,
         sequence: Sequence,
-    ) -> Result<(), Error>;
+    ) -> Result<(), PacketError>;
 
     fn store_connection_channels(
         &mut self,
         conn_id: ConnectionId,
         port_id: PortId,
         channel_id: ChannelId,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ChannelError>;
 
     /// Stores the given channel_end at a path associated with the port_id and channel_id.
     fn store_channel(
@@ -377,28 +407,28 @@ pub trait ChannelKeeper {
         port_id: PortId,
         channel_id: ChannelId,
         channel_end: ChannelEnd,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ChannelError>;
 
     fn store_next_sequence_send(
         &mut self,
         port_id: PortId,
         channel_id: ChannelId,
         seq: Sequence,
-    ) -> Result<(), Error>;
+    ) -> Result<(), PacketError>;
 
     fn store_next_sequence_recv(
         &mut self,
         port_id: PortId,
         channel_id: ChannelId,
         seq: Sequence,
-    ) -> Result<(), Error>;
+    ) -> Result<(), PacketError>;
 
     fn store_next_sequence_ack(
         &mut self,
         port_id: PortId,
         channel_id: ChannelId,
         seq: Sequence,
-    ) -> Result<(), Error>;
+    ) -> Result<(), PacketError>;
 
     /// Called upon channel identifier creation (Init or Try message processing).
     /// Increases the counter which keeps track of how many channels have been created.

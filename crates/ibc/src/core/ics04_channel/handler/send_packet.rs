@@ -3,7 +3,7 @@ use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::commitment::PacketCommitment;
 use crate::core::ics04_channel::events::SendPacket;
 use crate::core::ics04_channel::packet::Sequence;
-use crate::core::ics04_channel::{context::SendPacketReader, error::Error, packet::Packet};
+use crate::core::ics04_channel::{context::SendPacketReader, error::PacketError, packet::Packet};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
@@ -22,13 +22,15 @@ pub struct SendPacketResult {
 pub fn send_packet(
     ctx: &impl SendPacketReader,
     packet: Packet,
-) -> HandlerResult<SendPacketResult, Error> {
+) -> HandlerResult<SendPacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
     let source_channel_end = ctx.channel_end(&packet.source_port, &packet.source_channel)?;
 
     if source_channel_end.state_matches(&State::Closed) {
-        return Err(Error::channel_closed(packet.source_channel));
+        return Err(PacketError::ChannelClosed {
+            channel_id: packet.source_channel,
+        });
     }
 
     let counterparty = Counterparty::new(
@@ -37,10 +39,10 @@ pub fn send_packet(
     );
 
     if !source_channel_end.counterparty_matches(&counterparty) {
-        return Err(Error::invalid_packet_counterparty(
-            packet.destination_port.clone(),
-            packet.destination_channel,
-        ));
+        return Err(PacketError::InvalidPacketCounterparty {
+            port_id: packet.destination_port.clone(),
+            channel_id: packet.destination_channel,
+        });
     }
     let source_connection_id = &source_channel_end.connection_hops()[0];
     let connection_end = ctx.connection_end(source_connection_id)?;
@@ -51,32 +53,34 @@ pub fn send_packet(
 
     // prevent accidental sends with clients that cannot be updated
     if client_state.is_frozen() {
-        return Err(Error::frozen_client(connection_end.client_id().clone()));
+        return Err(PacketError::FrozenClient {
+            client_id: connection_end.client_id().clone(),
+        });
     }
 
     let latest_height = client_state.latest_height();
 
     if packet.timeout_height.has_expired(latest_height) {
-        return Err(Error::low_packet_height(
-            latest_height,
-            packet.timeout_height,
-        ));
+        return Err(PacketError::LowPacketHeight {
+            chain_height: latest_height,
+            timeout_height: packet.timeout_height,
+        });
     }
 
     let consensus_state = ctx.client_consensus_state(&client_id, latest_height)?;
     let latest_timestamp = consensus_state.timestamp();
     let packet_timestamp = packet.timeout_timestamp;
     if let Expiry::Expired = latest_timestamp.check_expiry(&packet_timestamp) {
-        return Err(Error::low_packet_timestamp());
+        return Err(PacketError::LowPacketTimestamp);
     }
 
     let next_seq_send = ctx.get_next_sequence_send(&packet.source_port, &packet.source_channel)?;
 
     if packet.sequence != next_seq_send {
-        return Err(Error::invalid_packet_sequence(
-            packet.sequence,
-            next_seq_send,
-        ));
+        return Err(PacketError::InvalidPacketSequence {
+            given_sequence: packet.sequence,
+            next_sequence: next_seq_send,
+        });
     }
 
     output.log("success: packet send ");

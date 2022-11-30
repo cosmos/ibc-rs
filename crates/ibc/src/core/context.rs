@@ -3,7 +3,7 @@ use core::time::Duration;
 use crate::events::IbcEvent;
 use crate::{prelude::*, timestamp::Timestamp, Height};
 
-use crate::core::ics26_routing::error::Error as RouterError;
+use crate::core::ics26_routing::error::RouterError;
 
 use ibc_proto::google::protobuf::Any;
 
@@ -17,18 +17,18 @@ use super::ics24_host::path::{
 use super::ics26_routing::msgs::MsgEnvelope;
 use super::{
     ics02_client::{
-        client_state::ClientState, consensus_state::ConsensusState, error::Error as ClientError,
+        client_state::ClientState, consensus_state::ConsensusState, error::ClientError,
     },
     ics03_connection::{
         connection::ConnectionEnd,
-        error::Error as ConnectionError,
+        error::ConnectionError,
         version::{get_compatible_versions, pick_version, Version as ConnectionVersion},
     },
     ics04_channel::{
         channel::ChannelEnd,
         commitment::{AcknowledgementCommitment, PacketCommitment},
         context::calculate_block_delay,
-        error::Error as ChannelError,
+        error::{ChannelError, PacketError},
         msgs::acknowledgement::Acknowledgement,
         packet::{Receipt, Sequence},
         timeout::TimeoutHeight,
@@ -36,6 +36,55 @@ use super::{
     ics23_commitment::commitment::CommitmentPrefix,
     ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId},
 };
+use displaydoc::Display;
+
+#[derive(Debug, Display)]
+pub enum ContextError {
+    /// ICS02 Client error
+    ClientError(ClientError),
+    /// ICS03 Connection error
+    ConnectionError(ConnectionError),
+    /// Ics04 Channel error
+    ChannelError(ChannelError),
+    /// ICS04 Packet error
+    PacketError(PacketError),
+}
+
+impl From<ClientError> for ContextError {
+    fn from(err: ClientError) -> ContextError {
+        Self::ClientError(err)
+    }
+}
+
+impl From<ConnectionError> for ContextError {
+    fn from(err: ConnectionError) -> ContextError {
+        Self::ConnectionError(err)
+    }
+}
+
+impl From<ChannelError> for ContextError {
+    fn from(err: ChannelError) -> ContextError {
+        Self::ChannelError(err)
+    }
+}
+
+impl From<PacketError> for ContextError {
+    fn from(err: PacketError) -> ContextError {
+        Self::PacketError(err)
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for ContextError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Self::ClientError(e) => Some(e),
+            Self::ConnectionError(e) => Some(e),
+            Self::ChannelError(e) => Some(e),
+            Self::PacketError(e) => Some(e),
+        }
+    }
+}
 
 pub trait ValidationContext {
     /// Validation entrypoint.
@@ -52,7 +101,7 @@ pub trait ValidationContext {
                 ClientMsg::Misbehaviour(_message) => unimplemented!(),
                 ClientMsg::UpgradeClient(message) => upgrade_client::validate(self, message),
             }
-            .map_err(RouterError::ics02_client),
+            .map_err(RouterError::ContextError),
             MsgEnvelope::ConnectionMsg(_message) => todo!(),
             MsgEnvelope::ChannelMsg(_message) => todo!(),
             MsgEnvelope::PacketMsg(_message) => todo!(),
@@ -60,10 +109,10 @@ pub trait ValidationContext {
     }
 
     /// Returns the ClientState for the given identifier `client_id`.
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ClientError>;
+    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError>;
 
     /// Tries to decode the given `client_state` into a concrete light client state.
-    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ClientError>;
+    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ContextError>;
 
     /// Retrieve the consensus state for the given client ID at the specified
     /// height.
@@ -73,27 +122,27 @@ pub trait ValidationContext {
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Box<dyn ConsensusState>, ClientError>;
+    ) -> Result<Box<dyn ConsensusState>, ContextError>;
 
     /// Search for the lowest consensus state higher than `height`.
     fn next_consensus_state(
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Option<Box<dyn ConsensusState>>, ClientError>;
+    ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
 
     /// Search for the highest consensus state lower than `height`.
     fn prev_consensus_state(
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Option<Box<dyn ConsensusState>>, ClientError>;
+    ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
 
     /// Returns the current height of the local chain.
-    fn host_height(&self) -> Result<Height, ClientError>;
+    fn host_height(&self) -> Result<Height, ContextError>;
 
     /// Returns the current timestamp of the local chain.
-    fn host_timestamp(&self) -> Result<Timestamp, ClientError> {
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
         let pending_consensus_state = self
             .pending_host_consensus_state()
             .expect("host must have pending consensus state");
@@ -101,17 +150,18 @@ pub trait ValidationContext {
     }
 
     /// Returns the pending `ConsensusState` of the host (local) chain.
-    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ClientError>;
+    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ContextError>;
 
     /// Returns the `ConsensusState` of the host (local) chain at a specific height.
-    fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, ClientError>;
+    fn host_consensus_state(&self, height: Height)
+        -> Result<Box<dyn ConsensusState>, ContextError>;
 
     /// Returns a natural number, counting how many clients have been created thus far.
     /// The value of this counter should increase only via method `ClientKeeper::increase_client_counter`.
-    fn client_counter(&self) -> Result<u64, ClientError>;
+    fn client_counter(&self) -> Result<u64, ContextError>;
 
     /// Returns the ConnectionEnd for the given identifier `conn_id`.
-    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ClientError>;
+    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError>;
 
     /// Returns the oldest height available on the local chain.
     fn host_oldest_height(&self) -> Height;
@@ -120,7 +170,7 @@ pub trait ValidationContext {
     fn commitment_prefix(&self) -> CommitmentPrefix;
 
     /// Returns a counter on how many connections have been created thus far.
-    fn connection_counter(&self) -> Result<u64, ClientError>;
+    fn connection_counter(&self) -> Result<u64, ContextError>;
 
     /// Function required by ICS 03. Returns the list of all possible versions that the connection
     /// handshake protocol supports.
@@ -134,50 +184,51 @@ pub trait ValidationContext {
         &self,
         supported_versions: Vec<ConnectionVersion>,
         counterparty_candidate_versions: Vec<ConnectionVersion>,
-    ) -> Result<ConnectionVersion, ConnectionError> {
+    ) -> Result<ConnectionVersion, ContextError> {
         pick_version(supported_versions, counterparty_candidate_versions)
+            .map_err(ContextError::ConnectionError)
     }
 
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
     fn channel_end(
         &self,
         port_channel_id: &(PortId, ChannelId),
-    ) -> Result<ChannelEnd, ChannelError>;
+    ) -> Result<ChannelEnd, ContextError>;
 
     fn connection_channels(
         &self,
         cid: &ConnectionId,
-    ) -> Result<Vec<(PortId, ChannelId)>, ChannelError>;
+    ) -> Result<Vec<(PortId, ChannelId)>, ContextError>;
 
     fn get_next_sequence_send(
         &self,
         port_channel_id: &(PortId, ChannelId),
-    ) -> Result<Sequence, ChannelError>;
+    ) -> Result<Sequence, ContextError>;
 
     fn get_next_sequence_recv(
         &self,
         port_channel_id: &(PortId, ChannelId),
-    ) -> Result<Sequence, ChannelError>;
+    ) -> Result<Sequence, ContextError>;
 
     fn get_next_sequence_ack(
         &self,
         port_channel_id: &(PortId, ChannelId),
-    ) -> Result<Sequence, ChannelError>;
+    ) -> Result<Sequence, ContextError>;
 
     fn get_packet_commitment(
         &self,
         key: &(PortId, ChannelId, Sequence),
-    ) -> Result<PacketCommitment, ChannelError>;
+    ) -> Result<PacketCommitment, ContextError>;
 
     fn get_packet_receipt(
         &self,
         key: &(PortId, ChannelId, Sequence),
-    ) -> Result<Receipt, ChannelError>;
+    ) -> Result<Receipt, ContextError>;
 
     fn get_packet_acknowledgement(
         &self,
         key: &(PortId, ChannelId, Sequence),
-    ) -> Result<AcknowledgementCommitment, ChannelError>;
+    ) -> Result<AcknowledgementCommitment, ContextError>;
 
     /// Compute the commitment for a packet.
     /// Note that the absence of `timeout_height` is treated as
@@ -216,19 +267,19 @@ pub trait ValidationContext {
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Timestamp, ChannelError>;
+    ) -> Result<Timestamp, ContextError>;
 
     /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
     fn client_update_height(
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Height, ChannelError>;
+    ) -> Result<Height, ContextError>;
 
     /// Returns a counter on the number of channel ids have been created thus far.
     /// The value of this counter should increase only via method
     /// `ChannelKeeper::increase_channel_counter`.
-    fn channel_counter(&self) -> Result<u64, ChannelError>;
+    fn channel_counter(&self) -> Result<u64, ContextError>;
 
     /// Returns the maximum expected time per block
     fn max_expected_time_per_block(&self) -> Duration;
@@ -255,7 +306,7 @@ pub trait ExecutionContext: ValidationContext {
                 ClientMsg::Misbehaviour(_message) => unimplemented!(),
                 ClientMsg::UpgradeClient(message) => upgrade_client::execute(self, message),
             }
-            .map_err(RouterError::ics02_client),
+            .map_err(RouterError::ContextError),
             MsgEnvelope::ConnectionMsg(_message) => todo!(),
             MsgEnvelope::ChannelMsg(_message) => todo!(),
             MsgEnvelope::PacketMsg(_message) => todo!(),
@@ -267,21 +318,21 @@ pub trait ExecutionContext: ValidationContext {
         &mut self,
         client_type_path: ClientTypePath,
         client_type: ClientType,
-    ) -> Result<(), ClientError>;
+    ) -> Result<(), ContextError>;
 
     /// Called upon successful client creation and update
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
         client_state: Box<dyn ClientState>,
-    ) -> Result<(), ClientError>;
+    ) -> Result<(), ContextError>;
 
     /// Called upon successful client creation and update
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
         consensus_state: Box<dyn ConsensusState>,
-    ) -> Result<(), ClientError>;
+    ) -> Result<(), ContextError>;
 
     /// Called upon client creation.
     /// Increases the counter which keeps track of how many clients have been created.
@@ -296,7 +347,7 @@ pub trait ExecutionContext: ValidationContext {
         client_id: ClientId,
         height: Height,
         timestamp: Timestamp,
-    ) -> Result<(), ClientError>;
+    ) -> Result<(), ContextError>;
 
     /// Called upon successful client update.
     /// Implementations are expected to use this to record the specified height as the height at
@@ -306,21 +357,21 @@ pub trait ExecutionContext: ValidationContext {
         client_id: ClientId,
         height: Height,
         host_height: Height,
-    ) -> Result<(), ClientError>;
+    ) -> Result<(), ContextError>;
 
     /// Stores the given connection_end at path
     fn store_connection(
         &mut self,
         connections_path: ConnectionsPath,
         connection_end: &ConnectionEnd,
-    ) -> Result<(), ConnectionError>;
+    ) -> Result<(), ContextError>;
 
     /// Stores the given connection_id at a path associated with the client_id.
     fn store_connection_to_client(
         &mut self,
         client_connections_path: ClientConnectionsPath,
         client_id: &ClientId,
-    ) -> Result<(), ConnectionError>;
+    ) -> Result<(), ContextError>;
 
     /// Called upon connection identifier creation (Init or Try process).
     /// Increases the counter which keeps track of how many connections have been created.
@@ -331,57 +382,57 @@ pub trait ExecutionContext: ValidationContext {
         &mut self,
         commitments_path: CommitmentsPath,
         commitment: PacketCommitment,
-    ) -> Result<(), ChannelError>;
+    ) -> Result<(), ContextError>;
 
-    fn delete_packet_commitment(&mut self, key: CommitmentsPath) -> Result<(), ChannelError>;
+    fn delete_packet_commitment(&mut self, key: CommitmentsPath) -> Result<(), ContextError>;
 
     fn store_packet_receipt(
         &mut self,
         path: ReceiptsPath,
         receipt: Receipt,
-    ) -> Result<(), ChannelError>;
+    ) -> Result<(), ContextError>;
 
     fn store_packet_acknowledgement(
         &mut self,
         key: (PortId, ChannelId, Sequence),
         ack_commitment: AcknowledgementCommitment,
-    ) -> Result<(), ChannelError>;
+    ) -> Result<(), ContextError>;
 
     fn delete_packet_acknowledgement(
         &mut self,
         key: (PortId, ChannelId, Sequence),
-    ) -> Result<(), ChannelError>;
+    ) -> Result<(), ContextError>;
 
     fn store_connection_channels(
         &mut self,
         conn_id: ConnectionId,
         port_channel_id: &(PortId, ChannelId),
-    ) -> Result<(), ChannelError>;
+    ) -> Result<(), ContextError>;
 
     /// Stores the given channel_end at a path associated with the port_id and channel_id.
     fn store_channel(
         &mut self,
         port_channel_id: (PortId, ChannelId),
         channel_end: &ChannelEnd,
-    ) -> Result<(), ChannelError>;
+    ) -> Result<(), ContextError>;
 
     fn store_next_sequence_send(
         &mut self,
         port_channel_id: (PortId, ChannelId),
         seq: Sequence,
-    ) -> Result<(), ChannelError>;
+    ) -> Result<(), ContextError>;
 
     fn store_next_sequence_recv(
         &mut self,
         port_channel_id: (PortId, ChannelId),
         seq: Sequence,
-    ) -> Result<(), ChannelError>;
+    ) -> Result<(), ContextError>;
 
     fn store_next_sequence_ack(
         &mut self,
         port_channel_id: (PortId, ChannelId),
         seq: Sequence,
-    ) -> Result<(), ChannelError>;
+    ) -> Result<(), ContextError>;
 
     /// Called upon channel identifier creation (Init or Try message processing).
     /// Increases the counter which keeps track of how many channels have been created.

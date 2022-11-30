@@ -2,7 +2,7 @@
 
 use crate::core::ics03_connection::connection::{ConnectionEnd, State};
 use crate::core::ics03_connection::context::ConnectionReader;
-use crate::core::ics03_connection::error::Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
@@ -17,7 +17,7 @@ use super::ConnectionIdState;
 pub(crate) fn process(
     ctx_a: &dyn ConnectionReader,
     msg: MsgConnectionOpenInit,
-) -> HandlerResult<ConnectionResult, Error> {
+) -> HandlerResult<ConnectionResult, ConnectionError> {
     let mut output = HandlerOutput::builder();
 
     // An IBC client running on the local (host) chain should exist.
@@ -28,7 +28,7 @@ pub(crate) fn process(
             if ctx_a.get_compatible_versions().contains(&version) {
                 Ok(vec![version])
             } else {
-                Err(Error::version_not_supported(version))
+                Err(ConnectionError::VersionNotSupported { version })
             }
         }
         None => Ok(ctx_a.get_compatible_versions()),

@@ -11,7 +11,7 @@ use super::handler::{
     timeout::TimeoutPacketResult, write_acknowledgement::WriteAckPacketResult,
 };
 use super::timeout::TimeoutHeight;
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::timestamp::{Expiry::Expired, Timestamp};
 use crate::Height;
@@ -59,11 +59,14 @@ impl core::fmt::Display for PacketMsgType {
 pub struct Sequence(u64);
 
 impl FromStr for Sequence {
-    type Err = Error;
+    type Err = ChannelError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self::from(s.parse::<u64>().map_err(|e| {
-            Error::invalid_string_as_sequence(s.to_string(), e)
+            ChannelError::InvalidStringAsSequence {
+                value: s.to_string(),
+                error: e,
+            }
         })?))
     }
 }
@@ -191,11 +194,11 @@ impl core::fmt::Display for Packet {
 }
 
 impl TryFrom<RawPacket> for Packet {
-    type Error = Error;
+    type Error = PacketError;
 
     fn try_from(raw_pkt: RawPacket) -> Result<Self, Self::Error> {
         if Sequence::from(raw_pkt.sequence).is_zero() {
-            return Err(Error::zero_packet_sequence());
+            return Err(PacketError::ZeroPacketSequence);
         }
 
         // Note: ibc-go currently (July 2022) incorrectly treats the timeout
@@ -209,27 +212,33 @@ impl TryFrom<RawPacket> for Packet {
         let packet_timeout_height: TimeoutHeight = raw_pkt
             .timeout_height
             .try_into()
-            .map_err(|_| Error::invalid_timeout_height())?;
+            .map_err(|_| PacketError::InvalidTimeoutHeight)?;
 
         if raw_pkt.data.is_empty() {
-            return Err(Error::zero_packet_data());
+            return Err(PacketError::ZeroPacketData);
         }
 
         let timeout_timestamp = Timestamp::from_nanoseconds(raw_pkt.timeout_timestamp)
-            .map_err(Error::invalid_packet_timestamp)?;
+            .map_err(PacketError::InvalidPacketTimestamp)?;
 
         Ok(Packet {
             sequence: Sequence::from(raw_pkt.sequence),
-            source_port: raw_pkt.source_port.parse().map_err(Error::identifier)?,
-            source_channel: raw_pkt.source_channel.parse().map_err(Error::identifier)?,
+            source_port: raw_pkt
+                .source_port
+                .parse()
+                .map_err(PacketError::Identifier)?,
+            source_channel: raw_pkt
+                .source_channel
+                .parse()
+                .map_err(PacketError::Identifier)?,
             destination_port: raw_pkt
                 .destination_port
                 .parse()
-                .map_err(Error::identifier)?,
+                .map_err(PacketError::Identifier)?,
             destination_channel: raw_pkt
                 .destination_channel
                 .parse()
-                .map_err(Error::identifier)?,
+                .map_err(PacketError::Identifier)?,
             data: raw_pkt.data,
             timeout_height: packet_timeout_height,
             timeout_timestamp,
