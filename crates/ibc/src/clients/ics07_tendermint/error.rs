@@ -51,8 +51,6 @@ pub enum Error {
     NegativeMaxClockDrift,
     /// missing latest height
     MissingLatestHeight,
-    /// invalid raw client consensus state: `{reason}`
-    InvalidRawConsensusState { reason: String },
     /// invalid raw header error: `{0}`
     InvalidRawHeader(TendermintError),
     /// invalid raw misbehaviour: `{reason}`
@@ -106,11 +104,11 @@ pub enum Error {
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Error::InvalidHeader { error: e, .. } => Some(e),
-            Error::InvalidTendermintTrustThreshold(e) => Some(e),
-            Error::InvalidRawHeader(e) => Some(e),
-            Error::Decode(e) => Some(e),
-            Error::TimestampOverflow(e) => Some(e),
+            Self::InvalidHeader { error: e, .. } => Some(e),
+            Self::InvalidTendermintTrustThreshold(e) => Some(e),
+            Self::InvalidRawHeader(e) => Some(e),
+            Self::Decode(e) => Some(e),
+            Self::TimestampOverflow(e) => Some(e),
             _ => None,
         }
     }

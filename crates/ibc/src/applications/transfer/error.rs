@@ -1,5 +1,3 @@
-use alloc::string::FromUtf8Error;
-
 use core::convert::Infallible;
 use core::str::Utf8Error;
 use displaydoc::Display;
@@ -37,8 +35,6 @@ pub enum TokenTransferError {
     InvalidPacketTimeoutHeight { context: String },
     /// invalid packet timeout timestamp value `{timestamp}`
     InvalidPacketTimeoutTimestamp { timestamp: u64 },
-    /// utf8 decoding error: `{0}`
-    Utf8(FromUtf8Error),
     /// base denomination is empty
     EmptyBaseDenom,
     /// invalid prot id n trace at postion: `{pos}`, validation error: `{validation_error}`
@@ -114,7 +110,6 @@ impl std::error::Error for TokenTransferError {
                 validation_error: e,
                 ..
             } => Some(e),
-            Self::Utf8(e) => Some(e),
             Self::InvalidTracePortId {
                 validation_error: e,
                 ..

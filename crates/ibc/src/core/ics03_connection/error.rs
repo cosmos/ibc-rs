@@ -52,8 +52,6 @@ pub enum ConnectionError {
     MissingCounterparty,
     /// missing client state
     MissingClientState,
-    /// the client id does not match any client state: `{client_id}`
-    FrozenClient { client_id: ClientId },
     /// the consensus proof verification failed (height: `{height}`), client error: `{client_error}`
     ConsensusStateVerificationFailure {
         height: Height,
@@ -65,8 +63,6 @@ pub enum ConnectionError {
         client_id: ClientId,
         client_error: client_error::ClientError,
     },
-    /// implementation specific error
-    ImplementationSpecific,
     /// invalid client state: `{reason}`
     InvalidClientState { reason: String },
     /// other error: `{description}`

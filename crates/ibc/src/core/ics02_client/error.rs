@@ -42,16 +42,12 @@ pub enum ClientError {
     UnknownHeaderType { header_type: String },
     /// missing raw client state
     MissingRawClientState,
-    /// invalid raw client consensus state error: `{0}`
-    InvalidRawConsensusState(TendermintProtoError),
     /// missing raw client consensus state
     MissingRawConsensusState,
     /// invalid client id in the update client message: `{0}`
     InvalidMsgUpdateClientId(ValidationError),
     /// decode error: `{0}`
     Decode(prost::DecodeError),
-    /// invalid raw client consensus state: the height field is missing
-    MissingHeight,
     /// invalid client identifier error: `{0}`
     InvalidClientIdentifier(ValidationError),
     /// invalid raw header error: `{0}`
@@ -119,9 +115,7 @@ impl std::error::Error for ClientError {
                 validation_error: e,
                 ..
             } => Some(e),
-            Self::InvalidRawConsensusState(e) => Some(e),
             Self::InvalidMsgUpdateClientId(e) => Some(e),
-            Self::Decode(e) => Some(e),
             Self::InvalidClientIdentifier(e) => Some(e),
             Self::InvalidRawHeader(e) => Some(e),
             Self::InvalidRawMisbehaviour(e) => Some(e),

@@ -88,7 +88,7 @@ pub fn verify_packet_recv_proofs<Ctx: ChannelReader>(
         )
         .map_err(|e| ChannelError::PacketVerificationFailed {
             sequence: packet.sequence,
-            ics02_error: e,
+            client_error: e,
         })?;
 
     Ok(())
@@ -132,7 +132,7 @@ pub fn verify_packet_acknowledgement_proofs<Ctx: ChannelReader>(
         )
         .map_err(|e| ChannelError::PacketVerificationFailed {
             sequence: packet.sequence,
-            ics02_error: e,
+            client_error: e,
         })?;
 
     Ok(())
@@ -173,7 +173,7 @@ pub fn verify_next_sequence_recv<Ctx: ChannelReader>(
         )
         .map_err(|e| ChannelError::PacketVerificationFailed {
             sequence: seq,
-            ics02_error: e,
+            client_error: e,
         })?;
 
     Ok(())
@@ -212,7 +212,7 @@ pub fn verify_packet_receipt_absence<Ctx: ChannelReader>(
         )
         .map_err(|e| ChannelError::PacketVerificationFailed {
             sequence: packet.sequence,
-            ics02_error: e,
+            client_error: e,
         })?;
 
     Ok(())

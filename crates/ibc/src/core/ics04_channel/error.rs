@@ -13,13 +13,12 @@ use crate::timestamp::Timestamp;
 use crate::Height;
 
 use displaydoc::Display;
-use ibc_proto::protobuf::Error as TendermintError;
 
 #[derive(Debug, Display)]
 pub enum ChannelError {
-    /// ICS03 connection error
+    /// connection error: `{0}`
     Connection(connection_error::ConnectionError),
-    /// ICS05 port error
+    /// port error: `{0}`
     Port(port_error::PortError),
     /// channel state unknown: `{state}`
     UnknownState { state: i32 },
@@ -27,18 +26,12 @@ pub enum ChannelError {
     UnknownOrderType { type_id: String },
     /// invalid connection hops length: expected `{expected}`; actual `{actual}`
     InvalidConnectionHopsLength { expected: usize, actual: usize },
-    /// invalid version
-    InvalidVersion(TendermintError),
-    /// invalid signer address
+    /// invalid signer address error: `{0}`
     Signer(SignerError),
     /// invalid proof: missing height
     MissingHeight,
     /// packet data bytes must be valid UTF-8 (this restriction will be lifted in the future)
     NonUtf8PacketData,
-    /// invalid packet
-    InvalidPacket,
-    /// there is no packet in this message
-    MissingPacket,
     /// missing counterparty
     MissingCounterparty,
     /// no commong version
@@ -54,14 +47,14 @@ pub enum ChannelError {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// Verification fails for the packet with the sequence number `{sequence}`, error(`{ics02_error}`)
+    /// Verification fails for the packet with the sequence number `{sequence}`, error: `{client_error}`
     PacketVerificationFailed {
         sequence: Sequence,
-        ics02_error: client_error::ClientError,
+        client_error: client_error::ClientError,
     },
-    /// Error verifying channel state
+    /// Error verifying channel state error: `{0}`
     VerifyChannelFailed(client_error::ClientError),
-    /// String `{value}` cannot be converted to packet sequence
+    /// String `{value}` cannot be converted to packet sequence, error: `{error}`
     InvalidStringAsSequence {
         value: String,
         error: core::num::ParseIntError,
@@ -88,15 +81,10 @@ pub enum ChannelError {
     FrozenClient { client_id: ClientId },
     /// Channel `{channel_id}` should not be state `{state}`
     InvalidChannelState { channel_id: ChannelId, state: State },
-    /// invalid proof
+    /// invalid proof error: `{0}`
     InvalidProof(ProofError),
-    /// identifier error
+    /// identifier error: `{0}`
     Identifier(ValidationError),
-    /// Missing sequence number for sending packets on port `{port_id}` and channel `{channel_id}`
-    MissingNextSendSeq {
-        port_id: PortId,
-        channel_id: ChannelId,
-    },
 }
 
 #[derive(Debug, Display)]
@@ -138,7 +126,7 @@ pub enum PacketError {
     ImplementationSpecific,
     /// Undefined counterparty connection for `{connection_id}`
     UndefinedConnectionCounterparty { connection_id: ConnectionId },
-    /// invalid proof
+    /// invalid proof: `{0}`
     InvalidProof(ProofError),
     /// Packet timeout height `{timeout_height}` > chain height `{chain_height}`
     PacketTimeoutHeightNotReached {
@@ -221,10 +209,11 @@ impl std::error::Error for ChannelError {
             Self::Connection(e) => Some(e),
             Self::Port(e) => Some(e),
             Self::Identifier(e) => Some(e),
-            Self::InvalidVersion(e) => Some(e),
             Self::Signer(e) => Some(e),
             Self::InvalidProof(e) => Some(e),
-            Self::PacketVerificationFailed { ics02_error: e, .. } => Some(e),
+            Self::PacketVerificationFailed {
+                client_error: e, ..
+            } => Some(e),
             Self::InvalidStringAsSequence { error: e, .. } => Some(e),
             _ => None,
         }
