@@ -247,7 +247,7 @@ mod tests {
 
         let header2 = {
             let mut tm_block = HostBlock::generate_tm_block(
-                chain_id_b.clone(),
+                chain_id_b,
                 misbehaviour_height.revision_height(),
                 Timestamp::now(),
             );
@@ -257,7 +257,7 @@ mod tests {
 
         let msg = MsgSubmitMisbehaviour {
             client_id: client_id.clone(),
-            misbehaviour: TmMisbehaviour::new(client_id.clone(), header1, header2)
+            misbehaviour: TmMisbehaviour::new(client_id, header1, header2)
                 .unwrap()
                 .into(),
             signer,
@@ -322,7 +322,7 @@ mod tests {
                 Timestamp::from_nanoseconds(Timestamp::now().nanoseconds() + 1_000_000_000)
                     .unwrap();
             let mut tm_block = HostBlock::generate_tm_block(
-                chain_id_b.clone(),
+                chain_id_b,
                 misbehaviour_height.revision_height(),
                 timestamp,
             );
@@ -332,7 +332,7 @@ mod tests {
 
         let msg = MsgSubmitMisbehaviour {
             client_id: client_id.clone(),
-            misbehaviour: TmMisbehaviour::new(client_id.clone(), header1.into(), header2.into())
+            misbehaviour: TmMisbehaviour::new(client_id, header1.into(), header2.into())
                 .unwrap()
                 .into(),
             signer,
