@@ -5,7 +5,7 @@
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::ConnectionEnd;
-use crate::core::ics03_connection::error::Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::version::{get_compatible_versions, pick_version, Version};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
@@ -19,20 +19,23 @@ use super::handler::ConnectionIdState;
 /// A context supplying all the necessary read-only dependencies for processing any `ConnectionMsg`.
 pub trait ConnectionReader {
     /// Returns the ConnectionEnd for the given identifier `conn_id`.
-    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, Error>;
+    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ConnectionError>;
 
     /// Returns the ClientState for the given identifier `client_id`.
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, Error>;
+    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ConnectionError>;
 
     /// Tries to decode the given `client_state` into a concrete light client state.
-    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, Error>;
+    fn decode_client_state(
+        &self,
+        client_state: Any,
+    ) -> Result<Box<dyn ClientState>, ConnectionError>;
 
     /// Returns the current height of the local chain.
-    fn host_current_height(&self) -> Result<Height, Error>;
+    fn host_current_height(&self) -> Result<Height, ConnectionError>;
 
     #[deprecated(since = "0.20.0")]
     /// Returns the oldest height available on the local chain.
-    fn host_oldest_height(&self) -> Result<Height, Error>;
+    fn host_oldest_height(&self) -> Result<Height, ConnectionError>;
 
     /// Returns the prefix that the local chain uses in the KV store.
     fn commitment_prefix(&self) -> CommitmentPrefix;
@@ -42,10 +45,13 @@ pub trait ConnectionReader {
         &self,
         client_id: &ClientId,
         height: Height,
-    ) -> Result<Box<dyn ConsensusState>, Error>;
+    ) -> Result<Box<dyn ConsensusState>, ConnectionError>;
 
     /// Returns the ConsensusState of the host (local) chain at a specific height.
-    fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, Error>;
+    fn host_consensus_state(
+        &self,
+        height: Height,
+    ) -> Result<Box<dyn ConsensusState>, ConnectionError>;
 
     /// Function required by ICS 03. Returns the list of all possible versions that the connection
     /// handshake protocol supports.
@@ -59,23 +65,23 @@ pub trait ConnectionReader {
         &self,
         supported_versions: Vec<Version>,
         counterparty_candidate_versions: Vec<Version>,
-    ) -> Result<Version, Error> {
+    ) -> Result<Version, ConnectionError> {
         pick_version(supported_versions, counterparty_candidate_versions)
     }
 
     /// Returns a counter on how many connections have been created thus far.
     /// The value of this counter should increase only via method
     /// `ConnectionKeeper::increase_connection_counter`.
-    fn connection_counter(&self) -> Result<u64, Error>;
+    fn connection_counter(&self) -> Result<u64, ConnectionError>;
 
     /// Validates the `ClientState` of the client on the counterparty chain.
-    fn validate_self_client(&self, counterparty_client_state: Any) -> Result<(), Error>;
+    fn validate_self_client(&self, counterparty_client_state: Any) -> Result<(), ConnectionError>;
 }
 
 /// A context supplying all the necessary write-only dependencies (i.e., storage writing facility)
 /// for processing any `ConnectionMsg`.
 pub trait ConnectionKeeper {
-    fn store_connection_result(&mut self, result: ConnectionResult) -> Result<(), Error> {
+    fn store_connection_result(&mut self, result: ConnectionResult) -> Result<(), ConnectionError> {
         self.store_connection(result.connection_id.clone(), &result.connection_end)?;
 
         // If we generated an identifier, increase the counter & associate this new identifier
@@ -98,14 +104,14 @@ pub trait ConnectionKeeper {
         &mut self,
         connection_id: ConnectionId,
         connection_end: &ConnectionEnd,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ConnectionError>;
 
     /// Stores the given connection_id at a path associated with the client_id.
     fn store_connection_to_client(
         &mut self,
         connection_id: ConnectionId,
         client_id: &ClientId,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ConnectionError>;
 
     /// Called upon connection identifier creation (Init or Try process).
     /// Increases the counter which keeps track of how many connections have been created.

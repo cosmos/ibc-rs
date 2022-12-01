@@ -2,7 +2,7 @@
 //!
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::context::ClientReader;
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::ClientMisbehaviour;
 use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
@@ -21,7 +21,7 @@ pub struct MisbehaviourResult {
 pub fn process(
     ctx: &dyn ClientReader,
     msg: MsgSubmitMisbehaviour,
-) -> HandlerResult<ClientResult, Error> {
+) -> HandlerResult<ClientResult, ClientError> {
     let mut output = HandlerOutput::builder();
 
     let MsgSubmitMisbehaviour {
@@ -34,12 +34,14 @@ pub fn process(
     let client_state = ctx.client_state(&client_id)?;
 
     if client_state.is_frozen() {
-        return Err(Error::client_frozen(client_id));
+        return Err(ClientError::ClientFrozen { client_id });
     }
 
     let client_state = client_state
         .check_misbehaviour_and_update_state(ctx, client_id.clone(), misbehaviour)
-        .map_err(|e| Error::misbehaviour_handling_failure(e.to_string()))?;
+        .map_err(|e| ClientError::MisbehaviourHandlingFailure {
+            reason: e.to_string(),
+        })?;
 
     output.emit(IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(
         client_id.clone(),

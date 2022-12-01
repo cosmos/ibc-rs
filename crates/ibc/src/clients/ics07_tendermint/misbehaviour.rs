@@ -10,7 +10,7 @@ use tendermint_light_client_verifier::ProdVerifier;
 
 use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::Header;
-use crate::core::ics02_client::error::Error as Ics02Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::Height;
 
@@ -26,17 +26,19 @@ pub struct Misbehaviour {
 impl Misbehaviour {
     pub fn new(client_id: ClientId, header1: Header, header2: Header) -> Result<Self, Error> {
         if header1.signed_header.header.chain_id != header2.signed_header.header.chain_id {
-            return Err(Error::invalid_raw_misbehaviour(
-                "headers must have identical chain_ids".into(),
-            ));
+            return Err(Error::InvalidRawMisbehaviour {
+                reason: "headers must have identical chain_ids".to_owned(),
+            });
         }
 
         if header1.height() < header2.height() {
-            return Err(Error::invalid_raw_misbehaviour(format!(
-                "headers1 height is less than header2 height ({} < {})",
-                header1.height(),
-                header2.height()
-            )));
+            return Err(Error::InvalidRawMisbehaviour {
+                reason: format!(
+                    "headers1 height is less than header2 height ({} < {})",
+                    header1.height(),
+                    header2.height()
+                ),
+            });
         }
 
         let untrusted_state_1 = header1.as_untrusted_block_state();
@@ -98,14 +100,20 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
         let client_id = raw
             .client_id
             .parse()
-            .map_err(|_| Error::invalid_raw_client_id(raw.client_id.clone()))?;
+            .map_err(|_| Error::InvalidRawClientId {
+                client_id: raw.client_id.clone(),
+            })?;
         let header1: Header = raw
             .header_1
-            .ok_or_else(|| Error::invalid_raw_misbehaviour("missing header1".into()))?
+            .ok_or_else(|| Error::InvalidRawMisbehaviour {
+                reason: "missing header1".into(),
+            })?
             .try_into()?;
         let header2: Header = raw
             .header_2
-            .ok_or_else(|| Error::invalid_raw_misbehaviour("missing header2".into()))?
+            .ok_or_else(|| Error::InvalidRawMisbehaviour {
+                reason: "missing header2".into(),
+            })?
             .try_into()?;
 
         Self::new(client_id, header1, header2)
@@ -125,14 +133,14 @@ impl From<Misbehaviour> for RawMisbehaviour {
 impl Protobuf<Any> for Misbehaviour {}
 
 impl TryFrom<Any> for Misbehaviour {
-    type Error = Ics02Error;
+    type Error = ClientError;
 
-    fn try_from(raw: Any) -> Result<Self, Ics02Error> {
+    fn try_from(raw: Any) -> Result<Self, ClientError> {
         use core::ops::Deref;
 
         fn decode_misbehaviour<B: Buf>(buf: B) -> Result<Misbehaviour, Error> {
             RawMisbehaviour::decode(buf)
-                .map_err(Error::decode)?
+                .map_err(Error::Decode)?
                 .try_into()
         }
 
@@ -140,7 +148,9 @@ impl TryFrom<Any> for Misbehaviour {
             TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
                 decode_misbehaviour(raw.value.deref()).map_err(Into::into)
             }
-            _ => Err(Ics02Error::unknown_misbehaviour_type(raw.type_url)),
+            _ => Err(ClientError::UnknownMisbehaviourType {
+                misbehaviour_type: raw.type_url,
+            }),
         }
     }
 }
@@ -157,7 +167,7 @@ impl From<Misbehaviour> for Any {
 
 pub fn decode_misbehaviour<B: Buf>(buf: B) -> Result<Misbehaviour, Error> {
     RawMisbehaviour::decode(buf)
-        .map_err(Error::decode)?
+        .map_err(Error::Decode)?
         .try_into()
 }
 

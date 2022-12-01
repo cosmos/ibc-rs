@@ -1,9 +1,10 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpgradeAnyClient`.
 //!
+use crate::core::context::ContextError;
 use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::ClientReader;
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
@@ -22,7 +23,7 @@ pub struct UpgradeClientResult {
     pub consensus_state: Box<dyn ConsensusState>,
 }
 
-pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), Error>
+pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
@@ -32,22 +33,23 @@ where
     let old_client_state = ctx.client_state(&client_id)?;
 
     if old_client_state.is_frozen() {
-        return Err(Error::client_frozen(client_id));
+        return Err(ClientError::ClientFrozen { client_id }.into());
     }
 
     let upgrade_client_state = ctx.decode_client_state(msg.client_state)?;
 
     if old_client_state.latest_height() >= upgrade_client_state.latest_height() {
-        return Err(Error::low_upgrade_height(
-            old_client_state.latest_height(),
-            upgrade_client_state.latest_height(),
-        ));
+        return Err(ClientError::LowUpgradeHeight {
+            upgraded_height: old_client_state.latest_height(),
+            client_height: upgrade_client_state.latest_height(),
+        }
+        .into());
     }
 
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), Error>
+pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
 {
@@ -85,7 +87,7 @@ where
 pub fn process(
     ctx: &dyn ClientReader,
     msg: MsgUpgradeClient,
-) -> HandlerResult<ClientResult, Error> {
+) -> HandlerResult<ClientResult, ClientError> {
     let mut output = HandlerOutput::builder();
     let MsgUpgradeClient { client_id, .. } = msg;
 
@@ -93,16 +95,16 @@ pub fn process(
     let old_client_state = ctx.client_state(&client_id)?;
 
     if old_client_state.is_frozen() {
-        return Err(Error::client_frozen(client_id));
+        return Err(ClientError::ClientFrozen { client_id });
     }
 
     let upgrade_client_state = ctx.decode_client_state(msg.client_state)?;
 
     if old_client_state.latest_height() >= upgrade_client_state.latest_height() {
-        return Err(Error::low_upgrade_height(
-            old_client_state.latest_height(),
-            upgrade_client_state.latest_height(),
-        ));
+        return Err(ClientError::LowUpgradeHeight {
+            upgraded_height: old_client_state.latest_height(),
+            client_height: upgrade_client_state.latest_height(),
+        });
     }
 
     let UpdatedState {
@@ -142,7 +144,7 @@ mod tests {
 
     use core::str::FromStr;
 
-    use crate::core::ics02_client::error::{Error, ErrorDetail};
+    use crate::core::ics02_client::error::ClientError;
     use crate::core::ics02_client::handler::dispatch;
     use crate::core::ics02_client::handler::ClientResult::Upgrade;
     use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
@@ -218,8 +220,8 @@ mod tests {
         let output = dispatch(&ctx, ClientMsg::UpgradeClient(msg.clone()));
 
         match output {
-            Err(Error(ErrorDetail::ClientNotFound(e), _)) => {
-                assert_eq!(e.client_id, msg.client_id);
+            Err(ClientError::ClientNotFound { client_id }) => {
+                assert_eq!(client_id, msg.client_id);
             }
             _ => {
                 panic!("expected ClientNotFound error, instead got {:?}", output);
@@ -247,10 +249,13 @@ mod tests {
         let output = dispatch(&ctx, ClientMsg::UpgradeClient(msg.clone()));
 
         match output {
-            Err(Error(ErrorDetail::LowUpgradeHeight(e), _)) => {
-                assert_eq!(e.upgraded_height, Height::new(0, 42).unwrap());
+            Err(ClientError::LowUpgradeHeight {
+                upgraded_height,
+                client_height,
+            }) => {
+                assert_eq!(upgraded_height, Height::new(0, 42).unwrap());
                 assert_eq!(
-                    e.client_height,
+                    client_height,
                     MockClientState::try_from(msg.client_state)
                         .unwrap()
                         .latest_height()

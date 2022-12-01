@@ -2,7 +2,7 @@
 
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::context::ConnectionReader;
-use crate::core::ics03_connection::error::Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenConfirm;
 use crate::core::ics03_connection::handler::{ConnectionIdState, ConnectionResult};
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
@@ -14,19 +14,21 @@ use crate::prelude::*;
 pub(crate) fn process(
     ctx_b: &dyn ConnectionReader,
     msg: MsgConnectionOpenConfirm,
-) -> HandlerResult<ConnectionResult, Error> {
+) -> HandlerResult<ConnectionResult, ConnectionError> {
     let mut output = HandlerOutput::builder();
 
     let conn_end_on_b = ctx_b.connection_end(&msg.conn_id_on_b)?;
     if !conn_end_on_b.state_matches(&State::TryOpen) {
-        return Err(Error::connection_mismatch(msg.conn_id_on_b));
+        return Err(ConnectionError::ConnectionMismatch {
+            connection_id: msg.conn_id_on_b,
+        });
     }
     let client_id_on_a = conn_end_on_b.counterparty().client_id();
     let client_id_on_b = conn_end_on_b.client_id();
     let conn_id_on_a = conn_end_on_b
         .counterparty()
         .connection_id()
-        .ok_or_else(Error::invalid_counterparty)?;
+        .ok_or(ConnectionError::InvalidCounterparty)?;
 
     // Verify proofs
     {
@@ -58,7 +60,7 @@ pub(crate) fn process(
                 conn_id_on_a,
                 &expected_conn_end_on_a,
             )
-            .map_err(Error::verify_connection_state)?;
+            .map_err(ConnectionError::VerifyConnectionState)?;
     }
 
     // Success

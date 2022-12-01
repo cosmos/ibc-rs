@@ -2,17 +2,18 @@ use serde::Serialize;
 
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::Height;
-use flex_error::define_error;
+use displaydoc::Display;
 
-define_error! {
-    #[derive(Debug, PartialEq, Eq)]
-    ProofError {
-        ZeroHeight
-            | _ | { format_args!("proof height cannot be zero") },
-        EmptyProof
-            | _ | { format_args!("proof cannot be empty") },
-    }
+#[derive(Debug, Display)]
+pub enum ProofError {
+    /// proof height cannot be zero
+    ZeroHeight,
+    /// proof cannot be empty
+    EmptyProof,
 }
+
+#[cfg(feature = "std")]
+impl std::error::Error for ProofError {}
 
 /// Structure comprising proofs in a message. Proofs are typically present in messages for
 /// handshake protocols, e.g., ICS3 connection (open) handshake or ICS4 channel (open and close)

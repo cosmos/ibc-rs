@@ -1,5 +1,6 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
+use crate::core::context::ContextError;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::ics24_host::path::ClientStatePath;
 use crate::core::ics24_host::path::ClientTypePath;
@@ -12,7 +13,7 @@ use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::ClientReader;
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::CreateClient;
 use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::height::Height;
@@ -33,7 +34,7 @@ pub struct CreateClientResult {
     pub processed_height: Height,
 }
 
-pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), Error>
+pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
@@ -51,13 +52,17 @@ where
     let client_type = client_state.client_type();
 
     let _client_id = ClientId::new(client_type, id_counter).map_err(|e| {
-        Error::client_identifier_constructor(client_state.client_type(), id_counter, e)
+        ClientError::ClientIdentifierConstructor {
+            client_type: client_state.client_type(),
+            counter: id_counter,
+            validation_error: e,
+        }
     })?;
 
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), Error>
+pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
 {
@@ -75,7 +80,11 @@ where
     let client_type = client_state.client_type();
 
     let client_id = ClientId::new(client_type.clone(), id_counter).map_err(|e| {
-        Error::client_identifier_constructor(client_state.client_type(), id_counter, e)
+        ContextError::from(ClientError::ClientIdentifierConstructor {
+            client_type: client_state.client_type(),
+            counter: id_counter,
+            validation_error: e,
+        })
     })?;
     let consensus_state = client_state.initialise(consensus_state)?;
 
@@ -111,7 +120,10 @@ where
     Ok(())
 }
 
-pub fn process(ctx: &dyn ClientReader, msg: MsgCreateClient) -> HandlerResult<ClientResult, Error> {
+pub fn process(
+    ctx: &dyn ClientReader,
+    msg: MsgCreateClient,
+) -> HandlerResult<ClientResult, ClientError> {
     let mut output = HandlerOutput::builder();
 
     let MsgCreateClient {
@@ -128,7 +140,11 @@ pub fn process(ctx: &dyn ClientReader, msg: MsgCreateClient) -> HandlerResult<Cl
     let client_type = client_state.client_type();
 
     let client_id = ClientId::new(client_type.clone(), id_counter).map_err(|e| {
-        Error::client_identifier_constructor(client_state.client_type(), id_counter, e)
+        ClientError::ClientIdentifierConstructor {
+            client_type: client_state.client_type(),
+            counter: id_counter,
+            validation_error: e,
+        }
     })?;
 
     let consensus_state = client_state.initialise(consensus_state)?;

@@ -3,7 +3,7 @@ use crate::core::ics04_channel::commitment::AcknowledgementCommitment;
 use crate::core::ics04_channel::events::WriteAcknowledgement;
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::packet::{Packet, PacketResult, Sequence};
-use crate::core::ics04_channel::{context::ChannelReader, error::Error};
+use crate::core::ics04_channel::{context::ChannelReader, error::PacketError};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::prelude::*;
 use crate::{
@@ -23,17 +23,18 @@ pub fn process<Ctx: ChannelReader>(
     ctx: &Ctx,
     packet: Packet,
     ack: Acknowledgement,
-) -> HandlerResult<PacketResult, Error> {
+) -> HandlerResult<PacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
-    let dest_channel_end =
-        ctx.channel_end(&packet.destination_port, &packet.destination_channel)?;
+    let dest_channel_end = ctx
+        .channel_end(&packet.destination_port, &packet.destination_channel)
+        .map_err(PacketError::Channel)?;
 
     if !dest_channel_end.state_matches(&State::Open) {
-        return Err(Error::invalid_channel_state(
-            packet.source_channel,
-            dest_channel_end.state,
-        ));
+        return Err(PacketError::InvalidChannelState {
+            channel_id: packet.source_channel,
+            state: dest_channel_end.state,
+        });
     }
 
     // NOTE: IBC app modules might have written the acknowledgement synchronously on
@@ -44,14 +45,22 @@ pub fn process<Ctx: ChannelReader>(
         &packet.destination_channel,
         packet.sequence,
     ) {
-        Ok(_) => return Err(Error::acknowledgement_exists(packet.sequence)),
+        Ok(_) => {
+            return Err(PacketError::AcknowledgementExists {
+                sequence: packet.sequence,
+            })
+        }
         Err(e)
-            if e.detail() == Error::packet_acknowledgement_not_found(packet.sequence).detail() => {}
+            if e.to_string()
+                == PacketError::PacketAcknowledgementNotFound {
+                    sequence: packet.sequence,
+                }
+                .to_string() => {}
         Err(e) => return Err(e),
     }
 
     if ack.is_empty() {
-        return Err(Error::invalid_acknowledgement());
+        return Err(PacketError::InvalidAcknowledgement);
     }
 
     let result = PacketResult::WriteAck(WriteAckPacketResult {

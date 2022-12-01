@@ -13,7 +13,7 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TMConse
 use crate::clients::ics07_tendermint::header::TENDERMINT_HEADER_TYPE_URL;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
 use crate::core::ics24_host::identifier::ChainId;
 use crate::mock::client_state::client_type as mock_client_type;
@@ -140,9 +140,9 @@ impl From<HostBlock> for Box<dyn ConsensusState> {
 impl ErasedProtobuf<Any> for HostBlock {}
 
 impl TryFrom<Any> for HostBlock {
-    type Error = Error;
+    type Error = ClientError;
 
-    fn try_from(_raw: Any) -> Result<Self, Error> {
+    fn try_from(_raw: Any) -> Result<Self, Self::Error> {
         todo!()
     }
 }

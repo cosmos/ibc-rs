@@ -6,7 +6,7 @@ use ibc_proto::ibc::mock::Misbehaviour as RawMisbehaviour;
 use ibc_proto::protobuf::Protobuf;
 use serde::{Deserialize, Serialize};
 
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::mock::header::MockHeader;
 use crate::Height;
@@ -33,18 +33,18 @@ impl crate::core::ics02_client::misbehaviour::Misbehaviour for Misbehaviour {
 impl Protobuf<RawMisbehaviour> for Misbehaviour {}
 
 impl TryFrom<RawMisbehaviour> for Misbehaviour {
-    type Error = Error;
+    type Error = ClientError;
 
     fn try_from(raw: RawMisbehaviour) -> Result<Self, Self::Error> {
         Ok(Self {
             client_id: Default::default(),
             header1: raw
                 .header1
-                .ok_or_else(Error::missing_raw_misbehaviour)?
+                .ok_or(ClientError::MissingRawMisbehaviour)?
                 .try_into()?,
             header2: raw
                 .header2
-                .ok_or_else(Error::missing_raw_misbehaviour)?
+                .ok_or(ClientError::MissingRawMisbehaviour)?
                 .try_into()?,
         })
     }
@@ -63,16 +63,16 @@ impl From<Misbehaviour> for RawMisbehaviour {
 impl Protobuf<Any> for Misbehaviour {}
 
 impl TryFrom<Any> for Misbehaviour {
-    type Error = Error;
+    type Error = ClientError;
 
-    fn try_from(raw: Any) -> Result<Self, Error> {
+    fn try_from(raw: Any) -> Result<Self, ClientError> {
         use core::ops::Deref;
 
-        fn decode_misbehaviour<B: Buf>(buf: B) -> Result<Misbehaviour, Error> {
+        fn decode_misbehaviour<B: Buf>(buf: B) -> Result<Misbehaviour, ClientError> {
             use prost::Message;
 
             RawMisbehaviour::decode(buf)
-                .map_err(Error::decode)?
+                .map_err(ClientError::Decode)?
                 .try_into()
         }
 
@@ -80,7 +80,9 @@ impl TryFrom<Any> for Misbehaviour {
             MOCK_MISBEHAVIOUR_TYPE_URL => {
                 decode_misbehaviour(raw.value.deref()).map_err(Into::into)
             }
-            _ => Err(Error::unknown_misbehaviour_type(raw.type_url)),
+            _ => Err(ClientError::UnknownMisbehaviourType {
+                misbehaviour_type: raw.type_url,
+            }),
         }
     }
 }

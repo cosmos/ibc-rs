@@ -7,7 +7,7 @@ use ibc_proto::protobuf::Protobuf;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
 use crate::mock::client_state::client_type as mock_client_type;
 use crate::timestamp::Timestamp;
@@ -43,17 +43,17 @@ impl Display for MockHeader {
 impl Protobuf<RawMockHeader> for MockHeader {}
 
 impl TryFrom<RawMockHeader> for MockHeader {
-    type Error = Error;
+    type Error = ClientError;
 
     fn try_from(raw: RawMockHeader) -> Result<Self, Self::Error> {
         Ok(MockHeader {
             height: raw
                 .height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_raw_header)?,
+                .ok_or(ClientError::MissingRawHeader)?,
 
             timestamp: Timestamp::from_nanoseconds(raw.timestamp)
-                .map_err(Error::invalid_packet_timestamp)?,
+                .map_err(ClientError::InvalidPacketTimestamp)?,
         })
     }
 }
@@ -101,13 +101,15 @@ impl Header for MockHeader {
 impl Protobuf<Any> for MockHeader {}
 
 impl TryFrom<Any> for MockHeader {
-    type Error = Error;
+    type Error = ClientError;
 
-    fn try_from(raw: Any) -> Result<Self, Error> {
+    fn try_from(raw: Any) -> Result<Self, Self::Error> {
         match raw.type_url.as_str() {
             MOCK_HEADER_TYPE_URL => Ok(Protobuf::<RawMockHeader>::decode_vec(&raw.value)
-                .map_err(Error::invalid_raw_header)?),
-            _ => Err(Error::unknown_header_type(raw.type_url)),
+                .map_err(ClientError::InvalidRawHeader)?),
+            _ => Err(ClientError::UnknownHeaderType {
+                header_type: raw.type_url,
+            }),
         }
     }
 }
