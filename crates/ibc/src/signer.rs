@@ -3,16 +3,16 @@ use core::str::FromStr;
 use crate::prelude::*;
 
 use derive_more::Display;
-use flex_error::define_error;
 use serde::{Deserialize, Serialize};
 
-define_error! {
-    #[derive(Debug, PartialEq, Eq)]
-    SignerError {
-        EmptySigner
-            | _ | { "signer cannot be empty" },
-    }
+#[derive(Debug, displaydoc::Display)]
+pub enum SignerError {
+    /// signer cannot be empty
+    EmptySigner,
 }
+
+#[cfg(feature = "std")]
+impl std::error::Error for SignerError {}
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Display)]
 pub struct Signer(String);
@@ -23,7 +23,7 @@ impl FromStr for Signer {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.to_string();
         if s.trim().is_empty() {
-            return Err(SignerError::empty_signer());
+            return Err(SignerError::EmptySigner);
         }
         Ok(Self(s))
     }

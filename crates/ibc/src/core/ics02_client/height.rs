@@ -4,13 +4,13 @@ use core::cmp::Ordering;
 use core::num::ParseIntError;
 use core::str::FromStr;
 
-use flex_error::{define_error, TraceError};
+use displaydoc::Display;
 use ibc_proto::protobuf::Protobuf;
 use serde_derive::{Deserialize, Serialize};
 
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Height {
@@ -22,9 +22,9 @@ pub struct Height {
 }
 
 impl Height {
-    pub fn new(revision_number: u64, revision_height: u64) -> Result<Self, Error> {
+    pub fn new(revision_number: u64, revision_height: u64) -> Result<Self, ClientError> {
         if revision_height == 0 {
-            return Err(Error::invalid_height());
+            return Err(ClientError::InvalidHeight);
         }
 
         Ok(Self {
@@ -52,9 +52,9 @@ impl Height {
         self.add(1)
     }
 
-    pub fn sub(&self, delta: u64) -> Result<Height, Error> {
+    pub fn sub(&self, delta: u64) -> Result<Height, ClientError> {
         if self.revision_height <= delta {
-            return Err(Error::invalid_height_result());
+            return Err(ClientError::InvalidHeightResult);
         }
 
         Ok(Height {
@@ -63,7 +63,7 @@ impl Height {
         })
     }
 
-    pub fn decrement(&self) -> Result<Height, Error> {
+    pub fn decrement(&self) -> Result<Height, ClientError> {
         self.sub(1)
     }
 }
@@ -93,7 +93,7 @@ impl Ord for Height {
 impl Protobuf<RawHeight> for Height {}
 
 impl TryFrom<RawHeight> for Height {
-    type Error = Error;
+    type Error = ClientError;
 
     fn try_from(raw_height: RawHeight) -> Result<Self, Self::Error> {
         Height::new(raw_height.revision_number, raw_height.revision_height)
@@ -125,18 +125,24 @@ impl core::fmt::Display for Height {
     }
 }
 
-define_error! {
-    #[derive(Debug, PartialEq, Eq)]
-    HeightError {
-        HeightConversion
-            { height: String }
-            [ TraceError<ParseIntError> ]
-            | e | {
-                format_args!("cannot convert into a `Height` type from string {0}",
-                    e.height)
-            },
-        ZeroHeight
-            |_| { "attempted to parse an invalid zero height" }
+#[derive(Debug, Display)]
+pub enum HeightError {
+    /// cannot convert into a `Height` type from string `{height}`
+    HeightConversion {
+        height: String,
+        error: ParseIntError,
+    },
+    /// attempted to parse an invalid zero height
+    ZeroHeight,
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for HeightError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            HeightError::HeightConversion { error: e, .. } => Some(e),
+            HeightError::ZeroHeight => None,
+        }
     }
 }
 
@@ -146,14 +152,22 @@ impl TryFrom<&str> for Height {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let split: Vec<&str> = value.split('-').collect();
 
-        let revision_number = split[0]
-            .parse::<u64>()
-            .map_err(|e| HeightError::height_conversion(value.to_owned(), e))?;
-        let revision_height = split[1]
-            .parse::<u64>()
-            .map_err(|e| HeightError::height_conversion(value.to_owned(), e))?;
+        let revision_number =
+            split[0]
+                .parse::<u64>()
+                .map_err(|e| HeightError::HeightConversion {
+                    height: value.to_owned(),
+                    error: e,
+                })?;
+        let revision_height =
+            split[1]
+                .parse::<u64>()
+                .map_err(|e| HeightError::HeightConversion {
+                    height: value.to_owned(),
+                    error: e,
+                })?;
 
-        Height::new(revision_number, revision_height).map_err(|_| HeightError::zero_height())
+        Height::new(revision_number, revision_height).map_err(|_| HeightError::ZeroHeight)
     }
 }
 

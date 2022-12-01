@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::context::ChannelReader;
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::msgs::ChannelMsg;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::{msgs::PacketMsg, packet::PacketResult};
@@ -65,7 +65,7 @@ impl ModuleExtras {
     }
 }
 
-pub fn channel_validate<Ctx>(ctx: &Ctx, msg: &ChannelMsg) -> Result<ModuleId, Error>
+pub fn channel_validate<Ctx>(ctx: &Ctx, msg: &ChannelMsg) -> Result<ModuleId, ChannelError>
 where
     Ctx: RouterContext,
 {
@@ -73,7 +73,7 @@ where
     if ctx.router().has_route(&module_id) {
         Ok(module_id)
     } else {
-        Err(Error::route_not_found())
+        Err(ChannelError::RouteNotFound)
     }
 }
 
@@ -82,7 +82,7 @@ where
 pub fn channel_dispatch<Ctx>(
     ctx: &Ctx,
     msg: &ChannelMsg,
-) -> Result<(Vec<String>, ChannelResult), Error>
+) -> Result<(Vec<String>, ChannelResult), ChannelError>
 where
     Ctx: ChannelReader,
 {
@@ -104,14 +104,14 @@ pub fn channel_callback<Ctx>(
     module_id: &ModuleId,
     msg: &ChannelMsg,
     result: &mut ChannelResult,
-) -> Result<ModuleExtras, Error>
+) -> Result<ModuleExtras, ChannelError>
 where
     Ctx: RouterContext,
 {
     let cb = ctx
         .router_mut()
         .get_route_mut(module_id)
-        .ok_or_else(Error::route_not_found)?;
+        .ok_or(ChannelError::RouteNotFound)?;
 
     match msg {
         ChannelMsg::ChannelOpenInit(msg) => {
@@ -222,29 +222,29 @@ pub fn channel_events(
     vec![event]
 }
 
-pub fn get_module_for_packet_msg<Ctx>(ctx: &Ctx, msg: &PacketMsg) -> Result<ModuleId, Error>
+pub fn get_module_for_packet_msg<Ctx>(ctx: &Ctx, msg: &PacketMsg) -> Result<ModuleId, ChannelError>
 where
     Ctx: RouterContext,
 {
     let module_id = match msg {
         PacketMsg::RecvPacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.destination_port)
-            .map_err(Error::ics05_port)?,
+            .map_err(ChannelError::Port)?,
         PacketMsg::AckPacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.source_port)
-            .map_err(Error::ics05_port)?,
+            .map_err(ChannelError::Port)?,
         PacketMsg::TimeoutPacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.source_port)
-            .map_err(Error::ics05_port)?,
+            .map_err(ChannelError::Port)?,
         PacketMsg::TimeoutOnClosePacket(msg) => ctx
             .lookup_module_by_port(&msg.packet.source_port)
-            .map_err(Error::ics05_port)?,
+            .map_err(ChannelError::Port)?,
     };
 
     if ctx.router().has_route(&module_id) {
         Ok(module_id)
     } else {
-        Err(Error::route_not_found())
+        Err(ChannelError::RouteNotFound)
     }
 }
 
@@ -252,7 +252,7 @@ where
 pub fn packet_dispatch<Ctx>(
     ctx: &Ctx,
     msg: &PacketMsg,
-) -> Result<(HandlerOutputBuilder<()>, PacketResult), Error>
+) -> Result<(HandlerOutputBuilder<()>, PacketResult), PacketError>
 where
     Ctx: ChannelReader,
 {
@@ -276,7 +276,7 @@ pub fn packet_callback<Ctx>(
     module_id: &ModuleId,
     msg: &PacketMsg,
     output: &mut HandlerOutputBuilder<()>,
-) -> Result<(), Error>
+) -> Result<(), PacketError>
 where
     Ctx: RouterContext,
 {
@@ -296,21 +296,22 @@ fn do_packet_callback(
     msg: &PacketMsg,
     module_output: &mut ModuleOutputBuilder,
     core_output: &mut HandlerOutputBuilder<()>,
-) -> Result<(), Error> {
+) -> Result<(), PacketError> {
     let cb = ctx
         .router_mut()
         .get_route_mut(module_id)
-        .ok_or_else(Error::route_not_found)?;
+        .ok_or(PacketError::RouteNotFound)?;
 
     match msg {
         PacketMsg::RecvPacket(msg) => {
             let result = cb.on_recv_packet(module_output, &msg.packet, &msg.signer);
             match result {
                 OnRecvPacketAck::Nil(write_fn) => {
-                    write_fn(cb.as_any_mut()).map_err(Error::app_module)
+                    write_fn(cb.as_any_mut()).map_err(|e| PacketError::AppModule { description: e })
                 }
                 OnRecvPacketAck::Successful(ack, write_fn) => {
-                    write_fn(cb.as_any_mut()).map_err(Error::app_module)?;
+                    write_fn(cb.as_any_mut())
+                        .map_err(|e| PacketError::AppModule { description: e })?;
 
                     process_write_ack(ctx, msg.packet.clone(), ack.as_ref(), core_output)
                 }
@@ -339,7 +340,7 @@ fn process_write_ack(
     packet: Packet,
     acknowledgement: &dyn Acknowledgement,
     core_output: &mut HandlerOutputBuilder<()>,
-) -> Result<(), Error> {
+) -> Result<(), PacketError> {
     let HandlerOutput {
         result,
         log,

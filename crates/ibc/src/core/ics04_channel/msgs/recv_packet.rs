@@ -4,7 +4,7 @@ use ibc_proto::protobuf::Protobuf;
 
 use ibc_proto::ibc::core::channel::v1::MsgRecvPacket as RawMsgRecvPacket;
 
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::Packet;
 use crate::proofs::Proofs;
 use crate::signer::Signer;
@@ -33,7 +33,7 @@ impl MsgRecvPacket {
 }
 
 impl Msg for MsgRecvPacket {
-    type ValidationError = Error;
+    type ValidationError = PacketError;
     type Raw = RawMsgRecvPacket;
 
     fn route(&self) -> String {
@@ -48,31 +48,31 @@ impl Msg for MsgRecvPacket {
 impl Protobuf<RawMsgRecvPacket> for MsgRecvPacket {}
 
 impl TryFrom<RawMsgRecvPacket> for MsgRecvPacket {
-    type Error = Error;
+    type Error = PacketError;
 
     fn try_from(raw_msg: RawMsgRecvPacket) -> Result<Self, Self::Error> {
         let proofs = Proofs::new(
             raw_msg
                 .proof_commitment
                 .try_into()
-                .map_err(Error::invalid_proof)?,
+                .map_err(PacketError::InvalidProof)?,
             None,
             None,
             None,
             raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_height)?,
+                .ok_or(PacketError::MissingHeight)?,
         )
-        .map_err(Error::invalid_proof)?;
+        .map_err(PacketError::InvalidProof)?;
 
         Ok(MsgRecvPacket {
             packet: raw_msg
                 .packet
-                .ok_or_else(Error::missing_packet)?
+                .ok_or(PacketError::MissingPacket)?
                 .try_into()?,
             proofs,
-            signer: raw_msg.signer.parse().map_err(Error::signer)?,
+            signer: raw_msg.signer.parse().map_err(PacketError::Signer)?,
         })
     }
 }
@@ -126,7 +126,7 @@ mod test {
 
     use ibc_proto::ibc::core::channel::v1::MsgRecvPacket as RawMsgRecvPacket;
 
-    use crate::core::ics04_channel::error::Error;
+    use crate::core::ics04_channel::error::PacketError;
     use crate::core::ics04_channel::msgs::recv_packet::test_util::get_dummy_raw_msg_recv_packet;
     use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
     use crate::test_utils::get_dummy_bech32_account;
@@ -174,7 +174,7 @@ mod test {
         ];
 
         for test in tests {
-            let res_msg: Result<MsgRecvPacket, Error> = test.raw.clone().try_into();
+            let res_msg: Result<MsgRecvPacket, PacketError> = test.raw.clone().try_into();
 
             assert_eq!(
                 res_msg.is_ok(),

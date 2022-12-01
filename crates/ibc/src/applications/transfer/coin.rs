@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use super::amount::Amount;
 use super::denom::{BaseDenom, PrefixedDenom};
-use super::error::Error;
+use super::error::TokenTransferError;
 use crate::prelude::*;
 use crate::serializers::serde_string;
 
@@ -30,35 +30,39 @@ pub struct Coin<D> {
 
 impl<D: FromStr> Coin<D>
 where
-    D::Err: Into<Error>,
+    D::Err: Into<TokenTransferError>,
 {
-    pub fn from_string_list(coin_str: &str) -> Result<Vec<Self>, Error> {
+    pub fn from_string_list(coin_str: &str) -> Result<Vec<Self>, TokenTransferError> {
         coin_str.split(',').map(FromStr::from_str).collect()
     }
 }
 
 impl<D: FromStr> FromStr for Coin<D>
 where
-    D::Err: Into<Error>,
+    D::Err: Into<TokenTransferError>,
 {
-    type Err = Error;
+    type Err = TokenTransferError;
 
     #[allow(clippy::assign_op_pattern)]
-    fn from_str(coin_str: &str) -> Result<Self, Error> {
+    fn from_str(coin_str: &str) -> Result<Self, TokenTransferError> {
         // Denominations can be 3 ~ 128 characters long and support letters, followed by either
         // a letter, a number or a separator ('/', ':', '.', '_' or '-').
         // Loosely copy the regex from here:
         // https://github.com/cosmos/cosmos-sdk/blob/v0.45.5/types/coin.go#L760-L762
         let matcher = regex!(br"([0-9]+)([a-zA-Z0-9/:\\._\x2d]+)");
 
-        let (m1, m2) = matcher
-            .match_slices(coin_str.as_bytes())
-            .ok_or_else(|| Error::invalid_coin(coin_str.to_string()))?;
+        let (m1, m2) = matcher.match_slices(coin_str.as_bytes()).ok_or_else(|| {
+            TokenTransferError::InvalidCoin {
+                coin: coin_str.to_string(),
+            }
+        })?;
 
-        let amount = from_utf8(m1).map_err(Error::utf8_decode)?.parse()?;
+        let amount = from_utf8(m1)
+            .map_err(TokenTransferError::Utf8Decode)?
+            .parse()?;
 
         let denom = from_utf8(m2)
-            .map_err(Error::utf8_decode)?
+            .map_err(TokenTransferError::Utf8Decode)?
             .parse()
             .map_err(Into::into)?;
 
@@ -68,9 +72,9 @@ where
 
 impl<D: FromStr> TryFrom<ProtoCoin> for Coin<D>
 where
-    D::Err: Into<Error>,
+    D::Err: Into<TokenTransferError>,
 {
-    type Error = Error;
+    type Error = TokenTransferError;
 
     fn try_from(proto: ProtoCoin) -> Result<Coin<D>, Self::Error> {
         let denom = D::from_str(&proto.denom).map_err(Into::into)?;
@@ -108,7 +112,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_raw_coin() -> Result<(), Error> {
+    fn test_parse_raw_coin() -> Result<(), TokenTransferError> {
         {
             let coin = RawCoin::from_str("123stake")?;
             assert_eq!(coin.denom, "stake");
@@ -137,7 +141,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_raw_coin_list() -> Result<(), Error> {
+    fn test_parse_raw_coin_list() -> Result<(), TokenTransferError> {
         {
             let coins = RawCoin::from_string_list("123stake,1a1,999den0m")?;
             assert_eq!(coins.len(), 3);

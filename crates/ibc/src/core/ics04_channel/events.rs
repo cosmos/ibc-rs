@@ -5,7 +5,7 @@ mod packet_attributes;
 
 use tendermint::abci;
 
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::events::IbcEventType;
@@ -524,7 +524,7 @@ impl SendPacket {
 }
 
 impl TryFrom<SendPacket> for abci::Event {
-    type Error = Error;
+    type Error = ChannelError;
 
     fn try_from(v: SendPacket) -> Result<Self, Self::Error> {
         let mut attributes = Vec::with_capacity(11);
@@ -618,7 +618,7 @@ impl ReceivePacket {
 }
 
 impl TryFrom<ReceivePacket> for abci::Event {
-    type Error = Error;
+    type Error = ChannelError;
 
     fn try_from(v: ReceivePacket) -> Result<Self, Self::Error> {
         let mut attributes = Vec::with_capacity(11);
@@ -716,7 +716,7 @@ impl WriteAcknowledgement {
 }
 
 impl TryFrom<WriteAcknowledgement> for abci::Event {
-    type Error = Error;
+    type Error = ChannelError;
 
     fn try_from(v: WriteAcknowledgement) -> Result<Self, Self::Error> {
         let mut attributes = Vec::with_capacity(11);
@@ -804,7 +804,7 @@ impl AcknowledgePacket {
 }
 
 impl TryFrom<AcknowledgePacket> for abci::Event {
-    type Error = Error;
+    type Error = ChannelError;
 
     fn try_from(v: AcknowledgePacket) -> Result<Self, Self::Error> {
         Ok(abci::Event {
@@ -884,7 +884,7 @@ impl TimeoutPacket {
 }
 
 impl TryFrom<TimeoutPacket> for abci::Event {
-    type Error = Error;
+    type Error = ChannelError;
 
     fn try_from(v: TimeoutPacket) -> Result<Self, Self::Error> {
         Ok(abci::Event {

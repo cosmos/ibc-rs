@@ -5,7 +5,7 @@ use derive_more::{Display, From};
 use ibc_proto::ibc::applications::transfer::v1::DenomTrace as RawDenomTrace;
 use serde::{Deserialize, Serialize};
 
-use super::error::Error;
+use super::error::TokenTransferError;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::prelude::*;
 use crate::serializers::serde_string;
@@ -22,11 +22,11 @@ impl BaseDenom {
 }
 
 impl FromStr for BaseDenom {
-    type Err = Error;
+    type Err = TokenTransferError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.trim().is_empty() {
-            Err(Error::empty_base_denom())
+            Err(TokenTransferError::EmptyBaseDenom)
         } else {
             Ok(BaseDenom(s.to_owned()))
         }
@@ -86,20 +86,27 @@ impl TracePath {
 }
 
 impl<'a> TryFrom<Vec<&'a str>> for TracePath {
-    type Error = Error;
+    type Error = TokenTransferError;
 
     fn try_from(v: Vec<&'a str>) -> Result<Self, Self::Error> {
         if v.len() % 2 != 0 {
-            return Err(Error::invalid_trace_length(v.len()));
+            return Err(TokenTransferError::InvalidTraceLength { len: v.len() });
         }
 
         let mut trace = vec![];
         let id_pairs = v.chunks_exact(2).map(|paths| (paths[0], paths[1]));
         for (pos, (port_id, channel_id)) in id_pairs.rev().enumerate() {
             let port_id =
-                PortId::from_str(port_id).map_err(|e| Error::invalid_trace_port_id(pos, e))?;
-            let channel_id = ChannelId::from_str(channel_id)
-                .map_err(|e| Error::invalid_trace_channel_id(pos, e))?;
+                PortId::from_str(port_id).map_err(|e| TokenTransferError::InvalidTracePortId {
+                    pos,
+                    validation_error: e,
+                })?;
+            let channel_id = ChannelId::from_str(channel_id).map_err(|e| {
+                TokenTransferError::InvalidTraceChannelId {
+                    pos,
+                    validation_error: e,
+                }
+            })?;
             trace.push(TracePrefix {
                 port_id,
                 channel_id,
@@ -111,7 +118,7 @@ impl<'a> TryFrom<Vec<&'a str>> for TracePath {
 }
 
 impl FromStr for TracePath {
-    type Err = Error;
+    type Err = TokenTransferError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts = {
@@ -211,7 +218,7 @@ pub fn is_receiver_chain_source(
 }
 
 impl FromStr for PrefixedDenom {
-    type Err = Error;
+    type Err = TokenTransferError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut parts: Vec<&str> = s.split('/').collect();
@@ -235,7 +242,7 @@ impl FromStr for PrefixedDenom {
 }
 
 impl TryFrom<RawDenomTrace> for PrefixedDenom {
-    type Error = Error;
+    type Error = TokenTransferError;
 
     fn try_from(value: RawDenomTrace) -> Result<Self, Self::Error> {
         let base_denom = BaseDenom::from_str(&value.base_denom)?;
@@ -280,7 +287,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_denom_validation() -> Result<(), Error> {
+    fn test_denom_validation() -> Result<(), TokenTransferError> {
         assert!(BaseDenom::from_str("").is_err(), "empty base denom");
         assert!(BaseDenom::from_str("uatom").is_ok(), "valid base denom");
         assert!(PrefixedDenom::from_str("").is_err(), "empty denom trace");
@@ -319,7 +326,7 @@ mod tests {
     }
 
     #[test]
-    fn test_denom_trace() -> Result<(), Error> {
+    fn test_denom_trace() -> Result<(), TokenTransferError> {
         assert_eq!(
             PrefixedDenom::from_str("transfer/channel-0/uatom")?,
             PrefixedDenom {
@@ -341,7 +348,7 @@ mod tests {
     }
 
     #[test]
-    fn test_denom_serde() -> Result<(), Error> {
+    fn test_denom_serde() -> Result<(), TokenTransferError> {
         let dt_str = "transfer/channel-0/uatom";
         let dt = PrefixedDenom::from_str(dt_str)?;
         assert_eq!(dt.to_string(), dt_str, "valid single trace info");
@@ -354,7 +361,7 @@ mod tests {
     }
 
     #[test]
-    fn test_trace_path() -> Result<(), Error> {
+    fn test_trace_path() -> Result<(), TokenTransferError> {
         assert!(TracePath::from_str("").is_ok(), "empty trace path");
         assert!(
             TracePath::from_str("transfer/uatom").is_err(),
