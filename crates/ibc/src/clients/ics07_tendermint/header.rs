@@ -216,6 +216,7 @@ pub mod test_util {
     use tendermint::PublicKey;
 
     use crate::clients::ics07_tendermint::header::Header;
+    use crate::mock::host::SyntheticTmBlock;
     use crate::Height;
 
     pub fn get_dummy_tendermint_header() -> tendermint::block::Header {
@@ -267,6 +268,21 @@ pub mod test_util {
             validator_set: vs.clone(),
             trusted_height: Height::new(0, 1).unwrap(),
             trusted_validator_set: vs,
+        }
+    }
+
+    impl From<SyntheticTmBlock> for Header {
+        fn from(light_block: SyntheticTmBlock) -> Self {
+            let SyntheticTmBlock {
+                trusted_height,
+                light_block,
+            } = light_block;
+            Self {
+                signed_header: light_block.signed_header,
+                validator_set: light_block.validators,
+                trusted_height,
+                trusted_validator_set: light_block.next_validators,
+            }
         }
     }
 }
