@@ -46,8 +46,12 @@ impl Misbehaviour {
 
         let verifier = ProdVerifier::default();
 
-        verifier.validate(&untrusted_state_1).into_result()?;
-        verifier.validate(&untrusted_state_2).into_result()?;
+        verifier
+            .verify_validator_sets(&untrusted_state_1)
+            .into_result()?;
+        verifier
+            .verify_validator_sets(&untrusted_state_2)
+            .into_result()?;
 
         verifier.verify_commit(&untrusted_state_1).into_result()?;
         verifier.verify_commit(&untrusted_state_2).into_result()?;
