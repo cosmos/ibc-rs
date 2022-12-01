@@ -9,9 +9,10 @@ use crate::{
     prelude::*,
     timestamp::Timestamp,
 };
+use abci_tag_proc_marco::abci_tag;
 use derive_more::From;
 use subtle_encoding::hex;
-use tendermint::abci;
+use tendermint::abci::EventAttribute;
 
 use core::str;
 
@@ -37,7 +38,7 @@ pub struct PacketDataAttribute {
     pub packet_data: Vec<u8>,
 }
 
-impl TryFrom<PacketDataAttribute> for Vec<abci::EventAttribute> {
+impl TryFrom<PacketDataAttribute> for Vec<EventAttribute> {
     type Error = ChannelError;
 
     fn try_from(attr: PacketDataAttribute) -> Result<Self, Self::Error> {
@@ -63,7 +64,7 @@ pub struct TimeoutHeightAttribute {
     pub timeout_height: TimeoutHeight,
 }
 
-impl From<TimeoutHeightAttribute> for abci::EventAttribute {
+impl From<TimeoutHeightAttribute> for EventAttribute {
     fn from(attr: TimeoutHeightAttribute) -> Self {
         match attr.timeout_height {
             TimeoutHeight::Never => (PKT_TIMEOUT_HEIGHT_ATTRIBUTE_KEY, "0-0").into(),
@@ -79,7 +80,7 @@ pub struct TimeoutTimestampAttribute {
     pub timeout_timestamp: Timestamp,
 }
 
-impl From<TimeoutTimestampAttribute> for abci::EventAttribute {
+impl From<TimeoutTimestampAttribute> for EventAttribute {
     fn from(attr: TimeoutTimestampAttribute) -> Self {
         (
             PKT_TIMEOUT_TIMESTAMP_ATTRIBUTE_KEY,
@@ -94,76 +95,46 @@ pub struct SequenceAttribute {
     pub sequence: Sequence,
 }
 
-impl From<SequenceAttribute> for abci::EventAttribute {
+impl From<SequenceAttribute> for EventAttribute {
     fn from(attr: SequenceAttribute) -> Self {
         (PKT_SEQ_ATTRIBUTE_KEY, attr.sequence.to_string()).into()
     }
 }
 
+#[abci_tag(PKT_SRC_PORT_ATTRIBUTE_KEY)]
 #[derive(Debug, From)]
 pub struct SrcPortIdAttribute {
     pub src_port_id: PortId,
 }
 
-impl From<SrcPortIdAttribute> for abci::EventAttribute {
-    fn from(attr: SrcPortIdAttribute) -> Self {
-        (PKT_SRC_PORT_ATTRIBUTE_KEY, attr.src_port_id.as_str()).into()
-    }
-}
-
+#[abci_tag(PKT_SRC_CHANNEL_ATTRIBUTE_KEY)]
 #[derive(Debug, From)]
 pub struct SrcChannelIdAttribute {
     pub src_channel_id: ChannelId,
 }
 
-impl From<SrcChannelIdAttribute> for abci::EventAttribute {
-    fn from(attr: SrcChannelIdAttribute) -> Self {
-        (PKT_SRC_CHANNEL_ATTRIBUTE_KEY, attr.src_channel_id.as_str()).into()
-    }
-}
-
+#[abci_tag(PKT_DST_PORT_ATTRIBUTE_KEY)]
 #[derive(Debug, From)]
 pub struct DstPortIdAttribute {
     pub dst_port_id: PortId,
 }
 
-impl From<DstPortIdAttribute> for abci::EventAttribute {
-    fn from(attr: DstPortIdAttribute) -> Self {
-        (PKT_DST_PORT_ATTRIBUTE_KEY, attr.dst_port_id.as_str()).into()
-    }
-}
-
+#[abci_tag(PKT_DST_CHANNEL_ATTRIBUTE_KEY)]
 #[derive(Debug, From)]
 pub struct DstChannelIdAttribute {
     pub dst_channel_id: ChannelId,
 }
 
-impl From<DstChannelIdAttribute> for abci::EventAttribute {
-    fn from(attr: DstChannelIdAttribute) -> Self {
-        (PKT_DST_CHANNEL_ATTRIBUTE_KEY, attr.dst_channel_id.as_str()).into()
-    }
-}
-
+#[abci_tag(PKT_CHANNEL_ORDERING_ATTRIBUTE_KEY)]
 #[derive(Debug, From)]
 pub struct ChannelOrderingAttribute {
     pub order: Order,
 }
 
-impl From<ChannelOrderingAttribute> for abci::EventAttribute {
-    fn from(attr: ChannelOrderingAttribute) -> Self {
-        (PKT_CHANNEL_ORDERING_ATTRIBUTE_KEY, attr.order.as_str()).into()
-    }
-}
-
+#[abci_tag(PKT_CONNECTION_ID_ATTRIBUTE_KEY)]
 #[derive(Debug, From)]
 pub struct PacketConnectionIdAttribute {
     pub connection_id: ConnectionId,
-}
-
-impl From<PacketConnectionIdAttribute> for abci::EventAttribute {
-    fn from(attr: PacketConnectionIdAttribute) -> Self {
-        (PKT_CONNECTION_ID_ATTRIBUTE_KEY, attr.connection_id.as_str()).into()
-    }
 }
 
 #[derive(Debug, From)]
@@ -171,7 +142,7 @@ pub struct AcknowledgementAttribute {
     pub acknowledgement: Acknowledgement,
 }
 
-impl TryFrom<AcknowledgementAttribute> for Vec<abci::EventAttribute> {
+impl TryFrom<AcknowledgementAttribute> for Vec<EventAttribute> {
     type Error = ChannelError;
 
     fn try_from(attr: AcknowledgementAttribute) -> Result<Self, Self::Error> {

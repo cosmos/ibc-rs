@@ -1,7 +1,8 @@
+use abci_tag_proc_marco::abci_tag;
 ///! This module holds all the abci event attributes for IBC events emitted
 ///! during the channel handshake.
 use derive_more::From;
-use tendermint::abci;
+use tendermint::abci::EventAttribute;
 
 use crate::core::{
     ics04_channel::Version,
@@ -17,56 +18,28 @@ pub const COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY: &str = "counterparty_channel_id
 const COUNTERPARTY_PORT_ID_ATTRIBUTE_KEY: &str = "counterparty_port_id";
 const VERSION_ATTRIBUTE_KEY: &str = "version";
 
+#[abci_tag(PORT_ID_ATTRIBUTE_KEY)]
 #[derive(Debug, From)]
 pub struct PortIdAttribute {
     pub port_id: PortId,
 }
 
-impl From<PortIdAttribute> for abci::EventAttribute {
-    fn from(attr: PortIdAttribute) -> Self {
-        (PORT_ID_ATTRIBUTE_KEY, attr.port_id.as_str()).into()
-    }
-}
-
+#[abci_tag(CHANNEL_ID_ATTRIBUTE_KEY)]
 #[derive(Clone, Debug, From)]
 pub struct ChannelIdAttribute {
     pub channel_id: ChannelId,
 }
 
-impl From<ChannelIdAttribute> for abci::EventAttribute {
-    fn from(attr: ChannelIdAttribute) -> Self {
-        (CHANNEL_ID_ATTRIBUTE_KEY, attr.channel_id.as_str()).into()
-    }
-}
-
+#[abci_tag(COUNTERPARTY_PORT_ID_ATTRIBUTE_KEY)]
 #[derive(Debug, From)]
 pub struct CounterpartyPortIdAttribute {
     pub counterparty_port_id: PortId,
 }
 
-impl From<CounterpartyPortIdAttribute> for abci::EventAttribute {
-    fn from(attr: CounterpartyPortIdAttribute) -> Self {
-        (
-            COUNTERPARTY_PORT_ID_ATTRIBUTE_KEY,
-            attr.counterparty_port_id.as_str(),
-        )
-            .into()
-    }
-}
-
+#[abci_tag(COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY)]
 #[derive(Debug, From)]
 pub struct CounterpartyChannelIdAttribute {
     pub counterparty_channel_id: ChannelId,
-}
-
-impl From<CounterpartyChannelIdAttribute> for abci::EventAttribute {
-    fn from(attr: CounterpartyChannelIdAttribute) -> Self {
-        (
-            COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY,
-            attr.counterparty_channel_id.as_str(),
-        )
-            .into()
-    }
 }
 
 impl AsRef<ChannelId> for CounterpartyChannelIdAttribute {
@@ -75,24 +48,14 @@ impl AsRef<ChannelId> for CounterpartyChannelIdAttribute {
     }
 }
 
+#[abci_tag(CONNECTION_ID_ATTRIBUTE_KEY)]
 #[derive(Debug, From)]
 pub struct ConnectionIdAttribute {
     pub connection_id: ConnectionId,
 }
 
-impl From<ConnectionIdAttribute> for abci::EventAttribute {
-    fn from(attr: ConnectionIdAttribute) -> Self {
-        (CONNECTION_ID_ATTRIBUTE_KEY, attr.connection_id.as_str()).into()
-    }
-}
-
+#[abci_tag(VERSION_ATTRIBUTE_KEY)]
 #[derive(Debug, From)]
 pub struct VersionAttribute {
     pub version: Version,
-}
-
-impl From<VersionAttribute> for abci::EventAttribute {
-    fn from(attr: VersionAttribute) -> Self {
-        (VERSION_ATTRIBUTE_KEY, attr.version.as_str()).into()
-    }
 }
