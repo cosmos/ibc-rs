@@ -27,8 +27,8 @@ pub enum ClientError {
     ConsensusStateNotFound { client_id: ClientId, height: Height },
     /// implementation specific error
     ImplementationSpecific,
-    /// header verification failed with reason: `{reaseon}`
-    HeaderVerificationFailure { reaseon: String },
+    /// header verification failed with reason: `{reason}`
+    HeaderVerificationFailure { reason: String },
     /// failed to build trust threshold from fraction: `{numerator}`/`{denominator}`
     InvalidTrustThreshold { numerator: u64, denominator: u64 },
     /// failed to build Tendermint domain type trust threshold from fraction: `{numerator}`/`{denominator}`
