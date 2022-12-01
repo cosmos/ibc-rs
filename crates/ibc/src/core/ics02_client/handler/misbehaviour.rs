@@ -59,13 +59,12 @@ pub fn process(
 #[cfg(test)]
 mod tests {
     use core::str::FromStr;
-    use ibc_proto::google::protobuf::Any;
     use test_log::test;
 
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
-    use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
+    use crate::clients::ics07_tendermint::header::Header as TmHeader;
+    use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
     use crate::core::ics02_client::client_state::ClientState;
-    use crate::core::ics02_client::consensus_state::downcast_consensus_state;
     use crate::core::ics02_client::error::ClientError;
     use crate::core::ics02_client::handler::dispatch;
     use crate::core::ics02_client::handler::ClientResult;
@@ -86,10 +85,6 @@ mod tests {
     use crate::{downcast, prelude::*};
 
     #[test]
-    fn test_misbehaviour_handling() {}
-
-    #[test]
-    #[ignore]
     fn test_misbehaviour_client_ok() {
         let client_id = ClientId::default();
         let signer = get_dummy_account_id();
@@ -125,6 +120,7 @@ mod tests {
                         assert_eq!(
                             upd_res.client_state,
                             MockClientState::new(MockHeader::new(height).with_timestamp(timestamp))
+                                .with_frozen_height(Height::new(0, 1).unwrap())
                                 .into_box()
                         )
                     }
@@ -214,11 +210,11 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
-    fn test_misbehaviour_synthetic_tendermint_client_adjacent_ok() {
+    fn test_misbehaviour_synthetic_tendermint_equivocation() {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let misbehaviour_height = Height::new(1, 21).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
 
         let ctx = MockContext::new(
             ChainId::new("mockgaiaA".to_string(), 1),
@@ -226,7 +222,8 @@ mod tests {
             5,
             Height::new(1, 1).unwrap(),
         )
-        .with_client_parametrized(
+        .with_client_parametrized_with_chain_id(
+            chain_id_b.clone(),
             &client_id,
             client_height,
             Some(tm_client_type()), // The target host chain (B) is synthetic TM.
@@ -234,7 +231,7 @@ mod tests {
         );
 
         let ctx_b = MockContext::new(
-            ChainId::new("mockgaiaB".to_string(), 1),
+            chain_id_b.clone(),
             HostType::SyntheticTendermint,
             5,
             misbehaviour_height,
@@ -242,18 +239,27 @@ mod tests {
 
         let signer = get_dummy_account_id();
 
-        let mut block = ctx_b.host_block(misbehaviour_height).unwrap().clone();
-        block.set_trusted_height(client_height);
+        let header1: TmHeader = {
+            let mut block = ctx_b.host_block(misbehaviour_height).unwrap().clone();
+            block.set_trusted_height(client_height);
+            block.try_into_tm_block().unwrap().into()
+        };
 
-        let latest_header_height = block.height();
+        let header2 = {
+            let mut tm_block = HostBlock::generate_tm_block(
+                chain_id_b.clone(),
+                misbehaviour_height.revision_height(),
+                Timestamp::now(),
+            );
+            tm_block.trusted_height = client_height;
+            tm_block.into()
+        };
+
         let msg = MsgSubmitMisbehaviour {
             client_id: client_id.clone(),
-            misbehaviour: Misbehaviour {
-                client_id: client_id.clone(),
-                header1: MockHeader::try_from(Any::from(block.clone())).unwrap(),
-                header2: MockHeader::try_from(Any::from(block)).unwrap(),
-            }
-            .into(),
+            misbehaviour: TmMisbehaviour::new(client_id.clone(), header1, header2)
+                .unwrap()
+                .into(),
             signer,
         };
 
@@ -269,9 +275,7 @@ mod tests {
                 // Check the result
                 match result {
                     ClientResult::Misbehaviour(upd_res) => {
-                        assert_eq!(upd_res.client_id, client_id);
-                        assert!(!upd_res.client_state.is_frozen());
-                        assert_eq!(upd_res.client_state.latest_height(), latest_header_height,)
+                        assert!(upd_res.client_state.is_frozen())
                     }
                     _ => panic!("misbehaviour handler result has incorrect type"),
                 }
@@ -283,11 +287,11 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
-    fn test_misbehaviour_synthetic_tendermint_client_non_adjacent_ok() {
+    fn test_misbehaviour_synthetic_tendermint_bft_time() {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let misbehaviour_height = Height::new(1, 21).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
 
         let ctx = MockContext::new(
             ChainId::new("mockgaiaA".to_string(), 1),
@@ -295,40 +299,46 @@ mod tests {
             5,
             Height::new(1, 1).unwrap(),
         )
-        .with_client_parametrized_history(
+        .with_client_parametrized_with_chain_id(
+            chain_id_b.clone(),
             &client_id,
             client_height,
             Some(tm_client_type()), // The target host chain (B) is synthetic TM.
             Some(client_height),
         );
 
-        let ctx_b = MockContext::new(
-            ChainId::new("mockgaiaB".to_string(), 1),
-            HostType::SyntheticTendermint,
-            5,
-            misbehaviour_height,
-        );
-
         let signer = get_dummy_account_id();
+        let header1 = {
+            let mut tm_block = HostBlock::generate_tm_block(
+                chain_id_b.clone(),
+                misbehaviour_height.revision_height(),
+                Timestamp::now(),
+            );
+            tm_block.trusted_height = client_height;
+            tm_block
+        };
+        let header2 = {
+            let timestamp =
+                Timestamp::from_nanoseconds(Timestamp::now().nanoseconds() + 1_000_000_000)
+                    .unwrap();
+            let mut tm_block = HostBlock::generate_tm_block(
+                chain_id_b.clone(),
+                misbehaviour_height.revision_height(),
+                timestamp,
+            );
+            tm_block.trusted_height = client_height;
+            tm_block
+        };
 
-        let mut block = ctx_b.host_block(misbehaviour_height).unwrap().clone();
-        let trusted_height = client_height.clone().sub(1).unwrap();
-        block.set_trusted_height(trusted_height);
-
-        let latest_header_height = block.height();
         let msg = MsgSubmitMisbehaviour {
             client_id: client_id.clone(),
-            misbehaviour: Misbehaviour {
-                client_id: client_id.clone(),
-                header1: MockHeader::try_from(Any::from(block.clone())).unwrap(),
-                header2: MockHeader::try_from(Any::from(block)).unwrap(),
-            }
-            .into(),
+            misbehaviour: TmMisbehaviour::new(client_id.clone(), header1.into(), header2.into())
+                .unwrap()
+                .into(),
             signer,
         };
 
         let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg));
-
         match output {
             Ok(HandlerOutput {
                 result,
@@ -339,9 +349,7 @@ mod tests {
                 // Check the result
                 match result {
                     ClientResult::Misbehaviour(upd_res) => {
-                        assert_eq!(upd_res.client_id, client_id);
-                        assert!(!upd_res.client_state.is_frozen());
-                        assert_eq!(upd_res.client_state.latest_height(), latest_header_height,)
+                        assert!(upd_res.client_state.is_frozen())
                     }
                     _ => panic!("misbehaviour handler result has incorrect type"),
                 }
@@ -349,147 +357,6 @@ mod tests {
             Err(err) => {
                 panic!("unexpected error: {}", err);
             }
-        }
-    }
-
-    #[test]
-    #[ignore]
-    fn test_misbehaviour_synthetic_tendermint_client_duplicate_ok() {
-        let client_id = ClientId::new(tm_client_type(), 0).unwrap();
-        let client_height = Height::new(1, 20).unwrap();
-
-        let chain_start_height = Height::new(1, 11).unwrap();
-
-        let ctx = MockContext::new(
-            ChainId::new("mockgaiaA".to_string(), 1),
-            HostType::Mock,
-            5,
-            chain_start_height,
-        )
-        .with_client_parametrized(
-            &client_id,
-            client_height,
-            Some(tm_client_type()), // The target host chain (B) is synthetic TM.
-            Some(client_height),
-        );
-
-        let ctx_b = MockContext::new(
-            ChainId::new("mockgaiaB".to_string(), 1),
-            HostType::SyntheticTendermint,
-            5,
-            client_height,
-        );
-
-        let signer = get_dummy_account_id();
-
-        let block = ctx_b.host_block(client_height).unwrap().clone();
-        let block = match block {
-            HostBlock::SyntheticTendermint(mut theader) => {
-                let cons_state = ctx.latest_consensus_states(&client_id, &client_height);
-                if let Some(tcs) = downcast_consensus_state::<TmConsensusState>(cons_state.as_ref())
-                {
-                    theader.light_block.signed_header.header.time = tcs.timestamp;
-                    theader.trusted_height = Height::new(1, 11).unwrap();
-                }
-                HostBlock::SyntheticTendermint(theader)
-            }
-            _ => block,
-        };
-
-        let latest_header_height = block.height();
-        let msg = MsgSubmitMisbehaviour {
-            client_id: client_id.clone(),
-            misbehaviour: Misbehaviour {
-                client_id: client_id.clone(),
-                header1: MockHeader::try_from(Any::from(block.clone())).unwrap(),
-                header2: MockHeader::try_from(Any::from(block)).unwrap(),
-            }
-            .into(),
-            signer,
-        };
-
-        let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg));
-
-        match output {
-            Ok(HandlerOutput {
-                result,
-                events: _,
-                log,
-            }) => {
-                assert!(log.is_empty());
-                // Check the result
-                match result {
-                    ClientResult::Misbehaviour(upd_res) => {
-                        assert_eq!(upd_res.client_id, client_id);
-                        assert!(!upd_res.client_state.is_frozen());
-                        assert_eq!(upd_res.client_state, ctx.latest_client_states(&client_id));
-                        assert_eq!(upd_res.client_state.latest_height(), latest_header_height,)
-                    }
-                    _ => panic!("misbehaviour handler result has incorrect type"),
-                }
-            }
-            Err(err) => {
-                panic!("unexpected error: {:?}", err);
-            }
-        }
-    }
-
-    #[test]
-    #[ignore]
-    fn test_misbehaviour_synthetic_tendermint_client_lower_height() {
-        let client_id = ClientId::new(tm_client_type(), 0).unwrap();
-        let client_height = Height::new(1, 20).unwrap();
-
-        let client_misbehaviour_height = Height::new(1, 19).unwrap();
-
-        let chain_start_height = Height::new(1, 11).unwrap();
-
-        let ctx = MockContext::new(
-            ChainId::new("mockgaiaA".to_string(), 1),
-            HostType::Mock,
-            5,
-            chain_start_height,
-        )
-        .with_client_parametrized(
-            &client_id,
-            client_height,
-            Some(tm_client_type()), // The target host chain (B) is synthetic TM.
-            Some(client_height),
-        );
-
-        let ctx_b = MockContext::new(
-            ChainId::new("mockgaiaB".to_string(), 1),
-            HostType::SyntheticTendermint,
-            5,
-            client_height,
-        );
-
-        let signer = get_dummy_account_id();
-
-        let block = ctx_b
-            .host_block(client_misbehaviour_height)
-            .unwrap()
-            .clone();
-
-        let msg = MsgSubmitMisbehaviour {
-            client_id: client_id.clone(),
-            misbehaviour: Misbehaviour {
-                client_id,
-                header1: MockHeader::try_from(Any::from(block.clone())).unwrap(),
-                header2: MockHeader::try_from(Any::from(block)).unwrap(),
-            }
-            .into(),
-            signer,
-        };
-
-        let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg));
-
-        match output {
-            Ok(_) => {
-                panic!("misbehaviour handler result has incorrect type");
-            }
-            Err(ClientError::HeaderVerificationFailure { reason: _ }) => {}
-            Err(err) => panic!("unexpected error: {:?}", err),
         }
     }
 
