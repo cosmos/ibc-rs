@@ -78,6 +78,13 @@ impl MockClientState {
     pub fn refresh_time(&self) -> Option<Duration> {
         None
     }
+
+    pub fn with_frozen_height(self, frozen_height: Height) -> Self {
+        Self {
+            frozen_height: Some(frozen_height),
+            ..self
+        }
+    }
 }
 
 impl Protobuf<RawMockClientState> for MockClientState {}
@@ -235,8 +242,8 @@ impl ClientState for MockClientState {
             });
         }
 
-        let mut new_state = MockClientState::new(header_1);
-        new_state.frozen_height = Some(Height::new(0, 1).unwrap());
+        let new_state =
+            MockClientState::new(header_1).with_frozen_height(Height::new(0, 1).unwrap());
 
         Ok(new_state.into_box())
     }
