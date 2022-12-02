@@ -4,6 +4,7 @@
 
 [![Docs][docs-image]][docs-link]
 [![Build Status][build-image]][build-link]
+[![Code Coverage][codecov-image]][codecov-link]
 [![Apache 2.0 Licensed][license-image]][license-link]
 ![Rust Stable][rustc-image]
 ![Rust 1.60+][rustc-version]
@@ -51,6 +52,8 @@ CONDITIONS OF ANY KIND, either express or implied. See the License for the speci
 [docs-link]: https://docs.rs/ibc/
 [build-image]: https://github.com/cosmos/ibc-rs/workflows/Rust/badge.svg
 [build-link]: https://github.com/cosmos/ibc-rs/actions?query=workflow%3ARust
+[codecov-image]: https://codecov.io/gh/cosmos/ibc-rs/branch/main/graph/badge.svg?token=wUm2aLCOu
+[codecov-link]: https://codecov.io/gh/cosmos/ibc-rs
 [license-image]: https://img.shields.io/badge/license-Apache2.0-blue.svg
 [license-link]: https://github.com/cosmos/ibc-rs/blob/main/LICENSE
 [rustc-image]: https://img.shields.io/badge/rustc-stable-blue.svg
