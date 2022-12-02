@@ -7,7 +7,7 @@ use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenTry;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
-use crate::core::ics24_host::identifier::ConnectionId;
+use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::core::ics24_host::path::{ClientConnectionsPath, ConnectionsPath};
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
@@ -20,7 +20,7 @@ pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<()
 where
     Ctx: ValidationContext,
 {
-    let _conn_id_on_b = ConnectionId::new(ctx_b.connection_counter()?);
+    let vars = LocalVars::new(ctx_b, &msg)?;
 
     ctx_b.validate_self_client(msg.client_state_of_b_on_a.clone())?;
 
@@ -37,28 +37,13 @@ where
         ));
     }
 
-    let version_on_b =
-        ctx_b.pick_version(ctx_b.get_compatible_versions(), msg.versions_on_a.clone())?;
-
-    let conn_end_on_b = ConnectionEnd::new(
-        State::TryOpen,
-        msg.client_id_on_b.clone(),
-        msg.counterparty.clone(),
-        vec![version_on_b],
-        msg.delay_period,
-    );
-
     let client_id_on_a = msg.counterparty.client_id();
-    let conn_id_on_a = conn_end_on_b
-        .counterparty()
-        .connection_id()
-        .ok_or(ConnectionError::InvalidCounterparty)?;
 
     // Verify proofs
     {
         let client_state_of_a_on_b =
             ctx_b
-                .client_state(conn_end_on_b.client_id())
+                .client_state(vars.conn_end_on_b.client_id())
                 .map_err(|_| ConnectionError::Other {
                     description: "failed to fetch client state".to_string(),
                 })?;
@@ -68,7 +53,7 @@ where
                 description: "failed to fetch client consensus state".to_string(),
             })?;
 
-        let prefix_on_a = conn_end_on_b.counterparty().prefix();
+        let prefix_on_a = vars.conn_end_on_b.counterparty().prefix();
         let prefix_on_b = ctx_b.commitment_prefix();
 
         {
@@ -87,7 +72,7 @@ where
                     prefix_on_a,
                     &msg.proof_conn_end_on_a,
                     consensus_state_of_a_on_b.root(),
-                    conn_id_on_a,
+                    &vars.conn_id_on_a,
                     &expected_conn_end_on_a,
                 )
                 .map_err(ConnectionError::VerifyConnectionState)?;
@@ -103,7 +88,7 @@ where
                 msg.client_state_of_b_on_a,
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
-                client_id: conn_end_on_b.client_id().clone(),
+                client_id: msg.client_id_on_b.clone(),
                 client_error: e,
             })?;
 
@@ -135,35 +120,63 @@ pub(crate) fn execute<Ctx>(ctx_b: &mut Ctx, msg: MsgConnectionOpenTry) -> Result
 where
     Ctx: ExecutionContext,
 {
-    let conn_id_on_b = ConnectionId::new(ctx_b.connection_counter()?);
-    let version_on_b =
-        ctx_b.pick_version(ctx_b.get_compatible_versions(), msg.versions_on_a.clone())?;
-    let conn_end_on_b = ConnectionEnd::new(
-        State::TryOpen,
-        msg.client_id_on_b.clone(),
-        msg.counterparty.clone(),
-        vec![version_on_b],
-        msg.delay_period,
-    );
+    let vars = LocalVars::new(ctx_b, &msg)?;
 
-    let client_id_on_a = msg.counterparty.client_id();
-    let conn_id_on_a = conn_end_on_b
+    let conn_id_on_a = vars
+        .conn_end_on_b
         .counterparty()
         .connection_id()
         .ok_or(ConnectionError::InvalidCounterparty)?;
     ctx_b.emit_ibc_event(IbcEvent::OpenTryConnection(OpenTry::new(
-        conn_id_on_b.clone(),
+        vars.conn_id_on_b.clone(),
         msg.client_id_on_b.clone(),
         conn_id_on_a.clone(),
-        client_id_on_a.clone(),
+        vars.client_id_on_a.clone(),
     )));
     ctx_b.log_message("success: conn_open_try verification passed".to_string());
 
     ctx_b.increase_connection_counter();
-    ctx_b.store_connection_to_client(ClientConnectionsPath(msg.client_id_on_b), &conn_id_on_b)?;
-    ctx_b.store_connection(ConnectionsPath(conn_id_on_b), &conn_end_on_b)?;
+    ctx_b.store_connection_to_client(
+        ClientConnectionsPath(msg.client_id_on_b),
+        &vars.conn_id_on_b,
+    )?;
+    ctx_b.store_connection(ConnectionsPath(vars.conn_id_on_b), &vars.conn_end_on_b)?;
 
     Ok(())
+}
+
+struct LocalVars {
+    conn_id_on_b: ConnectionId,
+    conn_end_on_b: ConnectionEnd,
+    client_id_on_a: ClientId,
+    conn_id_on_a: ConnectionId,
+}
+
+impl LocalVars {
+    fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenTry) -> Result<Self, ContextError>
+    where
+        Ctx: ValidationContext,
+    {
+        let version_on_b =
+            ctx_b.pick_version(ctx_b.get_compatible_versions(), msg.versions_on_a.clone())?;
+
+        Ok(Self {
+            conn_id_on_b: ConnectionId::new(ctx_b.connection_counter()?),
+            conn_end_on_b: ConnectionEnd::new(
+                State::TryOpen,
+                msg.client_id_on_b.clone(),
+                msg.counterparty.clone(),
+                vec![version_on_b],
+                msg.delay_period,
+            ),
+            client_id_on_a: msg.counterparty.client_id().clone(),
+            conn_id_on_a: msg
+                .counterparty
+                .connection_id()
+                .ok_or(ConnectionError::InvalidCounterparty)?
+                .clone(),
+        })
+    }
 }
 
 /// Per our convention, this message is processed on chain B.
