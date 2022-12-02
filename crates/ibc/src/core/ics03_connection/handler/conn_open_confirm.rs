@@ -13,17 +13,17 @@ use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
-pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenConfirm) -> Result<(), Error>
+pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), Error>
 where
     Ctx: ValidationContext,
 {
-    let vars = LocalVars::new(ctx_b, &msg)?;
+    let vars = LocalVars::new(ctx_b, msg)?;
     validate_impl(ctx_b, msg, &vars)
 }
 
 fn validate_impl<Ctx>(
     ctx_b: &Ctx,
-    msg: MsgConnectionOpenConfirm,
+    msg: &MsgConnectionOpenConfirm,
     vars: &LocalVars,
 ) -> Result<(), Error>
 where
@@ -31,7 +31,7 @@ where
 {
     let conn_end_on_b = vars.conn_end_on_b();
     if !conn_end_on_b.state_matches(&State::TryOpen) {
-        return Err(Error::connection_mismatch(msg.conn_id_on_b));
+        return Err(Error::connection_mismatch(msg.conn_id_on_b.clone()));
     }
 
     let client_id_on_a = vars.client_id_on_a();
@@ -77,17 +77,17 @@ where
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx_b: &mut Ctx, msg: MsgConnectionOpenConfirm) -> Result<(), Error>
+pub(crate) fn execute<Ctx>(ctx_b: &mut Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), Error>
 where
     Ctx: ExecutionContext,
 {
-    let vars = LocalVars::new(ctx_b, &msg)?;
+    let vars = LocalVars::new(ctx_b, msg)?;
     execute_impl(ctx_b, msg, vars)
 }
 
 fn execute_impl<Ctx>(
     ctx_b: &mut Ctx,
-    msg: MsgConnectionOpenConfirm,
+    msg: &MsgConnectionOpenConfirm,
     vars: LocalVars,
 ) -> Result<(), Error>
 where
@@ -113,10 +113,47 @@ where
             new_conn_end_on_b
         };
 
-        ctx_b.store_connection(ConnectionsPath(msg.conn_id_on_b), &new_conn_end_on_b)?;
+        ctx_b.store_connection(
+            ConnectionsPath(msg.conn_id_on_b.clone()),
+            &new_conn_end_on_b,
+        )?;
     }
 
     Ok(())
+}
+
+struct LocalVars {
+    conn_end_on_b: ConnectionEnd,
+}
+
+impl LocalVars {
+    fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<Self, Error>
+    where
+        Ctx: ValidationContext,
+    {
+        Ok(Self {
+            conn_end_on_b: ctx_b.connection_end(&msg.conn_id_on_b)?,
+        })
+    }
+
+    fn conn_end_on_b(&self) -> &ConnectionEnd {
+        &self.conn_end_on_b
+    }
+
+    fn client_id_on_a(&self) -> &ClientId {
+        self.conn_end_on_b.counterparty().client_id()
+    }
+
+    fn client_id_on_b(&self) -> &ClientId {
+        self.conn_end_on_b.client_id()
+    }
+
+    fn conn_id_on_a(&self) -> Result<&ConnectionId, Error> {
+        self.conn_end_on_b
+            .counterparty()
+            .connection_id()
+            .ok_or_else(Error::invalid_counterparty)
+    }
 }
 
 /// Per our convention, this message is processed on chain B.
@@ -195,40 +232,6 @@ pub(crate) fn process(
     };
 
     Ok(output.with_result(result))
-}
-
-struct LocalVars {
-    conn_end_on_b: ConnectionEnd,
-}
-
-impl LocalVars {
-    fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<Self, Error>
-    where
-        Ctx: ValidationContext,
-    {
-        Ok(Self {
-            conn_end_on_b: ctx_b.connection_end(&msg.conn_id_on_b)?,
-        })
-    }
-
-    fn conn_end_on_b(&self) -> &ConnectionEnd {
-        &self.conn_end_on_b
-    }
-
-    fn client_id_on_a(&self) -> &ClientId {
-        self.conn_end_on_b.counterparty().client_id()
-    }
-
-    fn client_id_on_b(&self) -> &ClientId {
-        self.conn_end_on_b.client_id()
-    }
-
-    fn conn_id_on_a(&self) -> Result<&ConnectionId, Error> {
-        self.conn_end_on_b
-            .counterparty()
-            .connection_id()
-            .ok_or_else(Error::invalid_counterparty)
-    }
 }
 
 #[cfg(test)]
