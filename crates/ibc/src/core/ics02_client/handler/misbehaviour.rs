@@ -143,8 +143,7 @@ mod tests {
             signer: get_dummy_account_id(),
         };
 
-        let ctx =
-            MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
+        let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
         let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg));
         ensure_misbehaviour_result(output, &client_id, &mock_client_type());
     }
@@ -165,8 +164,7 @@ mod tests {
             signer: get_dummy_account_id(),
         };
 
-        let ctx =
-            MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
+        let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
         let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg.clone()));
         match output {
             Err(ClientError::ClientNotFound { client_id }) => assert_eq!(client_id, msg.client_id),
