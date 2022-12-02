@@ -144,7 +144,7 @@ mod tests {
         };
 
         let ctx =
-            MockContext::default().with_client(&client_id.clone(), Height::new(0, 42).unwrap());
+            MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
         let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg));
         ensure_misbehaviour_result(output, &client_id, &mock_client_type());
     }
@@ -166,7 +166,7 @@ mod tests {
         };
 
         let ctx =
-            MockContext::default().with_client(&client_id.clone(), Height::new(0, 42).unwrap());
+            MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
         let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg.clone()));
         match output {
             Err(ClientError::ClientNotFound { client_id }) => assert_eq!(client_id, msg.client_id),
@@ -205,7 +205,7 @@ mod tests {
             };
 
             let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg.clone()));
-            ensure_misbehaviour_result(output, &client_id, &mock_client_type());
+            ensure_misbehaviour_result(output, client_id, &mock_client_type());
         }
     }
 
