@@ -47,11 +47,6 @@ where
     let client_id_on_a = conn_end_on_a.client_id();
     let client_id_on_b = conn_end_on_a.counterparty().client_id();
 
-    let conn_id_on_b = conn_end_on_a
-        .counterparty()
-        .connection_id()
-        .ok_or(ConnectionError::InvalidCounterparty)?;
-
     // Proof verification.
     {
         let client_state_of_b_on_a =
@@ -88,7 +83,7 @@ where
                     prefix_on_b,
                     &msg.proof_conn_end_on_b,
                     consensus_state_of_b_on_a.root(),
-                    conn_id_on_b,
+                    &msg.conn_id_on_b,
                     &expected_conn_end_on_b,
                 )
                 .map_err(ConnectionError::VerifyConnectionState)?;
@@ -141,15 +136,10 @@ where
     let client_id_on_a = conn_end_on_a.client_id();
     let client_id_on_b = conn_end_on_a.counterparty().client_id();
 
-    let conn_id_on_b = conn_end_on_a
-        .counterparty()
-        .connection_id()
-        .ok_or(ConnectionError::InvalidCounterparty)?;
-
     ctx_a.emit_ibc_event(IbcEvent::OpenAckConnection(OpenAck::new(
         msg.conn_id_on_a.clone(),
         client_id_on_a.clone(),
-        conn_id_on_b.clone(),
+        msg.conn_id_on_b.clone(),
         client_id_on_b.clone(),
     )));
 
