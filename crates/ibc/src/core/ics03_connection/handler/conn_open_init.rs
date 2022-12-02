@@ -23,16 +23,13 @@ where
     // An IBC client running on the local (host) chain should exist.
     ctx_a.client_state(&msg.client_id_on_a)?;
 
-    let _versions = match msg.version {
-        Some(version) => {
-            if ctx_a.get_compatible_versions().contains(&version) {
-                Ok(vec![version])
-            } else {
-                Err(ConnectionError::VersionNotSupported { version })
-            }
+    if let Some(version) = msg.version {
+        if !ctx_a.get_compatible_versions().contains(&version) {
+            return Err(ContextError::ConnectionError(
+                ConnectionError::VersionNotSupported { version },
+            ));
         }
-        None => Ok(ctx_a.get_compatible_versions()),
-    }?;
+    }
 
     Ok(())
 }
@@ -55,7 +52,11 @@ where
     let conn_end_on_a = ConnectionEnd::new(
         State::Init,
         msg.client_id_on_a.clone(),
-        msg.counterparty.clone(),
+        Counterparty::new(
+            msg.counterparty.client_id().clone(),
+            None,
+            msg.counterparty.prefix().clone(),
+        ),
         versions,
         msg.delay_period,
     );
