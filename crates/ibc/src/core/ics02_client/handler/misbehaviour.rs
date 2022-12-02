@@ -124,6 +124,9 @@ mod tests {
         }
     }
 
+    /// Tests misbehaviour handling for the mock client.
+    /// Misbehaviour evidence consists of identical headers - mock misbehaviour handler considers it
+    /// a valid proof of misbehaviour
     #[test]
     fn test_misbehaviour_client_ok() {
         let client_id = ClientId::default();
@@ -146,6 +149,7 @@ mod tests {
         ensure_misbehaviour_result(output, &client_id, &mock_client_type());
     }
 
+    /// Tests misbehaviour handling failure for a non-existent client
     #[test]
     fn test_misbehaviour_nonexisting_client() {
         let client_id = ClientId::from_str("mockclient1").unwrap();
@@ -170,6 +174,7 @@ mod tests {
         }
     }
 
+    /// Tests misbehaviour handling for multiple clients
     #[test]
     fn test_misbehaviour_client_ok_multiple() {
         let client_ids = vec![
@@ -204,6 +209,8 @@ mod tests {
         }
     }
 
+    /// Tests misbehaviour handling for the synthetic Tendermint client.
+    /// Misbehaviour evidence consists of equivocal headers.
     #[test]
     fn test_misbehaviour_synthetic_tendermint_equivocation() {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
@@ -211,7 +218,8 @@ mod tests {
         let misbehaviour_height = Height::new(1, 21).unwrap();
         let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
 
-        let ctx = MockContext::new(
+        // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
+        let ctx_a = MockContext::new(
             ChainId::new("mockgaiaA".to_string(), 1),
             HostType::Mock,
             5,
@@ -221,10 +229,11 @@ mod tests {
             chain_id_b.clone(),
             &client_id,
             client_height,
-            Some(tm_client_type()), // The target host chain (B) is synthetic TM.
+            Some(tm_client_type()),
             Some(client_height),
         );
 
+        // Create a mock context for chain-B
         let ctx_b = MockContext::new(
             chain_id_b.clone(),
             HostType::SyntheticTendermint,
@@ -232,14 +241,14 @@ mod tests {
             misbehaviour_height,
         );
 
-        let signer = get_dummy_account_id();
-
+        // Get chain-B's header at `misbehaviour_height`
         let header1: TmHeader = {
             let mut block = ctx_b.host_block(misbehaviour_height).unwrap().clone();
             block.set_trusted_height(client_height);
             block.try_into_tm_block().unwrap().into()
         };
 
+        // Generate an equivocal header for chain-B at `misbehaviour_height`
         let header2 = {
             let mut tm_block = HostBlock::generate_tm_block(
                 chain_id_b,
@@ -255,10 +264,10 @@ mod tests {
             misbehaviour: TmMisbehaviour::new(client_id.clone(), header1, header2)
                 .unwrap()
                 .into(),
-            signer,
+            signer: get_dummy_account_id(),
         };
 
-        let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg));
+        let output = dispatch(&ctx_a, ClientMsg::Misbehaviour(msg));
         ensure_misbehaviour_result(output, &client_id, &tm_client_type());
     }
 
@@ -269,7 +278,8 @@ mod tests {
         let misbehaviour_height = Height::new(1, 21).unwrap();
         let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
 
-        let ctx = MockContext::new(
+        // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
+        let ctx_a = MockContext::new(
             ChainId::new("mockgaiaA".to_string(), 1),
             HostType::Mock,
             5,
@@ -279,11 +289,11 @@ mod tests {
             chain_id_b.clone(),
             &client_id,
             client_height,
-            Some(tm_client_type()), // The target host chain (B) is synthetic TM.
+            Some(tm_client_type()),
             Some(client_height),
         );
 
-        let signer = get_dummy_account_id();
+        // Generate `header1` for chain-B
         let header1 = {
             let mut tm_block = HostBlock::generate_tm_block(
                 chain_id_b.clone(),
@@ -293,6 +303,9 @@ mod tests {
             tm_block.trusted_height = client_height;
             tm_block
         };
+
+        // Generate `header2` for chain-B which is identical to `header1` but with a conflicting
+        // timestamp
         let header2 = {
             let timestamp =
                 Timestamp::from_nanoseconds(Timestamp::now().nanoseconds() + 1_000_000_000)
@@ -311,10 +324,10 @@ mod tests {
             misbehaviour: TmMisbehaviour::new(client_id.clone(), header1.into(), header2.into())
                 .unwrap()
                 .into(),
-            signer,
+            signer: get_dummy_account_id(),
         };
 
-        let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg));
+        let output = dispatch(&ctx_a, ClientMsg::Misbehaviour(msg));
         ensure_misbehaviour_result(output, &client_id, &tm_client_type());
     }
 }
