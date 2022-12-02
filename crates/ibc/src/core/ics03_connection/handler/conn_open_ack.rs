@@ -21,7 +21,17 @@ where
     Ctx: ValidationContext,
 {
     let vars = LocalVars::new(ctx_a, &msg)?;
+    validate_impl(ctx_a, &msg, &vars)
+}
 
+fn validate_impl<Ctx>(
+    ctx_a: &Ctx,
+    msg: &MsgConnectionOpenAck,
+    vars: &LocalVars,
+) -> Result<(), ContextError>
+where
+    Ctx: ValidationContext,
+{
     let host_height = ctx_a.host_height().map_err(|_| ConnectionError::Other {
         description: "failed to get host height".to_string(),
     })?;
@@ -41,7 +51,7 @@ where
     {
         return Err(ContextError::ConnectionError(
             ConnectionError::ConnectionMismatch {
-                connection_id: msg.conn_id_on_a,
+                connection_id: msg.conn_id_on_a.clone(),
             },
         ));
     }
@@ -95,7 +105,7 @@ where
                 &msg.proof_client_state_of_a_on_b,
                 consensus_state_of_b_on_a.root(),
                 vars.client_id_on_b(),
-                msg.client_state_of_a_on_b,
+                msg.client_state_of_a_on_b.clone(),
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
                 client_id: vars.client_id_on_a().clone(),
@@ -132,7 +142,17 @@ where
     Ctx: ExecutionContext,
 {
     let vars = LocalVars::new(ctx_a, &msg)?;
+    execute_impl(ctx_a, msg, vars)
+}
 
+fn execute_impl<Ctx>(
+    ctx_a: &mut Ctx,
+    msg: MsgConnectionOpenAck,
+    vars: LocalVars,
+) -> Result<(), ContextError>
+where
+    Ctx: ExecutionContext,
+{
     ctx_a.emit_ibc_event(IbcEvent::OpenAckConnection(OpenAck::new(
         msg.conn_id_on_a.clone(),
         vars.client_id_on_a().clone(),
