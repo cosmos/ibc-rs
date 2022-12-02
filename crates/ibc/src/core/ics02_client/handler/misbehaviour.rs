@@ -64,7 +64,7 @@ mod tests {
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::clients::ics07_tendermint::header::Header as TmHeader;
     use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
-    use crate::core::ics02_client::client_state::ClientState;
+    use crate::core::ics02_client::client_type::ClientType;
     use crate::core::ics02_client::error::ClientError;
     use crate::core::ics02_client::handler::dispatch;
     use crate::core::ics02_client::handler::ClientResult;
@@ -74,92 +74,99 @@ mod tests {
     use crate::events::IbcEvent;
     use crate::handler::HandlerOutput;
     use crate::mock::client_state::client_type as mock_client_type;
-    use crate::mock::client_state::MockClientState;
     use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
     use crate::mock::host::{HostBlock, HostType};
-    use crate::mock::misbehaviour::Misbehaviour;
+    use crate::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
     use crate::test_utils::get_dummy_account_id;
     use crate::timestamp::Timestamp;
     use crate::Height;
     use crate::{downcast, prelude::*};
 
+    /// Panics unless the given handler output satisfies the following conditions -
+    /// * The output result is of type client misbehaviour
+    /// * The specified client is frozen and it's frozen height is set correctly
+    /// * Only a single misbehaviour event was emitted with the specified client id and type
+    /// * No logs were emitted
+    fn ensure_misbehaviour_result(
+        output: Result<HandlerOutput<ClientResult>, ClientError>,
+        client_id: &ClientId,
+        client_type: &ClientType,
+    ) {
+        match output {
+            Ok(HandlerOutput {
+                result: ClientResult::Misbehaviour(res),
+                mut events,
+                log,
+            }) => {
+                // check result
+                assert_eq!(&res.client_id, client_id);
+                assert!(res.client_state.is_frozen());
+                assert_eq!(
+                    res.client_state.frozen_height(),
+                    Some(Height::new(0, 1).unwrap())
+                );
+
+                // check events
+                let misbehaviour_client_event =
+                    downcast!(events.pop().unwrap() => IbcEvent::ClientMisbehaviour).unwrap();
+                assert!(events.is_empty());
+                assert_eq!(misbehaviour_client_event.client_id(), client_id);
+                assert_eq!(misbehaviour_client_event.client_type(), client_type);
+
+                // check logs
+                assert!(log.is_empty());
+            }
+            _ => panic!(
+                "Expected client to be frozen due to misbehaviour, instead got result: {:?}",
+                output
+            ),
+        }
+    }
+
     #[test]
     fn test_misbehaviour_client_ok() {
         let client_id = ClientId::default();
-        let signer = get_dummy_account_id();
-
         let timestamp = Timestamp::now();
-
-        let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
         let height = Height::new(0, 46).unwrap();
         let msg = MsgSubmitMisbehaviour {
             client_id: client_id.clone(),
-            misbehaviour: Misbehaviour {
+            misbehaviour: MockMisbehaviour {
                 client_id: client_id.clone(),
                 header1: MockHeader::new(height).with_timestamp(timestamp),
                 header2: MockHeader::new(height).with_timestamp(timestamp),
             }
             .into(),
-            signer,
+            signer: get_dummy_account_id(),
         };
 
+        let ctx =
+            MockContext::default().with_client(&client_id.clone(), Height::new(0, 42).unwrap());
         let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg));
-
-        match output {
-            Ok(HandlerOutput {
-                result,
-                events: _,
-                log,
-            }) => {
-                assert!(log.is_empty());
-                // Check the result
-                match result {
-                    ClientResult::Misbehaviour(upd_res) => {
-                        assert_eq!(upd_res.client_id, client_id);
-                        assert_eq!(
-                            upd_res.client_state,
-                            MockClientState::new(MockHeader::new(height).with_timestamp(timestamp))
-                                .with_frozen_height(Height::new(0, 1).unwrap())
-                                .into_box()
-                        )
-                    }
-                    _ => panic!("misbehaviour handler result has incorrect type"),
-                }
-            }
-            Err(err) => {
-                panic!("unexpected error: {}", err);
-            }
-        }
+        ensure_misbehaviour_result(output, &client_id, &mock_client_type());
     }
 
     #[test]
     fn test_misbehaviour_nonexisting_client() {
         let client_id = ClientId::from_str("mockclient1").unwrap();
-        let signer = get_dummy_account_id();
-
-        let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
-
+        let height = Height::new(0, 46).unwrap();
         let msg = MsgSubmitMisbehaviour {
             client_id: ClientId::from_str("nonexistingclient").unwrap(),
-            misbehaviour: Misbehaviour {
-                client_id,
-                header1: MockHeader::new(Height::new(0, 46).unwrap()),
-                header2: MockHeader::new(Height::new(0, 46).unwrap()),
+            misbehaviour: MockMisbehaviour {
+                client_id: client_id.clone(),
+                header1: MockHeader::new(height),
+                header2: MockHeader::new(height),
             }
             .into(),
-            signer,
+            signer: get_dummy_account_id(),
         };
 
+        let ctx =
+            MockContext::default().with_client(&client_id.clone(), Height::new(0, 42).unwrap());
         let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg.clone()));
-
         match output {
-            Err(ClientError::ClientNotFound { client_id }) => {
-                assert_eq!(client_id, msg.client_id);
-            }
-            _ => {
-                panic!("expected ClientNotFound error, instead got {:?}", output)
-            }
+            Err(ClientError::ClientNotFound { client_id }) => assert_eq!(client_id, msg.client_id),
+            _ => panic!("expected ClientNotFound error, instead got {:?}", output),
         }
     }
 
@@ -183,7 +190,7 @@ mod tests {
         for client_id in &client_ids {
             let msg = MsgSubmitMisbehaviour {
                 client_id: client_id.clone(),
-                misbehaviour: Misbehaviour {
+                misbehaviour: MockMisbehaviour {
                     client_id: client_id.clone(),
                     header1: MockHeader::new(misbehaviour_height),
                     header2: MockHeader::new(misbehaviour_height),
@@ -193,19 +200,7 @@ mod tests {
             };
 
             let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg.clone()));
-
-            match output {
-                Ok(HandlerOutput {
-                    result: _,
-                    events: _,
-                    log,
-                }) => {
-                    assert!(log.is_empty());
-                }
-                Err(err) => {
-                    panic!("unexpected error: {}", err);
-                }
-            }
+            ensure_misbehaviour_result(output, &client_id, &mock_client_type());
         }
     }
 
@@ -257,33 +252,14 @@ mod tests {
 
         let msg = MsgSubmitMisbehaviour {
             client_id: client_id.clone(),
-            misbehaviour: TmMisbehaviour::new(client_id, header1, header2)
+            misbehaviour: TmMisbehaviour::new(client_id.clone(), header1, header2)
                 .unwrap()
                 .into(),
             signer,
         };
 
         let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg));
-
-        match output {
-            Ok(HandlerOutput {
-                result,
-                events: _,
-                log,
-            }) => {
-                assert!(log.is_empty());
-                // Check the result
-                match result {
-                    ClientResult::Misbehaviour(upd_res) => {
-                        assert!(upd_res.client_state.is_frozen())
-                    }
-                    _ => panic!("misbehaviour handler result has incorrect type"),
-                }
-            }
-            Err(err) => {
-                panic!("unexpected error: {}", err);
-            }
-        }
+        ensure_misbehaviour_result(output, &client_id, &tm_client_type());
     }
 
     #[test]
@@ -332,60 +308,13 @@ mod tests {
 
         let msg = MsgSubmitMisbehaviour {
             client_id: client_id.clone(),
-            misbehaviour: TmMisbehaviour::new(client_id, header1.into(), header2.into())
+            misbehaviour: TmMisbehaviour::new(client_id.clone(), header1.into(), header2.into())
                 .unwrap()
                 .into(),
             signer,
         };
 
         let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg));
-        match output {
-            Ok(HandlerOutput {
-                result,
-                events: _,
-                log,
-            }) => {
-                assert!(log.is_empty());
-                // Check the result
-                match result {
-                    ClientResult::Misbehaviour(upd_res) => {
-                        assert!(upd_res.client_state.is_frozen())
-                    }
-                    _ => panic!("misbehaviour handler result has incorrect type"),
-                }
-            }
-            Err(err) => {
-                panic!("unexpected error: {}", err);
-            }
-        }
-    }
-
-    #[test]
-    fn test_misbehaviour_client_events() {
-        let client_id = ClientId::default();
-        let signer = get_dummy_account_id();
-
-        let timestamp = Timestamp::now();
-
-        let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
-        let height = Height::new(0, 46).unwrap();
-        let header = MockHeader::new(height).with_timestamp(timestamp);
-        let msg = MsgSubmitMisbehaviour {
-            client_id: client_id.clone(),
-            misbehaviour: Misbehaviour {
-                client_id: client_id.clone(),
-                header1: header,
-                header2: header,
-            }
-            .into(),
-            signer,
-        };
-
-        let output = dispatch(&ctx, ClientMsg::Misbehaviour(msg)).unwrap();
-        let misbehaviour_client_event =
-            downcast!(output.events.first().unwrap() => IbcEvent::ClientMisbehaviour).unwrap();
-
-        assert_eq!(misbehaviour_client_event.client_id(), &client_id);
-        assert_eq!(misbehaviour_client_event.client_type(), &mock_client_type());
+        ensure_misbehaviour_result(output, &client_id, &tm_client_type());
     }
 }
