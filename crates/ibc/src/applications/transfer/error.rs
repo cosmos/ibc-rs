@@ -1,10 +1,7 @@
-use alloc::string::FromUtf8Error;
-
 use core::convert::Infallible;
 use core::str::Utf8Error;
-use flex_error::{define_error, DisplayOnly, TraceError};
+use displaydoc::Display;
 use ibc_proto::protobuf::Error as TendermintProtoError;
-use subtle_encoding::Error as EncodingError;
 use uint::FromDecStrErr;
 
 use crate::core::ics04_channel::channel::Order;
@@ -15,137 +12,122 @@ use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::prelude::*;
 use crate::signer::SignerError;
 
-define_error! {
-    #[derive(Debug, PartialEq, Eq)]
-    Error {
-        UnknowMessageTypeUrl
-            { url: String }
-            | e | { format_args!("unrecognized ICS-20 transfer message type URL {0}", e.url) },
+#[derive(Display, Debug)]
+pub enum TokenTransferError {
+    /// packet error: `{0}`
+    PacketError(channel_error::PacketError),
+    /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
+    DestinationChannelNotFound {
+        port_id: PortId,
+        channel_id: ChannelId,
+    },
+    /// invalid port identifier `{context}`, validation error: `{validation_error}`
+    InvalidPortId {
+        context: String,
+        validation_error: ValidationError,
+    },
+    /// invalid channel identifier `{context}`, validation error: `{validation_error}`
+    InvalidChannelId {
+        context: String,
+        validation_error: ValidationError,
+    },
+    /// invalid packet timeout height value `{context}`
+    InvalidPacketTimeoutHeight { context: String },
+    /// invalid packet timeout timestamp value `{timestamp}`
+    InvalidPacketTimeoutTimestamp { timestamp: u64 },
+    /// base denomination is empty
+    EmptyBaseDenom,
+    /// invalid prot id n trace at postion: `{pos}`, validation error: `{validation_error}`
+    InvalidTracePortId {
+        pos: usize,
+        validation_error: ValidationError,
+    },
+    /// invalid channel id in trace at position: `{pos}`, validation error: `{validation_error}`
+    InvalidTraceChannelId {
+        pos: usize,
+        validation_error: ValidationError,
+    },
+    /// trace length must be even but got: `{len}`
+    InvalidTraceLength { len: usize },
+    /// invalid amount error: `{0}`
+    InvalidAmount(FromDecStrErr),
+    /// invalid token
+    InvalidToken,
+    /// failed to parse signer error: `{0}`
+    Signer(SignerError),
+    /// expected `{expect_order}` channel, got `{got_order}`
+    ChannelNotUnordered {
+        expect_order: Order,
+        got_order: Order,
+    },
+    /// expected version `{expect_version}` , got `{got_version}`
+    InvalidVersion {
+        expect_version: Version,
+        got_version: Version,
+    },
+    /// expected counterparty version `{expect_version}`, got `{got_version}`
+    InvalidCounterpartyVersion {
+        expect_version: Version,
+        got_version: Version,
+    },
+    /// channel cannot be closed
+    CantCloseChannel,
+    /// failed to deserialize packet data
+    PacketDataDeserialization,
+    /// failed to deserialize acknowledgement
+    AckDeserialization,
+    /// receive is not enabled
+    ReceiveDisabled,
+    /// send is not enabled
+    SendDisabled,
+    /// failed to parse as AccountId
+    ParseAccountFailure,
+    /// invalid port: `{port_id}`, expected `{exp_port_id}`
+    InvalidPort {
+        port_id: PortId,
+        exp_port_id: PortId,
+    },
+    /// decoding raw msg error: `{0}`
+    DecodeRawMsg(TendermintProtoError),
+    /// unknown msg type: `{msg_type}`
+    UnknownMsgType { msg_type: String },
+    /// invalid coin string: `{coin}`
+    InvalidCoin { coin: String },
+    /// decoding raw bytes as UTF8 string error: `{0}`
+    Utf8Decode(Utf8Error),
+}
 
-        Ics04Channel
-            [ channel_error::Error ]
-            |_ | { "Ics04 channel error" },
-
-        DestinationChannelNotFound
-            { port_id: PortId, channel_id: ChannelId }
-            | e | { format_args!("destination channel not found in the counterparty of port_id {0} and channel_id {1} ", e.port_id, e.channel_id) },
-
-        InvalidPortId
-            { context: String }
-            [ ValidationError ]
-            | _ | { "invalid port identifier" },
-
-        InvalidChannelId
-            { context: String }
-            [ ValidationError ]
-            | _ | { "invalid channel identifier" },
-
-        InvalidPacketTimeoutHeight
-            { context: String }
-            | _ | { "invalid packet timeout height value" },
-
-        InvalidPacketTimeoutTimestamp
-            { timestamp: u64 }
-            | _ | { "invalid packet timeout timestamp value" },
-
-        Utf8
-            [ DisplayOnly<FromUtf8Error> ]
-            | _ | { "utf8 decoding error" },
-
-        EmptyBaseDenom
-            |_| { "base denomination is empty" },
-
-        InvalidTracePortId
-            { pos: usize }
-            [ ValidationError ]
-            | e | { format_args!("invalid port id in trace at position: {0}", e.pos) },
-
-        InvalidTraceChannelId
-            { pos: usize }
-            [ ValidationError ]
-            | e | { format_args!("invalid channel id in trace at position: {0}", e.pos) },
-
-        InvalidTraceLength
-            { len: usize }
-            | e | { format_args!("trace length must be even but got: {0}", e.len) },
-
-        InvalidAmount
-            [ TraceError<FromDecStrErr> ]
-            | _ | { "invalid amount" },
-
-        InvalidToken
-            | _ | { "invalid token" },
-
-        Signer
-            [ SignerError ]
-            | _ | { "failed to parse signer" },
-
-        MissingDenomIbcPrefix
-            | _ | { "missing 'ibc/' prefix in denomination" },
-
-        MalformedHashDenom
-            | _ | { "hashed denom must be of the form 'ibc/{Hash}'" },
-
-        ParseHex
-            [ TraceError<EncodingError> ]
-            | _ | { "invalid hex string" },
-
-        ChannelNotUnordered
-            { order: Order }
-            | e | { format_args!("expected '{0}' channel, got '{1}'", Order::Unordered, e.order) },
-
-        InvalidVersion
-            { version: Version }
-            | e | { format_args!("expected version '{0}', got '{1}'", Version::ics20(), e.version) },
-
-        InvalidCounterpartyVersion
-            { version: Version }
-            | e | { format_args!("expected counterparty version '{0}', got '{1}'", Version::ics20(), e.version) },
-
-        CantCloseChannel
-            | _ | { "channel cannot be closed" },
-
-        PacketDataDeserialization
-            | _ | { "failed to deserialize packet data" },
-
-        AckDeserialization
-            | _ | { "failed to deserialize acknowledgement" },
-
-        ReceiveDisabled
-            | _ | { "receive is not enabled" },
-
-        SendDisabled
-            | _ | { "send is not enabled" },
-
-        ParseAccountFailure
-            | _ | { "failed to parse as AccountId" },
-
-        InvalidPort
-            { port_id: PortId, exp_port_id: PortId }
-            | e | { format_args!("invalid port: '{0}', expected '{1}'", e.port_id, e.exp_port_id) },
-
-        TraceNotFound
-            | _ | { "no trace associated with specified hash" },
-
-        DecodeRawMsg
-            [ TraceError<TendermintProtoError> ]
-            | _ | { "error decoding raw msg" },
-
-        UnknownMsgType
-            { msg_type: String }
-            | e | { format_args!("unknown msg type: {0}", e.msg_type) },
-
-        InvalidCoin
-            { coin: String }
-            | e | { format_args!("invalid coin string: {}", e.coin) },
-
-        Utf8Decode
-            [ TraceError<Utf8Error> ]
-            | _ | { "error decoding raw bytes as UTF8 string" },
+#[cfg(feature = "std")]
+impl std::error::Error for TokenTransferError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Self::PacketError(e) => Some(e),
+            Self::InvalidPortId {
+                validation_error: e,
+                ..
+            } => Some(e),
+            Self::InvalidChannelId {
+                validation_error: e,
+                ..
+            } => Some(e),
+            Self::InvalidTracePortId {
+                validation_error: e,
+                ..
+            } => Some(e),
+            Self::InvalidTraceChannelId {
+                validation_error: e,
+                ..
+            } => Some(e),
+            Self::InvalidAmount(e) => Some(e),
+            Self::Signer(e) => Some(e),
+            Self::DecodeRawMsg(e) => Some(e),
+            Self::Utf8Decode(e) => Some(e),
+            _ => None,
+        }
     }
 }
 
-impl From<Infallible> for Error {
+impl From<Infallible> for TokenTransferError {
     fn from(e: Infallible) -> Self {
         match e {}
     }

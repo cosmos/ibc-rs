@@ -7,7 +7,7 @@ use core::ops::{Add, Sub};
 use core::str::FromStr;
 use core::time::Duration;
 
-use flex_error::{define_error, TraceError};
+use displaydoc::Display;
 use serde_derive::{Deserialize, Serialize};
 use tendermint::Time;
 use time::OffsetDateTime;
@@ -176,13 +176,14 @@ impl Display for Timestamp {
     }
 }
 
-define_error! {
-    #[derive(Debug, PartialEq, Eq)]
-    TimestampOverflowError {
-        TimestampOverflow
-            |_| { "Timestamp overflow when modifying with duration" }
-    }
+#[derive(Debug, Display)]
+pub enum TimestampOverflowError {
+    /// Timestamp overflow when modifying with duration
+    TimestampOverflow,
 }
+
+#[cfg(feature = "std")]
+impl std::error::Error for TimestampOverflowError {}
 
 impl Add<Duration> for Timestamp {
     type Output = Result<Timestamp, TimestampOverflowError>;
@@ -191,7 +192,7 @@ impl Add<Duration> for Timestamp {
         match self.time {
             Some(time) => {
                 let time =
-                    (time + duration).map_err(|_| TimestampOverflowError::timestamp_overflow())?;
+                    (time + duration).map_err(|_| TimestampOverflowError::TimestampOverflow)?;
                 Ok(Timestamp { time: Some(time) })
             }
             None => Ok(self),
@@ -206,7 +207,7 @@ impl Sub<Duration> for Timestamp {
         match self.time {
             Some(time) => {
                 let time =
-                    (time - duration).map_err(|_| TimestampOverflowError::timestamp_overflow())?;
+                    (time - duration).map_err(|_| TimestampOverflowError::TimestampOverflow)?;
                 Ok(Timestamp { time: Some(time) })
             }
             None => Ok(self),
@@ -214,12 +215,18 @@ impl Sub<Duration> for Timestamp {
     }
 }
 
-define_error! {
-    #[derive(Debug, PartialEq, Eq)]
-    ParseTimestampError {
-        ParseInt
-            [ TraceError<ParseIntError> ]
-            | _ | { "error parsing u64 integer from string"},
+#[derive(Debug, Display)]
+pub enum ParseTimestampError {
+    /// parsing u64 integer from string error: `{0}`
+    ParseInt(ParseIntError),
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for ParseTimestampError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            ParseTimestampError::ParseInt(e) => Some(e),
+        }
     }
 }
 
@@ -227,7 +234,7 @@ impl FromStr for Timestamp {
     type Err = ParseTimestampError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let nanoseconds = u64::from_str(s).map_err(ParseTimestampError::parse_int)?;
+        let nanoseconds = u64::from_str(s).map_err(ParseTimestampError::ParseInt)?;
 
         Timestamp::from_nanoseconds(nanoseconds)
     }

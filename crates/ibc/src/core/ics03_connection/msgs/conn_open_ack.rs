@@ -4,7 +4,7 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenAck as RawMsgConnectionOpenAck;
 use ibc_proto::protobuf::Protobuf;
 
-use crate::core::ics03_connection::error::Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics24_host::identifier::ConnectionId;
@@ -39,7 +39,7 @@ pub struct MsgConnectionOpenAck {
 }
 
 impl Msg for MsgConnectionOpenAck {
-    type ValidationError = Error;
+    type ValidationError = ConnectionError;
     type Raw = RawMsgConnectionOpenAck;
 
     fn route(&self) -> String {
@@ -54,38 +54,46 @@ impl Msg for MsgConnectionOpenAck {
 impl Protobuf<RawMsgConnectionOpenAck> for MsgConnectionOpenAck {}
 
 impl TryFrom<RawMsgConnectionOpenAck> for MsgConnectionOpenAck {
-    type Error = Error;
+    type Error = ConnectionError;
 
     fn try_from(msg: RawMsgConnectionOpenAck) -> Result<Self, Self::Error> {
         Ok(Self {
             conn_id_on_a: msg
                 .connection_id
                 .parse()
-                .map_err(Error::invalid_identifier)?,
+                .map_err(ConnectionError::InvalidIdentifier)?,
             conn_id_on_b: msg
                 .counterparty_connection_id
                 .parse()
-                .map_err(Error::invalid_identifier)?,
-            client_state_of_a_on_b: msg.client_state.ok_or_else(Error::missing_client_state)?,
-            version: msg.version.ok_or_else(Error::empty_versions)?.try_into()?,
-            proof_conn_end_on_b: msg.proof_try.try_into().map_err(Error::invalid_proof)?,
+                .map_err(ConnectionError::InvalidIdentifier)?,
+            client_state_of_a_on_b: msg
+                .client_state
+                .ok_or(ConnectionError::MissingClientState)?,
+            version: msg
+                .version
+                .ok_or(ConnectionError::EmptyVersions)?
+                .try_into()?,
+            proof_conn_end_on_b: msg
+                .proof_try
+                .try_into()
+                .map_err(ConnectionError::InvalidProof)?,
             proof_client_state_of_a_on_b: msg
                 .proof_client
                 .try_into()
-                .map_err(Error::invalid_proof)?,
+                .map_err(ConnectionError::InvalidProof)?,
             proof_consensus_state_of_a_on_b: msg
                 .proof_consensus
                 .try_into()
-                .map_err(Error::invalid_proof)?,
+                .map_err(ConnectionError::InvalidProof)?,
             proofs_height_on_b: msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_proof_height)?,
+                .ok_or(ConnectionError::MissingProofHeight)?,
             consensus_height_of_a_on_b: msg
                 .consensus_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_consensus_height)?,
-            signer: msg.signer.parse().map_err(Error::signer)?,
+                .ok_or(ConnectionError::MissingConsensusHeight)?,
+            signer: msg.signer.parse().map_err(ConnectionError::Signer)?,
         })
     }
 }

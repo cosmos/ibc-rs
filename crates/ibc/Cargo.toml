@@ -18,7 +18,24 @@ all-features = true
 
 [features]
 default = ["std"]
-std = ["flex-error/std", "flex-error/eyre_tracer", "ibc-proto/std", "clock"]
+std = [ 
+    "ibc-proto/std",
+    "ics23/std",
+    "serde/std",
+    "serde_json/std",
+    "erased-serde/std",
+    "tracing/std",
+    "prost/std",
+    "bytes/std",
+    "subtle-encoding/std",
+    "sha2/std",
+    "displaydoc/std",
+    "num-traits/std",
+    "uint/std",
+    "primitive-types/std",
+    "clock",
+    "tendermint/std",
+]
 clock = ["tendermint/clock", "time/std"]
 
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
@@ -27,8 +44,8 @@ mocks = ["tendermint-testgen", "clock", "std"]
 
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
-ibc-proto = { version = "0.22.0", default-features = false }
-ics23 = { version = "=0.8.1", default-features = false, features = ["host-functions"] }
+ibc-proto = { version = "0.23.0", default-features = false }
+ics23 = { version = "0.9.0", default-features = false, features = ["host-functions"] }
 time = { version = ">=0.3.0, <0.3.18", default-features = false }
 serde_derive = { version = "1.0.104", default-features = false }
 serde = { version = "1.0", default-features = false }
@@ -40,7 +57,7 @@ bytes = { version = "1.2.1", default-features = false }
 safe-regex = { version = "0.2.5", default-features = false }
 subtle-encoding = { version = "0.5", default-features = false }
 sha2 = { version = "0.10.6", default-features = false }
-flex-error = { version = "0.4.4", default-features = false }
+displaydoc = { version = "0.2", default-features = false }
 num-traits = { version = "0.2.15", default-features = false }
 derive_more = { version = "0.99.17", default-features = false, features = ["from", "into", "display"] }
 uint = { version = "0.9", default-features = false }
@@ -48,27 +65,27 @@ primitive-types = { version = "0.12.0", default-features = false, features = ["s
 dyn-clone = "1.0.8"
 
 [dependencies.tendermint]
-version = "0.26.0"
+version = "0.27"
 default-features = false
 
 [dependencies.tendermint-proto]
-version = "0.26.0"
+version = "0.27"
 default-features = false
 
 [dependencies.tendermint-light-client-verifier]
-version = "0.26.0"
+version = "0.27"
 default-features = false
 
 [dependencies.tendermint-testgen]
-version = "0.26.0"
+version = "0.27"
 optional = true
 default-features = false
 
 [dev-dependencies]
-env_logger = "0.9.1"
+env_logger = "0.10.0"
 tracing-subscriber = { version = "0.3.14", features = ["fmt", "env-filter", "json"]}
 test-log = { version = "0.2.10", features = ["trace"] }
 modelator = "0.4.2"
 sha2 = { version = "0.10.6" }
-tendermint-rpc = { version = "0.26.0", features = ["http-client", "websocket-client"] }
-tendermint-testgen = { version = "0.26.0" } # Needed for generating (synthetic) light blocks.
+tendermint-rpc = { version = "0.27", features = ["http-client", "websocket-client"] }
+tendermint-testgen = { version = "0.27" } # Needed for generating (synthetic) light blocks.

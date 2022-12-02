@@ -1,8 +1,9 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenConfirm`.
 
+use crate::core::context::ContextError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::context::ConnectionReader;
-use crate::core::ics03_connection::error::Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenConfirm;
 use crate::core::ics03_connection::handler::{ConnectionIdState, ConnectionResult};
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
@@ -13,7 +14,7 @@ use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
-pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), Error>
+pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
@@ -25,13 +26,17 @@ fn validate_impl<Ctx>(
     ctx_b: &Ctx,
     msg: &MsgConnectionOpenConfirm,
     vars: &LocalVars,
-) -> Result<(), Error>
+) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
     let conn_end_on_b = vars.conn_end_on_b();
     if !conn_end_on_b.state_matches(&State::TryOpen) {
-        return Err(Error::connection_mismatch(msg.conn_id_on_b.clone()));
+        return Err(ContextError::ConnectionError(
+            ConnectionError::ConnectionMismatch {
+                connection_id: msg.conn_id_on_b.clone(),
+            },
+        ));
     }
 
     let client_id_on_a = vars.client_id_on_a();
@@ -40,12 +45,17 @@ where
 
     // Verify proofs
     {
-        let client_state_of_a_on_b = ctx_b
-            .client_state(client_id_on_b)
-            .map_err(|_| Error::other("failed to fetch client state".to_string()))?;
+        let client_state_of_a_on_b =
+            ctx_b
+                .client_state(client_id_on_b)
+                .map_err(|_| ConnectionError::Other {
+                    description: "failed to fetch client state".to_string(),
+                })?;
         let consensus_state_of_a_on_b = ctx_b
             .consensus_state(client_id_on_b, msg.proof_height_on_a)
-            .map_err(|_| Error::other("failed to fetch client consensus state".to_string()))?;
+            .map_err(|_| ConnectionError::Other {
+                description: "failed to fetch client consensus state".to_string(),
+            })?;
 
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let prefix_on_b = ctx_b.commitment_prefix();
@@ -71,13 +81,16 @@ where
                 conn_id_on_a,
                 &expected_conn_end_on_a,
             )
-            .map_err(Error::verify_connection_state)?;
+            .map_err(ConnectionError::VerifyConnectionState)?;
     }
 
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx_b: &mut Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), Error>
+pub(crate) fn execute<Ctx>(
+    ctx_b: &mut Ctx,
+    msg: &MsgConnectionOpenConfirm,
+) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
 {
@@ -89,7 +102,7 @@ fn execute_impl<Ctx>(
     ctx_b: &mut Ctx,
     msg: &MsgConnectionOpenConfirm,
     vars: LocalVars,
-) -> Result<(), Error>
+) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
 {
@@ -127,7 +140,7 @@ struct LocalVars {
 }
 
 impl LocalVars {
-    fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<Self, Error>
+    fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<Self, ContextError>
     where
         Ctx: ValidationContext,
     {
@@ -148,11 +161,11 @@ impl LocalVars {
         self.conn_end_on_b.client_id()
     }
 
-    fn conn_id_on_a(&self) -> Result<&ConnectionId, Error> {
+    fn conn_id_on_a(&self) -> Result<&ConnectionId, ConnectionError> {
         self.conn_end_on_b
             .counterparty()
             .connection_id()
-            .ok_or_else(Error::invalid_counterparty)
+            .ok_or(ConnectionError::InvalidCounterparty)
     }
 }
 
@@ -160,19 +173,21 @@ impl LocalVars {
 pub(crate) fn process(
     ctx_b: &dyn ConnectionReader,
     msg: MsgConnectionOpenConfirm,
-) -> HandlerResult<ConnectionResult, Error> {
+) -> HandlerResult<ConnectionResult, ConnectionError> {
     let mut output = HandlerOutput::builder();
 
     let conn_end_on_b = ctx_b.connection_end(&msg.conn_id_on_b)?;
     if !conn_end_on_b.state_matches(&State::TryOpen) {
-        return Err(Error::connection_mismatch(msg.conn_id_on_b));
+        return Err(ConnectionError::ConnectionMismatch {
+            connection_id: msg.conn_id_on_b,
+        });
     }
     let client_id_on_a = conn_end_on_b.counterparty().client_id();
     let client_id_on_b = conn_end_on_b.client_id();
     let conn_id_on_a = conn_end_on_b
         .counterparty()
         .connection_id()
-        .ok_or_else(Error::invalid_counterparty)?;
+        .ok_or(ConnectionError::InvalidCounterparty)?;
 
     // Verify proofs
     {
@@ -204,7 +219,7 @@ pub(crate) fn process(
                 conn_id_on_a,
                 &expected_conn_end_on_a,
             )
-            .map_err(Error::verify_connection_state)?;
+            .map_err(ConnectionError::VerifyConnectionState)?;
     }
 
     // Success

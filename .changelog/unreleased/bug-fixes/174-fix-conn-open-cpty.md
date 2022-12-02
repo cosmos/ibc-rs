@@ -1,0 +1,1 @@
+- Set counterparty connection ID to None in `conn_open_init` ([#174](https://github.com/cosmos/ibc-rs/issues/174))

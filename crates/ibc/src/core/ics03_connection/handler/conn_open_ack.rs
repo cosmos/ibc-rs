@@ -1,8 +1,9 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenAck`.
 
+use crate::core::context::ContextError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::context::ConnectionReader;
-use crate::core::ics03_connection::error::Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenAck;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
@@ -14,17 +15,19 @@ use crate::prelude::*;
 
 use super::ConnectionIdState;
 
-pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), Error>
+pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
-    let host_height = ctx_a
-        .host_height()
-        .map_err(|_| Error::other("failed to get host height".to_string()))?;
+    let host_height = ctx_a.host_height().map_err(|_| ConnectionError::Other {
+        description: "failed to get host height".to_string(),
+    })?;
     if msg.consensus_height_of_a_on_b > host_height {
-        return Err(Error::invalid_consensus_height(
-            msg.consensus_height_of_a_on_b,
-            host_height,
+        return Err(ContextError::ConnectionError(
+            ConnectionError::InvalidConsensusHeight {
+                target_height: msg.consensus_height_of_a_on_b,
+                current_height: host_height,
+            },
         ));
     }
 
@@ -34,7 +37,11 @@ where
     if !(conn_end_on_a.state_matches(&State::Init)
         && conn_end_on_a.versions().contains(&msg.version))
     {
-        return Err(Error::connection_mismatch(msg.conn_id_on_a));
+        return Err(ContextError::ConnectionError(
+            ConnectionError::ConnectionMismatch {
+                connection_id: msg.conn_id_on_a,
+            },
+        ));
     }
 
     let client_id_on_a = conn_end_on_a.client_id();
@@ -43,16 +50,21 @@ where
     let conn_id_on_b = conn_end_on_a
         .counterparty()
         .connection_id()
-        .ok_or_else(Error::invalid_counterparty)?;
+        .ok_or(ConnectionError::InvalidCounterparty)?;
 
     // Proof verification.
     {
-        let client_state_of_b_on_a = ctx_a
-            .client_state(client_id_on_a)
-            .map_err(|_| Error::other("failed to fetch client state".to_string()))?;
+        let client_state_of_b_on_a =
+            ctx_a
+                .client_state(client_id_on_a)
+                .map_err(|_| ConnectionError::Other {
+                    description: "failed to fetch client state".to_string(),
+                })?;
         let consensus_state_of_b_on_a = ctx_a
             .consensus_state(conn_end_on_a.client_id(), msg.proofs_height_on_b)
-            .map_err(|_| Error::other("failed to fetch client consensus state".to_string()))?;
+            .map_err(|_| ConnectionError::Other {
+                description: "failed to fetch client consensus state".to_string(),
+            })?;
 
         let prefix_on_a = ctx_a.commitment_prefix();
         let prefix_on_b = conn_end_on_a.counterparty().prefix();
@@ -79,7 +91,7 @@ where
                     conn_id_on_b,
                     &expected_conn_end_on_b,
                 )
-                .map_err(Error::verify_connection_state)?;
+                .map_err(ConnectionError::VerifyConnectionState)?;
         }
 
         client_state_of_b_on_a
@@ -91,13 +103,16 @@ where
                 client_id_on_b,
                 msg.client_state_of_a_on_b,
             )
-            .map_err(|e| {
-                Error::client_state_verification_failure(conn_end_on_a.client_id().clone(), e)
+            .map_err(|e| ConnectionError::ClientStateVerificationFailure {
+                client_id: client_id_on_a.clone(),
+                client_error: e,
             })?;
 
         let expected_consensus_state_of_a_on_b = ctx_a
             .host_consensus_state(msg.consensus_height_of_a_on_b)
-            .map_err(|_| Error::other("failed to fetch host consensus state".to_string()))?;
+            .map_err(|_| ConnectionError::Other {
+                description: "failed to fetch host consensus state".to_string(),
+            })?;
 
         client_state_of_b_on_a
             .verify_client_consensus_state(
@@ -109,13 +124,16 @@ where
                 msg.consensus_height_of_a_on_b,
                 expected_consensus_state_of_a_on_b.as_ref(),
             )
-            .map_err(|e| Error::consensus_state_verification_failure(msg.proofs_height_on_b, e))?;
+            .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
+                height: msg.proofs_height_on_b,
+                client_error: e,
+            })?;
     }
 
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), Error>
+pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
 {
@@ -126,7 +144,7 @@ where
     let conn_id_on_b = conn_end_on_a
         .counterparty()
         .connection_id()
-        .ok_or_else(Error::invalid_counterparty)?;
+        .ok_or(ConnectionError::InvalidCounterparty)?;
 
     ctx_a.emit_ibc_event(IbcEvent::OpenAckConnection(OpenAck::new(
         msg.conn_id_on_a.clone(),
@@ -159,14 +177,14 @@ where
 pub(crate) fn process(
     ctx_a: &dyn ConnectionReader,
     msg: MsgConnectionOpenAck,
-) -> HandlerResult<ConnectionResult, Error> {
+) -> HandlerResult<ConnectionResult, ConnectionError> {
     let mut output = HandlerOutput::builder();
 
     if msg.consensus_height_of_a_on_b > ctx_a.host_current_height()? {
-        return Err(Error::invalid_consensus_height(
-            msg.consensus_height_of_a_on_b,
-            ctx_a.host_current_height()?,
-        ));
+        return Err(ConnectionError::InvalidConsensusHeight {
+            target_height: msg.consensus_height_of_a_on_b,
+            current_height: ctx_a.host_current_height()?,
+        });
     }
 
     ctx_a.validate_self_client(msg.client_state_of_a_on_b.clone())?;
@@ -175,16 +193,13 @@ pub(crate) fn process(
     if !(conn_end_on_a.state_matches(&State::Init)
         && conn_end_on_a.versions().contains(&msg.version))
     {
-        return Err(Error::connection_mismatch(msg.conn_id_on_a));
+        return Err(ConnectionError::ConnectionMismatch {
+            connection_id: msg.conn_id_on_a,
+        });
     }
 
     let client_id_on_a = conn_end_on_a.client_id();
     let client_id_on_b = conn_end_on_a.counterparty().client_id();
-
-    let conn_id_on_b = conn_end_on_a
-        .counterparty()
-        .connection_id()
-        .ok_or_else(Error::invalid_counterparty)?;
 
     // Proof verification.
     {
@@ -214,10 +229,10 @@ pub(crate) fn process(
                     prefix_on_b,
                     &msg.proof_conn_end_on_b,
                     consensus_state_of_b_on_a.root(),
-                    conn_id_on_b,
+                    &msg.conn_id_on_b,
                     &expected_conn_end_on_b,
                 )
-                .map_err(Error::verify_connection_state)?;
+                .map_err(ConnectionError::VerifyConnectionState)?;
         }
 
         client_state_of_b_on_a
@@ -229,8 +244,9 @@ pub(crate) fn process(
                 client_id_on_b,
                 msg.client_state_of_a_on_b,
             )
-            .map_err(|e| {
-                Error::client_state_verification_failure(conn_end_on_a.client_id().clone(), e)
+            .map_err(|e| ConnectionError::ClientStateVerificationFailure {
+                client_id: conn_end_on_a.client_id().clone(),
+                client_error: e,
             })?;
 
         let expected_consensus_state_of_a_on_b =
@@ -245,14 +261,17 @@ pub(crate) fn process(
                 msg.consensus_height_of_a_on_b,
                 expected_consensus_state_of_a_on_b.as_ref(),
             )
-            .map_err(|e| Error::consensus_state_verification_failure(msg.proofs_height_on_b, e))?;
+            .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
+                height: msg.proofs_height_on_b,
+                client_error: e,
+            })?;
     }
 
     // Success
     output.emit(IbcEvent::OpenAckConnection(OpenAck::new(
         msg.conn_id_on_a.clone(),
         client_id_on_a.clone(),
-        conn_id_on_b.clone(),
+        msg.conn_id_on_b.clone(),
         client_id_on_b.clone(),
     )));
     output.log("success: conn_open_ack verification passed");
@@ -306,7 +325,7 @@ mod tests {
             ctx: MockContext,
             msg: ConnectionMsg,
             want_pass: bool,
-            match_error: Box<dyn FnOnce(error::Error)>,
+            match_error: Box<dyn FnOnce(error::ConnectionError)>,
         }
 
         let msg_ack =
@@ -364,10 +383,10 @@ mod tests {
                 msg: ConnectionMsg::ConnectionOpenAck(Box::new(msg_ack.clone())),
                 want_pass: false,
                 match_error: {
-                    let connection_id = conn_id.clone();
-                    Box::new(move |e| match e.detail() {
-                        error::ErrorDetail::ConnectionNotFound(e) => {
-                            assert_eq!(e.connection_id, connection_id)
+                    let right_connection_id = conn_id.clone();
+                    Box::new(move |e| match e {
+                        error::ConnectionError::ConnectionNotFound { connection_id } => {
+                            assert_eq!(connection_id, right_connection_id)
                         }
                         _ => {
                             panic!("Expected ConnectionNotFound error");
@@ -384,10 +403,10 @@ mod tests {
                 msg: ConnectionMsg::ConnectionOpenAck(Box::new(msg_ack)),
                 want_pass: false,
                 match_error: {
-                    let connection_id = conn_id;
-                    Box::new(move |e| match e.detail() {
-                        error::ErrorDetail::ConnectionMismatch(e) => {
-                            assert_eq!(e.connection_id, connection_id);
+                    let right_connection_id = conn_id;
+                    Box::new(move |e| match e {
+                        error::ConnectionError::ConnectionMismatch { connection_id } => {
+                            assert_eq!(connection_id, right_connection_id);
                         }
                         _ => {
                             panic!("Expected ConnectionMismatch error");

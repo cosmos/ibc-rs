@@ -38,11 +38,15 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
             client_id: Default::default(),
             header1: raw
                 .header_1
-                .ok_or_else(|| Error::invalid_raw_misbehaviour("missing header1".into()))?
+                .ok_or_else(|| Error::InvalidRawMisbehaviour {
+                    reason: "missing header1".into(),
+                })?
                 .try_into()?,
             header2: raw
                 .header_2
-                .ok_or_else(|| Error::invalid_raw_misbehaviour("missing header2".into()))?
+                .ok_or_else(|| Error::InvalidRawMisbehaviour {
+                    reason: "missing header2".into(),
+                })?
                 .try_into()?,
         })
     }

@@ -1,8 +1,9 @@
 //! Protocol logic specific to ICS3 messages of type `MsgConnectionOpenInit`.
 
-use crate::core::ics03_connection::connection::{ConnectionEnd, State};
+use crate::core::context::ContextError;
+use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::context::ConnectionReader;
-use crate::core::ics03_connection::error::Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
@@ -15,21 +16,19 @@ use crate::prelude::*;
 
 use super::ConnectionIdState;
 
-pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), Error>
+pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
     // An IBC client running on the local (host) chain should exist.
-    ctx_a
-        .client_state(&msg.client_id_on_a)
-        .map_err(|error| Error::client_state_verification_failure(msg.client_id_on_a, error))?;
+    ctx_a.client_state(&msg.client_id_on_a)?;
 
     let _versions = match msg.version {
         Some(version) => {
             if ctx_a.get_compatible_versions().contains(&version) {
                 Ok(vec![version])
             } else {
-                Err(Error::version_not_supported(version))
+                Err(ConnectionError::VersionNotSupported { version })
             }
         }
         None => Ok(ctx_a.get_compatible_versions()),
@@ -38,7 +37,7 @@ where
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenInit) -> Result<(), Error>
+pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
 {
@@ -47,7 +46,7 @@ where
             if ctx_a.get_compatible_versions().contains(&version) {
                 Ok(vec![version])
             } else {
-                Err(Error::version_not_supported(version))
+                Err(ConnectionError::VersionNotSupported { version })
             }
         }
         None => Ok(ctx_a.get_compatible_versions()),
@@ -90,7 +89,7 @@ where
 pub(crate) fn process(
     ctx_a: &dyn ConnectionReader,
     msg: MsgConnectionOpenInit,
-) -> HandlerResult<ConnectionResult, Error> {
+) -> HandlerResult<ConnectionResult, ConnectionError> {
     let mut output = HandlerOutput::builder();
 
     // An IBC client running on the local (host) chain should exist.
@@ -101,7 +100,7 @@ pub(crate) fn process(
             if ctx_a.get_compatible_versions().contains(&version) {
                 Ok(vec![version])
             } else {
-                Err(Error::version_not_supported(version))
+                Err(ConnectionError::VersionNotSupported { version })
             }
         }
         None => Ok(ctx_a.get_compatible_versions()),
@@ -110,7 +109,11 @@ pub(crate) fn process(
     let conn_end_on_a = ConnectionEnd::new(
         State::Init,
         msg.client_id_on_a.clone(),
-        msg.counterparty.clone(),
+        Counterparty::new(
+            msg.counterparty.client_id().clone(),
+            None,
+            msg.counterparty.prefix().clone(),
+        ),
         versions,
         msg.delay_period,
     );
