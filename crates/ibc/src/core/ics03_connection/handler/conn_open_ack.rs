@@ -7,6 +7,7 @@ use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenAck;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
+use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::ConnectionsPath;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
@@ -19,6 +20,8 @@ pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<()
 where
     Ctx: ValidationContext,
 {
+    let vars = LocalVars::new(ctx_a, &msg)?;
+
     let host_height = ctx_a.host_height().map_err(|_| ConnectionError::Other {
         description: "failed to get host height".to_string(),
     })?;
@@ -33,9 +36,8 @@ where
 
     ctx_a.validate_self_client(msg.client_state_of_a_on_b.clone())?;
 
-    let conn_end_on_a = ctx_a.connection_end(&msg.conn_id_on_a)?;
-    if !(conn_end_on_a.state_matches(&State::Init)
-        && conn_end_on_a.versions().contains(&msg.version))
+    if !(vars.conn_end_on_a.state_matches(&State::Init)
+        && vars.conn_end_on_a.versions().contains(&msg.version))
     {
         return Err(ContextError::ConnectionError(
             ConnectionError::ConnectionMismatch {
@@ -44,37 +46,34 @@ where
         ));
     }
 
-    let client_id_on_a = conn_end_on_a.client_id();
-    let client_id_on_b = conn_end_on_a.counterparty().client_id();
-
     // Proof verification.
     {
         let client_state_of_b_on_a =
             ctx_a
-                .client_state(client_id_on_a)
+                .client_state(vars.client_id_on_a())
                 .map_err(|_| ConnectionError::Other {
                     description: "failed to fetch client state".to_string(),
                 })?;
         let consensus_state_of_b_on_a = ctx_a
-            .consensus_state(conn_end_on_a.client_id(), msg.proofs_height_on_b)
+            .consensus_state(vars.client_id_on_a(), msg.proofs_height_on_b)
             .map_err(|_| ConnectionError::Other {
                 description: "failed to fetch client consensus state".to_string(),
             })?;
 
         let prefix_on_a = ctx_a.commitment_prefix();
-        let prefix_on_b = conn_end_on_a.counterparty().prefix();
+        let prefix_on_b = vars.conn_end_on_a.counterparty().prefix();
 
         {
             let expected_conn_end_on_b = ConnectionEnd::new(
                 State::TryOpen,
-                client_id_on_b.clone(),
+                vars.client_id_on_b().clone(),
                 Counterparty::new(
-                    client_id_on_a.clone(),
+                    vars.client_id_on_a().clone(),
                     Some(msg.conn_id_on_a.clone()),
                     prefix_on_a,
                 ),
                 vec![msg.version.clone()],
-                conn_end_on_a.delay_period(),
+                vars.conn_end_on_a.delay_period(),
             );
 
             client_state_of_b_on_a
@@ -95,11 +94,11 @@ where
                 prefix_on_b,
                 &msg.proof_client_state_of_a_on_b,
                 consensus_state_of_b_on_a.root(),
-                client_id_on_b,
+                vars.client_id_on_b(),
                 msg.client_state_of_a_on_b,
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
-                client_id: client_id_on_a.clone(),
+                client_id: vars.client_id_on_a().clone(),
                 client_error: e,
             })?;
 
@@ -115,7 +114,7 @@ where
                 prefix_on_b,
                 &msg.proof_consensus_state_of_a_on_b,
                 consensus_state_of_b_on_a.root(),
-                conn_end_on_a.counterparty().client_id(),
+                vars.client_id_on_b(),
                 msg.consensus_height_of_a_on_b,
                 expected_consensus_state_of_a_on_b.as_ref(),
             )
@@ -132,25 +131,23 @@ pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result
 where
     Ctx: ExecutionContext,
 {
-    let conn_end_on_a = ctx_a.connection_end(&msg.conn_id_on_a)?;
-    let client_id_on_a = conn_end_on_a.client_id();
-    let client_id_on_b = conn_end_on_a.counterparty().client_id();
+    let vars = LocalVars::new(ctx_a, &msg)?;
 
     ctx_a.emit_ibc_event(IbcEvent::OpenAckConnection(OpenAck::new(
         msg.conn_id_on_a.clone(),
-        client_id_on_a.clone(),
+        vars.client_id_on_a().clone(),
         msg.conn_id_on_b.clone(),
-        client_id_on_b.clone(),
+        vars.client_id_on_b().clone(),
     )));
 
     ctx_a.log_message("success: conn_open_ack verification passed".to_string());
 
     {
         let new_conn_end_on_a = {
-            let mut counterparty = conn_end_on_a.counterparty().clone();
+            let mut counterparty = vars.conn_end_on_a.counterparty().clone();
             counterparty.connection_id = Some(msg.conn_id_on_b.clone());
 
-            let mut new_conn_end_on_a = conn_end_on_a;
+            let mut new_conn_end_on_a = vars.conn_end_on_a;
             new_conn_end_on_a.set_state(State::Open);
             new_conn_end_on_a.set_version(msg.version.clone());
             new_conn_end_on_a.set_counterparty(counterparty);
@@ -161,6 +158,29 @@ where
     }
 
     Ok(())
+}
+
+struct LocalVars {
+    conn_end_on_a: ConnectionEnd,
+}
+
+impl LocalVars {
+    fn new<Ctx>(ctx_a: &Ctx, msg: &MsgConnectionOpenAck) -> Result<Self, ContextError>
+    where
+        Ctx: ValidationContext,
+    {
+        Ok(LocalVars {
+            conn_end_on_a: ctx_a.connection_end(&msg.conn_id_on_a)?,
+        })
+    }
+
+    fn client_id_on_a(&self) -> &ClientId {
+        self.conn_end_on_a.client_id()
+    }
+
+    fn client_id_on_b(&self) -> &ClientId {
+        self.conn_end_on_a.counterparty().client_id()
+    }
 }
 
 /// Per our convention, this message is processed on chain A.
