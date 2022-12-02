@@ -21,7 +21,17 @@ where
     Ctx: ValidationContext,
 {
     let vars = LocalVars::new(ctx_b, &msg)?;
+    validate_impl(ctx_b, &msg, &vars)
+}
 
+fn validate_impl<Ctx>(
+    ctx_b: &Ctx,
+    msg: &MsgConnectionOpenTry,
+    vars: &LocalVars,
+) -> Result<(), ContextError>
+where
+    Ctx: ValidationContext,
+{
     ctx_b.validate_self_client(msg.client_state_of_b_on_a.clone())?;
 
     let host_height = ctx_b.host_height().map_err(|_| ConnectionError::Other {
@@ -57,12 +67,11 @@ where
         let prefix_on_b = ctx_b.commitment_prefix();
 
         {
-            let versions_on_a = msg.versions_on_a;
             let expected_conn_end_on_a = ConnectionEnd::new(
                 State::Init,
                 client_id_on_a.clone(),
                 Counterparty::new(msg.client_id_on_b.clone(), None, prefix_on_b),
-                versions_on_a,
+                msg.versions_on_a.clone(),
                 msg.delay_period,
             );
 
@@ -85,7 +94,7 @@ where
                 &msg.proof_client_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
                 client_id_on_a,
-                msg.client_state_of_b_on_a,
+                msg.client_state_of_b_on_a.clone(),
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
                 client_id: msg.client_id_on_b.clone(),
@@ -121,7 +130,17 @@ where
     Ctx: ExecutionContext,
 {
     let vars = LocalVars::new(ctx_b, &msg)?;
+    execute_impl(ctx_b, msg, vars)
+}
 
+fn execute_impl<Ctx>(
+    ctx_b: &mut Ctx,
+    msg: MsgConnectionOpenTry,
+    vars: LocalVars,
+) -> Result<(), ContextError>
+where
+    Ctx: ExecutionContext,
+{
     let conn_id_on_a = vars
         .conn_end_on_b
         .counterparty()
