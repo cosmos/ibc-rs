@@ -1,18 +1,3 @@
-use crate::core::context::ContextError;
-use crate::core::ics02_client::context::ClientReader;
-use crate::core::ics03_connection::connection::ConnectionEnd;
-use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
-use crate::core::ics04_channel::packet::Sequence;
-use crate::core::ics23_commitment::commitment::{
-    CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
-};
-use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
-use crate::core::ics24_host::path::{
-    AcksPath, ChannelEndsPath, ClientConsensusStatePath, ClientStatePath, CommitmentsPath,
-    ConnectionsPath, ReceiptsPath, SeqRecvsPath,
-};
-use crate::core::ics24_host::Path;
-use crate::core::ValidationContext;
 use crate::prelude::*;
 
 use core::convert::{TryFrom, TryInto};
@@ -29,21 +14,37 @@ use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
-use tendermint_light_client_verifier::{ProdVerifier, Verdict, Verifier};
+use tendermint_light_client_verifier::{ProdVerifier, Verifier};
 
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
-use crate::clients::ics07_tendermint::error::Error;
-use crate::clients::ics07_tendermint::header::Header as TmHeader;
+use crate::clients::ics07_tendermint::error::{Error, IntoResult};
+use crate::clients::ics07_tendermint::header::{Header as TmHeader, Header};
+use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
+use crate::core::context::ContextError;
 use crate::core::ics02_client::client_state::{
     ClientState as Ics2ClientState, UpdatedState, UpgradeOptions as CoreUpgradeOptions,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::trust_threshold::TrustThreshold;
+use crate::core::ics03_connection::connection::ConnectionEnd;
+use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::context::ChannelReader;
+use crate::core::ics04_channel::packet::Sequence;
+use crate::core::ics23_commitment::commitment::{
+    CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
+};
+use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
+use crate::core::ics24_host::path::{
+    AcksPath, ChannelEndsPath, ClientConsensusStatePath, ClientStatePath, CommitmentsPath,
+    ConnectionsPath, ReceiptsPath, SeqRecvsPath,
+};
+use crate::core::ics24_host::Path;
+use crate::core::ValidationContext;
 use crate::timestamp::{Timestamp, ZERO_DURATION};
 use crate::Height;
 
@@ -201,11 +202,11 @@ impl ClientState {
         })
     }
 
-    pub fn with_frozen_height(self, h: Height) -> Result<Self, Error> {
-        Ok(Self {
+    pub fn with_frozen_height(self, h: Height) -> Self {
+        Self {
             frozen_height: Some(h),
             ..self
-        })
+        }
     }
 
     /// Get the refresh time to ensure the state does not expire
@@ -272,6 +273,79 @@ impl ClientState {
             }),
             _ => Ok(()),
         }
+    }
+
+    fn check_header_validator_set(
+        trusted_consensus_state: &TmConsensusState,
+        header: &Header,
+    ) -> Result<(), ClientError> {
+        let trusted_val_hash = header.trusted_validator_set.hash();
+
+        if trusted_consensus_state.next_validators_hash != trusted_val_hash {
+            return Err(Error::MisbehaviourTrustedValidatorHashMismatch {
+                trusted_validator_set: header.trusted_validator_set.clone(),
+                next_validators_hash: trusted_consensus_state.next_validators_hash,
+                trusted_val_hash,
+            }
+            .into());
+        }
+
+        Ok(())
+    }
+
+    fn check_header_and_validator_set(
+        &self,
+        header: &Header,
+        consensus_state: &TmConsensusState,
+        current_timestamp: Timestamp,
+    ) -> Result<(), ClientError> {
+        Self::check_header_validator_set(consensus_state, header)?;
+
+        let duration_since_consensus_state = current_timestamp
+            .duration_since(&consensus_state.timestamp())
+            .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
+                time1: consensus_state.timestamp(),
+                time2: current_timestamp,
+            })?;
+
+        if duration_since_consensus_state >= self.trusting_period {
+            return Err(Error::ConsensusStateTimestampGteTrustingPeriod {
+                duration_since_consensus_state,
+                trusting_period: self.trusting_period,
+            }
+            .into());
+        }
+
+        let untrusted_state = header.as_untrusted_block_state();
+        let trusted_state = header.as_trusted_block_state(consensus_state)?;
+        let options = self.as_light_client_options()?;
+
+        self.verifier
+            .validate_against_trusted(
+                &untrusted_state,
+                &trusted_state,
+                &options,
+                current_timestamp.into_tm_time().unwrap(),
+            )
+            .into_result()?;
+
+        Ok(())
+    }
+
+    fn verify_header_commit_against_trusted(
+        &self,
+        header: &Header,
+        consensus_state: &TmConsensusState,
+    ) -> Result<(), ClientError> {
+        let untrusted_state = header.as_untrusted_block_state();
+        let trusted_state = header.as_trusted_block_state(consensus_state)?;
+        let options = self.as_light_client_options()?;
+
+        self.verifier
+            .verify_commit_against_trusted(&untrusted_state, &trusted_state, &options)
+            .into_result()?;
+
+        Ok(())
     }
 }
 
@@ -422,23 +496,14 @@ impl Ics2ClientState for ClientState {
 
         let options = client_state.as_light_client_options()?;
 
-        let verdict = self.verifier.verify(
-            untrusted_state,
-            trusted_state,
-            &options,
-            ctx.host_timestamp()?.into_tm_time().unwrap(),
-        );
-
-        match verdict {
-            Verdict::Success => {}
-            Verdict::NotEnoughTrust(voting_power_tally) => {
-                return Err(Error::NotEnoughTrustedValsSigned {
-                    reason: format!("voting power tally: {}", voting_power_tally),
-                }
-                .into());
-            }
-            Verdict::Invalid(detail) => return Err(Error::VerificationError { detail }.into()),
-        }
+        self.verifier
+            .verify(
+                untrusted_state,
+                trusted_state,
+                &options,
+                ctx.host_timestamp()?.into_tm_time().unwrap(),
+            )
+            .into_result()?;
 
         // If the header has verified, but its corresponding consensus state
         // differs from the existing consensus state for that height, freeze the
@@ -446,7 +511,7 @@ impl Ics2ClientState for ClientState {
         if let Some(cs) = existing_consensus_state {
             if cs != header_consensus_state {
                 return Ok(UpdatedState {
-                    client_state: client_state.with_frozen_height(header.height())?.into_box(),
+                    client_state: client_state.with_frozen_height(header.height()).into_box(),
                     consensus_state: cs.into_box(),
                 });
             }
@@ -503,6 +568,65 @@ impl Ics2ClientState for ClientState {
             client_state: client_state.with_header(header.clone())?.into_box(),
             consensus_state: TmConsensusState::from(header).into_box(),
         })
+    }
+
+    fn check_misbehaviour_and_update_state(
+        &self,
+        ctx: &dyn ClientReader,
+        client_id: ClientId,
+        misbehaviour: Any,
+    ) -> Result<Box<dyn Ics2ClientState>, ClientError> {
+        let misbehaviour = TmMisbehaviour::try_from(misbehaviour)?;
+        let header_1 = misbehaviour.header1();
+        let header_2 = misbehaviour.header2();
+
+        if header_1.height() == header_2.height() {
+            // Fork
+            if header_1.signed_header.commit.block_id.hash
+                == header_2.signed_header.commit.block_id.hash
+            {
+                return Err(Error::MisbehaviourHeadersBlockHashesEqual.into());
+            }
+        } else {
+            // BFT time violation
+            if header_1.signed_header.header.time > header_2.signed_header.header.time {
+                return Err(Error::MisbehaviourHeadersNotAtSameHeight.into());
+            }
+        }
+
+        let consensus_state_1 = {
+            let cs = ctx.consensus_state(&client_id, header_1.trusted_height)?;
+            downcast_tm_consensus_state(cs.as_ref())
+        }?;
+        let consensus_state_2 = {
+            let cs = ctx.consensus_state(&client_id, header_2.trusted_height)?;
+            downcast_tm_consensus_state(cs.as_ref())
+        }?;
+
+        let chain_id = self
+            .chain_id
+            .clone()
+            .with_version(header_1.height().revision_number());
+        if !misbehaviour.chain_id_matches(&chain_id) {
+            return Err(Error::MisbehaviourHeadersChainIdMismatch {
+                header_chain_id: header_1.signed_header.header.chain_id.to_string(),
+                chain_id: self.chain_id.to_string(),
+            }
+            .into());
+        }
+
+        let current_timestamp = ctx.host_timestamp()?;
+
+        self.check_header_and_validator_set(header_1, &consensus_state_1, current_timestamp)?;
+        self.check_header_and_validator_set(header_2, &consensus_state_2, current_timestamp)?;
+
+        self.verify_header_commit_against_trusted(header_1, &consensus_state_1)?;
+        self.verify_header_commit_against_trusted(header_2, &consensus_state_2)?;
+
+        let client_state = downcast_tm_client_state(self)?.clone();
+        Ok(client_state
+            .with_frozen_height(Height::new(0, 1).unwrap())
+            .into_box())
     }
 
     fn check_header_and_update_state(
@@ -595,30 +719,17 @@ impl Ics2ClientState for ClientState {
         };
 
         let options = client_state.as_light_client_options()?;
+        let now = ctx
+            .host_timestamp()
+            .map_err(|e| ClientError::Other {
+                description: e.to_string(),
+            })?
+            .into_tm_time()
+            .unwrap();
 
-        let verdict = self.verifier.verify(
-            untrusted_state,
-            trusted_state,
-            &options,
-            ctx.host_timestamp()
-                .map_err(|e| match e {
-                    ContextError::ClientError(e) => e,
-                    _ => todo!(),
-                })?
-                .into_tm_time()
-                .unwrap(),
-        );
-
-        match verdict {
-            Verdict::Success => {}
-            Verdict::NotEnoughTrust(voting_power_tally) => {
-                return Err(Error::NotEnoughTrustedValsSigned {
-                    reason: format!("voting power tally: {}", voting_power_tally),
-                }
-                .into());
-            }
-            Verdict::Invalid(detail) => return Err(Error::VerificationError { detail }.into()),
-        }
+        self.verifier
+            .verify(untrusted_state, trusted_state, &options, now)
+            .into_result()?;
 
         // If the header has verified, but its corresponding consensus state
         // differs from the existing consensus state for that height, freeze the
@@ -626,7 +737,7 @@ impl Ics2ClientState for ClientState {
         if let Some(cs) = existing_consensus_state {
             if cs != header_consensus_state {
                 return Ok(UpdatedState {
-                    client_state: client_state.with_frozen_height(header.height())?.into_box(),
+                    client_state: client_state.with_frozen_height(header.height()).into_box(),
                     consensus_state: cs.into_box(),
                 });
             }
@@ -1473,9 +1584,7 @@ mod tests {
                 name: "Invalid, client is frozen below current height".to_string(),
                 height: Height::new(1, 6).unwrap(),
                 setup: Some(Box::new(|client_state| {
-                    client_state
-                        .with_frozen_height(Height::new(1, 5).unwrap())
-                        .unwrap()
+                    client_state.with_frozen_height(Height::new(1, 5).unwrap())
                 })),
                 want_pass: false,
             },

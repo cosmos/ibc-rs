@@ -10,7 +10,9 @@ use prost::Message;
 use serde_derive::{Deserialize, Serialize};
 use tendermint::block::signed_header::SignedHeader;
 use tendermint::validator::Set as ValidatorSet;
+use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 
+use crate::clients::ics07_tendermint::consensus_state::ConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::ClientError;
@@ -56,6 +58,32 @@ impl Header {
 
     pub fn compatible_with(&self, other_header: &Header) -> bool {
         headers_compatible(&self.signed_header, &other_header.signed_header)
+    }
+
+    pub(crate) fn as_untrusted_block_state(&self) -> UntrustedBlockState<'_> {
+        UntrustedBlockState {
+            signed_header: &self.signed_header,
+            validators: &self.validator_set,
+            next_validators: None,
+        }
+    }
+
+    pub(crate) fn as_trusted_block_state(
+        &self,
+        consensus_state: &ConsensusState,
+    ) -> Result<TrustedBlockState<'_>, Error> {
+        Ok(TrustedBlockState {
+            header_time: consensus_state.timestamp,
+            height: self
+                .trusted_height
+                .revision_height()
+                .try_into()
+                .map_err(|_| Error::InvalidHeaderHeight {
+                    height: self.trusted_height.revision_height(),
+                })?,
+            next_validators: &self.trusted_validator_set,
+            next_validators_hash: consensus_state.next_validators_hash,
+        })
     }
 }
 
@@ -143,10 +171,6 @@ impl TryFrom<Any> for Header {
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         use core::ops::Deref;
 
-        fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
-            RawHeader::decode(buf).map_err(Error::Decode)?.try_into()
-        }
-
         match raw.type_url.as_str() {
             TENDERMINT_HEADER_TYPE_URL => decode_header(raw.value.deref()).map_err(Into::into),
             _ => Err(ClientError::UnknownHeaderType {
@@ -192,6 +216,7 @@ pub mod test_util {
     use tendermint::PublicKey;
 
     use crate::clients::ics07_tendermint::header::Header;
+    use crate::mock::host::SyntheticTmBlock;
     use crate::Height;
 
     pub fn get_dummy_tendermint_header() -> tendermint::block::Header {
@@ -243,6 +268,21 @@ pub mod test_util {
             validator_set: vs.clone(),
             trusted_height: Height::new(0, 1).unwrap(),
             trusted_validator_set: vs,
+        }
+    }
+
+    impl From<SyntheticTmBlock> for Header {
+        fn from(light_block: SyntheticTmBlock) -> Self {
+            let SyntheticTmBlock {
+                trusted_height,
+                light_block,
+            } = light_block;
+            Self {
+                signed_header: light_block.signed_header,
+                validator_set: light_block.validators,
+                trusted_height,
+                trusted_validator_set: light_block.next_validators,
+            }
         }
     }
 }

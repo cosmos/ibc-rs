@@ -102,6 +102,26 @@ impl ChainId {
         let re = safe_regex::regex!(br".*[^-]-[1-9][0-9]*");
         re.is_match(chain_id.as_bytes())
     }
+
+    /// with_version() checks if a chain_id is in the format required for parsing epochs, and if so
+    /// replaces it's version with the specified version
+    /// ```
+    /// use ibc::core::ics24_host::identifier::ChainId;
+    /// assert_eq!(ChainId::new("chainA".to_string(), 1).with_version(2), ChainId::new("chainA".to_string(), 2));
+    /// assert_eq!("chain1".parse::<ChainId>().unwrap().with_version(2), "chain1".parse::<ChainId>().unwrap());
+    /// ```
+    pub fn with_version(mut self, version: u64) -> Self {
+        if Self::is_epoch_format(&self.id) {
+            self.id = {
+                let mut split: Vec<&str> = self.id.split('-').collect();
+                let version = version.to_string();
+                *split.last_mut().unwrap() = &version;
+                split.join("-")
+            };
+            self.version = version;
+        }
+        self
+    }
 }
 
 impl FromStr for ChainId {
