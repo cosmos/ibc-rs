@@ -251,6 +251,8 @@ pub(crate) fn process(
 
 #[cfg(test)]
 mod tests {
+    use crate::core::ics26_routing::msgs::MsgEnvelope;
+    use crate::core::ValidationContext;
     use crate::prelude::*;
 
     use core::str::FromStr;
@@ -293,7 +295,7 @@ mod tests {
             State::Init,
             client_id.clone(),
             counterparty,
-            context.get_compatible_versions(),
+            ConnectionReader::get_compatible_versions(&context),
             ZERO_DURATION,
         );
 
@@ -329,6 +331,33 @@ mod tests {
         .collect();
 
         for test in tests {
+            let res = ValidationContext::validate(
+                &test.ctx,
+                MsgEnvelope::ConnectionMsg(test.msg.clone()),
+            );
+
+            match res {
+                Ok(_) => {
+                    assert!(
+                        test.want_pass,
+                        "conn_open_confirm: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
+                        test.name,
+                        test.msg.clone(),
+                        test.ctx.clone()
+                    )
+                }
+                Err(e) => {
+                    assert!(
+                        !test.want_pass,
+                        "conn_open_confirm: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
+                        test.name,
+                        test.msg,
+                        test.ctx.clone(),
+                        e,
+                    );
+                }
+            }
+
             let res = dispatch(&test.ctx, test.msg.clone());
             // Additionally check the events and the output objects in the result.
             match res {
