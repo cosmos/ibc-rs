@@ -92,13 +92,11 @@ impl std::error::Error for ContextError {
 
 pub trait ValidationContext {
     /// Validation entrypoint.
-    fn validate(&self, message: Any) -> Result<(), RouterError>
+    fn validate(&self, message: MsgEnvelope) -> Result<(), RouterError>
     where
         Self: Sized,
     {
-        let envelope: MsgEnvelope = message.try_into()?;
-
-        match envelope {
+        match message {
             MsgEnvelope::ClientMsg(message) => match message {
                 ClientMsg::CreateClient(message) => create_client::validate(self, message),
                 ClientMsg::UpdateClient(message) => update_client::validate(self, message),

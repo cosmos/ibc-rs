@@ -28,6 +28,7 @@ pub mod ics24_host;
 pub mod ics26_routing;
 
 pub mod context;
+pub mod handler;
 
 pub use context::ExecutionContext;
 pub use context::ValidationContext;

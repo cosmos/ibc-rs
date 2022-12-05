@@ -157,6 +157,8 @@ mod tests {
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::msgs::ConnectionMsg;
     use crate::core::ics03_connection::version::Version;
+    use crate::core::ics26_routing::msgs::MsgEnvelope;
+    use crate::core::ValidationContext;
     use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::prelude::*;
@@ -214,7 +216,7 @@ mod tests {
                 name: "No version in MsgConnectionOpenInit msg".to_string(),
                 ctx: good_context.clone(),
                 msg: ConnectionMsg::ConnectionOpenInit(msg_conn_init_no_version),
-                expected_versions: good_context.get_compatible_versions(),
+                expected_versions: ConnectionReader::get_compatible_versions(&good_context),
                 want_pass: true,
             },
             Test {
@@ -229,6 +231,33 @@ mod tests {
         .collect();
 
         for test in tests {
+            let res = ValidationContext::validate(
+                &test.ctx,
+                MsgEnvelope::ConnectionMsg(test.msg.clone()),
+            );
+
+            match res {
+                Ok(_) => {
+                    assert!(
+                        test.want_pass,
+                        "conn_open_init: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
+                        test.name,
+                        test.msg.clone(),
+                        test.ctx.clone()
+                    )
+                }
+                Err(e) => {
+                    assert!(
+                        !test.want_pass,
+                        "conn_open_init: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
+                        test.name,
+                        test.msg,
+                        test.ctx.clone(),
+                        e,
+                    );
+                }
+            }
+
             let res = dispatch(&test.ctx, test.msg.clone());
             // Additionally check the events and the output objects in the result.
             match res {
