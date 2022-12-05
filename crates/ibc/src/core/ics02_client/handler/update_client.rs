@@ -19,8 +19,7 @@ use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 use crate::timestamp::Timestamp;
 
-/// The result following the successful processing of a `MsgUpdateAnyClient` message. Preferably
-/// this data type should be used with a qualified name `update_client::Result` to avoid ambiguity.
+/// The result following the successful processing of a `MsgUpdateAnyClient` message.
 #[derive(Clone, Debug, PartialEq)]
 pub struct UpdateClientResult {
     pub client_id: ClientId,
@@ -80,7 +79,7 @@ where
     let _ = client_state
         .check_header_and_update_state(ctx, client_id.clone(), header)
         .map_err(|e| ClientError::HeaderVerificationFailure {
-            reaseon: e.to_string(),
+            reason: e.to_string(),
         })?;
 
     Ok(())
@@ -106,7 +105,7 @@ where
     } = client_state
         .check_header_and_update_state(ctx, client_id.clone(), header.clone())
         .map_err(|e| ClientError::HeaderVerificationFailure {
-            reaseon: e.to_string(),
+            reason: e.to_string(),
         })?;
 
     ctx.store_client_state(ClientStatePath(client_id.clone()), client_state.clone())?;
@@ -195,7 +194,7 @@ pub fn process<Ctx: ClientReader>(
     } = client_state
         .old_check_header_and_update_state(ctx, client_id.clone(), header.clone())
         .map_err(|e| ClientError::HeaderVerificationFailure {
-            reaseon: e.to_string(),
+            reason: e.to_string(),
         })?;
 
     let client_type = client_state.client_type();
@@ -606,7 +605,7 @@ mod tests {
                 panic!("update handler result has incorrect type");
             }
             Err(err) => match err {
-                ClientError::HeaderVerificationFailure { reaseon: _ } => {}
+                ClientError::HeaderVerificationFailure { reason: _ } => {}
                 _ => panic!("unexpected error: {:?}", err),
             },
         }

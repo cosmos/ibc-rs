@@ -196,6 +196,24 @@ impl MockContext {
         client_type: Option<ClientType>,
         consensus_state_height: Option<Height>,
     ) -> Self {
+        let client_chain_id = self.host_chain_id.clone();
+        self.with_client_parametrized_with_chain_id(
+            client_chain_id,
+            client_id,
+            client_state_height,
+            client_type,
+            consensus_state_height,
+        )
+    }
+
+    pub fn with_client_parametrized_with_chain_id(
+        self,
+        client_chain_id: ChainId,
+        client_id: &ClientId,
+        client_state_height: Height,
+        client_type: Option<ClientType>,
+        consensus_state_height: Option<Height>,
+    ) -> Self {
         let cs_height = consensus_state_height.unwrap_or(client_state_height);
 
         let client_type = client_type.unwrap_or_else(mock_client_type);
@@ -206,7 +224,7 @@ impl MockContext {
             )
         } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
             let light_block = HostBlock::generate_tm_block(
-                self.host_chain_id.clone(),
+                client_chain_id,
                 cs_height.revision_height(),
                 Timestamp::now(),
             );

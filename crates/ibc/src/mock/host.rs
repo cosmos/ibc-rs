@@ -117,6 +117,13 @@ impl HostBlock {
             light_block,
         }
     }
+
+    pub fn try_into_tm_block(self) -> Option<SyntheticTmBlock> {
+        match self {
+            HostBlock::Mock(_) => None,
+            HostBlock::SyntheticTendermint(tm_block) => Some(tm_block),
+        }
+    }
 }
 
 impl From<SyntheticTmBlock> for Box<dyn ConsensusState> {
@@ -168,9 +175,9 @@ impl From<HostBlock> for Any {
 
         match value {
             HostBlock::Mock(mock_header) => mock_header.into(),
-            HostBlock::SyntheticTendermint(light_block_box) => Self {
+            HostBlock::SyntheticTendermint(light_block) => Self {
                 type_url: TENDERMINT_HEADER_TYPE_URL.to_string(),
-                value: encode_light_block(light_block_box),
+                value: encode_light_block(light_block),
             },
         }
     }
