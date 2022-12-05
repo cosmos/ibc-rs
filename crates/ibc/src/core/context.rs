@@ -181,9 +181,6 @@ pub trait ValidationContext {
     /// Returns the ConnectionEnd for the given identifier `conn_id`.
     fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError>;
 
-    /// Returns the oldest height available on the local chain.
-    fn host_oldest_height(&self) -> Height;
-
     /// Validates the `ClientState` of the client on the counterparty chain.
     fn validate_self_client(&self, counterparty_client_state: Any) -> Result<(), ConnectionError>;
 
