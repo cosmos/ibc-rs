@@ -1,13 +1,50 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenInit`.
 
+use crate::core::context::ContextError;
 use crate::core::ics04_channel::channel::{ChannelEnd, State};
 use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
 use crate::core::ics24_host::identifier::ChannelId;
+use crate::core::ValidationContext;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
+
+pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgChannelOpenInit) -> Result<(), ContextError>
+where
+    Ctx: ValidationContext,
+{
+    if msg.chan_end_on_a.connection_hops().len() != 1 {
+        return Err(ContextError::ChannelError(
+            ChannelError::InvalidConnectionHopsLength {
+                expected: 1,
+                actual: msg.chan_end_on_a.connection_hops().len(),
+            },
+        ));
+    }
+
+    // An IBC connection running on the local (host) chain should exist.
+    let conn_end_on_a = ctx_a.connection_end(&msg.chan_end_on_a.connection_hops()[0])?;
+
+    let conn_version = match conn_end_on_a.versions() {
+        [version] => version,
+        _ => {
+            return Err(ContextError::ChannelError(
+                ChannelError::InvalidVersionLengthConnection,
+            ))
+        }
+    };
+
+    let channel_feature = msg.chan_end_on_a.ordering().to_string();
+    if !conn_version.is_supported_feature(channel_feature) {
+        return Err(ContextError::ChannelError(
+            ChannelError::ChannelFeatureNotSuportedByConnection,
+        ));
+    }
+
+    Ok(())
+}
 
 /// Per our convention, this message is processed on chain A.
 pub(crate) fn process<Ctx: ChannelReader>(
