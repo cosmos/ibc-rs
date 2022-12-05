@@ -309,13 +309,11 @@ pub trait ValidationContext {
 
 pub trait ExecutionContext: ValidationContext {
     /// Execution entrypoint
-    fn execute(&mut self, message: Any) -> Result<(), RouterError>
+    fn execute(&mut self, message: MsgEnvelope) -> Result<(), RouterError>
     where
         Self: Sized,
     {
-        let envelope: MsgEnvelope = message.try_into()?;
-
-        match envelope {
+        match message {
             MsgEnvelope::ClientMsg(message) => match message {
                 ClientMsg::CreateClient(message) => create_client::execute(self, message),
                 ClientMsg::UpdateClient(message) => update_client::execute(self, message),
