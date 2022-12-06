@@ -11,11 +11,11 @@ use displaydoc::Display;
 use serde_derive::{Deserialize, Serialize};
 use tendermint::Time;
 use time::OffsetDateTime;
+use borsh::{BorshSerialize, BorshDeserialize};
 
 pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 
-#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
-#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+
 /// A newtype wrapper over `Option<Time>` to keep track of
 /// IBC packet timeout.
 ///
@@ -26,6 +26,59 @@ pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Timestamp {
     time: Option<Time>,
+}
+
+#[cfg(feature = "borsh")]
+impl BorshSerialize for Timestamp {
+    fn serialize<W: borsh::maybestd::io::Write>(&self, writer: &mut W) -> borsh::maybestd::io::Result<()> {
+        let timestamp = if let Some(time) = self.time { 
+            time.unix_timestamp_nanos()
+        } else {
+            0i128
+        };
+        BorshSerialize::serialize(&timestamp, writer)
+    }
+}
+
+#[cfg(feature = "borsh")]
+impl BorshDeserialize for Timestamp {
+    fn deserialize(buf: &mut &[u8]) -> borsh::maybestd::io::Result<Self> {
+        let timestamp = u64::deserialize(buf)?;
+        Ok(Timestamp::from_nanoseconds(timestamp).map_err(|_| borsh::maybestd::io::ErrorKind::Other)?)
+    }
+}
+
+#[cfg(feature = "scale-codec")]
+impl codec::Encode for Timestamp {
+    fn encode_to<T: codec::Output + ?Sized>(&self, writer: &mut T) {
+        let timestamp = if let Some(time) = self.time { 
+            time.unix_timestamp_nanos()
+        } else {
+            0i128
+        };
+
+        timestamp.encode_to(writer);
+    }
+}
+#[cfg(feature = "scale-codec")]
+impl codec::Decode for Timestamp {
+    fn decode<I: codec::Input>(input: &mut I) -> Result<Self, codec::Error> {
+        let timestamp = u64::decode(input)?;
+        Ok(Timestamp::from_nanoseconds(timestamp).map_err(|_| codec::Error::from("from nanoseconds error"))?)
+    }
+}
+
+#[cfg(feature = "scale-codec")]
+impl scale_info::TypeInfo for Timestamp {
+    type Identity = Self;
+
+     fn type_info() -> scale_info::Type {
+        scale_info::Type::builder()
+             .path(scale_info::Path::new("Timestamp", module_path!()))
+             .composite(scale_info::build::Fields::named()
+                 .field(|f| f.ty::<Option<i128>>().name("time").type_name("Option<i128>")) // todo(this ty should be Optoion<Time>)
+             )
+     }
 }
 
 // TODO: derive when tendermint::Time supports it:

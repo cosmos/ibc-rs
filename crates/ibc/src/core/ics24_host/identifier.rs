@@ -18,8 +18,8 @@ use crate::prelude::*;
 ///       See: <https://github.com/informalsystems/ibc-rs/pull/304#discussion_r503917283>.
 ///
 /// Also, contrast with tendermint-rs `ChainId` type.
-#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
-#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode, scale_info::TypeInfo))]
+#[cfg_attr(feature = "borsh", derive(borsh::BorshSerialize, borsh::BorshDeserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(from = "tendermint::chain::Id", into = "tendermint::chain::Id")]
 pub struct ChainId {
@@ -164,8 +164,8 @@ impl From<String> for ChainId {
     }
 }
 
-#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
-#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode, scale_info::TypeInfo))]
+#[cfg_attr(feature = "borsh", derive(borsh::BorshSerialize, borsh::BorshDeserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Into)]
 pub struct ClientId(String);
 
@@ -234,8 +234,8 @@ impl PartialEq<str> for ClientId {
     }
 }
 
-#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
-#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode, scale_info::TypeInfo))]
+#[cfg_attr(feature = "borsh", derive(borsh::BorshSerialize, borsh::BorshDeserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct ConnectionId(String);
 
@@ -307,8 +307,8 @@ impl PartialEq<str> for ConnectionId {
     }
 }
 
-#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
-#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode, scale_info::TypeInfo))]
+#[cfg_attr(feature = "borsh", derive(borsh::BorshSerialize, borsh::BorshDeserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct PortId(String);
 
@@ -356,8 +356,8 @@ impl Default for PortId {
     }
 }
 
-#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
-#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode, scale_info::TypeInfo))]
+#[cfg_attr(feature = "borsh", derive(borsh::BorshSerialize, borsh::BorshDeserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct ChannelId(String);
 
@@ -433,8 +433,8 @@ impl PartialEq<str> for ChannelId {
     }
 }
 
-#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
-#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode, scale_info::TypeInfo))]
+#[cfg_attr(feature = "borsh", derive(borsh::BorshSerialize, borsh::BorshDeserialize))]
 /// A pair of [`PortId`] and [`ChannelId`] are used together for sending IBC packets.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct PortChannelId {
