@@ -11,8 +11,6 @@ use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics24_host::error::ValidationError;
 use crate::prelude::*;
 
-#[cfg(not(feature = "codec"))]
-#[cfg(not(feature = "borsh"))]
 /// This type is subject to future changes.
 ///
 /// TODO: ChainId validation is not standardized yet.
@@ -20,28 +18,9 @@ use crate::prelude::*;
 ///       See: <https://github.com/informalsystems/ibc-rs/pull/304#discussion_r503917283>.
 ///
 /// Also, contrast with tendermint-rs `ChainId` type.
+#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[serde(from = "tendermint::chain::Id", into = "tendermint::chain::Id")]
-pub struct ChainId {
-    id: String,
-    version: u64,
-}
-
-#[cfg(feature = "codec")]
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Hash,
-    Serialize,
-    Deserialize,
-    codec::Encode,
-    codec::Decode,
-    scale_info::TypeInfo,
-)]
 #[serde(from = "tendermint::chain::Id", into = "tendermint::chain::Id")]
 pub struct ChainId {
     id: String,
@@ -165,28 +144,11 @@ impl From<String> for ChainId {
     }
 }
 
-#[cfg(not(feature = "codec"))]
-#[cfg(not(feature = "borsh"))]
+#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Into)]
 pub struct ClientId(String);
 
-#[cfg(feature = "codec")]
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Hash,
-    Serialize,
-    Deserialize,
-    Into,
-    codec::Encode,
-    codec::Decode,
-    scale_info::TypeInfo,
-)]
-pub struct ClientId(String);
 
 impl ClientId {
     /// Builds a new client identifier. Client identifiers are deterministically formed from two
@@ -252,27 +214,11 @@ impl PartialEq<str> for ClientId {
     }
 }
 
-#[cfg(not(feature = "codec"))]
-#[cfg(not(feature = "borsh"))]
+#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct ConnectionId(String);
 
-#[cfg(feature = "codec")]
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Hash,
-    Serialize,
-    Deserialize,
-    codec::Encode,
-    codec::Decode,
-    scale_info::TypeInfo,
-)]
-pub struct ConnectionId(String);
 
 impl ConnectionId {
     /// Builds a new connection identifier. Connection identifiers are deterministically formed from
@@ -341,26 +287,9 @@ impl PartialEq<str> for ConnectionId {
     }
 }
 
-#[cfg(not(feature = "codec"))]
-#[cfg(not(feature = "borsh"))]
+#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub struct PortId(String);
-
-#[cfg(feature = "codec")]
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Hash,
-    Serialize,
-    Deserialize,
-    codec::Encode,
-    codec::Decode,
-    scale_info::TypeInfo,
-)]
 pub struct PortId(String);
 
 impl PortId {
@@ -407,27 +336,11 @@ impl Default for PortId {
     }
 }
 
-#[cfg(not(feature = "codec"))]
-#[cfg(not(feature = "borsh"))]
+#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct ChannelId(String);
 
-#[cfg(feature = "codec")]
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Hash,
-    Serialize,
-    Deserialize,
-    codec::Encode,
-    codec::Decode,
-    scale_info::TypeInfo,
-)]
-pub struct ChannelId(String);
 
 impl ChannelId {
     const PREFIX: &'static str = "channel-";
@@ -500,8 +413,8 @@ impl PartialEq<str> for ChannelId {
     }
 }
 
-#[cfg(not(feature = "codec"))]
-#[cfg(not(feature = "borsh"))]
+#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 /// A pair of [`PortId`] and [`ChannelId`] are used together for sending IBC packets.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct PortChannelId {
@@ -509,25 +422,6 @@ pub struct PortChannelId {
     pub port_id: PortId,
 }
 
-#[cfg(feature = "codec")]
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Hash,
-    Serialize,
-    Deserialize,
-    codec::Encode,
-    codec::Decode,
-    scale_info::TypeInfo,
-)]
-pub struct PortChannelId {
-    pub channel_id: ChannelId,
-    pub port_id: PortId,
-}
 
 impl PortChannelId {
     pub fn new(channel_id: ChannelId, port_id: PortId) -> Self {

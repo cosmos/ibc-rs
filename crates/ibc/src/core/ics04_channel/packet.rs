@@ -52,32 +52,14 @@ impl core::fmt::Display for PacketMsgType {
     }
 }
 
-#[cfg(not(feature = "codec"))]
-#[cfg(not(feature = "borsh"))]
+#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 /// The sequence number of a packet enforces ordering among packets from the same source.
 #[derive(
     Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Deserialize, Serialize,
 )]
 pub struct Sequence(u64);
 
-#[cfg(feature = "codec")]
-#[derive(
-    Copy,
-    Clone,
-    Default,
-    PartialEq,
-    Eq,
-    Hash,
-    PartialOrd,
-    Ord,
-    Deserialize,
-    Serialize,
-    codec::Encode,
-    codec::Decode,
-    sp_runtime::RuntimeDebug,
-    scale_info::TypeInfo,
-)]
-pub struct Sequence(u64);
 
 impl FromStr for Sequence {
     type Err = Error;
@@ -117,34 +99,9 @@ impl core::fmt::Display for Sequence {
     }
 }
 
-#[cfg(not(feature = "codec"))]
-#[cfg(not(feature = "borsh"))]
+#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 #[derive(Clone, Default, Hash, PartialEq, Eq, Deserialize, Serialize)]
-pub struct Packet {
-    pub sequence: Sequence,
-    pub source_port: PortId,
-    pub source_channel: ChannelId,
-    pub destination_port: PortId,
-    pub destination_channel: ChannelId,
-    #[serde(serialize_with = "crate::serializers::ser_hex_upper")]
-    pub data: Vec<u8>,
-    pub timeout_height: TimeoutHeight,
-    pub timeout_timestamp: Timestamp,
-}
-
-#[cfg(feature = "codec")]
-#[derive(
-    Clone,
-    Default,
-    Hash,
-    PartialEq,
-    Eq,
-    Deserialize,
-    Serialize,
-    codec::Encode,
-    codec::Decode,
-    scale_info::TypeInfo,
-)]
 pub struct Packet {
     pub sequence: Sequence,
     pub source_port: PortId,

@@ -7,8 +7,8 @@ use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use crate::core::ics02_client::{error::Error as ICS2Error, height::Height};
 use crate::prelude::*;
 
-#[cfg(not(feature = "codec"))]
-#[cfg(not(feature = "borsh"))]
+#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 /// Indicates a consensus height on the destination chain after which the packet
 /// will no longer be processed, and will instead count as having timed-out.
 ///
@@ -20,23 +20,6 @@ use crate::prelude::*;
 /// as invalid. Thus, it must be parsed specially, where this special case means
 /// "no timeout".
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
-pub enum TimeoutHeight {
-    Never,
-    At(Height),
-}
-
-#[cfg(feature = "codec")]
-#[derive(
-    Clone,
-    Copy,
-    Hash,
-    Eq,
-    PartialEq,
-    codec::Encode,
-    codec::Decode,
-    sp_runtime::RuntimeDebug,
-    scale_info::TypeInfo,
-)]
 pub enum TimeoutHeight {
     Never,
     At(Height),

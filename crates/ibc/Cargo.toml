@@ -20,8 +20,11 @@ all-features = true
 default = ["std"]
 std = ["flex-error/std", "flex-error/eyre_tracer", "ibc-proto/std", "clock", "codec/std", "scale-info/std", "sp-runtime/std"]
 clock = ["tendermint/clock", "time/std"]
+scale-info = []
+sp-runtime = []
 codec = []
-borsh = []
+scale-codec = ["dep:codec", "dep:scale-info", "dep:sp-runtime"]
+borsh = ["dep:borsh"]
 
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
 # Depends on the `testgen` suite for generating Tendermint light blocks.
@@ -50,9 +53,11 @@ primitive-types = { version = "0.12.0", default-features = false, features = ["s
 dyn-clone = "1.0.8"
 displaydoc = {version = "0.2.3", default-features = false }
 ## for codec encode or decode
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
-scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
-sp-runtime = {  version = "7.0.0", default-features = false }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"], optional = true }
+scale-info = { version = "2.1.2", default-features = false, features = ["derive"], optional = true }
+sp-runtime = {  version = "7.0.0", default-features = false, optional = true }
+## for borsh encode or decode
+borsh = {version = "0.9.3", default-features = false, optional = true }
 
 [dependencies.tendermint]
 version = "0.26.0"
