@@ -1,5 +1,6 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenTry`.
 
+use crate::core::context::ContextError;
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::context::ChannelReader;
@@ -8,8 +9,99 @@ use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::ChannelId;
+use crate::core::ValidationContext;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
+
+pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: MsgChannelOpenTry) -> Result<(), ContextError>
+where
+    Ctx: ValidationContext,
+{
+    if msg.chan_end_on_b.connection_hops().len() != 1 {
+        return Err(ContextError::ChannelError(
+            ChannelError::InvalidConnectionHopsLength {
+                expected: 1,
+                actual: msg.chan_end_on_b.connection_hops().len(),
+            },
+        ));
+    }
+
+    let conn_end_on_b = ctx_b.connection_end(&msg.chan_end_on_b.connection_hops()[0])?;
+    if !conn_end_on_b.state_matches(&ConnectionState::Open) {
+        return Err(ContextError::ChannelError(
+            ChannelError::ConnectionNotOpen {
+                connection_id: msg.chan_end_on_b.connection_hops()[0].clone(),
+            },
+        ));
+    }
+
+    let conn_version = match conn_end_on_b.versions() {
+        [version] => version,
+        _ => {
+            return Err(ContextError::ChannelError(
+                ChannelError::InvalidVersionLengthConnection,
+            ))
+        }
+    };
+
+    let channel_feature = msg.chan_end_on_b.ordering().to_string();
+    if !conn_version.is_supported_feature(channel_feature) {
+        return Err(ContextError::ChannelError(
+            ChannelError::ChannelFeatureNotSuportedByConnection,
+        ));
+    }
+
+    // Verify proofs
+    {
+        let client_id_on_b = conn_end_on_b.client_id().clone();
+        let client_state_of_a_on_b = ctx_b.client_state(&client_id_on_b)?;
+        let consensus_state_of_a_on_b =
+            ctx_b.consensus_state(&client_id_on_b, msg.proof_height_on_a)?;
+        let prefix_on_a = conn_end_on_b.counterparty().prefix();
+        let port_id_on_a = &msg.chan_end_on_b.counterparty().port_id;
+        let chan_id_on_a = msg
+            .chan_end_on_b
+            .counterparty()
+            .channel_id()
+            .ok_or(ChannelError::InvalidCounterpartyChannelId)?;
+        let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
+            ChannelError::UndefinedConnectionCounterparty {
+                connection_id: msg.chan_end_on_b.connection_hops()[0].clone(),
+            },
+        )?;
+
+        // The client must not be frozen.
+        if client_state_of_a_on_b.is_frozen() {
+            return Err(ContextError::ChannelError(ChannelError::FrozenClient {
+                client_id: client_id_on_b,
+            }));
+        }
+
+        let expected_chan_end_on_a = ChannelEnd::new(
+            State::Init,
+            *msg.chan_end_on_b.ordering(),
+            Counterparty::new(msg.port_id_on_b.clone(), None),
+            vec![conn_id_on_a.clone()],
+            msg.version_on_a.clone(),
+        );
+
+        // Verify the proof for the channel state against the expected channel end.
+        // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
+        client_state_of_a_on_b
+            .verify_channel_state(
+                msg.proof_height_on_a,
+                prefix_on_a,
+                &msg.proof_chan_end_on_a,
+                consensus_state_of_a_on_b.root(),
+                port_id_on_a,
+                chan_id_on_a,
+                &expected_chan_end_on_a,
+            )
+            .map_err(ChannelError::VerifyChannelFailed)?;
+    }
+
+    Ok(())
+}
 
 /// Per our convention, this message is processed on chain B.
 pub(crate) fn process<Ctx: ChannelReader>(

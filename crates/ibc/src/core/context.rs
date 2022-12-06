@@ -14,7 +14,7 @@ use super::ics03_connection::handler::{
     conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try,
 };
 use super::ics03_connection::msgs::ConnectionMsg;
-use super::ics04_channel::handler::chan_open_init;
+use super::ics04_channel::handler::{chan_open_init, chan_open_try};
 use super::ics04_channel::msgs::ChannelMsg;
 use super::ics24_host::path::{
     ClientConnectionsPath, ClientConsensusStatePath, ClientStatePath, ClientTypePath,
@@ -123,7 +123,7 @@ pub trait ValidationContext {
             .map_err(RouterError::ContextError),
             MsgEnvelope::ChannelMsg(message) => match message {
                 ChannelMsg::ChannelOpenInit(message) => chan_open_init::validate(self, message),
-                ChannelMsg::ChannelOpenTry(_) => todo!(),
+                ChannelMsg::ChannelOpenTry(message) => chan_open_try::validate(self, message),
                 ChannelMsg::ChannelOpenAck(_) => todo!(),
                 ChannelMsg::ChannelOpenConfirm(_) => todo!(),
                 ChannelMsg::ChannelCloseInit(_) => todo!(),
