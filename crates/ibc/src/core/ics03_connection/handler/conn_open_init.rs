@@ -1,8 +1,8 @@
 //! Protocol logic specific to ICS3 messages of type `MsgConnectionOpenInit`.
 
-use crate::core::ics03_connection::connection::{ConnectionEnd, State};
+use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::context::ConnectionReader;
-use crate::core::ics03_connection::error::Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
@@ -17,7 +17,7 @@ use super::ConnectionIdState;
 pub(crate) fn process(
     ctx_a: &dyn ConnectionReader,
     msg: MsgConnectionOpenInit,
-) -> HandlerResult<ConnectionResult, Error> {
+) -> HandlerResult<ConnectionResult, ConnectionError> {
     let mut output = HandlerOutput::builder();
 
     // An IBC client running on the local (host) chain should exist.
@@ -28,7 +28,7 @@ pub(crate) fn process(
             if ctx_a.get_compatible_versions().contains(&version) {
                 Ok(vec![version])
             } else {
-                Err(Error::version_not_supported(version))
+                Err(ConnectionError::VersionNotSupported { version })
             }
         }
         None => Ok(ctx_a.get_compatible_versions()),
@@ -37,7 +37,11 @@ pub(crate) fn process(
     let conn_end_on_a = ConnectionEnd::new(
         State::Init,
         msg.client_id_on_a.clone(),
-        msg.counterparty.clone(),
+        Counterparty::new(
+            msg.counterparty.client_id().clone(),
+            None,
+            msg.counterparty.prefix().clone(),
+        ),
         versions,
         msg.delay_period,
     );

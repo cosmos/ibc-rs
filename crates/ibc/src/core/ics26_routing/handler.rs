@@ -14,7 +14,7 @@ use crate::core::ics04_channel::handler::{
 };
 use crate::core::ics04_channel::packet::PacketResult;
 use crate::core::ics26_routing::context::RouterContext;
-use crate::core::ics26_routing::error::Error;
+use crate::core::ics26_routing::error::RouterError;
 use crate::core::ics26_routing::msgs::MsgEnvelope::{
     self, ChannelMsg, ClientMsg, ConnectionMsg, PacketMsg,
 };
@@ -30,7 +30,7 @@ pub struct MsgReceipt {
 /// Mimics the DeliverTx ABCI interface, but for a single message and at a slightly lower level.
 /// No need for authentication info or signature checks here.
 /// Returns a vector of all events that got generated as a byproduct of processing `message`.
-pub fn deliver<Ctx>(ctx: &mut Ctx, message: Any) -> Result<MsgReceipt, Error>
+pub fn deliver<Ctx>(ctx: &mut Ctx, message: Any) -> Result<MsgReceipt, RouterError>
 where
     Ctx: RouterContext,
 {
@@ -44,7 +44,7 @@ where
 }
 
 /// Attempts to convert a message into a [MsgEnvelope] message
-pub fn decode(message: Any) -> Result<MsgEnvelope, Error> {
+pub fn decode(message: Any) -> Result<MsgEnvelope, RouterError> {
     message.try_into()
 }
 
@@ -53,17 +53,18 @@ pub fn decode(message: Any) -> Result<MsgEnvelope, Error> {
 /// and events produced after processing the input `msg`.
 /// If this method returns an error, the runtime is expected to rollback all state modifications to
 /// the `Ctx` caused by all messages from the transaction that this `msg` is a part of.
-pub fn dispatch<Ctx>(ctx: &mut Ctx, msg: MsgEnvelope) -> Result<HandlerOutput<()>, Error>
+pub fn dispatch<Ctx>(ctx: &mut Ctx, msg: MsgEnvelope) -> Result<HandlerOutput<()>, RouterError>
 where
     Ctx: RouterContext,
 {
     let output = match msg {
         ClientMsg(msg) => {
-            let handler_output = ics2_msg_dispatcher(ctx, msg).map_err(Error::ics02_client)?;
+            let handler_output =
+                ics2_msg_dispatcher(ctx, msg).map_err(|e| RouterError::ContextError(e.into()))?;
 
             // Apply the result to the context (host chain store).
             ctx.store_client_result(handler_output.result)
-                .map_err(Error::ics02_client)?;
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             HandlerOutput::builder()
                 .with_log(handler_output.log)
@@ -72,11 +73,12 @@ where
         }
 
         ConnectionMsg(msg) => {
-            let handler_output = ics3_msg_dispatcher(ctx, msg).map_err(Error::ics03_connection)?;
+            let handler_output =
+                ics3_msg_dispatcher(ctx, msg).map_err(|e| RouterError::ContextError(e.into()))?;
 
             // Apply any results to the host chain store.
             ctx.store_connection_result(handler_output.result)
-                .map_err(Error::ics03_connection)?;
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             HandlerOutput::builder()
                 .with_log(handler_output.log)
@@ -85,18 +87,19 @@ where
         }
 
         ChannelMsg(msg) => {
-            let module_id = channel_validate(ctx, &msg).map_err(Error::ics04_channel)?;
+            let module_id =
+                channel_validate(ctx, &msg).map_err(|e| RouterError::ContextError(e.into()))?;
             let dispatch_output = HandlerOutputBuilder::<()>::new();
 
             let (dispatch_log, mut channel_result) =
-                channel_dispatch(ctx, &msg).map_err(Error::ics04_channel)?;
+                channel_dispatch(ctx, &msg).map_err(|e| RouterError::ContextError(e.into()))?;
 
             // Note: `OpenInit` and `OpenTry` modify the `version` field of the `channel_result`,
             // so we must pass it mutably. We intend to clean this up with the implementation of
             // ADR 5.
             // See issue [#190](https://github.com/cosmos/ibc-rs/issues/190)
             let callback_extras = channel_callback(ctx, &module_id, &msg, &mut channel_result)
-                .map_err(Error::ics04_channel)?;
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             // We need to construct events here instead of directly in the
             // `process` functions because we need to wait for the callback to
@@ -111,7 +114,7 @@ where
 
             // Apply any results to the host chain store.
             ctx.store_channel_result(channel_result)
-                .map_err(Error::ics04_channel)?;
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             dispatch_output
                 .with_events(dispatch_events)
@@ -128,20 +131,21 @@ where
         }
 
         PacketMsg(msg) => {
-            let module_id = get_module_for_packet_msg(ctx, &msg).map_err(Error::ics04_channel)?;
-            let (mut handler_builder, packet_result) =
-                ics4_packet_msg_dispatcher(ctx, &msg).map_err(Error::ics04_channel)?;
+            let module_id = get_module_for_packet_msg(ctx, &msg)
+                .map_err(|e| RouterError::ContextError(e.into()))?;
+            let (mut handler_builder, packet_result) = ics4_packet_msg_dispatcher(ctx, &msg)
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             if matches!(packet_result, PacketResult::Recv(RecvPacketResult::NoOp)) {
                 return Ok(handler_builder.with_result(()));
             }
 
             let cb_result = ics4_packet_callback(ctx, &module_id, &msg, &mut handler_builder);
-            cb_result.map_err(Error::ics04_channel)?;
+            cb_result.map_err(|e| RouterError::ContextError(e.into()))?;
 
             // Apply any results to the host chain store.
             ctx.store_packet_result(packet_result)
-                .map_err(Error::ics04_channel)?;
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             handler_builder.with_result(())
         }
@@ -203,7 +207,7 @@ mod tests {
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
     use crate::core::ics26_routing::context::{ModuleId, Router, RouterBuilder, RouterContext};
-    use crate::core::ics26_routing::error::Error;
+    use crate::core::ics26_routing::error::RouterError;
     use crate::core::ics26_routing::handler::dispatch;
     use crate::core::ics26_routing::msgs::MsgEnvelope;
     use crate::events::IbcEvent;
@@ -632,7 +636,7 @@ mod tests {
                         msg,
                     )
                     .map(|_| ())
-                    .map_err(Error::ics04_channel)
+                    .map_err(|e| RouterError::ContextError(e.into()))
                 }
             };
 

@@ -8,7 +8,7 @@ use ibc_proto::ibc::core::commitment::v1::MerkleProof;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 
 use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
@@ -31,7 +31,7 @@ pub trait ClientState:
     + sealed::ErasedPartialEqClientState
     + DynClone
     + ErasedSerialize
-    + ErasedProtobuf<Any, Error = Error>
+    + ErasedProtobuf<Any, Error = ClientError>
     + core::fmt::Debug
     + Send
     + Sync
@@ -76,7 +76,7 @@ pub trait ClientState:
         Box::new(self)
     }
 
-    fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, Error>;
+    fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError>;
 
     /// XXX: temporary solution until we get rid of `ClientReader`
     fn old_check_header_and_update_state(
@@ -84,21 +84,28 @@ pub trait ClientState:
         ctx: &dyn ClientReader,
         client_id: ClientId,
         header: Any,
-    ) -> Result<UpdatedState, Error>;
+    ) -> Result<UpdatedState, ClientError>;
 
     fn check_header_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
         client_id: ClientId,
         header: Any,
-    ) -> Result<UpdatedState, Error>;
+    ) -> Result<UpdatedState, ClientError>;
+
+    fn check_misbehaviour_and_update_state(
+        &self,
+        ctx: &dyn ClientReader,
+        client_id: ClientId,
+        misbehaviour: Any,
+    ) -> Result<Box<dyn ClientState>, ClientError>;
 
     fn verify_upgrade_and_update_state(
         &self,
         consensus_state: Any,
         proof_upgrade_client: MerkleProof,
         proof_upgrade_consensus_state: MerkleProof,
-    ) -> Result<UpdatedState, Error>;
+    ) -> Result<UpdatedState, ClientError>;
 
     /// Verification functions as specified in:
     /// <https://github.com/cosmos/ibc/tree/master/spec/core/ics-002-client-semantics>
@@ -117,7 +124,7 @@ pub trait ClientState:
         counterparty_client_id: &ClientId,
         consensus_height: Height,
         expected_consensus_state: &dyn ConsensusState,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a connection state matches that of the input `connection_end`.
     #[allow(clippy::too_many_arguments)]
@@ -129,7 +136,7 @@ pub trait ClientState:
         root: &CommitmentRoot,
         counterparty_connection_id: &ConnectionId,
         expected_counterparty_connection_end: &ConnectionEnd,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a channel state matches that of the input `channel_end`.
     #[allow(clippy::too_many_arguments)]
@@ -142,7 +149,7 @@ pub trait ClientState:
         counterparty_port_id: &PortId,
         counterparty_channel_id: &ChannelId,
         expected_counterparty_channel_end: &ChannelEnd,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ClientError>;
 
     /// Verify the client state for this chain that it is stored on the counterparty chain.
     #[allow(clippy::too_many_arguments)]
@@ -154,7 +161,7 @@ pub trait ClientState:
         root: &CommitmentRoot,
         client_id: &ClientId,
         expected_client_state: Any,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a packet has been commited.
     #[allow(clippy::too_many_arguments)]
@@ -169,7 +176,7 @@ pub trait ClientState:
         channel_id: &ChannelId,
         sequence: Sequence,
         commitment: PacketCommitment,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a packet has been commited.
     #[allow(clippy::too_many_arguments)]
@@ -184,7 +191,7 @@ pub trait ClientState:
         channel_id: &ChannelId,
         sequence: Sequence,
         ack: AcknowledgementCommitment,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that of the next_seq_received.
     #[allow(clippy::too_many_arguments)]
@@ -198,7 +205,7 @@ pub trait ClientState:
         port_id: &PortId,
         channel_id: &ChannelId,
         sequence: Sequence,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a packet has not been received.
     #[allow(clippy::too_many_arguments)]
@@ -212,7 +219,7 @@ pub trait ClientState:
         port_id: &PortId,
         channel_id: &ChannelId,
         sequence: Sequence,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ClientError>;
 }
 
 // Implements `Clone` for `Box<dyn ClientState>`

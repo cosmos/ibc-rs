@@ -14,7 +14,7 @@ use crate::core::ics02_client::context::{ClientKeeper, ClientReader};
 use crate::core::ics03_connection::context::{ConnectionKeeper, ConnectionReader};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as GenericAcknowledgement;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
@@ -108,7 +108,7 @@ pub trait Module: Send + Sync + AsAnyMut {
         channel_id: &ChannelId,
         counterparty: &Counterparty,
         version: &Version,
-    ) -> Result<(ModuleExtras, Version), Error>;
+    ) -> Result<(ModuleExtras, Version), ChannelError>;
 
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_try(
@@ -119,14 +119,14 @@ pub trait Module: Send + Sync + AsAnyMut {
         channel_id: &ChannelId,
         counterparty: &Counterparty,
         counterparty_version: &Version,
-    ) -> Result<(ModuleExtras, Version), Error>;
+    ) -> Result<(ModuleExtras, Version), ChannelError>;
 
     fn on_chan_open_ack(
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
         _counterparty_version: &Version,
-    ) -> Result<ModuleExtras, Error> {
+    ) -> Result<ModuleExtras, ChannelError> {
         Ok(ModuleExtras::empty())
     }
 
@@ -134,7 +134,7 @@ pub trait Module: Send + Sync + AsAnyMut {
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, Error> {
+    ) -> Result<ModuleExtras, ChannelError> {
         Ok(ModuleExtras::empty())
     }
 
@@ -142,7 +142,7 @@ pub trait Module: Send + Sync + AsAnyMut {
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, Error> {
+    ) -> Result<ModuleExtras, ChannelError> {
         Ok(ModuleExtras::empty())
     }
 
@@ -150,7 +150,7 @@ pub trait Module: Send + Sync + AsAnyMut {
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, Error> {
+    ) -> Result<ModuleExtras, ChannelError> {
         Ok(ModuleExtras::empty())
     }
 
@@ -169,7 +169,7 @@ pub trait Module: Send + Sync + AsAnyMut {
         _packet: &Packet,
         _acknowledgement: &GenericAcknowledgement,
         _relayer: &Signer,
-    ) -> Result<(), Error> {
+    ) -> Result<(), PacketError> {
         Ok(())
     }
 
@@ -178,7 +178,7 @@ pub trait Module: Send + Sync + AsAnyMut {
         _output: &mut ModuleOutputBuilder,
         _packet: &Packet,
         _relayer: &Signer,
-    ) -> Result<(), Error> {
+    ) -> Result<(), PacketError> {
         Ok(())
     }
 }

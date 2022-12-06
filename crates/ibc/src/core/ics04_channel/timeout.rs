@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 
-use crate::core::ics02_client::{error::Error as ICS2Error, height::Height};
+use crate::core::ics02_client::{error::ClientError, height::Height};
 use crate::prelude::*;
 
 #[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode))]
@@ -72,7 +72,7 @@ impl Default for TimeoutHeight {
 }
 
 impl TryFrom<RawHeight> for TimeoutHeight {
-    type Error = ICS2Error;
+    type Error = ClientError;
 
     // Note: it is important for `revision_number` to also be `0`, otherwise
     // packet commitment proofs will be incorrect (proof construction in
@@ -89,7 +89,7 @@ impl TryFrom<RawHeight> for TimeoutHeight {
 }
 
 impl TryFrom<Option<RawHeight>> for TimeoutHeight {
-    type Error = ICS2Error;
+    type Error = ClientError;
 
     fn try_from(maybe_raw_height: Option<RawHeight>) -> Result<Self, Self::Error> {
         match maybe_raw_height {

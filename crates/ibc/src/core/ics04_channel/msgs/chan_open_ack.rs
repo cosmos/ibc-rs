@@ -1,4 +1,4 @@
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::Version;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
@@ -49,7 +49,7 @@ impl MsgChannelOpenAck {
 }
 
 impl Msg for MsgChannelOpenAck {
-    type ValidationError = Error;
+    type ValidationError = ChannelError;
     type Raw = RawMsgChannelOpenAck;
 
     fn route(&self) -> String {
@@ -64,23 +64,29 @@ impl Msg for MsgChannelOpenAck {
 impl Protobuf<RawMsgChannelOpenAck> for MsgChannelOpenAck {}
 
 impl TryFrom<RawMsgChannelOpenAck> for MsgChannelOpenAck {
-    type Error = Error;
+    type Error = ChannelError;
 
     fn try_from(raw_msg: RawMsgChannelOpenAck) -> Result<Self, Self::Error> {
         Ok(MsgChannelOpenAck {
-            port_id_on_a: raw_msg.port_id.parse().map_err(Error::identifier)?,
-            chan_id_on_a: raw_msg.channel_id.parse().map_err(Error::identifier)?,
+            port_id_on_a: raw_msg.port_id.parse().map_err(ChannelError::Identifier)?,
+            chan_id_on_a: raw_msg
+                .channel_id
+                .parse()
+                .map_err(ChannelError::Identifier)?,
             chan_id_on_b: raw_msg
                 .counterparty_channel_id
                 .parse()
-                .map_err(Error::identifier)?,
+                .map_err(ChannelError::Identifier)?,
             version_on_b: raw_msg.counterparty_version.into(),
-            proof_chan_end_on_b: raw_msg.proof_try.try_into().map_err(Error::invalid_proof)?,
+            proof_chan_end_on_b: raw_msg
+                .proof_try
+                .try_into()
+                .map_err(ChannelError::InvalidProof)?,
             proof_height_on_b: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_height)?,
-            signer: raw_msg.signer.parse().map_err(Error::signer)?,
+                .ok_or(ChannelError::MissingHeight)?,
+            signer: raw_msg.signer.parse().map_err(ChannelError::Signer)?,
         })
     }
 }

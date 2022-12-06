@@ -10,7 +10,7 @@ use crate::core::ics04_channel::msgs::{
     acknowledgement, chan_close_confirm, chan_close_init, chan_open_ack, chan_open_confirm,
     chan_open_init, chan_open_try, recv_packet, timeout, timeout_on_close, ChannelMsg, PacketMsg,
 };
-use crate::core::ics26_routing::error::Error;
+use crate::core::ics26_routing::error::RouterError;
 use ibc_proto::protobuf::Protobuf;
 
 /// Enumeration of all messages that the local ICS26 module is capable of routing.
@@ -23,7 +23,7 @@ pub enum MsgEnvelope {
 }
 
 impl TryFrom<Any> for MsgEnvelope {
-    type Error = Error;
+    type Error = RouterError;
 
     fn try_from(any_msg: Any) -> Result<Self, Self::Error> {
         match any_msg.type_url.as_str() {
@@ -31,38 +31,38 @@ impl TryFrom<Any> for MsgEnvelope {
             create_client::TYPE_URL => {
                 // Pop out the message and then wrap it in the corresponding type.
                 let domain_msg = create_client::MsgCreateClient::decode_vec(&any_msg.value)
-                    .map_err(Error::malformed_message_bytes)?;
+                    .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::ClientMsg(ClientMsg::CreateClient(domain_msg)))
             }
             update_client::TYPE_URL => {
                 let domain_msg = update_client::MsgUpdateClient::decode_vec(&any_msg.value)
-                    .map_err(Error::malformed_message_bytes)?;
+                    .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::ClientMsg(ClientMsg::UpdateClient(domain_msg)))
             }
             upgrade_client::TYPE_URL => {
                 let domain_msg = upgrade_client::MsgUpgradeClient::decode_vec(&any_msg.value)
-                    .map_err(Error::malformed_message_bytes)?;
+                    .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::ClientMsg(ClientMsg::UpgradeClient(domain_msg)))
             }
 
             // ICS03
             conn_open_init::TYPE_URL => {
                 let domain_msg = conn_open_init::MsgConnectionOpenInit::decode_vec(&any_msg.value)
-                    .map_err(Error::malformed_message_bytes)?;
+                    .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::ConnectionMsg(
                     ConnectionMsg::ConnectionOpenInit(domain_msg),
                 ))
             }
             conn_open_try::TYPE_URL => {
                 let domain_msg = conn_open_try::MsgConnectionOpenTry::decode_vec(&any_msg.value)
-                    .map_err(Error::malformed_message_bytes)?;
+                    .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::ConnectionMsg(
                     ConnectionMsg::ConnectionOpenTry(Box::new(domain_msg)),
                 ))
             }
             conn_open_ack::TYPE_URL => {
                 let domain_msg = conn_open_ack::MsgConnectionOpenAck::decode_vec(&any_msg.value)
-                    .map_err(Error::malformed_message_bytes)?;
+                    .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::ConnectionMsg(
                     ConnectionMsg::ConnectionOpenAck(Box::new(domain_msg)),
                 ))
@@ -70,7 +70,7 @@ impl TryFrom<Any> for MsgEnvelope {
             conn_open_confirm::TYPE_URL => {
                 let domain_msg =
                     conn_open_confirm::MsgConnectionOpenConfirm::decode_vec(&any_msg.value)
-                        .map_err(Error::malformed_message_bytes)?;
+                        .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::ConnectionMsg(
                     ConnectionMsg::ConnectionOpenConfirm(domain_msg),
                 ))
@@ -79,21 +79,21 @@ impl TryFrom<Any> for MsgEnvelope {
             // ICS04 channel messages
             chan_open_init::TYPE_URL => {
                 let domain_msg = chan_open_init::MsgChannelOpenInit::decode_vec(&any_msg.value)
-                    .map_err(Error::malformed_message_bytes)?;
+                    .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::ChannelMsg(ChannelMsg::ChannelOpenInit(
                     domain_msg,
                 )))
             }
             chan_open_try::TYPE_URL => {
                 let domain_msg = chan_open_try::MsgChannelOpenTry::decode_vec(&any_msg.value)
-                    .map_err(Error::malformed_message_bytes)?;
+                    .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::ChannelMsg(ChannelMsg::ChannelOpenTry(
                     domain_msg,
                 )))
             }
             chan_open_ack::TYPE_URL => {
                 let domain_msg = chan_open_ack::MsgChannelOpenAck::decode_vec(&any_msg.value)
-                    .map_err(Error::malformed_message_bytes)?;
+                    .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::ChannelMsg(ChannelMsg::ChannelOpenAck(
                     domain_msg,
                 )))
@@ -101,14 +101,14 @@ impl TryFrom<Any> for MsgEnvelope {
             chan_open_confirm::TYPE_URL => {
                 let domain_msg =
                     chan_open_confirm::MsgChannelOpenConfirm::decode_vec(&any_msg.value)
-                        .map_err(Error::malformed_message_bytes)?;
+                        .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::ChannelMsg(ChannelMsg::ChannelOpenConfirm(
                     domain_msg,
                 )))
             }
             chan_close_init::TYPE_URL => {
                 let domain_msg = chan_close_init::MsgChannelCloseInit::decode_vec(&any_msg.value)
-                    .map_err(Error::malformed_message_bytes)?;
+                    .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::ChannelMsg(ChannelMsg::ChannelCloseInit(
                     domain_msg,
                 )))
@@ -116,7 +116,7 @@ impl TryFrom<Any> for MsgEnvelope {
             chan_close_confirm::TYPE_URL => {
                 let domain_msg =
                     chan_close_confirm::MsgChannelCloseConfirm::decode_vec(&any_msg.value)
-                        .map_err(Error::malformed_message_bytes)?;
+                        .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::ChannelMsg(ChannelMsg::ChannelCloseConfirm(
                     domain_msg,
                 )))
@@ -124,27 +124,29 @@ impl TryFrom<Any> for MsgEnvelope {
             // ICS04 packet messages
             recv_packet::TYPE_URL => {
                 let domain_msg = recv_packet::MsgRecvPacket::decode_vec(&any_msg.value)
-                    .map_err(Error::malformed_message_bytes)?;
+                    .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::PacketMsg(PacketMsg::RecvPacket(domain_msg)))
             }
             acknowledgement::TYPE_URL => {
                 let domain_msg = acknowledgement::MsgAcknowledgement::decode_vec(&any_msg.value)
-                    .map_err(Error::malformed_message_bytes)?;
+                    .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::PacketMsg(PacketMsg::AckPacket(domain_msg)))
             }
             timeout::TYPE_URL => {
                 let domain_msg = timeout::MsgTimeout::decode_vec(&any_msg.value)
-                    .map_err(Error::malformed_message_bytes)?;
+                    .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::PacketMsg(PacketMsg::TimeoutPacket(domain_msg)))
             }
             timeout_on_close::TYPE_URL => {
                 let domain_msg = timeout_on_close::MsgTimeoutOnClose::decode_vec(&any_msg.value)
-                    .map_err(Error::malformed_message_bytes)?;
+                    .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::PacketMsg(PacketMsg::TimeoutOnClosePacket(
                     domain_msg,
                 )))
             }
-            _ => Err(Error::unknown_message_type_url(any_msg.type_url)),
+            _ => Err(RouterError::UnknownMessageTypeUrl {
+                url: any_msg.type_url,
+            }),
         }
     }
 }

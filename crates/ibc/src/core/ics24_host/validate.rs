@@ -15,17 +15,22 @@ pub fn validate_identifier(id: &str, min: usize, max: usize) -> Result<(), Error
 
     // Check identifier is not empty
     if id.is_empty() {
-        return Err(Error::empty());
+        return Err(Error::Empty);
     }
 
     // Check identifier does not contain path separators
     if id.contains(PATH_SEPARATOR) {
-        return Err(Error::contain_separator(id.to_string()));
+        return Err(Error::ContainSeparator { id: id.into() });
     }
 
     // Check identifier length is between given min/max
     if id.len() < min || id.len() > max {
-        return Err(Error::invalid_length(id.to_string(), id.len(), min, max));
+        return Err(Error::InvalidLength {
+            id: id.into(),
+            length: id.len(),
+            min,
+            max,
+        });
     }
 
     // Check that the identifier comprises only valid characters:
@@ -36,7 +41,7 @@ pub fn validate_identifier(id: &str, min: usize, max: usize) -> Result<(), Error
         .chars()
         .all(|c| c.is_alphanumeric() || VALID_SPECIAL_CHARS.contains(c))
     {
-        return Err(Error::invalid_character(id.to_string()));
+        return Err(Error::InvalidCharacter { id: id.into() });
     }
 
     // All good!

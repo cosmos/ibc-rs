@@ -1,7 +1,7 @@
 //! Message definitions for all ICS4 domain types: channel open & close handshake datagrams, as well
 //! as packets.
 
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
 use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
@@ -42,26 +42,26 @@ pub enum ChannelMsg {
 }
 
 impl ChannelMsg {
-    pub(super) fn lookup_module(&self, ctx: &impl RouterContext) -> Result<ModuleId, Error> {
+    pub(super) fn lookup_module(&self, ctx: &impl RouterContext) -> Result<ModuleId, ChannelError> {
         let module_id = match self {
             ChannelMsg::ChannelOpenInit(msg) => ctx
                 .lookup_module_by_port(&msg.port_id_on_a)
-                .map_err(Error::ics05_port)?,
+                .map_err(ChannelError::Port)?,
             ChannelMsg::ChannelOpenTry(msg) => ctx
                 .lookup_module_by_port(&msg.port_id_on_b)
-                .map_err(Error::ics05_port)?,
+                .map_err(ChannelError::Port)?,
             ChannelMsg::ChannelOpenAck(msg) => ctx
                 .lookup_module_by_port(&msg.port_id_on_a)
-                .map_err(Error::ics05_port)?,
+                .map_err(ChannelError::Port)?,
             ChannelMsg::ChannelOpenConfirm(msg) => ctx
                 .lookup_module_by_port(&msg.port_id_on_b)
-                .map_err(Error::ics05_port)?,
+                .map_err(ChannelError::Port)?,
             ChannelMsg::ChannelCloseInit(msg) => ctx
                 .lookup_module_by_port(&msg.port_id_on_a)
-                .map_err(Error::ics05_port)?,
+                .map_err(ChannelError::Port)?,
             ChannelMsg::ChannelCloseConfirm(msg) => ctx
                 .lookup_module_by_port(&msg.port_id_on_b)
-                .map_err(Error::ics05_port)?,
+                .map_err(ChannelError::Port)?,
         };
         Ok(module_id)
     }

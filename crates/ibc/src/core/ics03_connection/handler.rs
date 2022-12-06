@@ -3,7 +3,7 @@
 
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::context::ConnectionReader;
-use crate::core::ics03_connection::error::Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::msgs::ConnectionMsg;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::handler::HandlerOutput;
@@ -43,7 +43,7 @@ pub struct ConnectionResult {
 pub fn dispatch<Ctx>(
     ctx: &Ctx,
     msg: ConnectionMsg,
-) -> Result<HandlerOutput<ConnectionResult>, Error>
+) -> Result<HandlerOutput<ConnectionResult>, ConnectionError>
 where
     Ctx: ConnectionReader,
 {
