@@ -66,8 +66,8 @@ impl codec::Encode for Timestamp {
 impl codec::Decode for Timestamp {
     fn decode<I: codec::Input>(input: &mut I) -> Result<Self, codec::Error> {
         let timestamp = u64::decode(input)?;
-        Ok(Timestamp::from_nanoseconds(timestamp)
-            .map_err(|_| codec::Error::from("from nanoseconds error"))?)
+        Timestamp::from_nanoseconds(timestamp)
+            .map_err(|_| codec::Error::from("from nanoseconds error"))
     }
 }
 
