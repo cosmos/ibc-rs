@@ -10,6 +10,10 @@ use ibc_proto::google::protobuf::Any;
 use super::ics02_client::client_type::ClientType;
 use super::ics02_client::handler::{create_client, update_client, upgrade_client};
 use super::ics02_client::msgs::ClientMsg;
+use super::ics03_connection::handler::{
+    conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try,
+};
+use super::ics03_connection::msgs::ConnectionMsg;
 use super::ics24_host::path::{
     ClientConnectionsPath, ClientConsensusStatePath, ClientStatePath, ClientTypePath,
     CommitmentsPath, ConnectionsPath, ReceiptsPath,
@@ -88,13 +92,11 @@ impl std::error::Error for ContextError {
 
 pub trait ValidationContext {
     /// Validation entrypoint.
-    fn validate(&self, message: Any) -> Result<(), RouterError>
+    fn validate(&self, message: MsgEnvelope) -> Result<(), RouterError>
     where
         Self: Sized,
     {
-        let envelope: MsgEnvelope = message.try_into()?;
-
-        match envelope {
+        match message {
             MsgEnvelope::ClientMsg(message) => match message {
                 ClientMsg::CreateClient(message) => create_client::validate(self, message),
                 ClientMsg::UpdateClient(message) => update_client::validate(self, message),
@@ -102,7 +104,21 @@ pub trait ValidationContext {
                 ClientMsg::UpgradeClient(message) => upgrade_client::validate(self, message),
             }
             .map_err(RouterError::ContextError),
-            MsgEnvelope::ConnectionMsg(_message) => todo!(),
+            MsgEnvelope::ConnectionMsg(message) => match message {
+                ConnectionMsg::ConnectionOpenInit(message) => {
+                    conn_open_init::validate(self, message)
+                }
+                ConnectionMsg::ConnectionOpenTry(message) => {
+                    conn_open_try::validate(self, *message)
+                }
+                ConnectionMsg::ConnectionOpenAck(message) => {
+                    conn_open_ack::validate(self, *message)
+                }
+                ConnectionMsg::ConnectionOpenConfirm(ref message) => {
+                    conn_open_confirm::validate(self, message)
+                }
+            }
+            .map_err(RouterError::ContextError),
             MsgEnvelope::ChannelMsg(_message) => todo!(),
             MsgEnvelope::PacketMsg(_message) => todo!(),
         }
@@ -163,8 +179,8 @@ pub trait ValidationContext {
     /// Returns the ConnectionEnd for the given identifier `conn_id`.
     fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError>;
 
-    /// Returns the oldest height available on the local chain.
-    fn host_oldest_height(&self) -> Height;
+    /// Validates the `ClientState` of the client on the counterparty chain.
+    fn validate_self_client(&self, counterparty_client_state: Any) -> Result<(), ConnectionError>;
 
     /// Returns the prefix that the local chain uses in the KV store.
     fn commitment_prefix(&self) -> CommitmentPrefix;
@@ -293,13 +309,11 @@ pub trait ValidationContext {
 
 pub trait ExecutionContext: ValidationContext {
     /// Execution entrypoint
-    fn execute(&mut self, message: Any) -> Result<(), RouterError>
+    fn execute(&mut self, message: MsgEnvelope) -> Result<(), RouterError>
     where
         Self: Sized,
     {
-        let envelope: MsgEnvelope = message.try_into()?;
-
-        match envelope {
+        match message {
             MsgEnvelope::ClientMsg(message) => match message {
                 ClientMsg::CreateClient(message) => create_client::execute(self, message),
                 ClientMsg::UpdateClient(message) => update_client::execute(self, message),
@@ -307,7 +321,17 @@ pub trait ExecutionContext: ValidationContext {
                 ClientMsg::UpgradeClient(message) => upgrade_client::execute(self, message),
             }
             .map_err(RouterError::ContextError),
-            MsgEnvelope::ConnectionMsg(_message) => todo!(),
+            MsgEnvelope::ConnectionMsg(message) => match message {
+                ConnectionMsg::ConnectionOpenInit(message) => {
+                    conn_open_init::execute(self, message)
+                }
+                ConnectionMsg::ConnectionOpenTry(message) => conn_open_try::execute(self, *message),
+                ConnectionMsg::ConnectionOpenAck(message) => conn_open_ack::execute(self, *message),
+                ConnectionMsg::ConnectionOpenConfirm(ref message) => {
+                    conn_open_confirm::execute(self, message)
+                }
+            }
+            .map_err(RouterError::ContextError),
             MsgEnvelope::ChannelMsg(_message) => todo!(),
             MsgEnvelope::PacketMsg(_message) => todo!(),
         }
@@ -370,7 +394,7 @@ pub trait ExecutionContext: ValidationContext {
     fn store_connection_to_client(
         &mut self,
         client_connections_path: ClientConnectionsPath,
-        client_id: &ClientId,
+        conn_id: &ConnectionId,
     ) -> Result<(), ContextError>;
 
     /// Called upon connection identifier creation (Init or Try process).
