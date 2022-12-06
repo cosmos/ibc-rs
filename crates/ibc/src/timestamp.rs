@@ -7,7 +7,6 @@ use core::ops::{Add, Sub};
 use core::str::FromStr;
 use core::time::Duration;
 
-use borsh::{BorshDeserialize, BorshSerialize};
 use displaydoc::Display;
 use serde_derive::{Deserialize, Serialize};
 use tendermint::Time;
@@ -28,7 +27,7 @@ pub struct Timestamp {
 }
 
 #[cfg(feature = "borsh")]
-impl BorshSerialize for Timestamp {
+impl borsh::BorshSerialize for Timestamp {
     fn serialize<W: borsh::maybestd::io::Write>(
         &self,
         writer: &mut W,
@@ -38,12 +37,12 @@ impl BorshSerialize for Timestamp {
         } else {
             0i128
         };
-        BorshSerialize::serialize(&timestamp, writer)
+        borsh::BorshSerialize::serialize(&timestamp, writer)
     }
 }
 
 #[cfg(feature = "borsh")]
-impl BorshDeserialize for Timestamp {
+impl borsh::BorshDeserialize for Timestamp {
     fn deserialize(buf: &mut &[u8]) -> borsh::maybestd::io::Result<Self> {
         let timestamp = u64::deserialize(buf)?;
         Ok(Timestamp::from_nanoseconds(timestamp)
