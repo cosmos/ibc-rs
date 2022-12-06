@@ -57,14 +57,14 @@ impl TryFrom<Any> for MsgEnvelope {
                 let domain_msg = conn_open_try::MsgConnectionOpenTry::decode_vec(&any_msg.value)
                     .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::ConnectionMsg(
-                    ConnectionMsg::ConnectionOpenTry(Box::new(domain_msg)),
+                    ConnectionMsg::ConnectionOpenTry(domain_msg),
                 ))
             }
             conn_open_ack::TYPE_URL => {
                 let domain_msg = conn_open_ack::MsgConnectionOpenAck::decode_vec(&any_msg.value)
                     .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::ConnectionMsg(
-                    ConnectionMsg::ConnectionOpenAck(Box::new(domain_msg)),
+                    ConnectionMsg::ConnectionOpenAck(domain_msg),
                 ))
             }
             conn_open_confirm::TYPE_URL => {
