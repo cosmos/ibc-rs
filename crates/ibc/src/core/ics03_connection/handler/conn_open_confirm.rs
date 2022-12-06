@@ -32,11 +32,10 @@ where
 {
     let conn_end_on_b = vars.conn_end_on_b();
     if !conn_end_on_b.state_matches(&State::TryOpen) {
-        return Err(
-            ConnectionError::ConnectionMismatch {
-                connection_id: msg.conn_id_on_b.clone(),
-            }.into(),
-        );
+        return Err(ConnectionError::ConnectionMismatch {
+            connection_id: msg.conn_id_on_b.clone(),
+        }
+        .into());
     }
 
     let client_id_on_a = vars.client_id_on_a();
