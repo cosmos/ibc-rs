@@ -1,6 +1,8 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
+use crate::core::context::ContextError;
+use crate::core::ValidationContext;
 use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap;
@@ -1151,8 +1153,7 @@ impl ConnectionReader for MockContext {
         height: Height,
     ) -> Result<Box<dyn ConsensusState>, ConnectionError> {
         // Forward method call to the Ics2Client-specific method.
-        self.consensus_state(client_id, height)
-            .map_err(ConnectionError::Client)
+        ClientReader::consensus_state(self, client_id, height).map_err(ConnectionError::Client)
     }
 
     fn host_consensus_state(
@@ -1478,6 +1479,170 @@ impl RelayerContext for MockContext {
 
     fn signer(&self) -> Signer {
         "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C".parse().unwrap()
+    }
+}
+
+impl ValidationContext for MockContext {
+    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
+        ClientReader::client_state(self, client_id).map_err(ContextError::ClientError)
+    }
+
+    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ContextError> {
+        ClientReader::decode_client_state(self, client_state).map_err(ContextError::ClientError)
+    }
+
+    fn consensus_state(
+        &self,
+        client_id: &ClientId,
+        height: Height,
+    ) -> Result<Box<dyn ConsensusState>, ContextError> {
+        ClientReader::consensus_state(self, client_id, height).map_err(ContextError::ClientError)
+    }
+
+    fn next_consensus_state(
+        &self,
+        client_id: &ClientId,
+        height: Height,
+    ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
+        ClientReader::next_consensus_state(self, client_id, height)
+            .map_err(ContextError::ClientError)
+    }
+
+    fn prev_consensus_state(
+        &self,
+        client_id: &ClientId,
+        height: Height,
+    ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
+        ClientReader::prev_consensus_state(self, client_id, height)
+            .map_err(ContextError::ClientError)
+    }
+
+    fn host_height(&self) -> Result<Height, ContextError> {
+        Ok(self.latest_height())
+    }
+
+    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ContextError> {
+        ClientReader::pending_host_consensus_state(self).map_err(ContextError::ClientError)
+    }
+
+    fn host_consensus_state(
+        &self,
+        height: Height,
+    ) -> Result<Box<dyn ConsensusState>, ContextError> {
+        ConnectionReader::host_consensus_state(self, height).map_err(ContextError::ConnectionError)
+    }
+
+    fn client_counter(&self) -> Result<u64, ContextError> {
+        ClientReader::client_counter(self).map_err(ContextError::ClientError)
+    }
+
+    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError> {
+        ConnectionReader::connection_end(self, conn_id).map_err(ContextError::ConnectionError)
+    }
+
+    fn validate_self_client(&self, _counterparty_client_state: Any) -> Result<(), ConnectionError> {
+        Ok(())
+    }
+
+    fn commitment_prefix(&self) -> CommitmentPrefix {
+        ConnectionReader::commitment_prefix(self)
+    }
+
+    fn connection_counter(&self) -> Result<u64, ContextError> {
+        ConnectionReader::connection_counter(self).map_err(ContextError::ConnectionError)
+    }
+
+    fn channel_end(
+        &self,
+        port_channel_id: &(PortId, ChannelId),
+    ) -> Result<ChannelEnd, ContextError> {
+        ChannelReader::channel_end(self, &port_channel_id.0, &port_channel_id.1)
+            .map_err(ContextError::ChannelError)
+    }
+
+    fn connection_channels(
+        &self,
+        cid: &ConnectionId,
+    ) -> Result<Vec<(PortId, ChannelId)>, ContextError> {
+        ChannelReader::connection_channels(self, cid).map_err(ContextError::ChannelError)
+    }
+
+    fn get_next_sequence_send(
+        &self,
+        port_channel_id: &(PortId, ChannelId),
+    ) -> Result<Sequence, ContextError> {
+        ChannelReader::get_next_sequence_send(self, &port_channel_id.0, &port_channel_id.1)
+            .map_err(ContextError::PacketError)
+    }
+
+    fn get_next_sequence_recv(
+        &self,
+        port_channel_id: &(PortId, ChannelId),
+    ) -> Result<Sequence, ContextError> {
+        ChannelReader::get_next_sequence_recv(self, &port_channel_id.0, &port_channel_id.1)
+            .map_err(ContextError::PacketError)
+    }
+
+    fn get_next_sequence_ack(
+        &self,
+        port_channel_id: &(PortId, ChannelId),
+    ) -> Result<Sequence, ContextError> {
+        ChannelReader::get_next_sequence_ack(self, &port_channel_id.0, &port_channel_id.1)
+            .map_err(ContextError::PacketError)
+    }
+
+    fn get_packet_commitment(
+        &self,
+        key: &(PortId, ChannelId, Sequence),
+    ) -> Result<PacketCommitment, ContextError> {
+        ChannelReader::get_packet_commitment(self, &key.0, &key.1, key.2)
+            .map_err(ContextError::PacketError)
+    }
+
+    fn get_packet_receipt(
+        &self,
+        key: &(PortId, ChannelId, Sequence),
+    ) -> Result<Receipt, ContextError> {
+        ChannelReader::get_packet_receipt(self, &key.0, &key.1, key.2)
+            .map_err(ContextError::PacketError)
+    }
+
+    fn get_packet_acknowledgement(
+        &self,
+        key: &(PortId, ChannelId, Sequence),
+    ) -> Result<AcknowledgementCommitment, ContextError> {
+        ChannelReader::get_packet_acknowledgement(self, &key.0, &key.1, key.2)
+            .map_err(ContextError::PacketError)
+    }
+
+    fn hash(&self, value: Vec<u8>) -> Vec<u8> {
+        sha2::Sha256::digest(value).to_vec()
+    }
+
+    fn client_update_time(
+        &self,
+        client_id: &ClientId,
+        height: Height,
+    ) -> Result<Timestamp, ContextError> {
+        ChannelReader::client_update_time(self, client_id, height)
+            .map_err(ContextError::ChannelError)
+    }
+
+    fn client_update_height(
+        &self,
+        client_id: &ClientId,
+        height: Height,
+    ) -> Result<Height, ContextError> {
+        ChannelReader::client_update_height(self, client_id, height)
+            .map_err(ContextError::ChannelError)
+    }
+
+    fn channel_counter(&self) -> Result<u64, ContextError> {
+        ChannelReader::channel_counter(self).map_err(ContextError::ChannelError)
+    }
+
+    fn max_expected_time_per_block(&self) -> Duration {
+        ChannelReader::max_expected_time_per_block(self)
     }
 }
 
