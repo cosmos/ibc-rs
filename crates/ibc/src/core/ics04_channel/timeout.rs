@@ -7,8 +7,14 @@ use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use crate::core::ics02_client::{error::ClientError, height::Height};
 use crate::prelude::*;
 
-#[cfg_attr(feature = "scale-codec", derive(codec::Encode, codec::Decode, scale_info::TypeInfo))]
-#[cfg_attr(feature = "borsh", derive(borsh::BorshSerialize, borsh::BorshDeserialize))]
+#[cfg_attr(
+    feature = "scale-codec",
+    derive(codec::Encode, codec::Decode, scale_info::TypeInfo)
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 /// Indicates a consensus height on the destination chain after which the packet
 /// will no longer be processed, and will instead count as having timed-out.
 ///

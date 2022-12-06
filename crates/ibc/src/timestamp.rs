@@ -7,14 +7,13 @@ use core::ops::{Add, Sub};
 use core::str::FromStr;
 use core::time::Duration;
 
+use borsh::{BorshDeserialize, BorshSerialize};
 use displaydoc::Display;
 use serde_derive::{Deserialize, Serialize};
 use tendermint::Time;
 use time::OffsetDateTime;
-use borsh::{BorshSerialize, BorshDeserialize};
 
 pub const ZERO_DURATION: Duration = Duration::from_secs(0);
-
 
 /// A newtype wrapper over `Option<Time>` to keep track of
 /// IBC packet timeout.
@@ -30,8 +29,11 @@ pub struct Timestamp {
 
 #[cfg(feature = "borsh")]
 impl BorshSerialize for Timestamp {
-    fn serialize<W: borsh::maybestd::io::Write>(&self, writer: &mut W) -> borsh::maybestd::io::Result<()> {
-        let timestamp = if let Some(time) = self.time { 
+    fn serialize<W: borsh::maybestd::io::Write>(
+        &self,
+        writer: &mut W,
+    ) -> borsh::maybestd::io::Result<()> {
+        let timestamp = if let Some(time) = self.time {
             time.unix_timestamp_nanos()
         } else {
             0i128
@@ -44,14 +46,15 @@ impl BorshSerialize for Timestamp {
 impl BorshDeserialize for Timestamp {
     fn deserialize(buf: &mut &[u8]) -> borsh::maybestd::io::Result<Self> {
         let timestamp = u64::deserialize(buf)?;
-        Ok(Timestamp::from_nanoseconds(timestamp).map_err(|_| borsh::maybestd::io::ErrorKind::Other)?)
+        Ok(Timestamp::from_nanoseconds(timestamp)
+            .map_err(|_| borsh::maybestd::io::ErrorKind::Other)?)
     }
 }
 
 #[cfg(feature = "scale-codec")]
 impl codec::Encode for Timestamp {
     fn encode_to<T: codec::Output + ?Sized>(&self, writer: &mut T) {
-        let timestamp = if let Some(time) = self.time { 
+        let timestamp = if let Some(time) = self.time {
             time.unix_timestamp_nanos()
         } else {
             0i128
@@ -64,7 +67,8 @@ impl codec::Encode for Timestamp {
 impl codec::Decode for Timestamp {
     fn decode<I: codec::Input>(input: &mut I) -> Result<Self, codec::Error> {
         let timestamp = u64::decode(input)?;
-        Ok(Timestamp::from_nanoseconds(timestamp).map_err(|_| codec::Error::from("from nanoseconds error"))?)
+        Ok(Timestamp::from_nanoseconds(timestamp)
+            .map_err(|_| codec::Error::from("from nanoseconds error"))?)
     }
 }
 
@@ -72,13 +76,17 @@ impl codec::Decode for Timestamp {
 impl scale_info::TypeInfo for Timestamp {
     type Identity = Self;
 
-     fn type_info() -> scale_info::Type {
+    fn type_info() -> scale_info::Type {
         scale_info::Type::builder()
-             .path(scale_info::Path::new("Timestamp", module_path!()))
-             .composite(scale_info::build::Fields::named()
-                 .field(|f| f.ty::<Option<i128>>().name("time").type_name("Option<i128>")) // todo(this ty should be Optoion<Time>)
-             )
-     }
+            .path(scale_info::Path::new("Timestamp", module_path!()))
+            .composite(
+                scale_info::build::Fields::named().field(|f| {
+                    f.ty::<Option<i128>>()
+                        .name("time")
+                        .type_name("Option<i128>")
+                }), // todo(this ty should be Optoion<Time>)
+            )
+    }
 }
 
 // TODO: derive when tendermint::Time supports it:
