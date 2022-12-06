@@ -25,9 +25,7 @@ where
 
     if let Some(version) = msg.version {
         if !ctx_a.get_compatible_versions().contains(&version) {
-            return Err(ContextError::ConnectionError(
-                ConnectionError::VersionNotSupported { version },
-            ));
+            return Err(ConnectionError::VersionNotSupported { version }.into());
         }
     }
 
