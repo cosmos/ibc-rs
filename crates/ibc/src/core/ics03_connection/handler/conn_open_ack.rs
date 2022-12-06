@@ -36,12 +36,11 @@ where
         description: "failed to get host height".to_string(),
     })?;
     if msg.consensus_height_of_a_on_b > host_height {
-        return Err(ContextError::ConnectionError(
-            ConnectionError::InvalidConsensusHeight {
-                target_height: msg.consensus_height_of_a_on_b,
-                current_height: host_height,
-            },
-        ));
+        return Err(ConnectionError::InvalidConsensusHeight {
+            target_height: msg.consensus_height_of_a_on_b,
+            current_height: host_height,
+        }
+        .into());
     }
 
     ctx_a.validate_self_client(msg.client_state_of_a_on_b.clone())?;
@@ -49,11 +48,10 @@ where
     if !(vars.conn_end_on_a.state_matches(&State::Init)
         && vars.conn_end_on_a.versions().contains(&msg.version))
     {
-        return Err(ContextError::ConnectionError(
-            ConnectionError::ConnectionMismatch {
-                connection_id: msg.conn_id_on_a.clone(),
-            },
-        ));
+        return Err(ConnectionError::ConnectionMismatch {
+            connection_id: msg.conn_id_on_a.clone(),
+        }
+        .into());
     }
 
     // Proof verification.

@@ -35,3 +35,5 @@ pub use context::ValidationContext;
 
 pub use handler::execute;
 pub use handler::validate;
+
+pub use context::ContextError;

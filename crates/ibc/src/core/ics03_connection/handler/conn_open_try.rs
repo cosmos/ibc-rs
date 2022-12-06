@@ -39,12 +39,11 @@ where
     })?;
     if msg.consensus_height_of_b_on_a > host_height {
         // Fail if the consensus height is too advanced.
-        return Err(ContextError::ConnectionError(
-            ConnectionError::InvalidConsensusHeight {
-                target_height: msg.consensus_height_of_b_on_a,
-                current_height: host_height,
-            },
-        ));
+        return Err(ConnectionError::InvalidConsensusHeight {
+            target_height: msg.consensus_height_of_b_on_a,
+            current_height: host_height,
+        }
+        .into());
     }
 
     let client_id_on_a = msg.counterparty.client_id();
