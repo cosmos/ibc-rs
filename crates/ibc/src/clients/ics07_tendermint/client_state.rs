@@ -570,7 +570,7 @@ impl Ics2ClientState for ClientState {
         })
     }
 
-    fn check_misbehaviour_and_update_state(
+    fn old_check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ClientReader,
         client_id: ClientId,
@@ -613,6 +613,71 @@ impl Ics2ClientState for ClientState {
                 chain_id: self.chain_id.to_string(),
             }
             .into());
+        }
+
+        let current_timestamp = ctx.host_timestamp()?;
+
+        self.check_header_and_validator_set(header_1, &consensus_state_1, current_timestamp)?;
+        self.check_header_and_validator_set(header_2, &consensus_state_2, current_timestamp)?;
+
+        self.verify_header_commit_against_trusted(header_1, &consensus_state_1)?;
+        self.verify_header_commit_against_trusted(header_2, &consensus_state_2)?;
+
+        let client_state = downcast_tm_client_state(self)?.clone();
+        Ok(client_state
+            .with_frozen_height(Height::new(0, 1).unwrap())
+            .into_box())
+    }
+
+    fn check_misbehaviour_and_update_state(
+        &self,
+        ctx: &dyn ValidationContext,
+        client_id: ClientId,
+        misbehaviour: Any,
+    ) -> Result<Box<dyn Ics2ClientState>, ContextError> {
+        let misbehaviour = TmMisbehaviour::try_from(misbehaviour)?;
+        let header_1 = misbehaviour.header1();
+        let header_2 = misbehaviour.header2();
+
+        if header_1.height() == header_2.height() {
+            // Fork
+            if header_1.signed_header.commit.block_id.hash
+                == header_2.signed_header.commit.block_id.hash
+            {
+                return Err(ContextError::ClientError(
+                    Error::MisbehaviourHeadersBlockHashesEqual.into(),
+                ));
+            }
+        } else {
+            // BFT time violation
+            if header_1.signed_header.header.time > header_2.signed_header.header.time {
+                return Err(ContextError::ClientError(
+                    Error::MisbehaviourHeadersNotAtSameHeight.into(),
+                ));
+            }
+        }
+
+        let consensus_state_1 = {
+            let cs = ctx.consensus_state(&client_id, header_1.trusted_height)?;
+            downcast_tm_consensus_state(cs.as_ref())
+        }?;
+        let consensus_state_2 = {
+            let cs = ctx.consensus_state(&client_id, header_2.trusted_height)?;
+            downcast_tm_consensus_state(cs.as_ref())
+        }?;
+
+        let chain_id = self
+            .chain_id
+            .clone()
+            .with_version(header_1.height().revision_number());
+        if !misbehaviour.chain_id_matches(&chain_id) {
+            return Err(ContextError::ClientError(
+                Error::MisbehaviourHeadersChainIdMismatch {
+                    header_chain_id: header_1.signed_header.header.chain_id.to_string(),
+                    chain_id: self.chain_id.to_string(),
+                }
+                .into(),
+            ));
         }
 
         let current_timestamp = ctx.host_timestamp()?;
