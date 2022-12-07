@@ -18,37 +18,35 @@ where
     Ctx: ValidationContext,
 {
     if msg.chan_end_on_b.connection_hops().len() != 1 {
-        return Err(ContextError::ChannelError(
-            ChannelError::InvalidConnectionHopsLength {
-                expected: 1,
-                actual: msg.chan_end_on_b.connection_hops().len(),
-            },
-        ));
+        return Err(ChannelError::InvalidConnectionHopsLength {
+            expected: 1,
+            actual: msg.chan_end_on_b.connection_hops().len(),
+        }
+        .into());
     }
 
     let conn_end_on_b = ctx_b.connection_end(&msg.chan_end_on_b.connection_hops()[0])?;
     if !conn_end_on_b.state_matches(&ConnectionState::Open) {
-        return Err(ContextError::ChannelError(
-            ChannelError::ConnectionNotOpen {
-                connection_id: msg.chan_end_on_b.connection_hops()[0].clone(),
-            },
-        ));
+        return Err(ChannelError::ConnectionNotOpen {
+            connection_id: msg.chan_end_on_b.connection_hops()[0].clone(),
+        }
+        .into());
     }
 
     let conn_version = match conn_end_on_b.versions() {
         [version] => version,
         _ => {
-            return Err(ContextError::ChannelError(
-                ChannelError::InvalidVersionLengthConnection,
-            ))
+            return Err(
+                ChannelError::InvalidVersionLengthConnection.into(),
+            )
         }
     };
 
     let channel_feature = msg.chan_end_on_b.ordering().to_string();
     if !conn_version.is_supported_feature(channel_feature) {
-        return Err(ContextError::ChannelError(
-            ChannelError::ChannelFeatureNotSuportedByConnection,
-        ));
+        return Err(
+            ChannelError::ChannelFeatureNotSuportedByConnection.into(),
+        );
     }
 
     // Verify proofs
@@ -72,9 +70,9 @@ where
 
         // The client must not be frozen.
         if client_state_of_a_on_b.is_frozen() {
-            return Err(ContextError::ChannelError(ChannelError::FrozenClient {
+            return Err(ChannelError::FrozenClient {
                 client_id: client_id_on_b,
-            }));
+            }.into());
         }
 
         let expected_chan_end_on_a = ChannelEnd::new(

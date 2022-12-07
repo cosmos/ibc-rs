@@ -16,12 +16,11 @@ where
     Ctx: ValidationContext,
 {
     if msg.chan_end_on_a.connection_hops().len() != 1 {
-        return Err(ContextError::ChannelError(
-            ChannelError::InvalidConnectionHopsLength {
-                expected: 1,
-                actual: msg.chan_end_on_a.connection_hops().len(),
-            },
-        ));
+        return Err(ChannelError::InvalidConnectionHopsLength {
+            expected: 1,
+            actual: msg.chan_end_on_a.connection_hops().len(),
+        }
+        .into());
     }
 
     // An IBC connection running on the local (host) chain should exist.
@@ -29,18 +28,12 @@ where
 
     let conn_version = match conn_end_on_a.versions() {
         [version] => version,
-        _ => {
-            return Err(ContextError::ChannelError(
-                ChannelError::InvalidVersionLengthConnection,
-            ))
-        }
+        _ => return Err(ChannelError::InvalidVersionLengthConnection.into()),
     };
 
     let channel_feature = msg.chan_end_on_a.ordering().to_string();
     if !conn_version.is_supported_feature(channel_feature) {
-        return Err(ContextError::ChannelError(
-            ChannelError::ChannelFeatureNotSuportedByConnection,
-        ));
+        return Err(ChannelError::ChannelFeatureNotSuportedByConnection.into());
     }
 
     Ok(())
