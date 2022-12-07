@@ -1,11 +1,11 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenAck`.
-use crate::core::{ContextError, ValidationContext};
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
+use crate::core::{ContextError, ValidationContext};
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
@@ -19,9 +19,10 @@ where
     // Validate that the channel end is in a state where it can be ack.
     if !chan_end_on_a.state_matches(&State::Init) {
         return Err(ChannelError::InvalidChannelState {
-            channel_id: msg.chan_id_on_a.clone(),
+            channel_id: msg.chan_id_on_a,
             state: chan_end_on_a.state,
-        }.into());
+        }
+        .into());
     }
 
     // An OPEN IBC connection running on the local (host) chain should exist.
@@ -30,7 +31,8 @@ where
         return Err(ChannelError::InvalidConnectionHopsLength {
             expected: 1,
             actual: chan_end_on_a.connection_hops().len(),
-        }.into());
+        }
+        .into());
     }
 
     let conn_end_on_a = ctx_a.connection_end(&chan_end_on_a.connection_hops()[0])?;
@@ -38,7 +40,8 @@ where
     if !conn_end_on_a.state_matches(&ConnectionState::Open) {
         return Err(ChannelError::ConnectionNotOpen {
             connection_id: chan_end_on_a.connection_hops()[0].clone(),
-        }.into());
+        }
+        .into());
     }
 
     // Verify proofs
@@ -59,7 +62,8 @@ where
         if client_state_of_b_on_a.is_frozen() {
             return Err(ChannelError::FrozenClient {
                 client_id: client_id_on_a,
-            }.into());
+            }
+            .into());
         }
 
         let expected_chan_end_on_b = ChannelEnd::new(

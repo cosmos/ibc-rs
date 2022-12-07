@@ -224,32 +224,32 @@ pub trait ValidationContext {
 
     fn get_next_sequence_send(
         &self,
-        port_channel_id: &(PortId, ChannelId),
+        port_channel_id: (&PortId, &ChannelId),
     ) -> Result<Sequence, ContextError>;
 
     fn get_next_sequence_recv(
         &self,
-        port_channel_id: &(PortId, ChannelId),
+        port_channel_id: (&PortId, &ChannelId),
     ) -> Result<Sequence, ContextError>;
 
     fn get_next_sequence_ack(
         &self,
-        port_channel_id: &(PortId, ChannelId),
+        port_channel_id: (&PortId, &ChannelId),
     ) -> Result<Sequence, ContextError>;
 
     fn get_packet_commitment(
         &self,
-        key: &(PortId, ChannelId, Sequence),
+        key: (&PortId, &ChannelId, Sequence),
     ) -> Result<PacketCommitment, ContextError>;
 
     fn get_packet_receipt(
         &self,
-        key: &(PortId, ChannelId, Sequence),
+        key: (&PortId, &ChannelId, Sequence),
     ) -> Result<Receipt, ContextError>;
 
     fn get_packet_acknowledgement(
         &self,
-        key: &(PortId, ChannelId, Sequence),
+        key: (&PortId, &ChannelId, Sequence),
     ) -> Result<AcknowledgementCommitment, ContextError>;
 
     /// Compute the commitment for a packet.
@@ -436,7 +436,7 @@ pub trait ExecutionContext: ValidationContext {
     fn store_connection_channels(
         &mut self,
         conn_id: ConnectionId,
-        port_channel_id: &(PortId, ChannelId),
+        port_channel_id: (&PortId, &ChannelId),
     ) -> Result<(), ContextError>;
 
     /// Stores the given channel_end at a path associated with the port_id and channel_id.

@@ -1556,7 +1556,7 @@ impl ValidationContext for MockContext {
         &self,
         port_channel_id: (&PortId, &ChannelId),
     ) -> Result<ChannelEnd, ContextError> {
-        ChannelReader::channel_end(self, &port_channel_id.0, &port_channel_id.1)
+        ChannelReader::channel_end(self, port_channel_id.0, port_channel_id.1)
             .map_err(ContextError::ChannelError)
     }
 
@@ -1569,49 +1569,49 @@ impl ValidationContext for MockContext {
 
     fn get_next_sequence_send(
         &self,
-        port_channel_id: &(PortId, ChannelId),
+        port_channel_id: (&PortId, &ChannelId),
     ) -> Result<Sequence, ContextError> {
-        ChannelReader::get_next_sequence_send(self, &port_channel_id.0, &port_channel_id.1)
+        ChannelReader::get_next_sequence_send(self, port_channel_id.0, port_channel_id.1)
             .map_err(ContextError::PacketError)
     }
 
     fn get_next_sequence_recv(
         &self,
-        port_channel_id: &(PortId, ChannelId),
+        port_channel_id: (&PortId, &ChannelId),
     ) -> Result<Sequence, ContextError> {
-        ChannelReader::get_next_sequence_recv(self, &port_channel_id.0, &port_channel_id.1)
+        ChannelReader::get_next_sequence_recv(self, port_channel_id.0, port_channel_id.1)
             .map_err(ContextError::PacketError)
     }
 
     fn get_next_sequence_ack(
         &self,
-        port_channel_id: &(PortId, ChannelId),
+        port_channel_id: (&PortId, &ChannelId),
     ) -> Result<Sequence, ContextError> {
-        ChannelReader::get_next_sequence_ack(self, &port_channel_id.0, &port_channel_id.1)
+        ChannelReader::get_next_sequence_ack(self, port_channel_id.0, port_channel_id.1)
             .map_err(ContextError::PacketError)
     }
 
     fn get_packet_commitment(
         &self,
-        key: &(PortId, ChannelId, Sequence),
+        key: (&PortId, &ChannelId, Sequence),
     ) -> Result<PacketCommitment, ContextError> {
-        ChannelReader::get_packet_commitment(self, &key.0, &key.1, key.2)
+        ChannelReader::get_packet_commitment(self, key.0, key.1, key.2)
             .map_err(ContextError::PacketError)
     }
 
     fn get_packet_receipt(
         &self,
-        key: &(PortId, ChannelId, Sequence),
+        key: (&PortId, &ChannelId, Sequence),
     ) -> Result<Receipt, ContextError> {
-        ChannelReader::get_packet_receipt(self, &key.0, &key.1, key.2)
+        ChannelReader::get_packet_receipt(self, key.0, key.1, key.2)
             .map_err(ContextError::PacketError)
     }
 
     fn get_packet_acknowledgement(
         &self,
-        key: &(PortId, ChannelId, Sequence),
+        key: (&PortId, &ChannelId, Sequence),
     ) -> Result<AcknowledgementCommitment, ContextError> {
-        ChannelReader::get_packet_acknowledgement(self, &key.0, &key.1, key.2)
+        ChannelReader::get_packet_acknowledgement(self, key.0, key.1, key.2)
             .map_err(ContextError::PacketError)
     }
 

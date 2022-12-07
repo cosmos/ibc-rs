@@ -35,18 +35,12 @@ where
 
     let conn_version = match conn_end_on_b.versions() {
         [version] => version,
-        _ => {
-            return Err(
-                ChannelError::InvalidVersionLengthConnection.into(),
-            )
-        }
+        _ => return Err(ChannelError::InvalidVersionLengthConnection.into()),
     };
 
     let channel_feature = msg.chan_end_on_b.ordering().to_string();
     if !conn_version.is_supported_feature(channel_feature) {
-        return Err(
-            ChannelError::ChannelFeatureNotSuportedByConnection.into(),
-        );
+        return Err(ChannelError::ChannelFeatureNotSuportedByConnection.into());
     }
 
     // Verify proofs
@@ -72,7 +66,8 @@ where
         if client_state_of_a_on_b.is_frozen() {
             return Err(ChannelError::FrozenClient {
                 client_id: client_id_on_b,
-            }.into());
+            }
+            .into());
         }
 
         let expected_chan_end_on_a = ChannelEnd::new(
