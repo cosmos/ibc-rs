@@ -15,7 +15,8 @@ use super::ics03_connection::handler::{
 };
 use super::ics03_connection::msgs::ConnectionMsg;
 use super::ics04_channel::handler::{
-    chan_close_init, chan_open_ack, chan_open_confirm, chan_open_init, chan_open_try,
+    chan_close_confirm, chan_close_init, chan_open_ack, chan_open_confirm, chan_open_init,
+    chan_open_try,
 };
 use super::ics04_channel::msgs::ChannelMsg;
 use super::ics24_host::path::{
@@ -127,7 +128,9 @@ pub trait ValidationContext {
                     chan_open_confirm::validate(self, message)
                 }
                 ChannelMsg::ChannelCloseInit(message) => chan_close_init::validate(self, message),
-                ChannelMsg::ChannelCloseConfirm(_) => todo!(),
+                ChannelMsg::ChannelCloseConfirm(message) => {
+                    chan_close_confirm::validate(self, message)
+                }
             }
             .map_err(RouterError::ContextError),
             MsgEnvelope::PacketMsg(_message) => todo!(),
