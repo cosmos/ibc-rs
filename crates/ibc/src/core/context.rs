@@ -14,7 +14,7 @@ use super::ics03_connection::handler::{
     conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try,
 };
 use super::ics03_connection::msgs::ConnectionMsg;
-use super::ics04_channel::handler::{chan_open_init, chan_open_try};
+use super::ics04_channel::handler::{chan_open_ack, chan_open_init, chan_open_try};
 use super::ics04_channel::msgs::ChannelMsg;
 use super::ics24_host::path::{
     ClientConnectionsPath, ClientConsensusStatePath, ClientStatePath, ClientTypePath,
@@ -120,7 +120,7 @@ pub trait ValidationContext {
             MsgEnvelope::ChannelMsg(message) => match message {
                 ChannelMsg::ChannelOpenInit(message) => chan_open_init::validate(self, message),
                 ChannelMsg::ChannelOpenTry(message) => chan_open_try::validate(self, message),
-                ChannelMsg::ChannelOpenAck(_) => todo!(),
+                ChannelMsg::ChannelOpenAck(message) => chan_open_ack::validate(self, message),
                 ChannelMsg::ChannelOpenConfirm(_) => todo!(),
                 ChannelMsg::ChannelCloseInit(_) => todo!(),
                 ChannelMsg::ChannelCloseConfirm(_) => todo!(),
@@ -214,7 +214,7 @@ pub trait ValidationContext {
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
     fn channel_end(
         &self,
-        port_channel_id: &(PortId, ChannelId),
+        port_channel_id: (&PortId, &ChannelId),
     ) -> Result<ChannelEnd, ContextError>;
 
     fn connection_channels(

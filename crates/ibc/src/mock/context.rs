@@ -1554,7 +1554,7 @@ impl ValidationContext for MockContext {
 
     fn channel_end(
         &self,
-        port_channel_id: &(PortId, ChannelId),
+        port_channel_id: (&PortId, &ChannelId),
     ) -> Result<ChannelEnd, ContextError> {
         ChannelReader::channel_end(self, &port_channel_id.0, &port_channel_id.1)
             .map_err(ContextError::ChannelError)
