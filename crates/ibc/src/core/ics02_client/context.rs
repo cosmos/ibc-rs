@@ -125,6 +125,9 @@ pub trait ClientKeeper {
                 )?;
                 Ok(())
             }
+            ClientResult::Misbehaviour(res) => {
+                self.store_client_state(res.client_id, res.client_state)
+            }
         }
     }
 

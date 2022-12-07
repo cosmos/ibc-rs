@@ -1,4 +1,5 @@
 use crate::prelude::*;
+
 use displaydoc::Display;
 use ibc_proto::protobuf::Error as TendermintProtoError;
 
@@ -26,8 +27,8 @@ pub enum ClientError {
     ConsensusStateNotFound { client_id: ClientId, height: Height },
     /// implementation specific error
     ImplementationSpecific,
-    /// header verification failed with reason: `{reaseon}`
-    HeaderVerificationFailure { reaseon: String },
+    /// header verification failed with reason: `{reason}`
+    HeaderVerificationFailure { reason: String },
     /// failed to build trust threshold from fraction: `{numerator}`/`{denominator}`
     InvalidTrustThreshold { numerator: u64, denominator: u64 },
     /// failed to build Tendermint domain type trust threshold from fraction: `{numerator}`/`{denominator}`
@@ -40,6 +41,8 @@ pub enum ClientError {
     UnknownConsensusStateType { consensus_state_type: String },
     /// unknown header type: `{header_type}`
     UnknownHeaderType { header_type: String },
+    /// unknown misbehaviour type: `{misbehaviour_type}`
+    UnknownMisbehaviourType { misbehaviour_type: String },
     /// missing raw client state
     MissingRawClientState,
     /// missing raw client consensus state
@@ -101,6 +104,8 @@ pub enum ClientError {
     Signer(SignerError),
     /// ics23 verification failure error: `{0}`
     Ics23Verification(CommitmentError),
+    /// misbehaviour handling failed with reason: `{reason}`
+    MisbehaviourHandlingFailure { reason: String },
     /// client specific error: `{description}`
     ClientSpecific { description: String },
     /// other error: `{description}`

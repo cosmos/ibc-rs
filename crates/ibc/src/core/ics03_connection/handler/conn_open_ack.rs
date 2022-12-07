@@ -1,16 +1,205 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenAck`.
 
+use crate::core::context::ContextError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenAck;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
+use crate::core::ics24_host::identifier::ClientId;
+use crate::core::ics24_host::path::ConnectionsPath;
+use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
 use super::ConnectionIdState;
+
+pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
+where
+    Ctx: ValidationContext,
+{
+    let vars = LocalVars::new(ctx_a, &msg)?;
+    validate_impl(ctx_a, &msg, &vars)
+}
+
+fn validate_impl<Ctx>(
+    ctx_a: &Ctx,
+    msg: &MsgConnectionOpenAck,
+    vars: &LocalVars,
+) -> Result<(), ContextError>
+where
+    Ctx: ValidationContext,
+{
+    let host_height = ctx_a.host_height().map_err(|_| ConnectionError::Other {
+        description: "failed to get host height".to_string(),
+    })?;
+    if msg.consensus_height_of_a_on_b > host_height {
+        return Err(ConnectionError::InvalidConsensusHeight {
+            target_height: msg.consensus_height_of_a_on_b,
+            current_height: host_height,
+        }
+        .into());
+    }
+
+    ctx_a.validate_self_client(msg.client_state_of_a_on_b.clone())?;
+
+    if !(vars.conn_end_on_a.state_matches(&State::Init)
+        && vars.conn_end_on_a.versions().contains(&msg.version))
+    {
+        return Err(ConnectionError::ConnectionMismatch {
+            connection_id: msg.conn_id_on_a.clone(),
+        }
+        .into());
+    }
+
+    // Proof verification.
+    {
+        let client_state_of_b_on_a =
+            ctx_a
+                .client_state(vars.client_id_on_a())
+                .map_err(|_| ConnectionError::Other {
+                    description: "failed to fetch client state".to_string(),
+                })?;
+        let consensus_state_of_b_on_a = ctx_a
+            .consensus_state(vars.client_id_on_a(), msg.proofs_height_on_b)
+            .map_err(|_| ConnectionError::Other {
+                description: "failed to fetch client consensus state".to_string(),
+            })?;
+
+        let prefix_on_a = ctx_a.commitment_prefix();
+        let prefix_on_b = vars.conn_end_on_a.counterparty().prefix();
+
+        {
+            let expected_conn_end_on_b = ConnectionEnd::new(
+                State::TryOpen,
+                vars.client_id_on_b().clone(),
+                Counterparty::new(
+                    vars.client_id_on_a().clone(),
+                    Some(msg.conn_id_on_a.clone()),
+                    prefix_on_a,
+                ),
+                vec![msg.version.clone()],
+                vars.conn_end_on_a.delay_period(),
+            );
+
+            client_state_of_b_on_a
+                .verify_connection_state(
+                    msg.proofs_height_on_b,
+                    prefix_on_b,
+                    &msg.proof_conn_end_on_b,
+                    consensus_state_of_b_on_a.root(),
+                    &msg.conn_id_on_b,
+                    &expected_conn_end_on_b,
+                )
+                .map_err(ConnectionError::VerifyConnectionState)?;
+        }
+
+        client_state_of_b_on_a
+            .verify_client_full_state(
+                msg.proofs_height_on_b,
+                prefix_on_b,
+                &msg.proof_client_state_of_a_on_b,
+                consensus_state_of_b_on_a.root(),
+                vars.client_id_on_b(),
+                msg.client_state_of_a_on_b.clone(),
+            )
+            .map_err(|e| ConnectionError::ClientStateVerificationFailure {
+                client_id: vars.client_id_on_a().clone(),
+                client_error: e,
+            })?;
+
+        let expected_consensus_state_of_a_on_b = ctx_a
+            .host_consensus_state(msg.consensus_height_of_a_on_b)
+            .map_err(|_| ConnectionError::Other {
+                description: "failed to fetch host consensus state".to_string(),
+            })?;
+
+        client_state_of_b_on_a
+            .verify_client_consensus_state(
+                msg.proofs_height_on_b,
+                prefix_on_b,
+                &msg.proof_consensus_state_of_a_on_b,
+                consensus_state_of_b_on_a.root(),
+                vars.client_id_on_b(),
+                msg.consensus_height_of_a_on_b,
+                expected_consensus_state_of_a_on_b.as_ref(),
+            )
+            .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
+                height: msg.proofs_height_on_b,
+                client_error: e,
+            })?;
+    }
+
+    Ok(())
+}
+
+pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
+where
+    Ctx: ExecutionContext,
+{
+    let vars = LocalVars::new(ctx_a, &msg)?;
+    execute_impl(ctx_a, msg, vars)
+}
+
+fn execute_impl<Ctx>(
+    ctx_a: &mut Ctx,
+    msg: MsgConnectionOpenAck,
+    vars: LocalVars,
+) -> Result<(), ContextError>
+where
+    Ctx: ExecutionContext,
+{
+    ctx_a.emit_ibc_event(IbcEvent::OpenAckConnection(OpenAck::new(
+        msg.conn_id_on_a.clone(),
+        vars.client_id_on_a().clone(),
+        msg.conn_id_on_b.clone(),
+        vars.client_id_on_b().clone(),
+    )));
+
+    ctx_a.log_message("success: conn_open_ack verification passed".to_string());
+
+    {
+        let new_conn_end_on_a = {
+            let mut counterparty = vars.conn_end_on_a.counterparty().clone();
+            counterparty.connection_id = Some(msg.conn_id_on_b.clone());
+
+            let mut new_conn_end_on_a = vars.conn_end_on_a;
+            new_conn_end_on_a.set_state(State::Open);
+            new_conn_end_on_a.set_version(msg.version.clone());
+            new_conn_end_on_a.set_counterparty(counterparty);
+            new_conn_end_on_a
+        };
+
+        ctx_a.store_connection(ConnectionsPath(msg.conn_id_on_a), &new_conn_end_on_a)?;
+    }
+
+    Ok(())
+}
+
+struct LocalVars {
+    conn_end_on_a: ConnectionEnd,
+}
+
+impl LocalVars {
+    fn new<Ctx>(ctx_a: &Ctx, msg: &MsgConnectionOpenAck) -> Result<Self, ContextError>
+    where
+        Ctx: ValidationContext,
+    {
+        Ok(LocalVars {
+            conn_end_on_a: ctx_a.connection_end(&msg.conn_id_on_a)?,
+        })
+    }
+
+    fn client_id_on_a(&self) -> &ClientId {
+        self.conn_end_on_a.client_id()
+    }
+
+    fn client_id_on_b(&self) -> &ClientId {
+        self.conn_end_on_a.counterparty().client_id()
+    }
+}
 
 /// Per our convention, this message is processed on chain A.
 pub(crate) fn process(
@@ -40,11 +229,6 @@ pub(crate) fn process(
     let client_id_on_a = conn_end_on_a.client_id();
     let client_id_on_b = conn_end_on_a.counterparty().client_id();
 
-    let conn_id_on_b = conn_end_on_a
-        .counterparty()
-        .connection_id()
-        .ok_or(ConnectionError::InvalidCounterparty)?;
-
     // Proof verification.
     {
         let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
@@ -73,7 +257,7 @@ pub(crate) fn process(
                     prefix_on_b,
                     &msg.proof_conn_end_on_b,
                     consensus_state_of_b_on_a.root(),
-                    conn_id_on_b,
+                    &msg.conn_id_on_b,
                     &expected_conn_end_on_b,
                 )
                 .map_err(ConnectionError::VerifyConnectionState)?;
@@ -115,7 +299,7 @@ pub(crate) fn process(
     output.emit(IbcEvent::OpenAckConnection(OpenAck::new(
         msg.conn_id_on_a.clone(),
         client_id_on_a.clone(),
-        conn_id_on_b.clone(),
+        msg.conn_id_on_b.clone(),
         client_id_on_b.clone(),
     )));
     output.log("success: conn_open_ack verification passed");
@@ -144,6 +328,8 @@ pub(crate) fn process(
 
 #[cfg(test)]
 mod tests {
+    use crate::core::ics26_routing::msgs::MsgEnvelope;
+    use crate::core::ValidationContext;
     use crate::prelude::*;
 
     use core::str::FromStr;
@@ -272,6 +458,33 @@ mod tests {
         ];
 
         for test in tests {
+            let res = ValidationContext::validate(
+                &test.ctx,
+                MsgEnvelope::ConnectionMsg(test.msg.clone()),
+            );
+
+            match res {
+                Ok(_) => {
+                    assert!(
+                        test.want_pass,
+                        "conn_open_ack: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
+                        test.name,
+                        test.msg.clone(),
+                        test.ctx.clone()
+                    )
+                }
+                Err(e) => {
+                    assert!(
+                        !test.want_pass,
+                        "conn_open_ack: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
+                        test.name,
+                        test.msg,
+                        test.ctx.clone(),
+                        e,
+                    );
+                }
+            }
+
             let res = dispatch(&test.ctx, test.msg.clone());
             // Additionally check the events and the output objects in the result.
             match res {

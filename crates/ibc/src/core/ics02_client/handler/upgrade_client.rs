@@ -16,7 +16,6 @@ use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
 /// The result following the successful processing of a `MsgUpgradeAnyClient` message.
-/// This data type should be used with a qualified name `upgrade_client::Result` to avoid ambiguity.
 #[derive(Clone, Debug, PartialEq)]
 pub struct UpgradeClientResult {
     pub client_id: ClientId,

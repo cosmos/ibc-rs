@@ -1,17 +1,88 @@
 //! Protocol logic specific to ICS3 messages of type `MsgConnectionOpenInit`.
 
-use crate::core::ics03_connection::connection::{ConnectionEnd, State};
+use crate::core::context::ContextError;
+use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics24_host::identifier::ConnectionId;
+use crate::core::ics24_host::path::{ClientConnectionsPath, ConnectionsPath};
+use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
 use super::ConnectionIdState;
+
+pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
+where
+    Ctx: ValidationContext,
+{
+    // An IBC client running on the local (host) chain should exist.
+    ctx_a.client_state(&msg.client_id_on_a)?;
+
+    if let Some(version) = msg.version {
+        if !ctx_a.get_compatible_versions().contains(&version) {
+            return Err(ConnectionError::VersionNotSupported { version }.into());
+        }
+    }
+
+    Ok(())
+}
+
+pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
+where
+    Ctx: ExecutionContext,
+{
+    let versions = match msg.version {
+        Some(version) => {
+            if ctx_a.get_compatible_versions().contains(&version) {
+                Ok(vec![version])
+            } else {
+                Err(ConnectionError::VersionNotSupported { version })
+            }
+        }
+        None => Ok(ctx_a.get_compatible_versions()),
+    }?;
+
+    let conn_end_on_a = ConnectionEnd::new(
+        State::Init,
+        msg.client_id_on_a.clone(),
+        Counterparty::new(
+            msg.counterparty.client_id().clone(),
+            None,
+            msg.counterparty.prefix().clone(),
+        ),
+        versions,
+        msg.delay_period,
+    );
+
+    // Construct the identifier for the new connection.
+    let conn_id_on_a = ConnectionId::new(ctx_a.connection_counter()?);
+
+    ctx_a.log_message(format!(
+        "success: conn_open_init: generated new connection identifier: {}",
+        conn_id_on_a
+    ));
+
+    {
+        let client_id_on_b = msg.counterparty.client_id().clone();
+
+        ctx_a.emit_ibc_event(IbcEvent::OpenInitConnection(OpenInit::new(
+            conn_id_on_a.clone(),
+            msg.client_id_on_a.clone(),
+            client_id_on_b,
+        )));
+    }
+
+    ctx_a.increase_connection_counter();
+    ctx_a.store_connection_to_client(ClientConnectionsPath(msg.client_id_on_a), &conn_id_on_a)?;
+    ctx_a.store_connection(ConnectionsPath(conn_id_on_a), &conn_end_on_a)?;
+
+    Ok(())
+}
 
 /// Per our convention, this message is processed on chain A.
 pub(crate) fn process(
@@ -37,7 +108,11 @@ pub(crate) fn process(
     let conn_end_on_a = ConnectionEnd::new(
         State::Init,
         msg.client_id_on_a.clone(),
-        msg.counterparty.clone(),
+        Counterparty::new(
+            msg.counterparty.client_id().clone(),
+            None,
+            msg.counterparty.prefix().clone(),
+        ),
         versions,
         msg.delay_period,
     );
@@ -80,6 +155,8 @@ mod tests {
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::msgs::ConnectionMsg;
     use crate::core::ics03_connection::version::Version;
+    use crate::core::ics26_routing::msgs::MsgEnvelope;
+    use crate::core::ValidationContext;
     use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::prelude::*;
@@ -137,7 +214,7 @@ mod tests {
                 name: "No version in MsgConnectionOpenInit msg".to_string(),
                 ctx: good_context.clone(),
                 msg: ConnectionMsg::ConnectionOpenInit(msg_conn_init_no_version),
-                expected_versions: good_context.get_compatible_versions(),
+                expected_versions: ConnectionReader::get_compatible_versions(&good_context),
                 want_pass: true,
             },
             Test {
@@ -152,6 +229,33 @@ mod tests {
         .collect();
 
         for test in tests {
+            let res = ValidationContext::validate(
+                &test.ctx,
+                MsgEnvelope::ConnectionMsg(test.msg.clone()),
+            );
+
+            match res {
+                Ok(_) => {
+                    assert!(
+                        test.want_pass,
+                        "conn_open_init: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
+                        test.name,
+                        test.msg.clone(),
+                        test.ctx.clone()
+                    )
+                }
+                Err(e) => {
+                    assert!(
+                        !test.want_pass,
+                        "conn_open_init: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
+                        test.name,
+                        test.msg,
+                        test.ctx.clone(),
+                        e,
+                    );
+                }
+            }
+
             let res = dispatch(&test.ctx, test.msg.clone());
             // Additionally check the events and the output objects in the result.
             match res {

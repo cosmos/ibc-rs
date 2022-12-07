@@ -3,12 +3,17 @@ use crate::prelude::*;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::timestamp::{Timestamp, TimestampOverflowError};
-use displaydoc::Display;
-
 use crate::Height;
+
+use core::time::Duration;
+
+use displaydoc::Display;
 use tendermint::account::Id;
-use tendermint::Error as TendermintError;
+use tendermint::{Error as TendermintError, Hash};
 use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
+use tendermint_light_client_verifier::operations::VotingPowerTally;
+use tendermint_light_client_verifier::types::ValidatorSet;
+use tendermint_light_client_verifier::Verdict;
 
 #[derive(Debug, Display)]
 pub enum Error {
@@ -81,7 +86,7 @@ pub enum Error {
         update_revision: u64,
     },
     /// not enough trust because insufficient validators overlap: `{reason}`
-    NotEnoughTrustedValsSigned { reason: String },
+    NotEnoughTrustedValsSigned { reason: VotingPowerTally },
     /// verification failed: `{detail}`
     VerificationError { detail: LightClientErrorDetail },
     /// Processed time for the client `{client_id}` at height `{height}` not found
@@ -98,6 +103,28 @@ pub enum Error {
         frozen_height: Height,
         target_height: Height,
     },
+    /// trusted validators `{trusted_validator_set:?}`, does not hash to latest trusted validators. Expected: `{next_validators_hash}`, got: `{trusted_val_hash}`
+    MisbehaviourTrustedValidatorHashMismatch {
+        trusted_validator_set: ValidatorSet,
+        next_validators_hash: Hash,
+        trusted_val_hash: Hash,
+    },
+    /// current timestamp minus the latest consensus state timestamp is greater than or equal to the trusting period (`{duration_since_consensus_state:?}` >= `{trusting_period:?}`)
+    ConsensusStateTimestampGteTrustingPeriod {
+        duration_since_consensus_state: Duration,
+        trusting_period: Duration,
+    },
+    /// headers block hashes are equal
+    MisbehaviourHeadersBlockHashesEqual,
+    /// headers are not at same height and are monotonically increasing
+    MisbehaviourHeadersNotAtSameHeight,
+    /// header chain-id `{header_chain_id}` does not match the light client's chain-id `{chain_id}`)
+    MisbehaviourHeadersChainIdMismatch {
+        header_chain_id: String,
+        chain_id: String,
+    },
+    /// invalid raw client id: `{client_id}`
+    InvalidRawClientId { client_id: String },
 }
 
 #[cfg(feature = "std")]
@@ -131,6 +158,20 @@ impl From<Error> for ClientError {
     fn from(e: Error) -> Self {
         Self::ClientSpecific {
             description: e.to_string(),
+        }
+    }
+}
+
+pub(crate) trait IntoResult<T, E> {
+    fn into_result(self) -> Result<T, E>;
+}
+
+impl IntoResult<(), Error> for Verdict {
+    fn into_result(self) -> Result<(), Error> {
+        match self {
+            Verdict::Success => Ok(()),
+            Verdict::NotEnoughTrust(reason) => Err(Error::NotEnoughTrustedValsSigned { reason }),
+            Verdict::Invalid(detail) => Err(Error::VerificationError { detail }),
         }
     }
 }
