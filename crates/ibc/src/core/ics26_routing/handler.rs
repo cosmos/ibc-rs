@@ -436,28 +436,26 @@ mod tests {
             Test {
                 name: "Connection open try fails due to InvalidConsensusHeight (too high)"
                     .to_string(),
-                msg: MsgEnvelope::ConnectionMsg(ConnectionMsg::ConnectionOpenTry(Box::new(
+                msg: MsgEnvelope::ConnectionMsg(ConnectionMsg::ConnectionOpenTry(
                     incorrect_msg_conn_try,
-                )))
+                ))
                 .into(),
                 want_pass: false,
                 state_check: None,
             },
             Test {
                 name: "Connection open try succeeds".to_string(),
-                msg: MsgEnvelope::ConnectionMsg(ConnectionMsg::ConnectionOpenTry(Box::new(
+                msg: MsgEnvelope::ConnectionMsg(ConnectionMsg::ConnectionOpenTry(
                     correct_msg_conn_try.with_client_id(client_id.clone()),
-                )))
+                ))
                 .into(),
                 want_pass: true,
                 state_check: None,
             },
             Test {
                 name: "Connection open ack succeeds".to_string(),
-                msg: MsgEnvelope::ConnectionMsg(ConnectionMsg::ConnectionOpenAck(Box::new(
-                    msg_conn_ack,
-                )))
-                .into(),
+                msg: MsgEnvelope::ConnectionMsg(ConnectionMsg::ConnectionOpenAck(msg_conn_ack))
+                    .into(),
                 want_pass: true,
                 state_check: None,
             },
