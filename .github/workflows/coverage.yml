@@ -2,6 +2,7 @@ name: Coverage
 on:
   pull_request:
     paths:
+      - .codecov.yml
       - .github/workflows/rust.yml
       - .github/workflows/coverage.yml
       - Cargo.toml
@@ -49,4 +50,3 @@ jobs:
         with:
           files: lcov.info
           fail_ci_if_error: true
-
