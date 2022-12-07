@@ -110,12 +110,8 @@ pub trait ValidationContext {
                 ConnectionMsg::ConnectionOpenInit(message) => {
                     conn_open_init::validate(self, message)
                 }
-                ConnectionMsg::ConnectionOpenTry(message) => {
-                    conn_open_try::validate(self, *message)
-                }
-                ConnectionMsg::ConnectionOpenAck(message) => {
-                    conn_open_ack::validate(self, *message)
-                }
+                ConnectionMsg::ConnectionOpenTry(message) => conn_open_try::validate(self, message),
+                ConnectionMsg::ConnectionOpenAck(message) => conn_open_ack::validate(self, message),
                 ConnectionMsg::ConnectionOpenConfirm(ref message) => {
                     conn_open_confirm::validate(self, message)
                 }
@@ -335,8 +331,8 @@ pub trait ExecutionContext: ValidationContext {
                 ConnectionMsg::ConnectionOpenInit(message) => {
                     conn_open_init::execute(self, message)
                 }
-                ConnectionMsg::ConnectionOpenTry(message) => conn_open_try::execute(self, *message),
-                ConnectionMsg::ConnectionOpenAck(message) => conn_open_ack::execute(self, *message),
+                ConnectionMsg::ConnectionOpenTry(message) => conn_open_try::execute(self, message),
+                ConnectionMsg::ConnectionOpenAck(message) => conn_open_ack::execute(self, message),
                 ConnectionMsg::ConnectionOpenConfirm(ref message) => {
                     conn_open_confirm::execute(self, message)
                 }
