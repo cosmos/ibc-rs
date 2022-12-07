@@ -7,7 +7,8 @@ use crate::core::ics02_client::events::ClientMisbehaviour;
 use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::{ContextError, ValidationContext};
+use crate::core::ics24_host::path::ClientStatePath;
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
@@ -43,6 +44,37 @@ where
         })?;
 
     Ok(())
+}
+
+pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgSubmitMisbehaviour) -> Result<(), ContextError>
+where
+    Ctx: ExecutionContext,
+{
+    let MsgSubmitMisbehaviour {
+        client_id,
+        misbehaviour,
+        signer: _,
+    } = msg;
+
+    // Read client state from the host chain store.
+    let client_state = ctx.client_state(&client_id)?;
+
+    if client_state.is_frozen() {
+        return Err(ClientError::ClientFrozen { client_id }.into());
+    }
+
+    let client_state = client_state
+        .check_misbehaviour_and_update_state(ctx, client_id.clone(), misbehaviour)
+        .map_err(|e| ClientError::MisbehaviourHandlingFailure {
+            reason: e.to_string(),
+        })?;
+
+    ctx.emit_ibc_event(IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(
+        client_id.clone(),
+        client_state.client_type(),
+    )));
+
+    ctx.store_client_state(ClientStatePath(client_id), client_state)
 }
 
 pub fn process(

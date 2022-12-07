@@ -317,7 +317,7 @@ pub trait ExecutionContext: ValidationContext {
             MsgEnvelope::ClientMsg(message) => match message {
                 ClientMsg::CreateClient(message) => create_client::execute(self, message),
                 ClientMsg::UpdateClient(message) => update_client::execute(self, message),
-                ClientMsg::Misbehaviour(_message) => unimplemented!(),
+                ClientMsg::Misbehaviour(message) => misbehaviour::execute(self, message),
                 ClientMsg::UpgradeClient(message) => upgrade_client::execute(self, message),
             }
             .map_err(RouterError::ContextError),
