@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## v0.24.0
+
+*December 8, 2022*
+
+This release mainly updates the tendermint-rs dependency to v0.27.0 and includes security improvements.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Update to changes in tendermint-rs 0.27
+  ([#260](https://github.com/cosmos/ibc-rs/pulls/260))
+
+### IMPROVEMENTS
+
+- Update `ics23` to v0.9.0, which contains substantial security improvements
+  ([#278](https://github.com/cosmos/ibc-rs/issues/278))
+
 ## v0.23.0
 
 *November 21, 2022*
