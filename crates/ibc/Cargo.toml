@@ -35,16 +35,12 @@ std = [
     "primitive-types/std",
     "clock",
     "tendermint/std",
-    "codec/std",
+    "parity-scale-codec/std",
     "scale-info/std",
-    "sp-runtime/std",
     "borsh/std"
 ]
 clock = ["tendermint/clock", "time/std"]
-scale-info = []
-sp-runtime = []
-codec = []
-scale-codec = ["dep:codec", "dep:scale-info", "dep:sp-runtime"]
+parity-scale-codec = ["dep:parity-scale-codec", "scale-info"]
 borsh = ["dep:borsh"]
 
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
@@ -73,9 +69,8 @@ uint = { version = "0.9", default-features = false }
 primitive-types = { version = "0.12.0", default-features = false, features = ["serde_no_std"] }
 dyn-clone = "1.0.8"
 ## for codec encode or decode
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"], optional = true }
+parity-scale-codec = { version = "3.0.0", default-features = false, features = ["derive"], optional = true }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"], optional = true }
-sp-runtime = {  version = "7.0.0", default-features = false, optional = true }
 ## for borsh encode or decode
 borsh = {version = "0.9.3", default-features = false, optional = true }
 

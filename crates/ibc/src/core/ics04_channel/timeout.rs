@@ -8,8 +8,12 @@ use crate::core::ics02_client::{error::ClientError, height::Height};
 use crate::prelude::*;
 
 #[cfg_attr(
-    feature = "scale-codec",
-    derive(codec::Encode, codec::Decode, scale_info::TypeInfo)
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
 )]
 #[cfg_attr(
     feature = "borsh",

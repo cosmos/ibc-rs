@@ -50,9 +50,9 @@ impl borsh::BorshDeserialize for Timestamp {
     }
 }
 
-#[cfg(feature = "scale-codec")]
-impl codec::Encode for Timestamp {
-    fn encode_to<T: codec::Output + ?Sized>(&self, writer: &mut T) {
+#[cfg(feature = "parity-scale-codec")]
+impl parity_scale_codec::Encode for Timestamp {
+    fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, writer: &mut T) {
         let timestamp = if let Some(time) = self.time {
             time.unix_timestamp_nanos()
         } else {
@@ -62,29 +62,29 @@ impl codec::Encode for Timestamp {
         timestamp.encode_to(writer);
     }
 }
-#[cfg(feature = "scale-codec")]
-impl codec::Decode for Timestamp {
-    fn decode<I: codec::Input>(input: &mut I) -> Result<Self, codec::Error> {
+#[cfg(feature = "parity-scale-codec")]
+impl parity_scale_codec::Decode for Timestamp {
+    fn decode<I: parity_scale_codec::Input>(
+        input: &mut I,
+    ) -> Result<Self, parity_scale_codec::Error> {
         let timestamp = u64::decode(input)?;
         Timestamp::from_nanoseconds(timestamp)
-            .map_err(|_| codec::Error::from("from nanoseconds error"))
+            .map_err(|_| parity_scale_codec::Error::from("from nanoseconds error"))
     }
 }
 
-#[cfg(feature = "scale-codec")]
+#[cfg(feature = "parity-scale-codec")]
 impl scale_info::TypeInfo for Timestamp {
     type Identity = Self;
 
     fn type_info() -> scale_info::Type {
         scale_info::Type::builder()
             .path(scale_info::Path::new("Timestamp", module_path!()))
-            .composite(
-                scale_info::build::Fields::named().field(|f| {
-                    f.ty::<Option<i128>>()
-                        .name("time")
-                        .type_name("Option<i128>")
-                }), // todo(this ty should be Optoion<Time>)
-            )
+            .composite(scale_info::build::Fields::named().field(|f| {
+                f.ty::<Option<i128>>()
+                    .name("time")
+                    .type_name("Option<i128>")
+            }))
     }
 }
 
