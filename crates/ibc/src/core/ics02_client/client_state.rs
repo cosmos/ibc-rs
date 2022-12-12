@@ -79,14 +79,14 @@ pub trait ClientState:
     fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError>;
 
     /// XXX: temporary solution until we get rid of `ClientReader`
-    fn old_check_header_and_update_state(
+    fn check_header_and_update_state(
         &self,
         ctx: &dyn ClientReader,
         client_id: ClientId,
         header: Any,
     ) -> Result<UpdatedState, ClientError>;
 
-    fn check_header_and_update_state(
+    fn new_check_header_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
         client_id: ClientId,
