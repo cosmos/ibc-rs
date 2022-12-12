@@ -73,9 +73,6 @@ where
         .into());
     }
 
-    // Use client_state to validate the new header against the latest consensus_state.
-    // This function will return the new client_state (its latest_height changed) and a
-    // consensus_state obtained from header. These will be later persisted by the keeper.
     let _ = client_state
         .check_header_and_update_state(ctx, client_id.clone(), header)
         .map_err(|e| ClientError::HeaderVerificationFailure {

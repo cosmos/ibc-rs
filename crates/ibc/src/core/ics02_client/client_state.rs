@@ -18,7 +18,7 @@ use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ValidationContext;
+use crate::core::{ContextError, ValidationContext};
 use crate::dynamic_typing::AsAny;
 use crate::prelude::*;
 use crate::Height;
@@ -93,12 +93,20 @@ pub trait ClientState:
         header: Any,
     ) -> Result<UpdatedState, ClientError>;
 
-    fn check_misbehaviour_and_update_state(
+    /// XXX: temporary solution until we get rid of `ClientReader`
+    fn old_check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ClientReader,
         client_id: ClientId,
         misbehaviour: Any,
     ) -> Result<Box<dyn ClientState>, ClientError>;
+
+    fn check_misbehaviour_and_update_state(
+        &self,
+        ctx: &dyn ValidationContext,
+        client_id: ClientId,
+        misbehaviour: Any,
+    ) -> Result<Box<dyn ClientState>, ContextError>;
 
     fn verify_upgrade_and_update_state(
         &self,
