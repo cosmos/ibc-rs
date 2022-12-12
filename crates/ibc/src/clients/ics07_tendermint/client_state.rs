@@ -570,7 +570,7 @@ impl Ics2ClientState for ClientState {
         })
     }
 
-    fn old_check_misbehaviour_and_update_state(
+    fn check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ClientReader,
         client_id: ClientId,
@@ -629,7 +629,7 @@ impl Ics2ClientState for ClientState {
             .into_box())
     }
 
-    fn check_misbehaviour_and_update_state(
+    fn new_check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
         client_id: ClientId,

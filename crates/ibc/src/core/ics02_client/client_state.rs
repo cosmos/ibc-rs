@@ -78,7 +78,6 @@ pub trait ClientState:
 
     fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError>;
 
-    /// XXX: temporary solution until we get rid of `ClientReader`
     fn check_header_and_update_state(
         &self,
         ctx: &dyn ClientReader,
@@ -86,6 +85,7 @@ pub trait ClientState:
         header: Any,
     ) -> Result<UpdatedState, ClientError>;
 
+    /// XXX: temporary solution until we get rid of `ClientReader`
     fn new_check_header_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
@@ -93,15 +93,15 @@ pub trait ClientState:
         header: Any,
     ) -> Result<UpdatedState, ClientError>;
 
-    /// XXX: temporary solution until we get rid of `ClientReader`
-    fn old_check_misbehaviour_and_update_state(
+    fn check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ClientReader,
         client_id: ClientId,
         misbehaviour: Any,
     ) -> Result<Box<dyn ClientState>, ClientError>;
 
-    fn check_misbehaviour_and_update_state(
+    /// XXX: temporary solution until we get rid of `ClientReader`
+    fn new_check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
         client_id: ClientId,

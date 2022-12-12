@@ -222,7 +222,7 @@ impl ClientState for MockClientState {
         })
     }
 
-    fn old_check_misbehaviour_and_update_state(
+    fn check_misbehaviour_and_update_state(
         &self,
         _ctx: &dyn ClientReader,
         _client_id: ClientId,
@@ -249,7 +249,7 @@ impl ClientState for MockClientState {
         Ok(new_state.into_box())
     }
 
-    fn check_misbehaviour_and_update_state(
+    fn new_check_misbehaviour_and_update_state(
         &self,
         _ctx: &dyn ValidationContext,
         _client_id: ClientId,
