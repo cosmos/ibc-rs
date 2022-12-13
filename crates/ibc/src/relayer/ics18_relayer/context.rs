@@ -6,7 +6,7 @@ use crate::core::ics02_client::header::Header;
 use crate::events::IbcEvent;
 
 use crate::core::ics24_host::identifier::ClientId;
-use crate::relayer::ics18_relayer::error::Error;
+use crate::relayer::ics18_relayer::error::RelayerError;
 use crate::signer::Signer;
 use crate::Height;
 
@@ -15,9 +15,9 @@ use crate::Height;
 /// Most of the functions in this represent wrappers over the ABCI interface.
 /// This trait mimics the `Chain` trait, but at a lower level of abstraction (no networking, header
 /// types, light client, RPC client, etc.)
-pub trait Ics18Context {
+pub trait RelayerContext {
     /// Returns the latest height of the chain.
-    fn query_latest_height(&self) -> Height;
+    fn query_latest_height(&self) -> Result<Height, RelayerError>;
 
     /// Returns this client state for the given `client_id` on this chain.
     /// Wrapper over the `/abci_query?path=..` endpoint.
@@ -28,7 +28,7 @@ pub trait Ics18Context {
 
     /// Interface that the relayer uses to submit a datagram to this chain.
     /// One can think of this as wrapping around the `/broadcast_tx_commit` ABCI endpoint.
-    fn send(&mut self, msgs: Vec<Any>) -> Result<Vec<IbcEvent>, Error>;
+    fn send(&mut self, msgs: Vec<Any>) -> Result<Vec<IbcEvent>, RelayerError>;
 
     /// Temporary solution. Similar to `CosmosSDKChain::key_and_signer()` but simpler.
     fn signer(&self) -> Signer;

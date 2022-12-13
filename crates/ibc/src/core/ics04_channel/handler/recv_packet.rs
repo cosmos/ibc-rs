@@ -1,7 +1,7 @@
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{Counterparty, Order, State};
 use crate::core::ics04_channel::context::ChannelReader;
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::events::ReceivePacket;
 use crate::core::ics04_channel::handler::verify::verify_packet_recv_proofs;
 use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
@@ -10,6 +10,7 @@ use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::timestamp::Expiry;
+use alloc::string::ToString;
 
 #[derive(Clone, Debug)]
 pub enum RecvPacketResult {
@@ -30,19 +31,20 @@ pub enum RecvPacketResult {
 pub fn process<Ctx: ChannelReader>(
     ctx: &Ctx,
     msg: &MsgRecvPacket,
-) -> HandlerResult<PacketResult, Error> {
+) -> HandlerResult<PacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
     let packet = &msg.packet;
 
-    let dest_channel_end =
-        ctx.channel_end(&packet.destination_port, &packet.destination_channel)?;
+    let dest_channel_end = ctx
+        .channel_end(&packet.destination_port, &packet.destination_channel)
+        .map_err(PacketError::Channel)?;
 
     if !dest_channel_end.state_matches(&State::Open) {
-        return Err(Error::invalid_channel_state(
-            packet.source_channel.clone(),
-            dest_channel_end.state,
-        ));
+        return Err(PacketError::InvalidChannelState {
+            channel_id: packet.source_channel.clone(),
+            state: dest_channel_end.state,
+        });
     }
 
     let counterparty = Counterparty::new(
@@ -51,32 +53,34 @@ pub fn process<Ctx: ChannelReader>(
     );
 
     if !dest_channel_end.counterparty_matches(&counterparty) {
-        return Err(Error::invalid_packet_counterparty(
-            packet.source_port.clone(),
-            packet.source_channel.clone(),
-        ));
+        return Err(PacketError::InvalidPacketCounterparty {
+            port_id: packet.source_port.clone(),
+            channel_id: packet.source_channel.clone(),
+        });
     }
 
     let dest_connection_id = &dest_channel_end.connection_hops()[0];
-    let connection_end = ctx.connection_end(dest_connection_id)?;
+    let connection_end = ctx
+        .connection_end(dest_connection_id)
+        .map_err(PacketError::Channel)?;
 
     if !connection_end.state_matches(&ConnectionState::Open) {
-        return Err(Error::connection_not_open(
-            dest_channel_end.connection_hops()[0].clone(),
-        ));
+        return Err(PacketError::ConnectionNotOpen {
+            connection_id: dest_channel_end.connection_hops()[0].clone(),
+        });
     }
 
-    let latest_height = ChannelReader::host_height(ctx);
+    let latest_height = ChannelReader::host_height(ctx).map_err(PacketError::Channel)?;
     if packet.timeout_height.has_expired(latest_height) {
-        return Err(Error::low_packet_height(
-            latest_height,
-            packet.timeout_height,
-        ));
+        return Err(PacketError::LowPacketHeight {
+            chain_height: latest_height,
+            timeout_height: packet.timeout_height,
+        });
     }
 
-    let latest_timestamp = ChannelReader::host_timestamp(ctx);
+    let latest_timestamp = ChannelReader::host_timestamp(ctx).map_err(PacketError::Channel)?;
     if let Expiry::Expired = latest_timestamp.check_expiry(&packet.timeout_timestamp) {
-        return Err(Error::low_packet_timestamp());
+        return Err(PacketError::LowPacketTimestamp);
     }
 
     verify_packet_recv_proofs(
@@ -85,7 +89,8 @@ pub fn process<Ctx: ChannelReader>(
         packet,
         &connection_end,
         &msg.proofs,
-    )?;
+    )
+    .map_err(PacketError::Channel)?;
 
     let result = if dest_channel_end.order_matches(&Order::Ordered) {
         let next_seq_recv =
@@ -100,10 +105,10 @@ pub fn process<Ctx: ChannelReader>(
 
             return Ok(output.with_result(PacketResult::Recv(RecvPacketResult::NoOp)));
         } else if packet.sequence != next_seq_recv {
-            return Err(Error::invalid_packet_sequence(
-                packet.sequence,
-                next_seq_recv,
-            ));
+            return Err(PacketError::InvalidPacketSequence {
+                given_sequence: packet.sequence,
+                next_sequence: next_seq_recv,
+            });
         }
 
         PacketResult::Recv(RecvPacketResult::Ordered {
@@ -128,7 +133,13 @@ pub fn process<Ctx: ChannelReader>(
 
                 return Ok(output.with_result(PacketResult::Recv(RecvPacketResult::NoOp)));
             }
-            Err(e) if e.detail() == Error::packet_receipt_not_found(packet.sequence).detail() => {
+            Err(e)
+                if e.to_string()
+                    == PacketError::PacketReceiptNotFound {
+                        sequence: packet.sequence,
+                    }
+                    .to_string() =>
+            {
                 // store a receipt that does not contain any data
                 PacketResult::Recv(RecvPacketResult::Unordered {
                     port_id: packet.destination_port.clone(),
@@ -137,7 +148,7 @@ pub fn process<Ctx: ChannelReader>(
                     receipt: Receipt::Ok,
                 })
             }
-            Err(_) => return Err(Error::implementation_specific()),
+            Err(_) => return Err(PacketError::ImplementationSpecific),
         }
     };
 
@@ -169,7 +180,7 @@ mod tests {
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
     use crate::mock::context::MockContext;
-    use crate::relayer::ics18_relayer::context::Ics18Context;
+    use crate::relayer::ics18_relayer::context::RelayerContext;
     use crate::test_utils::get_dummy_account_id;
     use crate::timestamp::Timestamp;
     use crate::timestamp::ZERO_DURATION;
@@ -186,7 +197,7 @@ mod tests {
 
         let context = MockContext::default();
 
-        let host_height = context.query_latest_height().increment();
+        let host_height = context.query_latest_height().unwrap().increment();
 
         let client_height = host_height.increment();
 

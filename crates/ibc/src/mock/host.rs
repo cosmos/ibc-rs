@@ -13,7 +13,7 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TMConse
 use crate::clients::ics07_tendermint::header::TENDERMINT_HEADER_TYPE_URL;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
 use crate::core::ics24_host::identifier::ChainId;
 use crate::mock::client_state::client_type as mock_client_type;
@@ -117,6 +117,13 @@ impl HostBlock {
             light_block,
         }
     }
+
+    pub fn try_into_tm_block(self) -> Option<SyntheticTmBlock> {
+        match self {
+            HostBlock::Mock(_) => None,
+            HostBlock::SyntheticTendermint(tm_block) => Some(tm_block),
+        }
+    }
 }
 
 impl From<SyntheticTmBlock> for Box<dyn ConsensusState> {
@@ -140,9 +147,9 @@ impl From<HostBlock> for Box<dyn ConsensusState> {
 impl ErasedProtobuf<Any> for HostBlock {}
 
 impl TryFrom<Any> for HostBlock {
-    type Error = Error;
+    type Error = ClientError;
 
-    fn try_from(_raw: Any) -> Result<Self, Error> {
+    fn try_from(_raw: Any) -> Result<Self, Self::Error> {
         todo!()
     }
 }
@@ -168,9 +175,9 @@ impl From<HostBlock> for Any {
 
         match value {
             HostBlock::Mock(mock_header) => mock_header.into(),
-            HostBlock::SyntheticTendermint(light_block_box) => Self {
+            HostBlock::SyntheticTendermint(light_block) => Self {
                 type_url: TENDERMINT_HEADER_TYPE_URL.to_string(),
-                value: encode_light_block(light_block_box),
+                value: encode_light_block(light_block),
             },
         }
     }

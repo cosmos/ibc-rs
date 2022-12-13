@@ -1,6 +1,6 @@
 use sha2::{Digest, Sha256};
 
-use super::error::Error as Ics20Error;
+use super::error::TokenTransferError;
 use crate::applications::transfer::acknowledgement::Acknowledgement;
 use crate::applications::transfer::events::{AckEvent, AckStatusEvent, RecvEvent, TimeoutEvent};
 use crate::applications::transfer::packet::PacketData;
@@ -9,34 +9,64 @@ use crate::applications::transfer::relay::on_recv_packet::process_recv_packet;
 use crate::applications::transfer::relay::on_timeout_packet::process_timeout_packet;
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
-use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
+use crate::core::ics04_channel::commitment::PacketCommitment;
+use crate::core::ics04_channel::context::{ChannelKeeper, SendPacketReader};
+use crate::core::ics04_channel::error::PacketError;
+use crate::core::ics04_channel::handler::send_packet::SendPacketResult;
 use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as GenericAcknowledgement;
-use crate::core::ics04_channel::packet::Packet;
+use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{ModuleOutputBuilder, OnRecvPacketAck};
 use crate::prelude::*;
 use crate::signer::Signer;
 
-pub trait Ics20Keeper:
-    ChannelKeeper + BankKeeper<AccountId = <Self as Ics20Keeper>::AccountId>
-{
-    type AccountId;
+pub trait TokenTransferKeeper: BankKeeper {
+    fn store_send_packet_result(&mut self, result: SendPacketResult) -> Result<(), PacketError> {
+        self.store_next_sequence_send(
+            result.port_id.clone(),
+            result.channel_id.clone(),
+            result.seq_number,
+        )?;
+
+        self.store_packet_commitment(
+            result.port_id,
+            result.channel_id,
+            result.seq,
+            result.commitment,
+        )?;
+        Ok(())
+    }
+
+    fn store_packet_commitment(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        sequence: Sequence,
+        commitment: PacketCommitment,
+    ) -> Result<(), PacketError>;
+
+    fn store_next_sequence_send(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        seq: Sequence,
+    ) -> Result<(), PacketError>;
 }
 
-pub trait Ics20Reader: ChannelReader {
+pub trait TokenTransferReader: SendPacketReader {
     type AccountId: TryFrom<Signer>;
 
     /// get_port returns the portID for the transfer module.
-    fn get_port(&self) -> Result<PortId, Ics20Error>;
+    fn get_port(&self) -> Result<PortId, TokenTransferError>;
 
     /// Returns the escrow account id for a port and channel combination
     fn get_channel_escrow_address(
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<<Self as Ics20Reader>::AccountId, Ics20Error>;
+    ) -> Result<<Self as TokenTransferReader>::AccountId, TokenTransferError>;
 
     /// Returns true iff send is enabled.
     fn is_send_enabled(&self) -> bool;
@@ -48,6 +78,30 @@ pub trait Ics20Reader: ChannelReader {
     /// Implement only if the host chain supports hashed denominations.
     fn denom_hash_string(&self, _denom: &PrefixedDenom) -> Option<String> {
         None
+    }
+}
+
+impl<T> TokenTransferKeeper for T
+where
+    T: ChannelKeeper + BankKeeper,
+{
+    fn store_packet_commitment(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        sequence: Sequence,
+        commitment: PacketCommitment,
+    ) -> Result<(), PacketError> {
+        ChannelKeeper::store_packet_commitment(self, port_id, channel_id, sequence, commitment)
+    }
+
+    fn store_next_sequence_send(
+        &mut self,
+        port_id: PortId,
+        channel_id: ChannelId,
+        seq: Sequence,
+    ) -> Result<(), PacketError> {
+        ChannelKeeper::store_next_sequence_send(self, port_id, channel_id, seq)
     }
 }
 
@@ -74,52 +128,61 @@ pub trait BankKeeper {
         from: &Self::AccountId,
         to: &Self::AccountId,
         amt: &PrefixedCoin,
-    ) -> Result<(), Ics20Error>;
+    ) -> Result<(), TokenTransferError>;
 
     /// This function to enable minting ibc tokens to a user account
     fn mint_coins(
         &mut self,
         account: &Self::AccountId,
         amt: &PrefixedCoin,
-    ) -> Result<(), Ics20Error>;
+    ) -> Result<(), TokenTransferError>;
 
     /// This function should enable burning of minted tokens in a user account
     fn burn_coins(
         &mut self,
         account: &Self::AccountId,
         amt: &PrefixedCoin,
-    ) -> Result<(), Ics20Error>;
+    ) -> Result<(), TokenTransferError>;
 }
 
 /// Captures all the dependencies which the ICS20 module requires to be able to dispatch and
 /// process IBC messages.
-pub trait Ics20Context:
-    Ics20Keeper<AccountId = <Self as Ics20Context>::AccountId>
-    + Ics20Reader<AccountId = <Self as Ics20Context>::AccountId>
+pub trait TokenTransferContext:
+    TokenTransferKeeper<AccountId = <Self as TokenTransferContext>::AccountId>
+    + TokenTransferReader<AccountId = <Self as TokenTransferContext>::AccountId>
 {
     type AccountId: TryFrom<Signer>;
 }
 
 #[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_init(
-    ctx: &mut impl Ics20Context,
+    ctx: &mut impl TokenTransferContext,
     order: Order,
     _connection_hops: &[ConnectionId],
     port_id: &PortId,
     _channel_id: &ChannelId,
     _counterparty: &Counterparty,
     version: &Version,
-) -> Result<(ModuleExtras, Version), Ics20Error> {
+) -> Result<(ModuleExtras, Version), TokenTransferError> {
     if order != Order::Unordered {
-        return Err(Ics20Error::channel_not_unordered(order));
+        return Err(TokenTransferError::ChannelNotUnordered {
+            expect_order: Order::Unordered,
+            got_order: order,
+        });
     }
     let bound_port = ctx.get_port()?;
     if port_id != &bound_port {
-        return Err(Ics20Error::invalid_port(port_id.clone(), bound_port));
+        return Err(TokenTransferError::InvalidPort {
+            port_id: port_id.clone(),
+            exp_port_id: bound_port,
+        });
     }
 
     if !version.is_empty() && version != &Version::ics20() {
-        return Err(Ics20Error::invalid_version(version.clone()));
+        return Err(TokenTransferError::InvalidVersion {
+            expect_version: Version::ics20(),
+            got_version: version.clone(),
+        });
     }
 
     Ok((ModuleExtras::empty(), Version::ics20()))
@@ -127,66 +190,71 @@ pub fn on_chan_open_init(
 
 #[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_try(
-    _ctx: &mut impl Ics20Context,
+    _ctx: &mut impl TokenTransferContext,
     order: Order,
     _connection_hops: &[ConnectionId],
     _port_id: &PortId,
     _channel_id: &ChannelId,
     _counterparty: &Counterparty,
     counterparty_version: &Version,
-) -> Result<(ModuleExtras, Version), Ics20Error> {
+) -> Result<(ModuleExtras, Version), TokenTransferError> {
     if order != Order::Unordered {
-        return Err(Ics20Error::channel_not_unordered(order));
+        return Err(TokenTransferError::ChannelNotUnordered {
+            expect_order: Order::Unordered,
+            got_order: order,
+        });
     }
     if counterparty_version != &Version::ics20() {
-        return Err(Ics20Error::invalid_counterparty_version(
-            counterparty_version.clone(),
-        ));
+        return Err(TokenTransferError::InvalidCounterpartyVersion {
+            expect_version: Version::ics20(),
+            got_version: counterparty_version.clone(),
+        });
     }
 
     Ok((ModuleExtras::empty(), Version::ics20()))
 }
 
 pub fn on_chan_open_ack(
-    _ctx: &mut impl Ics20Context,
+    _ctx: &mut impl TokenTransferContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
     counterparty_version: &Version,
-) -> Result<ModuleExtras, Ics20Error> {
+) -> Result<ModuleExtras, TokenTransferError> {
     if counterparty_version != &Version::ics20() {
-        return Err(Ics20Error::invalid_counterparty_version(
-            counterparty_version.clone(),
-        ));
+        return Err(TokenTransferError::InvalidCounterpartyVersion {
+            expect_version: Version::ics20(),
+            got_version: counterparty_version.clone(),
+        });
     }
 
     Ok(ModuleExtras::empty())
 }
 
 pub fn on_chan_open_confirm(
-    _ctx: &mut impl Ics20Context,
+    _ctx: &mut impl TokenTransferContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
-) -> Result<ModuleExtras, Ics20Error> {
+) -> Result<ModuleExtras, TokenTransferError> {
     Ok(ModuleExtras::empty())
 }
 
 pub fn on_chan_close_init(
-    _ctx: &mut impl Ics20Context,
+    _ctx: &mut impl TokenTransferContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
-) -> Result<ModuleExtras, Ics20Error> {
-    Err(Ics20Error::cant_close_channel())
+) -> Result<ModuleExtras, TokenTransferError> {
+    Err(TokenTransferError::CantCloseChannel)
 }
 
 pub fn on_chan_close_confirm(
-    _ctx: &mut impl Ics20Context,
+    _ctx: &mut impl TokenTransferContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
-) -> Result<ModuleExtras, Ics20Error> {
+) -> Result<ModuleExtras, TokenTransferError> {
     Ok(ModuleExtras::empty())
 }
 
-pub fn on_recv_packet<Ctx: 'static + Ics20Context>(
+pub fn on_recv_packet<Ctx: 'static + TokenTransferContext>(
     ctx: &Ctx,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
@@ -196,8 +264,8 @@ pub fn on_recv_packet<Ctx: 'static + Ics20Context>(
         Ok(data) => data,
         Err(_) => {
             return OnRecvPacketAck::Failed(Box::new(Acknowledgement::Error(
-                Ics20Error::packet_data_deserialization().to_string(),
-            )))
+                TokenTransferError::PacketDataDeserialization.to_string(),
+            )));
         }
     };
 
@@ -218,17 +286,17 @@ pub fn on_recv_packet<Ctx: 'static + Ics20Context>(
 }
 
 pub fn on_acknowledgement_packet(
-    ctx: &mut impl Ics20Context,
+    ctx: &mut impl TokenTransferContext,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
     acknowledgement: &GenericAcknowledgement,
     _relayer: &Signer,
-) -> Result<(), Ics20Error> {
+) -> Result<(), TokenTransferError> {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
-        .map_err(|_| Ics20Error::packet_data_deserialization())?;
+        .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
 
     let acknowledgement = serde_json::from_slice::<Acknowledgement>(acknowledgement.as_ref())
-        .map_err(|_| Ics20Error::ack_deserialization())?;
+        .map_err(|_| TokenTransferError::AckDeserialization)?;
 
     process_ack_packet(ctx, packet, &data, &acknowledgement)?;
 
@@ -245,13 +313,13 @@ pub fn on_acknowledgement_packet(
 }
 
 pub fn on_timeout_packet(
-    ctx: &mut impl Ics20Context,
+    ctx: &mut impl TokenTransferContext,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
     _relayer: &Signer,
-) -> Result<(), Ics20Error> {
+) -> Result<(), TokenTransferError> {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
-        .map_err(|_| Ics20Error::packet_data_deserialization())?;
+        .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
 
     process_timeout_packet(ctx, packet, &data)?;
 
@@ -270,12 +338,12 @@ pub(crate) mod test {
     use subtle_encoding::bech32;
 
     use crate::applications::transfer::context::{cosmos_adr028_escrow_address, on_chan_open_try};
-    use crate::applications::transfer::error::Error as Ics20Error;
+    use crate::applications::transfer::error::TokenTransferError;
     use crate::applications::transfer::msgs::transfer::MsgTransfer;
     use crate::applications::transfer::relay::send_transfer::send_transfer;
     use crate::applications::transfer::PrefixedCoin;
     use crate::core::ics04_channel::channel::{Counterparty, Order};
-    use crate::core::ics04_channel::error::Error;
+    use crate::core::ics04_channel::error::ChannelError;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
     use crate::handler::HandlerOutputBuilder;
@@ -288,8 +356,10 @@ pub(crate) mod test {
         ctx: &mut DummyTransferModule,
         output: &mut HandlerOutputBuilder<()>,
         msg: MsgTransfer<PrefixedCoin>,
-    ) -> Result<(), Error> {
-        send_transfer(ctx, output, msg).map_err(|e: Ics20Error| Error::app_module(e.to_string()))
+    ) -> Result<(), ChannelError> {
+        send_transfer(ctx, output, msg).map_err(|e: TokenTransferError| ChannelError::AppModule {
+            description: e.to_string(),
+        })
     }
 
     fn get_defaults() -> (

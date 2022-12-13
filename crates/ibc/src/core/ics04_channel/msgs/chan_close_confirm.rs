@@ -5,7 +5,7 @@ use ibc_proto::protobuf::Protobuf;
 
 use ibc_proto::ibc::core::channel::v1::MsgChannelCloseConfirm as RawMsgChannelCloseConfirm;
 
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::signer::Signer;
 use crate::tx_msg::Msg;
@@ -45,7 +45,7 @@ impl MsgChannelCloseConfirm {
 }
 
 impl Msg for MsgChannelCloseConfirm {
-    type ValidationError = Error;
+    type ValidationError = ChannelError;
     type Raw = RawMsgChannelCloseConfirm;
 
     fn route(&self) -> String {
@@ -60,21 +60,24 @@ impl Msg for MsgChannelCloseConfirm {
 impl Protobuf<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {}
 
 impl TryFrom<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {
-    type Error = Error;
+    type Error = ChannelError;
 
     fn try_from(raw_msg: RawMsgChannelCloseConfirm) -> Result<Self, Self::Error> {
         Ok(MsgChannelCloseConfirm {
-            port_id_on_b: raw_msg.port_id.parse().map_err(Error::identifier)?,
-            chan_id_on_b: raw_msg.channel_id.parse().map_err(Error::identifier)?,
+            port_id_on_b: raw_msg.port_id.parse().map_err(ChannelError::Identifier)?,
+            chan_id_on_b: raw_msg
+                .channel_id
+                .parse()
+                .map_err(ChannelError::Identifier)?,
             proof_chan_end_on_a: raw_msg
                 .proof_init
                 .try_into()
-                .map_err(Error::invalid_proof)?,
+                .map_err(ChannelError::InvalidProof)?,
             proof_height_on_a: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_height)?,
-            signer: raw_msg.signer.parse().map_err(Error::signer)?,
+                .ok_or(ChannelError::MissingHeight)?,
+            signer: raw_msg.signer.parse().map_err(ChannelError::Signer)?,
         })
     }
 }

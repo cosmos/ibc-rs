@@ -11,7 +11,7 @@ use ics23::{
 };
 
 use crate::core::ics23_commitment::commitment::{CommitmentPrefix, CommitmentRoot};
-use crate::core::ics23_commitment::error::Error;
+use crate::core::ics23_commitment::error::CommitmentError;
 use crate::core::ics23_commitment::specs::ProofSpecs;
 
 pub fn apply_prefix(prefix: &CommitmentPrefix, mut path: Vec<String>) -> MerklePath {
@@ -75,24 +75,24 @@ impl MerkleProof {
         keys: MerklePath,
         value: Vec<u8>,
         start_index: usize,
-    ) -> Result<(), Error> {
+    ) -> Result<(), CommitmentError> {
         // validate arguments
         if self.proofs.is_empty() {
-            return Err(Error::empty_merkle_proof());
+            return Err(CommitmentError::EmptyMerkleProof);
         }
         if root.hash.is_empty() {
-            return Err(Error::empty_merkle_root());
+            return Err(CommitmentError::EmptyMerkleRoot);
         }
         let num = self.proofs.len();
         let ics23_specs = Vec::<ics23::ProofSpec>::from(specs.clone());
         if ics23_specs.len() != num {
-            return Err(Error::number_of_specs_mismatch());
+            return Err(CommitmentError::NumberOfSpecsMismatch);
         }
         if keys.key_path.len() != num {
-            return Err(Error::number_of_keys_mismatch());
+            return Err(CommitmentError::NumberOfKeysMismatch);
         }
         if value.is_empty() {
-            return Err(Error::empty_verified_value());
+            return Err(CommitmentError::EmptyVerifiedValue);
         }
 
         let mut subroot = value.clone();
@@ -109,7 +109,7 @@ impl MerkleProof {
                 Some(Proof::Exist(existence_proof)) => {
                     subroot =
                         calculate_existence_root::<ics23::HostFunctionsManager>(existence_proof)
-                            .map_err(|_| Error::invalid_merkle_proof())?;
+                            .map_err(|_| CommitmentError::InvalidMerkleProof)?;
 
                     if !verify_membership::<ics23::HostFunctionsManager>(
                         proof,
@@ -118,16 +118,16 @@ impl MerkleProof {
                         key.as_bytes(),
                         &value,
                     ) {
-                        return Err(Error::verification_failure());
+                        return Err(CommitmentError::VerificationFailure);
                     }
                     value = subroot.clone();
                 }
-                _ => return Err(Error::invalid_merkle_proof()),
+                _ => return Err(CommitmentError::InvalidMerkleProof),
             }
         }
 
         if root.hash != subroot {
-            return Err(Error::verification_failure());
+            return Err(CommitmentError::VerificationFailure);
         }
 
         Ok(())
@@ -138,31 +138,36 @@ impl MerkleProof {
         specs: &ProofSpecs,
         root: MerkleRoot,
         keys: MerklePath,
-    ) -> Result<(), Error> {
+    ) -> Result<(), CommitmentError> {
         // validate arguments
         if self.proofs.is_empty() {
-            return Err(Error::empty_merkle_proof());
+            return Err(CommitmentError::EmptyMerkleProof);
         }
         if root.hash.is_empty() {
-            return Err(Error::empty_merkle_root());
+            return Err(CommitmentError::EmptyMerkleRoot);
         }
         let num = self.proofs.len();
         let ics23_specs = Vec::<ics23::ProofSpec>::from(specs.clone());
         if ics23_specs.len() != num {
-            return Err(Error::number_of_specs_mismatch());
+            return Err(CommitmentError::NumberOfSpecsMismatch);
         }
         if keys.key_path.len() != num {
-            return Err(Error::number_of_keys_mismatch());
+            return Err(CommitmentError::NumberOfKeysMismatch);
         }
 
         // verify the absence of key in lowest subtree
-        let proof = self.proofs.get(0).ok_or_else(Error::invalid_merkle_proof)?;
-        let spec = ics23_specs.get(0).ok_or_else(Error::invalid_merkle_proof)?;
+        let proof = self
+            .proofs
+            .get(0)
+            .ok_or(CommitmentError::InvalidMerkleProof)?;
+        let spec = ics23_specs
+            .get(0)
+            .ok_or(CommitmentError::InvalidMerkleProof)?;
         // keys are represented from root-to-leaf
         let key = keys
             .key_path
             .get(num - 1)
-            .ok_or_else(Error::invalid_merkle_proof)?;
+            .ok_or(CommitmentError::InvalidMerkleProof)?;
         match &proof.proof {
             Some(Proof::Nonexist(non_existence_proof)) => {
                 let subroot = calculate_non_existence_root(non_existence_proof)?;
@@ -173,27 +178,27 @@ impl MerkleProof {
                     &subroot,
                     key.as_bytes(),
                 ) {
-                    return Err(Error::verification_failure());
+                    return Err(CommitmentError::VerificationFailure);
                 }
 
                 // verify membership proofs starting from index 1 with value = subroot
                 self.verify_membership(specs, root, keys, subroot, 1)
             }
-            _ => Err(Error::invalid_merkle_proof()),
+            _ => Err(CommitmentError::InvalidMerkleProof),
         }
     }
 }
 
 // TODO move to ics23
-fn calculate_non_existence_root(proof: &NonExistenceProof) -> Result<Vec<u8>, Error> {
+fn calculate_non_existence_root(proof: &NonExistenceProof) -> Result<Vec<u8>, CommitmentError> {
     if let Some(left) = &proof.left {
         calculate_existence_root::<ics23::HostFunctionsManager>(left)
-            .map_err(|_| Error::invalid_merkle_proof())
+            .map_err(|_| CommitmentError::InvalidMerkleProof)
     } else if let Some(right) = &proof.right {
         calculate_existence_root::<ics23::HostFunctionsManager>(right)
-            .map_err(|_| Error::invalid_merkle_proof())
+            .map_err(|_| CommitmentError::InvalidMerkleProof)
     } else {
-        Err(Error::invalid_merkle_proof())
+        Err(CommitmentError::InvalidMerkleProof)
     }
 }
 
@@ -249,13 +254,15 @@ fn calculate_non_existence_root(proof: &NonExistenceProof) -> Result<Vec<u8>, Er
 //     }
 // }
 
-pub fn convert_tm_to_ics_merkle_proof(tm_proof: &TendermintProof) -> Result<MerkleProof, Error> {
+pub fn convert_tm_to_ics_merkle_proof(
+    tm_proof: &TendermintProof,
+) -> Result<MerkleProof, CommitmentError> {
     let mut proofs = Vec::new();
 
     for op in &tm_proof.ops {
         let mut parsed = ibc_proto::ics23::CommitmentProof { proof: None };
         prost::Message::merge(&mut parsed, op.data.as_slice())
-            .map_err(Error::commitment_proof_decoding_failed)?;
+            .map_err(CommitmentError::CommitmentProofDecodingFailed)?;
 
         proofs.push(parsed);
     }

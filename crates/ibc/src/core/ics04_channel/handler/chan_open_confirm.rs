@@ -2,7 +2,7 @@
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::context::ChannelReader;
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
 use crate::handler::{HandlerOutput, HandlerResult};
@@ -12,7 +12,7 @@ use crate::prelude::*;
 pub(crate) fn process<Ctx: ChannelReader>(
     ctx_b: &Ctx,
     msg: &MsgChannelOpenConfirm,
-) -> HandlerResult<ChannelResult, Error> {
+) -> HandlerResult<ChannelResult, ChannelError> {
     let mut output = HandlerOutput::builder();
 
     // Unwrap the old channel end and validate it against the message.
@@ -20,26 +20,26 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     // Validate that the channel end is in a state where it can be confirmed.
     if !chan_end_on_b.state_matches(&State::TryOpen) {
-        return Err(Error::invalid_channel_state(
-            msg.chan_id_on_b.clone(),
-            chan_end_on_b.state,
-        ));
+        return Err(ChannelError::InvalidChannelState {
+            channel_id: msg.chan_id_on_b.clone(),
+            state: chan_end_on_b.state,
+        });
     }
 
     // An OPEN IBC connection running on the local (host) chain should exist.
     if chan_end_on_b.connection_hops().len() != 1 {
-        return Err(Error::invalid_connection_hops_length(
-            1,
-            chan_end_on_b.connection_hops().len(),
-        ));
+        return Err(ChannelError::InvalidConnectionHopsLength {
+            expected: 1,
+            actual: chan_end_on_b.connection_hops().len(),
+        });
     }
 
     let conn_end_on_b = ctx_b.connection_end(&chan_end_on_b.connection_hops()[0])?;
 
     if !conn_end_on_b.state_matches(&ConnectionState::Open) {
-        return Err(Error::connection_not_open(
-            chan_end_on_b.connection_hops()[0].clone(),
-        ));
+        return Err(ChannelError::ConnectionNotOpen {
+            connection_id: chan_end_on_b.connection_hops()[0].clone(),
+        });
     }
 
     // Verify proofs
@@ -53,17 +53,18 @@ pub(crate) fn process<Ctx: ChannelReader>(
         let chan_id_on_a = chan_end_on_b
             .counterparty()
             .channel_id()
-            .ok_or_else(Error::invalid_counterparty_channel_id)?;
-        let conn_id_on_a = conn_end_on_b
-            .counterparty()
-            .connection_id()
-            .ok_or_else(|| {
-                Error::undefined_connection_counterparty(chan_end_on_b.connection_hops()[0].clone())
-            })?;
+            .ok_or(ChannelError::InvalidCounterpartyChannelId)?;
+        let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
+            ChannelError::UndefinedConnectionCounterparty {
+                connection_id: chan_end_on_b.connection_hops()[0].clone(),
+            },
+        )?;
 
         // The client must not be frozen.
         if client_state_of_a_on_b.is_frozen() {
-            return Err(Error::frozen_client(client_id_on_b));
+            return Err(ChannelError::FrozenClient {
+                client_id: client_id_on_b,
+            });
         }
 
         let expected_chan_end_on_a = ChannelEnd::new(
@@ -86,7 +87,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
                 chan_id_on_a,
                 &expected_chan_end_on_a,
             )
-            .map_err(Error::verify_channel_failed)?;
+            .map_err(ChannelError::VerifyChannelFailed)?;
     }
 
     output.log("success: channel open confirm ");
@@ -140,7 +141,8 @@ mod tests {
         let client_id = ClientId::new(mock_client_type(), 24).unwrap();
         let conn_id = ConnectionId::new(2);
         let context = MockContext::default();
-        let client_consensus_state_height = context.host_current_height().revision_height();
+        let client_consensus_state_height =
+            context.host_current_height().unwrap().revision_height();
 
         // The connection underlying the channel we're trying to open.
         let conn_end = ConnectionEnd::new(

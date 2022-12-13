@@ -15,8 +15,8 @@ use ibc_proto::ibc::core::connection::v1::{
     IdentifiedConnection as RawIdentifiedConnection,
 };
 
-use crate::core::ics02_client::error::Error as ClientError;
-use crate::core::ics03_connection::error::Error;
+use crate::core::ics02_client::error::ClientError;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::error::ValidationError;
@@ -49,7 +49,7 @@ impl IdentifiedConnectionEnd {
 impl Protobuf<RawIdentifiedConnection> for IdentifiedConnectionEnd {}
 
 impl TryFrom<RawIdentifiedConnection> for IdentifiedConnectionEnd {
-    type Error = Error;
+    type Error = ConnectionError;
 
     fn try_from(value: RawIdentifiedConnection) -> Result<Self, Self::Error> {
         let raw_connection_end = RawConnectionEnd {
@@ -61,7 +61,10 @@ impl TryFrom<RawIdentifiedConnection> for IdentifiedConnectionEnd {
         };
 
         Ok(IdentifiedConnectionEnd {
-            connection_id: value.id.parse().map_err(Error::invalid_identifier)?,
+            connection_id: value
+                .id
+                .parse()
+                .map_err(ConnectionError::InvalidIdentifier)?,
             connection_end: raw_connection_end.try_into()?,
         })
     }
@@ -109,22 +112,25 @@ impl Default for ConnectionEnd {
 impl Protobuf<RawConnectionEnd> for ConnectionEnd {}
 
 impl TryFrom<RawConnectionEnd> for ConnectionEnd {
-    type Error = Error;
+    type Error = ConnectionError;
     fn try_from(value: RawConnectionEnd) -> Result<Self, Self::Error> {
         let state = value.state.try_into()?;
         if state == State::Uninitialized {
             return Ok(ConnectionEnd::default());
         }
         if value.client_id.is_empty() {
-            return Err(Error::empty_proto_connection_end());
+            return Err(ConnectionError::EmptyProtoConnectionEnd);
         }
 
         Ok(Self::new(
             state,
-            value.client_id.parse().map_err(Error::invalid_identifier)?,
+            value
+                .client_id
+                .parse()
+                .map_err(ConnectionError::InvalidIdentifier)?,
             value
                 .counterparty
-                .ok_or_else(Error::missing_counterparty)?
+                .ok_or(ConnectionError::MissingCounterparty)?
                 .try_into()?,
             value
                 .versions
@@ -253,23 +259,26 @@ impl Protobuf<RawCounterparty> for Counterparty {}
 // Converts from the wire format RawCounterparty. Typically used from the relayer side
 // during queries for response validation and to extract the Counterparty structure.
 impl TryFrom<RawCounterparty> for Counterparty {
-    type Error = Error;
+    type Error = ConnectionError;
 
     fn try_from(value: RawCounterparty) -> Result<Self, Self::Error> {
         let connection_id = Some(value.connection_id)
             .filter(|x| !x.is_empty())
             .map(|v| FromStr::from_str(v.as_str()))
             .transpose()
-            .map_err(Error::invalid_identifier)?;
+            .map_err(ConnectionError::InvalidIdentifier)?;
         Ok(Counterparty::new(
-            value.client_id.parse().map_err(Error::invalid_identifier)?,
+            value
+                .client_id
+                .parse()
+                .map_err(ConnectionError::InvalidIdentifier)?,
             connection_id,
             value
                 .prefix
-                .ok_or_else(Error::missing_counterparty)?
+                .ok_or(ConnectionError::MissingCounterparty)?
                 .key_prefix
                 .try_into()
-                .map_err(|_| Error::ics02_client(ClientError::empty_prefix()))?,
+                .map_err(|_| ConnectionError::Client(ClientError::EmptyPrefix))?,
         ))
     }
 }
@@ -340,13 +349,13 @@ impl State {
     }
 
     /// Parses the State out from a i32.
-    pub fn from_i32(s: i32) -> Result<Self, Error> {
+    pub fn from_i32(s: i32) -> Result<Self, ConnectionError> {
         match s {
             0 => Ok(Self::Uninitialized),
             1 => Ok(Self::Init),
             2 => Ok(Self::TryOpen),
             3 => Ok(Self::Open),
-            _ => Err(Error::invalid_state(s)),
+            _ => Err(ConnectionError::InvalidState { state: s }),
         }
     }
 
@@ -376,14 +385,14 @@ impl Display for State {
 }
 
 impl TryFrom<i32> for State {
-    type Error = Error;
+    type Error = ConnectionError;
     fn try_from(value: i32) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(Self::Uninitialized),
             1 => Ok(Self::Init),
             2 => Ok(Self::TryOpen),
             3 => Ok(Self::Open),
-            _ => Err(Error::invalid_state(value)),
+            _ => Err(ConnectionError::InvalidState { state: value }),
         }
     }
 }

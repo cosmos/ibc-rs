@@ -10,10 +10,12 @@ use prost::Message;
 use serde_derive::{Deserialize, Serialize};
 use tendermint::block::signed_header::SignedHeader;
 use tendermint::validator::Set as ValidatorSet;
+use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 
+use crate::clients::ics07_tendermint::consensus_state::ConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::error::Error as Ics02Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ChainId;
 use crate::timestamp::Timestamp;
 use crate::utils::pretty::{PrettySignedHeader, PrettyValidatorSet};
@@ -56,6 +58,32 @@ impl Header {
 
     pub fn compatible_with(&self, other_header: &Header) -> bool {
         headers_compatible(&self.signed_header, &other_header.signed_header)
+    }
+
+    pub(crate) fn as_untrusted_block_state(&self) -> UntrustedBlockState<'_> {
+        UntrustedBlockState {
+            signed_header: &self.signed_header,
+            validators: &self.validator_set,
+            next_validators: None,
+        }
+    }
+
+    pub(crate) fn as_trusted_block_state(
+        &self,
+        consensus_state: &ConsensusState,
+    ) -> Result<TrustedBlockState<'_>, Error> {
+        Ok(TrustedBlockState {
+            header_time: consensus_state.timestamp,
+            height: self
+                .trusted_height
+                .revision_height()
+                .try_into()
+                .map_err(|_| Error::InvalidHeaderHeight {
+                    height: self.trusted_height.revision_height(),
+                })?,
+            next_validators: &self.trusted_validator_set,
+            next_validators_hash: consensus_state.next_validators_hash,
+        })
     }
 }
 
@@ -102,30 +130,33 @@ impl TryFrom<RawHeader> for Header {
         let header = Self {
             signed_header: raw
                 .signed_header
-                .ok_or_else(Error::missing_signed_header)?
+                .ok_or(Error::MissingSignedHeader)?
                 .try_into()
-                .map_err(|e| Error::invalid_header("signed header conversion".to_string(), e))?,
+                .map_err(|e| Error::InvalidHeader {
+                    reason: "signed header conversion".to_string(),
+                    error: e,
+                })?,
             validator_set: raw
                 .validator_set
-                .ok_or_else(Error::missing_validator_set)?
+                .ok_or(Error::MissingValidatorSet)?
                 .try_into()
-                .map_err(Error::invalid_raw_header)?,
+                .map_err(Error::InvalidRawHeader)?,
             trusted_height: raw
                 .trusted_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_trusted_height)?,
+                .ok_or(Error::MissingTrustedHeight)?,
             trusted_validator_set: raw
                 .trusted_validators
-                .ok_or_else(Error::missing_trusted_validator_set)?
+                .ok_or(Error::MissingTrustedValidatorSet)?
                 .try_into()
-                .map_err(Error::invalid_raw_header)?,
+                .map_err(Error::InvalidRawHeader)?,
         };
 
         if header.height().revision_number() != header.trusted_height.revision_number() {
-            return Err(Error::mismatched_revisions(
-                header.trusted_height.revision_number(),
-                header.height().revision_number(),
-            ));
+            return Err(Error::MismatchedRevisions {
+                current_revision: header.trusted_height.revision_number(),
+                update_revision: header.height().revision_number(),
+            });
         }
 
         Ok(header)
@@ -135,18 +166,16 @@ impl TryFrom<RawHeader> for Header {
 impl Protobuf<Any> for Header {}
 
 impl TryFrom<Any> for Header {
-    type Error = Ics02Error;
+    type Error = ClientError;
 
-    fn try_from(raw: Any) -> Result<Self, Ics02Error> {
+    fn try_from(raw: Any) -> Result<Self, Self::Error> {
         use core::ops::Deref;
-
-        fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
-            RawHeader::decode(buf).map_err(Error::decode)?.try_into()
-        }
 
         match raw.type_url.as_str() {
             TENDERMINT_HEADER_TYPE_URL => decode_header(raw.value.deref()).map_err(Into::into),
-            _ => Err(Ics02Error::unknown_header_type(raw.type_url)),
+            _ => Err(ClientError::UnknownHeaderType {
+                header_type: raw.type_url,
+            }),
         }
     }
 }
@@ -162,7 +191,7 @@ impl From<Header> for Any {
 }
 
 pub fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
-    RawHeader::decode(buf).map_err(Error::decode)?.try_into()
+    RawHeader::decode(buf).map_err(Error::Decode)?.try_into()
 }
 
 impl From<Header> for RawHeader {
@@ -187,6 +216,7 @@ pub mod test_util {
     use tendermint::PublicKey;
 
     use crate::clients::ics07_tendermint::header::Header;
+    use crate::mock::host::SyntheticTmBlock;
     use crate::Height;
 
     pub fn get_dummy_tendermint_header() -> tendermint::block::Header {
@@ -238,6 +268,21 @@ pub mod test_util {
             validator_set: vs.clone(),
             trusted_height: Height::new(0, 1).unwrap(),
             trusted_validator_set: vs,
+        }
+    }
+
+    impl From<SyntheticTmBlock> for Header {
+        fn from(light_block: SyntheticTmBlock) -> Self {
+            let SyntheticTmBlock {
+                trusted_height,
+                light_block,
+            } = light_block;
+            Self {
+                signed_header: light_block.signed_header,
+                validator_set: light_block.validators,
+                trusted_height,
+                trusted_validator_set: light_block.next_validators,
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 use crate::core::ics04_channel::channel::ChannelEnd;
-use crate::core::ics04_channel::error::Error;
+use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics24_host::identifier::PortId;
 use crate::prelude::*;
 use crate::signer::Signer;
@@ -32,7 +32,7 @@ impl MsgChannelOpenInit {
 }
 
 impl Msg for MsgChannelOpenInit {
-    type ValidationError = Error;
+    type ValidationError = ChannelError;
     type Raw = RawMsgChannelOpenInit;
 
     fn route(&self) -> String {
@@ -47,16 +47,16 @@ impl Msg for MsgChannelOpenInit {
 impl Protobuf<RawMsgChannelOpenInit> for MsgChannelOpenInit {}
 
 impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
-    type Error = Error;
+    type Error = ChannelError;
 
     fn try_from(raw_msg: RawMsgChannelOpenInit) -> Result<Self, Self::Error> {
         Ok(MsgChannelOpenInit {
-            port_id_on_a: raw_msg.port_id.parse().map_err(Error::identifier)?,
+            port_id_on_a: raw_msg.port_id.parse().map_err(ChannelError::Identifier)?,
             chan_end_on_a: raw_msg
                 .channel
-                .ok_or_else(Error::missing_channel)?
+                .ok_or(ChannelError::MissingChannel)?
                 .try_into()?,
-            signer: raw_msg.signer.parse().map_err(Error::signer)?,
+            signer: raw_msg.signer.parse().map_err(ChannelError::Signer)?,
         })
     }
 }

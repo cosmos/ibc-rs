@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, Height};
 
 /// Path-space as listed in ICS-024
 /// https://github.com/cosmos/ibc/tree/master/spec/core/ics-024-host-requirements#path-space
@@ -10,7 +10,6 @@ use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
 
 use derive_more::{Display, From};
-use flex_error::define_error;
 
 /// ABCI Query path for the IBC sub-store
 pub const IBC_QUERY_PATH: &str = "store/ibc/key";
@@ -65,6 +64,16 @@ pub struct ClientConsensusStatePath {
     pub client_id: ClientId,
     pub epoch: u64,
     pub height: u64,
+}
+
+impl ClientConsensusStatePath {
+    pub fn new(client_id: ClientId, height: Height) -> ClientConsensusStatePath {
+        ClientConsensusStatePath {
+            client_id,
+            epoch: height.revision_number(),
+            height: height.revision_height(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
@@ -168,14 +177,14 @@ impl Path {
     }
 }
 
-define_error! {
-    #[derive(Eq, PartialEq)]
-    PathError {
-        ParseFailure
-            { path: String }
-            | e | { format!("'{}' could not be parsed into a Path", e.path) },
-    }
+#[derive(Debug, displaydoc::Display)]
+pub enum PathError {
+    /// `{path}` could not be parsed into a Path
+    ParseFailure { path: String },
 }
+
+#[cfg(feature = "std")]
+impl std::error::Error for PathError {}
 
 /// The FromStr trait allows paths encoded as strings to be parsed into Paths.
 impl FromStr for Path {
@@ -193,7 +202,9 @@ impl FromStr for Path {
             .or_else(|| parse_acks(&components))
             .or_else(|| parse_receipts(&components))
             .or_else(|| parse_upgrades(&components))
-            .ok_or_else(|| PathError::parse_failure(s.to_string()))
+            .ok_or(PathError::ParseFailure {
+                path: s.to_string(),
+            })
     }
 }
 

@@ -1,5 +1,5 @@
-use crate::applications::transfer::context::Ics20Context;
-use crate::applications::transfer::error::Error as Ics20Error;
+use crate::applications::transfer::context::TokenTransferContext;
+use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::events::DenomTraceEvent;
 use crate::applications::transfer::packet::PacketData;
 use crate::applications::transfer::{is_receiver_chain_source, TracePrefix};
@@ -7,21 +7,21 @@ use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics26_routing::context::{ModuleOutputBuilder, WriteFn};
 use crate::prelude::*;
 
-pub fn process_recv_packet<Ctx: 'static + Ics20Context>(
+pub fn process_recv_packet<Ctx: 'static + TokenTransferContext>(
     ctx: &Ctx,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
     data: PacketData,
-) -> Result<Box<WriteFn>, Ics20Error> {
+) -> Result<Box<WriteFn>, TokenTransferError> {
     if !ctx.is_receive_enabled() {
-        return Err(Ics20Error::receive_disabled());
+        return Err(TokenTransferError::ReceiveDisabled);
     }
 
     let receiver_account = data
         .receiver
         .clone()
         .try_into()
-        .map_err(|_| Ics20Error::parse_account_failure())?;
+        .map_err(|_| TokenTransferError::ParseAccountFailure)?;
 
     if is_receiver_chain_source(
         packet.source_port.clone(),

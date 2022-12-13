@@ -1,15 +1,4 @@
-use crate::core::ics02_client::context::ClientReader;
-use crate::core::ics03_connection::connection::ConnectionEnd;
-use crate::core::ics04_channel::channel::ChannelEnd;
-use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
-use crate::core::ics04_channel::context::ChannelReader;
-use crate::core::ics04_channel::packet::Sequence;
-use crate::core::ics23_commitment::commitment::{
-    CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
-};
-use crate::core::ics23_commitment::merkle::apply_prefix;
-use crate::core::ics24_host::path::ClientConsensusStatePath;
-use crate::core::ics24_host::Path;
+use crate::core::{ContextError, ValidationContext};
 use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap as HashMap;
@@ -25,11 +14,24 @@ use serde::{Deserialize, Serialize};
 use crate::core::ics02_client::client_state::{ClientState, UpdatedState, UpgradeOptions};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::context::ClientReader;
+use crate::core::ics02_client::error::ClientError;
+use crate::core::ics03_connection::connection::ConnectionEnd;
+use crate::core::ics04_channel::channel::ChannelEnd;
+use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
+use crate::core::ics04_channel::context::ChannelReader;
+use crate::core::ics04_channel::packet::Sequence;
+use crate::core::ics23_commitment::commitment::{
+    CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
+};
+use crate::core::ics23_commitment::merkle::apply_prefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
+use crate::core::ics24_host::path::ClientConsensusStatePath;
+use crate::core::ics24_host::Path;
 use crate::mock::client_state::client_type as mock_client_type;
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
+use crate::mock::misbehaviour::Misbehaviour;
 use crate::Height;
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
@@ -77,12 +79,19 @@ impl MockClientState {
     pub fn refresh_time(&self) -> Option<Duration> {
         None
     }
+
+    pub fn with_frozen_height(self, frozen_height: Height) -> Self {
+        Self {
+            frozen_height: Some(frozen_height),
+            ..self
+        }
+    }
 }
 
 impl Protobuf<RawMockClientState> for MockClientState {}
 
 impl TryFrom<RawMockClientState> for MockClientState {
-    type Error = Error;
+    type Error = ClientError;
 
     fn try_from(raw: RawMockClientState) -> Result<Self, Self::Error> {
         Ok(Self::new(raw.header.unwrap().try_into()?))
@@ -103,16 +112,16 @@ impl From<MockClientState> for RawMockClientState {
 impl Protobuf<Any> for MockClientState {}
 
 impl TryFrom<Any> for MockClientState {
-    type Error = Error;
+    type Error = ClientError;
 
-    fn try_from(raw: Any) -> Result<Self, Error> {
+    fn try_from(raw: Any) -> Result<Self, Self::Error> {
         use bytes::Buf;
         use core::ops::Deref;
         use prost::Message;
 
-        fn decode_client_state<B: Buf>(buf: B) -> Result<MockClientState, Error> {
+        fn decode_client_state<B: Buf>(buf: B) -> Result<MockClientState, ClientError> {
             RawMockClientState::decode(buf)
-                .map_err(Error::decode)?
+                .map_err(ClientError::Decode)?
                 .try_into()
         }
 
@@ -120,7 +129,9 @@ impl TryFrom<Any> for MockClientState {
             MOCK_CLIENT_STATE_TYPE_URL => {
                 decode_client_state(raw.value.deref()).map_err(Into::into)
             }
-            _ => Err(Error::unknown_client_state_type(raw.type_url)),
+            _ => Err(ClientError::UnknownClientStateType {
+                client_state_type: raw.type_url,
+            }),
         }
     }
 }
@@ -165,23 +176,23 @@ impl ClientState for MockClientState {
         false
     }
 
-    fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, Error> {
+    fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError> {
         MockConsensusState::try_from(consensus_state).map(MockConsensusState::into_box)
     }
 
-    fn check_header_and_update_state(
+    fn old_check_header_and_update_state(
         &self,
         _ctx: &dyn ClientReader,
         _client_id: ClientId,
         header: Any,
-    ) -> Result<UpdatedState, Error> {
+    ) -> Result<UpdatedState, ClientError> {
         let header = MockHeader::try_from(header)?;
 
         if self.latest_height() >= header.height() {
-            return Err(Error::low_header_height(
-                header.height(),
-                self.latest_height(),
-            ));
+            return Err(ClientError::LowHeaderHeight {
+                header_height: header.height(),
+                latest_height: self.latest_height(),
+            });
         }
 
         Ok(UpdatedState {
@@ -190,12 +201,88 @@ impl ClientState for MockClientState {
         })
     }
 
+    fn check_header_and_update_state(
+        &self,
+        _ctx: &dyn ValidationContext,
+        _client_id: ClientId,
+        header: Any,
+    ) -> Result<UpdatedState, ClientError> {
+        let header = MockHeader::try_from(header)?;
+
+        if self.latest_height() >= header.height() {
+            return Err(ClientError::LowHeaderHeight {
+                header_height: header.height(),
+                latest_height: self.latest_height(),
+            });
+        }
+
+        Ok(UpdatedState {
+            client_state: MockClientState::new(header).into_box(),
+            consensus_state: MockConsensusState::new(header).into_box(),
+        })
+    }
+
+    fn old_check_misbehaviour_and_update_state(
+        &self,
+        _ctx: &dyn ClientReader,
+        _client_id: ClientId,
+        misbehaviour: Any,
+    ) -> Result<Box<dyn ClientState>, ClientError> {
+        let misbehaviour = Misbehaviour::try_from(misbehaviour)?;
+        let header_1 = misbehaviour.header1;
+        let header_2 = misbehaviour.header2;
+
+        if header_1.height() != header_2.height() {
+            return Err(ClientError::InvalidHeight);
+        }
+
+        if self.latest_height() >= header_1.height() {
+            return Err(ClientError::LowHeaderHeight {
+                header_height: header_1.height(),
+                latest_height: self.latest_height(),
+            });
+        }
+
+        let new_state =
+            MockClientState::new(header_1).with_frozen_height(Height::new(0, 1).unwrap());
+
+        Ok(new_state.into_box())
+    }
+
+    fn check_misbehaviour_and_update_state(
+        &self,
+        _ctx: &dyn ValidationContext,
+        _client_id: ClientId,
+        misbehaviour: Any,
+    ) -> Result<Box<dyn ClientState>, ContextError> {
+        let misbehaviour = Misbehaviour::try_from(misbehaviour)?;
+        let header_1 = misbehaviour.header1;
+        let header_2 = misbehaviour.header2;
+
+        if header_1.height() != header_2.height() {
+            return Err(ClientError::InvalidHeight.into());
+        }
+
+        if self.latest_height() >= header_1.height() {
+            return Err(ClientError::LowHeaderHeight {
+                header_height: header_1.height(),
+                latest_height: self.latest_height(),
+            }
+            .into());
+        }
+
+        let new_state =
+            MockClientState::new(header_1).with_frozen_height(Height::new(0, 1).unwrap());
+
+        Ok(new_state.into_box())
+    }
+
     fn verify_upgrade_and_update_state(
         &self,
         consensus_state: Any,
         _proof_upgrade_client: MerkleProof,
         _proof_upgrade_consensus_state: MerkleProof,
-    ) -> Result<UpdatedState, Error> {
+    ) -> Result<UpdatedState, ClientError> {
         let consensus_state = MockConsensusState::try_from(consensus_state)?;
         Ok(UpdatedState {
             client_state: clone_box(self),
@@ -212,7 +299,7 @@ impl ClientState for MockClientState {
         client_id: &ClientId,
         consensus_height: Height,
         _expected_consensus_state: &dyn ConsensusState,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ClientError> {
         let client_prefixed_path = Path::ClientConsensusState(ClientConsensusStatePath {
             client_id: client_id.clone(),
             epoch: consensus_height.revision_number(),
@@ -233,7 +320,7 @@ impl ClientState for MockClientState {
         _root: &CommitmentRoot,
         _connection_id: &ConnectionId,
         _expected_connection_end: &ConnectionEnd,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ClientError> {
         Ok(())
     }
 
@@ -246,7 +333,7 @@ impl ClientState for MockClientState {
         _port_id: &PortId,
         _channel_id: &ChannelId,
         _expected_channel_end: &ChannelEnd,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ClientError> {
         Ok(())
     }
 
@@ -258,7 +345,7 @@ impl ClientState for MockClientState {
         _root: &CommitmentRoot,
         _client_id: &ClientId,
         _expected_client_state: Any,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ClientError> {
         Ok(())
     }
 
@@ -273,7 +360,7 @@ impl ClientState for MockClientState {
         _channel_id: &ChannelId,
         _sequence: Sequence,
         _commitment: PacketCommitment,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ClientError> {
         Ok(())
     }
 
@@ -288,7 +375,7 @@ impl ClientState for MockClientState {
         _channel_id: &ChannelId,
         _sequence: Sequence,
         _ack: AcknowledgementCommitment,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ClientError> {
         Ok(())
     }
 
@@ -302,7 +389,7 @@ impl ClientState for MockClientState {
         _port_id: &PortId,
         _channel_id: &ChannelId,
         _sequence: Sequence,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ClientError> {
         Ok(())
     }
 
@@ -316,7 +403,7 @@ impl ClientState for MockClientState {
         _port_id: &PortId,
         _channel_id: &ChannelId,
         _sequence: Sequence,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ClientError> {
         Ok(())
     }
 }

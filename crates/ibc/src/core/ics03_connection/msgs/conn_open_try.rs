@@ -10,7 +10,7 @@ use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenTry as RawMsgConnecti
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics03_connection::connection::Counterparty;
-use crate::core::ics03_connection::error::Error;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics24_host::identifier::ClientId;
@@ -51,7 +51,7 @@ pub struct MsgConnectionOpenTry {
 }
 
 impl Msg for MsgConnectionOpenTry {
-    type ValidationError = Error;
+    type ValidationError = ConnectionError;
     type Raw = RawMsgConnectionOpenTry;
 
     fn route(&self) -> String {
@@ -66,7 +66,7 @@ impl Msg for MsgConnectionOpenTry {
 impl Protobuf<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {}
 
 impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
-    type Error = Error;
+    type Error = ConnectionError;
 
     fn try_from(msg: RawMsgConnectionOpenTry) -> Result<Self, Self::Error> {
         let counterparty_versions = msg
@@ -76,7 +76,7 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
             .collect::<Result<Vec<_>, _>>()?;
 
         if counterparty_versions.is_empty() {
-            return Err(Error::empty_versions());
+            return Err(ConnectionError::EmptyVersions);
         }
 
         // We set the deprecated `previous_connection_id` field so that we can
@@ -84,32 +84,40 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
         #[allow(deprecated)]
         Ok(Self {
             previous_connection_id: msg.previous_connection_id,
-            client_id_on_b: msg.client_id.parse().map_err(Error::invalid_identifier)?,
-            client_state_of_b_on_a: msg.client_state.ok_or_else(Error::missing_client_state)?,
+            client_id_on_b: msg
+                .client_id
+                .parse()
+                .map_err(ConnectionError::InvalidIdentifier)?,
+            client_state_of_b_on_a: msg
+                .client_state
+                .ok_or(ConnectionError::MissingClientState)?,
             counterparty: msg
                 .counterparty
-                .ok_or_else(Error::missing_counterparty)?
+                .ok_or(ConnectionError::MissingCounterparty)?
                 .try_into()?,
             versions_on_a: counterparty_versions,
-            proof_conn_end_on_a: msg.proof_init.try_into().map_err(Error::invalid_proof)?,
+            proof_conn_end_on_a: msg
+                .proof_init
+                .try_into()
+                .map_err(ConnectionError::InvalidProof)?,
             proof_client_state_of_b_on_a: msg
                 .proof_client
                 .try_into()
-                .map_err(Error::invalid_proof)?,
+                .map_err(ConnectionError::InvalidProof)?,
             proof_consensus_state_of_b_on_a: msg
                 .proof_consensus
                 .try_into()
-                .map_err(Error::invalid_proof)?,
+                .map_err(ConnectionError::InvalidProof)?,
             proofs_height_on_a: msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_proof_height)?,
+                .ok_or(ConnectionError::MissingProofHeight)?,
             consensus_height_of_b_on_a: msg
                 .consensus_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or_else(Error::missing_consensus_height)?,
+                .ok_or(ConnectionError::MissingConsensusHeight)?,
             delay_period: Duration::from_nanos(msg.delay_period),
-            signer: msg.signer.parse().map_err(Error::signer)?,
+            signer: msg.signer.parse().map_err(ConnectionError::Signer)?,
         })
     }
 }

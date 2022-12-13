@@ -7,168 +7,84 @@ use crate::signer::SignerError;
 use crate::Height;
 
 use alloc::string::String;
-use flex_error::define_error;
+use displaydoc::Display;
 
-define_error! {
-    #[derive(Debug, PartialEq, Eq)]
-    Error {
-        Ics02Client
-            [ client_error::Error ]
-            | _ | { "ics02 client error" },
-
-        InvalidState
-            { state: i32 }
-            | e | { format_args!("connection state is unknown: {}", e.state) },
-
-        ConnectionExistsAlready
-            { connection_id: ConnectionId }
-            | e | {
-                format_args!("connection exists (was initialized) already: {0}",
-                    e.connection_id)
-            },
-
-        ConnectionMismatch
-            { connection_id: ConnectionId }
-            | e | {
-                format_args!("connection end for identifier {0} was never initialized",
-                    e.connection_id)
-            },
-
-        InvalidConsensusHeight
-            {
-                target_height: Height,
-                currrent_height: Height
-            }
-            | e | {
-                format_args!("consensus height claimed by the client on the other party is too advanced: {0} (host chain current height: {1})",
-                    e.target_height, e.currrent_height)
-            },
-
-        StaleConsensusHeight
-            {
-                target_height: Height,
-                oldest_height: Height
-            }
-            | e | {
-                format_args!("consensus height claimed by the client on the other party has been pruned: {0} (host chain oldest height: {1})",
-                    e.target_height, e.oldest_height)
-            },
-
-        InvalidIdentifier
-            [ ValidationError ]
-            | _ | { "identifier error" },
-
-        EmptyProtoConnectionEnd
-            | _ | { "ConnectionEnd domain object could not be constructed out of empty proto object" },
-
-        EmptyVersions
-            | _ | { "empty supported versions" },
-
-        EmptyFeatures
-            | _ | { "empty supported features" },
-
-        NoCommonVersion
-            | _ | { "no common version" },
-
-        VersionNotSupported
-            {
-                version: Version,
-            }
-            | e | { format_args!("version \"{}\" not supported", e.version) },
-
-        InvalidAddress
-            | _ | { "invalid address" },
-
-        MissingProofHeight
-            | _ | { "missing proof height" },
-
-        MissingConsensusHeight
-            | _ | { "missing consensus height" },
-
-        InvalidProof
-            [ ProofError ]
-            | _ | { "invalid connection proof" },
-
-        VerifyConnectionState
-            [ client_error::Error ]
-            | _ | { "error verifying connnection state" },
-
-        Signer
-            [ SignerError ]
-            | _ | { "invalid signer" },
-
-        ConnectionNotFound
-            { connection_id: ConnectionId }
-            | e | {
-                format_args!("no connection was found for the previous connection id provided {0}",
-                    e.connection_id)
-            },
-
-        InvalidCounterparty
-            | _ | { "invalid signer" },
-
-        ConnectionIdMismatch
-            {
-                connection_id: ConnectionId,
-                counterparty_connection_id: ConnectionId,
-            }
-            | e | {
-                format_args!("counterparty chosen connection id {0} is different than the connection id {1}",
-                    e.connection_id, e.counterparty_connection_id)
-            },
-
-        MissingCounterparty
-            | _ | { "missing counterparty" },
-
-
-        MissingCounterpartyPrefix
-            | _ | { "missing counterparty prefix" },
-        MissingClientState
-            | _ | { "missing client state" },
-
-        NullClientProof
-            | _ | { "client proof must be present" },
-
-        FrozenClient
-            { client_id: ClientId }
-            | e | {
-                format_args!("the client id does not match any client state: {0}",
-                    e.client_id)
-            },
-
-        ConnectionVerificationFailure
-            | _ | { "the connection proof verification failed" },
-
-        ConsensusStateVerificationFailure
-            { height: Height }
-            [ client_error::Error ]
-            | e | {
-                format_args!("the consensus proof verification failed (height: {0})",
-                    e.height)
-            },
-
+#[derive(Debug, Display)]
+pub enum ConnectionError {
+    /// client error: `{0}`
+    Client(client_error::ClientError),
+    /// connection state is unknown: `{state}`
+    InvalidState { state: i32 },
+    /// connection end for identifier `{connection_id}` was never initialized
+    ConnectionMismatch { connection_id: ConnectionId },
+    /// consensus height claimed by the client on the other party is too advanced: `{target_height}` (host chain current height: `{current_height}`)
+    InvalidConsensusHeight {
+        target_height: Height,
+        current_height: Height,
+    },
+    /// identifier error: `{0}`
+    InvalidIdentifier(ValidationError),
+    /// ConnectionEnd domain object could not be constructed out of empty proto object
+    EmptyProtoConnectionEnd,
+    /// empty supported versions
+    EmptyVersions,
+    /// empty supported features
+    EmptyFeatures,
+    /// no common version
+    NoCommonVersion,
+    /// version \"`{version}`\" not supported
+    VersionNotSupported { version: Version },
+    /// missing proof height
+    MissingProofHeight,
+    /// missing consensus height
+    MissingConsensusHeight,
+    /// invalid connection proof error: `{0}`
+    InvalidProof(ProofError),
+    /// verifying connnection state error: `{0}`
+    VerifyConnectionState(client_error::ClientError),
+    /// invalid signer error: `{0}`
+    Signer(SignerError),
+    /// no connection was found for the previous connection id provided `{connection_id}`
+    ConnectionNotFound { connection_id: ConnectionId },
+    /// invalid counterparty
+    InvalidCounterparty,
+    /// missing counterparty
+    MissingCounterparty,
+    /// missing client state
+    MissingClientState,
+    /// the consensus proof verification failed (height: `{height}`), client error: `{client_error}`
+    ConsensusStateVerificationFailure {
+        height: Height,
+        client_error: client_error::ClientError,
+    },
+    /// the client state proof verification failed for client id `{client_id}`, client error: `{client_error}`
+    ClientStateVerificationFailure {
         // TODO: use more specific error source
-        ClientStateVerificationFailure
-            {
-                client_id: ClientId,
-            }
-            [ client_error::Error ]
-            | e | {
-                format_args!("the client state proof verification failed for client id {0}",
-                    e.client_id)
-            },
+        client_id: ClientId,
+        client_error: client_error::ClientError,
+    },
+    /// invalid client state: `{reason}`
+    InvalidClientState { reason: String },
+    /// other error: `{description}`
+    Other { description: String },
+}
 
-        ImplementationSpecific
-            | _ | { "implementation specific error" },
-
-        InvalidClientState
-            {
-                reason: String,
-            }
-            | e | { format_args!("invalid client state: {0}", e.reason) },
-
-        Other
-            { description: String }
-            | e| { format_args!("other error: {0}", e.description) },
+#[cfg(feature = "std")]
+impl std::error::Error for ConnectionError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Self::Client(e) => Some(e),
+            Self::InvalidIdentifier(e) => Some(e),
+            Self::InvalidProof(e) => Some(e),
+            Self::VerifyConnectionState(e) => Some(e),
+            Self::Signer(e) => Some(e),
+            Self::ConsensusStateVerificationFailure {
+                client_error: e, ..
+            } => Some(e),
+            Self::ClientStateVerificationFailure {
+                client_error: e, ..
+            } => Some(e),
+            _ => None,
+        }
     }
 }

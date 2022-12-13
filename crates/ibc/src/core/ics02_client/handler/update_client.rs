@@ -2,24 +2,26 @@
 
 use tracing::debug;
 
+use crate::core::context::ContextError;
 use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::ClientReader;
-use crate::core::ics02_client::error::Error;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpdateClient;
 use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::height::Height;
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
+use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 use crate::timestamp::Timestamp;
 
-/// The result following the successful processing of a `MsgUpdateAnyClient` message. Preferably
-/// this data type should be used with a qualified name `update_client::Result` to avoid ambiguity.
+/// The result following the successful processing of a `MsgUpdateAnyClient` message.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Result {
+pub struct UpdateClientResult {
     pub client_id: ClientId,
     pub client_state: Box<dyn ClientState>,
     pub consensus_state: Box<dyn ConsensusState>,
@@ -27,10 +29,117 @@ pub struct Result {
     pub processed_height: Height,
 }
 
+pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
+where
+    Ctx: ValidationContext,
+{
+    let MsgUpdateClient {
+        client_id,
+        header,
+        signer: _,
+    } = msg;
+
+    // Read client type from the host chain store. The client should already exist.
+    // Read client state from the host chain store.
+    let client_state = ctx.client_state(&client_id)?;
+
+    if client_state.is_frozen() {
+        return Err(ClientError::ClientFrozen { client_id }.into());
+    }
+
+    // Read consensus state from the host chain store.
+    let latest_consensus_state = ctx
+        .consensus_state(&client_id, client_state.latest_height())
+        .map_err(|_| ClientError::ConsensusStateNotFound {
+            client_id: client_id.clone(),
+            height: client_state.latest_height(),
+        })?;
+
+    debug!("latest consensus state: {:?}", latest_consensus_state);
+
+    let now = ctx.host_timestamp()?;
+    let duration = now
+        .duration_since(&latest_consensus_state.timestamp())
+        .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
+            time1: latest_consensus_state.timestamp(),
+            time2: now,
+        })?;
+
+    if client_state.expired(duration) {
+        return Err(ClientError::HeaderNotWithinTrustPeriod {
+            latest_time: latest_consensus_state.timestamp(),
+            update_time: now,
+        }
+        .into());
+    }
+
+    let _ = client_state
+        .check_header_and_update_state(ctx, client_id.clone(), header)
+        .map_err(|e| ClientError::HeaderVerificationFailure {
+            reason: e.to_string(),
+        })?;
+
+    Ok(())
+}
+
+pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
+where
+    Ctx: ExecutionContext,
+{
+    let MsgUpdateClient {
+        client_id,
+        header,
+        signer: _,
+    } = msg;
+
+    // Read client type from the host chain store. The client should already exist.
+    // Read client state from the host chain store.
+    let client_state = ctx.client_state(&client_id)?;
+
+    let UpdatedState {
+        client_state,
+        consensus_state,
+    } = client_state
+        .check_header_and_update_state(ctx, client_id.clone(), header.clone())
+        .map_err(|e| ClientError::HeaderVerificationFailure {
+            reason: e.to_string(),
+        })?;
+
+    ctx.store_client_state(ClientStatePath(client_id.clone()), client_state.clone())?;
+    ctx.store_consensus_state(
+        ClientConsensusStatePath::new(client_id.clone(), client_state.latest_height()),
+        consensus_state,
+    )?;
+    ctx.store_update_time(
+        client_id.clone(),
+        client_state.latest_height(),
+        ctx.host_timestamp()?,
+    )?;
+    ctx.store_update_height(
+        client_id.clone(),
+        client_state.latest_height(),
+        ctx.host_height()?,
+    )?;
+
+    {
+        let consensus_height = client_state.latest_height();
+
+        ctx.emit_ibc_event(IbcEvent::UpdateClient(UpdateClient::new(
+            client_id,
+            client_state.client_type(),
+            consensus_height,
+            vec![consensus_height],
+            header,
+        )));
+    }
+
+    Ok(())
+}
+
 pub fn process<Ctx: ClientReader>(
     ctx: &Ctx,
     msg: MsgUpdateClient,
-) -> HandlerResult<ClientResult, Error> {
+) -> HandlerResult<ClientResult, ClientError> {
     let mut output = HandlerOutput::builder();
 
     let MsgUpdateClient {
@@ -44,29 +153,33 @@ pub fn process<Ctx: ClientReader>(
     let client_state = ctx.client_state(&client_id)?;
 
     if client_state.is_frozen() {
-        return Err(Error::client_frozen(client_id));
+        return Err(ClientError::ClientFrozen { client_id });
     }
 
     // Read consensus state from the host chain store.
     let latest_consensus_state =
         ClientReader::consensus_state(ctx, &client_id, client_state.latest_height()).map_err(
-            |_| Error::consensus_state_not_found(client_id.clone(), client_state.latest_height()),
+            |_| ClientError::ConsensusStateNotFound {
+                client_id: client_id.clone(),
+                height: client_state.latest_height(),
+            },
         )?;
 
     debug!("latest consensus state: {:?}", latest_consensus_state);
 
-    let now = ClientReader::host_timestamp(ctx);
+    let now = ClientReader::host_timestamp(ctx)?;
     let duration = now
         .duration_since(&latest_consensus_state.timestamp())
-        .ok_or_else(|| {
-            Error::invalid_consensus_state_timestamp(latest_consensus_state.timestamp(), now)
+        .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
+            time1: latest_consensus_state.timestamp(),
+            time2: now,
         })?;
 
     if client_state.expired(duration) {
-        return Err(Error::header_not_within_trust_period(
-            latest_consensus_state.timestamp(),
-            now,
-        ));
+        return Err(ClientError::HeaderNotWithinTrustPeriod {
+            latest_time: latest_consensus_state.timestamp(),
+            update_time: now,
+        });
     }
 
     // Use client_state to validate the new header against the latest consensus_state.
@@ -76,18 +189,20 @@ pub fn process<Ctx: ClientReader>(
         client_state,
         consensus_state,
     } = client_state
-        .check_header_and_update_state(ctx, client_id.clone(), header.clone())
-        .map_err(|e| Error::header_verification_failure(e.to_string()))?;
+        .old_check_header_and_update_state(ctx, client_id.clone(), header.clone())
+        .map_err(|e| ClientError::HeaderVerificationFailure {
+            reason: e.to_string(),
+        })?;
 
     let client_type = client_state.client_type();
     let consensus_height = client_state.latest_height();
 
-    let result = ClientResult::Update(Result {
+    let result = ClientResult::Update(UpdateClientResult {
         client_id: client_id.clone(),
         client_state,
         consensus_state,
-        processed_time: ClientReader::host_timestamp(ctx),
-        processed_height: ctx.host_height(),
+        processed_time: ClientReader::host_timestamp(ctx)?,
+        processed_height: ctx.host_height()?,
     });
 
     output.emit(IbcEvent::UpdateClient(UpdateClient::new(
@@ -111,7 +226,7 @@ mod tests {
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::core::ics02_client::client_state::ClientState;
     use crate::core::ics02_client::consensus_state::downcast_consensus_state;
-    use crate::core::ics02_client::error::{Error, ErrorDetail};
+    use crate::core::ics02_client::error::ClientError;
     use crate::core::ics02_client::handler::dispatch;
     use crate::core::ics02_client::handler::ClientResult::Update;
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
@@ -167,7 +282,7 @@ mod tests {
                 }
             }
             Err(err) => {
-                panic!("unexpected error: {}", err);
+                panic!("unexpected error: {:?}", err);
             }
         }
     }
@@ -188,8 +303,8 @@ mod tests {
         let output = dispatch(&ctx, ClientMsg::UpdateClient(msg.clone()));
 
         match output {
-            Err(Error(ErrorDetail::ClientNotFound(e), _)) => {
-                assert_eq!(e.client_id, msg.client_id);
+            Err(ClientError::ClientNotFound { client_id }) => {
+                assert_eq!(client_id, msg.client_id);
             }
             _ => {
                 panic!("expected ClientNotFound error, instead got {:?}", output)
@@ -232,7 +347,7 @@ mod tests {
                     assert!(log.is_empty());
                 }
                 Err(err) => {
-                    panic!("unexpected error: {}", err);
+                    panic!("unexpected error: {:?}", err);
                 }
             }
         }
@@ -296,7 +411,7 @@ mod tests {
                 }
             }
             Err(err) => {
-                panic!("unexpected error: {}", err);
+                panic!("unexpected error: {:?}", err);
             }
         }
     }
@@ -360,7 +475,7 @@ mod tests {
                 }
             }
             Err(err) => {
-                panic!("unexpected error: {}", err);
+                panic!("unexpected error: {:?}", err);
             }
         }
     }
@@ -486,8 +601,8 @@ mod tests {
             Ok(_) => {
                 panic!("update handler result has incorrect type");
             }
-            Err(err) => match err.detail() {
-                ErrorDetail::HeaderVerificationFailure(_) => {}
+            Err(err) => match err {
+                ClientError::HeaderVerificationFailure { reason: _ } => {}
                 _ => panic!("unexpected error: {:?}", err),
             },
         }

@@ -13,10 +13,10 @@ use crate::core::ics04_channel::handler::{
     packet_dispatch as ics4_packet_msg_dispatcher,
 };
 use crate::core::ics04_channel::packet::PacketResult;
-use crate::core::ics26_routing::context::Ics26Context;
-use crate::core::ics26_routing::error::Error;
-use crate::core::ics26_routing::msgs::Ics26Envelope::{
-    self, Ics2Msg, Ics3Msg, Ics4ChannelMsg, Ics4PacketMsg,
+use crate::core::ics26_routing::context::RouterContext;
+use crate::core::ics26_routing::error::RouterError;
+use crate::core::ics26_routing::msgs::MsgEnvelope::{
+    self, ChannelMsg, ClientMsg, ConnectionMsg, PacketMsg,
 };
 use crate::{events::IbcEvent, handler::HandlerOutput};
 
@@ -30,9 +30,9 @@ pub struct MsgReceipt {
 /// Mimics the DeliverTx ABCI interface, but for a single message and at a slightly lower level.
 /// No need for authentication info or signature checks here.
 /// Returns a vector of all events that got generated as a byproduct of processing `message`.
-pub fn deliver<Ctx>(ctx: &mut Ctx, message: Any) -> Result<MsgReceipt, Error>
+pub fn deliver<Ctx>(ctx: &mut Ctx, message: Any) -> Result<MsgReceipt, RouterError>
 where
-    Ctx: Ics26Context,
+    Ctx: RouterContext,
 {
     // Decode the proto message into a domain message, creating an ICS26 envelope.
     let envelope = decode(message)?;
@@ -43,8 +43,8 @@ where
     Ok(MsgReceipt { events, log })
 }
 
-/// Attempts to convert a message into a [Ics26Envelope] message
-pub fn decode(message: Any) -> Result<Ics26Envelope, Error> {
+/// Attempts to convert a message into a [MsgEnvelope] message
+pub fn decode(message: Any) -> Result<MsgEnvelope, RouterError> {
     message.try_into()
 }
 
@@ -53,17 +53,18 @@ pub fn decode(message: Any) -> Result<Ics26Envelope, Error> {
 /// and events produced after processing the input `msg`.
 /// If this method returns an error, the runtime is expected to rollback all state modifications to
 /// the `Ctx` caused by all messages from the transaction that this `msg` is a part of.
-pub fn dispatch<Ctx>(ctx: &mut Ctx, msg: Ics26Envelope) -> Result<HandlerOutput<()>, Error>
+pub fn dispatch<Ctx>(ctx: &mut Ctx, msg: MsgEnvelope) -> Result<HandlerOutput<()>, RouterError>
 where
-    Ctx: Ics26Context,
+    Ctx: RouterContext,
 {
     let output = match msg {
-        Ics2Msg(msg) => {
-            let handler_output = ics2_msg_dispatcher(ctx, msg).map_err(Error::ics02_client)?;
+        ClientMsg(msg) => {
+            let handler_output =
+                ics2_msg_dispatcher(ctx, msg).map_err(|e| RouterError::ContextError(e.into()))?;
 
             // Apply the result to the context (host chain store).
             ctx.store_client_result(handler_output.result)
-                .map_err(Error::ics02_client)?;
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             HandlerOutput::builder()
                 .with_log(handler_output.log)
@@ -71,12 +72,13 @@ where
                 .with_result(())
         }
 
-        Ics3Msg(msg) => {
-            let handler_output = ics3_msg_dispatcher(ctx, msg).map_err(Error::ics03_connection)?;
+        ConnectionMsg(msg) => {
+            let handler_output =
+                ics3_msg_dispatcher(ctx, msg).map_err(|e| RouterError::ContextError(e.into()))?;
 
             // Apply any results to the host chain store.
             ctx.store_connection_result(handler_output.result)
-                .map_err(Error::ics03_connection)?;
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             HandlerOutput::builder()
                 .with_log(handler_output.log)
@@ -84,19 +86,20 @@ where
                 .with_result(())
         }
 
-        Ics4ChannelMsg(msg) => {
-            let module_id = channel_validate(ctx, &msg).map_err(Error::ics04_channel)?;
+        ChannelMsg(msg) => {
+            let module_id =
+                channel_validate(ctx, &msg).map_err(|e| RouterError::ContextError(e.into()))?;
             let dispatch_output = HandlerOutputBuilder::<()>::new();
 
             let (dispatch_log, mut channel_result) =
-                channel_dispatch(ctx, &msg).map_err(Error::ics04_channel)?;
+                channel_dispatch(ctx, &msg).map_err(|e| RouterError::ContextError(e.into()))?;
 
             // Note: `OpenInit` and `OpenTry` modify the `version` field of the `channel_result`,
             // so we must pass it mutably. We intend to clean this up with the implementation of
             // ADR 5.
             // See issue [#190](https://github.com/cosmos/ibc-rs/issues/190)
             let callback_extras = channel_callback(ctx, &module_id, &msg, &mut channel_result)
-                .map_err(Error::ics04_channel)?;
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             // We need to construct events here instead of directly in the
             // `process` functions because we need to wait for the callback to
@@ -111,7 +114,7 @@ where
 
             // Apply any results to the host chain store.
             ctx.store_channel_result(channel_result)
-                .map_err(Error::ics04_channel)?;
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             dispatch_output
                 .with_events(dispatch_events)
@@ -127,21 +130,22 @@ where
                 .with_result(())
         }
 
-        Ics4PacketMsg(msg) => {
-            let module_id = get_module_for_packet_msg(ctx, &msg).map_err(Error::ics04_channel)?;
-            let (mut handler_builder, packet_result) =
-                ics4_packet_msg_dispatcher(ctx, &msg).map_err(Error::ics04_channel)?;
+        PacketMsg(msg) => {
+            let module_id = get_module_for_packet_msg(ctx, &msg)
+                .map_err(|e| RouterError::ContextError(e.into()))?;
+            let (mut handler_builder, packet_result) = ics4_packet_msg_dispatcher(ctx, &msg)
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             if matches!(packet_result, PacketResult::Recv(RecvPacketResult::NoOp)) {
                 return Ok(handler_builder.with_result(()));
             }
 
             let cb_result = ics4_packet_callback(ctx, &module_id, &msg, &mut handler_builder);
-            cb_result.map_err(Error::ics04_channel)?;
+            cb_result.map_err(|e| RouterError::ContextError(e.into()))?;
 
             // Apply any results to the host chain store.
             ctx.store_packet_result(packet_result)
-                .map_err(Error::ics04_channel)?;
+                .map_err(|e| RouterError::ContextError(e.into()))?;
 
             handler_builder.with_result(())
         }
@@ -202,10 +206,10 @@ mod tests {
     use crate::core::ics23_commitment::commitment::test_util::get_dummy_merkle_proof;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::ics26_routing::context::{Ics26Context, ModuleId, Router, RouterBuilder};
-    use crate::core::ics26_routing::error::Error;
+    use crate::core::ics26_routing::context::{ModuleId, Router, RouterBuilder, RouterContext};
+    use crate::core::ics26_routing::error::RouterError;
     use crate::core::ics26_routing::handler::dispatch;
-    use crate::core::ics26_routing::msgs::Ics26Envelope;
+    use crate::core::ics26_routing::msgs::MsgEnvelope;
     use crate::events::IbcEvent;
     use crate::handler::HandlerOutputBuilder;
     use crate::mock::client_state::MockClientState;
@@ -225,12 +229,12 @@ mod tests {
     fn routing_module_and_keepers() {
         #[derive(Clone, Debug)]
         enum TestMsg {
-            Ics26(Ics26Envelope),
+            Ics26(MsgEnvelope),
             Ics20(MsgTransfer<PrefixedCoin>),
         }
 
-        impl From<Ics26Envelope> for TestMsg {
-            fn from(msg: Ics26Envelope) -> Self {
+        impl From<MsgEnvelope> for TestMsg {
+            fn from(msg: MsgEnvelope) -> Self {
                 Self::Ics26(msg)
             }
         }
@@ -367,7 +371,7 @@ mod tests {
         // First, create a client..
         let res = dispatch(
             &mut ctx,
-            Ics26Envelope::Ics2Msg(ClientMsg::CreateClient(create_client_msg.clone())),
+            MsgEnvelope::ClientMsg(ClientMsg::CreateClient(create_client_msg.clone())),
         );
 
         assert!(
@@ -398,7 +402,7 @@ mod tests {
             // Test some ICS2 client functionality.
             Test {
                 name: "Client update successful".to_string(),
-                msg: Ics26Envelope::Ics2Msg(ClientMsg::UpdateClient(MsgUpdateClient {
+                msg: MsgEnvelope::ClientMsg(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
                     header: MockHeader::new(update_client_height)
                         .with_timestamp(Timestamp::now())
@@ -411,7 +415,7 @@ mod tests {
             },
             Test {
                 name: "Client update fails due to stale header".to_string(),
-                msg: Ics26Envelope::Ics2Msg(ClientMsg::UpdateClient(MsgUpdateClient {
+                msg: MsgEnvelope::ClientMsg(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
                     header: MockHeader::new(update_client_height).into(),
                     signer: default_signer.clone(),
@@ -422,7 +426,7 @@ mod tests {
             },
             Test {
                 name: "Connection open init succeeds".to_string(),
-                msg: Ics26Envelope::Ics3Msg(ConnectionMsg::ConnectionOpenInit(
+                msg: MsgEnvelope::ConnectionMsg(ConnectionMsg::ConnectionOpenInit(
                     msg_conn_init.with_client_id(client_id.clone()),
                 ))
                 .into(),
@@ -432,57 +436,52 @@ mod tests {
             Test {
                 name: "Connection open try fails due to InvalidConsensusHeight (too high)"
                     .to_string(),
-                msg: Ics26Envelope::Ics3Msg(ConnectionMsg::ConnectionOpenTry(Box::new(
+                msg: MsgEnvelope::ConnectionMsg(ConnectionMsg::ConnectionOpenTry(
                     incorrect_msg_conn_try,
-                )))
-                .into(),
-                want_pass: false,
-                state_check: None,
-            },
-            Test {
-                name: "Connection open try succeeds".to_string(),
-                msg: Ics26Envelope::Ics3Msg(ConnectionMsg::ConnectionOpenTry(Box::new(
-                    correct_msg_conn_try.with_client_id(client_id.clone()),
-                )))
-                .into(),
-                want_pass: true,
-                state_check: None,
-            },
-            Test {
-                name: "Connection open ack succeeds".to_string(),
-                msg: Ics26Envelope::Ics3Msg(ConnectionMsg::ConnectionOpenAck(Box::new(
-                    msg_conn_ack,
-                )))
-                .into(),
-                want_pass: true,
-                state_check: None,
-            },
-            // ICS04
-            Test {
-                name: "Channel open init succeeds".to_string(),
-                msg: Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelOpenInit(msg_chan_init))
-                    .into(),
-                want_pass: true,
-                state_check: None,
-            },
-            Test {
-                name: "Channel open init fail due to missing connection".to_string(),
-                msg: Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelOpenInit(
-                    incorrect_msg_chan_init,
                 ))
                 .into(),
                 want_pass: false,
                 state_check: None,
             },
             Test {
+                name: "Connection open try succeeds".to_string(),
+                msg: MsgEnvelope::ConnectionMsg(ConnectionMsg::ConnectionOpenTry(
+                    correct_msg_conn_try.with_client_id(client_id.clone()),
+                ))
+                .into(),
+                want_pass: true,
+                state_check: None,
+            },
+            Test {
+                name: "Connection open ack succeeds".to_string(),
+                msg: MsgEnvelope::ConnectionMsg(ConnectionMsg::ConnectionOpenAck(msg_conn_ack))
+                    .into(),
+                want_pass: true,
+                state_check: None,
+            },
+            // ICS04
+            Test {
+                name: "Channel open init succeeds".to_string(),
+                msg: MsgEnvelope::ChannelMsg(ChannelMsg::ChannelOpenInit(msg_chan_init)).into(),
+                want_pass: true,
+                state_check: None,
+            },
+            Test {
+                name: "Channel open init fail due to missing connection".to_string(),
+                msg: MsgEnvelope::ChannelMsg(ChannelMsg::ChannelOpenInit(incorrect_msg_chan_init))
+                    .into(),
+                want_pass: false,
+                state_check: None,
+            },
+            Test {
                 name: "Channel open try succeeds".to_string(),
-                msg: Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelOpenTry(msg_chan_try)).into(),
+                msg: MsgEnvelope::ChannelMsg(ChannelMsg::ChannelOpenTry(msg_chan_try)).into(),
                 want_pass: true,
                 state_check: None,
             },
             Test {
                 name: "Channel open ack succeeds".to_string(),
-                msg: Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelOpenAck(msg_chan_ack)).into(),
+                msg: MsgEnvelope::ChannelMsg(ChannelMsg::ChannelOpenAck(msg_chan_ack)).into(),
                 want_pass: true,
                 state_check: None,
             },
@@ -496,7 +495,7 @@ mod tests {
             // msg_recv_packet has the same height as the packet TO height (see get_dummy_raw_msg_recv_packet)
             Test {
                 name: "Client update successful #2".to_string(),
-                msg: Ics26Envelope::Ics2Msg(ClientMsg::UpdateClient(MsgUpdateClient {
+                msg: MsgEnvelope::ClientMsg(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
                     header: MockHeader::new(update_client_height_after_send)
                         .with_timestamp(Timestamp::now())
@@ -509,22 +508,20 @@ mod tests {
             },
             Test {
                 name: "Receive packet".to_string(),
-                msg: Ics26Envelope::Ics4PacketMsg(PacketMsg::RecvPacket(msg_recv_packet.clone()))
-                    .into(),
+                msg: MsgEnvelope::PacketMsg(PacketMsg::RecvPacket(msg_recv_packet.clone())).into(),
                 want_pass: true,
                 state_check: None,
             },
             Test {
                 name: "Re-Receive packet".to_string(),
-                msg: Ics26Envelope::Ics4PacketMsg(PacketMsg::RecvPacket(msg_recv_packet)).into(),
+                msg: MsgEnvelope::PacketMsg(PacketMsg::RecvPacket(msg_recv_packet)).into(),
                 want_pass: true,
                 state_check: None,
             },
             // Ack packet
             Test {
                 name: "Ack packet".to_string(),
-                msg: Ics26Envelope::Ics4PacketMsg(PacketMsg::AckPacket(msg_ack_packet.clone()))
-                    .into(),
+                msg: MsgEnvelope::PacketMsg(PacketMsg::AckPacket(msg_ack_packet.clone())).into(),
                 want_pass: true,
                 state_check: Some(Box::new(move |ctx| {
                     ctx.get_packet_commitment(
@@ -543,7 +540,7 @@ mod tests {
             },
             Test {
                 name: "Client update successful".to_string(),
-                msg: Ics26Envelope::Ics2Msg(ClientMsg::UpdateClient(MsgUpdateClient {
+                msg: MsgEnvelope::ClientMsg(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
                     header: MockHeader::new(update_client_height_after_second_send).into(),
                     signer: default_signer.clone(),
@@ -568,16 +565,14 @@ mod tests {
             //ICS04-close channel
             Test {
                 name: "Channel close init succeeds".to_string(),
-                msg: Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelCloseInit(
-                    msg_chan_close_init,
-                ))
-                .into(),
+                msg: MsgEnvelope::ChannelMsg(ChannelMsg::ChannelCloseInit(msg_chan_close_init))
+                    .into(),
                 want_pass: true,
                 state_check: None,
             },
             Test {
                 name: "Channel close confirm fails cause channel is already closed".to_string(),
-                msg: Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelCloseConfirm(
+                msg: MsgEnvelope::ChannelMsg(ChannelMsg::ChannelCloseConfirm(
                     msg_chan_close_confirm,
                 ))
                 .into(),
@@ -587,14 +582,14 @@ mod tests {
             //ICS04-to_on_close
             Test {
                 name: "Timeout on close".to_string(),
-                msg: Ics26Envelope::Ics4PacketMsg(PacketMsg::TimeoutOnClosePacket(msg_to_on_close))
+                msg: MsgEnvelope::PacketMsg(PacketMsg::TimeoutOnClosePacket(msg_to_on_close))
                     .into(),
                 want_pass: true,
                 state_check: None,
             },
             Test {
                 name: "Client upgrade successful".to_string(),
-                msg: Ics26Envelope::Ics2Msg(ClientMsg::UpgradeClient(MsgUpgradeClient::new(
+                msg: MsgEnvelope::ClientMsg(ClientMsg::UpgradeClient(MsgUpgradeClient::new(
                     client_id.clone(),
                     MockClientState::new(MockHeader::new(upgrade_client_height)).into(),
                     MockConsensusState::new(MockHeader::new(upgrade_client_height)).into(),
@@ -608,7 +603,7 @@ mod tests {
             },
             Test {
                 name: "Client upgrade un-successful".to_string(),
-                msg: Ics26Envelope::Ics2Msg(ClientMsg::UpgradeClient(MsgUpgradeClient::new(
+                msg: MsgEnvelope::ClientMsg(ClientMsg::UpgradeClient(MsgUpgradeClient::new(
                     client_id,
                     MockClientState::new(MockHeader::new(upgrade_client_height_second)).into(),
                     MockConsensusState::new(MockHeader::new(upgrade_client_height_second)).into(),
@@ -639,7 +634,7 @@ mod tests {
                         msg,
                     )
                     .map(|_| ())
-                    .map_err(Error::ics04_channel)
+                    .map_err(|e| RouterError::ContextError(e.into()))
                 }
             };
 
@@ -704,7 +699,7 @@ mod tests {
 
         let res = dispatch(
             &mut ctx,
-            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelOpenInit(msg_chan_open_init)),
+            MsgEnvelope::ChannelMsg(ChannelMsg::ChannelOpenInit(msg_chan_open_init)),
         )
         .unwrap();
 
@@ -724,7 +719,7 @@ mod tests {
 
         let res = dispatch(
             &mut ctx,
-            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelOpenTry(msg_chan_open_try)),
+            MsgEnvelope::ChannelMsg(ChannelMsg::ChannelOpenTry(msg_chan_open_try)),
         )
         .unwrap();
 
@@ -754,7 +749,7 @@ mod tests {
 
         let res = dispatch(
             &mut ctx,
-            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelOpenAck(msg_chan_open_ack)),
+            MsgEnvelope::ChannelMsg(ChannelMsg::ChannelOpenAck(msg_chan_open_ack)),
         )
         .unwrap();
 
@@ -784,7 +779,7 @@ mod tests {
 
         let res = dispatch(
             &mut ctx,
-            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelOpenConfirm(msg_chan_open_confirm)),
+            MsgEnvelope::ChannelMsg(ChannelMsg::ChannelOpenConfirm(msg_chan_open_confirm)),
         )
         .unwrap();
 
@@ -814,7 +809,7 @@ mod tests {
 
         let res = dispatch(
             &mut ctx,
-            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelCloseInit(msg_chan_close_init)),
+            MsgEnvelope::ChannelMsg(ChannelMsg::ChannelCloseInit(msg_chan_close_init)),
         )
         .unwrap();
 
@@ -844,7 +839,7 @@ mod tests {
 
         let res = dispatch(
             &mut ctx,
-            Ics26Envelope::Ics4ChannelMsg(ChannelMsg::ChannelCloseConfirm(msg_chan_close_confirm)),
+            MsgEnvelope::ChannelMsg(ChannelMsg::ChannelCloseConfirm(msg_chan_close_confirm)),
         )
         .unwrap();
 
