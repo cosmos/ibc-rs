@@ -317,7 +317,8 @@ impl ClientState {
         }
 
         let untrusted_state = header.as_untrusted_block_state();
-        let trusted_state = header.as_trusted_block_state(consensus_state)?;
+        let chain_id = self.chain_id.clone().into();
+        let trusted_state = header.as_trusted_block_state(consensus_state, &chain_id)?;
         let options = self.as_light_client_options()?;
 
         self.verifier
@@ -338,7 +339,8 @@ impl ClientState {
         consensus_state: &TmConsensusState,
     ) -> Result<(), ClientError> {
         let untrusted_state = header.as_untrusted_block_state();
-        let trusted_state = header.as_trusted_block_state(consensus_state)?;
+        let chain_id = self.chain_id.clone().into();
+        let trusted_state = Header::as_trusted_block_state(header, consensus_state, &chain_id)?;
         let options = self.as_light_client_options()?;
 
         self.verifier
@@ -470,6 +472,7 @@ impl Ics2ClientState for ClientState {
         )?;
 
         let trusted_state = TrustedBlockState {
+            chain_id: &self.chain_id.clone().into(),
             header_time: trusted_consensus_state.timestamp,
             height: header
                 .trusted_height
@@ -759,6 +762,7 @@ impl Ics2ClientState for ClientState {
         )?;
 
         let trusted_state = TrustedBlockState {
+            chain_id: &self.chain_id.clone().into(),
             header_time: trusted_consensus_state.timestamp,
             height: header
                 .trusted_height
