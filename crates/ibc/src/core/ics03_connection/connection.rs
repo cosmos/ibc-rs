@@ -148,10 +148,10 @@ mod sealed {
     impl From<ConnectionEnd> for InnerConnectionEnd {
         fn from(value: ConnectionEnd) -> Self {
             Self {
-                state: value.state.clone(),
-                client_id: value.client_id.clone(),
-                counterparty: value.counterparty.clone(),
-                versions: value.versions.clone(),
+                state: value.state,
+                client_id: value.client_id,
+                counterparty: value.counterparty,
+                versions: value.versions,
                 delay_period_secs: value.delay_period.as_secs(),
                 delay_period_nanos: value.delay_period.subsec_nanos(),
             }
