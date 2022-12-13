@@ -23,6 +23,18 @@ use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::timestamp::ZERO_DURATION;
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct IdentifiedConnectionEnd {
     pub connection_id: ConnectionId,
@@ -95,6 +107,125 @@ pub struct ConnectionEnd {
     counterparty: Counterparty,
     versions: Vec<Version>,
     delay_period: Duration,
+}
+
+mod sealed {
+    use super::*;
+
+    #[cfg_attr(
+        feature = "parity-scale-codec",
+        derive(
+            parity_scale_codec::Encode,
+            parity_scale_codec::Decode,
+            scale_info::TypeInfo
+        )
+    )]
+    #[cfg_attr(
+        feature = "borsh",
+        derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+    )]
+    struct InnerConnectionEnd {
+        pub state: State,
+        client_id: ClientId,
+        counterparty: Counterparty,
+        versions: Vec<Version>,
+        delay_period_secs: u64,
+        delay_period_nanos: u32,
+    }
+
+    impl From<InnerConnectionEnd> for ConnectionEnd {
+        fn from(value: InnerConnectionEnd) -> Self {
+            Self {
+                state: value.state,
+                client_id: value.client_id,
+                counterparty: value.counterparty,
+                versions: value.versions,
+                delay_period: Duration::new(value.delay_period_secs, value.delay_period_nanos),
+            }
+        }
+    }
+
+    impl From<ConnectionEnd> for InnerConnectionEnd {
+        fn from(value: ConnectionEnd) -> Self {
+            Self {
+                state: value.state.clone(),
+                client_id: value.client_id.clone(),
+                counterparty: value.counterparty.clone(),
+                versions: value.versions.clone(),
+                delay_period_secs: value.delay_period.as_secs(),
+                delay_period_nanos: value.delay_period.subsec_nanos(),
+            }
+        }
+    }
+
+    #[cfg(feature = "borsh")]
+    impl borsh::BorshSerialize for ConnectionEnd {
+        fn serialize<W: borsh::maybestd::io::Write>(
+            &self,
+            writer: &mut W,
+        ) -> borsh::maybestd::io::Result<()> {
+            let value = InnerConnectionEnd::from(self.clone());
+            borsh::BorshSerialize::serialize(&value, writer)
+        }
+    }
+
+    #[cfg(feature = "borsh")]
+    impl borsh::BorshDeserialize for ConnectionEnd {
+        fn deserialize(buf: &mut &[u8]) -> borsh::maybestd::io::Result<Self> {
+            let result = InnerConnectionEnd::deserialize(buf)?;
+            Ok(ConnectionEnd::from(result))
+        }
+    }
+
+    #[cfg(feature = "parity-scale-codec")]
+    impl parity_scale_codec::Encode for ConnectionEnd {
+        fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, writer: &mut T) {
+            let value = InnerConnectionEnd::from(self.clone());
+            value.encode_to(writer);
+        }
+    }
+
+    #[cfg(feature = "parity-scale-codec")]
+    impl parity_scale_codec::Decode for ConnectionEnd {
+        fn decode<I: parity_scale_codec::Input>(
+            input: &mut I,
+        ) -> Result<Self, parity_scale_codec::Error> {
+            let result = InnerConnectionEnd::decode(input)?;
+            Ok(ConnectionEnd::from(result))
+        }
+    }
+
+    #[cfg(feature = "parity-scale-codec")]
+    impl scale_info::TypeInfo for ConnectionEnd {
+        type Identity = Self;
+
+        fn type_info() -> scale_info::Type {
+            scale_info::Type::builder()
+                .path(scale_info::Path::new("ConnectionEnd", module_path!()))
+                .composite(
+                    scale_info::build::Fields::named()
+                        .field(|f| f.ty::<State>().name("state").type_name("State"))
+                        .field(|f| f.ty::<ClientId>().name("client_id").type_name("ClientId"))
+                        .field(|f| {
+                            f.ty::<Counterparty>()
+                                .name("counterparty")
+                                .type_name("Counterparty")
+                        })
+                        .field(|f| {
+                            f.ty::<Counterparty>()
+                                .name("counterparty")
+                                .type_name("Counterparty")
+                        })
+                        .field(|f| {
+                            f.ty::<Vec<Version>>()
+                                .name("versions")
+                                .type_name("Vec<Version>")
+                        })
+                        .field(|f| f.ty::<u64>().name("delay_period_secs").type_name("u64"))
+                        .field(|f| f.ty::<u32>().name("delay_period_nanos").type_name("u32")),
+                )
+        }
+    }
 }
 
 impl Default for ConnectionEnd {
@@ -247,6 +378,18 @@ impl ConnectionEnd {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Counterparty {
     client_id: ClientId,
@@ -329,12 +472,24 @@ impl Counterparty {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum State {
-    Uninitialized = 0,
-    Init = 1,
-    TryOpen = 2,
-    Open = 3,
+    Uninitialized = 0isize,
+    Init = 1isize,
+    TryOpen = 2isize,
+    Open = 3isize,
 }
 
 impl State {

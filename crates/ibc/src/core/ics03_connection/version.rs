@@ -11,12 +11,82 @@ use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::channel::Order;
 
 /// Stores the identifier and the features supported by a version
+#[cfg_attr(feature = "parity-scale-codec", derive(scale_info::TypeInfo))]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Version {
     /// unique version identifier
     identifier: String,
     /// list of features compatible with the specified identifier
     features: Vec<String>,
+}
+
+mod sealed {
+    use super::*;
+    #[cfg_attr(
+        feature = "parity-scale-codec",
+        derive(
+            parity_scale_codec::Encode,
+            parity_scale_codec::Decode,
+            scale_info::TypeInfo
+        )
+    )]
+    #[cfg_attr(
+        feature = "borsh",
+        derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+    )]
+    struct InnerVersion {
+        /// unique version identifier
+        identifier: Vec<u8>,
+        /// list of features compatible with the specified identifier
+        features: Vec<Vec<u8>>,
+    }
+
+    impl From<Version> for InnerVersion {
+        fn from(version: Version) -> Self {
+            Self {
+                identifier: version.identifier.as_bytes().to_vec(),
+                features: version
+                    .features
+                    .into_iter()
+                    .map(|value| value.as_bytes().to_vec())
+                    .collect(),
+            }
+        }
+    }
+
+    impl From<InnerVersion> for Version {
+        fn from(inner_version: InnerVersion) -> Self {
+            Self {
+                identifier: String::from_utf8(inner_version.identifier).expect("Never failed"),
+                features: inner_version
+                    .features
+                    .into_iter()
+                    .map(|value| String::from_utf8(value).expect("Never failed"))
+                    .collect(),
+            }
+        }
+    }
+
+    #[cfg(feature = "parity-scale-codec")]
+    impl parity_scale_codec::Encode for Version {
+        fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, writer: &mut T) {
+            let value = InnerVersion::from(self.clone()).encode();
+            value.encode_to(writer);
+        }
+    }
+    #[cfg(feature = "parity-scale-codec")]
+    impl parity_scale_codec::Decode for Version {
+        fn decode<I: parity_scale_codec::Input>(
+            input: &mut I,
+        ) -> Result<Self, parity_scale_codec::Error> {
+            let value = InnerVersion::decode(input)?;
+            Ok(Version::from(value))
+        }
+    }
 }
 
 impl Version {

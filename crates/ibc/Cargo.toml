@@ -35,12 +35,9 @@ std = [
     "primitive-types/std",
     "clock",
     "tendermint/std",
-    "parity-scale-codec/std",
-    "scale-info/std",
-    "borsh/std"
 ]
 clock = ["tendermint/clock", "time/std"]
-parity-scale-codec = ["dep:parity-scale-codec", "scale-info"]
+parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info"]
 borsh = ["dep:borsh"]
 
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.

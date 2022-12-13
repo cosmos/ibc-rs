@@ -109,6 +109,18 @@ impl TryFrom<CommitmentProofBytes> for RawMerkleProof {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, PartialEq, Eq, Hash, Deserialize, Default)]
 pub struct CommitmentPrefix {
     bytes: Vec<u8>,

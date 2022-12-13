@@ -7,6 +7,16 @@ use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use crate::core::ics02_client::{error::ClientError, height::Height};
 use crate::prelude::*;
 
+/// Indicates a consensus height on the destination chain after which the packet
+/// will no longer be processed, and will instead count as having timed-out.
+///
+/// `TimeoutHeight` is treated differently from other heights because
+///
+/// `RawHeight.timeout_height == {revision_number: 0, revision_height = 0}`
+///
+/// is legal and meaningful, even though the Tendermint spec rejects this height
+/// as invalid. Thus, it must be parsed specially, where this special case means
+/// "no timeout".
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -19,16 +29,6 @@ use crate::prelude::*;
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-/// Indicates a consensus height on the destination chain after which the packet
-/// will no longer be processed, and will instead count as having timed-out.
-///
-/// `TimeoutHeight` is treated differently from other heights because
-///
-/// `RawHeight.timeout_height == {revision_number: 0, revision_height = 0}`
-///
-/// is legal and meaningful, even though the Tendermint spec rejects this height
-/// as invalid. Thus, it must be parsed specially, where this special case means
-/// "no timeout".
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
 pub enum TimeoutHeight {
     Never,
