@@ -74,7 +74,7 @@ where
     }
 
     let _ = client_state
-        .check_header_and_update_state(ctx, client_id.clone(), header)
+        .new_check_header_and_update_state(ctx, client_id.clone(), header)
         .map_err(|e| ClientError::HeaderVerificationFailure {
             reason: e.to_string(),
         })?;
@@ -100,7 +100,7 @@ where
         client_state,
         consensus_state,
     } = client_state
-        .check_header_and_update_state(ctx, client_id.clone(), header.clone())
+        .new_check_header_and_update_state(ctx, client_id.clone(), header.clone())
         .map_err(|e| ClientError::HeaderVerificationFailure {
             reason: e.to_string(),
         })?;
@@ -189,7 +189,7 @@ pub fn process<Ctx: ClientReader>(
         client_state,
         consensus_state,
     } = client_state
-        .old_check_header_and_update_state(ctx, client_id.clone(), header.clone())
+        .check_header_and_update_state(ctx, client_id.clone(), header.clone())
         .map_err(|e| ClientError::HeaderVerificationFailure {
             reason: e.to_string(),
         })?;
