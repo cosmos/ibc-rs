@@ -358,6 +358,7 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let update_height = Height::new(1, 21).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
 
         let ctx = MockContext::new(
             ChainId::new("mockgaiaA".to_string(), 1),
@@ -365,19 +366,15 @@ mod tests {
             5,
             Height::new(1, 1).unwrap(),
         )
-        .with_client_parametrized(
+        .with_client_parametrized_with_chain_id(
+            chain_id_b.clone(),
             &client_id,
             client_height,
             Some(tm_client_type()), // The target host chain (B) is synthetic TM.
             Some(client_height),
         );
 
-        let ctx_b = MockContext::new(
-            ChainId::new("mockgaiaB".to_string(), 1),
-            HostType::SyntheticTendermint,
-            5,
-            update_height,
-        );
+        let ctx_b = MockContext::new(chain_id_b, HostType::SyntheticTendermint, 5, update_height);
 
         let signer = get_dummy_account_id();
 
@@ -421,6 +418,7 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let update_height = Height::new(1, 21).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
 
         let ctx = MockContext::new(
             ChainId::new("mockgaiaA".to_string(), 1),
@@ -428,19 +426,15 @@ mod tests {
             5,
             Height::new(1, 1).unwrap(),
         )
-        .with_client_parametrized_history(
+        .with_client_parametrized_history_with_chain_id(
+            chain_id_b.clone(),
             &client_id,
             client_height,
             Some(tm_client_type()), // The target host chain (B) is synthetic TM.
             Some(client_height),
         );
 
-        let ctx_b = MockContext::new(
-            ChainId::new("mockgaiaB".to_string(), 1),
-            HostType::SyntheticTendermint,
-            5,
-            update_height,
-        );
+        let ctx_b = MockContext::new(chain_id_b, HostType::SyntheticTendermint, 5, update_height);
 
         let signer = get_dummy_account_id();
 
