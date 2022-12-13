@@ -80,26 +80,27 @@ mod tests {
         let client_on_a_for_b = ClientId::new(tm_client_type(), 0).unwrap();
         let client_on_b_for_a = ClientId::new(mock_client_type(), 0).unwrap();
 
+        let chain_id_a = ChainId::new("mockgaiaA".to_string(), 1);
+        let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
+
         // Create two mock contexts, one for each chain.
-        let mut ctx_a = MockContext::new(
-            ChainId::new("mockgaiaA".to_string(), 1),
-            HostType::Mock,
-            5,
-            chain_a_start_height,
-        )
-        .with_client_parametrized(
-            &client_on_a_for_b,
-            client_on_a_for_b_height,
-            Some(tm_client_type()), // The target host chain (B) is synthetic TM.
-            Some(client_on_a_for_b_height),
-        );
+        let mut ctx_a =
+            MockContext::new(chain_id_a.clone(), HostType::Mock, 5, chain_a_start_height)
+                .with_client_parametrized_with_chain_id(
+                    chain_id_b.clone(),
+                    &client_on_a_for_b,
+                    client_on_a_for_b_height,
+                    Some(tm_client_type()), // The target host chain (B) is synthetic TM.
+                    Some(client_on_a_for_b_height),
+                );
         let mut ctx_b = MockContext::new(
-            ChainId::new("mockgaiaB".to_string(), 1),
+            chain_id_b,
             HostType::SyntheticTendermint,
             5,
             chain_b_start_height,
         )
-        .with_client_parametrized(
+        .with_client_parametrized_with_chain_id(
+            chain_id_a,
             &client_on_b_for_a,
             client_on_b_for_a_height,
             Some(mock_client_type()), // The target host chain is mock.

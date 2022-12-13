@@ -9,6 +9,7 @@ use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 use serde_derive::{Deserialize, Serialize};
 use tendermint::block::signed_header::SignedHeader;
+use tendermint::chain::Id as TmChainId;
 use tendermint::validator::Set as ValidatorSet;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 
@@ -68,11 +69,13 @@ impl Header {
         }
     }
 
-    pub(crate) fn as_trusted_block_state(
-        &self,
+    pub(crate) fn as_trusted_block_state<'a>(
+        &'a self,
         consensus_state: &ConsensusState,
-    ) -> Result<TrustedBlockState<'_>, Error> {
+        chain_id: &'a TmChainId,
+    ) -> Result<TrustedBlockState<'a>, Error> {
         Ok(TrustedBlockState {
+            chain_id,
             header_time: consensus_state.timestamp,
             height: self
                 .trusted_height

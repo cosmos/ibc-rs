@@ -264,6 +264,24 @@ impl MockContext {
         client_type: Option<ClientType>,
         consensus_state_height: Option<Height>,
     ) -> Self {
+        let client_chain_id = self.host_chain_id.clone();
+        self.with_client_parametrized_history_with_chain_id(
+            client_chain_id,
+            client_id,
+            client_state_height,
+            client_type,
+            consensus_state_height,
+        )
+    }
+
+    pub(crate) fn with_client_parametrized_history_with_chain_id(
+        self,
+        client_chain_id: ChainId,
+        client_id: &ClientId,
+        client_state_height: Height,
+        client_type: Option<ClientType>,
+        consensus_state_height: Option<Height>,
+    ) -> Self {
         let cs_height = consensus_state_height.unwrap_or(client_state_height);
         let prev_cs_height = cs_height.clone().sub(1).unwrap_or(client_state_height);
 
@@ -278,11 +296,8 @@ impl MockContext {
             )
         } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
             // If it's a Tendermint client, we need TM states.
-            let light_block = HostBlock::generate_tm_block(
-                self.host_chain_id.clone(),
-                cs_height.revision_height(),
-                now,
-            );
+            let light_block =
+                HostBlock::generate_tm_block(client_chain_id, cs_height.revision_height(), now);
 
             let client_state =
                 get_dummy_tendermint_client_state(light_block.header().clone()).into_box();
