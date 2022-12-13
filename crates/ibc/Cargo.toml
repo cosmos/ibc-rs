@@ -38,6 +38,7 @@ std = [
 ]
 clock = ["tendermint/clock", "time/std"]
 
+# This feature guards the unfinished implementation of ADR 5.
 val_exec_ctx = []
 
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
