@@ -20,7 +20,6 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConse
 use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::{Header as TmHeader, Header};
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
-use crate::core::context::ContextError;
 use crate::core::ics02_client::client_state::{
     ClientState as Ics2ClientState, UpdatedState, UpgradeOptions as CoreUpgradeOptions,
 };
@@ -44,11 +43,15 @@ use crate::core::ics24_host::path::{
     ConnectionsPath, ReceiptsPath, SeqRecvsPath,
 };
 use crate::core::ics24_host::Path;
-use crate::core::ValidationContext;
 use crate::timestamp::{Timestamp, ZERO_DURATION};
 use crate::Height;
 
 use super::client_type as tm_client_type;
+
+#[cfg(val_exec_ctx)]
+use crate::core::context::ContextError;
+#[cfg(val_exec_ctx)]
+use crate::core::ValidationContext;
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
@@ -632,6 +635,7 @@ impl Ics2ClientState for ClientState {
             .into_box())
     }
 
+    #[cfg(val_exec_ctx)]
     fn new_check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
@@ -697,6 +701,7 @@ impl Ics2ClientState for ClientState {
             .into_box())
     }
 
+    #[cfg(val_exec_ctx)]
     fn new_check_header_and_update_state(
         &self,
         ctx: &dyn ValidationContext,

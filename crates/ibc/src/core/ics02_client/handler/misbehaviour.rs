@@ -1,5 +1,7 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgSubmitMisbehaviour`.
 //!
+use crate::prelude::*;
+
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::ClientError;
@@ -7,11 +9,13 @@ use crate::core::ics02_client::events::ClientMisbehaviour;
 use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::path::ClientStatePath;
-use crate::core::{ContextError, ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
-use crate::prelude::*;
+
+#[cfg(val_exec_ctx)]
+use crate::core::ics24_host::path::ClientStatePath;
+#[cfg(val_exec_ctx)]
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 /// The result following the successful processing of a `MsgSubmitMisbehaviour` message.
 #[derive(Clone, Debug, PartialEq)]
@@ -20,6 +24,7 @@ pub struct MisbehaviourResult {
     pub client_state: Box<dyn ClientState>,
 }
 
+#[cfg(val_exec_ctx)]
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgSubmitMisbehaviour) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -46,6 +51,7 @@ where
     Ok(())
 }
 
+#[cfg(val_exec_ctx)]
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgSubmitMisbehaviour) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,

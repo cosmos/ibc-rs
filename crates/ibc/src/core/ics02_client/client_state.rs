@@ -18,13 +18,15 @@ use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::{ContextError, ValidationContext};
 use crate::dynamic_typing::AsAny;
 use crate::prelude::*;
 use crate::Height;
 
 use super::consensus_state::ConsensusState;
 use super::context::ClientReader;
+
+#[cfg(val_exec_ctx)]
+use crate::core::{ContextError, ValidationContext};
 
 pub trait ClientState:
     AsAny
@@ -86,6 +88,7 @@ pub trait ClientState:
     ) -> Result<UpdatedState, ClientError>;
 
     /// XXX: temporary solution until we get rid of `ClientReader`
+    #[cfg(val_exec_ctx)]
     fn new_check_header_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
@@ -101,6 +104,7 @@ pub trait ClientState:
     ) -> Result<Box<dyn ClientState>, ClientError>;
 
     /// XXX: temporary solution until we get rid of `ClientReader`
+    #[cfg(val_exec_ctx)]
     fn new_check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
