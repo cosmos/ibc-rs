@@ -1,19 +1,25 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenConfirm`.
+use crate::prelude::*;
 
-use crate::core::context::ContextError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenConfirm;
 use crate::core::ics03_connection::handler::{ConnectionIdState, ConnectionResult};
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
-use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-use crate::core::ics24_host::path::ConnectionsPath;
-use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
-use crate::prelude::*;
 
+#[cfg(val_exec_ctx)]
+use crate::core::context::ContextError;
+#[cfg(val_exec_ctx)]
+use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+#[cfg(val_exec_ctx)]
+use crate::core::ics24_host::path::ConnectionsPath;
+#[cfg(val_exec_ctx)]
+use crate::core::{ExecutionContext, ValidationContext};
+
+#[cfg(val_exec_ctx)]
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -22,6 +28,7 @@ where
     validate_impl(ctx_b, msg, &vars)
 }
 
+#[cfg(val_exec_ctx)]
 fn validate_impl<Ctx>(
     ctx_b: &Ctx,
     msg: &MsgConnectionOpenConfirm,
@@ -86,6 +93,7 @@ where
     Ok(())
 }
 
+#[cfg(val_exec_ctx)]
 pub(crate) fn execute<Ctx>(
     ctx_b: &mut Ctx,
     msg: &MsgConnectionOpenConfirm,
@@ -97,6 +105,7 @@ where
     execute_impl(ctx_b, msg, vars)
 }
 
+#[cfg(val_exec_ctx)]
 fn execute_impl<Ctx>(
     ctx_b: &mut Ctx,
     msg: &MsgConnectionOpenConfirm,
@@ -134,10 +143,12 @@ where
     Ok(())
 }
 
+#[cfg(val_exec_ctx)]
 struct LocalVars {
     conn_end_on_b: ConnectionEnd,
 }
 
+#[cfg(val_exec_ctx)]
 impl LocalVars {
     fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<Self, ContextError>
     where
@@ -250,8 +261,6 @@ pub(crate) fn process(
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ics26_routing::msgs::MsgEnvelope;
-    use crate::core::ValidationContext;
     use crate::prelude::*;
 
     use core::str::FromStr;
@@ -269,6 +278,11 @@ mod tests {
     use crate::mock::context::MockContext;
     use crate::timestamp::ZERO_DURATION;
     use crate::Height;
+
+    #[cfg(val_exec_ctx)]
+    use crate::core::ics26_routing::msgs::MsgEnvelope;
+    #[cfg(val_exec_ctx)]
+    use crate::core::ValidationContext;
 
     #[test]
     fn conn_open_confirm_msg_processing() {
@@ -330,23 +344,25 @@ mod tests {
         .collect();
 
         for test in tests {
-            let res = ValidationContext::validate(
-                &test.ctx,
-                MsgEnvelope::ConnectionMsg(test.msg.clone()),
-            );
+            #[cfg(val_exec_ctx)]
+            {
+                let res = ValidationContext::validate(
+                    &test.ctx,
+                    MsgEnvelope::ConnectionMsg(test.msg.clone()),
+                );
 
-            match res {
-                Ok(_) => {
-                    assert!(
+                match res {
+                    Ok(_) => {
+                        assert!(
                         test.want_pass,
                         "conn_open_confirm: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
                         test.name,
                         test.msg.clone(),
                         test.ctx.clone()
                     )
-                }
-                Err(e) => {
-                    assert!(
+                    }
+                    Err(e) => {
+                        assert!(
                         !test.want_pass,
                         "conn_open_confirm: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
                         test.name,
@@ -354,6 +370,7 @@ mod tests {
                         test.ctx.clone(),
                         e,
                     );
+                    }
                 }
             }
 

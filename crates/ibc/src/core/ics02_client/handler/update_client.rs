@@ -2,7 +2,8 @@
 
 use tracing::debug;
 
-use crate::core::context::ContextError;
+use crate::prelude::*;
+
 use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::ClientReader;
@@ -12,12 +13,16 @@ use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::height::Height;
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
-use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
-use crate::prelude::*;
 use crate::timestamp::Timestamp;
+
+#[cfg(val_exec_ctx)]
+use crate::core::context::ContextError;
+#[cfg(val_exec_ctx)]
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
+#[cfg(val_exec_ctx)]
+use crate::core::{ExecutionContext, ValidationContext};
 
 /// The result following the successful processing of a `MsgUpdateAnyClient` message.
 #[derive(Clone, Debug, PartialEq)]
@@ -29,6 +34,7 @@ pub struct UpdateClientResult {
     pub processed_height: Height,
 }
 
+#[cfg(val_exec_ctx)]
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -82,6 +88,7 @@ where
     Ok(())
 }
 
+#[cfg(val_exec_ctx)]
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,

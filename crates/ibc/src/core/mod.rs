@@ -28,12 +28,17 @@ pub mod ics24_host;
 pub mod ics26_routing;
 
 pub mod context;
+
+#[cfg(val_exec_ctx)]
 pub mod handler;
-
-pub use context::ExecutionContext;
-pub use context::ValidationContext;
-
+#[cfg(val_exec_ctx)]
 pub use handler::execute;
+#[cfg(val_exec_ctx)]
 pub use handler::validate;
+
+#[cfg(val_exec_ctx)]
+pub use context::ExecutionContext;
+#[cfg(val_exec_ctx)]
+pub use context::ValidationContext;
 
 pub use context::ContextError;
