@@ -18,7 +18,14 @@ use crate::prelude::*;
 ///       See: <https://github.com/informalsystems/ibc-rs/pull/304#discussion_r503917283>.
 ///
 /// Also, contrast with tendermint-rs `ChainId` type.
-#[cfg_attr(feature = "parity-scale-codec", derive(scale_info::TypeInfo))]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
@@ -28,61 +35,6 @@ use crate::prelude::*;
 pub struct ChainId {
     id: String,
     version: u64,
-}
-
-mod sealed {
-    use super::*;
-    #[cfg_attr(
-        feature = "parity-scale-codec",
-        derive(
-            parity_scale_codec::Encode,
-            parity_scale_codec::Decode,
-            scale_info::TypeInfo
-        )
-    )]
-    #[cfg_attr(
-        feature = "borsh",
-        derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-    )]
-    struct InnerChainId {
-        id: Vec<u8>,
-        version: u64,
-    }
-
-    impl From<ChainId> for InnerChainId {
-        fn from(chain_id: ChainId) -> Self {
-            Self {
-                id: chain_id.id.as_bytes().to_vec(),
-                version: chain_id.version,
-            }
-        }
-    }
-
-    impl From<InnerChainId> for ChainId {
-        fn from(chain_id: InnerChainId) -> Self {
-            Self {
-                id: String::from_utf8(chain_id.id).expect("Never failed"),
-                version: chain_id.version,
-            }
-        }
-    }
-
-    #[cfg(feature = "parity-scale-codec")]
-    impl parity_scale_codec::Encode for ChainId {
-        fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, writer: &mut T) {
-            let value = InnerChainId::from(self.clone()).encode();
-            value.encode_to(writer);
-        }
-    }
-    #[cfg(feature = "parity-scale-codec")]
-    impl parity_scale_codec::Decode for ChainId {
-        fn decode<I: parity_scale_codec::Input>(
-            input: &mut I,
-        ) -> Result<Self, parity_scale_codec::Error> {
-            let value = InnerChainId::decode(input)?;
-            Ok(ChainId::from(value))
-        }
-    }
 }
 
 impl ChainId {

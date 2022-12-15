@@ -69,7 +69,7 @@ uint = { version = "0.9", default-features = false }
 primitive-types = { version = "0.12.0", default-features = false, features = ["serde_no_std"] }
 dyn-clone = "1.0.8"
 ## for codec encode or decode
-parity-scale-codec = { version = "3.0.0", default-features = false, features = ["derive"], optional = true }
+parity-scale-codec = { version = "3.0.0", default-features = false, features = ["full"], optional = true }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"], optional = true }
 ## for borsh encode or decode
 borsh = {version = "0.9.3", default-features = false, optional = true }

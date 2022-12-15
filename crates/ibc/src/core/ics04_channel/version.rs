@@ -15,32 +15,20 @@ use crate::prelude::*;
 /// This field is opaque to the core IBC protocol.
 /// No explicit validation is necessary, and the
 /// spec (v1) currently allows empty strings.
-#[cfg_attr(feature = "parity-scale-codec", derive(scale_info::TypeInfo))]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Version(String);
-
-#[cfg(feature = "parity-scale-codec")]
-impl parity_scale_codec::Encode for Version {
-    fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, writer: &mut T) {
-        let value = self.0.as_bytes().to_vec();
-        value.encode_to(writer);
-    }
-}
-#[cfg(feature = "parity-scale-codec")]
-impl parity_scale_codec::Decode for Version {
-    fn decode<I: parity_scale_codec::Input>(
-        input: &mut I,
-    ) -> Result<Self, parity_scale_codec::Error> {
-        let value = Vec::<u8>::decode(input)?;
-        let value = String::from_utf8(value)
-            .map_err(|_| parity_scale_codec::Error::from("Utf8 decode to string error"))?;
-        Ok(Version(value))
-    }
-}
 
 impl Version {
     pub fn new(v: String) -> Self {
