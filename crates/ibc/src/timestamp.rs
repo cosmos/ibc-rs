@@ -56,6 +56,7 @@ impl parity_scale_codec::Encode for Timestamp {
         let timestamp = if let Some(time) = self.time {
             time.unix_timestamp_nanos()
         } else {
+            // CONTANT: When the value in time is a none we give the timestamp a default value of 0
             0i128
         };
 
@@ -80,6 +81,7 @@ impl scale_info::TypeInfo for Timestamp {
     fn type_info() -> scale_info::Type {
         scale_info::Type::builder()
             .path(scale_info::Path::new("Timestamp", module_path!()))
+            // i128 is chosen before we represent the timestamp is nanoseconds, which is represented as a i128 by Time
             .composite(scale_info::build::Fields::named().field(|f| {
                 f.ty::<Option<i128>>()
                     .name("time")
