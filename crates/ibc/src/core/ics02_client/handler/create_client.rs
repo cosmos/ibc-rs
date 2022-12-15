@@ -1,12 +1,19 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
-use crate::core::context::ContextError;
-use crate::core::ics24_host::path::ClientConsensusStatePath;
-use crate::core::ics24_host::path::ClientStatePath;
-use crate::core::ics24_host::path::ClientTypePath;
 use crate::prelude::*;
 
+#[cfg(val_exec_ctx)]
+use crate::core::context::ContextError;
+#[cfg(val_exec_ctx)]
+use crate::core::ics24_host::path::ClientConsensusStatePath;
+#[cfg(val_exec_ctx)]
+use crate::core::ics24_host::path::ClientStatePath;
+#[cfg(val_exec_ctx)]
+use crate::core::ics24_host::path::ClientTypePath;
+
+#[cfg(val_exec_ctx)]
 use crate::core::ExecutionContext;
+#[cfg(val_exec_ctx)]
 use crate::core::ValidationContext;
 
 use crate::core::ics02_client::client_state::ClientState;
@@ -34,6 +41,7 @@ pub struct CreateClientResult {
     pub processed_height: Height,
 }
 
+#[cfg(val_exec_ctx)]
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -62,6 +70,7 @@ where
     Ok(())
 }
 
+#[cfg(val_exec_ctx)]
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,

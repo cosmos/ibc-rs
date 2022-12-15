@@ -1,5 +1,68 @@
 # CHANGELOG
 
+## v0.25.0
+
+*December 14, 2022*
+
+This release updates the tendermint-rs dependency to v0.28.0 which includes important security improvements. Many other improvements have been made as well, including misbehaviour handling.
+
+A lot of work has also been put towards implementing ADR 5, which is currently unfinished and has been put behind the feature flag `val_exec_ctx`.
+
+The only consensus-breaking changes are the ones related to the fact that we now properly handle misbehaviour messages.
+
+### BREAKING CHANGES
+
+- Implement the IBC misbehaviour handler and misbehaviour handling logic for the Tendermint light client.
+  ([#12](https://github.com/cosmos/ibc-rs/issues/12))
+- `Ics20Context` no longer requires types implementing it to implement `ChannelReader` and `ChannelKeeper`, and instead depends on the `Ics20ChannelKeeper`
+  and `SendPacketReader` traits. Additionally, the `send_packet` handler now requires the calling context to implement `SendPacketReader` and returns
+  a `SendPacketResult`.
+  ([#182](https://github.com/cosmos/ibc-rs/issues/182))
+- Add `ValidationContext` and `ExecutionContext`, and implement for clients (ICS-2)
+  ([#240](https://github.com/cosmos/ibc-rs/issues/240))
+- Change `host_height`, `host_timestamp` return value to a `Result` in `ClientReader`, `ConnectionReader`, `ChannelReader` and `ValidationContext`
+  ([#242](https://github.com/cosmos/ibc-rs/issues/242))
+- Rename Ics* names to something more descriptive
+  ([#245](https://github.com/cosmos/ibc-rs/issues/245))
+- Implement `ValidationContext::validate` and `ExecutionContext::execute` for connections (ICS-3)
+  ([#251](https://github.com/cosmos/ibc-rs/issues/251))
+- Implement misbehaviour in `ExecutionContext` and `ValidationContext`
+  ([#281](https://github.com/cosmos/ibc-rs/issues/281))
+- Update `tendermint` dependencies to `v0.28.0`, which contain an important security fix.
+([#294](https://github.com/cosmos/ibc-rs/issues/294))
+
+### BUG FIXES
+
+- Set counterparty connection ID to None in `conn_open_init` ([#174](https://github.com/cosmos/ibc-rs/issues/174))
+- Verify the message's counterparty connection ID in `conn_open_ack`
+  instead of the store's ([#274](https://github.com/cosmos/ibc-rs/issues/274))
+
+### IMPROVEMENTS
+
+- Remove `flex-error` and remove unused error variants([#164](https://github.com/cosmos/ibc-rs/issues/164))
+- ConnectionMsg::ConnectionOpen{Try, Ack} should not wrap a Box
+  ([#258](https://github.com/cosmos/ibc-rs/issues/258))
+- Track code coverage with `cargo-llvm-cov`
+  ([#277](https://github.com/cosmos/ibc-rs/issues/277))
+
+## v0.24.0
+
+*December 8, 2022*
+
+This release mainly updates the tendermint-rs dependency to v0.27.0 and includes security improvements.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Update to changes in tendermint-rs 0.27
+  ([#260](https://github.com/cosmos/ibc-rs/pulls/260))
+
+### IMPROVEMENTS
+
+- Update `ics23` to v0.9.0, which contains substantial security improvements
+  ([#278](https://github.com/cosmos/ibc-rs/issues/278))
+
 ## v0.23.0
 
 *November 21, 2022*

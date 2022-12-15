@@ -20,7 +20,6 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConse
 use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::{Header as TmHeader, Header};
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
-use crate::core::context::ContextError;
 use crate::core::ics02_client::client_state::{
     ClientState as Ics2ClientState, UpdatedState, UpgradeOptions as CoreUpgradeOptions,
 };
@@ -44,11 +43,15 @@ use crate::core::ics24_host::path::{
     ConnectionsPath, ReceiptsPath, SeqRecvsPath,
 };
 use crate::core::ics24_host::Path;
-use crate::core::ValidationContext;
 use crate::timestamp::{Timestamp, ZERO_DURATION};
 use crate::Height;
 
 use super::client_type as tm_client_type;
+
+#[cfg(val_exec_ctx)]
+use crate::core::context::ContextError;
+#[cfg(val_exec_ctx)]
+use crate::core::ValidationContext;
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
@@ -317,7 +320,8 @@ impl ClientState {
         }
 
         let untrusted_state = header.as_untrusted_block_state();
-        let trusted_state = header.as_trusted_block_state(consensus_state)?;
+        let chain_id = self.chain_id.clone().into();
+        let trusted_state = header.as_trusted_block_state(consensus_state, &chain_id)?;
         let options = self.as_light_client_options()?;
 
         self.verifier
@@ -338,7 +342,8 @@ impl ClientState {
         consensus_state: &TmConsensusState,
     ) -> Result<(), ClientError> {
         let untrusted_state = header.as_untrusted_block_state();
-        let trusted_state = header.as_trusted_block_state(consensus_state)?;
+        let chain_id = self.chain_id.clone().into();
+        let trusted_state = Header::as_trusted_block_state(header, consensus_state, &chain_id)?;
         let options = self.as_light_client_options()?;
 
         self.verifier
@@ -406,7 +411,7 @@ impl Ics2ClientState for ClientState {
         TmConsensusState::try_from(consensus_state).map(TmConsensusState::into_box)
     }
 
-    fn old_check_header_and_update_state(
+    fn check_header_and_update_state(
         &self,
         ctx: &dyn ClientReader,
         client_id: ClientId,
@@ -470,6 +475,7 @@ impl Ics2ClientState for ClientState {
         )?;
 
         let trusted_state = TrustedBlockState {
+            chain_id: &self.chain_id.clone().into(),
             header_time: trusted_consensus_state.timestamp,
             height: header
                 .trusted_height
@@ -629,7 +635,74 @@ impl Ics2ClientState for ClientState {
             .into_box())
     }
 
-    fn check_header_and_update_state(
+    #[cfg(val_exec_ctx)]
+    fn new_check_misbehaviour_and_update_state(
+        &self,
+        ctx: &dyn ValidationContext,
+        client_id: ClientId,
+        misbehaviour: Any,
+    ) -> Result<Box<dyn Ics2ClientState>, ContextError> {
+        let misbehaviour = TmMisbehaviour::try_from(misbehaviour)?;
+        let header_1 = misbehaviour.header1();
+        let header_2 = misbehaviour.header2();
+
+        if header_1.height() == header_2.height() {
+            // Fork
+            if header_1.signed_header.commit.block_id.hash
+                == header_2.signed_header.commit.block_id.hash
+            {
+                return Err(ContextError::ClientError(
+                    Error::MisbehaviourHeadersBlockHashesEqual.into(),
+                ));
+            }
+        } else {
+            // BFT time violation
+            if header_1.signed_header.header.time > header_2.signed_header.header.time {
+                return Err(ContextError::ClientError(
+                    Error::MisbehaviourHeadersNotAtSameHeight.into(),
+                ));
+            }
+        }
+
+        let consensus_state_1 = {
+            let cs = ctx.consensus_state(&client_id, header_1.trusted_height)?;
+            downcast_tm_consensus_state(cs.as_ref())
+        }?;
+        let consensus_state_2 = {
+            let cs = ctx.consensus_state(&client_id, header_2.trusted_height)?;
+            downcast_tm_consensus_state(cs.as_ref())
+        }?;
+
+        let chain_id = self
+            .chain_id
+            .clone()
+            .with_version(header_1.height().revision_number());
+        if !misbehaviour.chain_id_matches(&chain_id) {
+            return Err(ContextError::ClientError(
+                Error::MisbehaviourHeadersChainIdMismatch {
+                    header_chain_id: header_1.signed_header.header.chain_id.to_string(),
+                    chain_id: self.chain_id.to_string(),
+                }
+                .into(),
+            ));
+        }
+
+        let current_timestamp = ctx.host_timestamp()?;
+
+        self.check_header_and_validator_set(header_1, &consensus_state_1, current_timestamp)?;
+        self.check_header_and_validator_set(header_2, &consensus_state_2, current_timestamp)?;
+
+        self.verify_header_commit_against_trusted(header_1, &consensus_state_1)?;
+        self.verify_header_commit_against_trusted(header_2, &consensus_state_2)?;
+
+        let client_state = downcast_tm_client_state(self)?.clone();
+        Ok(client_state
+            .with_frozen_height(Height::new(0, 1).unwrap())
+            .into_box())
+    }
+
+    #[cfg(val_exec_ctx)]
+    fn new_check_header_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
         client_id: ClientId,
@@ -694,6 +767,7 @@ impl Ics2ClientState for ClientState {
         )?;
 
         let trusted_state = TrustedBlockState {
+            chain_id: &self.chain_id.clone().into(),
             header_time: trusted_consensus_state.timestamp,
             height: header
                 .trusted_height

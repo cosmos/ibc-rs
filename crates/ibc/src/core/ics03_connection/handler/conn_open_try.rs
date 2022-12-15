@@ -1,21 +1,28 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenTry`.
+use crate::prelude::*;
 
-use crate::core::context::ContextError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenTry;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
-use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-use crate::core::ics24_host::path::{ClientConnectionsPath, ConnectionsPath};
-use crate::core::{ExecutionContext, ValidationContext};
+use crate::core::ics24_host::identifier::ConnectionId;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
-use crate::prelude::*;
 
 use super::ConnectionIdState;
 
+#[cfg(val_exec_ctx)]
+use crate::core::context::ContextError;
+#[cfg(val_exec_ctx)]
+use crate::core::ics24_host::identifier::ClientId;
+#[cfg(val_exec_ctx)]
+use crate::core::ics24_host::path::{ClientConnectionsPath, ConnectionsPath};
+#[cfg(val_exec_ctx)]
+use crate::core::{ExecutionContext, ValidationContext};
+
+#[cfg(val_exec_ctx)]
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -24,6 +31,7 @@ where
     validate_impl(ctx_b, &msg, &vars)
 }
 
+#[cfg(val_exec_ctx)]
 fn validate_impl<Ctx>(
     ctx_b: &Ctx,
     msg: &MsgConnectionOpenTry,
@@ -124,6 +132,7 @@ where
     Ok(())
 }
 
+#[cfg(val_exec_ctx)]
 pub(crate) fn execute<Ctx>(ctx_b: &mut Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
@@ -132,6 +141,7 @@ where
     execute_impl(ctx_b, msg, vars)
 }
 
+#[cfg(val_exec_ctx)]
 fn execute_impl<Ctx>(
     ctx_b: &mut Ctx,
     msg: MsgConnectionOpenTry,
@@ -163,6 +173,7 @@ where
     Ok(())
 }
 
+#[cfg(val_exec_ctx)]
 struct LocalVars {
     conn_id_on_b: ConnectionId,
     conn_end_on_b: ConnectionEnd,
@@ -170,6 +181,7 @@ struct LocalVars {
     conn_id_on_a: ConnectionId,
 }
 
+#[cfg(val_exec_ctx)]
 impl LocalVars {
     fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenTry) -> Result<Self, ContextError>
     where
@@ -316,8 +328,6 @@ pub(crate) fn process(
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ics26_routing::msgs::MsgEnvelope;
-    use crate::core::ValidationContext;
     use crate::prelude::*;
 
     use test_log::test;
@@ -332,6 +342,11 @@ mod tests {
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::Height;
+
+    #[cfg(val_exec_ctx)]
+    use crate::core::ics26_routing::msgs::MsgEnvelope;
+    #[cfg(val_exec_ctx)]
+    use crate::core::ValidationContext;
 
     #[test]
     fn conn_open_try_msg_processing() {
@@ -387,37 +402,37 @@ mod tests {
             Test {
                 name: "Processing fails because the height is too advanced".to_string(),
                 ctx: context.clone(),
-                msg: ConnectionMsg::ConnectionOpenTry(Box::new(msg_height_advanced)),
+                msg: ConnectionMsg::ConnectionOpenTry(msg_height_advanced),
                 want_pass: false,
             },
             Test {
                 name: "Processing fails because the height is too old".to_string(),
                 ctx: context.clone(),
-                msg: ConnectionMsg::ConnectionOpenTry(Box::new(msg_height_old)),
+                msg: ConnectionMsg::ConnectionOpenTry(msg_height_old),
                 want_pass: false,
             },
             Test {
                 name: "Processing fails because no client exists".to_string(),
                 ctx: context.clone(),
-                msg: ConnectionMsg::ConnectionOpenTry(Box::new(msg_conn_try.clone())),
+                msg: ConnectionMsg::ConnectionOpenTry(msg_conn_try.clone()),
                 want_pass: false,
             },
             Test {
                 name: "Processing fails because the client misses the consensus state targeted by the proof".to_string(),
                 ctx: context.clone().with_client(&msg_proof_height_missing.client_id_on_b, Height::new(0, client_consensus_state_height).unwrap()),
-                msg: ConnectionMsg::ConnectionOpenTry(Box::new(msg_proof_height_missing)),
+                msg: ConnectionMsg::ConnectionOpenTry(msg_proof_height_missing),
                 want_pass: false,
             },
             Test {
                 name: "Good parameters (no previous_connection_id)".to_string(),
                 ctx: context.clone().with_client(&msg_conn_try.client_id_on_b, Height::new(0, client_consensus_state_height).unwrap()),
-                msg: ConnectionMsg::ConnectionOpenTry(Box::new(msg_conn_try.clone())),
+                msg: ConnectionMsg::ConnectionOpenTry(msg_conn_try.clone()),
                 want_pass: true,
             },
             Test {
                 name: "Good parameters".to_string(),
                 ctx: context.with_client(&msg_conn_try.client_id_on_b, Height::new(0, client_consensus_state_height).unwrap()),
-                msg: ConnectionMsg::ConnectionOpenTry(Box::new(msg_conn_try)),
+                msg: ConnectionMsg::ConnectionOpenTry(msg_conn_try),
                 want_pass: true,
             },
         ]
@@ -425,33 +440,35 @@ mod tests {
         .collect();
 
         for test in tests {
-            let res = ValidationContext::validate(
-                &test.ctx,
-                MsgEnvelope::ConnectionMsg(test.msg.clone()),
-            );
+            #[cfg(val_exec_ctx)]
+            {
+                let res = ValidationContext::validate(
+                    &test.ctx,
+                    MsgEnvelope::ConnectionMsg(test.msg.clone()),
+                );
 
-            match res {
-                Ok(_) => {
-                    assert!(
+                match res {
+                    Ok(_) => {
+                        assert!(
                         test.want_pass,
                         "conn_open_try: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
                         test.name,
                         test.msg.clone(),
                         test.ctx.clone()
                     )
-                }
-                Err(e) => {
-                    assert!(
-                        !test.want_pass,
-                        "conn_open_try: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
-                        test.name,
-                        test.msg,
-                        test.ctx.clone(),
-                        e,
-                    );
+                    }
+                    Err(e) => {
+                        assert!(
+                            !test.want_pass,
+                            "conn_open_try: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
+                            test.name,
+                            test.msg,
+                            test.ctx.clone(),
+                            e,
+                        );
+                    }
                 }
             }
-
             let res = dispatch(&test.ctx, test.msg.clone());
             // Additionally check the events and the output objects in the result.
             match res {

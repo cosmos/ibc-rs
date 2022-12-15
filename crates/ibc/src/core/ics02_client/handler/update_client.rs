@@ -2,7 +2,8 @@
 
 use tracing::debug;
 
-use crate::core::context::ContextError;
+use crate::prelude::*;
+
 use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::ClientReader;
@@ -12,12 +13,16 @@ use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::height::Height;
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
-use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
-use crate::prelude::*;
 use crate::timestamp::Timestamp;
+
+#[cfg(val_exec_ctx)]
+use crate::core::context::ContextError;
+#[cfg(val_exec_ctx)]
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
+#[cfg(val_exec_ctx)]
+use crate::core::{ExecutionContext, ValidationContext};
 
 /// The result following the successful processing of a `MsgUpdateAnyClient` message.
 #[derive(Clone, Debug, PartialEq)]
@@ -29,6 +34,7 @@ pub struct UpdateClientResult {
     pub processed_height: Height,
 }
 
+#[cfg(val_exec_ctx)]
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -73,11 +79,8 @@ where
         .into());
     }
 
-    // Use client_state to validate the new header against the latest consensus_state.
-    // This function will return the new client_state (its latest_height changed) and a
-    // consensus_state obtained from header. These will be later persisted by the keeper.
     let _ = client_state
-        .check_header_and_update_state(ctx, client_id.clone(), header)
+        .new_check_header_and_update_state(ctx, client_id.clone(), header)
         .map_err(|e| ClientError::HeaderVerificationFailure {
             reason: e.to_string(),
         })?;
@@ -85,6 +88,7 @@ where
     Ok(())
 }
 
+#[cfg(val_exec_ctx)]
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
@@ -103,7 +107,7 @@ where
         client_state,
         consensus_state,
     } = client_state
-        .check_header_and_update_state(ctx, client_id.clone(), header.clone())
+        .new_check_header_and_update_state(ctx, client_id.clone(), header.clone())
         .map_err(|e| ClientError::HeaderVerificationFailure {
             reason: e.to_string(),
         })?;
@@ -192,7 +196,7 @@ pub fn process<Ctx: ClientReader>(
         client_state,
         consensus_state,
     } = client_state
-        .old_check_header_and_update_state(ctx, client_id.clone(), header.clone())
+        .check_header_and_update_state(ctx, client_id.clone(), header.clone())
         .map_err(|e| ClientError::HeaderVerificationFailure {
             reason: e.to_string(),
         })?;
@@ -361,6 +365,7 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let update_height = Height::new(1, 21).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
 
         let ctx = MockContext::new(
             ChainId::new("mockgaiaA".to_string(), 1),
@@ -368,19 +373,15 @@ mod tests {
             5,
             Height::new(1, 1).unwrap(),
         )
-        .with_client_parametrized(
+        .with_client_parametrized_with_chain_id(
+            chain_id_b.clone(),
             &client_id,
             client_height,
             Some(tm_client_type()), // The target host chain (B) is synthetic TM.
             Some(client_height),
         );
 
-        let ctx_b = MockContext::new(
-            ChainId::new("mockgaiaB".to_string(), 1),
-            HostType::SyntheticTendermint,
-            5,
-            update_height,
-        );
+        let ctx_b = MockContext::new(chain_id_b, HostType::SyntheticTendermint, 5, update_height);
 
         let signer = get_dummy_account_id();
 
@@ -424,6 +425,7 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let update_height = Height::new(1, 21).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
 
         let ctx = MockContext::new(
             ChainId::new("mockgaiaA".to_string(), 1),
@@ -431,19 +433,15 @@ mod tests {
             5,
             Height::new(1, 1).unwrap(),
         )
-        .with_client_parametrized_history(
+        .with_client_parametrized_history_with_chain_id(
+            chain_id_b.clone(),
             &client_id,
             client_height,
             Some(tm_client_type()), // The target host chain (B) is synthetic TM.
             Some(client_height),
         );
 
-        let ctx_b = MockContext::new(
-            ChainId::new("mockgaiaB".to_string(), 1),
-            HostType::SyntheticTendermint,
-            5,
-            update_height,
-        );
+        let ctx_b = MockContext::new(chain_id_b, HostType::SyntheticTendermint, 5, update_height);
 
         let signer = get_dummy_account_id();
 

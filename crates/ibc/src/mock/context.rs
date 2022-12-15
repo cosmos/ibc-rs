@@ -1,8 +1,6 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
-use crate::core::context::ContextError;
-use crate::core::ValidationContext;
 use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap;
@@ -55,6 +53,11 @@ use crate::timestamp::Timestamp;
 use crate::Height;
 
 use super::client_state::MOCK_CLIENT_TYPE;
+
+#[cfg(val_exec_ctx)]
+use crate::core::context::ContextError;
+#[cfg(val_exec_ctx)]
+use crate::core::ValidationContext;
 
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
@@ -264,6 +267,24 @@ impl MockContext {
         client_type: Option<ClientType>,
         consensus_state_height: Option<Height>,
     ) -> Self {
+        let client_chain_id = self.host_chain_id.clone();
+        self.with_client_parametrized_history_with_chain_id(
+            client_chain_id,
+            client_id,
+            client_state_height,
+            client_type,
+            consensus_state_height,
+        )
+    }
+
+    pub(crate) fn with_client_parametrized_history_with_chain_id(
+        self,
+        client_chain_id: ChainId,
+        client_id: &ClientId,
+        client_state_height: Height,
+        client_type: Option<ClientType>,
+        consensus_state_height: Option<Height>,
+    ) -> Self {
         let cs_height = consensus_state_height.unwrap_or(client_state_height);
         let prev_cs_height = cs_height.clone().sub(1).unwrap_or(client_state_height);
 
@@ -278,11 +299,8 @@ impl MockContext {
             )
         } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
             // If it's a Tendermint client, we need TM states.
-            let light_block = HostBlock::generate_tm_block(
-                self.host_chain_id.clone(),
-                cs_height.revision_height(),
-                now,
-            );
+            let light_block =
+                HostBlock::generate_tm_block(client_chain_id, cs_height.revision_height(), now);
 
             let client_state =
                 get_dummy_tendermint_client_state(light_block.header().clone()).into_box();
@@ -1482,6 +1500,7 @@ impl RelayerContext for MockContext {
     }
 }
 
+#[cfg(val_exec_ctx)]
 impl ValidationContext for MockContext {
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
         ClientReader::client_state(self, client_id).map_err(ContextError::ClientError)

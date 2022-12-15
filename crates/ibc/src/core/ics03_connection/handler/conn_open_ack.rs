@@ -1,21 +1,27 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenAck`.
+use crate::prelude::*;
 
-use crate::core::context::ContextError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenAck;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
-use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::path::ConnectionsPath;
-use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
-use crate::prelude::*;
+
+#[cfg(val_exec_ctx)]
+use crate::core::context::ContextError;
+#[cfg(val_exec_ctx)]
+use crate::core::ics24_host::identifier::ClientId;
+#[cfg(val_exec_ctx)]
+use crate::core::ics24_host::path::ConnectionsPath;
+#[cfg(val_exec_ctx)]
+use crate::core::{ExecutionContext, ValidationContext};
 
 use super::ConnectionIdState;
 
+#[cfg(val_exec_ctx)]
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -24,6 +30,7 @@ where
     validate_impl(ctx_a, &msg, &vars)
 }
 
+#[cfg(val_exec_ctx)]
 fn validate_impl<Ctx>(
     ctx_a: &Ctx,
     msg: &MsgConnectionOpenAck,
@@ -135,6 +142,7 @@ where
     Ok(())
 }
 
+#[cfg(val_exec_ctx)]
 pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
@@ -143,6 +151,7 @@ where
     execute_impl(ctx_a, msg, vars)
 }
 
+#[cfg(val_exec_ctx)]
 fn execute_impl<Ctx>(
     ctx_a: &mut Ctx,
     msg: MsgConnectionOpenAck,
@@ -178,10 +187,12 @@ where
     Ok(())
 }
 
+#[cfg(val_exec_ctx)]
 struct LocalVars {
     conn_end_on_a: ConnectionEnd,
 }
 
+#[cfg(val_exec_ctx)]
 impl LocalVars {
     fn new<Ctx>(ctx_a: &Ctx, msg: &MsgConnectionOpenAck) -> Result<Self, ContextError>
     where
@@ -328,8 +339,6 @@ pub(crate) fn process(
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ics26_routing::msgs::MsgEnvelope;
-    use crate::core::ValidationContext;
     use crate::prelude::*;
 
     use core::str::FromStr;
@@ -347,6 +356,11 @@ mod tests {
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::timestamp::ZERO_DURATION;
+
+    #[cfg(val_exec_ctx)]
+    use crate::core::ics26_routing::msgs::MsgEnvelope;
+    #[cfg(val_exec_ctx)]
+    use crate::core::ValidationContext;
 
     #[test]
     fn conn_open_ack_msg_processing() {
@@ -402,7 +416,7 @@ mod tests {
                     .clone()
                     .with_client(&client_id, proof_height)
                     .with_connection(conn_id.clone(), default_conn_end),
-                msg: ConnectionMsg::ConnectionOpenAck(Box::new(msg_ack.clone())),
+                msg: ConnectionMsg::ConnectionOpenAck(msg_ack.clone()),
                 want_pass: true,
                 match_error: Box::new(|_| panic!("should not have error")),
             },
@@ -410,7 +424,7 @@ mod tests {
                 name: "Processing fails because the connection does not exist in the context"
                     .to_string(),
                 ctx: default_context.clone(),
-                msg: ConnectionMsg::ConnectionOpenAck(Box::new(msg_ack.clone())),
+                msg: ConnectionMsg::ConnectionOpenAck(msg_ack.clone()),
                 want_pass: false,
                 match_error: {
                     let right_connection_id = conn_id.clone();
@@ -430,7 +444,7 @@ mod tests {
                 ctx: default_context
                     .with_client(&client_id, proof_height)
                     .with_connection(conn_id.clone(), conn_end_open),
-                msg: ConnectionMsg::ConnectionOpenAck(Box::new(msg_ack)),
+                msg: ConnectionMsg::ConnectionOpenAck(msg_ack),
                 want_pass: false,
                 match_error: {
                     let right_connection_id = conn_id;
@@ -458,30 +472,33 @@ mod tests {
         ];
 
         for test in tests {
-            let res = ValidationContext::validate(
-                &test.ctx,
-                MsgEnvelope::ConnectionMsg(test.msg.clone()),
-            );
+            #[cfg(val_exec_ctx)]
+            {
+                let res = ValidationContext::validate(
+                    &test.ctx,
+                    MsgEnvelope::ConnectionMsg(test.msg.clone()),
+                );
 
-            match res {
-                Ok(_) => {
-                    assert!(
+                match res {
+                    Ok(_) => {
+                        assert!(
                         test.want_pass,
                         "conn_open_ack: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
                         test.name,
                         test.msg.clone(),
                         test.ctx.clone()
                     )
-                }
-                Err(e) => {
-                    assert!(
-                        !test.want_pass,
-                        "conn_open_ack: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
-                        test.name,
-                        test.msg,
-                        test.ctx.clone(),
-                        e,
-                    );
+                    }
+                    Err(e) => {
+                        assert!(
+                            !test.want_pass,
+                            "conn_open_ack: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
+                            test.name,
+                            test.msg,
+                            test.ctx.clone(),
+                            e,
+                        );
+                    }
                 }
             }
 

@@ -31,7 +31,11 @@ use crate::mock::client_state::client_type as mock_client_type;
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::mock::misbehaviour::Misbehaviour;
+
 use crate::Height;
+
+#[cfg(val_exec_ctx)]
+use crate::core::{ContextError, ValidationContext};
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
 
@@ -179,7 +183,7 @@ impl ClientState for MockClientState {
         MockConsensusState::try_from(consensus_state).map(MockConsensusState::into_box)
     }
 
-    fn old_check_header_and_update_state(
+    fn check_header_and_update_state(
         &self,
         _ctx: &dyn ClientReader,
         _client_id: ClientId,
@@ -200,9 +204,10 @@ impl ClientState for MockClientState {
         })
     }
 
-    fn check_header_and_update_state(
+    #[cfg(val_exec_ctx)]
+    fn new_check_header_and_update_state(
         &self,
-        _ctx: &dyn crate::core::ValidationContext,
+        _ctx: &dyn ValidationContext,
         _client_id: ClientId,
         header: Any,
     ) -> Result<UpdatedState, ClientError> {
@@ -240,6 +245,35 @@ impl ClientState for MockClientState {
                 header_height: header_1.height(),
                 latest_height: self.latest_height(),
             });
+        }
+
+        let new_state =
+            MockClientState::new(header_1).with_frozen_height(Height::new(0, 1).unwrap());
+
+        Ok(new_state.into_box())
+    }
+
+    #[cfg(val_exec_ctx)]
+    fn new_check_misbehaviour_and_update_state(
+        &self,
+        _ctx: &dyn ValidationContext,
+        _client_id: ClientId,
+        misbehaviour: Any,
+    ) -> Result<Box<dyn ClientState>, ContextError> {
+        let misbehaviour = Misbehaviour::try_from(misbehaviour)?;
+        let header_1 = misbehaviour.header1;
+        let header_2 = misbehaviour.header2;
+
+        if header_1.height() != header_2.height() {
+            return Err(ClientError::InvalidHeight.into());
+        }
+
+        if self.latest_height() >= header_1.height() {
+            return Err(ClientError::LowHeaderHeight {
+                header_height: header_1.height(),
+                latest_height: self.latest_height(),
+            }
+            .into());
         }
 
         let new_state =

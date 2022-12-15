@@ -1,6 +1,6 @@
 //! Protocol logic specific to ICS3 messages of type `MsgConnectionOpenInit`.
+use crate::prelude::*;
 
-use crate::core::context::ContextError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::ConnectionError;
@@ -8,14 +8,19 @@ use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics24_host::identifier::ConnectionId;
-use crate::core::ics24_host::path::{ClientConnectionsPath, ConnectionsPath};
-use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
-use crate::prelude::*;
+
+#[cfg(val_exec_ctx)]
+use crate::core::context::ContextError;
+#[cfg(val_exec_ctx)]
+use crate::core::ics24_host::path::{ClientConnectionsPath, ConnectionsPath};
+#[cfg(val_exec_ctx)]
+use crate::core::{ExecutionContext, ValidationContext};
 
 use super::ConnectionIdState;
 
+#[cfg(val_exec_ctx)]
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -32,6 +37,7 @@ where
     Ok(())
 }
 
+#[cfg(val_exec_ctx)]
 pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
@@ -146,6 +152,8 @@ pub(crate) fn process(
 
 #[cfg(test)]
 mod tests {
+    use crate::prelude::*;
+
     use test_log::test;
 
     use crate::core::ics03_connection::connection::State;
@@ -155,12 +163,14 @@ mod tests {
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::msgs::ConnectionMsg;
     use crate::core::ics03_connection::version::Version;
-    use crate::core::ics26_routing::msgs::MsgEnvelope;
-    use crate::core::ValidationContext;
     use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
-    use crate::prelude::*;
     use crate::Height;
+
+    #[cfg(val_exec_ctx)]
+    use crate::core::ics26_routing::msgs::MsgEnvelope;
+    #[cfg(val_exec_ctx)]
+    use crate::core::ValidationContext;
 
     use ibc_proto::ibc::core::connection::v1::Version as RawVersion;
 
@@ -229,33 +239,35 @@ mod tests {
         .collect();
 
         for test in tests {
-            let res = ValidationContext::validate(
-                &test.ctx,
-                MsgEnvelope::ConnectionMsg(test.msg.clone()),
-            );
+            #[cfg(val_exec_ctx)]
+            {
+                let res = ValidationContext::validate(
+                    &test.ctx,
+                    MsgEnvelope::ConnectionMsg(test.msg.clone()),
+                );
 
-            match res {
-                Ok(_) => {
-                    assert!(
+                match res {
+                    Ok(_) => {
+                        assert!(
                         test.want_pass,
                         "conn_open_init: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
                         test.name,
                         test.msg.clone(),
                         test.ctx.clone()
                     )
-                }
-                Err(e) => {
-                    assert!(
-                        !test.want_pass,
-                        "conn_open_init: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
-                        test.name,
-                        test.msg,
-                        test.ctx.clone(),
-                        e,
-                    );
+                    }
+                    Err(e) => {
+                        assert!(
+                            !test.want_pass,
+                            "conn_open_init: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
+                            test.name,
+                            test.msg,
+                            test.ctx.clone(),
+                            e,
+                        );
+                    }
                 }
             }
-
             let res = dispatch(&test.ctx, test.msg.clone());
             // Additionally check the events and the output objects in the result.
             match res {

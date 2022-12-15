@@ -1,5 +1,7 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgSubmitMisbehaviour`.
 //!
+use crate::prelude::*;
+
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::ClientError;
@@ -9,13 +11,76 @@ use crate::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
-use crate::prelude::*;
+
+#[cfg(val_exec_ctx)]
+use crate::core::ics24_host::path::ClientStatePath;
+#[cfg(val_exec_ctx)]
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 /// The result following the successful processing of a `MsgSubmitMisbehaviour` message.
 #[derive(Clone, Debug, PartialEq)]
 pub struct MisbehaviourResult {
     pub client_id: ClientId,
     pub client_state: Box<dyn ClientState>,
+}
+
+#[cfg(val_exec_ctx)]
+pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgSubmitMisbehaviour) -> Result<(), ContextError>
+where
+    Ctx: ValidationContext,
+{
+    let MsgSubmitMisbehaviour {
+        client_id,
+        misbehaviour,
+        signer: _,
+    } = msg;
+
+    // Read client state from the host chain store.
+    let client_state = ctx.client_state(&client_id)?;
+
+    if client_state.is_frozen() {
+        return Err(ClientError::ClientFrozen { client_id }.into());
+    }
+
+    let _ = client_state
+        .new_check_misbehaviour_and_update_state(ctx, client_id.clone(), misbehaviour)
+        .map_err(|e| ClientError::MisbehaviourHandlingFailure {
+            reason: e.to_string(),
+        })?;
+
+    Ok(())
+}
+
+#[cfg(val_exec_ctx)]
+pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgSubmitMisbehaviour) -> Result<(), ContextError>
+where
+    Ctx: ExecutionContext,
+{
+    let MsgSubmitMisbehaviour {
+        client_id,
+        misbehaviour,
+        signer: _,
+    } = msg;
+
+    // Read client state from the host chain store.
+    let client_state = ctx.client_state(&client_id)?;
+
+    if client_state.is_frozen() {
+        return Err(ClientError::ClientFrozen { client_id }.into());
+    }
+
+    let client_state = client_state
+        .new_check_misbehaviour_and_update_state(ctx, client_id.clone(), misbehaviour)
+        .map_err(|e| ClientError::MisbehaviourHandlingFailure {
+            reason: e.to_string(),
+        })?;
+
+    ctx.emit_ibc_event(IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(
+        client_id.clone(),
+        client_state.client_type(),
+    )));
+
+    ctx.store_client_state(ClientStatePath(client_id), client_state)
 }
 
 pub fn process(

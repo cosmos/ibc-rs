@@ -6,14 +6,14 @@ resolver = "2"
 
 [dependencies]
 ibc = { path = "../../crates/ibc", default-features = false }
-ibc-proto = { version = "0.23.0", default-features = false }
-tendermint = { version = "0.27.0", default-features = false }
-tendermint-proto = { version = "0.27.0", default-features = false }
-tendermint-light-client-verifier = { version = "0.27.0", default-features = false }
+ibc-proto = { version = "0.24.0", default-features = false }
+tendermint = { version = "0.28.0", default-features = false }
+tendermint-proto = { version = "0.28.0", default-features = false }
+tendermint-light-client-verifier = { version = "0.28.0", default-features = false }
 
 sp-core = { version = "7.0.0", default-features = false, optional = true }
-sp-io = { version = "5.0.0", default-features = false, optional = true }
-sp-runtime = { version = "5.0.0", default-features = false, optional = true }
+sp-io = { version = "7.0.0", default-features = false, optional = true }
+sp-runtime = { version = "7.0.0", default-features = false, optional = true }
 sp-std = { version = "5.0.0", default-features = false, optional = true }
 
 [features]
