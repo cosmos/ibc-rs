@@ -35,7 +35,8 @@ impl borsh::BorshSerialize for Timestamp {
         let timestamp = if let Some(time) = self.time {
             time.unix_timestamp_nanos()
         } else {
-            0i128
+            // When the value in `Time` is `None` we give the timestamp a default value of 0
+            0
         };
         borsh::BorshSerialize::serialize(&timestamp, writer)
     }
