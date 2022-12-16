@@ -56,8 +56,8 @@ impl parity_scale_codec::Encode for Timestamp {
         let timestamp = if let Some(time) = self.time {
             time.unix_timestamp_nanos()
         } else {
-            // CONTANT: When the value in time is a none we give the timestamp a default value of 0
-            0i128
+            // When the value in `Time` is `None` we give the timestamp a default value of 0
+            0
         };
 
         timestamp.encode_to(writer);

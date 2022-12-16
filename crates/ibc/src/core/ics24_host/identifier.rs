@@ -174,32 +174,20 @@ impl From<String> for ChainId {
     }
 }
 
-#[cfg_attr(feature = "parity-scale-codec", derive(scale_info::TypeInfo))]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Into)]
 pub struct ClientId(String);
-
-#[cfg(feature = "parity-scale-codec")]
-impl parity_scale_codec::Encode for ClientId {
-    fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, writer: &mut T) {
-        let value = self.0.as_bytes().to_vec();
-        value.encode_to(writer);
-    }
-}
-#[cfg(feature = "parity-scale-codec")]
-impl parity_scale_codec::Decode for ClientId {
-    fn decode<I: parity_scale_codec::Input>(
-        input: &mut I,
-    ) -> Result<Self, parity_scale_codec::Error> {
-        let value = Vec::<u8>::decode(input)?;
-        let value = String::from_utf8(value)
-            .map_err(|_| parity_scale_codec::Error::from("Utf8 decode to string error"))?;
-        Ok(ClientId(value))
-    }
-}
 
 impl ClientId {
     /// Builds a new client identifier. Client identifiers are deterministically formed from two
@@ -265,32 +253,20 @@ impl PartialEq<str> for ClientId {
     }
 }
 
-#[cfg_attr(feature = "parity-scale-codec", derive(scale_info::TypeInfo))]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct ConnectionId(String);
-
-#[cfg(feature = "parity-scale-codec")]
-impl parity_scale_codec::Encode for ConnectionId {
-    fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, writer: &mut T) {
-        let value = self.0.as_bytes().to_vec();
-        value.encode_to(writer);
-    }
-}
-#[cfg(feature = "parity-scale-codec")]
-impl parity_scale_codec::Decode for ConnectionId {
-    fn decode<I: parity_scale_codec::Input>(
-        input: &mut I,
-    ) -> Result<Self, parity_scale_codec::Error> {
-        let value = Vec::<u8>::decode(input)?;
-        let value = String::from_utf8(value)
-            .map_err(|_| parity_scale_codec::Error::from("Utf8 decode to string error"))?;
-        Ok(ConnectionId(value))
-    }
-}
 
 impl ConnectionId {
     /// Builds a new connection identifier. Connection identifiers are deterministically formed from
@@ -359,32 +335,20 @@ impl PartialEq<str> for ConnectionId {
     }
 }
 
-#[cfg_attr(feature = "parity-scale-codec", derive(scale_info::TypeInfo))]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct PortId(String);
-
-#[cfg(feature = "parity-scale-codec")]
-impl parity_scale_codec::Encode for PortId {
-    fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, writer: &mut T) {
-        let value = self.0.as_bytes().to_vec();
-        value.encode_to(writer);
-    }
-}
-#[cfg(feature = "parity-scale-codec")]
-impl parity_scale_codec::Decode for PortId {
-    fn decode<I: parity_scale_codec::Input>(
-        input: &mut I,
-    ) -> Result<Self, parity_scale_codec::Error> {
-        let value = Vec::<u8>::decode(input)?;
-        let value = String::from_utf8(value)
-            .map_err(|_| parity_scale_codec::Error::from("Utf8 decode to string error"))?;
-        Ok(PortId(value))
-    }
-}
 
 impl PortId {
     /// Infallible creation of the well-known transfer port
@@ -430,32 +394,20 @@ impl Default for PortId {
     }
 }
 
-#[cfg_attr(feature = "parity-scale-codec", derive(scale_info::TypeInfo))]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct ChannelId(String);
-
-#[cfg(feature = "parity-scale-codec")]
-impl parity_scale_codec::Encode for ChannelId {
-    fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, writer: &mut T) {
-        let value = self.0.as_bytes().to_vec();
-        value.encode_to(writer);
-    }
-}
-#[cfg(feature = "parity-scale-codec")]
-impl parity_scale_codec::Decode for ChannelId {
-    fn decode<I: parity_scale_codec::Input>(
-        input: &mut I,
-    ) -> Result<Self, parity_scale_codec::Error> {
-        let value = Vec::<u8>::decode(input)?;
-        let value = String::from_utf8(value)
-            .map_err(|_| parity_scale_codec::Error::from("Utf8 decode to string error"))?;
-        Ok(ChannelId(value))
-    }
-}
 
 impl ChannelId {
     const PREFIX: &'static str = "channel-";
