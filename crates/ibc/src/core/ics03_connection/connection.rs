@@ -100,6 +100,10 @@ impl From<IdentifiedConnectionEnd> for RawIdentifiedConnection {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(parity_scale_codec::Encode, parity_scale_codec::Decode,)
+)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ConnectionEnd {
     pub state: State,
@@ -112,14 +116,6 @@ pub struct ConnectionEnd {
 mod sealed {
     use super::*;
 
-    #[cfg_attr(
-        feature = "parity-scale-codec",
-        derive(
-            parity_scale_codec::Encode,
-            parity_scale_codec::Decode,
-            scale_info::TypeInfo
-        )
-    )]
     #[cfg_attr(
         feature = "borsh",
         derive(borsh::BorshSerialize, borsh::BorshDeserialize)
@@ -173,24 +169,6 @@ mod sealed {
     impl borsh::BorshDeserialize for ConnectionEnd {
         fn deserialize(buf: &mut &[u8]) -> borsh::maybestd::io::Result<Self> {
             let result = InnerConnectionEnd::deserialize(buf)?;
-            Ok(ConnectionEnd::from(result))
-        }
-    }
-
-    #[cfg(feature = "parity-scale-codec")]
-    impl parity_scale_codec::Encode for ConnectionEnd {
-        fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, writer: &mut T) {
-            let value = InnerConnectionEnd::from(self.clone());
-            value.encode_to(writer);
-        }
-    }
-
-    #[cfg(feature = "parity-scale-codec")]
-    impl parity_scale_codec::Decode for ConnectionEnd {
-        fn decode<I: parity_scale_codec::Input>(
-            input: &mut I,
-        ) -> Result<Self, parity_scale_codec::Error> {
-            let result = InnerConnectionEnd::decode(input)?;
             Ok(ConnectionEnd::from(result))
         }
     }
