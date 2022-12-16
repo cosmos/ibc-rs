@@ -17,6 +17,18 @@ use crate::prelude::*;
 /// is legal and meaningful, even though the Tendermint spec rejects this height
 /// as invalid. Thus, it must be parsed specially, where this special case means
 /// "no timeout".
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
 pub enum TimeoutHeight {
     Never,

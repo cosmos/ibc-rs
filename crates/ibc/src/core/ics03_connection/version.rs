@@ -11,6 +11,18 @@ use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::channel::Order;
 
 /// Stores the identifier and the features supported by a version
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Version {
     /// unique version identifier

@@ -1879,7 +1879,7 @@ mod tests {
                 _relayer: &Signer,
             ) -> OnRecvPacketAck {
                 OnRecvPacketAck::Successful(
-                    Box::new(MockAck::default()),
+                    Box::<MockAck>::default(),
                     Box::new(|module| {
                         let module = module.downcast_mut::<FooModule>().unwrap();
                         module.counter += 1;

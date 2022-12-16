@@ -3,6 +3,18 @@ use crate::prelude::*;
 use serde_derive::{Deserialize, Serialize};
 
 /// Packet commitment
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct PacketCommitment(Vec<u8>);
 
@@ -25,6 +37,18 @@ impl From<Vec<u8>> for PacketCommitment {
 }
 
 /// Acknowledgement commitment to be stored
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct AcknowledgementCommitment(Vec<u8>);
 

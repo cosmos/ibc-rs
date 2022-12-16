@@ -26,6 +26,71 @@ pub struct Timestamp {
     time: Option<Time>,
 }
 
+#[cfg(feature = "borsh")]
+impl borsh::BorshSerialize for Timestamp {
+    fn serialize<W: borsh::maybestd::io::Write>(
+        &self,
+        writer: &mut W,
+    ) -> borsh::maybestd::io::Result<()> {
+        let timestamp = if let Some(time) = self.time {
+            time.unix_timestamp_nanos()
+        } else {
+            // When the value in `Time` is `None` we give the timestamp a default value of 0
+            0
+        };
+        borsh::BorshSerialize::serialize(&timestamp, writer)
+    }
+}
+
+#[cfg(feature = "borsh")]
+impl borsh::BorshDeserialize for Timestamp {
+    fn deserialize(buf: &mut &[u8]) -> borsh::maybestd::io::Result<Self> {
+        let timestamp = u64::deserialize(buf)?;
+        Ok(Timestamp::from_nanoseconds(timestamp)
+            .map_err(|_| borsh::maybestd::io::ErrorKind::Other)?)
+    }
+}
+
+#[cfg(feature = "parity-scale-codec")]
+impl parity_scale_codec::Encode for Timestamp {
+    fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, writer: &mut T) {
+        let timestamp = if let Some(time) = self.time {
+            time.unix_timestamp_nanos()
+        } else {
+            // When the value in `Time` is `None` we give the timestamp a default value of 0
+            0
+        };
+
+        timestamp.encode_to(writer);
+    }
+}
+#[cfg(feature = "parity-scale-codec")]
+impl parity_scale_codec::Decode for Timestamp {
+    fn decode<I: parity_scale_codec::Input>(
+        input: &mut I,
+    ) -> Result<Self, parity_scale_codec::Error> {
+        let timestamp = u64::decode(input)?;
+        Timestamp::from_nanoseconds(timestamp)
+            .map_err(|_| parity_scale_codec::Error::from("from nanoseconds error"))
+    }
+}
+
+#[cfg(feature = "parity-scale-codec")]
+impl scale_info::TypeInfo for Timestamp {
+    type Identity = Self;
+
+    fn type_info() -> scale_info::Type {
+        scale_info::Type::builder()
+            .path(scale_info::Path::new("Timestamp", module_path!()))
+            // i128 is chosen before we represent the timestamp is nanoseconds, which is represented as a i128 by Time
+            .composite(scale_info::build::Fields::named().field(|f| {
+                f.ty::<Option<i128>>()
+                    .name("time")
+                    .type_name("Option<i128>")
+            }))
+    }
+}
+
 // TODO: derive when tendermint::Time supports it:
 // https://github.com/informalsystems/tendermint-rs/pull/1054
 #[allow(clippy::derive_hash_xor_eq)]

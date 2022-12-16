@@ -15,6 +15,18 @@ use ibc_proto::ibc::core::channel::v1::{
 use crate::core::ics04_channel::{error::ChannelError, Version};
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IdentifiedChannelEnd {
     pub port_id: PortId,
@@ -73,6 +85,18 @@ impl From<IdentifiedChannelEnd> for RawIdentifiedChannel {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ChannelEnd {
     pub state: State,
@@ -250,6 +274,18 @@ impl ChannelEnd {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Counterparty {
     pub port_id: PortId,
@@ -323,11 +359,23 @@ impl From<Counterparty> for RawCounterparty {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Order {
-    None = 0,
-    Unordered = 1,
-    Ordered = 2,
+    None = 0isize,
+    Unordered = 1isize,
+    Ordered = 2isize,
 }
 
 impl Default for Order {
@@ -381,13 +429,25 @@ impl FromStr for Order {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum State {
-    Uninitialized = 0,
-    Init = 1,
-    TryOpen = 2,
-    Open = 3,
-    Closed = 4,
+    Uninitialized = 0isize,
+    Init = 1isize,
+    TryOpen = 2isize,
+    Open = 3isize,
+    Closed = 4isize,
 }
 
 impl State {
