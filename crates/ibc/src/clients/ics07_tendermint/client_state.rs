@@ -117,8 +117,7 @@ impl ClientState {
         if trusting_period <= Duration::new(0, 0) {
             return Err(Error::InvalidTrustThreshold {
                 reason: format!(
-                    "ClientState trusting period ({:?}) must be greater than zero",
-                    trusting_period
+                    "ClientState trusting period ({trusting_period:?}) must be greater than zero"
                 ),
             });
         }
@@ -126,8 +125,7 @@ impl ClientState {
         if unbonding_period <= Duration::new(0, 0) {
             return Err(Error::InvalidTrustThreshold {
                 reason: format!(
-                    "ClientState unbonding period ({:?}) must be greater than zero",
-                    unbonding_period
+                    "ClientState unbonding period ({unbonding_period:?}) must be greater than zero"
                 ),
             });
         }
@@ -135,8 +133,7 @@ impl ClientState {
         if trusting_period >= unbonding_period {
             return Err(Error::InvalidTrustThreshold {
                 reason: format!(
-                "ClientState trusting period ({:?}) must be smaller than unbonding period ({:?})",
-                trusting_period, unbonding_period,
+                "ClientState trusting period ({trusting_period:?}) must be smaller than unbonding period ({unbonding_period:?})"
             ),
             });
         }
@@ -166,8 +163,7 @@ impl ClientState {
             if key.trim().is_empty() {
                 return Err(Error::Validation {
                     reason: format!(
-                        "ClientState upgrade-path key at index {:?} cannot be empty",
-                        idx
+                        "ClientState upgrade-path key at index {idx:?} cannot be empty"
                     ),
                 });
             }
@@ -286,7 +282,7 @@ impl ClientState {
 
         if trusted_consensus_state.next_validators_hash != trusted_val_hash {
             return Err(Error::MisbehaviourTrustedValidatorHashMismatch {
-                trusted_validator_set: header.trusted_validator_set.clone(),
+                trusted_validator_set: Box::new(header.trusted_validator_set.clone()),
                 next_validators_hash: trusted_consensus_state.next_validators_hash,
                 trusted_val_hash,
             }
@@ -1207,7 +1203,7 @@ impl TryFrom<RawTmClientState> for ClientState {
             trust_level
                 .try_into()
                 .map_err(|e| Error::InvalidTrustThreshold {
-                    reason: format!("{}", e),
+                    reason: format!("{e}"),
                 })?
         };
 

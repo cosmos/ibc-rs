@@ -14,7 +14,6 @@ pub mod misbehaviour;
 pub mod update_client;
 pub mod upgrade_client;
 
-#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug)]
 pub enum ClientMsg {
     CreateClient(MsgCreateClient),
