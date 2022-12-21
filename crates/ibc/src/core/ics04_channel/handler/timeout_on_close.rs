@@ -45,13 +45,16 @@ pub fn process<Ctx: ChannelReader>(
         .map_err(PacketError::Channel)?;
 
     //verify the packet was sent, check the store
-    let packet_commitment =
-        ctx.get_packet_commitment(&packet.source_port, &packet.source_channel, packet.sequence)?;
+    let packet_commitment = ctx.get_packet_commitment(
+        &packet.source_port,
+        &packet.source_channel,
+        &packet.sequence,
+    )?;
 
     let expected_commitment = ctx.packet_commitment(
-        packet.data.clone(),
-        packet.timeout_height,
-        packet.timeout_timestamp,
+        &packet.data,
+        &packet.timeout_height,
+        &packet.timeout_timestamp,
     );
     if packet_commitment != expected_commitment {
         return Err(PacketError::IncorrectPacketCommitment {
@@ -206,9 +209,9 @@ mod tests {
         let packet = msg.packet.clone();
 
         let data = context.packet_commitment(
-            msg.packet.data.clone(),
-            msg.packet.timeout_height,
-            msg.packet.timeout_timestamp,
+            &msg.packet.data,
+            &msg.packet.timeout_height,
+            &msg.packet.timeout_timestamp,
         );
 
         let source_channel_end = ChannelEnd::new(

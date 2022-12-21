@@ -48,7 +48,7 @@ pub trait ChannelReader {
     fn client_consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ChannelError>;
 
     fn get_next_sequence_send(
@@ -73,21 +73,21 @@ pub trait ChannelReader {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-        sequence: Sequence,
+        sequence: &Sequence,
     ) -> Result<PacketCommitment, PacketError>;
 
     fn get_packet_receipt(
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-        sequence: Sequence,
+        sequence: &Sequence,
     ) -> Result<Receipt, PacketError>;
 
     fn get_packet_acknowledgement(
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-        sequence: Sequence,
+        sequence: &Sequence,
     ) -> Result<AcknowledgementCommitment, PacketError>;
 
     /// Compute the commitment for a packet.
@@ -97,9 +97,9 @@ pub trait ChannelReader {
     /// <https://github.com/cosmos/ibc-go/blob/04791984b3d6c83f704c4f058e6ca0038d155d91/modules/core/04-channel/keeper/packet.go#L206>
     fn packet_commitment(
         &self,
-        packet_data: Vec<u8>,
-        timeout_height: TimeoutHeight,
-        timeout_timestamp: Timestamp,
+        packet_data: &[u8],
+        timeout_height: &TimeoutHeight,
+        timeout_timestamp: &Timestamp,
     ) -> PacketCommitment {
         let mut hash_input = timeout_timestamp.nanoseconds().to_be_bytes().to_vec();
 
@@ -109,18 +109,18 @@ pub trait ChannelReader {
         let revision_height = timeout_height.commitment_revision_height().to_be_bytes();
         hash_input.append(&mut revision_height.to_vec());
 
-        let packet_data_hash = self.hash(packet_data);
+        let packet_data_hash = self.hash(packet_data.into());
         hash_input.append(&mut packet_data_hash.to_vec());
 
-        self.hash(hash_input).into()
+        self.hash(&hash_input).into()
     }
 
-    fn ack_commitment(&self, ack: Acknowledgement) -> AcknowledgementCommitment {
-        self.hash(ack.into()).into()
+    fn ack_commitment(&self, ack: &Acknowledgement) -> AcknowledgementCommitment {
+        self.hash(ack.as_ref()).into()
     }
 
     /// A hashing function for packet commitments
-    fn hash(&self, value: Vec<u8>) -> Vec<u8>;
+    fn hash(&self, value: &[u8]) -> Vec<u8>;
 
     /// Returns the current height of the local chain.
     fn host_height(&self) -> Result<Height, ChannelError>;
@@ -134,8 +134,10 @@ pub trait ChannelReader {
     }
 
     /// Returns the `ConsensusState` of the host (local) chain at a specific height.
-    fn host_consensus_state(&self, height: Height)
-        -> Result<Box<dyn ConsensusState>, ChannelError>;
+    fn host_consensus_state(
+        &self,
+        height: &Height,
+    ) -> Result<Box<dyn ConsensusState>, ChannelError>;
 
     /// Returns the pending `ConsensusState` of the host (local) chain.
     fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ChannelError>;
@@ -144,14 +146,14 @@ pub trait ChannelReader {
     fn client_update_time(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Timestamp, ChannelError>;
 
     /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
     fn client_update_height(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Height, ChannelError>;
 
     /// Returns a counter on the number of channel ids have been created thus far.
@@ -164,8 +166,8 @@ pub trait ChannelReader {
 
     /// Calculates the block delay period using the connection's delay period and the maximum
     /// expected time per block.
-    fn block_delay(&self, delay_period_time: Duration) -> u64 {
-        calculate_block_delay(delay_period_time, self.max_expected_time_per_block())
+    fn block_delay(&self, delay_period_time: &Duration) -> u64 {
+        calculate_block_delay(delay_period_time, &self.max_expected_time_per_block())
     }
 }
 
@@ -187,7 +189,7 @@ pub trait SendPacketReader {
     fn client_consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Box<dyn ConsensusState>, PacketError>;
 
     fn get_next_sequence_send(
@@ -196,13 +198,13 @@ pub trait SendPacketReader {
         channel_id: &ChannelId,
     ) -> Result<Sequence, PacketError>;
 
-    fn hash(&self, value: Vec<u8>) -> Vec<u8>;
+    fn hash(&self, value: &[u8]) -> Vec<u8>;
 
     fn packet_commitment(
         &self,
-        packet_data: Vec<u8>,
-        timeout_height: TimeoutHeight,
-        timeout_timestamp: Timestamp,
+        packet_data: &[u8],
+        timeout_height: &TimeoutHeight,
+        timeout_timestamp: &Timestamp,
     ) -> PacketCommitment {
         let mut hash_input = timeout_timestamp.nanoseconds().to_be_bytes().to_vec();
 
@@ -215,7 +217,7 @@ pub trait SendPacketReader {
         let packet_data_hash = self.hash(packet_data);
         hash_input.append(&mut packet_data_hash.to_vec());
 
-        self.hash(hash_input).into()
+        self.hash(&hash_input).into()
     }
 }
 
@@ -242,9 +244,10 @@ where
     fn client_consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Box<dyn ConsensusState>, PacketError> {
-        ChannelReader::client_consensus_state(self, client_id, height).map_err(PacketError::Channel)
+        ChannelReader::client_consensus_state(self, client_id, &height)
+            .map_err(PacketError::Channel)
     }
 
     fn get_next_sequence_send(
@@ -255,7 +258,7 @@ where
         ChannelReader::get_next_sequence_send(self, port_id, channel_id)
     }
 
-    fn hash(&self, value: Vec<u8>) -> Vec<u8> {
+    fn hash(&self, value: &[u8]) -> Vec<u8> {
         ChannelReader::hash(self, value)
     }
 }
@@ -338,14 +341,14 @@ pub trait ChannelKeeper {
                 )?;
             }
             PacketResult::Ack(res) => {
-                self.delete_packet_commitment(&res.port_id, &res.channel_id, res.seq)?;
+                self.delete_packet_commitment(&res.port_id, &res.channel_id, &res.seq)?;
                 if let Some(s) = res.seq_number {
                     //Ordered Channel
                     self.store_next_sequence_ack(res.port_id, res.channel_id, s)?;
                 }
             }
             PacketResult::Timeout(res) => {
-                self.delete_packet_commitment(&res.port_id, &res.channel_id, res.seq)?;
+                self.delete_packet_commitment(&res.port_id, &res.channel_id, &res.seq)?;
                 if let Some(c) = res.channel {
                     // Ordered Channel: closes channel
                     self.store_channel(res.port_id, res.channel_id, c)
@@ -368,7 +371,7 @@ pub trait ChannelKeeper {
         &mut self,
         port_id: &PortId,
         channel_id: &ChannelId,
-        seq: Sequence,
+        seq: &Sequence,
     ) -> Result<(), PacketError>;
 
     fn store_packet_receipt(
@@ -391,7 +394,7 @@ pub trait ChannelKeeper {
         &mut self,
         port_id: &PortId,
         channel_id: &ChannelId,
-        sequence: Sequence,
+        sequence: &Sequence,
     ) -> Result<(), PacketError>;
 
     fn store_connection_channels(
@@ -437,8 +440,8 @@ pub trait ChannelKeeper {
 }
 
 pub fn calculate_block_delay(
-    delay_period_time: Duration,
-    max_expected_time_per_block: Duration,
+    delay_period_time: &Duration,
+    max_expected_time_per_block: &Duration,
 ) -> u64 {
     if max_expected_time_per_block.is_zero() {
         return 0;

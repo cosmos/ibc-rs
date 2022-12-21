@@ -527,7 +527,7 @@ mod tests {
                     ctx.get_packet_commitment(
                         &msg_ack_packet.packet.source_port,
                         &msg_ack_packet.packet.source_channel,
-                        msg_ack_packet.packet.sequence,
+                        &msg_ack_packet.packet.sequence,
                     )
                     .is_err()
                 })),

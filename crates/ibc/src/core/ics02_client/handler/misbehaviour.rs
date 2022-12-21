@@ -306,7 +306,7 @@ mod tests {
 
         // Get chain-B's header at `misbehaviour_height`
         let header1: TmHeader = {
-            let mut block = ctx_b.host_block(misbehaviour_height).unwrap().clone();
+            let mut block = ctx_b.host_block(&misbehaviour_height).unwrap().clone();
             block.set_trusted_height(client_height);
             block.try_into_tm_block().unwrap().into()
         };

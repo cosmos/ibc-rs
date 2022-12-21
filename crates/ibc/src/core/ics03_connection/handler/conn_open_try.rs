@@ -229,7 +229,7 @@ pub(crate) fn process(
     }
 
     let version_on_b =
-        ctx_b.pick_version(ctx_b.get_compatible_versions(), msg.versions_on_a.clone())?;
+        ctx_b.pick_version(&ctx_b.get_compatible_versions(), &msg.versions_on_a.clone())?;
 
     let conn_end_on_b = ConnectionEnd::new(
         State::TryOpen,
@@ -249,7 +249,7 @@ pub(crate) fn process(
     {
         let client_state_of_a_on_b = ctx_b.client_state(conn_end_on_b.client_id())?;
         let consensus_state_of_a_on_b =
-            ctx_b.client_consensus_state(&msg.client_id_on_b, msg.proofs_height_on_a)?;
+            ctx_b.client_consensus_state(&msg.client_id_on_b, &msg.proofs_height_on_a)?;
 
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let prefix_on_b = ctx_b.commitment_prefix();
@@ -291,7 +291,7 @@ pub(crate) fn process(
             })?;
 
         let expected_consensus_state_of_b_on_a =
-            ctx_b.host_consensus_state(msg.consensus_height_of_b_on_a)?;
+            ctx_b.host_consensus_state(&msg.consensus_height_of_b_on_a)?;
         client_state_of_a_on_b
             .verify_client_consensus_state(
                 msg.proofs_height_on_a,

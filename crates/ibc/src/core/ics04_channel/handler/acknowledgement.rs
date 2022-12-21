@@ -61,14 +61,17 @@ pub fn process<Ctx: ChannelReader>(
     }
 
     // Verify packet commitment
-    let packet_commitment =
-        ctx.get_packet_commitment(&packet.source_port, &packet.source_channel, packet.sequence)?;
+    let packet_commitment = ctx.get_packet_commitment(
+        &packet.source_port,
+        &packet.source_channel,
+        &packet.sequence,
+    )?;
 
     if packet_commitment
         != ctx.packet_commitment(
-            packet.data.clone(),
-            packet.timeout_height,
-            packet.timeout_timestamp,
+            &packet.data,
+            &packet.timeout_height,
+            &packet.timeout_timestamp,
         )
     {
         return Err(PacketError::IncorrectPacketCommitment {
@@ -165,9 +168,9 @@ mod tests {
         let packet = msg.packet.clone();
 
         let data = context.packet_commitment(
-            packet.data.clone(),
-            packet.timeout_height,
-            packet.timeout_timestamp,
+            &packet.data,
+            &packet.timeout_height,
+            &packet.timeout_timestamp,
         );
 
         let source_channel_end = ChannelEnd::new(

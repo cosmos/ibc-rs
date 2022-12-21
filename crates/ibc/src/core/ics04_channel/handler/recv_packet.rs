@@ -120,7 +120,7 @@ pub fn process<Ctx: ChannelReader>(
         let packet_rec = ctx.get_packet_receipt(
             &packet.destination_port,
             &packet.destination_channel,
-            packet.sequence,
+            &packet.sequence,
         );
 
         match packet_rec {
