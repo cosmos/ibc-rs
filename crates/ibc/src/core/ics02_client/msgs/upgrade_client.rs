@@ -53,10 +53,6 @@ impl Msg for MsgUpgradeClient {
     type ValidationError = crate::core::ics24_host::error::ValidationError;
     type Raw = RawMsgUpgradeClient;
 
-    fn route(&self) -> String {
-        crate::keys::ROUTER_KEY.to_string()
-    }
-
     fn type_url(&self) -> String {
         TYPE_URL.to_string()
     }

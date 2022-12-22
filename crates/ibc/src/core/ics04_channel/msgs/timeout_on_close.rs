@@ -42,10 +42,6 @@ impl Msg for MsgTimeoutOnClose {
     type ValidationError = PacketError;
     type Raw = RawMsgTimeoutOnClose;
 
-    fn route(&self) -> String {
-        crate::keys::ROUTER_KEY.to_string()
-    }
-
     fn type_url(&self) -> String {
         TYPE_URL.to_string()
     }

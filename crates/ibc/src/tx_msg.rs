@@ -7,7 +7,9 @@ pub trait Msg: Clone {
     type Raw: From<Self> + prost::Message;
 
     // TODO: Clarify what is this function supposed to do & its connection to ICS26 routing mod.
-    fn route(&self) -> String;
+    fn route(&self) -> String {
+        crate::keys::ROUTER_KEY.to_string()
+    }
 
     /// Unique type identifier for this message, to support encoding to/from `prost_types::Any`.
     fn type_url(&self) -> String;
