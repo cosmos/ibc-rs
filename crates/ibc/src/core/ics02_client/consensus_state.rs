@@ -7,7 +7,6 @@ use erased_serde::Serialize as ErasedSerialize;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 
-use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::dynamic_typing::AsAny;
@@ -30,9 +29,6 @@ pub trait ConsensusState:
     + Send
     + Sync
 {
-    /// Type of client associated with this consensus state (eg. Tendermint)
-    fn client_type(&self) -> ClientType;
-
     /// Commitment root of the consensus state, which is used for key-value pair verification.
     fn root(&self) -> &CommitmentRoot;
 

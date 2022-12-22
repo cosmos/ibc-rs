@@ -226,21 +226,7 @@ pub fn get_module_for_packet_msg<Ctx>(ctx: &Ctx, msg: &PacketMsg) -> Result<Modu
 where
     Ctx: RouterContext,
 {
-    let module_id = match msg {
-        PacketMsg::RecvPacket(msg) => ctx
-            .lookup_module_by_port(&msg.packet.destination_port)
-            .map_err(ChannelError::Port)?,
-        PacketMsg::AckPacket(msg) => ctx
-            .lookup_module_by_port(&msg.packet.source_port)
-            .map_err(ChannelError::Port)?,
-        PacketMsg::TimeoutPacket(msg) => ctx
-            .lookup_module_by_port(&msg.packet.source_port)
-            .map_err(ChannelError::Port)?,
-        PacketMsg::TimeoutOnClosePacket(msg) => ctx
-            .lookup_module_by_port(&msg.packet.source_port)
-            .map_err(ChannelError::Port)?,
-    };
-
+    let module_id = msg.lookup_module(ctx)?;
     if ctx.router().has_route(&module_id) {
         Ok(module_id)
     } else {

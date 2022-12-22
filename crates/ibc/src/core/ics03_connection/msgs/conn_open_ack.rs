@@ -42,10 +42,6 @@ impl Msg for MsgConnectionOpenAck {
     type ValidationError = ConnectionError;
     type Raw = RawMsgConnectionOpenAck;
 
-    fn route(&self) -> String {
-        crate::keys::ROUTER_KEY.to_string()
-    }
-
     fn type_url(&self) -> String {
         TYPE_URL.to_string()
     }
