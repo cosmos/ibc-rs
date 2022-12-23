@@ -124,9 +124,7 @@ mod tests {
 
             assert!(
                 client_msg_b_res.is_ok(),
-                "create_client_update failed for context destination {:?}, error: {:?}",
-                ctx_b,
-                client_msg_b_res
+                "create_client_update failed for context destination {ctx_b:?}, error: {client_msg_b_res:?}",                
             );
 
             let client_msg_b = client_msg_b_res.unwrap();
@@ -137,16 +135,13 @@ mod tests {
             let validation_res = ctx_b.validate();
             assert!(
                 validation_res.is_ok(),
-                "context validation failed with error {:?} for context {:?}",
-                validation_res,
-                ctx_b
+                "context validation failed with error {validation_res:?} for context {ctx_b:?}",
             );
 
             // Check if the update succeeded.
             assert!(
                 dispatch_res_b.is_ok(),
-                "Dispatch failed for host chain b with error: {:?}",
-                dispatch_res_b
+                "Dispatch failed for host chain b with error: {dispatch_res_b:?}"
             );
             let client_height_b = ctx_b
                 .query_client_full_state(&client_on_b_for_a)
@@ -180,9 +175,7 @@ mod tests {
 
             assert!(
                 client_msg_a_res.is_ok(),
-                "create_client_update failed for context destination {:?}, error: {:?}",
-                ctx_a,
-                client_msg_a_res
+                "create_client_update failed for context destination {ctx_a:?}, error: {client_msg_a_res:?}",
             );
 
             let client_msg_a = client_msg_a_res.unwrap();
@@ -194,16 +187,13 @@ mod tests {
             let validation_res = ctx_a.validate();
             assert!(
                 validation_res.is_ok(),
-                "context validation failed with error {:?} for context {:?}",
-                validation_res,
-                ctx_a
+                "context validation failed with error {validation_res:?} for context {ctx_a:?}",
             );
 
             // Check if the update succeeded.
             assert!(
                 dispatch_res_a.is_ok(),
-                "Dispatch failed for host chain a with error: {:?}",
-                dispatch_res_a
+                "Dispatch failed for host chain a with error: {dispatch_res_a:?}"
             );
             let client_height_a = ctx_a
                 .query_client_full_state(&client_on_a_for_b)

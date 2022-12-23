@@ -539,7 +539,7 @@ impl MockContext {
     }
 
     pub fn add_port(&mut self, port_id: PortId) {
-        let module_id = ModuleId::new(format!("module{}", port_id).into()).unwrap();
+        let module_id = ModuleId::new(format!("module{port_id}").into()).unwrap();
         self.ibc_store
             .lock()
             .unwrap()
