@@ -47,8 +47,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
 
     output.log(format!(
-        "success: channel open init with channel identifier: {}",
-        chan_id_on_a
+        "success: channel open init with channel identifier: {chan_id_on_a}"
     ));
 
     let result = ChannelResult {

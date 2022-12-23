@@ -66,7 +66,7 @@ impl TryFrom<RawConsensusState> for ConsensusState {
         let timestamp = proto_timestamp
             .try_into()
             .map_err(|e| Error::InvalidRawClientState {
-                reason: format!("invalid timestamp: {}", e),
+                reason: format!("invalid timestamp: {e}"),
             })?;
 
         Ok(Self {

@@ -176,8 +176,7 @@ pub fn process(
     )));
 
     output.log(format!(
-        "success: generated new client identifier: {}",
-        client_id
+        "success: generated new client identifier: {client_id}"
     ));
 
     Ok(output.with_result(result))
