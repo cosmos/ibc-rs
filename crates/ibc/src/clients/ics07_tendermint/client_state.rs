@@ -282,7 +282,7 @@ impl ClientState {
 
         if trusted_consensus_state.next_validators_hash != trusted_val_hash {
             return Err(Error::MisbehaviourTrustedValidatorHashMismatch {
-                trusted_validator_set: vec![header.trusted_validator_set.clone()],
+                trusted_validator_set: header.trusted_validator_set.validators().clone(),
                 next_validators_hash: trusted_consensus_state.next_validators_hash,
                 trusted_val_hash,
             }
