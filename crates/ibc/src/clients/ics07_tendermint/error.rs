@@ -105,7 +105,7 @@ pub enum Error {
     },
     /// trusted validators `{trusted_validator_set:?}`, does not hash to latest trusted validators. Expected: `{next_validators_hash}`, got: `{trusted_val_hash}`
     MisbehaviourTrustedValidatorHashMismatch {
-        trusted_validator_set: Box<ValidatorSet>,
+        trusted_validator_set: Vec<ValidatorSet>,
         next_validators_hash: Hash,
         trusted_val_hash: Hash,
     },
