@@ -33,7 +33,6 @@ impl MsgRecvPacket {
 }
 
 impl Msg for MsgRecvPacket {
-    type ValidationError = PacketError;
     type Raw = RawMsgRecvPacket;
 
     fn type_url(&self) -> String {

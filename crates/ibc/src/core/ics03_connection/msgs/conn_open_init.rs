@@ -27,7 +27,6 @@ pub struct MsgConnectionOpenInit {
 }
 
 impl Msg for MsgConnectionOpenInit {
-    type ValidationError = ConnectionError;
     type Raw = RawMsgConnectionOpenInit;
 
     fn type_url(&self) -> String {

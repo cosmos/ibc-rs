@@ -49,7 +49,6 @@ impl MsgChannelOpenAck {
 }
 
 impl Msg for MsgChannelOpenAck {
-    type ValidationError = ChannelError;
     type Raw = RawMsgChannelOpenAck;
 
     fn type_url(&self) -> String {

@@ -32,7 +32,6 @@ impl MsgChannelOpenInit {
 }
 
 impl Msg for MsgChannelOpenInit {
-    type ValidationError = ChannelError;
     type Raw = RawMsgChannelOpenInit;
 
     fn type_url(&self) -> String {

@@ -43,7 +43,6 @@ impl MsgChannelOpenConfirm {
 }
 
 impl Msg for MsgChannelOpenConfirm {
-    type ValidationError = ChannelError;
     type Raw = RawMsgChannelOpenConfirm;
 
     fn type_url(&self) -> String {

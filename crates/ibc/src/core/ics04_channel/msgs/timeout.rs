@@ -40,7 +40,6 @@ impl MsgTimeout {
 }
 
 impl Msg for MsgTimeout {
-    type ValidationError = PacketError;
     type Raw = RawMsgTimeout;
 
     fn type_url(&self) -> String {

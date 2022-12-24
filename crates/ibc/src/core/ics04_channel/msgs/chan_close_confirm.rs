@@ -45,7 +45,6 @@ impl MsgChannelCloseConfirm {
 }
 
 impl Msg for MsgChannelCloseConfirm {
-    type ValidationError = ChannelError;
     type Raw = RawMsgChannelCloseConfirm;
 
     fn type_url(&self) -> String {

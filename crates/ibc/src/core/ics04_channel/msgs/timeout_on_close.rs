@@ -39,7 +39,6 @@ impl MsgTimeoutOnClose {
 }
 
 impl Msg for MsgTimeoutOnClose {
-    type ValidationError = PacketError;
     type Raw = RawMsgTimeoutOnClose;
 
     fn type_url(&self) -> String {
