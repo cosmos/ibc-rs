@@ -376,9 +376,7 @@ mod tests {
 
         assert!(
             res.is_ok(),
-            "ICS26 routing dispatch test 'client creation' failed for message {:?} with result: {:?}",
-            create_client_msg,
-            res
+            "ICS26 routing dispatch test 'client creation' failed for message {create_client_msg:?} with result: {res:?}",
         );
 
         ctx.scope_port_to_module(

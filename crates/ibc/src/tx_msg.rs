@@ -12,7 +12,6 @@ pub trait Msg: Clone {
     /// Unique type identifier for this message, to support encoding to/from `prost_types::Any`.
     fn type_url(&self) -> String;
 
-    #[allow(clippy::wrong_self_convention)]
     fn to_any(self) -> Any {
         Any {
             type_url: self.type_url(),

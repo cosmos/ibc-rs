@@ -69,7 +69,7 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
 
         let timeout_height: TimeoutHeight = raw_msg.timeout_height.try_into().map_err(|e| {
             TokenTransferError::InvalidPacketTimeoutHeight {
-                context: format!("invalid timeout height {}", e),
+                context: format!("invalid timeout height {e}"),
             }
         })?;
 
