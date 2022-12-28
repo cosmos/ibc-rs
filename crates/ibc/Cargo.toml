@@ -46,6 +46,7 @@ val_exec_ctx = []
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
 # Depends on the `testgen` suite for generating Tendermint light blocks.
 mocks = ["tendermint-testgen", "clock", "std"]
+mocks-primitives = []
 
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
@@ -73,6 +74,7 @@ parity-scale-codec = { version = "3.0.0", default-features = false, features = [
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"], optional = true }
 ## for borsh encode or decode
 borsh = {version = "0.9.3", default-features = false, optional = true }
+cfg-if = "1.0.0"
 
 [dependencies.tendermint]
 version = "0.28"
