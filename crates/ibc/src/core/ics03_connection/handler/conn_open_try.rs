@@ -228,8 +228,7 @@ pub(crate) fn process(
         });
     }
 
-    let version_on_b =
-        ctx_b.pick_version(&ctx_b.get_compatible_versions(), &msg.versions_on_a.clone())?;
+    let version_on_b = ctx_b.pick_version(&ctx_b.get_compatible_versions(), &msg.versions_on_a)?;
 
     let conn_end_on_b = ConnectionEnd::new(
         State::TryOpen,

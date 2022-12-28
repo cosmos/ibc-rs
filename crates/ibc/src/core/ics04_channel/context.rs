@@ -109,7 +109,7 @@ pub trait ChannelReader {
         let revision_height = timeout_height.commitment_revision_height().to_be_bytes();
         hash_input.append(&mut revision_height.to_vec());
 
-        let packet_data_hash = self.hash(packet_data.into());
+        let packet_data_hash = self.hash(packet_data);
         hash_input.append(&mut packet_data_hash.to_vec());
 
         self.hash(&hash_input).into()
@@ -246,8 +246,7 @@ where
         client_id: &ClientId,
         height: &Height,
     ) -> Result<Box<dyn ConsensusState>, PacketError> {
-        ChannelReader::client_consensus_state(self, client_id, &height)
-            .map_err(PacketError::Channel)
+        ChannelReader::client_consensus_state(self, client_id, height).map_err(PacketError::Channel)
     }
 
     fn get_next_sequence_send(

@@ -833,12 +833,10 @@ impl ChannelReader for MockContext {
             .packet_commitment
             .get(port_id)
             .and_then(|map| map.get(channel_id))
-            .and_then(|map| map.get(&seq))
+            .and_then(|map| map.get(seq))
         {
             Some(commitment) => Ok(commitment.clone()),
-            None => Err(PacketError::PacketCommitmentNotFound {
-                sequence: seq.clone(),
-            }),
+            None => Err(PacketError::PacketCommitmentNotFound { sequence: *seq }),
         }
     }
 
@@ -855,12 +853,10 @@ impl ChannelReader for MockContext {
             .packet_receipt
             .get(port_id)
             .and_then(|map| map.get(channel_id))
-            .and_then(|map| map.get(&seq))
+            .and_then(|map| map.get(seq))
         {
             Some(receipt) => Ok(receipt.clone()),
-            None => Err(PacketError::PacketReceiptNotFound {
-                sequence: seq.clone(),
-            }),
+            None => Err(PacketError::PacketReceiptNotFound { sequence: *seq }),
         }
     }
 
@@ -877,12 +873,10 @@ impl ChannelReader for MockContext {
             .packet_acknowledgement
             .get(port_id)
             .and_then(|map| map.get(channel_id))
-            .and_then(|map| map.get(&seq))
+            .and_then(|map| map.get(seq))
         {
             Some(ack) => Ok(ack.clone()),
-            None => Err(PacketError::PacketAcknowledgementNotFound {
-                sequence: seq.clone(),
-            }),
+            None => Err(PacketError::PacketAcknowledgementNotFound { sequence: *seq }),
         }
     }
 
@@ -922,12 +916,12 @@ impl ChannelReader for MockContext {
             .lock()
             .unwrap()
             .client_processed_times
-            .get(&(client_id.clone(), height.clone()))
+            .get(&(client_id.clone(), *height))
         {
             Some(time) => Ok(*time),
             None => Err(ChannelError::ProcessedTimeNotFound {
                 client_id: client_id.clone(),
-                height: height.clone(),
+                height: *height,
             }),
         }
     }
@@ -942,12 +936,12 @@ impl ChannelReader for MockContext {
             .lock()
             .unwrap()
             .client_processed_heights
-            .get(&(client_id.clone(), height.clone()))
+            .get(&(client_id.clone(), *height))
         {
             Some(height) => Ok(*height),
             None => Err(ChannelError::ProcessedHeightNotFound {
                 client_id: client_id.clone(),
-                height: height.clone(),
+                height: *height,
             }),
         }
     }
@@ -1012,7 +1006,7 @@ impl ChannelKeeper for MockContext {
             .packet_acknowledgement
             .get_mut(port_id)
             .and_then(|map| map.get_mut(channel_id))
-            .and_then(|map| map.remove(&seq));
+            .and_then(|map| map.remove(seq));
         Ok(())
     }
 
@@ -1112,7 +1106,7 @@ impl ChannelKeeper for MockContext {
             .packet_commitment
             .get_mut(port_id)
             .and_then(|map| map.get_mut(channel_id))
-            .and_then(|map| map.remove(&seq));
+            .and_then(|map| map.remove(seq));
         Ok(())
     }
 
@@ -1272,16 +1266,16 @@ impl ClientReader for MockContext {
         height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ClientError> {
         match self.ibc_store.lock().unwrap().clients.get(client_id) {
-            Some(client_record) => match client_record.consensus_states.get(&height) {
+            Some(client_record) => match client_record.consensus_states.get(height) {
                 Some(consensus_state) => Ok(consensus_state.clone()),
                 None => Err(ClientError::ConsensusStateNotFound {
                     client_id: client_id.clone(),
-                    height: height.clone(),
+                    height: *height,
                 }),
             },
             None => Err(ClientError::ConsensusStateNotFound {
                 client_id: client_id.clone(),
-                height: height.clone(),
+                height: *height,
             }),
         }
     }
@@ -1368,9 +1362,7 @@ impl ClientReader for MockContext {
     ) -> Result<Box<dyn ConsensusState>, ClientError> {
         match self.host_block(height) {
             Some(block_ref) => Ok(block_ref.clone().into()),
-            None => Err(ClientError::MissingLocalConsensusState {
-                height: height.clone(),
-            }),
+            None => Err(ClientError::MissingLocalConsensusState { height: *height }),
         }
     }
 

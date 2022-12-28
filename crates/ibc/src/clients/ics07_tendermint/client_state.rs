@@ -422,7 +422,7 @@ impl Ics2ClientState for ClientState {
             client_id: &ClientId,
             height: &Height,
         ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
-            match ctx.consensus_state(client_id, &height) {
+            match ctx.consensus_state(client_id, height) {
                 Ok(cs) => Ok(Some(cs)),
                 Err(e) => match e {
                     ClientError::ConsensusStateNotFound {
