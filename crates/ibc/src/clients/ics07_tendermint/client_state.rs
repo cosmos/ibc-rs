@@ -9,7 +9,6 @@ use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
 use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
-use serde::{Deserialize, Serialize};
 use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
@@ -55,7 +54,8 @@ use crate::core::ValidationContext;
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClientState {
     pub chain_id: ChainId,
     pub trust_level: TrustThreshold,
@@ -71,7 +71,8 @@ pub struct ClientState {
     verifier: ProdVerifier,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct AllowUpdate {
     pub after_expiry: bool,
     pub after_misbehaviour: bool,
@@ -350,7 +351,8 @@ impl ClientState {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpgradeOptions {
     pub unbonding_period: Duration,
 }

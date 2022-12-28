@@ -2,8 +2,6 @@ use crate::prelude::*;
 
 use core::str::FromStr;
 
-use serde_derive::{Deserialize, Serialize};
-
 use ibc_proto::ibc::core::channel::v1::Packet as RawPacket;
 
 use super::handler::{
@@ -64,10 +62,9 @@ impl core::fmt::Display for PacketMsgType {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// The sequence number of a packet enforces ordering among packets from the same source.
-#[derive(
-    Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Deserialize, Serialize,
-)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Sequence(u64);
 
 impl FromStr for Sequence {
@@ -123,7 +120,8 @@ impl core::fmt::Display for Sequence {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Default, Hash, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Default, Hash, PartialEq, Eq)]
 pub struct Packet {
     pub sequence: Sequence,
     pub source_port: PortId,

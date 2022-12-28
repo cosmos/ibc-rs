@@ -139,6 +139,7 @@ impl Display for TimeoutHeight {
     }
 }
 
+#[cfg(feature = "serde")]
 impl Serialize for TimeoutHeight {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -169,6 +170,7 @@ impl Serialize for TimeoutHeight {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for TimeoutHeight {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

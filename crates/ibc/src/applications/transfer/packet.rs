@@ -3,13 +3,13 @@ use core::convert::TryFrom;
 use core::str::FromStr;
 
 use ibc_proto::ibc::applications::transfer::v2::FungibleTokenPacketData as RawPacketData;
-use serde::{Deserialize, Serialize};
 
 use super::error::TokenTransferError;
 use super::{Amount, PrefixedCoin, PrefixedDenom};
 use crate::signer::Signer;
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[serde(try_from = "RawPacketData", into = "RawPacketData")]
 pub struct PacketData {
     pub token: PrefixedCoin,

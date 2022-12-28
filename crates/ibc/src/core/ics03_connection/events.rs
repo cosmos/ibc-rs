@@ -1,6 +1,4 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the connection module.
-
-use serde_derive::{Deserialize, Serialize};
 use tendermint::abci;
 
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
@@ -13,7 +11,8 @@ pub const CLIENT_ID_ATTRIBUTE_KEY: &str = "client_id";
 pub const COUNTERPARTY_CONN_ID_ATTRIBUTE_KEY: &str = "counterparty_connection_id";
 pub const COUNTERPARTY_CLIENT_ID_ATTRIBUTE_KEY: &str = "counterparty_client_id";
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct Attributes {
     pub connection_id: ConnectionId,
     pub client_id: ClientId,
@@ -51,7 +50,8 @@ impl From<Attributes> for Vec<abci::EventAttribute> {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenInit(Attributes);
 
 impl OpenInit {
@@ -92,7 +92,8 @@ impl From<OpenInit> for abci::Event {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenTry(Attributes);
 
 impl OpenTry {
@@ -134,7 +135,8 @@ impl From<OpenTry> for abci::Event {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenAck(Attributes);
 
 impl OpenAck {
@@ -176,7 +178,8 @@ impl From<OpenAck> for abci::Event {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenConfirm(Attributes);
 
 impl OpenConfirm {

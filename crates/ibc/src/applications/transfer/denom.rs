@@ -3,7 +3,6 @@ use core::str::FromStr;
 
 use derive_more::{Display, From};
 use ibc_proto::ibc::applications::transfer::v1::DenomTrace as RawDenomTrace;
-use serde::{Deserialize, Serialize};
 
 use super::error::TokenTransferError;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
@@ -11,7 +10,8 @@ use crate::prelude::*;
 use crate::serializers::serde_string;
 
 /// Base denomination type
-#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Serialize, Deserialize, Display)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Display)]
 #[serde(transparent)]
 pub struct BaseDenom(String);
 
@@ -147,7 +147,8 @@ impl Display for TracePath {
 }
 
 /// A type that contains the base denomination for ICS20 and the source tracing information path.
-#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct PrefixedDenom {
     /// A series of `{port-id}/{channel-id}`s for tracing the source of the token.
     #[serde(with = "serde_string")]

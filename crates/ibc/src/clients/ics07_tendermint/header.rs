@@ -7,7 +7,6 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
-use serde_derive::{Deserialize, Serialize};
 use tendermint::block::signed_header::SignedHeader;
 use tendermint::chain::Id as TmChainId;
 use tendermint::validator::Set as ValidatorSet;
@@ -26,8 +25,9 @@ use super::client_type as tm_client_type;
 
 pub const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// Tendermint consensus header
-#[derive(Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Header {
     pub signed_header: SignedHeader, // contains the commitment root
     pub validator_set: ValidatorSet, // the validator set that signed Header

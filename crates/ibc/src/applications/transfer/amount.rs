@@ -1,14 +1,12 @@
 use core::str::FromStr;
 use derive_more::{Display, From, Into};
-use serde::{Deserialize, Serialize};
 
 use super::error::TokenTransferError;
 use crate::bigint::U256;
 
 /// A type for representing token transfer amounts.
-#[derive(
-    Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Serialize, Deserialize, Display, From, Into,
-)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Display, From, Into)]
 pub struct Amount(U256);
 
 impl Amount {

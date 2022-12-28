@@ -5,7 +5,6 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use ibc_proto::protobuf::Protobuf;
-use serde::{Deserialize, Serialize};
 
 use ibc_proto::ibc::core::channel::v1::{
     Channel as RawChannel, Counterparty as RawCounterparty,
@@ -27,7 +26,8 @@ use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IdentifiedChannelEnd {
     pub port_id: PortId,
     pub channel_id: ChannelId,
@@ -97,7 +97,8 @@ impl From<IdentifiedChannelEnd> for RawIdentifiedChannel {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ChannelEnd {
     pub state: State,
     pub ordering: Order,
@@ -285,7 +286,8 @@ impl ChannelEnd {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Counterparty {
     pub port_id: PortId,
     pub channel_id: Option<ChannelId>,
@@ -370,7 +372,8 @@ impl From<Counterparty> for RawCounterparty {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Order {
     None = 0isize,
     Unordered = 1isize,
@@ -440,7 +443,8 @@ impl FromStr for Order {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum State {
     Uninitialized = 0isize,
     Init = 1isize,

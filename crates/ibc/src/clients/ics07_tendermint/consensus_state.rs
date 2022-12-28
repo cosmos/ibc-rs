@@ -3,7 +3,6 @@ use crate::prelude::*;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::ConsensusState as RawConsensusState;
 use ibc_proto::protobuf::Protobuf;
-use serde::{Deserialize, Serialize};
 use tendermint::{hash::Algorithm, time::Time, Hash};
 use tendermint_proto::google::protobuf as tpb;
 
@@ -19,7 +18,8 @@ use super::client_type as tm_client_type;
 pub const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str =
     "/ibc.lightclients.tendermint.v1.ConsensusState";
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConsensusState {
     pub timestamp: Time,
     pub root: CommitmentRoot,
