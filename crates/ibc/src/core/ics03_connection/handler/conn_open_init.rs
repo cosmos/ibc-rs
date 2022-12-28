@@ -133,8 +133,7 @@ pub(crate) fn process(
     };
 
     output.log(format!(
-        "success: conn_open_init: generated new connection identifier: {}",
-        conn_id_on_a
+        "success: conn_open_init: generated new connection identifier: {conn_id_on_a}",
     ));
 
     {

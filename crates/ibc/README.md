@@ -3,11 +3,9 @@
 [![Crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
 [![Build Status][build-image]][build-link]
-[![End to End testing][e2e-image]][e2e-link]
 [![Apache 2.0 Licensed][license-image]][license-link]
 ![Rust Stable][rustc-image]
 ![Rust 1.60+][rustc-version]
-
 
 Implementation of the Inter-Blockchain Communication Protocol ([IBC]) in Rust.
 
@@ -16,9 +14,11 @@ Implementation of the Inter-Blockchain Communication Protocol ([IBC]) in Rust.
 See documentation on [docs.rs][docs-link].
 
 ## Divergence from the Interchain Standards (ICS)
+
 This crate diverges from the [ICS specification](https://github.com/cosmos/ibc) in a number of ways. See below for more details.
 
 ### Module system: no support for untrusted modules
+
 ICS 24 (Host Requirements) gives the [following requirement](https://github.com/cosmos/ibc/blob/master/spec/core/ics-024-host-requirements/README.md#module-system) about the module system that the host state machine must support:
 
 > The host state machine must support a module system, whereby self-contained, potentially mutually distrusted packages of code can safely execute on the same ledger [...].
@@ -26,6 +26,7 @@ ICS 24 (Host Requirements) gives the [following requirement](https://github.com/
 **This crate currently does not support mutually distrusted packages**. That is, modules on the host state machine are assumed to be fully trusted. In practice, this means that every module has either been written by the host state machine developers, or fully vetted by them.
 
 ### Port system: No object capability system
+
 ICS 5 (Port Allocation) requires the host system to support either object-capability reference or source authentication for modules.
 
 > In the former object-capability case, the IBC handler must have the ability to generate object-capabilities, unique, opaque references which can be passed to a module and will not be duplicable by other modules. [...]
@@ -36,6 +37,7 @@ ICS 5 (Port Allocation) requires the host system to support either object-capabi
 For more background on this, see [this issue](https://github.com/informalsystems/ibc-rs/issues/2159).
 
 ### Port system: transferring and releasing a port
+
 ICS 5 (Port Allocation) requires the IBC handler to permit [transferring ownership of a port](https://github.com/cosmos/ibc/tree/master/spec/core/ics-005-port-allocation#transferring-ownership-of-a-port) and [releasing a port](https://github.com/cosmos/ibc/tree/master/spec/core/ics-005-port-allocation#releasing-a-port).
 
 We currently support neither.
@@ -65,5 +67,4 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 [//]: # (general links)
 
-[ibc-rs]: https://github.com/cosmos/ibc-rs
 [IBC]: https://github.com/cosmos/ibc

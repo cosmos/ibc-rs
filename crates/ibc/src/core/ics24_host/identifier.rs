@@ -50,7 +50,7 @@ impl ChainId {
     /// ```
     pub fn new(name: String, version: u64) -> Self {
         Self {
-            id: format!("{}-{}", name, version),
+            id: format!("{name}-{version}"),
             version,
         }
     }
@@ -203,7 +203,7 @@ impl ClientId {
     /// ```
     pub fn new(client_type: ClientType, counter: u64) -> Result<Self, ValidationError> {
         let prefix = client_type.as_str();
-        let id = format!("{}-{}", prefix, counter);
+        let id = format!("{prefix}-{counter}");
         Self::from_str(id.as_str())
     }
 

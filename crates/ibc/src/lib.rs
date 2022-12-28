@@ -1,9 +1,7 @@
 // TODO: disable unwraps:
 // https://github.com/informalsystems/ibc-rs/issues/987
 // #![cfg_attr(not(test), deny(clippy::unwrap_used))]
-
 #![no_std]
-#![allow(clippy::large_enum_variant)]
 #![deny(
     warnings,
     trivial_casts,
@@ -14,7 +12,6 @@
 )]
 #![forbid(unsafe_code)]
 #![doc(html_root_url = "https://docs.rs/ibc/0.25.0")]
-
 //! This library implements the InterBlockchain Communication (IBC) protocol in Rust. IBC is
 //! a distributed protocol that enables communication between distinct sovereign blockchains.
 //! Loose analogies may be drawn between the IBC protocol and the TCP/UDP protocols that enable
