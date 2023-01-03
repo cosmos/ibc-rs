@@ -1,9 +1,9 @@
+use super::context::RelayerContext;
+use super::error::RelayerError;
 use crate::core::ics02_client::header::Header;
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
 use crate::core::ics02_client::msgs::ClientMsg;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::relayer::ics18_relayer::context::RelayerContext;
-use crate::relayer::ics18_relayer::error::RelayerError;
 
 /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
 /// context, assuming that the latest header on the source context is `src_header`.
@@ -58,9 +58,9 @@ mod tests {
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::mock::host::{HostBlock, HostType};
+    use crate::mock::ics18_relayer::context::RelayerContext;
+    use crate::mock::ics18_relayer::utils::build_client_update_datagram;
     use crate::prelude::*;
-    use crate::relayer::ics18_relayer::context::RelayerContext;
-    use crate::relayer::ics18_relayer::utils::build_client_update_datagram;
     use crate::Height;
 
     use test_log::test;
@@ -141,7 +141,7 @@ mod tests {
                 .latest_height();
             assert_eq!(client_height_b, ctx_a.query_latest_height().unwrap());
 
-            // Update client on chain B to latest height of B.
+            // Update client on chain A to latest height of B.
             // - create the client update message with the latest header from B
             // The test uses LightClientBlock that does not store the trusted height
             let b_latest_header = ctx_b.query_latest_header().unwrap();

@@ -50,16 +50,13 @@ extern crate std;
 mod prelude;
 
 pub mod applications;
-pub mod bigint;
 pub mod clients;
 pub mod core;
 pub mod dynamic_typing;
 pub mod events;
 pub mod handler;
 pub mod keys;
-pub mod macros;
 pub mod proofs;
-pub mod relayer;
 pub mod signer;
 pub mod timestamp;
 pub mod tx_msg;

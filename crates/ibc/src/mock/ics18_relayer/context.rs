@@ -5,8 +5,8 @@ use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::header::Header;
 use crate::events::IbcEvent;
 
+use super::error::RelayerError;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::relayer::ics18_relayer::error::RelayerError;
 use crate::signer::Signer;
 use crate::Height;
 
