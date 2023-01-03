@@ -128,11 +128,11 @@ impl TryFrom<Any> for MsgTransfer {
 pub mod test_util {
     use core::ops::Add;
     use core::time::Duration;
+    use primitive_types::U256;
 
     use super::MsgTransfer;
     use crate::applications::transfer::packet::PacketData;
     use crate::applications::transfer::Coin;
-    use crate::bigint::U256;
     use crate::core::ics04_channel::packet::{Packet, Sequence};
     use crate::core::ics04_channel::timeout::TimeoutHeight;
     use crate::signer::Signer;

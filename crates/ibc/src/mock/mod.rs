@@ -5,4 +5,5 @@ pub mod consensus_state;
 pub mod context;
 pub mod header;
 pub mod host;
+pub mod ics18_relayer;
 pub mod misbehaviour;

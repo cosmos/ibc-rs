@@ -1,70 +1,101 @@
+use crate::prelude::*;
+use ibc_proto::google::protobuf::Any;
+
+use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::header::Header;
-use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
-use crate::core::ics02_client::msgs::ClientMsg;
+use crate::events::IbcEvent;
+
+use super::error::RelayerError;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::relayer::ics18_relayer::context::RelayerContext;
-use crate::relayer::ics18_relayer::error::RelayerError;
+use crate::signer::Signer;
+use crate::Height;
 
-/// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
-/// context, assuming that the latest header on the source context is `src_header`.
-pub fn build_client_update_datagram<Ctx>(
-    dest: &Ctx,
-    client_id: &ClientId,
-    src_header: &dyn Header,
-) -> Result<ClientMsg, RelayerError>
-where
-    Ctx: RelayerContext,
-{
-    // Check if client for ibc0 on ibc1 has been updated to latest height:
-    // - query client state on destination chain
-    let dest_client_state = dest.query_client_full_state(client_id).ok_or_else(|| {
-        RelayerError::ClientStateNotFound {
-            client_id: client_id.clone(),
-        }
-    })?;
+/// Trait capturing all dependencies (i.e., the context) which algorithms in ICS18 require to
+/// relay packets between chains. This trait comprises the dependencies towards a single chain.
+/// Most of the functions in this represent wrappers over the ABCI interface.
+/// This trait mimics the `Chain` trait, but at a lower level of abstraction (no networking, header
+/// types, light client, RPC client, etc.)
+pub trait RelayerContext {
+    /// Returns the latest height of the chain.
+    fn query_latest_height(&self) -> Result<Height, RelayerError>;
 
-    let dest_client_latest_height = dest_client_state.latest_height();
+    /// Returns this client state for the given `client_id` on this chain.
+    /// Wrapper over the `/abci_query?path=..` endpoint.
+    fn query_client_full_state(&self, client_id: &ClientId) -> Option<Box<dyn ClientState>>;
 
-    if src_header.height() == dest_client_latest_height {
-        return Err(RelayerError::ClientAlreadyUpToDate {
-            client_id: client_id.clone(),
-            source_height: src_header.height(),
-            destination_height: dest_client_latest_height,
-        });
-    };
+    /// Returns the most advanced header of this chain.
+    fn query_latest_header(&self) -> Option<Box<dyn Header>>;
 
-    if dest_client_latest_height > src_header.height() {
-        return Err(RelayerError::ClientAtHigherHeight {
-            client_id: client_id.clone(),
-            source_height: src_header.height(),
-            destination_height: dest_client_latest_height,
-        });
-    };
+    /// Interface that the relayer uses to submit a datagram to this chain.
+    /// One can think of this as wrapping around the `/broadcast_tx_commit` ABCI endpoint.
+    fn send(&mut self, msgs: Vec<Any>) -> Result<Vec<IbcEvent>, RelayerError>;
 
-    // Client on destination chain can be updated.
-    Ok(ClientMsg::UpdateClient(MsgUpdateClient {
-        client_id: client_id.clone(),
-        header: src_header.clone_into(),
-        signer: dest.signer(),
-    }))
+    /// Temporary solution. Similar to `CosmosSDKChain::key_and_signer()` but simpler.
+    fn signer(&self) -> Signer;
 }
 
 #[cfg(test)]
 mod tests {
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::core::ics02_client::header::{downcast_header, Header};
+    use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
+    use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ics26_routing::msgs::MsgEnvelope;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::mock::host::{HostBlock, HostType};
+    use crate::mock::ics18_relayer::context::RelayerContext;
+    use crate::mock::ics18_relayer::error::RelayerError;
     use crate::prelude::*;
-    use crate::relayer::ics18_relayer::context::RelayerContext;
-    use crate::relayer::ics18_relayer::utils::build_client_update_datagram;
     use crate::Height;
 
     use test_log::test;
     use tracing::debug;
+
+    /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
+    /// context, assuming that the latest header on the source context is `src_header`.
+    pub fn build_client_update_datagram<Ctx>(
+        dest: &Ctx,
+        client_id: &ClientId,
+        src_header: &dyn Header,
+    ) -> Result<ClientMsg, RelayerError>
+    where
+        Ctx: RelayerContext,
+    {
+        // Check if client for ibc0 on ibc1 has been updated to latest height:
+        // - query client state on destination chain
+        let dest_client_state = dest.query_client_full_state(client_id).ok_or_else(|| {
+            RelayerError::ClientStateNotFound {
+                client_id: client_id.clone(),
+            }
+        })?;
+
+        let dest_client_latest_height = dest_client_state.latest_height();
+
+        if src_header.height() == dest_client_latest_height {
+            return Err(RelayerError::ClientAlreadyUpToDate {
+                client_id: client_id.clone(),
+                source_height: src_header.height(),
+                destination_height: dest_client_latest_height,
+            });
+        };
+
+        if dest_client_latest_height > src_header.height() {
+            return Err(RelayerError::ClientAtHigherHeight {
+                client_id: client_id.clone(),
+                source_height: src_header.height(),
+                destination_height: dest_client_latest_height,
+            });
+        };
+
+        // Client on destination chain can be updated.
+        Ok(ClientMsg::UpdateClient(MsgUpdateClient {
+            client_id: client_id.clone(),
+            header: src_header.clone_into(),
+            signer: dest.signer(),
+        }))
+    }
 
     #[test]
     /// Serves to test both ICS 26 `dispatch` & `build_client_update_datagram` functions.
@@ -141,7 +172,7 @@ mod tests {
                 .latest_height();
             assert_eq!(client_height_b, ctx_a.query_latest_height().unwrap());
 
-            // Update client on chain B to latest height of B.
+            // Update client on chain A to latest height of B.
             // - create the client update message with the latest header from B
             // The test uses LightClientBlock that does not store the trusted height
             let b_latest_header = ctx_b.query_latest_header().unwrap();
