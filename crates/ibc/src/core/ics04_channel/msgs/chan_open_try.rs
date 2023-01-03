@@ -54,18 +54,10 @@ impl MsgChannelOpenTry {
 }
 
 impl Msg for MsgChannelOpenTry {
-    type ValidationError = ChannelError;
     type Raw = RawMsgChannelOpenTry;
 
     fn type_url(&self) -> String {
         TYPE_URL.to_string()
-    }
-
-    fn validate_basic(&self) -> Result<(), ValidationError> {
-        match self.chan_end_on_b.counterparty().channel_id() {
-            None => Err(ValidationError::InvalidCounterpartyChannelId),
-            Some(_c) => Ok(()),
-        }
     }
 }
 
@@ -95,8 +87,11 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
             signer: raw_msg.signer.parse().map_err(ChannelError::Signer)?,
         };
 
-        msg.validate_basic()
-            .map_err(|_| ChannelError::InvalidCounterpartyChannelId)?;
+        match msg.chan_end_on_b.counterparty().channel_id() {
+            None => Err(ValidationError::InvalidCounterpartyChannelId),
+            Some(_c) => Ok(()),
+        }
+        .map_err(|_| ChannelError::InvalidCounterpartyChannelId)?;
 
         Ok(msg)
     }

@@ -51,7 +51,6 @@ pub struct MsgConnectionOpenTry {
 }
 
 impl Msg for MsgConnectionOpenTry {
-    type ValidationError = ConnectionError;
     type Raw = RawMsgConnectionOpenTry;
 
     fn type_url(&self) -> String {

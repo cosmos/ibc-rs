@@ -26,7 +26,6 @@ pub struct MsgConnectionOpenConfirm {
 }
 
 impl Msg for MsgConnectionOpenConfirm {
-    type ValidationError = ConnectionError;
     type Raw = RawMsgConnectionOpenConfirm;
 
     fn type_url(&self) -> String {

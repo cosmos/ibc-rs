@@ -69,7 +69,6 @@ impl MsgAcknowledgement {
 }
 
 impl Msg for MsgAcknowledgement {
-    type ValidationError = PacketError;
     type Raw = RawMsgAcknowledgement;
 
     fn type_url(&self) -> String {

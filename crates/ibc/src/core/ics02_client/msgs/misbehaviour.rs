@@ -23,7 +23,6 @@ pub struct MsgSubmitMisbehaviour {
 }
 
 impl Msg for MsgSubmitMisbehaviour {
-    type ValidationError = crate::core::ics24_host::error::ValidationError;
     type Raw = RawMsgSubmitMisbehaviour;
 
     fn type_url(&self) -> String {

@@ -31,7 +31,6 @@ impl MsgCreateClient {
 }
 
 impl Msg for MsgCreateClient {
-    type ValidationError = crate::core::ics24_host::error::ValidationError;
     type Raw = RawMsgCreateClient;
 
     fn type_url(&self) -> String {

@@ -33,7 +33,6 @@ impl MsgChannelCloseInit {
 }
 
 impl Msg for MsgChannelCloseInit {
-    type ValidationError = ChannelError;
     type Raw = RawMsgChannelCloseInit;
 
     fn type_url(&self) -> String {

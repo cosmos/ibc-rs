@@ -39,7 +39,6 @@ pub struct MsgConnectionOpenAck {
 }
 
 impl Msg for MsgConnectionOpenAck {
-    type ValidationError = ConnectionError;
     type Raw = RawMsgConnectionOpenAck;
 
     fn type_url(&self) -> String {
