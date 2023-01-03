@@ -4,17 +4,6 @@ use tendermint::validator::Set as ValidatorSet;
 
 use alloc::vec::Vec;
 
-pub struct PrettyOption<'a, T>(pub &'a Option<T>);
-
-impl<'a, T: Display> Display for PrettyOption<'a, T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        match &self.0 {
-            Some(v) => write!(f, "{v}"),
-            None => write!(f, "None"),
-        }
-    }
-}
-
 pub struct PrettySignedHeader<'a>(pub &'a SignedHeader);
 
 impl Display for PrettySignedHeader<'_> {
@@ -76,26 +65,6 @@ mod tests {
 
     use crate::alloc::string::ToString;
     use std::{string::String, vec};
-
-    #[test]
-    fn test_pretty_option_some() {
-        let expected_output = "Option content";
-
-        let option_string = Some(String::from("Option content"));
-        let pretty_option = PrettyOption(&option_string);
-
-        assert_eq!(pretty_option.to_string(), expected_output);
-    }
-
-    #[test]
-    fn test_pretty_option_none() {
-        let expected_output = "None";
-
-        let option_string: Option<String> = None;
-        let pretty_option = PrettyOption(&option_string);
-
-        assert_eq!(pretty_option.to_string(), expected_output);
-    }
 
     #[test]
     fn test_pretty_vec_display() {
