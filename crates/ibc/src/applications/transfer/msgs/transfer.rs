@@ -44,12 +44,7 @@ pub struct MsgTransfer<C = Coin> {
 }
 
 impl Msg for MsgTransfer {
-    type ValidationError = TokenTransferError;
     type Raw = RawMsgTransfer;
-
-    fn route(&self) -> String {
-        crate::keys::ROUTER_KEY.to_string()
-    }
 
     fn type_url(&self) -> String {
         TYPE_URL.to_string()
@@ -125,17 +120,6 @@ impl TryFrom<Any> for MsgTransfer {
             _ => Err(TokenTransferError::UnknownMsgType {
                 msg_type: raw.type_url,
             }),
-        }
-    }
-}
-
-impl From<MsgTransfer> for Any {
-    fn from(msg: MsgTransfer) -> Self {
-        Self {
-            type_url: TYPE_URL.to_string(),
-            value: msg
-                .encode_vec()
-                .expect("encoding to `Any` from `MsgTranfer`"),
         }
     }
 }

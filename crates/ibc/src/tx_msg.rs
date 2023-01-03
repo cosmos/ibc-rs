@@ -1,23 +1,11 @@
-use crate::core::ics24_host::error::ValidationError;
 use crate::prelude::*;
 use ibc_proto::google::protobuf::Any;
 
 pub trait Msg: Clone {
-    type ValidationError;
     type Raw: From<Self> + prost::Message;
-
-    // TODO: Clarify what is this function supposed to do & its connection to ICS26 routing mod.
-    fn route(&self) -> String;
 
     /// Unique type identifier for this message, to support encoding to/from `prost_types::Any`.
     fn type_url(&self) -> String;
-
-    fn to_any(self) -> Any {
-        Any {
-            type_url: self.type_url(),
-            value: self.get_sign_bytes(),
-        }
-    }
 
     fn get_sign_bytes(self) -> Vec<u8> {
         let mut buf = Vec::new();
@@ -32,7 +20,10 @@ pub trait Msg: Clone {
         }
     }
 
-    fn validate_basic(&self) -> Result<(), ValidationError> {
-        Ok(())
+    fn to_any(self) -> Any {
+        Any {
+            type_url: self.type_url(),
+            value: self.get_sign_bytes(),
+        }
     }
 }

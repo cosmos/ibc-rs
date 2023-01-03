@@ -69,12 +69,7 @@ impl MsgAcknowledgement {
 }
 
 impl Msg for MsgAcknowledgement {
-    type ValidationError = PacketError;
     type Raw = RawMsgAcknowledgement;
-
-    fn route(&self) -> String {
-        crate::keys::ROUTER_KEY.to_string()
-    }
 
     fn type_url(&self) -> String {
         TYPE_URL.to_string()

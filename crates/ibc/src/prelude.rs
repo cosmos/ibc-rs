@@ -9,7 +9,3 @@ pub use alloc::vec::Vec;
 
 pub use alloc::format;
 pub use alloc::vec;
-
-// Those are exported by default in the std prelude in Rust 2021
-pub use core::convert::{TryFrom, TryInto};
-pub use core::iter::FromIterator;

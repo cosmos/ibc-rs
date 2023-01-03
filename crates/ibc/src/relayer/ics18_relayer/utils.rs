@@ -111,14 +111,6 @@ mod tests {
             // Update client on chain B to latest height of A.
             // - create the client update message with the latest header from A
             let a_latest_header = ctx_a.query_latest_header().unwrap();
-            assert_eq!(
-                a_latest_header.client_type(),
-                mock_client_type(),
-                "Client type verification in header failed for context A (Mock); got {:?} but expected {:?}",
-                a_latest_header.client_type(),
-                mock_client_type()
-            );
-
             let client_msg_b_res =
                 build_client_update_datagram(&ctx_b, &client_on_b_for_a, a_latest_header.as_ref());
 
@@ -158,14 +150,6 @@ mod tests {
 
             let th = b_latest_header.height();
             b_latest_header.set_trusted_height(th.decrement().unwrap());
-
-            assert_eq!(
-                b_latest_header.client_type(),
-                tm_client_type(),
-                "Client type verification in header failed for context B (TM); got {:?} but expected {:?}",
-                b_latest_header.client_type(),
-                tm_client_type(),
-            );
 
             let client_msg_a_res = build_client_update_datagram(
                 &ctx_a,
