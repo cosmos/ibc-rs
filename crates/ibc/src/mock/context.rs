@@ -46,8 +46,8 @@ use crate::mock::client_state::{
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::mock::host::{HostBlock, HostType};
-use crate::relayer::ics18_relayer::context::RelayerContext;
-use crate::relayer::ics18_relayer::error::RelayerError;
+use crate::mock::ics18_relayer::context::RelayerContext;
+use crate::mock::ics18_relayer::error::RelayerError;
 use crate::signer::Signer;
 use crate::timestamp::Timestamp;
 use crate::Height;

@@ -20,10 +20,8 @@ use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics04_channel::Version;
-use crate::core::ics05_port::context::PortReader;
-use crate::core::ics05_port::error::PortError;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ics26_routing::context::{Module, ModuleId};
+use crate::core::ics26_routing::context::Module;
 use crate::mock::context::MockIbcStore;
 use crate::prelude::*;
 use crate::signer::Signer;
@@ -150,12 +148,6 @@ impl TokenTransferKeeper for DummyTransferModule {
             .or_default()
             .insert(channel_id, seq);
         Ok(())
-    }
-}
-
-impl PortReader for DummyTransferModule {
-    fn lookup_module_by_port(&self, _port_id: &PortId) -> Result<ModuleId, PortError> {
-        unimplemented!()
     }
 }
 

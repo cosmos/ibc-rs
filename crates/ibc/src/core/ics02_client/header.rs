@@ -5,7 +5,6 @@ use erased_serde::Serialize as ErasedSerialize;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 
-use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::ClientError;
 use crate::dynamic_typing::AsAny;
 use crate::timestamp::Timestamp;
@@ -27,9 +26,6 @@ pub trait Header:
     + Send
     + Sync
 {
-    /// The type of client (eg. Tendermint)
-    fn client_type(&self) -> ClientType;
-
     /// The height of the consensus state
     fn height(&self) -> Height;
 
