@@ -3,7 +3,7 @@ use derive_more::{Display, From, Into};
 use serde::{Deserialize, Serialize};
 
 use super::error::TokenTransferError;
-use crate::bigint::U256;
+use primitive_types::U256;
 
 /// A type for representing token transfer amounts.
 #[derive(

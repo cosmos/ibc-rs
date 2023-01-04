@@ -35,6 +35,18 @@ pub enum PacketResult {
     Timeout(TimeoutPacketResult),
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug)]
 pub enum Receipt {
     Ok,

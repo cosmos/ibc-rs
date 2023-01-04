@@ -6,10 +6,8 @@ use ibc_proto::ibc::mock::Header as RawMockHeader;
 use ibc_proto::protobuf::Protobuf;
 use serde_derive::{Deserialize, Serialize};
 
-use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
-use crate::mock::client_state::client_type as mock_client_type;
 use crate::timestamp::Timestamp;
 use crate::Height;
 
@@ -94,10 +92,6 @@ impl MockHeader {
 }
 
 impl Header for MockHeader {
-    fn client_type(&self) -> ClientType {
-        mock_client_type()
-    }
-
     fn height(&self) -> Height {
         self.height
     }
