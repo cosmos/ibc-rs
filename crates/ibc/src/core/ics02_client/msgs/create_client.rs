@@ -21,26 +21,17 @@ pub struct MsgCreateClient {
 }
 
 impl MsgCreateClient {
-    pub fn new(
-        client_state: Any,
-        consensus_state: Any,
-        signer: Signer,
-    ) -> Result<Self, ClientError> {
-        Ok(MsgCreateClient {
+    pub fn new(client_state: Any, consensus_state: Any, signer: Signer) -> Self {
+        MsgCreateClient {
             client_state,
             consensus_state,
             signer,
-        })
+        }
     }
 }
 
 impl Msg for MsgCreateClient {
-    type ValidationError = crate::core::ics24_host::error::ValidationError;
     type Raw = RawMsgCreateClient;
-
-    fn route(&self) -> String {
-        crate::keys::ROUTER_KEY.to_string()
-    }
 
     fn type_url(&self) -> String {
         TYPE_URL.to_string()
@@ -59,11 +50,11 @@ impl TryFrom<RawMsgCreateClient> for MsgCreateClient {
             .consensus_state
             .ok_or(ClientError::MissingRawConsensusState)?;
 
-        MsgCreateClient::new(
+        Ok(MsgCreateClient::new(
             raw_client_state,
             raw_consensus_state,
             raw.signer.parse().map_err(ClientError::Signer)?,
-        )
+        ))
     }
 }
 
@@ -101,8 +92,7 @@ mod tests {
             tm_client_state,
             TmConsensusState::try_from(tm_header).unwrap().into(),
             signer,
-        )
-        .unwrap();
+        );
 
         let raw = RawMsgCreateClient::from(msg.clone());
         let msg_back = MsgCreateClient::try_from(raw.clone()).unwrap();

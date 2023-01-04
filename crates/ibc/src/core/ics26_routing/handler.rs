@@ -283,8 +283,7 @@ mod tests {
             MockClientState::new(MockHeader::new(start_client_height)).into(),
             MockConsensusState::new(MockHeader::new(start_client_height)).into(),
             default_signer.clone(),
-        )
-        .unwrap();
+        );
 
         //
         // Connection handshake messages.

@@ -219,8 +219,7 @@ mod tests {
             MockClientState::new(MockHeader::new(height)).into(),
             MockConsensusState::new(MockHeader::new(height)).into(),
             signer,
-        )
-        .unwrap();
+        );
 
         let output = dispatch(&ctx, ClientMsg::CreateClient(msg.clone()));
 
@@ -266,20 +265,17 @@ mod tests {
                 MockClientState::new(MockHeader::new(height_2)).into(),
                 MockConsensusState::new(MockHeader::new(height_2)).into(),
                 signer.clone(),
-            )
-            .unwrap(),
+            ),
             MsgCreateClient::new(
                 MockClientState::new(MockHeader::new(height_2)).into(),
                 MockConsensusState::new(MockHeader::new(height_2)).into(),
                 signer.clone(),
-            )
-            .unwrap(),
+            ),
             MsgCreateClient::new(
                 MockClientState::new(MockHeader::new(height_3)).into(),
                 MockConsensusState::new(MockHeader::new(height_3)).into(),
                 signer,
-            )
-            .unwrap(),
+            ),
         ]
         .into_iter()
         .collect();
@@ -350,8 +346,7 @@ mod tests {
             tm_client_state,
             TmConsensusState::try_from(tm_header).unwrap().into(),
             signer,
-        )
-        .unwrap();
+        );
 
         let output = dispatch(&ctx, ClientMsg::CreateClient(msg.clone()));
 
