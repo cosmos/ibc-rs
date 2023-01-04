@@ -244,7 +244,7 @@ pub(crate) fn process(
     {
         let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
         let consensus_state_of_b_on_a =
-            ctx_a.client_consensus_state(conn_end_on_a.client_id(), msg.proofs_height_on_b)?;
+            ctx_a.client_consensus_state(conn_end_on_a.client_id(), &msg.proofs_height_on_b)?;
 
         let prefix_on_a = ctx_a.commitment_prefix();
         let prefix_on_b = conn_end_on_a.counterparty().prefix();
@@ -289,7 +289,7 @@ pub(crate) fn process(
             })?;
 
         let expected_consensus_state_of_a_on_b =
-            ctx_a.host_consensus_state(msg.consensus_height_of_a_on_b)?;
+            ctx_a.host_consensus_state(&msg.consensus_height_of_a_on_b)?;
         client_state_of_b_on_a
             .verify_client_consensus_state(
                 msg.proofs_height_on_b,

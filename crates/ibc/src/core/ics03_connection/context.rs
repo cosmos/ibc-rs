@@ -44,13 +44,13 @@ pub trait ConnectionReader {
     fn client_consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ConnectionError>;
 
     /// Returns the ConsensusState of the host (local) chain at a specific height.
     fn host_consensus_state(
         &self,
-        height: Height,
+        height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ConnectionError>;
 
     /// Function required by ICS 03. Returns the list of all possible versions that the connection
@@ -63,8 +63,8 @@ pub trait ConnectionReader {
     /// connection handshake protocol prefers.
     fn pick_version(
         &self,
-        supported_versions: Vec<Version>,
-        counterparty_candidate_versions: Vec<Version>,
+        supported_versions: &[Version],
+        counterparty_candidate_versions: &[Version],
     ) -> Result<Version, ConnectionError> {
         pick_version(supported_versions, counterparty_candidate_versions)
     }
@@ -82,7 +82,7 @@ pub trait ConnectionReader {
 /// for processing any `ConnectionMsg`.
 pub trait ConnectionKeeper {
     fn store_connection_result(&mut self, result: ConnectionResult) -> Result<(), ConnectionError> {
-        self.store_connection(result.connection_id.clone(), &result.connection_end)?;
+        self.store_connection(result.connection_id.clone(), result.connection_end.clone())?;
 
         // If we generated an identifier, increase the counter & associate this new identifier
         // with the client id.
@@ -92,7 +92,7 @@ pub trait ConnectionKeeper {
             // Also associate the connection end to its client identifier.
             self.store_connection_to_client(
                 result.connection_id.clone(),
-                result.connection_end.client_id(),
+                result.connection_end.client_id().clone(),
             )?;
         }
 
@@ -103,14 +103,14 @@ pub trait ConnectionKeeper {
     fn store_connection(
         &mut self,
         connection_id: ConnectionId,
-        connection_end: &ConnectionEnd,
+        connection_end: ConnectionEnd,
     ) -> Result<(), ConnectionError>;
 
     /// Stores the given connection_id at a path associated with the client_id.
     fn store_connection_to_client(
         &mut self,
         connection_id: ConnectionId,
-        client_id: &ClientId,
+        client_id: ClientId,
     ) -> Result<(), ConnectionError>;
 
     /// Called upon connection identifier creation (Init or Try process).
