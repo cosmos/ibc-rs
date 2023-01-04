@@ -188,7 +188,19 @@ impl FromStr for IbcEventType {
 }
 
 /// Events created by the IBC component of a chain, destined for a relayer.
-#[derive(Debug)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum IbcEvent {
     CreateClient(ClientEvents::CreateClient),
     UpdateClient(ClientEvents::UpdateClient),
@@ -287,7 +299,7 @@ impl IbcEvent {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ModuleEvent {
     pub kind: String,
     pub module_name: ModuleId,
