@@ -30,3 +30,6 @@ substrate-std = [
   "sp-runtime/std",
   "sp-std/std",
 ]
+
+[patch.crates-io]
+ibc-proto  = { git = "https://github.com/octopus-network/ibc-proto-rs.git",  branch = "add-codec-borsh-for-any" }
