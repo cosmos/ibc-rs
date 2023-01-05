@@ -1240,7 +1240,7 @@ impl ClientReader for MockContext {
         height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ClientError> {
         match self.ibc_store.lock().clients.get(client_id) {
-            Some(client_record) => match client_record.consensus_states.get(&height) {
+            Some(client_record) => match client_record.consensus_states.get(height) {
                 Some(consensus_state) => Ok(consensus_state.clone()),
                 None => Err(ClientError::ConsensusStateNotFound {
                     client_id: client_id.clone(),
