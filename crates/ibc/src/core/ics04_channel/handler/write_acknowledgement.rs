@@ -43,7 +43,7 @@ pub fn process<Ctx: ChannelReader>(
     match ctx.get_packet_acknowledgement(
         &packet.destination_port,
         &packet.destination_channel,
-        packet.sequence,
+        &packet.sequence,
     ) {
         Ok(_) => {
             return Err(PacketError::AcknowledgementExists {
@@ -67,7 +67,7 @@ pub fn process<Ctx: ChannelReader>(
         port_id: packet.destination_port.clone(),
         channel_id: packet.destination_channel.clone(),
         seq: packet.sequence,
-        ack_commitment: ctx.ack_commitment(ack.clone()),
+        ack_commitment: ctx.ack_commitment(&ack),
     });
 
     output.log("success: packet write acknowledgement");

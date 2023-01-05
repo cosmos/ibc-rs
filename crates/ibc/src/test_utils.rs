@@ -255,19 +255,19 @@ impl SendPacketReader for DummyTransferModule {
     fn client_consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Box<dyn ConsensusState>, PacketError> {
         match self.ibc_store.lock().clients.get(client_id) {
             Some(client_record) => match client_record.consensus_states.get(&height) {
                 Some(consensus_state) => Ok(consensus_state.clone()),
                 None => Err(ClientError::ConsensusStateNotFound {
                     client_id: client_id.clone(),
-                    height,
+                    height: *height,
                 }),
             },
             None => Err(ClientError::ConsensusStateNotFound {
                 client_id: client_id.clone(),
-                height,
+                height: *height,
             }),
         }
         .map_err(|e| PacketError::Connection(ConnectionError::Client(e)))
@@ -293,7 +293,7 @@ impl SendPacketReader for DummyTransferModule {
         }
     }
 
-    fn hash(&self, value: Vec<u8>) -> Vec<u8> {
+    fn hash(&self, value: &[u8]) -> Vec<u8> {
         use sha2::Digest;
 
         sha2::Sha256::digest(value).to_vec()

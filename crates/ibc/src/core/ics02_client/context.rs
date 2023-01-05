@@ -33,21 +33,21 @@ pub trait ClientReader {
     fn consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ClientError>;
 
     /// Search for the lowest consensus state higher than `height`.
     fn next_consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ClientError>;
 
     /// Search for the highest consensus state lower than `height`.
     fn prev_consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ClientError>;
 
     /// Returns the current height of the local chain.
@@ -62,7 +62,8 @@ pub trait ClientReader {
     }
 
     /// Returns the `ConsensusState` of the host (local) chain at a specific height.
-    fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, ClientError>;
+    fn host_consensus_state(&self, height: &Height)
+        -> Result<Box<dyn ConsensusState>, ClientError>;
 
     /// Returns the pending `ConsensusState` of the host (local) chain.
     fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ClientError>;

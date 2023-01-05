@@ -67,7 +67,7 @@ pub fn send_packet(
         });
     }
 
-    let consensus_state = ctx.client_consensus_state(&client_id, latest_height)?;
+    let consensus_state = ctx.client_consensus_state(&client_id, &latest_height)?;
     let latest_timestamp = consensus_state.timestamp();
     let packet_timestamp = packet.timeout_timestamp;
     if let Expiry::Expired = latest_timestamp.check_expiry(&packet_timestamp) {
@@ -91,9 +91,9 @@ pub fn send_packet(
         seq: packet.sequence,
         seq_number: next_seq_send.increment(),
         commitment: ctx.packet_commitment(
-            packet.data.clone(),
-            packet.timeout_height,
-            packet.timeout_timestamp,
+            &packet.data,
+            &packet.timeout_height,
+            &packet.timeout_timestamp,
         ),
     };
 

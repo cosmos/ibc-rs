@@ -464,7 +464,7 @@ impl MockContext {
 
     /// Accessor for a block of the local (host) chain from this context.
     /// Returns `None` if the block at the requested height does not exist.
-    pub fn host_block(&self, target_height: Height) -> Option<&HostBlock> {
+    pub fn host_block(&self, target_height: &Height) -> Option<&HostBlock> {
         let target = target_height.revision_height() as usize;
         let latest = self.latest_height().revision_height() as usize;
 
@@ -745,7 +745,7 @@ impl ChannelReader for MockContext {
     fn client_consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ChannelError> {
         ClientReader::consensus_state(self, client_id, height)
             .map_err(|e| ChannelError::Connection(ConnectionError::Client(e)))
@@ -815,7 +815,7 @@ impl ChannelReader for MockContext {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-        seq: Sequence,
+        seq: &Sequence,
     ) -> Result<PacketCommitment, PacketError> {
         match self
             .ibc_store
@@ -823,10 +823,10 @@ impl ChannelReader for MockContext {
             .packet_commitment
             .get(port_id)
             .and_then(|map| map.get(channel_id))
-            .and_then(|map| map.get(&seq))
+            .and_then(|map| map.get(seq))
         {
             Some(commitment) => Ok(commitment.clone()),
-            None => Err(PacketError::PacketCommitmentNotFound { sequence: seq }),
+            None => Err(PacketError::PacketCommitmentNotFound { sequence: *seq }),
         }
     }
 
@@ -834,7 +834,7 @@ impl ChannelReader for MockContext {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-        seq: Sequence,
+        seq: &Sequence,
     ) -> Result<Receipt, PacketError> {
         match self
             .ibc_store
@@ -842,10 +842,10 @@ impl ChannelReader for MockContext {
             .packet_receipt
             .get(port_id)
             .and_then(|map| map.get(channel_id))
-            .and_then(|map| map.get(&seq))
+            .and_then(|map| map.get(seq))
         {
             Some(receipt) => Ok(receipt.clone()),
-            None => Err(PacketError::PacketReceiptNotFound { sequence: seq }),
+            None => Err(PacketError::PacketReceiptNotFound { sequence: *seq }),
         }
     }
 
@@ -853,7 +853,7 @@ impl ChannelReader for MockContext {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-        seq: Sequence,
+        seq: &Sequence,
     ) -> Result<AcknowledgementCommitment, PacketError> {
         match self
             .ibc_store
@@ -861,14 +861,14 @@ impl ChannelReader for MockContext {
             .packet_acknowledgement
             .get(port_id)
             .and_then(|map| map.get(channel_id))
-            .and_then(|map| map.get(&seq))
+            .and_then(|map| map.get(seq))
         {
             Some(ack) => Ok(ack.clone()),
-            None => Err(PacketError::PacketAcknowledgementNotFound { sequence: seq }),
+            None => Err(PacketError::PacketAcknowledgementNotFound { sequence: *seq }),
         }
     }
 
-    fn hash(&self, value: Vec<u8>) -> Vec<u8> {
+    fn hash(&self, value: &[u8]) -> Vec<u8> {
         sha2::Sha256::digest(value).to_vec()
     }
 
@@ -884,7 +884,7 @@ impl ChannelReader for MockContext {
 
     fn host_consensus_state(
         &self,
-        height: Height,
+        height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ChannelError> {
         ConnectionReader::host_consensus_state(self, height).map_err(ChannelError::Connection)
     }
@@ -897,18 +897,18 @@ impl ChannelReader for MockContext {
     fn client_update_time(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Timestamp, ChannelError> {
         match self
             .ibc_store
             .lock()
             .client_processed_times
-            .get(&(client_id.clone(), height))
+            .get(&(client_id.clone(), *height))
         {
             Some(time) => Ok(*time),
             None => Err(ChannelError::ProcessedTimeNotFound {
                 client_id: client_id.clone(),
-                height,
+                height: *height,
             }),
         }
     }
@@ -916,18 +916,18 @@ impl ChannelReader for MockContext {
     fn client_update_height(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Height, ChannelError> {
         match self
             .ibc_store
             .lock()
             .client_processed_heights
-            .get(&(client_id.clone(), height))
+            .get(&(client_id.clone(), *height))
         {
             Some(height) => Ok(*height),
             None => Err(ChannelError::ProcessedHeightNotFound {
                 client_id: client_id.clone(),
-                height,
+                height: *height,
             }),
         }
     }
@@ -982,14 +982,14 @@ impl ChannelKeeper for MockContext {
         &mut self,
         port_id: &PortId,
         channel_id: &ChannelId,
-        seq: Sequence,
+        seq: &Sequence,
     ) -> Result<(), PacketError> {
         self.ibc_store
             .lock()
             .packet_acknowledgement
             .get_mut(port_id)
             .and_then(|map| map.get_mut(channel_id))
-            .and_then(|map| map.remove(&seq));
+            .and_then(|map| map.remove(seq));
         Ok(())
     }
 
@@ -1076,14 +1076,14 @@ impl ChannelKeeper for MockContext {
         &mut self,
         port_id: &PortId,
         channel_id: &ChannelId,
-        seq: Sequence,
+        seq: &Sequence,
     ) -> Result<(), PacketError> {
         self.ibc_store
             .lock()
             .packet_commitment
             .get_mut(port_id)
             .and_then(|map| map.get_mut(channel_id))
-            .and_then(|map| map.remove(&seq));
+            .and_then(|map| map.remove(seq));
         Ok(())
     }
 
@@ -1144,7 +1144,7 @@ impl ConnectionReader for MockContext {
     fn client_consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ConnectionError> {
         // Forward method call to the Ics2Client-specific method.
         ClientReader::consensus_state(self, client_id, height).map_err(ConnectionError::Client)
@@ -1152,7 +1152,7 @@ impl ConnectionReader for MockContext {
 
     fn host_consensus_state(
         &self,
-        height: Height,
+        height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ConnectionError> {
         ClientReader::host_consensus_state(self, height).map_err(ConnectionError::Client)
     }
@@ -1170,24 +1170,24 @@ impl ConnectionKeeper for MockContext {
     fn store_connection(
         &mut self,
         connection_id: ConnectionId,
-        connection_end: &ConnectionEnd,
+        connection_end: ConnectionEnd,
     ) -> Result<(), ConnectionError> {
         self.ibc_store
             .lock()
             .connections
-            .insert(connection_id, connection_end.clone());
+            .insert(connection_id, connection_end);
         Ok(())
     }
 
     fn store_connection_to_client(
         &mut self,
         connection_id: ConnectionId,
-        client_id: &ClientId,
+        client_id: ClientId,
     ) -> Result<(), ConnectionError> {
         self.ibc_store
             .lock()
             .client_connections
-            .insert(client_id.clone(), connection_id);
+            .insert(client_id, connection_id);
         Ok(())
     }
 
@@ -1237,19 +1237,19 @@ impl ClientReader for MockContext {
     fn consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ClientError> {
         match self.ibc_store.lock().clients.get(client_id) {
             Some(client_record) => match client_record.consensus_states.get(&height) {
                 Some(consensus_state) => Ok(consensus_state.clone()),
                 None => Err(ClientError::ConsensusStateNotFound {
                     client_id: client_id.clone(),
-                    height,
+                    height: *height,
                 }),
             },
             None => Err(ClientError::ConsensusStateNotFound {
                 client_id: client_id.clone(),
-                height,
+                height: *height,
             }),
         }
     }
@@ -1258,7 +1258,7 @@ impl ClientReader for MockContext {
     fn next_consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
         let ibc_store = self.ibc_store.lock();
         let client_record =
@@ -1275,7 +1275,7 @@ impl ClientReader for MockContext {
 
         // Search for next state.
         for h in heights {
-            if h > height {
+            if h > *height {
                 // unwrap should never happen, as the consensus state for h must exist
                 return Ok(Some(
                     client_record.consensus_states.get(&h).unwrap().clone(),
@@ -1289,7 +1289,7 @@ impl ClientReader for MockContext {
     fn prev_consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
         let ibc_store = self.ibc_store.lock();
         let client_record =
@@ -1306,7 +1306,7 @@ impl ClientReader for MockContext {
 
         // Search for previous state.
         for h in heights {
-            if h < height {
+            if h < *height {
                 // unwrap should never happen, as the consensus state for h must exist
                 return Ok(Some(
                     client_record.consensus_states.get(&h).unwrap().clone(),
@@ -1330,10 +1330,13 @@ impl ClientReader for MockContext {
             .unwrap())
     }
 
-    fn host_consensus_state(&self, height: Height) -> Result<Box<dyn ConsensusState>, ClientError> {
+    fn host_consensus_state(
+        &self,
+        height: &Height,
+    ) -> Result<Box<dyn ConsensusState>, ClientError> {
         match self.host_block(height) {
             Some(block_ref) => Ok(block_ref.clone().into()),
-            None => Err(ClientError::MissingLocalConsensusState { height }),
+            None => Err(ClientError::MissingLocalConsensusState { height: *height }),
         }
     }
 
@@ -1451,7 +1454,7 @@ impl RelayerContext for MockContext {
     }
 
     fn query_latest_header(&self) -> Option<Box<dyn Header>> {
-        let block_ref = self.host_block(self.host_current_height().unwrap());
+        let block_ref = self.host_block(&self.host_current_height().unwrap());
         block_ref.cloned().map(Header::into_box)
     }
 
@@ -1792,7 +1795,7 @@ mod tests {
             );
 
             assert_eq!(
-                test.ctx.host_block(current_height).unwrap().height(),
+                test.ctx.host_block(&current_height).unwrap().height(),
                 current_height,
                 "failed while fetching height {:?} of context {:?}",
                 current_height,
