@@ -10,7 +10,6 @@ use crate::core::ics04_channel::{
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
-use crate::proofs::{ProofError, Proofs};
 
 pub fn process<Ctx: ChannelReader>(
     ctx_a: &Ctx,
@@ -73,15 +72,8 @@ pub fn process<Ctx: ChannelReader>(
             });
         }
 
-        // The message's proofs have the channel proof as `other_proof`
-        let proof_close = match msg.proofs.other_proof() {
-            Some(p) => p.clone(),
-            None => return Err(PacketError::InvalidProof(ProofError::EmptyProof)),
-        };
-        let proofs = Proofs::new(proof_close, None, None, None, msg.proofs.height())
-            .map_err(PacketError::InvalidProof)?;
         let consensus_state_of_b_on_a = ctx_a
-            .client_consensus_state(&client_id_on_a, &proofs.height())
+            .client_consensus_state(&client_id_on_a, &msg.proof_height_on_b)
             .map_err(PacketError::Channel)?;
         let prefix_on_b = conn_end_on_a.counterparty().prefix();
         let port_id_on_b = &chan_end_on_a.counterparty().port_id;
@@ -114,9 +106,9 @@ pub fn process<Ctx: ChannelReader>(
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
         client_state_of_b_on_a
             .verify_channel_state(
-                msg.proofs.height(),
+                msg.proof_height_on_b,
                 prefix_on_b,
-                proofs.object_proof(),
+                &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 port_id_on_b,
                 chan_id_on_b,
@@ -134,9 +126,9 @@ pub fn process<Ctx: ChannelReader>(
             }
             client_state_of_b_on_a.verify_next_sequence_recv(
                 ctx_a,
-                msg.proofs.height(),
+                msg.proof_height_on_b,
                 &conn_end_on_a,
-                proofs.object_proof(),
+                &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 &packet.destination_port,
                 &packet.destination_channel,
@@ -145,9 +137,9 @@ pub fn process<Ctx: ChannelReader>(
         } else {
             client_state_of_b_on_a.verify_packet_receipt_absence(
                 ctx_a,
-                msg.proofs.height(),
+                msg.proof_height_on_b,
                 &conn_end_on_a,
-                proofs.object_proof(),
+                &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 &packet.destination_port,
                 &packet.destination_channel,

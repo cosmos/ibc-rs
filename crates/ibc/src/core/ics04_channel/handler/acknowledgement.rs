@@ -94,7 +94,7 @@ pub fn process<Ctx: ChannelReader>(
         }
 
         let consensus_state = ctx_a
-            .client_consensus_state(client_id, &msg.proofs.height())
+            .client_consensus_state(client_id, &msg.proof_height_on_b)
             .map_err(PacketError::Channel)?;
 
         let ack_commitment = ctx_a.ack_commitment(&msg.acknowledgement);
@@ -103,9 +103,9 @@ pub fn process<Ctx: ChannelReader>(
         client_state
             .verify_packet_acknowledgement(
                 ctx_a,
-                msg.proofs.height(),
+                msg.proof_height_on_b,
                 &conn_end_on_a,
-                msg.proofs.object_proof(),
+                &msg.proof_acked_on_b,
                 consensus_state.root(),
                 &packet.destination_port,
                 &packet.destination_channel,

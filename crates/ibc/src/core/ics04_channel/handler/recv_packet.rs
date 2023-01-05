@@ -98,7 +98,7 @@ pub fn process<Ctx: ChannelReader>(
         }
 
         let consensus_state_of_a_on_b = ctx_b
-            .client_consensus_state(client_id_on_b, &msg.proofs.height())
+            .client_consensus_state(client_id_on_b, &msg.proof_height_on_a)
             .map_err(PacketError::Channel)?;
 
         let commitment = ctx_b.packet_commitment(
@@ -110,9 +110,9 @@ pub fn process<Ctx: ChannelReader>(
         client_state_of_a_on_b
             .verify_packet_data(
                 ctx_b,
-                msg.proofs.height(),
+                msg.proof_height_on_a,
                 &conn_end_on_b,
-                msg.proofs.object_proof(),
+                &msg.proof_commitment_on_a,
                 consensus_state_of_a_on_b.root(),
                 &packet.source_port,
                 &packet.source_channel,
@@ -240,8 +240,12 @@ mod tests {
             timeout_timestamp: Timestamp::from_nanoseconds(1).unwrap(),
         };
 
-        let msg_packet_old =
-            MsgRecvPacket::new(packet_old, msg.proofs.clone(), get_dummy_account_id());
+        let msg_packet_old = MsgRecvPacket::new(
+            packet_old,
+            msg.proof_commitment_on_a.clone(),
+            msg.proof_height_on_a,
+            get_dummy_account_id(),
+        );
 
         let chan_end_on_b = ChannelEnd::new(
             State::Open,

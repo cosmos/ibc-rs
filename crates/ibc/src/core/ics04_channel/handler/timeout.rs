@@ -85,7 +85,7 @@ pub fn process<Ctx: ChannelReader>(
             .map_err(PacketError::Channel)?;
 
         // check that timeout height or timeout timestamp has passed on the other end
-        let proof_height = msg.proofs.height();
+        let proof_height = msg.proof_height_on_b;
 
         if packet.timeout_height.has_expired(proof_height) {
             return Err(PacketError::PacketTimeoutHeightNotReached {
@@ -115,9 +115,9 @@ pub fn process<Ctx: ChannelReader>(
             }
             client_state_of_b_on_a.verify_next_sequence_recv(
                 ctx_a,
-                msg.proofs.height(),
+                msg.proof_height_on_b,
                 &conn_end_on_a,
-                msg.proofs.object_proof(),
+                &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 &packet.destination_port,
                 &packet.destination_channel,
@@ -126,9 +126,9 @@ pub fn process<Ctx: ChannelReader>(
         } else {
             client_state_of_b_on_a.verify_packet_receipt_absence(
                 ctx_a,
-                msg.proofs.height(),
+                msg.proof_height_on_b,
                 &conn_end_on_a,
-                msg.proofs.object_proof(),
+                &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 &packet.destination_port,
                 &packet.destination_channel,

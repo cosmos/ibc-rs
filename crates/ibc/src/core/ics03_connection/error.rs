@@ -2,7 +2,6 @@ use crate::core::ics02_client::error as client_error;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-use crate::proofs::ProofError;
 use crate::signer::SignerError;
 use crate::Height;
 
@@ -38,8 +37,8 @@ pub enum ConnectionError {
     MissingProofHeight,
     /// missing consensus height
     MissingConsensusHeight,
-    /// invalid connection proof error: `{0}`
-    InvalidProof(ProofError),
+    /// invalid connection proof error
+    InvalidProof,
     /// verifying connnection state error: `{0}`
     VerifyConnectionState(client_error::ClientError),
     /// invalid signer error: `{0}`
@@ -75,7 +74,6 @@ impl std::error::Error for ConnectionError {
         match &self {
             Self::Client(e) => Some(e),
             Self::InvalidIdentifier(e) => Some(e),
-            Self::InvalidProof(e) => Some(e),
             Self::VerifyConnectionState(e) => Some(e),
             Self::Signer(e) => Some(e),
             Self::ConsensusStateVerificationFailure {

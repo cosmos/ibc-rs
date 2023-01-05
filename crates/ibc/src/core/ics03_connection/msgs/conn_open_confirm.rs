@@ -47,7 +47,7 @@ impl TryFrom<RawMsgConnectionOpenConfirm> for MsgConnectionOpenConfirm {
             proof_conn_end_on_a: msg
                 .proof_ack
                 .try_into()
-                .map_err(ConnectionError::InvalidProof)?,
+                .map_err(|_| ConnectionError::InvalidProof)?,
             proof_height_on_a: msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
