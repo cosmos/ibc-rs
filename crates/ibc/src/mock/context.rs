@@ -54,9 +54,9 @@ use crate::Height;
 
 use super::client_state::MOCK_CLIENT_TYPE;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ValidationContext;
 
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
@@ -1503,7 +1503,7 @@ impl RelayerContext for MockContext {
     }
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 impl ValidationContext for MockContext {
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
         ClientReader::client_state(self, client_id).map_err(ContextError::ClientError)

@@ -34,7 +34,7 @@ use crate::mock::misbehaviour::Misbehaviour;
 
 use crate::Height;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::{ContextError, ValidationContext};
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
@@ -204,7 +204,7 @@ impl ClientState for MockClientState {
         })
     }
 
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     fn new_check_header_and_update_state(
         &self,
         _ctx: &dyn ValidationContext,
@@ -253,7 +253,7 @@ impl ClientState for MockClientState {
         Ok(new_state.into_box())
     }
 
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     fn new_check_misbehaviour_and_update_state(
         &self,
         _ctx: &dyn ValidationContext,

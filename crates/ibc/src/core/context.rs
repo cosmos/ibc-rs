@@ -56,10 +56,10 @@ impl std::error::Error for ContextError {
     }
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub use val_exec_ctx::*;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 mod val_exec_ctx {
     use core::time::Duration;
 

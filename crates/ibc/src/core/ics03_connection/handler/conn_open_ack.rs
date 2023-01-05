@@ -10,18 +10,18 @@ use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ics24_host::identifier::ClientId;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ics24_host::path::ConnectionsPath;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::{ExecutionContext, ValidationContext};
 
 use super::ConnectionIdState;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -30,7 +30,7 @@ where
     validate_impl(ctx_a, &msg, &vars)
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 fn validate_impl<Ctx>(
     ctx_a: &Ctx,
     msg: &MsgConnectionOpenAck,
@@ -142,7 +142,7 @@ where
     Ok(())
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
@@ -151,7 +151,7 @@ where
     execute_impl(ctx_a, msg, vars)
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 fn execute_impl<Ctx>(
     ctx_a: &mut Ctx,
     msg: MsgConnectionOpenAck,
@@ -187,12 +187,12 @@ where
     Ok(())
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 struct LocalVars {
     conn_end_on_a: ConnectionEnd,
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 impl LocalVars {
     fn new<Ctx>(ctx_a: &Ctx, msg: &MsgConnectionOpenAck) -> Result<Self, ContextError>
     where
@@ -357,9 +357,9 @@ mod tests {
     use crate::mock::host::HostType;
     use crate::timestamp::ZERO_DURATION;
 
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     use crate::core::ics26_routing::msgs::MsgEnvelope;
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     use crate::core::ValidationContext;
 
     #[test]
@@ -472,7 +472,7 @@ mod tests {
         ];
 
         for test in tests {
-            #[cfg(val_exec_ctx)]
+            #[cfg(feature = "val_exec_ctx")]
             {
                 let res = ValidationContext::validate(
                     &test.ctx,

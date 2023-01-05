@@ -11,16 +11,16 @@ use crate::core::ics24_host::identifier::ConnectionId;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ics24_host::path::{ClientConnectionsPath, ConnectionsPath};
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::{ExecutionContext, ValidationContext};
 
 use super::ConnectionIdState;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -37,7 +37,7 @@ where
     Ok(())
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
@@ -166,9 +166,9 @@ mod tests {
     use crate::mock::context::MockContext;
     use crate::Height;
 
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     use crate::core::ics26_routing::msgs::MsgEnvelope;
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     use crate::core::ValidationContext;
 
     use ibc_proto::ibc::core::connection::v1::Version as RawVersion;
@@ -238,7 +238,7 @@ mod tests {
         .collect();
 
         for test in tests {
-            #[cfg(val_exec_ctx)]
+            #[cfg(feature = "val_exec_ctx")]
             {
                 let res = ValidationContext::validate(
                     &test.ctx,

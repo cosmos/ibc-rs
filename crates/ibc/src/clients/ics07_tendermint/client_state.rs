@@ -48,9 +48,9 @@ use crate::Height;
 
 use super::client_type as tm_client_type;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ValidationContext;
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
@@ -631,7 +631,7 @@ impl Ics2ClientState for ClientState {
             .into_box())
     }
 
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     fn new_check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
@@ -697,7 +697,7 @@ impl Ics2ClientState for ClientState {
             .into_box())
     }
 
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     fn new_check_header_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
