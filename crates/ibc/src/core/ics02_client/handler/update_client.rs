@@ -55,7 +55,7 @@ where
 
     // Read consensus state from the host chain store.
     let latest_consensus_state = ctx
-        .consensus_state(&client_id, client_state.latest_height())
+        .consensus_state(&client_id, &client_state.latest_height())
         .map_err(|_| ClientError::ConsensusStateNotFound {
             client_id: client_id.clone(),
             height: client_state.latest_height(),

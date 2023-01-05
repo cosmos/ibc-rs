@@ -58,7 +58,7 @@ where
                     description: "failed to fetch client state".to_string(),
                 })?;
         let consensus_state_of_a_on_b = ctx_b
-            .consensus_state(client_id_on_b, msg.proof_height_on_a)
+            .consensus_state(client_id_on_b, &msg.proof_height_on_a)
             .map_err(|_| ConnectionError::Other {
                 description: "failed to fetch client consensus state".to_string(),
             })?;

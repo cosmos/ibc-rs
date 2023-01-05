@@ -153,21 +153,21 @@ mod val_exec_ctx {
         fn consensus_state(
             &self,
             client_id: &ClientId,
-            height: Height,
+            height: &Height,
         ) -> Result<Box<dyn ConsensusState>, ContextError>;
 
         /// Search for the lowest consensus state higher than `height`.
         fn next_consensus_state(
             &self,
             client_id: &ClientId,
-            height: Height,
+            height: &Height,
         ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
 
         /// Search for the highest consensus state lower than `height`.
         fn prev_consensus_state(
             &self,
             client_id: &ClientId,
-            height: Height,
+            height: &Height,
         ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
 
         /// Returns the current height of the local chain.
@@ -187,7 +187,7 @@ mod val_exec_ctx {
         /// Returns the `ConsensusState` of the host (local) chain at a specific height.
         fn host_consensus_state(
             &self,
-            height: Height,
+            height: &Height,
         ) -> Result<Box<dyn ConsensusState>, ContextError>;
 
         /// Returns a natural number, counting how many clients have been created thus far.
@@ -219,8 +219,8 @@ mod val_exec_ctx {
         /// connection handshake protocol prefers.
         fn pick_version(
             &self,
-            supported_versions: Vec<ConnectionVersion>,
-            counterparty_candidate_versions: Vec<ConnectionVersion>,
+            supported_versions: &[ConnectionVersion],
+            counterparty_candidate_versions: &[ConnectionVersion],
         ) -> Result<ConnectionVersion, ContextError> {
             pick_version(supported_versions, counterparty_candidate_versions)
                 .map_err(ContextError::ConnectionError)
@@ -274,7 +274,7 @@ mod val_exec_ctx {
         /// <https://github.com/cosmos/ibc-go/blob/04791984b3d6c83f704c4f058e6ca0038d155d91/modules/core/04-channel/keeper/packet.go#L206>
         fn packet_commitment(
             &self,
-            packet_data: Vec<u8>,
+            packet_data: &[u8],
             timeout_height: TimeoutHeight,
             timeout_timestamp: Timestamp,
         ) -> PacketCommitment {
@@ -289,28 +289,29 @@ mod val_exec_ctx {
             let packet_data_hash = self.hash(packet_data);
             hash_input.append(&mut packet_data_hash.to_vec());
 
-            self.hash(hash_input).into()
+            self.hash(&hash_input).into()
         }
 
         fn ack_commitment(&self, ack: Acknowledgement) -> AcknowledgementCommitment {
-            self.hash(ack.into()).into()
+            let ack: Vec<u8> = ack.into();
+            self.hash(&ack).into()
         }
 
         /// A hashing function for packet commitments
-        fn hash(&self, value: Vec<u8>) -> Vec<u8>;
+        fn hash(&self, value: &[u8]) -> Vec<u8>;
 
         /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
         fn client_update_time(
             &self,
             client_id: &ClientId,
-            height: Height,
+            height: &Height,
         ) -> Result<Timestamp, ContextError>;
 
         /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
         fn client_update_height(
             &self,
             client_id: &ClientId,
-            height: Height,
+            height: &Height,
         ) -> Result<Height, ContextError>;
 
         /// Returns a counter on the number of channel ids have been created thus far.
@@ -323,8 +324,8 @@ mod val_exec_ctx {
 
         /// Calculates the block delay period using the connection's delay period and the maximum
         /// expected time per block.
-        fn block_delay(&self, delay_period_time: Duration) -> u64 {
-            calculate_block_delay(delay_period_time, self.max_expected_time_per_block())
+        fn block_delay(&self, delay_period_time: &Duration) -> u64 {
+            calculate_block_delay(delay_period_time, &self.max_expected_time_per_block())
         }
     }
 

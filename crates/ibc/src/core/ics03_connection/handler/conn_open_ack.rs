@@ -70,7 +70,7 @@ where
                     description: "failed to fetch client state".to_string(),
                 })?;
         let consensus_state_of_b_on_a = ctx_a
-            .consensus_state(vars.client_id_on_a(), msg.proofs_height_on_b)
+            .consensus_state(vars.client_id_on_a(), &msg.proofs_height_on_b)
             .map_err(|_| ConnectionError::Other {
                 description: "failed to fetch client consensus state".to_string(),
             })?;
@@ -118,7 +118,7 @@ where
             })?;
 
         let expected_consensus_state_of_a_on_b = ctx_a
-            .host_consensus_state(msg.consensus_height_of_a_on_b)
+            .host_consensus_state(&msg.consensus_height_of_a_on_b)
             .map_err(|_| ConnectionError::Other {
                 description: "failed to fetch host consensus state".to_string(),
             })?;

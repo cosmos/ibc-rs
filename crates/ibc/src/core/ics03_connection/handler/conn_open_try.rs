@@ -65,7 +65,7 @@ where
                     description: "failed to fetch client state".to_string(),
                 })?;
         let consensus_state_of_a_on_b = ctx_b
-            .consensus_state(&msg.client_id_on_b, msg.proofs_height_on_a)
+            .consensus_state(&msg.client_id_on_b, &msg.proofs_height_on_a)
             .map_err(|_| ConnectionError::Other {
                 description: "failed to fetch client consensus state".to_string(),
             })?;
@@ -109,7 +109,7 @@ where
             })?;
 
         let expected_consensus_state_of_b_on_a = ctx_b
-            .host_consensus_state(msg.consensus_height_of_b_on_a)
+            .host_consensus_state(&msg.consensus_height_of_b_on_a)
             .map_err(|_| ConnectionError::Other {
                 description: "failed to fetch host consensus state".to_string(),
             })?;
@@ -188,7 +188,7 @@ impl LocalVars {
         Ctx: ValidationContext,
     {
         let version_on_b =
-            ctx_b.pick_version(ctx_b.get_compatible_versions(), msg.versions_on_a.clone())?;
+            ctx_b.pick_version(&ctx_b.get_compatible_versions(), &msg.versions_on_a)?;
 
         Ok(Self {
             conn_id_on_b: ConnectionId::new(ctx_b.connection_counter()?),
