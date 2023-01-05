@@ -260,7 +260,6 @@ impl ChannelEnd {
         self.ordering.eq(other)
     }
 
-    #[allow(clippy::ptr_arg)]
     pub fn connection_hops_matches(&self, other: &Vec<ConnectionId>) -> bool {
         self.connection_hops.eq(other)
     }

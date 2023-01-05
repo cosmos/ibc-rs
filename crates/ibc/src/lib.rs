@@ -1,9 +1,7 @@
 // TODO: disable unwraps:
 // https://github.com/informalsystems/ibc-rs/issues/987
 // #![cfg_attr(not(test), deny(clippy::unwrap_used))]
-
 #![no_std]
-#![allow(clippy::large_enum_variant)]
 #![deny(
     warnings,
     trivial_casts,
@@ -14,7 +12,6 @@
 )]
 #![forbid(unsafe_code)]
 #![doc(html_root_url = "https://docs.rs/ibc/0.25.0")]
-
 //! This library implements the InterBlockchain Communication (IBC) protocol in Rust. IBC is
 //! a distributed protocol that enables communication between distinct sovereign blockchains.
 //! Loose analogies may be drawn between the IBC protocol and the TCP/UDP protocols that enable
@@ -35,15 +32,10 @@
 //! `Applications` consists of various packet encoding and processing semantics which underpin the
 //! various types of transactions that users can perform on any IBC-compliant chain.
 //!
-//! `Relayer` contains utilities for testing the `ibc` crate against the [Hermes IBC relayer][relayer-repo]. It acts
-//! as scaffolding for gluing the `ibc` crate with Hermes for testing purposes.
-//!
 //! [core]: https://github.com/cosmos/ibc-rs/tree/main/crates/ibc/src/core
 //! [clients]: https://github.com/cosmos/ibc-rs/tree/main/crates/ibc/src/clients
 //! [applications]: https://github.com/cosmos/ibc-rs/tree/main/crates/ibc/src/applications
 //! [ics-standards]: https://github.com/cosmos/ibc#interchain-standards
-//! [relayer]: https://github.com/cosmos/ibc-rs/tree/main/crates/ibc/src/relayer
-//! [relayer-repo]: https://github.com/informalsystems/ibc-rs/tree/main/relayer
 
 extern crate alloc;
 
@@ -53,16 +45,12 @@ extern crate std;
 mod prelude;
 
 pub mod applications;
-pub mod bigint;
 pub mod clients;
 pub mod core;
 pub mod dynamic_typing;
 pub mod events;
 pub mod handler;
-pub mod keys;
-pub mod macros;
 pub mod proofs;
-pub mod relayer;
 pub mod signer;
 pub mod timestamp;
 pub mod tx_msg;

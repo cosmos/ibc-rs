@@ -283,8 +283,7 @@ mod tests {
             MockClientState::new(MockHeader::new(start_client_height)).into(),
             MockConsensusState::new(MockHeader::new(start_client_height)).into(),
             default_signer.clone(),
-        )
-        .unwrap();
+        );
 
         //
         // Connection handshake messages.
@@ -376,9 +375,7 @@ mod tests {
 
         assert!(
             res.is_ok(),
-            "ICS26 routing dispatch test 'client creation' failed for message {:?} with result: {:?}",
-            create_client_msg,
-            res
+            "ICS26 routing dispatch test 'client creation' failed for message {create_client_msg:?} with result: {res:?}",
         );
 
         ctx.scope_port_to_module(
@@ -527,7 +524,7 @@ mod tests {
                     ctx.get_packet_commitment(
                         &msg_ack_packet.packet.source_port,
                         &msg_ack_packet.packet.source_channel,
-                        msg_ack_packet.packet.sequence,
+                        &msg_ack_packet.packet.sequence,
                     )
                     .is_err()
                 })),

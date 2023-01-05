@@ -12,7 +12,7 @@ use tendermint::account::Id;
 use tendermint::{Error as TendermintError, Hash};
 use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
 use tendermint_light_client_verifier::operations::VotingPowerTally;
-use tendermint_light_client_verifier::types::ValidatorSet;
+use tendermint_light_client_verifier::types::Validator;
 use tendermint_light_client_verifier::Verdict;
 
 #[derive(Debug, Display)]
@@ -105,7 +105,7 @@ pub enum Error {
     },
     /// trusted validators `{trusted_validator_set:?}`, does not hash to latest trusted validators. Expected: `{next_validators_hash}`, got: `{trusted_val_hash}`
     MisbehaviourTrustedValidatorHashMismatch {
-        trusted_validator_set: ValidatorSet,
+        trusted_validator_set: Vec<Validator>,
         next_validators_hash: Hash,
         trusted_val_hash: Hash,
     },

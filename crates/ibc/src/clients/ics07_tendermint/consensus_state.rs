@@ -9,12 +9,9 @@ use tendermint_proto::google::protobuf as tpb;
 
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
-use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::timestamp::Timestamp;
-
-use super::client_type as tm_client_type;
 
 pub const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str =
     "/ibc.lightclients.tendermint.v1.ConsensusState";
@@ -37,10 +34,6 @@ impl ConsensusState {
 }
 
 impl crate::core::ics02_client::consensus_state::ConsensusState for ConsensusState {
-    fn client_type(&self) -> ClientType {
-        tm_client_type()
-    }
-
     fn root(&self) -> &CommitmentRoot {
         &self.root
     }
@@ -66,7 +59,7 @@ impl TryFrom<RawConsensusState> for ConsensusState {
         let timestamp = proto_timestamp
             .try_into()
             .map_err(|e| Error::InvalidRawClientState {
-                reason: format!("invalid timestamp: {}", e),
+                reason: format!("invalid timestamp: {e}"),
             })?;
 
         Ok(Self {

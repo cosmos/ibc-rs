@@ -44,12 +44,7 @@ pub struct MsgTransfer<C = Coin> {
 }
 
 impl Msg for MsgTransfer {
-    type ValidationError = TokenTransferError;
     type Raw = RawMsgTransfer;
-
-    fn route(&self) -> String {
-        crate::keys::ROUTER_KEY.to_string()
-    }
 
     fn type_url(&self) -> String {
         TYPE_URL.to_string()
@@ -69,7 +64,7 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
 
         let timeout_height: TimeoutHeight = raw_msg.timeout_height.try_into().map_err(|e| {
             TokenTransferError::InvalidPacketTimeoutHeight {
-                context: format!("invalid timeout height {}", e),
+                context: format!("invalid timeout height {e}"),
             }
         })?;
 
@@ -129,26 +124,15 @@ impl TryFrom<Any> for MsgTransfer {
     }
 }
 
-impl From<MsgTransfer> for Any {
-    fn from(msg: MsgTransfer) -> Self {
-        Self {
-            type_url: TYPE_URL.to_string(),
-            value: msg
-                .encode_vec()
-                .expect("encoding to `Any` from `MsgTranfer`"),
-        }
-    }
-}
-
 #[cfg(test)]
 pub mod test_util {
     use core::ops::Add;
     use core::time::Duration;
+    use primitive_types::U256;
 
     use super::MsgTransfer;
     use crate::applications::transfer::packet::PacketData;
     use crate::applications::transfer::Coin;
-    use crate::bigint::U256;
     use crate::core::ics04_channel::packet::{Packet, Sequence};
     use crate::core::ics04_channel::timeout::TimeoutHeight;
     use crate::signer::Signer;

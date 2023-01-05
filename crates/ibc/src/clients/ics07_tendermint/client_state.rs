@@ -117,8 +117,7 @@ impl ClientState {
         if trusting_period <= Duration::new(0, 0) {
             return Err(Error::InvalidTrustThreshold {
                 reason: format!(
-                    "ClientState trusting period ({:?}) must be greater than zero",
-                    trusting_period
+                    "ClientState trusting period ({trusting_period:?}) must be greater than zero"
                 ),
             });
         }
@@ -126,8 +125,7 @@ impl ClientState {
         if unbonding_period <= Duration::new(0, 0) {
             return Err(Error::InvalidTrustThreshold {
                 reason: format!(
-                    "ClientState unbonding period ({:?}) must be greater than zero",
-                    unbonding_period
+                    "ClientState unbonding period ({unbonding_period:?}) must be greater than zero"
                 ),
             });
         }
@@ -135,8 +133,7 @@ impl ClientState {
         if trusting_period >= unbonding_period {
             return Err(Error::InvalidTrustThreshold {
                 reason: format!(
-                "ClientState trusting period ({:?}) must be smaller than unbonding period ({:?})",
-                trusting_period, unbonding_period,
+                "ClientState trusting period ({trusting_period:?}) must be smaller than unbonding period ({unbonding_period:?})"
             ),
             });
         }
@@ -166,8 +163,7 @@ impl ClientState {
             if key.trim().is_empty() {
                 return Err(Error::Validation {
                     reason: format!(
-                        "ClientState upgrade-path key at index {:?} cannot be empty",
-                        idx
+                        "ClientState upgrade-path key at index {idx:?} cannot be empty"
                     ),
                 });
             }
@@ -286,7 +282,7 @@ impl ClientState {
 
         if trusted_consensus_state.next_validators_hash != trusted_val_hash {
             return Err(Error::MisbehaviourTrustedValidatorHashMismatch {
-                trusted_validator_set: header.trusted_validator_set.clone(),
+                trusted_validator_set: header.trusted_validator_set.validators().clone(),
                 next_validators_hash: trusted_consensus_state.next_validators_hash,
                 trusted_val_hash,
             }
@@ -420,7 +416,7 @@ impl Ics2ClientState for ClientState {
         fn maybe_consensus_state(
             ctx: &dyn ClientReader,
             client_id: &ClientId,
-            height: Height,
+            height: &Height,
         ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
             match ctx.consensus_state(client_id, height) {
                 Ok(cs) => Ok(Some(cs)),
@@ -451,7 +447,7 @@ impl Ics2ClientState for ClientState {
         // match the untrusted header.
         let header_consensus_state = TmConsensusState::from(header.clone());
         let existing_consensus_state =
-            match maybe_consensus_state(ctx, &client_id, header.height())? {
+            match maybe_consensus_state(ctx, &client_id, &header.height())? {
                 Some(cs) => {
                     let cs = downcast_tm_consensus_state(cs.as_ref())?;
                     // If this consensus state matches, skip verification
@@ -470,7 +466,7 @@ impl Ics2ClientState for ClientState {
             };
 
         let trusted_consensus_state = downcast_tm_consensus_state(
-            ctx.consensus_state(&client_id, header.trusted_height)?
+            ctx.consensus_state(&client_id, &header.trusted_height)?
                 .as_ref(),
         )?;
 
@@ -527,7 +523,7 @@ impl Ics2ClientState for ClientState {
         // (cs-new, cs-next, cs-latest)
         if header.height() < client_state.latest_height() {
             let maybe_next_cs = ctx
-                .next_consensus_state(&client_id, header.height())?
+                .next_consensus_state(&client_id, &header.height())?
                 .as_ref()
                 .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
                 .transpose()?;
@@ -550,7 +546,7 @@ impl Ics2ClientState for ClientState {
         // (cs-trusted, cs-prev, cs-new)
         if header.trusted_height < header.height() {
             let maybe_prev_cs = ctx
-                .prev_consensus_state(&client_id, header.height())?
+                .prev_consensus_state(&client_id, &header.height())?
                 .as_ref()
                 .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
                 .transpose()?;
@@ -601,11 +597,11 @@ impl Ics2ClientState for ClientState {
         }
 
         let consensus_state_1 = {
-            let cs = ctx.consensus_state(&client_id, header_1.trusted_height)?;
+            let cs = ctx.consensus_state(&client_id, &header_1.trusted_height)?;
             downcast_tm_consensus_state(cs.as_ref())
         }?;
         let consensus_state_2 = {
-            let cs = ctx.consensus_state(&client_id, header_2.trusted_height)?;
+            let cs = ctx.consensus_state(&client_id, &header_2.trusted_height)?;
             downcast_tm_consensus_state(cs.as_ref())
         }?;
 
@@ -1148,12 +1144,12 @@ fn verify_delay_passed(
 
     let client_id = connection_end.client_id();
     let processed_time =
-        ctx.client_update_time(client_id, height)
+        ctx.client_update_time(client_id, &height)
             .map_err(|_| Error::ProcessedTimeNotFound {
                 client_id: client_id.clone(),
                 height,
             })?;
-    let processed_height = ctx.client_update_height(client_id, height).map_err(|_| {
+    let processed_height = ctx.client_update_height(client_id, &height).map_err(|_| {
         Error::ProcessedHeightNotFound {
             client_id: client_id.clone(),
             height,
@@ -1161,7 +1157,7 @@ fn verify_delay_passed(
     })?;
 
     let delay_period_time = connection_end.delay_period();
-    let delay_period_height = ctx.block_delay(delay_period_time);
+    let delay_period_height = ctx.block_delay(&delay_period_time);
 
     ClientState::verify_delay_passed(
         current_timestamp,
@@ -1207,7 +1203,7 @@ impl TryFrom<RawTmClientState> for ClientState {
             trust_level
                 .try_into()
                 .map_err(|e| Error::InvalidTrustThreshold {
-                    reason: format!("{}", e),
+                    reason: format!("{e}"),
                 })?
         };
 

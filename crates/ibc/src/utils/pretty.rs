@@ -1,28 +1,8 @@
-use core::fmt::{Debug, Display, Error as FmtError, Formatter};
-use core::time::Duration;
+use core::fmt::{Display, Error as FmtError, Formatter};
 use tendermint::block::signed_header::SignedHeader;
 use tendermint::validator::Set as ValidatorSet;
 
 use alloc::vec::Vec;
-
-pub struct PrettyDuration<'a>(pub &'a Duration);
-
-impl Display for PrettyDuration<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        Debug::fmt(self.0, f)
-    }
-}
-
-pub struct PrettyOption<'a, T>(pub &'a Option<T>);
-
-impl<'a, T: Display> Display for PrettyOption<'a, T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        match &self.0 {
-            Some(v) => write!(f, "{}", v),
-            None => write!(f, "None"),
-        }
-    }
-}
 
 pub struct PrettySignedHeader<'a>(pub &'a SignedHeader);
 
@@ -69,7 +49,7 @@ impl<'a, T: Display> Display for PrettySlice<'a, T> {
         write!(f, "[ ")?;
         let mut vec_iterator = self.0.iter().peekable();
         while let Some(element) = vec_iterator.next() {
-            write!(f, "{}", element)?;
+            write!(f, "{element}")?;
             // If it is not the last element, add separator.
             if vec_iterator.peek().is_some() {
                 write!(f, ", ")?;
@@ -85,56 +65,6 @@ mod tests {
 
     use crate::alloc::string::ToString;
     use std::{string::String, vec};
-
-    #[test]
-    fn test_pretty_duration_micros() {
-        let expected_output = "5µs";
-
-        let duration = Duration::from_micros(5);
-        let pretty_duration = PrettyDuration(&duration);
-
-        assert_eq!(pretty_duration.to_string(), expected_output);
-    }
-
-    #[test]
-    fn test_pretty_duration_millis() {
-        let expected_output = "5ms";
-
-        let duration = Duration::from_millis(5);
-        let pretty_duration = PrettyDuration(&duration);
-
-        assert_eq!(pretty_duration.to_string(), expected_output);
-    }
-
-    #[test]
-    fn test_pretty_duration_secs() {
-        let expected_output = "10s";
-
-        let duration = Duration::from_secs(10);
-        let pretty_duration = PrettyDuration(&duration);
-
-        assert_eq!(pretty_duration.to_string(), expected_output);
-    }
-
-    #[test]
-    fn test_pretty_option_some() {
-        let expected_output = "Option content";
-
-        let option_string = Some(String::from("Option content"));
-        let pretty_option = PrettyOption(&option_string);
-
-        assert_eq!(pretty_option.to_string(), expected_output);
-    }
-
-    #[test]
-    fn test_pretty_option_none() {
-        let expected_output = "None";
-
-        let option_string: Option<String> = None;
-        let pretty_option = PrettyOption(&option_string);
-
-        assert_eq!(pretty_option.to_string(), expected_output);
-    }
 
     #[test]
     fn test_pretty_vec_display() {
