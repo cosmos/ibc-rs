@@ -1,9 +1,7 @@
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order};
+use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::events::{ChannelClosed, TimeoutPacket};
-use crate::core::ics04_channel::handler::verify::{
-    verify_next_sequence_recv, verify_packet_receipt_absence,
-};
 use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics04_channel::packet::{PacketResult, Sequence};
 use crate::core::ics04_channel::{context::ChannelReader, error::PacketError};
@@ -27,18 +25,18 @@ pub struct TimeoutPacketResult {
 /// packet can no longer be executed and to allow the calling module to safely
 /// perform appropriate state transitions.
 pub fn process<Ctx: ChannelReader>(
-    ctx: &Ctx,
+    ctx_a: &Ctx,
     msg: &MsgTimeout,
 ) -> HandlerResult<PacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
     let packet = &msg.packet;
 
-    let mut source_channel_end = ctx
+    let mut chan_end_on_a = ctx_a
         .channel_end(&packet.source_port, &packet.source_channel)
         .map_err(PacketError::Channel)?;
 
-    if !source_channel_end.state_matches(&State::Open) {
+    if !chan_end_on_a.state_matches(&State::Open) {
         return Err(PacketError::ChannelClosed {
             channel_id: packet.source_channel.clone(),
         });
@@ -49,52 +47,26 @@ pub fn process<Ctx: ChannelReader>(
         Some(packet.destination_channel.clone()),
     );
 
-    if !source_channel_end.counterparty_matches(&counterparty) {
+    if !chan_end_on_a.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
             port_id: packet.destination_port.clone(),
             channel_id: packet.destination_channel.clone(),
         });
     }
 
-    let source_connection_id = source_channel_end.connection_hops()[0].clone();
-    let connection_end = ctx
-        .connection_end(&source_connection_id)
+    let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
+    let conn_end_on_a = ctx_a
+        .connection_end(&conn_id_on_a)
         .map_err(PacketError::Channel)?;
-
-    let client_id = connection_end.client_id().clone();
-
-    // check that timeout height or timeout timestamp has passed on the other end
-    let proof_height = msg.proofs.height();
-
-    if packet.timeout_height.has_expired(proof_height) {
-        return Err(PacketError::PacketTimeoutHeightNotReached {
-            timeout_height: packet.timeout_height,
-            chain_height: proof_height,
-        });
-    }
-
-    let consensus_state = ctx
-        .client_consensus_state(&client_id, &proof_height)
-        .map_err(PacketError::Channel)?;
-
-    let proof_timestamp = consensus_state.timestamp();
-
-    let packet_timestamp = packet.timeout_timestamp;
-    if let Expiry::Expired = packet_timestamp.check_expiry(&proof_timestamp) {
-        return Err(PacketError::PacketTimeoutTimestampNotReached {
-            timeout_timestamp: packet_timestamp,
-            chain_timestamp: proof_timestamp,
-        });
-    }
 
     //verify packet commitment
-    let packet_commitment = ctx.get_packet_commitment(
+    let packet_commitment = ctx_a.get_packet_commitment(
         &packet.source_port,
         &packet.source_channel,
         &packet.sequence,
     )?;
 
-    let expected_commitment = ctx.packet_commitment(
+    let expected_commitment = ctx_a.packet_commitment(
         &packet.data,
         &packet.timeout_height,
         &packet.timeout_timestamp,
@@ -105,65 +77,100 @@ pub fn process<Ctx: ChannelReader>(
         });
     }
 
-    let result = if source_channel_end.order_matches(&Order::Ordered) {
-        if packet.sequence < msg.next_sequence_recv {
-            return Err(PacketError::InvalidPacketSequence {
-                given_sequence: packet.sequence,
-                next_sequence: msg.next_sequence_recv,
+    // Verify proofs
+    {
+        let client_id_on_a = conn_end_on_a.client_id().clone();
+        let client_state_of_b_on_a = ctx_a
+            .client_state(&client_id_on_a)
+            .map_err(PacketError::Channel)?;
+
+        // check that timeout height or timeout timestamp has passed on the other end
+        let proof_height = msg.proofs.height();
+
+        if packet.timeout_height.has_expired(proof_height) {
+            return Err(PacketError::PacketTimeoutHeightNotReached {
+                timeout_height: packet.timeout_height,
+                chain_height: proof_height,
             });
         }
-        verify_next_sequence_recv(
-            ctx,
-            msg.proofs.height(),
-            &connection_end,
-            packet.clone(),
-            msg.next_sequence_recv,
-            &msg.proofs,
-        )
-        .map_err(PacketError::Channel)?;
 
-        source_channel_end.state = State::Closed;
-        PacketResult::Timeout(TimeoutPacketResult {
-            port_id: packet.source_port.clone(),
-            channel_id: packet.source_channel.clone(),
-            seq: packet.sequence,
-            channel: Some(source_channel_end.clone()),
-        })
-    } else {
-        verify_packet_receipt_absence(
-            ctx,
-            msg.proofs.height(),
-            &connection_end,
-            packet.clone(),
-            &msg.proofs,
-        )
-        .map_err(PacketError::Channel)?;
+        let consensus_state_of_b_on_a = ctx_a
+            .client_consensus_state(&client_id_on_a, &proof_height)
+            .map_err(PacketError::Channel)?;
+        let proof_timestamp = consensus_state_of_b_on_a.timestamp();
 
-        PacketResult::Timeout(TimeoutPacketResult {
-            port_id: packet.source_port.clone(),
-            channel_id: packet.source_channel.clone(),
-            seq: packet.sequence,
-            channel: None,
-        })
-    };
+        let packet_timestamp = packet.timeout_timestamp;
+        if let Expiry::Expired = packet_timestamp.check_expiry(&proof_timestamp) {
+            return Err(PacketError::PacketTimeoutTimestampNotReached {
+                timeout_timestamp: packet_timestamp,
+                chain_timestamp: proof_timestamp,
+            });
+        }
+        let verify_res = if chan_end_on_a.order_matches(&Order::Ordered) {
+            if packet.sequence < msg.next_sequence_recv {
+                return Err(PacketError::InvalidPacketSequence {
+                    given_sequence: packet.sequence,
+                    next_sequence: msg.next_sequence_recv,
+                });
+            }
+            client_state_of_b_on_a.verify_next_sequence_recv(
+                ctx_a,
+                msg.proofs.height(),
+                &conn_end_on_a,
+                msg.proofs.object_proof(),
+                consensus_state_of_b_on_a.root(),
+                &packet.destination_port,
+                &packet.destination_channel,
+                packet.sequence,
+            )
+        } else {
+            client_state_of_b_on_a.verify_packet_receipt_absence(
+                ctx_a,
+                msg.proofs.height(),
+                &conn_end_on_a,
+                msg.proofs.object_proof(),
+                consensus_state_of_b_on_a.root(),
+                &packet.destination_port,
+                &packet.destination_channel,
+                packet.sequence,
+            )
+        };
+        verify_res
+            .map_err(|e| ChannelError::PacketVerificationFailed {
+                sequence: msg.next_sequence_recv,
+                client_error: e,
+            })
+            .map_err(PacketError::Channel)?;
+    }
 
     output.log("success: packet timeout ");
 
     output.emit(IbcEvent::TimeoutPacket(TimeoutPacket::new(
         packet.clone(),
-        source_channel_end.ordering,
+        chan_end_on_a.ordering,
     )));
 
-    if source_channel_end.order_matches(&Order::Ordered) {
+    let packet_res_chan = if chan_end_on_a.order_matches(&Order::Ordered) {
         output.emit(IbcEvent::ChannelClosed(ChannelClosed::new(
             msg.packet.source_port.clone(),
             msg.packet.source_channel.clone(),
-            source_channel_end.counterparty().port_id.clone(),
-            source_channel_end.counterparty().channel_id.clone(),
-            source_connection_id,
-            source_channel_end.ordering,
+            chan_end_on_a.counterparty().port_id.clone(),
+            chan_end_on_a.counterparty().channel_id.clone(),
+            conn_id_on_a,
+            chan_end_on_a.ordering,
         )));
-    }
+        chan_end_on_a.state = State::Closed;
+        Some(chan_end_on_a)
+    } else {
+        None
+    };
+
+    let result = PacketResult::Timeout(TimeoutPacketResult {
+        port_id: packet.source_port.clone(),
+        channel_id: packet.source_channel.clone(),
+        seq: packet.sequence,
+        channel: packet_res_chan,
+    });
 
     Ok(output.with_result(result))
 }
@@ -223,7 +230,7 @@ mod tests {
             &msg_ok.packet.timeout_timestamp,
         );
 
-        let source_channel_end = ChannelEnd::new(
+        let chan_end_on_a = ChannelEnd::new(
             State::Open,
             Order::default(),
             Counterparty::new(
@@ -234,10 +241,10 @@ mod tests {
             Version::ics20(),
         );
 
-        let mut source_ordered_channel_end = source_channel_end.clone();
+        let mut source_ordered_channel_end = chan_end_on_a.clone();
         source_ordered_channel_end.ordering = Order::Ordered;
 
-        let connection_end = ConnectionEnd::new(
+        let conn_end_on_a = ConnectionEnd::new(
             ConnectionState::Open,
             ClientId::default(),
             ConnectionCounterparty::new(
@@ -262,9 +269,9 @@ mod tests {
                 ctx: context.clone().with_channel(
                     PortId::default(),
                     ChannelId::default(),
-                    source_channel_end.clone(),
+                    chan_end_on_a.clone(),
                 )
-                .with_connection(ConnectionId::default(), connection_end.clone()),
+                .with_connection(ConnectionId::default(), conn_end_on_a.clone()),
                 msg: msg.clone(),
                 want_pass: false,
             },
@@ -274,10 +281,10 @@ mod tests {
                 ctx: context.clone().with_channel(
                     PortId::default(),
                     ChannelId::default(),
-                    source_channel_end.clone(),
+                    chan_end_on_a.clone(),
                 )
                 .with_client(&ClientId::default(), client_height)
-                .with_connection(ConnectionId::default(), connection_end.clone()),
+                .with_connection(ConnectionId::default(), conn_end_on_a.clone()),
                 msg,
                 want_pass: false,
             },
@@ -285,11 +292,11 @@ mod tests {
                 name: "Good parameters Unordered channel".to_string(),
                 ctx: context.clone()
                     .with_client(&ClientId::default(), client_height)
-                    .with_connection(ConnectionId::default(), connection_end.clone())
+                    .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                     .with_channel(
                         packet.source_port.clone(),
                         packet.source_channel.clone(),
-                        source_channel_end,
+                        chan_end_on_a,
                     )
                     .with_packet_commitment(
                         msg_ok.packet.source_port.clone(),
@@ -304,7 +311,7 @@ mod tests {
                 name: "Good parameters Ordered Channel".to_string(),
                 ctx: context
                     .with_client(&ClientId::default(), client_height)
-                    .with_connection(ConnectionId::default(), connection_end)
+                    .with_connection(ConnectionId::default(), conn_end_on_a)
                     .with_channel(
                         packet.source_port.clone(),
                         packet.source_channel.clone(),

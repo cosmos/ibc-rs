@@ -76,7 +76,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         );
 
         // Verify the proof for the channel state against the expected channel end.
-        // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
+        // A counterparty channel id of None in not possible, and is checked in msg.
         client_state_of_a_on_b
             .verify_channel_state(
                 msg.proof_height_on_a,
