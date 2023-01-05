@@ -275,8 +275,8 @@ mod val_exec_ctx {
         fn packet_commitment(
             &self,
             packet_data: &[u8],
-            timeout_height: TimeoutHeight,
-            timeout_timestamp: Timestamp,
+            timeout_height: &TimeoutHeight,
+            timeout_timestamp: &Timestamp,
         ) -> PacketCommitment {
             let mut hash_input = timeout_timestamp.nanoseconds().to_be_bytes().to_vec();
 
@@ -292,9 +292,8 @@ mod val_exec_ctx {
             self.hash(&hash_input).into()
         }
 
-        fn ack_commitment(&self, ack: Acknowledgement) -> AcknowledgementCommitment {
-            let ack: Vec<u8> = ack.into();
-            self.hash(&ack).into()
+        fn ack_commitment(&self, ack: &Acknowledgement) -> AcknowledgementCommitment {
+            self.hash(ack.as_ref()).into()
         }
 
         /// A hashing function for packet commitments
@@ -413,7 +412,7 @@ mod val_exec_ctx {
         fn store_connection(
             &mut self,
             connections_path: ConnectionsPath,
-            connection_end: &ConnectionEnd,
+            connection_end: ConnectionEnd,
         ) -> Result<(), ContextError>;
 
         /// Stores the given connection_id at a path associated with the client_id.
@@ -456,7 +455,7 @@ mod val_exec_ctx {
         fn store_connection_channels(
             &mut self,
             conn_id: ConnectionId,
-            port_channel_id: &(PortId, ChannelId),
+            port_channel_id: (PortId, ChannelId),
         ) -> Result<(), ContextError>;
 
         /// Stores the given channel_end at a path associated with the port_id and channel_id.

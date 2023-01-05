@@ -168,7 +168,7 @@ where
         ClientConnectionsPath(msg.client_id_on_b),
         &vars.conn_id_on_b,
     )?;
-    ctx_b.store_connection(ConnectionsPath(vars.conn_id_on_b), &vars.conn_end_on_b)?;
+    ctx_b.store_connection(ConnectionsPath(vars.conn_id_on_b), vars.conn_end_on_b)?;
 
     Ok(())
 }

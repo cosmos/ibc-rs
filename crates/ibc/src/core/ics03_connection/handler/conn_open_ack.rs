@@ -181,7 +181,7 @@ where
             new_conn_end_on_a
         };
 
-        ctx_a.store_connection(ConnectionsPath(msg.conn_id_on_a), &new_conn_end_on_a)?;
+        ctx_a.store_connection(ConnectionsPath(msg.conn_id_on_a), new_conn_end_on_a)?;
     }
 
     Ok(())
