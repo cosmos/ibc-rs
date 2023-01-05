@@ -27,7 +27,7 @@ pub fn verify_channel_proofs<Ctx: ChannelReader>(
         return Err(ChannelError::FrozenClient { client_id });
     }
 
-    let consensus_state = ctx.client_consensus_state(&client_id, proofs.height())?;
+    let consensus_state = ctx.client_consensus_state(&client_id, &proofs.height())?;
 
     // Verify the proof for the channel state against the expected channel end.
     // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
@@ -65,12 +65,12 @@ pub fn verify_packet_recv_proofs<Ctx: ChannelReader>(
         });
     }
 
-    let consensus_state = ctx.client_consensus_state(client_id, proofs.height())?;
+    let consensus_state = ctx.client_consensus_state(client_id, &proofs.height())?;
 
     let commitment = ctx.packet_commitment(
-        packet.data.clone(),
-        packet.timeout_height,
-        packet.timeout_timestamp,
+        &packet.data,
+        &packet.timeout_height,
+        &packet.timeout_timestamp,
     );
 
     // Verify the proof for the packet against the chain store.
@@ -113,9 +113,9 @@ pub fn verify_packet_acknowledgement_proofs<Ctx: ChannelReader>(
         });
     }
 
-    let consensus_state = ctx.client_consensus_state(client_id, proofs.height())?;
+    let consensus_state = ctx.client_consensus_state(client_id, &proofs.height())?;
 
-    let ack_commitment = ctx.ack_commitment(acknowledgement);
+    let ack_commitment = ctx.ack_commitment(&acknowledgement);
 
     // Verify the proof for the packet against the chain store.
     client_state
@@ -157,7 +157,7 @@ pub fn verify_next_sequence_recv<Ctx: ChannelReader>(
         });
     }
 
-    let consensus_state = ctx.client_consensus_state(client_id, proofs.height())?;
+    let consensus_state = ctx.client_consensus_state(client_id, &proofs.height())?;
 
     // Verify the proof for the packet against the chain store.
     client_state
@@ -196,7 +196,7 @@ pub fn verify_packet_receipt_absence<Ctx: ChannelReader>(
         });
     }
 
-    let consensus_state = ctx.client_consensus_state(client_id, proofs.height())?;
+    let consensus_state = ctx.client_consensus_state(client_id, &proofs.height())?;
 
     // Verify the proof for the packet against the chain store.
     client_state

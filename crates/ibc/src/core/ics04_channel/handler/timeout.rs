@@ -74,7 +74,7 @@ pub fn process<Ctx: ChannelReader>(
     }
 
     let consensus_state = ctx
-        .client_consensus_state(&client_id, proof_height)
+        .client_consensus_state(&client_id, &proof_height)
         .map_err(PacketError::Channel)?;
 
     let proof_timestamp = consensus_state.timestamp();
@@ -88,13 +88,16 @@ pub fn process<Ctx: ChannelReader>(
     }
 
     //verify packet commitment
-    let packet_commitment =
-        ctx.get_packet_commitment(&packet.source_port, &packet.source_channel, packet.sequence)?;
+    let packet_commitment = ctx.get_packet_commitment(
+        &packet.source_port,
+        &packet.source_channel,
+        &packet.sequence,
+    )?;
 
     let expected_commitment = ctx.packet_commitment(
-        packet.data.clone(),
-        packet.timeout_height,
-        packet.timeout_timestamp,
+        &packet.data,
+        &packet.timeout_height,
+        &packet.timeout_timestamp,
     );
     if packet_commitment != expected_commitment {
         return Err(PacketError::IncorrectPacketCommitment {
@@ -215,9 +218,9 @@ mod tests {
         msg_ok.packet.timeout_timestamp = Default::default();
 
         let data = context.packet_commitment(
-            msg_ok.packet.data.clone(),
-            msg_ok.packet.timeout_height,
-            msg_ok.packet.timeout_timestamp,
+            &msg_ok.packet.data,
+            &msg_ok.packet.timeout_height,
+            &msg_ok.packet.timeout_timestamp,
         );
 
         let source_channel_end = ChannelEnd::new(

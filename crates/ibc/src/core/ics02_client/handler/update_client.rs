@@ -165,7 +165,7 @@ pub fn process<Ctx: ClientReader>(
 
     // Read consensus state from the host chain store.
     let latest_consensus_state =
-        ClientReader::consensus_state(ctx, &client_id, client_state.latest_height()).map_err(
+        ClientReader::consensus_state(ctx, &client_id, &client_state.latest_height()).map_err(
             |_| ClientError::ConsensusStateNotFound {
                 client_id: client_id.clone(),
                 height: client_state.latest_height(),
@@ -385,7 +385,7 @@ mod tests {
 
         let signer = get_dummy_account_id();
 
-        let mut block = ctx_b.host_block(update_height).unwrap().clone();
+        let mut block = ctx_b.host_block(&update_height).unwrap().clone();
         block.set_trusted_height(client_height);
 
         let latest_header_height = block.height();
@@ -445,7 +445,7 @@ mod tests {
 
         let signer = get_dummy_account_id();
 
-        let mut block = ctx_b.host_block(update_height).unwrap().clone();
+        let mut block = ctx_b.host_block(&update_height).unwrap().clone();
         let trusted_height = client_height.clone().sub(1).unwrap();
         block.set_trusted_height(trusted_height);
 
@@ -510,7 +510,7 @@ mod tests {
 
         let signer = get_dummy_account_id();
 
-        let block = ctx_b.host_block(client_height).unwrap().clone();
+        let block = ctx_b.host_block(&client_height).unwrap().clone();
         let block = match block {
             HostBlock::SyntheticTendermint(mut theader) => {
                 let cons_state = ctx.latest_consensus_states(&client_id, &client_height);
@@ -588,7 +588,7 @@ mod tests {
 
         let signer = get_dummy_account_id();
 
-        let block_ref = ctx_b.host_block(client_update_height).unwrap();
+        let block_ref = ctx_b.host_block(&client_update_height).unwrap();
 
         let msg = MsgUpdateClient {
             client_id,
