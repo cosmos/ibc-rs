@@ -192,7 +192,7 @@ mod tests {
             Test {
                 name: "Processing fails because no connection exists in the context".to_string(),
                 ctx: context.clone(),
-                msg: ChannelMsg::ChannelOpenTry(msg.clone()),
+                msg: ChannelMsg::OpenTry(msg.clone()),
                 want_pass: false,
                 match_error: {
                     let connection_id = msg.chan_end_on_b.connection_hops()[0].clone();
@@ -220,7 +220,7 @@ mod tests {
                         chan_id.clone(),
                         correct_chan_end.clone(),
                     ),
-                msg: ChannelMsg::ChannelOpenTry(msg.clone()),
+                msg: ChannelMsg::OpenTry(msg.clone()),
                 want_pass: false,
                 match_error: Box::new(|e| match e {
                     error::ChannelError::Connection(e) => {
@@ -246,7 +246,7 @@ mod tests {
                     .with_client(&client_id, Height::new(0, proof_height).unwrap())
                     .with_connection(conn_id.clone(), conn_end.clone())
                     .with_channel(msg.port_id_on_b.clone(), chan_id, correct_chan_end),
-                msg: ChannelMsg::ChannelOpenTry(msg.clone()),
+                msg: ChannelMsg::OpenTry(msg.clone()),
                 want_pass: true,
                 match_error: Box::new(|_| {}),
             },
@@ -256,7 +256,7 @@ mod tests {
                 ctx: context
                     .with_client(&client_id, Height::new(0, proof_height).unwrap())
                     .with_connection(conn_id, conn_end),
-                msg: ChannelMsg::ChannelOpenTry(msg),
+                msg: ChannelMsg::OpenTry(msg),
                 want_pass: true,
                 match_error: Box::new(|_| {}),
             },
@@ -265,7 +265,7 @@ mod tests {
         .collect();
 
         for test in tests {
-            let test_msg = downcast!(test.msg => ChannelMsg::ChannelOpenTry).unwrap();
+            let test_msg = downcast!(test.msg => ChannelMsg::OpenTry).unwrap();
             let res = chan_open_try::process(&test.ctx, &test_msg);
             // Additionally check the events and the output objects in the result.
             match res {

@@ -171,10 +171,6 @@ mod tests {
                 chan_end,
             );
 
-        channel_dispatch(
-            &context,
-            &ChannelMsg::ChannelCloseConfirm(msg_chan_close_confirm),
-        )
-        .unwrap();
+        channel_dispatch(&context, &ChannelMsg::CloseConfirm(msg_chan_close_confirm)).unwrap();
     }
 }

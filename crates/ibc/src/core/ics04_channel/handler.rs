@@ -87,12 +87,12 @@ where
     Ctx: ChannelReader,
 {
     let output = match msg {
-        ChannelMsg::ChannelOpenInit(msg) => chan_open_init::process(ctx, msg),
-        ChannelMsg::ChannelOpenTry(msg) => chan_open_try::process(ctx, msg),
-        ChannelMsg::ChannelOpenAck(msg) => chan_open_ack::process(ctx, msg),
-        ChannelMsg::ChannelOpenConfirm(msg) => chan_open_confirm::process(ctx, msg),
-        ChannelMsg::ChannelCloseInit(msg) => chan_close_init::process(ctx, msg),
-        ChannelMsg::ChannelCloseConfirm(msg) => chan_close_confirm::process(ctx, msg),
+        ChannelMsg::OpenInit(msg) => chan_open_init::process(ctx, msg),
+        ChannelMsg::OpenTry(msg) => chan_open_try::process(ctx, msg),
+        ChannelMsg::OpenAck(msg) => chan_open_ack::process(ctx, msg),
+        ChannelMsg::OpenConfirm(msg) => chan_open_confirm::process(ctx, msg),
+        ChannelMsg::CloseInit(msg) => chan_close_init::process(ctx, msg),
+        ChannelMsg::CloseConfirm(msg) => chan_close_confirm::process(ctx, msg),
     }?;
 
     let HandlerOutput { result, log, .. } = output;
@@ -114,7 +114,7 @@ where
         .ok_or(ChannelError::RouteNotFound)?;
 
     match msg {
-        ChannelMsg::ChannelOpenInit(msg) => {
+        ChannelMsg::OpenInit(msg) => {
             let (extras, version) = cb.on_chan_open_init(
                 msg.chan_end_on_a.ordering,
                 &msg.chan_end_on_a.connection_hops,
@@ -127,7 +127,7 @@ where
 
             Ok(extras)
         }
-        ChannelMsg::ChannelOpenTry(msg) => {
+        ChannelMsg::OpenTry(msg) => {
             let (extras, version) = cb.on_chan_open_try(
                 msg.chan_end_on_b.ordering,
                 &msg.chan_end_on_b.connection_hops,
@@ -140,16 +140,14 @@ where
 
             Ok(extras)
         }
-        ChannelMsg::ChannelOpenAck(msg) => {
+        ChannelMsg::OpenAck(msg) => {
             cb.on_chan_open_ack(&msg.port_id_on_a, &result.channel_id, &msg.version_on_b)
         }
-        ChannelMsg::ChannelOpenConfirm(msg) => {
+        ChannelMsg::OpenConfirm(msg) => {
             cb.on_chan_open_confirm(&msg.port_id_on_b, &result.channel_id)
         }
-        ChannelMsg::ChannelCloseInit(msg) => {
-            cb.on_chan_close_init(&msg.port_id_on_a, &result.channel_id)
-        }
-        ChannelMsg::ChannelCloseConfirm(msg) => {
+        ChannelMsg::CloseInit(msg) => cb.on_chan_close_init(&msg.port_id_on_a, &result.channel_id),
+        ChannelMsg::CloseConfirm(msg) => {
             cb.on_chan_close_confirm(&msg.port_id_on_b, &result.channel_id)
         }
     }
@@ -164,14 +162,14 @@ pub(crate) fn channel_events(
     version: &Version,
 ) -> Vec<IbcEvent> {
     let event = match msg {
-        ChannelMsg::ChannelOpenInit(msg) => IbcEvent::OpenInitChannel(OpenInit::new(
+        ChannelMsg::OpenInit(msg) => IbcEvent::OpenInitChannel(OpenInit::new(
             msg.port_id_on_a.clone(),
             channel_id,
             counterparty.port_id,
             connection_id,
             version.clone(),
         )),
-        ChannelMsg::ChannelOpenTry(msg) => IbcEvent::OpenTryChannel(OpenTry::new(
+        ChannelMsg::OpenTry(msg) => IbcEvent::OpenTryChannel(OpenTry::new(
             msg.port_id_on_b.clone(),
             channel_id,
             counterparty.port_id,
@@ -181,7 +179,7 @@ pub(crate) fn channel_events(
             connection_id,
             version.clone(),
         )),
-        ChannelMsg::ChannelOpenAck(msg) => IbcEvent::OpenAckChannel(OpenAck::new(
+        ChannelMsg::OpenAck(msg) => IbcEvent::OpenAckChannel(OpenAck::new(
             msg.port_id_on_a.clone(),
             channel_id,
             counterparty.port_id,
@@ -190,7 +188,7 @@ pub(crate) fn channel_events(
                 .expect("counterparty channel id must exist after channel open ack"),
             connection_id,
         )),
-        ChannelMsg::ChannelOpenConfirm(msg) => IbcEvent::OpenConfirmChannel(OpenConfirm::new(
+        ChannelMsg::OpenConfirm(msg) => IbcEvent::OpenConfirmChannel(OpenConfirm::new(
             msg.port_id_on_b.clone(),
             channel_id,
             counterparty.port_id,
@@ -199,7 +197,7 @@ pub(crate) fn channel_events(
                 .expect("counterparty channel id must exist after channel open confirm"),
             connection_id,
         )),
-        ChannelMsg::ChannelCloseInit(msg) => IbcEvent::CloseInitChannel(CloseInit::new(
+        ChannelMsg::CloseInit(msg) => IbcEvent::CloseInitChannel(CloseInit::new(
             msg.port_id_on_a.clone(),
             channel_id,
             counterparty.port_id,
@@ -208,7 +206,7 @@ pub(crate) fn channel_events(
                 .expect("counterparty channel id must exist after channel open ack"),
             connection_id,
         )),
-        ChannelMsg::ChannelCloseConfirm(msg) => IbcEvent::CloseConfirmChannel(CloseConfirm::new(
+        ChannelMsg::CloseConfirm(msg) => IbcEvent::CloseConfirmChannel(CloseConfirm::new(
             msg.port_id_on_b.clone(),
             channel_id,
             counterparty.port_id,
@@ -246,10 +244,10 @@ where
     Ctx: ChannelReader,
 {
     let output = match msg {
-        PacketMsg::RecvPacket(msg) => recv_packet::process(ctx, msg),
-        PacketMsg::AckPacket(msg) => acknowledgement::process(ctx, msg),
-        PacketMsg::TimeoutPacket(msg) => timeout::process(ctx, msg),
-        PacketMsg::TimeoutOnClosePacket(msg) => timeout_on_close::process(ctx, msg),
+        PacketMsg::Recv(msg) => recv_packet::process(ctx, msg),
+        PacketMsg::Ack(msg) => acknowledgement::process(ctx, msg),
+        PacketMsg::Timeout(msg) => timeout::process(ctx, msg),
+        PacketMsg::TimeoutOnClose(msg) => timeout_on_close::process(ctx, msg),
     }?;
     let HandlerOutput {
         result,
@@ -292,7 +290,7 @@ fn do_packet_callback(
         .ok_or(PacketError::RouteNotFound)?;
 
     match msg {
-        PacketMsg::RecvPacket(msg) => {
+        PacketMsg::Recv(msg) => {
             let result = cb.on_recv_packet(module_output, &msg.packet, &msg.signer);
             match result {
                 OnRecvPacketAck::Nil(write_fn) => {
@@ -309,16 +307,14 @@ fn do_packet_callback(
                 }
             }
         }
-        PacketMsg::AckPacket(msg) => cb.on_acknowledgement_packet(
+        PacketMsg::Ack(msg) => cb.on_acknowledgement_packet(
             module_output,
             &msg.packet,
             &msg.acknowledgement,
             &msg.signer,
         ),
-        PacketMsg::TimeoutPacket(msg) => {
-            cb.on_timeout_packet(module_output, &msg.packet, &msg.signer)
-        }
-        PacketMsg::TimeoutOnClosePacket(msg) => {
+        PacketMsg::Timeout(msg) => cb.on_timeout_packet(module_output, &msg.packet, &msg.signer),
+        PacketMsg::TimeoutOnClose(msg) => {
             cb.on_timeout_packet(module_output, &msg.packet, &msg.signer)
         }
     }

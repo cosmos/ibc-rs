@@ -154,7 +154,7 @@ mod tests {
 
             // - send the message to B. We bypass ICS18 interface and call directly into
             // MockContext `recv` method (to avoid additional serialization steps).
-            let dispatch_res_b = ctx_b.deliver(MsgEnvelope::ClientMsg(client_msg_b));
+            let dispatch_res_b = ctx_b.deliver(MsgEnvelope::Client(client_msg_b));
             let validation_res = ctx_b.validate();
             assert!(
                 validation_res.is_ok(),
@@ -198,7 +198,7 @@ mod tests {
             debug!("client_msg_a = {:?}", client_msg_a);
 
             // - send the message to A
-            let dispatch_res_a = ctx_a.deliver(MsgEnvelope::ClientMsg(client_msg_a));
+            let dispatch_res_a = ctx_a.deliver(MsgEnvelope::Client(client_msg_a));
             let validation_res = ctx_a.validate();
             assert!(
                 validation_res.is_ok(),

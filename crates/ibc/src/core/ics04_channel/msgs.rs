@@ -33,23 +33,23 @@ pub mod timeout_on_close;
 /// Enumeration of all possible messages that the ICS4 protocol processes.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum ChannelMsg {
-    ChannelOpenInit(MsgChannelOpenInit),
-    ChannelOpenTry(MsgChannelOpenTry),
-    ChannelOpenAck(MsgChannelOpenAck),
-    ChannelOpenConfirm(MsgChannelOpenConfirm),
-    ChannelCloseInit(MsgChannelCloseInit),
-    ChannelCloseConfirm(MsgChannelCloseConfirm),
+    OpenInit(MsgChannelOpenInit),
+    OpenTry(MsgChannelOpenTry),
+    OpenAck(MsgChannelOpenAck),
+    OpenConfirm(MsgChannelOpenConfirm),
+    CloseInit(MsgChannelCloseInit),
+    CloseConfirm(MsgChannelCloseConfirm),
 }
 
 impl ChannelMsg {
     pub(super) fn lookup_module(&self, ctx: &impl RouterContext) -> Result<ModuleId, ChannelError> {
         let port_id = match self {
-            ChannelMsg::ChannelOpenInit(msg) => &msg.port_id_on_a,
-            ChannelMsg::ChannelOpenTry(msg) => &msg.port_id_on_b,
-            ChannelMsg::ChannelOpenAck(msg) => &msg.port_id_on_a,
-            ChannelMsg::ChannelOpenConfirm(msg) => &msg.port_id_on_b,
-            ChannelMsg::ChannelCloseInit(msg) => &msg.port_id_on_a,
-            ChannelMsg::ChannelCloseConfirm(msg) => &msg.port_id_on_b,
+            ChannelMsg::OpenInit(msg) => &msg.port_id_on_a,
+            ChannelMsg::OpenTry(msg) => &msg.port_id_on_b,
+            ChannelMsg::OpenAck(msg) => &msg.port_id_on_a,
+            ChannelMsg::OpenConfirm(msg) => &msg.port_id_on_b,
+            ChannelMsg::CloseInit(msg) => &msg.port_id_on_a,
+            ChannelMsg::CloseConfirm(msg) => &msg.port_id_on_b,
         };
         let module_id = ctx
             .lookup_module_by_port(port_id)
@@ -60,19 +60,19 @@ impl ChannelMsg {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum PacketMsg {
-    RecvPacket(MsgRecvPacket),
-    AckPacket(MsgAcknowledgement),
-    TimeoutPacket(MsgTimeout),
-    TimeoutOnClosePacket(MsgTimeoutOnClose),
+    Recv(MsgRecvPacket),
+    Ack(MsgAcknowledgement),
+    Timeout(MsgTimeout),
+    TimeoutOnClose(MsgTimeoutOnClose),
 }
 
 impl PacketMsg {
     pub(super) fn lookup_module(&self, ctx: &impl RouterContext) -> Result<ModuleId, ChannelError> {
         let port_id = match self {
-            PacketMsg::RecvPacket(msg) => &msg.packet.destination_port,
-            PacketMsg::AckPacket(msg) => &msg.packet.source_port,
-            PacketMsg::TimeoutPacket(msg) => &msg.packet.source_port,
-            PacketMsg::TimeoutOnClosePacket(msg) => &msg.packet.source_port,
+            PacketMsg::Recv(msg) => &msg.packet.destination_port,
+            PacketMsg::Ack(msg) => &msg.packet.source_port,
+            PacketMsg::Timeout(msg) => &msg.packet.source_port,
+            PacketMsg::TimeoutOnClose(msg) => &msg.packet.source_port,
         };
         let module_id = ctx
             .lookup_module_by_port(port_id)
