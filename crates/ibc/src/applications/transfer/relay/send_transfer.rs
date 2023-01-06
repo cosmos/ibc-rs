@@ -27,7 +27,7 @@ where
     }
 
     let chan_end_on_a = ctx
-        .channel_end(&msg.source_port, &msg.source_channel)
+        .channel_end(&msg.port_on_a, &msg.chan_on_a)
         .map_err(TokenTransferError::PacketError)?;
 
     let port_on_b = chan_end_on_a.counterparty().port_id().clone();
@@ -35,14 +35,14 @@ where
         .counterparty()
         .channel_id()
         .ok_or_else(|| TokenTransferError::DestinationChannelNotFound {
-            port_id: msg.source_port.clone(),
-            channel_id: msg.source_channel.clone(),
+            port_id: msg.port_on_a.clone(),
+            channel_id: msg.chan_on_a.clone(),
         })?
         .clone();
 
     // get the next sequence
     let sequence = ctx
-        .get_next_sequence_send(&msg.source_port, &msg.source_channel)
+        .get_next_sequence_send(&msg.port_on_a, &msg.chan_on_a)
         .map_err(TokenTransferError::PacketError)?;
 
     let token = msg
@@ -61,9 +61,8 @@ where
         .try_into()
         .map_err(|_| TokenTransferError::ParseAccountFailure)?;
 
-    if is_sender_chain_source(msg.source_port.clone(), msg.source_channel.clone(), &denom) {
-        let escrow_address =
-            ctx.get_channel_escrow_address(&msg.source_port, &msg.source_channel)?;
+    if is_sender_chain_source(msg.port_on_a.clone(), msg.chan_on_a.clone(), &denom) {
+        let escrow_address = ctx.get_channel_escrow_address(&msg.port_on_a, &msg.chan_on_a)?;
         ctx.send_coins(&sender, &escrow_address, &coin)?;
     } else {
         ctx.burn_coins(&sender, &coin)?;
@@ -80,13 +79,13 @@ where
 
     let packet = Packet {
         sequence,
-        port_on_a: msg.source_port,
-        chan_on_a: msg.source_channel,
+        port_on_a: msg.port_on_a,
+        chan_on_a: msg.chan_on_a,
         port_on_b,
         chan_on_b,
         data,
-        timeout_height_on_b: msg.timeout_height,
-        timeout_timestamp_on_b: msg.timeout_timestamp,
+        timeout_height_on_b: msg.timeout_height_on_b,
+        timeout_timestamp_on_b: msg.timeout_timestamp_on_b,
     };
 
     let HandlerOutput {

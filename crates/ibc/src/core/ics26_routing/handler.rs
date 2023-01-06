@@ -343,8 +343,8 @@ mod tests {
         let mut msg_to_on_close =
             MsgTimeoutOnClose::try_from(get_dummy_raw_msg_timeout_on_close(36, 5)).unwrap();
         msg_to_on_close.packet.sequence = 2.into();
-        msg_to_on_close.packet.timeout_height_on_b = msg_transfer_two.timeout_height;
-        msg_to_on_close.packet.timeout_timestamp_on_b = msg_transfer_two.timeout_timestamp;
+        msg_to_on_close.packet.timeout_height_on_b = msg_transfer_two.timeout_height_on_b;
+        msg_to_on_close.packet.timeout_timestamp_on_b = msg_transfer_two.timeout_timestamp_on_b;
 
         let denom = msg_transfer_two.token.denom.clone();
         let packet_data = {
