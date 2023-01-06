@@ -283,8 +283,7 @@ mod tests {
             MockClientState::new(MockHeader::new(start_client_height)).into(),
             MockConsensusState::new(MockHeader::new(start_client_height)).into(),
             default_signer.clone(),
-        )
-        .unwrap();
+        );
 
         //
         // Connection handshake messages.
@@ -525,7 +524,7 @@ mod tests {
                     ctx.get_packet_commitment(
                         &msg_ack_packet.packet.source_port,
                         &msg_ack_packet.packet.source_channel,
-                        msg_ack_packet.packet.sequence,
+                        &msg_ack_packet.packet.sequence,
                     )
                     .is_err()
                 })),

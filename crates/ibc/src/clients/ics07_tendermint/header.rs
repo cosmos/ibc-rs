@@ -15,14 +15,11 @@ use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockS
 
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
-use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ChainId;
 use crate::timestamp::Timestamp;
 use crate::utils::pretty::{PrettySignedHeader, PrettyValidatorSet};
 use crate::Height;
-
-use super::client_type as tm_client_type;
 
 pub const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
 
@@ -111,10 +108,6 @@ pub fn headers_compatible(header: &SignedHeader, other: &SignedHeader) -> bool {
 }
 
 impl crate::core::ics02_client::header::Header for Header {
-    fn client_type(&self) -> ClientType {
-        tm_client_type()
-    }
-
     fn height(&self) -> Height {
         self.height()
     }
