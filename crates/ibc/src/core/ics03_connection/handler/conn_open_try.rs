@@ -166,7 +166,7 @@ where
     ctx_b.increase_connection_counter();
     ctx_b.store_connection_to_client(
         ClientConnectionsPath(msg.client_id_on_b),
-        &vars.conn_id_on_b,
+        vars.conn_id_on_b.clone(),
     )?;
     ctx_b.store_connection(ConnectionsPath(vars.conn_id_on_b), vars.conn_end_on_b)?;
 

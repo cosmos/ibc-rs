@@ -419,7 +419,7 @@ mod val_exec_ctx {
         fn store_connection_to_client(
             &mut self,
             client_connections_path: ClientConnectionsPath,
-            conn_id: &ConnectionId,
+            conn_id: ConnectionId,
         ) -> Result<(), ContextError>;
 
         /// Called upon connection identifier creation (Init or Try process).
@@ -462,7 +462,7 @@ mod val_exec_ctx {
         fn store_channel(
             &mut self,
             port_channel_id: (PortId, ChannelId),
-            channel_end: &ChannelEnd,
+            channel_end: ChannelEnd,
         ) -> Result<(), ContextError>;
 
         fn store_next_sequence_send(
