@@ -20,7 +20,7 @@
 //!
 //! The layout of this crate mirrors the classification of the [Interchain
 //! Standards][ics-standards]. The classification consists of [Core][core], [Clients][clients],
-//! [Applications][applications], and [Relayer][relayer].
+//! and [Applications][applications].
 //!
 //! `Core` consists of the designs and logic pertaining to the transport, authentication, and
 //! ordering layers of the IBC protocol, the fundamental pieces.
