@@ -18,9 +18,9 @@ use crate::core::ics23_commitment::commitment::{
 };
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
 use crate::dynamic_typing::AsAny;
+use crate::erased::ErasedSerialize;
 use crate::prelude::*;
 use crate::Height;
-use crate::erased::ErasedSerialize;
 
 use super::consensus_state::ConsensusState;
 use super::context::ClientReader;

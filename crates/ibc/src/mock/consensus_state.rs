@@ -4,9 +4,6 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::mock::ConsensusState as RawMockConsensusState;
 use ibc_proto::protobuf::Protobuf;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;

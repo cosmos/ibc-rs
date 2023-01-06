@@ -9,9 +9,6 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::mock::ClientState as RawMockClientState;
 use ibc_proto::protobuf::Protobuf;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 use crate::core::ics02_client::client_state::{ClientState, UpdatedState, UpgradeOptions};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
