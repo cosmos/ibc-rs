@@ -19,17 +19,17 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let mut output = HandlerOutput::builder();
 
     // An IBC connection running on the local (host) chain should exist.
-    if msg.connection_hops.len() != 1 {
+    if msg.connection_hops_on_b.len() != 1 {
         return Err(ChannelError::InvalidConnectionHopsLength {
             expected: 1,
-            actual: msg.connection_hops.len(),
+            actual: msg.connection_hops_on_b.len(),
         });
     }
 
-    let conn_end_on_b = ctx_b.connection_end(&msg.connection_hops[0])?;
+    let conn_end_on_b = ctx_b.connection_end(&msg.connection_hops_on_b[0])?;
     if !conn_end_on_b.state_matches(&ConnectionState::Open) {
         return Err(ChannelError::ConnectionNotOpen {
-            connection_id: msg.connection_hops[0].clone(),
+            connection_id: msg.connection_hops_on_b[0].clone(),
         });
     }
 
@@ -57,7 +57,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
             .ok_or(ChannelError::InvalidCounterpartyChannelId)?;
         let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
             ChannelError::UndefinedConnectionCounterparty {
-                connection_id: msg.connection_hops[0].clone(),
+                connection_id: msg.connection_hops_on_b[0].clone(),
             },
         )?;
 
@@ -95,7 +95,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         State::TryOpen,
         msg.ordering_on_b,
         Counterparty::new(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()),
-        msg.connection_hops.clone(),
+        msg.connection_hops_on_b.clone(),
         // Note: This will be rewritten by the module callback
         Version::empty(),
     );
@@ -175,7 +175,7 @@ mod tests {
 
         let chan_id = ChannelId::new(24);
         let hops = vec![conn_id.clone()];
-        msg.connection_hops = hops;
+        msg.connection_hops_on_b = hops;
 
         // A preloaded channel end that resides in the context. This is constructed so as to be
         // consistent with the incoming ChanOpenTry message `msg`.
@@ -183,7 +183,7 @@ mod tests {
             State::Init,
             msg.ordering_on_b,
             Counterparty::new(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()),
-            msg.connection_hops.clone(),
+            msg.connection_hops_on_b.clone(),
             msg.version_on_b.clone(),
         );
 
@@ -194,7 +194,7 @@ mod tests {
                 msg: ChannelMsg::ChannelOpenTry(msg.clone()),
                 want_pass: false,
                 match_error: {
-                    let connection_id = msg.connection_hops[0].clone();
+                    let connection_id = msg.connection_hops_on_b[0].clone();
                     Box::new(move |e| match e {
                         error::ChannelError::Connection(e) => {
                             assert_eq!(
@@ -323,13 +323,13 @@ mod tests {
 
         let chan_id = ChannelId::new(24);
         let hops = vec![conn_id.clone()];
-        msg.connection_hops = hops;
+        msg.connection_hops_on_b = hops;
 
         let chan_end = ChannelEnd::new(
             State::Init,
             msg.ordering_on_b,
             Counterparty::new(msg.port_id_on_b.clone(), msg.chan_id_on_a.clone()),
-            msg.connection_hops.clone(),
+            msg.connection_hops_on_b.clone(),
             msg.version_on_b.clone(),
         );
         let context = MockContext::default()

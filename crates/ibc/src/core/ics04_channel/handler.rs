@@ -117,7 +117,7 @@ where
         ChannelMsg::ChannelOpenInit(msg) => {
             let (extras, version) = cb.on_chan_open_init(
                 msg.ordering_on_a,
-                &msg.connection_hops,
+                &msg.connection_hops_on_a,
                 &msg.port_id_on_a,
                 &result.channel_id,
                 &Counterparty::new(msg.port_id_on_b.clone(), msg.chan_id_on_b.clone()),
@@ -130,7 +130,7 @@ where
         ChannelMsg::ChannelOpenTry(msg) => {
             let (extras, version) = cb.on_chan_open_try(
                 msg.ordering_on_b,
-                &msg.connection_hops,
+                &msg.connection_hops_on_b,
                 &msg.port_id_on_b,
                 &result.channel_id,
                 &Counterparty::new(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()),

@@ -22,9 +22,9 @@ pub struct MsgChannelOpenInit {
     pub port_id_on_a: PortId,
     pub ordering_on_a: Order,
     pub version_on_a: Version,
+    pub connection_hops_on_a: Vec<ConnectionId>,
     pub port_id_on_b: PortId,
     pub chan_id_on_b: Option<ChannelId>,
-    pub connection_hops: Vec<ConnectionId>,
     pub signer: Signer,
 }
 
@@ -32,19 +32,19 @@ impl MsgChannelOpenInit {
     pub fn new(
         port_id_on_a: PortId,
         ordering_on_a: Order,
+        connection_hops_on_a: Vec<ConnectionId>,
         port_id_on_b: PortId,
         version_on_a: Version,
         chan_id_on_b: Option<ChannelId>,
-        connection_hops: Vec<ConnectionId>,
         signer: Signer,
     ) -> Self {
         Self {
             port_id_on_a,
             ordering_on_a,
             version_on_a,
+            connection_hops_on_a,
             port_id_on_b,
             chan_id_on_b,
-            connection_hops,
             signer,
         }
     }
@@ -71,9 +71,9 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
         Ok(MsgChannelOpenInit {
             port_id_on_a: raw_msg.port_id.parse().map_err(ChannelError::Identifier)?,
             ordering_on_a: chan_end_on_a.ordering,
+            connection_hops_on_a: chan_end_on_a.connection_hops,
             port_id_on_b: chan_end_on_a.remote.port_id,
             chan_id_on_b: chan_end_on_a.remote.channel_id,
-            connection_hops: chan_end_on_a.connection_hops,
             version_on_a: chan_end_on_a.version,
             signer: raw_msg.signer.parse().map_err(ChannelError::Signer)?,
         })
@@ -85,7 +85,7 @@ impl From<MsgChannelOpenInit> for RawMsgChannelOpenInit {
             State::Init,
             domain_msg.ordering_on_a,
             Counterparty::new(domain_msg.port_id_on_b, domain_msg.chan_id_on_b),
-            domain_msg.connection_hops,
+            domain_msg.connection_hops_on_a,
             domain_msg.version_on_a,
         );
         RawMsgChannelOpenInit {

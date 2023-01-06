@@ -317,7 +317,7 @@ mod tests {
 
         // The handler will fail to process this b/c the associated connection does not exist
         let mut incorrect_msg_chan_init = msg_chan_init.clone();
-        incorrect_msg_chan_init.connection_hops = vec![ConnectionId::new(590)];
+        incorrect_msg_chan_init.connection_hops_on_a = vec![ConnectionId::new(590)];
 
         let msg_chan_try =
             MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(client_height)).unwrap();
