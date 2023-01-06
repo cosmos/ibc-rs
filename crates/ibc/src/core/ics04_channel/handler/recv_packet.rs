@@ -34,28 +34,26 @@ pub fn process<Ctx: ChannelReader>(
 ) -> HandlerResult<PacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
-    let packet = &msg.packet;
-
     let chan_end_on_b = ctx_b
-        .channel_end(&packet.destination_port, &packet.destination_channel)
+        .channel_end(&msg.packet.destination_port, &msg.packet.destination_channel)
         .map_err(PacketError::Channel)?;
 
     if !chan_end_on_b.state_matches(&State::Open) {
         return Err(PacketError::InvalidChannelState {
-            channel_id: packet.source_channel.clone(),
+            channel_id: msg.packet.source_channel.clone(),
             state: chan_end_on_b.state,
         });
     }
 
     let counterparty = Counterparty::new(
-        packet.source_port.clone(),
-        Some(packet.source_channel.clone()),
+        msg.packet.source_port.clone(),
+        Some(msg.packet.source_channel.clone()),
     );
 
     if !chan_end_on_b.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
-            port_id: packet.source_port.clone(),
-            channel_id: packet.source_channel.clone(),
+            port_id: msg.packet.source_port.clone(),
+            channel_id: msg.packet.source_channel.clone(),
         });
     }
 
@@ -71,15 +69,15 @@ pub fn process<Ctx: ChannelReader>(
     }
 
     let latest_height = ChannelReader::host_height(ctx_b).map_err(PacketError::Channel)?;
-    if packet.timeout_height.has_expired(latest_height) {
+    if msg.packet.timeout_height.has_expired(latest_height) {
         return Err(PacketError::LowPacketHeight {
             chain_height: latest_height,
-            timeout_height: packet.timeout_height,
+            timeout_height: msg.packet.timeout_height,
         });
     }
 
     let latest_timestamp = ChannelReader::host_timestamp(ctx_b).map_err(PacketError::Channel)?;
-    if let Expiry::Expired = latest_timestamp.check_expiry(&packet.timeout_timestamp) {
+    if let Expiry::Expired = latest_timestamp.check_expiry(&msg.packet.timeout_timestamp) {
         return Err(PacketError::LowPacketTimestamp);
     }
 
@@ -101,10 +99,10 @@ pub fn process<Ctx: ChannelReader>(
             .client_consensus_state(client_id_on_b, &msg.proof_height_on_a)
             .map_err(PacketError::Channel)?;
 
-        let commitment = ctx_b.packet_commitment(
-            &packet.data,
-            &packet.timeout_height,
-            &packet.timeout_timestamp,
+        let expected_commitment_on_a = ctx_b.packet_commitment(
+            &msg.packet.data,
+            &msg.packet.timeout_height,
+            &msg.packet.timeout_timestamp,
         );
         // Verify the proof for the packet against the chain store.
         client_state_of_a_on_b
@@ -114,13 +112,13 @@ pub fn process<Ctx: ChannelReader>(
                 &conn_end_on_b,
                 &msg.proof_commitment_on_a,
                 consensus_state_of_a_on_b.root(),
-                &packet.source_port,
-                &packet.source_channel,
-                packet.sequence,
-                commitment,
+                &msg.packet.source_port,
+                &msg.packet.source_channel,
+                msg.packet.sequence,
+                expected_commitment_on_a,
             )
             .map_err(|e| ChannelError::PacketVerificationFailed {
-                sequence: packet.sequence,
+                sequence: msg.packet.sequence,
                 client_error: e,
             })
             .map_err(PacketError::Channel)?;
@@ -128,28 +126,28 @@ pub fn process<Ctx: ChannelReader>(
 
     let result = if chan_end_on_b.order_matches(&Order::Ordered) {
         let next_seq_recv =
-            ctx_b.get_next_sequence_recv(&packet.destination_port, &packet.destination_channel)?;
-        if packet.sequence > next_seq_recv {
+            ctx_b.get_next_sequence_recv(&msg.packet.destination_port, &msg.packet.destination_channel)?;
+        if msg.packet.sequence > next_seq_recv {
             return Err(PacketError::InvalidPacketSequence {
-                given_sequence: packet.sequence,
+                given_sequence: msg.packet.sequence,
                 next_sequence: next_seq_recv,
             });
         }
 
-        if packet.sequence < next_seq_recv {
+        if msg.packet.sequence < next_seq_recv {
             PacketResult::Recv(RecvPacketResult::NoOp)
         } else {
             PacketResult::Recv(RecvPacketResult::Ordered {
-                port_id: packet.destination_port.clone(),
-                channel_id: packet.destination_channel.clone(),
+                port_id: msg.packet.destination_port.clone(),
+                channel_id: msg.packet.destination_channel.clone(),
                 next_seq_recv: next_seq_recv.increment(),
             })
         }
     } else {
         let packet_rec = ctx_b.get_packet_receipt(
-            &packet.destination_port,
-            &packet.destination_channel,
-            &packet.sequence,
+            &msg.packet.destination_port,
+            &msg.packet.destination_channel,
+            &msg.packet.sequence,
         );
 
         match packet_rec {
@@ -157,15 +155,15 @@ pub fn process<Ctx: ChannelReader>(
             Err(e)
                 if e.to_string()
                     == PacketError::PacketReceiptNotFound {
-                        sequence: packet.sequence,
+                        sequence: msg.packet.sequence,
                     }
                     .to_string() =>
             {
                 // store a receipt that does not contain any data
                 PacketResult::Recv(RecvPacketResult::Unordered {
-                    port_id: packet.destination_port.clone(),
-                    channel_id: packet.destination_channel.clone(),
-                    sequence: packet.sequence,
+                    port_id: msg.packet.destination_port.clone(),
+                    channel_id: msg.packet.destination_channel.clone(),
+                    sequence: msg.packet.sequence,
                     receipt: Receipt::Ok,
                 })
             }

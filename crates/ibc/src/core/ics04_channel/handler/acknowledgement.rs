@@ -81,26 +81,26 @@ pub fn process<Ctx: ChannelReader>(
 
     // Verify proofs
     {
-        let client_id = conn_end_on_a.client_id();
-        let client_state = ctx_a
-            .client_state(client_id)
+        let client_id_on_a = conn_end_on_a.client_id();
+        let client_state_on_a = ctx_a
+            .client_state(client_id_on_a)
             .map_err(PacketError::Channel)?;
 
         // The client must not be frozen.
-        if client_state.is_frozen() {
+        if client_state_on_a.is_frozen() {
             return Err(PacketError::FrozenClient {
-                client_id: client_id.clone(),
+                client_id: client_id_on_a.clone(),
             });
         }
 
         let consensus_state = ctx_a
-            .client_consensus_state(client_id, &msg.proof_height_on_b)
+            .client_consensus_state(client_id_on_a, &msg.proof_height_on_b)
             .map_err(PacketError::Channel)?;
 
         let ack_commitment = ctx_a.ack_commitment(&msg.acknowledgement);
 
         // Verify the proof for the packet against the chain store.
-        client_state
+        client_state_on_a
             .verify_packet_acknowledgement(
                 ctx_a,
                 msg.proof_height_on_b,

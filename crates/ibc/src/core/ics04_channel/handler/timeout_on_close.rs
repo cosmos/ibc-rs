@@ -36,18 +36,18 @@ pub fn process<Ctx: ChannelReader>(
     }
 
     //verify the packet was sent, check the store
-    let packet_commitment = ctx_a.get_packet_commitment(
+    let commitment_on_a = ctx_a.get_packet_commitment(
         &packet.source_port,
         &packet.source_channel,
         &packet.sequence,
     )?;
 
-    let expected_commitment = ctx_a.packet_commitment(
+    let expected_commitment_on_a = ctx_a.packet_commitment(
         &packet.data,
         &packet.timeout_height,
         &packet.timeout_timestamp,
     );
-    if packet_commitment != expected_commitment {
+    if commitment_on_a != expected_commitment_on_a {
         return Err(PacketError::IncorrectPacketCommitment {
             sequence: packet.sequence,
         });
@@ -117,11 +117,11 @@ pub fn process<Ctx: ChannelReader>(
             .map_err(ChannelError::VerifyChannelFailed)
             .map_err(PacketError::Channel)?;
 
-        let verify_res = if chan_end_on_a.order_matches(&Order::Ordered) {
-            if packet.sequence < msg.next_sequence_recv {
+        let next_seq_recv_verification_result = if chan_end_on_a.order_matches(&Order::Ordered) {
+            if packet.sequence < msg.next_seq_recv_on_b {
                 return Err(PacketError::InvalidPacketSequence {
                     given_sequence: packet.sequence,
-                    next_sequence: msg.next_sequence_recv,
+                    next_sequence: msg.next_seq_recv_on_b,
                 });
             }
             client_state_of_b_on_a.verify_next_sequence_recv(
@@ -146,9 +146,9 @@ pub fn process<Ctx: ChannelReader>(
                 packet.sequence,
             )
         };
-        verify_res
+        next_seq_recv_verification_result
             .map_err(|e| ChannelError::PacketVerificationFailed {
-                sequence: msg.next_sequence_recv,
+                sequence: msg.next_seq_recv_on_b,
                 client_error: e,
             })
             .map_err(PacketError::Channel)?;

@@ -73,12 +73,12 @@ pub fn process<Ctx: ChannelReader>(
     output.log("success: packet write acknowledgement");
 
     {
-        let dst_connection_id = chan_end_on_b.connection_hops()[0].clone();
+        let conn_id_on_b = chan_end_on_b.connection_hops()[0].clone();
 
         output.emit(IbcEvent::WriteAcknowledgement(WriteAcknowledgement::new(
             packet,
             ack,
-            dst_connection_id,
+            conn_id_on_b,
         )));
     }
 

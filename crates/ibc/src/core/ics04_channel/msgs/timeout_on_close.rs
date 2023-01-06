@@ -18,7 +18,7 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgTimeoutOnClose";
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgTimeoutOnClose {
     pub packet: Packet,
-    pub next_sequence_recv: Sequence,
+    pub next_seq_recv_on_b: Sequence,
     pub proof_unreceived_on_b: CommitmentProofBytes,
     pub proof_close_on_b: CommitmentProofBytes,
     pub proof_height_on_b: Height,
@@ -28,7 +28,7 @@ pub struct MsgTimeoutOnClose {
 impl MsgTimeoutOnClose {
     pub fn new(
         packet: Packet,
-        next_sequence_recv: Sequence,
+        next_seq_recv_on_b: Sequence,
         proof_unreceived_on_b: CommitmentProofBytes,
         proof_close_on_b: CommitmentProofBytes,
         proof_height_on_b: Height,
@@ -36,7 +36,7 @@ impl MsgTimeoutOnClose {
     ) -> MsgTimeoutOnClose {
         Self {
             packet,
-            next_sequence_recv,
+            next_seq_recv_on_b,
             proof_unreceived_on_b,
             proof_close_on_b,
             proof_height_on_b,
@@ -65,7 +65,7 @@ impl TryFrom<RawMsgTimeoutOnClose> for MsgTimeoutOnClose {
                 .packet
                 .ok_or(PacketError::MissingPacket)?
                 .try_into()?,
-            next_sequence_recv: Sequence::from(raw_msg.next_sequence_recv),
+            next_seq_recv_on_b: Sequence::from(raw_msg.next_sequence_recv),
             proof_unreceived_on_b: raw_msg
                 .proof_unreceived
                 .try_into()
@@ -90,7 +90,7 @@ impl From<MsgTimeoutOnClose> for RawMsgTimeoutOnClose {
             proof_unreceived: domain_msg.proof_unreceived_on_b.into(),
             proof_close: domain_msg.proof_close_on_b.into(),
             proof_height: Some(domain_msg.proof_height_on_b.into()),
-            next_sequence_recv: domain_msg.next_sequence_recv.into(),
+            next_sequence_recv: domain_msg.next_seq_recv_on_b.into(),
             signer: domain_msg.signer.to_string(),
         }
     }

@@ -19,6 +19,7 @@ pub struct SendPacketResult {
     pub commitment: PacketCommitment,
 }
 
+/// Per our convention, this message is processed on chain A.
 pub fn send_packet(
     ctx_a: &impl SendPacketReader,
     packet: Packet,
@@ -47,7 +48,7 @@ pub fn send_packet(
     let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
     let conn_end_on_a = ctx_a.connection_end(conn_id_on_a)?;
 
-    let client_id_on_a = conn_end_on_a.client_id().clone();
+    let client_id_on_a = conn_end_on_a.client_id();
 
     let client_state_of_b_on_a = ctx_a.client_state(&client_id_on_a)?;
 
@@ -58,29 +59,29 @@ pub fn send_packet(
         });
     }
 
-    let latest_height = client_state_of_b_on_a.latest_height();
+    let latest_height_on_a = client_state_of_b_on_a.latest_height();
 
-    if packet.timeout_height.has_expired(latest_height) {
+    if packet.timeout_height.has_expired(latest_height_on_a) {
         return Err(PacketError::LowPacketHeight {
-            chain_height: latest_height,
+            chain_height: latest_height_on_a,
             timeout_height: packet.timeout_height,
         });
     }
 
-    let consensus_state = ctx_a.client_consensus_state(&client_id_on_a, &latest_height)?;
-    let latest_timestamp = consensus_state.timestamp();
+    let consensus_state_of_b_on_a = ctx_a.client_consensus_state(&client_id_on_a, &latest_height_on_a)?;
+    let latest_timestamp = consensus_state_of_b_on_a.timestamp();
     let packet_timestamp = packet.timeout_timestamp;
     if let Expiry::Expired = latest_timestamp.check_expiry(&packet_timestamp) {
         return Err(PacketError::LowPacketTimestamp);
     }
 
-    let next_seq_send =
+    let next_seq_send_on_a =
         ctx_a.get_next_sequence_send(&packet.source_port, &packet.source_channel)?;
 
-    if packet.sequence != next_seq_send {
+    if packet.sequence != next_seq_send_on_a {
         return Err(PacketError::InvalidPacketSequence {
             given_sequence: packet.sequence,
-            next_sequence: next_seq_send,
+            next_sequence: next_seq_send_on_a,
         });
     }
 
@@ -90,7 +91,7 @@ pub fn send_packet(
         port_id: packet.source_port.clone(),
         channel_id: packet.source_channel.clone(),
         seq: packet.sequence,
-        seq_number: next_seq_send.increment(),
+        seq_number: next_seq_send_on_a.increment(),
         commitment: ctx_a.packet_commitment(
             &packet.data,
             &packet.timeout_height,
