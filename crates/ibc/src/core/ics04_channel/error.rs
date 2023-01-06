@@ -7,7 +7,6 @@ use crate::core::ics05_port::error as port_error;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
 use crate::prelude::*;
-use crate::proofs::ProofError;
 use crate::signer::SignerError;
 use crate::timestamp::Timestamp;
 use crate::Height;
@@ -81,8 +80,8 @@ pub enum ChannelError {
     FrozenClient { client_id: ClientId },
     /// Channel `{channel_id}` should not be state `{state}`
     InvalidChannelState { channel_id: ChannelId, state: State },
-    /// invalid proof error: `{0}`
-    InvalidProof(ProofError),
+    /// invalid proof: empty proof
+    InvalidProof,
     /// identifier error: `{0}`
     Identifier(ValidationError),
 }
@@ -126,8 +125,8 @@ pub enum PacketError {
     ImplementationSpecific,
     /// Undefined counterparty connection for `{connection_id}`
     UndefinedConnectionCounterparty { connection_id: ConnectionId },
-    /// invalid proof: `{0}`
-    InvalidProof(ProofError),
+    /// invalid proof: empty proof
+    InvalidProof,
     /// Packet timeout height `{timeout_height}` > chain height `{chain_height}`
     PacketTimeoutHeightNotReached {
         timeout_height: TimeoutHeight,
@@ -194,7 +193,6 @@ impl std::error::Error for PacketError {
         match &self {
             Self::Connection(e) => Some(e),
             Self::Channel(e) => Some(e),
-            Self::InvalidProof(e) => Some(e),
             Self::Signer(e) => Some(e),
             Self::Identifier(e) => Some(e),
             _ => None,
@@ -210,7 +208,6 @@ impl std::error::Error for ChannelError {
             Self::Port(e) => Some(e),
             Self::Identifier(e) => Some(e),
             Self::Signer(e) => Some(e),
-            Self::InvalidProof(e) => Some(e),
             Self::PacketVerificationFailed {
                 client_error: e, ..
             } => Some(e),
