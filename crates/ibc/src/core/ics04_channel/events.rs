@@ -470,13 +470,13 @@ impl SendPacket {
     pub fn new(packet: Packet, channel_ordering: Order, src_connection_id: ConnectionId) -> Self {
         Self {
             packet_data: packet.data.into(),
-            timeout_height: packet.timeout_height.into(),
-            timeout_timestamp: packet.timeout_timestamp.into(),
+            timeout_height: packet.timeout_height_on_b.into(),
+            timeout_timestamp: packet.timeout_timestamp_on_b.into(),
             sequence: packet.sequence.into(),
-            src_port_id: packet.source_port.into(),
-            src_channel_id: packet.source_channel.into(),
-            dst_port_id: packet.destination_port.into(),
-            dst_channel_id: packet.destination_channel.into(),
+            src_port_id: packet.port_on_a.into(),
+            src_channel_id: packet.chan_on_a.into(),
+            dst_port_id: packet.port_on_b.into(),
+            dst_channel_id: packet.chan_on_b.into(),
             channel_ordering: channel_ordering.into(),
             src_connection_id: src_connection_id.into(),
         }
@@ -564,13 +564,13 @@ impl ReceivePacket {
     pub fn new(packet: Packet, channel_ordering: Order, dst_connection_id: ConnectionId) -> Self {
         Self {
             packet_data: packet.data.into(),
-            timeout_height: packet.timeout_height.into(),
-            timeout_timestamp: packet.timeout_timestamp.into(),
+            timeout_height: packet.timeout_height_on_b.into(),
+            timeout_timestamp: packet.timeout_timestamp_on_b.into(),
             sequence: packet.sequence.into(),
-            src_port_id: packet.source_port.into(),
-            src_channel_id: packet.source_channel.into(),
-            dst_port_id: packet.destination_port.into(),
-            dst_channel_id: packet.destination_channel.into(),
+            src_port_id: packet.port_on_a.into(),
+            src_channel_id: packet.chan_on_a.into(),
+            dst_port_id: packet.port_on_b.into(),
+            dst_channel_id: packet.chan_on_b.into(),
             channel_ordering: channel_ordering.into(),
             dst_connection_id: dst_connection_id.into(),
         }
@@ -662,13 +662,13 @@ impl WriteAcknowledgement {
     ) -> Self {
         Self {
             packet_data: packet.data.into(),
-            timeout_height: packet.timeout_height.into(),
-            timeout_timestamp: packet.timeout_timestamp.into(),
+            timeout_height: packet.timeout_height_on_b.into(),
+            timeout_timestamp: packet.timeout_timestamp_on_b.into(),
             sequence: packet.sequence.into(),
-            src_port_id: packet.source_port.into(),
-            src_channel_id: packet.source_channel.into(),
-            dst_port_id: packet.destination_port.into(),
-            dst_channel_id: packet.destination_channel.into(),
+            src_port_id: packet.port_on_a.into(),
+            src_channel_id: packet.chan_on_a.into(),
+            dst_port_id: packet.port_on_b.into(),
+            dst_channel_id: packet.chan_on_b.into(),
             acknowledgement: acknowledgement.into(),
             dst_connection_id: dst_connection_id.into(),
         }
@@ -754,13 +754,13 @@ pub struct AcknowledgePacket {
 impl AcknowledgePacket {
     pub fn new(packet: Packet, channel_ordering: Order, src_connection_id: ConnectionId) -> Self {
         Self {
-            timeout_height: packet.timeout_height.into(),
-            timeout_timestamp: packet.timeout_timestamp.into(),
+            timeout_height: packet.timeout_height_on_b.into(),
+            timeout_timestamp: packet.timeout_timestamp_on_b.into(),
             sequence: packet.sequence.into(),
-            src_port_id: packet.source_port.into(),
-            src_channel_id: packet.source_channel.into(),
-            dst_port_id: packet.destination_port.into(),
-            dst_channel_id: packet.destination_channel.into(),
+            src_port_id: packet.port_on_a.into(),
+            src_channel_id: packet.chan_on_a.into(),
+            dst_port_id: packet.port_on_b.into(),
+            dst_channel_id: packet.chan_on_b.into(),
             channel_ordering: channel_ordering.into(),
             src_connection_id: src_connection_id.into(),
         }
@@ -839,13 +839,13 @@ pub struct TimeoutPacket {
 impl TimeoutPacket {
     pub fn new(packet: Packet, channel_ordering: Order) -> Self {
         Self {
-            timeout_height: packet.timeout_height.into(),
-            timeout_timestamp: packet.timeout_timestamp.into(),
+            timeout_height: packet.timeout_height_on_b.into(),
+            timeout_timestamp: packet.timeout_timestamp_on_b.into(),
             sequence: packet.sequence.into(),
-            src_port_id: packet.source_port.into(),
-            src_channel_id: packet.source_channel.into(),
-            dst_port_id: packet.destination_port.into(),
-            dst_channel_id: packet.destination_channel.into(),
+            src_port_id: packet.port_on_a.into(),
+            src_channel_id: packet.chan_on_a.into(),
+            dst_port_id: packet.port_on_b.into(),
+            dst_channel_id: packet.chan_on_b.into(),
             channel_ordering: channel_ordering.into(),
         }
     }

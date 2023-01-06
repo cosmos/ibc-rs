@@ -28,24 +28,21 @@ pub fn process<Ctx: ChannelReader>(
     let packet = &msg.packet;
 
     let chan_end_on_a = ctx_a
-        .channel_end(&packet.source_port, &packet.source_channel)
+        .channel_end(&packet.port_on_a, &packet.chan_on_a)
         .map_err(PacketError::Channel)?;
 
     if !chan_end_on_a.state_matches(&State::Open) {
         return Err(PacketError::ChannelClosed {
-            channel_id: packet.source_channel.clone(),
+            channel_id: packet.chan_on_a.clone(),
         });
     }
 
-    let counterparty = Counterparty::new(
-        packet.destination_port.clone(),
-        Some(packet.destination_channel.clone()),
-    );
+    let counterparty = Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone()));
 
     if !chan_end_on_a.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
-            port_id: packet.destination_port.clone(),
-            channel_id: packet.destination_channel.clone(),
+            port_id: packet.port_on_b.clone(),
+            channel_id: packet.chan_on_b.clone(),
         });
     }
 
@@ -61,17 +58,14 @@ pub fn process<Ctx: ChannelReader>(
     }
 
     // Verify packet commitment
-    let packet_commitment = ctx_a.get_packet_commitment(
-        &packet.source_port,
-        &packet.source_channel,
-        &packet.sequence,
-    )?;
+    let packet_commitment =
+        ctx_a.get_packet_commitment(&packet.port_on_a, &packet.chan_on_a, &packet.sequence)?;
 
     if packet_commitment
         != ctx_a.packet_commitment(
             &packet.data,
-            &packet.timeout_height,
-            &packet.timeout_timestamp,
+            &packet.timeout_height_on_b,
+            &packet.timeout_timestamp_on_b,
         )
     {
         return Err(PacketError::IncorrectPacketCommitment {
@@ -107,8 +101,8 @@ pub fn process<Ctx: ChannelReader>(
                 &conn_end_on_a,
                 &msg.proof_acked_on_b,
                 consensus_state.root(),
-                &packet.destination_port,
-                &packet.destination_channel,
+                &packet.port_on_b,
+                &packet.chan_on_b,
                 packet.sequence,
                 ack_commitment,
             )
@@ -120,8 +114,7 @@ pub fn process<Ctx: ChannelReader>(
     }
 
     let result = if chan_end_on_a.order_matches(&Order::Ordered) {
-        let next_seq_ack =
-            ctx_a.get_next_sequence_ack(&packet.source_port, &packet.source_channel)?;
+        let next_seq_ack = ctx_a.get_next_sequence_ack(&packet.port_on_a, &packet.chan_on_a)?;
 
         if packet.sequence != next_seq_ack {
             return Err(PacketError::InvalidPacketSequence {
@@ -131,15 +124,15 @@ pub fn process<Ctx: ChannelReader>(
         }
 
         PacketResult::Ack(AckPacketResult {
-            port_id: packet.source_port.clone(),
-            channel_id: packet.source_channel.clone(),
+            port_id: packet.port_on_a.clone(),
+            channel_id: packet.chan_on_a.clone(),
             seq: packet.sequence,
             seq_number: Some(next_seq_ack.increment()),
         })
     } else {
         PacketResult::Ack(AckPacketResult {
-            port_id: packet.source_port.clone(),
-            channel_id: packet.source_channel.clone(),
+            port_id: packet.port_on_a.clone(),
+            channel_id: packet.chan_on_a.clone(),
             seq: packet.sequence,
             seq_number: None,
         })
@@ -198,17 +191,14 @@ mod tests {
 
         let data = context.packet_commitment(
             &packet.data,
-            &packet.timeout_height,
-            &packet.timeout_timestamp,
+            &packet.timeout_height_on_b,
+            &packet.timeout_timestamp_on_b,
         );
 
         let chan_end_on_a = ChannelEnd::new(
             State::Open,
             Order::default(),
-            Counterparty::new(
-                packet.destination_port.clone(),
-                Some(packet.destination_channel.clone()),
-            ),
+            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone())),
             vec![ConnectionId::default()],
             Version::ics20(),
         );
@@ -238,21 +228,17 @@ mod tests {
                     .with_client(&ClientId::default(), client_height)
                     .with_connection(ConnectionId::default(), conn_end_on_a)
                     .with_channel(
-                        packet.source_port.clone(),
-                        packet.source_channel.clone(),
+                        packet.port_on_a.clone(),
+                        packet.chan_on_a.clone(),
                         chan_end_on_a,
                     )
                     .with_packet_commitment(
-                        packet.source_port,
-                        packet.source_channel,
+                        packet.port_on_a,
+                        packet.chan_on_a,
                         packet.sequence,
                         data,
                     ) //with_ack_sequence required for ordered channels
-                    .with_ack_sequence(
-                        packet.destination_port,
-                        packet.destination_channel,
-                        1.into(),
-                    ),
+                    .with_ack_sequence(packet.port_on_b, packet.chan_on_b, 1.into()),
                 msg,
                 want_pass: true,
             },

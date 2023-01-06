@@ -183,13 +183,13 @@ pub mod test_util {
 
         Packet {
             sequence,
-            source_port: msg.source_port,
-            source_channel: msg.source_channel,
-            destination_port: PortId::default(),
-            destination_channel: ChannelId::default(),
+            port_on_a: msg.source_port,
+            chan_on_a: msg.source_channel,
+            port_on_b: PortId::default(),
+            chan_on_b: ChannelId::default(),
             data,
-            timeout_height: msg.timeout_height,
-            timeout_timestamp: msg.timeout_timestamp,
+            timeout_height_on_b: msg.timeout_height,
+            timeout_timestamp_on_b: msg.timeout_timestamp,
         }
     }
 }

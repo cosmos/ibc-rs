@@ -26,23 +26,20 @@ pub fn send_packet(
 ) -> HandlerResult<SendPacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
-    let chan_end_on_a = ctx_a.channel_end(&packet.source_port, &packet.source_channel)?;
+    let chan_end_on_a = ctx_a.channel_end(&packet.port_on_a, &packet.chan_on_a)?;
 
     if chan_end_on_a.state_matches(&State::Closed) {
         return Err(PacketError::ChannelClosed {
-            channel_id: packet.source_channel,
+            channel_id: packet.chan_on_a,
         });
     }
 
-    let counterparty = Counterparty::new(
-        packet.destination_port.clone(),
-        Some(packet.destination_channel.clone()),
-    );
+    let counterparty = Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone()));
 
     if !chan_end_on_a.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
-            port_id: packet.destination_port.clone(),
-            channel_id: packet.destination_channel,
+            port_id: packet.port_on_b.clone(),
+            channel_id: packet.chan_on_b,
         });
     }
     let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
@@ -50,7 +47,7 @@ pub fn send_packet(
 
     let client_id_on_a = conn_end_on_a.client_id();
 
-    let client_state_of_b_on_a = ctx_a.client_state(&client_id_on_a)?;
+    let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
 
     // prevent accidental sends with clients that cannot be updated
     if client_state_of_b_on_a.is_frozen() {
@@ -61,22 +58,22 @@ pub fn send_packet(
 
     let latest_height_on_a = client_state_of_b_on_a.latest_height();
 
-    if packet.timeout_height.has_expired(latest_height_on_a) {
+    if packet.timeout_height_on_b.has_expired(latest_height_on_a) {
         return Err(PacketError::LowPacketHeight {
             chain_height: latest_height_on_a,
-            timeout_height: packet.timeout_height,
+            timeout_height: packet.timeout_height_on_b,
         });
     }
 
-    let consensus_state_of_b_on_a = ctx_a.client_consensus_state(&client_id_on_a, &latest_height_on_a)?;
+    let consensus_state_of_b_on_a =
+        ctx_a.client_consensus_state(client_id_on_a, &latest_height_on_a)?;
     let latest_timestamp = consensus_state_of_b_on_a.timestamp();
-    let packet_timestamp = packet.timeout_timestamp;
+    let packet_timestamp = packet.timeout_timestamp_on_b;
     if let Expiry::Expired = latest_timestamp.check_expiry(&packet_timestamp) {
         return Err(PacketError::LowPacketTimestamp);
     }
 
-    let next_seq_send_on_a =
-        ctx_a.get_next_sequence_send(&packet.source_port, &packet.source_channel)?;
+    let next_seq_send_on_a = ctx_a.get_next_sequence_send(&packet.port_on_a, &packet.chan_on_a)?;
 
     if packet.sequence != next_seq_send_on_a {
         return Err(PacketError::InvalidPacketSequence {
@@ -88,14 +85,14 @@ pub fn send_packet(
     output.log("success: packet send ");
 
     let result = SendPacketResult {
-        port_id: packet.source_port.clone(),
-        channel_id: packet.source_channel.clone(),
+        port_id: packet.port_on_a.clone(),
+        channel_id: packet.chan_on_a.clone(),
         seq: packet.sequence,
         seq_number: next_seq_send_on_a.increment(),
         commitment: ctx_a.packet_commitment(
             &packet.data,
-            &packet.timeout_height,
-            &packet.timeout_timestamp,
+            &packet.timeout_height_on_b,
+            &packet.timeout_timestamp_on_b,
         ),
     };
 

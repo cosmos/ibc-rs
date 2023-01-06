@@ -26,12 +26,12 @@ where
         return Err(TokenTransferError::SendDisabled);
     }
 
-    let source_channel_end = ctx
+    let chan_end_on_a = ctx
         .channel_end(&msg.source_port, &msg.source_channel)
         .map_err(TokenTransferError::PacketError)?;
 
-    let destination_port = source_channel_end.counterparty().port_id().clone();
-    let destination_channel = source_channel_end
+    let port_on_b = chan_end_on_a.counterparty().port_id().clone();
+    let chan_on_b = chan_end_on_a
         .counterparty()
         .channel_id()
         .ok_or_else(|| TokenTransferError::DestinationChannelNotFound {
@@ -80,13 +80,13 @@ where
 
     let packet = Packet {
         sequence,
-        source_port: msg.source_port,
-        source_channel: msg.source_channel,
-        destination_port,
-        destination_channel,
+        port_on_a: msg.source_port,
+        chan_on_a: msg.source_channel,
+        port_on_b,
+        chan_on_b,
         data,
-        timeout_height: msg.timeout_height,
-        timeout_timestamp: msg.timeout_timestamp,
+        timeout_height_on_b: msg.timeout_height,
+        timeout_timestamp_on_b: msg.timeout_timestamp,
     };
 
     let HandlerOutput {

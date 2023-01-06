@@ -20,32 +20,26 @@ pub fn process<Ctx: ChannelReader>(
     let packet = &msg.packet;
 
     let chan_end_on_a = ctx_a
-        .channel_end(&packet.source_port, &packet.source_channel)
+        .channel_end(&packet.port_on_a, &packet.chan_on_a)
         .map_err(PacketError::Channel)?;
 
-    let counterparty = Counterparty::new(
-        packet.destination_port.clone(),
-        Some(packet.destination_channel.clone()),
-    );
+    let counterparty = Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone()));
 
     if !chan_end_on_a.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
-            port_id: packet.destination_port.clone(),
-            channel_id: packet.destination_channel.clone(),
+            port_id: packet.port_on_b.clone(),
+            channel_id: packet.chan_on_b.clone(),
         });
     }
 
     //verify the packet was sent, check the store
-    let commitment_on_a = ctx_a.get_packet_commitment(
-        &packet.source_port,
-        &packet.source_channel,
-        &packet.sequence,
-    )?;
+    let commitment_on_a =
+        ctx_a.get_packet_commitment(&packet.port_on_a, &packet.chan_on_a, &packet.sequence)?;
 
     let expected_commitment_on_a = ctx_a.packet_commitment(
         &packet.data,
-        &packet.timeout_height,
-        &packet.timeout_timestamp,
+        &packet.timeout_height_on_b,
+        &packet.timeout_timestamp_on_b,
     );
     if commitment_on_a != expected_commitment_on_a {
         return Err(PacketError::IncorrectPacketCommitment {
@@ -90,10 +84,8 @@ pub fn process<Ctx: ChannelReader>(
             },
         )?;
         let expected_conn_hops_on_b = vec![conn_id_on_b.clone()];
-        let expected_counterparty = Counterparty::new(
-            packet.source_port.clone(),
-            Some(packet.source_channel.clone()),
-        );
+        let expected_counterparty =
+            Counterparty::new(packet.port_on_a.clone(), Some(packet.chan_on_a.clone()));
         let expected_chan_end_on_b = ChannelEnd::new(
             State::Closed,
             *chan_end_on_a.ordering(),
@@ -130,8 +122,8 @@ pub fn process<Ctx: ChannelReader>(
                 &conn_end_on_a,
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
-                &packet.destination_port,
-                &packet.destination_channel,
+                &packet.port_on_b,
+                &packet.chan_on_b,
                 packet.sequence,
             )
         } else {
@@ -141,8 +133,8 @@ pub fn process<Ctx: ChannelReader>(
                 &conn_end_on_a,
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
-                &packet.destination_port,
-                &packet.destination_channel,
+                &packet.port_on_b,
+                &packet.chan_on_b,
                 packet.sequence,
             )
         };
@@ -163,8 +155,8 @@ pub fn process<Ctx: ChannelReader>(
 
     let packet_res_chan = if chan_end_on_a.order_matches(&Order::Ordered) {
         output.emit(IbcEvent::ChannelClosed(ChannelClosed::new(
-            msg.packet.source_port.clone(),
-            msg.packet.source_channel.clone(),
+            msg.packet.port_on_a.clone(),
+            msg.packet.chan_on_a.clone(),
             chan_end_on_a.counterparty().port_id.clone(),
             chan_end_on_a.counterparty().channel_id.clone(),
             conn_id_on_a,
@@ -176,8 +168,8 @@ pub fn process<Ctx: ChannelReader>(
     };
 
     let result = PacketResult::Timeout(TimeoutPacketResult {
-        port_id: packet.source_port.clone(),
-        channel_id: packet.source_channel.clone(),
+        port_id: packet.port_on_a.clone(),
+        channel_id: packet.chan_on_a.clone(),
         seq: packet.sequence,
         channel: packet_res_chan,
     });
@@ -231,17 +223,14 @@ mod tests {
 
         let data = context.packet_commitment(
             &msg.packet.data,
-            &msg.packet.timeout_height,
-            &msg.packet.timeout_timestamp,
+            &msg.packet.timeout_height_on_b,
+            &msg.packet.timeout_timestamp_on_b,
         );
 
         let chan_end_on_a = ChannelEnd::new(
             State::Open,
             Order::Ordered,
-            Counterparty::new(
-                packet.destination_port.clone(),
-                Some(packet.destination_channel),
-            ),
+            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b)),
             vec![ConnectionId::default()],
             Version::ics20(),
         );
@@ -283,10 +272,10 @@ mod tests {
                 ctx: context
                     .with_client(&ClientId::default(), client_height)
                     .with_connection(ConnectionId::default(), conn_end_on_a)
-                    .with_channel(packet.source_port, packet.source_channel, chan_end_on_a)
+                    .with_channel(packet.port_on_a, packet.chan_on_a, chan_end_on_a)
                     .with_packet_commitment(
-                        msg.packet.source_port.clone(),
-                        msg.packet.source_channel.clone(),
+                        msg.packet.port_on_a.clone(),
+                        msg.packet.chan_on_a.clone(),
                         msg.packet.sequence,
                         data,
                     ),
@@ -313,7 +302,7 @@ mod tests {
                     let events = proto_output.events;
                     let src_channel_end = test
                         .ctx
-                        .channel_end(&msg.packet.source_port, &msg.packet.source_channel)
+                        .channel_end(&msg.packet.port_on_a, &msg.packet.chan_on_a)
                         .unwrap();
 
                     if src_channel_end.order_matches(&Order::Ordered) {

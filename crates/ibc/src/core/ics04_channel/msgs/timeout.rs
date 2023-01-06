@@ -64,7 +64,7 @@ impl TryFrom<RawMsgTimeout> for MsgTimeout {
                 .packet
                 .ok_or(PacketError::MissingPacket)?
                 .try_into()?,
-                next_seq_recv_on_b: Sequence::from(raw_msg.next_sequence_recv),
+            next_seq_recv_on_b: Sequence::from(raw_msg.next_sequence_recv),
             proof_unreceived_on_b: raw_msg
                 .proof_unreceived
                 .try_into()
