@@ -44,7 +44,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     // Verify proofs
     {
-        let client_id_on_b = conn_end_on_b.client_id().clone();
+        let client_id_on_b = conn_end_on_b.client_id();
         let client_state_of_a_on_b = ctx_b.client_state(&client_id_on_b)?;
         let consensus_state_of_a_on_b =
             ctx_b.client_consensus_state(&client_id_on_b, &msg.proof_height_on_a)?;
@@ -63,7 +63,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         // The client must not be frozen.
         if client_state_of_a_on_b.is_frozen() {
             return Err(ChannelError::FrozenClient {
-                client_id: client_id_on_b,
+                client_id: client_id_on_b.clone(),
             });
         }
 
