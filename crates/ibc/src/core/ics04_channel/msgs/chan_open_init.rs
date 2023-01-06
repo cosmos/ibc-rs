@@ -32,12 +32,7 @@ impl MsgChannelOpenInit {
 }
 
 impl Msg for MsgChannelOpenInit {
-    type ValidationError = ChannelError;
     type Raw = RawMsgChannelOpenInit;
-
-    fn route(&self) -> String {
-        crate::keys::ROUTER_KEY.to_string()
-    }
 
     fn type_url(&self) -> String {
         TYPE_URL.to_string()

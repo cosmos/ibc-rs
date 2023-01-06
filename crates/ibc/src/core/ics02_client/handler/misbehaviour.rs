@@ -12,9 +12,9 @@ use crate::core::ics24_host::identifier::ClientId;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ics24_host::path::ClientStatePath;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 /// The result following the successful processing of a `MsgSubmitMisbehaviour` message.
@@ -24,7 +24,7 @@ pub struct MisbehaviourResult {
     pub client_state: Box<dyn ClientState>,
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgSubmitMisbehaviour) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -51,7 +51,7 @@ where
     Ok(())
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgSubmitMisbehaviour) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
@@ -306,7 +306,7 @@ mod tests {
 
         // Get chain-B's header at `misbehaviour_height`
         let header1: TmHeader = {
-            let mut block = ctx_b.host_block(misbehaviour_height).unwrap().clone();
+            let mut block = ctx_b.host_block(&misbehaviour_height).unwrap().clone();
             block.set_trusted_height(client_height);
             block.try_into_tm_block().unwrap().into()
         };

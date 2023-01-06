@@ -47,9 +47,9 @@ use crate::Height;
 
 use super::client_type as tm_client_type;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ValidationContext;
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
@@ -418,7 +418,7 @@ impl Ics2ClientState for ClientState {
         fn maybe_consensus_state(
             ctx: &dyn ClientReader,
             client_id: &ClientId,
-            height: Height,
+            height: &Height,
         ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
             match ctx.consensus_state(client_id, height) {
                 Ok(cs) => Ok(Some(cs)),
@@ -449,7 +449,7 @@ impl Ics2ClientState for ClientState {
         // match the untrusted header.
         let header_consensus_state = TmConsensusState::from(header.clone());
         let existing_consensus_state =
-            match maybe_consensus_state(ctx, &client_id, header.height())? {
+            match maybe_consensus_state(ctx, &client_id, &header.height())? {
                 Some(cs) => {
                     let cs = downcast_tm_consensus_state(cs.as_ref())?;
                     // If this consensus state matches, skip verification
@@ -468,7 +468,7 @@ impl Ics2ClientState for ClientState {
             };
 
         let trusted_consensus_state = downcast_tm_consensus_state(
-            ctx.consensus_state(&client_id, header.trusted_height)?
+            ctx.consensus_state(&client_id, &header.trusted_height)?
                 .as_ref(),
         )?;
 
@@ -525,7 +525,7 @@ impl Ics2ClientState for ClientState {
         // (cs-new, cs-next, cs-latest)
         if header.height() < client_state.latest_height() {
             let maybe_next_cs = ctx
-                .next_consensus_state(&client_id, header.height())?
+                .next_consensus_state(&client_id, &header.height())?
                 .as_ref()
                 .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
                 .transpose()?;
@@ -548,7 +548,7 @@ impl Ics2ClientState for ClientState {
         // (cs-trusted, cs-prev, cs-new)
         if header.trusted_height < header.height() {
             let maybe_prev_cs = ctx
-                .prev_consensus_state(&client_id, header.height())?
+                .prev_consensus_state(&client_id, &header.height())?
                 .as_ref()
                 .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
                 .transpose()?;
@@ -599,11 +599,11 @@ impl Ics2ClientState for ClientState {
         }
 
         let consensus_state_1 = {
-            let cs = ctx.consensus_state(&client_id, header_1.trusted_height)?;
+            let cs = ctx.consensus_state(&client_id, &header_1.trusted_height)?;
             downcast_tm_consensus_state(cs.as_ref())
         }?;
         let consensus_state_2 = {
-            let cs = ctx.consensus_state(&client_id, header_2.trusted_height)?;
+            let cs = ctx.consensus_state(&client_id, &header_2.trusted_height)?;
             downcast_tm_consensus_state(cs.as_ref())
         }?;
 
@@ -633,7 +633,7 @@ impl Ics2ClientState for ClientState {
             .into_box())
     }
 
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     fn new_check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
@@ -663,11 +663,11 @@ impl Ics2ClientState for ClientState {
         }
 
         let consensus_state_1 = {
-            let cs = ctx.consensus_state(&client_id, header_1.trusted_height)?;
+            let cs = ctx.consensus_state(&client_id, &header_1.trusted_height)?;
             downcast_tm_consensus_state(cs.as_ref())
         }?;
         let consensus_state_2 = {
-            let cs = ctx.consensus_state(&client_id, header_2.trusted_height)?;
+            let cs = ctx.consensus_state(&client_id, &header_2.trusted_height)?;
             downcast_tm_consensus_state(cs.as_ref())
         }?;
 
@@ -699,7 +699,7 @@ impl Ics2ClientState for ClientState {
             .into_box())
     }
 
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     fn new_check_header_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
@@ -711,7 +711,7 @@ impl Ics2ClientState for ClientState {
             client_id: &ClientId,
             height: Height,
         ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
-            match ctx.consensus_state(client_id, height) {
+            match ctx.consensus_state(client_id, &height) {
                 Ok(cs) => Ok(Some(cs)),
                 Err(e) => match e {
                     ContextError::ClientError(e) => Err(e),
@@ -756,7 +756,7 @@ impl Ics2ClientState for ClientState {
             };
 
         let trusted_consensus_state = downcast_tm_consensus_state(
-            ctx.consensus_state(&client_id, header.trusted_height)
+            ctx.consensus_state(&client_id, &header.trusted_height)
                 .map_err(|e| match e {
                     ContextError::ClientError(e) => e,
                     _ => todo!(),
@@ -819,7 +819,7 @@ impl Ics2ClientState for ClientState {
         // (cs-new, cs-next, cs-latest)
         if header.height() < client_state.latest_height() {
             let maybe_next_cs = ctx
-                .next_consensus_state(&client_id, header.height())
+                .next_consensus_state(&client_id, &header.height())
                 .map_err(|e| match e {
                     ContextError::ClientError(e) => e,
                     _ => todo!(),
@@ -846,7 +846,7 @@ impl Ics2ClientState for ClientState {
         // (cs-trusted, cs-prev, cs-new)
         if header.trusted_height < header.height() {
             let maybe_prev_cs = ctx
-                .prev_consensus_state(&client_id, header.height())
+                .prev_consensus_state(&client_id, &header.height())
                 .map_err(|e| match e {
                     ContextError::ClientError(e) => e,
                     _ => todo!(),
@@ -1146,12 +1146,12 @@ fn verify_delay_passed(
 
     let client_id = connection_end.client_id();
     let processed_time =
-        ctx.client_update_time(client_id, height)
+        ctx.client_update_time(client_id, &height)
             .map_err(|_| Error::ProcessedTimeNotFound {
                 client_id: client_id.clone(),
                 height,
             })?;
-    let processed_height = ctx.client_update_height(client_id, height).map_err(|_| {
+    let processed_height = ctx.client_update_height(client_id, &height).map_err(|_| {
         Error::ProcessedHeightNotFound {
             client_id: client_id.clone(),
             height,
@@ -1159,7 +1159,7 @@ fn verify_delay_passed(
     })?;
 
     let delay_period_time = connection_end.delay_period();
-    let delay_period_height = ctx.block_delay(delay_period_time);
+    let delay_period_height = ctx.block_delay(&delay_period_time);
 
     ClientState::verify_delay_passed(
         current_timestamp,

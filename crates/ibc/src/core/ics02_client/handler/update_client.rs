@@ -17,11 +17,11 @@ use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::timestamp::Timestamp;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::{ExecutionContext, ValidationContext};
 
 /// The result following the successful processing of a `MsgUpdateAnyClient` message.
@@ -34,7 +34,7 @@ pub struct UpdateClientResult {
     pub processed_height: Height,
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -55,7 +55,7 @@ where
 
     // Read consensus state from the host chain store.
     let latest_consensus_state = ctx
-        .consensus_state(&client_id, client_state.latest_height())
+        .consensus_state(&client_id, &client_state.latest_height())
         .map_err(|_| ClientError::ConsensusStateNotFound {
             client_id: client_id.clone(),
             height: client_state.latest_height(),
@@ -88,7 +88,7 @@ where
     Ok(())
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
@@ -165,7 +165,7 @@ pub fn process<Ctx: ClientReader>(
 
     // Read consensus state from the host chain store.
     let latest_consensus_state =
-        ClientReader::consensus_state(ctx, &client_id, client_state.latest_height()).map_err(
+        ClientReader::consensus_state(ctx, &client_id, &client_state.latest_height()).map_err(
             |_| ClientError::ConsensusStateNotFound {
                 client_id: client_id.clone(),
                 height: client_state.latest_height(),
@@ -385,7 +385,7 @@ mod tests {
 
         let signer = get_dummy_account_id();
 
-        let mut block = ctx_b.host_block(update_height).unwrap().clone();
+        let mut block = ctx_b.host_block(&update_height).unwrap().clone();
         block.set_trusted_height(client_height);
 
         let latest_header_height = block.height();
@@ -445,7 +445,7 @@ mod tests {
 
         let signer = get_dummy_account_id();
 
-        let mut block = ctx_b.host_block(update_height).unwrap().clone();
+        let mut block = ctx_b.host_block(&update_height).unwrap().clone();
         let trusted_height = client_height.clone().sub(1).unwrap();
         block.set_trusted_height(trusted_height);
 
@@ -510,7 +510,7 @@ mod tests {
 
         let signer = get_dummy_account_id();
 
-        let block = ctx_b.host_block(client_height).unwrap().clone();
+        let block = ctx_b.host_block(&client_height).unwrap().clone();
         let block = match block {
             HostBlock::SyntheticTendermint(mut theader) => {
                 let cons_state = ctx.latest_consensus_states(&client_id, &client_height);
@@ -588,7 +588,7 @@ mod tests {
 
         let signer = get_dummy_account_id();
 
-        let block_ref = ctx_b.host_block(client_update_height).unwrap();
+        let block_ref = ctx_b.host_block(&client_update_height).unwrap();
 
         let msg = MsgUpdateClient {
             client_id,

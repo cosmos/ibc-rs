@@ -43,26 +43,17 @@ pub enum ChannelMsg {
 
 impl ChannelMsg {
     pub(super) fn lookup_module(&self, ctx: &impl RouterContext) -> Result<ModuleId, ChannelError> {
-        let module_id = match self {
-            ChannelMsg::ChannelOpenInit(msg) => ctx
-                .lookup_module_by_port(&msg.port_id_on_a)
-                .map_err(ChannelError::Port)?,
-            ChannelMsg::ChannelOpenTry(msg) => ctx
-                .lookup_module_by_port(&msg.port_id_on_b)
-                .map_err(ChannelError::Port)?,
-            ChannelMsg::ChannelOpenAck(msg) => ctx
-                .lookup_module_by_port(&msg.port_id_on_a)
-                .map_err(ChannelError::Port)?,
-            ChannelMsg::ChannelOpenConfirm(msg) => ctx
-                .lookup_module_by_port(&msg.port_id_on_b)
-                .map_err(ChannelError::Port)?,
-            ChannelMsg::ChannelCloseInit(msg) => ctx
-                .lookup_module_by_port(&msg.port_id_on_a)
-                .map_err(ChannelError::Port)?,
-            ChannelMsg::ChannelCloseConfirm(msg) => ctx
-                .lookup_module_by_port(&msg.port_id_on_b)
-                .map_err(ChannelError::Port)?,
+        let port_id = match self {
+            ChannelMsg::ChannelOpenInit(msg) => &msg.port_id_on_a,
+            ChannelMsg::ChannelOpenTry(msg) => &msg.port_id_on_b,
+            ChannelMsg::ChannelOpenAck(msg) => &msg.port_id_on_a,
+            ChannelMsg::ChannelOpenConfirm(msg) => &msg.port_id_on_b,
+            ChannelMsg::ChannelCloseInit(msg) => &msg.port_id_on_a,
+            ChannelMsg::ChannelCloseConfirm(msg) => &msg.port_id_on_b,
         };
+        let module_id = ctx
+            .lookup_module_by_port(port_id)
+            .map_err(ChannelError::Port)?;
         Ok(module_id)
     }
 }
@@ -73,4 +64,19 @@ pub enum PacketMsg {
     AckPacket(MsgAcknowledgement),
     TimeoutPacket(MsgTimeout),
     TimeoutOnClosePacket(MsgTimeoutOnClose),
+}
+
+impl PacketMsg {
+    pub(super) fn lookup_module(&self, ctx: &impl RouterContext) -> Result<ModuleId, ChannelError> {
+        let port_id = match self {
+            PacketMsg::RecvPacket(msg) => &msg.packet.destination_port,
+            PacketMsg::AckPacket(msg) => &msg.packet.source_port,
+            PacketMsg::TimeoutPacket(msg) => &msg.packet.source_port,
+            PacketMsg::TimeoutOnClosePacket(msg) => &msg.packet.source_port,
+        };
+        let module_id = ctx
+            .lookup_module_by_port(port_id)
+            .map_err(ChannelError::Port)?;
+        Ok(module_id)
+    }
 }

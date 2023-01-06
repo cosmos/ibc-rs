@@ -97,8 +97,8 @@ pub fn get_compatible_versions() -> Vec<Version> {
 
 /// Selects a version from the intersection of locally supported and counterparty versions.
 pub fn pick_version(
-    supported_versions: Vec<Version>,
-    counterparty_versions: Vec<Version>,
+    supported_versions: &[Version],
+    counterparty_versions: &[Version],
 ) -> Result<Version, ConnectionError> {
     let mut intersection: Vec<Version> = Vec::new();
     for s in supported_versions.iter() {
@@ -303,7 +303,7 @@ mod tests {
         ];
 
         for test in tests {
-            let version = pick_version(test.supported, test.counterparty);
+            let version = pick_version(&test.supported, &test.counterparty);
 
             assert_eq!(
                 test.want_pass,

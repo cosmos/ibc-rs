@@ -20,10 +20,8 @@ use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics04_channel::Version;
-use crate::core::ics05_port::context::PortReader;
-use crate::core::ics05_port::error::PortError;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ics26_routing::context::{Module, ModuleId};
+use crate::core::ics26_routing::context::Module;
 use crate::mock::context::MockIbcStore;
 use crate::prelude::*;
 use crate::signer::Signer;
@@ -153,12 +151,6 @@ impl TokenTransferKeeper for DummyTransferModule {
     }
 }
 
-impl PortReader for DummyTransferModule {
-    fn lookup_module_by_port(&self, _port_id: &PortId) -> Result<ModuleId, PortError> {
-        unimplemented!()
-    }
-}
-
 impl BankKeeper for DummyTransferModule {
     type AccountId = Signer;
 
@@ -265,19 +257,19 @@ impl SendPacketReader for DummyTransferModule {
     fn client_consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Box<dyn ConsensusState>, PacketError> {
         match self.ibc_store.lock().unwrap().clients.get(client_id) {
-            Some(client_record) => match client_record.consensus_states.get(&height) {
+            Some(client_record) => match client_record.consensus_states.get(height) {
                 Some(consensus_state) => Ok(consensus_state.clone()),
                 None => Err(ClientError::ConsensusStateNotFound {
                     client_id: client_id.clone(),
-                    height,
+                    height: *height,
                 }),
             },
             None => Err(ClientError::ConsensusStateNotFound {
                 client_id: client_id.clone(),
-                height,
+                height: *height,
             }),
         }
         .map_err(|e| PacketError::Connection(ConnectionError::Client(e)))
@@ -304,7 +296,7 @@ impl SendPacketReader for DummyTransferModule {
         }
     }
 
-    fn hash(&self, value: Vec<u8>) -> Vec<u8> {
+    fn hash(&self, value: &[u8]) -> Vec<u8> {
         use sha2::Digest;
 
         sha2::Sha256::digest(value).to_vec()
