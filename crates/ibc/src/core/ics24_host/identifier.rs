@@ -30,8 +30,11 @@ use crate::prelude::*;
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(from = "tendermint::chain::Id", into = "tendermint::chain::Id")
+)]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[serde(from = "tendermint::chain::Id", into = "tendermint::chain::Id")]
 pub struct ChainId {
     id: String,
     version: u64,

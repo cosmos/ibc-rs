@@ -9,8 +9,11 @@ use super::{Amount, PrefixedCoin, PrefixedDenom};
 use crate::signer::Signer;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(try_from = "RawPacketData", into = "RawPacketData")
+)]
 #[derive(Clone, Debug, PartialEq, Eq)]
-#[serde(try_from = "RawPacketData", into = "RawPacketData")]
 pub struct PacketData {
     pub token: PrefixedCoin,
     pub sender: Signer,

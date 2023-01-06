@@ -7,6 +7,8 @@ use super::amount::Amount;
 use super::denom::{BaseDenom, PrefixedDenom};
 use super::error::TokenTransferError;
 use crate::prelude::*;
+
+#[cfg(feature = "serde")]
 use crate::serializers::serde_string;
 
 /// A `Coin` type with fully qualified `PrefixedDenom`.
@@ -24,7 +26,7 @@ pub struct Coin<D> {
     /// Denomination
     pub denom: D,
     /// Amount
-    #[serde(with = "serde_string")]
+    #[cfg_attr(feature = "serde", serde(rename = "serde_string"))]
     pub amount: Amount,
 }
 

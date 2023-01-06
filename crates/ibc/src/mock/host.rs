@@ -3,7 +3,10 @@
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
+
+#[cfg(feature = "serde")]
 use serde::Serialize;
+
 use tendermint::block::Header as TmHeader;
 use tendermint_testgen::light_block::TmLightBlock;
 use tendermint_testgen::{Generator, LightBlock as TestgenLightBlock};
@@ -31,7 +34,8 @@ pub enum HostType {
     SyntheticTendermint,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SyntheticTmBlock {
     pub trusted_height: Height,
     pub light_block: TmLightBlock,
@@ -45,7 +49,8 @@ impl SyntheticTmBlock {
 
 /// Depending on `HostType` (the type of host chain underlying a context mock), this enum defines
 /// the type of blocks composing the history of the host chain.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum HostBlock {
     Mock(Box<MockHeader>),
     SyntheticTendermint(Box<SyntheticTmBlock>),

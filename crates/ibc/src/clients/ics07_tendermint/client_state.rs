@@ -67,7 +67,7 @@ pub struct ClientState {
     pub upgrade_path: Vec<String>,
     allow_update: AllowUpdate,
     frozen_height: Option<Height>,
-    #[serde(skip)]
+    #[cfg_attr(feature = "serde", serde(skip))]
     verifier: ProdVerifier,
 }
 
@@ -1333,13 +1333,18 @@ mod tests {
     use test_log::test;
 
     use ibc_proto::ics23::ProofSpec as Ics23ProofSpec;
+
+    #[cfg(feature = "serde")]
     use tendermint_rpc::endpoint::abci_query::AbciQuery;
 
     use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState};
     use crate::core::ics02_client::trust_threshold::TrustThreshold;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ChainId;
+
+    #[cfg(feature = "serde")]
     use crate::test::test_serialization_roundtrip;
+
     use crate::timestamp::{Timestamp, ZERO_DURATION};
 
     #[derive(Clone, Debug, PartialEq)]
@@ -1356,6 +1361,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serde")]
     fn serialization_roundtrip_no_proof() {
         let json_data =
             include_str!("../../../tests/support/query/serialization/client_state.json");
@@ -1363,6 +1369,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serde")]
     fn serialization_roundtrip_with_proof() {
         let json_data =
             include_str!("../../../tests/support/query/serialization/client_state_proof.json");

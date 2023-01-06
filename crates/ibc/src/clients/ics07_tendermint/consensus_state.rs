@@ -150,6 +150,7 @@ impl From<Header> for ConsensusState {
 }
 
 #[cfg(test)]
+#[cfg(feature = "serde")]
 mod tests {
     use tendermint_rpc::endpoint::abci_query::AbciQuery;
     use test_log::test;

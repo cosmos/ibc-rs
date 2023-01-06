@@ -1,8 +1,11 @@
 use crate::prelude::*;
 use displaydoc::Display;
+
+#[cfg(feature = "serde")]
 use serde::Serialize;
 
-#[derive(Debug, Display, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Display)]
 pub enum ValidationError {
     /// identifier `{id}` cannot contain separator '/'
     ContainSeparator { id: String },

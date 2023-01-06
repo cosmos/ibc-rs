@@ -14,7 +14,7 @@ pub const ACK_SUCCESS_B64: &str = "AQ==";
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConstAckSuccess {
-    #[serde(rename = "AQ==")]
+    #[cfg_attr(feature = "serde", serde(rename = "AQ=="))]
     Success,
 }
 
@@ -23,11 +23,11 @@ pub enum ConstAckSuccess {
 pub enum Acknowledgement {
     /// Successful Acknowledgement
     /// e.g. `{"result":"AQ=="}`
-    #[serde(rename = "result")]
+    #[cfg_attr(feature = "serde", serde(rename = "result"))]
     Success(ConstAckSuccess),
     /// Error Acknowledgement
     /// e.g. `{"error":"cannot unmarshal ICS-20 transfer packet data"}`
-    #[serde(rename = "error")]
+    #[cfg_attr(feature = "serde", serde(rename = "error"))]
     Error(String),
 }
 

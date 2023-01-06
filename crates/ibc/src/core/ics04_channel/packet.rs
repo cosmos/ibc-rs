@@ -140,7 +140,10 @@ pub struct Packet {
     pub source_channel: ChannelId,
     pub destination_port: PortId,
     pub destination_channel: ChannelId,
-    #[serde(serialize_with = "crate::serializers::ser_hex_upper")]
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "crate::serializers::ser_hex_upper")
+    )]
     pub data: Vec<u8>,
     pub timeout_height: TimeoutHeight,
     pub timeout_timestamp: Timestamp,

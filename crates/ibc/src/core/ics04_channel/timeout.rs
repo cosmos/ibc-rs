@@ -1,5 +1,6 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;

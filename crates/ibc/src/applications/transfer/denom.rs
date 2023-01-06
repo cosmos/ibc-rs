@@ -7,12 +7,14 @@ use ibc_proto::ibc::applications::transfer::v1::DenomTrace as RawDenomTrace;
 use super::error::TokenTransferError;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::prelude::*;
+
+#[cfg(feature = "serde")]
 use crate::serializers::serde_string;
 
 /// Base denomination type
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Display)]
-#[serde(transparent)]
 pub struct BaseDenom(String);
 
 impl BaseDenom {
@@ -151,7 +153,7 @@ impl Display for TracePath {
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct PrefixedDenom {
     /// A series of `{port-id}/{channel-id}`s for tracing the source of the token.
-    #[serde(with = "serde_string")]
+    #[cfg_attr(feature = "serde", serde(with = "serde_string"))]
     pub trace_path: TracePath,
     /// Base denomination of the relayed fungible token.
     pub base_denom: BaseDenom,
