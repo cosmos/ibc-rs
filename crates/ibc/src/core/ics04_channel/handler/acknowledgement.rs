@@ -19,6 +19,7 @@ pub struct AckPacketResult {
     pub seq_number: Option<Sequence>,
 }
 
+/// Per our convention, this message is processed on chain A.
 pub fn process<Ctx: ChannelReader>(
     ctx_a: &Ctx,
     msg: &MsgAcknowledgement,

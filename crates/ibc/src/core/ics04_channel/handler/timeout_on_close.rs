@@ -11,6 +11,7 @@ use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
+/// Per our convention, this message is processed on chain A.
 pub fn process<Ctx: ChannelReader>(
     ctx_a: &Ctx,
     msg: &MsgTimeoutOnClose,

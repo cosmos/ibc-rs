@@ -19,6 +19,7 @@ pub struct WriteAckPacketResult {
     pub ack_commitment: AcknowledgementCommitment,
 }
 
+/// Per our convention, this message is processed on chain B.
 pub fn process<Ctx: ChannelReader>(
     ctx_b: &Ctx,
     packet: Packet,
