@@ -1,6 +1,9 @@
 use crate::core::ics04_channel::channel::ChannelEnd;
+use crate::core::ics04_channel::channel::Counterparty;
+use crate::core::ics04_channel::channel::{Order, State};
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics24_host::identifier::PortId;
+use crate::core::ics04_channel::Version;
+use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::prelude::*;
 use crate::signer::Signer;
 use crate::tx_msg::Msg;
@@ -17,15 +20,31 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenInit";
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelOpenInit {
     pub port_id_on_a: PortId,
-    pub chan_end_on_a: ChannelEnd,
+    pub ordering_on_a: Order,
+    pub version_on_a: Version,
+    pub port_id_on_b: PortId,
+    pub chan_id_on_b: Option<ChannelId>,
+    pub connection_hops: Vec<ConnectionId>,
     pub signer: Signer,
 }
 
 impl MsgChannelOpenInit {
-    pub fn new(port_id_on_a: PortId, chan_end_on_a: ChannelEnd, signer: Signer) -> Self {
+    pub fn new(
+        port_id_on_a: PortId,
+        ordering_on_a: Order,
+        port_id_on_b: PortId,
+        version_on_a: Version,
+        chan_id_on_b: Option<ChannelId>,
+        connection_hops: Vec<ConnectionId>,
+        signer: Signer,
+    ) -> Self {
         Self {
             port_id_on_a,
-            chan_end_on_a,
+            ordering_on_a,
+            version_on_a,
+            port_id_on_b,
+            chan_id_on_b,
+            connection_hops,
             signer,
         }
     }
@@ -45,22 +64,33 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
     type Error = ChannelError;
 
     fn try_from(raw_msg: RawMsgChannelOpenInit) -> Result<Self, Self::Error> {
+        let chan_end_on_a: ChannelEnd = raw_msg
+            .channel
+            .ok_or(ChannelError::MissingChannel)?
+            .try_into()?;
         Ok(MsgChannelOpenInit {
             port_id_on_a: raw_msg.port_id.parse().map_err(ChannelError::Identifier)?,
-            chan_end_on_a: raw_msg
-                .channel
-                .ok_or(ChannelError::MissingChannel)?
-                .try_into()?,
+            ordering_on_a: chan_end_on_a.ordering,
+            port_id_on_b: chan_end_on_a.remote.port_id,
+            chan_id_on_b: chan_end_on_a.remote.channel_id,
+            connection_hops: chan_end_on_a.connection_hops,
+            version_on_a: chan_end_on_a.version,
             signer: raw_msg.signer.parse().map_err(ChannelError::Signer)?,
         })
     }
 }
-
 impl From<MsgChannelOpenInit> for RawMsgChannelOpenInit {
     fn from(domain_msg: MsgChannelOpenInit) -> Self {
+        let chan_end_on_a = ChannelEnd::new(
+            State::Init,
+            domain_msg.ordering_on_a,
+            Counterparty::new(domain_msg.port_id_on_b, domain_msg.chan_id_on_b),
+            domain_msg.connection_hops,
+            domain_msg.version_on_a,
+        );
         RawMsgChannelOpenInit {
             port_id: domain_msg.port_id_on_a.to_string(),
-            channel: Some(domain_msg.chan_end_on_a.into()),
+            channel: Some(chan_end_on_a.into()),
             signer: domain_msg.signer.to_string(),
         }
     }

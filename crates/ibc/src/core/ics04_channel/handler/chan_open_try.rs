@@ -19,17 +19,17 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let mut output = HandlerOutput::builder();
 
     // An IBC connection running on the local (host) chain should exist.
-    if msg.chan_end_on_b.connection_hops().len() != 1 {
+    if msg.connection_hops.len() != 1 {
         return Err(ChannelError::InvalidConnectionHopsLength {
             expected: 1,
-            actual: msg.chan_end_on_b.connection_hops().len(),
+            actual: msg.connection_hops.len(),
         });
     }
 
-    let conn_end_on_b = ctx_b.connection_end(&msg.chan_end_on_b.connection_hops()[0])?;
+    let conn_end_on_b = ctx_b.connection_end(&msg.connection_hops[0])?;
     if !conn_end_on_b.state_matches(&ConnectionState::Open) {
         return Err(ChannelError::ConnectionNotOpen {
-            connection_id: msg.chan_end_on_b.connection_hops()[0].clone(),
+            connection_id: msg.connection_hops[0].clone(),
         });
     }
 
@@ -38,7 +38,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         _ => return Err(ChannelError::InvalidVersionLengthConnection),
     };
 
-    let channel_feature = msg.chan_end_on_b.ordering().to_string();
+    let channel_feature = msg.ordering_on_b.to_string();
     if !conn_version.is_supported_feature(channel_feature) {
         return Err(ChannelError::ChannelFeatureNotSuportedByConnection);
     }
@@ -50,15 +50,14 @@ pub(crate) fn process<Ctx: ChannelReader>(
         let consensus_state_of_a_on_b =
             ctx_b.client_consensus_state(&client_id_on_b, &msg.proof_height_on_a)?;
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
-        let port_id_on_a = &msg.chan_end_on_b.counterparty().port_id;
+        let port_id_on_a = &&msg.port_id_on_a;
         let chan_id_on_a = msg
-            .chan_end_on_b
-            .counterparty()
-            .channel_id()
+            .chan_id_on_a
+            .clone()
             .ok_or(ChannelError::InvalidCounterpartyChannelId)?;
         let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
             ChannelError::UndefinedConnectionCounterparty {
-                connection_id: msg.chan_end_on_b.connection_hops()[0].clone(),
+                connection_id: msg.connection_hops[0].clone(),
             },
         )?;
 
@@ -71,7 +70,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
         let expected_chan_end_on_a = ChannelEnd::new(
             State::Init,
-            *msg.chan_end_on_b.ordering(),
+            msg.ordering_on_b,
             Counterparty::new(msg.port_id_on_b.clone(), None),
             vec![conn_id_on_a.clone()],
             msg.version_on_a.clone(),
@@ -86,7 +85,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
                 &msg.proof_chan_end_on_a,
                 consensus_state_of_a_on_b.root(),
                 port_id_on_a,
-                chan_id_on_a,
+                &chan_id_on_a,
                 &expected_chan_end_on_a,
             )
             .map_err(ChannelError::VerifyChannelFailed)?;
@@ -94,9 +93,9 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     let chan_end_on_b = ChannelEnd::new(
         State::TryOpen,
-        *msg.chan_end_on_b.ordering(),
-        msg.chan_end_on_b.counterparty().clone(),
-        msg.chan_end_on_b.connection_hops().clone(),
+        msg.ordering_on_b,
+        Counterparty::new(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()),
+        msg.connection_hops.clone(),
         // Note: This will be rewritten by the module callback
         Version::empty(),
     );
@@ -132,7 +131,7 @@ mod tests {
     use crate::core::ics03_connection::error as ics03_error;
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
     use crate::core::ics03_connection::version::get_compatible_versions;
-    use crate::core::ics04_channel::channel::{ChannelEnd, State};
+    use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
     use crate::core::ics04_channel::error;
     use crate::core::ics04_channel::msgs::chan_open_try::test_util::get_dummy_raw_msg_chan_open_try;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
@@ -176,16 +175,16 @@ mod tests {
 
         let chan_id = ChannelId::new(24);
         let hops = vec![conn_id.clone()];
-        msg.chan_end_on_b.connection_hops = hops;
+        msg.connection_hops = hops;
 
         // A preloaded channel end that resides in the context. This is constructed so as to be
         // consistent with the incoming ChanOpenTry message `msg`.
         let correct_chan_end = ChannelEnd::new(
             State::Init,
-            *msg.chan_end_on_b.ordering(),
-            msg.chan_end_on_b.counterparty().clone(),
-            msg.chan_end_on_b.connection_hops().clone(),
-            msg.chan_end_on_b.version().clone(),
+            msg.ordering_on_b,
+            Counterparty::new(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()),
+            msg.connection_hops.clone(),
+            msg.version_on_b.clone(),
         );
 
         let tests: Vec<Test> = vec![
@@ -195,7 +194,7 @@ mod tests {
                 msg: ChannelMsg::ChannelOpenTry(msg.clone()),
                 want_pass: false,
                 match_error: {
-                    let connection_id = msg.chan_end_on_b.connection_hops()[0].clone();
+                    let connection_id = msg.connection_hops[0].clone();
                     Box::new(move |e| match e {
                         error::ChannelError::Connection(e) => {
                             assert_eq!(
@@ -320,18 +319,18 @@ mod tests {
         // Note: we make the counterparty's channel_id `None`.
         let mut msg =
             MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(proof_height)).unwrap();
-        msg.chan_end_on_b.remote.channel_id = None;
+        msg.chan_id_on_a = None;
 
         let chan_id = ChannelId::new(24);
         let hops = vec![conn_id.clone()];
-        msg.chan_end_on_b.connection_hops = hops;
+        msg.connection_hops = hops;
 
         let chan_end = ChannelEnd::new(
             State::Init,
-            *msg.chan_end_on_b.ordering(),
-            msg.chan_end_on_b.counterparty().clone(),
-            msg.chan_end_on_b.connection_hops().clone(),
-            msg.chan_end_on_b.version().clone(),
+            msg.ordering_on_b,
+            Counterparty::new(msg.port_id_on_b.clone(), msg.chan_id_on_a.clone()),
+            msg.connection_hops.clone(),
+            msg.version_on_b.clone(),
         );
         let context = MockContext::default()
             .with_client(&client_id, Height::new(0, proof_height).unwrap())

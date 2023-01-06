@@ -198,24 +198,24 @@ mod tests {
 
         let chan_end = ChannelEnd::new(
             State::Init,
-            *msg_chan_try.chan_end_on_b.ordering(),
+            msg_chan_try.ordering_on_b,
             Counterparty::new(
                 msg_chan_ack.port_id_on_a.clone(),
                 Some(msg_chan_ack.chan_id_on_a.clone()),
             ),
             connection_vec0.clone(),
-            msg_chan_try.chan_end_on_b.version().clone(),
+            msg_chan_try.version_on_a,
         );
 
         let failed_chan_end = ChannelEnd::new(
             State::Open,
-            *msg_chan_try.chan_end_on_b.ordering(),
+            msg_chan_try.ordering_on_b,
             Counterparty::new(
                 msg_chan_ack.port_id_on_a.clone(),
                 Some(msg_chan_ack.chan_id_on_a.clone()),
             ),
             connection_vec0,
-            msg_chan_try.chan_end_on_b.version().clone(),
+            msg_chan_try.version_on_b,
         );
 
         let tests: Vec<Test> = vec![
