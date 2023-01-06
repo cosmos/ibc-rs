@@ -40,7 +40,7 @@ pub struct ConnectionResult {
 
 /// General entry point for processing any type of message related to the ICS3 connection open
 /// handshake protocol.
-pub fn dispatch<Ctx>(
+pub(crate) fn dispatch<Ctx>(
     ctx: &Ctx,
     msg: ConnectionMsg,
 ) -> Result<HandlerOutput<ConnectionResult>, ConnectionError>

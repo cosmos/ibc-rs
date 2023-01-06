@@ -15,7 +15,7 @@ pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenConfirm";
 /// Per our convention, this message is sent to chain B.
 /// The handler will check proofs of chain A.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MsgConnectionOpenConfirm {
+pub(crate) struct MsgConnectionOpenConfirm {
     /// ConnectionId that chain B has chosen for it's ConnectionEnd
     pub conn_id_on_b: ConnectionId,
     /// proof of ConnectionEnd stored on Chain A during ConnOpenInit

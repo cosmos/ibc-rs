@@ -19,7 +19,7 @@ pub struct AckPacketResult {
     pub seq_number: Option<Sequence>,
 }
 
-pub fn process<Ctx: ChannelReader>(
+pub(crate) fn process<Ctx: ChannelReader>(
     ctx: &Ctx,
     msg: &MsgAcknowledgement,
 ) -> HandlerResult<PacketResult, PacketError> {

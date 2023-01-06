@@ -28,7 +28,7 @@ pub enum RecvPacketResult {
     },
 }
 
-pub fn process<Ctx: ChannelReader>(
+pub(crate) fn process<Ctx: ChannelReader>(
     ctx: &Ctx,
     msg: &MsgRecvPacket,
 ) -> HandlerResult<PacketResult, PacketError> {

@@ -26,7 +26,7 @@ pub struct TimeoutPacketResult {
 /// counterparty chain without the packet being committed, to prove that the
 /// packet can no longer be executed and to allow the calling module to safely
 /// perform appropriate state transitions.
-pub fn process<Ctx: ChannelReader>(
+pub(crate) fn process<Ctx: ChannelReader>(
     ctx: &Ctx,
     msg: &MsgTimeout,
 ) -> HandlerResult<PacketResult, PacketError> {

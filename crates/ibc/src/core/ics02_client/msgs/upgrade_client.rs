@@ -20,7 +20,7 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpgradeClient";
 
 /// A type of message that triggers the upgrade of an on-chain (IBC) client.
 #[derive(Clone, Debug, PartialEq)]
-pub struct MsgUpgradeClient {
+pub(crate) struct MsgUpgradeClient {
     pub client_id: ClientId,
     pub client_state: Any,
     pub consensus_state: Any,
@@ -30,6 +30,7 @@ pub struct MsgUpgradeClient {
 }
 
 impl MsgUpgradeClient {
+    #[allow(dead_code)]
     pub fn new(
         client_id: ClientId,
         client_state: Any,
@@ -128,6 +129,7 @@ pub mod test_util {
 
     /// Extends the implementation with additional helper methods.
     impl MsgUpgradeClient {
+        #[allow(dead_code)]
         /// Setter for `client_id`. Amenable to chaining, since it consumes the input message.
         pub fn with_client_id(self, client_id: ClientId) -> Self {
             MsgUpgradeClient { client_id, ..self }

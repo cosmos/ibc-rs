@@ -15,7 +15,7 @@ use ibc_proto::protobuf::Protobuf;
 
 /// Enumeration of all messages that the local ICS26 module is capable of routing.
 #[derive(Clone, Debug)]
-pub enum MsgEnvelope {
+pub(crate) enum MsgEnvelope {
     ClientMsg(ClientMsg),
     ConnectionMsg(ConnectionMsg),
     ChannelMsg(ChannelMsg),

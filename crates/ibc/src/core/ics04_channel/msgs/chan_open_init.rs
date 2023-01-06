@@ -15,13 +15,14 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenInit";
 /// Per our convention, this message is sent to chain A.
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MsgChannelOpenInit {
+pub(crate) struct MsgChannelOpenInit {
     pub port_id_on_a: PortId,
     pub chan_end_on_a: ChannelEnd,
     pub signer: Signer,
 }
 
 impl MsgChannelOpenInit {
+    #[allow(dead_code)]
     pub fn new(port_id_on_a: PortId, chan_end_on_a: ChannelEnd, signer: Signer) -> Self {
         Self {
             port_id_on_a,

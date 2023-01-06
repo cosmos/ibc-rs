@@ -49,7 +49,7 @@ impl AsRef<[u8]> for Acknowledgement {
 /// Message definition for packet acknowledgements.
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MsgAcknowledgement {
+pub(crate) struct MsgAcknowledgement {
     pub packet: Packet,
     pub acknowledgement: Acknowledgement,
     pub proofs: Proofs,
@@ -57,6 +57,7 @@ pub struct MsgAcknowledgement {
 }
 
 impl MsgAcknowledgement {
+    #[allow(dead_code)]
     pub fn new(
         packet: Packet,
         acknowledgement: Acknowledgement,
@@ -71,10 +72,12 @@ impl MsgAcknowledgement {
         }
     }
 
+    #[allow(dead_code)]
     pub fn acknowledgement(&self) -> &Acknowledgement {
         &self.acknowledgement
     }
 
+    #[allow(dead_code)]
     pub fn proofs(&self) -> &Proofs {
         &self.proofs
     }

@@ -15,13 +15,14 @@ pub const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
 
 /// A type of message that triggers the update of an on-chain (IBC) client with new headers.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MsgUpdateClient {
+pub(crate) struct MsgUpdateClient {
     pub client_id: ClientId,
     pub header: Any,
     pub signer: Signer,
 }
 
 impl MsgUpdateClient {
+    #[allow(dead_code)]
     pub fn new(client_id: ClientId, header: Any, signer: Signer) -> Self {
         MsgUpdateClient {
             client_id,

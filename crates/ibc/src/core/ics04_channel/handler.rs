@@ -65,7 +65,7 @@ impl ModuleExtras {
     }
 }
 
-pub fn channel_validate<Ctx>(ctx: &Ctx, msg: &ChannelMsg) -> Result<ModuleId, ChannelError>
+pub(crate) fn channel_validate<Ctx>(ctx: &Ctx, msg: &ChannelMsg) -> Result<ModuleId, ChannelError>
 where
     Ctx: RouterContext,
 {
@@ -79,7 +79,7 @@ where
 
 /// General entry point for processing any type of message related to the ICS4 channel open and
 /// channel close handshake protocols.
-pub fn channel_dispatch<Ctx>(
+pub(crate) fn channel_dispatch<Ctx>(
     ctx: &Ctx,
     msg: &ChannelMsg,
 ) -> Result<(Vec<String>, ChannelResult), ChannelError>
@@ -99,7 +99,7 @@ where
     Ok((log, result))
 }
 
-pub fn channel_callback<Ctx>(
+pub(crate) fn channel_callback<Ctx>(
     ctx: &mut Ctx,
     module_id: &ModuleId,
     msg: &ChannelMsg,
@@ -156,7 +156,7 @@ where
 }
 
 /// Constructs the proper channel event
-pub fn channel_events(
+pub(crate) fn channel_events(
     msg: &ChannelMsg,
     channel_id: ChannelId,
     counterparty: Counterparty,
@@ -222,7 +222,10 @@ pub fn channel_events(
     vec![event]
 }
 
-pub fn get_module_for_packet_msg<Ctx>(ctx: &Ctx, msg: &PacketMsg) -> Result<ModuleId, ChannelError>
+pub(crate) fn get_module_for_packet_msg<Ctx>(
+    ctx: &Ctx,
+    msg: &PacketMsg,
+) -> Result<ModuleId, ChannelError>
 where
     Ctx: RouterContext,
 {
@@ -235,7 +238,7 @@ where
 }
 
 /// Dispatcher for processing any type of message related to the ICS4 packet protocols.
-pub fn packet_dispatch<Ctx>(
+pub(crate) fn packet_dispatch<Ctx>(
     ctx: &Ctx,
     msg: &PacketMsg,
 ) -> Result<(HandlerOutputBuilder<()>, PacketResult), PacketError>
@@ -257,7 +260,7 @@ where
     Ok((builder, result))
 }
 
-pub fn packet_callback<Ctx>(
+pub(crate) fn packet_callback<Ctx>(
     ctx: &mut Ctx,
     module_id: &ModuleId,
     msg: &PacketMsg,

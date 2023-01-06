@@ -23,7 +23,7 @@ pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenTry";
 /// Per our convention, this message is sent to chain B.
 /// The handler will check proofs of chain A.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MsgConnectionOpenTry {
+pub(crate) struct MsgConnectionOpenTry {
     /// ClientId on B that the connection is being opened for
     pub client_id_on_b: ClientId,
     /// ClientState of client tracking chain B on chain A

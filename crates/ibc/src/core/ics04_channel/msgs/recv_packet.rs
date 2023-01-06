@@ -16,13 +16,14 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgRecvPacket";
 /// Message definition for the "packet receiving" datagram.
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MsgRecvPacket {
+pub(crate) struct MsgRecvPacket {
     pub packet: Packet,
     pub proofs: Proofs,
     pub signer: Signer,
 }
 
 impl MsgRecvPacket {
+    #[allow(dead_code)]
     pub fn new(packet: Packet, proofs: Proofs, signer: Signer) -> MsgRecvPacket {
         Self {
             packet,

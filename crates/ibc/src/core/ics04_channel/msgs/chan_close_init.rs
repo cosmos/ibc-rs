@@ -16,13 +16,14 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCloseInit";
 /// Per our convention, this message is sent to chain A.
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MsgChannelCloseInit {
+pub(crate) struct MsgChannelCloseInit {
     pub port_id_on_a: PortId,
     pub chan_id_on_a: ChannelId,
     pub signer: Signer,
 }
 
 impl MsgChannelCloseInit {
+    #[allow(dead_code)]
     pub fn new(port_id_on_a: PortId, chan_id_on_a: ChannelId, signer: Signer) -> Self {
         Self {
             port_id_on_a,
