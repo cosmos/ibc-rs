@@ -3,7 +3,6 @@ use crate::prelude::*;
 use core::marker::{Send, Sync};
 
 use dyn_clone::DynClone;
-use erased_serde::Serialize as ErasedSerialize;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 
@@ -11,6 +10,7 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::dynamic_typing::AsAny;
 use crate::timestamp::Timestamp;
+use crate::erased::ErasedSerialize;
 
 /// Abstract of consensus state information used by the validity predicate
 /// to verify new commits & state roots.
@@ -48,6 +48,7 @@ pub trait ConsensusState:
 dyn_clone::clone_trait_object!(ConsensusState);
 
 // Implements `serde::Serialize` for all types that have ConsensusState as supertrait
+#[cfg(feature = "serde")]
 erased_serde::serialize_trait_object!(ConsensusState);
 
 pub fn downcast_consensus_state<CS: ConsensusState>(h: &dyn ConsensusState) -> Option<&CS> {

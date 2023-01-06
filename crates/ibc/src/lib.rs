@@ -49,6 +49,7 @@ pub mod clients;
 pub mod core;
 pub mod dynamic_typing;
 pub mod events;
+mod erased;
 pub mod handler;
 pub mod proofs;
 pub mod signer;

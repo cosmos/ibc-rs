@@ -8,9 +8,6 @@ use super::denom::{BaseDenom, PrefixedDenom};
 use super::error::TokenTransferError;
 use crate::prelude::*;
 
-#[cfg(feature = "serde")]
-use crate::serializers::serde_string;
-
 /// A `Coin` type with fully qualified `PrefixedDenom`.
 pub type PrefixedCoin = Coin<PrefixedDenom>;
 
