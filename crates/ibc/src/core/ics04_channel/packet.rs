@@ -141,8 +141,8 @@ pub struct Packet {
     pub port_on_b: PortId,
     pub chan_on_b: ChannelId,
     #[cfg_attr(
-    feature = "serde",
-    serde(serialize_with = "crate::serializers::ser_hex_upper")
+        feature = "serde",
+        serde(serialize_with = "crate::serializers::ser_hex_upper")
     )]
     pub data: Vec<u8>,
     pub timeout_height_on_b: TimeoutHeight,
