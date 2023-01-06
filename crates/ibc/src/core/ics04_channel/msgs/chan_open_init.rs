@@ -3,7 +3,7 @@ use crate::core::ics04_channel::channel::Counterparty;
 use crate::core::ics04_channel::channel::{Order, State};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::Version;
-use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+use crate::core::ics24_host::identifier::{ConnectionId, PortId};
 use crate::prelude::*;
 use crate::signer::Signer;
 use crate::tx_msg::Msg;
@@ -20,32 +20,30 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenInit";
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelOpenInit {
     pub port_id_on_a: PortId,
-    pub ordering_on_a: Order,
-    pub version_on_a: Version,
     pub connection_hops_on_a: Vec<ConnectionId>,
     pub port_id_on_b: PortId,
-    pub chan_id_on_b: Option<ChannelId>,
+    pub ordering: Order,
     pub signer: Signer,
+    /// Allow a relayer to specify a particular version by providing a non-empty version string
+    pub version_proposal: Version,
 }
 
 impl MsgChannelOpenInit {
     pub fn new(
         port_id_on_a: PortId,
-        ordering_on_a: Order,
         connection_hops_on_a: Vec<ConnectionId>,
         port_id_on_b: PortId,
-        version_on_a: Version,
-        chan_id_on_b: Option<ChannelId>,
+        ordering: Order,
         signer: Signer,
+        version_proposal: Version,
     ) -> Self {
         Self {
             port_id_on_a,
-            ordering_on_a,
-            version_on_a,
             connection_hops_on_a,
             port_id_on_b,
-            chan_id_on_b,
+            ordering,
             signer,
+            version_proposal,
         }
     }
 }
@@ -70,12 +68,11 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
             .try_into()?;
         Ok(MsgChannelOpenInit {
             port_id_on_a: raw_msg.port_id.parse().map_err(ChannelError::Identifier)?,
-            ordering_on_a: chan_end_on_a.ordering,
             connection_hops_on_a: chan_end_on_a.connection_hops,
             port_id_on_b: chan_end_on_a.remote.port_id,
-            chan_id_on_b: chan_end_on_a.remote.channel_id,
-            version_on_a: chan_end_on_a.version,
+            ordering: chan_end_on_a.ordering,
             signer: raw_msg.signer.parse().map_err(ChannelError::Signer)?,
+            version_proposal: chan_end_on_a.version,
         })
     }
 }
@@ -83,10 +80,10 @@ impl From<MsgChannelOpenInit> for RawMsgChannelOpenInit {
     fn from(domain_msg: MsgChannelOpenInit) -> Self {
         let chan_end_on_a = ChannelEnd::new(
             State::Init,
-            domain_msg.ordering_on_a,
-            Counterparty::new(domain_msg.port_id_on_b, domain_msg.chan_id_on_b),
+            domain_msg.ordering,
+            Counterparty::new(domain_msg.port_id_on_b, None),
             domain_msg.connection_hops_on_a,
-            domain_msg.version_on_a,
+            domain_msg.version_proposal,
         );
         RawMsgChannelOpenInit {
             port_id: domain_msg.port_id_on_a.to_string(),
@@ -109,7 +106,7 @@ pub mod test_util {
     pub fn get_dummy_raw_msg_chan_open_init() -> RawMsgChannelOpenInit {
         RawMsgChannelOpenInit {
             port_id: PortId::default().to_string(),
-            channel: Some(get_dummy_raw_channel_end()),
+            channel: Some(get_dummy_raw_channel_end("".to_string())),
             signer: get_dummy_bech32_account(),
         }
     }

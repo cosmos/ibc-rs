@@ -31,17 +31,17 @@ pub(crate) fn process<Ctx: ChannelReader>(
         _ => return Err(ChannelError::InvalidVersionLengthConnection),
     };
 
-    let channel_feature = msg.ordering_on_a.to_string();
+    let channel_feature = msg.ordering.to_string();
     if !conn_version.is_supported_feature(channel_feature) {
         return Err(ChannelError::ChannelFeatureNotSuportedByConnection);
     }
 
     let chan_end_on_a = ChannelEnd::new(
         State::Init,
-        msg.ordering_on_a,
-        Counterparty::new(msg.port_id_on_b.clone(), msg.chan_id_on_b.clone()),
+        msg.ordering,
+        Counterparty::new(msg.port_id_on_b.clone(), None),
         msg.connection_hops_on_a.clone(),
-        msg.version_on_a.clone(),
+        msg.version_proposal.clone(),
     );
 
     let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);

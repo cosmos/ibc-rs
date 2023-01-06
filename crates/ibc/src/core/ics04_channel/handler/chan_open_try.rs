@@ -38,7 +38,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         _ => return Err(ChannelError::InvalidVersionLengthConnection),
     };
 
-    let channel_feature = msg.ordering_on_b.to_string();
+    let channel_feature = msg.ordering.to_string();
     if !conn_version.is_supported_feature(channel_feature) {
         return Err(ChannelError::ChannelFeatureNotSuportedByConnection);
     }
@@ -51,10 +51,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
             ctx_b.client_consensus_state(&client_id_on_b, &msg.proof_height_on_a)?;
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let port_id_on_a = &&msg.port_id_on_a;
-        let chan_id_on_a = msg
-            .chan_id_on_a
-            .clone()
-            .ok_or(ChannelError::InvalidCounterpartyChannelId)?;
+        let chan_id_on_a = msg.chan_id_on_a.clone();
         let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
             ChannelError::UndefinedConnectionCounterparty {
                 connection_id: msg.connection_hops_on_b[0].clone(),
@@ -70,10 +67,10 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
         let expected_chan_end_on_a = ChannelEnd::new(
             State::Init,
-            msg.ordering_on_b,
+            msg.ordering,
             Counterparty::new(msg.port_id_on_b.clone(), None),
             vec![conn_id_on_a.clone()],
-            msg.version_on_a.clone(),
+            msg.version_supported_on_a.clone(),
         );
 
         // Verify the proof for the channel state against the expected channel end.
@@ -93,8 +90,8 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     let chan_end_on_b = ChannelEnd::new(
         State::TryOpen,
-        msg.ordering_on_b,
-        Counterparty::new(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()),
+        msg.ordering,
+        Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
         msg.connection_hops_on_b.clone(),
         // Note: This will be rewritten by the module callback
         Version::empty(),
@@ -136,6 +133,7 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_open_try::test_util::get_dummy_raw_msg_chan_open_try;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics04_channel::msgs::ChannelMsg;
+    use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId};
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
@@ -181,10 +179,10 @@ mod tests {
         // consistent with the incoming ChanOpenTry message `msg`.
         let correct_chan_end = ChannelEnd::new(
             State::Init,
-            msg.ordering_on_b,
-            Counterparty::new(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()),
+            msg.ordering,
+            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
             msg.connection_hops_on_b.clone(),
-            msg.version_on_b.clone(),
+            Version::empty(),
         );
 
         let tests: Vec<Test> = vec![
@@ -319,7 +317,6 @@ mod tests {
         // Note: we make the counterparty's channel_id `None`.
         let mut msg =
             MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(proof_height)).unwrap();
-        msg.chan_id_on_a = None;
 
         let chan_id = ChannelId::new(24);
         let hops = vec![conn_id.clone()];
@@ -327,10 +324,10 @@ mod tests {
 
         let chan_end = ChannelEnd::new(
             State::Init,
-            msg.ordering_on_b,
-            Counterparty::new(msg.port_id_on_b.clone(), msg.chan_id_on_a.clone()),
+            msg.ordering,
+            Counterparty::new(msg.port_id_on_a.clone(), None),
             msg.connection_hops_on_b.clone(),
-            msg.version_on_b.clone(),
+            Version::empty(),
         );
         let context = MockContext::default()
             .with_client(&client_id, Height::new(0, proof_height).unwrap())
