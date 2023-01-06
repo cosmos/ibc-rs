@@ -11,8 +11,12 @@
 //!    run of the counterparty chain) running on the host chain
 //!
 //! We remove such ambiguity by adopting the following conventions:
-//! + we call "chain A" the chain that runs `OpenInit` and `OpenAck`
-//! + we call "chain B" the chain that runs `OpenTry` and `OpenConfirm`
+//! + During handshakes
+//!     + we call "chain A" the chain that runs `OpenInit` and `OpenAck`
+//!     + we call "chain B" the chain that runs `OpenTry` and `OpenConfirm`
+//! + During packet transfers
+//!     + we call "chain A" the chain that runs `SendPacket`, `Acknowledgement`, and timeouts
+//!     + we call "chain B" the chain that runs `RecvPacket` and `WriteAcknowledgement`
 //! + In variable names,
 //!     + `on_a` implies "stored on chain A"
 //!     + `of_a` implies "of light client for chain A" So
