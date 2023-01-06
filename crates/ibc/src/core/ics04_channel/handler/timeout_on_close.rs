@@ -57,7 +57,7 @@ pub fn process<Ctx: ChannelReader>(
     {
         let client_id_on_a = conn_end_on_a.client_id();
         let client_state_of_b_on_a = ctx_a
-            .client_state(&client_id_on_a)
+            .client_state(client_id_on_a)
             .map_err(PacketError::Channel)?;
 
         // The client must not be frozen.
@@ -68,7 +68,7 @@ pub fn process<Ctx: ChannelReader>(
         }
 
         let consensus_state_of_b_on_a = ctx_a
-            .client_consensus_state(&client_id_on_a, &msg.proof_height_on_b)
+            .client_consensus_state(client_id_on_a, &msg.proof_height_on_b)
             .map_err(PacketError::Channel)?;
         let prefix_on_b = conn_end_on_a.counterparty().prefix();
         let port_id_on_b = &chan_end_on_a.counterparty().port_id;
