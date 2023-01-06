@@ -29,16 +29,16 @@ pub mod ics26_routing;
 
 pub mod context;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub mod handler;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub use handler::execute;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub use handler::validate;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub use context::ExecutionContext;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub use context::ValidationContext;
 
 pub use context::ContextError;
