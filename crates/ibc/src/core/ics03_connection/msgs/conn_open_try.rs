@@ -94,15 +94,15 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
             proof_conn_end_on_a: msg
                 .proof_init
                 .try_into()
-                .map_err(ConnectionError::InvalidProof)?,
+                .map_err(|_| ConnectionError::InvalidProof)?,
             proof_client_state_of_b_on_a: msg
                 .proof_client
                 .try_into()
-                .map_err(ConnectionError::InvalidProof)?,
+                .map_err(|_| ConnectionError::InvalidProof)?,
             proof_consensus_state_of_b_on_a: msg
                 .proof_consensus
                 .try_into()
-                .map_err(ConnectionError::InvalidProof)?,
+                .map_err(|_| ConnectionError::InvalidProof)?,
             proofs_height_on_a: msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
