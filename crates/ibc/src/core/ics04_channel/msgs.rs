@@ -69,10 +69,10 @@ pub(crate) enum PacketMsg {
 impl PacketMsg {
     pub(super) fn lookup_module(&self, ctx: &impl RouterContext) -> Result<ModuleId, ChannelError> {
         let port_id = match self {
-            PacketMsg::Recv(msg) => &msg.packet.destination_port,
-            PacketMsg::Ack(msg) => &msg.packet.source_port,
-            PacketMsg::Timeout(msg) => &msg.packet.source_port,
-            PacketMsg::TimeoutOnClose(msg) => &msg.packet.source_port,
+            PacketMsg::Recv(msg) => &msg.packet.port_on_b,
+            PacketMsg::Ack(msg) => &msg.packet.port_on_a,
+            PacketMsg::Timeout(msg) => &msg.packet.port_on_a,
+            PacketMsg::TimeoutOnClose(msg) => &msg.packet.port_on_a,
         };
         let module_id = ctx
             .lookup_module_by_port(port_id)

@@ -79,7 +79,7 @@ pub mod test_util {
     use super::MsgRecvPacket;
     use crate::core::ics04_channel::packet::test_utils::get_dummy_raw_packet;
     use crate::core::ics04_channel::packet::Packet;
-    use crate::proofs::Proofs;
+    use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
     use crate::signer::Signer;
     use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
     use crate::timestamp::Timestamp;
@@ -87,10 +87,16 @@ pub mod test_util {
     use core::time::Duration;
 
     impl MsgRecvPacket {
-        pub fn new(packet: Packet, proofs: Proofs, signer: Signer) -> MsgRecvPacket {
+        pub fn new(
+            packet: Packet,
+            proof_commitment_on_a: CommitmentProofBytes,
+            proof_height_on_a: crate::Height,
+            signer: Signer,
+        ) -> MsgRecvPacket {
             Self {
                 packet,
-                proofs,
+                proof_commitment_on_a,
+                proof_height_on_a,
                 signer,
             }
         }
