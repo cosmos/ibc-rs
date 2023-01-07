@@ -45,8 +45,8 @@ val_exec_ctx = []
 
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
 # Depends on the `testgen` suite for generating Tendermint light blocks.
-mocks = ["tendermint-testgen", "clock"]
-mocks-no-std = []
+mocks = ["tendermint-testgen", "clock", "cfg-if", "parking_lot"]
+mocks-no-std = ["cfg-if"]
 
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
@@ -74,8 +74,8 @@ parity-scale-codec = { version = "3.0.0", default-features = false, features = [
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"], optional = true }
 ## for borsh encode or decode
 borsh = {version = "0.9.3", default-features = false, optional = true }
-parking_lot = { version = "0.12.1", default-features = false }
-cfg-if = "1.0.0"
+parking_lot = { version = "0.12.1", default-features = false, optional = true }
+cfg-if = { version = "1.0.0", optional = true }
 
 [dependencies.tendermint]
 version = "0.28"
@@ -100,3 +100,5 @@ tracing-subscriber = { version = "0.3.14", features = ["fmt", "env-filter", "jso
 test-log = { version = "0.2.10", features = ["trace"] }
 tendermint-rpc = { version = "0.28", features = ["http-client", "websocket-client"] }
 tendermint-testgen = { version = "0.28" } # Needed for generating (synthetic) light blocks.
+parking_lot = { version = "0.12.1" }
+cfg-if = { version = "1.0.0" }
