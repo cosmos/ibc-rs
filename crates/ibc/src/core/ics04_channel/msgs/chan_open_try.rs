@@ -31,29 +31,6 @@ pub(crate) struct MsgChannelOpenTry {
     pub previous_channel_id: String,
 }
 
-impl MsgChannelOpenTry {
-    #[allow(dead_code)]
-    pub fn new(
-        port_id_on_b: PortId,
-        chan_end_on_b: ChannelEnd,
-        version_on_a: Version,
-        proof_chan_end_on_a: CommitmentProofBytes,
-        proof_height_on_a: Height,
-        signer: Signer,
-    ) -> Self {
-        #[allow(deprecated)]
-        Self {
-            port_id_on_b,
-            chan_end_on_b,
-            version_on_a,
-            proof_chan_end_on_a,
-            proof_height_on_a,
-            signer,
-            previous_channel_id: "".to_string(),
-        }
-    }
-}
-
 impl Msg for MsgChannelOpenTry {
     type Raw = RawMsgChannelOpenTry;
 

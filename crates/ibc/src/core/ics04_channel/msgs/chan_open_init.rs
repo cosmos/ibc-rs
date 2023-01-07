@@ -21,17 +21,6 @@ pub(crate) struct MsgChannelOpenInit {
     pub signer: Signer,
 }
 
-impl MsgChannelOpenInit {
-    #[allow(dead_code)]
-    pub fn new(port_id_on_a: PortId, chan_end_on_a: ChannelEnd, signer: Signer) -> Self {
-        Self {
-            port_id_on_a,
-            chan_end_on_a,
-            signer,
-        }
-    }
-}
-
 impl Msg for MsgChannelOpenInit {
     type Raw = RawMsgChannelOpenInit;
 

@@ -22,23 +22,6 @@ pub(crate) struct MsgTimeoutOnClose {
     pub signer: Signer,
 }
 
-impl MsgTimeoutOnClose {
-    #[allow(dead_code)]
-    pub fn new(
-        packet: Packet,
-        next_sequence_recv: Sequence,
-        proofs: Proofs,
-        signer: Signer,
-    ) -> MsgTimeoutOnClose {
-        Self {
-            packet,
-            next_sequence_recv,
-            proofs,
-            signer,
-        }
-    }
-}
-
 impl Msg for MsgTimeoutOnClose {
     type Raw = RawMsgTimeoutOnClose;
 

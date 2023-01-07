@@ -29,27 +29,6 @@ pub(crate) struct MsgUpgradeClient {
     pub signer: Signer,
 }
 
-impl MsgUpgradeClient {
-    #[allow(dead_code)]
-    pub fn new(
-        client_id: ClientId,
-        client_state: Any,
-        consensus_state: Any,
-        proof_upgrade_client: RawMerkleProof,
-        proof_upgrade_consensus_state: RawMerkleProof,
-        signer: Signer,
-    ) -> Self {
-        MsgUpgradeClient {
-            client_id,
-            client_state,
-            consensus_state,
-            proof_upgrade_client,
-            proof_upgrade_consensus_state,
-            signer,
-        }
-    }
-}
-
 impl Msg for MsgUpgradeClient {
     type Raw = RawMsgUpgradeClient;
 
@@ -115,7 +94,9 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
 
 #[cfg(test)]
 pub mod test_util {
+    use ibc_proto::google::protobuf::Any;
     use ibc_proto::ibc::core::client::v1::MsgUpgradeClient as RawMsgUpgradeClient;
+    use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
 
     use crate::{
         core::{ics02_client::height::Height, ics24_host::identifier::ClientId},
@@ -126,14 +107,32 @@ pub mod test_util {
     };
 
     use super::MsgUpgradeClient;
+    use crate::signer::Signer;
 
     /// Extends the implementation with additional helper methods.
     impl MsgUpgradeClient {
-        #[allow(dead_code)]
-        /// Setter for `client_id`. Amenable to chaining, since it consumes the input message.
-        pub fn with_client_id(self, client_id: ClientId) -> Self {
-            MsgUpgradeClient { client_id, ..self }
+        pub fn new(
+            client_id: ClientId,
+            client_state: Any,
+            consensus_state: Any,
+            proof_upgrade_client: RawMerkleProof,
+            proof_upgrade_consensus_state: RawMerkleProof,
+            signer: Signer,
+        ) -> Self {
+            MsgUpgradeClient {
+                client_id,
+                client_state,
+                consensus_state,
+                proof_upgrade_client,
+                proof_upgrade_consensus_state,
+                signer,
+            }
         }
+
+        // /// Setter for `client_id`. Amenable to chaining, since it consumes the input message.
+        // pub fn with_client_id(self, client_id: ClientId) -> Self {
+        //     MsgUpgradeClient { client_id, ..self }
+        // }
     }
 
     /// Returns a dummy `RawMsgUpgradeClient`, for testing only!

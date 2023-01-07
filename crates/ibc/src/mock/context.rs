@@ -500,7 +500,6 @@ impl MockContext {
         }
     }
 
-    #[allow(dead_code)]
     /// A datagram passes from the relayer to the IBC module (on host chain).
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
     /// Used in testing the Ics18 algorithms, hence this may return a Ics18Error.

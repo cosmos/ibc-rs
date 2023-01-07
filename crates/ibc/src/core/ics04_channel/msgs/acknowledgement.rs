@@ -56,33 +56,6 @@ pub(crate) struct MsgAcknowledgement {
     pub signer: Signer,
 }
 
-impl MsgAcknowledgement {
-    #[allow(dead_code)]
-    pub fn new(
-        packet: Packet,
-        acknowledgement: Acknowledgement,
-        proofs: Proofs,
-        signer: Signer,
-    ) -> MsgAcknowledgement {
-        Self {
-            packet,
-            acknowledgement,
-            proofs,
-            signer,
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn acknowledgement(&self) -> &Acknowledgement {
-        &self.acknowledgement
-    }
-
-    #[allow(dead_code)]
-    pub fn proofs(&self) -> &Proofs {
-        &self.proofs
-    }
-}
-
 impl Msg for MsgAcknowledgement {
     type Raw = RawMsgAcknowledgement;
 

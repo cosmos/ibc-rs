@@ -22,17 +22,6 @@ pub(crate) struct MsgRecvPacket {
     pub signer: Signer,
 }
 
-impl MsgRecvPacket {
-    #[allow(dead_code)]
-    pub fn new(packet: Packet, proofs: Proofs, signer: Signer) -> MsgRecvPacket {
-        Self {
-            packet,
-            proofs,
-            signer,
-        }
-    }
-}
-
 impl Msg for MsgRecvPacket {
     type Raw = RawMsgRecvPacket;
 
@@ -89,11 +78,25 @@ pub mod test_util {
     use ibc_proto::ibc::core::channel::v1::MsgRecvPacket as RawMsgRecvPacket;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 
+    use super::MsgRecvPacket;
     use crate::core::ics04_channel::packet::test_utils::get_dummy_raw_packet;
+    use crate::core::ics04_channel::packet::Packet;
+    use crate::proofs::Proofs;
+    use crate::signer::Signer;
     use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
     use crate::timestamp::Timestamp;
     use core::ops::Add;
     use core::time::Duration;
+
+    impl MsgRecvPacket {
+        pub fn new(packet: Packet, proofs: Proofs, signer: Signer) -> MsgRecvPacket {
+            Self {
+                packet,
+                proofs,
+                signer,
+            }
+        }
+    }
 
     /// Returns a dummy `RawMsgRecvPacket`, for testing only! The `height` parametrizes both the
     /// proof height as well as the timeout height.

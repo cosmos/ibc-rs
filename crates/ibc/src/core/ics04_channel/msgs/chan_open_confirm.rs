@@ -24,25 +24,6 @@ pub(crate) struct MsgChannelOpenConfirm {
     pub signer: Signer,
 }
 
-impl MsgChannelOpenConfirm {
-    #[allow(dead_code)]
-    pub fn new(
-        port_id: PortId,
-        channel_id: ChannelId,
-        proof_chan_end_on_a: CommitmentProofBytes,
-        proof_height_on_a: Height,
-        signer: Signer,
-    ) -> Self {
-        Self {
-            port_id_on_b: port_id,
-            chan_id_on_b: channel_id,
-            proof_chan_end_on_a,
-            proof_height_on_a,
-            signer,
-        }
-    }
-}
-
 impl Msg for MsgChannelOpenConfirm {
     type Raw = RawMsgChannelOpenConfirm;
 

@@ -26,29 +26,6 @@ pub(crate) struct MsgChannelOpenAck {
     pub signer: Signer,
 }
 
-impl MsgChannelOpenAck {
-    #[allow(dead_code)]
-    pub fn new(
-        port_id_on_a: PortId,
-        chan_id_on_a: ChannelId,
-        chan_id_on_b: ChannelId,
-        version_on_b: Version,
-        proof_chan_end_on_b: CommitmentProofBytes,
-        proof_height_on_b: Height,
-        signer: Signer,
-    ) -> Self {
-        Self {
-            port_id_on_a,
-            chan_id_on_a,
-            chan_id_on_b,
-            version_on_b,
-            proof_chan_end_on_b,
-            proof_height_on_b,
-            signer,
-        }
-    }
-}
-
 impl Msg for MsgChannelOpenAck {
     type Raw = RawMsgChannelOpenAck;
 

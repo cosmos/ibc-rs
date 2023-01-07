@@ -23,23 +23,6 @@ pub(crate) struct MsgTimeout {
     pub signer: Signer,
 }
 
-impl MsgTimeout {
-    #[allow(dead_code)]
-    pub fn new(
-        packet: Packet,
-        next_sequence_recv: Sequence,
-        proofs: Proofs,
-        signer: Signer,
-    ) -> MsgTimeout {
-        Self {
-            packet,
-            next_sequence_recv,
-            proofs,
-            signer,
-        }
-    }
-}
-
 impl Msg for MsgTimeout {
     type Raw = RawMsgTimeout;
 
