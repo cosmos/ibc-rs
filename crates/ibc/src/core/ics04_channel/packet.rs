@@ -138,14 +138,14 @@ impl core::fmt::Display for Sequence {
 #[derive(Clone, Default, Hash, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Packet {
     pub sequence: Sequence,
-    pub source_port: PortId,
-    pub source_channel: ChannelId,
-    pub destination_port: PortId,
-    pub destination_channel: ChannelId,
+    pub port_on_a: PortId,
+    pub chan_on_a: ChannelId,
+    pub port_on_b: PortId,
+    pub chan_on_b: ChannelId,
     #[serde(serialize_with = "crate::serializers::ser_hex_upper")]
     pub data: Vec<u8>,
-    pub timeout_height: TimeoutHeight,
-    pub timeout_timestamp: Timestamp,
+    pub timeout_height_on_b: TimeoutHeight,
+    pub timeout_timestamp_on_b: Timestamp,
 }
 
 struct PacketData<'a>(&'a [u8]);
@@ -164,26 +164,26 @@ impl core::fmt::Debug for Packet {
         // 2. update this destructuring assignment accordingly
         let Packet {
             sequence: _,
-            source_port: _,
-            source_channel: _,
-            destination_port: _,
-            destination_channel: _,
+            port_on_a: _,
+            chan_on_a: _,
+            port_on_b: _,
+            chan_on_b: _,
             data,
-            timeout_height: _,
-            timeout_timestamp: _,
+            timeout_height_on_b: _,
+            timeout_timestamp_on_b: _,
         } = self;
         let data_wrapper = PacketData(data);
 
         formatter
             .debug_struct("Packet")
             .field("sequence", &self.sequence)
-            .field("source_port", &self.source_port)
-            .field("source_channel", &self.source_channel)
-            .field("destination_port", &self.destination_port)
-            .field("destination_channel", &self.destination_channel)
+            .field("source_port", &self.port_on_a)
+            .field("source_channel", &self.chan_on_a)
+            .field("destination_port", &self.port_on_b)
+            .field("destination_channel", &self.chan_on_b)
             .field("data", &data_wrapper)
-            .field("timeout_height", &self.timeout_height)
-            .field("timeout_timestamp", &self.timeout_timestamp)
+            .field("timeout_height", &self.timeout_height_on_b)
+            .field("timeout_timestamp", &self.timeout_timestamp_on_b)
             .finish()
     }
 }
@@ -203,10 +203,10 @@ impl Packet {
     /// instead of the common-case where it results in
     /// [`MsgRecvPacket`](crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket).
     pub fn timed_out(&self, dst_chain_ts: &Timestamp, dst_chain_height: Height) -> bool {
-        let height_timed_out = self.timeout_height.has_expired(dst_chain_height);
+        let height_timed_out = self.timeout_height_on_b.has_expired(dst_chain_height);
 
-        let timestamp_timed_out = self.timeout_timestamp != Timestamp::none()
-            && dst_chain_ts.check_expiry(&self.timeout_timestamp) == Expired;
+        let timestamp_timed_out = self.timeout_timestamp_on_b != Timestamp::none()
+            && dst_chain_ts.check_expiry(&self.timeout_timestamp_on_b) == Expired;
 
         height_timed_out || timestamp_timed_out
     }
@@ -219,12 +219,12 @@ impl core::fmt::Display for Packet {
             f,
             "seq:{}, path:{}/{}->{}/{}, toh:{}, tos:{})",
             self.sequence,
-            self.source_channel,
-            self.source_port,
-            self.destination_channel,
-            self.destination_port,
-            self.timeout_height,
-            self.timeout_timestamp
+            self.chan_on_a,
+            self.port_on_a,
+            self.chan_on_b,
+            self.port_on_b,
+            self.timeout_height_on_b,
+            self.timeout_timestamp_on_b
         )
     }
 }
@@ -254,30 +254,30 @@ impl TryFrom<RawPacket> for Packet {
             return Err(PacketError::ZeroPacketData);
         }
 
-        let timeout_timestamp = Timestamp::from_nanoseconds(raw_pkt.timeout_timestamp)
+        let timeout_timestamp_on_b = Timestamp::from_nanoseconds(raw_pkt.timeout_timestamp)
             .map_err(PacketError::InvalidPacketTimestamp)?;
 
         Ok(Packet {
             sequence: Sequence::from(raw_pkt.sequence),
-            source_port: raw_pkt
+            port_on_a: raw_pkt
                 .source_port
                 .parse()
                 .map_err(PacketError::Identifier)?,
-            source_channel: raw_pkt
+            chan_on_a: raw_pkt
                 .source_channel
                 .parse()
                 .map_err(PacketError::Identifier)?,
-            destination_port: raw_pkt
+            port_on_b: raw_pkt
                 .destination_port
                 .parse()
                 .map_err(PacketError::Identifier)?,
-            destination_channel: raw_pkt
+            chan_on_b: raw_pkt
                 .destination_channel
                 .parse()
                 .map_err(PacketError::Identifier)?,
             data: raw_pkt.data,
-            timeout_height: packet_timeout_height,
-            timeout_timestamp,
+            timeout_height_on_b: packet_timeout_height,
+            timeout_timestamp_on_b,
         })
     }
 }
@@ -286,13 +286,13 @@ impl From<Packet> for RawPacket {
     fn from(packet: Packet) -> Self {
         RawPacket {
             sequence: packet.sequence.0,
-            source_port: packet.source_port.to_string(),
-            source_channel: packet.source_channel.to_string(),
-            destination_port: packet.destination_port.to_string(),
-            destination_channel: packet.destination_channel.to_string(),
+            source_port: packet.port_on_a.to_string(),
+            source_channel: packet.chan_on_a.to_string(),
+            destination_port: packet.port_on_b.to_string(),
+            destination_channel: packet.chan_on_b.to_string(),
             data: packet.data,
-            timeout_height: packet.timeout_height.into(),
-            timeout_timestamp: packet.timeout_timestamp.nanoseconds(),
+            timeout_height: packet.timeout_height_on_b.into(),
+            timeout_timestamp: packet.timeout_timestamp_on_b.nanoseconds(),
         }
     }
 }
