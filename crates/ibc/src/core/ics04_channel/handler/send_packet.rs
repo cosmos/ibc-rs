@@ -19,88 +19,87 @@ pub struct SendPacketResult {
     pub commitment: PacketCommitment,
 }
 
+/// Per our convention, this message is processed on chain A.
 pub fn send_packet(
-    ctx: &impl SendPacketReader,
+    ctx_a: &impl SendPacketReader,
     packet: Packet,
 ) -> HandlerResult<SendPacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
-    let source_channel_end = ctx.channel_end(&packet.source_port, &packet.source_channel)?;
+    let chan_end_on_a = ctx_a.channel_end(&packet.port_on_a, &packet.chan_on_a)?;
 
-    if source_channel_end.state_matches(&State::Closed) {
+    if chan_end_on_a.state_matches(&State::Closed) {
         return Err(PacketError::ChannelClosed {
-            channel_id: packet.source_channel,
+            channel_id: packet.chan_on_a,
         });
     }
 
-    let counterparty = Counterparty::new(
-        packet.destination_port.clone(),
-        Some(packet.destination_channel.clone()),
-    );
+    let counterparty = Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone()));
 
-    if !source_channel_end.counterparty_matches(&counterparty) {
+    if !chan_end_on_a.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
-            port_id: packet.destination_port.clone(),
-            channel_id: packet.destination_channel,
+            port_id: packet.port_on_b.clone(),
+            channel_id: packet.chan_on_b,
         });
     }
-    let source_connection_id = &source_channel_end.connection_hops()[0];
-    let connection_end = ctx.connection_end(source_connection_id)?;
+    let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
+    let conn_end_on_a = ctx_a.connection_end(conn_id_on_a)?;
 
-    let client_id = connection_end.client_id().clone();
+    let client_id_on_a = conn_end_on_a.client_id();
 
-    let client_state = ctx.client_state(&client_id)?;
+    let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
 
     // prevent accidental sends with clients that cannot be updated
-    if client_state.is_frozen() {
+    if client_state_of_b_on_a.is_frozen() {
         return Err(PacketError::FrozenClient {
-            client_id: connection_end.client_id().clone(),
+            client_id: conn_end_on_a.client_id().clone(),
         });
     }
 
-    let latest_height = client_state.latest_height();
+    let latest_height_on_a = client_state_of_b_on_a.latest_height();
 
-    if packet.timeout_height.has_expired(latest_height) {
+    if packet.timeout_height_on_b.has_expired(latest_height_on_a) {
         return Err(PacketError::LowPacketHeight {
-            chain_height: latest_height,
-            timeout_height: packet.timeout_height,
+            chain_height: latest_height_on_a,
+            timeout_height: packet.timeout_height_on_b,
         });
     }
 
-    let consensus_state = ctx.client_consensus_state(&client_id, &latest_height)?;
-    let latest_timestamp = consensus_state.timestamp();
-    let packet_timestamp = packet.timeout_timestamp;
+    let consensus_state_of_b_on_a =
+        ctx_a.client_consensus_state(client_id_on_a, &latest_height_on_a)?;
+    let latest_timestamp = consensus_state_of_b_on_a.timestamp();
+    let packet_timestamp = packet.timeout_timestamp_on_b;
     if let Expiry::Expired = latest_timestamp.check_expiry(&packet_timestamp) {
         return Err(PacketError::LowPacketTimestamp);
     }
 
-    let next_seq_send = ctx.get_next_sequence_send(&packet.source_port, &packet.source_channel)?;
+    let next_seq_send_on_a = ctx_a.get_next_sequence_send(&packet.port_on_a, &packet.chan_on_a)?;
 
-    if packet.sequence != next_seq_send {
+    if packet.sequence != next_seq_send_on_a {
         return Err(PacketError::InvalidPacketSequence {
             given_sequence: packet.sequence,
-            next_sequence: next_seq_send,
+            next_sequence: next_seq_send_on_a,
         });
     }
 
     output.log("success: packet send ");
 
     let result = SendPacketResult {
-        port_id: packet.source_port.clone(),
-        channel_id: packet.source_channel.clone(),
+        port_id: packet.port_on_a.clone(),
+        channel_id: packet.chan_on_a.clone(),
         seq: packet.sequence,
-        seq_number: next_seq_send.increment(),
-        commitment: ctx.packet_commitment(
+        seq_number: next_seq_send_on_a.increment(),
+        commitment: ctx_a.packet_commitment(
             &packet.data,
-            &packet.timeout_height,
-            &packet.timeout_timestamp,
+            &packet.timeout_height_on_b,
+            &packet.timeout_timestamp_on_b,
         ),
     };
 
     output.emit(IbcEvent::SendPacket(SendPacket::new(
         packet,
-        source_channel_end.ordering,
-        source_connection_id.clone(),
+        chan_end_on_a.ordering,
+        conn_id_on_a.clone(),
     )));
 
     Ok(output.with_result(result))
@@ -141,7 +140,7 @@ mod tests {
 
         let context = MockContext::default();
 
-        let channel_end = ChannelEnd::new(
+        let chan_end_on_a = ChannelEnd::new(
             State::TryOpen,
             Order::default(),
             Counterparty::new(PortId::default(), Some(ChannelId::default())),
@@ -149,7 +148,7 @@ mod tests {
             Version::ics20(),
         );
 
-        let connection_end = ConnectionEnd::new(
+        let conn_end_on_a = ConnectionEnd::new(
             ConnectionState::Open,
             ClientId::default(),
             ConnectionCounterparty::new(
@@ -204,8 +203,12 @@ mod tests {
                 ctx: context
                     .clone()
                     .with_client(&ClientId::default(), client_height)
-                    .with_connection(ConnectionId::default(), connection_end.clone())
-                    .with_channel(PortId::default(), ChannelId::default(), channel_end.clone())
+                    .with_connection(ConnectionId::default(), conn_end_on_a.clone())
+                    .with_channel(
+                        PortId::default(),
+                        ChannelId::default(),
+                        chan_end_on_a.clone(),
+                    )
                     .with_send_sequence(PortId::default(), ChannelId::default(), 1.into()),
                 packet,
                 want_pass: true,
@@ -215,8 +218,12 @@ mod tests {
                 ctx: context
                     .clone()
                     .with_client(&ClientId::default(), client_height)
-                    .with_connection(ConnectionId::default(), connection_end.clone())
-                    .with_channel(PortId::default(), ChannelId::default(), channel_end.clone())
+                    .with_connection(ConnectionId::default(), conn_end_on_a.clone())
+                    .with_channel(
+                        PortId::default(),
+                        ChannelId::default(),
+                        chan_end_on_a.clone(),
+                    )
                     .with_send_sequence(PortId::default(), ChannelId::default(), 1.into()),
                 packet: packet_timeout_equal_client_height,
                 want_pass: true,
@@ -226,8 +233,12 @@ mod tests {
                 ctx: context
                     .clone()
                     .with_client(&ClientId::default(), client_height)
-                    .with_connection(ConnectionId::default(), connection_end.clone())
-                    .with_channel(PortId::default(), ChannelId::default(), channel_end.clone())
+                    .with_connection(ConnectionId::default(), conn_end_on_a.clone())
+                    .with_channel(
+                        PortId::default(),
+                        ChannelId::default(),
+                        chan_end_on_a.clone(),
+                    )
                     .with_send_sequence(PortId::default(), ChannelId::default(), 1.into()),
                 packet: packet_timeout_one_before_client_height,
                 want_pass: false,
@@ -236,8 +247,8 @@ mod tests {
                 name: "Packet timeout due to timestamp".to_string(),
                 ctx: context
                     .with_client(&ClientId::default(), client_height)
-                    .with_connection(ConnectionId::default(), connection_end)
-                    .with_channel(PortId::default(), ChannelId::default(), channel_end)
+                    .with_connection(ConnectionId::default(), conn_end_on_a)
+                    .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a)
                     .with_send_sequence(PortId::default(), ChannelId::default(), 1.into()),
                 packet: packet_with_timestamp_old,
                 want_pass: false,

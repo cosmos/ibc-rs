@@ -17,11 +17,11 @@ use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::timestamp::Timestamp;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::{ExecutionContext, ValidationContext};
 
 /// The result following the successful processing of a `MsgUpdateAnyClient` message.
@@ -34,7 +34,7 @@ pub struct UpdateClientResult {
     pub processed_height: Height,
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -55,7 +55,7 @@ where
 
     // Read consensus state from the host chain store.
     let latest_consensus_state = ctx
-        .consensus_state(&client_id, client_state.latest_height())
+        .consensus_state(&client_id, &client_state.latest_height())
         .map_err(|_| ClientError::ConsensusStateNotFound {
             client_id: client_id.clone(),
             height: client_state.latest_height(),
@@ -88,7 +88,7 @@ where
     Ok(())
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,

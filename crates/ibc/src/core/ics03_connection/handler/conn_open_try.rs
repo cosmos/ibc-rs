@@ -13,16 +13,16 @@ use crate::handler::{HandlerOutput, HandlerResult};
 
 use super::ConnectionIdState;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ics24_host::identifier::ClientId;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ics24_host::path::{ClientConnectionsPath, ConnectionsPath};
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::{ExecutionContext, ValidationContext};
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -31,7 +31,7 @@ where
     validate_impl(ctx_b, &msg, &vars)
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 fn validate_impl<Ctx>(
     ctx_b: &Ctx,
     msg: &MsgConnectionOpenTry,
@@ -65,7 +65,7 @@ where
                     description: "failed to fetch client state".to_string(),
                 })?;
         let consensus_state_of_a_on_b = ctx_b
-            .consensus_state(&msg.client_id_on_b, msg.proofs_height_on_a)
+            .consensus_state(&msg.client_id_on_b, &msg.proofs_height_on_a)
             .map_err(|_| ConnectionError::Other {
                 description: "failed to fetch client consensus state".to_string(),
             })?;
@@ -109,7 +109,7 @@ where
             })?;
 
         let expected_consensus_state_of_b_on_a = ctx_b
-            .host_consensus_state(msg.consensus_height_of_b_on_a)
+            .host_consensus_state(&msg.consensus_height_of_b_on_a)
             .map_err(|_| ConnectionError::Other {
                 description: "failed to fetch host consensus state".to_string(),
             })?;
@@ -132,7 +132,7 @@ where
     Ok(())
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn execute<Ctx>(ctx_b: &mut Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
@@ -141,7 +141,7 @@ where
     execute_impl(ctx_b, msg, vars)
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 fn execute_impl<Ctx>(
     ctx_b: &mut Ctx,
     msg: MsgConnectionOpenTry,
@@ -166,14 +166,14 @@ where
     ctx_b.increase_connection_counter();
     ctx_b.store_connection_to_client(
         ClientConnectionsPath(msg.client_id_on_b),
-        &vars.conn_id_on_b,
+        vars.conn_id_on_b.clone(),
     )?;
-    ctx_b.store_connection(ConnectionsPath(vars.conn_id_on_b), &vars.conn_end_on_b)?;
+    ctx_b.store_connection(ConnectionsPath(vars.conn_id_on_b), vars.conn_end_on_b)?;
 
     Ok(())
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 struct LocalVars {
     conn_id_on_b: ConnectionId,
     conn_end_on_b: ConnectionEnd,
@@ -181,14 +181,14 @@ struct LocalVars {
     conn_id_on_a: ConnectionId,
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 impl LocalVars {
     fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenTry) -> Result<Self, ContextError>
     where
         Ctx: ValidationContext,
     {
         let version_on_b =
-            ctx_b.pick_version(ctx_b.get_compatible_versions(), msg.versions_on_a.clone())?;
+            ctx_b.pick_version(&ctx_b.get_compatible_versions(), &msg.versions_on_a)?;
 
         Ok(Self {
             conn_id_on_b: ConnectionId::new(ctx_b.connection_counter()?),
@@ -342,9 +342,9 @@ mod tests {
     use crate::mock::host::HostType;
     use crate::Height;
 
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     use crate::core::ics26_routing::msgs::MsgEnvelope;
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     use crate::core::ValidationContext;
 
     #[test]
@@ -439,7 +439,7 @@ mod tests {
         .collect();
 
         for test in tests {
-            #[cfg(val_exec_ctx)]
+            #[cfg(feature = "val_exec_ctx")]
             {
                 let res = ValidationContext::validate(
                     &test.ctx,

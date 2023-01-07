@@ -54,7 +54,7 @@ impl TryFrom<RawMsgChannelOpenAck> for MsgChannelOpenAck {
             proof_chan_end_on_b: raw_msg
                 .proof_try
                 .try_into()
-                .map_err(ChannelError::InvalidProof)?,
+                .map_err(|_| ChannelError::InvalidProof)?,
             proof_height_on_b: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())

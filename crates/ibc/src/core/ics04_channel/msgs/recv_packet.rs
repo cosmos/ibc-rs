@@ -6,9 +6,10 @@ use ibc_proto::ibc::core::channel::v1::MsgRecvPacket as RawMsgRecvPacket;
 
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::Packet;
-use crate::proofs::Proofs;
+use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::signer::Signer;
 use crate::tx_msg::Msg;
+use crate::Height;
 
 pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgRecvPacket";
 
@@ -17,8 +18,13 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgRecvPacket";
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct MsgRecvPacket {
+    /// The packet to be received
     pub packet: Packet,
-    pub proofs: Proofs,
+    /// Proof of packet commitment on the sending chain
+    pub proof_commitment_on_a: CommitmentProofBytes,
+    /// Height at which the commitment proof in this message were taken
+    pub proof_height_on_a: Height,
+    /// The signer of the message
     pub signer: Signer,
 }
 
@@ -36,27 +42,19 @@ impl TryFrom<RawMsgRecvPacket> for MsgRecvPacket {
     type Error = PacketError;
 
     fn try_from(raw_msg: RawMsgRecvPacket) -> Result<Self, Self::Error> {
-        let proofs = Proofs::new(
-            raw_msg
-                .proof_commitment
-                .try_into()
-                .map_err(PacketError::InvalidProof)?,
-            None,
-            None,
-            None,
-            raw_msg
-                .proof_height
-                .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(PacketError::MissingHeight)?,
-        )
-        .map_err(PacketError::InvalidProof)?;
-
         Ok(MsgRecvPacket {
             packet: raw_msg
                 .packet
                 .ok_or(PacketError::MissingPacket)?
                 .try_into()?,
-            proofs,
+            proof_commitment_on_a: raw_msg
+                .proof_commitment
+                .try_into()
+                .map_err(|_| PacketError::InvalidProof)?,
+            proof_height_on_a: raw_msg
+                .proof_height
+                .and_then(|raw_height| raw_height.try_into().ok())
+                .ok_or(PacketError::MissingHeight)?,
             signer: raw_msg.signer.parse().map_err(PacketError::Signer)?,
         })
     }
@@ -66,8 +64,8 @@ impl From<MsgRecvPacket> for RawMsgRecvPacket {
     fn from(domain_msg: MsgRecvPacket) -> Self {
         RawMsgRecvPacket {
             packet: Some(domain_msg.packet.into()),
-            proof_commitment: domain_msg.proofs.object_proof().clone().into(),
-            proof_height: Some(domain_msg.proofs.height().into()),
+            proof_commitment: domain_msg.proof_commitment_on_a.into(),
+            proof_height: Some(domain_msg.proof_height_on_a.into()),
             signer: domain_msg.signer.to_string(),
         }
     }
