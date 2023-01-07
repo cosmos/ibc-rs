@@ -54,9 +54,9 @@ use crate::Height;
 
 use super::client_state::MOCK_CLIENT_TYPE;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ValidationContext;
 
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
@@ -1503,7 +1503,7 @@ impl RelayerContext for MockContext {
     }
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 impl ValidationContext for MockContext {
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
         ClientReader::client_state(self, client_id).map_err(ContextError::ClientError)
@@ -1516,7 +1516,7 @@ impl ValidationContext for MockContext {
     fn consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ContextError> {
         ClientReader::consensus_state(self, client_id, height).map_err(ContextError::ClientError)
     }
@@ -1524,7 +1524,7 @@ impl ValidationContext for MockContext {
     fn next_consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
         ClientReader::next_consensus_state(self, client_id, height)
             .map_err(ContextError::ClientError)
@@ -1533,7 +1533,7 @@ impl ValidationContext for MockContext {
     fn prev_consensus_state(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
         ClientReader::prev_consensus_state(self, client_id, height)
             .map_err(ContextError::ClientError)
@@ -1549,7 +1549,7 @@ impl ValidationContext for MockContext {
 
     fn host_consensus_state(
         &self,
-        height: Height,
+        height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ContextError> {
         ConnectionReader::host_consensus_state(self, height).map_err(ContextError::ConnectionError)
     }
@@ -1617,7 +1617,7 @@ impl ValidationContext for MockContext {
         &self,
         key: &(PortId, ChannelId, Sequence),
     ) -> Result<PacketCommitment, ContextError> {
-        ChannelReader::get_packet_commitment(self, &key.0, &key.1, key.2)
+        ChannelReader::get_packet_commitment(self, &key.0, &key.1, &key.2)
             .map_err(ContextError::PacketError)
     }
 
@@ -1625,7 +1625,7 @@ impl ValidationContext for MockContext {
         &self,
         key: &(PortId, ChannelId, Sequence),
     ) -> Result<Receipt, ContextError> {
-        ChannelReader::get_packet_receipt(self, &key.0, &key.1, key.2)
+        ChannelReader::get_packet_receipt(self, &key.0, &key.1, &key.2)
             .map_err(ContextError::PacketError)
     }
 
@@ -1633,18 +1633,18 @@ impl ValidationContext for MockContext {
         &self,
         key: &(PortId, ChannelId, Sequence),
     ) -> Result<AcknowledgementCommitment, ContextError> {
-        ChannelReader::get_packet_acknowledgement(self, &key.0, &key.1, key.2)
+        ChannelReader::get_packet_acknowledgement(self, &key.0, &key.1, &key.2)
             .map_err(ContextError::PacketError)
     }
 
-    fn hash(&self, value: Vec<u8>) -> Vec<u8> {
+    fn hash(&self, value: &[u8]) -> Vec<u8> {
         sha2::Sha256::digest(value).to_vec()
     }
 
     fn client_update_time(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Timestamp, ContextError> {
         ChannelReader::client_update_time(self, client_id, height)
             .map_err(ContextError::ChannelError)
@@ -1653,7 +1653,7 @@ impl ValidationContext for MockContext {
     fn client_update_height(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<Height, ContextError> {
         ChannelReader::client_update_height(self, client_id, height)
             .map_err(ContextError::ChannelError)

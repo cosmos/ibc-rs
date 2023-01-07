@@ -48,9 +48,9 @@ use crate::Height;
 
 use super::client_type as tm_client_type;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ValidationContext;
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
@@ -631,7 +631,7 @@ impl Ics2ClientState for ClientState {
             .into_box())
     }
 
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     fn new_check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
@@ -661,11 +661,11 @@ impl Ics2ClientState for ClientState {
         }
 
         let consensus_state_1 = {
-            let cs = ctx.consensus_state(&client_id, header_1.trusted_height)?;
+            let cs = ctx.consensus_state(&client_id, &header_1.trusted_height)?;
             downcast_tm_consensus_state(cs.as_ref())
         }?;
         let consensus_state_2 = {
-            let cs = ctx.consensus_state(&client_id, header_2.trusted_height)?;
+            let cs = ctx.consensus_state(&client_id, &header_2.trusted_height)?;
             downcast_tm_consensus_state(cs.as_ref())
         }?;
 
@@ -697,7 +697,7 @@ impl Ics2ClientState for ClientState {
             .into_box())
     }
 
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     fn new_check_header_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
@@ -709,7 +709,7 @@ impl Ics2ClientState for ClientState {
             client_id: &ClientId,
             height: Height,
         ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
-            match ctx.consensus_state(client_id, height) {
+            match ctx.consensus_state(client_id, &height) {
                 Ok(cs) => Ok(Some(cs)),
                 Err(e) => match e {
                     ContextError::ClientError(e) => Err(e),
@@ -754,7 +754,7 @@ impl Ics2ClientState for ClientState {
             };
 
         let trusted_consensus_state = downcast_tm_consensus_state(
-            ctx.consensus_state(&client_id, header.trusted_height)
+            ctx.consensus_state(&client_id, &header.trusted_height)
                 .map_err(|e| match e {
                     ContextError::ClientError(e) => e,
                     _ => todo!(),
@@ -817,7 +817,7 @@ impl Ics2ClientState for ClientState {
         // (cs-new, cs-next, cs-latest)
         if header.height() < client_state.latest_height() {
             let maybe_next_cs = ctx
-                .next_consensus_state(&client_id, header.height())
+                .next_consensus_state(&client_id, &header.height())
                 .map_err(|e| match e {
                     ContextError::ClientError(e) => e,
                     _ => todo!(),
@@ -844,7 +844,7 @@ impl Ics2ClientState for ClientState {
         // (cs-trusted, cs-prev, cs-new)
         if header.trusted_height < header.height() {
             let maybe_prev_cs = ctx
-                .prev_consensus_state(&client_id, header.height())
+                .prev_consensus_state(&client_id, &header.height())
                 .map_err(|e| match e {
                     ContextError::ClientError(e) => e,
                     _ => todo!(),
