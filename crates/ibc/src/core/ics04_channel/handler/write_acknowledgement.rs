@@ -19,32 +19,29 @@ pub struct WriteAckPacketResult {
     pub ack_commitment: AcknowledgementCommitment,
 }
 
+/// Per our convention, this message is processed on chain B.
 pub fn process<Ctx: ChannelReader>(
-    ctx: &Ctx,
+    ctx_b: &Ctx,
     packet: Packet,
     ack: Acknowledgement,
 ) -> HandlerResult<PacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
-    let dest_channel_end = ctx
-        .channel_end(&packet.destination_port, &packet.destination_channel)
+    let chan_end_on_b = ctx_b
+        .channel_end(&packet.port_on_b, &packet.chan_on_b)
         .map_err(PacketError::Channel)?;
 
-    if !dest_channel_end.state_matches(&State::Open) {
+    if !chan_end_on_b.state_matches(&State::Open) {
         return Err(PacketError::InvalidChannelState {
-            channel_id: packet.source_channel,
-            state: dest_channel_end.state,
+            channel_id: packet.chan_on_a,
+            state: chan_end_on_b.state,
         });
     }
 
     // NOTE: IBC app modules might have written the acknowledgement synchronously on
     // the OnRecvPacket callback so we need to check if the acknowledgement is already
     // set on the store and return an error if so.
-    match ctx.get_packet_acknowledgement(
-        &packet.destination_port,
-        &packet.destination_channel,
-        &packet.sequence,
-    ) {
+    match ctx_b.get_packet_acknowledgement(&packet.port_on_b, &packet.chan_on_b, &packet.sequence) {
         Ok(_) => {
             return Err(PacketError::AcknowledgementExists {
                 sequence: packet.sequence,
@@ -64,21 +61,21 @@ pub fn process<Ctx: ChannelReader>(
     }
 
     let result = PacketResult::WriteAck(WriteAckPacketResult {
-        port_id: packet.destination_port.clone(),
-        channel_id: packet.destination_channel.clone(),
+        port_id: packet.port_on_b.clone(),
+        channel_id: packet.chan_on_b.clone(),
         seq: packet.sequence,
-        ack_commitment: ctx.ack_commitment(&ack),
+        ack_commitment: ctx_b.ack_commitment(&ack),
     });
 
     output.log("success: packet write acknowledgement");
 
     {
-        let dst_connection_id = dest_channel_end.connection_hops()[0].clone();
+        let conn_id_on_b = chan_end_on_b.connection_hops()[0].clone();
 
         output.emit(IbcEvent::WriteAcknowledgement(WriteAcknowledgement::new(
             packet,
             ack,
-            dst_connection_id,
+            conn_id_on_b,
         )));
     }
 
@@ -129,10 +126,7 @@ mod tests {
         let dest_channel_end = ChannelEnd::new(
             State::Open,
             Order::default(),
-            Counterparty::new(
-                packet.source_port.clone(),
-                Some(packet.source_channel.clone()),
-            ),
+            Counterparty::new(packet.port_on_a.clone(), Some(packet.chan_on_a.clone())),
             vec![ConnectionId::default()],
             Version::ics20(),
         );
@@ -164,8 +158,8 @@ mod tests {
                     .with_client(&ClientId::default(), client_height)
                     .with_connection(ConnectionId::default(), connection_end.clone())
                     .with_channel(
-                        packet.destination_port.clone(),
-                        packet.destination_channel.clone(),
+                        packet.port_on_b.clone(),
+                        packet.chan_on_b.clone(),
                         dest_channel_end.clone(),
                     ),
                 packet: packet.clone(),

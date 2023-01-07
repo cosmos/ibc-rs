@@ -6,34 +6,39 @@ use ibc_proto::ibc::core::channel::v1::MsgTimeout as RawMsgTimeout;
 
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::{Packet, Sequence};
-use crate::proofs::Proofs;
+use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::signer::Signer;
 use crate::tx_msg::Msg;
+use crate::Height;
 
 pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgTimeout";
 
 ///
-/// Message definition for packet timeout domain type.
+/// Message definition for packet timeout domain type,
+/// which is sent on chain A and needs to prove that a previously sent packet was not received on chain B
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgTimeout {
     pub packet: Packet,
-    pub next_sequence_recv: Sequence,
-    pub proofs: Proofs,
+    pub next_seq_recv_on_b: Sequence,
+    pub proof_unreceived_on_b: CommitmentProofBytes,
+    pub proof_height_on_b: Height,
     pub signer: Signer,
 }
 
 impl MsgTimeout {
     pub fn new(
         packet: Packet,
-        next_sequence_recv: Sequence,
-        proofs: Proofs,
+        next_seq_recv_on_b: Sequence,
+        proof_unreceived_on_b: CommitmentProofBytes,
+        proof_height_on_b: Height,
         signer: Signer,
     ) -> MsgTimeout {
         Self {
             packet,
-            next_sequence_recv,
-            proofs,
+            next_seq_recv_on_b,
+            proof_unreceived_on_b,
+            proof_height_on_b,
             signer,
         }
     }
@@ -53,31 +58,22 @@ impl TryFrom<RawMsgTimeout> for MsgTimeout {
     type Error = PacketError;
 
     fn try_from(raw_msg: RawMsgTimeout) -> Result<Self, Self::Error> {
-        let proofs = Proofs::new(
-            raw_msg
-                .proof_unreceived
-                .try_into()
-                .map_err(PacketError::InvalidProof)?,
-            None,
-            None,
-            None,
-            raw_msg
-                .proof_height
-                .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(PacketError::MissingHeight)?,
-        )
-        .map_err(PacketError::InvalidProof)?;
-
         // TODO: Domain type verification for the next sequence: this should probably be > 0.
-
         Ok(MsgTimeout {
             packet: raw_msg
                 .packet
                 .ok_or(PacketError::MissingPacket)?
                 .try_into()?,
-            next_sequence_recv: Sequence::from(raw_msg.next_sequence_recv),
+            next_seq_recv_on_b: Sequence::from(raw_msg.next_sequence_recv),
+            proof_unreceived_on_b: raw_msg
+                .proof_unreceived
+                .try_into()
+                .map_err(|_| PacketError::InvalidProof)?,
+            proof_height_on_b: raw_msg
+                .proof_height
+                .and_then(|raw_height| raw_height.try_into().ok())
+                .ok_or(PacketError::MissingHeight)?,
             signer: raw_msg.signer.parse().map_err(PacketError::Signer)?,
-            proofs,
         })
     }
 }
@@ -86,9 +82,9 @@ impl From<MsgTimeout> for RawMsgTimeout {
     fn from(domain_msg: MsgTimeout) -> Self {
         RawMsgTimeout {
             packet: Some(domain_msg.packet.into()),
-            proof_unreceived: domain_msg.proofs.object_proof().clone().into(),
-            proof_height: Some(domain_msg.proofs.height().into()),
-            next_sequence_recv: domain_msg.next_sequence_recv.into(),
+            proof_unreceived: domain_msg.proof_unreceived_on_b.into(),
+            proof_height: Some(domain_msg.proof_height_on_b.into()),
+            next_sequence_recv: domain_msg.next_seq_recv_on_b.into(),
             signer: domain_msg.signer.to_string(),
         }
     }

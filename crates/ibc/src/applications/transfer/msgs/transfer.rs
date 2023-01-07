@@ -26,9 +26,9 @@ pub const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgTransfer<C = Coin> {
     /// the port on which the packet will be sent
-    pub source_port: PortId,
+    pub port_on_a: PortId,
     /// the channel by which the packet will be sent
-    pub source_channel: ChannelId,
+    pub chan_on_a: ChannelId,
     /// the tokens to be transferred
     pub token: C,
     /// the sender address
@@ -37,10 +37,10 @@ pub struct MsgTransfer<C = Coin> {
     pub receiver: Signer,
     /// Timeout height relative to the current block height.
     /// The timeout is disabled when set to None.
-    pub timeout_height: TimeoutHeight,
+    pub timeout_height_on_b: TimeoutHeight,
     /// Timeout timestamp relative to the current block timestamp.
     /// The timeout is disabled when set to 0.
-    pub timeout_timestamp: Timestamp,
+    pub timeout_timestamp_on_b: Timestamp,
 }
 
 impl Msg for MsgTransfer {
@@ -55,27 +55,26 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
     type Error = TokenTransferError;
 
     fn try_from(raw_msg: RawMsgTransfer) -> Result<Self, Self::Error> {
-        let timeout_timestamp =
-            Timestamp::from_nanoseconds(raw_msg.timeout_timestamp).map_err(|_| {
-                TokenTransferError::InvalidPacketTimeoutTimestamp {
-                    timestamp: raw_msg.timeout_timestamp,
+        let timeout_timestamp_on_b = Timestamp::from_nanoseconds(raw_msg.timeout_timestamp)
+            .map_err(|_| TokenTransferError::InvalidPacketTimeoutTimestamp {
+                timestamp: raw_msg.timeout_timestamp,
+            })?;
+
+        let timeout_height_on_b: TimeoutHeight =
+            raw_msg.timeout_height.try_into().map_err(|e| {
+                TokenTransferError::InvalidPacketTimeoutHeight {
+                    context: format!("invalid timeout height {e}"),
                 }
             })?;
 
-        let timeout_height: TimeoutHeight = raw_msg.timeout_height.try_into().map_err(|e| {
-            TokenTransferError::InvalidPacketTimeoutHeight {
-                context: format!("invalid timeout height {e}"),
-            }
-        })?;
-
         Ok(MsgTransfer {
-            source_port: raw_msg.source_port.parse().map_err(|e| {
+            port_on_a: raw_msg.source_port.parse().map_err(|e| {
                 TokenTransferError::InvalidPortId {
                     context: raw_msg.source_port.clone(),
                     validation_error: e,
                 }
             })?,
-            source_channel: raw_msg.source_channel.parse().map_err(|e| {
+            chan_on_a: raw_msg.source_channel.parse().map_err(|e| {
                 TokenTransferError::InvalidChannelId {
                     context: raw_msg.source_channel.clone(),
                     validation_error: e,
@@ -87,8 +86,8 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
                 .receiver
                 .parse()
                 .map_err(TokenTransferError::Signer)?,
-            timeout_height,
-            timeout_timestamp,
+            timeout_height_on_b,
+            timeout_timestamp_on_b,
         })
     }
 }
@@ -96,13 +95,13 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
 impl From<MsgTransfer> for RawMsgTransfer {
     fn from(domain_msg: MsgTransfer) -> Self {
         RawMsgTransfer {
-            source_port: domain_msg.source_port.to_string(),
-            source_channel: domain_msg.source_channel.to_string(),
+            source_port: domain_msg.port_on_a.to_string(),
+            source_channel: domain_msg.chan_on_a.to_string(),
             token: Some(domain_msg.token),
             sender: domain_msg.sender.to_string(),
             receiver: domain_msg.receiver.to_string(),
-            timeout_height: domain_msg.timeout_height.into(),
-            timeout_timestamp: domain_msg.timeout_timestamp.nanoseconds(),
+            timeout_height: domain_msg.timeout_height_on_b.into(),
+            timeout_timestamp: domain_msg.timeout_timestamp_on_b.nanoseconds(),
         }
     }
 }
@@ -151,8 +150,8 @@ pub mod test_util {
     ) -> MsgTransfer<PrefixedCoin> {
         let address: Signer = get_dummy_bech32_account().as_str().parse().unwrap();
         MsgTransfer {
-            source_port: PortId::default(),
-            source_channel: ChannelId::default(),
+            port_on_a: PortId::default(),
+            chan_on_a: ChannelId::default(),
             token: BaseCoin {
                 denom: "uatom".parse().unwrap(),
                 amount: U256::from(10).into(),
@@ -160,9 +159,9 @@ pub mod test_util {
             .into(),
             sender: address.clone(),
             receiver: address,
-            timeout_timestamp: timeout_timestamp
+            timeout_timestamp_on_b: timeout_timestamp
                 .unwrap_or_else(|| Timestamp::now().add(Duration::from_secs(10)).unwrap()),
-            timeout_height,
+            timeout_height_on_b: timeout_height,
         }
     }
 
@@ -183,13 +182,13 @@ pub mod test_util {
 
         Packet {
             sequence,
-            source_port: msg.source_port,
-            source_channel: msg.source_channel,
-            destination_port: PortId::default(),
-            destination_channel: ChannelId::default(),
+            port_on_a: msg.port_on_a,
+            chan_on_a: msg.chan_on_a,
+            port_on_b: PortId::default(),
+            chan_on_b: ChannelId::default(),
             data,
-            timeout_height: msg.timeout_height,
-            timeout_timestamp: msg.timeout_timestamp,
+            timeout_height_on_b: msg.timeout_height_on_b,
+            timeout_timestamp_on_b: msg.timeout_timestamp_on_b,
         }
     }
 }
