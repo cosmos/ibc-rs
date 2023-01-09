@@ -199,9 +199,11 @@ single commit for the PR with all the commit messages.
 In order to help facilitate the PR review process, tag *one* person as the
 reviewer of the PR. If you are unsure of who to tag, your point of contact on
 the ibc-rs team is always a natural candidate; they'll make sure that the PR gets
-reviewed by whomever is most appropriate to review it. It also helps to notify
-the person whom you tagged as reviewer through direct means, such as through
-Slack or Discord, as it is easy for GitHub notifications to get lost or buried.
+reviewed by whomever is most appropriate to review it.
+
+If the issue you worked on was tagged `A: low priority`, we'll do our best to
+review it in a timely manner, but please expect longer wait times for a review
+in general.
 
 ## Responsibilities of a PR Reviewer
 
