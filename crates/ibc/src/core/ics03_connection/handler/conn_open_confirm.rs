@@ -345,7 +345,7 @@ mod tests {
             {
                 let res = ValidationContext::validate(
                     &test.ctx,
-                    MsgEnvelope::ConnectionMsg(test.msg.clone()),
+                    MsgEnvelope::Connection(test.msg.clone()),
                 );
 
                 match res {
