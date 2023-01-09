@@ -23,13 +23,13 @@ fn refund_packet_token(
         .map_err(|_| TokenTransferError::ParseAccountFailure)?;
 
     if is_sender_chain_source(
-        packet.source_port.clone(),
-        packet.source_channel.clone(),
+        packet.port_on_a.clone(),
+        packet.chan_on_a.clone(),
         &data.token.denom,
     ) {
         // unescrow tokens back to sender
         let escrow_address =
-            ctx.get_channel_escrow_address(&packet.source_port, &packet.source_channel)?;
+            ctx.get_channel_escrow_address(&packet.port_on_a, &packet.chan_on_a)?;
 
         ctx.send_coins(&escrow_address, &sender, &data.token)
     }

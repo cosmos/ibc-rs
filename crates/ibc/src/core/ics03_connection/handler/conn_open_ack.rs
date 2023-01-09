@@ -10,18 +10,18 @@ use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ics24_host::identifier::ClientId;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ics24_host::path::ConnectionsPath;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::{ExecutionContext, ValidationContext};
 
 use super::ConnectionIdState;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -30,7 +30,7 @@ where
     validate_impl(ctx_a, &msg, &vars)
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 fn validate_impl<Ctx>(
     ctx_a: &Ctx,
     msg: &MsgConnectionOpenAck,
@@ -70,7 +70,7 @@ where
                     description: "failed to fetch client state".to_string(),
                 })?;
         let consensus_state_of_b_on_a = ctx_a
-            .consensus_state(vars.client_id_on_a(), msg.proofs_height_on_b)
+            .consensus_state(vars.client_id_on_a(), &msg.proofs_height_on_b)
             .map_err(|_| ConnectionError::Other {
                 description: "failed to fetch client consensus state".to_string(),
             })?;
@@ -118,7 +118,7 @@ where
             })?;
 
         let expected_consensus_state_of_a_on_b = ctx_a
-            .host_consensus_state(msg.consensus_height_of_a_on_b)
+            .host_consensus_state(&msg.consensus_height_of_a_on_b)
             .map_err(|_| ConnectionError::Other {
                 description: "failed to fetch host consensus state".to_string(),
             })?;
@@ -142,7 +142,7 @@ where
     Ok(())
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
@@ -151,7 +151,7 @@ where
     execute_impl(ctx_a, msg, vars)
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 fn execute_impl<Ctx>(
     ctx_a: &mut Ctx,
     msg: MsgConnectionOpenAck,
@@ -181,18 +181,18 @@ where
             new_conn_end_on_a
         };
 
-        ctx_a.store_connection(ConnectionsPath(msg.conn_id_on_a), &new_conn_end_on_a)?;
+        ctx_a.store_connection(ConnectionsPath(msg.conn_id_on_a), new_conn_end_on_a)?;
     }
 
     Ok(())
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 struct LocalVars {
     conn_end_on_a: ConnectionEnd,
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 impl LocalVars {
     fn new<Ctx>(ctx_a: &Ctx, msg: &MsgConnectionOpenAck) -> Result<Self, ContextError>
     where
@@ -357,9 +357,9 @@ mod tests {
     use crate::mock::host::HostType;
     use crate::timestamp::ZERO_DURATION;
 
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     use crate::core::ics26_routing::msgs::MsgEnvelope;
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     use crate::core::ValidationContext;
 
     #[test]
@@ -416,7 +416,7 @@ mod tests {
                     .clone()
                     .with_client(&client_id, proof_height)
                     .with_connection(conn_id.clone(), default_conn_end),
-                msg: ConnectionMsg::ConnectionOpenAck(msg_ack.clone()),
+                msg: ConnectionMsg::OpenAck(msg_ack.clone()),
                 want_pass: true,
                 match_error: Box::new(|_| panic!("should not have error")),
             },
@@ -424,7 +424,7 @@ mod tests {
                 name: "Processing fails because the connection does not exist in the context"
                     .to_string(),
                 ctx: default_context.clone(),
-                msg: ConnectionMsg::ConnectionOpenAck(msg_ack.clone()),
+                msg: ConnectionMsg::OpenAck(msg_ack.clone()),
                 want_pass: false,
                 match_error: {
                     let right_connection_id = conn_id.clone();
@@ -444,7 +444,7 @@ mod tests {
                 ctx: default_context
                     .with_client(&client_id, proof_height)
                     .with_connection(conn_id.clone(), conn_end_open),
-                msg: ConnectionMsg::ConnectionOpenAck(msg_ack),
+                msg: ConnectionMsg::OpenAck(msg_ack),
                 want_pass: false,
                 match_error: {
                     let right_connection_id = conn_id;
@@ -472,11 +472,11 @@ mod tests {
         ];
 
         for test in tests {
-            #[cfg(val_exec_ctx)]
+            #[cfg(feature = "val_exec_ctx")]
             {
                 let res = ValidationContext::validate(
                     &test.ctx,
-                    MsgEnvelope::ConnectionMsg(test.msg.clone()),
+                    MsgEnvelope::Connection(test.msg.clone()),
                 );
 
                 match res {

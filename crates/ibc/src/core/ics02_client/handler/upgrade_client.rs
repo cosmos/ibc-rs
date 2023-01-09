@@ -13,11 +13,11 @@ use crate::core::ics24_host::identifier::ClientId;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::{ExecutionContext, ValidationContext};
 
 /// The result following the successful processing of a `MsgUpgradeAnyClient` message.
@@ -28,7 +28,7 @@ pub struct UpgradeClientResult {
     pub consensus_state: Box<dyn ConsensusState>,
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -55,7 +55,7 @@ where
     Ok(())
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
@@ -91,7 +91,7 @@ where
     Ok(())
 }
 
-pub fn process(
+pub(crate) fn process(
     ctx: &dyn ClientReader,
     msg: MsgUpgradeClient,
 ) -> HandlerResult<ClientResult, ClientError> {

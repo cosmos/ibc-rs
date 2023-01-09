@@ -26,24 +26,6 @@ pub struct MsgChannelCloseConfirm {
     pub signer: Signer,
 }
 
-impl MsgChannelCloseConfirm {
-    pub fn new(
-        port_id_on_b: PortId,
-        chan_id_on_b: ChannelId,
-        proof_chan_end_on_a: CommitmentProofBytes,
-        proof_height_on_a: Height,
-        signer: Signer,
-    ) -> Self {
-        Self {
-            port_id_on_b,
-            chan_id_on_b,
-            proof_chan_end_on_a,
-            proof_height_on_a,
-            signer,
-        }
-    }
-}
-
 impl Msg for MsgChannelCloseConfirm {
     type Raw = RawMsgChannelCloseConfirm;
 
@@ -67,7 +49,7 @@ impl TryFrom<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {
             proof_chan_end_on_a: raw_msg
                 .proof_init
                 .try_into()
-                .map_err(ChannelError::InvalidProof)?,
+                .map_err(|_| ChannelError::InvalidProof)?,
             proof_height_on_a: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())

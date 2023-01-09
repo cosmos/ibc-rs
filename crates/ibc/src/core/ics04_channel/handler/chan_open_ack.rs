@@ -45,10 +45,10 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     // Verify proofs
     {
-        let client_id_on_a = conn_end_on_a.client_id().clone();
-        let client_state_of_b_on_a = ctx_a.client_state(&client_id_on_a)?;
+        let client_id_on_a = conn_end_on_a.client_id();
+        let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
         let consensus_state_of_b_on_a =
-            ctx_a.client_consensus_state(&client_id_on_a, &msg.proof_height_on_b)?;
+            ctx_a.client_consensus_state(client_id_on_a, &msg.proof_height_on_b)?;
         let prefix_on_b = conn_end_on_a.counterparty().prefix();
         let port_id_on_b = &chan_end_on_a.counterparty().port_id;
         let conn_id_on_b = conn_end_on_a.counterparty().connection_id().ok_or(
@@ -60,7 +60,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         // The client must not be frozen.
         if client_state_of_b_on_a.is_frozen() {
             return Err(ChannelError::FrozenClient {
-                client_id: client_id_on_a,
+                client_id: client_id_on_a.clone(),
             });
         }
 
@@ -222,7 +222,7 @@ mod tests {
             Test {
                 name: "Processing fails because no channel exists in the context".to_string(),
                 ctx: context.clone(),
-                msg: ChannelMsg::ChannelOpenAck(msg_chan_ack.clone()),
+                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
                 want_pass: false,
             },
             Test {
@@ -238,7 +238,7 @@ mod tests {
                         msg_chan_ack.chan_id_on_a.clone(),
                         failed_chan_end,
                     ),
-                msg: ChannelMsg::ChannelOpenAck(msg_chan_ack.clone()),
+                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
                 want_pass: false,
             },
             Test {
@@ -254,7 +254,7 @@ mod tests {
                         msg_chan_ack.chan_id_on_a.clone(),
                         chan_end.clone(),
                     ),
-                msg: ChannelMsg::ChannelOpenAck(msg_chan_ack.clone()),
+                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
                 want_pass: false,
             },
             Test {
@@ -267,7 +267,7 @@ mod tests {
                         msg_chan_ack.chan_id_on_a.clone(),
                         chan_end.clone(),
                     ),
-                msg: ChannelMsg::ChannelOpenAck(msg_chan_ack.clone()),
+                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
                 want_pass: false,
             },
             Test {
@@ -283,7 +283,7 @@ mod tests {
                         msg_chan_ack.chan_id_on_a.clone(),
                         chan_end,
                     ),
-                msg: ChannelMsg::ChannelOpenAck(msg_chan_ack),
+                msg: ChannelMsg::OpenAck(msg_chan_ack),
                 want_pass: true,
             },
         ]

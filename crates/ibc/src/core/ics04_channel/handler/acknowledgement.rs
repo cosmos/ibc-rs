@@ -1,8 +1,8 @@
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::channel::{Counterparty, Order};
+use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::events::AcknowledgePacket;
-use crate::core::ics04_channel::handler::verify::verify_packet_acknowledgement_proofs;
 use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
 use crate::core::ics04_channel::packet::{PacketResult, Sequence};
 use crate::core::ics04_channel::{context::ChannelReader, error::PacketError};
@@ -19,59 +19,53 @@ pub struct AckPacketResult {
     pub seq_number: Option<Sequence>,
 }
 
-pub fn process<Ctx: ChannelReader>(
-    ctx: &Ctx,
+pub(crate) fn process<Ctx: ChannelReader>(
+    ctx_a: &Ctx,
     msg: &MsgAcknowledgement,
 ) -> HandlerResult<PacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
     let packet = &msg.packet;
 
-    let source_channel_end = ctx
-        .channel_end(&packet.source_port, &packet.source_channel)
+    let chan_end_on_a = ctx_a
+        .channel_end(&packet.port_on_a, &packet.chan_on_a)
         .map_err(PacketError::Channel)?;
 
-    if !source_channel_end.state_matches(&State::Open) {
+    if !chan_end_on_a.state_matches(&State::Open) {
         return Err(PacketError::ChannelClosed {
-            channel_id: packet.source_channel.clone(),
+            channel_id: packet.chan_on_a.clone(),
         });
     }
 
-    let counterparty = Counterparty::new(
-        packet.destination_port.clone(),
-        Some(packet.destination_channel.clone()),
-    );
+    let counterparty = Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone()));
 
-    if !source_channel_end.counterparty_matches(&counterparty) {
+    if !chan_end_on_a.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
-            port_id: packet.destination_port.clone(),
-            channel_id: packet.destination_channel.clone(),
+            port_id: packet.port_on_b.clone(),
+            channel_id: packet.chan_on_b.clone(),
         });
     }
 
-    let source_connection_id = &source_channel_end.connection_hops()[0];
-    let connection_end = ctx
-        .connection_end(source_connection_id)
+    let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
+    let conn_end_on_a = ctx_a
+        .connection_end(conn_id_on_a)
         .map_err(PacketError::Channel)?;
 
-    if !connection_end.state_matches(&ConnectionState::Open) {
+    if !conn_end_on_a.state_matches(&ConnectionState::Open) {
         return Err(PacketError::ConnectionNotOpen {
-            connection_id: source_channel_end.connection_hops()[0].clone(),
+            connection_id: chan_end_on_a.connection_hops()[0].clone(),
         });
     }
 
     // Verify packet commitment
-    let packet_commitment = ctx.get_packet_commitment(
-        &packet.source_port,
-        &packet.source_channel,
-        &packet.sequence,
-    )?;
+    let packet_commitment =
+        ctx_a.get_packet_commitment(&packet.port_on_a, &packet.chan_on_a, &packet.sequence)?;
 
     if packet_commitment
-        != ctx.packet_commitment(
+        != ctx_a.packet_commitment(
             &packet.data,
-            &packet.timeout_height,
-            &packet.timeout_timestamp,
+            &packet.timeout_height_on_b,
+            &packet.timeout_timestamp_on_b,
         )
     {
         return Err(PacketError::IncorrectPacketCommitment {
@@ -79,20 +73,48 @@ pub fn process<Ctx: ChannelReader>(
         });
     }
 
-    // Verify the acknowledgement proof
-    verify_packet_acknowledgement_proofs(
-        ctx,
-        msg.proofs.height(),
-        packet,
-        msg.acknowledgement.clone(),
-        &connection_end,
-        &msg.proofs,
-    )
-    .map_err(PacketError::Channel)?;
+    // Verify proofs
+    {
+        let client_id_on_a = conn_end_on_a.client_id();
+        let client_state_on_a = ctx_a
+            .client_state(client_id_on_a)
+            .map_err(PacketError::Channel)?;
 
-    let result = if source_channel_end.order_matches(&Order::Ordered) {
-        let next_seq_ack =
-            ctx.get_next_sequence_ack(&packet.source_port, &packet.source_channel)?;
+        // The client must not be frozen.
+        if client_state_on_a.is_frozen() {
+            return Err(PacketError::FrozenClient {
+                client_id: client_id_on_a.clone(),
+            });
+        }
+
+        let consensus_state = ctx_a
+            .client_consensus_state(client_id_on_a, &msg.proof_height_on_b)
+            .map_err(PacketError::Channel)?;
+
+        let ack_commitment = ctx_a.ack_commitment(&msg.acknowledgement);
+
+        // Verify the proof for the packet against the chain store.
+        client_state_on_a
+            .verify_packet_acknowledgement(
+                ctx_a,
+                msg.proof_height_on_b,
+                &conn_end_on_a,
+                &msg.proof_acked_on_b,
+                consensus_state.root(),
+                &packet.port_on_b,
+                &packet.chan_on_b,
+                packet.sequence,
+                ack_commitment,
+            )
+            .map_err(|e| ChannelError::PacketVerificationFailed {
+                sequence: packet.sequence,
+                client_error: e,
+            })
+            .map_err(PacketError::Channel)?;
+    }
+
+    let result = if chan_end_on_a.order_matches(&Order::Ordered) {
+        let next_seq_ack = ctx_a.get_next_sequence_ack(&packet.port_on_a, &packet.chan_on_a)?;
 
         if packet.sequence != next_seq_ack {
             return Err(PacketError::InvalidPacketSequence {
@@ -102,15 +124,15 @@ pub fn process<Ctx: ChannelReader>(
         }
 
         PacketResult::Ack(AckPacketResult {
-            port_id: packet.source_port.clone(),
-            channel_id: packet.source_channel.clone(),
+            port_id: packet.port_on_a.clone(),
+            channel_id: packet.chan_on_a.clone(),
             seq: packet.sequence,
             seq_number: Some(next_seq_ack.increment()),
         })
     } else {
         PacketResult::Ack(AckPacketResult {
-            port_id: packet.source_port.clone(),
-            channel_id: packet.source_channel.clone(),
+            port_id: packet.port_on_a.clone(),
+            channel_id: packet.chan_on_a.clone(),
             seq: packet.sequence,
             seq_number: None,
         })
@@ -120,8 +142,8 @@ pub fn process<Ctx: ChannelReader>(
 
     output.emit(IbcEvent::AcknowledgePacket(AcknowledgePacket::new(
         packet.clone(),
-        source_channel_end.ordering,
-        source_connection_id.clone(),
+        chan_end_on_a.ordering,
+        conn_id_on_a.clone(),
     )));
 
     Ok(output.with_result(result))
@@ -169,22 +191,19 @@ mod tests {
 
         let data = context.packet_commitment(
             &packet.data,
-            &packet.timeout_height,
-            &packet.timeout_timestamp,
+            &packet.timeout_height_on_b,
+            &packet.timeout_timestamp_on_b,
         );
 
-        let source_channel_end = ChannelEnd::new(
+        let chan_end_on_a = ChannelEnd::new(
             State::Open,
             Order::default(),
-            Counterparty::new(
-                packet.destination_port.clone(),
-                Some(packet.destination_channel.clone()),
-            ),
+            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone())),
             vec![ConnectionId::default()],
             Version::ics20(),
         );
 
-        let connection_end = ConnectionEnd::new(
+        let conn_end_on_a = ConnectionEnd::new(
             ConnectionState::Open,
             ClientId::default(),
             ConnectionCounterparty::new(
@@ -207,23 +226,19 @@ mod tests {
                 name: "Good parameters".to_string(),
                 ctx: context
                     .with_client(&ClientId::default(), client_height)
-                    .with_connection(ConnectionId::default(), connection_end)
+                    .with_connection(ConnectionId::default(), conn_end_on_a)
                     .with_channel(
-                        packet.source_port.clone(),
-                        packet.source_channel.clone(),
-                        source_channel_end,
+                        packet.port_on_a.clone(),
+                        packet.chan_on_a.clone(),
+                        chan_end_on_a,
                     )
                     .with_packet_commitment(
-                        packet.source_port,
-                        packet.source_channel,
+                        packet.port_on_a,
+                        packet.chan_on_a,
                         packet.sequence,
                         data,
                     ) //with_ack_sequence required for ordered channels
-                    .with_ack_sequence(
-                        packet.destination_port,
-                        packet.destination_channel,
-                        1.into(),
-                    ),
+                    .with_ack_sequence(packet.port_on_b, packet.chan_on_b, 1.into()),
                 msg,
                 want_pass: true,
             },

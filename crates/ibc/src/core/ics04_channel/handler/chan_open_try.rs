@@ -45,10 +45,10 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     // Verify proofs
     {
-        let client_id_on_b = conn_end_on_b.client_id().clone();
-        let client_state_of_a_on_b = ctx_b.client_state(&client_id_on_b)?;
+        let client_id_on_b = conn_end_on_b.client_id();
+        let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
         let consensus_state_of_a_on_b =
-            ctx_b.client_consensus_state(&client_id_on_b, &msg.proof_height_on_a)?;
+            ctx_b.client_consensus_state(client_id_on_b, &msg.proof_height_on_a)?;
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let port_id_on_a = &&msg.port_id_on_a;
         let chan_id_on_a = msg.chan_id_on_a.clone();
@@ -61,7 +61,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         // The client must not be frozen.
         if client_state_of_a_on_b.is_frozen() {
             return Err(ChannelError::FrozenClient {
-                client_id: client_id_on_b,
+                client_id: client_id_on_b.clone(),
             });
         }
 
@@ -189,7 +189,7 @@ mod tests {
             Test {
                 name: "Processing fails because no connection exists in the context".to_string(),
                 ctx: context.clone(),
-                msg: ChannelMsg::ChannelOpenTry(msg.clone()),
+                msg: ChannelMsg::OpenTry(msg.clone()),
                 want_pass: false,
                 match_error: {
                     let connection_id = msg.connection_hops_on_b[0].clone();
@@ -217,7 +217,7 @@ mod tests {
                         chan_id.clone(),
                         correct_chan_end.clone(),
                     ),
-                msg: ChannelMsg::ChannelOpenTry(msg.clone()),
+                msg: ChannelMsg::OpenTry(msg.clone()),
                 want_pass: false,
                 match_error: Box::new(|e| match e {
                     error::ChannelError::Connection(e) => {
@@ -243,7 +243,7 @@ mod tests {
                     .with_client(&client_id, Height::new(0, proof_height).unwrap())
                     .with_connection(conn_id.clone(), conn_end.clone())
                     .with_channel(msg.port_id_on_b.clone(), chan_id, correct_chan_end),
-                msg: ChannelMsg::ChannelOpenTry(msg.clone()),
+                msg: ChannelMsg::OpenTry(msg.clone()),
                 want_pass: true,
                 match_error: Box::new(|_| {}),
             },
@@ -253,7 +253,7 @@ mod tests {
                 ctx: context
                     .with_client(&client_id, Height::new(0, proof_height).unwrap())
                     .with_connection(conn_id, conn_end),
-                msg: ChannelMsg::ChannelOpenTry(msg),
+                msg: ChannelMsg::OpenTry(msg),
                 want_pass: true,
                 match_error: Box::new(|_| {}),
             },
@@ -262,7 +262,7 @@ mod tests {
         .collect();
 
         for test in tests {
-            let test_msg = downcast!(test.msg => ChannelMsg::ChannelOpenTry).unwrap();
+            let test_msg = downcast!(test.msg => ChannelMsg::OpenTry).unwrap();
             let res = chan_open_try::process(&test.ctx, &test_msg);
             // Additionally check the events and the output objects in the result.
             match res {

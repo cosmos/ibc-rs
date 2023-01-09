@@ -38,36 +38,6 @@ pub struct MsgChannelOpenTry {
     pub version_proposal: Version,
 }
 
-impl MsgChannelOpenTry {
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        port_id_on_b: PortId,
-        connection_hops_on_b: Vec<ConnectionId>,
-        port_id_on_a: PortId,
-        chan_id_on_a: ChannelId,
-        version_supported_on_a: Version,
-        proof_chan_end_on_a: CommitmentProofBytes,
-        proof_height_on_a: Height,
-        ordering: Order,
-        signer: Signer,
-    ) -> Self {
-        #[allow(deprecated)]
-        Self {
-            port_id_on_b,
-            connection_hops_on_b,
-            port_id_on_a,
-            chan_id_on_a,
-            version_supported_on_a,
-            proof_chan_end_on_a,
-            proof_height_on_a,
-            ordering,
-            signer,
-            previous_channel_id: "".to_string(),
-            version_proposal: Version::empty(),
-        }
-    }
-}
-
 impl Msg for MsgChannelOpenTry {
     type Raw = RawMsgChannelOpenTry;
 
@@ -101,7 +71,7 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
             proof_chan_end_on_a: raw_msg
                 .proof_init
                 .try_into()
-                .map_err(ChannelError::InvalidProof)?,
+                .map_err(|_| ChannelError::InvalidProof)?,
             proof_height_on_a: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())

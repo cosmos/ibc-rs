@@ -1,9 +1,9 @@
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{Counterparty, Order, State};
 use crate::core::ics04_channel::context::ChannelReader;
+use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::events::ReceivePacket;
-use crate::core::ics04_channel::handler::verify::verify_packet_recv_proofs;
 use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
 use crate::core::ics04_channel::packet::{PacketResult, Receipt, Sequence};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
@@ -28,123 +28,143 @@ pub enum RecvPacketResult {
     },
 }
 
-pub fn process<Ctx: ChannelReader>(
-    ctx: &Ctx,
+/// Per our convention, this message is processed on chain B.
+pub(crate) fn process<Ctx: ChannelReader>(
+    ctx_b: &Ctx,
     msg: &MsgRecvPacket,
 ) -> HandlerResult<PacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
-    let packet = &msg.packet;
-
-    let dest_channel_end = ctx
-        .channel_end(&packet.destination_port, &packet.destination_channel)
+    let chan_end_on_b = ctx_b
+        .channel_end(&msg.packet.port_on_b, &msg.packet.chan_on_b)
         .map_err(PacketError::Channel)?;
 
-    if !dest_channel_end.state_matches(&State::Open) {
+    if !chan_end_on_b.state_matches(&State::Open) {
         return Err(PacketError::InvalidChannelState {
-            channel_id: packet.source_channel.clone(),
-            state: dest_channel_end.state,
+            channel_id: msg.packet.chan_on_a.clone(),
+            state: chan_end_on_b.state,
         });
     }
 
     let counterparty = Counterparty::new(
-        packet.source_port.clone(),
-        Some(packet.source_channel.clone()),
+        msg.packet.port_on_a.clone(),
+        Some(msg.packet.chan_on_a.clone()),
     );
 
-    if !dest_channel_end.counterparty_matches(&counterparty) {
+    if !chan_end_on_b.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
-            port_id: packet.source_port.clone(),
-            channel_id: packet.source_channel.clone(),
+            port_id: msg.packet.port_on_a.clone(),
+            channel_id: msg.packet.chan_on_a.clone(),
         });
     }
 
-    let dest_connection_id = &dest_channel_end.connection_hops()[0];
-    let connection_end = ctx
-        .connection_end(dest_connection_id)
+    let conn_id_on_b = &chan_end_on_b.connection_hops()[0];
+    let conn_end_on_b = ctx_b
+        .connection_end(conn_id_on_b)
         .map_err(PacketError::Channel)?;
 
-    if !connection_end.state_matches(&ConnectionState::Open) {
+    if !conn_end_on_b.state_matches(&ConnectionState::Open) {
         return Err(PacketError::ConnectionNotOpen {
-            connection_id: dest_channel_end.connection_hops()[0].clone(),
+            connection_id: chan_end_on_b.connection_hops()[0].clone(),
         });
     }
 
-    let latest_height = ChannelReader::host_height(ctx).map_err(PacketError::Channel)?;
-    if packet.timeout_height.has_expired(latest_height) {
+    let latest_height = ChannelReader::host_height(ctx_b).map_err(PacketError::Channel)?;
+    if msg.packet.timeout_height_on_b.has_expired(latest_height) {
         return Err(PacketError::LowPacketHeight {
             chain_height: latest_height,
-            timeout_height: packet.timeout_height,
+            timeout_height: msg.packet.timeout_height_on_b,
         });
     }
 
-    let latest_timestamp = ChannelReader::host_timestamp(ctx).map_err(PacketError::Channel)?;
-    if let Expiry::Expired = latest_timestamp.check_expiry(&packet.timeout_timestamp) {
+    let latest_timestamp = ChannelReader::host_timestamp(ctx_b).map_err(PacketError::Channel)?;
+    if let Expiry::Expired = latest_timestamp.check_expiry(&msg.packet.timeout_timestamp_on_b) {
         return Err(PacketError::LowPacketTimestamp);
     }
 
-    verify_packet_recv_proofs(
-        ctx,
-        msg.proofs.height(),
-        packet,
-        &connection_end,
-        &msg.proofs,
-    )
-    .map_err(PacketError::Channel)?;
+    // Verify proofs
+    {
+        let client_id_on_b = conn_end_on_b.client_id();
+        let client_state_of_a_on_b = ctx_b
+            .client_state(client_id_on_b)
+            .map_err(PacketError::Channel)?;
 
-    let result = if dest_channel_end.order_matches(&Order::Ordered) {
+        // The client must not be frozen.
+        if client_state_of_a_on_b.is_frozen() {
+            return Err(PacketError::FrozenClient {
+                client_id: client_id_on_b.clone(),
+            });
+        }
+
+        let consensus_state_of_a_on_b = ctx_b
+            .client_consensus_state(client_id_on_b, &msg.proof_height_on_a)
+            .map_err(PacketError::Channel)?;
+
+        let expected_commitment_on_a = ctx_b.packet_commitment(
+            &msg.packet.data,
+            &msg.packet.timeout_height_on_b,
+            &msg.packet.timeout_timestamp_on_b,
+        );
+        // Verify the proof for the packet against the chain store.
+        client_state_of_a_on_b
+            .verify_packet_data(
+                ctx_b,
+                msg.proof_height_on_a,
+                &conn_end_on_b,
+                &msg.proof_commitment_on_a,
+                consensus_state_of_a_on_b.root(),
+                &msg.packet.port_on_a,
+                &msg.packet.chan_on_a,
+                msg.packet.sequence,
+                expected_commitment_on_a,
+            )
+            .map_err(|e| ChannelError::PacketVerificationFailed {
+                sequence: msg.packet.sequence,
+                client_error: e,
+            })
+            .map_err(PacketError::Channel)?;
+    }
+
+    let result = if chan_end_on_b.order_matches(&Order::Ordered) {
         let next_seq_recv =
-            ctx.get_next_sequence_recv(&packet.destination_port, &packet.destination_channel)?;
-
-        if packet.sequence < next_seq_recv {
-            output.emit(IbcEvent::ReceivePacket(ReceivePacket::new(
-                msg.packet.clone(),
-                dest_channel_end.ordering,
-                dest_connection_id.clone(),
-            )));
-
-            return Ok(output.with_result(PacketResult::Recv(RecvPacketResult::NoOp)));
-        } else if packet.sequence != next_seq_recv {
+            ctx_b.get_next_sequence_recv(&msg.packet.port_on_b, &msg.packet.chan_on_b)?;
+        if msg.packet.sequence > next_seq_recv {
             return Err(PacketError::InvalidPacketSequence {
-                given_sequence: packet.sequence,
+                given_sequence: msg.packet.sequence,
                 next_sequence: next_seq_recv,
             });
         }
 
-        PacketResult::Recv(RecvPacketResult::Ordered {
-            port_id: packet.destination_port.clone(),
-            channel_id: packet.destination_channel.clone(),
-            next_seq_recv: next_seq_recv.increment(),
-        })
+        if msg.packet.sequence < next_seq_recv {
+            PacketResult::Recv(RecvPacketResult::NoOp)
+        } else {
+            PacketResult::Recv(RecvPacketResult::Ordered {
+                port_id: msg.packet.port_on_b.clone(),
+                channel_id: msg.packet.chan_on_b.clone(),
+                next_seq_recv: next_seq_recv.increment(),
+            })
+        }
     } else {
-        let packet_rec = ctx.get_packet_receipt(
-            &packet.destination_port,
-            &packet.destination_channel,
-            &packet.sequence,
+        let packet_rec = ctx_b.get_packet_receipt(
+            &msg.packet.port_on_b,
+            &msg.packet.chan_on_b,
+            &msg.packet.sequence,
         );
 
         match packet_rec {
-            Ok(_receipt) => {
-                output.emit(IbcEvent::ReceivePacket(ReceivePacket::new(
-                    msg.packet.clone(),
-                    dest_channel_end.ordering,
-                    dest_connection_id.clone(),
-                )));
-
-                return Ok(output.with_result(PacketResult::Recv(RecvPacketResult::NoOp)));
-            }
+            Ok(_receipt) => PacketResult::Recv(RecvPacketResult::NoOp),
             Err(e)
                 if e.to_string()
                     == PacketError::PacketReceiptNotFound {
-                        sequence: packet.sequence,
+                        sequence: msg.packet.sequence,
                     }
                     .to_string() =>
             {
                 // store a receipt that does not contain any data
                 PacketResult::Recv(RecvPacketResult::Unordered {
-                    port_id: packet.destination_port.clone(),
-                    channel_id: packet.destination_channel.clone(),
-                    sequence: packet.sequence,
+                    port_id: msg.packet.port_on_b.clone(),
+                    channel_id: msg.packet.chan_on_b.clone(),
+                    sequence: msg.packet.sequence,
                     receipt: Receipt::Ok,
                 })
             }
@@ -156,8 +176,8 @@ pub fn process<Ctx: ChannelReader>(
 
     output.emit(IbcEvent::ReceivePacket(ReceivePacket::new(
         msg.packet.clone(),
-        dest_channel_end.ordering,
-        dest_connection_id.clone(),
+        chan_end_on_b.ordering,
+        conn_id_on_b.clone(),
     )));
 
     Ok(output.with_result(result))
@@ -210,27 +230,31 @@ mod tests {
 
         let packet_old = Packet {
             sequence: 1.into(),
-            source_port: PortId::default(),
-            source_channel: ChannelId::default(),
-            destination_port: PortId::default(),
-            destination_channel: ChannelId::default(),
+            port_on_a: PortId::default(),
+            chan_on_a: ChannelId::default(),
+            port_on_b: PortId::default(),
+            chan_on_b: ChannelId::default(),
             data: Vec::new(),
-            timeout_height: client_height.into(),
-            timeout_timestamp: Timestamp::from_nanoseconds(1).unwrap(),
+            timeout_height_on_b: client_height.into(),
+            timeout_timestamp_on_b: Timestamp::from_nanoseconds(1).unwrap(),
         };
 
-        let msg_packet_old =
-            MsgRecvPacket::new(packet_old, msg.proofs.clone(), get_dummy_account_id());
+        let msg_packet_old = MsgRecvPacket::new(
+            packet_old,
+            msg.proof_commitment_on_a.clone(),
+            msg.proof_height_on_a,
+            get_dummy_account_id(),
+        );
 
-        let dest_channel_end = ChannelEnd::new(
+        let chan_end_on_b = ChannelEnd::new(
             State::Open,
             Order::default(),
-            Counterparty::new(packet.source_port.clone(), Some(packet.source_channel)),
+            Counterparty::new(packet.port_on_a, Some(packet.chan_on_a)),
             vec![ConnectionId::default()],
             Version::ics20(),
         );
 
-        let connection_end = ConnectionEnd::new(
+        let conn_end_on_b = ConnectionEnd::new(
             ConnectionState::Open,
             ClientId::default(),
             ConnectionCounterparty::new(
@@ -254,22 +278,22 @@ mod tests {
                 ctx: context
                     .clone()
                     .with_client(&ClientId::default(), client_height)
-                    .with_connection(ConnectionId::default(), connection_end.clone())
+                    .with_connection(ConnectionId::default(), conn_end_on_b.clone())
                     .with_channel(
-                        packet.destination_port.clone(),
-                        packet.destination_channel.clone(),
-                        dest_channel_end.clone(),
+                        packet.port_on_b.clone(),
+                        packet.chan_on_b.clone(),
+                        chan_end_on_b.clone(),
                     )
                     .with_send_sequence(
-                        packet.destination_port.clone(),
-                        packet.destination_channel.clone(),
+                        packet.port_on_b.clone(),
+                        packet.chan_on_b.clone(),
                         1.into(),
                     )
                     .with_height(host_height)
                     // This `with_recv_sequence` is required for ordered channels
                     .with_recv_sequence(
-                        packet.destination_port.clone(),
-                        packet.destination_channel.clone(),
+                        packet.port_on_b.clone(),
+                        packet.chan_on_b.clone(),
                         packet.sequence,
                     ),
                 msg,
@@ -279,8 +303,8 @@ mod tests {
                 name: "Packet timeout expired".to_string(),
                 ctx: context
                     .with_client(&ClientId::default(), client_height)
-                    .with_connection(ConnectionId::default(), connection_end)
-                    .with_channel(PortId::default(), ChannelId::default(), dest_channel_end)
+                    .with_connection(ConnectionId::default(), conn_end_on_b)
+                    .with_channel(PortId::default(), ChannelId::default(), chan_end_on_b)
                     .with_send_sequence(PortId::default(), ChannelId::default(), 1.into())
                     .with_height(host_height),
                 msg: msg_packet_old,

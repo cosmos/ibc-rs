@@ -11,16 +11,16 @@ use crate::core::ics24_host::identifier::ConnectionId;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::ics24_host::path::{ClientConnectionsPath, ConnectionsPath};
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 use crate::core::{ExecutionContext, ValidationContext};
 
 use super::ConnectionIdState;
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -37,7 +37,7 @@ where
     Ok(())
 }
 
-#[cfg(val_exec_ctx)]
+#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
@@ -84,8 +84,11 @@ where
     }
 
     ctx_a.increase_connection_counter();
-    ctx_a.store_connection_to_client(ClientConnectionsPath(msg.client_id_on_a), &conn_id_on_a)?;
-    ctx_a.store_connection(ConnectionsPath(conn_id_on_a), &conn_end_on_a)?;
+    ctx_a.store_connection_to_client(
+        ClientConnectionsPath(msg.client_id_on_a),
+        conn_id_on_a.clone(),
+    )?;
+    ctx_a.store_connection(ConnectionsPath(conn_id_on_a), conn_end_on_a)?;
 
     Ok(())
 }
@@ -166,9 +169,9 @@ mod tests {
     use crate::mock::context::MockContext;
     use crate::Height;
 
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     use crate::core::ics26_routing::msgs::MsgEnvelope;
-    #[cfg(val_exec_ctx)]
+    #[cfg(feature = "val_exec_ctx")]
     use crate::core::ValidationContext;
 
     use ibc_proto::ibc::core::connection::v1::Version as RawVersion;
@@ -208,28 +211,28 @@ mod tests {
             Test {
                 name: "Processing fails because no client exists in the context".to_string(),
                 ctx: default_context,
-                msg: ConnectionMsg::ConnectionOpenInit(msg_conn_init_default.clone()),
+                msg: ConnectionMsg::OpenInit(msg_conn_init_default.clone()),
                 expected_versions: vec![msg_conn_init_default.version.clone().unwrap()],
                 want_pass: false,
             },
             Test {
                 name: "Incompatible version in MsgConnectionOpenInit msg".to_string(),
                 ctx: good_context.clone(),
-                msg: ConnectionMsg::ConnectionOpenInit(msg_conn_init_bad_version),
+                msg: ConnectionMsg::OpenInit(msg_conn_init_bad_version),
                 expected_versions: vec![],
                 want_pass: false,
             },
             Test {
                 name: "No version in MsgConnectionOpenInit msg".to_string(),
                 ctx: good_context.clone(),
-                msg: ConnectionMsg::ConnectionOpenInit(msg_conn_init_no_version),
+                msg: ConnectionMsg::OpenInit(msg_conn_init_no_version),
                 expected_versions: ConnectionReader::get_compatible_versions(&good_context),
                 want_pass: true,
             },
             Test {
                 name: "Good parameters".to_string(),
                 ctx: good_context,
-                msg: ConnectionMsg::ConnectionOpenInit(msg_conn_init_default.clone()),
+                msg: ConnectionMsg::OpenInit(msg_conn_init_default.clone()),
                 expected_versions: vec![msg_conn_init_default.version.unwrap()],
                 want_pass: true,
             },
@@ -238,11 +241,11 @@ mod tests {
         .collect();
 
         for test in tests {
-            #[cfg(val_exec_ctx)]
+            #[cfg(feature = "val_exec_ctx")]
             {
                 let res = ValidationContext::validate(
                     &test.ctx,
-                    MsgEnvelope::ConnectionMsg(test.msg.clone()),
+                    MsgEnvelope::Connection(test.msg.clone()),
                 );
 
                 match res {

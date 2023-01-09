@@ -1,6 +1,5 @@
 use crate::core::ics23_commitment::error::CommitmentError;
 use crate::prelude::*;
-use crate::proofs::ProofError;
 
 use core::{convert::TryFrom, fmt};
 use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
@@ -63,11 +62,11 @@ impl fmt::Debug for CommitmentProofBytes {
 }
 
 impl TryFrom<Vec<u8>> for CommitmentProofBytes {
-    type Error = ProofError;
+    type Error = CommitmentError;
 
     fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
         if bytes.is_empty() {
-            Err(Self::Error::EmptyProof)
+            Err(Self::Error::EmptyMerkleProof)
         } else {
             Ok(Self { bytes })
         }
@@ -81,7 +80,7 @@ impl From<CommitmentProofBytes> for Vec<u8> {
 }
 
 impl TryFrom<RawMerkleProof> for CommitmentProofBytes {
-    type Error = ProofError;
+    type Error = CommitmentError;
 
     fn try_from(proof: RawMerkleProof) -> Result<Self, Self::Error> {
         let mut buf = Vec::new();
@@ -91,7 +90,7 @@ impl TryFrom<RawMerkleProof> for CommitmentProofBytes {
 }
 
 impl TryFrom<MerkleProof> for CommitmentProofBytes {
-    type Error = ProofError;
+    type Error = CommitmentError;
 
     fn try_from(value: MerkleProof) -> Result<Self, Self::Error> {
         Self::try_from(RawMerkleProof::from(value))
