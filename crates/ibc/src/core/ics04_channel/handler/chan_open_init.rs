@@ -110,13 +110,13 @@ mod tests {
             Test {
                 name: "Processing fails because no connection exists in the context".to_string(),
                 ctx: context.clone(),
-                msg: ChannelMsg::ChannelOpenInit(msg_chan_init.clone()),
+                msg: ChannelMsg::OpenInit(msg_chan_init.clone()),
                 want_pass: false,
             },
             Test {
                 name: "Good parameters".to_string(),
                 ctx: context.with_connection(cid, init_conn_end),
-                msg: ChannelMsg::ChannelOpenInit(msg_chan_init),
+                msg: ChannelMsg::OpenInit(msg_chan_init),
                 want_pass: true,
             },
         ]
@@ -140,7 +140,7 @@ mod tests {
                     assert_eq!(res.channel_end.state().clone(), State::Init);
                     let msg_init = test.msg;
 
-                    if let ChannelMsg::ChannelOpenInit(msg_init) = msg_init {
+                    if let ChannelMsg::OpenInit(msg_init) = msg_init {
                         assert_eq!(res.port_id.clone(), msg_init.port_id_on_a.clone());
                     }
                 }

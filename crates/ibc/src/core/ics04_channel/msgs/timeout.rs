@@ -26,24 +26,6 @@ pub struct MsgTimeout {
     pub signer: Signer,
 }
 
-impl MsgTimeout {
-    pub fn new(
-        packet: Packet,
-        next_seq_recv_on_b: Sequence,
-        proof_unreceived_on_b: CommitmentProofBytes,
-        proof_height_on_b: Height,
-        signer: Signer,
-    ) -> MsgTimeout {
-        Self {
-            packet,
-            next_seq_recv_on_b,
-            proof_unreceived_on_b,
-            proof_height_on_b,
-            signer,
-        }
-    }
-}
-
 impl Msg for MsgTimeout {
     type Raw = RawMsgTimeout;
 

@@ -22,16 +22,6 @@ pub struct MsgChannelCloseInit {
     pub signer: Signer,
 }
 
-impl MsgChannelCloseInit {
-    pub fn new(port_id_on_a: PortId, chan_id_on_a: ChannelId, signer: Signer) -> Self {
-        Self {
-            port_id_on_a,
-            chan_id_on_a,
-            signer,
-        }
-    }
-}
-
 impl Msg for MsgChannelCloseInit {
     type Raw = RawMsgChannelCloseInit;
 

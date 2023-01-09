@@ -25,7 +25,7 @@ pub struct TimeoutPacketResult {
 /// packet can no longer be executed and to allow the calling module to safely
 /// perform appropriate state transitions.
 /// Per our convention, this message is processed on chain A.
-pub fn process<Ctx: ChannelReader>(
+pub(crate) fn process<Ctx: ChannelReader>(
     ctx_a: &Ctx,
     msg: &MsgTimeout,
 ) -> HandlerResult<PacketResult, PacketError> {

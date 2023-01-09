@@ -91,7 +91,7 @@ where
     Ok(())
 }
 
-pub fn process(
+pub(crate) fn process(
     ctx: &dyn ClientReader,
     msg: MsgUpgradeClient,
 ) -> HandlerResult<ClientResult, ClientError> {

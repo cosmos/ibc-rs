@@ -222,7 +222,7 @@ mod tests {
             Test {
                 name: "Processing fails because no channel exists in the context".to_string(),
                 ctx: context.clone(),
-                msg: ChannelMsg::ChannelOpenAck(msg_chan_ack.clone()),
+                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
                 want_pass: false,
             },
             Test {
@@ -238,7 +238,7 @@ mod tests {
                         msg_chan_ack.chan_id_on_a.clone(),
                         failed_chan_end,
                     ),
-                msg: ChannelMsg::ChannelOpenAck(msg_chan_ack.clone()),
+                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
                 want_pass: false,
             },
             Test {
@@ -254,7 +254,7 @@ mod tests {
                         msg_chan_ack.chan_id_on_a.clone(),
                         chan_end.clone(),
                     ),
-                msg: ChannelMsg::ChannelOpenAck(msg_chan_ack.clone()),
+                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
                 want_pass: false,
             },
             Test {
@@ -267,7 +267,7 @@ mod tests {
                         msg_chan_ack.chan_id_on_a.clone(),
                         chan_end.clone(),
                     ),
-                msg: ChannelMsg::ChannelOpenAck(msg_chan_ack.clone()),
+                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
                 want_pass: false,
             },
             Test {
@@ -283,7 +283,7 @@ mod tests {
                         msg_chan_ack.chan_id_on_a.clone(),
                         chan_end,
                     ),
-                msg: ChannelMsg::ChannelOpenAck(msg_chan_ack),
+                msg: ChannelMsg::OpenAck(msg_chan_ack),
                 want_pass: true,
             },
         ]
