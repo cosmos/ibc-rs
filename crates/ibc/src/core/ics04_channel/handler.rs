@@ -115,12 +115,12 @@ where
     match msg {
         ChannelMsg::OpenInit(msg) => {
             let (extras, version) = cb.on_chan_open_init(
-                msg.chan_end_on_a.ordering,
-                &msg.chan_end_on_a.connection_hops,
+                msg.ordering,
+                &msg.connection_hops_on_a,
                 &msg.port_id_on_a,
                 &result.channel_id,
-                msg.chan_end_on_a.counterparty(),
-                &msg.chan_end_on_a.version,
+                &Counterparty::new(msg.port_id_on_b.clone(), None),
+                &msg.version_proposal,
             )?;
             result.channel_end.version = version;
 
@@ -128,12 +128,12 @@ where
         }
         ChannelMsg::OpenTry(msg) => {
             let (extras, version) = cb.on_chan_open_try(
-                msg.chan_end_on_b.ordering,
-                &msg.chan_end_on_b.connection_hops,
+                msg.ordering,
+                &msg.connection_hops_on_b,
                 &msg.port_id_on_b,
                 &result.channel_id,
-                msg.chan_end_on_b.counterparty(),
-                &msg.version_on_a,
+                &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+                &msg.version_supported_on_a,
             )?;
             result.channel_end.version = version;
 

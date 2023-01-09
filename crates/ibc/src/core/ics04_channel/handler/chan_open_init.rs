@@ -1,6 +1,6 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenInit`.
 
-use crate::core::ics04_channel::channel::{ChannelEnd, State};
+use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
@@ -16,32 +16,32 @@ pub(crate) fn process<Ctx: ChannelReader>(
 ) -> HandlerResult<ChannelResult, ChannelError> {
     let mut output = HandlerOutput::builder();
 
-    if msg.chan_end_on_a.connection_hops().len() != 1 {
+    if msg.connection_hops_on_a.len() != 1 {
         return Err(ChannelError::InvalidConnectionHopsLength {
             expected: 1,
-            actual: msg.chan_end_on_a.connection_hops().len(),
+            actual: msg.connection_hops_on_a.len(),
         });
     }
 
     // An IBC connection running on the local (host) chain should exist.
-    let conn_end_on_a = ctx_a.connection_end(&msg.chan_end_on_a.connection_hops()[0])?;
+    let conn_end_on_a = ctx_a.connection_end(&msg.connection_hops_on_a[0])?;
 
     let conn_version = match conn_end_on_a.versions() {
         [version] => version,
         _ => return Err(ChannelError::InvalidVersionLengthConnection),
     };
 
-    let channel_feature = msg.chan_end_on_a.ordering().to_string();
+    let channel_feature = msg.ordering.to_string();
     if !conn_version.is_supported_feature(channel_feature) {
         return Err(ChannelError::ChannelFeatureNotSuportedByConnection);
     }
 
     let chan_end_on_a = ChannelEnd::new(
         State::Init,
-        *msg.chan_end_on_a.ordering(),
-        msg.chan_end_on_a.counterparty().clone(),
-        msg.chan_end_on_a.connection_hops().clone(),
-        msg.chan_end_on_a.version().clone(),
+        msg.ordering,
+        Counterparty::new(msg.port_id_on_b.clone(), None),
+        msg.connection_hops_on_a.clone(),
+        msg.version_proposal.clone(),
     );
 
     let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
