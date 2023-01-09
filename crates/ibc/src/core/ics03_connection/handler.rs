@@ -48,9 +48,9 @@ where
     Ctx: ConnectionReader,
 {
     match msg {
-        ConnectionMsg::Init(msg) => conn_open_init::process(ctx, msg),
-        ConnectionMsg::Try(msg) => conn_open_try::process(ctx, msg),
-        ConnectionMsg::Ack(msg) => conn_open_ack::process(ctx, msg),
-        ConnectionMsg::Confirm(msg) => conn_open_confirm::process(ctx, msg),
+        ConnectionMsg::OpenInit(msg) => conn_open_init::process(ctx, msg),
+        ConnectionMsg::OpenTry(msg) => conn_open_try::process(ctx, msg),
+        ConnectionMsg::OpenAck(msg) => conn_open_ack::process(ctx, msg),
+        ConnectionMsg::OpenConfirm(msg) => conn_open_confirm::process(ctx, msg),
     }
 }

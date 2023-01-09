@@ -15,7 +15,7 @@ pub const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
 
 /// A type of message that triggers the update of an on-chain (IBC) client with new headers.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct MsgUpdateClient {
+pub struct MsgUpdateClient {
     pub client_id: ClientId,
     pub header: Any,
     pub signer: Signer,

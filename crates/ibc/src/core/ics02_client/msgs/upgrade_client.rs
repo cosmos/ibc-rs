@@ -20,7 +20,7 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpgradeClient";
 
 /// A type of message that triggers the upgrade of an on-chain (IBC) client.
 #[derive(Clone, Debug, PartialEq)]
-pub(crate) struct MsgUpgradeClient {
+pub struct MsgUpgradeClient {
     pub client_id: ClientId,
     pub client_state: Any,
     pub consensus_state: Any,

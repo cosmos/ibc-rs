@@ -18,7 +18,7 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenTry";
 /// Per our convention, this message is sent to chain B.
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct MsgChannelOpenTry {
+pub struct MsgChannelOpenTry {
     pub port_id_on_b: PortId,
     pub chan_end_on_b: ChannelEnd,
     pub version_on_a: Version,

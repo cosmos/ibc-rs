@@ -316,7 +316,7 @@ mod tests {
             Test {
                 name: "Processing fails due to missing connection in context".to_string(),
                 ctx: context.clone(),
-                msg: ConnectionMsg::Confirm(msg_confirm.clone()),
+                msg: ConnectionMsg::OpenConfirm(msg_confirm.clone()),
                 want_pass: false,
             },
             Test {
@@ -325,7 +325,7 @@ mod tests {
                     .clone()
                     .with_client(&client_id, Height::new(0, 10).unwrap())
                     .with_connection(msg_confirm.conn_id_on_b.clone(), incorrect_conn_end_state),
-                msg: ConnectionMsg::Confirm(msg_confirm.clone()),
+                msg: ConnectionMsg::OpenConfirm(msg_confirm.clone()),
                 want_pass: false,
             },
             Test {
@@ -333,7 +333,7 @@ mod tests {
                 ctx: context
                     .with_client(&client_id, Height::new(0, 10).unwrap())
                     .with_connection(msg_confirm.conn_id_on_b.clone(), correct_conn_end),
-                msg: ConnectionMsg::Confirm(msg_confirm),
+                msg: ConnectionMsg::OpenConfirm(msg_confirm),
                 want_pass: true,
             },
         ]

@@ -50,7 +50,7 @@ impl AsRef<[u8]> for Acknowledgement {
 /// Message definition for packet acknowledgements.
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct MsgAcknowledgement {
+pub struct MsgAcknowledgement {
     pub packet: Packet,
     pub acknowledgement: Acknowledgement,
     /// Proof of packet acknowledgement on the receiving chain

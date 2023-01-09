@@ -16,7 +16,7 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenConfirm";
 /// Per our convention, this message is sent to chain B.
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct MsgChannelOpenConfirm {
+pub struct MsgChannelOpenConfirm {
     pub port_id_on_b: PortId,
     pub chan_id_on_b: ChannelId,
     pub proof_chan_end_on_a: CommitmentProofBytes,

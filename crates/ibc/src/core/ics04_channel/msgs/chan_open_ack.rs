@@ -16,7 +16,7 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenAck";
 /// Message definition for the third step in the channel open handshake (`ChanOpenAck` datagram).
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct MsgChannelOpenAck {
+pub struct MsgChannelOpenAck {
     pub port_id_on_a: PortId,
     pub chan_id_on_a: ChannelId,
     pub chan_id_on_b: ChannelId,

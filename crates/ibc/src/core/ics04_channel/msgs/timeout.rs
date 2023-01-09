@@ -18,7 +18,7 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgTimeout";
 /// which is sent on chain A and needs to prove that a previously sent packet was not received on chain B
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct MsgTimeout {
+pub struct MsgTimeout {
     pub packet: Packet,
     pub next_seq_recv_on_b: Sequence,
     pub proof_unreceived_on_b: CommitmentProofBytes,

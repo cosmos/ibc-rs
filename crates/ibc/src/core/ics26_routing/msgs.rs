@@ -15,7 +15,7 @@ use ibc_proto::protobuf::Protobuf;
 
 /// Enumeration of all messages that the local ICS26 module is capable of routing.
 #[derive(Clone, Debug)]
-pub(crate) enum MsgEnvelope {
+pub enum MsgEnvelope {
     Client(ClientMsg),
     Connection(ConnectionMsg),
     Channel(ChannelMsg),
@@ -49,23 +49,25 @@ impl TryFrom<Any> for MsgEnvelope {
             conn_open_init::TYPE_URL => {
                 let domain_msg = conn_open_init::MsgConnectionOpenInit::decode_vec(&any_msg.value)
                     .map_err(RouterError::MalformedMessageBytes)?;
-                Ok(MsgEnvelope::Connection(ConnectionMsg::Init(domain_msg)))
+                Ok(MsgEnvelope::Connection(ConnectionMsg::OpenInit(domain_msg)))
             }
             conn_open_try::TYPE_URL => {
                 let domain_msg = conn_open_try::MsgConnectionOpenTry::decode_vec(&any_msg.value)
                     .map_err(RouterError::MalformedMessageBytes)?;
-                Ok(MsgEnvelope::Connection(ConnectionMsg::Try(domain_msg)))
+                Ok(MsgEnvelope::Connection(ConnectionMsg::OpenTry(domain_msg)))
             }
             conn_open_ack::TYPE_URL => {
                 let domain_msg = conn_open_ack::MsgConnectionOpenAck::decode_vec(&any_msg.value)
                     .map_err(RouterError::MalformedMessageBytes)?;
-                Ok(MsgEnvelope::Connection(ConnectionMsg::Ack(domain_msg)))
+                Ok(MsgEnvelope::Connection(ConnectionMsg::OpenAck(domain_msg)))
             }
             conn_open_confirm::TYPE_URL => {
                 let domain_msg =
                     conn_open_confirm::MsgConnectionOpenConfirm::decode_vec(&any_msg.value)
                         .map_err(RouterError::MalformedMessageBytes)?;
-                Ok(MsgEnvelope::Connection(ConnectionMsg::Confirm(domain_msg)))
+                Ok(MsgEnvelope::Connection(ConnectionMsg::OpenConfirm(
+                    domain_msg,
+                )))
             }
 
             // ICS04 channel messages
