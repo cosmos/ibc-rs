@@ -416,8 +416,8 @@ mod tests {
                 ctx: default_context
                     .clone()
                     .with_client(&client_id, proof_height)
-                    .with_connection(conn_id.clone(), default_conn_end.clone()),
-                msg: ConnectionMsg::ConnectionOpenAck(msg_ack.clone()),
+                    .with_connection(conn_id.clone(), default_conn_end),
+                msg: ConnectionMsg::OpenAck(msg_ack.clone()),
                 want_pass: true,
                 match_error: Box::new(|_| panic!("should not have error")),
             },
@@ -425,7 +425,7 @@ mod tests {
                 name: "Processing fails because the connection does not exist in the context"
                     .to_string(),
                 ctx: default_context.clone(),
-                msg: ConnectionMsg::ConnectionOpenAck(msg_ack.clone()),
+                msg: ConnectionMsg::OpenAck(msg_ack.clone()),
                 want_pass: false,
                 match_error: {
                     let right_connection_id = conn_id.clone();
@@ -466,7 +466,7 @@ mod tests {
                 ctx: default_context
                     .with_client(&client_id, proof_height)
                     .with_connection(conn_id.clone(), conn_end_open),
-                msg: ConnectionMsg::ConnectionOpenAck(msg_ack),
+                msg: ConnectionMsg::OpenAck(msg_ack),
                 want_pass: false,
                 match_error: {
                     let right_connection_id = conn_id;
@@ -487,7 +487,7 @@ mod tests {
             {
                 let res = ValidationContext::validate(
                     &test.ctx,
-                    MsgEnvelope::ConnectionMsg(test.msg.clone()),
+                    MsgEnvelope::Connection(test.msg.clone()),
                 );
 
                 match res {

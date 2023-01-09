@@ -29,7 +29,7 @@ pub enum RecvPacketResult {
 }
 
 /// Per our convention, this message is processed on chain B.
-pub fn process<Ctx: ChannelReader>(
+pub(crate) fn process<Ctx: ChannelReader>(
     ctx_b: &Ctx,
     msg: &MsgRecvPacket,
 ) -> HandlerResult<PacketResult, PacketError> {
