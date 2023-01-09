@@ -416,7 +416,7 @@ mod tests {
                 ctx: default_context
                     .clone()
                     .with_client(&client_id, proof_height)
-                    .with_connection(conn_id.clone(), default_conn_end),
+                    .with_connection(conn_id.clone(), default_conn_end.clone()),
                 msg: ConnectionMsg::OpenAck(msg_ack.clone()),
                 want_pass: true,
                 match_error: Box::new(|_| panic!("should not have error")),
@@ -444,7 +444,7 @@ mod tests {
                 ctx: MockContext::default()
                     .with_client(&client_id, proof_height)
                     .with_connection(conn_id.clone(), default_conn_end),
-                msg: ConnectionMsg::ConnectionOpenAck(msg_ack.clone()),
+                msg: ConnectionMsg::OpenAck(msg_ack.clone()),
                 want_pass: false,
                 match_error: {
                     Box::new(move |e| match e {
