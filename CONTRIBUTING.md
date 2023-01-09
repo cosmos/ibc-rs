@@ -203,7 +203,8 @@ reviewed by whomever is most appropriate to review it.
 
 If the issue you worked on was tagged `A: low priority`, we'll do our best to
 review it in a timely manner, but please expect longer wait times for a review
-in general.
+in general. If a low priority issue is important to you, please leave a comment
+explaining why, and we will reprioritize it!
 
 ## Responsibilities of a PR Reviewer
 
