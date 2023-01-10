@@ -25,10 +25,10 @@ pub mod conn_open_try;
 /// Enumeration of all possible messages that the ICS3 protocol processes.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConnectionMsg {
-    ConnectionOpenInit(MsgConnectionOpenInit),
-    ConnectionOpenTry(MsgConnectionOpenTry),
-    ConnectionOpenAck(MsgConnectionOpenAck),
-    ConnectionOpenConfirm(MsgConnectionOpenConfirm),
+    OpenInit(MsgConnectionOpenInit),
+    OpenTry(MsgConnectionOpenTry),
+    OpenAck(MsgConnectionOpenAck),
+    OpenConfirm(MsgConnectionOpenConfirm),
 }
 
 #[cfg(test)]

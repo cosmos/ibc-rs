@@ -25,26 +25,6 @@ pub struct MsgTimeoutOnClose {
     pub signer: Signer,
 }
 
-impl MsgTimeoutOnClose {
-    pub fn new(
-        packet: Packet,
-        next_seq_recv_on_b: Sequence,
-        proof_unreceived_on_b: CommitmentProofBytes,
-        proof_close_on_b: CommitmentProofBytes,
-        proof_height_on_b: Height,
-        signer: Signer,
-    ) -> MsgTimeoutOnClose {
-        Self {
-            packet,
-            next_seq_recv_on_b,
-            proof_unreceived_on_b,
-            proof_close_on_b,
-            proof_height_on_b,
-            signer,
-        }
-    }
-}
-
 impl Msg for MsgTimeoutOnClose {
     type Raw = RawMsgTimeoutOnClose;
 

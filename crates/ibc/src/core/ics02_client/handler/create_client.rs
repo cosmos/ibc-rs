@@ -129,7 +129,7 @@ where
     Ok(())
 }
 
-pub fn process(
+pub(crate) fn process(
     ctx: &dyn ClientReader,
     msg: MsgCreateClient,
 ) -> HandlerResult<ClientResult, ClientError> {

@@ -501,34 +501,35 @@ impl Display for State {
 
 #[cfg(test)]
 pub mod test_util {
-    use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+    use crate::core::ics24_host::identifier::{ConnectionId, PortId};
     use crate::prelude::*;
     use ibc_proto::ibc::core::channel::v1::Channel as RawChannel;
     use ibc_proto::ibc::core::channel::v1::Counterparty as RawCounterparty;
 
     /// Returns a dummy `RawCounterparty`, for testing only!
     /// Can be optionally parametrized with a specific channel identifier.
-    pub fn get_dummy_raw_counterparty() -> RawCounterparty {
+    pub fn get_dummy_raw_counterparty(channel_id: String) -> RawCounterparty {
         RawCounterparty {
             port_id: PortId::default().to_string(),
-            channel_id: ChannelId::default().to_string(),
+            channel_id,
         }
     }
 
     /// Returns a dummy `RawChannel`, for testing only!
-    pub fn get_dummy_raw_channel_end() -> RawChannel {
+    pub fn get_dummy_raw_channel_end(channel_id: String) -> RawChannel {
         RawChannel {
             state: 1,
             ordering: 2,
-            counterparty: Some(get_dummy_raw_counterparty()),
+            counterparty: Some(get_dummy_raw_counterparty(channel_id)),
             connection_hops: vec![ConnectionId::default().to_string()],
-            version: "ics20".to_string(), // The version is not validated.
+            version: "".to_string(), // The version is not validated.
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::core::ics24_host::identifier::ChannelId;
     use crate::prelude::*;
 
     use core::str::FromStr;
@@ -541,7 +542,7 @@ mod tests {
 
     #[test]
     fn channel_end_try_from_raw() {
-        let raw_channel_end = get_dummy_raw_channel_end();
+        let raw_channel_end = get_dummy_raw_channel_end(ChannelId::default().to_string());
 
         let empty_raw_channel_end = RawChannel {
             counterparty: None,

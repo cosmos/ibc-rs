@@ -40,7 +40,7 @@ pub struct ConnectionResult {
 
 /// General entry point for processing any type of message related to the ICS3 connection open
 /// handshake protocol.
-pub fn dispatch<Ctx>(
+pub(crate) fn dispatch<Ctx>(
     ctx: &Ctx,
     msg: ConnectionMsg,
 ) -> Result<HandlerOutput<ConnectionResult>, ConnectionError>
@@ -48,9 +48,9 @@ where
     Ctx: ConnectionReader,
 {
     match msg {
-        ConnectionMsg::ConnectionOpenInit(msg) => conn_open_init::process(ctx, msg),
-        ConnectionMsg::ConnectionOpenTry(msg) => conn_open_try::process(ctx, msg),
-        ConnectionMsg::ConnectionOpenAck(msg) => conn_open_ack::process(ctx, msg),
-        ConnectionMsg::ConnectionOpenConfirm(msg) => conn_open_confirm::process(ctx, msg),
+        ConnectionMsg::OpenInit(msg) => conn_open_init::process(ctx, msg),
+        ConnectionMsg::OpenTry(msg) => conn_open_try::process(ctx, msg),
+        ConnectionMsg::OpenAck(msg) => conn_open_ack::process(ctx, msg),
+        ConnectionMsg::OpenConfirm(msg) => conn_open_confirm::process(ctx, msg),
     }
 }

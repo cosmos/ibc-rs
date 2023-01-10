@@ -182,7 +182,7 @@ mod tests {
                     msg_chan_confirm.chan_id_on_b.clone(),
                     chan_end,
                 ),
-            msg: ChannelMsg::ChannelOpenConfirm(msg_chan_confirm),
+            msg: ChannelMsg::OpenConfirm(msg_chan_confirm),
             want_pass: true,
         }]
         .into_iter()
