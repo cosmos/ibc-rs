@@ -42,7 +42,7 @@ where
 }
 
 /// Attempts to convert a message into a [MsgEnvelope] message
-pub(crate) fn decode(message: Any) -> Result<MsgEnvelope, RouterError> {
+pub fn decode(message: Any) -> Result<MsgEnvelope, RouterError> {
     message.try_into()
 }
 
@@ -51,10 +51,7 @@ pub(crate) fn decode(message: Any) -> Result<MsgEnvelope, RouterError> {
 /// and events produced after processing the input `msg`.
 /// If this method returns an error, the runtime is expected to rollback all state modifications to
 /// the `Ctx` caused by all messages from the transaction that this `msg` is a part of.
-pub(crate) fn dispatch<Ctx>(
-    ctx: &mut Ctx,
-    msg: MsgEnvelope,
-) -> Result<HandlerOutput<()>, RouterError>
+pub fn dispatch<Ctx>(ctx: &mut Ctx, msg: MsgEnvelope) -> Result<HandlerOutput<()>, RouterError>
 where
     Ctx: RouterContext,
 {
