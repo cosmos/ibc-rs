@@ -1,7 +1,5 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 
-use serde::{Deserialize, Serialize};
-
 use super::error::TokenTransferError;
 use crate::core::ics26_routing::context::Acknowledgement as AckTrait;
 use crate::prelude::*;
@@ -13,21 +11,23 @@ pub const ACK_ERR_STR: &str = "error handling packet on destination chain: see e
 /// A successful acknowledgement, equivalent to `base64::encode(0x01)`.
 pub const ACK_SUCCESS_B64: &str = "AQ==";
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConstAckSuccess {
-    #[serde(rename = "AQ==")]
+    #[cfg_attr(feature = "serde", serde(rename = "AQ=="))]
     Success,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Acknowledgement {
     /// Successful Acknowledgement
     /// e.g. `{"result":"AQ=="}`
-    #[serde(rename = "result")]
+    #[cfg_attr(feature = "serde", serde(rename = "result"))]
     Success(ConstAckSuccess),
     /// Error Acknowledgement
     /// e.g. `{"error":"cannot unmarshal ICS-20 transfer packet data"}`
-    #[serde(rename = "error")]
+    #[cfg_attr(feature = "serde", serde(rename = "error"))]
     Error(String),
 }
 

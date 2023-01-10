@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use core::fmt::{Display, Error as FmtError, Formatter};
-use serde_derive::{Deserialize, Serialize};
 
 #[cfg_attr(
     feature = "parity-scale-codec",
@@ -14,8 +13,9 @@ use serde_derive::{Deserialize, Serialize};
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// Type of the client, depending on the specific consensus algorithm.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ClientType(String);
 
 impl ClientType {

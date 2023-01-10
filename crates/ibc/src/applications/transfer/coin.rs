@@ -2,13 +2,11 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::{from_utf8, FromStr};
 use ibc_proto::cosmos::base::v1beta1::Coin as ProtoCoin;
 use safe_regex::regex;
-use serde::{Deserialize, Serialize};
 
 use super::amount::Amount;
 use super::denom::{BaseDenom, PrefixedDenom};
 use super::error::TokenTransferError;
 use crate::prelude::*;
-use crate::serializers::serde_string;
 
 /// A `Coin` type with fully qualified `PrefixedDenom`.
 pub type PrefixedCoin = Coin<PrefixedDenom>;
@@ -19,12 +17,13 @@ pub type BaseCoin = Coin<BaseDenom>;
 pub type RawCoin = Coin<String>;
 
 /// Coin defines a token with a denomination and an amount.
-#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Coin<D> {
     /// Denomination
     pub denom: D,
     /// Amount
-    #[serde(with = "serde_string")]
+    #[cfg_attr(feature = "serde", serde(rename = "serde_string"))]
     pub amount: Amount,
 }
 

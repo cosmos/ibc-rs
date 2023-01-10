@@ -6,7 +6,6 @@ use core::str::FromStr;
 
 use displaydoc::Display;
 use ibc_proto::protobuf::Protobuf;
-use serde_derive::{Deserialize, Serialize};
 
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 
@@ -24,7 +23,8 @@ use crate::core::ics02_client::error::ClientError;
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Height {
     /// Previously known as "epoch"
     revision_number: u64,

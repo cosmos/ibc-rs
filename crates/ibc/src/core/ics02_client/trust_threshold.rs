@@ -7,10 +7,8 @@ use core::{
     fmt::{Display, Error as FmtError, Formatter},
 };
 
-use ibc_proto::protobuf::Protobuf;
-use serde::{Deserialize, Serialize};
-
 use ibc_proto::ibc::lightclients::tendermint::v1::Fraction;
+use ibc_proto::protobuf::Protobuf;
 use tendermint::trust_threshold::TrustThresholdFraction;
 
 use crate::core::ics02_client::error::ClientError;
@@ -35,7 +33,8 @@ use crate::core::ics02_client::error::ClientError;
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct TrustThreshold {
     numerator: u64,
     denominator: u64,

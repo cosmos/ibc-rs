@@ -69,8 +69,7 @@ where
     let conn_id_on_a = ConnectionId::new(ctx_a.connection_counter()?);
 
     ctx_a.log_message(format!(
-        "success: conn_open_init: generated new connection identifier: {}",
-        conn_id_on_a
+        "success: conn_open_init: generated new connection identifier: {conn_id_on_a}"
     ));
 
     {

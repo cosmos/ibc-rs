@@ -8,8 +8,6 @@ use core::{
     str::FromStr,
 };
 
-use serde::{Deserialize, Serialize};
-
 use crate::core::ics02_client::context::{ClientKeeper, ClientReader};
 use crate::core::ics03_connection::context::{ConnectionKeeper, ConnectionReader};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
@@ -58,7 +56,8 @@ pub struct InvalidModuleId;
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ModuleId(String);
 
 impl ModuleId {

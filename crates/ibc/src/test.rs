@@ -1,4 +1,4 @@
-use core::fmt::Debug;
+#[cfg(feature = "serde")]
 use serde::{de::DeserializeOwned, Serialize};
 
 /// Test that a struct `T` can be:
@@ -7,9 +7,10 @@ use serde::{de::DeserializeOwned, Serialize};
 /// - serialized back to JSON
 /// - parsed back from the serialized JSON of the previous step
 /// - that the two parsed structs are equal according to their `PartialEq` impl
+#[cfg(feature = "serde")]
 pub fn test_serialization_roundtrip<T>(json_data: &str)
 where
-    T: Debug + Serialize + DeserializeOwned,
+    T: core::fmt::Debug + Serialize + DeserializeOwned,
 {
     let parsed0 = serde_json::from_str::<T>(json_data);
     assert!(parsed0.is_ok());

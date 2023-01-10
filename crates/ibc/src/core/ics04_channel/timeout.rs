@@ -1,5 +1,6 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
@@ -139,6 +140,7 @@ impl Display for TimeoutHeight {
     }
 }
 
+#[cfg(feature = "serde")]
 impl Serialize for TimeoutHeight {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -169,6 +171,7 @@ impl Serialize for TimeoutHeight {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for TimeoutHeight {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

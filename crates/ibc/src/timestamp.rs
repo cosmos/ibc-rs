@@ -8,7 +8,6 @@ use core::str::FromStr;
 use core::time::Duration;
 
 use displaydoc::Display;
-use serde_derive::{Deserialize, Serialize};
 use tendermint::Time;
 use time::OffsetDateTime;
 
@@ -21,7 +20,8 @@ pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 /// a `u64` value and a raw timestamp. In protocol buffer, the timestamp is
 /// represented as a `u64` Unix timestamp in nanoseconds, with 0 representing the absence
 /// of timestamp.
-#[derive(PartialEq, Eq, Copy, Clone, Debug, Default, Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(PartialEq, Eq, Copy, Clone, Debug, Default)]
 pub struct Timestamp {
     time: Option<Time>,
 }
@@ -108,7 +108,8 @@ impl Hash for Timestamp {
 ///
 /// User of this result may want to determine whether error should be raised,
 /// when either of the timestamp being compared is invalid.
-#[derive(PartialEq, Eq, Copy, Clone, Debug, Deserialize, Serialize, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(PartialEq, Eq, Copy, Clone, Debug, Hash)]
 pub enum Expiry {
     Expired,
     NotExpired,

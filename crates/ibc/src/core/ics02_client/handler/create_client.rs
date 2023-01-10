@@ -122,8 +122,7 @@ where
     )));
 
     ctx.log_message(format!(
-        "success: generated new client identifier: {}",
-        client_id
+        "success: generated new client identifier: {client_id}"
     ));
 
     Ok(())

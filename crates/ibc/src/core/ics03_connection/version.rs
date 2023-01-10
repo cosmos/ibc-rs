@@ -5,7 +5,6 @@ use crate::utils::pretty::PrettySlice;
 
 use ibc_proto::ibc::core::connection::v1::Version as RawVersion;
 use ibc_proto::protobuf::Protobuf;
-use serde::{Deserialize, Serialize};
 
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::channel::Order;
@@ -23,7 +22,8 @@ use crate::core::ics04_channel::channel::Order;
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Version {
     /// unique version identifier
     identifier: String,

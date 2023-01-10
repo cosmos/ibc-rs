@@ -3,7 +3,6 @@ use crate::prelude::*;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::mock::ConsensusState as RawMockConsensusState;
 use ibc_proto::protobuf::Protobuf;
-use serde::{Deserialize, Serialize};
 
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
@@ -13,7 +12,8 @@ use crate::timestamp::Timestamp;
 
 pub const MOCK_CONSENSUS_STATE_TYPE_URL: &str = "/ibc.mock.ConsensusState";
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MockConsensusState {
     pub header: MockHeader,
     pub root: CommitmentRoot,

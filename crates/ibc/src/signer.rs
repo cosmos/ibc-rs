@@ -3,7 +3,6 @@ use core::str::FromStr;
 use crate::prelude::*;
 
 use derive_more::Display;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, displaydoc::Display)]
 pub enum SignerError {
@@ -26,7 +25,8 @@ impl std::error::Error for SignerError {}
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Display)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 pub struct Signer(String);
 
 impl FromStr for Signer {

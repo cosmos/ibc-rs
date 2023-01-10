@@ -4,7 +4,6 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::mock::Header as RawMockHeader;
 use ibc_proto::protobuf::Protobuf;
-use serde_derive::{Deserialize, Serialize};
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
@@ -13,7 +12,8 @@ use crate::Height;
 
 pub const MOCK_HEADER_TYPE_URL: &str = "/ibc.mock.Header";
 
-#[derive(Copy, Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct MockHeader {
     pub height: Height,
     pub timestamp: Timestamp,
