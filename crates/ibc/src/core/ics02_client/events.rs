@@ -10,6 +10,7 @@ use crate::core::ics02_client::height::Height;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::events::IbcEventType;
 use crate::prelude::*;
+use serde_derive::{Deserialize, Serialize};
 
 /// The content of the `key` field for the attribute containing the client identifier.
 pub const CLIENT_ID_ATTRIBUTE_KEY: &str = "client_id";
@@ -25,7 +26,19 @@ pub const CONSENSUS_HEIGHTS_ATTRIBUTE_KEY: &str = "consensus_heights";
 /// The content of the `key` field for the header in update client event.
 pub const HEADER_ATTRIBUTE_KEY: &str = "header";
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[derive(Clone, Debug, From, Serialize, Deserialize, PartialEq, Eq)]
 struct ClientIdAttribute {
     client_id: ClientId,
 }
@@ -36,7 +49,19 @@ impl From<ClientIdAttribute> for abci::EventAttribute {
     }
 }
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[derive(Clone, Debug, From, Serialize, Deserialize, PartialEq, Eq)]
 struct ClientTypeAttribute {
     client_type: ClientType,
 }
@@ -47,7 +72,19 @@ impl From<ClientTypeAttribute> for abci::EventAttribute {
     }
 }
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[derive(Clone, Debug, From, Serialize, Deserialize, PartialEq, Eq)]
 struct ConsensusHeightAttribute {
     consensus_height: Height,
 }
@@ -58,7 +95,19 @@ impl From<ConsensusHeightAttribute> for abci::EventAttribute {
     }
 }
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[derive(Clone, Debug, From, Serialize, Deserialize, PartialEq, Eq)]
 struct ConsensusHeightsAttribute {
     consensus_heights: Vec<Height>,
 }
@@ -74,7 +123,19 @@ impl From<ConsensusHeightsAttribute> for abci::EventAttribute {
     }
 }
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[derive(Clone, Debug, From, Serialize, Deserialize, PartialEq, Eq)]
 struct HeaderAttribute {
     header: Any,
 }
@@ -90,7 +151,19 @@ impl From<HeaderAttribute> for abci::EventAttribute {
 }
 
 /// CreateClient event signals the creation of a new on-chain client (IBC client).
-#[derive(Debug)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CreateClient {
     client_id: ClientIdAttribute,
     client_type: ClientTypeAttribute,
@@ -133,7 +206,19 @@ impl From<CreateClient> for abci::Event {
 }
 
 /// UpdateClient event signals a recent update of an on-chain client (IBC Client).
-#[derive(Debug)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct UpdateClient {
     client_id: ClientIdAttribute,
     client_type: ClientTypeAttribute,
@@ -199,7 +284,19 @@ impl From<UpdateClient> for abci::Event {
 
 /// ClientMisbehaviour event signals the update of an on-chain client (IBC Client) with evidence of
 /// misbehaviour.
-#[derive(Debug)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ClientMisbehaviour {
     client_id: ClientIdAttribute,
     client_type: ClientTypeAttribute,
@@ -232,7 +329,19 @@ impl From<ClientMisbehaviour> for abci::Event {
 }
 
 /// Signals a recent upgrade of an on-chain client (IBC Client).
-#[derive(Debug)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct UpgradeClient {
     client_id: ClientIdAttribute,
     client_type: ClientTypeAttribute,
