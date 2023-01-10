@@ -61,28 +61,6 @@ pub struct MsgAcknowledgement {
     pub signer: Signer,
 }
 
-impl MsgAcknowledgement {
-    pub fn new(
-        packet: Packet,
-        acknowledgement: Acknowledgement,
-        proof_acked_on_b: CommitmentProofBytes,
-        proof_height_on_b: Height,
-        signer: Signer,
-    ) -> MsgAcknowledgement {
-        Self {
-            packet,
-            acknowledgement,
-            proof_acked_on_b,
-            proof_height_on_b,
-            signer,
-        }
-    }
-
-    pub fn acknowledgement(&self) -> &Acknowledgement {
-        &self.acknowledgement
-    }
-}
-
 impl Msg for MsgAcknowledgement {
     type Raw = RawMsgAcknowledgement;
 

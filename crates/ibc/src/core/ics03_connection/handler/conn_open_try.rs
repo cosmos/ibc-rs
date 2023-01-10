@@ -401,37 +401,37 @@ mod tests {
             Test {
                 name: "Processing fails because the height is too advanced".to_string(),
                 ctx: context.clone(),
-                msg: ConnectionMsg::ConnectionOpenTry(msg_height_advanced),
+                msg: ConnectionMsg::OpenTry(msg_height_advanced),
                 want_pass: false,
             },
             Test {
                 name: "Processing fails because the height is too old".to_string(),
                 ctx: context.clone(),
-                msg: ConnectionMsg::ConnectionOpenTry(msg_height_old),
+                msg: ConnectionMsg::OpenTry(msg_height_old),
                 want_pass: false,
             },
             Test {
                 name: "Processing fails because no client exists".to_string(),
                 ctx: context.clone(),
-                msg: ConnectionMsg::ConnectionOpenTry(msg_conn_try.clone()),
+                msg: ConnectionMsg::OpenTry(msg_conn_try.clone()),
                 want_pass: false,
             },
             Test {
                 name: "Processing fails because the client misses the consensus state targeted by the proof".to_string(),
                 ctx: context.clone().with_client(&msg_proof_height_missing.client_id_on_b, Height::new(0, client_consensus_state_height).unwrap()),
-                msg: ConnectionMsg::ConnectionOpenTry(msg_proof_height_missing),
+                msg: ConnectionMsg::OpenTry(msg_proof_height_missing),
                 want_pass: false,
             },
             Test {
                 name: "Good parameters (no previous_connection_id)".to_string(),
                 ctx: context.clone().with_client(&msg_conn_try.client_id_on_b, Height::new(0, client_consensus_state_height).unwrap()),
-                msg: ConnectionMsg::ConnectionOpenTry(msg_conn_try.clone()),
+                msg: ConnectionMsg::OpenTry(msg_conn_try.clone()),
                 want_pass: true,
             },
             Test {
                 name: "Good parameters".to_string(),
                 ctx: context.with_client(&msg_conn_try.client_id_on_b, Height::new(0, client_consensus_state_height).unwrap()),
-                msg: ConnectionMsg::ConnectionOpenTry(msg_conn_try),
+                msg: ConnectionMsg::OpenTry(msg_conn_try),
                 want_pass: true,
             },
         ]
@@ -443,7 +443,7 @@ mod tests {
             {
                 let res = ValidationContext::validate(
                     &test.ctx,
-                    MsgEnvelope::ConnectionMsg(test.msg.clone()),
+                    MsgEnvelope::Connection(test.msg.clone()),
                 );
 
                 match res {

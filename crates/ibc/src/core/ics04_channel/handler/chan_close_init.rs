@@ -123,6 +123,6 @@ mod tests {
                 )
         };
 
-        channel_dispatch(&context, &ChannelMsg::ChannelCloseInit(msg_chan_close_init)).unwrap();
+        channel_dispatch(&context, &ChannelMsg::CloseInit(msg_chan_close_init)).unwrap();
     }
 }

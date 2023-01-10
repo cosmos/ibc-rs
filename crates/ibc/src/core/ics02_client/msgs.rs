@@ -14,6 +14,7 @@ pub mod misbehaviour;
 pub mod update_client;
 pub mod upgrade_client;
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum ClientMsg {
     CreateClient(MsgCreateClient),

@@ -83,7 +83,7 @@ where
     ctx.store_client_state(ClientStatePath(client_id), client_state)
 }
 
-pub fn process(
+pub(crate) fn process(
     ctx: &dyn ClientReader,
     msg: MsgSubmitMisbehaviour,
 ) -> HandlerResult<ClientResult, ClientError> {

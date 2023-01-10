@@ -110,30 +110,24 @@ mod val_exec_ctx {
             Self: Sized,
         {
             match message {
-                MsgEnvelope::ClientMsg(message) => match message {
+                MsgEnvelope::Client(message) => match message {
                     ClientMsg::CreateClient(message) => create_client::validate(self, message),
                     ClientMsg::UpdateClient(message) => update_client::validate(self, message),
                     ClientMsg::Misbehaviour(message) => misbehaviour::validate(self, message),
                     ClientMsg::UpgradeClient(message) => upgrade_client::validate(self, message),
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::ConnectionMsg(message) => match message {
-                    ConnectionMsg::ConnectionOpenInit(message) => {
-                        conn_open_init::validate(self, message)
-                    }
-                    ConnectionMsg::ConnectionOpenTry(message) => {
-                        conn_open_try::validate(self, message)
-                    }
-                    ConnectionMsg::ConnectionOpenAck(message) => {
-                        conn_open_ack::validate(self, message)
-                    }
-                    ConnectionMsg::ConnectionOpenConfirm(ref message) => {
+                MsgEnvelope::Connection(message) => match message {
+                    ConnectionMsg::OpenInit(message) => conn_open_init::validate(self, message),
+                    ConnectionMsg::OpenTry(message) => conn_open_try::validate(self, message),
+                    ConnectionMsg::OpenAck(message) => conn_open_ack::validate(self, message),
+                    ConnectionMsg::OpenConfirm(ref message) => {
                         conn_open_confirm::validate(self, message)
                     }
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::ChannelMsg(_message) => todo!(),
-                MsgEnvelope::PacketMsg(_message) => todo!(),
+                MsgEnvelope::Channel(_message) => todo!(),
+                MsgEnvelope::Packet(_message) => todo!(),
             }
         }
 
@@ -335,30 +329,24 @@ mod val_exec_ctx {
             Self: Sized,
         {
             match message {
-                MsgEnvelope::ClientMsg(message) => match message {
+                MsgEnvelope::Client(message) => match message {
                     ClientMsg::CreateClient(message) => create_client::execute(self, message),
                     ClientMsg::UpdateClient(message) => update_client::execute(self, message),
                     ClientMsg::Misbehaviour(message) => misbehaviour::execute(self, message),
                     ClientMsg::UpgradeClient(message) => upgrade_client::execute(self, message),
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::ConnectionMsg(message) => match message {
-                    ConnectionMsg::ConnectionOpenInit(message) => {
-                        conn_open_init::execute(self, message)
-                    }
-                    ConnectionMsg::ConnectionOpenTry(message) => {
-                        conn_open_try::execute(self, message)
-                    }
-                    ConnectionMsg::ConnectionOpenAck(message) => {
-                        conn_open_ack::execute(self, message)
-                    }
-                    ConnectionMsg::ConnectionOpenConfirm(ref message) => {
+                MsgEnvelope::Connection(message) => match message {
+                    ConnectionMsg::OpenInit(message) => conn_open_init::execute(self, message),
+                    ConnectionMsg::OpenTry(message) => conn_open_try::execute(self, message),
+                    ConnectionMsg::OpenAck(message) => conn_open_ack::execute(self, message),
+                    ConnectionMsg::OpenConfirm(ref message) => {
                         conn_open_confirm::execute(self, message)
                     }
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::ChannelMsg(_message) => todo!(),
-                MsgEnvelope::PacketMsg(_message) => todo!(),
+                MsgEnvelope::Channel(_message) => todo!(),
+                MsgEnvelope::Packet(_message) => todo!(),
             }
         }
 

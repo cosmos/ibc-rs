@@ -21,16 +21,6 @@ pub struct MsgUpdateClient {
     pub signer: Signer,
 }
 
-impl MsgUpdateClient {
-    pub fn new(client_id: ClientId, header: Any, signer: Signer) -> Self {
-        MsgUpdateClient {
-            client_id,
-            header,
-            signer,
-        }
-    }
-}
-
 impl Msg for MsgUpdateClient {
     type Raw = RawMsgUpdateClient;
 
@@ -71,12 +61,24 @@ mod tests {
 
     use test_log::test;
 
+    use ibc_proto::google::protobuf::Any;
     use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;
 
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_ics07_header;
     use crate::core::ics02_client::msgs::MsgUpdateClient;
     use crate::core::ics24_host::identifier::ClientId;
+    use crate::signer::Signer;
     use crate::test_utils::get_dummy_account_id;
+
+    impl MsgUpdateClient {
+        pub fn new(client_id: ClientId, header: Any, signer: Signer) -> Self {
+            MsgUpdateClient {
+                client_id,
+                header,
+                signer,
+            }
+        }
+    }
 
     #[test]
     fn msg_update_client_serialization() {
