@@ -85,7 +85,7 @@ jobs:
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --no-default-features --features "clock" --all-targets # tests need the clock feature
+          args: --no-default-features --all-targets # tests need the clock feature
 
   test-stable:
     runs-on: ubuntu-latest
