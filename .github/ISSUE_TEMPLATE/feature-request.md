@@ -14,27 +14,10 @@ v                     without deliberation
 ## Feature Summary
 
 <!-- Short description of the proposed feature -->
-<!-- Apply relevant labels to indicate:
-    - (WHY) The purpose or objective of this issue with "O" labels
-    - (WHICH) The part of the system this issue relates to (use "E" for external or "I" for internal levels)
-    - (HOW) If any administrative considerations should be taken into account (use "A" labels)
--->
-
-## Definition
-
-<!-- Why do we need this feature? 
-What benefits does IBC-rs stand to gain by including this feature?
-Are there any disadvantages of including this feature? -->
 
 ## Proposal
 
 <!-- Detailed description of requirements of implementation -->
-<!-- Break down the work into bullet points to better organize how things get done (If applicable) -->
-
-____
-
-### For Admin Use
-
-- [ ] Not duplicate issue
-- [ ] Appropriate labels applied
-- [ ] Appropriate contributors assigned
+<!-- Why do we need this feature? 
+What benefits does IBC-rs stand to gain by including this feature?
+Are there any disadvantages of including this feature? -->

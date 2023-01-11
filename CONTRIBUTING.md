@@ -73,18 +73,13 @@ We welcome bug reports, feature requests, and other contributions to our project
 
 2. **Provide a clear and descriptive title**: This helps others understand the nature of the issue at a glance.
 
-3. **Provide detailed information**: In the issue description, clearly state the purpose of the issue include as much information as possible, such as:
-    - Steps to reproduce the issue
-    - Expected behavior
-    - Actual behavior
-    - The version of the operating system and the software you are using
-    - Error messages or logs (if applicable)
+3. **Provide detailed information**: In the issue description, clearly state the purpose of the issue and follow the guidelines of the issue template
 
 4. **Use appropriate labels**: Assign relevant labels to indicate:
     - (WHY) The purpose or objective of this issue with Objective-level "O" labels like `O: security`, `O: new-feature`, etc.
     - (WHICH) The part of the system this issue relates to using:
       - External-level "E" labels if the issue fall outside the current scope of the system and is related to external dependencies or projects like `E: non-cosmos`, `E: no-std` etc.
-      - or "Internal-level "I" labels for anything related to the current scope of the product like `I: logic`, `I: documentation`, etc.
+      - or "Internal-level "I" labels for anything related to the current scope of the product like `I: errors`, `I: documentation`, etc.
     - (HOW) If any administrative considerations should be taken into account use Administrative-level "A" labels like `A: help-wanted`, `A: critical`, etc.
 
 This assist us prioritize and categorize your issue more effectively and help others and reviewers understand the type and severity of the issue.
@@ -115,11 +110,6 @@ Pull requests should aim to be small and self-contained to facilitate quick
 review and merging. Larger change sets should be broken up across multiple PRs.
 Commits should be concise but informative, and moderately clean. Commits will be squashed into a
 single commit for the PR with all the commit messages.
-
-In order to help facilitate the PR review process, tag *one* person as the
-reviewer of the PR. If you are unsure of who to tag, your point of contact on
-the ibc-rs team is always a natural candidate; they'll make sure that the PR gets
-reviewed by whomever is most appropriate to review it.
 
 ## Responsibilities of a PR Reviewer
 
