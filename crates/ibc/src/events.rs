@@ -189,7 +189,20 @@ impl FromStr for IbcEventType {
 }
 
 /// Events created by the IBC component of a chain, destined for a relayer.
-#[derive(Debug)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum IbcEvent {
     CreateClient(ClientEvents::CreateClient),
     UpdateClient(ClientEvents::UpdateClient),
@@ -318,7 +331,6 @@ impl From<ModuleEvent> for IbcEvent {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -331,6 +343,7 @@ impl From<ModuleEvent> for IbcEvent {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ModuleEventAttribute {
     pub key: String,

@@ -380,6 +380,7 @@ mod tests {
         // Client parameters -- identifier and correct height (matching the proof height)
         let client_id = ClientId::from_str("mock_clientid").unwrap();
         let proof_height = msg_ack.proofs_height_on_b;
+        let consensus_state_height = msg_ack.consensus_height_of_a_on_b;
 
         // Parametrize the host chain to have a height at least as recent as the
         // the height of the proofs in the Ack msg.
@@ -415,8 +416,8 @@ mod tests {
                 ctx: default_context
                     .clone()
                     .with_client(&client_id, proof_height)
-                    .with_connection(conn_id.clone(), default_conn_end),
-                msg: ConnectionMsg::ConnectionOpenAck(msg_ack.clone()),
+                    .with_connection(conn_id.clone(), default_conn_end.clone()),
+                msg: ConnectionMsg::OpenAck(msg_ack.clone()),
                 want_pass: true,
                 match_error: Box::new(|_| panic!("should not have error")),
             },
@@ -424,7 +425,7 @@ mod tests {
                 name: "Processing fails because the connection does not exist in the context"
                     .to_string(),
                 ctx: default_context.clone(),
-                msg: ConnectionMsg::ConnectionOpenAck(msg_ack.clone()),
+                msg: ConnectionMsg::OpenAck(msg_ack.clone()),
                 want_pass: false,
                 match_error: {
                     let right_connection_id = conn_id.clone();
@@ -439,12 +440,33 @@ mod tests {
                 },
             },
             Test {
+                name: "Processing fails due to InvalidConsensusHeight".to_string(),
+                ctx: MockContext::default()
+                    .with_client(&client_id, proof_height)
+                    .with_connection(conn_id.clone(), default_conn_end),
+                msg: ConnectionMsg::OpenAck(msg_ack.clone()),
+                want_pass: false,
+                match_error: {
+                    Box::new(move |e| match e {
+                        error::ConnectionError::InvalidConsensusHeight {
+                            target_height,
+                            current_height: _,
+                        } => {
+                            assert_eq!(consensus_state_height, target_height);
+                        }
+                        _ => {
+                            panic!("Expected InvalidConsensusHeight error");
+                        }
+                    })
+                },
+            },
+            Test {
                 name: "Processing fails due to connections mismatch (incorrect 'open' state)"
                     .to_string(),
                 ctx: default_context
                     .with_client(&client_id, proof_height)
                     .with_connection(conn_id.clone(), conn_end_open),
-                msg: ConnectionMsg::ConnectionOpenAck(msg_ack),
+                msg: ConnectionMsg::OpenAck(msg_ack),
                 want_pass: false,
                 match_error: {
                     let right_connection_id = conn_id;
@@ -458,17 +480,6 @@ mod tests {
                     })
                 },
             },
-            /*
-            Test {
-                name: "Processing fails due to MissingLocalConsensusState".to_string(),
-                ctx: MockContext::default()
-                    .with_client(&client_id, proof_height)
-                    .with_connection(conn_id, default_conn_end),
-                msg: ConnectionMsg::ConnectionOpenAck(Box::new(msg_ack)),
-                want_pass: false,
-                error_kind: Some(Kind::MissingLocalConsensusState)
-            },
-            */
         ];
 
         for test in tests {
@@ -476,7 +487,7 @@ mod tests {
             {
                 let res = ValidationContext::validate(
                     &test.ctx,
-                    MsgEnvelope::ConnectionMsg(test.msg.clone()),
+                    MsgEnvelope::Connection(test.msg.clone()),
                 );
 
                 match res {
@@ -501,7 +512,6 @@ mod tests {
                     }
                 }
             }
-
             let res = dispatch(&test.ctx, test.msg.clone());
             // Additionally check the events and the output objects in the result.
             match res {

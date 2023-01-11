@@ -26,6 +26,7 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgAcknowledgement";
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, From, Into)]
 pub struct Acknowledgement(Vec<u8>);
 
@@ -58,28 +59,6 @@ pub struct MsgAcknowledgement {
     /// Height at which the commitment proof in this message were taken
     pub proof_height_on_b: Height,
     pub signer: Signer,
-}
-
-impl MsgAcknowledgement {
-    pub fn new(
-        packet: Packet,
-        acknowledgement: Acknowledgement,
-        proof_acked_on_b: CommitmentProofBytes,
-        proof_height_on_b: Height,
-        signer: Signer,
-    ) -> MsgAcknowledgement {
-        Self {
-            packet,
-            acknowledgement,
-            proof_acked_on_b,
-            proof_height_on_b,
-            signer,
-        }
-    }
-
-    pub fn acknowledgement(&self) -> &Acknowledgement {
-        &self.acknowledgement
-    }
 }
 
 impl Msg for MsgAcknowledgement {

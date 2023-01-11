@@ -5,15 +5,15 @@ edition = "2021"
 resolver = "2"
 
 [dependencies]
-ibc = { path = "../../crates/ibc", default-features = false, features = ["serde"] }
-ibc-proto = { version = "0.24.0", default-features = false }
+ibc = { path = "../../crates/ibc", default-features = false, features = ["serde", "mocks-no-std"] }
+ibc-proto = { version = "0.24.1", default-features = false, features = ["parity-scale-codec", "borsh"]}
 tendermint = { version = "0.28.0", default-features = false }
 tendermint-proto = { version = "0.28.0", default-features = false }
 tendermint-light-client-verifier = { version = "0.28.0", default-features = false }
 
-sp-core = { version = "10.0.0", default-features = false, optional = true }
-sp-io = { version = "11.0.0", default-features = false, optional = true }
-sp-runtime = { version = "11.0.0", default-features = false, optional = true }
+sp-core = { version = "11.0.0", default-features = false, optional = true }
+sp-io = { version = "12.0.0", default-features = false, optional = true }
+sp-runtime = { version = "12.0.0", default-features = false, optional = true }
 sp-std = { version = "6.0.0", default-features = false, optional = true }
 
 [features]

@@ -143,7 +143,7 @@ where
     Ok(())
 }
 
-pub fn process<Ctx: ClientReader>(
+pub(crate) fn process<Ctx: ClientReader>(
     ctx: &Ctx,
     msg: MsgUpdateClient,
 ) -> HandlerResult<ClientResult, ClientError> {

@@ -198,31 +198,31 @@ mod tests {
 
         let chan_end = ChannelEnd::new(
             State::Init,
-            *msg_chan_try.chan_end_on_b.ordering(),
+            msg_chan_try.ordering,
             Counterparty::new(
                 msg_chan_ack.port_id_on_a.clone(),
                 Some(msg_chan_ack.chan_id_on_a.clone()),
             ),
             connection_vec0.clone(),
-            msg_chan_try.chan_end_on_b.version().clone(),
+            msg_chan_try.version_supported_on_a.clone(),
         );
 
         let failed_chan_end = ChannelEnd::new(
             State::Open,
-            *msg_chan_try.chan_end_on_b.ordering(),
+            msg_chan_try.ordering,
             Counterparty::new(
                 msg_chan_ack.port_id_on_a.clone(),
                 Some(msg_chan_ack.chan_id_on_a.clone()),
             ),
             connection_vec0,
-            msg_chan_try.chan_end_on_b.version().clone(),
+            msg_chan_try.version_supported_on_a,
         );
 
         let tests: Vec<Test> = vec![
             Test {
                 name: "Processing fails because no channel exists in the context".to_string(),
                 ctx: context.clone(),
-                msg: ChannelMsg::ChannelOpenAck(msg_chan_ack.clone()),
+                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
                 want_pass: false,
             },
             Test {
@@ -238,7 +238,7 @@ mod tests {
                         msg_chan_ack.chan_id_on_a.clone(),
                         failed_chan_end,
                     ),
-                msg: ChannelMsg::ChannelOpenAck(msg_chan_ack.clone()),
+                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
                 want_pass: false,
             },
             Test {
@@ -254,7 +254,7 @@ mod tests {
                         msg_chan_ack.chan_id_on_a.clone(),
                         chan_end.clone(),
                     ),
-                msg: ChannelMsg::ChannelOpenAck(msg_chan_ack.clone()),
+                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
                 want_pass: false,
             },
             Test {
@@ -267,7 +267,7 @@ mod tests {
                         msg_chan_ack.chan_id_on_a.clone(),
                         chan_end.clone(),
                     ),
-                msg: ChannelMsg::ChannelOpenAck(msg_chan_ack.clone()),
+                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
                 want_pass: false,
             },
             Test {
@@ -283,7 +283,7 @@ mod tests {
                         msg_chan_ack.chan_id_on_a.clone(),
                         chan_end,
                     ),
-                msg: ChannelMsg::ChannelOpenAck(msg_chan_ack),
+                msg: ChannelMsg::OpenAck(msg_chan_ack),
                 want_pass: true,
             },
         ]

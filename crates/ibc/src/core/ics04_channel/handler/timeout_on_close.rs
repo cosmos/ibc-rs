@@ -12,7 +12,7 @@ use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
 /// Per our convention, this message is processed on chain A.
-pub fn process<Ctx: ChannelReader>(
+pub(crate) fn process<Ctx: ChannelReader>(
     ctx_a: &Ctx,
     msg: &MsgTimeoutOnClose,
 ) -> HandlerResult<PacketResult, PacketError> {
