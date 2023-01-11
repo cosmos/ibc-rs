@@ -3,7 +3,6 @@ use crate::prelude::*;
 use core::convert::{TryFrom, TryInto};
 use core::str::FromStr;
 use displaydoc::Display;
-use serde_derive::{Deserialize, Serialize};
 use tendermint::abci;
 
 use crate::core::ics02_client::error as client_error;
@@ -55,7 +54,8 @@ impl std::error::Error for Error {
 
 /// Events whose data is not included in the app state and must be extracted using tendermint RPCs
 /// (i.e. /tx_search or /block_search)
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone)]
 pub enum WithBlockDataType {
     CreateClient,
     UpdateClient,
@@ -101,7 +101,8 @@ const TIMEOUT_EVENT: &str = "timeout_packet";
 const CHANNEL_CLOSED_EVENT: &str = "channel_close";
 
 /// Events types
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IbcEventType {
     CreateClient,
     UpdateClient,
@@ -200,7 +201,8 @@ impl FromStr for IbcEventType {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum IbcEvent {
     CreateClient(ClientEvents::CreateClient),
     UpdateClient(ClientEvents::UpdateClient),
@@ -299,7 +301,8 @@ impl IbcEvent {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ModuleEvent {
     pub kind: String,
     pub module_name: ModuleId,
@@ -340,7 +343,8 @@ impl From<ModuleEvent> for IbcEvent {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ModuleEventAttribute {
     pub key: String,
     pub value: String,

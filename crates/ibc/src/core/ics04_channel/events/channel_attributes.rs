@@ -1,7 +1,6 @@
 ///! This module holds all the abci event attributes for IBC events emitted
 ///! during the channel handshake.
 use derive_more::From;
-use serde_derive::{Deserialize, Serialize};
 use tendermint::abci;
 
 use crate::core::{
@@ -29,7 +28,8 @@ const VERSION_ATTRIBUTE_KEY: &str = "version";
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, From, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct PortIdAttribute {
     pub port_id: PortId,
 }
@@ -52,7 +52,8 @@ impl From<PortIdAttribute> for abci::EventAttribute {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, From, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct ChannelIdAttribute {
     pub channel_id: ChannelId,
 }
@@ -74,7 +75,8 @@ impl From<ChannelIdAttribute> for abci::EventAttribute {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, From, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct CounterpartyPortIdAttribute {
     pub counterparty_port_id: PortId,
 }
@@ -100,7 +102,8 @@ impl From<CounterpartyPortIdAttribute> for abci::EventAttribute {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, From, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct CounterpartyChannelIdAttribute {
     pub counterparty_channel_id: ChannelId,
 }
@@ -133,7 +136,8 @@ impl AsRef<ChannelId> for CounterpartyChannelIdAttribute {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, From, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct ConnectionIdAttribute {
     pub connection_id: ConnectionId,
 }
@@ -156,7 +160,8 @@ impl From<ConnectionIdAttribute> for abci::EventAttribute {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, From, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct VersionAttribute {
     pub version: Version,
 }

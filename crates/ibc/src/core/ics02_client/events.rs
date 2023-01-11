@@ -10,7 +10,6 @@ use crate::core::ics02_client::height::Height;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::events::IbcEventType;
 use crate::prelude::*;
-use serde_derive::{Deserialize, Serialize};
 
 /// The content of the `key` field for the attribute containing the client identifier.
 pub const CLIENT_ID_ATTRIBUTE_KEY: &str = "client_id";
@@ -38,7 +37,8 @@ pub const HEADER_ATTRIBUTE_KEY: &str = "header";
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, From, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 struct ClientIdAttribute {
     client_id: ClientId,
 }
@@ -61,7 +61,8 @@ impl From<ClientIdAttribute> for abci::EventAttribute {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, From, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 struct ClientTypeAttribute {
     client_type: ClientType,
 }
@@ -84,7 +85,8 @@ impl From<ClientTypeAttribute> for abci::EventAttribute {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, From, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 struct ConsensusHeightAttribute {
     consensus_height: Height,
 }
@@ -107,7 +109,8 @@ impl From<ConsensusHeightAttribute> for abci::EventAttribute {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, From, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 struct ConsensusHeightsAttribute {
     consensus_heights: Vec<Height>,
 }
@@ -135,7 +138,8 @@ impl From<ConsensusHeightsAttribute> for abci::EventAttribute {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, From, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 struct HeaderAttribute {
     header: Any,
 }
@@ -163,7 +167,8 @@ impl From<HeaderAttribute> for abci::EventAttribute {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CreateClient {
     client_id: ClientIdAttribute,
     client_type: ClientTypeAttribute,
@@ -218,7 +223,8 @@ impl From<CreateClient> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpdateClient {
     client_id: ClientIdAttribute,
     client_type: ClientTypeAttribute,
@@ -296,7 +302,8 @@ impl From<UpdateClient> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClientMisbehaviour {
     client_id: ClientIdAttribute,
     client_type: ClientTypeAttribute,
@@ -341,7 +348,8 @@ impl From<ClientMisbehaviour> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpgradeClient {
     client_id: ClientIdAttribute,
     client_type: ClientTypeAttribute,

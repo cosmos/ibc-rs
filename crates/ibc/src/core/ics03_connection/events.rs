@@ -1,6 +1,5 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the connection module.
 
-use serde_derive::{Deserialize, Serialize};
 use tendermint::abci;
 
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
@@ -25,7 +24,8 @@ pub const COUNTERPARTY_CLIENT_ID_ATTRIBUTE_KEY: &str = "counterparty_client_id";
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct Attributes {
     pub connection_id: ConnectionId,
     pub client_id: ClientId,
@@ -75,7 +75,8 @@ impl From<Attributes> for Vec<abci::EventAttribute> {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenInit(Attributes);
 
 impl OpenInit {
@@ -128,7 +129,8 @@ impl From<OpenInit> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenTry(Attributes);
 
 impl OpenTry {
@@ -181,7 +183,8 @@ impl From<OpenTry> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenAck(Attributes);
 
 impl OpenAck {
@@ -235,7 +238,8 @@ impl From<OpenAck> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenConfirm(Attributes);
 
 impl OpenConfirm {

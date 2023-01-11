@@ -3,7 +3,6 @@ use crate::prelude::*;
 use derive_more::{From, Into};
 use ibc_proto::ibc::core::channel::v1::MsgAcknowledgement as RawMsgAcknowledgement;
 use ibc_proto::protobuf::Protobuf;
-use serde_derive::{Deserialize, Serialize};
 
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::Packet;
@@ -27,7 +26,8 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgAcknowledgement";
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, From, Into, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, From, Into)]
 pub struct Acknowledgement(Vec<u8>);
 
 impl Acknowledgement {

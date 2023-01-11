@@ -3,7 +3,6 @@
 mod channel_attributes;
 mod packet_attributes;
 
-use serde_derive::{Deserialize, Serialize};
 use tendermint::abci;
 
 use crate::core::ics04_channel::error::ChannelError;
@@ -42,7 +41,8 @@ use super::Version;
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenInit {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
@@ -112,7 +112,8 @@ impl From<OpenInit> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenTry {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
@@ -188,7 +189,8 @@ impl From<OpenTry> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenAck {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
@@ -257,7 +259,8 @@ impl From<OpenAck> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenConfirm {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
@@ -326,7 +329,8 @@ impl From<OpenConfirm> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CloseInit {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
@@ -395,7 +399,8 @@ impl From<CloseInit> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CloseConfirm {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
@@ -468,7 +473,8 @@ impl From<CloseConfirm> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ChannelClosed {
     port_id: PortIdAttribute,
     channel_id: ChannelIdAttribute,
@@ -549,7 +555,8 @@ impl From<ChannelClosed> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SendPacket {
     packet_data: PacketDataAttribute,
     timeout_height: TimeoutHeightAttribute,
@@ -655,7 +662,8 @@ impl TryFrom<SendPacket> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReceivePacket {
     packet_data: PacketDataAttribute,
     timeout_height: TimeoutHeightAttribute,
@@ -761,7 +769,8 @@ impl TryFrom<ReceivePacket> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WriteAcknowledgement {
     packet_data: PacketDataAttribute,
     timeout_height: TimeoutHeightAttribute,
@@ -871,7 +880,8 @@ impl TryFrom<WriteAcknowledgement> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AcknowledgePacket {
     timeout_height: TimeoutHeightAttribute,
     timeout_timestamp: TimeoutTimestampAttribute,
@@ -969,7 +979,8 @@ impl TryFrom<AcknowledgePacket> for abci::Event {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TimeoutPacket {
     timeout_height: TimeoutHeightAttribute,
     timeout_timestamp: TimeoutTimestampAttribute,
