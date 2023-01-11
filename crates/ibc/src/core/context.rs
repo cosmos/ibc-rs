@@ -78,6 +78,7 @@ mod val_exec_ctx {
     use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
     use crate::core::ics04_channel::context::calculate_block_delay;
     use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
+    use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics04_channel::packet::{Receipt, Sequence};
     use crate::core::ics04_channel::timeout::TimeoutHeight;
@@ -158,15 +159,25 @@ mod val_exec_ctx {
                 }
                 .map_err(RouterError::ContextError),
                 MsgEnvelope::Channel(message) => {
-                    let module_id = self
-                        .lookup_module(&message)
-                        .map_err(|err| ContextError::from(err))?;
+                    let module_id = self.lookup_module(&message).map_err(ContextError::from)?;
                     if !self.has_route(&module_id) {
                         return Err(ChannelError::RouteNotFound)
-                            .map_err(|err| ContextError::ChannelError(err))?;
+                            .map_err(ContextError::ChannelError)
+                            .map_err(RouterError::ContextError);
                     }
 
-                    todo!()
+                    match message {
+                        ChannelMsg::OpenInit(_) => todo!(),
+                        ChannelMsg::OpenTry(message) => {
+                            validate_chan_open_try(self, module_id, message)
+                        }
+                        ChannelMsg::OpenAck(_) => todo!(),
+                        ChannelMsg::OpenConfirm(_) => todo!(),
+                        ChannelMsg::CloseInit(_) => todo!(),
+                        ChannelMsg::CloseConfirm(_) => todo!(),
+                    }
+                    .map_err(ContextError::ChannelError)
+                    .map_err(RouterError::ContextError)
                 }
                 MsgEnvelope::Packet(_message) => todo!(),
             }
@@ -361,6 +372,17 @@ mod val_exec_ctx {
         fn block_delay(&self, delay_period_time: &Duration) -> u64 {
             calculate_block_delay(delay_period_time, &self.max_expected_time_per_block())
         }
+    }
+
+    fn validate_chan_open_try<ValCtx>(
+        _ctx: &ValCtx,
+        _module_id: ModuleId,
+        _message: MsgChannelOpenTry,
+    ) -> Result<(), ChannelError>
+    where
+        ValCtx: ValidationContext,
+    {
+        todo!()
     }
 
     pub trait ExecutionContext: ValidationContext {
