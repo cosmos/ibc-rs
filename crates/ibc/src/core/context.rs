@@ -173,7 +173,7 @@ mod val_exec_ctx {
                     match message {
                         ChannelMsg::OpenInit(_) => todo!(),
                         ChannelMsg::OpenTry(message) => {
-                            validate_chan_open_try(self, module_id, message)
+                            chan_open_try_validate(self, module_id, message)
                         }
                         ChannelMsg::OpenAck(_) => todo!(),
                         ChannelMsg::OpenConfirm(_) => todo!(),
@@ -377,31 +377,6 @@ mod val_exec_ctx {
         }
     }
 
-    fn validate_chan_open_try<ValCtx>(
-        ctx: &ValCtx,
-        module_id: ModuleId,
-        msg: MsgChannelOpenTry,
-    ) -> Result<(), ContextError>
-    where
-        ValCtx: ValidationContext,
-    {
-        let channel_id = chan_open_try::validate(ctx, &msg)?;
-
-        let module = ctx
-            .get_route(&module_id)
-            .ok_or(ChannelError::RouteNotFound)?;
-        let _ = module.on_chan_open_try_validate(
-            msg.ordering,
-            &msg.connection_hops_on_b,
-            &msg.port_id_on_b,
-            &channel_id,
-            &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
-            &msg.version_supported_on_a,
-        )?;
-
-        Ok(())
-    }
-
     pub trait ExecutionContext: ValidationContext {
         /// Execution entrypoint
         fn execute(&mut self, message: MsgEnvelope) -> Result<(), RouterError>
@@ -425,7 +400,26 @@ mod val_exec_ctx {
                     }
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::Channel(_message) => todo!(),
+                MsgEnvelope::Channel(message) => {
+                    let module_id = self.lookup_module(&message).map_err(ContextError::from)?;
+                    if !self.has_route(&module_id) {
+                        return Err(ChannelError::RouteNotFound)
+                            .map_err(ContextError::ChannelError)
+                            .map_err(RouterError::ContextError);
+                    }
+
+                    match message {
+                        ChannelMsg::OpenInit(_) => todo!(),
+                        ChannelMsg::OpenTry(message) => {
+                            chan_open_try_execute(self, module_id, message)
+                        }
+                        ChannelMsg::OpenAck(_) => todo!(),
+                        ChannelMsg::OpenConfirm(_) => todo!(),
+                        ChannelMsg::CloseInit(_) => todo!(),
+                        ChannelMsg::CloseConfirm(_) => todo!(),
+                    }
+                    .map_err(RouterError::ContextError)
+                }
                 MsgEnvelope::Packet(_message) => todo!(),
             }
         }
@@ -561,5 +555,41 @@ mod val_exec_ctx {
 
         /// Logging facility
         fn log_message(&mut self, message: String);
+    }
+
+    fn chan_open_try_validate<ValCtx>(
+        ctx: &ValCtx,
+        module_id: ModuleId,
+        msg: MsgChannelOpenTry,
+    ) -> Result<(), ContextError>
+    where
+        ValCtx: ValidationContext,
+    {
+        let channel_id = chan_open_try::validate(ctx, &msg)?;
+
+        let module = ctx
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        let _ = module.on_chan_open_try_validate(
+            msg.ordering,
+            &msg.connection_hops_on_b,
+            &msg.port_id_on_b,
+            &channel_id,
+            &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+            &msg.version_supported_on_a,
+        )?;
+
+        Ok(())
+    }
+
+    fn chan_open_try_execute<ExecCtx>(
+        _ctx: &mut ExecCtx,
+        _module_id: ModuleId,
+        _msg: MsgChannelOpenTry,
+    ) -> Result<(), ContextError>
+    where
+        ExecCtx: ExecutionContext,
+    {
+        todo!()
     }
 }
