@@ -122,6 +122,18 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         version: &Version,
     ) -> Result<(ModuleExtras, Version), ChannelError>;
 
+    #[cfg(feature = "val_exec_ctx")]
+    #[allow(clippy::too_many_arguments)]
+    fn on_chan_open_try_validate(
+        &self,
+        order: Order,
+        connection_hops: &[ConnectionId],
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        counterparty: &Counterparty,
+        counterparty_version: &Version,
+    ) -> Result<(ModuleExtras, Version), ChannelError>;
+
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_try(
         &mut self,

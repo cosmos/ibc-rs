@@ -95,6 +95,18 @@ impl Module for DummyTransferModule {
             version.clone(),
         ))
     }
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_open_try_validate(
+        &self,
+        _order: Order,
+        _connection_hops: &[ConnectionId],
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty: &Counterparty,
+        counterparty_version: &Version,
+    ) -> Result<(ModuleExtras, Version), ChannelError> {
+        Ok((ModuleExtras::empty(), counterparty_version.clone()))
+    }
 
     fn on_chan_open_try(
         &mut self,
