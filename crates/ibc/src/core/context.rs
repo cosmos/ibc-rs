@@ -74,7 +74,7 @@ mod val_exec_ctx {
     use crate::core::ics03_connection::version::{
         get_compatible_versions, pick_version, Version as ConnectionVersion,
     };
-    use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty};
+    use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
     use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
     use crate::core::ics04_channel::context::calculate_block_delay;
     use crate::core::ics04_channel::events::OpenTry;
@@ -584,15 +584,15 @@ mod val_exec_ctx {
     }
 
     fn chan_open_try_execute<ExecCtx>(
-        ctx: &mut ExecCtx,
+        ctx_b: &mut ExecCtx,
         module_id: ModuleId,
         msg: MsgChannelOpenTry,
     ) -> Result<(), ContextError>
     where
         ExecCtx: ExecutionContext,
     {
-        let channel_id = chan_open_try::execute(ctx)?;
-        let module = ctx
+        let channel_id = chan_open_try::execute(ctx_b)?;
+        let module = ctx_b
             .get_route_mut(&module_id)
             .ok_or(ChannelError::RouteNotFound)?;
 
@@ -605,28 +605,51 @@ mod val_exec_ctx {
             &msg.version_supported_on_a,
         )?;
 
+        let conn_id_on_b = msg.connection_hops_on_b[0].clone();
+        let port_channel_id_on_b = (msg.port_id_on_b.clone(), channel_id.clone());
+
         // emit events and logs
         {
             let core_event = IbcEvent::OpenTryChannel(OpenTry::new(
                 msg.port_id_on_b.clone(),
-                channel_id,
-                msg.port_id_on_a,
-                msg.chan_id_on_a,
-                msg.connection_hops_on_b[0].clone(),
-                version,
+                channel_id.clone(),
+                msg.port_id_on_a.clone(),
+                msg.chan_id_on_a.clone(),
+                conn_id_on_b.clone(),
+                version.clone(),
             ));
-            ctx.emit_ibc_event(core_event);
+            ctx_b.emit_ibc_event(core_event);
 
             for module_event in extras.events {
-                ctx.emit_ibc_event(IbcEvent::AppModule(module_event));
+                ctx_b.emit_ibc_event(IbcEvent::AppModule(module_event));
             }
 
             for log_message in extras.log {
-                ctx.log_message(log_message);
+                ctx_b.log_message(log_message);
             }
         }
 
-        // TODO: mutate chain state
+        {
+            let channel_end = ChannelEnd::new(
+                State::TryOpen,
+                msg.ordering,
+                Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+                msg.connection_hops_on_b.clone(),
+                version,
+            );
+
+            ctx_b.store_channel(port_channel_id_on_b.clone(), channel_end)?;
+
+            ctx_b.increase_channel_counter();
+
+            // Associate also the channel end to its connection.
+            ctx_b.store_connection_channels(conn_id_on_b, port_channel_id_on_b.clone())?;
+
+            // Initialize send, recv, and ack sequence numbers.
+            ctx_b.store_next_sequence_send(port_channel_id_on_b.clone(), 1.into())?;
+            ctx_b.store_next_sequence_recv(port_channel_id_on_b.clone(), 1.into())?;
+            ctx_b.store_next_sequence_ack(port_channel_id_on_b, 1.into())?;
+        }
 
         Ok(())
     }

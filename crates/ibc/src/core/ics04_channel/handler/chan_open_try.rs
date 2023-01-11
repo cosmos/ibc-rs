@@ -104,11 +104,16 @@ pub(crate) mod val_exec_ctx {
         Ok(chan_id_on_b)
     }
 
-    pub fn execute<Ctx>(ctx_b: &Ctx) -> Result<ChannelId, ContextError>
+    pub fn execute<Ctx>(ctx_b: &mut Ctx) -> Result<ChannelId, ContextError>
     where
         Ctx: ExecutionContext,
     {
         let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
+
+        ctx_b.log_message(format!(
+            "success: channel open try with channel identifier: {chan_id_on_b}"
+        ));
+
         Ok(chan_id_on_b)
     }
 }
