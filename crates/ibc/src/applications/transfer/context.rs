@@ -188,6 +188,33 @@ pub fn on_chan_open_init(
     Ok((ModuleExtras::empty(), Version::ics20()))
 }
 
+#[cfg(feature = "val_exec_ctx")]
+#[allow(clippy::too_many_arguments)]
+pub fn on_chan_open_try_validate(
+    _ctx: &impl TokenTransferContext,
+    order: Order,
+    _connection_hops: &[ConnectionId],
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+    _counterparty: &Counterparty,
+    counterparty_version: &Version,
+) -> Result<(ModuleExtras, Version), TokenTransferError> {
+    if order != Order::Unordered {
+        return Err(TokenTransferError::ChannelNotUnordered {
+            expect_order: Order::Unordered,
+            got_order: order,
+        });
+    }
+    if counterparty_version != &Version::ics20() {
+        return Err(TokenTransferError::InvalidCounterpartyVersion {
+            expect_version: Version::ics20(),
+            got_version: counterparty_version.clone(),
+        });
+    }
+
+    Ok((ModuleExtras::empty(), Version::ics20()))
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_try(
     _ctx: &mut impl TokenTransferContext,
