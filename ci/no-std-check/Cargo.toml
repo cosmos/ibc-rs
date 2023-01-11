@@ -5,8 +5,8 @@ edition = "2021"
 resolver = "2"
 
 [dependencies]
-ibc = { path = "../../crates/ibc", default-features = false }
-ibc-proto = { version = "0.24.0", default-features = false, features = ["parity-scale-codec", "borsh"]}
+ibc = { path = "../../crates/ibc", default-features = false, features = ["mocks-no-std"] }
+ibc-proto = { version = "0.24.1", default-features = false, features = ["parity-scale-codec", "borsh"]}
 tendermint = { version = "0.28.0", default-features = false }
 tendermint-proto = { version = "0.28.0", default-features = false }
 tendermint-light-client-verifier = { version = "0.28.0", default-features = false }
@@ -30,6 +30,3 @@ substrate-std = [
   "sp-runtime/std",
   "sp-std/std",
 ]
-
-[patch.crates-io]
-ibc-proto  = { git = "https://github.com/cosmos/ibc-proto-rs.git",  branch = "main" }
