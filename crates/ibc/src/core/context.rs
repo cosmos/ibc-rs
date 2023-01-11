@@ -77,6 +77,7 @@ mod val_exec_ctx {
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty};
     use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
     use crate::core::ics04_channel::context::calculate_block_delay;
+    use crate::core::ics04_channel::events::OpenTry;
     use crate::core::ics04_channel::handler::chan_open_try;
     use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
@@ -584,14 +585,49 @@ mod val_exec_ctx {
 
     fn chan_open_try_execute<ExecCtx>(
         ctx: &mut ExecCtx,
-        _module_id: ModuleId,
-        _msg: MsgChannelOpenTry,
+        module_id: ModuleId,
+        msg: MsgChannelOpenTry,
     ) -> Result<(), ContextError>
     where
         ExecCtx: ExecutionContext,
     {
-        let _channel_id = chan_open_try::execute(ctx)?;
+        let channel_id = chan_open_try::execute(ctx)?;
+        let module = ctx
+            .get_route_mut(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
 
-        todo!()
+        let (extras, version) = module.on_chan_open_try_execute(
+            msg.ordering,
+            &msg.connection_hops_on_b,
+            &msg.port_id_on_b,
+            &channel_id,
+            &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+            &msg.version_supported_on_a,
+        )?;
+
+        // emit events and logs
+        {
+            let core_event = IbcEvent::OpenTryChannel(OpenTry::new(
+                msg.port_id_on_b.clone(),
+                channel_id,
+                msg.port_id_on_a,
+                msg.chan_id_on_a,
+                msg.connection_hops_on_b[0].clone(),
+                version.clone(),
+            ));
+            ctx.emit_ibc_event(core_event);
+
+            for module_event in extras.events {
+                ctx.emit_ibc_event(IbcEvent::AppModule(module_event));
+            }
+
+            for log_message in extras.log {
+                ctx.log_message(log_message);
+            }
+        }
+
+        // TODO: mutate chain state
+
+        Ok(())
     }
 }
