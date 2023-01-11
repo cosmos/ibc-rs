@@ -11,6 +11,20 @@ use crate::core::ics24_host::identifier::ChannelId;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
+#[cfg(feature = "val_exec_ctx")]
+pub(crate) use val_exec_ctx::*;
+#[cfg(feature = "val_exec_ctx")]
+pub(crate) mod val_exec_ctx {
+    use super::*;
+    use crate::core::{ContextError, ValidationContext};
+
+    pub fn validate<Ctx>(_ctx_b: &Ctx, _msg: &MsgChannelOpenTry) -> Result<ChannelId, ContextError>
+    where
+        Ctx: ValidationContext,
+    {
+        todo!()
+    }
+}
 /// Per our convention, this message is processed on chain B.
 pub(crate) fn process<Ctx: ChannelReader>(
     ctx_b: &Ctx,

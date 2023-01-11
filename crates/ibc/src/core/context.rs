@@ -77,6 +77,7 @@ mod val_exec_ctx {
     use crate::core::ics04_channel::channel::ChannelEnd;
     use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
     use crate::core::ics04_channel::context::calculate_block_delay;
+    use crate::core::ics04_channel::handler::chan_open_try;
     use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics04_channel::msgs::ChannelMsg;
@@ -176,7 +177,6 @@ mod val_exec_ctx {
                         ChannelMsg::CloseInit(_) => todo!(),
                         ChannelMsg::CloseConfirm(_) => todo!(),
                     }
-                    .map_err(ContextError::ChannelError)
                     .map_err(RouterError::ContextError)
                 }
                 MsgEnvelope::Packet(_message) => todo!(),
@@ -375,13 +375,15 @@ mod val_exec_ctx {
     }
 
     fn validate_chan_open_try<ValCtx>(
-        _ctx: &ValCtx,
+        ctx: &ValCtx,
         _module_id: ModuleId,
-        _message: MsgChannelOpenTry,
-    ) -> Result<(), ChannelError>
+        message: MsgChannelOpenTry,
+    ) -> Result<(), ContextError>
     where
         ValCtx: ValidationContext,
     {
+        let _channel_id = chan_open_try::validate(ctx, &message)?;
+
         todo!()
     }
 
