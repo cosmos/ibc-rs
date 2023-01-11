@@ -1529,6 +1529,9 @@ mod val_exec_ctx {
     use crate::core::ValidationContext;
 
     impl NewRouter for MockContext {
+        fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module> {
+            self.new_router.get(module_id).map(Arc::as_ref)
+        }
         fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module> {
             self.new_router.get_mut(module_id).and_then(Arc::get_mut)
         }

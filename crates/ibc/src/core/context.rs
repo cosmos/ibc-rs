@@ -109,6 +109,9 @@ mod val_exec_ctx {
     use super::ContextError;
 
     pub trait Router {
+        /// Returns a reference to a `Module` registered against the specified `ModuleId`
+        fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module>;
+
         /// Returns a mutable reference to a `Module` registered against the specified `ModuleId`
         fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module>;
 
