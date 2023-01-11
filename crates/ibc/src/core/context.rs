@@ -583,13 +583,15 @@ mod val_exec_ctx {
     }
 
     fn chan_open_try_execute<ExecCtx>(
-        _ctx: &mut ExecCtx,
+        ctx: &mut ExecCtx,
         _module_id: ModuleId,
         _msg: MsgChannelOpenTry,
     ) -> Result<(), ContextError>
     where
         ExecCtx: ExecutionContext,
     {
+        let _channel_id = chan_open_try::execute(ctx)?;
+
         todo!()
     }
 }

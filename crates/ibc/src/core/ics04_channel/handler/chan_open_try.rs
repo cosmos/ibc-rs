@@ -16,7 +16,7 @@ pub(crate) use val_exec_ctx::*;
 #[cfg(feature = "val_exec_ctx")]
 pub(crate) mod val_exec_ctx {
     use super::*;
-    use crate::core::{ContextError, ValidationContext};
+    use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
     pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<ChannelId, ContextError>
     where
@@ -101,6 +101,14 @@ pub(crate) mod val_exec_ctx {
 
         let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
 
+        Ok(chan_id_on_b)
+    }
+
+    pub fn execute<Ctx>(ctx_b: &Ctx) -> Result<ChannelId, ContextError>
+    where
+        Ctx: ExecutionContext,
+    {
+        let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
         Ok(chan_id_on_b)
     }
 }
