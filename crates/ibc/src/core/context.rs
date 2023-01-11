@@ -157,7 +157,15 @@ mod val_exec_ctx {
                     }
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::Channel(_message) => {
+                MsgEnvelope::Channel(message) => {
+                    let module_id = self
+                        .lookup_module(&message)
+                        .map_err(|err| ContextError::from(err))?;
+                    if !self.has_route(&module_id) {
+                        return Err(ChannelError::RouteNotFound)
+                            .map_err(|err| ContextError::ChannelError(err))?;
+                    }
+
                     todo!()
                 }
                 MsgEnvelope::Packet(_message) => todo!(),

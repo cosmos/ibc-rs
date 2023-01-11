@@ -13,6 +13,12 @@ pub enum RouterError {
     MalformedMessageBytes(ibc_proto::protobuf::Error),
 }
 
+impl From<ContextError> for RouterError {
+    fn from(error: ContextError) -> Self {
+        Self::ContextError(error)
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for RouterError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
