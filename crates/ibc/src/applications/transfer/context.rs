@@ -215,6 +215,20 @@ pub fn on_chan_open_try_validate(
     Ok((ModuleExtras::empty(), Version::ics20()))
 }
 
+#[cfg(feature = "val_exec_ctx")]
+#[allow(clippy::too_many_arguments)]
+pub fn on_chan_open_try_execute(
+    _ctx: &mut impl TokenTransferContext,
+    _order: Order,
+    _connection_hops: &[ConnectionId],
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+    _counterparty: &Counterparty,
+    _counterparty_version: &Version,
+) -> Result<(ModuleExtras, Version), TokenTransferError> {
+    Ok((ModuleExtras::empty(), Version::ics20()))
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_try(
     _ctx: &mut impl TokenTransferContext,
