@@ -132,7 +132,7 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         channel_id: &ChannelId,
         counterparty: &Counterparty,
         counterparty_version: &Version,
-    ) -> Result<(ModuleExtras, Version), ChannelError>;
+    ) -> Result<Version, ChannelError>;
 
     #[cfg(feature = "val_exec_ctx")]
     #[allow(clippy::too_many_arguments)]

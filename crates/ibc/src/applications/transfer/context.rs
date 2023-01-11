@@ -198,7 +198,7 @@ pub fn on_chan_open_try_validate(
     _channel_id: &ChannelId,
     _counterparty: &Counterparty,
     counterparty_version: &Version,
-) -> Result<(ModuleExtras, Version), TokenTransferError> {
+) -> Result<Version, TokenTransferError> {
     if order != Order::Unordered {
         return Err(TokenTransferError::ChannelNotUnordered {
             expect_order: Order::Unordered,
@@ -212,7 +212,7 @@ pub fn on_chan_open_try_validate(
         });
     }
 
-    Ok((ModuleExtras::empty(), Version::ics20()))
+    Ok(Version::ics20())
 }
 
 #[cfg(feature = "val_exec_ctx")]

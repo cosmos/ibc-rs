@@ -613,7 +613,7 @@ mod val_exec_ctx {
                 msg.port_id_on_a,
                 msg.chan_id_on_a,
                 msg.connection_hops_on_b[0].clone(),
-                version.clone(),
+                version,
             ));
             ctx.emit_ibc_event(core_event);
 

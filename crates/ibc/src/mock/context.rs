@@ -1922,8 +1922,8 @@ mod tests {
                 _channel_id: &ChannelId,
                 _counterparty: &Counterparty,
                 counterparty_version: &Version,
-            ) -> Result<(ModuleExtras, Version), ChannelError> {
-                Ok((ModuleExtras::empty(), counterparty_version.clone()))
+            ) -> Result<Version, ChannelError> {
+                Ok(counterparty_version.clone())
             }
 
             #[cfg(feature = "val_exec_ctx")]
@@ -1993,8 +1993,8 @@ mod tests {
                 _channel_id: &ChannelId,
                 _counterparty: &Counterparty,
                 counterparty_version: &Version,
-            ) -> Result<(ModuleExtras, Version), ChannelError> {
-                Ok((ModuleExtras::empty(), counterparty_version.clone()))
+            ) -> Result<Version, ChannelError> {
+                Ok(counterparty_version.clone())
             }
 
             #[cfg(feature = "val_exec_ctx")]
