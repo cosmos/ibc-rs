@@ -74,7 +74,7 @@ mod val_exec_ctx {
     use crate::core::ics03_connection::version::{
         get_compatible_versions, pick_version, Version as ConnectionVersion,
     };
-    use crate::core::ics04_channel::channel::ChannelEnd;
+    use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty};
     use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
     use crate::core::ics04_channel::context::calculate_block_delay;
     use crate::core::ics04_channel::handler::chan_open_try;
@@ -379,15 +379,27 @@ mod val_exec_ctx {
 
     fn validate_chan_open_try<ValCtx>(
         ctx: &ValCtx,
-        _module_id: ModuleId,
-        message: MsgChannelOpenTry,
+        module_id: ModuleId,
+        msg: MsgChannelOpenTry,
     ) -> Result<(), ContextError>
     where
         ValCtx: ValidationContext,
     {
-        let _channel_id = chan_open_try::validate(ctx, &message)?;
+        let channel_id = chan_open_try::validate(ctx, &msg)?;
 
-        todo!()
+        let module = ctx
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        let _ = module.on_chan_open_try_validate(
+            msg.ordering,
+            &msg.connection_hops_on_b,
+            &msg.port_id_on_b,
+            &channel_id,
+            &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+            &msg.version_supported_on_a,
+        )?;
+
+        Ok(())
     }
 
     pub trait ExecutionContext: ValidationContext {
