@@ -1536,6 +1536,10 @@ mod val_exec_ctx {
         fn has_route(&self, module_id: &ModuleId) -> bool {
             self.new_router.get(module_id).is_some()
         }
+
+        fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId> {
+            <Self as PortReader>::lookup_module_by_port(self, port_id).ok()
+        }
     }
 
     impl ValidationContext for MockContext {

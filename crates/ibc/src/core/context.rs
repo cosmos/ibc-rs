@@ -110,6 +110,9 @@ mod val_exec_ctx {
 
         /// Returns true if the `Router` has a `Module` registered against the specified `ModuleId`
         fn has_route(&self, module_id: &ModuleId) -> bool;
+
+        /// Return the module_id associated with a given port_id
+        fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId>;
     }
 
     pub trait ValidationContext: Router {
@@ -135,7 +138,9 @@ mod val_exec_ctx {
                     }
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::Channel(_message) => todo!(),
+                MsgEnvelope::Channel(_message) => {
+                    todo!()
+                },
                 MsgEnvelope::Packet(_message) => todo!(),
             }
         }
