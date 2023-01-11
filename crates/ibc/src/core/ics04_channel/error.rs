@@ -19,6 +19,8 @@ pub enum ChannelError {
     Connection(connection_error::ConnectionError),
     /// port error: `{0}`
     Port(port_error::PortError),
+    /// port `{port_id}` is unknown
+    PortNoSource { port_id: PortId },
     /// channel state unknown: `{state}`
     UnknownState { state: i32 },
     /// channel order type unknown: `{type_id}`

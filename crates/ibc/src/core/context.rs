@@ -61,6 +61,7 @@ pub use val_exec_ctx::*;
 
 #[cfg(feature = "val_exec_ctx")]
 mod val_exec_ctx {
+    use super::*;
     use core::time::Duration;
 
     use ibc_proto::google::protobuf::Any;
@@ -77,6 +78,7 @@ mod val_exec_ctx {
     use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
     use crate::core::ics04_channel::context::calculate_block_delay;
     use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
+    use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics04_channel::packet::{Receipt, Sequence};
     use crate::core::ics04_channel::timeout::TimeoutHeight;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
@@ -100,7 +102,7 @@ mod val_exec_ctx {
     };
     use crate::events::IbcEvent;
     use crate::timestamp::Timestamp;
-    use crate::{prelude::*, Height};
+    use crate::Height;
 
     use super::ContextError;
 
@@ -113,6 +115,23 @@ mod val_exec_ctx {
 
         /// Return the module_id associated with a given port_id
         fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId>;
+
+        fn lookup_module(&self, msg: &ChannelMsg) -> Result<ModuleId, ChannelError> {
+            let port_id = match msg {
+                ChannelMsg::OpenInit(msg) => &msg.port_id_on_a,
+                ChannelMsg::OpenTry(msg) => &msg.port_id_on_b,
+                ChannelMsg::OpenAck(msg) => &msg.port_id_on_a,
+                ChannelMsg::OpenConfirm(msg) => &msg.port_id_on_b,
+                ChannelMsg::CloseInit(msg) => &msg.port_id_on_a,
+                ChannelMsg::CloseConfirm(msg) => &msg.port_id_on_b,
+            };
+            let module_id =
+                self.lookup_module_by_port(port_id)
+                    .ok_or(ChannelError::PortNoSource {
+                        port_id: port_id.clone(),
+                    })?;
+            Ok(module_id)
+        }
     }
 
     pub trait ValidationContext: Router {
@@ -140,7 +159,7 @@ mod val_exec_ctx {
                 .map_err(RouterError::ContextError),
                 MsgEnvelope::Channel(_message) => {
                     todo!()
-                },
+                }
                 MsgEnvelope::Packet(_message) => todo!(),
             }
         }
