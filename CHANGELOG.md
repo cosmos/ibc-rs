@@ -1,5 +1,55 @@
 # CHANGELOG
 
+## v0.26.0
+
+*December 14, 2022*
+
+This release contains miscellaneous improvements, focusing mainly on addressing technical debt.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Exclude `ChannelEnd` from `MsgChannelOpenInit` and `MsgChannelOpenTry` and refactor their fields to match the spec
+  ([#20](https://github.com/cosmos/ibc-rs/issues/20))
+- Simplify Msg trait by removing unnecessary methods.
+  ([#218](https://github.com/cosmos/ibc-rs/issues/218))
+- Refactor proof handlers to conduct proof verifications inline with the process function 
+  and apply naming conventions to packet messages types
+  ([#230](https://github.com/cosmos/ibc-rs/issues/230))
+- The function parameters in the Reader traits now references,
+  while the functions in the Keeper traits take ownership directly.
+  ([#304](https://github.com/cosmos/ibc-rs/issues/304))
+- Change type of `trusted_validator_set` field in
+  `MisbehaviourTrustedValidatorHashMismatch` error variant from `ValidatorSet` to
+  `Vec<Validator>` to avoid clippy catches
+  ([#309](https://github.com/cosmos/ibc-rs/issues/309))
+- The function parameters in the `ValidationContext` trait now use references,
+  while the functions in the `ExecutionContext` trait take ownership directly.
+  ([#319](https://github.com/cosmos/ibc-rs/issues/319))
+- Make internal `process()` `pub(crate)` 
+  ([#338](https://github.com/cosmos/ibc-rs/issues/338))
+
+### FEATURES
+
+- Add serialization and deserialization features for codec and borsh to the host
+  type in ics24 ([#259](https://github.com/cosmos/ibc-rs/issues/259))
+- Add codec and borsh for ics04_channel::msgs::Acknowledgement and
+  events::ModuleEvent ([#303](https://github.com/cosmos/ibc-rs/issues/303))
+- Add parity-scale-codec and borsh for ibc::events::IbcEvent
+  ([#320](https://github.com/cosmos/ibc-rs/issues/320))
+- Make the code under mocks features work in no-std
+  ([#311](https://github.com/cosmos/ibc-rs/issues/311))
+
+### IMPROVEMENTS
+
+- Refactor unreachable test of conn_open_ack handler
+  ([#30](https://github.com/cosmos/ibc-rs/issues/30))
+- Remove legacy relayer-specific code and move ics18_relayer under the mock module
+  ([#154](https://github.com/cosmos/ibc-rs/issues/154))
+- Improve clippy catches and fix lint issues identified by clippy 0.1.67
+  ([#309](https://github.com/cosmos/ibc-rs/issues/309))
+
 ## v0.25.0
 
 *December 14, 2022*
