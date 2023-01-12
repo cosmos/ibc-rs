@@ -560,24 +560,24 @@ mod val_exec_ctx {
     }
 
     fn chan_open_try_validate<ValCtx>(
-        ctx: &ValCtx,
+        ctx_b: &ValCtx,
         module_id: ModuleId,
         msg: MsgChannelOpenTry,
     ) -> Result<(), ContextError>
     where
         ValCtx: ValidationContext,
     {
-        chan_open_try::validate(ctx, &msg)?;
-        let channel_id = ChannelId::new(ctx.channel_counter()?);
+        chan_open_try::validate(ctx_b, &msg)?;
+        let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
 
-        let module = ctx
+        let module = ctx_b
             .get_route(&module_id)
             .ok_or(ChannelError::RouteNotFound)?;
         let _ = module.on_chan_open_try_validate(
             msg.ordering,
             &msg.connection_hops_on_b,
             &msg.port_id_on_b,
-            &channel_id,
+            &chan_id_on_b,
             &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
             &msg.version_supported_on_a,
         )?;
