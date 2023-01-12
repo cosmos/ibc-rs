@@ -18,7 +18,7 @@ pub(crate) mod val_exec_ctx {
     use super::*;
     use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
-    pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<ChannelId, ContextError>
+    pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), ContextError>
     where
         Ctx: ValidationContext,
     {
@@ -99,9 +99,7 @@ pub(crate) mod val_exec_ctx {
                 .map_err(ChannelError::VerifyChannelFailed)?;
         }
 
-        let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
-
-        Ok(chan_id_on_b)
+        Ok(())
     }
 
     pub fn execute<Ctx>(ctx_b: &mut Ctx) -> Result<ChannelId, ContextError>

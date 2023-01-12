@@ -567,7 +567,8 @@ mod val_exec_ctx {
     where
         ValCtx: ValidationContext,
     {
-        let channel_id = chan_open_try::validate(ctx, &msg)?;
+        chan_open_try::validate(ctx, &msg)?;
+        let channel_id = ChannelId::new(ctx.channel_counter()?);
 
         let module = ctx
             .get_route(&module_id)
