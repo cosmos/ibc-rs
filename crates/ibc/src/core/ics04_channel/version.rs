@@ -6,7 +6,6 @@ use core::convert::Infallible;
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
-use crate::applications::transfer;
 use crate::prelude::*;
 
 /// The version field for a `ChannelEnd`.
@@ -33,10 +32,6 @@ pub struct Version(String);
 impl Version {
     pub fn new(v: String) -> Self {
         Self(v)
-    }
-
-    pub fn ics20() -> Self {
-        Self::new(transfer::VERSION.to_string())
     }
 
     pub fn empty() -> Self {

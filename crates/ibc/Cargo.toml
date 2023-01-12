@@ -38,6 +38,8 @@ std = [
 ]
 parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info"]
 borsh = ["dep:borsh"]
+
+# This feature is required for token transfer (ICS-20)
 serde = ["dep:serde", "dep:serde_derive", "serde_json", "erased-serde"]
 
 # This feature guards the unfinished implementation of ADR 5.
