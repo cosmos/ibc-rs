@@ -5,34 +5,19 @@ about: Create a report to help us squash bugs!
 ---
 
 <!-- < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < ☺ 
-v                            ✰  Thanks for opening an issue! ✰    
+v               ✰  Thanks for opening an issue! ✰    
 v    Before smashing the submit button please review the template.
 v    Please also ensure that this is not a duplicate issue :)  
 ☺ > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > >  -->
 
-## Summary of Bug
+## Bug Summary
 
-<!-- Describe the issue you're encountering -->
+<!-- Provide a short description of the issue you're encountering -->
+
+## Details
+
+<!-- Add details needed to reproduce the issue here -->
 
 ## Version
 
 <!-- ibc-rs release version or git commit hash -->
-
-## Steps to Reproduce
-
-<!-- What commands should someone run to reproduce your problem? -->
-<!-- Attach logs here if you have them. -->
-
-## Acceptance Criteria
-
-<!-- What's the definition of "done" for this issue? -->
-
-____
-
-## For Admin Use
-
-- [ ] Not duplicate issue
-- [ ] Appropriate labels applied
-- [ ] Appropriate milestone (priority) applied
-- [ ] Appropriate contributors tagged
-- [ ] Contributor assigned/self-assigned
