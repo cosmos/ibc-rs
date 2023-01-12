@@ -2,8 +2,6 @@ use crate::prelude::*;
 
 use core::str::FromStr;
 
-use serde_derive::{Deserialize, Serialize};
-
 use ibc_proto::ibc::core::channel::v1::Packet as RawPacket;
 
 use super::handler::{
@@ -76,10 +74,9 @@ impl core::fmt::Display for PacketMsgType {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// The sequence number of a packet enforces ordering among packets from the same source.
-#[derive(
-    Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Deserialize, Serialize,
-)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Sequence(u64);
 
 impl FromStr for Sequence {
@@ -135,14 +132,18 @@ impl core::fmt::Display for Sequence {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Default, Hash, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Default, Hash, PartialEq, Eq)]
 pub struct Packet {
     pub sequence: Sequence,
     pub port_on_a: PortId,
     pub chan_on_a: ChannelId,
     pub port_on_b: PortId,
     pub chan_on_b: ChannelId,
-    #[serde(serialize_with = "crate::serializers::ser_hex_upper")]
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "crate::serializers::ser_hex_upper")
+    )]
     pub data: Vec<u8>,
     pub timeout_height_on_b: TimeoutHeight,
     pub timeout_timestamp_on_b: Timestamp,

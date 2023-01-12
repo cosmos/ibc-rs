@@ -145,7 +145,7 @@ mod tests {
             Order::default(),
             Counterparty::new(PortId::default(), Some(ChannelId::default())),
             vec![ConnectionId::default()],
-            Version::ics20(),
+            Version::new("ics20-1".to_string()),
         );
 
         let conn_end_on_a = ConnectionEnd::new(

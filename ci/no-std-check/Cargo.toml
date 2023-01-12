@@ -5,7 +5,7 @@ edition = "2021"
 resolver = "2"
 
 [dependencies]
-ibc = { path = "../../crates/ibc", default-features = false, features = ["mocks-no-std"] }
+ibc = { path = "../../crates/ibc", default-features = false, features = ["serde", "mocks-no-std"] }
 ibc-proto = { version = "0.24.1", default-features = false, features = ["parity-scale-codec", "borsh"]}
 tendermint = { version = "0.28.0", default-features = false }
 tendermint-proto = { version = "0.28.0", default-features = false }

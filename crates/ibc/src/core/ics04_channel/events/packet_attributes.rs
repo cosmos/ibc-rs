@@ -83,7 +83,8 @@ impl TryFrom<PacketDataAttribute> for Vec<abci::EventAttribute> {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, From, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct TimeoutHeightAttribute {
     pub timeout_height: TimeoutHeight,
 }

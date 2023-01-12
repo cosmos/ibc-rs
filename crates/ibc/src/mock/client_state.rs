@@ -8,7 +8,6 @@ use ibc_proto::ibc::core::commitment::v1::MerkleProof;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::mock::ClientState as RawMockClientState;
 use ibc_proto::protobuf::Protobuf;
-use serde::{Deserialize, Serialize};
 
 use crate::core::ics02_client::client_state::{ClientState, UpdatedState, UpgradeOptions};
 use crate::core::ics02_client::client_type::ClientType;
@@ -61,7 +60,9 @@ pub struct MockClientRecord {
 
 /// A mock of a client state. For an example of a real structure that this mocks, you can see
 /// `ClientState` of ics07_tendermint/client_state.rs.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct MockClientState {
     pub header: MockHeader,
     pub frozen_height: Option<Height>,

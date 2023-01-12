@@ -5,7 +5,6 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Misbehaviour as RawMisbehaviour;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
-use serde::{Deserialize, Serialize};
 use tendermint_light_client_verifier::ProdVerifier;
 
 use crate::clients::ics07_tendermint::error::{Error, IntoResult};
@@ -16,7 +15,8 @@ use crate::Height;
 
 pub const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Misbehaviour {
     client_id: ClientId,
     header1: Header,
