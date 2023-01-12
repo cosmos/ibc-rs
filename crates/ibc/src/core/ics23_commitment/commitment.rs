@@ -3,15 +3,18 @@ use crate::prelude::*;
 
 use core::{convert::TryFrom, fmt};
 use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
-use serde::{Deserialize, Serialize};
 use subtle_encoding::{Encoding, Hex};
 
 use super::merkle::MerkleProof;
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(transparent)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
+#[derive(Clone, PartialEq, Eq)]
 pub struct CommitmentRoot {
-    #[serde(serialize_with = "crate::serializers::ser_hex_upper")]
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "crate::serializers::ser_hex_upper")
+    )]
     bytes: Vec<u8>,
 }
 
@@ -47,10 +50,14 @@ impl From<Vec<u8>> for CommitmentRoot {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CommitmentPath;
 
-#[derive(Clone, PartialEq, Eq, Serialize)]
-#[serde(transparent)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
+#[derive(Clone, PartialEq, Eq)]
 pub struct CommitmentProofBytes {
-    #[serde(serialize_with = "crate::serializers::ser_hex_upper")]
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "crate::serializers::ser_hex_upper")
+    )]
     bytes: Vec<u8>,
 }
 
@@ -120,7 +127,8 @@ impl TryFrom<CommitmentProofBytes> for RawMerkleProof {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, PartialEq, Eq, Hash, Deserialize, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+#[derive(Clone, PartialEq, Eq, Hash, Default)]
 pub struct CommitmentPrefix {
     bytes: Vec<u8>,
 }
@@ -157,7 +165,8 @@ impl fmt::Debug for CommitmentPrefix {
     }
 }
 
-impl Serialize for CommitmentPrefix {
+#[cfg(feature = "serde")]
+impl serde::Serialize for CommitmentPrefix {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,

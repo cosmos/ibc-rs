@@ -13,7 +13,7 @@
 #![forbid(unsafe_code)]
 // https://github.com/cosmos/ibc-rs/issues/342
 #![allow(clippy::result_large_err)]
-#![doc(html_root_url = "https://docs.rs/ibc/0.25.0")]
+#![doc(html_root_url = "https://docs.rs/ibc/0.26.0")]
 //! This library implements the InterBlockchain Communication (IBC) protocol in Rust. IBC is
 //! a distributed protocol that enables communication between distinct sovereign blockchains.
 //! Loose analogies may be drawn between the IBC protocol and the TCP/UDP protocols that enable
@@ -50,6 +50,7 @@ pub mod applications;
 pub mod clients;
 pub mod core;
 pub mod dynamic_typing;
+mod erased;
 pub mod events;
 pub mod handler;
 pub mod signer;
@@ -57,6 +58,7 @@ pub mod timestamp;
 pub mod tx_msg;
 pub mod utils;
 
+#[cfg(feature = "serde")]
 mod serializers;
 
 /// Re-export of ICS 002 Height domain type

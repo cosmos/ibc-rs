@@ -32,7 +32,20 @@ const PKT_ACK_ATTRIBUTE_KEY: &str = "packet_ack";
 const PKT_ACK_HEX_ATTRIBUTE_KEY: &str = "packet_ack_hex";
 const PKT_CONNECTION_ID_ATTRIBUTE_KEY: &str = "packet_connection";
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct PacketDataAttribute {
     pub packet_data: Vec<u8>,
 }
@@ -58,7 +71,20 @@ impl TryFrom<PacketDataAttribute> for Vec<abci::EventAttribute> {
     }
 }
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct TimeoutHeightAttribute {
     pub timeout_height: TimeoutHeight,
 }
@@ -74,7 +100,20 @@ impl From<TimeoutHeightAttribute> for abci::EventAttribute {
     }
 }
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct TimeoutTimestampAttribute {
     pub timeout_timestamp: Timestamp,
 }
@@ -89,7 +128,20 @@ impl From<TimeoutTimestampAttribute> for abci::EventAttribute {
     }
 }
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct SequenceAttribute {
     pub sequence: Sequence,
 }
@@ -100,7 +152,20 @@ impl From<SequenceAttribute> for abci::EventAttribute {
     }
 }
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct SrcPortIdAttribute {
     pub src_port_id: PortId,
 }
@@ -111,7 +176,20 @@ impl From<SrcPortIdAttribute> for abci::EventAttribute {
     }
 }
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct SrcChannelIdAttribute {
     pub src_channel_id: ChannelId,
 }
@@ -122,7 +200,20 @@ impl From<SrcChannelIdAttribute> for abci::EventAttribute {
     }
 }
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct DstPortIdAttribute {
     pub dst_port_id: PortId,
 }
@@ -133,7 +224,20 @@ impl From<DstPortIdAttribute> for abci::EventAttribute {
     }
 }
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct DstChannelIdAttribute {
     pub dst_channel_id: ChannelId,
 }
@@ -144,7 +248,20 @@ impl From<DstChannelIdAttribute> for abci::EventAttribute {
     }
 }
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct ChannelOrderingAttribute {
     pub order: Order,
 }
@@ -155,7 +272,20 @@ impl From<ChannelOrderingAttribute> for abci::EventAttribute {
     }
 }
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct PacketConnectionIdAttribute {
     pub connection_id: ConnectionId,
 }
@@ -166,7 +296,20 @@ impl From<PacketConnectionIdAttribute> for abci::EventAttribute {
     }
 }
 
-#[derive(Debug, From)]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct AcknowledgementAttribute {
     pub acknowledgement: Acknowledgement,
 }
