@@ -84,6 +84,7 @@ mod val_exec_ctx {
     use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics04_channel::packet::{Receipt, Sequence};
     use crate::core::ics04_channel::timeout::TimeoutHeight;
+    use crate::core::ics05_port::error::PortError::UnknownPort;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
     use crate::core::ics24_host::path::{
@@ -131,11 +132,11 @@ mod val_exec_ctx {
                 ChannelMsg::CloseInit(msg) => &msg.port_id_on_a,
                 ChannelMsg::CloseConfirm(msg) => &msg.port_id_on_b,
             };
-            let module_id =
-                self.lookup_module_by_port(port_id)
-                    .ok_or(ChannelError::PortNoSource {
-                        port_id: port_id.clone(),
-                    })?;
+            let module_id = self
+                .lookup_module_by_port(port_id)
+                .ok_or(ChannelError::Port(UnknownPort {
+                    port_id: port_id.clone(),
+                }))?;
             Ok(module_id)
         }
     }
