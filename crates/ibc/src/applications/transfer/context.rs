@@ -205,14 +205,14 @@ pub fn on_chan_open_try_validate(
             got_order: order,
         });
     }
-    if counterparty_version != &Version::ics20() {
+    if counterparty_version != &Version::new(VERSION.to_string()) {
         return Err(TokenTransferError::InvalidCounterpartyVersion {
-            expect_version: Version::ics20(),
+            expect_version: Version::new(VERSION.to_string()),
             got_version: counterparty_version.clone(),
         });
     }
 
-    Ok(Version::ics20())
+    Ok(Version::new(VERSION.to_string()))
 }
 
 #[cfg(feature = "val_exec_ctx")]
@@ -226,7 +226,7 @@ pub fn on_chan_open_try_execute(
     _counterparty: &Counterparty,
     _counterparty_version: &Version,
 ) -> Result<(ModuleExtras, Version), TokenTransferError> {
-    Ok((ModuleExtras::empty(), Version::ics20()))
+    Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
 }
 
 #[allow(clippy::too_many_arguments)]
