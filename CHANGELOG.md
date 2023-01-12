@@ -40,6 +40,8 @@ There are no consensus-breaking changes.
   ([#320](https://github.com/cosmos/ibc-rs/issues/320))
 - Make the code under mocks features work in no-std
   ([#311](https://github.com/cosmos/ibc-rs/issues/311))
+- Make `serde` optional behind the `serde` feature flag
+  ([#293](https://github.com/cosmos/ibc-rs/issues/293))
 
 ### IMPROVEMENTS
 
