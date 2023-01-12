@@ -17,7 +17,4 @@ v                     without deliberation
 
 ## Proposal
 
-<!-- Detailed description of requirements of implementation -->
-<!-- Why do we need this feature? 
-What benefits does IBC-rs stand to gain by including this feature?
-Are there any disadvantages of including this feature? -->
+<!-- Provide a full description and requirements of the feature -->

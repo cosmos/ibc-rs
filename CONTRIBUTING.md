@@ -75,24 +75,20 @@ We welcome bug reports, feature requests, and other contributions to our project
 
 3. **Provide detailed information**: In the issue description, clearly state the purpose of the issue and follow the guidelines of the issue template
 
-4. **Use appropriate labels**: Assign relevant labels to indicate:
+4. A maintainer will take care of assigning the appropriate labels to your issue.
+
+We use the following convention for issue label names:
     - (WHY) The purpose or objective of this issue with Objective-level "O" labels like `O: security`, `O: new-feature`, etc.
     - (WHICH) The part of the system this issue relates to using:
       - External-level "E" labels if the issue fall outside the current scope of the system and is related to external dependencies or projects like `E: non-cosmos`, `E: no-std` etc.
       - or "Internal-level "I" labels for anything related to the current scope of the product like `I: errors`, `I: documentation`, etc.
     - (HOW) If any administrative considerations should be taken into account use Administrative-level "A" labels like `A: help-wanted`, `A: critical`, etc.
 
-This assist us prioritize and categorize your issue more effectively and help others and reviewers understand the type and severity of the issue.
-If the issue you worked on was tagged `A: low-priority`, we'll do our best to
-review it in a timely manner, but please expect longer wait times for a review
-in general. If a low priority issue is important to you, please leave a comment
-explaining why, and we will reprioritize it!
-
 ## Pull Requests
 
 If you have write access to the ibc-rs repo, you can directly branch off of `main`.
 This makes it easier for project maintainers to directly make changes to your
-branch should the need arise. Otherwise, check [Forking](#forking) section for instructions
+branch should the need arise. Otherwise, check [Forking](#forking) section for instructions.
 
 Branch names should be prefixed with the author's name followed by a short description
 of the feature, eg. `name/feature-x`.
@@ -110,6 +106,11 @@ Pull requests should aim to be small and self-contained to facilitate quick
 review and merging. Larger change sets should be broken up across multiple PRs.
 Commits should be concise but informative, and moderately clean. Commits will be squashed into a
 single commit for the PR with all the commit messages.
+
+If the issue you worked on was tagged `A: low-priority`, we'll do our best to
+review it in a timely manner, but please expect longer wait times for a review
+in general. If a low priority issue is important to you, please leave a comment
+explaining why, and we will reprioritize it!
 
 ## Responsibilities of a PR Reviewer
 

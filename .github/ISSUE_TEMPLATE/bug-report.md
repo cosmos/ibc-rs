@@ -12,15 +12,12 @@ v    Please also ensure that this is not a duplicate issue :)
 
 ## Bug Summary
 
-<!-- Short description of issue you're encountering -->
+<!-- Provide a short description of the issue you're encountering -->
 
 ## Details
 
-<!-- Add details about the issue here. -->
-<!-- Attach logs if you have them. -->
-<!-- Provide commands should someone run to reproduce the issue (If applicable) -->
+<!-- Add details needed to reproduce the issue here -->
 
 ## Version
 
 <!-- ibc-rs release version or git commit hash -->
-<!-- Operating system and version (if applicable) -->
