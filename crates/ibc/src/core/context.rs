@@ -593,7 +593,11 @@ mod val_exec_ctx {
     where
         ExecCtx: ExecutionContext,
     {
-        let channel_id = chan_open_try::execute(ctx_b)?;
+        let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
+        ctx_b.log_message(format!(
+            "success: channel open try with channel identifier: {chan_id_on_b}"
+        ));
+
         let module = ctx_b
             .get_route_mut(&module_id)
             .ok_or(ChannelError::RouteNotFound)?;
@@ -602,19 +606,19 @@ mod val_exec_ctx {
             msg.ordering,
             &msg.connection_hops_on_b,
             &msg.port_id_on_b,
-            &channel_id,
+            &chan_id_on_b,
             &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
             &msg.version_supported_on_a,
         )?;
 
         let conn_id_on_b = msg.connection_hops_on_b[0].clone();
-        let port_channel_id_on_b = (msg.port_id_on_b.clone(), channel_id.clone());
+        let port_channel_id_on_b = (msg.port_id_on_b.clone(), chan_id_on_b.clone());
 
         // emit events and logs
         {
             let core_event = IbcEvent::OpenTryChannel(OpenTry::new(
                 msg.port_id_on_b.clone(),
-                channel_id.clone(),
+                chan_id_on_b.clone(),
                 msg.port_id_on_a.clone(),
                 msg.chan_id_on_a.clone(),
                 conn_id_on_b.clone(),

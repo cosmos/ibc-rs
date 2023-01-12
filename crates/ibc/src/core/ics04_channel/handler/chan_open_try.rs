@@ -16,7 +16,7 @@ pub(crate) use val_exec_ctx::*;
 #[cfg(feature = "val_exec_ctx")]
 pub(crate) mod val_exec_ctx {
     use super::*;
-    use crate::core::{ContextError, ExecutionContext, ValidationContext};
+    use crate::core::{ContextError, ValidationContext};
 
     pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), ContextError>
     where
@@ -100,19 +100,6 @@ pub(crate) mod val_exec_ctx {
         }
 
         Ok(())
-    }
-
-    pub fn execute<Ctx>(ctx_b: &mut Ctx) -> Result<ChannelId, ContextError>
-    where
-        Ctx: ExecutionContext,
-    {
-        let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
-
-        ctx_b.log_message(format!(
-            "success: channel open try with channel identifier: {chan_id_on_b}"
-        ));
-
-        Ok(chan_id_on_b)
     }
 }
 /// Per our convention, this message is processed on chain B.
