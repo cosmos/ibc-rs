@@ -8,7 +8,6 @@ use core::{
 };
 
 use ibc_proto::protobuf::Protobuf;
-use serde::{Deserialize, Serialize};
 
 use ibc_proto::ibc::core::connection::v1::{
     ConnectionEnd as RawConnectionEnd, Counterparty as RawCounterparty,
@@ -35,7 +34,8 @@ use crate::timestamp::ZERO_DURATION;
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct IdentifiedConnectionEnd {
     pub connection_id: ConnectionId,
     pub connection_end: ConnectionEnd,
@@ -104,7 +104,8 @@ impl From<IdentifiedConnectionEnd> for RawIdentifiedConnection {
     feature = "parity-scale-codec",
     derive(parity_scale_codec::Encode, parity_scale_codec::Decode,)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ConnectionEnd {
     pub state: State,
     client_id: ClientId,
@@ -368,7 +369,8 @@ impl ConnectionEnd {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct Counterparty {
     client_id: ClientId,
     pub connection_id: Option<ConnectionId>,
@@ -462,7 +464,8 @@ impl Counterparty {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum State {
     Uninitialized = 0isize,
     Init = 1isize,

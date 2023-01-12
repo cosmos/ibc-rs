@@ -50,6 +50,7 @@ pub mod applications;
 pub mod clients;
 pub mod core;
 pub mod dynamic_typing;
+mod erased;
 pub mod events;
 pub mod handler;
 pub mod signer;
@@ -57,6 +58,7 @@ pub mod timestamp;
 pub mod tx_msg;
 pub mod utils;
 
+#[cfg(feature = "serde")]
 mod serializers;
 
 /// Re-export of ICS 002 Height domain type

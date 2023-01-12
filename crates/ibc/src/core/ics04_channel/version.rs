@@ -5,9 +5,7 @@
 use core::convert::Infallible;
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
-use serde_derive::{Deserialize, Serialize};
 
-use crate::applications::transfer;
 use crate::prelude::*;
 
 /// The version field for a `ChannelEnd`.
@@ -27,16 +25,13 @@ use crate::prelude::*;
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Version(String);
 
 impl Version {
     pub fn new(v: String) -> Self {
         Self(v)
-    }
-
-    pub fn ics20() -> Self {
-        Self::new(transfer::VERSION.to_string())
     }
 
     pub fn empty() -> Self {

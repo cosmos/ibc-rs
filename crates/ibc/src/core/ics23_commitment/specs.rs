@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use ibc_proto::ics23::{InnerSpec as IbcInnerSpec, LeafOp as IbcLeafOp, ProofSpec as IbcProofSpec};
 use ics23::{InnerSpec as Ics23InnerSpec, LeafOp as Ics23LeafOp, ProofSpec as Ics23ProofSpec};
-use serde::{Deserialize, Serialize};
 
 /// An array of proof specifications.
 ///
@@ -10,7 +9,8 @@ use serde::{Deserialize, Serialize};
 /// Additionally, this type also aids in the conversion from `ProofSpec` types from crate `ics23`
 /// into proof specifications as represented in the `ibc_proto` type; see the
 /// `From` trait(s) below.
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProofSpecs(Vec<ProofSpec>);
 
 impl ProofSpecs {
@@ -63,7 +63,8 @@ impl From<ProofSpecs> for Vec<IbcProofSpec> {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct ProofSpec(IbcProofSpec);
 
 impl From<Ics23ProofSpec> for ProofSpec {
@@ -89,7 +90,8 @@ impl From<ProofSpec> for Ics23ProofSpec {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct LeafOp(IbcLeafOp);
 
 impl From<Ics23LeafOp> for LeafOp {
@@ -117,7 +119,8 @@ impl From<LeafOp> for Ics23LeafOp {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct InnerSpec(IbcInnerSpec);
 
 impl From<Ics23InnerSpec> for InnerSpec {
