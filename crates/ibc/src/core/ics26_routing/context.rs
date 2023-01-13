@@ -190,6 +190,16 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(())
     }
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_open_ack_execute(
+        &mut self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty_version: &Version,
+    ) -> Result<ModuleExtras, ChannelError> {
+        Ok(ModuleExtras::empty())
+    }
+
     fn on_chan_open_ack(
         &mut self,
         _port_id: &PortId,
