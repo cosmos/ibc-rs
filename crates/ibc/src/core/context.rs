@@ -148,44 +148,44 @@ mod val_exec_ctx {
 
     pub trait ValidationContext: Router {
         /// Validation entrypoint.
-        fn validate(&self, message: MsgEnvelope) -> Result<(), RouterError>
+        fn validate(&self, msg: MsgEnvelope) -> Result<(), RouterError>
         where
             Self: Sized,
         {
-            match message {
-                MsgEnvelope::Client(message) => match message {
-                    ClientMsg::CreateClient(message) => create_client::validate(self, message),
-                    ClientMsg::UpdateClient(message) => update_client::validate(self, message),
-                    ClientMsg::Misbehaviour(message) => misbehaviour::validate(self, message),
-                    ClientMsg::UpgradeClient(message) => upgrade_client::validate(self, message),
+            match msg {
+                MsgEnvelope::Client(msg) => match msg {
+                    ClientMsg::CreateClient(msg) => create_client::validate(self, msg),
+                    ClientMsg::UpdateClient(msg) => update_client::validate(self, msg),
+                    ClientMsg::Misbehaviour(msg) => misbehaviour::validate(self, msg),
+                    ClientMsg::UpgradeClient(msg) => upgrade_client::validate(self, msg),
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::Connection(message) => match message {
-                    ConnectionMsg::OpenInit(message) => conn_open_init::validate(self, message),
-                    ConnectionMsg::OpenTry(message) => conn_open_try::validate(self, message),
-                    ConnectionMsg::OpenAck(message) => conn_open_ack::validate(self, message),
-                    ConnectionMsg::OpenConfirm(ref message) => {
-                        conn_open_confirm::validate(self, message)
+                MsgEnvelope::Connection(msg) => match msg {
+                    ConnectionMsg::OpenInit(msg) => conn_open_init::validate(self, msg),
+                    ConnectionMsg::OpenTry(msg) => conn_open_try::validate(self, msg),
+                    ConnectionMsg::OpenAck(msg) => conn_open_ack::validate(self, msg),
+                    ConnectionMsg::OpenConfirm(ref msg) => {
+                        conn_open_confirm::validate(self, msg)
                     }
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::Channel(message) => {
-                    let module_id = self.lookup_module(&message).map_err(ContextError::from)?;
+                MsgEnvelope::Channel(msg) => {
+                    let module_id = self.lookup_module(&msg).map_err(ContextError::from)?;
                     if !self.has_route(&module_id) {
                         return Err(ChannelError::RouteNotFound)
                             .map_err(ContextError::ChannelError)
                             .map_err(RouterError::ContextError);
                     }
 
-                    match message {
-                        ChannelMsg::OpenInit(message) => {
-                            chan_open_init_validate(self, module_id, message)
+                    match msg {
+                        ChannelMsg::OpenInit(msg) => {
+                            chan_open_init_validate(self, module_id, msg)
                         }
-                        ChannelMsg::OpenTry(message) => {
-                            chan_open_try_validate(self, module_id, message)
+                        ChannelMsg::OpenTry(msg) => {
+                            chan_open_try_validate(self, module_id, msg)
                         }
-                        ChannelMsg::OpenAck(message) => {
-                            chan_open_ack_validate(self, module_id, message)
+                        ChannelMsg::OpenAck(msg) => {
+                            chan_open_ack_validate(self, module_id, msg)
                         }
                         ChannelMsg::OpenConfirm(msg) => {
                             chan_open_confirm_validate(self, module_id, msg)
@@ -195,7 +195,7 @@ mod val_exec_ctx {
                     }
                     .map_err(RouterError::ContextError)
                 }
-                MsgEnvelope::Packet(_message) => todo!(),
+                MsgEnvelope::Packet(_msg) => todo!(),
             }
         }
 
@@ -392,44 +392,44 @@ mod val_exec_ctx {
 
     pub trait ExecutionContext: ValidationContext {
         /// Execution entrypoint
-        fn execute(&mut self, message: MsgEnvelope) -> Result<(), RouterError>
+        fn execute(&mut self, msg: MsgEnvelope) -> Result<(), RouterError>
         where
             Self: Sized,
         {
-            match message {
-                MsgEnvelope::Client(message) => match message {
-                    ClientMsg::CreateClient(message) => create_client::execute(self, message),
-                    ClientMsg::UpdateClient(message) => update_client::execute(self, message),
-                    ClientMsg::Misbehaviour(message) => misbehaviour::execute(self, message),
-                    ClientMsg::UpgradeClient(message) => upgrade_client::execute(self, message),
+            match msg {
+                MsgEnvelope::Client(msg) => match msg {
+                    ClientMsg::CreateClient(msg) => create_client::execute(self, msg),
+                    ClientMsg::UpdateClient(msg) => update_client::execute(self, msg),
+                    ClientMsg::Misbehaviour(msg) => misbehaviour::execute(self, msg),
+                    ClientMsg::UpgradeClient(msg) => upgrade_client::execute(self, msg),
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::Connection(message) => match message {
-                    ConnectionMsg::OpenInit(message) => conn_open_init::execute(self, message),
-                    ConnectionMsg::OpenTry(message) => conn_open_try::execute(self, message),
-                    ConnectionMsg::OpenAck(message) => conn_open_ack::execute(self, message),
-                    ConnectionMsg::OpenConfirm(ref message) => {
-                        conn_open_confirm::execute(self, message)
+                MsgEnvelope::Connection(msg) => match msg {
+                    ConnectionMsg::OpenInit(msg) => conn_open_init::execute(self, msg),
+                    ConnectionMsg::OpenTry(msg) => conn_open_try::execute(self, msg),
+                    ConnectionMsg::OpenAck(msg) => conn_open_ack::execute(self, msg),
+                    ConnectionMsg::OpenConfirm(ref msg) => {
+                        conn_open_confirm::execute(self, msg)
                     }
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::Channel(message) => {
-                    let module_id = self.lookup_module(&message).map_err(ContextError::from)?;
+                MsgEnvelope::Channel(msg) => {
+                    let module_id = self.lookup_module(&msg).map_err(ContextError::from)?;
                     if !self.has_route(&module_id) {
                         return Err(ChannelError::RouteNotFound)
                             .map_err(ContextError::ChannelError)
                             .map_err(RouterError::ContextError);
                     }
 
-                    match message {
-                        ChannelMsg::OpenInit(message) => {
-                            chan_open_init_execute(self, module_id, message)
+                    match msg {
+                        ChannelMsg::OpenInit(msg) => {
+                            chan_open_init_execute(self, module_id, msg)
                         }
-                        ChannelMsg::OpenTry(message) => {
-                            chan_open_try_execute(self, module_id, message)
+                        ChannelMsg::OpenTry(msg) => {
+                            chan_open_try_execute(self, module_id, msg)
                         }
-                        ChannelMsg::OpenAck(message) => {
-                            chan_open_ack_execute(self, module_id, message)
+                        ChannelMsg::OpenAck(msg) => {
+                            chan_open_ack_execute(self, module_id, msg)
                         }
                         ChannelMsg::OpenConfirm(msg) => {
                             chan_open_confirm_execute(self, module_id, msg)
@@ -439,7 +439,7 @@ mod val_exec_ctx {
                     }
                     .map_err(RouterError::ContextError)
                 }
-                MsgEnvelope::Packet(_message) => todo!(),
+                MsgEnvelope::Packet(_msg) => todo!(),
             }
         }
 
