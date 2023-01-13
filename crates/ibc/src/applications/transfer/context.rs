@@ -479,6 +479,22 @@ mod val_exec_ctx {
     ) -> Result<ModuleExtras, TokenTransferError> {
         Err(TokenTransferError::CantCloseChannel)
     }
+
+    pub fn on_chan_close_confirm_validate(
+        _ctx: &impl TokenTransferContext,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    pub fn on_chan_close_confirm_execute(
+        _ctx: &mut impl TokenTransferContext,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<ModuleExtras, TokenTransferError> {
+        Ok(ModuleExtras::empty())
+    }
 }
 
 #[cfg(test)]
