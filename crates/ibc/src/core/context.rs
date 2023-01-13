@@ -79,9 +79,10 @@ mod val_exec_ctx {
     use crate::core::ics04_channel::context::calculate_block_delay;
     use crate::core::ics04_channel::events::{OpenAck, OpenConfirm, OpenInit, OpenTry};
     use crate::core::ics04_channel::handler::{
-        chan_open_ack, chan_open_confirm, chan_open_init, chan_open_try,
+        chan_close_init, chan_open_ack, chan_open_confirm, chan_open_init, chan_open_try,
     };
     use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
+    use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
     use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
     use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
     use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
@@ -164,9 +165,7 @@ mod val_exec_ctx {
                     ConnectionMsg::OpenInit(msg) => conn_open_init::validate(self, msg),
                     ConnectionMsg::OpenTry(msg) => conn_open_try::validate(self, msg),
                     ConnectionMsg::OpenAck(msg) => conn_open_ack::validate(self, msg),
-                    ConnectionMsg::OpenConfirm(ref msg) => {
-                        conn_open_confirm::validate(self, msg)
-                    }
+                    ConnectionMsg::OpenConfirm(ref msg) => conn_open_confirm::validate(self, msg),
                 }
                 .map_err(RouterError::ContextError),
                 MsgEnvelope::Channel(msg) => {
@@ -178,19 +177,15 @@ mod val_exec_ctx {
                     }
 
                     match msg {
-                        ChannelMsg::OpenInit(msg) => {
-                            chan_open_init_validate(self, module_id, msg)
-                        }
-                        ChannelMsg::OpenTry(msg) => {
-                            chan_open_try_validate(self, module_id, msg)
-                        }
-                        ChannelMsg::OpenAck(msg) => {
-                            chan_open_ack_validate(self, module_id, msg)
-                        }
+                        ChannelMsg::OpenInit(msg) => chan_open_init_validate(self, module_id, msg),
+                        ChannelMsg::OpenTry(msg) => chan_open_try_validate(self, module_id, msg),
+                        ChannelMsg::OpenAck(msg) => chan_open_ack_validate(self, module_id, msg),
                         ChannelMsg::OpenConfirm(msg) => {
                             chan_open_confirm_validate(self, module_id, msg)
                         }
-                        ChannelMsg::CloseInit(_) => todo!(),
+                        ChannelMsg::CloseInit(msg) => {
+                            chan_close_init_validate(self, module_id, msg)
+                        }
                         ChannelMsg::CloseConfirm(_) => todo!(),
                     }
                     .map_err(RouterError::ContextError)
@@ -408,9 +403,7 @@ mod val_exec_ctx {
                     ConnectionMsg::OpenInit(msg) => conn_open_init::execute(self, msg),
                     ConnectionMsg::OpenTry(msg) => conn_open_try::execute(self, msg),
                     ConnectionMsg::OpenAck(msg) => conn_open_ack::execute(self, msg),
-                    ConnectionMsg::OpenConfirm(ref msg) => {
-                        conn_open_confirm::execute(self, msg)
-                    }
+                    ConnectionMsg::OpenConfirm(ref msg) => conn_open_confirm::execute(self, msg),
                 }
                 .map_err(RouterError::ContextError),
                 MsgEnvelope::Channel(msg) => {
@@ -422,15 +415,9 @@ mod val_exec_ctx {
                     }
 
                     match msg {
-                        ChannelMsg::OpenInit(msg) => {
-                            chan_open_init_execute(self, module_id, msg)
-                        }
-                        ChannelMsg::OpenTry(msg) => {
-                            chan_open_try_execute(self, module_id, msg)
-                        }
-                        ChannelMsg::OpenAck(msg) => {
-                            chan_open_ack_execute(self, module_id, msg)
-                        }
+                        ChannelMsg::OpenInit(msg) => chan_open_init_execute(self, module_id, msg),
+                        ChannelMsg::OpenTry(msg) => chan_open_try_execute(self, module_id, msg),
+                        ChannelMsg::OpenAck(msg) => chan_open_ack_execute(self, module_id, msg),
                         ChannelMsg::OpenConfirm(msg) => {
                             chan_open_confirm_execute(self, module_id, msg)
                         }
@@ -946,6 +933,24 @@ mod val_exec_ctx {
 
             ctx_b.store_channel(port_channel_id_on_b, chan_end_on_b)?;
         }
+
+        Ok(())
+    }
+
+    fn chan_close_init_validate<ValCtx>(
+        ctx_a: &ValCtx,
+        module_id: ModuleId,
+        msg: MsgChannelCloseInit,
+    ) -> Result<(), ContextError>
+    where
+        ValCtx: ValidationContext,
+    {
+        chan_close_init::validate(ctx_a, &msg)?;
+
+        let module = ctx_a
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        module.on_chan_close_init_validate(&msg.port_id_on_a, &msg.chan_id_on_a)?;
 
         Ok(())
     }
