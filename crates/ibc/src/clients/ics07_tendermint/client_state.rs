@@ -902,7 +902,7 @@ impl Ics2ClientState for ClientState {
         root: &CommitmentRoot,
     ) -> Result<(), ClientError> {
         // Make sure that the client type is of Tendermint type `ClientState`
-        let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state.clone())?;
+        let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
 
         // Make sure the latest height of the current client is not greater then the upgrade height
         // This condition checks both the revision number and the height

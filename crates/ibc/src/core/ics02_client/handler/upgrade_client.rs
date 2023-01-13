@@ -235,11 +235,7 @@ mod tests {
                 match result {
                     Upgrade(upg_res) => {
                         assert_eq!(upg_res.client_id, client_id);
-                        assert_ne!(upg_res.client_state.as_ref().clone_into(), msg.client_state);
-                        assert_eq!(
-                            upg_res.client_state.latest_height(),
-                            ctx.latest_client_states(&client_id).latest_height()
-                        );
+                        assert_eq!(upg_res.client_state.as_ref().clone_into(), msg.client_state);
                         assert_eq!(
                             upg_res.consensus_state.as_ref().clone_into(),
                             msg.consensus_state
@@ -316,7 +312,7 @@ mod tests {
                 );
             }
             _ => {
-                // panic!("expected LowUpgradeHeight error, instead got {:?}", output);
+                panic!("expected LowUpgradeHeight error, instead got {:?}", output);
             }
         }
     }
@@ -343,6 +339,6 @@ mod tests {
             downcast!(output.events.first().unwrap() => IbcEvent::UpgradeClient).unwrap();
         assert_eq!(upgrade_client_event.client_id(), &client_id);
         assert_eq!(upgrade_client_event.client_type(), &mock_client_type());
-        // assert_eq!(upgrade_client_event.consensus_height(), &upgrade_height);
+        assert_eq!(upgrade_client_event.consensus_height(), &upgrade_height);
     }
 }

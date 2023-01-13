@@ -2,7 +2,6 @@ use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap as HashMap;
 use core::time::Duration;
-use dyn_clone::clone_box;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof;
 
 use ibc_proto::google::protobuf::Any;
@@ -284,24 +283,33 @@ impl ClientState for MockClientState {
 
     fn verify_upgrade_client(
         &self,
-        _upgraded_client_state: Any,
-        _upgraded_consensus_state: Any,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
         _proof_upgrade_client: MerkleProof,
         _proof_upgrade_consensus_state: MerkleProof,
         _root: &CommitmentRoot,
     ) -> Result<(), ClientError> {
+        let upgraded_mock_client_state = MockClientState::try_from(upgraded_client_state)?;
+        MockConsensusState::try_from(upgraded_consensus_state)?;
+        if self.latest_height() >= upgraded_mock_client_state.latest_height() {
+            return Err(ClientError::LowUpgradeHeight {
+                upgraded_height: self.latest_height(),
+                client_height: upgraded_mock_client_state.latest_height(),
+            });
+        }
         Ok(())
     }
 
     fn update_state_with_upgrade_client(
         &self,
-        _upgraded_client_state: Any,
+        upgraded_client_state: Any,
         upgraded_consensus_state: Any,
     ) -> Result<UpdatedState, ClientError> {
-        let consensus_state = MockConsensusState::try_from(upgraded_consensus_state)?;
+        let mock_client_state = MockClientState::try_from(upgraded_client_state)?;
+        let mock_consensus_state = MockConsensusState::try_from(upgraded_consensus_state)?;
         Ok(UpdatedState {
-            client_state: clone_box(self),
-            consensus_state: consensus_state.into_box(),
+            client_state: mock_client_state.into_box(),
+            consensus_state: mock_consensus_state.into_box(),
         })
     }
 
