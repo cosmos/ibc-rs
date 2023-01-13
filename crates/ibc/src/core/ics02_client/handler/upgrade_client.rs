@@ -35,22 +35,52 @@ where
 {
     let MsgUpgradeClient { client_id, .. } = msg;
 
-    // Read client state from the host chain store.
+    // Start to perform basic validations on the current client and consensus states.
+    // Read the current latest client state from the host chain store.
     let old_client_state = ctx.client_state(&client_id)?;
 
+    // Check if the client is frozen.
     if old_client_state.is_frozen() {
-        return Err(ClientError::ClientFrozen { client_id }.into());
+        return Err(ContextError::ClientError(ClientError::ClientFrozen {
+            client_id,
+        }));
     }
 
-    let upgrade_client_state = ctx.decode_client_state(msg.client_state)?;
+    // Read the latest consensus state from the host chain store.
+    let old_consensus_state = ctx
+        .consensus_state(&client_id, &old_client_state.latest_height())
+        .map_err(|_| ClientError::ConsensusStateNotFound {
+            client_id: client_id.clone(),
+            height: old_client_state.latest_height(),
+        })?;
 
-    if old_client_state.latest_height() >= upgrade_client_state.latest_height() {
-        return Err(ClientError::LowUpgradeHeight {
-            upgraded_height: old_client_state.latest_height(),
-            client_height: upgrade_client_state.latest_height(),
-        }
-        .into());
-    }
+    let now = ctx.host_timestamp()?;
+    let duration = now
+        .duration_since(&old_consensus_state.timestamp())
+        .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
+            time1: old_consensus_state.timestamp(),
+            time2: now,
+        })?;
+
+    // Check if the latest consensus state is within the trust period.
+    if old_client_state.expired(duration) {
+        return Err(ContextError::ClientError(
+            ClientError::HeaderNotWithinTrustPeriod {
+                latest_time: old_consensus_state.timestamp(),
+                update_time: now,
+            },
+        ));
+    };
+    // End of basic validations.
+
+    // Validate the upgraded client state and consensus state and verify proofs against the root
+    old_client_state.verify_upgrade_client_state(
+        msg.client_state.clone(),
+        msg.consensus_state.clone(),
+        msg.proof_upgrade_client.clone(),
+        msg.proof_upgrade_consensus_state,
+        old_consensus_state.root(),
+    )?;
 
     Ok(())
 }
@@ -61,20 +91,14 @@ where
     Ctx: ExecutionContext,
 {
     let MsgUpgradeClient { client_id, .. } = msg;
-
-    let upgrade_client_state = ctx.decode_client_state(msg.client_state)?;
+    
+    let old_client_state = ctx.client_state(&client_id)?;
 
     let UpdatedState {
         client_state,
         consensus_state,
-    } = upgrade_client_state.verify_upgrade_and_update_state(
-        msg.consensus_state.clone(),
-        msg.proof_upgrade_client.clone(),
-        msg.proof_upgrade_consensus_state,
-    )?;
-
-    // Not implemented yet: https://github.com/informalsystems/ibc-rs/issues/722
-    // todo!()
+    } = old_client_state
+        .execute_upgrade_client_state(msg.client_state.clone(), msg.consensus_state)?;
 
     ctx.store_client_state(ClientStatePath(client_id.clone()), client_state.clone())?;
     ctx.store_consensus_state(
@@ -98,48 +122,54 @@ pub(crate) fn process(
     let mut output = HandlerOutput::builder();
     let MsgUpgradeClient { client_id, .. } = msg;
 
+    // Start to perform basic validations on the current client and consensus states.
     // Read the current latest client state from the host chain store.
-    let latest_client_state = ctx.client_state(&client_id)?;
+    let old_client_state = ctx.client_state(&client_id)?;
 
     // Check if the client is frozen.
-    if latest_client_state.is_frozen() {
+    if old_client_state.is_frozen() {
         return Err(ClientError::ClientFrozen { client_id });
     }
 
     // Read the latest consensus state from the host chain store.
-    let latest_consensus_state = ctx
-        .consensus_state(&client_id, &latest_client_state.latest_height())
+    let old_consensus_state = ctx
+        .consensus_state(&client_id, &old_client_state.latest_height())
         .map_err(|_| ClientError::ConsensusStateNotFound {
             client_id: client_id.clone(),
-            height: latest_client_state.latest_height(),
+            height: old_client_state.latest_height(),
         })?;
 
     let now = ctx.host_timestamp()?;
     let duration = now
-        .duration_since(&latest_consensus_state.timestamp())
+        .duration_since(&old_consensus_state.timestamp())
         .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
-            time1: latest_consensus_state.timestamp(),
+            time1: old_consensus_state.timestamp(),
             time2: now,
         })?;
 
     // Check if the latest consensus state is within the trust period.
-    if latest_client_state.expired(duration) {
+    if old_client_state.expired(duration) {
         return Err(ClientError::HeaderNotWithinTrustPeriod {
-            latest_time: latest_consensus_state.timestamp(),
+            latest_time: old_consensus_state.timestamp(),
             update_time: now,
         });
     };
+    // End of basic validations.
+
+    // Validate the upgraded client state and consensus state and verify proofs against the root
+    old_client_state.verify_upgrade_client_state(
+        msg.client_state.clone(),
+        msg.consensus_state.clone(),
+        msg.proof_upgrade_client.clone(),
+        msg.proof_upgrade_consensus_state.clone(),
+        old_consensus_state.root(),
+    )?;
 
     let UpdatedState {
         client_state,
         consensus_state,
-    } = latest_client_state.verify_upgrade_and_update_state(
-        msg.client_state.clone(),
-        msg.consensus_state.clone(),
-        msg.proof_upgrade_client.clone(),
-        msg.proof_upgrade_consensus_state,
-        latest_consensus_state.root(),
-    )?;
+    } = old_client_state
+        .execute_upgrade_client_state(msg.client_state.clone(), msg.consensus_state)?;
 
     let result = ClientResult::Upgrade(UpgradeClientResult {
         client_id: client_id.clone(),

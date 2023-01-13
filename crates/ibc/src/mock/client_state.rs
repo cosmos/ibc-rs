@@ -282,13 +282,21 @@ impl ClientState for MockClientState {
         Ok(new_state.into_box())
     }
 
-    fn verify_upgrade_and_update_state(
+    fn verify_upgrade_client_state(
         &self,
         _upgraded_client_state: Any,
-        upgraded_consensus_state: Any,
+        _upgraded_consensus_state: Any,
         _proof_upgrade_client: MerkleProof,
         _proof_upgrade_consensus_state: MerkleProof,
         _root: &CommitmentRoot,
+    ) -> Result<(), ClientError> {
+        Ok(())
+    }
+
+    fn execute_upgrade_client_state(
+        &self,
+        _upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
     ) -> Result<UpdatedState, ClientError> {
         let consensus_state = MockConsensusState::try_from(upgraded_consensus_state)?;
         Ok(UpdatedState {

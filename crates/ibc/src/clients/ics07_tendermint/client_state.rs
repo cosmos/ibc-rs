@@ -878,8 +878,7 @@ impl Ics2ClientState for ClientState {
     }
 
     /// Check if the upgraded client has been committed by the current client,
-    /// zero out all client-specific fields (e.g. TrustingPeriod) and verify all data
-    /// in client state that must be the same across all valid Tendermint clients for the new chain.
+    /// and verify all data in client state that must be the same across all valid Tendermint clients for the new chain.
     ///
     /// - Error cases:
     ///     - the upgraded client is not of a Tendermint ClientState
@@ -892,15 +891,15 @@ impl Ics2ClientState for ClientState {
     ///
     /// You can learn more about how to upgrade IBC-connected SDK chains in
     /// [this](https://ibc.cosmos.network/main/ibc/upgrades/quick-guide.html) guide
-    fn verify_upgrade_and_update_state(
+    fn verify_upgrade_client_state(
         &self,
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
         proof_upgrade_client: RawMerkleProof,
         proof_upgrade_consensus_state: RawMerkleProof,
         root: &CommitmentRoot,
-    ) -> Result<UpdatedState, ClientError> {
-        // Extract `ClientState` and make sure that the client type is of Tendermint type
+    ) -> Result<(), ClientError> {
+        // Make sure that the client type is of Tendermint type `ClientState`
         let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state.clone())?;
 
         // Make sure the latest height of the current client is not greater then the upgrade height
@@ -912,8 +911,8 @@ impl Ics2ClientState for ClientState {
             });
         }
 
-        // Extract `ConsensusState` and make sure that the consensus type is of Tendermint type
-        let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state.clone())?;
+        // Make sure that the consensus type is of Tendermint type `ConsensusState`
+        TmConsensusState::try_from(upgraded_consensus_state.clone())?;
 
         // Note: verification of proofs that unmarshalled correctly has been done
         // while decoding the proto message into a `MsgEnvelope` domain type
@@ -921,7 +920,7 @@ impl Ics2ClientState for ClientState {
         let merkle_proof_upgrade_cons_state = MerkleProof::from(proof_upgrade_consensus_state);
 
         // Check to see if the upgrade path is set and construct the consensus state Merkle path
-        let mut upgrade_path = upgraded_tm_client_state.upgrade_path.clone();
+        let mut upgrade_path = upgraded_tm_client_state.upgrade_path;
         let mut client_path = match upgrade_path.pop() {
             Some(_) => upgrade_path,
             None => {
@@ -979,6 +978,18 @@ impl Ics2ClientState for ClientState {
                 0,
             )
             .map_err(ClientError::Ics23Verification)?;
+
+        Ok(())
+    }
+
+    fn execute_upgrade_client_state(
+        &self,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+    ) -> Result<UpdatedState, ClientError> {
+
+        let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
+        let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
 
         // Construct new client state and consensus state
         // Relayer chosen client parameters are ignored.
