@@ -46,7 +46,7 @@ pub struct Coin<Denom> {
 }
 ```
 
-The ICS20 acknowledgement type and packet data type are defined in the spec[^2] and maybe modelled as follows. Note that
+The ICS20 acknowledgement type and packet data type are defined in the spec[^2] and may be modelled as follows. Note that
 these types must be (de)serializable from/to JSON.
 
 ```rust
@@ -197,7 +197,7 @@ pub fn on_timeout_packet<Ctx>(ctx: &Ctx, data: &FungibleTokenPacketData) -> Resu
     refund_packet_token(ctx, data)
 }
 
-/// Responds to the the success or failure of a packet
+/// Responds to the success or failure of a packet
 /// acknowledgement written on the receiving chain. If the acknowledgement
 /// was a success then nothing occurs. If the acknowledgement failed, then
 /// the sender is refunded their tokens.
