@@ -423,6 +423,31 @@ mod val_exec_ctx {
     ) -> Result<(ModuleExtras, Version), TokenTransferError> {
         Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
     }
+
+    pub fn on_chan_open_ack_validate(
+        _ctx: &impl TokenTransferContext,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        counterparty_version: &Version,
+    ) -> Result<(), TokenTransferError> {
+        if counterparty_version != &Version::new(VERSION.to_string()) {
+            return Err(TokenTransferError::InvalidCounterpartyVersion {
+                expect_version: Version::new(VERSION.to_string()),
+                got_version: counterparty_version.clone(),
+            });
+        }
+
+        Ok(())
+    }
+
+    pub fn on_chan_open_ack_execute(
+        _ctx: &mut impl TokenTransferContext,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty_version: &Version,
+    ) -> Result<ModuleExtras, TokenTransferError> {
+        Ok(ModuleExtras::empty())
+    }
 }
 
 #[cfg(test)]
