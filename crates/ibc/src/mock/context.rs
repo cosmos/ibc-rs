@@ -54,11 +54,6 @@ use crate::Height;
 
 use super::client_state::MOCK_CLIENT_TYPE;
 
-#[cfg(feature = "val_exec_ctx")]
-use crate::core::context::ContextError;
-#[cfg(feature = "val_exec_ctx")]
-use crate::core::ValidationContext;
-
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
 /// A context implementing the dependencies necessary for testing any IBC module.
@@ -85,6 +80,10 @@ pub struct MockContext {
 
     /// ICS26 router impl
     router: MockRouter,
+
+    /// To implement ValidationContext Router
+    #[cfg(feature = "val_exec_ctx")]
+    new_router: BTreeMap<ModuleId, Arc<dyn Module>>,
 }
 
 /// Returns a MockContext with bare minimum initialization: no clients, no connections and no channels are
@@ -109,14 +108,29 @@ impl Clone for MockContext {
             let ibc_store = self.ibc_store.lock().clone();
             Arc::new(Mutex::new(ibc_store))
         };
-        Self {
-            host_chain_type: self.host_chain_type,
-            host_chain_id: self.host_chain_id.clone(),
-            max_history_size: self.max_history_size,
-            history: self.history.clone(),
-            block_time: self.block_time,
-            ibc_store,
-            router: self.router.clone(),
+        cfg_if::cfg_if! {
+            if #[cfg(not(feature = "val_exec_ctx"))] {
+                Self {
+                    host_chain_type: self.host_chain_type,
+                    host_chain_id: self.host_chain_id.clone(),
+                    max_history_size: self.max_history_size,
+                    history: self.history.clone(),
+                    block_time: self.block_time,
+                    ibc_store,
+                    router: self.router.clone(),
+                }
+            } else {
+                Self {
+                    host_chain_type: self.host_chain_type,
+                    host_chain_id: self.host_chain_id.clone(),
+                    max_history_size: self.max_history_size,
+                    history: self.history.clone(),
+                    block_time: self.block_time,
+                    ibc_store,
+                    router: self.router.clone(),
+                    new_router: self.new_router.clone(),
+                }
+            }
         }
     }
 }
@@ -156,28 +170,57 @@ impl MockContext {
 
         let block_time = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS);
         let next_block_timestamp = Timestamp::now().add(block_time).unwrap();
-        MockContext {
-            host_chain_type: host_type,
-            host_chain_id: host_id.clone(),
-            max_history_size,
-            history: (0..n)
-                .rev()
-                .map(|i| {
-                    // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
-                    // where N = now(), BT = block_time
-                    HostBlock::generate_block(
-                        host_id.clone(),
-                        host_type,
-                        latest_height.sub(i).unwrap().revision_height(),
-                        next_block_timestamp
-                            .sub(Duration::from_secs(DEFAULT_BLOCK_TIME_SECS * (i + 1)))
-                            .unwrap(),
-                    )
-                })
-                .collect(),
-            block_time,
-            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
-            router: Default::default(),
+        cfg_if::cfg_if! {
+            if #[cfg(not(feature = "val_exec_ctx"))] {
+                MockContext {
+                    host_chain_type: host_type,
+                    host_chain_id: host_id.clone(),
+                    max_history_size,
+                    history: (0..n)
+                        .rev()
+                        .map(|i| {
+                            // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
+                            // where N = now(), BT = block_time
+                            HostBlock::generate_block(
+                                host_id.clone(),
+                                host_type,
+                                latest_height.sub(i).unwrap().revision_height(),
+                                next_block_timestamp
+                                    .sub(Duration::from_secs(DEFAULT_BLOCK_TIME_SECS * (i + 1)))
+                                    .unwrap(),
+                            )
+                        })
+                        .collect(),
+                    block_time,
+                    ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+                    router: Default::default(),
+                }
+            } else {
+                MockContext {
+                    host_chain_type: host_type,
+                    host_chain_id: host_id.clone(),
+                    max_history_size,
+                    history: (0..n)
+                        .rev()
+                        .map(|i| {
+                            // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
+                            // where N = now(), BT = block_time
+                            HostBlock::generate_block(
+                                host_id.clone(),
+                                host_type,
+                                latest_height.sub(i).unwrap().revision_height(),
+                                next_block_timestamp
+                                    .sub(Duration::from_secs(DEFAULT_BLOCK_TIME_SECS * (i + 1)))
+                                    .unwrap(),
+                            )
+                        })
+                        .collect(),
+                    block_time,
+                    ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+                    router: Default::default(),
+                    new_router: BTreeMap::new(),
+                }
+            }
         }
     }
 
@@ -1476,167 +1519,202 @@ impl RelayerContext for MockContext {
 }
 
 #[cfg(feature = "val_exec_ctx")]
-impl ValidationContext for MockContext {
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
-        ClientReader::client_state(self, client_id).map_err(ContextError::ClientError)
+pub use val_exec_ctx::*;
+#[cfg(feature = "val_exec_ctx")]
+mod val_exec_ctx {
+    pub use super::*;
+
+    use crate::core::context::ContextError;
+    use crate::core::context::Router as NewRouter;
+    use crate::core::ValidationContext;
+
+    impl NewRouter for MockContext {
+        fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module> {
+            self.new_router.get(module_id).map(Arc::as_ref)
+        }
+        fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module> {
+            self.new_router.get_mut(module_id).and_then(Arc::get_mut)
+        }
+
+        fn has_route(&self, module_id: &ModuleId) -> bool {
+            self.new_router.get(module_id).is_some()
+        }
+
+        fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId> {
+            <Self as PortReader>::lookup_module_by_port(self, port_id).ok()
+        }
     }
 
-    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ContextError> {
-        ClientReader::decode_client_state(self, client_state).map_err(ContextError::ClientError)
-    }
+    impl ValidationContext for MockContext {
+        fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
+            ClientReader::client_state(self, client_id).map_err(ContextError::ClientError)
+        }
 
-    fn consensus_state(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Box<dyn ConsensusState>, ContextError> {
-        ClientReader::consensus_state(self, client_id, height).map_err(ContextError::ClientError)
-    }
+        fn decode_client_state(
+            &self,
+            client_state: Any,
+        ) -> Result<Box<dyn ClientState>, ContextError> {
+            ClientReader::decode_client_state(self, client_state).map_err(ContextError::ClientError)
+        }
 
-    fn next_consensus_state(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
-        ClientReader::next_consensus_state(self, client_id, height)
-            .map_err(ContextError::ClientError)
-    }
+        fn consensus_state(
+            &self,
+            client_id: &ClientId,
+            height: &Height,
+        ) -> Result<Box<dyn ConsensusState>, ContextError> {
+            ClientReader::consensus_state(self, client_id, height)
+                .map_err(ContextError::ClientError)
+        }
 
-    fn prev_consensus_state(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
-        ClientReader::prev_consensus_state(self, client_id, height)
-            .map_err(ContextError::ClientError)
-    }
+        fn next_consensus_state(
+            &self,
+            client_id: &ClientId,
+            height: &Height,
+        ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
+            ClientReader::next_consensus_state(self, client_id, height)
+                .map_err(ContextError::ClientError)
+        }
 
-    fn host_height(&self) -> Result<Height, ContextError> {
-        Ok(self.latest_height())
-    }
+        fn prev_consensus_state(
+            &self,
+            client_id: &ClientId,
+            height: &Height,
+        ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
+            ClientReader::prev_consensus_state(self, client_id, height)
+                .map_err(ContextError::ClientError)
+        }
 
-    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ContextError> {
-        ClientReader::pending_host_consensus_state(self).map_err(ContextError::ClientError)
-    }
+        fn host_height(&self) -> Result<Height, ContextError> {
+            Ok(self.latest_height())
+        }
 
-    fn host_consensus_state(
-        &self,
-        height: &Height,
-    ) -> Result<Box<dyn ConsensusState>, ContextError> {
-        ConnectionReader::host_consensus_state(self, height).map_err(ContextError::ConnectionError)
-    }
+        fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ContextError> {
+            ClientReader::pending_host_consensus_state(self).map_err(ContextError::ClientError)
+        }
 
-    fn client_counter(&self) -> Result<u64, ContextError> {
-        ClientReader::client_counter(self).map_err(ContextError::ClientError)
-    }
+        fn host_consensus_state(
+            &self,
+            height: &Height,
+        ) -> Result<Box<dyn ConsensusState>, ContextError> {
+            ConnectionReader::host_consensus_state(self, height)
+                .map_err(ContextError::ConnectionError)
+        }
 
-    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError> {
-        ConnectionReader::connection_end(self, conn_id).map_err(ContextError::ConnectionError)
-    }
+        fn client_counter(&self) -> Result<u64, ContextError> {
+            ClientReader::client_counter(self).map_err(ContextError::ClientError)
+        }
 
-    fn validate_self_client(&self, _counterparty_client_state: Any) -> Result<(), ConnectionError> {
-        Ok(())
-    }
+        fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError> {
+            ConnectionReader::connection_end(self, conn_id).map_err(ContextError::ConnectionError)
+        }
 
-    fn commitment_prefix(&self) -> CommitmentPrefix {
-        ConnectionReader::commitment_prefix(self)
-    }
+        fn validate_self_client(
+            &self,
+            _counterparty_client_state: Any,
+        ) -> Result<(), ConnectionError> {
+            Ok(())
+        }
 
-    fn connection_counter(&self) -> Result<u64, ContextError> {
-        ConnectionReader::connection_counter(self).map_err(ContextError::ConnectionError)
-    }
+        fn commitment_prefix(&self) -> CommitmentPrefix {
+            ConnectionReader::commitment_prefix(self)
+        }
 
-    fn channel_end(
-        &self,
-        port_channel_id: &(PortId, ChannelId),
-    ) -> Result<ChannelEnd, ContextError> {
-        ChannelReader::channel_end(self, &port_channel_id.0, &port_channel_id.1)
-            .map_err(ContextError::ChannelError)
-    }
+        fn connection_counter(&self) -> Result<u64, ContextError> {
+            ConnectionReader::connection_counter(self).map_err(ContextError::ConnectionError)
+        }
 
-    fn connection_channels(
-        &self,
-        cid: &ConnectionId,
-    ) -> Result<Vec<(PortId, ChannelId)>, ContextError> {
-        ChannelReader::connection_channels(self, cid).map_err(ContextError::ChannelError)
-    }
+        fn channel_end(
+            &self,
+            port_channel_id: &(PortId, ChannelId),
+        ) -> Result<ChannelEnd, ContextError> {
+            ChannelReader::channel_end(self, &port_channel_id.0, &port_channel_id.1)
+                .map_err(ContextError::ChannelError)
+        }
 
-    fn get_next_sequence_send(
-        &self,
-        port_channel_id: &(PortId, ChannelId),
-    ) -> Result<Sequence, ContextError> {
-        ChannelReader::get_next_sequence_send(self, &port_channel_id.0, &port_channel_id.1)
-            .map_err(ContextError::PacketError)
-    }
+        fn connection_channels(
+            &self,
+            cid: &ConnectionId,
+        ) -> Result<Vec<(PortId, ChannelId)>, ContextError> {
+            ChannelReader::connection_channels(self, cid).map_err(ContextError::ChannelError)
+        }
 
-    fn get_next_sequence_recv(
-        &self,
-        port_channel_id: &(PortId, ChannelId),
-    ) -> Result<Sequence, ContextError> {
-        ChannelReader::get_next_sequence_recv(self, &port_channel_id.0, &port_channel_id.1)
-            .map_err(ContextError::PacketError)
-    }
+        fn get_next_sequence_send(
+            &self,
+            port_channel_id: &(PortId, ChannelId),
+        ) -> Result<Sequence, ContextError> {
+            ChannelReader::get_next_sequence_send(self, &port_channel_id.0, &port_channel_id.1)
+                .map_err(ContextError::PacketError)
+        }
 
-    fn get_next_sequence_ack(
-        &self,
-        port_channel_id: &(PortId, ChannelId),
-    ) -> Result<Sequence, ContextError> {
-        ChannelReader::get_next_sequence_ack(self, &port_channel_id.0, &port_channel_id.1)
-            .map_err(ContextError::PacketError)
-    }
+        fn get_next_sequence_recv(
+            &self,
+            port_channel_id: &(PortId, ChannelId),
+        ) -> Result<Sequence, ContextError> {
+            ChannelReader::get_next_sequence_recv(self, &port_channel_id.0, &port_channel_id.1)
+                .map_err(ContextError::PacketError)
+        }
 
-    fn get_packet_commitment(
-        &self,
-        key: &(PortId, ChannelId, Sequence),
-    ) -> Result<PacketCommitment, ContextError> {
-        ChannelReader::get_packet_commitment(self, &key.0, &key.1, &key.2)
-            .map_err(ContextError::PacketError)
-    }
+        fn get_next_sequence_ack(
+            &self,
+            port_channel_id: &(PortId, ChannelId),
+        ) -> Result<Sequence, ContextError> {
+            ChannelReader::get_next_sequence_ack(self, &port_channel_id.0, &port_channel_id.1)
+                .map_err(ContextError::PacketError)
+        }
 
-    fn get_packet_receipt(
-        &self,
-        key: &(PortId, ChannelId, Sequence),
-    ) -> Result<Receipt, ContextError> {
-        ChannelReader::get_packet_receipt(self, &key.0, &key.1, &key.2)
-            .map_err(ContextError::PacketError)
-    }
+        fn get_packet_commitment(
+            &self,
+            key: &(PortId, ChannelId, Sequence),
+        ) -> Result<PacketCommitment, ContextError> {
+            ChannelReader::get_packet_commitment(self, &key.0, &key.1, &key.2)
+                .map_err(ContextError::PacketError)
+        }
 
-    fn get_packet_acknowledgement(
-        &self,
-        key: &(PortId, ChannelId, Sequence),
-    ) -> Result<AcknowledgementCommitment, ContextError> {
-        ChannelReader::get_packet_acknowledgement(self, &key.0, &key.1, &key.2)
-            .map_err(ContextError::PacketError)
-    }
+        fn get_packet_receipt(
+            &self,
+            key: &(PortId, ChannelId, Sequence),
+        ) -> Result<Receipt, ContextError> {
+            ChannelReader::get_packet_receipt(self, &key.0, &key.1, &key.2)
+                .map_err(ContextError::PacketError)
+        }
 
-    fn hash(&self, value: &[u8]) -> Vec<u8> {
-        sha2::Sha256::digest(value).to_vec()
-    }
+        fn get_packet_acknowledgement(
+            &self,
+            key: &(PortId, ChannelId, Sequence),
+        ) -> Result<AcknowledgementCommitment, ContextError> {
+            ChannelReader::get_packet_acknowledgement(self, &key.0, &key.1, &key.2)
+                .map_err(ContextError::PacketError)
+        }
 
-    fn client_update_time(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Timestamp, ContextError> {
-        ChannelReader::client_update_time(self, client_id, height)
-            .map_err(ContextError::ChannelError)
-    }
+        fn hash(&self, value: &[u8]) -> Vec<u8> {
+            sha2::Sha256::digest(value).to_vec()
+        }
 
-    fn client_update_height(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ContextError> {
-        ChannelReader::client_update_height(self, client_id, height)
-            .map_err(ContextError::ChannelError)
-    }
+        fn client_update_time(
+            &self,
+            client_id: &ClientId,
+            height: &Height,
+        ) -> Result<Timestamp, ContextError> {
+            ChannelReader::client_update_time(self, client_id, height)
+                .map_err(ContextError::ChannelError)
+        }
 
-    fn channel_counter(&self) -> Result<u64, ContextError> {
-        ChannelReader::channel_counter(self).map_err(ContextError::ChannelError)
-    }
+        fn client_update_height(
+            &self,
+            client_id: &ClientId,
+            height: &Height,
+        ) -> Result<Height, ContextError> {
+            ChannelReader::client_update_height(self, client_id, height)
+                .map_err(ContextError::ChannelError)
+        }
 
-    fn max_expected_time_per_block(&self) -> Duration {
-        ChannelReader::max_expected_time_per_block(self)
+        fn channel_counter(&self) -> Result<u64, ContextError> {
+            ChannelReader::channel_counter(self).map_err(ContextError::ChannelError)
+        }
+
+        fn max_expected_time_per_block(&self) -> Duration {
+            ChannelReader::max_expected_time_per_block(self)
+        }
     }
 }
 
@@ -1835,6 +1913,32 @@ mod tests {
                 Ok((ModuleExtras::empty(), version.clone()))
             }
 
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_chan_open_try_validate(
+                &self,
+                _order: Order,
+                _connection_hops: &[ConnectionId],
+                _port_id: &PortId,
+                _channel_id: &ChannelId,
+                _counterparty: &Counterparty,
+                counterparty_version: &Version,
+            ) -> Result<Version, ChannelError> {
+                Ok(counterparty_version.clone())
+            }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_chan_open_try_execute(
+                &mut self,
+                _order: Order,
+                _connection_hops: &[ConnectionId],
+                _port_id: &PortId,
+                _channel_id: &ChannelId,
+                _counterparty: &Counterparty,
+                counterparty_version: &Version,
+            ) -> Result<(ModuleExtras, Version), ChannelError> {
+                Ok((ModuleExtras::empty(), counterparty_version.clone()))
+            }
+
             fn on_chan_open_try(
                 &mut self,
                 _order: Order,
@@ -1878,6 +1982,32 @@ mod tests {
                 version: &Version,
             ) -> Result<(ModuleExtras, Version), ChannelError> {
                 Ok((ModuleExtras::empty(), version.clone()))
+            }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_chan_open_try_validate(
+                &self,
+                _order: Order,
+                _connection_hops: &[ConnectionId],
+                _port_id: &PortId,
+                _channel_id: &ChannelId,
+                _counterparty: &Counterparty,
+                counterparty_version: &Version,
+            ) -> Result<Version, ChannelError> {
+                Ok(counterparty_version.clone())
+            }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_chan_open_try_execute(
+                &mut self,
+                _order: Order,
+                _connection_hops: &[ConnectionId],
+                _port_id: &PortId,
+                _channel_id: &ChannelId,
+                _counterparty: &Counterparty,
+                counterparty_version: &Version,
+            ) -> Result<(ModuleExtras, Version), ChannelError> {
+                Ok((ModuleExtras::empty(), counterparty_version.clone()))
             }
 
             fn on_chan_open_try(

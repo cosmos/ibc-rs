@@ -178,14 +178,55 @@ pub fn on_chan_open_init(
         });
     }
 
-    if !version.is_empty() && version != &Version::ics20() {
+    if !version.is_empty() && version != &Version::new(VERSION.to_string()) {
         return Err(TokenTransferError::InvalidVersion {
-            expect_version: Version::ics20(),
+            expect_version: Version::new(VERSION.to_string()),
             got_version: version.clone(),
         });
     }
 
-    Ok((ModuleExtras::empty(), Version::ics20()))
+    Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
+}
+
+#[cfg(feature = "val_exec_ctx")]
+#[allow(clippy::too_many_arguments)]
+pub fn on_chan_open_try_validate(
+    _ctx: &impl TokenTransferContext,
+    order: Order,
+    _connection_hops: &[ConnectionId],
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+    _counterparty: &Counterparty,
+    counterparty_version: &Version,
+) -> Result<Version, TokenTransferError> {
+    if order != Order::Unordered {
+        return Err(TokenTransferError::ChannelNotUnordered {
+            expect_order: Order::Unordered,
+            got_order: order,
+        });
+    }
+    if counterparty_version != &Version::new(VERSION.to_string()) {
+        return Err(TokenTransferError::InvalidCounterpartyVersion {
+            expect_version: Version::new(VERSION.to_string()),
+            got_version: counterparty_version.clone(),
+        });
+    }
+
+    Ok(Version::new(VERSION.to_string()))
+}
+
+#[cfg(feature = "val_exec_ctx")]
+#[allow(clippy::too_many_arguments)]
+pub fn on_chan_open_try_execute(
+    _ctx: &mut impl TokenTransferContext,
+    _order: Order,
+    _connection_hops: &[ConnectionId],
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+    _counterparty: &Counterparty,
+    _counterparty_version: &Version,
+) -> Result<(ModuleExtras, Version), TokenTransferError> {
+    Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -204,14 +245,14 @@ pub fn on_chan_open_try(
             got_order: order,
         });
     }
-    if counterparty_version != &Version::ics20() {
+    if counterparty_version != &Version::new(VERSION.to_string()) {
         return Err(TokenTransferError::InvalidCounterpartyVersion {
-            expect_version: Version::ics20(),
+            expect_version: Version::new(VERSION.to_string()),
             got_version: counterparty_version.clone(),
         });
     }
 
-    Ok((ModuleExtras::empty(), Version::ics20()))
+    Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
 }
 
 pub fn on_chan_open_ack(
@@ -220,9 +261,9 @@ pub fn on_chan_open_ack(
     _channel_id: &ChannelId,
     counterparty_version: &Version,
 ) -> Result<ModuleExtras, TokenTransferError> {
-    if counterparty_version != &Version::ics20() {
+    if counterparty_version != &Version::new(VERSION.to_string()) {
         return Err(TokenTransferError::InvalidCounterpartyVersion {
-            expect_version: Version::ics20(),
+            expect_version: Version::new(VERSION.to_string()),
             got_version: counterparty_version.clone(),
         });
     }
@@ -335,6 +376,7 @@ pub fn on_timeout_packet(
 
 #[cfg(test)]
 pub(crate) mod test {
+    use super::*;
     use subtle_encoding::bech32;
 
     use crate::applications::transfer::context::{cosmos_adr028_escrow_address, on_chan_open_try};
@@ -347,7 +389,6 @@ pub(crate) mod test {
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
     use crate::handler::HandlerOutputBuilder;
-    use crate::prelude::*;
     use crate::test_utils::{get_dummy_transfer_module, DummyTransferModule};
 
     use super::on_chan_open_init;
@@ -436,7 +477,7 @@ pub(crate) mod test {
         )
         .unwrap();
 
-        assert_eq!(out_version, Version::ics20());
+        assert_eq!(out_version, Version::new(VERSION.to_string()));
     }
 
     /// If the relayer passed in the only supported version (ics20), then return ics20
@@ -444,7 +485,7 @@ pub(crate) mod test {
     fn test_on_chan_open_init_ics20_version() {
         let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
 
-        let in_version = Version::ics20();
+        let in_version = Version::new(VERSION.to_string());
         let (_, out_version) = on_chan_open_init(
             &mut ctx,
             order,
@@ -456,7 +497,7 @@ pub(crate) mod test {
         )
         .unwrap();
 
-        assert_eq!(out_version, Version::ics20());
+        assert_eq!(out_version, Version::new(VERSION.to_string()));
     }
 
     /// If the relayer passed in an unsupported version, then fail
@@ -483,7 +524,7 @@ pub(crate) mod test {
     fn test_on_chan_open_try_counterparty_correct_version() {
         let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
 
-        let counterparty_version = Version::ics20();
+        let counterparty_version = Version::new(VERSION.to_string());
 
         let (_, out_version) = on_chan_open_try(
             &mut ctx,
@@ -496,7 +537,7 @@ pub(crate) mod test {
         )
         .unwrap();
 
-        assert_eq!(out_version, Version::ics20());
+        assert_eq!(out_version, Version::new(VERSION.to_string()));
     }
 
     /// If the counterparty doesn't support ics20, then fail

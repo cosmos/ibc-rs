@@ -11,7 +11,6 @@ use ibc_proto::ibc::lightclients::tendermint::v1::{
 };
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
-use serde::{Deserialize, Serialize};
 use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
@@ -60,7 +59,8 @@ use crate::core::ValidationContext;
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClientState {
     pub chain_id: ChainId,
     pub trust_level: TrustThreshold,
@@ -72,11 +72,12 @@ pub struct ClientState {
     pub upgrade_path: Vec<String>,
     allow_update: AllowUpdate,
     frozen_height: Option<Height>,
-    #[serde(skip)]
+    #[cfg_attr(feature = "serde", serde(skip))]
     verifier: ProdVerifier,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct AllowUpdate {
     pub after_expiry: bool,
     pub after_misbehaviour: bool,
@@ -355,7 +356,8 @@ impl ClientState {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpgradeOptions {
     pub unbonding_period: Duration,
 }
@@ -1480,13 +1482,11 @@ mod tests {
     use test_log::test;
 
     use ibc_proto::ics23::ProofSpec as Ics23ProofSpec;
-    use tendermint_rpc::endpoint::abci_query::AbciQuery;
 
     use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState};
     use crate::core::ics02_client::trust_threshold::TrustThreshold;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ChainId;
-    use crate::test::test_serialization_roundtrip;
     use crate::timestamp::{Timestamp, ZERO_DURATION};
 
     #[derive(Clone, Debug, PartialEq)]
@@ -1500,20 +1500,6 @@ mod tests {
         proof_specs: ProofSpecs,
         upgrade_path: Vec<String>,
         allow_update: AllowUpdate,
-    }
-
-    #[test]
-    fn serialization_roundtrip_no_proof() {
-        let json_data =
-            include_str!("../../../tests/support/query/serialization/client_state.json");
-        test_serialization_roundtrip::<AbciQuery>(json_data);
-    }
-
-    #[test]
-    fn serialization_roundtrip_with_proof() {
-        let json_data =
-            include_str!("../../../tests/support/query/serialization/client_state_proof.json");
-        test_serialization_roundtrip::<AbciQuery>(json_data);
     }
 
     #[test]
@@ -1839,6 +1825,27 @@ mod tests {
                 res.err(),
             );
         }
+    }
+}
+
+#[cfg(all(test, feature = "serde"))]
+mod serde_tests {
+    use tendermint_rpc::endpoint::abci_query::AbciQuery;
+
+    use crate::test::test_serialization_roundtrip;
+
+    #[test]
+    fn serialization_roundtrip_no_proof() {
+        let json_data =
+            include_str!("../../../tests/support/query/serialization/client_state.json");
+        test_serialization_roundtrip::<AbciQuery>(json_data);
+    }
+
+    #[test]
+    fn serialization_roundtrip_with_proof() {
+        let json_data =
+            include_str!("../../../tests/support/query/serialization/client_state_proof.json");
+        test_serialization_roundtrip::<AbciQuery>(json_data);
     }
 }
 

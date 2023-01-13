@@ -4,7 +4,6 @@ use bytes::Buf;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::mock::Misbehaviour as RawMisbehaviour;
 use ibc_proto::protobuf::Protobuf;
-use serde::{Deserialize, Serialize};
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
@@ -13,7 +12,8 @@ use crate::Height;
 
 pub const MOCK_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.mock.Misbehavior";
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Misbehaviour {
     pub client_id: ClientId,
     pub header1: MockHeader,

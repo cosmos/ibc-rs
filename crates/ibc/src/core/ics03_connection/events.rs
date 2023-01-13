@@ -171,6 +171,7 @@ impl From<OpenTry> for abci::Event {
         }
     }
 }
+
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
