@@ -78,8 +78,9 @@ mod val_exec_ctx {
     use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
     use crate::core::ics04_channel::context::calculate_block_delay;
     use crate::core::ics04_channel::events::OpenTry;
-    use crate::core::ics04_channel::handler::chan_open_try;
+    use crate::core::ics04_channel::handler::{chan_open_init, chan_open_try};
     use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
+    use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics04_channel::packet::{Receipt, Sequence};
@@ -173,7 +174,9 @@ mod val_exec_ctx {
                     }
 
                     match message {
-                        ChannelMsg::OpenInit(_) => todo!(),
+                        ChannelMsg::OpenInit(message) => {
+                            chan_open_init_validate(self, module_id, message)
+                        }
                         ChannelMsg::OpenTry(message) => {
                             chan_open_try_validate(self, module_id, message)
                         }
@@ -557,6 +560,32 @@ mod val_exec_ctx {
 
         /// Logging facility
         fn log_message(&mut self, message: String);
+    }
+
+    fn chan_open_init_validate<ValCtx>(
+        ctx_a: &ValCtx,
+        module_id: ModuleId,
+        msg: MsgChannelOpenInit,
+    ) -> Result<(), ContextError>
+    where
+        ValCtx: ValidationContext,
+    {
+        chan_open_init::validate(ctx_a, &msg)?;
+        let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
+
+        let module = ctx_a
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        let _ = module.on_chan_open_init_validate(
+            msg.ordering,
+            &msg.connection_hops_on_a,
+            &msg.port_id_on_a,
+            &chan_id_on_a,
+            &Counterparty::new(msg.port_id_on_b.clone(), None),
+            &msg.version_proposal,
+        )?;
+
+        Ok(())
     }
 
     fn chan_open_try_validate<ValCtx>(
