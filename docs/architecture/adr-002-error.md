@@ -39,7 +39,7 @@ impl Kind {
 The design above is meant to separate between two concerns:
 
   - The metadata about an error, as captured in `Kind`.
-  - The trace of how the error occured, as captured in `anomaly::Context`.
+  - The trace of how the error occurred, as captured in `anomaly::Context`.
   - The type `Error` is defined to be `anomaly::Error<Kind>`, which is a newtype wrapper to `Box<anomaly::Context<Kind>>`.
 
 There are a few issues with the original design using `anomaly`:
@@ -76,7 +76,7 @@ are not too critical in this specific case. However this would not be the
 case if we want to use the error source information to determine whether
 an error is _recoverable_ or not. For instance, let's say if we want to
 implement custom retry logic only when the error source is
-`std::io::Error`, there is not easy way to distinguished if an error
+`std::io::Error`, there is no easy way to distinguish if an error
 variant `Kind::Grpc` is caused by `std::io::Error`.
 
 ### Proposed Design
