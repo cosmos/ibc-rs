@@ -209,6 +209,24 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(ModuleExtras::empty())
     }
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_open_confirm_validate(
+        &self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<(), ChannelError> {
+        Ok(())
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_open_confirm_execute(
+        &mut self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<ModuleExtras, ChannelError> {
+        Ok(ModuleExtras::empty())
+    }
+
     fn on_chan_open_confirm(
         &mut self,
         _port_id: &PortId,

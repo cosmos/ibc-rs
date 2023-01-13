@@ -78,9 +78,12 @@ mod val_exec_ctx {
     use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
     use crate::core::ics04_channel::context::calculate_block_delay;
     use crate::core::ics04_channel::events::{OpenAck, OpenInit, OpenTry};
-    use crate::core::ics04_channel::handler::{chan_open_ack, chan_open_init, chan_open_try};
+    use crate::core::ics04_channel::handler::{
+        chan_open_ack, chan_open_confirm, chan_open_init, chan_open_try,
+    };
     use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
     use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
+    use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
     use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics04_channel::msgs::ChannelMsg;
@@ -184,7 +187,9 @@ mod val_exec_ctx {
                         ChannelMsg::OpenAck(message) => {
                             chan_open_ack_validate(self, module_id, message)
                         }
-                        ChannelMsg::OpenConfirm(_) => todo!(),
+                        ChannelMsg::OpenConfirm(msg) => {
+                            chan_open_confirm_validate(self, module_id, msg)
+                        }
                         ChannelMsg::CloseInit(_) => todo!(),
                         ChannelMsg::CloseConfirm(_) => todo!(),
                     }
@@ -854,6 +859,24 @@ mod val_exec_ctx {
 
             ctx_a.store_channel(port_channel_id_on_a, chan_end_on_a)?;
         }
+
+        Ok(())
+    }
+
+    fn chan_open_confirm_validate<ValCtx>(
+        ctx_b: &ValCtx,
+        module_id: ModuleId,
+        msg: MsgChannelOpenConfirm,
+    ) -> Result<(), ContextError>
+    where
+        ValCtx: ValidationContext,
+    {
+        chan_open_confirm::validate(ctx_b, &msg)?;
+
+        let module = ctx_b
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        module.on_chan_open_confirm_validate(&msg.port_id_on_b, &msg.chan_id_on_b)?;
 
         Ok(())
     }
