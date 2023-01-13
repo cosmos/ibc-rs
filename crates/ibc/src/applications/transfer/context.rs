@@ -188,6 +188,47 @@ pub fn on_chan_open_init(
     Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
 }
 
+#[cfg(feature = "val_exec_ctx")]
+#[allow(clippy::too_many_arguments)]
+pub fn on_chan_open_try_validate(
+    _ctx: &impl TokenTransferContext,
+    order: Order,
+    _connection_hops: &[ConnectionId],
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+    _counterparty: &Counterparty,
+    counterparty_version: &Version,
+) -> Result<Version, TokenTransferError> {
+    if order != Order::Unordered {
+        return Err(TokenTransferError::ChannelNotUnordered {
+            expect_order: Order::Unordered,
+            got_order: order,
+        });
+    }
+    if counterparty_version != &Version::new(VERSION.to_string()) {
+        return Err(TokenTransferError::InvalidCounterpartyVersion {
+            expect_version: Version::new(VERSION.to_string()),
+            got_version: counterparty_version.clone(),
+        });
+    }
+
+    Ok(Version::new(VERSION.to_string()))
+}
+
+#[cfg(feature = "val_exec_ctx")]
+#[allow(clippy::too_many_arguments)]
+pub fn on_chan_open_try_execute(
+    _ctx: &mut impl TokenTransferContext,
+    _order: Order,
+    _connection_hops: &[ConnectionId],
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+    _counterparty: &Counterparty,
+    _counterparty_version: &Version,
+) -> Result<(ModuleExtras, Version), TokenTransferError> {
+    Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_try(
     _ctx: &mut impl TokenTransferContext,

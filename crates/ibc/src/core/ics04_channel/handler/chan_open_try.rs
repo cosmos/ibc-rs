@@ -11,6 +11,97 @@ use crate::core::ics24_host::identifier::ChannelId;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
+#[cfg(feature = "val_exec_ctx")]
+pub(crate) use val_exec_ctx::*;
+#[cfg(feature = "val_exec_ctx")]
+pub(crate) mod val_exec_ctx {
+    use super::*;
+    use crate::core::{ContextError, ValidationContext};
+
+    pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), ContextError>
+    where
+        Ctx: ValidationContext,
+    {
+        // An IBC connection running on the local (host) chain should exist.
+        if msg.connection_hops_on_b.len() != 1 {
+            return Err(ChannelError::InvalidConnectionHopsLength {
+                expected: 1,
+                actual: msg.connection_hops_on_b.len(),
+            })
+            .map_err(ContextError::ChannelError);
+        }
+
+        let conn_end_on_b = ctx_b.connection_end(&msg.connection_hops_on_b[0])?;
+        if !conn_end_on_b.state_matches(&ConnectionState::Open) {
+            return Err(ChannelError::ConnectionNotOpen {
+                connection_id: msg.connection_hops_on_b[0].clone(),
+            })
+            .map_err(ContextError::ChannelError);
+        }
+
+        let conn_version = match conn_end_on_b.versions() {
+            [version] => version,
+            _ => {
+                return Err(ChannelError::InvalidVersionLengthConnection)
+                    .map_err(ContextError::ChannelError)
+            }
+        };
+
+        let channel_feature = msg.ordering.to_string();
+        if !conn_version.is_supported_feature(channel_feature) {
+            return Err(ChannelError::ChannelFeatureNotSuportedByConnection)
+                .map_err(ContextError::ChannelError);
+        }
+
+        // Verify proofs
+        {
+            let client_id_on_b = conn_end_on_b.client_id();
+            let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
+            let consensus_state_of_a_on_b =
+                ctx_b.consensus_state(client_id_on_b, &msg.proof_height_on_a)?;
+            let prefix_on_a = conn_end_on_b.counterparty().prefix();
+            let port_id_on_a = &&msg.port_id_on_a;
+            let chan_id_on_a = msg.chan_id_on_a.clone();
+            let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
+                ChannelError::UndefinedConnectionCounterparty {
+                    connection_id: msg.connection_hops_on_b[0].clone(),
+                },
+            )?;
+
+            // The client must not be frozen.
+            if client_state_of_a_on_b.is_frozen() {
+                return Err(ChannelError::FrozenClient {
+                    client_id: client_id_on_b.clone(),
+                })
+                .map_err(ContextError::ChannelError);
+            }
+
+            let expected_chan_end_on_a = ChannelEnd::new(
+                State::Init,
+                msg.ordering,
+                Counterparty::new(msg.port_id_on_b.clone(), None),
+                vec![conn_id_on_a.clone()],
+                msg.version_supported_on_a.clone(),
+            );
+
+            // Verify the proof for the channel state against the expected channel end.
+            // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
+            client_state_of_a_on_b
+                .verify_channel_state(
+                    msg.proof_height_on_a,
+                    prefix_on_a,
+                    &msg.proof_chan_end_on_a,
+                    consensus_state_of_a_on_b.root(),
+                    port_id_on_a,
+                    &chan_id_on_a,
+                    &expected_chan_end_on_a,
+                )
+                .map_err(ChannelError::VerifyChannelFailed)?;
+        }
+
+        Ok(())
+    }
+}
 /// Per our convention, this message is processed on chain B.
 pub(crate) fn process<Ctx: ChannelReader>(
     ctx_b: &Ctx,

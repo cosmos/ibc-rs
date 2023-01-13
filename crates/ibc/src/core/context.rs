@@ -61,6 +61,7 @@ pub use val_exec_ctx::*;
 
 #[cfg(feature = "val_exec_ctx")]
 mod val_exec_ctx {
+    use super::*;
     use core::time::Duration;
 
     use ibc_proto::google::protobuf::Any;
@@ -73,18 +74,24 @@ mod val_exec_ctx {
     use crate::core::ics03_connection::version::{
         get_compatible_versions, pick_version, Version as ConnectionVersion,
     };
-    use crate::core::ics04_channel::channel::ChannelEnd;
+    use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
     use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
     use crate::core::ics04_channel::context::calculate_block_delay;
+    use crate::core::ics04_channel::events::OpenTry;
+    use crate::core::ics04_channel::handler::chan_open_try;
     use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
+    use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
+    use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics04_channel::packet::{Receipt, Sequence};
     use crate::core::ics04_channel::timeout::TimeoutHeight;
+    use crate::core::ics05_port::error::PortError::UnknownPort;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
     use crate::core::ics24_host::path::{
         ClientConnectionsPath, ClientConsensusStatePath, ClientStatePath, ClientTypePath,
         CommitmentsPath, ConnectionsPath, ReceiptsPath,
     };
+    use crate::core::ics26_routing::context::{Module, ModuleId};
     use crate::core::{
         ics02_client::{
             handler::{create_client, misbehaviour, update_client, upgrade_client},
@@ -99,11 +106,42 @@ mod val_exec_ctx {
     };
     use crate::events::IbcEvent;
     use crate::timestamp::Timestamp;
-    use crate::{prelude::*, Height};
+    use crate::Height;
 
     use super::ContextError;
 
-    pub trait ValidationContext {
+    pub trait Router {
+        /// Returns a reference to a `Module` registered against the specified `ModuleId`
+        fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module>;
+
+        /// Returns a mutable reference to a `Module` registered against the specified `ModuleId`
+        fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module>;
+
+        /// Returns true if the `Router` has a `Module` registered against the specified `ModuleId`
+        fn has_route(&self, module_id: &ModuleId) -> bool;
+
+        /// Return the module_id associated with a given port_id
+        fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId>;
+
+        fn lookup_module(&self, msg: &ChannelMsg) -> Result<ModuleId, ChannelError> {
+            let port_id = match msg {
+                ChannelMsg::OpenInit(msg) => &msg.port_id_on_a,
+                ChannelMsg::OpenTry(msg) => &msg.port_id_on_b,
+                ChannelMsg::OpenAck(msg) => &msg.port_id_on_a,
+                ChannelMsg::OpenConfirm(msg) => &msg.port_id_on_b,
+                ChannelMsg::CloseInit(msg) => &msg.port_id_on_a,
+                ChannelMsg::CloseConfirm(msg) => &msg.port_id_on_b,
+            };
+            let module_id = self
+                .lookup_module_by_port(port_id)
+                .ok_or(ChannelError::Port(UnknownPort {
+                    port_id: port_id.clone(),
+                }))?;
+            Ok(module_id)
+        }
+    }
+
+    pub trait ValidationContext: Router {
         /// Validation entrypoint.
         fn validate(&self, message: MsgEnvelope) -> Result<(), RouterError>
         where
@@ -126,7 +164,26 @@ mod val_exec_ctx {
                     }
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::Channel(_message) => todo!(),
+                MsgEnvelope::Channel(message) => {
+                    let module_id = self.lookup_module(&message).map_err(ContextError::from)?;
+                    if !self.has_route(&module_id) {
+                        return Err(ChannelError::RouteNotFound)
+                            .map_err(ContextError::ChannelError)
+                            .map_err(RouterError::ContextError);
+                    }
+
+                    match message {
+                        ChannelMsg::OpenInit(_) => todo!(),
+                        ChannelMsg::OpenTry(message) => {
+                            chan_open_try_validate(self, module_id, message)
+                        }
+                        ChannelMsg::OpenAck(_) => todo!(),
+                        ChannelMsg::OpenConfirm(_) => todo!(),
+                        ChannelMsg::CloseInit(_) => todo!(),
+                        ChannelMsg::CloseConfirm(_) => todo!(),
+                    }
+                    .map_err(RouterError::ContextError)
+                }
                 MsgEnvelope::Packet(_message) => todo!(),
             }
         }
@@ -345,7 +402,26 @@ mod val_exec_ctx {
                     }
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::Channel(_message) => todo!(),
+                MsgEnvelope::Channel(message) => {
+                    let module_id = self.lookup_module(&message).map_err(ContextError::from)?;
+                    if !self.has_route(&module_id) {
+                        return Err(ChannelError::RouteNotFound)
+                            .map_err(ContextError::ChannelError)
+                            .map_err(RouterError::ContextError);
+                    }
+
+                    match message {
+                        ChannelMsg::OpenInit(_) => todo!(),
+                        ChannelMsg::OpenTry(message) => {
+                            chan_open_try_execute(self, module_id, message)
+                        }
+                        ChannelMsg::OpenAck(_) => todo!(),
+                        ChannelMsg::OpenConfirm(_) => todo!(),
+                        ChannelMsg::CloseInit(_) => todo!(),
+                        ChannelMsg::CloseConfirm(_) => todo!(),
+                    }
+                    .map_err(RouterError::ContextError)
+                }
                 MsgEnvelope::Packet(_message) => todo!(),
             }
         }
@@ -481,5 +557,106 @@ mod val_exec_ctx {
 
         /// Logging facility
         fn log_message(&mut self, message: String);
+    }
+
+    fn chan_open_try_validate<ValCtx>(
+        ctx_b: &ValCtx,
+        module_id: ModuleId,
+        msg: MsgChannelOpenTry,
+    ) -> Result<(), ContextError>
+    where
+        ValCtx: ValidationContext,
+    {
+        chan_open_try::validate(ctx_b, &msg)?;
+        let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
+
+        let module = ctx_b
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        let _ = module.on_chan_open_try_validate(
+            msg.ordering,
+            &msg.connection_hops_on_b,
+            &msg.port_id_on_b,
+            &chan_id_on_b,
+            &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+            &msg.version_supported_on_a,
+        )?;
+
+        Ok(())
+    }
+
+    fn chan_open_try_execute<ExecCtx>(
+        ctx_b: &mut ExecCtx,
+        module_id: ModuleId,
+        msg: MsgChannelOpenTry,
+    ) -> Result<(), ContextError>
+    where
+        ExecCtx: ExecutionContext,
+    {
+        let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
+        ctx_b.log_message(format!(
+            "success: channel open try with channel identifier: {chan_id_on_b}"
+        ));
+
+        let module = ctx_b
+            .get_route_mut(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+
+        let (extras, version) = module.on_chan_open_try_execute(
+            msg.ordering,
+            &msg.connection_hops_on_b,
+            &msg.port_id_on_b,
+            &chan_id_on_b,
+            &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+            &msg.version_supported_on_a,
+        )?;
+
+        let conn_id_on_b = msg.connection_hops_on_b[0].clone();
+        let port_channel_id_on_b = (msg.port_id_on_b.clone(), chan_id_on_b.clone());
+
+        // emit events and logs
+        {
+            let core_event = IbcEvent::OpenTryChannel(OpenTry::new(
+                msg.port_id_on_b.clone(),
+                chan_id_on_b.clone(),
+                msg.port_id_on_a.clone(),
+                msg.chan_id_on_a.clone(),
+                conn_id_on_b.clone(),
+                version.clone(),
+            ));
+            ctx_b.emit_ibc_event(core_event);
+
+            for module_event in extras.events {
+                ctx_b.emit_ibc_event(IbcEvent::AppModule(module_event));
+            }
+
+            for log_message in extras.log {
+                ctx_b.log_message(log_message);
+            }
+        }
+
+        {
+            let channel_end = ChannelEnd::new(
+                State::TryOpen,
+                msg.ordering,
+                Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+                msg.connection_hops_on_b.clone(),
+                version,
+            );
+
+            ctx_b.store_channel(port_channel_id_on_b.clone(), channel_end)?;
+
+            ctx_b.increase_channel_counter();
+
+            // Associate also the channel end to its connection.
+            ctx_b.store_connection_channels(conn_id_on_b, port_channel_id_on_b.clone())?;
+
+            // Initialize send, recv, and ack sequence numbers.
+            ctx_b.store_next_sequence_send(port_channel_id_on_b.clone(), 1.into())?;
+            ctx_b.store_next_sequence_recv(port_channel_id_on_b.clone(), 1.into())?;
+            ctx_b.store_next_sequence_ack(port_channel_id_on_b, 1.into())?;
+        }
+
+        Ok(())
     }
 }

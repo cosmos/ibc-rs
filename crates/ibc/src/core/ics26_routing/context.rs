@@ -109,7 +109,7 @@ impl OnRecvPacketAck {
 
 pub type ModuleOutputBuilder = HandlerOutputBuilder<(), ModuleEvent>;
 
-pub trait Module: Send + Sync + AsAnyMut {
+pub trait Module: Send + Sync + AsAnyMut + Debug {
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init(
         &mut self,
@@ -119,6 +119,30 @@ pub trait Module: Send + Sync + AsAnyMut {
         channel_id: &ChannelId,
         counterparty: &Counterparty,
         version: &Version,
+    ) -> Result<(ModuleExtras, Version), ChannelError>;
+
+    #[cfg(feature = "val_exec_ctx")]
+    #[allow(clippy::too_many_arguments)]
+    fn on_chan_open_try_validate(
+        &self,
+        order: Order,
+        connection_hops: &[ConnectionId],
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        counterparty: &Counterparty,
+        counterparty_version: &Version,
+    ) -> Result<Version, ChannelError>;
+
+    #[cfg(feature = "val_exec_ctx")]
+    #[allow(clippy::too_many_arguments)]
+    fn on_chan_open_try_execute(
+        &mut self,
+        order: Order,
+        connection_hops: &[ConnectionId],
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        counterparty: &Counterparty,
+        counterparty_version: &Version,
     ) -> Result<(ModuleExtras, Version), ChannelError>;
 
     #[allow(clippy::too_many_arguments)]
