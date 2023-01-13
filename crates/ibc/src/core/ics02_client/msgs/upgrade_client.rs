@@ -28,11 +28,11 @@ pub struct MsgUpgradeClient {
     // Upgraded consensus state, only contains enough information
     // to serve as a basis of trust in update logic
     pub consensus_state: Any,
-    // proof that old chain committed to new client 
+    // proof that old chain committed to new client
     pub proof_upgrade_client: RawMerkleProof,
     // proof that old chain committed to new consensus state
     pub proof_upgrade_consensus_state: RawMerkleProof,
-	// signer address
+    // signer address
     pub signer: Signer,
 }
 

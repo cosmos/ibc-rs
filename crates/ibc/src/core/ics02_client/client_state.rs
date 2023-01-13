@@ -113,7 +113,7 @@ pub trait ClientState:
     ) -> Result<Box<dyn ClientState>, ContextError>;
 
     /// Verify the ugrade message and set the upgraded client and consensus states in the client store.
-    /// 
+    ///
     /// NOTE: proof heights are not included as upgrade to a new revision is expected to pass only on the last
     /// height committed by the current revision. Clients are responsible for ensuring that the planned last
     /// height of the current revision is somehow encoded in the proof verification process.
@@ -125,7 +125,7 @@ pub trait ClientState:
         upgraded_consensus_state: Any,
         proof_upgrade_client: MerkleProof,
         proof_upgrade_consensus_state: MerkleProof,
-        root: CommitmentRoot,
+        root: &CommitmentRoot,
     ) -> Result<UpdatedState, ClientError>;
 
     /// Verification functions as specified in:

@@ -898,18 +898,20 @@ impl Ics2ClientState for ClientState {
         upgraded_consensus_state: Any,
         proof_upgrade_client: RawMerkleProof,
         proof_upgrade_consensus_state: RawMerkleProof,
-        root: CommitmentRoot,
+        root: &CommitmentRoot,
     ) -> Result<UpdatedState, ClientError> {
         // Extract `ClientState` and make sure that the client type is of Tendermint type
         let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state.clone())?;
 
-        // Make sure the latest height of the current client does not exceed the upgrade height
+        // Make sure the latest height of the current client is not greater then the upgrade height
+        // This condition checks both the revision number and the height
         if self.latest_height() >= upgraded_tm_client_state.latest_height() {
             return Err(ClientError::LowUpgradeHeight {
                 upgraded_height: self.latest_height(),
                 client_height: upgraded_tm_client_state.latest_height(),
             });
         }
+
         // Extract `ConsensusState` and make sure that the consensus type is of Tendermint type
         let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state.clone())?;
 
@@ -971,16 +973,46 @@ impl Ics2ClientState for ClientState {
         merkle_proof_upgrade_cons_state
             .verify_membership(
                 &self.proof_specs,
-                root.into(),
+                root.clone().into(),
                 conssesus_merkle_path,
                 cons_state_value,
                 0,
             )
             .map_err(ClientError::Ics23Verification)?;
 
+        // Construct new client state and consensus state
+        // Relayer chosen client parameters are ignored.
+        // All chain-chosen parameters come from committed client, all client-chosen parameters
+        // come from current client.
+        let new_client_state = TmClientState::new(
+            upgraded_tm_client_state.chain_id,
+            self.trust_level,
+            self.trusting_period,
+            upgraded_tm_client_state.unbonding_period,
+            self.max_clock_drift,
+            upgraded_tm_client_state.latest_height,
+            upgraded_tm_client_state.proof_specs,
+            upgraded_tm_client_state.upgrade_path,
+            upgraded_tm_client_state.allow_update,
+            upgraded_tm_client_state.frozen_height,
+        )?;
+
+        // The new consensus state is merely used as a trusted kernel against which headers on the new
+        // chain can be verified. The root is just a stand-in sentinel value as it cannot be known in advance, thus no proof verification will pass.
+        // The timestamp and the NextValidatorsHash of the consensus state is the blocktime and NextValidatorsHash
+        // of the last block committed by the old chain. This will allow the first block of the new chain to be verified against
+        // the last validators of the old chain so long as it is submitted within the TrustingPeriod of this client.
+        // NOTE: We do not set processed time for this consensus state since this consensus state should not be used for packet verification
+        // as the root is empty. The next consensus state submitted using update will be usable for packet-verification.
+        let new_consensus_state = TmConsensusState::new(
+            vec![].into(),
+            upgraded_tm_cons_state.timestamp,
+            upgraded_tm_cons_state.next_validators_hash,
+        );
+
         Ok(UpdatedState {
-            client_state: upgraded_tm_client_state.into_box(),
-            consensus_state: upgraded_tm_cons_state.into_box(),
+            client_state: new_client_state.into_box(),
+            consensus_state: new_consensus_state.into_box(),
         })
     }
 

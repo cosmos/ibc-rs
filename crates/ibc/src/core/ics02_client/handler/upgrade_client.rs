@@ -127,10 +127,8 @@ pub(crate) fn process(
         return Err(ClientError::HeaderNotWithinTrustPeriod {
             latest_time: latest_consensus_state.timestamp(),
             update_time: now,
-        }
-        .into());
+        });
     };
-
 
     let UpdatedState {
         client_state,
@@ -140,9 +138,9 @@ pub(crate) fn process(
         msg.consensus_state.clone(),
         msg.proof_upgrade_client.clone(),
         msg.proof_upgrade_consensus_state,
-        latest_consensus_state.root().clone()
+        latest_consensus_state.root(),
     )?;
-    
+
     let result = ClientResult::Upgrade(UpgradeClientResult {
         client_id: client_id.clone(),
         client_state: client_state.clone(),

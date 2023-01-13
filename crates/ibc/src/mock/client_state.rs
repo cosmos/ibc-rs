@@ -288,7 +288,7 @@ impl ClientState for MockClientState {
         upgraded_consensus_state: Any,
         _proof_upgrade_client: MerkleProof,
         _proof_upgrade_consensus_state: MerkleProof,
-        _root: CommitmentRoot,
+        _root: &CommitmentRoot,
     ) -> Result<UpdatedState, ClientError> {
         let consensus_state = MockConsensusState::try_from(upgraded_consensus_state)?;
         Ok(UpdatedState {
