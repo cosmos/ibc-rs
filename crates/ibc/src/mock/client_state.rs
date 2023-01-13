@@ -282,7 +282,7 @@ impl ClientState for MockClientState {
         Ok(new_state.into_box())
     }
 
-    fn verify_upgrade_client_state(
+    fn verify_upgrade_client(
         &self,
         _upgraded_client_state: Any,
         _upgraded_consensus_state: Any,
@@ -293,7 +293,7 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
-    fn execute_upgrade_client_state(
+    fn update_state_with_upgrade_client(
         &self,
         _upgraded_client_state: Any,
         upgraded_consensus_state: Any,

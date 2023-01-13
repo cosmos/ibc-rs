@@ -35,7 +35,6 @@ where
 {
     let MsgUpgradeClient { client_id, .. } = msg;
 
-    // Start to perform basic validations on the current client and consensus states.
     // Read the current latest client state from the host chain store.
     let old_client_state = ctx.client_state(&client_id)?;
 
@@ -71,10 +70,9 @@ where
             },
         ));
     };
-    // End of basic validations.
 
     // Validate the upgraded client state and consensus state and verify proofs against the root
-    old_client_state.verify_upgrade_client_state(
+    old_client_state.verify_upgrade_client(
         msg.client_state.clone(),
         msg.consensus_state.clone(),
         msg.proof_upgrade_client.clone(),
@@ -91,14 +89,14 @@ where
     Ctx: ExecutionContext,
 {
     let MsgUpgradeClient { client_id, .. } = msg;
-    
+
     let old_client_state = ctx.client_state(&client_id)?;
 
     let UpdatedState {
         client_state,
         consensus_state,
     } = old_client_state
-        .execute_upgrade_client_state(msg.client_state.clone(), msg.consensus_state)?;
+        .update_state_with_upgrade_client(msg.client_state.clone(), msg.consensus_state)?;
 
     ctx.store_client_state(ClientStatePath(client_id.clone()), client_state.clone())?;
     ctx.store_consensus_state(
@@ -122,7 +120,6 @@ pub(crate) fn process(
     let mut output = HandlerOutput::builder();
     let MsgUpgradeClient { client_id, .. } = msg;
 
-    // Start to perform basic validations on the current client and consensus states.
     // Read the current latest client state from the host chain store.
     let old_client_state = ctx.client_state(&client_id)?;
 
@@ -154,10 +151,9 @@ pub(crate) fn process(
             update_time: now,
         });
     };
-    // End of basic validations.
 
     // Validate the upgraded client state and consensus state and verify proofs against the root
-    old_client_state.verify_upgrade_client_state(
+    old_client_state.verify_upgrade_client(
         msg.client_state.clone(),
         msg.consensus_state.clone(),
         msg.proof_upgrade_client.clone(),
@@ -165,11 +161,12 @@ pub(crate) fn process(
         old_consensus_state.root(),
     )?;
 
+    // Create updated new client state and consensus state
     let UpdatedState {
         client_state,
         consensus_state,
     } = old_client_state
-        .execute_upgrade_client_state(msg.client_state.clone(), msg.consensus_state)?;
+        .update_state_with_upgrade_client(msg.client_state.clone(), msg.consensus_state)?;
 
     let result = ClientResult::Upgrade(UpgradeClientResult {
         client_id: client_id.clone(),

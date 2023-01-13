@@ -891,7 +891,7 @@ impl Ics2ClientState for ClientState {
     ///
     /// You can learn more about how to upgrade IBC-connected SDK chains in
     /// [this](https://ibc.cosmos.network/main/ibc/upgrades/quick-guide.html) guide
-    fn verify_upgrade_client_state(
+    fn verify_upgrade_client(
         &self,
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
@@ -919,9 +919,9 @@ impl Ics2ClientState for ClientState {
         let merkle_proof_upgrade_client = MerkleProof::from(proof_upgrade_client);
         let merkle_proof_upgrade_cons_state = MerkleProof::from(proof_upgrade_consensus_state);
 
-        // Check to see if the upgrade path is set and construct the consensus state Merkle path
+        // Check to see if the upgrade path is set
         let mut upgrade_path = upgraded_tm_client_state.upgrade_path;
-        let mut client_path = match upgrade_path.pop() {
+        let trunc_upgrade_path = match upgrade_path.pop() {
             Some(_) => upgrade_path,
             None => {
                 return Err(ClientError::ClientSpecific {
@@ -930,22 +930,24 @@ impl Ics2ClientState for ClientState {
                 })
             }
         };
-        let mut consensus_path = client_path.clone();
-        let a = client_path.clone();
-
-        let last_key = a.last().unwrap();
+        let last_key = &trunc_upgrade_path[trunc_upgrade_path.len()];
         let last_height = self.latest_height().revision_height();
-        let client_path_append_key = format!("{last_key}/{last_height}/{UPGRADED_CLIENT_STATE}");
-        client_path.push(client_path_append_key);
+
+        // Construct the merkle path for the client state
+        let mut client_path = trunc_upgrade_path.clone();
+        let append_to_client_path = format!("{last_key}/{last_height}/{UPGRADED_CLIENT_STATE}");
+        client_path.push(append_to_client_path);
         let client_merkle_path = MerklePath {
             key_path: client_path,
         };
+
         let mut client_state_value = Vec::with_capacity(upgraded_client_state.encoded_len());
         upgraded_client_state
             .encode(&mut client_state_value)
             .map(|_| client_state_value.clone())
             .unwrap();
 
+        // Verify the proof of the upgraded client state
         merkle_proof_upgrade_client
             .verify_membership(
                 &self.proof_specs,
@@ -956,11 +958,13 @@ impl Ics2ClientState for ClientState {
             )
             .map_err(ClientError::Ics23Verification)?;
 
-        let cons_path_append_key =
+        // Construct the merkle path for the consensus state
+        let mut cons_path = trunc_upgrade_path.clone();
+        let append_to_cons_path =
             format!("{last_key}/{last_height}/{UPGRADED_CLIENT_CONSENSUS_STATE}");
-        consensus_path.push(cons_path_append_key);
+        cons_path.push(append_to_cons_path);
         let conssesus_merkle_path = MerklePath {
-            key_path: consensus_path,
+            key_path: cons_path,
         };
 
         let mut cons_state_value = Vec::with_capacity(upgraded_consensus_state.encoded_len());
@@ -969,6 +973,7 @@ impl Ics2ClientState for ClientState {
             .map(|_| cons_state_value.clone())
             .unwrap();
 
+        // Verify the proof of the upgraded consensus state
         merkle_proof_upgrade_cons_state
             .verify_membership(
                 &self.proof_specs,
@@ -982,12 +987,11 @@ impl Ics2ClientState for ClientState {
         Ok(())
     }
 
-    fn execute_upgrade_client_state(
+    fn update_state_with_upgrade_client(
         &self,
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
     ) -> Result<UpdatedState, ClientError> {
-
         let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
         let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
 
