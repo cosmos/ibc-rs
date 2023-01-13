@@ -448,6 +448,22 @@ mod val_exec_ctx {
     ) -> Result<ModuleExtras, TokenTransferError> {
         Ok(ModuleExtras::empty())
     }
+
+    pub fn on_chan_open_confirm_validate(
+        _ctx: &impl TokenTransferContext,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    pub fn on_chan_open_confirm_execute(
+        _ctx: &mut impl TokenTransferContext,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<ModuleExtras, TokenTransferError> {
+        Ok(ModuleExtras::empty())
+    }
 }
 
 #[cfg(test)]
