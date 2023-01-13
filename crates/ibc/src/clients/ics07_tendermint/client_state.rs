@@ -5,7 +5,7 @@ use core::time::Duration;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
+use ibc_proto::ibc::core::commitment::v1::{MerklePath, MerkleProof as RawMerkleProof};
 use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
@@ -16,6 +16,7 @@ use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::{ProdVerifier, Verifier};
 
+use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::{Header as TmHeader, Header};
@@ -38,6 +39,8 @@ use crate::core::ics23_commitment::commitment::{
 use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
+use crate::core::ics24_host::path::UPGRADED_CLIENT_CONSENSUS_STATE;
+use crate::core::ics24_host::path::UPGRADED_CLIENT_STATE;
 use crate::core::ics24_host::path::{
     AcksPath, ChannelEndsPath, ClientConsensusStatePath, ClientStatePath, CommitmentsPath,
     ConnectionsPath, ReceiptsPath, SeqRecvsPath,
@@ -874,13 +877,111 @@ impl Ics2ClientState for ClientState {
         })
     }
 
+    /// Check if the upgraded client has been committed by the current client,
+    /// zero out all client-specific fields (e.g. TrustingPeriod) and verify all data
+    /// in client state that must be the same across all valid Tendermint clients for the new chain.
+    ///
+    /// - Error cases:
+    ///     - the upgraded client is not of a Tendermint ClientState
+    ///     - the latest height of the client state does not have the same revision number or has a greater
+    /// height than the committed client.
+    ///     - the height of upgraded client is not greater than that of current client
+    ///     - the latest height of the new client does not match or is greater than the height in committed client
+    ///     - any Tendermint chain specified parameter in upgraded client such as ChainID, UnbondingPeriod,
+    /// and ProofSpecs do not match parameters set by committed client
+    ///
+    /// You can learn more about how to upgrade IBC-connected SDK chains in
+    /// [this](https://ibc.cosmos.network/main/ibc/upgrades/quick-guide.html) guide
     fn verify_upgrade_and_update_state(
         &self,
-        _consensus_state: Any,
-        _proof_upgrade_client: RawMerkleProof,
-        _proof_upgrade_consensus_state: RawMerkleProof,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+        proof_upgrade_client: RawMerkleProof,
+        proof_upgrade_consensus_state: RawMerkleProof,
+        root: CommitmentRoot,
     ) -> Result<UpdatedState, ClientError> {
-        unimplemented!()
+        // Extract `ClientState` and make sure that the client type is of Tendermint type
+        let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state.clone())?;
+
+        // Make sure the latest height of the current client does not exceed the upgrade height
+        if self.latest_height() >= upgraded_tm_client_state.latest_height() {
+            return Err(ClientError::LowUpgradeHeight {
+                upgraded_height: self.latest_height(),
+                client_height: upgraded_tm_client_state.latest_height(),
+            });
+        }
+        // Extract `ConsensusState` and make sure that the consensus type is of Tendermint type
+        let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state.clone())?;
+
+        // Note: verification of proofs that unmarshalled correctly has been done
+        // while decoding the proto message into a `MsgEnvelope` domain type
+        let merkle_proof_upgrade_client = MerkleProof::from(proof_upgrade_client);
+        let merkle_proof_upgrade_cons_state = MerkleProof::from(proof_upgrade_consensus_state);
+
+        // Check to see if the upgrade path is set and construct the consensus state Merkle path
+        let mut upgrade_path = upgraded_tm_client_state.upgrade_path.clone();
+        let mut client_path = match upgrade_path.pop() {
+            Some(_) => upgrade_path,
+            None => {
+                return Err(ClientError::ClientSpecific {
+                    description: "cannot upgrade client as no upgrade path has been set"
+                        .to_string(),
+                })
+            }
+        };
+        let mut consensus_path = client_path.clone();
+        let a = client_path.clone();
+
+        let last_key = a.last().unwrap();
+        let last_height = self.latest_height().revision_height();
+        let client_path_append_key = format!("{last_key}/{last_height}/{UPGRADED_CLIENT_STATE}");
+        client_path.push(client_path_append_key);
+        let client_merkle_path = MerklePath {
+            key_path: client_path,
+        };
+        let mut client_state_value = Vec::with_capacity(upgraded_client_state.encoded_len());
+        upgraded_client_state
+            .encode(&mut client_state_value)
+            .map(|_| client_state_value.clone())
+            .unwrap();
+
+        merkle_proof_upgrade_client
+            .verify_membership(
+                &self.proof_specs,
+                root.clone().into(),
+                client_merkle_path,
+                client_state_value,
+                0,
+            )
+            .map_err(ClientError::Ics23Verification)?;
+
+        let cons_path_append_key =
+            format!("{last_key}/{last_height}/{UPGRADED_CLIENT_CONSENSUS_STATE}");
+        consensus_path.push(cons_path_append_key);
+        let conssesus_merkle_path = MerklePath {
+            key_path: consensus_path,
+        };
+
+        let mut cons_state_value = Vec::with_capacity(upgraded_consensus_state.encoded_len());
+        upgraded_consensus_state
+            .encode(&mut cons_state_value)
+            .map(|_| cons_state_value.clone())
+            .unwrap();
+
+        merkle_proof_upgrade_cons_state
+            .verify_membership(
+                &self.proof_specs,
+                root.into(),
+                conssesus_merkle_path,
+                cons_state_value,
+                0,
+            )
+            .map_err(ClientError::Ics23Verification)?;
+
+        Ok(UpdatedState {
+            client_state: upgraded_tm_client_state.into_box(),
+            consensus_state: upgraded_tm_cons_state.into_box(),
+        })
     }
 
     fn verify_client_consensus_state(

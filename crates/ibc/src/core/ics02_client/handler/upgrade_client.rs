@@ -98,47 +98,61 @@ pub(crate) fn process(
     let mut output = HandlerOutput::builder();
     let MsgUpgradeClient { client_id, .. } = msg;
 
-    // Read client state from the host chain store.
-    let old_client_state = ctx.client_state(&client_id)?;
+    // Read the current latest client state from the host chain store.
+    let latest_client_state = ctx.client_state(&client_id)?;
 
-    if old_client_state.is_frozen() {
+    // Check if the client is frozen.
+    if latest_client_state.is_frozen() {
         return Err(ClientError::ClientFrozen { client_id });
     }
 
-    let upgrade_client_state = ctx.decode_client_state(msg.client_state)?;
+    // Read the latest consensus state from the host chain store.
+    let latest_consensus_state = ctx
+        .consensus_state(&client_id, &latest_client_state.latest_height())
+        .map_err(|_| ClientError::ConsensusStateNotFound {
+            client_id: client_id.clone(),
+            height: latest_client_state.latest_height(),
+        })?;
 
-    if old_client_state.latest_height() >= upgrade_client_state.latest_height() {
-        return Err(ClientError::LowUpgradeHeight {
-            upgraded_height: old_client_state.latest_height(),
-            client_height: upgrade_client_state.latest_height(),
-        });
-    }
+    let now = ctx.host_timestamp()?;
+    let duration = now
+        .duration_since(&latest_consensus_state.timestamp())
+        .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
+            time1: latest_consensus_state.timestamp(),
+            time2: now,
+        })?;
+
+    // Check if the latest consensus state is within the trust period.
+    if latest_client_state.expired(duration) {
+        return Err(ClientError::HeaderNotWithinTrustPeriod {
+            latest_time: latest_consensus_state.timestamp(),
+            update_time: now,
+        }
+        .into());
+    };
+
 
     let UpdatedState {
         client_state,
         consensus_state,
-    } = upgrade_client_state.verify_upgrade_and_update_state(
+    } = latest_client_state.verify_upgrade_and_update_state(
+        msg.client_state.clone(),
         msg.consensus_state.clone(),
         msg.proof_upgrade_client.clone(),
         msg.proof_upgrade_consensus_state,
+        latest_consensus_state.root().clone()
     )?;
-
-    // Not implemented yet: https://github.com/informalsystems/ibc-rs/issues/722
-    // todo!()
-
-    let client_type = client_state.client_type();
-    let consensus_height = client_state.latest_height();
-
+    
     let result = ClientResult::Upgrade(UpgradeClientResult {
         client_id: client_id.clone(),
-        client_state,
+        client_state: client_state.clone(),
         consensus_state,
     });
 
     output.emit(IbcEvent::UpgradeClient(UpgradeClient::new(
         client_id,
-        client_type,
-        consensus_height,
+        client_state.client_type(),
+        client_state.latest_height(),
     )));
 
     Ok(output.with_result(result))
