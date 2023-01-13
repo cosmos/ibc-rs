@@ -78,8 +78,9 @@ mod val_exec_ctx {
     use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
     use crate::core::ics04_channel::context::calculate_block_delay;
     use crate::core::ics04_channel::events::{OpenInit, OpenTry};
-    use crate::core::ics04_channel::handler::{chan_open_init, chan_open_try};
+    use crate::core::ics04_channel::handler::{chan_open_ack, chan_open_init, chan_open_try};
     use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
+    use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
     use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics04_channel::msgs::ChannelMsg;
@@ -180,7 +181,9 @@ mod val_exec_ctx {
                         ChannelMsg::OpenTry(message) => {
                             chan_open_try_validate(self, module_id, message)
                         }
-                        ChannelMsg::OpenAck(_) => todo!(),
+                        ChannelMsg::OpenAck(message) => {
+                            chan_open_ack_validate(self, module_id, message)
+                        }
                         ChannelMsg::OpenConfirm(_) => todo!(),
                         ChannelMsg::CloseInit(_) => todo!(),
                         ChannelMsg::CloseConfirm(_) => todo!(),
@@ -761,6 +764,27 @@ mod val_exec_ctx {
             ctx_b.store_next_sequence_recv(port_channel_id_on_b.clone(), 1.into())?;
             ctx_b.store_next_sequence_ack(port_channel_id_on_b, 1.into())?;
         }
+
+        Ok(())
+    }
+    fn chan_open_ack_validate<ValCtx>(
+        ctx_a: &ValCtx,
+        module_id: ModuleId,
+        msg: MsgChannelOpenAck,
+    ) -> Result<(), ContextError>
+    where
+        ValCtx: ValidationContext,
+    {
+        chan_open_ack::validate(ctx_a, &msg)?;
+
+        let module = ctx_a
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        module.on_chan_open_ack_validate(
+            &msg.port_id_on_a,
+            &msg.chan_id_on_a,
+            &msg.version_on_b,
+        )?;
 
         Ok(())
     }

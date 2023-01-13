@@ -180,6 +180,16 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         counterparty_version: &Version,
     ) -> Result<(ModuleExtras, Version), ChannelError>;
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_open_ack_validate(
+        &self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty_version: &Version,
+    ) -> Result<(), ChannelError> {
+        Ok(())
+    }
+
     fn on_chan_open_ack(
         &mut self,
         _port_id: &PortId,
