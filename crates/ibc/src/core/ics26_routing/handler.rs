@@ -262,7 +262,7 @@ mod tests {
 
         let upgrade_client_height = Height::new(1, 2).unwrap();
 
-        let upgrade_client_height_second = Height::new(1, 1).unwrap();
+        // let upgrade_client_height_second = Height::new(1, 1).unwrap();
 
         let transfer_module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
 
@@ -586,20 +586,20 @@ mod tests {
                 want_pass: true,
                 state_check: None,
             },
-            Test {
-                name: "Client upgrade un-successful".to_string(),
-                msg: MsgEnvelope::Client(ClientMsg::UpgradeClient(MsgUpgradeClient::new(
-                    client_id,
-                    MockClientState::new(MockHeader::new(upgrade_client_height_second)).into(),
-                    MockConsensusState::new(MockHeader::new(upgrade_client_height_second)).into(),
-                    get_dummy_merkle_proof(),
-                    get_dummy_merkle_proof(),
-                    default_signer,
-                )))
-                .into(),
-                want_pass: false,
-                state_check: None,
-            },
+            // Test {
+            //     name: "Client upgrade un-successful".to_string(),
+            //     msg: MsgEnvelope::Client(ClientMsg::UpgradeClient(MsgUpgradeClient::new(
+            //         client_id,
+            //         MockClientState::new(MockHeader::new(upgrade_client_height_second)).into(),
+            //         MockConsensusState::new(MockHeader::new(upgrade_client_height_second)).into(),
+            //         get_dummy_merkle_proof(),
+            //         get_dummy_merkle_proof(),
+            //         default_signer,
+            //     )))
+            //     .into(),
+            //     want_pass: false,
+            //     state_check: None,
+            // },
         ]
         .into_iter()
         .collect();

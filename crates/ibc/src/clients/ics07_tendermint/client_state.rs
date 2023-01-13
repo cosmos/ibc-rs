@@ -6,7 +6,9 @@ use core::time::Duration;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use ibc_proto::ibc::core::commitment::v1::{MerklePath, MerkleProof as RawMerkleProof};
-use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
+use ibc_proto::ibc::lightclients::tendermint::v1::{
+    ClientState as RawTmClientState, ConsensusState as RawTmConsensusState,
+};
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 use serde::{Deserialize, Serialize};
@@ -912,7 +914,7 @@ impl Ics2ClientState for ClientState {
         }
 
         // Make sure that the consensus type is of Tendermint type `ConsensusState`
-        TmConsensusState::try_from(upgraded_consensus_state.clone())?;
+        let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
 
         // Note: verification of proofs that unmarshalled correctly has been done
         // while decoding the proto message into a `MsgEnvelope` domain type
@@ -920,7 +922,7 @@ impl Ics2ClientState for ClientState {
         let merkle_proof_upgrade_cons_state = MerkleProof::from(proof_upgrade_consensus_state);
 
         // Check to see if the upgrade path is set
-        let mut upgrade_path = upgraded_tm_client_state.upgrade_path;
+        let mut upgrade_path = upgraded_tm_client_state.clone().upgrade_path;
         let trunc_upgrade_path = match upgrade_path.pop() {
             Some(_) => upgrade_path,
             None => {
@@ -940,12 +942,12 @@ impl Ics2ClientState for ClientState {
         let client_merkle_path = MerklePath {
             key_path: client_path,
         };
-
-        let mut client_state_value = Vec::with_capacity(upgraded_client_state.encoded_len());
-        upgraded_client_state
-            .encode(&mut client_state_value)
-            .map(|_| client_state_value.clone())
-            .unwrap();
+        let client_state_value =
+            Protobuf::<RawTmClientState>::encode_vec(&upgraded_tm_client_state).map_err(|_| {
+                ClientError::Other {
+                    description: "Could not encode raw client state".to_string(),
+                }
+            })?;
 
         // Verify the proof of the upgraded client state
         merkle_proof_upgrade_client
@@ -967,11 +969,10 @@ impl Ics2ClientState for ClientState {
             key_path: cons_path,
         };
 
-        let mut cons_state_value = Vec::with_capacity(upgraded_consensus_state.encoded_len());
-        upgraded_consensus_state
-            .encode(&mut cons_state_value)
-            .map(|_| cons_state_value.clone())
-            .unwrap();
+        let cons_state_value = Protobuf::<RawTmConsensusState>::encode_vec(&upgraded_tm_cons_state)
+            .map_err(|_| ClientError::Other {
+                description: "Could not encode raw consensus state".to_string(),
+            })?;
 
         // Verify the proof of the upgraded consensus state
         merkle_proof_upgrade_cons_state
