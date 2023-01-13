@@ -164,7 +164,7 @@ A production implementation of this `Reader` would hold references to both the p
 store at the current height where the handler executes, but we omit the actual implementation as
 the store interfaces are yet to be defined, as is the general IBC top-level module machinery.
 
-A mock implementation of the `ConnectionReader` trait could looks as follows:
+A mock implementation of the `ConnectionReader` trait could look as follows:
 
 ```rust
 struct MockConnectionReader {
@@ -580,7 +580,7 @@ where
 ```
 
 With this boilerplate out of way, one can write tests using a mock client, and associated mock datatypes
-in a fairly straightforward way, taking advantage of the `From` instance to lift concerete mock datatypes
+in a fairly straightforward way, taking advantage of the `From` instance to lift concrete mock datatypes
 into the `Any...` enumeration:
 
 ```rust

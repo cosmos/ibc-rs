@@ -178,7 +178,7 @@ pub struct UpdateClient {
 This can be solved using the `ibc_proto::google::protobuf::Any` type instead thereby deferring the actual
 encoding/decoding to the hosts themselves during handler execution.
 Thankfully, the core modules code doesn't use the `serde` derivations except in logs and errors. Host and light-client
-implementations can optionally choose to downcast to the concrete type and use it's `serde` derivations directly (if
+implementations can optionally choose to downcast to the concrete type and use its `serde` derivations directly (if
 available).
 
 #### Light client traits cannot have constructors
@@ -477,7 +477,7 @@ Accepted
 ## References
 
 * PRs for removing `Any*` enums:
-    * Remove all occurences of Any* enums from light clients
+    * Remove all occurrences of Any* enums from light clients
       ([PR #2332](https://github.com/informalsystems/ibc-rs/pull/2332))
     * Remove Any* enums ([PR #2338](https://github.com/informalsystems/ibc-rs/pull/2338))
 * Experimental PR for extracting `ibc-base` crate ([PR #2327](https://github.com/informalsystems/ibc-rs/pull/2327))
