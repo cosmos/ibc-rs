@@ -77,7 +77,7 @@ mod val_exec_ctx {
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
     use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
     use crate::core::ics04_channel::context::calculate_block_delay;
-    use crate::core::ics04_channel::events::{OpenAck, OpenConfirm, OpenInit, OpenTry};
+    use crate::core::ics04_channel::events::{CloseInit, OpenAck, OpenConfirm, OpenInit, OpenTry};
     use crate::core::ics04_channel::handler::{
         chan_close_init, chan_open_ack, chan_open_confirm, chan_open_init, chan_open_try,
     };
@@ -421,7 +421,7 @@ mod val_exec_ctx {
                         ChannelMsg::OpenConfirm(msg) => {
                             chan_open_confirm_execute(self, module_id, msg)
                         }
-                        ChannelMsg::CloseInit(_) => todo!(),
+                        ChannelMsg::CloseInit(msg) => chan_close_init_execute(self, module_id, msg),
                         ChannelMsg::CloseConfirm(_) => todo!(),
                     }
                     .map_err(RouterError::ContextError)
@@ -951,6 +951,73 @@ mod val_exec_ctx {
             .get_route(&module_id)
             .ok_or(ChannelError::RouteNotFound)?;
         module.on_chan_close_init_validate(&msg.port_id_on_a, &msg.chan_id_on_a)?;
+
+        Ok(())
+    }
+
+    fn chan_close_init_execute<ExecCtx>(
+        ctx_a: &mut ExecCtx,
+        module_id: ModuleId,
+        msg: MsgChannelCloseInit,
+    ) -> Result<(), ContextError>
+    where
+        ExecCtx: ExecutionContext,
+    {
+        let module = ctx_a
+            .get_route_mut(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        let extras = module.on_chan_close_init_execute(&msg.port_id_on_a, &msg.chan_id_on_a)?;
+
+        let chan_end_on_a =
+            ctx_a.channel_end(&(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()))?;
+
+        // emit events and logs
+        {
+            ctx_a.log_message("success: channel close init".to_string());
+
+            let core_event = {
+                let port_id_on_b = chan_end_on_a.counterparty().port_id.clone();
+                let chan_id_on_b = chan_end_on_a
+                .counterparty()
+                .channel_id
+                .clone()
+                .ok_or(ContextError::ChannelError(ChannelError::Other {
+                    description:
+                        "internal error: ChannelEnd doesn't have a counterparty channel id in CloseInit"
+                            .to_string(),
+                }))?;
+                let conn_id_on_a = chan_end_on_a.connection_hops[0].clone();
+
+                IbcEvent::CloseInitChannel(CloseInit::new(
+                    msg.port_id_on_a.clone(),
+                    msg.chan_id_on_a.clone(),
+                    port_id_on_b,
+                    chan_id_on_b,
+                    conn_id_on_a,
+                ))
+            };
+            ctx_a.emit_ibc_event(core_event);
+
+            for module_event in extras.events {
+                ctx_a.emit_ibc_event(IbcEvent::AppModule(module_event));
+            }
+
+            for log_message in extras.log {
+                ctx_a.log_message(log_message);
+            }
+        }
+
+        // state changes
+        {
+            let chan_end_on_a = {
+                let mut chan_end_on_a = chan_end_on_a;
+                chan_end_on_a.set_state(State::Closed);
+                chan_end_on_a
+            };
+
+            let port_channel_id_on_a = (msg.port_id_on_a.clone(), msg.chan_id_on_a.clone());
+            ctx_a.store_channel(port_channel_id_on_a, chan_end_on_a)?;
+        }
 
         Ok(())
     }

@@ -235,14 +235,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(ModuleExtras::empty())
     }
 
-    fn on_chan_close_init(
-        &mut self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, ChannelError> {
-        Ok(ModuleExtras::empty())
-    }
-
     #[cfg(feature = "val_exec_ctx")]
     fn on_chan_close_init_validate(
         &self,
@@ -253,7 +245,15 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
     }
 
     #[cfg(feature = "val_exec_ctx")]
-    fn on_chan_close_confirm_execute(
+    fn on_chan_close_init_execute(
+        &mut self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<ModuleExtras, ChannelError> {
+        Ok(ModuleExtras::empty())
+    }
+
+    fn on_chan_close_init(
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
