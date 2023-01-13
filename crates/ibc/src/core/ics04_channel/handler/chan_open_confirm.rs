@@ -68,7 +68,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         }
 
         let expected_chan_end_on_a = ChannelEnd::new(
-            State::Init,
+            State::Open,
             *chan_end_on_b.ordering(),
             Counterparty::new(msg.port_id_on_b.clone(), None),
             vec![conn_id_on_a.clone()],
