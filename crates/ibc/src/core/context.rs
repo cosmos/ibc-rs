@@ -585,7 +585,7 @@ mod val_exec_ctx {
         let module = ctx_a
             .get_route(&module_id)
             .ok_or(ChannelError::RouteNotFound)?;
-        let _ = module.on_chan_open_init_validate(
+        module.on_chan_open_init_validate(
             msg.ordering,
             &msg.connection_hops_on_a,
             &msg.port_id_on_a,
@@ -684,7 +684,7 @@ mod val_exec_ctx {
         let module = ctx_b
             .get_route(&module_id)
             .ok_or(ChannelError::RouteNotFound)?;
-        let _ = module.on_chan_open_try_validate(
+        module.on_chan_open_try_validate(
             msg.ordering,
             &msg.connection_hops_on_b,
             &msg.port_id_on_b,

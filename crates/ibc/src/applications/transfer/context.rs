@@ -347,7 +347,7 @@ mod val_exec_ctx {
         _channel_id: &ChannelId,
         _counterparty: &Counterparty,
         version: &Version,
-    ) -> Result<Version, TokenTransferError> {
+    ) -> Result<(), TokenTransferError> {
         if order != Order::Unordered {
             return Err(TokenTransferError::ChannelNotUnordered {
                 expect_order: Order::Unordered,
@@ -369,7 +369,7 @@ mod val_exec_ctx {
             });
         }
 
-        Ok(Version::new(VERSION.to_string()))
+        Ok(())
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -394,7 +394,7 @@ mod val_exec_ctx {
         _channel_id: &ChannelId,
         _counterparty: &Counterparty,
         counterparty_version: &Version,
-    ) -> Result<Version, TokenTransferError> {
+    ) -> Result<(), TokenTransferError> {
         if order != Order::Unordered {
             return Err(TokenTransferError::ChannelNotUnordered {
                 expect_order: Order::Unordered,
@@ -408,7 +408,7 @@ mod val_exec_ctx {
             });
         }
 
-        Ok(Version::new(VERSION.to_string()))
+        Ok(())
     }
 
     #[allow(clippy::too_many_arguments)]
