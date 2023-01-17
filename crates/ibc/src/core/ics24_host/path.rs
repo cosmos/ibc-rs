@@ -22,9 +22,9 @@ pub const SDK_UPGRADE_QUERY_PATH: &str = "store/upgrade/key";
 /// - The key identifying the upgraded IBC state within the upgrade sub-store
 const UPGRADED_IBC_STATE: &str = "upgradedIBCState";
 ///- The key identifying the upgraded client state
-pub const UPGRADED_CLIENT_STATE: &str = "upgradedClient";
+const UPGRADED_CLIENT_STATE: &str = "upgradedClient";
 /// - The key identifying the upgraded consensus state
-pub const UPGRADED_CLIENT_CONSENSUS_STATE: &str = "upgradedConsState";
+const UPGRADED_CLIENT_CONSENSUS_STATE: &str = "upgradedConsState";
 
 /// The Path enum abstracts out the different sub-paths.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, From, Display)]
