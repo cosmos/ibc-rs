@@ -40,11 +40,9 @@ use crate::core::ics23_commitment::commitment::{
 use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ics24_host::path::UPGRADED_CLIENT_CONSENSUS_STATE;
-use crate::core::ics24_host::path::UPGRADED_CLIENT_STATE;
 use crate::core::ics24_host::path::{
-    AcksPath, ChannelEndsPath, ClientConsensusStatePath, ClientStatePath, CommitmentsPath,
-    ConnectionsPath, ReceiptsPath, SeqRecvsPath,
+    AcksPath, ChannelEndsPath, ClientConsensusStatePath, ClientStatePath, ClientUpgradePath,
+    CommitmentsPath, ConnectionsPath, ReceiptsPath, SeqRecvsPath,
 };
 use crate::core::ics24_host::Path;
 use crate::timestamp::{Timestamp, ZERO_DURATION};
@@ -886,10 +884,7 @@ impl Ics2ClientState for ClientState {
     ///
     /// - Error cases:
     ///     - the upgraded client is not of a Tendermint ClientState
-    ///     - the latest height of the client state does not have the same revision number or has a greater
-    /// height than the committed client.
     ///     - the height of upgraded client is not greater than that of current client
-    ///     - the latest height of the new client does not match or is greater than the height in committed client
     ///     - any Tendermint chain specified parameter in upgraded client such as ChainID, UnbondingPeriod,
     /// and ProofSpecs do not match parameters set by committed client
     ///
@@ -906,6 +901,14 @@ impl Ics2ClientState for ClientState {
         // Make sure that the client type is of Tendermint type `ClientState`
         let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
 
+        // Make sure that the consensus type is of Tendermint type `ConsensusState`
+        let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
+
+        // Note: verification of proofs that unmarshalled correctly has been done
+        // while decoding the proto message into a `MsgEnvelope` domain type
+        let merkle_proof_upgrade_client = MerkleProof::from(proof_upgrade_client);
+        let merkle_proof_upgrade_cons_state = MerkleProof::from(proof_upgrade_consensus_state);
+
         // Make sure the latest height of the current client is not greater then the upgrade height
         // This condition checks both the revision number and the height
         if self.latest_height() >= upgraded_tm_client_state.latest_height() {
@@ -914,14 +917,6 @@ impl Ics2ClientState for ClientState {
                 client_height: upgraded_tm_client_state.latest_height(),
             });
         }
-
-        // Make sure that the consensus type is of Tendermint type `ConsensusState`
-        let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
-
-        // Note: verification of proofs that unmarshalled correctly has been done
-        // while decoding the proto message into a `MsgEnvelope` domain type
-        let merkle_proof_upgrade_client = MerkleProof::from(proof_upgrade_client);
-        let merkle_proof_upgrade_cons_state = MerkleProof::from(proof_upgrade_consensus_state);
 
         // Check to see if the upgrade path is set
         let mut upgrade_path = upgraded_tm_client_state.clone().upgrade_path;
@@ -934,54 +929,49 @@ impl Ics2ClientState for ClientState {
                 })
             }
         };
-        let last_key = &trunc_upgrade_path[trunc_upgrade_path.len()];
+
         let last_height = self.latest_height().revision_height();
 
         // Construct the merkle path for the client state
-        let mut client_path = trunc_upgrade_path.clone();
-        let append_to_client_path = format!("{last_key}/{last_height}/{UPGRADED_CLIENT_STATE}");
-        client_path.push(append_to_client_path);
-        let client_merkle_path = MerklePath {
-            key_path: client_path,
+        let mut client_upgrade_path = trunc_upgrade_path.clone();
+        client_upgrade_path.push(ClientUpgradePath::UpgradedClientState(last_height).to_string());
+
+        let client_upgrade_merkle_path = MerklePath {
+            key_path: client_upgrade_path,
         };
+
         let client_state_value =
-            Protobuf::<RawTmClientState>::encode_vec(&upgraded_tm_client_state).map_err(|_| {
-                ClientError::Other {
-                    description: "Could not encode raw client state".to_string(),
-                }
-            })?;
+            Protobuf::<RawTmClientState>::encode_vec(&upgraded_tm_client_state)
+                .map_err(ClientError::Encode)?;
 
         // Verify the proof of the upgraded client state
         merkle_proof_upgrade_client
             .verify_membership(
                 &self.proof_specs,
                 root.clone().into(),
-                client_merkle_path,
+                client_upgrade_merkle_path,
                 client_state_value,
                 0,
             )
             .map_err(ClientError::Ics23Verification)?;
 
         // Construct the merkle path for the consensus state
-        let mut cons_path = trunc_upgrade_path.clone();
-        let append_to_cons_path =
-            format!("{last_key}/{last_height}/{UPGRADED_CLIENT_CONSENSUS_STATE}");
-        cons_path.push(append_to_cons_path);
-        let conssesus_merkle_path = MerklePath {
-            key_path: cons_path,
+        let mut cons_upgrade_path = trunc_upgrade_path;
+        cons_upgrade_path
+            .push(ClientUpgradePath::UpgradedClientConsensusState(last_height).to_string());
+        let cons_upgrade_merkle_path = MerklePath {
+            key_path: cons_upgrade_path,
         };
 
         let cons_state_value = Protobuf::<RawTmConsensusState>::encode_vec(&upgraded_tm_cons_state)
-            .map_err(|_| ClientError::Other {
-                description: "Could not encode raw consensus state".to_string(),
-            })?;
+            .map_err(ClientError::Encode)?;
 
         // Verify the proof of the upgraded consensus state
         merkle_proof_upgrade_cons_state
             .verify_membership(
                 &self.proof_specs,
                 root.clone().into(),
-                conssesus_merkle_path,
+                cons_upgrade_merkle_path,
                 cons_state_value,
                 0,
             )
