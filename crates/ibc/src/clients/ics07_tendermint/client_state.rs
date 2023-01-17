@@ -920,20 +920,16 @@ impl Ics2ClientState for ClientState {
 
         // Check to see if the upgrade path is set
         let mut upgrade_path = upgraded_tm_client_state.clone().upgrade_path;
-        let trunc_upgrade_path = match upgrade_path.pop() {
-            Some(_) => upgrade_path,
-            None => {
-                return Err(ClientError::ClientSpecific {
-                    description: "cannot upgrade client as no upgrade path has been set"
-                        .to_string(),
-                })
-            }
+        if upgrade_path.pop().is_none() {
+            return Err(ClientError::ClientSpecific {
+                description: "cannot upgrade client as no upgrade path has been set".to_string(),
+            });
         };
 
         let last_height = self.latest_height().revision_height();
 
         // Construct the merkle path for the client state
-        let mut client_upgrade_path = trunc_upgrade_path.clone();
+        let mut client_upgrade_path = upgrade_path.clone();
         client_upgrade_path.push(ClientUpgradePath::UpgradedClientState(last_height).to_string());
 
         let client_upgrade_merkle_path = MerklePath {
@@ -956,7 +952,7 @@ impl Ics2ClientState for ClientState {
             .map_err(ClientError::Ics23Verification)?;
 
         // Construct the merkle path for the consensus state
-        let mut cons_upgrade_path = trunc_upgrade_path;
+        let mut cons_upgrade_path = upgrade_path;
         cons_upgrade_path
             .push(ClientUpgradePath::UpgradedClientConsensusState(last_height).to_string());
         let cons_upgrade_merkle_path = MerklePath {
