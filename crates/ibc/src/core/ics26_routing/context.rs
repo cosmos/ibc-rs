@@ -110,6 +110,30 @@ impl OnRecvPacketAck {
 pub type ModuleOutputBuilder = HandlerOutputBuilder<(), ModuleEvent>;
 
 pub trait Module: Send + Sync + AsAnyMut + Debug {
+    #[cfg(feature = "val_exec_ctx")]
+    #[allow(clippy::too_many_arguments)]
+    fn on_chan_open_init_validate(
+        &self,
+        order: Order,
+        connection_hops: &[ConnectionId],
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        counterparty: &Counterparty,
+        version: &Version,
+    ) -> Result<Version, ChannelError>;
+
+    #[cfg(feature = "val_exec_ctx")]
+    #[allow(clippy::too_many_arguments)]
+    fn on_chan_open_init_execute(
+        &mut self,
+        order: Order,
+        connection_hops: &[ConnectionId],
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        counterparty: &Counterparty,
+        version: &Version,
+    ) -> Result<(ModuleExtras, Version), ChannelError>;
+
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init(
         &mut self,
@@ -156,11 +180,49 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         counterparty_version: &Version,
     ) -> Result<(ModuleExtras, Version), ChannelError>;
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_open_ack_validate(
+        &self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty_version: &Version,
+    ) -> Result<(), ChannelError> {
+        Ok(())
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_open_ack_execute(
+        &mut self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty_version: &Version,
+    ) -> Result<ModuleExtras, ChannelError> {
+        Ok(ModuleExtras::empty())
+    }
+
     fn on_chan_open_ack(
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
         _counterparty_version: &Version,
+    ) -> Result<ModuleExtras, ChannelError> {
+        Ok(ModuleExtras::empty())
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_open_confirm_validate(
+        &self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<(), ChannelError> {
+        Ok(())
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_open_confirm_execute(
+        &mut self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
     ) -> Result<ModuleExtras, ChannelError> {
         Ok(ModuleExtras::empty())
     }
@@ -173,7 +235,43 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(ModuleExtras::empty())
     }
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_close_init_validate(
+        &self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<(), ChannelError> {
+        Ok(())
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_close_init_execute(
+        &mut self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<ModuleExtras, ChannelError> {
+        Ok(ModuleExtras::empty())
+    }
+
     fn on_chan_close_init(
+        &mut self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<ModuleExtras, ChannelError> {
+        Ok(ModuleExtras::empty())
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_close_confirm_validate(
+        &self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<(), ChannelError> {
+        Ok(())
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_close_confirm_execute(
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
