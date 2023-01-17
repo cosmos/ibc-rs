@@ -620,6 +620,30 @@ mod val_exec_ctx {
 
         let conn_id_on_a = msg.connection_hops_on_a[0].clone();
 
+        // state changes
+        {
+            let port_channel_id_on_a = (msg.port_id_on_a.clone(), chan_id_on_a.clone());
+            let chan_end_on_a = ChannelEnd::new(
+                State::Init,
+                msg.ordering,
+                Counterparty::new(msg.port_id_on_b.clone(), None),
+                msg.connection_hops_on_a.clone(),
+                msg.version_proposal.clone(),
+            );
+
+            ctx_a.store_channel(port_channel_id_on_a.clone(), chan_end_on_a)?;
+
+            ctx_a.increase_channel_counter();
+
+            // Associate also the channel end to its connection.
+            ctx_a.store_connection_channels(conn_id_on_a.clone(), port_channel_id_on_a.clone())?;
+
+            // Initialize send, recv, and ack sequence numbers.
+            ctx_a.store_next_sequence_send(port_channel_id_on_a.clone(), 1.into())?;
+            ctx_a.store_next_sequence_recv(port_channel_id_on_a.clone(), 1.into())?;
+            ctx_a.store_next_sequence_ack(port_channel_id_on_a, 1.into())?;
+        }
+
         // emit events and logs
         {
             ctx_a.log_message(format!(
@@ -628,8 +652,8 @@ mod val_exec_ctx {
             let core_event = IbcEvent::OpenInitChannel(OpenInit::new(
                 msg.port_id_on_a.clone(),
                 chan_id_on_a.clone(),
-                msg.port_id_on_b.clone(),
-                conn_id_on_a.clone(),
+                msg.port_id_on_b,
+                conn_id_on_a,
                 version,
             ));
             ctx_a.emit_ibc_event(core_event);
@@ -641,30 +665,6 @@ mod val_exec_ctx {
             for log_message in extras.log {
                 ctx_a.log_message(log_message);
             }
-        }
-
-        // state changes
-        {
-            let port_channel_id_on_a = (msg.port_id_on_a.clone(), chan_id_on_a.clone());
-            let chan_end_on_a = ChannelEnd::new(
-                State::Init,
-                msg.ordering,
-                Counterparty::new(msg.port_id_on_b, None),
-                msg.connection_hops_on_a.clone(),
-                msg.version_proposal.clone(),
-            );
-
-            ctx_a.store_channel(port_channel_id_on_a.clone(), chan_end_on_a)?;
-
-            ctx_a.increase_channel_counter();
-
-            // Associate also the channel end to its connection.
-            ctx_a.store_connection_channels(conn_id_on_a, port_channel_id_on_a.clone())?;
-
-            // Initialize send, recv, and ack sequence numbers.
-            ctx_a.store_next_sequence_send(port_channel_id_on_a.clone(), 1.into())?;
-            ctx_a.store_next_sequence_recv(port_channel_id_on_a.clone(), 1.into())?;
-            ctx_a.store_next_sequence_ack(port_channel_id_on_a, 1.into())?;
         }
 
         Ok(())
@@ -720,6 +720,30 @@ mod val_exec_ctx {
 
         let conn_id_on_b = msg.connection_hops_on_b[0].clone();
 
+        // state changes
+        {
+            let port_channel_id_on_b = (msg.port_id_on_b.clone(), chan_id_on_b.clone());
+            let chan_end_on_b = ChannelEnd::new(
+                State::TryOpen,
+                msg.ordering,
+                Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+                msg.connection_hops_on_b.clone(),
+                version.clone(),
+            );
+
+            ctx_b.store_channel(port_channel_id_on_b.clone(), chan_end_on_b)?;
+
+            ctx_b.increase_channel_counter();
+
+            // Associate also the channel end to its connection.
+            ctx_b.store_connection_channels(conn_id_on_b.clone(), port_channel_id_on_b.clone())?;
+
+            // Initialize send, recv, and ack sequence numbers.
+            ctx_b.store_next_sequence_send(port_channel_id_on_b.clone(), 1.into())?;
+            ctx_b.store_next_sequence_recv(port_channel_id_on_b.clone(), 1.into())?;
+            ctx_b.store_next_sequence_ack(port_channel_id_on_b, 1.into())?;
+        }
+
         // emit events and logs
         {
             ctx_b.log_message(format!(
@@ -731,8 +755,8 @@ mod val_exec_ctx {
                 chan_id_on_b.clone(),
                 msg.port_id_on_a.clone(),
                 msg.chan_id_on_a.clone(),
-                conn_id_on_b.clone(),
-                version.clone(),
+                conn_id_on_b,
+                version,
             ));
             ctx_b.emit_ibc_event(core_event);
 
@@ -743,30 +767,6 @@ mod val_exec_ctx {
             for log_message in extras.log {
                 ctx_b.log_message(log_message);
             }
-        }
-
-        // state changes
-        {
-            let port_channel_id_on_b = (msg.port_id_on_b.clone(), chan_id_on_b.clone());
-            let chan_end_on_b = ChannelEnd::new(
-                State::TryOpen,
-                msg.ordering,
-                Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
-                msg.connection_hops_on_b.clone(),
-                version,
-            );
-
-            ctx_b.store_channel(port_channel_id_on_b.clone(), chan_end_on_b)?;
-
-            ctx_b.increase_channel_counter();
-
-            // Associate also the channel end to its connection.
-            ctx_b.store_connection_channels(conn_id_on_b, port_channel_id_on_b.clone())?;
-
-            // Initialize send, recv, and ack sequence numbers.
-            ctx_b.store_next_sequence_send(port_channel_id_on_b.clone(), 1.into())?;
-            ctx_b.store_next_sequence_recv(port_channel_id_on_b.clone(), 1.into())?;
-            ctx_b.store_next_sequence_ack(port_channel_id_on_b, 1.into())?;
         }
 
         Ok(())
@@ -814,6 +814,22 @@ mod val_exec_ctx {
         let chan_end_on_a =
             ctx_a.channel_end(&(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()))?;
 
+        // state changes
+        {
+            let port_channel_id_on_a = (msg.port_id_on_a.clone(), msg.chan_id_on_a.clone());
+            let chan_end_on_a = {
+                let mut chan_end_on_a = chan_end_on_a.clone();
+
+                chan_end_on_a.set_state(State::Open);
+                chan_end_on_a.set_version(msg.version_on_b.clone());
+                chan_end_on_a.set_counterparty_channel_id(msg.chan_id_on_b.clone());
+
+                chan_end_on_a
+            };
+
+            ctx_a.store_channel(port_channel_id_on_a, chan_end_on_a)?;
+        }
+
         // emit events and logs
         {
             ctx_a.log_message("success: channel open ack".to_string());
@@ -826,7 +842,7 @@ mod val_exec_ctx {
                     msg.port_id_on_a.clone(),
                     msg.chan_id_on_a.clone(),
                     port_id_on_b,
-                    msg.chan_id_on_b.clone(),
+                    msg.chan_id_on_b,
                     conn_id_on_a,
                 ))
             };
@@ -839,22 +855,6 @@ mod val_exec_ctx {
             for log_message in extras.log {
                 ctx_a.log_message(log_message);
             }
-        }
-
-        // state changes
-        {
-            let port_channel_id_on_a = (msg.port_id_on_a.clone(), msg.chan_id_on_a.clone());
-            let chan_end_on_a = {
-                let mut chan_end_on_a = chan_end_on_a;
-
-                chan_end_on_a.set_state(State::Open);
-                chan_end_on_a.set_version(msg.version_on_b.clone());
-                chan_end_on_a.set_counterparty_channel_id(msg.chan_id_on_b);
-
-                chan_end_on_a
-            };
-
-            ctx_a.store_channel(port_channel_id_on_a, chan_end_on_a)?;
         }
 
         Ok(())
@@ -895,6 +895,19 @@ mod val_exec_ctx {
         let chan_end_on_b =
             ctx_b.channel_end(&(msg.port_id_on_b.clone(), msg.chan_id_on_b.clone()))?;
 
+        // state changes
+        {
+            let port_channel_id_on_b = (msg.port_id_on_b.clone(), msg.chan_id_on_b.clone());
+            let chan_end_on_b = {
+                let mut chan_end_on_b = chan_end_on_b.clone();
+                chan_end_on_b.set_state(State::Open);
+
+                chan_end_on_b
+            };
+
+            ctx_b.store_channel(port_channel_id_on_b, chan_end_on_b)?;
+        }
+
         // emit events and logs
         {
             ctx_b.log_message("success: channel open confirm".to_string());
@@ -927,19 +940,6 @@ mod val_exec_ctx {
             for log_message in extras.log {
                 ctx_b.log_message(log_message);
             }
-        }
-
-        // state changes
-        {
-            let port_channel_id_on_b = (msg.port_id_on_b.clone(), msg.chan_id_on_b.clone());
-            let chan_end_on_b = {
-                let mut chan_end_on_b = chan_end_on_b;
-                chan_end_on_b.set_state(State::Open);
-
-                chan_end_on_b
-            };
-
-            ctx_b.store_channel(port_channel_id_on_b, chan_end_on_b)?;
         }
 
         Ok(())
@@ -979,6 +979,18 @@ mod val_exec_ctx {
         let chan_end_on_a =
             ctx_a.channel_end(&(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()))?;
 
+        // state changes
+        {
+            let chan_end_on_a = {
+                let mut chan_end_on_a = chan_end_on_a.clone();
+                chan_end_on_a.set_state(State::Closed);
+                chan_end_on_a
+            };
+
+            let port_channel_id_on_a = (msg.port_id_on_a.clone(), msg.chan_id_on_a.clone());
+            ctx_a.store_channel(port_channel_id_on_a, chan_end_on_a)?;
+        }
+
         // emit events and logs
         {
             ctx_a.log_message("success: channel close init".to_string());
@@ -1013,18 +1025,6 @@ mod val_exec_ctx {
             for log_message in extras.log {
                 ctx_a.log_message(log_message);
             }
-        }
-
-        // state changes
-        {
-            let chan_end_on_a = {
-                let mut chan_end_on_a = chan_end_on_a;
-                chan_end_on_a.set_state(State::Closed);
-                chan_end_on_a
-            };
-
-            let port_channel_id_on_a = (msg.port_id_on_a.clone(), msg.chan_id_on_a.clone());
-            ctx_a.store_channel(port_channel_id_on_a, chan_end_on_a)?;
         }
 
         Ok(())
@@ -1064,6 +1064,18 @@ mod val_exec_ctx {
         let chan_end_on_b =
             ctx_b.channel_end(&(msg.port_id_on_b.clone(), msg.chan_id_on_b.clone()))?;
 
+        // state changes
+        {
+            let chan_end_on_b = {
+                let mut chan_end_on_b = chan_end_on_b.clone();
+                chan_end_on_b.set_state(State::Closed);
+                chan_end_on_b
+            };
+
+            let port_channel_id_on_b = (msg.port_id_on_b.clone(), msg.chan_id_on_b.clone());
+            ctx_b.store_channel(port_channel_id_on_b, chan_end_on_b)?;
+        }
+
         // emit events and logs
         {
             ctx_b.log_message("success: channel close confirm".to_string());
@@ -1098,18 +1110,6 @@ mod val_exec_ctx {
             for log_message in extras.log {
                 ctx_b.log_message(log_message);
             }
-        }
-
-        // state changes
-        {
-            let chan_end_on_b = {
-                let mut chan_end_on_b = chan_end_on_b;
-                chan_end_on_b.set_state(State::Closed);
-                chan_end_on_b
-            };
-
-            let port_channel_id_on_b = (msg.port_id_on_b.clone(), msg.chan_id_on_b.clone());
-            ctx_b.store_channel(port_channel_id_on_b, chan_end_on_b)?;
         }
 
         Ok(())
