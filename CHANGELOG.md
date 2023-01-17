@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## v0.26.1
+
+*January 16, 2023*
+
+This release contains a bug fix for the `ChanOpenConfirm` handler and strongly recommended to upgrade.
+
+### BUG FIXES
+
+- Fix ChanOpenConfirm handler check of counterparty state
+  ([#353](https://github.com/cosmos/ibc-rs/issues/353))
+
 ## v0.26.0
 
 *December 14, 2022*

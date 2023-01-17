@@ -1,0 +1,1 @@
+This release contains a bug fix for the `ChanOpenConfirm` handler and strongly recommended to upgrade.
