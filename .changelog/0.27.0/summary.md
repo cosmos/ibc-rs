@@ -1,0 +1,1 @@
+This release contains a consensus-breaking change during the channel opening handshake; it was broken, and now is fixed.
