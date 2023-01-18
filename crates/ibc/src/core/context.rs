@@ -91,7 +91,7 @@ mod val_exec_ctx {
     use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
     use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
-    use crate::core::ics04_channel::msgs::ChannelMsg;
+    use crate::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
     use crate::core::ics04_channel::packet::{Receipt, Sequence};
     use crate::core::ics04_channel::timeout::TimeoutHeight;
     use crate::core::ics05_port::error::PortError::UnknownPort;
@@ -133,7 +133,7 @@ mod val_exec_ctx {
         /// Return the module_id associated with a given port_id
         fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId>;
 
-        fn lookup_module(&self, msg: &ChannelMsg) -> Result<ModuleId, ChannelError> {
+        fn lookup_module_channel(&self, msg: &ChannelMsg) -> Result<ModuleId, ChannelError> {
             let port_id = match msg {
                 ChannelMsg::OpenInit(msg) => &msg.port_id_on_a,
                 ChannelMsg::OpenTry(msg) => &msg.port_id_on_b,
@@ -141,6 +141,21 @@ mod val_exec_ctx {
                 ChannelMsg::OpenConfirm(msg) => &msg.port_id_on_b,
                 ChannelMsg::CloseInit(msg) => &msg.port_id_on_a,
                 ChannelMsg::CloseConfirm(msg) => &msg.port_id_on_b,
+            };
+            let module_id = self
+                .lookup_module_by_port(port_id)
+                .ok_or(ChannelError::Port(UnknownPort {
+                    port_id: port_id.clone(),
+                }))?;
+            Ok(module_id)
+        }
+
+        fn lookup_module_packet(&self, msg: &PacketMsg) -> Result<ModuleId, ChannelError> {
+            let port_id = match msg {
+                PacketMsg::Recv(msg) => &msg.packet.port_on_b,
+                PacketMsg::Ack(msg) => &msg.packet.port_on_a,
+                PacketMsg::Timeout(msg) => &msg.packet.port_on_a,
+                PacketMsg::TimeoutOnClose(msg) => &msg.packet.port_on_a,
             };
             let module_id = self
                 .lookup_module_by_port(port_id)
@@ -173,7 +188,9 @@ mod val_exec_ctx {
                 }
                 .map_err(RouterError::ContextError),
                 MsgEnvelope::Channel(msg) => {
-                    let module_id = self.lookup_module(&msg).map_err(ContextError::from)?;
+                    let module_id = self
+                        .lookup_module_channel(&msg)
+                        .map_err(ContextError::from)?;
                     if !self.has_route(&module_id) {
                         return Err(ChannelError::RouteNotFound)
                             .map_err(ContextError::ChannelError)
@@ -196,7 +213,23 @@ mod val_exec_ctx {
                     }
                     .map_err(RouterError::ContextError)
                 }
-                MsgEnvelope::Packet(_msg) => todo!(),
+                MsgEnvelope::Packet(msg) => {
+                    let module_id = self
+                        .lookup_module_packet(&msg)
+                        .map_err(ContextError::from)?;
+                    if !self.has_route(&module_id) {
+                        return Err(ChannelError::RouteNotFound)
+                            .map_err(ContextError::ChannelError)
+                            .map_err(RouterError::ContextError);
+                    }
+
+                    match msg {
+                        PacketMsg::Recv(_) => todo!(),
+                        PacketMsg::Ack(_) => todo!(),
+                        PacketMsg::Timeout(_) => todo!(),
+                        PacketMsg::TimeoutOnClose(_) => todo!(),
+                    }
+                }
             }
         }
 
@@ -413,7 +446,9 @@ mod val_exec_ctx {
                 }
                 .map_err(RouterError::ContextError),
                 MsgEnvelope::Channel(msg) => {
-                    let module_id = self.lookup_module(&msg).map_err(ContextError::from)?;
+                    let module_id = self
+                        .lookup_module_channel(&msg)
+                        .map_err(ContextError::from)?;
                     if !self.has_route(&module_id) {
                         return Err(ChannelError::RouteNotFound)
                             .map_err(ContextError::ChannelError)
