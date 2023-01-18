@@ -82,7 +82,7 @@ mod val_exec_ctx {
     };
     use crate::core::ics04_channel::handler::{
         chan_close_confirm, chan_close_init, chan_open_ack, chan_open_confirm, chan_open_init,
-        chan_open_try,
+        chan_open_try, recv_packet,
     };
     use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
@@ -91,6 +91,7 @@ mod val_exec_ctx {
     use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
     use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
+    use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
     use crate::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
     use crate::core::ics04_channel::packet::{Receipt, Sequence};
     use crate::core::ics04_channel::timeout::TimeoutHeight;
@@ -223,12 +224,15 @@ mod val_exec_ctx {
                             .map_err(RouterError::ContextError);
                     }
 
-                    match msg {
-                        PacketMsg::Recv(_) => todo!(),
+                    // TODO: use the return value appropriately
+                    let _ = match msg {
+                        PacketMsg::Recv(msg) => recv_packet_validate(self, module_id, msg),
                         PacketMsg::Ack(_) => todo!(),
                         PacketMsg::Timeout(_) => todo!(),
                         PacketMsg::TimeoutOnClose(_) => todo!(),
-                    }
+                    };
+
+                    todo!()
                 }
             }
         }
@@ -1148,5 +1152,22 @@ mod val_exec_ctx {
         }
 
         Ok(())
+    }
+
+    fn recv_packet_validate<ValCtx>(
+        ctx_b: &ValCtx,
+        module_id: ModuleId,
+        msg: MsgRecvPacket,
+    ) -> Result<(), ContextError>
+    where
+        ValCtx: ValidationContext,
+    {
+        recv_packet::validate(ctx_b, &msg)?;
+
+        let _module = ctx_b
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+
+        todo!()
     }
 }
