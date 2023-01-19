@@ -156,10 +156,9 @@ pub trait ChannelReader {
         height: &Height,
     ) -> Result<Height, ChannelError>;
 
-    /// Returns a counter on the number of channel ids have been created thus far.
-    /// The value of this counter should increase only via method
-    /// `ChannelKeeper::increase_channel_counter`.
-    fn channel_counter(&self) -> Result<u64, ChannelError>;
+    /// Returns a channel identifier which also shows the number of channels have been created thus far.
+    /// The value of this counter increases only via method `ChannelKeeper::increase_channel_counter`.
+    fn generate_channel_identifier(&self) -> Result<u64, ChannelError>;
 
     /// Returns the maximum expected time per block
     fn max_expected_time_per_block(&self) -> Duration;

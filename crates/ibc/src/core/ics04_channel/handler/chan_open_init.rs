@@ -39,12 +39,14 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let chan_end_on_a = ChannelEnd::new(
         State::Init,
         msg.ordering,
+        // Note: the counterparty channel Id passed by the relayer alternated to `None`,
+        // left for the `chan_open_try` handler to set
         Counterparty::new(msg.port_id_on_b.clone(), None),
         msg.connection_hops_on_a.clone(),
         msg.version_proposal.clone(),
     );
 
-    let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
+    let chan_id_on_a = ChannelId::new(ctx_a.generate_channel_identifier()?);
 
     output.log(format!(
         "success: channel open init with channel identifier: {chan_id_on_a}"
@@ -89,12 +91,15 @@ mod tests {
         }
 
         let msg_chan_init =
-            MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init()).unwrap();
+            MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
+
+        let msg_chan_init_with_counterparty_chan_id_some =
+            MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(Some(0))).unwrap();
 
         let context = MockContext::default();
 
         let msg_conn_init =
-            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init()).unwrap();
+            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init(None)).unwrap();
 
         let init_conn_end = ConnectionEnd::new(
             ConnectionState::Init,
@@ -115,8 +120,17 @@ mod tests {
             },
             Test {
                 name: "Good parameters".to_string(),
-                ctx: context.with_connection(cid, init_conn_end),
+                ctx: context
+                    .clone()
+                    .with_connection(cid.clone(), init_conn_end.clone()),
                 msg: ChannelMsg::OpenInit(msg_chan_init),
+                want_pass: true,
+            },
+            Test {
+                name: "Good parameters even if counterparty channel id is set some by relayer"
+                    .to_string(),
+                ctx: context.with_connection(cid, init_conn_end),
+                msg: ChannelMsg::OpenInit(msg_chan_init_with_counterparty_chan_id_some),
                 want_pass: true,
             },
         ]

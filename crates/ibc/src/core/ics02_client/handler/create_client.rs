@@ -53,7 +53,7 @@ where
     } = msg;
 
     // Construct this client's identifier
-    let id_counter = ctx.client_counter()?;
+    let id_counter = ctx.generate_client_identifier()?;
 
     let client_state = ctx.decode_client_state(client_state)?;
 
@@ -82,7 +82,7 @@ where
     } = msg;
 
     // Construct this client's identifier
-    let id_counter = ctx.client_counter()?;
+    let id_counter = ctx.generate_client_identifier()?;
 
     let client_state = ctx.decode_client_state(client_state)?;
 
@@ -141,7 +141,7 @@ pub(crate) fn process(
     } = msg;
 
     // Construct this client's identifier
-    let id_counter = ctx.client_counter()?;
+    let id_counter = ctx.generate_client_identifier()?;
 
     let client_state = ctx.decode_client_state(client_state)?;
 

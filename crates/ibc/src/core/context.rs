@@ -243,7 +243,7 @@ mod val_exec_ctx {
 
         /// Returns a natural number, counting how many clients have been created thus far.
         /// The value of this counter should increase only via method `ClientKeeper::increase_client_counter`.
-        fn client_counter(&self) -> Result<u64, ContextError>;
+        fn generate_client_identifier(&self) -> Result<u64, ContextError>;
 
         /// Returns the ConnectionEnd for the given identifier `conn_id`.
         fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError>;
@@ -258,7 +258,7 @@ mod val_exec_ctx {
         fn commitment_prefix(&self) -> CommitmentPrefix;
 
         /// Returns a counter on how many connections have been created thus far.
-        fn connection_counter(&self) -> Result<u64, ContextError>;
+        fn generate_connection_identifier(&self) -> Result<u64, ContextError>;
 
         /// Function required by ICS 03. Returns the list of all possible versions that the connection
         /// handshake protocol supports.
@@ -367,7 +367,7 @@ mod val_exec_ctx {
         /// Returns a counter on the number of channel ids have been created thus far.
         /// The value of this counter should increase only via method
         /// `ChannelKeeper::increase_channel_counter`.
-        fn channel_counter(&self) -> Result<u64, ContextError>;
+        fn generate_channel_identifier(&self) -> Result<u64, ContextError>;
 
         /// Returns the maximum expected time per block
         fn max_expected_time_per_block(&self) -> Duration;
@@ -568,7 +568,7 @@ mod val_exec_ctx {
         ValCtx: ValidationContext,
     {
         chan_open_try::validate(ctx_b, &msg)?;
-        let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
+        let chan_id_on_b = ChannelId::new(ctx_b.generate_channel_identifier()?);
 
         let module = ctx_b
             .get_route(&module_id)
@@ -593,7 +593,7 @@ mod val_exec_ctx {
     where
         ExecCtx: ExecutionContext,
     {
-        let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
+        let chan_id_on_b = ChannelId::new(ctx_b.generate_channel_identifier()?);
         ctx_b.log_message(format!(
             "success: channel open try with channel identifier: {chan_id_on_b}"
         ));

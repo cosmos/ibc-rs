@@ -188,7 +188,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         Version::empty(),
     );
 
-    let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
+    let chan_id_on_b = ChannelId::new(ctx_b.generate_channel_identifier()?);
 
     output.log(format!(
         "success: channel open try with channel identifier: {chan_id_on_b}"
@@ -253,7 +253,7 @@ mod tests {
         let conn_end = ConnectionEnd::new(
             ConnectionState::Open,
             client_id.clone(),
-            ConnectionCounterparty::try_from(get_dummy_raw_counterparty()).unwrap(),
+            ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
             get_compatible_versions(),
             ZERO_DURATION,
         );
@@ -399,7 +399,7 @@ mod tests {
         let conn_end = ConnectionEnd::new(
             ConnectionState::Open,
             client_id.clone(),
-            ConnectionCounterparty::try_from(get_dummy_raw_counterparty()).unwrap(),
+            ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
             get_compatible_versions(),
             ZERO_DURATION,
         );

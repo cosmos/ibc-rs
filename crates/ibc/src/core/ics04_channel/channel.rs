@@ -505,7 +505,7 @@ impl Display for State {
 
 #[cfg(test)]
 pub mod test_util {
-    use crate::core::ics24_host::identifier::{ConnectionId, PortId};
+    use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
     use crate::prelude::*;
     use ibc_proto::ibc::core::channel::v1::Channel as RawChannel;
     use ibc_proto::ibc::core::channel::v1::Counterparty as RawCounterparty;
@@ -520,7 +520,11 @@ pub mod test_util {
     }
 
     /// Returns a dummy `RawChannel`, for testing only!
-    pub fn get_dummy_raw_channel_end(channel_id: String) -> RawChannel {
+    pub fn get_dummy_raw_channel_end(channel_id: Option<u64>) -> RawChannel {
+        let channel_id = match channel_id {
+            Some(id) => ChannelId::new(id).to_string(),
+            None => "".to_string(),
+        };
         RawChannel {
             state: 1,
             ordering: 2,
@@ -533,7 +537,6 @@ pub mod test_util {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ics24_host::identifier::ChannelId;
     use crate::prelude::*;
 
     use core::str::FromStr;
@@ -546,7 +549,7 @@ mod tests {
 
     #[test]
     fn channel_end_try_from_raw() {
-        let raw_channel_end = get_dummy_raw_channel_end(ChannelId::default().to_string());
+        let raw_channel_end = get_dummy_raw_channel_end(Some(0));
 
         let empty_raw_channel_end = RawChannel {
             counterparty: None,

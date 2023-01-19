@@ -643,7 +643,7 @@ pub struct MockIbcStore {
     pub client_processed_heights: BTreeMap<(ClientId, Height), Height>,
 
     /// Counter for the client identifiers, necessary for `increase_client_counter` and the
-    /// `client_counter` methods.
+    /// `generate_client_identifier` methods.
     pub client_ids_counter: u64,
 
     /// Association between client ids and connection ids.
@@ -975,7 +975,7 @@ impl ChannelReader for MockContext {
         }
     }
 
-    fn channel_counter(&self) -> Result<u64, ChannelError> {
+    fn generate_channel_identifier(&self) -> Result<u64, ChannelError> {
         Ok(self.ibc_store.lock().channel_ids_counter)
     }
 
@@ -1200,7 +1200,7 @@ impl ConnectionReader for MockContext {
         ClientReader::host_consensus_state(self, height).map_err(ConnectionError::Client)
     }
 
-    fn connection_counter(&self) -> Result<u64, ConnectionError> {
+    fn generate_connection_identifier(&self) -> Result<u64, ConnectionError> {
         Ok(self.ibc_store.lock().connection_ids_counter)
     }
 
@@ -1387,7 +1387,7 @@ impl ClientReader for MockContext {
         Err(ClientError::ImplementationSpecific)
     }
 
-    fn client_counter(&self) -> Result<u64, ClientError> {
+    fn generate_client_identifier(&self) -> Result<u64, ClientError> {
         Ok(self.ibc_store.lock().client_ids_counter)
     }
 }
@@ -1600,8 +1600,8 @@ mod val_exec_ctx {
                 .map_err(ContextError::ConnectionError)
         }
 
-        fn client_counter(&self) -> Result<u64, ContextError> {
-            ClientReader::client_counter(self).map_err(ContextError::ClientError)
+        fn generate_client_identifier(&self) -> Result<u64, ContextError> {
+            ClientReader::generate_client_identifier(self).map_err(ContextError::ClientError)
         }
 
         fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError> {
@@ -1619,8 +1619,9 @@ mod val_exec_ctx {
             ConnectionReader::commitment_prefix(self)
         }
 
-        fn connection_counter(&self) -> Result<u64, ContextError> {
-            ConnectionReader::connection_counter(self).map_err(ContextError::ConnectionError)
+        fn generate_connection_identifier(&self) -> Result<u64, ContextError> {
+            ConnectionReader::generate_connection_identifier(self)
+                .map_err(ContextError::ConnectionError)
         }
 
         fn channel_end(
@@ -1708,8 +1709,8 @@ mod val_exec_ctx {
                 .map_err(ContextError::ChannelError)
         }
 
-        fn channel_counter(&self) -> Result<u64, ContextError> {
-            ChannelReader::channel_counter(self).map_err(ContextError::ChannelError)
+        fn generate_channel_identifier(&self) -> Result<u64, ContextError> {
+            ChannelReader::generate_channel_identifier(self).map_err(ContextError::ChannelError)
         }
 
         fn max_expected_time_per_block(&self) -> Duration {

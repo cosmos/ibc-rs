@@ -178,7 +178,7 @@ pub mod test_util {
             client_id: ClientId::default().to_string(),
             previous_connection_id: ConnectionId::default().to_string(),
             client_state: Some(MockClientState::new(MockHeader::new(client_state_height)).into()),
-            counterparty: Some(get_dummy_raw_counterparty()),
+            counterparty: Some(get_dummy_raw_counterparty(Some(0))),
             delay_period: 0,
             counterparty_versions: get_compatible_versions()
                 .iter()
@@ -247,7 +247,7 @@ mod tests {
                             connection_id:
                             "abcdasdfasdfsdfasfdwefwfsdfsfsfasfwewvxcvdvwgadvaadsefghijklmnopqrstu"
                                 .to_string(),
-                            ..get_dummy_raw_counterparty()
+                            ..get_dummy_raw_counterparty(Some(0))
                         }),
                         ..default_try_msg.clone()
                     },
@@ -259,7 +259,7 @@ mod tests {
                     raw: RawMsgConnectionOpenTry {
                         counterparty: Some(RawCounterparty {
                             client_id: "ClientId_".to_string(),
-                            ..get_dummy_raw_counterparty()
+                            ..get_dummy_raw_counterparty(Some(0))
                         }),
                         ..default_try_msg.clone()
                     },
