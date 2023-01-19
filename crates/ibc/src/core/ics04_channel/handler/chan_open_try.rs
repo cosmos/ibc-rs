@@ -188,7 +188,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         Version::empty(),
     );
 
-    let chan_id_on_b = ChannelId::new(ctx_b.generate_channel_identifier()?);
+    let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
 
     output.log(format!(
         "success: channel open try with channel identifier: {chan_id_on_b}"

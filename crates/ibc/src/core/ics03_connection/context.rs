@@ -71,7 +71,7 @@ pub trait ConnectionReader {
 
     /// Returns a connection identifier which also shows how many connections have been created thus far.
     /// The value of this counter increases only via method `ConnectionKeeper::increase_connection_counter`.
-    fn generate_connection_identifier(&self) -> Result<u64, ConnectionError>;
+    fn connection_counter(&self) -> Result<u64, ConnectionError>;
 
     /// Validates the `ClientState` of the client on the counterparty chain.
     fn validate_self_client(&self, counterparty_client_state: Any) -> Result<(), ConnectionError>;

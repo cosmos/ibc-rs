@@ -70,7 +70,7 @@ pub trait ClientReader {
 
     /// Returns a client identifier which also shows how many clients have been created thus far.
     /// The value of this counter should increase only via method `ClientKeeper::increase_client_counter`.
-    fn generate_client_identifier(&self) -> Result<u64, ClientError>;
+    fn client_counter(&self) -> Result<u64, ClientError>;
 }
 
 /// Defines the write-only part of ICS2 (client functions) context.

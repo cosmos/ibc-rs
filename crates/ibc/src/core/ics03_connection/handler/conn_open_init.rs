@@ -68,7 +68,7 @@ where
     );
 
     // Construct the identifier for the new connection.
-    let conn_id_on_a = ConnectionId::new(ctx_a.generate_connection_identifier()?);
+    let conn_id_on_a = ConnectionId::new(ctx_a.connection_counter()?);
 
     ctx_a.log_message(format!(
         "success: conn_open_init: generated new connection identifier: {conn_id_on_a}"
@@ -130,7 +130,7 @@ pub(crate) fn process(
     );
 
     // Construct the identifier for the new connection.
-    let conn_id_on_a = ConnectionId::new(ctx_a.generate_connection_identifier()?);
+    let conn_id_on_a = ConnectionId::new(ctx_a.connection_counter()?);
 
     let result = ConnectionResult {
         connection_id: conn_id_on_a.clone(),

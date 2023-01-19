@@ -191,7 +191,7 @@ impl LocalVars {
             ctx_b.pick_version(&ctx_b.get_compatible_versions(), &msg.versions_on_a)?;
 
         Ok(Self {
-            conn_id_on_b: ConnectionId::new(ctx_b.generate_connection_identifier()?),
+            conn_id_on_b: ConnectionId::new(ctx_b.connection_counter()?),
             conn_end_on_b: ConnectionEnd::new(
                 State::TryOpen,
                 msg.client_id_on_b.clone(),
@@ -216,7 +216,7 @@ pub(crate) fn process(
 ) -> HandlerResult<ConnectionResult, ConnectionError> {
     let mut output = HandlerOutput::builder();
 
-    let conn_id_on_b = ConnectionId::new(ctx_b.generate_connection_identifier()?);
+    let conn_id_on_b = ConnectionId::new(ctx_b.connection_counter()?);
 
     ctx_b.validate_self_client(msg.client_state_of_b_on_a.clone())?;
 
