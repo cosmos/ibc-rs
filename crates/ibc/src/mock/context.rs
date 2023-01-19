@@ -1902,6 +1902,32 @@ mod tests {
         }
 
         impl Module for FooModule {
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_chan_open_init_validate(
+                &self,
+                _order: Order,
+                _connection_hops: &[ConnectionId],
+                _port_id: &PortId,
+                _channel_id: &ChannelId,
+                _counterparty: &Counterparty,
+                version: &Version,
+            ) -> Result<Version, ChannelError> {
+                Ok(version.clone())
+            }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_chan_open_init_execute(
+                &mut self,
+                _order: Order,
+                _connection_hops: &[ConnectionId],
+                _port_id: &PortId,
+                _channel_id: &ChannelId,
+                _counterparty: &Counterparty,
+                version: &Version,
+            ) -> Result<(ModuleExtras, Version), ChannelError> {
+                Ok((ModuleExtras::empty(), version.clone()))
+            }
+
             fn on_chan_open_init(
                 &mut self,
                 _order: Order,
@@ -1973,6 +1999,32 @@ mod tests {
         struct BarModule;
 
         impl Module for BarModule {
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_chan_open_init_validate(
+                &self,
+                _order: Order,
+                _connection_hops: &[ConnectionId],
+                _port_id: &PortId,
+                _channel_id: &ChannelId,
+                _counterparty: &Counterparty,
+                version: &Version,
+            ) -> Result<Version, ChannelError> {
+                Ok(version.clone())
+            }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_chan_open_init_execute(
+                &mut self,
+                _order: Order,
+                _connection_hops: &[ConnectionId],
+                _port_id: &PortId,
+                _channel_id: &ChannelId,
+                _counterparty: &Counterparty,
+                version: &Version,
+            ) -> Result<(ModuleExtras, Version), ChannelError> {
+                Ok((ModuleExtras::empty(), version.clone()))
+            }
+
             fn on_chan_open_init(
                 &mut self,
                 _order: Order,

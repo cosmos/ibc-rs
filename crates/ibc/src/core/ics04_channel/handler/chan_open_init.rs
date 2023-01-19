@@ -9,6 +9,41 @@ use crate::core::ics24_host::identifier::ChannelId;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
+#[cfg(feature = "val_exec_ctx")]
+pub(crate) use val_exec_ctx::*;
+#[cfg(feature = "val_exec_ctx")]
+pub(crate) mod val_exec_ctx {
+    use super::*;
+    use crate::core::{ContextError, ValidationContext};
+
+    pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenInit) -> Result<(), ContextError>
+    where
+        Ctx: ValidationContext,
+    {
+        if msg.connection_hops_on_a.len() != 1 {
+            return Err(ChannelError::InvalidConnectionHopsLength {
+                expected: 1,
+                actual: msg.connection_hops_on_a.len(),
+            }
+            .into());
+        }
+
+        // An IBC connection running on the local (host) chain should exist.
+        let conn_end_on_a = ctx_a.connection_end(&msg.connection_hops_on_a[0])?;
+
+        let conn_version = match conn_end_on_a.versions() {
+            [version] => version,
+            _ => return Err(ChannelError::InvalidVersionLengthConnection.into()),
+        };
+
+        let channel_feature = msg.ordering.to_string();
+        if !conn_version.is_supported_feature(channel_feature) {
+            return Err(ChannelError::ChannelFeatureNotSuportedByConnection.into());
+        }
+
+        Ok(())
+    }
+}
 /// Per our convention, this message is processed on chain A.
 pub(crate) fn process<Ctx: ChannelReader>(
     ctx_a: &Ctx,

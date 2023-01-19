@@ -77,9 +77,19 @@ mod val_exec_ctx {
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
     use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
     use crate::core::ics04_channel::context::calculate_block_delay;
-    use crate::core::ics04_channel::events::OpenTry;
-    use crate::core::ics04_channel::handler::chan_open_try;
+    use crate::core::ics04_channel::events::{
+        CloseConfirm, CloseInit, OpenAck, OpenConfirm, OpenInit, OpenTry,
+    };
+    use crate::core::ics04_channel::handler::{
+        chan_close_confirm, chan_close_init, chan_open_ack, chan_open_confirm, chan_open_init,
+        chan_open_try,
+    };
     use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
+    use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
+    use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
+    use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
+    use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
+    use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics04_channel::packet::{Receipt, Sequence};
@@ -143,48 +153,50 @@ mod val_exec_ctx {
 
     pub trait ValidationContext: Router {
         /// Validation entrypoint.
-        fn validate(&self, message: MsgEnvelope) -> Result<(), RouterError>
+        fn validate(&self, msg: MsgEnvelope) -> Result<(), RouterError>
         where
             Self: Sized,
         {
-            match message {
-                MsgEnvelope::Client(message) => match message {
-                    ClientMsg::CreateClient(message) => create_client::validate(self, message),
-                    ClientMsg::UpdateClient(message) => update_client::validate(self, message),
-                    ClientMsg::Misbehaviour(message) => misbehaviour::validate(self, message),
-                    ClientMsg::UpgradeClient(message) => upgrade_client::validate(self, message),
+            match msg {
+                MsgEnvelope::Client(msg) => match msg {
+                    ClientMsg::CreateClient(msg) => create_client::validate(self, msg),
+                    ClientMsg::UpdateClient(msg) => update_client::validate(self, msg),
+                    ClientMsg::Misbehaviour(msg) => misbehaviour::validate(self, msg),
+                    ClientMsg::UpgradeClient(msg) => upgrade_client::validate(self, msg),
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::Connection(message) => match message {
-                    ConnectionMsg::OpenInit(message) => conn_open_init::validate(self, message),
-                    ConnectionMsg::OpenTry(message) => conn_open_try::validate(self, message),
-                    ConnectionMsg::OpenAck(message) => conn_open_ack::validate(self, message),
-                    ConnectionMsg::OpenConfirm(ref message) => {
-                        conn_open_confirm::validate(self, message)
-                    }
+                MsgEnvelope::Connection(msg) => match msg {
+                    ConnectionMsg::OpenInit(msg) => conn_open_init::validate(self, msg),
+                    ConnectionMsg::OpenTry(msg) => conn_open_try::validate(self, msg),
+                    ConnectionMsg::OpenAck(msg) => conn_open_ack::validate(self, msg),
+                    ConnectionMsg::OpenConfirm(ref msg) => conn_open_confirm::validate(self, msg),
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::Channel(message) => {
-                    let module_id = self.lookup_module(&message).map_err(ContextError::from)?;
+                MsgEnvelope::Channel(msg) => {
+                    let module_id = self.lookup_module(&msg).map_err(ContextError::from)?;
                     if !self.has_route(&module_id) {
                         return Err(ChannelError::RouteNotFound)
                             .map_err(ContextError::ChannelError)
                             .map_err(RouterError::ContextError);
                     }
 
-                    match message {
-                        ChannelMsg::OpenInit(_) => todo!(),
-                        ChannelMsg::OpenTry(message) => {
-                            chan_open_try_validate(self, module_id, message)
+                    match msg {
+                        ChannelMsg::OpenInit(msg) => chan_open_init_validate(self, module_id, msg),
+                        ChannelMsg::OpenTry(msg) => chan_open_try_validate(self, module_id, msg),
+                        ChannelMsg::OpenAck(msg) => chan_open_ack_validate(self, module_id, msg),
+                        ChannelMsg::OpenConfirm(msg) => {
+                            chan_open_confirm_validate(self, module_id, msg)
                         }
-                        ChannelMsg::OpenAck(_) => todo!(),
-                        ChannelMsg::OpenConfirm(_) => todo!(),
-                        ChannelMsg::CloseInit(_) => todo!(),
-                        ChannelMsg::CloseConfirm(_) => todo!(),
+                        ChannelMsg::CloseInit(msg) => {
+                            chan_close_init_validate(self, module_id, msg)
+                        }
+                        ChannelMsg::CloseConfirm(msg) => {
+                            chan_close_confirm_validate(self, module_id, msg)
+                        }
                     }
                     .map_err(RouterError::ContextError)
                 }
-                MsgEnvelope::Packet(_message) => todo!(),
+                MsgEnvelope::Packet(_msg) => todo!(),
             }
         }
 
@@ -381,48 +393,48 @@ mod val_exec_ctx {
 
     pub trait ExecutionContext: ValidationContext {
         /// Execution entrypoint
-        fn execute(&mut self, message: MsgEnvelope) -> Result<(), RouterError>
+        fn execute(&mut self, msg: MsgEnvelope) -> Result<(), RouterError>
         where
             Self: Sized,
         {
-            match message {
-                MsgEnvelope::Client(message) => match message {
-                    ClientMsg::CreateClient(message) => create_client::execute(self, message),
-                    ClientMsg::UpdateClient(message) => update_client::execute(self, message),
-                    ClientMsg::Misbehaviour(message) => misbehaviour::execute(self, message),
-                    ClientMsg::UpgradeClient(message) => upgrade_client::execute(self, message),
+            match msg {
+                MsgEnvelope::Client(msg) => match msg {
+                    ClientMsg::CreateClient(msg) => create_client::execute(self, msg),
+                    ClientMsg::UpdateClient(msg) => update_client::execute(self, msg),
+                    ClientMsg::Misbehaviour(msg) => misbehaviour::execute(self, msg),
+                    ClientMsg::UpgradeClient(msg) => upgrade_client::execute(self, msg),
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::Connection(message) => match message {
-                    ConnectionMsg::OpenInit(message) => conn_open_init::execute(self, message),
-                    ConnectionMsg::OpenTry(message) => conn_open_try::execute(self, message),
-                    ConnectionMsg::OpenAck(message) => conn_open_ack::execute(self, message),
-                    ConnectionMsg::OpenConfirm(ref message) => {
-                        conn_open_confirm::execute(self, message)
-                    }
+                MsgEnvelope::Connection(msg) => match msg {
+                    ConnectionMsg::OpenInit(msg) => conn_open_init::execute(self, msg),
+                    ConnectionMsg::OpenTry(msg) => conn_open_try::execute(self, msg),
+                    ConnectionMsg::OpenAck(msg) => conn_open_ack::execute(self, msg),
+                    ConnectionMsg::OpenConfirm(ref msg) => conn_open_confirm::execute(self, msg),
                 }
                 .map_err(RouterError::ContextError),
-                MsgEnvelope::Channel(message) => {
-                    let module_id = self.lookup_module(&message).map_err(ContextError::from)?;
+                MsgEnvelope::Channel(msg) => {
+                    let module_id = self.lookup_module(&msg).map_err(ContextError::from)?;
                     if !self.has_route(&module_id) {
                         return Err(ChannelError::RouteNotFound)
                             .map_err(ContextError::ChannelError)
                             .map_err(RouterError::ContextError);
                     }
 
-                    match message {
-                        ChannelMsg::OpenInit(_) => todo!(),
-                        ChannelMsg::OpenTry(message) => {
-                            chan_open_try_execute(self, module_id, message)
+                    match msg {
+                        ChannelMsg::OpenInit(msg) => chan_open_init_execute(self, module_id, msg),
+                        ChannelMsg::OpenTry(msg) => chan_open_try_execute(self, module_id, msg),
+                        ChannelMsg::OpenAck(msg) => chan_open_ack_execute(self, module_id, msg),
+                        ChannelMsg::OpenConfirm(msg) => {
+                            chan_open_confirm_execute(self, module_id, msg)
                         }
-                        ChannelMsg::OpenAck(_) => todo!(),
-                        ChannelMsg::OpenConfirm(_) => todo!(),
-                        ChannelMsg::CloseInit(_) => todo!(),
-                        ChannelMsg::CloseConfirm(_) => todo!(),
+                        ChannelMsg::CloseInit(msg) => chan_close_init_execute(self, module_id, msg),
+                        ChannelMsg::CloseConfirm(msg) => {
+                            chan_close_confirm_execute(self, module_id, msg)
+                        }
                     }
                     .map_err(RouterError::ContextError)
                 }
-                MsgEnvelope::Packet(_message) => todo!(),
+                MsgEnvelope::Packet(_msg) => todo!(),
             }
         }
 
@@ -559,6 +571,105 @@ mod val_exec_ctx {
         fn log_message(&mut self, message: String);
     }
 
+    fn chan_open_init_validate<ValCtx>(
+        ctx_a: &ValCtx,
+        module_id: ModuleId,
+        msg: MsgChannelOpenInit,
+    ) -> Result<(), ContextError>
+    where
+        ValCtx: ValidationContext,
+    {
+        chan_open_init::validate(ctx_a, &msg)?;
+        let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
+
+        let module = ctx_a
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        module.on_chan_open_init_validate(
+            msg.ordering,
+            &msg.connection_hops_on_a,
+            &msg.port_id_on_a,
+            &chan_id_on_a,
+            &Counterparty::new(msg.port_id_on_b.clone(), None),
+            &msg.version_proposal,
+        )?;
+
+        Ok(())
+    }
+
+    fn chan_open_init_execute<ExecCtx>(
+        ctx_a: &mut ExecCtx,
+        module_id: ModuleId,
+        msg: MsgChannelOpenInit,
+    ) -> Result<(), ContextError>
+    where
+        ExecCtx: ExecutionContext,
+    {
+        let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
+        let module = ctx_a
+            .get_route_mut(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        let (extras, version) = module.on_chan_open_init_execute(
+            msg.ordering,
+            &msg.connection_hops_on_a,
+            &msg.port_id_on_a,
+            &chan_id_on_a,
+            &Counterparty::new(msg.port_id_on_b.clone(), None),
+            &msg.version_proposal,
+        )?;
+
+        let conn_id_on_a = msg.connection_hops_on_a[0].clone();
+
+        // state changes
+        {
+            let port_channel_id_on_a = (msg.port_id_on_a.clone(), chan_id_on_a.clone());
+            let chan_end_on_a = ChannelEnd::new(
+                State::Init,
+                msg.ordering,
+                Counterparty::new(msg.port_id_on_b.clone(), None),
+                msg.connection_hops_on_a.clone(),
+                msg.version_proposal.clone(),
+            );
+
+            ctx_a.store_channel(port_channel_id_on_a.clone(), chan_end_on_a)?;
+
+            ctx_a.increase_channel_counter();
+
+            // Associate also the channel end to its connection.
+            ctx_a.store_connection_channels(conn_id_on_a.clone(), port_channel_id_on_a.clone())?;
+
+            // Initialize send, recv, and ack sequence numbers.
+            ctx_a.store_next_sequence_send(port_channel_id_on_a.clone(), 1.into())?;
+            ctx_a.store_next_sequence_recv(port_channel_id_on_a.clone(), 1.into())?;
+            ctx_a.store_next_sequence_ack(port_channel_id_on_a, 1.into())?;
+        }
+
+        // emit events and logs
+        {
+            ctx_a.log_message(format!(
+                "success: channel open init with channel identifier: {chan_id_on_a}"
+            ));
+            let core_event = IbcEvent::OpenInitChannel(OpenInit::new(
+                msg.port_id_on_a.clone(),
+                chan_id_on_a.clone(),
+                msg.port_id_on_b,
+                conn_id_on_a,
+                version,
+            ));
+            ctx_a.emit_ibc_event(core_event);
+
+            for module_event in extras.events {
+                ctx_a.emit_ibc_event(IbcEvent::AppModule(module_event));
+            }
+
+            for log_message in extras.log {
+                ctx_a.log_message(log_message);
+            }
+        }
+
+        Ok(())
+    }
+
     fn chan_open_try_validate<ValCtx>(
         ctx_b: &ValCtx,
         module_id: ModuleId,
@@ -573,7 +684,7 @@ mod val_exec_ctx {
         let module = ctx_b
             .get_route(&module_id)
             .ok_or(ChannelError::RouteNotFound)?;
-        let _ = module.on_chan_open_try_validate(
+        module.on_chan_open_try_validate(
             msg.ordering,
             &msg.connection_hops_on_b,
             &msg.port_id_on_b,
@@ -597,7 +708,6 @@ mod val_exec_ctx {
         ctx_b.log_message(format!(
             "success: channel open try with channel identifier: {chan_id_on_b}"
         ));
-
         let module = ctx_b
             .get_route_mut(&module_id)
             .ok_or(ChannelError::RouteNotFound)?;
@@ -612,17 +722,44 @@ mod val_exec_ctx {
         )?;
 
         let conn_id_on_b = msg.connection_hops_on_b[0].clone();
-        let port_channel_id_on_b = (msg.port_id_on_b.clone(), chan_id_on_b.clone());
+
+        // state changes
+        {
+            let port_channel_id_on_b = (msg.port_id_on_b.clone(), chan_id_on_b.clone());
+            let chan_end_on_b = ChannelEnd::new(
+                State::TryOpen,
+                msg.ordering,
+                Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+                msg.connection_hops_on_b.clone(),
+                version.clone(),
+            );
+
+            ctx_b.store_channel(port_channel_id_on_b.clone(), chan_end_on_b)?;
+
+            ctx_b.increase_channel_counter();
+
+            // Associate also the channel end to its connection.
+            ctx_b.store_connection_channels(conn_id_on_b.clone(), port_channel_id_on_b.clone())?;
+
+            // Initialize send, recv, and ack sequence numbers.
+            ctx_b.store_next_sequence_send(port_channel_id_on_b.clone(), 1.into())?;
+            ctx_b.store_next_sequence_recv(port_channel_id_on_b.clone(), 1.into())?;
+            ctx_b.store_next_sequence_ack(port_channel_id_on_b, 1.into())?;
+        }
 
         // emit events and logs
         {
+            ctx_b.log_message(format!(
+                "success: channel open try with channel identifier: {chan_id_on_b}"
+            ));
+
             let core_event = IbcEvent::OpenTryChannel(OpenTry::new(
                 msg.port_id_on_b.clone(),
                 chan_id_on_b.clone(),
                 msg.port_id_on_a.clone(),
                 msg.chan_id_on_a.clone(),
-                conn_id_on_b.clone(),
-                version.clone(),
+                conn_id_on_b,
+                version,
             ));
             ctx_b.emit_ibc_event(core_event);
 
@@ -635,26 +772,347 @@ mod val_exec_ctx {
             }
         }
 
+        Ok(())
+    }
+
+    fn chan_open_ack_validate<ValCtx>(
+        ctx_a: &ValCtx,
+        module_id: ModuleId,
+        msg: MsgChannelOpenAck,
+    ) -> Result<(), ContextError>
+    where
+        ValCtx: ValidationContext,
+    {
+        chan_open_ack::validate(ctx_a, &msg)?;
+
+        let module = ctx_a
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        module.on_chan_open_ack_validate(
+            &msg.port_id_on_a,
+            &msg.chan_id_on_a,
+            &msg.version_on_b,
+        )?;
+
+        Ok(())
+    }
+
+    fn chan_open_ack_execute<ExecCtx>(
+        ctx_a: &mut ExecCtx,
+        module_id: ModuleId,
+        msg: MsgChannelOpenAck,
+    ) -> Result<(), ContextError>
+    where
+        ExecCtx: ExecutionContext,
+    {
+        let module = ctx_a
+            .get_route_mut(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        let extras = module.on_chan_open_ack_execute(
+            &msg.port_id_on_a,
+            &msg.chan_id_on_a,
+            &msg.version_on_b,
+        )?;
+
+        let chan_end_on_a =
+            ctx_a.channel_end(&(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()))?;
+
+        // state changes
         {
-            let channel_end = ChannelEnd::new(
-                State::TryOpen,
-                msg.ordering,
-                Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
-                msg.connection_hops_on_b.clone(),
-                version,
-            );
+            let port_channel_id_on_a = (msg.port_id_on_a.clone(), msg.chan_id_on_a.clone());
+            let chan_end_on_a = {
+                let mut chan_end_on_a = chan_end_on_a.clone();
 
-            ctx_b.store_channel(port_channel_id_on_b.clone(), channel_end)?;
+                chan_end_on_a.set_state(State::Open);
+                chan_end_on_a.set_version(msg.version_on_b.clone());
+                chan_end_on_a.set_counterparty_channel_id(msg.chan_id_on_b.clone());
 
-            ctx_b.increase_channel_counter();
+                chan_end_on_a
+            };
 
-            // Associate also the channel end to its connection.
-            ctx_b.store_connection_channels(conn_id_on_b, port_channel_id_on_b.clone())?;
+            ctx_a.store_channel(port_channel_id_on_a, chan_end_on_a)?;
+        }
 
-            // Initialize send, recv, and ack sequence numbers.
-            ctx_b.store_next_sequence_send(port_channel_id_on_b.clone(), 1.into())?;
-            ctx_b.store_next_sequence_recv(port_channel_id_on_b.clone(), 1.into())?;
-            ctx_b.store_next_sequence_ack(port_channel_id_on_b, 1.into())?;
+        // emit events and logs
+        {
+            ctx_a.log_message("success: channel open ack".to_string());
+
+            let core_event = {
+                let port_id_on_b = chan_end_on_a.counterparty().port_id.clone();
+                let conn_id_on_a = chan_end_on_a.connection_hops[0].clone();
+
+                IbcEvent::OpenAckChannel(OpenAck::new(
+                    msg.port_id_on_a.clone(),
+                    msg.chan_id_on_a.clone(),
+                    port_id_on_b,
+                    msg.chan_id_on_b,
+                    conn_id_on_a,
+                ))
+            };
+            ctx_a.emit_ibc_event(core_event);
+
+            for module_event in extras.events {
+                ctx_a.emit_ibc_event(IbcEvent::AppModule(module_event));
+            }
+
+            for log_message in extras.log {
+                ctx_a.log_message(log_message);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn chan_open_confirm_validate<ValCtx>(
+        ctx_b: &ValCtx,
+        module_id: ModuleId,
+        msg: MsgChannelOpenConfirm,
+    ) -> Result<(), ContextError>
+    where
+        ValCtx: ValidationContext,
+    {
+        chan_open_confirm::validate(ctx_b, &msg)?;
+
+        let module = ctx_b
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        module.on_chan_open_confirm_validate(&msg.port_id_on_b, &msg.chan_id_on_b)?;
+
+        Ok(())
+    }
+
+    fn chan_open_confirm_execute<ExecCtx>(
+        ctx_b: &mut ExecCtx,
+        module_id: ModuleId,
+        msg: MsgChannelOpenConfirm,
+    ) -> Result<(), ContextError>
+    where
+        ExecCtx: ExecutionContext,
+    {
+        let module = ctx_b
+            .get_route_mut(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+
+        let extras = module.on_chan_open_confirm_execute(&msg.port_id_on_b, &msg.chan_id_on_b)?;
+
+        let chan_end_on_b =
+            ctx_b.channel_end(&(msg.port_id_on_b.clone(), msg.chan_id_on_b.clone()))?;
+
+        // state changes
+        {
+            let port_channel_id_on_b = (msg.port_id_on_b.clone(), msg.chan_id_on_b.clone());
+            let chan_end_on_b = {
+                let mut chan_end_on_b = chan_end_on_b.clone();
+                chan_end_on_b.set_state(State::Open);
+
+                chan_end_on_b
+            };
+
+            ctx_b.store_channel(port_channel_id_on_b, chan_end_on_b)?;
+        }
+
+        // emit events and logs
+        {
+            ctx_b.log_message("success: channel open confirm".to_string());
+
+            let conn_id_on_b = chan_end_on_b.connection_hops[0].clone();
+            let port_id_on_a = chan_end_on_b.counterparty().port_id.clone();
+            let chan_id_on_a = chan_end_on_b
+                .counterparty()
+                .channel_id
+                .clone()
+                .ok_or(ContextError::ChannelError(ChannelError::Other {
+                    description:
+                        "internal error: ChannelEnd doesn't have a counterparty channel id in OpenConfirm"
+                            .to_string(),
+                }))?;
+
+            let core_event = IbcEvent::OpenConfirmChannel(OpenConfirm::new(
+                msg.port_id_on_b.clone(),
+                msg.chan_id_on_b.clone(),
+                port_id_on_a,
+                chan_id_on_a,
+                conn_id_on_b,
+            ));
+            ctx_b.emit_ibc_event(core_event);
+
+            for module_event in extras.events {
+                ctx_b.emit_ibc_event(IbcEvent::AppModule(module_event));
+            }
+
+            for log_message in extras.log {
+                ctx_b.log_message(log_message);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn chan_close_init_validate<ValCtx>(
+        ctx_a: &ValCtx,
+        module_id: ModuleId,
+        msg: MsgChannelCloseInit,
+    ) -> Result<(), ContextError>
+    where
+        ValCtx: ValidationContext,
+    {
+        chan_close_init::validate(ctx_a, &msg)?;
+
+        let module = ctx_a
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        module.on_chan_close_init_validate(&msg.port_id_on_a, &msg.chan_id_on_a)?;
+
+        Ok(())
+    }
+
+    fn chan_close_init_execute<ExecCtx>(
+        ctx_a: &mut ExecCtx,
+        module_id: ModuleId,
+        msg: MsgChannelCloseInit,
+    ) -> Result<(), ContextError>
+    where
+        ExecCtx: ExecutionContext,
+    {
+        let module = ctx_a
+            .get_route_mut(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        let extras = module.on_chan_close_init_execute(&msg.port_id_on_a, &msg.chan_id_on_a)?;
+
+        let chan_end_on_a =
+            ctx_a.channel_end(&(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()))?;
+
+        // state changes
+        {
+            let chan_end_on_a = {
+                let mut chan_end_on_a = chan_end_on_a.clone();
+                chan_end_on_a.set_state(State::Closed);
+                chan_end_on_a
+            };
+
+            let port_channel_id_on_a = (msg.port_id_on_a.clone(), msg.chan_id_on_a.clone());
+            ctx_a.store_channel(port_channel_id_on_a, chan_end_on_a)?;
+        }
+
+        // emit events and logs
+        {
+            ctx_a.log_message("success: channel close init".to_string());
+
+            let core_event = {
+                let port_id_on_b = chan_end_on_a.counterparty().port_id.clone();
+                let chan_id_on_b = chan_end_on_a
+                .counterparty()
+                .channel_id
+                .clone()
+                .ok_or(ContextError::ChannelError(ChannelError::Other {
+                    description:
+                        "internal error: ChannelEnd doesn't have a counterparty channel id in CloseInit"
+                            .to_string(),
+                }))?;
+                let conn_id_on_a = chan_end_on_a.connection_hops[0].clone();
+
+                IbcEvent::CloseInitChannel(CloseInit::new(
+                    msg.port_id_on_a.clone(),
+                    msg.chan_id_on_a.clone(),
+                    port_id_on_b,
+                    chan_id_on_b,
+                    conn_id_on_a,
+                ))
+            };
+            ctx_a.emit_ibc_event(core_event);
+
+            for module_event in extras.events {
+                ctx_a.emit_ibc_event(IbcEvent::AppModule(module_event));
+            }
+
+            for log_message in extras.log {
+                ctx_a.log_message(log_message);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn chan_close_confirm_validate<ValCtx>(
+        ctx_b: &ValCtx,
+        module_id: ModuleId,
+        msg: MsgChannelCloseConfirm,
+    ) -> Result<(), ContextError>
+    where
+        ValCtx: ValidationContext,
+    {
+        chan_close_confirm::validate(ctx_b, &msg)?;
+
+        let module = ctx_b
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        module.on_chan_close_confirm_validate(&msg.port_id_on_b, &msg.chan_id_on_b)?;
+
+        Ok(())
+    }
+
+    fn chan_close_confirm_execute<ExecCtx>(
+        ctx_b: &mut ExecCtx,
+        module_id: ModuleId,
+        msg: MsgChannelCloseConfirm,
+    ) -> Result<(), ContextError>
+    where
+        ExecCtx: ExecutionContext,
+    {
+        let module = ctx_b
+            .get_route_mut(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+        let extras = module.on_chan_close_confirm_execute(&msg.port_id_on_b, &msg.chan_id_on_b)?;
+
+        let chan_end_on_b =
+            ctx_b.channel_end(&(msg.port_id_on_b.clone(), msg.chan_id_on_b.clone()))?;
+
+        // state changes
+        {
+            let chan_end_on_b = {
+                let mut chan_end_on_b = chan_end_on_b.clone();
+                chan_end_on_b.set_state(State::Closed);
+                chan_end_on_b
+            };
+
+            let port_channel_id_on_b = (msg.port_id_on_b.clone(), msg.chan_id_on_b.clone());
+            ctx_b.store_channel(port_channel_id_on_b, chan_end_on_b)?;
+        }
+
+        // emit events and logs
+        {
+            ctx_b.log_message("success: channel close confirm".to_string());
+
+            let core_event = {
+                let port_id_on_a = chan_end_on_b.counterparty().port_id.clone();
+                let chan_id_on_a = chan_end_on_b
+                .counterparty()
+                .channel_id
+                .clone()
+                .ok_or(ContextError::ChannelError(ChannelError::Other {
+                    description:
+                        "internal error: ChannelEnd doesn't have a counterparty channel id in CloseInit"
+                            .to_string(),
+                }))?;
+                let conn_id_on_b = chan_end_on_b.connection_hops[0].clone();
+
+                IbcEvent::CloseConfirmChannel(CloseConfirm::new(
+                    msg.port_id_on_b.clone(),
+                    msg.chan_id_on_b.clone(),
+                    port_id_on_a,
+                    chan_id_on_a,
+                    conn_id_on_b,
+                ))
+            };
+            ctx_b.emit_ibc_event(core_event);
+
+            for module_event in extras.events {
+                ctx_b.emit_ibc_event(IbcEvent::AppModule(module_event));
+            }
+
+            for log_message in extras.log {
+                ctx_b.log_message(log_message);
+            }
         }
 
         Ok(())
