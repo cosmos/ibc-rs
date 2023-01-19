@@ -68,7 +68,7 @@ pub trait ClientReader {
     /// Returns the pending `ConsensusState` of the host (local) chain.
     fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ClientError>;
 
-    /// Returns a natural number, counting how many clients have been created thus far..
+    /// Returns a natural number, counting how many clients have been created thus far.
     /// The value of this counter should increase only via method `ClientKeeper::increase_client_counter`.
     fn client_counter(&self) -> Result<u64, ClientError>;
 }

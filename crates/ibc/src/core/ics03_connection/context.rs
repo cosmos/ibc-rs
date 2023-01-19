@@ -70,7 +70,8 @@ pub trait ConnectionReader {
     }
 
     /// Returns a counter on how many connections have been created thus far.
-    /// The value of this counter increases only via method `ConnectionKeeper::increase_connection_counter`.
+    /// The value of this counter should increase only via method
+    /// `ConnectionKeeper::increase_connection_counter`.
     fn connection_counter(&self) -> Result<u64, ConnectionError>;
 
     /// Validates the `ClientState` of the client on the counterparty chain.

@@ -58,8 +58,6 @@ where
         msg.client_id_on_a.clone(),
         Counterparty::new(
             msg.counterparty.client_id().clone(),
-            // Note: the counterparty connection Id passed by the relayer alternated to `None`,
-            // left for the `conn_open_try` process to set
             None,
             msg.counterparty.prefix().clone(),
         ),
@@ -120,8 +118,6 @@ pub(crate) fn process(
         msg.client_id_on_a.clone(),
         Counterparty::new(
             msg.counterparty.client_id().clone(),
-            // Note: the counterparty connection Id passed by the relayer alternated to `None`,
-            // left for the `conn_open_try` handler to set
             None,
             msg.counterparty.prefix().clone(),
         ),

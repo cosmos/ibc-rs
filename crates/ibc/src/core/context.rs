@@ -705,9 +705,6 @@ mod val_exec_ctx {
         ExecCtx: ExecutionContext,
     {
         let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
-        ctx_b.log_message(format!(
-            "success: channel open try with channel identifier: {chan_id_on_b}"
-        ));
         let module = ctx_b
             .get_route_mut(&module_id)
             .ok_or(ChannelError::RouteNotFound)?;

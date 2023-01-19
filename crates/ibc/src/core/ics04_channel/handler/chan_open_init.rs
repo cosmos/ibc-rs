@@ -74,8 +74,6 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let chan_end_on_a = ChannelEnd::new(
         State::Init,
         msg.ordering,
-        // Note: the counterparty channel Id passed by the relayer alternated to `None`,
-        // left for the `chan_open_try` handler to set
         Counterparty::new(msg.port_id_on_b.clone(), None),
         msg.connection_hops_on_a.clone(),
         msg.version_proposal.clone(),
