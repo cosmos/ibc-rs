@@ -69,7 +69,7 @@ pub trait ConnectionReader {
         pick_version(supported_versions, counterparty_candidate_versions)
     }
 
-    /// Returns a connection identifier which also shows how many connections have been created thus far.
+    /// Returns a counter on how many connections have been created thus far.
     /// The value of this counter increases only via method `ConnectionKeeper::increase_connection_counter`.
     fn connection_counter(&self) -> Result<u64, ConnectionError>;
 

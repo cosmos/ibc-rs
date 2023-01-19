@@ -156,7 +156,7 @@ pub trait ChannelReader {
         height: &Height,
     ) -> Result<Height, ChannelError>;
 
-    /// Returns a channel identifier which also shows the number of channels have been created thus far.
+    /// Returns a counter on the number of channel ids have been created thus far.
     /// The value of this counter increases only via method `ChannelKeeper::increase_channel_counter`.
     fn channel_counter(&self) -> Result<u64, ChannelError>;
 
