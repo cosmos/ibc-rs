@@ -336,14 +336,23 @@ impl Protobuf<RawCounterparty> for Counterparty {}
 impl TryFrom<RawCounterparty> for Counterparty {
     type Error = ChannelError;
 
-    fn try_from(value: RawCounterparty) -> Result<Self, Self::Error> {
-        let channel_id = Some(value.channel_id)
-            .filter(|x| !x.is_empty())
-            .map(|v| FromStr::from_str(v.as_str()))
-            .transpose()
-            .map_err(ChannelError::Identifier)?;
+    fn try_from(raw_counterparty: RawCounterparty) -> Result<Self, Self::Error> {
+        let channel_id: Option<ChannelId> = if raw_counterparty.channel_id.is_empty() {
+            None
+        } else {
+            Some(
+                raw_counterparty
+                    .channel_id
+                    .parse()
+                    .map_err(ChannelError::Identifier)?,
+            )
+        };
+
         Ok(Counterparty::new(
-            value.port_id.parse().map_err(ChannelError::Identifier)?,
+            raw_counterparty
+                .port_id
+                .parse()
+                .map_err(ChannelError::Identifier)?,
             channel_id,
         ))
     }
