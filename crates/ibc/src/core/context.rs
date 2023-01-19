@@ -580,7 +580,7 @@ mod val_exec_ctx {
         ValCtx: ValidationContext,
     {
         chan_open_init::validate(ctx_a, &msg)?;
-        let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
+        let chan_id_on_a = ChannelId::new(ctx_a.generate_channel_identifier()?);
 
         let module = ctx_a
             .get_route(&module_id)
@@ -605,7 +605,7 @@ mod val_exec_ctx {
     where
         ExecCtx: ExecutionContext,
     {
-        let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
+        let chan_id_on_a = ChannelId::new(ctx_a.generate_channel_identifier()?);
         let module = ctx_a
             .get_route_mut(&module_id)
             .ok_or(ChannelError::RouteNotFound)?;
