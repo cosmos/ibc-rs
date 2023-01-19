@@ -643,7 +643,7 @@ pub struct MockIbcStore {
     pub client_processed_heights: BTreeMap<(ClientId, Height), Height>,
 
     /// Counter for the client identifiers, necessary for `increase_client_counter` and the
-    /// `generate_client_identifier` methods.
+    /// `client_counter` methods.
     pub client_ids_counter: u64,
 
     /// Association between client ids and connection ids.
