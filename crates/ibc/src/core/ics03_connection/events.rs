@@ -294,6 +294,7 @@ mod tests {
             kind: IbcEventType,
             event: AbciEvent,
             expected_keys: Vec<&'static str>,
+            expected_values: Vec<String>,
         }
 
         let conn_id_on_a = ConnectionId::default();
@@ -306,6 +307,12 @@ mod tests {
             COUNTERPARTY_CLIENT_ID_ATTRIBUTE_KEY,
             COUNTERPARTY_CONN_ID_ATTRIBUTE_KEY,
         ];
+        let expected_values = vec![
+            conn_id_on_a.to_string(),
+            client_id_on_a.to_string(),
+            client_id_on_b.to_string(),
+            conn_id_on_b.to_string(),
+        ];
 
         let tests: Vec<Test> = vec![
             Test {
@@ -317,6 +324,11 @@ mod tests {
                 )
                 .into(),
                 expected_keys: expected_keys.clone(),
+                expected_values: expected_values
+                    .iter()
+                    .enumerate()
+                    .map(|(i, v)| if i == 3 { "".to_string() } else { v.clone() })
+                    .collect(),
             },
             Test {
                 kind: IbcEventType::OpenTryConnection,
@@ -328,6 +340,7 @@ mod tests {
                 )
                 .into(),
                 expected_keys: expected_keys.clone(),
+                expected_values: expected_values.iter().rev().cloned().collect(),
             },
             Test {
                 kind: IbcEventType::OpenAckConnection,
@@ -339,12 +352,14 @@ mod tests {
                 )
                 .into(),
                 expected_keys: expected_keys.clone(),
+                expected_values: expected_values.clone(),
             },
             Test {
                 kind: IbcEventType::OpenConfirmConnection,
                 event: OpenConfirm::new(conn_id_on_b, client_id_on_b, conn_id_on_a, client_id_on_a)
                     .into(),
                 expected_keys: expected_keys.clone(),
+                expected_values: expected_values.iter().rev().cloned().collect(),
             },
         ];
 
@@ -352,7 +367,20 @@ mod tests {
             assert_eq!(t.kind.as_str(), t.event.kind);
             assert_eq!(t.expected_keys.len(), t.event.attributes.len());
             for (i, key) in t.expected_keys.iter().enumerate() {
-                assert_eq!(t.event.attributes[i].key, *key);
+                assert_eq!(
+                    t.event.attributes[i].key,
+                    *key,
+                    "key mismatch for {:?}",
+                    t.kind.as_str()
+                );
+            }
+            for (i, value) in t.expected_values.iter().enumerate() {
+                assert_eq!(
+                    t.event.attributes[i].value,
+                    *value,
+                    "value mismatch for {:?}",
+                    t.kind.as_str()
+                );
             }
         }
     }

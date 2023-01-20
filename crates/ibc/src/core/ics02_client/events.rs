@@ -394,7 +394,7 @@ impl From<UpgradeClient> for abci::Event {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mock::client_state::client_type as mock_client_type;
+    use crate::mock::client_state::{client_type as mock_client_type, MOCK_CLIENT_TYPE};
     use crate::mock::header::MockHeader;
     use ibc_proto::google::protobuf::Any;
     use tendermint::abci::Event as AbciEvent;
@@ -405,6 +405,7 @@ mod tests {
             kind: IbcEventType,
             event: AbciEvent,
             expected_keys: Vec<&'static str>,
+            expected_values: Vec<String>,
         }
 
         let client_type = mock_client_type();
@@ -419,6 +420,17 @@ mod tests {
             CONSENSUS_HEIGHTS_ATTRIBUTE_KEY,
             HEADER_ATTRIBUTE_KEY,
         ];
+        let expected_values = vec![
+            client_id.to_string(),
+            MOCK_CLIENT_TYPE.to_string(),
+            consensus_height.to_string(),
+            consensus_heights
+                .iter()
+                .map(|h| h.to_string())
+                .collect::<Vec<_>>()
+                .join(","),
+            String::from_utf8(hex::encode(header.clone().value)).unwrap(),
+        ];
 
         let tests: Vec<Test> = vec![
             Test {
@@ -426,6 +438,7 @@ mod tests {
                 event: CreateClient::new(client_id.clone(), client_type.clone(), consensus_height)
                     .into(),
                 expected_keys: expected_keys[0..3].to_vec(),
+                expected_values: expected_values[0..3].to_vec(),
             },
             Test {
                 kind: IbcEventType::UpdateClient,
@@ -438,17 +451,20 @@ mod tests {
                 )
                 .into(),
                 expected_keys: expected_keys.clone(),
+                expected_values: expected_values.clone(),
             },
             Test {
                 kind: IbcEventType::UpgradeClient,
                 event: UpgradeClient::new(client_id.clone(), client_type.clone(), consensus_height)
                     .into(),
                 expected_keys: expected_keys[0..3].to_vec(),
+                expected_values: expected_values[0..3].to_vec(),
             },
             Test {
                 kind: IbcEventType::ClientMisbehaviour,
                 event: ClientMisbehaviour::new(client_id, client_type).into(),
                 expected_keys: expected_keys[0..2].to_vec(),
+                expected_values: expected_values[0..2].to_vec(),
             },
         ];
 
@@ -456,7 +472,18 @@ mod tests {
             assert_eq!(t.event.kind, t.kind.as_str());
             assert_eq!(t.expected_keys.len(), t.event.attributes.len());
             for (i, key) in t.expected_keys.iter().enumerate() {
-                assert_eq!(t.event.attributes[i].key, *key);
+                assert_eq!(
+                    t.event.attributes[i].key, *key,
+                    "key mismatch for {:?}",
+                    t.kind
+                );
+            }
+            for (i, value) in t.expected_values.iter().enumerate() {
+                assert_eq!(
+                    t.event.attributes[i].value, *value,
+                    "value mismatch for {:?}",
+                    t.kind
+                );
             }
         }
     }

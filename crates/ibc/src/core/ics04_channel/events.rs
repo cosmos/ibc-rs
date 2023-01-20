@@ -1075,6 +1075,7 @@ mod tests {
             kind: IbcEventType,
             event: AbciEvent,
             expected_keys: Vec<&'static str>,
+            expected_values: Vec<String>,
         }
 
         let port_id = PortId::default();
@@ -1091,6 +1092,14 @@ mod tests {
             CONNECTION_ID_ATTRIBUTE_KEY,
             VERSION_ATTRIBUTE_KEY,
         ];
+        let expected_values = vec![
+            port_id.to_string(),
+            channel_id.to_string(),
+            counterparty_port_id.to_string(),
+            counterparty_channel_id.to_string(),
+            connection_id.to_string(),
+            version.to_string(),
+        ];
 
         let tests: Vec<Test> = vec![
             Test {
@@ -1104,6 +1113,11 @@ mod tests {
                 )
                 .into(),
                 expected_keys: expected_keys.clone(),
+                expected_values: expected_values
+                    .iter()
+                    .enumerate()
+                    .map(|(i, v)| if i == 3 { "".to_string() } else { v.clone() })
+                    .collect(),
             },
             Test {
                 kind: IbcEventType::OpenTryChannel,
@@ -1117,6 +1131,7 @@ mod tests {
                 )
                 .into(),
                 expected_keys: expected_keys.clone(),
+                expected_values: expected_values.clone(),
             },
             Test {
                 kind: IbcEventType::OpenAckChannel,
@@ -1129,6 +1144,7 @@ mod tests {
                 )
                 .into(),
                 expected_keys: expected_keys[0..5].to_vec(),
+                expected_values: expected_values[0..5].to_vec(),
             },
             Test {
                 kind: IbcEventType::OpenConfirmChannel,
@@ -1141,6 +1157,7 @@ mod tests {
                 )
                 .into(),
                 expected_keys: expected_keys[0..5].to_vec(),
+                expected_values: expected_values[0..5].to_vec(),
             },
             Test {
                 kind: IbcEventType::CloseInitChannel,
@@ -1153,6 +1170,7 @@ mod tests {
                 )
                 .into(),
                 expected_keys: expected_keys[0..5].to_vec(),
+                expected_values: expected_values[0..5].to_vec(),
             },
             Test {
                 kind: IbcEventType::CloseConfirmChannel,
@@ -1165,6 +1183,7 @@ mod tests {
                 )
                 .into(),
                 expected_keys: expected_keys[0..5].to_vec(),
+                expected_values: expected_values[0..5].to_vec(),
             },
         ];
 
@@ -1172,7 +1191,20 @@ mod tests {
             assert_eq!(t.kind.as_str(), t.event.kind);
             assert_eq!(t.expected_keys.len(), t.event.attributes.len());
             for (i, key) in t.expected_keys.iter().enumerate() {
-                assert_eq!(t.event.attributes[i].key, *key);
+                assert_eq!(
+                    t.event.attributes[i].key,
+                    *key,
+                    "key mismatch for {:?}",
+                    t.kind.as_str()
+                );
+            }
+            for (i, value) in t.expected_values.iter().enumerate() {
+                assert_eq!(
+                    t.event.attributes[i].value,
+                    *value,
+                    "value mismatch for {:?}",
+                    t.kind.as_str()
+                );
             }
         }
     }
