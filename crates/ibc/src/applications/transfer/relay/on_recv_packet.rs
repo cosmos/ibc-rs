@@ -4,15 +4,15 @@ use crate::applications::transfer::events::DenomTraceEvent;
 use crate::applications::transfer::packet::PacketData;
 use crate::applications::transfer::{is_receiver_chain_source, TracePrefix};
 use crate::core::ics04_channel::packet::Packet;
-use crate::core::ics26_routing::context::{ModuleOutputBuilder, WriteFn};
+use crate::core::ics26_routing::context::ModuleOutputBuilder;
 use crate::prelude::*;
 
 pub fn process_recv_packet<Ctx: 'static + TokenTransferContext>(
-    ctx: &Ctx,
+    ctx: &mut Ctx,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
     data: PacketData,
-) -> Result<Box<WriteFn>, TokenTransferError> {
+) -> Result<(), TokenTransferError> {
     if !ctx.is_receive_enabled() {
         return Err(TokenTransferError::ReceiveDisabled);
     }
@@ -39,11 +39,7 @@ pub fn process_recv_packet<Ctx: 'static + TokenTransferContext>(
         let escrow_address =
             ctx.get_channel_escrow_address(&packet.port_on_b, &packet.chan_on_b)?;
 
-        Ok(Box::new(move |ctx| {
-            let ctx = ctx.downcast_mut::<Ctx>().unwrap();
-            ctx.send_coins(&escrow_address, &receiver_account, &coin)
-                .map_err(|e| e.to_string())
-        }))
+        ctx.send_coins(&escrow_address, &receiver_account, &coin)?;
     } else {
         // sender chain is the source, mint vouchers
         let prefix = TracePrefix::new(packet.port_on_b.clone(), packet.chan_on_b.clone());
@@ -59,10 +55,8 @@ pub fn process_recv_packet<Ctx: 'static + TokenTransferContext>(
         };
         output.emit(denom_trace_event.into());
 
-        Ok(Box::new(move |ctx| {
-            let ctx = ctx.downcast_mut::<Ctx>().unwrap();
-            ctx.mint_coins(&receiver_account, &coin)
-                .map_err(|e| e.to_string())
-        }))
+        ctx.mint_coins(&receiver_account, &coin)?;
     }
+
+    Ok(())
 }

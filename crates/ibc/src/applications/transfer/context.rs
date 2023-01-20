@@ -18,7 +18,7 @@ use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as Generi
 use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use crate::core::ics26_routing::context::{ModuleOutputBuilder, OnRecvPacketAck};
+use crate::core::ics26_routing::context::ModuleOutputBuilder;
 use crate::prelude::*;
 use crate::signer::Signer;
 
@@ -254,30 +254,31 @@ pub fn on_chan_close_confirm(
 }
 
 pub fn on_recv_packet<Ctx: 'static + TokenTransferContext>(
-    ctx: &Ctx,
+    ctx: &mut Ctx,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
     _relayer: &Signer,
-) -> OnRecvPacketAck {
+) -> GenericAcknowledgement {
     let data = match serde_json::from_slice::<PacketData>(&packet.data) {
         Ok(data) => data,
         Err(_) => {
-            return OnRecvPacketAck::Failed(Box::new(Acknowledgement::Error(
-                TokenTransferError::PacketDataDeserialization.to_string(),
-            )));
+            let ack =
+                Acknowledgement::Error(TokenTransferError::PacketDataDeserialization.to_string());
+            // TODO: Make sure that this is the right way to serialize (vs using serde)
+            return ack.into();
         }
     };
 
-    let ack = match process_recv_packet(ctx, output, packet, data.clone()) {
-        Ok(write_fn) => OnRecvPacketAck::Successful(Box::new(Acknowledgement::success()), write_fn),
-        Err(e) => OnRecvPacketAck::Failed(Box::new(Acknowledgement::from_error(e))),
+    let (ack, success) = match process_recv_packet(ctx, output, packet, data.clone()) {
+        Ok(()) => (Acknowledgement::success().into(), true),
+        Err(e) => (Acknowledgement::from_error(e).into(), false),
     };
 
     let recv_event = RecvEvent {
         receiver: data.receiver,
         denom: data.token.denom,
         amount: data.token.amount,
-        success: ack.is_successful(),
+        success,
     };
     output.emit(recv_event.into());
 

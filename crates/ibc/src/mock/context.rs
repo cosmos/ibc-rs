@@ -1727,13 +1727,13 @@ mod tests {
     use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::error::ChannelError;
     use crate::core::ics04_channel::handler::ModuleExtras;
+    use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
     use crate::core::ics26_routing::context::{
-        Acknowledgement, Module, ModuleId, ModuleOutputBuilder, OnRecvPacketAck, Router,
-        RouterBuilder,
+        Module, ModuleId, ModuleOutputBuilder, Router, RouterBuilder,
     };
     use crate::mock::context::MockContext;
     use crate::mock::context::MockRouterBuilder;
@@ -1884,17 +1884,6 @@ mod tests {
 
     #[test]
     fn test_router() {
-        #[derive(Default)]
-        struct MockAck(Vec<u8>);
-
-        impl AsRef<[u8]> for MockAck {
-            fn as_ref(&self) -> &[u8] {
-                self.0.as_slice()
-            }
-        }
-
-        impl Acknowledgement for MockAck {}
-
         #[derive(Debug, Default)]
         struct FooModule {
             counter: usize,
@@ -1978,19 +1967,14 @@ mod tests {
             }
 
             fn on_recv_packet(
-                &self,
+                &mut self,
                 _output: &mut ModuleOutputBuilder,
                 _packet: &Packet,
                 _relayer: &Signer,
-            ) -> OnRecvPacketAck {
-                OnRecvPacketAck::Successful(
-                    Box::<MockAck>::default(),
-                    Box::new(|module| {
-                        let module = module.downcast_mut::<FooModule>().unwrap();
-                        module.counter += 1;
-                        Ok(())
-                    }),
-                )
+            ) -> Acknowledgement {
+                self.counter += 1;
+
+                Acknowledgement::default()
             }
         }
 
@@ -2073,6 +2057,15 @@ mod tests {
             ) -> Result<(ModuleExtras, Version), ChannelError> {
                 Ok((ModuleExtras::empty(), counterparty_version.clone()))
             }
+
+            fn on_recv_packet(
+                &mut self,
+                _output: &mut ModuleOutputBuilder,
+                _packet: &Packet,
+                _relayer: &Signer,
+            ) -> Acknowledgement {
+                Acknowledgement::default()
+            }
         }
 
         let r = MockRouterBuilder::default()
@@ -2101,20 +2094,9 @@ mod tests {
             (module_id, result)
         };
 
-        let results = vec![
+        let _results = vec![
             on_recv_packet_result("foomodule"),
             on_recv_packet_result("barmodule"),
         ];
-        results
-            .into_iter()
-            .filter_map(|(mid, result)| match result {
-                OnRecvPacketAck::Nil(write_fn) | OnRecvPacketAck::Successful(_, write_fn) => {
-                    Some((mid, write_fn))
-                }
-                _ => None,
-            })
-            .for_each(|(mid, write_fn)| {
-                write_fn(ctx.router.get_route_mut(&mid).unwrap().as_any_mut()).unwrap()
-            });
     }
 }

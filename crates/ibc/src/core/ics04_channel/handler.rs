@@ -9,13 +9,12 @@ use crate::core::ics04_channel::msgs::ChannelMsg;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::{msgs::PacketMsg, packet::PacketResult};
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use crate::core::ics26_routing::context::{
-    Acknowledgement, ModuleId, ModuleOutputBuilder, OnRecvPacketAck, Router, RouterContext,
-};
+use crate::core::ics26_routing::context::{ModuleId, ModuleOutputBuilder, Router, RouterContext};
 use crate::handler::{HandlerOutput, HandlerOutputBuilder};
 
 use super::channel::Counterparty;
 use super::events::{CloseConfirm, CloseInit, OpenAck, OpenConfirm, OpenInit, OpenTry};
+use super::msgs::acknowledgement::Acknowledgement;
 use super::Version;
 
 pub mod acknowledgement;
@@ -290,21 +289,8 @@ fn do_packet_callback(
 
     match msg {
         PacketMsg::Recv(msg) => {
-            let result = cb.on_recv_packet(module_output, &msg.packet, &msg.signer);
-            match result {
-                OnRecvPacketAck::Nil(write_fn) => {
-                    write_fn(cb.as_any_mut()).map_err(|e| PacketError::AppModule { description: e })
-                }
-                OnRecvPacketAck::Successful(ack, write_fn) => {
-                    write_fn(cb.as_any_mut())
-                        .map_err(|e| PacketError::AppModule { description: e })?;
-
-                    process_write_ack(ctx, msg.packet.clone(), ack.as_ref(), core_output)
-                }
-                OnRecvPacketAck::Failed(ack) => {
-                    process_write_ack(ctx, msg.packet.clone(), ack.as_ref(), core_output)
-                }
-            }
+            let ack = cb.on_recv_packet(module_output, &msg.packet, &msg.signer);
+            process_write_ack(ctx, msg.packet.clone(), ack, core_output)
         }
         PacketMsg::Ack(msg) => cb.on_acknowledgement_packet(
             module_output,
@@ -322,14 +308,14 @@ fn do_packet_callback(
 fn process_write_ack(
     ctx: &mut impl RouterContext,
     packet: Packet,
-    acknowledgement: &dyn Acknowledgement,
+    acknowledgement: Acknowledgement,
     core_output: &mut HandlerOutputBuilder<()>,
 ) -> Result<(), PacketError> {
     let HandlerOutput {
         result,
         log,
         events,
-    } = write_acknowledgement::process(ctx, packet, acknowledgement.as_ref().to_vec().into())?;
+    } = write_acknowledgement::process(ctx, packet, acknowledgement)?;
 
     // store write ack result
     ctx.store_packet_result(result)?;

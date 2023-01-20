@@ -47,6 +47,19 @@ impl AsRef<[u8]> for Acknowledgement {
     }
 }
 
+impl From<&[u8]> for Acknowledgement {
+    fn from(bytes: &[u8]) -> Self {
+        Self(bytes.to_vec())
+    }
+}
+
+#[cfg(any(test, feature = "mocks"))]
+impl Default for Acknowledgement {
+    fn default() -> Self {
+        Self(vec![1])
+    }
+}
+
 ///
 /// Message definition for packet acknowledgements.
 ///

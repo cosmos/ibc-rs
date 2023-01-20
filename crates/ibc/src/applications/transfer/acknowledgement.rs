@@ -1,7 +1,7 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 
 use super::error::TokenTransferError;
-use crate::core::ics26_routing::context::Acknowledgement as AckTrait;
+use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as GenericAcknowledgement;
 use crate::prelude::*;
 
 /// A string constant included in error acknowledgements.
@@ -59,7 +59,11 @@ impl Display for Acknowledgement {
     }
 }
 
-impl AckTrait for Acknowledgement {}
+impl From<Acknowledgement> for GenericAcknowledgement {
+    fn from(ack: Acknowledgement) -> Self {
+        ack.as_ref().into()
+    }
+}
 
 #[cfg(test)]
 mod test {
