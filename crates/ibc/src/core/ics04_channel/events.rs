@@ -1058,3 +1058,122 @@ impl TryFrom<TimeoutPacket> for abci::Event {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use channel_attributes::{
+        CHANNEL_ID_ATTRIBUTE_KEY, CONNECTION_ID_ATTRIBUTE_KEY,
+        COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY, COUNTERPARTY_PORT_ID_ATTRIBUTE_KEY,
+        PORT_ID_ATTRIBUTE_KEY, VERSION_ATTRIBUTE_KEY,
+    };
+    use tendermint::abci::Event as AbciEvent;
+
+    #[test]
+    fn ibc_to_abci_channel_events() {
+        struct Test {
+            kind: IbcEventType,
+            event: AbciEvent,
+            expected_keys: Vec<&'static str>,
+        }
+
+        let port_id = PortId::default();
+        let channel_id = ChannelId::default();
+        let connection_id = ConnectionId::default();
+        let counterparty_port_id = PortId::default();
+        let counterparty_channel_id = ChannelId::new(1);
+        let version = Version::default();
+        let expected_keys = vec![
+            PORT_ID_ATTRIBUTE_KEY,
+            CHANNEL_ID_ATTRIBUTE_KEY,
+            COUNTERPARTY_PORT_ID_ATTRIBUTE_KEY,
+            COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY,
+            CONNECTION_ID_ATTRIBUTE_KEY,
+            VERSION_ATTRIBUTE_KEY,
+        ];
+
+        let tests: Vec<Test> = vec![
+            Test {
+                kind: IbcEventType::OpenInitChannel,
+                event: OpenInit::new(
+                    port_id.clone(),
+                    channel_id.clone(),
+                    counterparty_port_id.clone(),
+                    connection_id.clone(),
+                    version.clone(),
+                )
+                .into(),
+                expected_keys: expected_keys.clone(),
+            },
+            Test {
+                kind: IbcEventType::OpenTryChannel,
+                event: OpenTry::new(
+                    port_id.clone(),
+                    channel_id.clone(),
+                    counterparty_port_id.clone(),
+                    counterparty_channel_id.clone(),
+                    connection_id.clone(),
+                    version,
+                )
+                .into(),
+                expected_keys: expected_keys.clone(),
+            },
+            Test {
+                kind: IbcEventType::OpenAckChannel,
+                event: OpenAck::new(
+                    port_id.clone(),
+                    channel_id.clone(),
+                    counterparty_port_id.clone(),
+                    counterparty_channel_id.clone(),
+                    connection_id.clone(),
+                )
+                .into(),
+                expected_keys: expected_keys[0..5].to_vec(),
+            },
+            Test {
+                kind: IbcEventType::OpenConfirmChannel,
+                event: OpenConfirm::new(
+                    port_id.clone(),
+                    channel_id.clone(),
+                    counterparty_port_id.clone(),
+                    counterparty_channel_id.clone(),
+                    connection_id.clone(),
+                )
+                .into(),
+                expected_keys: expected_keys[0..5].to_vec(),
+            },
+            Test {
+                kind: IbcEventType::CloseInitChannel,
+                event: CloseInit::new(
+                    port_id.clone(),
+                    channel_id.clone(),
+                    counterparty_port_id.clone(),
+                    counterparty_channel_id.clone(),
+                    connection_id.clone(),
+                )
+                .into(),
+                expected_keys: expected_keys[0..5].to_vec(),
+            },
+            Test {
+                kind: IbcEventType::CloseConfirmChannel,
+                event: CloseConfirm::new(
+                    port_id,
+                    channel_id,
+                    counterparty_port_id,
+                    counterparty_channel_id,
+                    connection_id,
+                )
+                .into(),
+                expected_keys: expected_keys[0..5].to_vec(),
+            },
+        ];
+
+        for t in tests {
+            assert_eq!(t.kind.as_str(), t.event.kind);
+            assert_eq!(t.expected_keys.len(), t.event.attributes.len());
+            for (i, key) in t.expected_keys.iter().enumerate() {
+                assert_eq!(t.event.attributes[i].key, *key);
+            }
+        }
+    }
+}

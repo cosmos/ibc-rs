@@ -281,3 +281,79 @@ impl From<OpenConfirm> for abci::Event {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::mock::client_state::client_type as mock_client_type;
+    use tendermint::abci::Event as AbciEvent;
+
+    #[test]
+    fn ibc_to_abci_connection_events() {
+        struct Test {
+            kind: IbcEventType,
+            event: AbciEvent,
+            expected_keys: Vec<&'static str>,
+        }
+
+        let conn_id_on_a = ConnectionId::default();
+        let client_id_on_a = ClientId::default();
+        let conn_id_on_b = ConnectionId::new(1);
+        let client_id_on_b = ClientId::new(mock_client_type(), 0).unwrap();
+        let expected_keys = vec![
+            CONN_ID_ATTRIBUTE_KEY,
+            CLIENT_ID_ATTRIBUTE_KEY,
+            COUNTERPARTY_CLIENT_ID_ATTRIBUTE_KEY,
+            COUNTERPARTY_CONN_ID_ATTRIBUTE_KEY,
+        ];
+
+        let tests: Vec<Test> = vec![
+            Test {
+                kind: IbcEventType::OpenInitConnection,
+                event: OpenInit::new(
+                    conn_id_on_a.clone(),
+                    client_id_on_a.clone(),
+                    client_id_on_b.clone(),
+                )
+                .into(),
+                expected_keys: expected_keys.clone(),
+            },
+            Test {
+                kind: IbcEventType::OpenTryConnection,
+                event: OpenTry::new(
+                    conn_id_on_b.clone(),
+                    client_id_on_b.clone(),
+                    conn_id_on_a.clone(),
+                    client_id_on_a.clone(),
+                )
+                .into(),
+                expected_keys: expected_keys.clone(),
+            },
+            Test {
+                kind: IbcEventType::OpenAckConnection,
+                event: OpenAck::new(
+                    conn_id_on_a.clone(),
+                    client_id_on_a.clone(),
+                    conn_id_on_b.clone(),
+                    client_id_on_b.clone(),
+                )
+                .into(),
+                expected_keys: expected_keys.clone(),
+            },
+            Test {
+                kind: IbcEventType::OpenConfirmConnection,
+                event: OpenConfirm::new(conn_id_on_b, client_id_on_b, conn_id_on_a, client_id_on_a)
+                    .into(),
+                expected_keys: expected_keys.clone(),
+            },
+        ];
+
+        for t in tests {
+            assert_eq!(t.kind.as_str(), t.event.kind);
+            assert_eq!(t.expected_keys.len(), t.event.attributes.len());
+            for (i, key) in t.expected_keys.iter().enumerate() {
+                assert_eq!(t.event.attributes[i].key, *key);
+            }
+        }
+    }
+}

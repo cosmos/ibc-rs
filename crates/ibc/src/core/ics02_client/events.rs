@@ -390,3 +390,74 @@ impl From<UpgradeClient> for abci::Event {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::mock::client_state::client_type as mock_client_type;
+    use crate::mock::header::MockHeader;
+    use ibc_proto::google::protobuf::Any;
+    use tendermint::abci::Event as AbciEvent;
+
+    #[test]
+    fn ibc_to_abci_client_events() {
+        struct Test {
+            kind: IbcEventType,
+            event: AbciEvent,
+            expected_keys: Vec<&'static str>,
+        }
+
+        let client_type = mock_client_type();
+        let client_id = ClientId::new(client_type.clone(), 0).unwrap();
+        let consensus_height = Height::new(0, 10).unwrap();
+        let consensus_heights = vec![Height::new(0, 5).unwrap(), Height::new(0, 7).unwrap()];
+        let header: Any = MockHeader::new(consensus_height).into();
+        let expected_keys = vec![
+            CLIENT_ID_ATTRIBUTE_KEY,
+            CLIENT_TYPE_ATTRIBUTE_KEY,
+            CONSENSUS_HEIGHT_ATTRIBUTE_KEY,
+            CONSENSUS_HEIGHTS_ATTRIBUTE_KEY,
+            HEADER_ATTRIBUTE_KEY,
+        ];
+
+        let tests: Vec<Test> = vec![
+            Test {
+                kind: IbcEventType::CreateClient,
+                event: CreateClient::new(client_id.clone(), client_type.clone(), consensus_height)
+                    .into(),
+                expected_keys: expected_keys[0..3].to_vec(),
+            },
+            Test {
+                kind: IbcEventType::UpdateClient,
+                event: UpdateClient::new(
+                    client_id.clone(),
+                    client_type.clone(),
+                    consensus_height,
+                    consensus_heights,
+                    header,
+                )
+                .into(),
+                expected_keys: expected_keys.clone(),
+            },
+            Test {
+                kind: IbcEventType::UpgradeClient,
+                event: UpgradeClient::new(client_id.clone(), client_type.clone(), consensus_height)
+                    .into(),
+                expected_keys: expected_keys[0..3].to_vec(),
+            },
+            Test {
+                kind: IbcEventType::ClientMisbehaviour,
+                event: ClientMisbehaviour::new(client_id, client_type).into(),
+                expected_keys: expected_keys[0..2].to_vec(),
+            },
+        ];
+
+        for t in tests {
+            assert_eq!(t.event.kind, t.kind.as_str());
+            assert_eq!(t.expected_keys.len(), t.event.attributes.len());
+            for (i, key) in t.expected_keys.iter().enumerate() {
+                assert_eq!(t.event.attributes[i].key, *key);
+            }
+        }
+    }
+}
