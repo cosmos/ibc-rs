@@ -247,7 +247,7 @@ mod tests {
         let context = MockContext::default();
 
         let msg_conn_init =
-            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init()).unwrap();
+            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init(None)).unwrap();
 
         let conn_end = ConnectionEnd::new(
             ConnectionState::Open,

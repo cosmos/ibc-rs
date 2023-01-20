@@ -92,10 +92,12 @@ pub mod test_util {
 
     /// Returns a dummy message, for testing only.
     /// Other unit tests may import this if they depend on a MsgConnectionOpenInit.
-    pub fn get_dummy_raw_msg_conn_open_init() -> RawMsgConnectionOpenInit {
+    pub fn get_dummy_raw_msg_conn_open_init(
+        counterparty_conn_id: Option<u64>,
+    ) -> RawMsgConnectionOpenInit {
         RawMsgConnectionOpenInit {
             client_id: ClientId::default().to_string(),
-            counterparty: Some(get_dummy_raw_counterparty()),
+            counterparty: Some(get_dummy_raw_counterparty(counterparty_conn_id)),
             version: Some(Version::default().into()),
             delay_period: 0,
             signer: get_dummy_bech32_account(),
@@ -125,7 +127,7 @@ mod tests {
             want_pass: bool,
         }
 
-        let default_init_msg = get_dummy_raw_msg_conn_open_init();
+        let default_init_msg = get_dummy_raw_msg_conn_open_init(None);
 
         let tests: Vec<Test> = vec![
             Test {
@@ -148,7 +150,7 @@ mod tests {
                         connection_id:
                             "abcdefghijksdffjssdkflweldflsfladfsfwjkrekcmmsdfsdfjflddmnopqrstu"
                                 .to_string(),
-                        ..get_dummy_raw_counterparty()
+                        ..get_dummy_raw_counterparty(None)
                     }),
                     ..default_init_msg
                 },
@@ -174,11 +176,33 @@ mod tests {
 
     #[test]
     fn to_and_from() {
-        let raw = get_dummy_raw_msg_conn_open_init();
+        let raw = get_dummy_raw_msg_conn_open_init(None);
         let msg = MsgConnectionOpenInit::try_from(raw.clone()).unwrap();
         let raw_back = RawMsgConnectionOpenInit::from(msg.clone());
         let msg_back = MsgConnectionOpenInit::try_from(raw_back.clone()).unwrap();
         assert_eq!(raw, raw_back);
         assert_eq!(msg, msg_back);
+
+        // Check if handler sets counterparty connection id to `None`
+        // in case relayer passes `MsgConnectionOpenInit` message with it set to `Some(_)`.
+        let raw_with_counterpary_conn_id_some = get_dummy_raw_msg_conn_open_init(None);
+        let msg_with_counterpary_conn_id_some =
+            MsgConnectionOpenInit::try_from(raw_with_counterpary_conn_id_some).unwrap();
+        let raw_with_counterpary_conn_id_some_back =
+            RawMsgConnectionOpenInit::from(msg_with_counterpary_conn_id_some.clone());
+        let msg_with_counterpary_conn_id_some_back =
+            MsgConnectionOpenInit::try_from(raw_with_counterpary_conn_id_some_back.clone())
+                .unwrap();
+        assert_eq!(
+            raw_with_counterpary_conn_id_some_back
+                .counterparty
+                .unwrap()
+                .connection_id,
+            "".to_string()
+        );
+        assert_eq!(
+            msg_with_counterpary_conn_id_some,
+            msg_with_counterpary_conn_id_some_back
+        );
     }
 }
