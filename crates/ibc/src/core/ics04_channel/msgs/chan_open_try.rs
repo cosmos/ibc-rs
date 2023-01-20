@@ -122,7 +122,7 @@ pub mod test_util {
         RawMsgChannelOpenTry {
             port_id: PortId::default().to_string(),
             previous_channel_id: ChannelId::default().to_string(),
-            channel: Some(get_dummy_raw_channel_end(ChannelId::default().to_string())),
+            channel: Some(get_dummy_raw_channel_end(Some(0))),
             counterparty_version: "".to_string(),
             proof_init: get_dummy_proof(),
             proof_height: Some(Height {

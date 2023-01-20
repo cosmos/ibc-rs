@@ -284,8 +284,8 @@ impl ConnectionId {
     /// let conn_id = ConnectionId::new(11);
     /// assert_eq!(&conn_id, "connection-11");
     /// ```
-    pub fn new(counter: u64) -> Self {
-        let id = format!("{}-{}", Self::prefix(), counter);
+    pub fn new(identifier: u64) -> Self {
+        let id = format!("{}-{}", Self::prefix(), identifier);
         Self::from_str(id.as_str()).unwrap()
     }
 
@@ -430,8 +430,8 @@ impl ChannelId {
     /// let chan_id = ChannelId::new(27);
     /// assert_eq!(chan_id.to_string(), "channel-27");
     /// ```
-    pub fn new(counter: u64) -> Self {
-        let id = format!("{}{}", Self::PREFIX, counter);
+    pub fn new(identifier: u64) -> Self {
+        let id = format!("{}{}", Self::PREFIX, identifier);
         Self(id)
     }
 
