@@ -14,7 +14,7 @@ use crate::core::ics04_channel::context::{ChannelKeeper, SendPacketReader};
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::handler::send_packet::SendPacketResult;
 use crate::core::ics04_channel::handler::ModuleExtras;
-use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as GenericAcknowledgement;
+use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as AcknowledgementBytes;
 use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
@@ -258,7 +258,7 @@ pub fn on_recv_packet<Ctx: 'static + TokenTransferContext>(
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
     _relayer: &Signer,
-) -> GenericAcknowledgement {
+) -> AcknowledgementBytes {
     let data = match serde_json::from_slice::<PacketData>(&packet.data) {
         Ok(data) => data,
         Err(_) => {
@@ -288,7 +288,7 @@ pub fn on_acknowledgement_packet(
     ctx: &mut impl TokenTransferContext,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
-    acknowledgement: &GenericAcknowledgement,
+    acknowledgement: &AcknowledgementBytes,
     _relayer: &Signer,
 ) -> Result<(), TokenTransferError> {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
