@@ -44,8 +44,11 @@ impl Acknowledgement {
 impl AsRef<[u8]> for Acknowledgement {
     fn as_ref(&self) -> &[u8] {
         match self {
-            Acknowledgement::Success(_) => ACK_SUCCESS_B64.as_bytes(),
-            Acknowledgement::Error(s) => s.as_bytes(),
+            Acknowledgement::Success(_) => r#"{"result":"AQ=="}"#.as_bytes(),
+            Acknowledgement::Error(_) => {
+                r#"{"error":"error handling packet on destination chain: see events for details"}"#
+                    .as_bytes()
+            }
         }
     }
 }

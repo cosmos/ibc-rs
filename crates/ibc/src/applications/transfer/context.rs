@@ -264,7 +264,6 @@ pub fn on_recv_packet<Ctx: 'static + TokenTransferContext>(
         Err(_) => {
             let ack =
                 Acknowledgement::Error(TokenTransferError::PacketDataDeserialization.to_string());
-            // TODO: Make sure that this is the right way to serialize (vs using serde)
             return ack.into();
         }
     };
