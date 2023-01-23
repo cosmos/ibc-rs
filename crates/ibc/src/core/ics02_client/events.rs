@@ -394,7 +394,7 @@ impl From<UpgradeClient> for abci::Event {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mock::client_state::{client_type as mock_client_type, MOCK_CLIENT_TYPE};
+    use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::header::MockHeader;
     use ibc_proto::google::protobuf::Any;
     use tendermint::abci::Event as AbciEvent;
@@ -414,15 +414,15 @@ mod tests {
         let consensus_heights = vec![Height::new(0, 5).unwrap(), Height::new(0, 7).unwrap()];
         let header: Any = MockHeader::new(consensus_height).into();
         let expected_keys = vec![
-            CLIENT_ID_ATTRIBUTE_KEY,
-            CLIENT_TYPE_ATTRIBUTE_KEY,
-            CONSENSUS_HEIGHT_ATTRIBUTE_KEY,
-            CONSENSUS_HEIGHTS_ATTRIBUTE_KEY,
-            HEADER_ATTRIBUTE_KEY,
+            "client_id",
+            "client_type",
+            "consensus_height",
+            "consensus_heights",
+            "header",
         ];
         let expected_values = vec![
             client_id.to_string(),
-            MOCK_CLIENT_TYPE.to_string(),
+            "9999-mock".to_string(),
             consensus_height.to_string(),
             consensus_heights
                 .iter()

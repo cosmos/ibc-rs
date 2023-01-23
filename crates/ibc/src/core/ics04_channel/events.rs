@@ -1062,11 +1062,6 @@ impl TryFrom<TimeoutPacket> for abci::Event {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use channel_attributes::{
-        CHANNEL_ID_ATTRIBUTE_KEY, CONNECTION_ID_ATTRIBUTE_KEY,
-        COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY, COUNTERPARTY_PORT_ID_ATTRIBUTE_KEY,
-        PORT_ID_ATTRIBUTE_KEY, VERSION_ATTRIBUTE_KEY,
-    };
     use tendermint::abci::Event as AbciEvent;
 
     #[test]
@@ -1085,12 +1080,12 @@ mod tests {
         let counterparty_channel_id = ChannelId::new(1);
         let version = Version::default();
         let expected_keys = vec![
-            PORT_ID_ATTRIBUTE_KEY,
-            CHANNEL_ID_ATTRIBUTE_KEY,
-            COUNTERPARTY_PORT_ID_ATTRIBUTE_KEY,
-            COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY,
-            CONNECTION_ID_ATTRIBUTE_KEY,
-            VERSION_ATTRIBUTE_KEY,
+            "port_id",
+            "channel_id",
+            "counterparty_port_id",
+            "counterparty_channel_id",
+            "connection_id",
+            "version",
         ];
         let expected_values = vec![
             port_id.to_string(),

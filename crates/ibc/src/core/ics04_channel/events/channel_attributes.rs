@@ -8,12 +8,14 @@ use crate::core::{
     ics24_host::identifier::{ChannelId, ConnectionId, PortId},
 };
 
-pub(super) const CONNECTION_ID_ATTRIBUTE_KEY: &str = "connection_id";
-pub(super) const CHANNEL_ID_ATTRIBUTE_KEY: &str = "channel_id";
-pub(super) const PORT_ID_ATTRIBUTE_KEY: &str = "port_id";
+pub const CONNECTION_ID_ATTRIBUTE_KEY: &str = "connection_id";
+pub const CHANNEL_ID_ATTRIBUTE_KEY: &str = "channel_id";
+pub const PORT_ID_ATTRIBUTE_KEY: &str = "port_id";
+/// This attribute key is public so that OpenInit can use it to convert itself
+/// to an `AbciEvent`
 pub(super) const COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY: &str = "counterparty_channel_id";
-pub(super) const COUNTERPARTY_PORT_ID_ATTRIBUTE_KEY: &str = "counterparty_port_id";
-pub(super) const VERSION_ATTRIBUTE_KEY: &str = "version";
+pub const COUNTERPARTY_PORT_ID_ATTRIBUTE_KEY: &str = "counterparty_port_id";
+pub const VERSION_ATTRIBUTE_KEY: &str = "version";
 
 #[cfg_attr(
     feature = "parity-scale-codec",

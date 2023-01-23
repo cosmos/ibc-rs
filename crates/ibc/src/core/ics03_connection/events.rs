@@ -302,10 +302,10 @@ mod tests {
         let conn_id_on_b = ConnectionId::new(1);
         let client_id_on_b = ClientId::new(mock_client_type(), 0).unwrap();
         let expected_keys = vec![
-            CONN_ID_ATTRIBUTE_KEY,
-            CLIENT_ID_ATTRIBUTE_KEY,
-            COUNTERPARTY_CLIENT_ID_ATTRIBUTE_KEY,
-            COUNTERPARTY_CONN_ID_ATTRIBUTE_KEY,
+            "connection_id",
+            "client_id",
+            "counterparty_client_id",
+            "counterparty_connection_id",
         ];
         let expected_values = vec![
             conn_id_on_a.to_string(),
