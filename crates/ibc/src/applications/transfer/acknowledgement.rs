@@ -87,6 +87,14 @@ mod test {
     }
 
     #[test]
+    fn test_ack_success_asref() {
+        let ack_success = Acknowledgement::success();
+
+        // Check that it's the same output as ibc-go
+        assert_eq!(ack_success.as_ref(), r#"{"result":"AQ=="}"#.as_bytes());
+    }
+
+    #[test]
     fn test_ack_de() {
         fn de_json_assert_eq(json_str: &str, ack: Acknowledgement) {
             let de = serde_json::from_str::<Acknowledgement>(json_str).unwrap();
