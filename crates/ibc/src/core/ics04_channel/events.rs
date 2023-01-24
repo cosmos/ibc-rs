@@ -1078,7 +1078,7 @@ mod tests {
         let connection_id = ConnectionId::default();
         let counterparty_port_id = PortId::default();
         let counterparty_channel_id = ChannelId::new(1);
-        let version = Version::new("ics20".to_string());
+        let version = Version::new("ics20-1".to_string());
         let expected_keys = vec![
             "port_id",
             "channel_id",
@@ -1093,7 +1093,7 @@ mod tests {
             "defaultPort",
             "channel-1",
             "connection-0",
-            "ics20",
+            "ics20-1",
         ];
 
         let tests: Vec<Test> = vec![
