@@ -394,7 +394,6 @@ impl From<UpgradeClient> for abci::Event {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::header::MockHeader;
     use ibc_proto::google::protobuf::Any;
     use tendermint::abci::Event as AbciEvent;
@@ -405,12 +404,12 @@ mod tests {
             kind: IbcEventType,
             event: AbciEvent,
             expected_keys: Vec<&'static str>,
-            expected_values: Vec<String>,
+            expected_values: Vec<&'static str>,
         }
 
-        let client_type = mock_client_type();
+        let client_type = ClientType::new("07-tendermint".to_string());
         let client_id = ClientId::new(client_type.clone(), 0).unwrap();
-        let consensus_height = Height::new(0, 10).unwrap();
+        let consensus_height = Height::new(0, 5).unwrap();
         let consensus_heights = vec![Height::new(0, 5).unwrap(), Height::new(0, 7).unwrap()];
         let header: Any = MockHeader::new(consensus_height).into();
         let expected_keys = vec![
@@ -420,17 +419,7 @@ mod tests {
             "consensus_heights",
             "header",
         ];
-        let expected_values = vec![
-            client_id.to_string(),
-            "9999-mock".to_string(),
-            consensus_height.to_string(),
-            consensus_heights
-                .iter()
-                .map(|h| h.to_string())
-                .collect::<Vec<_>>()
-                .join(","),
-            String::from_utf8(hex::encode(header.clone().value)).unwrap(),
-        ];
+        let expected_values = vec!["07-tendermint-0", "07-tendermint", "0-5", "0-5,0-7"];
 
         let tests: Vec<Test> = vec![
             Test {

@@ -1070,7 +1070,7 @@ mod tests {
             kind: IbcEventType,
             event: AbciEvent,
             expected_keys: Vec<&'static str>,
-            expected_values: Vec<String>,
+            expected_values: Vec<&'static str>,
         }
 
         let port_id = PortId::default();
@@ -1078,7 +1078,7 @@ mod tests {
         let connection_id = ConnectionId::default();
         let counterparty_port_id = PortId::default();
         let counterparty_channel_id = ChannelId::new(1);
-        let version = Version::default();
+        let version = Version::new("ics20".to_string());
         let expected_keys = vec![
             "port_id",
             "channel_id",
@@ -1088,12 +1088,12 @@ mod tests {
             "version",
         ];
         let expected_values = vec![
-            port_id.to_string(),
-            channel_id.to_string(),
-            counterparty_port_id.to_string(),
-            counterparty_channel_id.to_string(),
-            connection_id.to_string(),
-            version.to_string(),
+            "defaultPort",
+            "channel-0",
+            "defaultPort",
+            "channel-1",
+            "connection-0",
+            "ics20",
         ];
 
         let tests: Vec<Test> = vec![
@@ -1111,7 +1111,7 @@ mod tests {
                 expected_values: expected_values
                     .iter()
                     .enumerate()
-                    .map(|(i, v)| if i == 3 { "".to_string() } else { v.clone() })
+                    .map(|(i, v)| if i == 3 { "" } else { v })
                     .collect(),
             },
             Test {

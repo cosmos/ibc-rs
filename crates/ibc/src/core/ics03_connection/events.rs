@@ -285,7 +285,7 @@ impl From<OpenConfirm> for abci::Event {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mock::client_state::client_type as mock_client_type;
+    use crate::core::ics02_client::client_type::ClientType;
     use tendermint::abci::Event as AbciEvent;
 
     #[test]
@@ -294,13 +294,14 @@ mod tests {
             kind: IbcEventType,
             event: AbciEvent,
             expected_keys: Vec<&'static str>,
-            expected_values: Vec<String>,
+            expected_values: Vec<&'static str>,
         }
 
+        let client_type = ClientType::new("07-tendermint".to_string());
         let conn_id_on_a = ConnectionId::default();
-        let client_id_on_a = ClientId::default();
+        let client_id_on_a = ClientId::new(client_type.clone(), 0).unwrap();
         let conn_id_on_b = ConnectionId::new(1);
-        let client_id_on_b = ClientId::new(mock_client_type(), 0).unwrap();
+        let client_id_on_b = ClientId::new(client_type, 1).unwrap();
         let expected_keys = vec![
             "connection_id",
             "client_id",
@@ -308,10 +309,10 @@ mod tests {
             "counterparty_connection_id",
         ];
         let expected_values = vec![
-            conn_id_on_a.to_string(),
-            client_id_on_a.to_string(),
-            client_id_on_b.to_string(),
-            conn_id_on_b.to_string(),
+            "connection-0",
+            "07-tendermint-0",
+            "07-tendermint-1",
+            "connection-1",
         ];
 
         let tests: Vec<Test> = vec![
@@ -327,7 +328,7 @@ mod tests {
                 expected_values: expected_values
                     .iter()
                     .enumerate()
-                    .map(|(i, v)| if i == 3 { "".to_string() } else { v.clone() })
+                    .map(|(i, v)| if i == 3 { "" } else { v })
                     .collect(),
             },
             Test {
