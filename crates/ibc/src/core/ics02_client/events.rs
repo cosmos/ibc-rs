@@ -395,6 +395,7 @@ impl From<UpgradeClient> for abci::Event {
 mod tests {
     use super::*;
     use crate::mock::header::MockHeader;
+    use crate::timestamp::Timestamp;
     use ibc_proto::google::protobuf::Any;
     use tendermint::abci::Event as AbciEvent;
 
@@ -411,7 +412,9 @@ mod tests {
         let client_id = ClientId::new(client_type.clone(), 0).unwrap();
         let consensus_height = Height::new(0, 5).unwrap();
         let consensus_heights = vec![Height::new(0, 5).unwrap(), Height::new(0, 7).unwrap()];
-        let header: Any = MockHeader::new(consensus_height).into();
+        let header: Any = MockHeader::new(consensus_height)
+            .with_timestamp(Timestamp::none())
+            .into();
         let expected_keys = vec![
             "client_id",
             "client_type",
@@ -419,7 +422,14 @@ mod tests {
             "consensus_heights",
             "header",
         ];
-        let expected_values = vec!["07-tendermint-0", "07-tendermint", "0-5", "0-5,0-7"];
+
+        let expected_values = vec![
+            "07-tendermint-0",
+            "07-tendermint",
+            "0-5",
+            "0-5,0-7",
+            "0a021005",
+        ];
 
         let tests: Vec<Test> = vec![
             Test {
@@ -460,16 +470,12 @@ mod tests {
         for t in tests {
             assert_eq!(t.event.kind, t.kind.as_str());
             assert_eq!(t.expected_keys.len(), t.event.attributes.len());
-            for (i, key) in t.expected_keys.iter().enumerate() {
-                assert_eq!(
-                    t.event.attributes[i].key, *key,
-                    "key mismatch for {:?}",
-                    t.kind
-                );
+            for (i, e) in t.event.attributes.iter().enumerate() {
+                assert_eq!(e.key, t.expected_keys[i], "key mismatch for {:?}", t.kind);
             }
-            for (i, value) in t.expected_values.iter().enumerate() {
+            for (i, e) in t.event.attributes.iter().enumerate() {
                 assert_eq!(
-                    t.event.attributes[i].value, *value,
+                    e.value, t.expected_values[i],
                     "value mismatch for {:?}",
                     t.kind
                 );

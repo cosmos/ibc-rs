@@ -1073,10 +1073,10 @@ mod tests {
             expected_values: Vec<&'static str>,
         }
 
-        let port_id = PortId::default();
-        let channel_id = ChannelId::default();
-        let connection_id = ConnectionId::default();
-        let counterparty_port_id = PortId::default();
+        let port_id = PortId::transfer();
+        let channel_id = ChannelId::new(0);
+        let connection_id = ConnectionId::new(0);
+        let counterparty_port_id = PortId::transfer();
         let counterparty_channel_id = ChannelId::new(1);
         let version = Version::new("ics20-1".to_string());
         let expected_keys = vec![
@@ -1088,9 +1088,9 @@ mod tests {
             "version",
         ];
         let expected_values = vec![
-            "defaultPort",
+            "transfer",
             "channel-0",
-            "defaultPort",
+            "transfer",
             "channel-1",
             "connection-0",
             "ics20-1",
@@ -1185,18 +1185,19 @@ mod tests {
         for t in tests {
             assert_eq!(t.kind.as_str(), t.event.kind);
             assert_eq!(t.expected_keys.len(), t.event.attributes.len());
-            for (i, key) in t.expected_keys.iter().enumerate() {
+            for (i, e) in t.event.attributes.iter().enumerate() {
                 assert_eq!(
-                    t.event.attributes[i].key,
-                    *key,
+                    e.key,
+                    t.expected_keys[i],
                     "key mismatch for {:?}",
                     t.kind.as_str()
                 );
             }
-            for (i, value) in t.expected_values.iter().enumerate() {
+            assert_eq!(t.expected_values.len(), t.event.attributes.len());
+            for (i, e) in t.event.attributes.iter().enumerate() {
                 assert_eq!(
-                    t.event.attributes[i].value,
-                    *value,
+                    e.value,
+                    t.expected_values[i],
                     "value mismatch for {:?}",
                     t.kind.as_str()
                 );

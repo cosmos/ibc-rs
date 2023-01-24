@@ -367,18 +367,18 @@ mod tests {
         for t in tests {
             assert_eq!(t.kind.as_str(), t.event.kind);
             assert_eq!(t.expected_keys.len(), t.event.attributes.len());
-            for (i, key) in t.expected_keys.iter().enumerate() {
+            for (i, e) in t.event.attributes.iter().enumerate() {
                 assert_eq!(
-                    t.event.attributes[i].key,
-                    *key,
+                    e.key,
+                    t.expected_keys[i],
                     "key mismatch for {:?}",
                     t.kind.as_str()
                 );
             }
-            for (i, value) in t.expected_values.iter().enumerate() {
+            for (i, e) in t.event.attributes.iter().enumerate() {
                 assert_eq!(
-                    t.event.attributes[i].value,
-                    *value,
+                    e.value,
+                    t.expected_values[i],
                     "value mismatch for {:?}",
                     t.kind.as_str()
                 );
