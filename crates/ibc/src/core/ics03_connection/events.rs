@@ -281,3 +281,108 @@ impl From<OpenConfirm> for abci::Event {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::ics02_client::client_type::ClientType;
+    use tendermint::abci::Event as AbciEvent;
+
+    #[test]
+    fn ibc_to_abci_connection_events() {
+        struct Test {
+            kind: IbcEventType,
+            event: AbciEvent,
+            expected_keys: Vec<&'static str>,
+            expected_values: Vec<&'static str>,
+        }
+
+        let client_type = ClientType::new("07-tendermint".to_string());
+        let conn_id_on_a = ConnectionId::default();
+        let client_id_on_a = ClientId::new(client_type.clone(), 0).unwrap();
+        let conn_id_on_b = ConnectionId::new(1);
+        let client_id_on_b = ClientId::new(client_type, 1).unwrap();
+        let expected_keys = vec![
+            "connection_id",
+            "client_id",
+            "counterparty_client_id",
+            "counterparty_connection_id",
+        ];
+        let expected_values = vec![
+            "connection-0",
+            "07-tendermint-0",
+            "07-tendermint-1",
+            "connection-1",
+        ];
+
+        let tests: Vec<Test> = vec![
+            Test {
+                kind: IbcEventType::OpenInitConnection,
+                event: OpenInit::new(
+                    conn_id_on_a.clone(),
+                    client_id_on_a.clone(),
+                    client_id_on_b.clone(),
+                )
+                .into(),
+                expected_keys: expected_keys.clone(),
+                expected_values: expected_values
+                    .iter()
+                    .enumerate()
+                    .map(|(i, v)| if i == 3 { "" } else { v })
+                    .collect(),
+            },
+            Test {
+                kind: IbcEventType::OpenTryConnection,
+                event: OpenTry::new(
+                    conn_id_on_b.clone(),
+                    client_id_on_b.clone(),
+                    conn_id_on_a.clone(),
+                    client_id_on_a.clone(),
+                )
+                .into(),
+                expected_keys: expected_keys.clone(),
+                expected_values: expected_values.iter().rev().cloned().collect(),
+            },
+            Test {
+                kind: IbcEventType::OpenAckConnection,
+                event: OpenAck::new(
+                    conn_id_on_a.clone(),
+                    client_id_on_a.clone(),
+                    conn_id_on_b.clone(),
+                    client_id_on_b.clone(),
+                )
+                .into(),
+                expected_keys: expected_keys.clone(),
+                expected_values: expected_values.clone(),
+            },
+            Test {
+                kind: IbcEventType::OpenConfirmConnection,
+                event: OpenConfirm::new(conn_id_on_b, client_id_on_b, conn_id_on_a, client_id_on_a)
+                    .into(),
+                expected_keys: expected_keys.clone(),
+                expected_values: expected_values.iter().rev().cloned().collect(),
+            },
+        ];
+
+        for t in tests {
+            assert_eq!(t.kind.as_str(), t.event.kind);
+            assert_eq!(t.expected_keys.len(), t.event.attributes.len());
+            for (i, e) in t.event.attributes.iter().enumerate() {
+                assert_eq!(
+                    e.key,
+                    t.expected_keys[i],
+                    "key mismatch for {:?}",
+                    t.kind.as_str()
+                );
+            }
+            for (i, e) in t.event.attributes.iter().enumerate() {
+                assert_eq!(
+                    e.value,
+                    t.expected_values[i],
+                    "value mismatch for {:?}",
+                    t.kind.as_str()
+                );
+            }
+        }
+    }
+}
