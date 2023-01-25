@@ -105,6 +105,19 @@ mod test {
     }
 
     #[test]
+    fn test_ack_error_to_vec() {
+        let ack_error = TokenTransferAcknowledgement::Error(
+            "cannot unmarshal ICS-20 transfer packet data".to_string(),
+        );
+
+        // Check that it's the same output as ibc-go
+        assert_eq!(
+            Vec::<u8>::from(ack_error),
+            r#"{"error":"cannot unmarshal ICS-20 transfer packet data"}"#.as_bytes()
+        );
+    }
+
+    #[test]
     fn test_ack_de() {
         fn de_json_assert_eq(json_str: &str, ack: TokenTransferAcknowledgement) {
             let de = serde_json::from_str::<TokenTransferAcknowledgement>(json_str).unwrap();
