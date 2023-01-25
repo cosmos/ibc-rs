@@ -53,13 +53,6 @@ impl From<&[u8]> for Acknowledgement {
     }
 }
 
-#[cfg(any(test, feature = "mocks"))]
-impl Default for Acknowledgement {
-    fn default() -> Self {
-        Self(vec![1])
-    }
-}
-
 ///
 /// Message definition for packet acknowledgements.
 ///
