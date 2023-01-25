@@ -1,7 +1,7 @@
 use sha2::{Digest, Sha256};
 
 use super::error::TokenTransferError;
-use crate::applications::transfer::acknowledgement::Acknowledgement;
+use crate::applications::transfer::acknowledgement::TokenTransferAcknowledgement;
 use crate::applications::transfer::events::{AckEvent, AckStatusEvent, RecvEvent, TimeoutEvent};
 use crate::applications::transfer::packet::PacketData;
 use crate::applications::transfer::relay::on_ack_packet::process_ack_packet;
@@ -14,7 +14,7 @@ use crate::core::ics04_channel::context::{ChannelKeeper, SendPacketReader};
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::handler::send_packet::SendPacketResult;
 use crate::core::ics04_channel::handler::ModuleExtras;
-use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as AcknowledgementBytes;
+use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
@@ -258,20 +258,22 @@ pub fn on_recv_packet<Ctx: 'static + TokenTransferContext>(
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
     _relayer: &Signer,
-) -> AcknowledgementBytes {
+) -> Acknowledgement {
     let data = match serde_json::from_slice::<PacketData>(&packet.data) {
         Ok(data) => data,
         Err(_) => {
-            let ack =
-                Acknowledgement::Error(TokenTransferError::PacketDataDeserialization.to_string());
+            let ack = TokenTransferAcknowledgement::Error(
+                TokenTransferError::PacketDataDeserialization.to_string(),
+            );
             return ack.into();
         }
     };
 
-    let ack: Acknowledgement = match process_recv_packet(ctx, output, packet, data.clone()) {
-        Ok(()) => Acknowledgement::success(),
-        Err(e) => Acknowledgement::from_error(e),
-    };
+    let ack: TokenTransferAcknowledgement =
+        match process_recv_packet(ctx, output, packet, data.clone()) {
+            Ok(()) => TokenTransferAcknowledgement::success(),
+            Err(e) => TokenTransferAcknowledgement::from_error(e),
+        };
 
     let recv_event = RecvEvent {
         receiver: data.receiver,
@@ -288,14 +290,15 @@ pub fn on_acknowledgement_packet(
     ctx: &mut impl TokenTransferContext,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
-    acknowledgement: &AcknowledgementBytes,
+    acknowledgement: &Acknowledgement,
     _relayer: &Signer,
 ) -> Result<(), TokenTransferError> {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
         .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
 
-    let acknowledgement = serde_json::from_slice::<Acknowledgement>(acknowledgement.as_ref())
-        .map_err(|_| TokenTransferError::AckDeserialization)?;
+    let acknowledgement =
+        serde_json::from_slice::<TokenTransferAcknowledgement>(acknowledgement.as_ref())
+            .map_err(|_| TokenTransferError::AckDeserialization)?;
 
     process_ack_packet(ctx, packet, &data, &acknowledgement)?;
 

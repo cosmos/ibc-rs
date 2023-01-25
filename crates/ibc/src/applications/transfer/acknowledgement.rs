@@ -1,7 +1,7 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 
 use super::error::TokenTransferError;
-use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as AcknowledgementBytes;
+use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::prelude::*;
 
 /// A string constant included in error acknowledgements.
@@ -20,7 +20,7 @@ pub enum ConstAckSuccess {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Acknowledgement {
+pub enum TokenTransferAcknowledgement {
     /// Successful Acknowledgement
     /// e.g. `{"result":"AQ=="}`
     #[cfg_attr(feature = "serde", serde(rename = "result"))]
@@ -31,7 +31,7 @@ pub enum Acknowledgement {
     Error(String),
 }
 
-impl Acknowledgement {
+impl TokenTransferAcknowledgement {
     pub fn success() -> Self {
         Self::Success(ConstAckSuccess::Success)
     }
@@ -41,30 +41,30 @@ impl Acknowledgement {
     }
 
     pub fn is_successful(&self) -> bool {
-        matches!(self, Acknowledgement::Success(_))
+        matches!(self, TokenTransferAcknowledgement::Success(_))
     }
 }
 
-impl AsRef<[u8]> for Acknowledgement {
+impl AsRef<[u8]> for TokenTransferAcknowledgement {
     fn as_ref(&self) -> &[u8] {
         match self {
-            Acknowledgement::Success(_) => r#"{"result":"AQ=="}"#.as_bytes(),
-            Acknowledgement::Error(s) => s.as_bytes(),
+            TokenTransferAcknowledgement::Success(_) => r#"{"result":"AQ=="}"#.as_bytes(),
+            TokenTransferAcknowledgement::Error(s) => s.as_bytes(),
         }
     }
 }
 
-impl Display for Acknowledgement {
+impl Display for TokenTransferAcknowledgement {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         match self {
-            Acknowledgement::Success(_) => write!(f, "{ACK_SUCCESS_B64}"),
-            Acknowledgement::Error(err_str) => write!(f, "{err_str}"),
+            TokenTransferAcknowledgement::Success(_) => write!(f, "{ACK_SUCCESS_B64}"),
+            TokenTransferAcknowledgement::Error(err_str) => write!(f, "{err_str}"),
         }
     }
 }
 
-impl From<Acknowledgement> for AcknowledgementBytes {
-    fn from(ack: Acknowledgement) -> Self {
+impl From<TokenTransferAcknowledgement> for Acknowledgement {
+    fn from(ack: TokenTransferAcknowledgement) -> Self {
         ack.as_ref().into()
     }
 }
@@ -75,21 +75,26 @@ mod test {
 
     #[test]
     fn test_ack_ser() {
-        fn ser_json_assert_eq(ack: Acknowledgement, json_str: &str) {
+        fn ser_json_assert_eq(ack: TokenTransferAcknowledgement, json_str: &str) {
             let ser = serde_json::to_string(&ack).unwrap();
             assert_eq!(ser, json_str)
         }
 
-        ser_json_assert_eq(Acknowledgement::success(), r#"{"result":"AQ=="}"#);
         ser_json_assert_eq(
-            Acknowledgement::Error("cannot unmarshal ICS-20 transfer packet data".to_owned()),
+            TokenTransferAcknowledgement::success(),
+            r#"{"result":"AQ=="}"#,
+        );
+        ser_json_assert_eq(
+            TokenTransferAcknowledgement::Error(
+                "cannot unmarshal ICS-20 transfer packet data".to_owned(),
+            ),
             r#"{"error":"cannot unmarshal ICS-20 transfer packet data"}"#,
         );
     }
 
     #[test]
     fn test_ack_success_asref() {
-        let ack_success = Acknowledgement::success();
+        let ack_success = TokenTransferAcknowledgement::success();
 
         // Check that it's the same output as ibc-go
         assert_eq!(ack_success.as_ref(), r#"{"result":"AQ=="}"#.as_bytes());
@@ -97,18 +102,27 @@ mod test {
 
     #[test]
     fn test_ack_de() {
-        fn de_json_assert_eq(json_str: &str, ack: Acknowledgement) {
-            let de = serde_json::from_str::<Acknowledgement>(json_str).unwrap();
+        fn de_json_assert_eq(json_str: &str, ack: TokenTransferAcknowledgement) {
+            let de = serde_json::from_str::<TokenTransferAcknowledgement>(json_str).unwrap();
             assert_eq!(de, ack)
         }
 
-        de_json_assert_eq(r#"{"result":"AQ=="}"#, Acknowledgement::success());
+        de_json_assert_eq(
+            r#"{"result":"AQ=="}"#,
+            TokenTransferAcknowledgement::success(),
+        );
         de_json_assert_eq(
             r#"{"error":"cannot unmarshal ICS-20 transfer packet data"}"#,
-            Acknowledgement::Error("cannot unmarshal ICS-20 transfer packet data".to_owned()),
+            TokenTransferAcknowledgement::Error(
+                "cannot unmarshal ICS-20 transfer packet data".to_owned(),
+            ),
         );
 
-        assert!(serde_json::from_str::<Acknowledgement>(r#"{"result":"AQ="}"#).is_err());
-        assert!(serde_json::from_str::<Acknowledgement>(r#"{"success":"AQ=="}"#).is_err());
+        assert!(
+            serde_json::from_str::<TokenTransferAcknowledgement>(r#"{"result":"AQ="}"#).is_err()
+        );
+        assert!(
+            serde_json::from_str::<TokenTransferAcknowledgement>(r#"{"success":"AQ=="}"#).is_err()
+        );
     }
 }
