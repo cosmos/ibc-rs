@@ -45,15 +45,6 @@ impl TokenTransferAcknowledgement {
     }
 }
 
-impl AsRef<[u8]> for TokenTransferAcknowledgement {
-    fn as_ref(&self) -> &[u8] {
-        match self {
-            TokenTransferAcknowledgement::Success(_) => r#"{"result":"AQ=="}"#.as_bytes(),
-            TokenTransferAcknowledgement::Error(s) => s.as_bytes(),
-        }
-    }
-}
-
 impl Display for TokenTransferAcknowledgement {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         match self {
@@ -63,9 +54,19 @@ impl Display for TokenTransferAcknowledgement {
     }
 }
 
+impl From<TokenTransferAcknowledgement> for Vec<u8> {
+    fn from(ack: TokenTransferAcknowledgement) -> Self {
+        match ack {
+            TokenTransferAcknowledgement::Success(_) => r#"{"result":"AQ=="}"#.as_bytes().into(),
+            // TokenTransferAcknowledgement::Error(s) => s.as_bytes(),
+            TokenTransferAcknowledgement::Error(s) => alloc::format!(r#"{{"error":"{s}"}}"#).into(),
+        }
+    }
+}
+
 impl From<TokenTransferAcknowledgement> for Acknowledgement {
     fn from(ack: TokenTransferAcknowledgement) -> Self {
-        ack.as_ref().into()
+        ack.into()
     }
 }
 
@@ -93,11 +94,14 @@ mod test {
     }
 
     #[test]
-    fn test_ack_success_asref() {
+    fn test_ack_success_to_vec() {
         let ack_success = TokenTransferAcknowledgement::success();
 
         // Check that it's the same output as ibc-go
-        assert_eq!(ack_success.as_ref(), r#"{"result":"AQ=="}"#.as_bytes());
+        assert_eq!(
+            Vec::<u8>::from(ack_success),
+            r#"{"result":"AQ=="}"#.as_bytes()
+        );
     }
 
     #[test]
