@@ -39,6 +39,10 @@ impl Acknowledgement {
     pub fn from_error(err: TokenTransferError) -> Self {
         Self::Error(format!("{ACK_ERR_STR}: {err}"))
     }
+
+    pub fn is_successful(&self) -> bool {
+        matches!(self, Acknowledgement::Success(_))
+    }
 }
 
 impl AsRef<[u8]> for Acknowledgement {

@@ -268,20 +268,20 @@ pub fn on_recv_packet<Ctx: 'static + TokenTransferContext>(
         }
     };
 
-    let (ack, success) = match process_recv_packet(ctx, output, packet, data.clone()) {
-        Ok(()) => (Acknowledgement::success().into(), true),
-        Err(e) => (Acknowledgement::from_error(e).into(), false),
+    let ack: Acknowledgement = match process_recv_packet(ctx, output, packet, data.clone()) {
+        Ok(()) => Acknowledgement::success(),
+        Err(e) => Acknowledgement::from_error(e),
     };
 
     let recv_event = RecvEvent {
         receiver: data.receiver,
         denom: data.token.denom,
         amount: data.token.amount,
-        success,
+        success: ack.is_successful(),
     };
     output.emit(recv_event.into());
 
-    ack
+    ack.into()
 }
 
 pub fn on_acknowledgement_packet(
