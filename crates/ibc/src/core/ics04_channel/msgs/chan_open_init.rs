@@ -83,10 +83,12 @@ pub mod test_util {
     use crate::test_utils::get_dummy_bech32_account;
 
     /// Returns a dummy `RawMsgChannelOpenInit`, for testing only!
-    pub fn get_dummy_raw_msg_chan_open_init() -> RawMsgChannelOpenInit {
+    pub fn get_dummy_raw_msg_chan_open_init(
+        counterparty_channel_id: Option<u64>,
+    ) -> RawMsgChannelOpenInit {
         RawMsgChannelOpenInit {
             port_id: PortId::default().to_string(),
-            channel: Some(get_dummy_raw_channel_end("".to_string())),
+            channel: Some(get_dummy_raw_channel_end(counterparty_channel_id)),
             signer: get_dummy_bech32_account(),
         }
     }
@@ -109,19 +111,19 @@ mod tests {
             want_pass: bool,
         }
 
-        let default_raw_msg = get_dummy_raw_msg_chan_open_init();
+        let default_raw_init_msg = get_dummy_raw_msg_chan_open_init(None);
 
         let tests: Vec<Test> = vec![
             Test {
                 name: "Good parameters".to_string(),
-                raw: default_raw_msg.clone(),
+                raw: default_raw_init_msg.clone(),
                 want_pass: true,
             },
             Test {
                 name: "Incorrect port identifier, slash (separator) prohibited".to_string(),
                 raw: RawMsgChannelOpenInit {
                     port_id: "p34/".to_string(),
-                    ..default_raw_msg.clone()
+                    ..default_raw_init_msg.clone()
                 },
                 want_pass: false,
             },
@@ -129,7 +131,7 @@ mod tests {
                 name: "Missing channel".to_string(),
                 raw: RawMsgChannelOpenInit {
                     channel: None,
-                    ..default_raw_msg
+                    ..default_raw_init_msg
                 },
                 want_pass: false,
             },
@@ -153,11 +155,35 @@ mod tests {
 
     #[test]
     fn to_and_from() {
-        let raw = get_dummy_raw_msg_chan_open_init();
+        // Check if raw and domain types are equal after conversions
+        let raw = get_dummy_raw_msg_chan_open_init(None);
         let msg = MsgChannelOpenInit::try_from(raw.clone()).unwrap();
         let raw_back = RawMsgChannelOpenInit::from(msg.clone());
         let msg_back = MsgChannelOpenInit::try_from(raw_back.clone()).unwrap();
         assert_eq!(raw, raw_back);
         assert_eq!(msg, msg_back);
+
+        // Check if handler sets counterparty channel id to `None`
+        // in case relayer passes `MsgChannelOpenInit` message with it set to `Some(_)`
+        let raw_with_counterpary_chan_id_some = get_dummy_raw_msg_chan_open_init(None);
+        let msg_with_counterpary_chan_id_some =
+            MsgChannelOpenInit::try_from(raw_with_counterpary_chan_id_some).unwrap();
+        let raw_with_counterpary_chan_id_some_back =
+            RawMsgChannelOpenInit::from(msg_with_counterpary_chan_id_some.clone());
+        let msg_with_counterpary_chan_id_some_back =
+            MsgChannelOpenInit::try_from(raw_with_counterpary_chan_id_some_back.clone()).unwrap();
+        assert_eq!(
+            raw_with_counterpary_chan_id_some_back
+                .channel
+                .unwrap()
+                .counterparty
+                .unwrap()
+                .channel_id,
+            "".to_string()
+        );
+        assert_eq!(
+            msg_with_counterpary_chan_id_some,
+            msg_with_counterpary_chan_id_some_back
+        );
     }
 }

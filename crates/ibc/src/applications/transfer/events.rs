@@ -1,4 +1,4 @@
-use crate::applications::transfer::acknowledgement::Acknowledgement;
+use crate::applications::transfer::acknowledgement::TokenTransferAcknowledgement;
 use crate::applications::transfer::{Amount, PrefixedDenom, MODULE_ID_STR};
 use crate::events::ModuleEvent;
 use crate::prelude::*;
@@ -50,7 +50,7 @@ pub struct AckEvent {
     pub receiver: Signer,
     pub denom: PrefixedDenom,
     pub amount: Amount,
-    pub acknowledgement: Acknowledgement,
+    pub acknowledgement: TokenTransferAcknowledgement,
 }
 
 impl From<AckEvent> for ModuleEvent {
@@ -75,7 +75,7 @@ impl From<AckEvent> for ModuleEvent {
 }
 
 pub struct AckStatusEvent {
-    pub acknowledgement: Acknowledgement,
+    pub acknowledgement: TokenTransferAcknowledgement,
 }
 
 impl From<AckStatusEvent> for ModuleEvent {
@@ -87,8 +87,8 @@ impl From<AckStatusEvent> for ModuleEvent {
             attributes: vec![],
         };
         let attr_label = match acknowledgement {
-            Acknowledgement::Success(_) => "success",
-            Acknowledgement::Error(_) => "error",
+            TokenTransferAcknowledgement::Success(_) => "success",
+            TokenTransferAcknowledgement::Error(_) => "error",
         };
         event
             .attributes

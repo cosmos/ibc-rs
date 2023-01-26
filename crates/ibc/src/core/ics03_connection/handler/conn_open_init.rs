@@ -186,7 +186,7 @@ mod tests {
         }
 
         let msg_conn_init_default =
-            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init()).unwrap();
+            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init(None)).unwrap();
         let msg_conn_init_no_version = MsgConnectionOpenInit {
             version: None,
             ..msg_conn_init_default.clone()
@@ -200,6 +200,8 @@ mod tests {
             .into(),
             ..msg_conn_init_default.clone()
         };
+        let msg_conn_init_with_couterparty_conn_id_some =
+            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init(Some(0))).unwrap();
         let default_context = MockContext::default();
         let good_context = default_context.clone().with_client(
             &msg_conn_init_default.client_id_on_a,
@@ -225,6 +227,13 @@ mod tests {
                 name: "No version in MsgConnectionOpenInit msg".to_string(),
                 ctx: good_context.clone(),
                 msg: ConnectionMsg::OpenInit(msg_conn_init_no_version),
+                expected_versions: ConnectionReader::get_compatible_versions(&good_context),
+                want_pass: true,
+            },
+            Test {
+                name: "Counterparty connection id is some in MsgConnectionOpenInit msg".to_string(),
+                ctx: good_context.clone(),
+                msg: ConnectionMsg::OpenInit(msg_conn_init_with_couterparty_conn_id_some),
                 expected_versions: ConnectionReader::get_compatible_versions(&good_context),
                 want_pass: true,
             },

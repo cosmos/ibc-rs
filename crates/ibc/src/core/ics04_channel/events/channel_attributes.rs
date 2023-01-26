@@ -13,9 +13,10 @@ const CHANNEL_ID_ATTRIBUTE_KEY: &str = "channel_id";
 const PORT_ID_ATTRIBUTE_KEY: &str = "port_id";
 /// This attribute key is public so that OpenInit can use it to convert itself
 /// to an `AbciEvent`
-pub const COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY: &str = "counterparty_channel_id";
+pub(super) const COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY: &str = "counterparty_channel_id";
 const COUNTERPARTY_PORT_ID_ATTRIBUTE_KEY: &str = "counterparty_port_id";
 const VERSION_ATTRIBUTE_KEY: &str = "version";
+
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

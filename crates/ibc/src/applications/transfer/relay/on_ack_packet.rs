@@ -1,4 +1,4 @@
-use crate::applications::transfer::acknowledgement::Acknowledgement;
+use crate::applications::transfer::acknowledgement::TokenTransferAcknowledgement;
 use crate::applications::transfer::context::TokenTransferContext;
 use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::packet::PacketData;
@@ -9,9 +9,9 @@ pub fn process_ack_packet(
     ctx: &mut impl TokenTransferContext,
     packet: &Packet,
     data: &PacketData,
-    ack: &Acknowledgement,
+    ack: &TokenTransferAcknowledgement,
 ) -> Result<(), TokenTransferError> {
-    if matches!(ack, Acknowledgement::Error(_)) {
+    if !ack.is_successful() {
         refund_packet_token(ctx, packet, data)?;
     }
 

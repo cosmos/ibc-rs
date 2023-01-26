@@ -13,7 +13,7 @@ use crate::core::ics03_connection::context::{ConnectionKeeper, ConnectionReader}
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
-use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as GenericAcknowledgement;
+use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
 use crate::core::ics05_port::context::PortReader;
@@ -87,23 +87,6 @@ impl FromStr for ModuleId {
 impl Borrow<str> for ModuleId {
     fn borrow(&self) -> &str {
         self.0.as_str()
-    }
-}
-
-/// Types implementing this trait are expected to implement `From<GenericAcknowledgement>`
-pub trait Acknowledgement: AsRef<[u8]> {}
-
-pub type WriteFn = dyn FnOnce(&mut dyn Any) -> Result<(), String>;
-
-pub enum OnRecvPacketAck {
-    Nil(Box<WriteFn>),
-    Successful(Box<dyn Acknowledgement>, Box<WriteFn>),
-    Failed(Box<dyn Acknowledgement>),
-}
-
-impl OnRecvPacketAck {
-    pub fn is_successful(&self) -> bool {
-        matches!(self, OnRecvPacketAck::Successful(_, _))
     }
 }
 
@@ -288,19 +271,17 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
     }
 
     fn on_recv_packet(
-        &self,
+        &mut self,
         _output: &mut ModuleOutputBuilder,
         _packet: &Packet,
         _relayer: &Signer,
-    ) -> OnRecvPacketAck {
-        OnRecvPacketAck::Nil(Box::new(|_| Ok(())))
-    }
+    ) -> Acknowledgement;
 
     fn on_acknowledgement_packet(
         &mut self,
         _output: &mut ModuleOutputBuilder,
         _packet: &Packet,
-        _acknowledgement: &GenericAcknowledgement,
+        _acknowledgement: &Acknowledgement,
         _relayer: &Signer,
     ) -> Result<(), PacketError> {
         Ok(())

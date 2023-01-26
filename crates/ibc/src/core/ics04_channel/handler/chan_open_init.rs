@@ -124,12 +124,15 @@ mod tests {
         }
 
         let msg_chan_init =
-            MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init()).unwrap();
+            MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
+
+        let msg_chan_init_with_counterparty_chan_id_some =
+            MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(Some(0))).unwrap();
 
         let context = MockContext::default();
 
         let msg_conn_init =
-            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init()).unwrap();
+            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init(None)).unwrap();
 
         let init_conn_end = ConnectionEnd::new(
             ConnectionState::Init,
@@ -150,8 +153,17 @@ mod tests {
             },
             Test {
                 name: "Good parameters".to_string(),
-                ctx: context.with_connection(cid, init_conn_end),
+                ctx: context
+                    .clone()
+                    .with_connection(cid.clone(), init_conn_end.clone()),
                 msg: ChannelMsg::OpenInit(msg_chan_init),
+                want_pass: true,
+            },
+            Test {
+                name: "Good parameters even if counterparty channel id is set some by relayer"
+                    .to_string(),
+                ctx: context.with_connection(cid, init_conn_end),
+                msg: ChannelMsg::OpenInit(msg_chan_init_with_counterparty_chan_id_some),
                 want_pass: true,
             },
         ]

@@ -253,7 +253,7 @@ mod tests {
         let conn_end = ConnectionEnd::new(
             ConnectionState::Open,
             client_id.clone(),
-            ConnectionCounterparty::try_from(get_dummy_raw_counterparty()).unwrap(),
+            ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
             get_compatible_versions(),
             ZERO_DURATION,
         );
@@ -399,7 +399,7 @@ mod tests {
         let conn_end = ConnectionEnd::new(
             ConnectionState::Open,
             client_id.clone(),
-            ConnectionCounterparty::try_from(get_dummy_raw_counterparty()).unwrap(),
+            ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
             get_compatible_versions(),
             ZERO_DURATION,
         );
