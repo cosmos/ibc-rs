@@ -11,7 +11,7 @@ pub fn process_ack_packet(
     data: &PacketData,
     ack: &TokenTransferAcknowledgement,
 ) -> Result<(), TokenTransferError> {
-    if matches!(ack, TokenTransferAcknowledgement::Error(_)) {
+    if !ack.is_successful() {
         refund_packet_token(ctx, packet, data)?;
     }
 
