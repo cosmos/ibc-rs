@@ -471,7 +471,24 @@ mod val_exec_ctx {
                     }
                     .map_err(RouterError::ContextError)
                 }
-                MsgEnvelope::Packet(_msg) => todo!(),
+                MsgEnvelope::Packet(msg) => {
+                    let module_id = self
+                        .lookup_module_packet(&msg)
+                        .map_err(ContextError::from)?;
+                    if !self.has_route(&module_id) {
+                        return Err(ChannelError::RouteNotFound)
+                            .map_err(ContextError::ChannelError)
+                            .map_err(RouterError::ContextError);
+                    }
+
+                    match msg {
+                        PacketMsg::Recv(msg) => recv_packet_execute(self, module_id, msg),
+                        PacketMsg::Ack(_) => todo!(),
+                        PacketMsg::Timeout(_) => todo!(),
+                        PacketMsg::TimeoutOnClose(_) => todo!(),
+                    }
+                    .map_err(RouterError::ContextError)
+                }
             }
         }
 
@@ -1159,5 +1176,16 @@ mod val_exec_ctx {
         recv_packet::validate(ctx_b, &msg)
 
         // nothing to validate with the module, since `onRecvPacket` cannot fail.
+    }
+
+    fn recv_packet_execute<ExecCtx>(
+        _ctx_b: &mut ExecCtx,
+        _module_id: ModuleId,
+        _msg: MsgRecvPacket,
+    ) -> Result<(), ContextError>
+    where
+        ExecCtx: ExecutionContext,
+    {
+        todo!()
     }
 }
