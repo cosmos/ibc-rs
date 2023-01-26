@@ -95,13 +95,10 @@ mod test {
 
     #[test]
     fn test_ack_success_to_vec() {
-        let ack_success = TokenTransferAcknowledgement::success();
+        let ack_success: Vec<u8> = TokenTransferAcknowledgement::success().into();
 
         // Check that it's the same output as ibc-go
-        assert_eq!(
-            Vec::<u8>::from(ack_success),
-            r#"{"result":"AQ=="}"#.as_bytes()
-        );
+        assert_eq!(ack_success, r#"{"result":"AQ=="}"#.as_bytes());
     }
 
     #[test]
