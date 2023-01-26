@@ -224,15 +224,13 @@ mod val_exec_ctx {
                             .map_err(RouterError::ContextError);
                     }
 
-                    // TODO: use the return value appropriately
-                    let _ = match msg {
+                    match msg {
                         PacketMsg::Recv(msg) => recv_packet_validate(self, module_id, msg),
                         PacketMsg::Ack(_) => todo!(),
                         PacketMsg::Timeout(_) => todo!(),
                         PacketMsg::TimeoutOnClose(_) => todo!(),
-                    };
-
-                    todo!()
+                    }
+                    .map_err(RouterError::ContextError)
                 }
             }
         }
