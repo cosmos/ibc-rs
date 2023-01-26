@@ -166,6 +166,15 @@ impl Module for DummyTransferModule {
         ))
     }
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_recv_packet_execute(
+        &mut self,
+        _packet: &Packet,
+        _relayer: &Signer,
+    ) -> (ModuleExtras, Acknowledgement) {
+        (ModuleExtras::empty(), Acknowledgement::from(vec![1u8]))
+    }
+
     fn on_recv_packet(
         &mut self,
         _output: &mut ModuleOutputBuilder,
