@@ -47,12 +47,6 @@ impl AsRef<[u8]> for Acknowledgement {
     }
 }
 
-impl From<&[u8]> for Acknowledgement {
-    fn from(bytes: &[u8]) -> Self {
-        Self(bytes.to_vec())
-    }
-}
-
 ///
 /// Message definition for packet acknowledgements.
 ///

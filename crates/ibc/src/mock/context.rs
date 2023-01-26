@@ -1974,8 +1974,7 @@ mod tests {
             ) -> Acknowledgement {
                 self.counter += 1;
 
-                let ack_bytes = [1u8];
-                Acknowledgement::from(ack_bytes.as_ref())
+                Acknowledgement::from(vec![1u8])
             }
         }
 
@@ -2065,8 +2064,7 @@ mod tests {
                 _packet: &Packet,
                 _relayer: &Signer,
             ) -> Acknowledgement {
-                let ack_bytes = [1u8];
-                Acknowledgement::from(ack_bytes.as_ref())
+                Acknowledgement::from(vec![1u8])
             }
         }
 

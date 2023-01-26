@@ -172,8 +172,7 @@ impl Module for DummyTransferModule {
         _packet: &Packet,
         _relayer: &Signer,
     ) -> Acknowledgement {
-        let ack_bytes = [1u8];
-        Acknowledgement::from(ack_bytes.as_ref())
+        Acknowledgement::from(vec![1u8])
     }
 }
 
