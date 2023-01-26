@@ -42,6 +42,13 @@ ICS 5 (Port Allocation) requires the IBC handler to permit [transferring ownersh
 
 We currently support neither.
 
+### Asynchronous acknowledgements
+The standard gives the ability for modules to [acknowledge packets asynchronously](https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics#writing-acknowledgements). This allows modules to receive the packet, but only applying the changes at a later time (after which they would write the acknowledgement).
+
+We currently force applications to process the packets as part of `onRecvPacket()`. If you need asynchronous acknowledgements for your application, please open an issue.
+
+Note that this still makes us 100% compatible with ibc-go.
+
 ## License
 
 Copyright © 2021 Informal Systems Inc. and ibc-rs authors.
