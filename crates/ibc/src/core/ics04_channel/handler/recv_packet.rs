@@ -121,13 +121,44 @@ pub(crate) mod val_exec_ctx {
                 }
                 .into());
             }
+
+            if msg.packet.sequence == next_seq_recv {
+                // Case where the recvPacket is successful and an
+                // acknowledgement will be written (not a no-op)
+                validate_write_acknowledgement(ctx_b, msg)?;
+            }
         } else {
             ctx_b.get_packet_receipt(&(
                 msg.packet.port_on_b.clone(),
                 msg.packet.chan_on_b.clone(),
                 msg.packet.sequence,
             ))?;
+
+            // Case where the recvPacket is successful and an
+            // acknowledgement will be written (not a no-op)
+            validate_write_acknowledgement(ctx_b, msg)?;
         };
+
+        Ok(())
+    }
+
+    fn validate_write_acknowledgement<Ctx>(
+        ctx_b: &Ctx,
+        msg: &MsgRecvPacket,
+    ) -> Result<(), ContextError>
+    where
+        Ctx: ValidationContext,
+    {
+        let packet = msg.packet.clone();
+        if ctx_b
+            .get_packet_acknowledgement(&(packet.port_on_b, packet.chan_on_b, packet.sequence))
+            .is_ok()
+        {
+            return Err(PacketError::AcknowledgementExists {
+                sequence: msg.packet.sequence,
+            }
+            .into());
+        }
 
         Ok(())
     }

@@ -74,11 +74,12 @@ mod val_exec_ctx {
     use crate::core::ics03_connection::version::{
         get_compatible_versions, pick_version, Version as ConnectionVersion,
     };
-    use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
+    use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
     use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
     use crate::core::ics04_channel::context::calculate_block_delay;
     use crate::core::ics04_channel::events::{
-        CloseConfirm, CloseInit, OpenAck, OpenConfirm, OpenInit, OpenTry,
+        CloseConfirm, CloseInit, OpenAck, OpenConfirm, OpenInit, OpenTry, ReceivePacket,
+        WriteAcknowledgement,
     };
     use crate::core::ics04_channel::handler::{
         chan_close_confirm, chan_close_init, chan_open_ack, chan_open_confirm, chan_open_init,
@@ -1179,13 +1180,112 @@ mod val_exec_ctx {
     }
 
     fn recv_packet_execute<ExecCtx>(
-        _ctx_b: &mut ExecCtx,
-        _module_id: ModuleId,
-        _msg: MsgRecvPacket,
+        ctx_b: &mut ExecCtx,
+        module_id: ModuleId,
+        msg: MsgRecvPacket,
     ) -> Result<(), ContextError>
     where
         ExecCtx: ExecutionContext,
     {
-        todo!()
+        let chan_port_id_on_b = (msg.packet.port_on_b.clone(), msg.packet.chan_on_b.clone());
+        let chan_end_on_b = ctx_b.channel_end(&chan_port_id_on_b)?;
+
+        // check for the no-op cases (i.e. when another relayer already relayed the packet)
+        // we don't want to fail the transaction in this case
+        match chan_end_on_b.ordering {
+            Order::None => (),
+            Order::Unordered => {
+                let packet = msg.packet.clone();
+                if let Ok(_receipt) =
+                    ctx_b.get_packet_receipt(&(packet.port_on_b, packet.chan_on_b, packet.sequence))
+                {
+                    // the receipt exists, so another relayer already relayed
+                    // the packet
+                    return Ok(());
+                }
+            }
+            Order::Ordered => {
+                let next_seq_recv = ctx_b.get_next_sequence_recv(&chan_port_id_on_b)?;
+
+                if msg.packet.sequence < next_seq_recv {
+                    // the sequence number has already been incremented, so
+                    // another relayer already relayed the packet
+                    return Ok(());
+                }
+            }
+        }
+
+        let module = ctx_b
+            .get_route_mut(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+
+        let (extras, acknowledgement) = module.on_recv_packet_execute(&msg.packet, &msg.signer);
+
+        // FIXME: Enforce this in the type instead (e.g. constructor revokes empty vecs)
+        if acknowledgement.is_empty() {
+            return Err(PacketError::InvalidAcknowledgement.into());
+        }
+
+        // state changes
+        {
+            // `recvPacket` core handler state changes
+            match chan_end_on_b.ordering {
+                Order::Unordered => {
+                    let path = ReceiptsPath {
+                        port_id: msg.packet.port_on_b.clone(),
+                        channel_id: msg.packet.chan_on_b.clone(),
+                        sequence: msg.packet.sequence,
+                    };
+
+                    ctx_b.store_packet_receipt(path, Receipt::Ok)?;
+                }
+                Order::Ordered => {
+                    let port_chan_id_on_b =
+                        (msg.packet.port_on_b.clone(), msg.packet.chan_on_b.clone());
+                    let next_seq_recv = ctx_b.get_next_sequence_recv(&port_chan_id_on_b)?;
+
+                    ctx_b.store_next_sequence_recv(port_chan_id_on_b, next_seq_recv.increment())?;
+                }
+                _ => {}
+            }
+
+            // `writeAcknowledgement` handler state changes
+            ctx_b.store_packet_acknowledgement(
+                (
+                    msg.packet.port_on_b.clone(),
+                    msg.packet.chan_on_b.clone(),
+                    msg.packet.sequence,
+                ),
+                ctx_b.ack_commitment(&acknowledgement),
+            )?;
+        }
+
+        // emit events and logs
+        {
+            ctx_b.log_message("success: packet receive".to_string());
+            ctx_b.log_message("success: packet write acknowledgement".to_string());
+
+            let conn_id_on_b = &chan_end_on_b.connection_hops()[0];
+            ctx_b.emit_ibc_event(IbcEvent::ReceivePacket(ReceivePacket::new(
+                msg.packet.clone(),
+                chan_end_on_b.ordering,
+                conn_id_on_b.clone(),
+            )));
+            ctx_b.emit_ibc_event(IbcEvent::WriteAcknowledgement(WriteAcknowledgement::new(
+                msg.packet,
+                acknowledgement,
+                conn_id_on_b.clone(),
+            )));
+
+            for module_event in extras.events {
+                ctx_b.emit_ibc_event(IbcEvent::AppModule(module_event));
+            }
+
+            for log_message in extras.log {
+                ctx_b.log_message(log_message);
+            }
+        }
+
+        Ok(())
     }
 }
