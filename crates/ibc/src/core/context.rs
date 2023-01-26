@@ -225,7 +225,7 @@ mod val_exec_ctx {
                     }
 
                     match msg {
-                        PacketMsg::Recv(msg) => recv_packet_validate(self, module_id, msg),
+                        PacketMsg::Recv(msg) => recv_packet_validate(self, msg),
                         PacketMsg::Ack(_) => todo!(),
                         PacketMsg::Timeout(_) => todo!(),
                         PacketMsg::TimeoutOnClose(_) => todo!(),
@@ -1152,20 +1152,12 @@ mod val_exec_ctx {
         Ok(())
     }
 
-    fn recv_packet_validate<ValCtx>(
-        ctx_b: &ValCtx,
-        module_id: ModuleId,
-        msg: MsgRecvPacket,
-    ) -> Result<(), ContextError>
+    fn recv_packet_validate<ValCtx>(ctx_b: &ValCtx, msg: MsgRecvPacket) -> Result<(), ContextError>
     where
         ValCtx: ValidationContext,
     {
-        recv_packet::validate(ctx_b, &msg)?;
+        recv_packet::validate(ctx_b, &msg)
 
-        let _module = ctx_b
-            .get_route(&module_id)
-            .ok_or(ChannelError::RouteNotFound)?;
-
-        todo!()
+        // nothing to validate with the module, since `onRecvPacket` cannot fail.
     }
 }
