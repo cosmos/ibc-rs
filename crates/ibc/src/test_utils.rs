@@ -172,7 +172,10 @@ impl Module for DummyTransferModule {
         _packet: &Packet,
         _relayer: &Signer,
     ) -> (ModuleExtras, Acknowledgement) {
-        (ModuleExtras::empty(), Acknowledgement::from(vec![1u8]))
+        (
+            ModuleExtras::empty(),
+            Acknowledgement::try_from(vec![1u8]).unwrap(),
+        )
     }
 
     fn on_recv_packet(
@@ -181,7 +184,7 @@ impl Module for DummyTransferModule {
         _packet: &Packet,
         _relayer: &Signer,
     ) -> Acknowledgement {
-        Acknowledgement::from(vec![1u8])
+        Acknowledgement::try_from(vec![1u8]).unwrap()
     }
 }
 

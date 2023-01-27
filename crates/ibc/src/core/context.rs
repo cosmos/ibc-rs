@@ -1224,11 +1224,6 @@ mod val_exec_ctx {
 
         let (extras, acknowledgement) = module.on_recv_packet_execute(&msg.packet, &msg.signer);
 
-        // FIXME: Enforce this in the type instead (e.g. constructor revokes empty vecs)
-        if acknowledgement.is_empty() {
-            return Err(PacketError::InvalidAcknowledgement.into());
-        }
-
         // state changes
         {
             // `recvPacket` core handler state changes

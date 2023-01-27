@@ -56,10 +56,6 @@ pub fn process<Ctx: ChannelReader>(
         Err(e) => return Err(e),
     }
 
-    if ack.is_empty() {
-        return Err(PacketError::InvalidAcknowledgement);
-    }
-
     let result = PacketResult::WriteAck(WriteAckPacketResult {
         port_id: packet.port_on_b.clone(),
         channel_id: packet.chan_on_b.clone(),
@@ -181,7 +177,7 @@ mod tests {
         .collect();
 
         for test in tests {
-            let res = process(&test.ctx, test.packet.clone(), test.ack.into());
+            let res = process(&test.ctx, test.packet.clone(), test.ack.try_into().unwrap());
             // Additionally check the events and the output objects in the result.
             match res {
                 Ok(proto_output) => {
