@@ -879,17 +879,9 @@ impl Ics2ClientState for ClientState {
         })
     }
 
-    /// Check if the upgraded client has been committed by the current client,
-    /// and verify all data in client state that must be the same across all
-    /// valid Tendermint clients for the new chain.
-    ///
-    /// - Error cases:
-    ///     - the upgraded client is not of a Tendermint ClientState
-    ///     - the height of upgraded client is not greater than that of current
-    ///       client
-    ///     - any Tendermint chain specified parameter in upgraded client such
-    ///       as ChainID, UnbondingPeriod, and ProofSpecs do not match
-    ///       parameters set by committed client
+    /// Perform client-specific verifications and check all data in the new
+    /// client state to be the same across all valid Tendermint clients for the
+    /// new chain.
     ///
     /// You can learn more about how to upgrade IBC-connected SDK chains in
     /// [this](https://ibc.cosmos.network/main/ibc/upgrades/quick-guide.html)
@@ -923,7 +915,7 @@ impl Ics2ClientState for ClientState {
             });
         }
 
-        // Ensure that the new unbonding period is not shorter than the current's 
+        // Ensure that the new unbonding period is not shorter than the current's
         // client unbonding period
         if self.unbonding_period > upgraded_tm_client_state.unbonding_period {
             return Err(ClientError::ClientSpecific {
@@ -991,6 +983,7 @@ impl Ics2ClientState for ClientState {
         Ok(())
     }
 
+    // Commit the new client state and consensus state to the store
     fn update_state_with_upgrade_client(
         &self,
         upgraded_client_state: Any,
@@ -1024,7 +1017,7 @@ impl Ics2ClientState for ClientState {
         // NextValidatorsHash of the last block committed by the old chain. This
         // will allow the first block of the new chain to be verified against
         // the last validators of the old chain so long as it is submitted
-        // within the TrustingPeriod of this client. 
+        // within the TrustingPeriod of this client.
         // NOTE: We do not set processed time for this consensus state since
         // this consensus state should not be used for packet verification as
         // the root is empty. The next consensus state submitted using update
