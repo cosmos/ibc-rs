@@ -1,0 +1,420 @@
+# ADR 006: Upgrade client implementation
+
+## Changelog
+
+* 2023-01-25 Initial Proposal
+
+## Context
+
+The ability to upgrade is crucial for IBC-connected chains. It allows them to
+evolve and improve without any restrictions. The IBC module may not be affected
+by some upgrades, but some may require it to be upgraded as well to maintain
+high-value connections to other chains secure. For having this capability,
+chains that implement `IBC-rs` may bring various concerns and characteristics
+than Tendermint chains leading to different ways for upgrading their clients.
+However there are generic rules that apply to all and can serve as a framework
+for any `IBC-rs` implementation. On this basis, this record aims to justify the
+logic behind upgrading a light client, determine the boundary between
+client-wide and client-specific upgrade processes, list requisites for
+validation and execution steps, and explain Tendermint's upgrade client
+implementation within the
+[ics07_tendermint](../../crates/ibc/src/clients/ics07_tendermint).
+
+## Decision
+
+In this section, after presenting rules that mainly derived from the IBC
+protocol and the review of the `IBC-Go` implementation, the upgrade client
+process for Tendermint chains is outlined in detail. Then, the design and
+implementation of this rationale in `IBC-rs` is explained.
+
+### Chain-wide Upgrade Rules
+
+#### Chain supports IBC upgrades?
+
+* IBC currently **ONLY** supports planned upgrades that are committed to in
+  advance by the upgrading chain, in order for counterparty clients to maintain
+  their connections securely.
+* An IBC upgrade **MUST** be performed if upgrading an IBC-connected chain
+  breaks the counterparty IBC client.
+* There **MUST** be a proof verification process to check upgraded client and
+  consensus states against the host chain's state.
+* Clients **MUST** ensure that the planned last height of the current revision
+  is somehow encoded in the proof verification process. This prevents premature
+  upgrades, as the counterparty may cancel or modify upgrade plans before the
+  last planned height.
+* Chain upgrades **MUST NOT** result in changing
+  [ClientState](../../crates/ibc/src/core/ics02_client/client_state.rs#ClientState)
+  or
+  [ConsensusState](../../crates/ibc/src/core/ics02_client/consensus_state.rs#ConsensusState)
+  implementations
+* It is **UP TO** the chain's architecture how updated client and consensus
+  states are committed, either through decentralized approaches, like governance
+  or centralized methods, like a multisig account, etc.
+* Upon commitment, chain's store **MUST** contain updated client and consensus
+  states, which can be retrieved using respective upgrade paths
+
+#### IBC Handler accepts upgrade?
+
+After ensuring that the chain upgrades is supported by IBC, the general
+validation and execution steps that apply to all chains are as follows. The
+criteria for classifying a validation as client-wide (also can be known as
+basic) or client-specific was whether that IBC handler can perform that action
+just using its own context data, which are available upon calling interfaces
+provided by `ClientState` and `ConsensusState` traits, like `is_frozen()`,
+`latest_height()`, etc.
+
+* Latest client state **MUST NOT** be frozen
+* Latest consensus state **MUST** be within the trusting period of the latest
+  client state
+* Verification proofs **MUST** successfully be decoded into the domain types
+
+Any other requisite beyond the above rules are considered client-specific. Next,
+we go through the upgrade client process for Tendermint chains to justify the
+logic and illustrate an example of client-specific upgrade process.
+
+### Upgrade Tendermint Clients
+
+This section is based on the `IBC-Go` procedure for client upgrades with a few
+modifications to comply with the `IBC-rs` design patterns.
+
+#### Acceptable Client State Upgrades
+
+Below list enumerates upgrades on Tendermint chains that would break
+counterparty IBC Tendermint clients and indicates whether or not the change is
+supported by `IBC-rs`:
+
+* S: Supported, P: Partially Supported, U: Unsupported
+
+1. (S) Changing the `ChainId`
+2. (P) Changing the `UnbondingPeriod`: chains may increase the unbonding period
+   with no issues. However, decreasing the unbonding period may irreversibly
+   break some counterparty clients. Thus, it is not recommended that chains
+   reduce the unbonding period.
+3. (S) Changing the `Height` (resetting to 0): as long as chains remember to
+   increment the revision number in their chain-id.
+4. (S) Changing the `ProofSpecs`: this should be changed if the proof structure
+   needed to verify IBC proofs is changed across the upgrade. Ex: Switching from
+   an IAVL store, to a SimpleTree Store.
+5. (S) Changing the `UpgradePath`: this might involve changing the key under
+   which upgraded clients and consensus states are stored in the upgrade store,
+   or even migrating the upgrade store itself.
+6. (U) Migrating the IBC store: the store location is negotiated by the
+   connection.
+7. (S) Upgrading to a backwards compatible version of IBC
+8. (U) Upgrading to a non-backwards compatible version of IBC: the version is
+   negotiated on connection handshake.
+9. (U) Changing parameters that are customizable by relayers like `TrustLevel`
+    and `TrustingPeriod`, `max_clock_drift`
+10. (P) Changing the Tendermint LightClient algorithm: Changes to the light
+   client algorithm that do not change the
+   [ClientState](../../crates/ibc/src/clients/ics07_tendermint/client_state.rs#ClientState)
+   or
+   [ConsensusState](../../crates/ibc/src/clients/ics07_tendermint/consensus_state.rs#ConsensusState)
+   struct may be supported, provided that the counterparty is also upgraded to
+   support the new light client algorithm. Changes that require updating the
+   `ClientState` and `ConsensusState` structs themselves are theoretically
+   possible by providing a path to translate an older ClientState struct into
+   the new ClientState struct; however this is not currently implemented.
+  
+#### Upgrade Process Step-by-step
+
+An IBC-connected Tendermint chain will take the following steps to completely
+upgrade its own chain and counterparty's IBC client:
+
+1. Upgrade chain through governance
+   1. Create a 02-client
+      [UpgradeProposal](https://github.com/cosmos/ibc-go/blob/main/docs/ibc/proto-docs.md#upgradeproposal)
+      with an `UpgradePlan` and a new IBC `ClientState` in the
+      `UpgradedClientState` field with the following remarks:
+        * The `UpgradePlan` must specify an upgrade height only (no upgrade
+          time)
+        * The `ClientState` should only include the fields common to all valid
+          clients and zero out any client-customizable fields (such as
+          `TrustingPeriod`).
+   2. Vote on and pass the `UpgradeProposal`
+   3. Commit `UpgradedClient` by the upgrade module under the following key:
+
+        ```md
+        upgrade/UpgradedIBCState/{upgradeHeight}/upgradedClient
+        ```
+
+   4. Commit an initial consensus state by upgrade module on the block right
+      before the upgrade height for the next chain under the following key:
+
+        ```md
+        upgrade/UpgradedIBCState/{upgradeHeight}/upgradedConsState
+        ```
+
+2. Submit an upgrade client message to the counterparty chain by a relayer
+   1. Wait for the upgrading chain to reach the upgrade height and halt
+   2. Query a full node for the proofs of `UpgradedClient` and
+      `UpgradedConsensusState` at the last height of the old chain
+   3. Update the counterparty client to the last height of the old chain using
+      the `UpdateClient` msg
+   4. Submit an `UpgradeClient` msg to the counterparty chain with the
+      `UpgradedClient`, `UpgradedConsensusState` and their respective proofs
+
+3. Process the upgrade message on the counterparty chain</br> IBC handler upon
+receiving an `MsgUpgradeClient` message performs basic validations (BV),
+client-specific validations (SV) and lastly execution (E) steps as follows.
+   1. (BV) Check that the current client is not frozen
+   2. (BV) Check if the latest consensus state is within the trust period
+   3. (BV) Decode proofs and check that they are valid
+   4. (SV) Verify that the upgradedClient be of a Tendermint `ClientState` type
+   5. (SV) Verify that the upgradedConsensusState be of a Tendermint
+      `ConsensusState` type
+   6. (SV) Check the latest height of the current client state does not have the
+      same revision number or has a greater height than the committed client
+   7. (SV) Match any Tendermint chain specified parameter in upgraded client
+      such as ChainID, UnbondingPeriod, and ProofSpecs with the committed client
+   8. (SV) Verify that the upgrading chain did indeed commit to the upgraded
+      client state at the upgrade height by provided proof
+   9. (SV) Verify that the upgrading chain did indeed commit to the upgraded
+      consensus state at the upgrade height by provided proof
+   10. (E) Upgrade client to the new client by retaining old client-customizable
+      parameters (sent by relayers) such `TrustingPeriod`, `TrustLevel`,
+      `MaxClockDrift` and adopt the new chain-specified fields such as
+      `UnbondingPeriod`, `ChainId`, `UpgradePath`, etc.
+   11. (E) Upgrade consensus state with a stand-in sentinel value for root</b>
+      Note: The upgraded consensus state serve purely as a basis of trust for
+      future `UpdateClientMsgs`, and therefore does not require a root for proof
+      verification. Also, we do not set processed time for this consensus state
+      since this consensus state should not be used for packet verification as
+      the root is empty. To ensure the connection can be used for relaying
+      packets, relayers must submit an `UpdateClientMsg` with a header from the
+      new chain.
+
+4. Submit an `UpdateClient` msg by a relayer to the counterparty chain with a
+   header from the newly upgraded chain
+
+#### Decisions
+
+Whenever the IBC handler receives an `MsgUpgradeClient`, it dispatches the
+decoded message to the router and triggers the
+[process](../../crates/ibc/src/core/ics02_client/handler/upgrade_client.rs#process)
+function of `upgrade_client` handler, which would go through the steps outlined
+in 3rd section of [Upgrade Process Step-by-Step]. Just note that the `process`
+function will be rendered into `validate` and `execute` functions due to ongoing
+changes associated with ADR-005, and to align with that one of the decisions
+made is to split off the `verify_upgrade_and_update_state` method of
+`ClientState` trait into:
+
+* `verify_upgrade_client` interface
+
+   ```rust
+   fn verify_upgrade_client(
+      &self,
+      upgraded_client_state: Any,
+      upgraded_consensus_state: Any,
+      proof_upgrade_client: MerkleProof,
+      proof_upgrade_consensus_state: MerkleProof,
+      root: &CommitmentRoot,
+   ) -> Result<(), ClientError>;
+   ```
+
+* And `update_state_with_upgrade_client` interface
+
+   ```rust
+   fn update_state_with_upgrade_client(
+      &self,
+      upgraded_client_state: Any,
+      upgraded_consensus_state: Any,
+   ) -> Result<UpdatedState, ClientError>;
+   ```
+
+Listed below are the code snippets that correspond to the third step of the
+previous section as mentioned:
+
+* **Basic Validations**
+
+1. ```rust
+   if old_client_state.is_frozen() {
+      return Err(ContextError::ClientError(ClientError::ClientFrozen {
+         client_id,
+      }));
+   }
+   ```
+
+2. ```rust
+   let old_consensus_state = ctx
+      .consensus_state(&client_id, &old_client_state.latest_height())
+      .map_err(|_| ClientError::ConsensusStateNotFound {
+         client_id: client_id.clone(),
+         height: old_client_state.latest_height(),
+      })?;
+
+   let now = ctx.host_timestamp()?;
+   let duration = now
+      .duration_since(&old_consensus_state.timestamp())
+      .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
+         time1: old_consensus_state.timestamp(),
+         time2: now,
+      })?;
+
+   if old_client_state.expired(duration) {
+      return Err(ClientError::HeaderNotWithinTrustPeriod {
+         latest_time: old_consensus_state.timestamp(),
+         update_time: now,
+      });
+   };
+   ```
+
+3. ```rust
+   // Decode the proto message into a domain message inside deliver() function
+   // include the proofs in the message
+   let envelope = decode(message)?;
+   ```
+
+* **Chain-specific Validations**
+
+4. ```rust
+   let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
+   ```
+
+5. ```rust
+   let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
+   ```
+
+6. ```rust
+   if self.latest_height() >= upgraded_tm_client_state.latest_height() {
+      return Err(ClientError::LowUpgradeHeight {
+            upgraded_height: self.latest_height(),
+            client_height: upgraded_tm_client_state.latest_height(),
+      });
+   }
+   ```
+
+7. ```rust
+   // Ensure that the new unbonding period is not shorter than the current's client unbonding period
+   if self.unbonding_period > upgraded_tm_client_state.unbonding_period {
+      return Err(ClientError::ClientSpecific {
+            description:
+               "cannot upgrade client with a shorter unbonding period than the current one"
+                  .to_string(),
+      });
+   }
+
+   // Check to see if the upgrade path is set
+   let mut upgrade_path = upgraded_tm_client_state.clone().upgrade_path;
+   if upgrade_path.pop().is_none() {
+      return Err(ClientError::ClientSpecific {
+            description: "cannot upgrade client as no upgrade path has been set".to_string(),
+      });
+   };
+   ```
+
+8. ```rust
+   let last_height = self.latest_height().revision_height();
+
+   // Construct the merkle path for the client state
+   let mut client_upgrade_path = upgrade_path.clone();
+   client_upgrade_path.push(ClientUpgradePath::UpgradedClientState(last_height).to_string());
+
+   let client_upgrade_merkle_path = MerklePath {
+      key_path: client_upgrade_path,
+   };
+
+   let client_state_value =
+      Protobuf::<RawTmClientState>::encode_vec(&upgraded_tm_client_state)
+         .map_err(ClientError::Encode)?;
+
+   // Verify the proof of the upgraded client state
+   merkle_proof_upgrade_client
+      .verify_membership(
+         &self.proof_specs,
+         root.clone().into(),
+         client_upgrade_merkle_path,
+         client_state_value,
+         0,
+      )
+      .map_err(ClientError::Ics23Verification)?;
+   ```
+
+9. ```rust
+   let last_height = self.latest_height().revision_height();
+
+   // Construct the merkle path for the consensus state
+   let mut cons_upgrade_path = upgrade_path;
+   cons_upgrade_path
+      .push(ClientUpgradePath::UpgradedClientConsensusState(last_height).to_string());
+   let cons_upgrade_merkle_path = MerklePath {
+      key_path: cons_upgrade_path,
+   };
+
+   let cons_state_value = Protobuf::<RawTmConsensusState>::encode_vec(&upgraded_tm_cons_state)
+      .map_err(ClientError::Encode)?;
+
+   // Verify the proof of the upgraded consensus state
+   merkle_proof_upgrade_cons_state
+      .verify_membership(
+            &self.proof_specs,
+            root.clone().into(),
+            cons_upgrade_merkle_path,
+            cons_state_value,
+            0,
+      )
+      .map_err(ClientError::Ics23Verification)?;
+   ```
+
+* **Executions**
+
+10. ```rust
+    let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
+    let new_client_state = TmClientState::new(
+       upgraded_tm_client_state.chain_id,
+       self.trust_level,
+       self.trusting_period,
+       upgraded_tm_client_state.unbonding_period,
+       self.max_clock_drift,
+       upgraded_tm_client_state.latest_height,
+       upgraded_tm_client_state.proof_specs,
+       upgraded_tm_client_state.upgrade_path,
+       upgraded_tm_client_state.allow_update,
+       upgraded_tm_client_state.frozen_height,
+    )?;
+    ```
+
+11. ```rust
+    let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
+    let sentinel_root = "sentinel_root".as_bytes().to_vec();
+    let new_consensus_state = TmConsensusState::new(
+       sentinel_root.into(),
+       upgraded_tm_cons_state.timestamp,
+       upgraded_tm_cons_state.next_validators_hash,
+    );
+    ```
+
+## Status
+
+Proposed
+
+## Consequences
+
+### Positive
+
+* Resolve the issue of unimplemented upgrade client message in `IBC-rs`
+* Keep tendermint upgrade client implementation close to the `IBC-Go`
+
+### Negative
+
+* This proposal might not cover upgrade edge cases that arise from specific
+  chain architectures. Thus, there should be further investigation in such
+  cases.
+
+### Neutral
+
+* As a general fact, upgrading processes are tricky by nature, requiring much
+  more care from developers and support from IBC maintainers
+
+## References
+
+* [How to Upgrade IBC Chains and their
+  Clients](https://github.com/cosmos/ibc-go/blob/main/docs/ibc/upgrades/quick-guide.md)
+* [IBC Client Developer Guide to
+  Upgrades](https://github.com/cosmos/ibc-go/blob/main/docs/ibc/upgrades/developer-guide.md)
+* [cosmos/cosmos-sdk/Issue 7367: Upgrade
+  Client](https://github.com/cosmos/cosmos-sdk/pull/7367)
+* [cosmos/ibc-go/Issue 2501: Create importable workflow for chains to run
+  upgrade tests](https://github.com/cosmos/ibc-go/issues/2501)
+* [Hermes relayer documentation: Client
+  Upgrade](https://hermes.informal.systems/documentation/commands/upgrade/index.html)
