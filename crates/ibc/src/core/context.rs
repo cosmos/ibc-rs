@@ -1174,6 +1174,7 @@ mod val_exec_ctx {
     where
         ValCtx: ValidationContext,
     {
+        // Note: this contains the validation for `write_acknowledgement` as well.
         recv_packet::validate(ctx_b, &msg)
 
         // nothing to validate with the module, since `onRecvPacket` cannot fail.
