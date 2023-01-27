@@ -880,16 +880,20 @@ impl Ics2ClientState for ClientState {
     }
 
     /// Check if the upgraded client has been committed by the current client,
-    /// and verify all data in client state that must be the same across all valid Tendermint clients for the new chain.
+    /// and verify all data in client state that must be the same across all
+    /// valid Tendermint clients for the new chain.
     ///
     /// - Error cases:
     ///     - the upgraded client is not of a Tendermint ClientState
-    ///     - the height of upgraded client is not greater than that of current client
-    ///     - any Tendermint chain specified parameter in upgraded client such as ChainID, UnbondingPeriod,
-    /// and ProofSpecs do not match parameters set by committed client
+    ///     - the height of upgraded client is not greater than that of current
+    ///       client
+    ///     - any Tendermint chain specified parameter in upgraded client such
+    ///       as ChainID, UnbondingPeriod, and ProofSpecs do not match
+    ///       parameters set by committed client
     ///
     /// You can learn more about how to upgrade IBC-connected SDK chains in
-    /// [this](https://ibc.cosmos.network/main/ibc/upgrades/quick-guide.html) guide
+    /// [this](https://ibc.cosmos.network/main/ibc/upgrades/quick-guide.html)
+    /// guide
     fn verify_upgrade_client(
         &self,
         upgraded_client_state: Any,
@@ -909,12 +913,23 @@ impl Ics2ClientState for ClientState {
         let merkle_proof_upgrade_client = MerkleProof::from(proof_upgrade_client);
         let merkle_proof_upgrade_cons_state = MerkleProof::from(proof_upgrade_consensus_state);
 
-        // Make sure the latest height of the current client is not greater then the upgrade height
-        // This condition checks both the revision number and the height
+        // Make sure the latest height of the current client is not greater then
+        // the upgrade height This condition checks both the revision number and
+        // the height
         if self.latest_height() >= upgraded_tm_client_state.latest_height() {
             return Err(ClientError::LowUpgradeHeight {
                 upgraded_height: self.latest_height(),
                 client_height: upgraded_tm_client_state.latest_height(),
+            });
+        }
+
+        // Ensure that the new unbonding period is not shorter than the current's 
+        // client unbonding period
+        if self.unbonding_period > upgraded_tm_client_state.unbonding_period {
+            return Err(ClientError::ClientSpecific {
+                description:
+                    "cannot upgrade client with a shorter unbonding period than the current one"
+                        .to_string(),
             });
         }
 
@@ -984,10 +999,10 @@ impl Ics2ClientState for ClientState {
         let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
         let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
 
-        // Construct new client state and consensus state
-        // Relayer chosen client parameters are ignored.
-        // All chain-chosen parameters come from committed client, all client-chosen parameters
-        // come from current client.
+        // Construct new client state and consensus state relayer chosen client
+        // parameters are ignored. All chain-chosen parameters come from
+        // committed client, all client-chosen parameters come from current
+        // client.
         let new_client_state = TmClientState::new(
             upgraded_tm_client_state.chain_id,
             self.trust_level,
@@ -1001,13 +1016,19 @@ impl Ics2ClientState for ClientState {
             upgraded_tm_client_state.frozen_height,
         )?;
 
-        // The new consensus state is merely used as a trusted kernel against which headers on the new
-        // chain can be verified. The root is just a stand-in sentinel value as it cannot be known in advance, thus no proof verification will pass.
-        // The timestamp and the NextValidatorsHash of the consensus state is the blocktime and NextValidatorsHash
-        // of the last block committed by the old chain. This will allow the first block of the new chain to be verified against
-        // the last validators of the old chain so long as it is submitted within the TrustingPeriod of this client.
-        // NOTE: We do not set processed time for this consensus state since this consensus state should not be used for packet verification
-        // as the root is empty. The next consensus state submitted using update will be usable for packet-verification.
+        // The new consensus state is merely used as a trusted kernel against
+        // which headers on the new chain can be verified. The root is just a
+        // stand-in sentinel value as it cannot be known in advance, thus no
+        // proof verification will pass. The timestamp and the
+        // NextValidatorsHash of the consensus state is the blocktime and
+        // NextValidatorsHash of the last block committed by the old chain. This
+        // will allow the first block of the new chain to be verified against
+        // the last validators of the old chain so long as it is submitted
+        // within the TrustingPeriod of this client. NOTE: We do not set
+        // processed time for this consensus state since this consensus state
+        // should not be used for packet verification as the root is empty. The
+        // next consensus state submitted using update will be usable for
+        // packet-verification.
         let new_consensus_state = TmConsensusState::new(
             vec![].into(),
             upgraded_tm_cons_state.timestamp,

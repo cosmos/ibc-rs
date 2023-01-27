@@ -112,13 +112,16 @@ pub trait ClientState:
         misbehaviour: Any,
     ) -> Result<Box<dyn ClientState>, ContextError>;
 
-    /// Verify the ugraded client and consensus states and validate proofs against the given root.
+    /// Verify the upgraded client and consensus states and validate proofs
+    /// against the given root.
     ///
-    /// NOTE: proof heights are not included as upgrade to a new revision is expected to pass only on the last
-    /// height committed by the current revision. Clients are responsible for ensuring that the planned last
-    /// height of the current revision is somehow encoded in the proof verification process.
-    /// This is to ensure that no premature upgrades occur, since upgrade plans committed to by the counterparty
-    /// may be cancelled or modified before the last planned height.
+    /// NOTE: proof heights are not included as upgrade to a new revision is
+    /// expected to pass only on the last height committed by the current
+    /// revision. Clients are responsible for ensuring that the planned last
+    /// height of the current revision is somehow encoded in the proof
+    /// verification process. This is to ensure that no premature upgrades
+    /// occur, since upgrade plans committed to by the counterparty may be
+    /// cancelled or modified before the last planned height.
     fn verify_upgrade_client(
         &self,
         upgraded_client_state: Any,
@@ -191,7 +194,7 @@ pub trait ClientState:
         expected_client_state: Any,
     ) -> Result<(), ClientError>;
 
-    /// Verify a `proof` that a packet has been commited.
+    /// Verify a `proof` that a packet has been committed.
     #[allow(clippy::too_many_arguments)]
     fn verify_packet_data(
         &self,
@@ -206,7 +209,7 @@ pub trait ClientState:
         commitment: PacketCommitment,
     ) -> Result<(), ClientError>;
 
-    /// Verify a `proof` that a packet has been commited.
+    /// Verify a `proof` that a packet has been committed.
     #[allow(clippy::too_many_arguments)]
     fn verify_packet_acknowledgement(
         &self,
