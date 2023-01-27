@@ -170,6 +170,7 @@ client-specific validations (SV) and lastly execution (E) steps as follows:
       such as ChainID, UnbondingPeriod, and ProofSpecs with the committed client
    8. (SV) Verify that the upgrading chain did indeed commit to the upgraded
       client state at the upgrade height by provided proof
+      Note: client-customizable fields must be zeroed out for this check
    9. (SV) Verify that the upgrading chain did indeed commit to the upgraded
       consensus state at the upgrade height by provided proof
    10. (E) Upgrade client to the new client by retaining old client-customizable
@@ -222,6 +223,12 @@ with that one of the decisions made is to split off the
       upgraded_consensus_state: Any,
    ) -> Result<UpdatedState, ClientError>;
    ```
+
+There is also a need to move away from `upgrade` method of `ClientState` trait
+leaving only zeroed out fields through `zero_custom_fields()`. New state
+commitment should be done in `update_state_with_upgrade_client` and stored via
+`store_client_result` of keeper context, so the upgrade part is no longer
+necessary.
 
 Listed below are the code snippets that correspond to the third step of the
 previous section as mentioned:
@@ -315,6 +322,7 @@ previous section as mentioned:
       key_path: client_upgrade_path,
    };
 
+   upgraded_tm_client_state.zero_custom_fields();
    let client_state_value =
       Protobuf::<RawTmClientState>::encode_vec(&upgraded_tm_client_state)
          .map_err(ClientError::Encode)?;
@@ -384,6 +392,8 @@ previous section as mentioned:
        upgraded_tm_cons_state.next_validators_hash,
     );
     ```
+
+```rust
 
 ## Status
 
