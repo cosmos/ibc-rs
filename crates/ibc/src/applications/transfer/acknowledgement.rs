@@ -56,9 +56,10 @@ impl Display for TokenTransferAcknowledgement {
 
 impl From<TokenTransferAcknowledgement> for Vec<u8> {
     fn from(ack: TokenTransferAcknowledgement) -> Self {
+        // WARNING: Make sure all branches always return a non-empty vector.
+        // Otherwise, the conversion to `Acknowledgement` will panic.
         match ack {
             TokenTransferAcknowledgement::Success(_) => r#"{"result":"AQ=="}"#.as_bytes().into(),
-            // TokenTransferAcknowledgement::Error(s) => s.as_bytes(),
             TokenTransferAcknowledgement::Error(s) => alloc::format!(r#"{{"error":"{s}"}}"#).into(),
         }
     }
@@ -66,7 +67,10 @@ impl From<TokenTransferAcknowledgement> for Vec<u8> {
 
 impl From<TokenTransferAcknowledgement> for Acknowledgement {
     fn from(ack: TokenTransferAcknowledgement) -> Self {
-        ack.into()
+        let v: Vec<u8> = ack.into();
+
+        v.try_into()
+            .expect("token transfer internal error: ack is never supposed to be empty")
     }
 }
 
@@ -98,18 +102,23 @@ mod test {
         let ack_success: Vec<u8> = TokenTransferAcknowledgement::success().into();
 
         // Check that it's the same output as ibc-go
+        // Note: this also implicitly checks that the ack bytes are non-empty,
+        // which would make the conversion to `Acknowledgement` panic
         assert_eq!(ack_success, r#"{"result":"AQ=="}"#.as_bytes());
     }
 
     #[test]
     fn test_ack_error_to_vec() {
-        let ack_error = TokenTransferAcknowledgement::Error(
+        let ack_error: Vec<u8> = TokenTransferAcknowledgement::Error(
             "cannot unmarshal ICS-20 transfer packet data".to_string(),
-        );
+        )
+        .into();
 
         // Check that it's the same output as ibc-go
+        // Note: this also implicitly checks that the ack bytes are non-empty,
+        // which would make the conversion to `Acknowledgement` panic
         assert_eq!(
-            Vec::<u8>::from(ack_error),
+            ack_error,
             r#"{"error":"cannot unmarshal ICS-20 transfer packet data"}"#.as_bytes()
         );
     }
