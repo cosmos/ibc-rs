@@ -1190,28 +1190,30 @@ mod val_exec_ctx {
         let chan_port_id_on_b = (msg.packet.port_on_b.clone(), msg.packet.chan_on_b.clone());
         let chan_end_on_b = ctx_b.channel_end(&chan_port_id_on_b)?;
 
-        // check for the no-op cases (i.e. when another relayer already relayed the packet)
-        // we don't want to fail the transaction in this case
-        match chan_end_on_b.ordering {
-            Order::None => (),
-            Order::Unordered => {
-                let packet = msg.packet.clone();
-                if let Ok(_receipt) =
-                    ctx_b.get_packet_receipt(&(packet.port_on_b, packet.chan_on_b, packet.sequence))
-                {
-                    // the receipt exists, so another relayer already relayed
-                    // the packet
-                    return Ok(());
-                }
-            }
-            Order::Ordered => {
-                let next_seq_recv = ctx_b.get_next_sequence_recv(&chan_port_id_on_b)?;
+        // Check if another relayer already relayed the packet.
+        // We don't want to fail the transaction in this case.
+        {
+            let packet_already_received = match chan_end_on_b.ordering {
+                // Note: ibc-go doesn't make the check for `Order::None` channels
+                Order::None => false,
+                Order::Unordered => {
+                    let packet = msg.packet.clone();
 
-                if msg.packet.sequence < next_seq_recv {
+                    ctx_b
+                        .get_packet_receipt(&(packet.port_on_b, packet.chan_on_b, packet.sequence))
+                        .is_ok()
+                }
+                Order::Ordered => {
+                    let next_seq_recv = ctx_b.get_next_sequence_recv(&chan_port_id_on_b)?;
+
                     // the sequence number has already been incremented, so
                     // another relayer already relayed the packet
-                    return Ok(());
+                    msg.packet.sequence < next_seq_recv
                 }
+            };
+
+            if packet_already_received {
+                return Ok(());
             }
         }
 
