@@ -63,12 +63,7 @@ pub trait ClientState:
     /// Helper function to verify the upgrade client procedure.
     /// Resets all fields except the blockchain-specific ones,
     /// and updates the given fields.
-    fn upgrade(
-        &mut self,
-        upgrade_height: Height,
-        upgrade_options: &dyn UpgradeOptions,
-        chain_id: ChainId,
-    );
+    fn zero_custom_fields(&mut self);
 
     /// Convert into a boxed trait object
     fn into_box(self) -> Box<dyn ClientState>
@@ -276,8 +271,6 @@ impl PartialEq<&Self> for Box<dyn ClientState> {
 pub fn downcast_client_state<CS: ClientState>(h: &dyn ClientState) -> Option<&CS> {
     h.as_any().downcast_ref::<CS>()
 }
-
-pub trait UpgradeOptions: AsAny {}
 
 pub struct UpdatedState {
     pub client_state: Box<dyn ClientState>,

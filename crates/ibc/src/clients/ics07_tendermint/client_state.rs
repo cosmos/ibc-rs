@@ -22,9 +22,7 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConse
 use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::{Header as TmHeader, Header};
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
-use crate::core::ics02_client::client_state::{
-    ClientState as Ics2ClientState, UpdatedState, UpgradeOptions as CoreUpgradeOptions,
-};
+use crate::core::ics02_client::client_state::{ClientState as Ics2ClientState, UpdatedState};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::ClientReader;
@@ -354,14 +352,6 @@ impl ClientState {
     }
 }
 
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct UpgradeOptions {
-    pub unbonding_period: Duration,
-}
-
-impl CoreUpgradeOptions for UpgradeOptions {}
-
 impl Ics2ClientState for ClientState {
     fn chain_id(&self) -> ChainId {
         self.chain_id.clone()
@@ -379,17 +369,7 @@ impl Ics2ClientState for ClientState {
         self.frozen_height
     }
 
-    fn upgrade(
-        &mut self,
-        upgrade_height: Height,
-        upgrade_options: &dyn CoreUpgradeOptions,
-        chain_id: ChainId,
-    ) {
-        let upgrade_options = upgrade_options
-            .as_any()
-            .downcast_ref::<UpgradeOptions>()
-            .expect("UpgradeOptions not of type Tendermint");
-
+    fn zero_custom_fields(&mut self) {
         // Reset custom fields to zero values
         self.trusting_period = ZERO_DURATION;
         self.trust_level = TrustThreshold::ZERO;
@@ -397,11 +377,6 @@ impl Ics2ClientState for ClientState {
         self.allow_update.after_misbehaviour = false;
         self.frozen_height = None;
         self.max_clock_drift = ZERO_DURATION;
-
-        // Upgrade the client state
-        self.latest_height = upgrade_height;
-        self.unbonding_period = upgrade_options.unbonding_period;
-        self.chain_id = chain_id;
     }
 
     fn expired(&self, elapsed: Duration) -> bool {
@@ -895,7 +870,7 @@ impl Ics2ClientState for ClientState {
         root: &CommitmentRoot,
     ) -> Result<(), ClientError> {
         // Make sure that the client type is of Tendermint type `ClientState`
-        let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
+        let mut upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
 
         // Make sure that the consensus type is of Tendermint type `ConsensusState`
         let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
@@ -943,6 +918,7 @@ impl Ics2ClientState for ClientState {
             key_path: client_upgrade_path,
         };
 
+        upgraded_tm_client_state.zero_custom_fields();
         let client_state_value =
             Protobuf::<RawTmClientState>::encode_vec(&upgraded_tm_client_state)
                 .map_err(ClientError::Encode)?;
