@@ -1024,13 +1024,14 @@ impl Ics2ClientState for ClientState {
         // NextValidatorsHash of the last block committed by the old chain. This
         // will allow the first block of the new chain to be verified against
         // the last validators of the old chain so long as it is submitted
-        // within the TrustingPeriod of this client. NOTE: We do not set
-        // processed time for this consensus state since this consensus state
-        // should not be used for packet verification as the root is empty. The
-        // next consensus state submitted using update will be usable for
-        // packet-verification.
+        // within the TrustingPeriod of this client. 
+        // NOTE: We do not set processed time for this consensus state since
+        // this consensus state should not be used for packet verification as
+        // the root is empty. The next consensus state submitted using update
+        // will be usable for packet-verification.
+        let sentinel_root = "sentinel_root".as_bytes().to_vec();
         let new_consensus_state = TmConsensusState::new(
-            vec![].into(),
+            sentinel_root.into(),
             upgraded_tm_cons_state.timestamp,
             upgraded_tm_cons_state.next_validators_hash,
         );
