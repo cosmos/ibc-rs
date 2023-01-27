@@ -91,86 +91,8 @@ impl ClientState {
         upgrade_path: Vec<String>,
         allow_update: AllowUpdate,
         frozen_height: Option<Height>,
-    ) -> Result<ClientState, Error> {
-        if chain_id.as_str().len() > MaxChainIdLen {
-            return Err(Error::ChainIdTooLong {
-                chain_id: chain_id.clone(),
-                len: chain_id.as_str().len(),
-                max_len: MaxChainIdLen,
-            });
-        }
-
-        // `TrustThreshold` is guaranteed to be in the range `[0, 1)`, but a `TrustThreshold::ZERO`
-        // value is invalid in this context
-        if trust_level == TrustThreshold::ZERO {
-            return Err(Error::InvalidTrustThreshold {
-                reason: "ClientState trust-level cannot be zero".to_string(),
-            });
-        }
-
-        let _ = TendermintTrustThresholdFraction::new(
-            trust_level.numerator(),
-            trust_level.denominator(),
-        )
-        .map_err(Error::InvalidTendermintTrustThreshold)?;
-
-        // Basic validation of trusting period and unbonding period: each should be non-zero.
-        if trusting_period <= Duration::new(0, 0) {
-            return Err(Error::InvalidTrustThreshold {
-                reason: format!(
-                    "ClientState trusting period ({trusting_period:?}) must be greater than zero"
-                ),
-            });
-        }
-
-        if unbonding_period <= Duration::new(0, 0) {
-            return Err(Error::InvalidTrustThreshold {
-                reason: format!(
-                    "ClientState unbonding period ({unbonding_period:?}) must be greater than zero"
-                ),
-            });
-        }
-
-        if trusting_period >= unbonding_period {
-            return Err(Error::InvalidTrustThreshold {
-                reason: format!(
-                "ClientState trusting period ({trusting_period:?}) must be smaller than unbonding period ({unbonding_period:?})"
-            ),
-            });
-        }
-
-        if max_clock_drift <= Duration::new(0, 0) {
-            return Err(Error::InvalidMaxClockDrift {
-                reason: "ClientState max-clock-drift must be greater than zero".to_string(),
-            });
-        }
-
-        if latest_height.revision_number() != chain_id.version() {
-            return Err(Error::InvalidLatestHeight {
-                reason: "ClientState latest-height revision number must match chain-id version"
-                    .to_string(),
-            });
-        }
-
-        // Disallow empty proof-specs
-        if proof_specs.is_empty() {
-            return Err(Error::Validation {
-                reason: "ClientState proof-specs cannot be empty".to_string(),
-            });
-        }
-
-        // `upgrade_path` itself may be empty, but if not then each key must be non-empty
-        for (idx, key) in upgrade_path.iter().enumerate() {
-            if key.trim().is_empty() {
-                return Err(Error::Validation {
-                    reason: format!(
-                        "ClientState upgrade-path key at index {idx:?} cannot be empty"
-                    ),
-                });
-            }
-        }
-
-        Ok(Self {
+    ) -> Result<ClientState, ClientError> {
+        let new_client_state = Self {
             chain_id,
             trust_level,
             trusting_period,
@@ -182,7 +104,9 @@ impl ClientState {
             allow_update,
             frozen_height,
             verifier: ProdVerifier::default(),
-        })
+        };
+        new_client_state.validate()?;
+        Ok(new_client_state)
     }
 
     pub fn latest_height(&self) -> Height {
@@ -374,6 +298,97 @@ impl Ics2ClientState for ClientState {
 
     fn frozen_height(&self) -> Option<Height> {
         self.frozen_height
+    }
+
+    fn validate(&self) -> Result<(), ClientError> {
+        if self.chain_id.as_str().len() > MaxChainIdLen {
+            return Err(Error::ChainIdTooLong {
+                chain_id: self.chain_id.clone(),
+                len: self.chain_id.as_str().len(),
+                max_len: MaxChainIdLen,
+            }
+            .into());
+        }
+
+        // `TrustThreshold` is guaranteed to be in the range `[0, 1)`, but a `TrustThreshold::ZERO`
+        // value is invalid in this context
+        if self.trust_level == TrustThreshold::ZERO {
+            return Err(Error::InvalidTrustThreshold {
+                reason: "ClientState trust-level cannot be zero".to_string(),
+            }
+            .into());
+        }
+
+        TendermintTrustThresholdFraction::new(
+            self.trust_level.numerator(),
+            self.trust_level.denominator(),
+        )
+        .map_err(Error::InvalidTendermintTrustThreshold)?;
+
+        // Basic validation of trusting period and unbonding period: each should be non-zero.
+        if self.trusting_period <= Duration::new(0, 0) {
+            return Err(Error::InvalidTrustThreshold {
+                reason: format!(
+                    "ClientState trusting period ({:?}) must be greater than zero",
+                    self.trusting_period
+                ),
+            }
+            .into());
+        }
+
+        if self.unbonding_period <= Duration::new(0, 0) {
+            return Err(Error::InvalidTrustThreshold {
+                reason: format!(
+                    "ClientState unbonding period ({:?}) must be greater than zero",
+                    self.unbonding_period
+                ),
+            }
+            .into());
+        }
+
+        if self.trusting_period >= self.unbonding_period {
+            return Err(Error::InvalidTrustThreshold {
+                reason: format!(
+                "ClientState trusting period ({:?}) must be smaller than unbonding period ({:?})", self.trusting_period, self.unbonding_period
+            ),
+            }.into());
+        }
+
+        if self.max_clock_drift <= Duration::new(0, 0) {
+            return Err(Error::InvalidMaxClockDrift {
+                reason: "ClientState max-clock-drift must be greater than zero".to_string(),
+            }
+            .into());
+        }
+
+        if self.latest_height.revision_number() != self.chain_id.version() {
+            return Err(Error::InvalidLatestHeight {
+                reason: "ClientState latest-height revision number must match chain-id version"
+                    .to_string(),
+            }
+            .into());
+        }
+
+        // Disallow empty proof-specs
+        if self.proof_specs.is_empty() {
+            return Err(Error::Validation {
+                reason: "ClientState proof-specs cannot be empty".to_string(),
+            }
+            .into());
+        }
+
+        // `upgrade_path` itself may be empty, but if not then each key must be non-empty
+        for (idx, key) in self.upgrade_path.iter().enumerate() {
+            if key.trim().is_empty() {
+                return Err(Error::Validation {
+                    reason: format!(
+                        "ClientState upgrade-path key at index {idx:?} cannot be empty"
+                    ),
+                }
+                .into());
+            }
+        }
+        Ok(())
     }
 
     fn upgrade(
@@ -1192,7 +1207,7 @@ fn downcast_tm_consensus_state(cs: &dyn ConsensusState) -> Result<TmConsensusSta
 impl Protobuf<RawTmClientState> for ClientState {}
 
 impl TryFrom<RawTmClientState> for ClientState {
-    type Error = Error;
+    type Error = ClientError;
 
     fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
         let chain_id = ChainId::from_string(raw.chain_id.as_str());
@@ -1298,7 +1313,7 @@ impl TryFrom<Any> for ClientState {
         use bytes::Buf;
         use core::ops::Deref;
 
-        fn decode_client_state<B: Buf>(buf: B) -> Result<ClientState, Error> {
+        fn decode_client_state<B: Buf>(buf: B) -> Result<ClientState, ClientError> {
             RawTmClientState::decode(buf)
                 .map_err(Error::Decode)?
                 .try_into()

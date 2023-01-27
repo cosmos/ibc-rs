@@ -167,6 +167,10 @@ impl ClientState for MockClientState {
         self.frozen_height
     }
 
+    fn validate(&self) -> Result<(), ClientError> {
+        Ok(())
+    }
+
     fn upgrade(
         &mut self,
         _upgrade_height: Height,
