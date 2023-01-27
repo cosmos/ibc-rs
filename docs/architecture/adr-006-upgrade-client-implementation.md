@@ -6,16 +6,16 @@
 
 ## Context
 
-The ability to upgrade is crucial for IBC-connected chains. It allows them to
-evolve and improve without any restrictions. The IBC module may not be affected
-by some upgrades, but some may require it to be upgraded as well to maintain
-high-value connections to other chains secure. For having this capability,
-chains that implement `IBC-rs` may bring various concerns and characteristics
-than Tendermint chains leading to different ways for upgrading their clients.
-However there are generic rules that apply to all and can serve as a framework
-for any `IBC-rs` implementation. On this basis, this record aims to justify the
-logic behind upgrading a light client, determine the boundary between
-client-wide and client-specific upgrade processes, list requisites for
+The ability to upgrade is a crucial feature for IBC-connected chains, as it
+enables them to evolve and improve without limitations. The IBC module may
+not be affected by some upgrades, but some may require it to be upgraded as well
+to maintain high-value connections to other chains secure. For having this
+capability, chains that implement `IBC-rs` may bring various concerns and
+characteristics than Tendermint chains leading to different ways for upgrading
+their clients. However there are general rules that apply to all and can serve
+as a framework for any `IBC-rs` implementation. On this basis, this record aims
+to justify the logic behind upgrading a light client, determine the boundary
+between client-wide and client-specific upgrade processes, list requisites for
 validation and execution steps, and explain Tendermint's upgrade client
 implementation within the
 [ics07_tendermint](../../crates/ibc/src/clients/ics07_tendermint).
@@ -38,10 +38,6 @@ implementation of this rationale in `IBC-rs` is explained.
   breaks the counterparty IBC client.
 * There **MUST** be a proof verification process to check upgraded client and
   consensus states against the host chain's state.
-* Clients **MUST** ensure that the planned last height of the current revision
-  is somehow encoded in the proof verification process. This prevents premature
-  upgrades, as the counterparty may cancel or modify upgrade plans before the
-  last planned height.
 * Chain upgrades **MUST NOT** result in changing
   [ClientState](../../crates/ibc/src/core/ics02_client/client_state.rs#ClientState)
   or
@@ -66,11 +62,16 @@ provided by `ClientState` and `ConsensusState` traits, like `is_frozen()`,
 * Latest client state **MUST NOT** be frozen
 * Latest consensus state **MUST** be within the trusting period of the latest
   client state
-* Verification proofs **MUST** successfully be decoded into the domain types
+* Received update message including verification proofs **MUST** successfully be
+  decoded into the domain types
+* Clients **MUST** ensure that the planned last height of the current revision
+  is somehow encoded in the proof verification process. This prevents premature
+  upgrades, as the counterparty may cancel or modify upgrade plans before the
+  last planned height.
 
 Any other requisite beyond the above rules are considered client-specific. Next,
-we go through the upgrade client process for Tendermint chains to justify the
-logic and illustrate an example of client-specific upgrade process.
+we go through the upgrade process for Tendermint clients to justify the logic
+and illustrate an example of client-specific upgrade.
 
 ### Upgrade Tendermint Clients
 
@@ -145,7 +146,7 @@ upgrade its own chain and counterparty's IBC client:
         upgrade/UpgradedIBCState/{upgradeHeight}/upgradedConsState
         ```
 
-2. Submit an upgrade client message to the counterparty chain by a relayer
+2. Submit an upgrade client message by relayers to the counterparty chain
    1. Wait for the upgrading chain to reach the upgrade height and halt
    2. Query a full node for the proofs of `UpgradedClient` and
       `UpgradedConsensusState` at the last height of the old chain
@@ -155,11 +156,11 @@ upgrade its own chain and counterparty's IBC client:
       `UpgradedClient`, `UpgradedConsensusState` and their respective proofs
 
 3. Process the upgrade message on the counterparty chain</br> IBC handler upon
-receiving an `MsgUpgradeClient` message performs basic validations (BV),
-client-specific validations (SV) and lastly execution (E) steps as follows.
+receiving a `MsgUpgradeClient` message performs basic validations (BV),
+client-specific validations (SV) and lastly execution (E) steps as follows:
    1. (BV) Check that the current client is not frozen
    2. (BV) Check if the latest consensus state is within the trust period
-   3. (BV) Decode proofs and check that they are valid
+   3. (BV) Check if the message containing proofs decoded successfully
    4. (SV) Verify that the upgradedClient be of a Tendermint `ClientState` type
    5. (SV) Verify that the upgradedConsensusState be of a Tendermint
       `ConsensusState` type
@@ -193,13 +194,13 @@ Whenever the IBC handler receives an `MsgUpgradeClient`, it dispatches the
 decoded message to the router and triggers the
 [process](../../crates/ibc/src/core/ics02_client/handler/upgrade_client.rs#process)
 function of `upgrade_client` handler, which would go through the steps outlined
-in 3rd section of [Upgrade Process Step-by-Step]. Just note that the `process`
-function will be rendered into `validate` and `execute` functions due to ongoing
-changes associated with ADR-005, and to align with that one of the decisions
-made is to split off the `verify_upgrade_and_update_state` method of
-`ClientState` trait into:
+in 3rd section of [Upgrade Process Step-by-Step](#upgrade-process-step-by-step).
+Just note that the `process` function will be rendered into `validate` and
+`execute` functions due to ongoing changes associated with ADR-005, and to align
+with that one of the decisions made is to split off the
+`verify_upgrade_and_update_state` method of `ClientState` trait into:
 
-* `verify_upgrade_client` interface
+* `verify_upgrade_client` method
 
    ```rust
    fn verify_upgrade_client(
@@ -212,7 +213,7 @@ made is to split off the `verify_upgrade_and_update_state` method of
    ) -> Result<(), ClientError>;
    ```
 
-* And `update_state_with_upgrade_client` interface
+* And `update_state_with_upgrade_client` method
 
    ```rust
    fn update_state_with_upgrade_client(
@@ -412,8 +413,10 @@ Proposed
   Clients](https://github.com/cosmos/ibc-go/blob/main/docs/ibc/upgrades/quick-guide.md)
 * [IBC Client Developer Guide to
   Upgrades](https://github.com/cosmos/ibc-go/blob/main/docs/ibc/upgrades/developer-guide.md)
-* [cosmos/cosmos-sdk/Issue 7367: Upgrade
-  Client](https://github.com/cosmos/cosmos-sdk/pull/7367)
+* [cosmos/ibc-go/Issue 445: IBC upgrade plan
+  summary](https://github.com/cosmos/ibc/issues/445)
+* [cosmos/cosmos-sdk/PR 7367: Upgrade
+  Client](https://github.com/cosmos/cosmos-sdk/åpull/7367)
 * [cosmos/ibc-go/Issue 2501: Create importable workflow for chains to run
   upgrade tests](https://github.com/cosmos/ibc-go/issues/2501)
 * [Hermes relayer documentation: Client
