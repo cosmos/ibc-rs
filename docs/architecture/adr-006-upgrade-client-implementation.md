@@ -87,35 +87,36 @@ supported by `IBC-rs`:
 * S: Supported, P: Partially Supported, U: Unsupported
 
 1. (S) Changing the `ChainId`
-2. (P) Changing the `UnbondingPeriod`: chains may increase the unbonding period
+2. (S) Changing the `Height` (resetting to 0): as long as chains remember to
+   increment the revision number in their chain-id.
+3. (S) Changing the `ProofSpecs`: this should be changed if the proof structure
+   needed to verify IBC proofs is changed across the upgrade. Ex: Switching from
+   an IAVL store, to a SimpleTree Store.
+4. (S) Changing the `UpgradePath`: this might involve changing the key under
+   which upgraded clients and consensus states are stored in the upgrade store,
+   or even migrating the upgrade store itself.
+5. (S) Upgrading to a backwards compatible version of IBC
+6. (P) Changing the `UnbondingPeriod`: chains may increase the unbonding period
    with no issues. However, decreasing the unbonding period may irreversibly
    break some counterparty clients. Thus, it is not recommended that chains
    reduce the unbonding period.
-3. (S) Changing the `Height` (resetting to 0): as long as chains remember to
-   increment the revision number in their chain-id.
-4. (S) Changing the `ProofSpecs`: this should be changed if the proof structure
-   needed to verify IBC proofs is changed across the upgrade. Ex: Switching from
-   an IAVL store, to a SimpleTree Store.
-5. (S) Changing the `UpgradePath`: this might involve changing the key under
-   which upgraded clients and consensus states are stored in the upgrade store,
-   or even migrating the upgrade store itself.
-6. (U) Migrating the IBC store: the store location is negotiated by the
-   connection.
-7. (S) Upgrading to a backwards compatible version of IBC
-8. (U) Upgrading to a non-backwards compatible version of IBC: the version is
-   negotiated on connection handshake.
-9. (U) Changing parameters that are customizable by relayers like `TrustLevel`
-    and `TrustingPeriod`, `max_clock_drift`
-10. (P) Changing the Tendermint LightClient algorithm: Changes to the light
+7. (P) Changing the Tendermint LightClient algorithm: Changes to the light
    client algorithm that do not change the
    [ClientState](../../crates/ibc/src/clients/ics07_tendermint/client_state.rs#ClientState)
    or
    [ConsensusState](../../crates/ibc/src/clients/ics07_tendermint/consensus_state.rs#ConsensusState)
-   struct may be supported, provided that the counterparty is also upgraded to
-   support the new light client algorithm. Changes that require updating the
-   `ClientState` and `ConsensusState` structs themselves are theoretically
-   possible by providing a path to translate an older ClientState struct into
-   the new ClientState struct; however this is not currently implemented.
+   struct abstraction may be supported, provided that the counterparty is also
+   upgraded to support the new light client algorithm. Changes that require
+   updating the `ClientState` and `ConsensusState` structs themselves are
+   theoretically possible by providing a path to translate an older ClientState
+   struct into the new ClientState struct; however this is not currently
+   implemented.
+8. (U) Migrating the IBC store: the store location is negotiated by the
+   connection.
+9. (U) Upgrading to a non-backwards compatible version of IBC: the version is
+   negotiated on connection handshake.
+10. (U) Changing parameters that are customizable by relayers like `TrustLevel`
+    and `TrustingPeriod`, `max_clock_drift`
   
 #### Upgrade Process Step-by-step
 
@@ -155,9 +156,9 @@ upgrade its own chain and counterparty's IBC client:
    4. Submit an `UpgradeClient` msg to the counterparty chain with the
       `UpgradedClient`, `UpgradedConsensusState` and their respective proofs
 
-3. Process the upgrade message on the counterparty chain</br> IBC handler upon
-receiving a `MsgUpgradeClient` message performs basic validations (BV),
-client-specific validations (SV) and lastly execution (E) steps as follows:
+3. Process the upgrade message on the counterparty chain upon receiving a
+`MsgUpgradeClient` message performs basic validations (BV), client-specific
+validations (SV) and lastly execution (E) steps as follows:
    1. (BV) Check that the current client is not frozen
    2. (BV) Check if the latest consensus state is within the trust period
    3. (BV) Check if the message containing proofs decoded successfully
@@ -177,7 +178,7 @@ client-specific validations (SV) and lastly execution (E) steps as follows:
       parameters (sent by relayers) such `TrustingPeriod`, `TrustLevel`,
       `MaxClockDrift` and adopt the new chain-specified fields such as
       `UnbondingPeriod`, `ChainId`, `UpgradePath`, etc.
-   11. (E) Upgrade consensus state with a stand-in sentinel value for root</b>
+   11. (E) Upgrade consensus state with a stand-in sentinel value for root
       Note: The upgraded consensus state serve purely as a basis of trust for
       future `UpdateClientMsgs`, and therefore does not require a root for proof
       verification. Also, we do not set processed time for this consensus state
@@ -392,8 +393,6 @@ previous section as mentioned:
        upgraded_tm_cons_state.next_validators_hash,
     );
     ```
-
-```rust
 
 ## Status
 
