@@ -517,10 +517,7 @@ mod val_exec_ctx {
 
         let (mut extras, ack) = match process_recv_packet_execute(ctx, packet, data.clone()) {
             Ok(extras) => (extras, TokenTransferAcknowledgement::success()),
-            Err(e) => (
-                ModuleExtras::empty(),
-                TokenTransferAcknowledgement::from_error(e),
-            ),
+            Err((extras, error)) => (extras, TokenTransferAcknowledgement::from_error(error)),
         };
 
         let recv_event = RecvEvent {

@@ -68,23 +68,21 @@ mod val_exec_ctx {
     pub use super::*;
     use crate::core::ics04_channel::handler::ModuleExtras;
 
-    ////////////////////////////////////////////////////////////
-    // FIXME BEFORE MERGE: events need to be emitted even when there's an error
-    ////////////////////////////////////////////////////////////
     pub fn process_recv_packet_execute<Ctx: TokenTransferContext>(
         ctx: &mut Ctx,
         packet: &Packet,
         data: PacketData,
-    ) -> Result<ModuleExtras, TokenTransferError> {
+    ) -> Result<ModuleExtras, (ModuleExtras, TokenTransferError)> {
         if !ctx.is_receive_enabled() {
-            return Err(TokenTransferError::ReceiveDisabled);
+            return Err((ModuleExtras::empty(), TokenTransferError::ReceiveDisabled));
         }
 
-        let receiver_account = data
-            .receiver
-            .clone()
-            .try_into()
-            .map_err(|_| TokenTransferError::ParseAccountFailure)?;
+        let receiver_account = data.receiver.clone().try_into().map_err(|_| {
+            (
+                ModuleExtras::empty(),
+                TokenTransferError::ParseAccountFailure,
+            )
+        })?;
 
         let extras = if is_receiver_chain_source(
             packet.port_on_a.clone(),
@@ -99,10 +97,12 @@ mod val_exec_ctx {
                 c
             };
 
-            let escrow_address =
-                ctx.get_channel_escrow_address(&packet.port_on_b, &packet.chan_on_b)?;
+            let escrow_address = ctx
+                .get_channel_escrow_address(&packet.port_on_b, &packet.chan_on_b)
+                .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
 
-            ctx.send_coins(&escrow_address, &receiver_account, &coin)?;
+            ctx.send_coins(&escrow_address, &receiver_account, &coin)
+                .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
 
             ModuleExtras::empty()
         } else {
@@ -114,17 +114,22 @@ mod val_exec_ctx {
                 c
             };
 
-            let denom_trace_event = DenomTraceEvent {
-                trace_hash: ctx.denom_hash_string(&coin.denom),
-                denom: coin.denom.clone(),
+            let extras = {
+                let denom_trace_event = DenomTraceEvent {
+                    trace_hash: ctx.denom_hash_string(&coin.denom),
+                    denom: coin.denom.clone(),
+                };
+                ModuleExtras {
+                    events: vec![denom_trace_event.into()],
+                    log: Vec::new(),
+                }
             };
+            let extras_closure = extras.clone();
 
-            ctx.mint_coins(&receiver_account, &coin)?;
+            ctx.mint_coins(&receiver_account, &coin)
+                .map_err(|token_err| (extras_closure, token_err))?;
 
-            ModuleExtras {
-                events: vec![denom_trace_event.into()],
-                log: Vec::new(),
-            }
+            extras
         };
 
         Ok(extras)
