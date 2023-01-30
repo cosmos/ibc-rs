@@ -175,7 +175,7 @@ pub trait ClientState:
         expected_client_state: Any,
     ) -> Result<(), ClientError>;
 
-    /// Verify a `proof` that a packet has been commited.
+    /// Verify a `proof` that a packet has been committed.
     #[cfg(feature = "val_exec_ctx")]
     #[allow(clippy::too_many_arguments)]
     fn new_verify_packet_data(
@@ -191,7 +191,7 @@ pub trait ClientState:
         commitment: PacketCommitment,
     ) -> Result<(), ClientError>;
 
-    /// Verify a `proof` that a packet has been commited.
+    /// Verify a `proof` that a packet has been committed.
     #[allow(clippy::too_many_arguments)]
     fn verify_packet_data(
         &self,
@@ -206,7 +206,7 @@ pub trait ClientState:
         commitment: PacketCommitment,
     ) -> Result<(), ClientError>;
 
-    /// Verify a `proof` that a packet has been commited.
+    /// Verify a `proof` that a packet has been committed.
     #[allow(clippy::too_many_arguments)]
     fn verify_packet_acknowledgement(
         &self,
