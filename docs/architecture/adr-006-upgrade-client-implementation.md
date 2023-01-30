@@ -170,7 +170,7 @@ validations (SV) and lastly execution (E) steps as follows:
    7. (SV) Match any Tendermint chain specified parameter in upgraded client
       such as ChainID, UnbondingPeriod, and ProofSpecs with the committed client
    8. (SV) Verify that the upgrading chain did indeed commit to the upgraded
-      client state at the upgrade height by provided proof Note:
+      client state at the upgrade height by provided proof. Note that the
       client-customizable fields must be zeroed out for this check
    9. (SV) Verify that the upgrading chain did indeed commit to the upgraded
       consensus state at the upgrade height by provided proof
@@ -178,16 +178,18 @@ validations (SV) and lastly execution (E) steps as follows:
       parameters (sent by relayers) such `TrustingPeriod`, `TrustLevel`,
       `MaxClockDrift` and adopt the new chain-specified fields such as
       `UnbondingPeriod`, `ChainId`, `UpgradePath`, etc.
-   11. (E) Upgrade consensus state with a stand-in sentinel value for root Note:
-      The upgraded consensus state serve purely as a basis of trust for future
-      `UpdateClientMsgs`, and therefore does not require a root for proof
-      verification. Also, we do not set processed time for this consensus state
-      since this consensus state should not be used for packet verification as
-      the root is empty. To ensure the connection can be used for relaying
-      packets, relayers must submit an `UpdateClientMsg` with a header from the
-      new chain.
+   11. (E) Upgrade consensus state with a stand-in sentinel value for root. Note
+      that the upgraded consensus state serves purely as a basis of trust for
+      future `UpdateClientMsgs`, and therefore it does not require a root for
+      proof verification and it is not used for packet verifications as well.
+      That sentinel value serves as a temporary substitute until the root of new
+      chain gets available by `UpdateClientMsg`. It is set by module with a
+      distinct, easily recognizable value to reduce the risk of bugs. Thereby,
+      we do not also set a processed time for this consensus state. To ensure
+      the connection can be used for relaying packets, relayers must submit an
+      `UpdateClientMsg` with a header from the new chain.
 
-1. Submit an `UpdateClient` msg by a relayer to the counterparty chain with a
+4. Submit an `UpdateClient` msg by a relayer to the counterparty chain with a
    header from the newly upgraded chain
 
 #### Decisions
