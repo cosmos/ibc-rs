@@ -7,9 +7,9 @@
 ## Context
 
 The ability to upgrade is a crucial feature for IBC-connected chains, as it
-enables them to evolve and improve without limitations. The IBC module may
-not be affected by some upgrades, but some may require it to be upgraded as well
-to maintain high-value connections to other chains secure. For having this
+enables them to evolve and improve without limitations. The IBC module may not
+be affected by some upgrades, but some may require it to be upgraded as well to
+maintain high-value connections to other chains secure. For having this
 capability, chains that implement `IBC-rs` may bring various concerns and
 characteristics than Tendermint chains leading to different ways for upgrading
 their clients. However there are general rules that apply to all and can serve
@@ -60,14 +60,12 @@ provided by `ClientState` and `ConsensusState` traits, like `is_frozen()`,
 `latest_height()`, etc.
 
 * Latest client state **MUST NOT** be frozen
-* Latest consensus state **MUST** be within the trusting period of the latest
-  client state
 * Received update message including verification proofs **MUST** successfully be
   decoded into the domain types
-* Clients **MUST** ensure that the planned last height of the current revision
-  is somehow encoded in the proof verification process. This prevents premature
-  upgrades, as the counterparty may cancel or modify upgrade plans before the
-  last planned height.
+* Clients **MUST** only accept upgrades at the planned last height of the
+  current revision which is somehow encoded in the proof verification process.
+  This prevents premature upgrades, as the counterparty may cancel or modify
+  upgrade plans before the last planned height.
 
 Any other requisite beyond the above rules are considered client-specific. Next,
 we go through the upgrade process for Tendermint clients to justify the logic
@@ -121,7 +119,9 @@ supported by `IBC-rs`:
 #### Upgrade Process Step-by-step
 
 An IBC-connected Tendermint chain will take the following steps to completely
-upgrade its own chain and counterparty's IBC client:
+upgrade its own chain and counterparty's IBC client. Note that the chain-level
+upgrade instruction (1) is not a part of the IBC protocol. It is provided for
+the sake of the big picture and as an example of how the upgrade process can be.
 
 1. Upgrade chain through governance
    1. Create a 02-client
@@ -165,29 +165,29 @@ validations (SV) and lastly execution (E) steps as follows:
    4. (SV) Verify that the upgradedClient be of a Tendermint `ClientState` type
    5. (SV) Verify that the upgradedConsensusState be of a Tendermint
       `ConsensusState` type
-   6. (SV) Check the latest height of the current client state does not have the
-      same revision number or has a greater height than the committed client
+   6. (SV) Check the height of the committed client state is not greater than
+      the latest height of the current client state
    7. (SV) Match any Tendermint chain specified parameter in upgraded client
       such as ChainID, UnbondingPeriod, and ProofSpecs with the committed client
    8. (SV) Verify that the upgrading chain did indeed commit to the upgraded
-      client state at the upgrade height by provided proof
-      Note: client-customizable fields must be zeroed out for this check
+      client state at the upgrade height by provided proof Note:
+      client-customizable fields must be zeroed out for this check
    9. (SV) Verify that the upgrading chain did indeed commit to the upgraded
       consensus state at the upgrade height by provided proof
    10. (E) Upgrade client to the new client by retaining old client-customizable
       parameters (sent by relayers) such `TrustingPeriod`, `TrustLevel`,
       `MaxClockDrift` and adopt the new chain-specified fields such as
       `UnbondingPeriod`, `ChainId`, `UpgradePath`, etc.
-   11. (E) Upgrade consensus state with a stand-in sentinel value for root
-      Note: The upgraded consensus state serve purely as a basis of trust for
-      future `UpdateClientMsgs`, and therefore does not require a root for proof
+   11. (E) Upgrade consensus state with a stand-in sentinel value for root Note:
+      The upgraded consensus state serve purely as a basis of trust for future
+      `UpdateClientMsgs`, and therefore does not require a root for proof
       verification. Also, we do not set processed time for this consensus state
       since this consensus state should not be used for packet verification as
       the root is empty. To ensure the connection can be used for relaying
       packets, relayers must submit an `UpdateClientMsg` with a header from the
       new chain.
 
-4. Submit an `UpdateClient` msg by a relayer to the counterparty chain with a
+1. Submit an `UpdateClient` msg by a relayer to the counterparty chain with a
    header from the newly upgraded chain
 
 #### Decisions
