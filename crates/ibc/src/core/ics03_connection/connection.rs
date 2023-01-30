@@ -190,11 +190,6 @@ mod sealed {
                                 .type_name("Counterparty")
                         })
                         .field(|f| {
-                            f.ty::<Counterparty>()
-                                .name("counterparty")
-                                .type_name("Counterparty")
-                        })
-                        .field(|f| {
                             f.ty::<Vec<Version>>()
                                 .name("versions")
                                 .type_name("Vec<Version>")
