@@ -287,7 +287,7 @@ mod tests {
         // Connection handshake messages.
         //
         let msg_conn_init =
-            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init()).unwrap();
+            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init(None)).unwrap();
 
         let correct_msg_conn_try = MsgConnectionOpenTry::try_from(get_dummy_raw_msg_conn_open_try(
             client_height,
@@ -311,7 +311,7 @@ mod tests {
         // Channel handshake messages.
         //
         let msg_chan_init =
-            MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init()).unwrap();
+            MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
 
         // The handler will fail to process this b/c the associated connection does not exist
         let mut incorrect_msg_chan_init = msg_chan_init.clone();
@@ -680,7 +680,7 @@ mod tests {
         let mut ctx = get_channel_events_ctx();
 
         let msg_chan_open_init =
-            MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init()).unwrap();
+            MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
 
         let res = dispatch(
             &mut ctx,

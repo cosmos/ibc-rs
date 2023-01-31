@@ -368,6 +368,22 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn new_verify_packet_data(
+        &self,
+        _ctx: &dyn ValidationContext,
+        _height: Height,
+        _connection_end: &ConnectionEnd,
+        _proof: &CommitmentProofBytes,
+        _root: &CommitmentRoot,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _sequence: Sequence,
+        _commitment: PacketCommitment,
+    ) -> Result<(), ClientError> {
+        Ok(())
+    }
+
     fn verify_packet_data(
         &self,
         _ctx: &dyn ChannelReader,

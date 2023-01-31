@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-use derive_more::{From, Into};
+use derive_more::Into;
 use ibc_proto::ibc::core::channel::v1::MsgAcknowledgement as RawMsgAcknowledgement;
 use ibc_proto::protobuf::Protobuf;
 
@@ -14,6 +14,7 @@ use crate::Height;
 pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgAcknowledgement";
 
 /// A generic Acknowledgement type that modules may interpret as they like.
+/// An acknowledgement cannot be empty.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -27,14 +28,10 @@ pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgAcknowledgement";
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq, From, Into)]
+#[derive(Clone, Debug, PartialEq, Eq, Into)]
 pub struct Acknowledgement(Vec<u8>);
 
 impl Acknowledgement {
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
     // Returns the data as a slice of bytes.
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_slice()
@@ -44,6 +41,18 @@ impl Acknowledgement {
 impl AsRef<[u8]> for Acknowledgement {
     fn as_ref(&self) -> &[u8] {
         self.0.as_slice()
+    }
+}
+
+impl TryFrom<Vec<u8>> for Acknowledgement {
+    type Error = PacketError;
+
+    fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
+        if bytes.is_empty() {
+            Err(PacketError::InvalidAcknowledgement)
+        } else {
+            Ok(Self(bytes))
+        }
     }
 }
 
@@ -80,7 +89,7 @@ impl TryFrom<RawMsgAcknowledgement> for MsgAcknowledgement {
                 .packet
                 .ok_or(PacketError::MissingPacket)?
                 .try_into()?,
-            acknowledgement: raw_msg.acknowledgement.into(),
+            acknowledgement: raw_msg.acknowledgement.try_into()?,
             proof_acked_on_b: raw_msg
                 .proof_acked
                 .try_into()

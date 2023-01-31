@@ -1,6 +1,5 @@
 use crate::prelude::*;
 
-use core::str::FromStr;
 use core::time::Duration;
 use core::{
     fmt::{Display, Error as FmtError, Formatter},
@@ -185,11 +184,6 @@ mod sealed {
                     scale_info::build::Fields::named()
                         .field(|f| f.ty::<State>().name("state").type_name("State"))
                         .field(|f| f.ty::<ClientId>().name("client_id").type_name("ClientId"))
-                        .field(|f| {
-                            f.ty::<Counterparty>()
-                                .name("counterparty")
-                                .type_name("Counterparty")
-                        })
                         .field(|f| {
                             f.ty::<Counterparty>()
                                 .name("counterparty")
@@ -384,19 +378,24 @@ impl Protobuf<RawCounterparty> for Counterparty {}
 impl TryFrom<RawCounterparty> for Counterparty {
     type Error = ConnectionError;
 
-    fn try_from(value: RawCounterparty) -> Result<Self, Self::Error> {
-        let connection_id = Some(value.connection_id)
-            .filter(|x| !x.is_empty())
-            .map(|v| FromStr::from_str(v.as_str()))
-            .transpose()
-            .map_err(ConnectionError::InvalidIdentifier)?;
+    fn try_from(raw_counterparty: RawCounterparty) -> Result<Self, Self::Error> {
+        let connection_id: Option<ConnectionId> = if raw_counterparty.connection_id.is_empty() {
+            None
+        } else {
+            Some(
+                raw_counterparty
+                    .connection_id
+                    .parse()
+                    .map_err(ConnectionError::InvalidIdentifier)?,
+            )
+        };
         Ok(Counterparty::new(
-            value
+            raw_counterparty
                 .client_id
                 .parse()
                 .map_err(ConnectionError::InvalidIdentifier)?,
             connection_id,
-            value
+            raw_counterparty
                 .prefix
                 .ok_or(ConnectionError::MissingCounterparty)?
                 .key_prefix

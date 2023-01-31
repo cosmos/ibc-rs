@@ -190,6 +190,22 @@ pub trait ClientState:
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a packet has been committed.
+    #[cfg(feature = "val_exec_ctx")]
+    #[allow(clippy::too_many_arguments)]
+    fn new_verify_packet_data(
+        &self,
+        ctx: &dyn ValidationContext,
+        height: Height,
+        connection_end: &ConnectionEnd,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        sequence: Sequence,
+        commitment: PacketCommitment,
+    ) -> Result<(), ClientError>;
+
+    /// Verify a `proof` that a packet has been committed.
     #[allow(clippy::too_many_arguments)]
     fn verify_packet_data(
         &self,

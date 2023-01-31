@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## v0.27.0
+
+*January 16, 2023*
+
+This release contains a bug fix for the `ChanOpenConfirm` handler and it is strongly recommended to upgrade.
+
+This release contains a consensus-breaking change during the channel opening handshake; it was broken, and now is fixed.
+
+### BUG FIXES
+
+- Fix ChanOpenConfirm handler check of counterparty state
+  ([#353](https://github.com/cosmos/ibc-rs/issues/353))
+
 ## v0.26.0
 
 *December 14, 2022*

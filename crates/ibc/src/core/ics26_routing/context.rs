@@ -13,7 +13,7 @@ use crate::core::ics03_connection::context::{ConnectionKeeper, ConnectionReader}
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
-use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement as GenericAcknowledgement;
+use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
 use crate::core::ics05_port::context::PortReader;
@@ -90,26 +90,33 @@ impl Borrow<str> for ModuleId {
     }
 }
 
-/// Types implementing this trait are expected to implement `From<GenericAcknowledgement>`
-pub trait Acknowledgement: AsRef<[u8]> {}
-
-pub type WriteFn = dyn FnOnce(&mut dyn Any) -> Result<(), String>;
-
-pub enum OnRecvPacketAck {
-    Nil(Box<WriteFn>),
-    Successful(Box<dyn Acknowledgement>, Box<WriteFn>),
-    Failed(Box<dyn Acknowledgement>),
-}
-
-impl OnRecvPacketAck {
-    pub fn is_successful(&self) -> bool {
-        matches!(self, OnRecvPacketAck::Successful(_, _))
-    }
-}
-
 pub type ModuleOutputBuilder = HandlerOutputBuilder<(), ModuleEvent>;
 
 pub trait Module: Send + Sync + AsAnyMut + Debug {
+    #[cfg(feature = "val_exec_ctx")]
+    #[allow(clippy::too_many_arguments)]
+    fn on_chan_open_init_validate(
+        &self,
+        order: Order,
+        connection_hops: &[ConnectionId],
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        counterparty: &Counterparty,
+        version: &Version,
+    ) -> Result<Version, ChannelError>;
+
+    #[cfg(feature = "val_exec_ctx")]
+    #[allow(clippy::too_many_arguments)]
+    fn on_chan_open_init_execute(
+        &mut self,
+        order: Order,
+        connection_hops: &[ConnectionId],
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        counterparty: &Counterparty,
+        version: &Version,
+    ) -> Result<(ModuleExtras, Version), ChannelError>;
+
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init(
         &mut self,
@@ -156,6 +163,26 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         counterparty_version: &Version,
     ) -> Result<(ModuleExtras, Version), ChannelError>;
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_open_ack_validate(
+        &self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty_version: &Version,
+    ) -> Result<(), ChannelError> {
+        Ok(())
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_open_ack_execute(
+        &mut self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty_version: &Version,
+    ) -> Result<ModuleExtras, ChannelError> {
+        Ok(ModuleExtras::empty())
+    }
+
     fn on_chan_open_ack(
         &mut self,
         _port_id: &PortId,
@@ -165,7 +192,43 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(ModuleExtras::empty())
     }
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_open_confirm_validate(
+        &self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<(), ChannelError> {
+        Ok(())
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_open_confirm_execute(
+        &mut self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<ModuleExtras, ChannelError> {
+        Ok(ModuleExtras::empty())
+    }
+
     fn on_chan_open_confirm(
+        &mut self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<ModuleExtras, ChannelError> {
+        Ok(ModuleExtras::empty())
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_close_init_validate(
+        &self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<(), ChannelError> {
+        Ok(())
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_close_init_execute(
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
@@ -181,6 +244,24 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(ModuleExtras::empty())
     }
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_close_confirm_validate(
+        &self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<(), ChannelError> {
+        Ok(())
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_close_confirm_execute(
+        &mut self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<ModuleExtras, ChannelError> {
+        Ok(ModuleExtras::empty())
+    }
+
     fn on_chan_close_confirm(
         &mut self,
         _port_id: &PortId,
@@ -189,20 +270,25 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(ModuleExtras::empty())
     }
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_recv_packet_execute(
+        &mut self,
+        packet: &Packet,
+        relayer: &Signer,
+    ) -> (ModuleExtras, Acknowledgement);
+
     fn on_recv_packet(
-        &self,
+        &mut self,
         _output: &mut ModuleOutputBuilder,
         _packet: &Packet,
         _relayer: &Signer,
-    ) -> OnRecvPacketAck {
-        OnRecvPacketAck::Nil(Box::new(|_| Ok(())))
-    }
+    ) -> Acknowledgement;
 
     fn on_acknowledgement_packet(
         &mut self,
         _output: &mut ModuleOutputBuilder,
         _packet: &Packet,
-        _acknowledgement: &GenericAcknowledgement,
+        _acknowledgement: &Acknowledgement,
         _relayer: &Signer,
     ) -> Result<(), PacketError> {
         Ok(())

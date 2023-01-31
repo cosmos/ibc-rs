@@ -19,10 +19,11 @@ use crate::core::ics04_channel::commitment::PacketCommitment;
 use crate::core::ics04_channel::context::SendPacketReader;
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::handler::ModuleExtras;
-use crate::core::ics04_channel::packet::Sequence;
+use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
+use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ics26_routing::context::Module;
+use crate::core::ics26_routing::context::{Module, ModuleOutputBuilder};
 use crate::mock::context::MockIbcStore;
 use crate::prelude::*;
 use crate::signer::Signer;
@@ -78,6 +79,32 @@ impl DummyTransferModule {
 }
 
 impl Module for DummyTransferModule {
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_open_init_validate(
+        &self,
+        _order: Order,
+        _connection_hops: &[ConnectionId],
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty: &Counterparty,
+        version: &Version,
+    ) -> Result<Version, ChannelError> {
+        Ok(version.clone())
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_chan_open_init_execute(
+        &mut self,
+        _order: Order,
+        _connection_hops: &[ConnectionId],
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty: &Counterparty,
+        version: &Version,
+    ) -> Result<(ModuleExtras, Version), ChannelError> {
+        Ok((ModuleExtras::empty(), version.clone()))
+    }
+
     fn on_chan_open_init(
         &mut self,
         _order: Order,
@@ -137,6 +164,27 @@ impl Module for DummyTransferModule {
             },
             counterparty_version.clone(),
         ))
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_recv_packet_execute(
+        &mut self,
+        _packet: &Packet,
+        _relayer: &Signer,
+    ) -> (ModuleExtras, Acknowledgement) {
+        (
+            ModuleExtras::empty(),
+            Acknowledgement::try_from(vec![1u8]).unwrap(),
+        )
+    }
+
+    fn on_recv_packet(
+        &mut self,
+        _output: &mut ModuleOutputBuilder,
+        _packet: &Packet,
+        _relayer: &Signer,
+    ) -> Acknowledgement {
+        Acknowledgement::try_from(vec![1u8]).unwrap()
     }
 }
 

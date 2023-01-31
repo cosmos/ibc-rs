@@ -56,10 +56,6 @@ pub fn process<Ctx: ChannelReader>(
         Err(e) => return Err(e),
     }
 
-    if ack.is_empty() {
-        return Err(PacketError::InvalidAcknowledgement);
-    }
-
     let result = PacketResult::WriteAck(WriteAckPacketResult {
         port_id: packet.port_on_b.clone(),
         channel_id: packet.chan_on_b.clone(),
@@ -97,7 +93,7 @@ mod tests {
     use crate::core::ics04_channel::handler::write_acknowledgement::process;
     use crate::core::ics04_channel::packet::test_utils::get_dummy_raw_packet;
     use crate::core::ics04_channel::Version;
-    use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
+    use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
     use crate::mock::context::MockContext;
     use crate::timestamp::ZERO_DURATION;
     use crate::{core::ics04_channel::packet::Packet, events::IbcEvent};
@@ -121,7 +117,6 @@ mod tests {
         packet.data = vec![0];
 
         let ack = vec![0];
-        let ack_null = Vec::new();
 
         let dest_channel_end = ChannelEnd::new(
             State::Open,
@@ -154,34 +149,23 @@ mod tests {
             Test {
                 name: "Good parameters".to_string(),
                 ctx: context
-                    .clone()
                     .with_client(&ClientId::default(), client_height)
-                    .with_connection(ConnectionId::default(), connection_end.clone())
+                    .with_connection(ConnectionId::default(), connection_end)
                     .with_channel(
                         packet.port_on_b.clone(),
                         packet.chan_on_b.clone(),
-                        dest_channel_end.clone(),
+                        dest_channel_end,
                     ),
-                packet: packet.clone(),
+                packet,
                 ack,
                 want_pass: true,
-            },
-            Test {
-                name: "Zero ack".to_string(),
-                ctx: context
-                    .with_client(&ClientId::default(), Height::new(0, 1).unwrap())
-                    .with_connection(ConnectionId::default(), connection_end)
-                    .with_channel(PortId::default(), ChannelId::default(), dest_channel_end),
-                packet,
-                ack: ack_null,
-                want_pass: false,
             },
         ]
         .into_iter()
         .collect();
 
         for test in tests {
-            let res = process(&test.ctx, test.packet.clone(), test.ack.into());
+            let res = process(&test.ctx, test.packet.clone(), test.ack.try_into().unwrap());
             // Additionally check the events and the output objects in the result.
             match res {
                 Ok(proto_output) => {
