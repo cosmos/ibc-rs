@@ -14,10 +14,10 @@ capability, chains that implement `IBC-rs` may bring various concerns and
 characteristics than Tendermint chains leading to different ways for upgrading
 their clients. However there are general rules that apply to all and can serve
 as a framework for any `IBC-rs` implementation. On this basis, this record aims
-to justify the logic behind upgrading a light client, determine the boundary
-between client-wide and client-specific upgrade processes, list requisites for
-validation and execution steps, and explain Tendermint's upgrade client
-implementation within the
+to justify the chain-wide logic behind upgrading light clients, list requisites
+for validation and execution steps, determine the boundary between basic and
+upgrade-specific validations by an IBC handler, and explain Tendermint's upgrade
+client implementation within the
 [ics07_tendermint](../../crates/ibc/src/clients/ics07_tendermint).
 
 ## Decision
@@ -46,18 +46,17 @@ implementation of this rationale in `IBC-rs` is explained.
 * It is **UP TO** the chain's architecture how updated client and consensus
   states are committed, either through decentralized approaches, like governance
   or centralized methods, like a multisig account, etc.
-* Upon commitment, chain's store **MUST** contain updated client and consensus
+* Upon commitment, chain's store **MUST** contain upgraded client and consensus
   states, which can be retrieved using respective upgrade paths
 
 #### IBC Handler accepts upgrade?
 
 After ensuring that the chain upgrades is supported by IBC, the general
 validation and execution steps that apply to all chains are as follows. The
-criteria for classifying a validation as client-wide (also can be known as
-basic) or client-specific was whether that IBC handler can perform that action
-just using its own context data, which are available upon calling interfaces
-provided by `ClientState` and `ConsensusState` traits, like `is_frozen()`,
-`latest_height()`, etc.
+criteria for classifying a validation as basic or upgrade-specific was whether
+that IBC handler can perform that check just using its own contextual data,
+which are available upon calling interfaces provided by `ClientState` and
+`ConsensusState` traits, like `is_frozen()`, `latest_height()`, etc.
 
 * Latest client state **MUST NOT** be frozen
 * Received update message including verification proofs **MUST** successfully be
@@ -66,6 +65,8 @@ provided by `ClientState` and `ConsensusState` traits, like `is_frozen()`,
   current revision which is somehow encoded in the proof verification process.
   This prevents premature upgrades, as the counterparty may cancel or modify
   upgrade plans before the last planned height.
+* Latest consensus state **MUST** be within the trusting period of the latest
+  client state, which for clients without a trusting period is not applicable.
 
 Any other requisite beyond the above rules are considered client-specific. Next,
 we go through the upgrade process for Tendermint clients to justify the logic
@@ -121,7 +122,9 @@ supported by `IBC-rs`:
 An IBC-connected Tendermint chain will take the following steps to completely
 upgrade its own chain and counterparty's IBC client. Note that the chain-level
 upgrade instruction (1) is not a part of the IBC protocol. It is provided for
-the sake of the big picture and as an example of how the upgrade process can be.
+the sake of the big picture and as a reference to follow the upgrade process
+from the very beginning when a proposal is initiated to when the upgrade message
+is entirely handled.
 
 1. Upgrade chain through governance
    1. Create a 02-client
@@ -147,17 +150,21 @@ the sake of the big picture and as an example of how the upgrade process can be.
         upgrade/UpgradedIBCState/{upgradeHeight}/upgradedConsState
         ```
 
+      Notice that since the `UpgradedConsensusState` will not be available at
+      the upgrade path prior to this height, relayers cannot submit a valid
+      upgrade message as the proof verification would fail
+
 2. Submit an upgrade client message by relayers to the counterparty chain
    1. Wait for the upgrading chain to reach the upgrade height and halt
    2. Query a full node for the proofs of `UpgradedClient` and
       `UpgradedConsensusState` at the last height of the old chain
    3. Update the counterparty client to the last height of the old chain using
       the `UpdateClient` msg
-   4. Submit an `UpgradeClient` msg to the counterparty chain with the
+   4. Submit a `MsgUpgradeClient` message to the counterparty chain with the
       `UpgradedClient`, `UpgradedConsensusState` and their respective proofs
 
 3. Process the upgrade message on the counterparty chain upon receiving a
-`MsgUpgradeClient` message performs basic validations (BV), client-specific
+`MsgUpgradeClient` message performs basic validations (BV), upgrade-specific
 validations (SV) and lastly execution (E) steps as follows:
    1. (BV) Check that the current client is not frozen
    2. (BV) Check if the latest consensus state is within the trust period
