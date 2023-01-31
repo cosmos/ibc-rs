@@ -583,7 +583,9 @@ mod tests {
                     default_signer.clone(),
                 )))
                 .into(),
-                want_pass: true,
+                // Temporarily set to false due to the fact that the client
+                // upgrade is not yet implemented
+                want_pass: !cfg!(feature = "disable_upgrade_client"),
                 state_check: None,
             },
             Test {

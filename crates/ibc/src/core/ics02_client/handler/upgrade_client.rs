@@ -197,6 +197,7 @@ pub(crate) fn process(
     Ok(output.with_result(result))
 }
 
+#[cfg(not(feature = "disable_upgrade_client"))]
 #[cfg(test)]
 mod tests {
     use crate::events::IbcEvent;
