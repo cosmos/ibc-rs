@@ -294,6 +294,20 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(())
     }
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_timeout_packet_validate(
+        &self,
+        packet: &Packet,
+        relayer: &Signer,
+    ) -> (ModuleExtras, Result<(), PacketError>);
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_timeout_packet_execute(
+        &mut self,
+        packet: &Packet,
+        relayer: &Signer,
+    ) -> (ModuleExtras, Result<(), PacketError>);
+
     fn on_timeout_packet(
         &mut self,
         _output: &mut ModuleOutputBuilder,

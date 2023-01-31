@@ -229,7 +229,7 @@ mod val_exec_ctx {
                     match msg {
                         PacketMsg::Recv(msg) => recv_packet_validate(self, msg),
                         PacketMsg::Ack(_) => todo!(),
-                        PacketMsg::Timeout(msg) => timeout_packet_validate(self, msg),
+                        PacketMsg::Timeout(msg) => timeout_packet_validate(self, module_id, msg),
                         PacketMsg::TimeoutOnClose(_) => todo!(),
                     }
                     .map_err(RouterError::ContextError)
@@ -1288,7 +1288,11 @@ mod val_exec_ctx {
         Ok(())
     }
 
-    fn timeout_packet_validate<ValCtx>(ctx_a: &ValCtx, msg: MsgTimeout) -> Result<(), ContextError>
+    fn timeout_packet_validate<ValCtx>(
+        ctx_a: &ValCtx,
+        module_id: ModuleId,
+        msg: MsgTimeout,
+    ) -> Result<(), ContextError>
     where
         ValCtx: ValidationContext,
     {
