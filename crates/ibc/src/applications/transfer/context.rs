@@ -339,6 +339,8 @@ pub fn on_timeout_packet(
 pub use val_exec_ctx::*;
 #[cfg(feature = "val_exec_ctx")]
 mod val_exec_ctx {
+    use crate::applications::transfer::relay::on_recv_packet::process_recv_packet_execute;
+
     pub use super::*;
 
     #[allow(clippy::too_many_arguments)]
@@ -497,6 +499,36 @@ mod val_exec_ctx {
         _channel_id: &ChannelId,
     ) -> Result<ModuleExtras, TokenTransferError> {
         Ok(ModuleExtras::empty())
+    }
+
+    pub fn on_recv_packet_execute(
+        ctx: &mut impl TokenTransferContext,
+        packet: &Packet,
+    ) -> (ModuleExtras, Acknowledgement) {
+        let data = match serde_json::from_slice::<PacketData>(&packet.data) {
+            Ok(data) => data,
+            Err(_) => {
+                let ack = TokenTransferAcknowledgement::Error(
+                    TokenTransferError::PacketDataDeserialization.to_string(),
+                );
+                return (ModuleExtras::empty(), ack.into());
+            }
+        };
+
+        let (mut extras, ack) = match process_recv_packet_execute(ctx, packet, data.clone()) {
+            Ok(extras) => (extras, TokenTransferAcknowledgement::success()),
+            Err((extras, error)) => (extras, TokenTransferAcknowledgement::from_error(error)),
+        };
+
+        let recv_event = RecvEvent {
+            receiver: data.receiver,
+            denom: data.token.denom,
+            amount: data.token.amount,
+            success: ack.is_successful(),
+        };
+        extras.events.push(recv_event.into());
+
+        (extras, ack.into())
     }
 }
 

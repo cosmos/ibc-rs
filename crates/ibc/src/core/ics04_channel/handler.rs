@@ -49,6 +49,7 @@ pub struct ChannelResult {
     pub channel_end: ChannelEnd,
 }
 
+#[derive(Clone, Debug)]
 pub struct ModuleExtras {
     pub events: Vec<ModuleEvent>,
     pub log: Vec<String>,

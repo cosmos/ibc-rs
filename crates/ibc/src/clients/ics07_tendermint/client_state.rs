@@ -966,6 +966,39 @@ impl Ics2ClientState for ClientState {
         verify_membership(client_state, prefix, proof, root, path, value)
     }
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn new_verify_packet_data(
+        &self,
+        ctx: &dyn ValidationContext,
+        height: Height,
+        connection_end: &ConnectionEnd,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        sequence: Sequence,
+        commitment: PacketCommitment,
+    ) -> Result<(), ClientError> {
+        let client_state = downcast_tm_client_state(self)?;
+        client_state.verify_height(height)?;
+        new_verify_delay_passed(ctx, height, connection_end)?;
+
+        let commitment_path = CommitmentsPath {
+            port_id: port_id.clone(),
+            channel_id: channel_id.clone(),
+            sequence,
+        };
+
+        verify_membership(
+            client_state,
+            connection_end.counterparty().prefix(),
+            proof,
+            root,
+            commitment_path,
+            commitment.into_vec(),
+        )
+    }
+
     fn verify_packet_data(
         &self,
         ctx: &dyn ChannelReader,
@@ -1134,6 +1167,47 @@ fn verify_non_membership(
 
 fn verify_delay_passed(
     ctx: &dyn ChannelReader,
+    height: Height,
+    connection_end: &ConnectionEnd,
+) -> Result<(), ClientError> {
+    let current_timestamp = ctx.host_timestamp().map_err(|e| ClientError::Other {
+        description: e.to_string(),
+    })?;
+    let current_height = ctx.host_height().map_err(|e| ClientError::Other {
+        description: e.to_string(),
+    })?;
+
+    let client_id = connection_end.client_id();
+    let processed_time =
+        ctx.client_update_time(client_id, &height)
+            .map_err(|_| Error::ProcessedTimeNotFound {
+                client_id: client_id.clone(),
+                height,
+            })?;
+    let processed_height = ctx.client_update_height(client_id, &height).map_err(|_| {
+        Error::ProcessedHeightNotFound {
+            client_id: client_id.clone(),
+            height,
+        }
+    })?;
+
+    let delay_period_time = connection_end.delay_period();
+    let delay_period_height = ctx.block_delay(&delay_period_time);
+
+    ClientState::verify_delay_passed(
+        current_timestamp,
+        current_height,
+        processed_time,
+        processed_height,
+        delay_period_time,
+        delay_period_height,
+    )
+    .map_err(|e| e.into())
+}
+
+#[cfg(feature = "val_exec_ctx")]
+fn new_verify_delay_passed(
+    ctx: &dyn ValidationContext,
     height: Height,
     connection_end: &ConnectionEnd,
 ) -> Result<(), ClientError> {
