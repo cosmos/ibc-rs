@@ -128,7 +128,7 @@ pub(crate) fn process(
     let MsgUpgradeClient { client_id, .. } = msg;
 
     // Temporary has been disabled until we have a better understanding of some design implications
-    if cfg!(feature = "disable_upgrade_client") {
+    if !cfg!(feature = "upgrade_client") {
         return Err(ClientError::Other {
             description: "upgrade_client feature is not supported".to_string(),
         });
@@ -197,7 +197,7 @@ pub(crate) fn process(
     Ok(output.with_result(result))
 }
 
-#[cfg(not(feature = "disable_upgrade_client"))]
+#[cfg(feature = "upgrade_client")]
 #[cfg(test)]
 mod tests {
     use crate::events::IbcEvent;

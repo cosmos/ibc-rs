@@ -585,7 +585,7 @@ mod tests {
                 .into(),
                 // Temporarily set to false due to the fact that the client
                 // upgrade is not yet implemented
-                want_pass: !cfg!(feature = "disable_upgrade_client"),
+                want_pass: cfg!(feature = "upgrade_client"),
                 state_check: None,
             },
             Test {
