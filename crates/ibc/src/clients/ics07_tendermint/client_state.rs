@@ -968,6 +968,9 @@ impl Ics2ClientState for ClientState {
         let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
         let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
 
+        // Frozen height is set to None fo the new client state
+        let new_frozen_height = None;
+
         // Construct new client state and consensus state relayer chosen client
         // parameters are ignored. All chain-chosen parameters come from
         // committed client, all client-chosen parameters come from current
@@ -981,8 +984,8 @@ impl Ics2ClientState for ClientState {
             upgraded_tm_client_state.latest_height,
             upgraded_tm_client_state.proof_specs,
             upgraded_tm_client_state.upgrade_path,
-            upgraded_tm_client_state.allow_update,
-            upgraded_tm_client_state.frozen_height,
+            self.allow_update,
+            new_frozen_height,
         )?;
 
         // The new consensus state is merely used as a trusted kernel against
