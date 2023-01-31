@@ -17,7 +17,7 @@ description  = """
 all-features = true
 
 [features]
-default = ["std"]
+default = ["std", "disable_upgrade_client"]
 std = [ 
     "ibc-proto/std",
     "ics23/std",
@@ -44,6 +44,9 @@ serde = ["dep:serde", "dep:serde_derive", "serde_json", "erased-serde"]
 
 # This feature guards the unfinished implementation of ADR 5.
 val_exec_ctx = []
+
+# This feature disables the upgrade client handler and return an error when a client upgrade is attempted.
+disable_upgrade_client = []
 
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
 # Depends on the `testgen` suite for generating Tendermint light blocks.

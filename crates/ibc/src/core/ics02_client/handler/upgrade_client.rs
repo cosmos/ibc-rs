@@ -35,6 +35,13 @@ where
 {
     let MsgUpgradeClient { client_id, .. } = msg;
 
+    // Temporary has been disabled until we have a better understanding of some design implications
+    if cfg!(feature = "disable_upgrade_client") {
+        return Err(ContextError::ClientError(ClientError::Other {
+            description: "upgrade_client feature is not supported".to_string(),
+        }));
+    }
+
     // Read the current latest client state from the host chain store.
     let old_client_state = ctx.client_state(&client_id)?;
 
@@ -119,6 +126,13 @@ pub(crate) fn process(
 ) -> HandlerResult<ClientResult, ClientError> {
     let mut output = HandlerOutput::builder();
     let MsgUpgradeClient { client_id, .. } = msg;
+
+    // Temporary has been disabled until we have a better understanding of some design implications
+    if cfg!(feature = "disable_upgrade_client") {
+        return Err(ClientError::Other {
+            description: "upgrade_client feature is not supported".to_string(),
+        });
+    }
 
     // Read the current latest client state from the host chain store.
     let old_client_state = ctx.client_state(&client_id)?;
