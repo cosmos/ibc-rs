@@ -186,6 +186,24 @@ impl Module for DummyTransferModule {
     ) -> Acknowledgement {
         Acknowledgement::try_from(vec![1u8]).unwrap()
     }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_timeout_packet_validate(
+        &self,
+        _packet: &Packet,
+        _relayer: &Signer,
+    ) -> (ModuleExtras, Result<(), PacketError>) {
+        (ModuleExtras::empty(), Ok(()))
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_timeout_packet_execute(
+        &mut self,
+        _packet: &Packet,
+        _relayer: &Signer,
+    ) -> (ModuleExtras, Result<(), PacketError>) {
+        (ModuleExtras::empty(), Ok(()))
+    }
 }
 
 impl TokenTransferKeeper for DummyTransferModule {

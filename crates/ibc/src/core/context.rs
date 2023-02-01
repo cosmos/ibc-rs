@@ -1298,8 +1298,12 @@ mod val_exec_ctx {
     {
         timeout::validate(ctx_a, &msg)?;
 
-        // TODO: cb validate
+        let module = ctx_a
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
 
-        Ok(())
+        let (_, cb_result) = module.on_timeout_packet_validate(&msg.packet, &msg.signer);
+
+        cb_result.map_err(ContextError::PacketError)
     }
 }
