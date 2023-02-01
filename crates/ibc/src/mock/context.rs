@@ -1996,11 +1996,8 @@ mod tests {
                 &self,
                 _packet: &Packet,
                 _relayer: &Signer,
-            ) -> (
-                ModuleExtras,
-                Result<(), crate::core::ics04_channel::error::PacketError>,
-            ) {
-                (ModuleExtras::empty(), Ok(()))
+            ) -> Result<(), crate::core::ics04_channel::error::PacketError> {
+                Ok(())
             }
 
             #[cfg(feature = "val_exec_ctx")]
@@ -2144,11 +2141,8 @@ mod tests {
                 &self,
                 _packet: &Packet,
                 _relayer: &Signer,
-            ) -> (
-                ModuleExtras,
-                Result<(), crate::core::ics04_channel::error::PacketError>,
-            ) {
-                (ModuleExtras::empty(), Ok(()))
+            ) -> Result<(), crate::core::ics04_channel::error::PacketError> {
+                Ok(())
             }
 
             #[cfg(feature = "val_exec_ctx")]

@@ -192,8 +192,8 @@ impl Module for DummyTransferModule {
         &self,
         _packet: &Packet,
         _relayer: &Signer,
-    ) -> (ModuleExtras, Result<(), PacketError>) {
-        (ModuleExtras::empty(), Ok(()))
+    ) -> Result<(), PacketError> {
+        Ok(())
     }
 
     #[cfg(feature = "val_exec_ctx")]

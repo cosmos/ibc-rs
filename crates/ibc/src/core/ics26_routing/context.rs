@@ -316,7 +316,7 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         &self,
         packet: &Packet,
         relayer: &Signer,
-    ) -> (ModuleExtras, Result<(), PacketError>);
+    ) -> Result<(), PacketError>;
 
     /// Note: `MsgTimeout` and `MsgTimeoutOnClose` use the same callback
     #[cfg(feature = "val_exec_ctx")]

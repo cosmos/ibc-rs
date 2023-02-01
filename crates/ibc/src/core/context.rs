@@ -1431,9 +1431,9 @@ mod val_exec_ctx {
             TimeoutMsgType::TimeoutOnClose(msg) => (msg.packet, msg.signer),
         };
 
-        let (_, cb_result) = module.on_timeout_packet_validate(&packet, &signer);
-
-        cb_result.map_err(ContextError::PacketError)
+        module
+            .on_timeout_packet_validate(&packet, &signer)
+            .map_err(ContextError::PacketError)
     }
 
     fn timeout_packet_execute<ExecCtx>(
