@@ -83,7 +83,7 @@ mod val_exec_ctx {
     };
     use crate::core::ics04_channel::handler::{
         chan_close_confirm, chan_close_init, chan_open_ack, chan_open_confirm, chan_open_init,
-        chan_open_try, recv_packet, timeout,
+        chan_open_try, recv_packet, timeout, timeout_on_close,
     };
     use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
@@ -94,6 +94,7 @@ mod val_exec_ctx {
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
     use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
+    use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
     use crate::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
     use crate::core::ics04_channel::packet::{Receipt, Sequence};
     use crate::core::ics04_channel::timeout::TimeoutHeight;
@@ -230,7 +231,9 @@ mod val_exec_ctx {
                         PacketMsg::Recv(msg) => recv_packet_validate(self, msg),
                         PacketMsg::Ack(_) => todo!(),
                         PacketMsg::Timeout(msg) => timeout_packet_validate(self, module_id, msg),
-                        PacketMsg::TimeoutOnClose(_) => todo!(),
+                        PacketMsg::TimeoutOnClose(msg) => {
+                            timeout_on_close_packet_validate(self, module_id, msg)
+                        }
                     }
                     .map_err(RouterError::ContextError)
                 }
@@ -1395,5 +1398,24 @@ mod val_exec_ctx {
         }
 
         Ok(())
+    }
+
+    fn timeout_on_close_packet_validate<ValCtx>(
+        ctx_a: &ValCtx,
+        module_id: ModuleId,
+        msg: MsgTimeoutOnClose,
+    ) -> Result<(), ContextError>
+    where
+        ValCtx: ValidationContext,
+    {
+        timeout_on_close::validate(ctx_a, &msg)?;
+
+        let module = ctx_a
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+
+        let (_, cb_result) = module.on_timeout_on_close_packet_validate(&msg.packet, &msg.signer);
+
+        cb_result.map_err(ContextError::PacketError)
     }
 }
