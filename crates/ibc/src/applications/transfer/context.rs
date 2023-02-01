@@ -286,6 +286,70 @@ pub fn on_recv_packet<Ctx: 'static + TokenTransferContext>(
     ack.into()
 }
 
+#[cfg(feature = "val_exec_ctx")]
+pub fn on_acknowledgement_packet_validate(
+    _ctx: &impl TokenTransferContext,
+    packet: &Packet,
+    acknowledgement: &Acknowledgement,
+    _relayer: &Signer,
+) -> Result<(), TokenTransferError> {
+    let _data = serde_json::from_slice::<PacketData>(&packet.data)
+        .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
+
+    let _acknowledgement =
+        serde_json::from_slice::<TokenTransferAcknowledgement>(acknowledgement.as_ref())
+            .map_err(|_| TokenTransferError::AckDeserialization)?;
+
+    Ok(())
+}
+
+#[cfg(feature = "val_exec_ctx")]
+pub fn on_acknowledgement_packet_execute(
+    ctx: &mut impl TokenTransferContext,
+    packet: &Packet,
+    acknowledgement: &Acknowledgement,
+    _relayer: &Signer,
+) -> (ModuleExtras, Result<(), TokenTransferError>) {
+    let data = match serde_json::from_slice::<PacketData>(&packet.data) {
+        Ok(data) => data,
+        Err(_) => {
+            return (
+                ModuleExtras::empty(),
+                Err(TokenTransferError::PacketDataDeserialization),
+            );
+        }
+    };
+
+    let acknowledgement =
+        match serde_json::from_slice::<TokenTransferAcknowledgement>(acknowledgement.as_ref()) {
+            Ok(ack) => ack,
+            Err(_) => {
+                return (
+                    ModuleExtras::empty(),
+                    Err(TokenTransferError::AckDeserialization),
+                );
+            }
+        };
+
+    if let Err(err) = process_ack_packet(ctx, packet, &data, &acknowledgement) {
+        return (ModuleExtras::empty(), Err(err));
+    }
+
+    let ack_event = AckEvent {
+        receiver: data.receiver,
+        denom: data.token.denom,
+        amount: data.token.amount,
+        acknowledgement: acknowledgement.clone(),
+    };
+
+    let extras = ModuleExtras {
+        events: vec![ack_event.into(), AckStatusEvent { acknowledgement }.into()],
+        log: Vec::new(),
+    };
+
+    (extras, Ok(()))
+}
+
 pub fn on_acknowledgement_packet(
     ctx: &mut impl TokenTransferContext,
     output: &mut ModuleOutputBuilder,
