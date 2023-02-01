@@ -49,11 +49,19 @@ pub(crate) mod val_exec_ctx {
         let conn_end_on_a = ctx_a.connection_end(&conn_id_on_a)?;
 
         //verify packet commitment
-        let commitment_on_a = ctx_a.get_packet_commitment(&(
+        let commitment_on_a = match ctx_a.get_packet_commitment(&(
             msg.packet.port_on_a.clone(),
             msg.packet.chan_on_a.clone(),
             msg.packet.sequence,
-        ))?;
+        )) {
+            Ok(commitment_on_a) => commitment_on_a,
+
+            // This error indicates that the timeout has already been relayed
+            // or there is a misconfigured relayer attempting to prove a timeout
+            // for a packet never sent. Core IBC will treat this error as a no-op in order to
+            // prevent an entire relay transaction from failing and consuming unnecessary fees.
+            Err(_) => return Ok(()),
+        };
 
         let expected_commitment_on_a = ctx_a.packet_commitment(
             &msg.packet.data,
