@@ -97,8 +97,9 @@ supported by `IBC-rs`:
 5. (S) Upgrading to a backwards compatible version of IBC
 6. (P) Changing the `UnbondingPeriod`: chains may increase the unbonding period
    with no issues. However, decreasing the unbonding period may irreversibly
-   break some counterparty clients. Thus, it is not recommended that chains
-   reduce the unbonding period.
+   break some counterparty clients (Consider the case where the
+   `UnbondingPeriod` falls below the `TrustingPeriod`). Thus, it is not
+   recommended that chains reduce the unbonding period.
 7. (P) Changing the Tendermint LightClient algorithm: Changes to the light
    client algorithm that do not change the
    [ClientState](../../crates/ibc/src/clients/ics07_tendermint/client_state.rs#ClientState)
@@ -170,12 +171,12 @@ validations (SV) and lastly execution (E) steps as follows:
    2. (BV) Check if the latest consensus state is within the trust period
    3. (BV) Check if the message containing proofs decoded successfully
    4. (SV) Verify that the upgradedClient be of a Tendermint `ClientState` type
-   5. (SV) Verify that the upgradedConsensusState be of a Tendermint
-      `ConsensusState` type
-   6. (SV) Check the height of the committed client state is not greater than
-      the latest height of the current client state
-   7. (SV) Match any Tendermint chain specified parameter in upgraded client
+   5. (SV) Match any Tendermint chain specified parameter in upgraded client
       such as ChainID, UnbondingPeriod, and ProofSpecs with the committed client
+   6. (SV) Verify that the upgradedConsensusState be of a Tendermint
+      `ConsensusState` type
+   7. (SV) Check the height of the committed client state is not greater than
+      the latest height of the current client state
    8. (SV) Verify that the upgrading chain did indeed commit to the upgraded
       client state at the upgrade height by provided proof. Note that the
       client-customizable fields must be zeroed out for this check
@@ -289,36 +290,20 @@ previous section as mentioned:
    let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
    ```
 
-5. ```rust
+5. This check has been done as part of step 4 while creating an instance of
+   `UpgradedClientState` in the domain type.
+
+6. ```rust
    let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
    ```
 
-6. ```rust
+7. ```rust
    if self.latest_height() >= upgraded_tm_client_state.latest_height() {
       return Err(ClientError::LowUpgradeHeight {
             upgraded_height: self.latest_height(),
             client_height: upgraded_tm_client_state.latest_height(),
       });
    }
-   ```
-
-7. ```rust
-   // Ensure that the new unbonding period is not shorter than the current's client unbonding period
-   if self.unbonding_period > upgraded_tm_client_state.unbonding_period {
-      return Err(ClientError::ClientSpecific {
-            description:
-               "cannot upgrade client with a shorter unbonding period than the current one"
-                  .to_string(),
-      });
-   }
-
-   // Check to see if the upgrade path is set
-   let mut upgrade_path = upgraded_tm_client_state.clone().upgrade_path;
-   if upgrade_path.pop().is_none() {
-      return Err(ClientError::ClientSpecific {
-            description: "cannot upgrade client as no upgrade path has been set".to_string(),
-      });
-   };
    ```
 
 8. ```rust

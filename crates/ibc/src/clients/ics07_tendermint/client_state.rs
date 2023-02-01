@@ -890,18 +890,8 @@ impl Ics2ClientState for ClientState {
             });
         }
 
-        // Ensure that the new unbonding period is not shorter than the current's
-        // client unbonding period
-        if self.unbonding_period > upgraded_tm_client_state.unbonding_period {
-            return Err(ClientError::ClientSpecific {
-                description:
-                    "cannot upgrade client with a shorter unbonding period than the current one"
-                        .to_string(),
-            });
-        }
-
         // Check to see if the upgrade path is set
-        let mut upgrade_path = upgraded_tm_client_state.clone().upgrade_path;
+        let mut upgrade_path = self.upgrade_path.clone();
         if upgrade_path.pop().is_none() {
             return Err(ClientError::ClientSpecific {
                 description: "cannot upgrade client as no upgrade path has been set".to_string(),
