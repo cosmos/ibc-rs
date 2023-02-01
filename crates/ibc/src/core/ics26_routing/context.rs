@@ -294,6 +294,7 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(())
     }
 
+    /// Note: `MsgTimeout` and `MsgTimeoutOnClose` use the same callback
     #[cfg(feature = "val_exec_ctx")]
     fn on_timeout_packet_validate(
         &self,
@@ -301,6 +302,7 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         relayer: &Signer,
     ) -> (ModuleExtras, Result<(), PacketError>);
 
+    /// Note: `MsgTimeout` and `MsgTimeoutOnClose` use the same callback
     #[cfg(feature = "val_exec_ctx")]
     fn on_timeout_packet_execute(
         &mut self,

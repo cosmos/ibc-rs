@@ -129,7 +129,8 @@ pub(crate) mod val_exec_ctx {
                     return Err(PacketError::InvalidPacketSequence {
                         given_sequence: packet.sequence,
                         next_sequence: msg.next_seq_recv_on_b,
-                    }.into());
+                    }
+                    .into());
                 }
                 client_state_of_b_on_a.new_verify_next_sequence_recv(
                     ctx_a,

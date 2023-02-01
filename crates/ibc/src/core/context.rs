@@ -230,10 +230,14 @@ mod val_exec_ctx {
                     match msg {
                         PacketMsg::Recv(msg) => recv_packet_validate(self, msg),
                         PacketMsg::Ack(_) => todo!(),
-                        PacketMsg::Timeout(msg) => timeout_packet_validate(self, module_id, msg),
-                        PacketMsg::TimeoutOnClose(msg) => {
-                            timeout_on_close_packet_validate(self, module_id, msg)
+                        PacketMsg::Timeout(msg) => {
+                            timeout_packet_validate(self, module_id, TimeoutMsgType::Timeout(msg))
                         }
+                        PacketMsg::TimeoutOnClose(msg) => timeout_packet_validate(
+                            self,
+                            module_id,
+                            TimeoutMsgType::TimeoutOnClose(msg),
+                        ),
                     }
                     .map_err(RouterError::ContextError)
                 }
@@ -489,8 +493,14 @@ mod val_exec_ctx {
                     match msg {
                         PacketMsg::Recv(msg) => recv_packet_execute(self, module_id, msg),
                         PacketMsg::Ack(_) => todo!(),
-                        PacketMsg::Timeout(msg) => timeout_packet_execute(self, module_id, msg),
-                        PacketMsg::TimeoutOnClose(_) => todo!(),
+                        PacketMsg::Timeout(msg) => {
+                            timeout_packet_execute(self, module_id, TimeoutMsgType::Timeout(msg))
+                        }
+                        PacketMsg::TimeoutOnClose(msg) => timeout_packet_execute(
+                            self,
+                            module_id,
+                            TimeoutMsgType::TimeoutOnClose(msg),
+                        ),
                     }
                     .map_err(RouterError::ContextError)
                 }
@@ -1291,21 +1301,34 @@ mod val_exec_ctx {
         Ok(())
     }
 
+    enum TimeoutMsgType {
+        Timeout(MsgTimeout),
+        TimeoutOnClose(MsgTimeoutOnClose),
+    }
+
     fn timeout_packet_validate<ValCtx>(
         ctx_a: &ValCtx,
         module_id: ModuleId,
-        msg: MsgTimeout,
+        timeout_msg_type: TimeoutMsgType,
     ) -> Result<(), ContextError>
     where
         ValCtx: ValidationContext,
     {
-        timeout::validate(ctx_a, &msg)?;
+        match &timeout_msg_type {
+            TimeoutMsgType::Timeout(msg) => timeout::validate(ctx_a, msg),
+            TimeoutMsgType::TimeoutOnClose(msg) => timeout_on_close::validate(ctx_a, msg),
+        }?;
 
         let module = ctx_a
             .get_route(&module_id)
             .ok_or(ChannelError::RouteNotFound)?;
 
-        let (_, cb_result) = module.on_timeout_packet_validate(&msg.packet, &msg.signer);
+        let (packet, signer) = match timeout_msg_type {
+            TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),
+            TimeoutMsgType::TimeoutOnClose(msg) => (msg.packet, msg.signer),
+        };
+
+        let (_, cb_result) = module.on_timeout_packet_validate(&packet, &signer);
 
         cb_result.map_err(ContextError::PacketError)
     }
@@ -1313,26 +1336,31 @@ mod val_exec_ctx {
     fn timeout_packet_execute<ExecCtx>(
         ctx_a: &mut ExecCtx,
         module_id: ModuleId,
-        msg: MsgTimeout,
+        timeout_msg_type: TimeoutMsgType,
     ) -> Result<(), ContextError>
     where
         ExecCtx: ExecutionContext,
     {
-        let port_chan_id_on_a = (msg.packet.port_on_a.clone(), msg.packet.chan_on_a.clone());
+        let (packet, signer) = match timeout_msg_type {
+            TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),
+            TimeoutMsgType::TimeoutOnClose(msg) => (msg.packet, msg.signer),
+        };
+
+        let port_chan_id_on_a = (packet.port_on_a.clone(), packet.chan_on_a.clone());
         let chan_end_on_a = ctx_a.channel_end(&port_chan_id_on_a)?;
 
         // In all cases, this event is emitted
         ctx_a.emit_ibc_event(IbcEvent::TimeoutPacket(TimeoutPacket::new(
-            msg.packet.clone(),
+            packet.clone(),
             chan_end_on_a.ordering,
         )));
 
         // check if we're in the NO-OP case
         if ctx_a
             .get_packet_commitment(&(
-                msg.packet.port_on_a.clone(),
-                msg.packet.chan_on_a.clone(),
-                msg.packet.sequence,
+                packet.port_on_a.clone(),
+                packet.chan_on_a.clone(),
+                packet.sequence,
             ))
             .is_err()
         {
@@ -1347,16 +1375,16 @@ mod val_exec_ctx {
             .get_route_mut(&module_id)
             .ok_or(ChannelError::RouteNotFound)?;
 
-        let (extras, cb_result) = module.on_timeout_packet_execute(&msg.packet, &msg.signer);
+        let (extras, cb_result) = module.on_timeout_packet_execute(&packet, &signer);
 
         cb_result?;
 
         // apply state changes
         let chan_end_on_a = {
             let commitment_path = CommitmentsPath {
-                port_id: msg.packet.port_on_a.clone(),
-                channel_id: msg.packet.chan_on_a.clone(),
-                sequence: msg.packet.sequence,
+                port_id: packet.port_on_a.clone(),
+                channel_id: packet.chan_on_a.clone(),
+                sequence: packet.sequence,
             };
             ctx_a.delete_packet_commitment(commitment_path)?;
 
@@ -1379,8 +1407,8 @@ mod val_exec_ctx {
                 let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
 
                 ctx_a.emit_ibc_event(IbcEvent::ChannelClosed(ChannelClosed::new(
-                    msg.packet.port_on_a.clone(),
-                    msg.packet.chan_on_a.clone(),
+                    packet.port_on_a.clone(),
+                    packet.chan_on_a.clone(),
                     chan_end_on_a.counterparty().port_id.clone(),
                     chan_end_on_a.counterparty().channel_id.clone(),
                     conn_id_on_a,
@@ -1398,24 +1426,5 @@ mod val_exec_ctx {
         }
 
         Ok(())
-    }
-
-    fn timeout_on_close_packet_validate<ValCtx>(
-        ctx_a: &ValCtx,
-        module_id: ModuleId,
-        msg: MsgTimeoutOnClose,
-    ) -> Result<(), ContextError>
-    where
-        ValCtx: ValidationContext,
-    {
-        timeout_on_close::validate(ctx_a, &msg)?;
-
-        let module = ctx_a
-            .get_route(&module_id)
-            .ok_or(ChannelError::RouteNotFound)?;
-
-        let (_, cb_result) = module.on_timeout_on_close_packet_validate(&msg.packet, &msg.signer);
-
-        cb_result.map_err(ContextError::PacketError)
     }
 }
