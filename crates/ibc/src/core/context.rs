@@ -78,8 +78,8 @@ mod val_exec_ctx {
     use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
     use crate::core::ics04_channel::context::calculate_block_delay;
     use crate::core::ics04_channel::events::{
-        ChannelClosed, CloseConfirm, CloseInit, OpenAck, OpenConfirm, OpenInit, OpenTry,
-        ReceivePacket, TimeoutPacket, WriteAcknowledgement,
+        AcknowledgePacket, ChannelClosed, CloseConfirm, CloseInit, OpenAck, OpenConfirm, OpenInit,
+        OpenTry, ReceivePacket, TimeoutPacket, WriteAcknowledgement,
     };
     use crate::core::ics04_channel::handler::{
         acknowledgement, chan_close_confirm, chan_close_init, chan_open_ack, chan_open_confirm,
@@ -229,7 +229,9 @@ mod val_exec_ctx {
 
                     match msg {
                         PacketMsg::Recv(msg) => recv_packet_validate(self, msg),
-                        PacketMsg::Ack(msg) => acknowledgement_validate(self, module_id, msg),
+                        PacketMsg::Ack(msg) => {
+                            acknowledgement_packet_validate(self, module_id, msg)
+                        }
                         PacketMsg::Timeout(msg) => {
                             timeout_packet_validate(self, module_id, TimeoutMsgType::Timeout(msg))
                         }
@@ -492,7 +494,7 @@ mod val_exec_ctx {
 
                     match msg {
                         PacketMsg::Recv(msg) => recv_packet_execute(self, module_id, msg),
-                        PacketMsg::Ack(_) => todo!(),
+                        PacketMsg::Ack(msg) => acknowledgement_packet_execute(self, module_id, msg),
                         PacketMsg::Timeout(msg) => {
                             timeout_packet_execute(self, module_id, TimeoutMsgType::Timeout(msg))
                         }
@@ -1300,7 +1302,8 @@ mod val_exec_ctx {
 
         Ok(())
     }
-    fn acknowledgement_validate<ValCtx>(
+
+    fn acknowledgement_packet_validate<ValCtx>(
         ctx_a: &ValCtx,
         module_id: ModuleId,
         msg: MsgAcknowledgement,
@@ -1317,6 +1320,88 @@ mod val_exec_ctx {
         module
             .on_acknowledgement_packet_validate(&msg.packet, &msg.acknowledgement, &msg.signer)
             .map_err(ContextError::PacketError)
+    }
+
+    fn acknowledgement_packet_execute<ExecCtx>(
+        ctx_a: &mut ExecCtx,
+        module_id: ModuleId,
+        msg: MsgAcknowledgement,
+    ) -> Result<(), ContextError>
+    where
+        ExecCtx: ExecutionContext,
+    {
+        let port_chan_id_on_a = (msg.packet.port_on_a.clone(), msg.packet.chan_on_a.clone());
+        let chan_end_on_a = ctx_a.channel_end(&port_chan_id_on_a)?;
+        let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
+
+        // In all cases, this event is emitted
+        ctx_a.emit_ibc_event(IbcEvent::AcknowledgePacket(AcknowledgePacket::new(
+            msg.packet.clone(),
+            chan_end_on_a.ordering,
+            conn_id_on_a.clone(),
+        )));
+
+        // check if we're in the NO-OP case
+        if ctx_a
+            .get_packet_commitment(&(
+                msg.packet.port_on_a.clone(),
+                msg.packet.chan_on_a.clone(),
+                msg.packet.sequence,
+            ))
+            .is_err()
+        {
+            // This error indicates that the timeout has already been relayed
+            // or there is a misconfigured relayer attempting to prove a timeout
+            // for a packet never sent. Core IBC will treat this error as a no-op in order to
+            // prevent an entire relay transaction from failing and consuming unnecessary fees.
+            return Ok(());
+        };
+
+        let module = ctx_a
+            .get_route_mut(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+
+        let (extras, cb_result) = module.on_acknowledgement_packet_execute(
+            &msg.packet,
+            &msg.acknowledgement,
+            &msg.signer,
+        );
+
+        cb_result?;
+
+        // apply state changes
+        {
+            let commitment_path = CommitmentsPath {
+                port_id: msg.packet.port_on_a.clone(),
+                channel_id: msg.packet.chan_on_a.clone(),
+                sequence: msg.packet.sequence,
+            };
+            ctx_a.delete_packet_commitment(commitment_path)?;
+
+            if let Order::Ordered = chan_end_on_a.ordering {
+                // Note: in validation, we verified that `msg.packet.sequence == nextSeqRecv`
+                // (where `nextSeqRecv` is the value in the store)
+                ctx_a
+                    .store_next_sequence_ack(port_chan_id_on_a, msg.packet.sequence.increment())?;
+            }
+        }
+
+        // emit events and logs
+        {
+            ctx_a.log_message("success: packet acknowledgement".to_string());
+
+            // Note: Acknowledgement event was emitted at the beginning
+
+            for module_event in extras.events {
+                ctx_a.emit_ibc_event(IbcEvent::AppModule(module_event));
+            }
+
+            for log_message in extras.log {
+                ctx_a.log_message(log_message);
+            }
+        }
+
+        Ok(())
     }
 
     enum TimeoutMsgType {
