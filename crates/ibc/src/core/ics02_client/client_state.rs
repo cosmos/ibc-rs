@@ -63,12 +63,7 @@ pub trait ClientState:
     /// Helper function to verify the upgrade client procedure.
     /// Resets all fields except the blockchain-specific ones,
     /// and updates the given fields.
-    fn upgrade(
-        &mut self,
-        upgrade_height: Height,
-        upgrade_options: &dyn UpgradeOptions,
-        chain_id: ChainId,
-    );
+    fn zero_custom_fields(&mut self);
 
     /// Convert into a boxed trait object
     fn into_box(self) -> Box<dyn ClientState>
@@ -112,11 +107,30 @@ pub trait ClientState:
         misbehaviour: Any,
     ) -> Result<Box<dyn ClientState>, ContextError>;
 
-    fn verify_upgrade_and_update_state(
+    /// Verify the upgraded client and consensus states and validate proofs
+    /// against the given root.
+    ///
+    /// NOTE: proof heights are not included as upgrade to a new revision is
+    /// expected to pass only on the last height committed by the current
+    /// revision. Clients are responsible for ensuring that the planned last
+    /// height of the current revision is somehow encoded in the proof
+    /// verification process. This is to ensure that no premature upgrades
+    /// occur, since upgrade plans committed to by the counterparty may be
+    /// cancelled or modified before the last planned height.
+    fn verify_upgrade_client(
         &self,
-        consensus_state: Any,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
         proof_upgrade_client: MerkleProof,
         proof_upgrade_consensus_state: MerkleProof,
+        root: &CommitmentRoot,
+    ) -> Result<(), ClientError>;
+
+    // Update the client state and consensus state in the store with the upgraded ones.
+    fn update_state_with_upgrade_client(
+        &self,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
     ) -> Result<UpdatedState, ClientError>;
 
     /// Verification functions as specified in:
@@ -273,8 +287,6 @@ impl PartialEq<&Self> for Box<dyn ClientState> {
 pub fn downcast_client_state<CS: ClientState>(h: &dyn ClientState) -> Option<&CS> {
     h.as_any().downcast_ref::<CS>()
 }
-
-pub trait UpgradeOptions: AsAny {}
 
 pub struct UpdatedState {
     pub client_state: Box<dyn ClientState>,

@@ -35,22 +35,57 @@ where
 {
     let MsgUpgradeClient { client_id, .. } = msg;
 
-    // Read client state from the host chain store.
+    // Temporary has been disabled until we have a better understanding of some design implications
+    if cfg!(feature = "disable_upgrade_client") {
+        return Err(ContextError::ClientError(ClientError::Other {
+            description: "upgrade_client feature is not supported".to_string(),
+        }));
+    }
+
+    // Read the current latest client state from the host chain store.
     let old_client_state = ctx.client_state(&client_id)?;
 
+    // Check if the client is frozen.
     if old_client_state.is_frozen() {
-        return Err(ClientError::ClientFrozen { client_id }.into());
+        return Err(ContextError::ClientError(ClientError::ClientFrozen {
+            client_id,
+        }));
     }
 
-    let upgrade_client_state = ctx.decode_client_state(msg.client_state)?;
+    // Read the latest consensus state from the host chain store.
+    let old_consensus_state = ctx
+        .consensus_state(&client_id, &old_client_state.latest_height())
+        .map_err(|_| ClientError::ConsensusStateNotFound {
+            client_id: client_id.clone(),
+            height: old_client_state.latest_height(),
+        })?;
 
-    if old_client_state.latest_height() >= upgrade_client_state.latest_height() {
-        return Err(ClientError::LowUpgradeHeight {
-            upgraded_height: old_client_state.latest_height(),
-            client_height: upgrade_client_state.latest_height(),
-        }
-        .into());
-    }
+    let now = ctx.host_timestamp()?;
+    let duration = now
+        .duration_since(&old_consensus_state.timestamp())
+        .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
+            time1: old_consensus_state.timestamp(),
+            time2: now,
+        })?;
+
+    // Check if the latest consensus state is within the trust period.
+    if old_client_state.expired(duration) {
+        return Err(ContextError::ClientError(
+            ClientError::HeaderNotWithinTrustPeriod {
+                latest_time: old_consensus_state.timestamp(),
+                update_time: now,
+            },
+        ));
+    };
+
+    // Validate the upgraded client state and consensus state and verify proofs against the root
+    old_client_state.verify_upgrade_client(
+        msg.client_state.clone(),
+        msg.consensus_state.clone(),
+        msg.proof_upgrade_client.clone(),
+        msg.proof_upgrade_consensus_state,
+        old_consensus_state.root(),
+    )?;
 
     Ok(())
 }
@@ -62,19 +97,13 @@ where
 {
     let MsgUpgradeClient { client_id, .. } = msg;
 
-    let upgrade_client_state = ctx.decode_client_state(msg.client_state)?;
+    let old_client_state = ctx.client_state(&client_id)?;
 
     let UpdatedState {
         client_state,
         consensus_state,
-    } = upgrade_client_state.verify_upgrade_and_update_state(
-        msg.consensus_state.clone(),
-        msg.proof_upgrade_client.clone(),
-        msg.proof_upgrade_consensus_state,
-    )?;
-
-    // Not implemented yet: https://github.com/informalsystems/ibc-rs/issues/722
-    // todo!()
+    } = old_client_state
+        .update_state_with_upgrade_client(msg.client_state.clone(), msg.consensus_state)?;
 
     ctx.store_client_state(ClientStatePath(client_id.clone()), client_state.clone())?;
     ctx.store_consensus_state(
@@ -98,52 +127,77 @@ pub(crate) fn process(
     let mut output = HandlerOutput::builder();
     let MsgUpgradeClient { client_id, .. } = msg;
 
-    // Read client state from the host chain store.
+    // Temporary has been disabled until we have a better understanding of some design implications
+    if !cfg!(feature = "upgrade_client") {
+        return Err(ClientError::Other {
+            description: "upgrade_client feature is not supported".to_string(),
+        });
+    }
+
+    // Read the current latest client state from the host chain store.
     let old_client_state = ctx.client_state(&client_id)?;
 
+    // Check if the client is frozen.
     if old_client_state.is_frozen() {
         return Err(ClientError::ClientFrozen { client_id });
     }
 
-    let upgrade_client_state = ctx.decode_client_state(msg.client_state)?;
+    // Read the latest consensus state from the host chain store.
+    let old_consensus_state = ctx
+        .consensus_state(&client_id, &old_client_state.latest_height())
+        .map_err(|_| ClientError::ConsensusStateNotFound {
+            client_id: client_id.clone(),
+            height: old_client_state.latest_height(),
+        })?;
 
-    if old_client_state.latest_height() >= upgrade_client_state.latest_height() {
-        return Err(ClientError::LowUpgradeHeight {
-            upgraded_height: old_client_state.latest_height(),
-            client_height: upgrade_client_state.latest_height(),
+    let now = ctx.host_timestamp()?;
+    let duration = now
+        .duration_since(&old_consensus_state.timestamp())
+        .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
+            time1: old_consensus_state.timestamp(),
+            time2: now,
+        })?;
+
+    // Check if the latest consensus state is within the trust period.
+    if old_client_state.expired(duration) {
+        return Err(ClientError::HeaderNotWithinTrustPeriod {
+            latest_time: old_consensus_state.timestamp(),
+            update_time: now,
         });
-    }
+    };
 
+    // Validate the upgraded client state and consensus state and verify proofs against the root
+    old_client_state.verify_upgrade_client(
+        msg.client_state.clone(),
+        msg.consensus_state.clone(),
+        msg.proof_upgrade_client.clone(),
+        msg.proof_upgrade_consensus_state.clone(),
+        old_consensus_state.root(),
+    )?;
+
+    // Create updated new client state and consensus state
     let UpdatedState {
         client_state,
         consensus_state,
-    } = upgrade_client_state.verify_upgrade_and_update_state(
-        msg.consensus_state.clone(),
-        msg.proof_upgrade_client.clone(),
-        msg.proof_upgrade_consensus_state,
-    )?;
-
-    // Not implemented yet: https://github.com/informalsystems/ibc-rs/issues/722
-    // todo!()
-
-    let client_type = client_state.client_type();
-    let consensus_height = client_state.latest_height();
+    } = old_client_state
+        .update_state_with_upgrade_client(msg.client_state.clone(), msg.consensus_state)?;
 
     let result = ClientResult::Upgrade(UpgradeClientResult {
         client_id: client_id.clone(),
-        client_state,
+        client_state: client_state.clone(),
         consensus_state,
     });
 
     output.emit(IbcEvent::UpgradeClient(UpgradeClient::new(
         client_id,
-        client_type,
-        consensus_height,
+        client_state.client_type(),
+        client_state.latest_height(),
     )));
 
     Ok(output.with_result(result))
 }
 
+#[cfg(feature = "upgrade_client")]
 #[cfg(test)]
 mod tests {
     use crate::events::IbcEvent;
@@ -157,7 +211,6 @@ mod tests {
     use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
     use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics24_host::identifier::ClientId;
-    use crate::handler::HandlerOutput;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
@@ -167,135 +220,131 @@ mod tests {
     use crate::Height;
 
     #[test]
-    fn test_upgrade_client_ok() {
+    fn upgrade_client_msg_processing() {
+        struct Test {
+            name: String,
+            ctx: MockContext,
+            msg: MsgUpgradeClient,
+            want_pass: bool,
+        }
         let client_id = ClientId::default();
         let signer = get_dummy_account_id();
-
         let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
+        let tests: Vec<Test> = vec![
+            Test {
+                name: "Processing succeeds".to_string(),
+                ctx: ctx.clone(),
+                msg: MsgUpgradeClient {
+                    client_id: client_id.clone(),
+                    client_state: MockClientState::new(MockHeader::new(
+                        Height::new(1, 26).unwrap(),
+                    ))
+                    .into(),
+                    consensus_state: MockConsensusState::new(MockHeader::new(
+                        Height::new(1, 26).unwrap(),
+                    ))
+                    .into(),
+                    proof_upgrade_client: Default::default(),
+                    proof_upgrade_consensus_state: Default::default(),
+                    signer: signer.clone(),
+                },
+                want_pass: true,
+            },
+            Test {
+                name: "Processing fails for non existing client".to_string(),
+                ctx: ctx.clone(),
+                msg: MsgUpgradeClient {
+                    client_id: ClientId::from_str("nonexistingclient").unwrap(),
+                    client_state: MockClientState::new(MockHeader::new(
+                        Height::new(1, 26).unwrap(),
+                    ))
+                    .into(),
+                    consensus_state: MockConsensusState::new(MockHeader::new(
+                        Height::new(1, 26).unwrap(),
+                    ))
+                    .into(),
+                    proof_upgrade_client: Default::default(),
+                    proof_upgrade_consensus_state: Default::default(),
+                    signer: signer.clone(),
+                },
+                want_pass: false,
+            },
+            Test {
+                name: "Processing fails for low upgrade height".to_string(),
+                ctx,
+                msg: MsgUpgradeClient {
+                    client_id: client_id.clone(),
+                    client_state: MockClientState::new(MockHeader::new(
+                        Height::new(0, 26).unwrap(),
+                    ))
+                    .into(),
+                    consensus_state: MockConsensusState::new(MockHeader::new(
+                        Height::new(0, 26).unwrap(),
+                    ))
+                    .into(),
+                    proof_upgrade_client: Default::default(),
+                    proof_upgrade_consensus_state: Default::default(),
+                    signer,
+                },
+                want_pass: false,
+            },
+        ]
+        .into_iter()
+        .collect();
 
-        let msg = MsgUpgradeClient {
-            client_id: client_id.clone(),
-            client_state: MockClientState::new(MockHeader::new(Height::new(1, 26).unwrap())).into(),
-            consensus_state: MockConsensusState::new(MockHeader::new(Height::new(1, 26).unwrap()))
-                .into(),
-            proof_upgrade_client: Default::default(),
-            proof_upgrade_consensus_state: Default::default(),
-            signer,
-        };
-
-        let output = dispatch(&ctx, ClientMsg::UpgradeClient(msg.clone()));
-
-        match output {
-            Ok(HandlerOutput {
-                result,
-                events: _,
-                log,
-            }) => {
-                assert!(log.is_empty());
-                // Check the result
-                match result {
-                    Upgrade(upg_res) => {
-                        assert_eq!(upg_res.client_id, client_id);
-                        assert_eq!(upg_res.client_state.as_ref().clone_into(), msg.client_state)
+        for test in tests {
+            let output = dispatch(&test.ctx, ClientMsg::UpgradeClient(test.msg.clone()));
+            let test_name = test.name;
+            match (test.want_pass, output) {
+                (true, Ok(output)) => {
+                    let upgrade_client_event =
+                        downcast!(output.events.first().unwrap() => IbcEvent::UpgradeClient)
+                            .unwrap();
+                    assert_eq!(upgrade_client_event.client_id(), &client_id);
+                    assert_eq!(upgrade_client_event.client_type(), &mock_client_type());
+                    assert_eq!(
+                        upgrade_client_event.consensus_height(),
+                        &Height::new(1, 26).unwrap()
+                    );
+                    assert!(output.log.is_empty());
+                    match output.result {
+                        Upgrade(upg_res) => {
+                            assert_eq!(upg_res.client_id, client_id);
+                            assert_eq!(
+                                upg_res.client_state.as_ref().clone_into(),
+                                test.msg.client_state
+                            );
+                            assert_eq!(
+                                upg_res.consensus_state.as_ref().clone_into(),
+                                test.msg.consensus_state
+                            );
+                        }
+                        _ => panic!("upgrade handler result has incorrect type"),
                     }
-                    _ => panic!("upgrade handler result has incorrect type"),
+                }
+                (true, Err(e)) => panic!("unexpected error for test {test_name}, {e:?}"),
+                (false, Err(e)) => match e {
+                    ClientError::ClientNotFound { client_id } => {
+                        assert_eq!(client_id, test.msg.client_id)
+                    }
+                    ClientError::LowUpgradeHeight {
+                        upgraded_height,
+                        client_height,
+                    } => {
+                        assert_eq!(upgraded_height, Height::new(0, 42).unwrap());
+                        assert_eq!(
+                            client_height,
+                            MockClientState::try_from(test.msg.client_state)
+                                .unwrap()
+                                .latest_height()
+                        );
+                    }
+                    _ => panic!("unexpected error for test {test_name}, {e:?}"),
+                },
+                (false, Ok(e)) => {
+                    panic!("unexpected success for test {test_name}, result: {e:?}")
                 }
             }
-            Err(err) => {
-                panic!("unexpected error: {}", err);
-            }
         }
-    }
-
-    #[test]
-    fn test_upgrade_nonexisting_client() {
-        let client_id = ClientId::from_str("mockclient1").unwrap();
-        let signer = get_dummy_account_id();
-
-        let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
-
-        let msg = MsgUpgradeClient {
-            client_id: ClientId::from_str("nonexistingclient").unwrap(),
-            client_state: MockClientState::new(MockHeader::new(Height::new(1, 26).unwrap())).into(),
-            consensus_state: MockConsensusState::new(MockHeader::new(Height::new(1, 26).unwrap()))
-                .into(),
-            proof_upgrade_client: Default::default(),
-            proof_upgrade_consensus_state: Default::default(),
-            signer,
-        };
-
-        let output = dispatch(&ctx, ClientMsg::UpgradeClient(msg.clone()));
-
-        match output {
-            Err(ClientError::ClientNotFound { client_id }) => {
-                assert_eq!(client_id, msg.client_id);
-            }
-            _ => {
-                panic!("expected ClientNotFound error, instead got {:?}", output);
-            }
-        }
-    }
-
-    #[test]
-    fn test_upgrade_client_low_height() {
-        let client_id = ClientId::default();
-        let signer = get_dummy_account_id();
-
-        let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
-
-        let msg = MsgUpgradeClient {
-            client_id,
-            client_state: MockClientState::new(MockHeader::new(Height::new(0, 26).unwrap())).into(),
-            consensus_state: MockConsensusState::new(MockHeader::new(Height::new(0, 26).unwrap()))
-                .into(),
-            proof_upgrade_client: Default::default(),
-            proof_upgrade_consensus_state: Default::default(),
-            signer,
-        };
-
-        let output = dispatch(&ctx, ClientMsg::UpgradeClient(msg.clone()));
-
-        match output {
-            Err(ClientError::LowUpgradeHeight {
-                upgraded_height,
-                client_height,
-            }) => {
-                assert_eq!(upgraded_height, Height::new(0, 42).unwrap());
-                assert_eq!(
-                    client_height,
-                    MockClientState::try_from(msg.client_state)
-                        .unwrap()
-                        .latest_height()
-                );
-            }
-            _ => {
-                panic!("expected LowUpgradeHeight error, instead got {:?}", output);
-            }
-        }
-    }
-
-    #[test]
-    fn test_upgrade_client_event() {
-        let client_id = ClientId::default();
-        let signer = get_dummy_account_id();
-
-        let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
-
-        let upgrade_height = Height::new(1, 26).unwrap();
-        let msg = MsgUpgradeClient {
-            client_id: client_id.clone(),
-            client_state: MockClientState::new(MockHeader::new(upgrade_height)).into(),
-            consensus_state: MockConsensusState::new(MockHeader::new(upgrade_height)).into(),
-            proof_upgrade_client: Default::default(),
-            proof_upgrade_consensus_state: Default::default(),
-            signer,
-        };
-
-        let output = dispatch(&ctx, ClientMsg::UpgradeClient(msg)).unwrap();
-        let upgrade_client_event =
-            downcast!(output.events.first().unwrap() => IbcEvent::UpgradeClient).unwrap();
-        assert_eq!(upgrade_client_event.client_id(), &client_id);
-        assert_eq!(upgrade_client_event.client_type(), &mock_client_type());
-        assert_eq!(upgrade_client_event.consensus_height(), &upgrade_height);
     }
 }

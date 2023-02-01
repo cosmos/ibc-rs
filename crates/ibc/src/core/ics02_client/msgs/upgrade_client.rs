@@ -21,11 +21,18 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpgradeClient";
 /// A type of message that triggers the upgrade of an on-chain (IBC) client.
 #[derive(Clone, Debug, PartialEq)]
 pub struct MsgUpgradeClient {
+    // client unique identifier
     pub client_id: ClientId,
+    // Upgraded client state
     pub client_state: Any,
+    // Upgraded consensus state, only contains enough information
+    // to serve as a basis of trust in update logic
     pub consensus_state: Any,
+    // proof that old chain committed to new client
     pub proof_upgrade_client: RawMerkleProof,
+    // proof that old chain committed to new consensus state
     pub proof_upgrade_consensus_state: RawMerkleProof,
+    // signer address
     pub signer: Signer,
 }
 
