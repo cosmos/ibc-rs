@@ -62,13 +62,13 @@ pub struct ClientState {
     pub trusting_period: Duration,
     pub unbonding_period: Duration,
     max_clock_drift: Duration,
-    latest_height: Height,
+    pub latest_height: Height,
     pub proof_specs: ProofSpecs,
     pub upgrade_path: Vec<String>,
     allow_update: AllowUpdate,
     frozen_height: Option<Height>,
     #[cfg_attr(feature = "serde", serde(skip))]
-    verifier: ProdVerifier,
+    pub verifier: ProdVerifier,
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -370,6 +370,10 @@ impl Ics2ClientState for ClientState {
 
     fn latest_height(&self) -> Height {
         self.latest_height
+    }
+
+    fn trusting_period(&self) -> Duration {
+        self.trusting_period
     }
 
     fn frozen_height(&self) -> Option<Height> {

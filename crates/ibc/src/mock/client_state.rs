@@ -163,6 +163,10 @@ impl ClientState for MockClientState {
         self.header.height()
     }
 
+    fn trusting_period(&self) -> Duration {
+        Duration::MAX
+    }
+
     fn frozen_height(&self) -> Option<Height> {
         self.frozen_height
     }

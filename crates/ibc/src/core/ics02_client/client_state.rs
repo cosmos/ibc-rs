@@ -48,6 +48,8 @@ pub trait ClientState:
     /// Latest height the client was updated to
     fn latest_height(&self) -> Height;
 
+    fn trusting_period(&self) -> Duration;
+
     /// Freeze status of the client
     fn is_frozen(&self) -> bool {
         self.frozen_height().is_some()
