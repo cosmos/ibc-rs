@@ -284,6 +284,22 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         _relayer: &Signer,
     ) -> Acknowledgement;
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_acknowledgement_packet_validate(
+        &self,
+        _packet: &Packet,
+        _acknowledgement: &Acknowledgement,
+        _relayer: &Signer,
+    ) -> Result<(), PacketError>;
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_acknowledgement_packet_execute(
+        &mut self,
+        _packet: &Packet,
+        _acknowledgement: &Acknowledgement,
+        _relayer: &Signer,
+    ) -> (ModuleExtras, Result<(), PacketError>);
+
     fn on_acknowledgement_packet(
         &mut self,
         _output: &mut ModuleOutputBuilder,

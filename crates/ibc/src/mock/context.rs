@@ -2014,6 +2014,29 @@ mod tests {
             ) {
                 (ModuleExtras::empty(), Ok(()))
             }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_acknowledgement_packet_validate(
+                &self,
+                _packet: &Packet,
+                _acknowledgement: &Acknowledgement,
+                _relayer: &Signer,
+            ) -> Result<(), crate::core::ics04_channel::error::PacketError> {
+                Ok(())
+            }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_acknowledgement_packet_execute(
+                &mut self,
+                _packet: &Packet,
+                _acknowledgement: &Acknowledgement,
+                _relayer: &Signer,
+            ) -> (
+                ModuleExtras,
+                Result<(), crate::core::ics04_channel::error::PacketError>,
+            ) {
+                (ModuleExtras::empty(), Ok(()))
+            }
         }
 
         #[derive(Debug, Default)]
@@ -2132,6 +2155,29 @@ mod tests {
             fn on_timeout_packet_execute(
                 &mut self,
                 _packet: &Packet,
+                _relayer: &Signer,
+            ) -> (
+                ModuleExtras,
+                Result<(), crate::core::ics04_channel::error::PacketError>,
+            ) {
+                (ModuleExtras::empty(), Ok(()))
+            }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_acknowledgement_packet_validate(
+                &self,
+                _packet: &Packet,
+                _acknowledgement: &Acknowledgement,
+                _relayer: &Signer,
+            ) -> Result<(), crate::core::ics04_channel::error::PacketError> {
+                Ok(())
+            }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_acknowledgement_packet_execute(
+                &mut self,
+                _packet: &Packet,
+                _acknowledgement: &Acknowledgement,
                 _relayer: &Signer,
             ) -> (
                 ModuleExtras,

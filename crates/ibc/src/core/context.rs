@@ -82,10 +82,10 @@ mod val_exec_ctx {
         ReceivePacket, TimeoutPacket, WriteAcknowledgement,
     };
     use crate::core::ics04_channel::handler::{
-        chan_close_confirm, chan_close_init, chan_open_ack, chan_open_confirm, chan_open_init,
-        chan_open_try, recv_packet, timeout, timeout_on_close,
+        acknowledgement, chan_close_confirm, chan_close_init, chan_open_ack, chan_open_confirm,
+        chan_open_init, chan_open_try, recv_packet, timeout, timeout_on_close,
     };
-    use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
+    use crate::core::ics04_channel::msgs::acknowledgement::{Acknowledgement, MsgAcknowledgement};
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
     use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
     use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
@@ -229,7 +229,7 @@ mod val_exec_ctx {
 
                     match msg {
                         PacketMsg::Recv(msg) => recv_packet_validate(self, msg),
-                        PacketMsg::Ack(_) => todo!(),
+                        PacketMsg::Ack(msg) => acknowledgement_validate(self, module_id, msg),
                         PacketMsg::Timeout(msg) => {
                             timeout_packet_validate(self, module_id, TimeoutMsgType::Timeout(msg))
                         }
@@ -1299,6 +1299,24 @@ mod val_exec_ctx {
         }
 
         Ok(())
+    }
+    fn acknowledgement_validate<ValCtx>(
+        ctx_a: &ValCtx,
+        module_id: ModuleId,
+        msg: MsgAcknowledgement,
+    ) -> Result<(), ContextError>
+    where
+        ValCtx: ValidationContext,
+    {
+        acknowledgement::validate(ctx_a, &msg)?;
+
+        let module = ctx_a
+            .get_route(&module_id)
+            .ok_or(ChannelError::RouteNotFound)?;
+
+        module
+            .on_acknowledgement_packet_validate(&msg.packet, &msg.acknowledgement, &msg.signer)
+            .map_err(ContextError::PacketError)
     }
 
     enum TimeoutMsgType {

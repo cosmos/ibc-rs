@@ -1150,6 +1150,38 @@ impl Ics2ClientState for ClientState {
         )
     }
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn new_verify_packet_acknowledgement(
+        &self,
+        ctx: &dyn ValidationContext,
+        height: Height,
+        connection_end: &ConnectionEnd,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        sequence: Sequence,
+        ack: AcknowledgementCommitment,
+    ) -> Result<(), ClientError> {
+        let client_state = downcast_tm_client_state(self)?;
+        client_state.verify_height(height)?;
+        new_verify_delay_passed(ctx, height, connection_end)?;
+
+        let ack_path = AcksPath {
+            port_id: port_id.clone(),
+            channel_id: channel_id.clone(),
+            sequence,
+        };
+        verify_membership(
+            client_state,
+            connection_end.counterparty().prefix(),
+            proof,
+            root,
+            ack_path,
+            ack.into_vec(),
+        )
+    }
+
     fn verify_packet_acknowledgement(
         &self,
         ctx: &dyn ChannelReader,
