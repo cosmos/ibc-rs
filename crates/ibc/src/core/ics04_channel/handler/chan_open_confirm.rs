@@ -79,7 +79,7 @@ pub(crate) mod val_exec_ctx {
             let expected_chan_end_on_a = ChannelEnd::new(
                 State::Open,
                 *chan_end_on_b.ordering(),
-                Counterparty::new(msg.port_id_on_b.clone(), None),
+                Counterparty::new(msg.port_id_on_b.clone(), Some(msg.chan_id_on_b.clone())),
                 vec![conn_id_on_a.clone()],
                 chan_end_on_b.version.clone(),
             );
@@ -165,7 +165,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         let expected_chan_end_on_a = ChannelEnd::new(
             State::Open,
             *chan_end_on_b.ordering(),
-            Counterparty::new(msg.port_id_on_b.clone(), None),
+            Counterparty::new(msg.port_id_on_b.clone(), Some(msg.chan_id_on_b.clone())),
             vec![conn_id_on_a.clone()],
             chan_end_on_b.version.clone(),
         );
