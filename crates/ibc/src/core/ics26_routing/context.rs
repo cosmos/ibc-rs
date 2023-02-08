@@ -270,6 +270,13 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(ModuleExtras::empty())
     }
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn on_recv_packet_execute(
+        &mut self,
+        packet: &Packet,
+        relayer: &Signer,
+    ) -> (ModuleExtras, Acknowledgement);
+
     fn on_recv_packet(
         &mut self,
         _output: &mut ModuleOutputBuilder,

@@ -1966,6 +1966,20 @@ mod tests {
                 Ok((ModuleExtras::empty(), counterparty_version.clone()))
             }
 
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_recv_packet_execute(
+                &mut self,
+                _packet: &Packet,
+                _relayer: &Signer,
+            ) -> (ModuleExtras, Acknowledgement) {
+                self.counter += 1;
+
+                (
+                    ModuleExtras::empty(),
+                    Acknowledgement::try_from(vec![1u8]).unwrap(),
+                )
+            }
+
             fn on_recv_packet(
                 &mut self,
                 _output: &mut ModuleOutputBuilder,
@@ -1974,7 +1988,7 @@ mod tests {
             ) -> Acknowledgement {
                 self.counter += 1;
 
-                Acknowledgement::from(vec![1u8])
+                Acknowledgement::try_from(vec![1u8]).unwrap()
             }
         }
 
@@ -2058,13 +2072,25 @@ mod tests {
                 Ok((ModuleExtras::empty(), counterparty_version.clone()))
             }
 
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_recv_packet_execute(
+                &mut self,
+                _packet: &Packet,
+                _relayer: &Signer,
+            ) -> (ModuleExtras, Acknowledgement) {
+                (
+                    ModuleExtras::empty(),
+                    Acknowledgement::try_from(vec![1u8]).unwrap(),
+                )
+            }
+
             fn on_recv_packet(
                 &mut self,
                 _output: &mut ModuleOutputBuilder,
                 _packet: &Packet,
                 _relayer: &Signer,
             ) -> Acknowledgement {
-                Acknowledgement::from(vec![1u8])
+                Acknowledgement::try_from(vec![1u8]).unwrap()
             }
         }
 

@@ -2,14 +2,13 @@ use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap as HashMap;
 use core::time::Duration;
-use dyn_clone::clone_box;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::mock::ClientState as RawMockClientState;
 use ibc_proto::protobuf::Protobuf;
 
-use crate::core::ics02_client::client_state::{ClientState, UpdatedState, UpgradeOptions};
+use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::context::ClientReader;
@@ -171,12 +170,7 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
-    fn upgrade(
-        &mut self,
-        _upgrade_height: Height,
-        _upgrade_options: &dyn UpgradeOptions,
-        _chain_id: ChainId,
-    ) {
+    fn zero_custom_fields(&mut self) {
         unimplemented!()
     }
 
@@ -287,16 +281,35 @@ impl ClientState for MockClientState {
         Ok(new_state.into_box())
     }
 
-    fn verify_upgrade_and_update_state(
+    fn verify_upgrade_client(
         &self,
-        consensus_state: Any,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
         _proof_upgrade_client: MerkleProof,
         _proof_upgrade_consensus_state: MerkleProof,
+        _root: &CommitmentRoot,
+    ) -> Result<(), ClientError> {
+        let upgraded_mock_client_state = MockClientState::try_from(upgraded_client_state)?;
+        MockConsensusState::try_from(upgraded_consensus_state)?;
+        if self.latest_height() >= upgraded_mock_client_state.latest_height() {
+            return Err(ClientError::LowUpgradeHeight {
+                upgraded_height: self.latest_height(),
+                client_height: upgraded_mock_client_state.latest_height(),
+            });
+        }
+        Ok(())
+    }
+
+    fn update_state_with_upgrade_client(
+        &self,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
     ) -> Result<UpdatedState, ClientError> {
-        let consensus_state = MockConsensusState::try_from(consensus_state)?;
+        let mock_client_state = MockClientState::try_from(upgraded_client_state)?;
+        let mock_consensus_state = MockConsensusState::try_from(upgraded_consensus_state)?;
         Ok(UpdatedState {
-            client_state: clone_box(self),
-            consensus_state: consensus_state.into_box(),
+            client_state: mock_client_state.into_box(),
+            consensus_state: mock_consensus_state.into_box(),
         })
     }
 
@@ -355,6 +368,22 @@ impl ClientState for MockClientState {
         _root: &CommitmentRoot,
         _client_id: &ClientId,
         _expected_client_state: Any,
+    ) -> Result<(), ClientError> {
+        Ok(())
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    fn new_verify_packet_data(
+        &self,
+        _ctx: &dyn ValidationContext,
+        _height: Height,
+        _connection_end: &ConnectionEnd,
+        _proof: &CommitmentProofBytes,
+        _root: &CommitmentRoot,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _sequence: Sequence,
+        _commitment: PacketCommitment,
     ) -> Result<(), ClientError> {
         Ok(())
     }

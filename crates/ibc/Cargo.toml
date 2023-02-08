@@ -45,6 +45,9 @@ serde = ["dep:serde", "dep:serde_derive", "serde_json", "erased-serde"]
 # This feature guards the unfinished implementation of ADR 5.
 val_exec_ctx = []
 
+# This feature guards the unfinished implementation of the `UpgradeClient` handler.
+upgrade_client = []
+
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
 # Depends on the `testgen` suite for generating Tendermint light blocks.
 mocks = ["tendermint-testgen", "tendermint/clock", "cfg-if", "parking_lot"]
