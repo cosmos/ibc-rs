@@ -1720,6 +1720,7 @@ mod val_exec_ctx {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use test_log::test;
 
     use alloc::str::FromStr;
@@ -1738,7 +1739,6 @@ mod tests {
     use crate::mock::context::MockContext;
     use crate::mock::context::MockRouterBuilder;
     use crate::mock::host::HostType;
-    use crate::prelude::*;
     use crate::signer::Signer;
     use crate::test_utils::get_dummy_bech32_account;
     use crate::Height;
@@ -1996,7 +1996,7 @@ mod tests {
                 &self,
                 _packet: &Packet,
                 _relayer: &Signer,
-            ) -> Result<(), crate::core::ics04_channel::error::PacketError> {
+            ) -> Result<(), PacketError> {
                 Ok(())
             }
 
@@ -2005,10 +2005,7 @@ mod tests {
                 &mut self,
                 _packet: &Packet,
                 _relayer: &Signer,
-            ) -> (
-                ModuleExtras,
-                Result<(), crate::core::ics04_channel::error::PacketError>,
-            ) {
+            ) -> (ModuleExtras, Result<(), PacketError>) {
                 (ModuleExtras::empty(), Ok(()))
             }
 
@@ -2018,7 +2015,7 @@ mod tests {
                 _packet: &Packet,
                 _acknowledgement: &Acknowledgement,
                 _relayer: &Signer,
-            ) -> Result<(), crate::core::ics04_channel::error::PacketError> {
+            ) -> Result<(), PacketError> {
                 Ok(())
             }
 
@@ -2028,10 +2025,7 @@ mod tests {
                 _packet: &Packet,
                 _acknowledgement: &Acknowledgement,
                 _relayer: &Signer,
-            ) -> (
-                ModuleExtras,
-                Result<(), crate::core::ics04_channel::error::PacketError>,
-            ) {
+            ) -> (ModuleExtras, Result<(), PacketError>) {
                 (ModuleExtras::empty(), Ok(()))
             }
         }
@@ -2141,7 +2135,7 @@ mod tests {
                 &self,
                 _packet: &Packet,
                 _relayer: &Signer,
-            ) -> Result<(), crate::core::ics04_channel::error::PacketError> {
+            ) -> Result<(), PacketError> {
                 Ok(())
             }
 
@@ -2150,10 +2144,7 @@ mod tests {
                 &mut self,
                 _packet: &Packet,
                 _relayer: &Signer,
-            ) -> (
-                ModuleExtras,
-                Result<(), crate::core::ics04_channel::error::PacketError>,
-            ) {
+            ) -> (ModuleExtras, Result<(), PacketError>) {
                 (ModuleExtras::empty(), Ok(()))
             }
 
@@ -2163,7 +2154,7 @@ mod tests {
                 _packet: &Packet,
                 _acknowledgement: &Acknowledgement,
                 _relayer: &Signer,
-            ) -> Result<(), crate::core::ics04_channel::error::PacketError> {
+            ) -> Result<(), PacketError> {
                 Ok(())
             }
 
@@ -2173,10 +2164,7 @@ mod tests {
                 _packet: &Packet,
                 _acknowledgement: &Acknowledgement,
                 _relayer: &Signer,
-            ) -> (
-                ModuleExtras,
-                Result<(), crate::core::ics04_channel::error::PacketError>,
-            ) {
+            ) -> (ModuleExtras, Result<(), PacketError>) {
                 (ModuleExtras::empty(), Ok(()))
             }
         }
