@@ -7,7 +7,6 @@ use crate::core::ics04_channel::packet::Packet;
 use crate::prelude::*;
 
 pub mod on_recv_packet;
-pub mod on_timeout_packet;
 pub mod send_transfer;
 
 pub fn refund_packet_token(

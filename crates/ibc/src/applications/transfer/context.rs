@@ -5,7 +5,6 @@ use crate::applications::transfer::acknowledgement::TokenTransferAcknowledgement
 use crate::applications::transfer::events::{AckEvent, AckStatusEvent, RecvEvent, TimeoutEvent};
 use crate::applications::transfer::packet::PacketData;
 use crate::applications::transfer::relay::on_recv_packet::process_recv_packet;
-use crate::applications::transfer::relay::on_timeout_packet::process_timeout_packet;
 use crate::applications::transfer::relay::refund_packet_token;
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
@@ -325,7 +324,7 @@ pub fn on_timeout_packet(
     let data = serde_json::from_slice::<PacketData>(&packet.data)
         .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
 
-    process_timeout_packet(ctx, packet, &data)?;
+    refund_packet_token(ctx, packet, &data)?;
 
     let timeout_event = TimeoutEvent {
         refund_receiver: data.sender,
@@ -607,15 +606,18 @@ mod val_exec_ctx {
         (extras, Ok(()))
     }
 
-    pub fn on_timeout_packet_validate(
-        _ctx: &impl TokenTransferContext,
+    pub fn on_timeout_packet_validate<Ctx>(
+        _ctx: &Ctx,
         packet: &Packet,
         _relayer: &Signer,
-    ) -> Result<(), TokenTransferError> {
-        let _data = serde_json::from_slice::<PacketData>(&packet.data)
+    ) -> Result<(), TokenTransferError>
+    where
+        Ctx: TokenTransferContext,
+    {
+        let data = serde_json::from_slice::<PacketData>(&packet.data)
             .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
 
-        // TODO: validate `refund_packet_token`
+        refund_packet_token_validate::<Ctx>(&data)?;
 
         Ok(())
     }
@@ -635,7 +637,7 @@ mod val_exec_ctx {
             }
         };
 
-        if let Err(err) = process_timeout_packet(ctx, packet, &data) {
+        if let Err(err) = refund_packet_token(ctx, packet, &data) {
             return (ModuleExtras::empty(), Err(err));
         }
 
