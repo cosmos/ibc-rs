@@ -1150,6 +1150,38 @@ impl Ics2ClientState for ClientState {
         )
     }
 
+    #[cfg(feature = "val_exec_ctx")]
+    fn new_verify_packet_acknowledgement(
+        &self,
+        ctx: &dyn ValidationContext,
+        height: Height,
+        connection_end: &ConnectionEnd,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        sequence: Sequence,
+        ack: AcknowledgementCommitment,
+    ) -> Result<(), ClientError> {
+        let client_state = downcast_tm_client_state(self)?;
+        client_state.verify_height(height)?;
+        new_verify_delay_passed(ctx, height, connection_end)?;
+
+        let ack_path = AcksPath {
+            port_id: port_id.clone(),
+            channel_id: channel_id.clone(),
+            sequence,
+        };
+        verify_membership(
+            client_state,
+            connection_end.counterparty().prefix(),
+            proof,
+            root,
+            ack_path,
+            ack.into_vec(),
+        )
+    }
+
     fn verify_packet_acknowledgement(
         &self,
         ctx: &dyn ChannelReader,
@@ -1178,6 +1210,40 @@ impl Ics2ClientState for ClientState {
             root,
             ack_path,
             ack_commitment.into_vec(),
+        )
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    #[allow(clippy::too_many_arguments)]
+    fn new_verify_next_sequence_recv(
+        &self,
+        ctx: &dyn ValidationContext,
+        height: Height,
+        connection_end: &ConnectionEnd,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        sequence: Sequence,
+    ) -> Result<(), ClientError> {
+        let client_state = downcast_tm_client_state(self)?;
+        client_state.verify_height(height)?;
+        new_verify_delay_passed(ctx, height, connection_end)?;
+
+        let mut seq_bytes = Vec::new();
+        u64::from(sequence)
+            .encode(&mut seq_bytes)
+            .expect("buffer size too small");
+
+        let seq_path = SeqRecvsPath(port_id.clone(), channel_id.clone());
+
+        verify_membership(
+            client_state,
+            connection_end.counterparty().prefix(),
+            proof,
+            root,
+            seq_path,
+            seq_bytes,
         )
     }
 
@@ -1210,6 +1276,37 @@ impl Ics2ClientState for ClientState {
             root,
             seq_path,
             seq_bytes,
+        )
+    }
+
+    #[cfg(feature = "val_exec_ctx")]
+    #[allow(clippy::too_many_arguments)]
+    fn new_verify_packet_receipt_absence(
+        &self,
+        ctx: &dyn ValidationContext,
+        height: Height,
+        connection_end: &ConnectionEnd,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        sequence: Sequence,
+    ) -> Result<(), ClientError> {
+        let client_state = downcast_tm_client_state(self)?;
+        client_state.verify_height(height)?;
+        new_verify_delay_passed(ctx, height, connection_end)?;
+
+        let receipt_path = ReceiptsPath {
+            port_id: port_id.clone(),
+            channel_id: channel_id.clone(),
+            sequence,
+        };
+        verify_non_membership(
+            client_state,
+            connection_end.counterparty().prefix(),
+            proof,
+            root,
+            receipt_path,
         )
     }
 

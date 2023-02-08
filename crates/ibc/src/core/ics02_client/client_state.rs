@@ -221,6 +221,22 @@ pub trait ClientState:
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a packet has been committed.
+    #[cfg(feature = "val_exec_ctx")]
+    #[allow(clippy::too_many_arguments)]
+    fn new_verify_packet_acknowledgement(
+        &self,
+        ctx: &dyn ValidationContext,
+        height: Height,
+        connection_end: &ConnectionEnd,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        sequence: Sequence,
+        ack: AcknowledgementCommitment,
+    ) -> Result<(), ClientError>;
+
+    /// Verify a `proof` that a packet has been committed.
     #[allow(clippy::too_many_arguments)]
     fn verify_packet_acknowledgement(
         &self,
@@ -236,10 +252,40 @@ pub trait ClientState:
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that of the next_seq_received.
+    #[cfg(feature = "val_exec_ctx")]
+    #[allow(clippy::too_many_arguments)]
+    fn new_verify_next_sequence_recv(
+        &self,
+        ctx: &dyn ValidationContext,
+        height: Height,
+        connection_end: &ConnectionEnd,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        sequence: Sequence,
+    ) -> Result<(), ClientError>;
+
+    /// Verify a `proof` that of the next_seq_received.
     #[allow(clippy::too_many_arguments)]
     fn verify_next_sequence_recv(
         &self,
         ctx: &dyn ChannelReader,
+        height: Height,
+        connection_end: &ConnectionEnd,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        sequence: Sequence,
+    ) -> Result<(), ClientError>;
+
+    /// Verify a `proof` that a packet has not been received.
+    #[cfg(feature = "val_exec_ctx")]
+    #[allow(clippy::too_many_arguments)]
+    fn new_verify_packet_receipt_absence(
+        &self,
+        ctx: &dyn ValidationContext,
         height: Height,
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,

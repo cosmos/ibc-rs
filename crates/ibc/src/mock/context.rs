@@ -1720,6 +1720,7 @@ mod val_exec_ctx {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use test_log::test;
 
     use alloc::str::FromStr;
@@ -1738,7 +1739,6 @@ mod tests {
     use crate::mock::context::MockContext;
     use crate::mock::context::MockRouterBuilder;
     use crate::mock::host::HostType;
-    use crate::prelude::*;
     use crate::signer::Signer;
     use crate::test_utils::get_dummy_bech32_account;
     use crate::Height;
@@ -1990,6 +1990,44 @@ mod tests {
 
                 Acknowledgement::try_from(vec![1u8]).unwrap()
             }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_timeout_packet_validate(
+                &self,
+                _packet: &Packet,
+                _relayer: &Signer,
+            ) -> Result<(), PacketError> {
+                Ok(())
+            }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_timeout_packet_execute(
+                &mut self,
+                _packet: &Packet,
+                _relayer: &Signer,
+            ) -> (ModuleExtras, Result<(), PacketError>) {
+                (ModuleExtras::empty(), Ok(()))
+            }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_acknowledgement_packet_validate(
+                &self,
+                _packet: &Packet,
+                _acknowledgement: &Acknowledgement,
+                _relayer: &Signer,
+            ) -> Result<(), PacketError> {
+                Ok(())
+            }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_acknowledgement_packet_execute(
+                &mut self,
+                _packet: &Packet,
+                _acknowledgement: &Acknowledgement,
+                _relayer: &Signer,
+            ) -> (ModuleExtras, Result<(), PacketError>) {
+                (ModuleExtras::empty(), Ok(()))
+            }
         }
 
         #[derive(Debug, Default)]
@@ -2091,6 +2129,43 @@ mod tests {
                 _relayer: &Signer,
             ) -> Acknowledgement {
                 Acknowledgement::try_from(vec![1u8]).unwrap()
+            }
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_timeout_packet_validate(
+                &self,
+                _packet: &Packet,
+                _relayer: &Signer,
+            ) -> Result<(), PacketError> {
+                Ok(())
+            }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_timeout_packet_execute(
+                &mut self,
+                _packet: &Packet,
+                _relayer: &Signer,
+            ) -> (ModuleExtras, Result<(), PacketError>) {
+                (ModuleExtras::empty(), Ok(()))
+            }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_acknowledgement_packet_validate(
+                &self,
+                _packet: &Packet,
+                _acknowledgement: &Acknowledgement,
+                _relayer: &Signer,
+            ) -> Result<(), PacketError> {
+                Ok(())
+            }
+
+            #[cfg(feature = "val_exec_ctx")]
+            fn on_acknowledgement_packet_execute(
+                &mut self,
+                _packet: &Packet,
+                _acknowledgement: &Acknowledgement,
+                _relayer: &Signer,
+            ) -> (ModuleExtras, Result<(), PacketError>) {
+                (ModuleExtras::empty(), Ok(()))
             }
         }
 

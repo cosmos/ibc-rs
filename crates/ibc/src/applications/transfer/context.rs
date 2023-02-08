@@ -4,9 +4,8 @@ use super::error::TokenTransferError;
 use crate::applications::transfer::acknowledgement::TokenTransferAcknowledgement;
 use crate::applications::transfer::events::{AckEvent, AckStatusEvent, RecvEvent, TimeoutEvent};
 use crate::applications::transfer::packet::PacketData;
-use crate::applications::transfer::relay::on_ack_packet::process_ack_packet;
 use crate::applications::transfer::relay::on_recv_packet::process_recv_packet;
-use crate::applications::transfer::relay::on_timeout_packet::process_timeout_packet;
+use crate::applications::transfer::relay::refund_packet_token;
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::commitment::PacketCommitment;
@@ -300,7 +299,9 @@ pub fn on_acknowledgement_packet(
         serde_json::from_slice::<TokenTransferAcknowledgement>(acknowledgement.as_ref())
             .map_err(|_| TokenTransferError::AckDeserialization)?;
 
-    process_ack_packet(ctx, packet, &data, &acknowledgement)?;
+    if !acknowledgement.is_successful() {
+        refund_packet_token(ctx, packet, &data)?;
+    }
 
     let ack_event = AckEvent {
         receiver: data.receiver,
@@ -323,7 +324,7 @@ pub fn on_timeout_packet(
     let data = serde_json::from_slice::<PacketData>(&packet.data)
         .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
 
-    process_timeout_packet(ctx, packet, &data)?;
+    refund_packet_token(ctx, packet, &data)?;
 
     let timeout_event = TimeoutEvent {
         refund_receiver: data.sender,
@@ -339,7 +340,9 @@ pub fn on_timeout_packet(
 pub use val_exec_ctx::*;
 #[cfg(feature = "val_exec_ctx")]
 mod val_exec_ctx {
-    use crate::applications::transfer::relay::on_recv_packet::process_recv_packet_execute;
+    use crate::applications::transfer::relay::{
+        on_recv_packet::process_recv_packet_execute, refund_packet_token_validate,
+    };
 
     pub use super::*;
 
@@ -529,6 +532,127 @@ mod val_exec_ctx {
         extras.events.push(recv_event.into());
 
         (extras, ack.into())
+    }
+
+    pub fn on_acknowledgement_packet_validate<Ctx>(
+        _ctx: &Ctx,
+        packet: &Packet,
+        acknowledgement: &Acknowledgement,
+        _relayer: &Signer,
+    ) -> Result<(), TokenTransferError>
+    where
+        Ctx: TokenTransferContext,
+    {
+        let data = serde_json::from_slice::<PacketData>(&packet.data)
+            .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
+
+        let acknowledgement =
+            serde_json::from_slice::<TokenTransferAcknowledgement>(acknowledgement.as_ref())
+                .map_err(|_| TokenTransferError::AckDeserialization)?;
+
+        if !acknowledgement.is_successful() {
+            refund_packet_token_validate::<Ctx>(&data)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn on_acknowledgement_packet_execute(
+        ctx: &mut impl TokenTransferContext,
+        packet: &Packet,
+        acknowledgement: &Acknowledgement,
+        _relayer: &Signer,
+    ) -> (ModuleExtras, Result<(), TokenTransferError>) {
+        let data = match serde_json::from_slice::<PacketData>(&packet.data) {
+            Ok(data) => data,
+            Err(_) => {
+                return (
+                    ModuleExtras::empty(),
+                    Err(TokenTransferError::PacketDataDeserialization),
+                );
+            }
+        };
+
+        let acknowledgement = match serde_json::from_slice::<TokenTransferAcknowledgement>(
+            acknowledgement.as_ref(),
+        ) {
+            Ok(ack) => ack,
+            Err(_) => {
+                return (
+                    ModuleExtras::empty(),
+                    Err(TokenTransferError::AckDeserialization),
+                );
+            }
+        };
+
+        if !acknowledgement.is_successful() {
+            if let Err(err) = refund_packet_token(ctx, packet, &data) {
+                return (ModuleExtras::empty(), Err(err));
+            }
+        }
+
+        let ack_event = AckEvent {
+            receiver: data.receiver,
+            denom: data.token.denom,
+            amount: data.token.amount,
+            acknowledgement: acknowledgement.clone(),
+        };
+
+        let extras = ModuleExtras {
+            events: vec![ack_event.into(), AckStatusEvent { acknowledgement }.into()],
+            log: Vec::new(),
+        };
+
+        (extras, Ok(()))
+    }
+
+    pub fn on_timeout_packet_validate<Ctx>(
+        _ctx: &Ctx,
+        packet: &Packet,
+        _relayer: &Signer,
+    ) -> Result<(), TokenTransferError>
+    where
+        Ctx: TokenTransferContext,
+    {
+        let data = serde_json::from_slice::<PacketData>(&packet.data)
+            .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
+
+        refund_packet_token_validate::<Ctx>(&data)?;
+
+        Ok(())
+    }
+
+    pub fn on_timeout_packet_execute(
+        ctx: &mut impl TokenTransferContext,
+        packet: &Packet,
+        _relayer: &Signer,
+    ) -> (ModuleExtras, Result<(), TokenTransferError>) {
+        let data = match serde_json::from_slice::<PacketData>(&packet.data) {
+            Ok(data) => data,
+            Err(_) => {
+                return (
+                    ModuleExtras::empty(),
+                    Err(TokenTransferError::PacketDataDeserialization),
+                );
+            }
+        };
+
+        if let Err(err) = refund_packet_token(ctx, packet, &data) {
+            return (ModuleExtras::empty(), Err(err));
+        }
+
+        let timeout_event = TimeoutEvent {
+            refund_receiver: data.sender,
+            refund_denom: data.token.denom,
+            refund_amount: data.token.amount,
+        };
+
+        let extras = ModuleExtras {
+            events: vec![timeout_event.into()],
+            log: Vec::new(),
+        };
+
+        (extras, Ok(()))
     }
 }
 
