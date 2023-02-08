@@ -83,6 +83,18 @@ pub(crate) mod val_exec_ctx {
             .into());
         }
 
+        if let Order::Ordered = chan_end_on_a.ordering {
+            let next_seq_ack = ctx_a.get_next_sequence_ack(port_chan_id_on_a)?;
+
+            if packet.sequence != next_seq_ack {
+                return Err(PacketError::InvalidPacketSequence {
+                    given_sequence: packet.sequence,
+                    next_sequence: next_seq_ack,
+                }
+                .into());
+            }
+        }
+
         // Verify proofs
         {
             let client_id_on_a = conn_end_on_a.client_id();
@@ -118,18 +130,6 @@ pub(crate) mod val_exec_ctx {
                     client_error: e,
                 })
                 .map_err(PacketError::Channel)?;
-        }
-
-        if let Order::Ordered = chan_end_on_a.ordering {
-            let next_seq_ack = ctx_a.get_next_sequence_ack(port_chan_id_on_a)?;
-
-            if packet.sequence != next_seq_ack {
-                return Err(PacketError::InvalidPacketSequence {
-                    given_sequence: packet.sequence,
-                    next_sequence: next_seq_ack,
-                }
-                .into());
-            }
         }
 
         Ok(())
