@@ -136,7 +136,7 @@ pub(crate) mod val_exec_ctx {
                 Ok(_receipt) => {}
                 Err(ContextError::PacketError(PacketError::PacketReceiptNotFound { sequence }))
                     if sequence == msg.packet.sequence => {}
-                Err(_) => return Err(e),
+                Err(e) => return Err(e),
             }
             // Case where the recvPacket is successful and an
             // acknowledgement will be written (not a no-op)
