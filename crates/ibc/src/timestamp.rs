@@ -44,8 +44,10 @@ impl borsh::BorshSerialize for Timestamp {
 
 #[cfg(feature = "borsh")]
 impl borsh::BorshDeserialize for Timestamp {
-    fn deserialize(buf: &mut &[u8]) -> borsh::maybestd::io::Result<Self> {
-        let timestamp = u64::deserialize(buf)?;
+    fn deserialize_reader<R: borsh::maybestd::io::Read>(
+        reader: &mut R,
+    ) -> borsh::maybestd::io::Result<Self> {
+        let timestamp = u64::deserialize_reader(reader)?;
         Ok(Timestamp::from_nanoseconds(timestamp)
             .map_err(|_| borsh::maybestd::io::ErrorKind::Other)?)
     }
