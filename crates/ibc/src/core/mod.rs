@@ -36,6 +36,8 @@ pub mod context;
 #[cfg(feature = "val_exec_ctx")]
 pub mod handler;
 #[cfg(feature = "val_exec_ctx")]
+pub use handler::dispatch;
+#[cfg(feature = "val_exec_ctx")]
 pub use handler::execute;
 #[cfg(feature = "val_exec_ctx")]
 pub use handler::validate;
