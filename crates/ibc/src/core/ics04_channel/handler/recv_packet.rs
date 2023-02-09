@@ -136,11 +136,7 @@ pub(crate) mod val_exec_ctx {
                 Ok(_receipt) => {}
                 Err(ContextError::PacketError(PacketError::PacketReceiptNotFound { sequence }))
                     if sequence == msg.packet.sequence => {}
-                Err(_) => {
-                    return Err(ContextError::PacketError(
-                        PacketError::ImplementationSpecific,
-                    ))
-                }
+                Err(_) => return Err(e),
             }
             // Case where the recvPacket is successful and an
             // acknowledgement will be written (not a no-op)
@@ -324,7 +320,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
                     receipt: Receipt::Ok,
                 })
             }
-            Err(_) => return Err(PacketError::ImplementationSpecific),
+            Err(e) => return Err(e),
         }
     };
 
