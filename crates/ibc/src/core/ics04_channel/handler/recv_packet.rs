@@ -10,7 +10,6 @@ use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::timestamp::Expiry;
-use alloc::string::ToString;
 
 #[cfg(feature = "val_exec_ctx")]
 pub(crate) use val_exec_ctx::*;
@@ -128,12 +127,17 @@ pub(crate) mod val_exec_ctx {
                 validate_write_acknowledgement(ctx_b, msg)?;
             }
         } else {
-            ctx_b.get_packet_receipt(&(
+            let packet_rec = ctx_b.get_packet_receipt(&(
                 msg.packet.port_on_b.clone(),
                 msg.packet.chan_on_b.clone(),
                 msg.packet.sequence,
-            ))?;
-
+            ));
+            match packet_rec {
+                Ok(_receipt) => {}
+                Err(ContextError::PacketError(PacketError::PacketReceiptNotFound { sequence }))
+                    if sequence == msg.packet.sequence => {}
+                Err(e) => return Err(e),
+            }
             // Case where the recvPacket is successful and an
             // acknowledgement will be written (not a no-op)
             validate_write_acknowledgement(ctx_b, msg)?;
@@ -305,12 +309,8 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
         match packet_rec {
             Ok(_receipt) => PacketResult::Recv(RecvPacketResult::NoOp),
-            Err(e)
-                if e.to_string()
-                    == PacketError::PacketReceiptNotFound {
-                        sequence: msg.packet.sequence,
-                    }
-                    .to_string() =>
+            Err(PacketError::PacketReceiptNotFound { sequence })
+                if sequence == msg.packet.sequence =>
             {
                 // store a receipt that does not contain any data
                 PacketResult::Recv(RecvPacketResult::Unordered {
@@ -320,7 +320,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
                     receipt: Receipt::Ok,
                 })
             }
-            Err(_) => return Err(PacketError::ImplementationSpecific),
+            Err(e) => return Err(e),
         }
     };
 
