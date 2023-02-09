@@ -22,3 +22,9 @@ where
     let envelope: MsgEnvelope = message.try_into()?;
     ctx.execute(envelope)
 }
+
+/// Entrypoint which performs both validation and message execution
+pub fn dispatch(ctx: &mut impl ExecutionContext, msg: MsgEnvelope) -> Result<(), RouterError> {
+    ctx.validate(msg.clone())?;
+    ctx.execute(msg)
+}
