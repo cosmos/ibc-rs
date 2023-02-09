@@ -692,8 +692,14 @@ impl Ics2ClientState for ClientState {
             match ctx.consensus_state(client_id, &height) {
                 Ok(cs) => Ok(Some(cs)),
                 Err(e) => match e {
+                    ContextError::ClientError(ClientError::ConsensusStateNotFound {
+                        client_id: _,
+                        height: _,
+                    }) => Ok(None),
                     ContextError::ClientError(e) => Err(e),
-                    _ => Ok(None),
+                    _ => Err(ClientError::Other {
+                        description: e.to_string(),
+                    }),
                 },
             }
         }
