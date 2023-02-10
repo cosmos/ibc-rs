@@ -1611,6 +1611,16 @@ impl ValidationContext for MockContext {
         Ok(self.latest_height())
     }
 
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
+        Ok(self
+            .history
+            .last()
+            .expect("history cannot be empty")
+            .timestamp()
+            .add(self.block_time)
+            .unwrap())
+    }
+
     fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ContextError> {
         Err(ClientError::ImplementationSpecific.into())
     }
