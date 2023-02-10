@@ -164,6 +164,7 @@ mod tests {
         context::test::deliver as ics20_deliver, msgs::transfer::test_util::get_dummy_msg_transfer,
         msgs::transfer::MsgTransfer, packet::PacketData, PrefixedCoin, MODULE_ID_STR,
     };
+    use crate::core::context::Router;
     use crate::core::ics02_client::msgs::{
         create_client::MsgCreateClient, update_client::MsgUpdateClient,
         upgrade_client::MsgUpgradeClient, ClientMsg,
@@ -182,7 +183,6 @@ mod tests {
     use crate::core::ics04_channel::channel::Counterparty as ChannelCounterparty;
     use crate::core::ics04_channel::channel::Order as ChannelOrder;
     use crate::core::ics04_channel::channel::State as ChannelState;
-    use crate::core::ics04_channel::context::ChannelReader;
     use crate::core::ics04_channel::msgs::acknowledgement::test_util::get_dummy_raw_msg_ack_with_packet;
     use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
     use crate::core::ics04_channel::msgs::chan_open_confirm::test_util::get_dummy_raw_msg_chan_open_confirm;
@@ -204,15 +204,15 @@ mod tests {
     use crate::core::ics23_commitment::commitment::test_util::get_dummy_merkle_proof;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::ics26_routing::context::{ModuleId, Router, RouterBuilder, RouterContext};
+    use crate::core::ics26_routing::context::ModuleId;
     use crate::core::ics26_routing::error::RouterError;
-    use crate::core::ics26_routing::handler::dispatch;
     use crate::core::ics26_routing::msgs::MsgEnvelope;
+    use crate::core::{dispatch, ValidationContext};
     use crate::events::IbcEvent;
     use crate::handler::HandlerOutputBuilder;
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
-    use crate::mock::context::{MockContext, MockRouterBuilder};
+    use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
     use crate::prelude::*;
     use crate::test_utils::{get_dummy_account_id, DummyTransferModule};
@@ -268,13 +268,11 @@ mod tests {
 
         // We reuse this same context across all tests. Nothing in particular needs parametrizing.
         let mut ctx = {
-            let ctx = MockContext::default();
+            let mut ctx = MockContext::default();
             let module = DummyTransferModule::new(ctx.ibc_store_share());
-            let router = MockRouterBuilder::default()
-                .add_route(transfer_module_id.clone(), module)
-                .unwrap()
-                .build();
-            ctx.with_router(router)
+            ctx.add_route(transfer_module_id.clone(), module).unwrap();
+
+            ctx
         };
 
         let create_client_msg = MsgCreateClient::new(
@@ -382,8 +380,7 @@ mod tests {
         );
 
         // Figure out the ID of the client that was just created.
-        let events = res.unwrap().events;
-        let client_id_event = events.first();
+        let client_id_event = ctx.events.first();
         assert!(
             client_id_event.is_some(),
             "There was no event generated for client creation!"
@@ -514,11 +511,11 @@ mod tests {
                 msg: MsgEnvelope::Packet(PacketMsg::Ack(msg_ack_packet.clone())).into(),
                 want_pass: true,
                 state_check: Some(Box::new(move |ctx| {
-                    ctx.get_packet_commitment(
-                        &msg_ack_packet.packet.port_on_a,
-                        &msg_ack_packet.packet.chan_on_a,
-                        &msg_ack_packet.packet.sequence,
-                    )
+                    ctx.get_packet_commitment(&(
+                        msg_ack_packet.packet.port_on_a,
+                        msg_ack_packet.packet.chan_on_a,
+                        msg_ack_packet.packet.sequence,
+                    ))
                     .is_err()
                 })),
             },
@@ -610,8 +607,7 @@ mod tests {
             let res = match test.msg.clone() {
                 TestMsg::Ics26(msg) => dispatch(&mut ctx, msg).map(|_| ()),
                 TestMsg::Ics20(msg) => {
-                    let transfer_module =
-                        ctx.router_mut().get_route_mut(&transfer_module_id).unwrap();
+                    let transfer_module = ctx.get_route_mut(&transfer_module_id).unwrap();
                     ics20_deliver(
                         transfer_module
                             .as_any_mut()
@@ -666,15 +662,13 @@ mod tests {
                 ),
             );
         let module = DummyTransferModule::new(ctx.ibc_store_share());
-        let router = MockRouterBuilder::default()
-            .add_route(module_id.clone(), module)
-            .unwrap()
-            .build();
+
+        ctx.add_route(module_id.clone(), module).unwrap();
 
         // Note: messages will be using the default port
         ctx.scope_port_to_module(PortId::default(), module_id);
 
-        ctx.with_router(router)
+        ctx
     }
 
     #[test]
@@ -684,15 +678,15 @@ mod tests {
         let msg_chan_open_init =
             MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
 
-        let res = dispatch(
+        dispatch(
             &mut ctx,
             MsgEnvelope::Channel(ChannelMsg::OpenInit(msg_chan_open_init)),
         )
         .unwrap();
 
-        assert_eq!(res.events.len(), 1);
+        assert_eq!(ctx.events.len(), 1);
 
-        let event = res.events.first().unwrap();
+        let event = ctx.events.first().unwrap();
 
         assert!(matches!(event, IbcEvent::OpenInitChannel(_)));
     }
@@ -704,15 +698,15 @@ mod tests {
         let msg_chan_open_try =
             MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(1)).unwrap();
 
-        let res = dispatch(
+        dispatch(
             &mut ctx,
             MsgEnvelope::Channel(ChannelMsg::OpenTry(msg_chan_open_try)),
         )
         .unwrap();
 
-        assert_eq!(res.events.len(), 1);
+        assert_eq!(ctx.events.len(), 1);
 
-        let event = res.events.first().unwrap();
+        let event = ctx.events.first().unwrap();
 
         assert!(matches!(event, IbcEvent::OpenTryChannel(_)));
     }
@@ -734,15 +728,15 @@ mod tests {
         let msg_chan_open_ack =
             MsgChannelOpenAck::try_from(get_dummy_raw_msg_chan_open_ack(1)).unwrap();
 
-        let res = dispatch(
+        dispatch(
             &mut ctx,
             MsgEnvelope::Channel(ChannelMsg::OpenAck(msg_chan_open_ack)),
         )
         .unwrap();
 
-        assert_eq!(res.events.len(), 1);
+        assert_eq!(ctx.events.len(), 1);
 
-        let event = res.events.first().unwrap();
+        let event = ctx.events.first().unwrap();
 
         assert!(matches!(event, IbcEvent::OpenAckChannel(_)));
     }
@@ -764,15 +758,15 @@ mod tests {
         let msg_chan_open_confirm =
             MsgChannelOpenConfirm::try_from(get_dummy_raw_msg_chan_open_confirm(1)).unwrap();
 
-        let res = dispatch(
+        dispatch(
             &mut ctx,
             MsgEnvelope::Channel(ChannelMsg::OpenConfirm(msg_chan_open_confirm)),
         )
         .unwrap();
 
-        assert_eq!(res.events.len(), 1);
+        assert_eq!(ctx.events.len(), 1);
 
-        let event = res.events.first().unwrap();
+        let event = ctx.events.first().unwrap();
 
         assert!(matches!(event, IbcEvent::OpenConfirmChannel(_)));
     }
@@ -794,15 +788,15 @@ mod tests {
         let msg_chan_close_init =
             MsgChannelCloseInit::try_from(get_dummy_raw_msg_chan_close_init()).unwrap();
 
-        let res = dispatch(
+        dispatch(
             &mut ctx,
             MsgEnvelope::Channel(ChannelMsg::CloseInit(msg_chan_close_init)),
         )
         .unwrap();
 
-        assert_eq!(res.events.len(), 1);
+        assert_eq!(ctx.events.len(), 1);
 
-        let event = res.events.first().unwrap();
+        let event = ctx.events.first().unwrap();
 
         assert!(matches!(event, IbcEvent::CloseInitChannel(_)));
     }
@@ -824,15 +818,15 @@ mod tests {
         let msg_chan_close_confirm =
             MsgChannelCloseConfirm::try_from(get_dummy_raw_msg_chan_close_confirm(1)).unwrap();
 
-        let res = dispatch(
+        dispatch(
             &mut ctx,
             MsgEnvelope::Channel(ChannelMsg::CloseConfirm(msg_chan_close_confirm)),
         )
         .unwrap();
 
-        assert_eq!(res.events.len(), 1);
+        assert_eq!(ctx.events.len(), 1);
 
-        let event = res.events.first().unwrap();
+        let event = ctx.events.first().unwrap();
 
         assert!(matches!(event, IbcEvent::CloseConfirmChannel(_)));
     }

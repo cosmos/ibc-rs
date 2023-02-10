@@ -473,8 +473,11 @@ impl MockContext {
         self
     }
 
-    pub fn with_router(self, router: MockRouter) -> Self {
-        Self { router, ..self }
+    pub fn add_route(&mut self, module_id: ModuleId, module: impl Module) -> Result<(), String> {
+        match self.new_router.insert(module_id, Arc::new(module)) {
+            None => Ok(()),
+            Some(_) => Err("Duplicate module_id".to_owned()),
+        }
     }
 
     /// Accessor for a block of the local (host) chain from this context.
@@ -675,6 +678,7 @@ impl RouterBuilder for MockRouterBuilder {
     }
 }
 
+// TODO: REMOVE BEFORE MERGING
 #[derive(Clone, Default)]
 pub struct MockRouter(BTreeMap<ModuleId, Arc<dyn Module>>);
 
@@ -2037,7 +2041,7 @@ impl ExecutionContext for MockContext {
     ) -> Result<(), ContextError> {
         self.ibc_store
             .lock()
-            .packet_acknowledgement
+            .packet_commitment
             .get_mut(&commitments_path.port_id)
             .and_then(|map| map.get_mut(&commitments_path.channel_id))
             .and_then(|map| map.remove(&commitments_path.sequence));
@@ -2206,11 +2210,8 @@ mod tests {
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-    use crate::core::ics26_routing::context::{
-        Module, ModuleId, ModuleOutputBuilder, Router, RouterBuilder,
-    };
+    use crate::core::ics26_routing::context::{Module, ModuleId, ModuleOutputBuilder};
     use crate::mock::context::MockContext;
-    use crate::mock::context::MockRouterBuilder;
     use crate::mock::host::HostType;
     use crate::signer::Signer;
     use crate::test_utils::get_dummy_bech32_account;
@@ -2625,24 +2626,20 @@ mod tests {
             }
         }
 
-        let r = MockRouterBuilder::default()
-            .add_route("foomodule".parse().unwrap(), FooModule::default())
-            .unwrap()
-            .add_route("barmodule".parse().unwrap(), BarModule::default())
-            .unwrap()
-            .build();
-
         let mut ctx = MockContext::new(
             ChainId::new("mockgaia".to_string(), 1),
             HostType::Mock,
             1,
             Height::new(1, 1).unwrap(),
-        )
-        .with_router(r);
+        );
+        ctx.add_route("foomodule".parse().unwrap(), FooModule::default())
+            .unwrap();
+        ctx.add_route("barmodule".parse().unwrap(), BarModule::default())
+            .unwrap();
 
         let mut on_recv_packet_result = |module_id: &'static str| {
             let module_id = ModuleId::from_str(module_id).unwrap();
-            let m = ctx.router.get_route_mut(&module_id).unwrap();
+            let m = ctx.get_route_mut(&module_id).unwrap();
             let result = m.on_recv_packet(
                 &mut ModuleOutputBuilder::new(),
                 &Packet::default(),
