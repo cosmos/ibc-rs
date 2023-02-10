@@ -11,10 +11,6 @@ use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 use crate::timestamp::Expiry;
 
-pub(crate) use val_exec_ctx::*;
-
-pub(crate) mod val_exec_ctx {
-    use super::*;
     use crate::core::{ContextError, ValidationContext};
 
     pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeout) -> Result<(), ContextError>
@@ -148,7 +144,6 @@ pub(crate) mod val_exec_ctx {
 
         Ok(())
     }
-}
 
 #[derive(Clone, Debug)]
 pub struct TimeoutPacketResult {

@@ -7,10 +7,6 @@ use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
 use crate::handler::{HandlerOutput, HandlerResult};
 
-pub(crate) use val_exec_ctx::*;
-
-pub(crate) mod val_exec_ctx {
-    use super::*;
     use crate::core::{ContextError, ValidationContext};
 
     pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelCloseInit) -> Result<(), ContextError>
@@ -49,7 +45,6 @@ pub(crate) mod val_exec_ctx {
 
         Ok(())
     }
-}
 
 /// Per our convention, this message is processed on chain A.
 pub(crate) fn process<Ctx: ChannelReader>(
