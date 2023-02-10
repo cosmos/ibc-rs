@@ -1,9 +1,7 @@
 use crate::prelude::*;
-use ibc_proto::google::protobuf::Any;
 
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::header::Header;
-use crate::events::IbcEvent;
 
 use super::error::RelayerError;
 use crate::core::ics24_host::identifier::ClientId;
@@ -25,10 +23,6 @@ pub trait RelayerContext {
 
     /// Returns the most advanced header of this chain.
     fn query_latest_header(&self) -> Option<Box<dyn Header>>;
-
-    /// Interface that the relayer uses to submit a datagram to this chain.
-    /// One can think of this as wrapping around the `/broadcast_tx_commit` ABCI endpoint.
-    fn send(&mut self, msgs: Vec<Any>) -> Result<Vec<IbcEvent>, RelayerError>;
 
     /// Temporary solution. Similar to `CosmosSDKChain::key_and_signer()` but simpler.
     fn signer(&self) -> Signer;

@@ -43,9 +43,8 @@ use crate::core::ics05_port::error::PortError;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{Module, ModuleId, Router, RouterBuilder, RouterContext};
-use crate::core::ics26_routing::handler::{deliver, dispatch, MsgReceipt};
 use crate::core::ics26_routing::msgs::MsgEnvelope;
-use crate::core::{ExecutionContext, ValidationContext};
+use crate::core::{dispatch, ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::mock::client_state::{
     client_type as mock_client_type, MockClientRecord, MockClientState,
@@ -1472,18 +1471,6 @@ impl RelayerContext for MockContext {
     fn query_latest_header(&self) -> Option<Box<dyn Header>> {
         let block_ref = self.host_block(&self.host_current_height().unwrap());
         block_ref.cloned().map(Header::into_box)
-    }
-
-    fn send(&mut self, msgs: Vec<Any>) -> Result<Vec<IbcEvent>, RelayerError> {
-        // Forward call to Ics26 delivery method.
-        let mut all_events = vec![];
-        for msg in msgs {
-            let MsgReceipt { mut events, .. } =
-                deliver(self, msg).map_err(RelayerError::TransactionFailed)?;
-            all_events.append(&mut events);
-        }
-        self.advance_host_chain_height(); // Advance chain height
-        Ok(all_events)
     }
 
     fn signer(&self) -> Signer {
