@@ -12,9 +12,8 @@ use crate::core::ics24_host::identifier::ClientId;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 
-#[cfg(feature = "val_exec_ctx")]
 use crate::core::ics24_host::path::ClientStatePath;
-#[cfg(feature = "val_exec_ctx")]
+
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 /// The result following the successful processing of a `MsgSubmitMisbehaviour` message.
@@ -24,7 +23,6 @@ pub struct MisbehaviourResult {
     pub client_state: Box<dyn ClientState>,
 }
 
-#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgSubmitMisbehaviour) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -51,7 +49,6 @@ where
     Ok(())
 }
 
-#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgSubmitMisbehaviour) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,

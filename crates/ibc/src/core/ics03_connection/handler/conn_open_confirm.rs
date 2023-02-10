@@ -10,16 +10,14 @@ use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenCon
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 
-#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(feature = "val_exec_ctx")]
+
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-#[cfg(feature = "val_exec_ctx")]
+
 use crate::core::ics24_host::path::ConnectionsPath;
-#[cfg(feature = "val_exec_ctx")]
+
 use crate::core::{ExecutionContext, ValidationContext};
 
-#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -28,7 +26,6 @@ where
     validate_impl(ctx_b, msg, &vars)
 }
 
-#[cfg(feature = "val_exec_ctx")]
 fn validate_impl<Ctx>(
     ctx_b: &Ctx,
     msg: &MsgConnectionOpenConfirm,
@@ -93,7 +90,6 @@ where
     Ok(())
 }
 
-#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn execute<Ctx>(
     ctx_b: &mut Ctx,
     msg: &MsgConnectionOpenConfirm,
@@ -105,7 +101,6 @@ where
     execute_impl(ctx_b, msg, vars)
 }
 
-#[cfg(feature = "val_exec_ctx")]
 fn execute_impl<Ctx>(
     ctx_b: &mut Ctx,
     msg: &MsgConnectionOpenConfirm,
@@ -140,12 +135,10 @@ where
     Ok(())
 }
 
-#[cfg(feature = "val_exec_ctx")]
 struct LocalVars {
     conn_end_on_b: ConnectionEnd,
 }
 
-#[cfg(feature = "val_exec_ctx")]
 impl LocalVars {
     fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<Self, ContextError>
     where
@@ -276,9 +269,8 @@ mod tests {
     use crate::timestamp::ZERO_DURATION;
     use crate::Height;
 
-    #[cfg(feature = "val_exec_ctx")]
     use crate::core::ics26_routing::msgs::MsgEnvelope;
-    #[cfg(feature = "val_exec_ctx")]
+
     use crate::core::ValidationContext;
 
     #[test]
@@ -341,7 +333,6 @@ mod tests {
         .collect();
 
         for test in tests {
-            #[cfg(feature = "val_exec_ctx")]
             {
                 let res = ValidationContext::validate(
                     &test.ctx,

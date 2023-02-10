@@ -7,9 +7,8 @@ use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
 use crate::handler::{HandlerOutput, HandlerResult};
 
-#[cfg(feature = "val_exec_ctx")]
 pub(crate) use val_exec_ctx::*;
-#[cfg(feature = "val_exec_ctx")]
+
 pub(crate) mod val_exec_ctx {
     use super::*;
     use crate::core::{ContextError, ValidationContext};

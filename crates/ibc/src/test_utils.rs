@@ -79,7 +79,6 @@ impl DummyTransferModule {
 }
 
 impl Module for DummyTransferModule {
-    #[cfg(feature = "val_exec_ctx")]
     fn on_chan_open_init_validate(
         &self,
         _order: Order,
@@ -92,7 +91,6 @@ impl Module for DummyTransferModule {
         Ok(version.clone())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_chan_open_init_execute(
         &mut self,
         _order: Order,
@@ -122,7 +120,7 @@ impl Module for DummyTransferModule {
             version.clone(),
         ))
     }
-    #[cfg(feature = "val_exec_ctx")]
+
     fn on_chan_open_try_validate(
         &self,
         _order: Order,
@@ -135,7 +133,6 @@ impl Module for DummyTransferModule {
         Ok(counterparty_version.clone())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_chan_open_try_execute(
         &mut self,
         _order: Order,
@@ -166,7 +163,6 @@ impl Module for DummyTransferModule {
         ))
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_recv_packet_execute(
         &mut self,
         _packet: &Packet,
@@ -187,7 +183,6 @@ impl Module for DummyTransferModule {
         Acknowledgement::try_from(vec![1u8]).unwrap()
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_timeout_packet_validate(
         &self,
         _packet: &Packet,
@@ -196,7 +191,6 @@ impl Module for DummyTransferModule {
         Ok(())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_timeout_packet_execute(
         &mut self,
         _packet: &Packet,
@@ -205,7 +199,6 @@ impl Module for DummyTransferModule {
         (ModuleExtras::empty(), Ok(()))
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_acknowledgement_packet_validate(
         &self,
         _packet: &Packet,
@@ -215,7 +208,6 @@ impl Module for DummyTransferModule {
         Ok(())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_acknowledgement_packet_execute(
         &mut self,
         _packet: &Packet,

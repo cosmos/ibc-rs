@@ -8,9 +8,8 @@ use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
-#[cfg(feature = "val_exec_ctx")]
 pub(crate) use val_exec_ctx::*;
-#[cfg(feature = "val_exec_ctx")]
+
 pub(crate) mod val_exec_ctx {
     use super::*;
     use crate::core::{ContextError, ValidationContext};

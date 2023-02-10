@@ -42,9 +42,6 @@ borsh = ["dep:borsh"]
 # This feature is required for token transfer (ICS-20)
 serde = ["dep:serde", "dep:serde_derive", "serde_json", "erased-serde"]
 
-# This feature guards the unfinished implementation of ADR 5.
-val_exec_ctx = []
-
 # This feature guards the unfinished implementation of the `UpgradeClient` handler.
 upgrade_client = []
 

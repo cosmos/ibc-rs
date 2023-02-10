@@ -10,18 +10,16 @@ use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 
-#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(feature = "val_exec_ctx")]
+
 use crate::core::ics24_host::identifier::ClientId;
-#[cfg(feature = "val_exec_ctx")]
+
 use crate::core::ics24_host::path::ConnectionsPath;
-#[cfg(feature = "val_exec_ctx")]
+
 use crate::core::{ExecutionContext, ValidationContext};
 
 use super::ConnectionIdState;
 
-#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -30,7 +28,6 @@ where
     validate_impl(ctx_a, &msg, &vars)
 }
 
-#[cfg(feature = "val_exec_ctx")]
 fn validate_impl<Ctx>(
     ctx_a: &Ctx,
     msg: &MsgConnectionOpenAck,
@@ -142,7 +139,6 @@ where
     Ok(())
 }
 
-#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
@@ -151,7 +147,6 @@ where
     execute_impl(ctx_a, msg, vars)
 }
 
-#[cfg(feature = "val_exec_ctx")]
 fn execute_impl<Ctx>(
     ctx_a: &mut Ctx,
     msg: MsgConnectionOpenAck,
@@ -187,12 +182,10 @@ where
     Ok(())
 }
 
-#[cfg(feature = "val_exec_ctx")]
 struct LocalVars {
     conn_end_on_a: ConnectionEnd,
 }
 
-#[cfg(feature = "val_exec_ctx")]
 impl LocalVars {
     fn new<Ctx>(ctx_a: &Ctx, msg: &MsgConnectionOpenAck) -> Result<Self, ContextError>
     where
@@ -357,9 +350,8 @@ mod tests {
     use crate::mock::host::HostType;
     use crate::timestamp::ZERO_DURATION;
 
-    #[cfg(feature = "val_exec_ctx")]
     use crate::core::ics26_routing::msgs::MsgEnvelope;
-    #[cfg(feature = "val_exec_ctx")]
+
     use crate::core::ValidationContext;
 
     #[test]
@@ -483,7 +475,6 @@ mod tests {
         ];
 
         for test in tests {
-            #[cfg(feature = "val_exec_ctx")]
             {
                 let res = ValidationContext::validate(
                     &test.ctx,
