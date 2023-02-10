@@ -8,98 +8,92 @@ use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
-#[cfg(feature = "val_exec_ctx")]
-pub(crate) use val_exec_ctx::*;
-#[cfg(feature = "val_exec_ctx")]
-pub(crate) mod val_exec_ctx {
-    use super::*;
-    use crate::core::{ContextError, ValidationContext};
+use crate::core::{ContextError, ValidationContext};
 
-    pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenAck) -> Result<(), ContextError>
-    where
-        Ctx: ValidationContext,
-    {
-        let chan_end_on_a =
-            ctx_a.channel_end(&(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()))?;
+pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenAck) -> Result<(), ContextError>
+where
+    Ctx: ValidationContext,
+{
+    let chan_end_on_a = ctx_a.channel_end(&(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()))?;
 
-        // Validate that the channel end is in a state where it can be ack.
-        if !chan_end_on_a.state_matches(&State::Init) {
-            return Err(ChannelError::InvalidChannelState {
-                channel_id: msg.chan_id_on_a.clone(),
-                state: chan_end_on_a.state,
-            }
-            .into());
+    // Validate that the channel end is in a state where it can be ack.
+    if !chan_end_on_a.state_matches(&State::Init) {
+        return Err(ChannelError::InvalidChannelState {
+            channel_id: msg.chan_id_on_a.clone(),
+            state: chan_end_on_a.state,
         }
-
-        // An OPEN IBC connection running on the local (host) chain should exist.
-
-        if chan_end_on_a.connection_hops().len() != 1 {
-            return Err(ChannelError::InvalidConnectionHopsLength {
-                expected: 1,
-                actual: chan_end_on_a.connection_hops().len(),
-            }
-            .into());
-        }
-
-        let conn_end_on_a = ctx_a.connection_end(&chan_end_on_a.connection_hops()[0])?;
-
-        if !conn_end_on_a.state_matches(&ConnectionState::Open) {
-            return Err(ChannelError::ConnectionNotOpen {
-                connection_id: chan_end_on_a.connection_hops()[0].clone(),
-            }
-            .into());
-        }
-
-        // Verify proofs
-        {
-            let client_id_on_a = conn_end_on_a.client_id();
-            let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
-            let consensus_state_of_b_on_a =
-                ctx_a.consensus_state(client_id_on_a, &msg.proof_height_on_b)?;
-            let prefix_on_b = conn_end_on_a.counterparty().prefix();
-            let port_id_on_b = &chan_end_on_a.counterparty().port_id;
-            let conn_id_on_b = conn_end_on_a.counterparty().connection_id().ok_or(
-                ChannelError::UndefinedConnectionCounterparty {
-                    connection_id: chan_end_on_a.connection_hops()[0].clone(),
-                },
-            )?;
-
-            // The client must not be frozen.
-            if client_state_of_b_on_a.is_frozen() {
-                return Err(ChannelError::FrozenClient {
-                    client_id: client_id_on_a.clone(),
-                }
-                .into());
-            }
-
-            let expected_chan_end_on_b = ChannelEnd::new(
-                State::TryOpen,
-                // Note: Both ends of a channel must have the same ordering, so it's
-                // fine to use A's ordering here
-                *chan_end_on_a.ordering(),
-                Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
-                vec![conn_id_on_b.clone()],
-                msg.version_on_b.clone(),
-            );
-
-            // Verify the proof for the channel state against the expected channel end.
-            // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
-            client_state_of_b_on_a
-                .verify_channel_state(
-                    msg.proof_height_on_b,
-                    prefix_on_b,
-                    &msg.proof_chan_end_on_b,
-                    consensus_state_of_b_on_a.root(),
-                    port_id_on_b,
-                    &msg.chan_id_on_b,
-                    &expected_chan_end_on_b,
-                )
-                .map_err(ChannelError::VerifyChannelFailed)?;
-        }
-
-        Ok(())
+        .into());
     }
+
+    // An OPEN IBC connection running on the local (host) chain should exist.
+
+    if chan_end_on_a.connection_hops().len() != 1 {
+        return Err(ChannelError::InvalidConnectionHopsLength {
+            expected: 1,
+            actual: chan_end_on_a.connection_hops().len(),
+        }
+        .into());
+    }
+
+    let conn_end_on_a = ctx_a.connection_end(&chan_end_on_a.connection_hops()[0])?;
+
+    if !conn_end_on_a.state_matches(&ConnectionState::Open) {
+        return Err(ChannelError::ConnectionNotOpen {
+            connection_id: chan_end_on_a.connection_hops()[0].clone(),
+        }
+        .into());
+    }
+
+    // Verify proofs
+    {
+        let client_id_on_a = conn_end_on_a.client_id();
+        let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
+        let consensus_state_of_b_on_a =
+            ctx_a.consensus_state(client_id_on_a, &msg.proof_height_on_b)?;
+        let prefix_on_b = conn_end_on_a.counterparty().prefix();
+        let port_id_on_b = &chan_end_on_a.counterparty().port_id;
+        let conn_id_on_b = conn_end_on_a.counterparty().connection_id().ok_or(
+            ChannelError::UndefinedConnectionCounterparty {
+                connection_id: chan_end_on_a.connection_hops()[0].clone(),
+            },
+        )?;
+
+        // The client must not be frozen.
+        if client_state_of_b_on_a.is_frozen() {
+            return Err(ChannelError::FrozenClient {
+                client_id: client_id_on_a.clone(),
+            }
+            .into());
+        }
+
+        let expected_chan_end_on_b = ChannelEnd::new(
+            State::TryOpen,
+            // Note: Both ends of a channel must have the same ordering, so it's
+            // fine to use A's ordering here
+            *chan_end_on_a.ordering(),
+            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+            vec![conn_id_on_b.clone()],
+            msg.version_on_b.clone(),
+        );
+
+        // Verify the proof for the channel state against the expected channel end.
+        // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
+        client_state_of_b_on_a
+            .verify_channel_state(
+                msg.proof_height_on_b,
+                prefix_on_b,
+                &msg.proof_chan_end_on_b,
+                consensus_state_of_b_on_a.root(),
+                port_id_on_b,
+                &msg.chan_id_on_b,
+                &expected_chan_end_on_b,
+            )
+            .map_err(ChannelError::VerifyChannelFailed)?;
+    }
+
+    Ok(())
 }
+
 /// Per our convention, this message is processed on chain A.
 pub(crate) fn process<Ctx: ChannelReader>(
     ctx_a: &Ctx,

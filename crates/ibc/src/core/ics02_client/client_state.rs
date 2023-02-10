@@ -25,7 +25,6 @@ use crate::Height;
 use super::consensus_state::ConsensusState;
 use super::context::ClientReader;
 
-#[cfg(feature = "val_exec_ctx")]
 use crate::core::{ContextError, ValidationContext};
 
 pub trait ClientState:
@@ -83,7 +82,7 @@ pub trait ClientState:
     ) -> Result<UpdatedState, ClientError>;
 
     /// XXX: temporary solution until we get rid of `ClientReader`
-    #[cfg(feature = "val_exec_ctx")]
+
     fn new_check_header_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
@@ -99,7 +98,7 @@ pub trait ClientState:
     ) -> Result<Box<dyn ClientState>, ClientError>;
 
     /// XXX: temporary solution until we get rid of `ClientReader`
-    #[cfg(feature = "val_exec_ctx")]
+
     fn new_check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
@@ -190,7 +189,7 @@ pub trait ClientState:
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a packet has been committed.
-    #[cfg(feature = "val_exec_ctx")]
+
     #[allow(clippy::too_many_arguments)]
     fn new_verify_packet_data(
         &self,
@@ -221,7 +220,7 @@ pub trait ClientState:
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a packet has been committed.
-    #[cfg(feature = "val_exec_ctx")]
+
     #[allow(clippy::too_many_arguments)]
     fn new_verify_packet_acknowledgement(
         &self,
@@ -252,7 +251,7 @@ pub trait ClientState:
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that of the next_seq_received.
-    #[cfg(feature = "val_exec_ctx")]
+
     #[allow(clippy::too_many_arguments)]
     fn new_verify_next_sequence_recv(
         &self,
@@ -281,7 +280,7 @@ pub trait ClientState:
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a packet has not been received.
-    #[cfg(feature = "val_exec_ctx")]
+
     #[allow(clippy::too_many_arguments)]
     fn new_verify_packet_receipt_absence(
         &self,

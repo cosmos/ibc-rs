@@ -37,21 +37,14 @@ pub fn refund_packet_token(
     }
 }
 
-#[cfg(feature = "val_exec_ctx")]
-pub use val_exec_ctx::*;
-#[cfg(feature = "val_exec_ctx")]
-mod val_exec_ctx {
-    use super::*;
+pub fn refund_packet_token_validate<Ctx: TokenTransferContext>(
+    data: &PacketData,
+) -> Result<(), TokenTransferError> {
+    let _sender: <Ctx as TokenTransferContext>::AccountId = data
+        .sender
+        .clone()
+        .try_into()
+        .map_err(|_| TokenTransferError::ParseAccountFailure)?;
 
-    pub fn refund_packet_token_validate<Ctx: TokenTransferContext>(
-        data: &PacketData,
-    ) -> Result<(), TokenTransferError> {
-        let _sender: <Ctx as TokenTransferContext>::AccountId = data
-            .sender
-            .clone()
-            .try_into()
-            .map_err(|_| TokenTransferError::ParseAccountFailure)?;
-
-        Ok(())
-    }
+    Ok(())
 }

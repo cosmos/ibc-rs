@@ -48,9 +48,8 @@ use crate::Height;
 
 use super::client_type as tm_client_type;
 
-#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(feature = "val_exec_ctx")]
+
 use crate::core::ValidationContext;
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
@@ -611,7 +610,6 @@ impl Ics2ClientState for ClientState {
             .into_box())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn new_check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
@@ -677,7 +675,6 @@ impl Ics2ClientState for ClientState {
             .into_box())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn new_check_header_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
@@ -1091,7 +1088,6 @@ impl Ics2ClientState for ClientState {
         verify_membership(client_state, prefix, proof, root, path, value)
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn new_verify_packet_data(
         &self,
         ctx: &dyn ValidationContext,
@@ -1156,7 +1152,6 @@ impl Ics2ClientState for ClientState {
         )
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn new_verify_packet_acknowledgement(
         &self,
         ctx: &dyn ValidationContext,
@@ -1219,7 +1214,6 @@ impl Ics2ClientState for ClientState {
         )
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     #[allow(clippy::too_many_arguments)]
     fn new_verify_next_sequence_recv(
         &self,
@@ -1285,7 +1279,6 @@ impl Ics2ClientState for ClientState {
         )
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     #[allow(clippy::too_many_arguments)]
     fn new_verify_packet_receipt_absence(
         &self,
@@ -1427,7 +1420,6 @@ fn verify_delay_passed(
     .map_err(|e| e.into())
 }
 
-#[cfg(feature = "val_exec_ctx")]
 fn new_verify_delay_passed(
     ctx: &dyn ValidationContext,
     height: Height,

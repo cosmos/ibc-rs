@@ -11,159 +11,151 @@ use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
-#[cfg(feature = "val_exec_ctx")]
-pub(crate) use val_exec_ctx::*;
-#[cfg(feature = "val_exec_ctx")]
-pub(crate) mod val_exec_ctx {
-    use super::*;
-    use crate::core::{ContextError, ValidationContext};
+use crate::core::{ContextError, ValidationContext};
 
-    pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), ContextError>
-    where
-        Ctx: ValidationContext,
+pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), ContextError>
+where
+    Ctx: ValidationContext,
+{
+    let packet = &msg.packet;
+
+    let port_chan_id_on_a = &(msg.packet.port_on_a.clone(), msg.packet.chan_on_a.clone());
+    let chan_end_on_a = ctx_a.channel_end(port_chan_id_on_a)?;
+
+    let counterparty = Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone()));
+
+    if !chan_end_on_a.counterparty_matches(&counterparty) {
+        return Err(PacketError::InvalidPacketCounterparty {
+            port_id: packet.port_on_b.clone(),
+            channel_id: packet.chan_on_b.clone(),
+        }
+        .into());
+    }
+
+    //verify the packet was sent, check the store
+    let commitment_on_a = match ctx_a.get_packet_commitment(&(
+        msg.packet.port_on_a.clone(),
+        msg.packet.chan_on_a.clone(),
+        msg.packet.sequence,
+    )) {
+        Ok(commitment_on_a) => commitment_on_a,
+
+        // This error indicates that the timeout has already been relayed
+        // or there is a misconfigured relayer attempting to prove a timeout
+        // for a packet never sent. Core IBC will treat this error as a no-op in order to
+        // prevent an entire relay transaction from failing and consuming unnecessary fees.
+        Err(_) => return Ok(()),
+    };
+
+    let expected_commitment_on_a = ctx_a.packet_commitment(
+        &packet.data,
+        &packet.timeout_height_on_b,
+        &packet.timeout_timestamp_on_b,
+    );
+    if commitment_on_a != expected_commitment_on_a {
+        return Err(PacketError::IncorrectPacketCommitment {
+            sequence: packet.sequence,
+        }
+        .into());
+    }
+
+    let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
+    let conn_end_on_a = ctx_a.connection_end(&conn_id_on_a)?;
+
+    // Verify proofs
     {
-        let packet = &msg.packet;
+        let client_id_on_a = conn_end_on_a.client_id();
+        let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
 
-        let port_chan_id_on_a = &(msg.packet.port_on_a.clone(), msg.packet.chan_on_a.clone());
-        let chan_end_on_a = ctx_a.channel_end(port_chan_id_on_a)?;
-
-        let counterparty =
-            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone()));
-
-        if !chan_end_on_a.counterparty_matches(&counterparty) {
-            return Err(PacketError::InvalidPacketCounterparty {
-                port_id: packet.port_on_b.clone(),
-                channel_id: packet.chan_on_b.clone(),
+        // The client must not be frozen.
+        if client_state_of_b_on_a.is_frozen() {
+            return Err(PacketError::FrozenClient {
+                client_id: client_id_on_a.clone(),
             }
             .into());
         }
 
-        //verify the packet was sent, check the store
-        let commitment_on_a = match ctx_a.get_packet_commitment(&(
-            msg.packet.port_on_a.clone(),
-            msg.packet.chan_on_a.clone(),
-            msg.packet.sequence,
-        )) {
-            Ok(commitment_on_a) => commitment_on_a,
-
-            // This error indicates that the timeout has already been relayed
-            // or there is a misconfigured relayer attempting to prove a timeout
-            // for a packet never sent. Core IBC will treat this error as a no-op in order to
-            // prevent an entire relay transaction from failing and consuming unnecessary fees.
-            Err(_) => return Ok(()),
-        };
-
-        let expected_commitment_on_a = ctx_a.packet_commitment(
-            &packet.data,
-            &packet.timeout_height_on_b,
-            &packet.timeout_timestamp_on_b,
+        let consensus_state_of_b_on_a =
+            ctx_a.consensus_state(client_id_on_a, &msg.proof_height_on_b)?;
+        let prefix_on_b = conn_end_on_a.counterparty().prefix();
+        let port_id_on_b = &chan_end_on_a.counterparty().port_id;
+        let chan_id_on_b =
+            chan_end_on_a
+                .counterparty()
+                .channel_id()
+                .ok_or(PacketError::Channel(
+                    ChannelError::InvalidCounterpartyChannelId,
+                ))?;
+        let conn_id_on_b = conn_end_on_a.counterparty().connection_id().ok_or(
+            PacketError::UndefinedConnectionCounterparty {
+                connection_id: chan_end_on_a.connection_hops()[0].clone(),
+            },
+        )?;
+        let expected_conn_hops_on_b = vec![conn_id_on_b.clone()];
+        let expected_counterparty =
+            Counterparty::new(packet.port_on_a.clone(), Some(packet.chan_on_a.clone()));
+        let expected_chan_end_on_b = ChannelEnd::new(
+            State::Closed,
+            *chan_end_on_a.ordering(),
+            expected_counterparty,
+            expected_conn_hops_on_b,
+            chan_end_on_a.version().clone(),
         );
-        if commitment_on_a != expected_commitment_on_a {
-            return Err(PacketError::IncorrectPacketCommitment {
-                sequence: packet.sequence,
-            }
-            .into());
-        }
 
-        let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
-        let conn_end_on_a = ctx_a.connection_end(&conn_id_on_a)?;
+        // Verify the proof for the channel state against the expected channel end.
+        // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
+        client_state_of_b_on_a
+            .verify_channel_state(
+                msg.proof_height_on_b,
+                prefix_on_b,
+                &msg.proof_unreceived_on_b,
+                consensus_state_of_b_on_a.root(),
+                port_id_on_b,
+                chan_id_on_b,
+                &expected_chan_end_on_b,
+            )
+            .map_err(ChannelError::VerifyChannelFailed)
+            .map_err(PacketError::Channel)?;
 
-        // Verify proofs
-        {
-            let client_id_on_a = conn_end_on_a.client_id();
-            let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
-
-            // The client must not be frozen.
-            if client_state_of_b_on_a.is_frozen() {
-                return Err(PacketError::FrozenClient {
-                    client_id: client_id_on_a.clone(),
+        let next_seq_recv_verification_result = if chan_end_on_a.order_matches(&Order::Ordered) {
+            if packet.sequence < msg.next_seq_recv_on_b {
+                return Err(PacketError::InvalidPacketSequence {
+                    given_sequence: packet.sequence,
+                    next_sequence: msg.next_seq_recv_on_b,
                 }
                 .into());
             }
-
-            let consensus_state_of_b_on_a =
-                ctx_a.consensus_state(client_id_on_a, &msg.proof_height_on_b)?;
-            let prefix_on_b = conn_end_on_a.counterparty().prefix();
-            let port_id_on_b = &chan_end_on_a.counterparty().port_id;
-            let chan_id_on_b =
-                chan_end_on_a
-                    .counterparty()
-                    .channel_id()
-                    .ok_or(PacketError::Channel(
-                        ChannelError::InvalidCounterpartyChannelId,
-                    ))?;
-            let conn_id_on_b = conn_end_on_a.counterparty().connection_id().ok_or(
-                PacketError::UndefinedConnectionCounterparty {
-                    connection_id: chan_end_on_a.connection_hops()[0].clone(),
-                },
-            )?;
-            let expected_conn_hops_on_b = vec![conn_id_on_b.clone()];
-            let expected_counterparty =
-                Counterparty::new(packet.port_on_a.clone(), Some(packet.chan_on_a.clone()));
-            let expected_chan_end_on_b = ChannelEnd::new(
-                State::Closed,
-                *chan_end_on_a.ordering(),
-                expected_counterparty,
-                expected_conn_hops_on_b,
-                chan_end_on_a.version().clone(),
-            );
-
-            // Verify the proof for the channel state against the expected channel end.
-            // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
-            client_state_of_b_on_a
-                .verify_channel_state(
-                    msg.proof_height_on_b,
-                    prefix_on_b,
-                    &msg.proof_unreceived_on_b,
-                    consensus_state_of_b_on_a.root(),
-                    port_id_on_b,
-                    chan_id_on_b,
-                    &expected_chan_end_on_b,
-                )
-                .map_err(ChannelError::VerifyChannelFailed)
-                .map_err(PacketError::Channel)?;
-
-            let next_seq_recv_verification_result = if chan_end_on_a.order_matches(&Order::Ordered)
-            {
-                if packet.sequence < msg.next_seq_recv_on_b {
-                    return Err(PacketError::InvalidPacketSequence {
-                        given_sequence: packet.sequence,
-                        next_sequence: msg.next_seq_recv_on_b,
-                    }
-                    .into());
-                }
-                client_state_of_b_on_a.new_verify_next_sequence_recv(
-                    ctx_a,
-                    msg.proof_height_on_b,
-                    &conn_end_on_a,
-                    &msg.proof_unreceived_on_b,
-                    consensus_state_of_b_on_a.root(),
-                    &packet.port_on_b,
-                    &packet.chan_on_b,
-                    packet.sequence,
-                )
-            } else {
-                client_state_of_b_on_a.new_verify_packet_receipt_absence(
-                    ctx_a,
-                    msg.proof_height_on_b,
-                    &conn_end_on_a,
-                    &msg.proof_unreceived_on_b,
-                    consensus_state_of_b_on_a.root(),
-                    &packet.port_on_b,
-                    &packet.chan_on_b,
-                    packet.sequence,
-                )
-            };
-            next_seq_recv_verification_result
-                .map_err(|e| ChannelError::PacketVerificationFailed {
-                    sequence: msg.next_seq_recv_on_b,
-                    client_error: e,
-                })
-                .map_err(PacketError::Channel)?;
+            client_state_of_b_on_a.new_verify_next_sequence_recv(
+                ctx_a,
+                msg.proof_height_on_b,
+                &conn_end_on_a,
+                &msg.proof_unreceived_on_b,
+                consensus_state_of_b_on_a.root(),
+                &packet.port_on_b,
+                &packet.chan_on_b,
+                packet.sequence,
+            )
+        } else {
+            client_state_of_b_on_a.new_verify_packet_receipt_absence(
+                ctx_a,
+                msg.proof_height_on_b,
+                &conn_end_on_a,
+                &msg.proof_unreceived_on_b,
+                consensus_state_of_b_on_a.root(),
+                &packet.port_on_b,
+                &packet.chan_on_b,
+                packet.sequence,
+            )
         };
+        next_seq_recv_verification_result
+            .map_err(|e| ChannelError::PacketVerificationFailed {
+                sequence: msg.next_seq_recv_on_b,
+                client_error: e,
+            })
+            .map_err(PacketError::Channel)?;
+    };
 
-        Ok(())
-    }
+    Ok(())
 }
 
 /// Per our convention, this message is processed on chain A.
