@@ -321,15 +321,11 @@ pub trait ValidationContext: Router {
         cid: &ConnectionId,
     ) -> Result<Vec<(PortId, ChannelId)>, ContextError>;
 
-    fn get_next_sequence_send(
-        &self,
-        seq_send_path: &SeqSendPath,
-    ) -> Result<Sequence, ContextError>;
+    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
+        -> Result<Sequence, ContextError>;
 
-    fn get_next_sequence_recv(
-        &self,
-        seq_recv_path: &SeqRecvPath,
-    ) -> Result<Sequence, ContextError>;
+    fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath)
+        -> Result<Sequence, ContextError>;
 
     fn get_next_sequence_ack(&self, seq_acks_path: &SeqAckPath) -> Result<Sequence, ContextError>;
 

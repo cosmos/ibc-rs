@@ -8,8 +8,7 @@ use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
 use crate::core::ics04_channel::packet::{PacketResult, Receipt, Sequence};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::ics24_host::path::{
-    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath,
-    SeqRecvPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};

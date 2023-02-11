@@ -379,10 +379,7 @@ impl SendPacketReader for DummyTransferModule {
         .map_err(|e| PacketError::Connection(ConnectionError::Client(e)))
     }
 
-    fn get_next_sequence_send(
-        &self,
-        seq_send_path: &SeqSendPath,
-    ) -> Result<Sequence, PacketError> {
+    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, PacketError> {
         match self
             .ibc_store
             .lock()

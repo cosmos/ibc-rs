@@ -117,8 +117,7 @@ where
                 }
                 .into());
             }
-            let seq_recv_path_on_b =
-                SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+            let seq_recv_path_on_b = SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
             client_state_of_b_on_a.new_verify_next_sequence_recv(
                 ctx_a,
                 msg.proof_height_on_b,
@@ -262,8 +261,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
                     next_sequence: msg.next_seq_recv_on_b,
                 });
             }
-            let seq_recv_path_on_b =
-                SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+            let seq_recv_path_on_b = SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
             client_state_of_b_on_a.verify_next_sequence_recv(
                 ctx_a,
                 msg.proof_height_on_b,

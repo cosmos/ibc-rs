@@ -2,8 +2,8 @@
 
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
 use crate::core::ics24_host::path::{
-    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath,
-    SeqAckPath, SeqRecvPath, SeqSendPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqAckPath,
+    SeqRecvPath, SeqSendPath,
 };
 use crate::prelude::*;
 
@@ -754,10 +754,7 @@ impl ChannelReader for MockContext {
             .map_err(|e| ChannelError::Connection(ConnectionError::Client(e)))
     }
 
-    fn get_next_sequence_send(
-        &self,
-        seq_send_path: &SeqSendPath,
-    ) -> Result<Sequence, PacketError> {
+    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, PacketError> {
         match self
             .ibc_store
             .lock()
@@ -773,10 +770,7 @@ impl ChannelReader for MockContext {
         }
     }
 
-    fn get_next_sequence_recv(
-        &self,
-        seq_recv_path: &SeqRecvPath,
-    ) -> Result<Sequence, PacketError> {
+    fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath) -> Result<Sequence, PacketError> {
         match self
             .ibc_store
             .lock()

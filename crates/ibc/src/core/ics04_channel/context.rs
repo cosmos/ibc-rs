@@ -3,8 +3,8 @@
 //!
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics24_host::path::{
-    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath,
-    SeqAckPath, SeqRecvPath, SeqSendPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqAckPath,
+    SeqRecvPath, SeqSendPath,
 };
 use core::time::Duration;
 use num_traits::float::FloatCore;
@@ -50,11 +50,9 @@ pub trait ChannelReader {
         client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Box<dyn ConsensusState>, ChannelError>;
 
-    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
-        -> Result<Sequence, PacketError>;
+    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, PacketError>;
 
-    fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath)
-        -> Result<Sequence, PacketError>;
+    fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath) -> Result<Sequence, PacketError>;
 
     fn get_next_sequence_ack(&self, seq_acks_path: &SeqAckPath) -> Result<Sequence, PacketError>;
 
@@ -167,8 +165,7 @@ pub trait SendPacketReader {
         client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Box<dyn ConsensusState>, PacketError>;
 
-    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
-        -> Result<Sequence, PacketError>;
+    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, PacketError>;
 
     fn hash(&self, value: &[u8]) -> Vec<u8>;
 
