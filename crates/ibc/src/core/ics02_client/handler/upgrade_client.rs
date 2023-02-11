@@ -104,7 +104,7 @@ where
     } = old_client_state
         .update_state_with_upgrade_client(msg.client_state.clone(), msg.consensus_state)?;
 
-    ctx.store_client_state(ClientStatePath(client_id.clone()), client_state.clone())?;
+    ctx.store_client_state(ClientStatePath::new(&client_id), client_state.clone())?;
     ctx.store_consensus_state(
         ClientConsensusStatePath::new(&client_id, &client_state.latest_height()),
         consensus_state,

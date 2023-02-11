@@ -107,12 +107,6 @@ impl ConnectionPath {
 #[display(fmt = "ports/{_0}")]
 pub struct PortPath(pub PortId);
 
-impl PortPath {
-    pub fn new(port_id: &PortId) -> PortPath {
-        PortPath(port_id.clone())
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "channelEnds/ports/{_0}/channels/{_1}")]
 pub struct ChannelEndPath(pub PortId, pub ChannelId);

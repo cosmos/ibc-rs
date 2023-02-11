@@ -83,7 +83,7 @@ where
                 prefix_on_a,
                 &msg.proof_conn_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                &ConnectionPath(conn_id_on_a.clone()),
+                &ConnectionPath::new(conn_id_on_a),
                 &expected_conn_end_on_a,
             )
             .map_err(ConnectionError::VerifyConnectionState)?;

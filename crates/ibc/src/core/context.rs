@@ -327,14 +327,14 @@ pub trait ValidationContext: Router {
     fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath)
         -> Result<Sequence, ContextError>;
 
-    fn get_next_sequence_ack(&self, seq_acks_path: &SeqAckPath) -> Result<Sequence, ContextError>;
+    fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, ContextError>;
 
     fn get_packet_commitment(
         &self,
         commitment_path: &CommitmentPath,
     ) -> Result<PacketCommitment, ContextError>;
 
-    fn get_packet_receipt(&self, receipts_path: &ReceiptPath) -> Result<Receipt, ContextError>;
+    fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, ContextError>;
 
     fn get_packet_acknowledgement(
         &self,
@@ -555,7 +555,7 @@ pub trait ExecutionContext: ValidationContext {
         ack_commitment: AcknowledgementCommitment,
     ) -> Result<(), ContextError>;
 
-    fn delete_packet_acknowledgement(&mut self, acks_path: AckPath) -> Result<(), ContextError>;
+    fn delete_packet_acknowledgement(&mut self, ack_path: AckPath) -> Result<(), ContextError>;
 
     /// Stores the given channel_end at a path associated with the port_id and channel_id.
     fn store_channel(
