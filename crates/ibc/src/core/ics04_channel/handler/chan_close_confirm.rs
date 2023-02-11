@@ -5,7 +5,7 @@ use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
-use crate::core::ics24_host::path::{ChannelEndsPath, ClientConsensusStatePath};
+use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
@@ -16,7 +16,7 @@ where
     Ctx: ValidationContext,
 {
     // Retrieve the old channel end and validate it against the message.
-    let chan_end_path_on_b = ChannelEndsPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);
+    let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);
     let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     // Validate that the channel end is in a state where it can be closed.
@@ -79,7 +79,7 @@ where
             vec![conn_id_on_a.clone()],
             chan_end_on_b.version().clone(),
         );
-        let chan_end_path_on_a = ChannelEndsPath::new(port_id_on_a, chan_id_on_a);
+        let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, chan_id_on_a);
 
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
@@ -106,7 +106,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let mut output = HandlerOutput::builder();
 
     // Retrieve the old channel end and validate it against the message.
-    let chan_end_path_on_b = ChannelEndsPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);
+    let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);
     let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     // Validate that the channel end is in a state where it can be closed.
@@ -166,7 +166,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
             vec![conn_id_on_a.clone()],
             chan_end_on_b.version().clone(),
         );
-        let chan_end_path_on_a = ChannelEndsPath::new(port_id_on_a, chan_id_on_a);
+        let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, chan_id_on_a);
 
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.

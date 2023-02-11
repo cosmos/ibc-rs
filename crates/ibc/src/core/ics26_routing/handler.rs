@@ -204,7 +204,7 @@ mod tests {
     use crate::core::ics23_commitment::commitment::test_util::get_dummy_merkle_proof;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::ics24_host::path::CommitmentsPath;
+    use crate::core::ics24_host::path::CommitmentPath;
     use crate::core::ics26_routing::context::{ModuleId, Router, RouterBuilder, RouterContext};
     use crate::core::ics26_routing::error::RouterError;
     use crate::core::ics26_routing::handler::dispatch;
@@ -515,7 +515,7 @@ mod tests {
                 msg: MsgEnvelope::Packet(PacketMsg::Ack(msg_ack_packet.clone())).into(),
                 want_pass: true,
                 state_check: Some(Box::new(move |ctx| {
-                    ctx.get_packet_commitment(&CommitmentsPath::new(
+                    ctx.get_packet_commitment(&CommitmentPath::new(
                         &msg_ack_packet.packet.port_on_a,
                         &msg_ack_packet.packet.chan_on_a,
                         msg_ack_packet.packet.sequence,

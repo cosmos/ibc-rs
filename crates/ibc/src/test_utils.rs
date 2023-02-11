@@ -23,7 +23,7 @@ use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ics24_host::path::{ChannelEndsPath, ClientConsensusStatePath, SeqSendsPath};
+use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath, SeqSendPath};
 use crate::core::ics26_routing::context::{Module, ModuleOutputBuilder};
 use crate::mock::context::MockIbcStore;
 use crate::prelude::*;
@@ -309,7 +309,7 @@ impl TokenTransferReader for DummyTransferModule {
 }
 
 impl SendPacketReader for DummyTransferModule {
-    fn channel_end(&self, chan_end_path: &ChannelEndsPath) -> Result<ChannelEnd, PacketError> {
+    fn channel_end(&self, chan_end_path: &ChannelEndPath) -> Result<ChannelEnd, PacketError> {
         match self
             .ibc_store
             .lock()
@@ -381,7 +381,7 @@ impl SendPacketReader for DummyTransferModule {
 
     fn get_next_sequence_send(
         &self,
-        seq_send_path: &SeqSendsPath,
+        seq_send_path: &SeqSendPath,
     ) -> Result<Sequence, PacketError> {
         match self
             .ibc_store

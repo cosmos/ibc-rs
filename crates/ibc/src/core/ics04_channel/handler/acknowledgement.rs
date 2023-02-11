@@ -8,7 +8,7 @@ use crate::core::ics04_channel::packet::{PacketResult, Sequence};
 use crate::core::ics04_channel::{context::ChannelReader, error::PacketError};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::ics24_host::path::{
-    AcksPath, ChannelEndsPath, ClientConsensusStatePath, CommitmentsPath, SeqAcksPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqAckPath,
 };
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
@@ -21,7 +21,7 @@ where
     Ctx: ValidationContext,
 {
     let packet = &msg.packet;
-    let chan_end_path_on_a = ChannelEndsPath::new(&packet.port_on_a, &packet.chan_on_a);
+    let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     if !chan_end_on_a.state_matches(&State::Open) {
@@ -52,7 +52,7 @@ where
     }
 
     let commitments_path =
-        CommitmentsPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
+        CommitmentPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
 
     // Verify packet commitment
     let commitment_on_a = match ctx_a.get_packet_commitment(&commitments_path) {
@@ -79,7 +79,7 @@ where
     }
 
     if let Order::Ordered = chan_end_on_a.ordering {
-        let seq_ack_path = SeqAcksPath::new(&packet.port_on_a, &packet.chan_on_a);
+        let seq_ack_path = SeqAckPath::new(&packet.port_on_a, &packet.chan_on_a);
         let next_seq_ack = ctx_a.get_next_sequence_ack(&seq_ack_path)?;
         if packet.sequence != next_seq_ack {
             return Err(PacketError::InvalidPacketSequence {
@@ -106,7 +106,7 @@ where
             ClientConsensusStatePath::new(client_id_on_a, &msg.proof_height_on_b);
         let consensus_state = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
         let ack_commitment = ctx_a.ack_commitment(&msg.acknowledgement);
-        let ack_path_on_b = AcksPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
+        let ack_path_on_b = AckPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
         // Verify the proof for the packet against the chain store.
         client_state_on_a
             .new_verify_packet_acknowledgement(
@@ -142,7 +142,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let mut output = HandlerOutput::builder();
 
     let packet = &msg.packet;
-    let chan_end_path_on_a = ChannelEndsPath::new(&packet.port_on_a, &packet.chan_on_a);
+    let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
     let chan_end_on_a = ctx_a
         .channel_end(&chan_end_path_on_a)
         .map_err(PacketError::Channel)?;
@@ -174,7 +174,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
     }
 
     let commitments_path =
-        CommitmentsPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
+        CommitmentPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
     // Verify packet commitment
     let packet_commitment = ctx_a.get_packet_commitment(&commitments_path)?;
 
@@ -210,7 +210,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
             .client_consensus_state(&client_cons_state_path_on_a)
             .map_err(PacketError::Channel)?;
         let ack_commitment = ctx_a.ack_commitment(&msg.acknowledgement);
-        let ack_path_on_b = AcksPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);
+        let ack_path_on_b = AckPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);
         // Verify the proof for the packet against the chain store.
         client_state_on_a
             .verify_packet_acknowledgement(
@@ -230,7 +230,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
     }
 
     let result = if chan_end_on_a.order_matches(&Order::Ordered) {
-        let ack_path_on_a = SeqAcksPath::new(&packet.port_on_a, &packet.chan_on_a);
+        let ack_path_on_a = SeqAckPath::new(&packet.port_on_a, &packet.chan_on_a);
         let next_seq_ack = ctx_a.get_next_sequence_ack(&ack_path_on_a)?;
 
         if packet.sequence != next_seq_ack {

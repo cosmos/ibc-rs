@@ -14,7 +14,7 @@ use crate::core::context::ContextError;
 
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ConnectionsPath};
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ConnectionPath};
 
 use crate::core::{ExecutionContext, ValidationContext};
 
@@ -83,7 +83,7 @@ where
                 prefix_on_a,
                 &msg.proof_conn_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                &ConnectionsPath(conn_id_on_a.clone()),
+                &ConnectionPath(conn_id_on_a.clone()),
                 &expected_conn_end_on_a,
             )
             .map_err(ConnectionError::VerifyConnectionState)?;
@@ -131,7 +131,7 @@ where
             new_conn_end_on_b
         };
 
-        ctx_b.store_connection(ConnectionsPath(msg.conn_id_on_b.clone()), new_conn_end_on_b)?;
+        ctx_b.store_connection(ConnectionPath(msg.conn_id_on_b.clone()), new_conn_end_on_b)?;
     }
 
     Ok(())
@@ -220,7 +220,7 @@ pub(crate) fn process(
                 prefix_on_a,
                 &msg.proof_conn_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                &ConnectionsPath::new(conn_id_on_a),
+                &ConnectionPath::new(conn_id_on_a),
                 &expected_conn_end_on_a,
             )
             .map_err(ConnectionError::VerifyConnectionState)?;

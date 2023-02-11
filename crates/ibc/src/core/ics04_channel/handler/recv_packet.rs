@@ -8,8 +8,8 @@ use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
 use crate::core::ics04_channel::packet::{PacketResult, Receipt, Sequence};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::ics24_host::path::{
-    AcksPath, ChannelEndsPath, ClientConsensusStatePath, CommitmentsPath, ReceiptsPath,
-    SeqRecvsPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath,
+    SeqRecvPath,
 };
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
@@ -21,7 +21,7 @@ pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextErro
 where
     Ctx: ValidationContext,
 {
-    let chan_end_path_on_b = ChannelEndsPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+    let chan_end_path_on_b = ChannelEndPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
     let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     if !chan_end_on_b.state_matches(&State::Open) {
@@ -91,7 +91,7 @@ where
             &msg.packet.timeout_height_on_b,
             &msg.packet.timeout_timestamp_on_b,
         );
-        let commitment_path_on_a = CommitmentsPath::new(
+        let commitment_path_on_a = CommitmentPath::new(
             &msg.packet.port_on_a,
             &msg.packet.chan_on_a,
             msg.packet.sequence,
@@ -116,7 +116,7 @@ where
     }
 
     if chan_end_on_b.order_matches(&Order::Ordered) {
-        let seq_recv_path_on_b = SeqRecvsPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+        let seq_recv_path_on_b = SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
         let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
         if msg.packet.sequence > next_seq_recv {
             return Err(PacketError::InvalidPacketSequence {
@@ -132,7 +132,7 @@ where
             validate_write_acknowledgement(ctx_b, msg)?;
         }
     } else {
-        let receipt_path_on_b = ReceiptsPath::new(
+        let receipt_path_on_b = ReceiptPath::new(
             &msg.packet.port_on_a,
             &msg.packet.chan_on_a,
             msg.packet.sequence,
@@ -157,7 +157,7 @@ where
     Ctx: ValidationContext,
 {
     let packet = msg.packet.clone();
-    let ack_path_on_b = AcksPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);
+    let ack_path_on_b = AckPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);
     if ctx_b.get_packet_acknowledgement(&ack_path_on_b).is_ok() {
         return Err(PacketError::AcknowledgementExists {
             sequence: msg.packet.sequence,
@@ -191,7 +191,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
 ) -> HandlerResult<PacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
-    let chan_end_path_on_b = ChannelEndsPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+    let chan_end_path_on_b = ChannelEndPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
     let chan_end_on_b = ctx_b
         .channel_end(&chan_end_path_on_b)
         .map_err(PacketError::Channel)?;
@@ -265,7 +265,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
             &msg.packet.timeout_timestamp_on_b,
         );
 
-        let commitment_path_on_a = CommitmentsPath::new(
+        let commitment_path_on_a = CommitmentPath::new(
             &msg.packet.port_on_a,
             &msg.packet.chan_on_a,
             msg.packet.sequence,
@@ -290,7 +290,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
     }
 
     let result = if chan_end_on_b.order_matches(&Order::Ordered) {
-        let seq_recv_path_on_b = SeqRecvsPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+        let seq_recv_path_on_b = SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
         let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
         if msg.packet.sequence > next_seq_recv {
             return Err(PacketError::InvalidPacketSequence {
@@ -309,7 +309,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
             })
         }
     } else {
-        let receipt_path_on_b = ReceiptsPath::new(
+        let receipt_path_on_b = ReceiptPath::new(
             &msg.packet.port_on_b,
             &msg.packet.chan_on_b,
             msg.packet.sequence,

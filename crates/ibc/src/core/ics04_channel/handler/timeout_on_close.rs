@@ -8,7 +8,7 @@ use crate::core::ics04_channel::{
     context::ChannelReader, error::PacketError, handler::timeout::TimeoutPacketResult,
 };
 use crate::core::ics24_host::path::{
-    ChannelEndsPath, ClientConsensusStatePath, CommitmentsPath, ReceiptsPath, SeqRecvsPath,
+    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
@@ -21,7 +21,7 @@ where
     Ctx: ValidationContext,
 {
     let packet = &msg.packet;
-    let chan_end_path_on_a = ChannelEndsPath::new(&packet.port_on_a, &packet.chan_on_a);
+    let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     let counterparty = Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone()));
@@ -34,7 +34,7 @@ where
         .into());
     }
 
-    let commitment_path_on_a = CommitmentsPath::new(
+    let commitment_path_on_a = CommitmentPath::new(
         &msg.packet.port_on_a,
         &msg.packet.chan_on_a,
         msg.packet.sequence,
@@ -106,7 +106,7 @@ where
             chan_end_on_a.version().clone(),
         );
 
-        let chan_ends_path_on_b = ChannelEndsPath(port_id_on_b, chan_id_on_b.clone());
+        let chan_ends_path_on_b = ChannelEndPath(port_id_on_b, chan_id_on_b.clone());
 
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
@@ -130,7 +130,7 @@ where
                 }
                 .into());
             }
-            let seq_recv_path_on_b = SeqRecvsPath::new(&packet.port_on_b, &packet.chan_on_b);
+            let seq_recv_path_on_b = SeqRecvPath::new(&packet.port_on_b, &packet.chan_on_b);
             client_state_of_b_on_a.new_verify_next_sequence_recv(
                 ctx_a,
                 msg.proof_height_on_b,
@@ -141,7 +141,7 @@ where
                 packet.sequence,
             )
         } else {
-            let receipt_path_on_b = ReceiptsPath::new(
+            let receipt_path_on_b = ReceiptPath::new(
                 &msg.packet.port_on_b,
                 &msg.packet.chan_on_b,
                 msg.packet.sequence,
@@ -175,7 +175,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
     let packet = &msg.packet;
 
-    let chan_end_path_on_a = ChannelEndsPath::new(&packet.port_on_a, &packet.chan_on_a);
+    let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
     let chan_end_on_a = ctx_a
         .channel_end(&chan_end_path_on_a)
         .map_err(PacketError::Channel)?;
@@ -190,7 +190,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
     }
 
     let commitment_path =
-        CommitmentsPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
+        CommitmentPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
 
     //verify the packet was sent, check the store
     let commitment_on_a = ctx_a.get_packet_commitment(&commitment_path)?;
@@ -254,7 +254,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
             chan_end_on_a.version().clone(),
         );
 
-        let chan_end_path_on_b = ChannelEndsPath::new(&port_id_on_b, chan_id_on_b);
+        let chan_end_path_on_b = ChannelEndPath::new(&port_id_on_b, chan_id_on_b);
 
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
@@ -277,7 +277,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
                     next_sequence: msg.next_seq_recv_on_b,
                 });
             }
-            let seq_recv_path_on_b = SeqRecvsPath::new(&packet.port_on_b, &packet.chan_on_b);
+            let seq_recv_path_on_b = SeqRecvPath::new(&packet.port_on_b, &packet.chan_on_b);
             client_state_of_b_on_a.verify_next_sequence_recv(
                 ctx_a,
                 msg.proof_height_on_b,
@@ -288,7 +288,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
                 packet.sequence,
             )
         } else {
-            let receipt_path_on_b = ReceiptsPath::new(
+            let receipt_path_on_b = ReceiptPath::new(
                 &msg.packet.port_on_b,
                 &msg.packet.chan_on_b,
                 msg.packet.sequence,
@@ -343,7 +343,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ics24_host::path::ChannelEndsPath;
+    use crate::core::ics24_host::path::ChannelEndPath;
     use crate::prelude::*;
     use test_log::test;
 
@@ -467,7 +467,7 @@ mod tests {
                     let events = proto_output.events;
                     let src_channel_end = test
                         .ctx
-                        .channel_end(&ChannelEndsPath::new(
+                        .channel_end(&ChannelEndPath::new(
                             &msg.packet.port_on_a,
                             &msg.packet.chan_on_a,
                         ))

@@ -18,8 +18,8 @@ use crate::core::ics23_commitment::commitment::{
 };
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::{
-    AcksPath, ChannelEndsPath, ClientConsensusStatePath, ClientStatePath, CommitmentsPath,
-    ConnectionsPath, ReceiptsPath, SeqRecvsPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath,
+    ConnectionPath, ReceiptPath, SeqRecvPath,
 };
 use crate::dynamic_typing::AsAny;
 use crate::erased::ErasedSerialize;
@@ -160,7 +160,7 @@ pub trait ClientState:
         counterparty_prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        counterparty_conn_path: &ConnectionsPath,
+        counterparty_conn_path: &ConnectionPath,
         expected_counterparty_connection_end: &ConnectionEnd,
     ) -> Result<(), ClientError>;
 
@@ -171,7 +171,7 @@ pub trait ClientState:
         counterparty_prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        counterparty_chan_end_path: &ChannelEndsPath,
+        counterparty_chan_end_path: &ChannelEndPath,
         expected_counterparty_channel_end: &ChannelEnd,
     ) -> Result<(), ClientError>;
 
@@ -196,7 +196,7 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        commitment_path: &CommitmentsPath,
+        commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
     ) -> Result<(), ClientError>;
 
@@ -209,7 +209,7 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        commitment_path: &CommitmentsPath,
+        commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
     ) -> Result<(), ClientError>;
 
@@ -223,7 +223,7 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        ack_path: &AcksPath,
+        ack_path: &AckPath,
         ack: AcknowledgementCommitment,
     ) -> Result<(), ClientError>;
 
@@ -236,7 +236,7 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        ack_path: &AcksPath,
+        ack_path: &AckPath,
         ack: AcknowledgementCommitment,
     ) -> Result<(), ClientError>;
 
@@ -250,7 +250,7 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        seq_recv_path: &SeqRecvsPath,
+        seq_recv_path: &SeqRecvPath,
         sequence: Sequence,
     ) -> Result<(), ClientError>;
 
@@ -263,7 +263,7 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        seq_recv_path: &SeqRecvsPath,
+        seq_recv_path: &SeqRecvPath,
         sequence: Sequence,
     ) -> Result<(), ClientError>;
 
@@ -275,7 +275,7 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        receipt_path: &ReceiptsPath,
+        receipt_path: &ReceiptPath,
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a packet has not been received.
@@ -286,7 +286,7 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        receipt_path: &ReceiptsPath,
+        receipt_path: &ReceiptPath,
     ) -> Result<(), ClientError>;
 }
 

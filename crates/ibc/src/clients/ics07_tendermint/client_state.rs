@@ -40,8 +40,8 @@ use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::{
-    AcksPath, ChannelEndsPath, ClientConsensusStatePath, ClientStatePath, ClientUpgradePath,
-    CommitmentsPath, ConnectionsPath, ReceiptsPath, SeqRecvsPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, ClientUpgradePath,
+    CommitmentPath, ConnectionPath, ReceiptPath, SeqRecvPath,
 };
 use crate::core::ics24_host::Path;
 use crate::timestamp::{Timestamp, ZERO_DURATION};
@@ -1051,7 +1051,7 @@ impl Ics2ClientState for ClientState {
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        conn_path: &ConnectionsPath,
+        conn_path: &ConnectionPath,
         expected_connection_end: &ConnectionEnd,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
@@ -1069,7 +1069,7 @@ impl Ics2ClientState for ClientState {
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        channel_end_path: &ChannelEndsPath,
+        channel_end_path: &ChannelEndPath,
         expected_channel_end: &ChannelEnd,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
@@ -1118,7 +1118,7 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        commitment_path: &CommitmentsPath,
+        commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
@@ -1142,7 +1142,7 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        commitment_path: &CommitmentsPath,
+        commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
@@ -1166,7 +1166,7 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        ack_path: &AcksPath,
+        ack_path: &AckPath,
         ack: AcknowledgementCommitment,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
@@ -1190,7 +1190,7 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        ack_path: &AcksPath,
+        ack_path: &AckPath,
         ack_commitment: AcknowledgementCommitment,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
@@ -1215,7 +1215,7 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        seq_recv_path: &SeqRecvsPath,
+        seq_recv_path: &SeqRecvPath,
         sequence: Sequence,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
@@ -1244,7 +1244,7 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        seq_recv_path: &SeqRecvsPath,
+        seq_recv_path: &SeqRecvPath,
         sequence: Sequence,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
@@ -1274,7 +1274,7 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        receipt_path: &ReceiptsPath,
+        receipt_path: &ReceiptPath,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
@@ -1296,7 +1296,7 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        receipt_path: &ReceiptsPath,
+        receipt_path: &ReceiptPath,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;

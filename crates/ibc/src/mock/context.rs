@@ -2,8 +2,8 @@
 
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
 use crate::core::ics24_host::path::{
-    AcksPath, ChannelEndsPath, ClientConsensusStatePath, CommitmentsPath, ReceiptsPath,
-    SeqAcksPath, SeqRecvsPath, SeqSendsPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath,
+    SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use crate::prelude::*;
 
@@ -711,7 +711,7 @@ impl PortReader for MockContext {
 }
 
 impl ChannelReader for MockContext {
-    fn channel_end(&self, chan_end_path: &ChannelEndsPath) -> Result<ChannelEnd, ChannelError> {
+    fn channel_end(&self, chan_end_path: &ChannelEndPath) -> Result<ChannelEnd, ChannelError> {
         match self
             .ibc_store
             .lock()
@@ -756,7 +756,7 @@ impl ChannelReader for MockContext {
 
     fn get_next_sequence_send(
         &self,
-        seq_send_path: &SeqSendsPath,
+        seq_send_path: &SeqSendPath,
     ) -> Result<Sequence, PacketError> {
         match self
             .ibc_store
@@ -775,7 +775,7 @@ impl ChannelReader for MockContext {
 
     fn get_next_sequence_recv(
         &self,
-        seq_recv_path: &SeqRecvsPath,
+        seq_recv_path: &SeqRecvPath,
     ) -> Result<Sequence, PacketError> {
         match self
             .ibc_store
@@ -792,7 +792,7 @@ impl ChannelReader for MockContext {
         }
     }
 
-    fn get_next_sequence_ack(&self, seq_acks_path: &SeqAcksPath) -> Result<Sequence, PacketError> {
+    fn get_next_sequence_ack(&self, seq_acks_path: &SeqAckPath) -> Result<Sequence, PacketError> {
         match self
             .ibc_store
             .lock()
@@ -810,7 +810,7 @@ impl ChannelReader for MockContext {
 
     fn get_packet_commitment(
         &self,
-        commitment_path: &CommitmentsPath,
+        commitment_path: &CommitmentPath,
     ) -> Result<PacketCommitment, PacketError> {
         match self
             .ibc_store
@@ -827,7 +827,7 @@ impl ChannelReader for MockContext {
         }
     }
 
-    fn get_packet_receipt(&self, receipt_path: &ReceiptsPath) -> Result<Receipt, PacketError> {
+    fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, PacketError> {
         match self
             .ibc_store
             .lock()
@@ -845,7 +845,7 @@ impl ChannelReader for MockContext {
 
     fn get_packet_acknowledgement(
         &self,
-        ack_path: &AcksPath,
+        ack_path: &AckPath,
     ) -> Result<AcknowledgementCommitment, PacketError> {
         match self
             .ibc_store
@@ -1567,7 +1567,7 @@ impl ValidationContext for MockContext {
         ConnectionReader::connection_counter(self).map_err(ContextError::ConnectionError)
     }
 
-    fn channel_end(&self, chan_end_path: &ChannelEndsPath) -> Result<ChannelEnd, ContextError> {
+    fn channel_end(&self, chan_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
         ChannelReader::channel_end(self, chan_end_path).map_err(ContextError::ChannelError)
     }
 
@@ -1580,7 +1580,7 @@ impl ValidationContext for MockContext {
 
     fn get_next_sequence_send(
         &self,
-        seq_send_path: &SeqSendsPath,
+        seq_send_path: &SeqSendPath,
     ) -> Result<Sequence, ContextError> {
         ChannelReader::get_next_sequence_send(self, seq_send_path)
             .map_err(ContextError::PacketError)
@@ -1588,31 +1588,31 @@ impl ValidationContext for MockContext {
 
     fn get_next_sequence_recv(
         &self,
-        seq_recv_path: &SeqRecvsPath,
+        seq_recv_path: &SeqRecvPath,
     ) -> Result<Sequence, ContextError> {
         ChannelReader::get_next_sequence_recv(self, seq_recv_path)
             .map_err(ContextError::PacketError)
     }
 
-    fn get_next_sequence_ack(&self, seq_ack_path: &SeqAcksPath) -> Result<Sequence, ContextError> {
+    fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, ContextError> {
         ChannelReader::get_next_sequence_ack(self, seq_ack_path).map_err(ContextError::PacketError)
     }
 
     fn get_packet_commitment(
         &self,
-        commitment_path: &CommitmentsPath,
+        commitment_path: &CommitmentPath,
     ) -> Result<PacketCommitment, ContextError> {
         ChannelReader::get_packet_commitment(self, commitment_path)
             .map_err(ContextError::PacketError)
     }
 
-    fn get_packet_receipt(&self, receipt_path: &ReceiptsPath) -> Result<Receipt, ContextError> {
+    fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, ContextError> {
         ChannelReader::get_packet_receipt(self, receipt_path).map_err(ContextError::PacketError)
     }
 
     fn get_packet_acknowledgement(
         &self,
-        ack_path: &AcksPath,
+        ack_path: &AckPath,
     ) -> Result<AcknowledgementCommitment, ContextError> {
         ChannelReader::get_packet_acknowledgement(self, ack_path).map_err(ContextError::PacketError)
     }

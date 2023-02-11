@@ -24,8 +24,8 @@ use crate::core::ics23_commitment::commitment::{
 use crate::core::ics23_commitment::merkle::apply_prefix;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::{
-    AcksPath, ChannelEndsPath, ClientConsensusStatePath, ClientStatePath, CommitmentsPath,
-    ConnectionsPath, ReceiptsPath, SeqRecvsPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath,
+    ConnectionPath, ReceiptPath, SeqRecvPath,
 };
 use crate::core::ics24_host::Path;
 use crate::mock::client_state::client_type as mock_client_type;
@@ -332,7 +332,7 @@ impl ClientState for MockClientState {
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _conn_path: &ConnectionsPath,
+        _conn_path: &ConnectionPath,
         _expected_connection_end: &ConnectionEnd,
     ) -> Result<(), ClientError> {
         Ok(())
@@ -344,7 +344,7 @@ impl ClientState for MockClientState {
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _chan_end_path: &ChannelEndsPath,
+        _chan_end_path: &ChannelEndPath,
         _expected_channel_end: &ChannelEnd,
     ) -> Result<(), ClientError> {
         Ok(())
@@ -369,7 +369,7 @@ impl ClientState for MockClientState {
         _connection_end: &ConnectionEnd,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _commitment_path: &CommitmentsPath,
+        _commitment_path: &CommitmentPath,
         _commitment: PacketCommitment,
     ) -> Result<(), ClientError> {
         Ok(())
@@ -382,7 +382,7 @@ impl ClientState for MockClientState {
         _connection_end: &ConnectionEnd,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _commitment_path: &CommitmentsPath,
+        _commitment_path: &CommitmentPath,
         _commitment: PacketCommitment,
     ) -> Result<(), ClientError> {
         Ok(())
@@ -395,7 +395,7 @@ impl ClientState for MockClientState {
         _connection_end: &ConnectionEnd,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _ack_path: &AcksPath,
+        _ack_path: &AckPath,
         _ack: AcknowledgementCommitment,
     ) -> Result<(), ClientError> {
         Ok(())
@@ -408,7 +408,7 @@ impl ClientState for MockClientState {
         _connection_end: &ConnectionEnd,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _seq_recv_path: &SeqRecvsPath,
+        _seq_recv_path: &SeqRecvPath,
         _sequence: Sequence,
     ) -> Result<(), ClientError> {
         Ok(())
@@ -421,7 +421,7 @@ impl ClientState for MockClientState {
         _connection_end: &ConnectionEnd,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _seq_recv_path: &SeqRecvsPath,
+        _seq_recv_path: &SeqRecvPath,
         _sequence: Sequence,
     ) -> Result<(), ClientError> {
         Ok(())
@@ -434,7 +434,7 @@ impl ClientState for MockClientState {
         _connection_end: &ConnectionEnd,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _receipt_path: &ReceiptsPath,
+        _receipt_path: &ReceiptPath,
     ) -> Result<(), ClientError> {
         Ok(())
     }
@@ -446,7 +446,7 @@ impl ClientState for MockClientState {
         _connection_end: &ConnectionEnd,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _receipt_path: &ReceiptsPath,
+        _receipt_path: &ReceiptPath,
     ) -> Result<(), ClientError> {
         Ok(())
     }
@@ -458,7 +458,7 @@ impl ClientState for MockClientState {
         _connection_end: &ConnectionEnd,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _ack_path: &AcksPath,
+        _ack_path: &AckPath,
         _ack: AcknowledgementCommitment,
     ) -> Result<(), ClientError> {
         Ok(())

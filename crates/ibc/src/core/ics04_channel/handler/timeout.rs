@@ -7,7 +7,7 @@ use crate::core::ics04_channel::packet::{PacketResult, Sequence};
 use crate::core::ics04_channel::{context::ChannelReader, error::PacketError};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::ics24_host::path::{
-    ChannelEndsPath, ClientConsensusStatePath, CommitmentsPath, ReceiptsPath, SeqRecvsPath,
+    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
@@ -20,7 +20,7 @@ pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeout) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
-    let chan_end_on_a = ctx_a.channel_end(&ChannelEndsPath::new(
+    let chan_end_on_a = ctx_a.channel_end(&ChannelEndPath::new(
         &msg.packet.port_on_a,
         &msg.packet.chan_on_a,
     ))?;
@@ -49,7 +49,7 @@ where
     let conn_end_on_a = ctx_a.connection_end(&conn_id_on_a)?;
 
     //verify packet commitment
-    let commitment_path_on_a = CommitmentsPath::new(
+    let commitment_path_on_a = CommitmentPath::new(
         &msg.packet.port_on_a,
         &msg.packet.chan_on_a,
         msg.packet.sequence,
@@ -118,7 +118,7 @@ where
                 .into());
             }
             let seq_recv_path_on_b =
-                SeqRecvsPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+                SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
             client_state_of_b_on_a.new_verify_next_sequence_recv(
                 ctx_a,
                 msg.proof_height_on_b,
@@ -129,7 +129,7 @@ where
                 msg.packet.sequence,
             )
         } else {
-            let receipt_path_on_b = ReceiptsPath::new(
+            let receipt_path_on_b = ReceiptPath::new(
                 &msg.packet.port_on_b,
                 &msg.packet.chan_on_b,
                 msg.packet.sequence,
@@ -173,7 +173,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
     msg: &MsgTimeout,
 ) -> HandlerResult<PacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
-    let chan_end_path_on_a = ChannelEndsPath::new(&msg.packet.port_on_a, &msg.packet.chan_on_a);
+    let chan_end_path_on_a = ChannelEndPath::new(&msg.packet.port_on_a, &msg.packet.chan_on_a);
     let mut chan_end_on_a = ctx_a
         .channel_end(&chan_end_path_on_a)
         .map_err(PacketError::Channel)?;
@@ -202,7 +202,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
         .map_err(PacketError::Channel)?;
 
     //verify packet commitment
-    let commitment_path_on_a = CommitmentsPath::new(
+    let commitment_path_on_a = CommitmentPath::new(
         &msg.packet.port_on_a,
         &msg.packet.chan_on_a,
         msg.packet.sequence,
@@ -263,7 +263,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
                 });
             }
             let seq_recv_path_on_b =
-                SeqRecvsPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+                SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
             client_state_of_b_on_a.verify_next_sequence_recv(
                 ctx_a,
                 msg.proof_height_on_b,
@@ -274,7 +274,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
                 msg.packet.sequence,
             )
         } else {
-            let receipt_path_on_b = ReceiptsPath::new(
+            let receipt_path_on_b = ReceiptPath::new(
                 &msg.packet.port_on_b,
                 &msg.packet.chan_on_b,
                 msg.packet.sequence,
@@ -344,7 +344,7 @@ mod tests {
     use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::ics24_host::path::ChannelEndsPath;
+    use crate::core::ics24_host::path::ChannelEndPath;
     use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::prelude::*;
@@ -502,7 +502,7 @@ mod tests {
                     let events = proto_output.events;
                     let src_channel_end = test
                         .ctx
-                        .channel_end(&ChannelEndsPath::new(&packet.port_on_a, &packet.chan_on_a))
+                        .channel_end(&ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a))
                         .unwrap();
 
                     if src_channel_end.order_matches(&Order::Ordered) {

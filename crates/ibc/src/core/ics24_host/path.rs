@@ -32,16 +32,16 @@ pub enum Path {
     ClientType(ClientTypePath),
     ClientState(ClientStatePath),
     ClientConsensusState(ClientConsensusStatePath),
-    ClientConnections(ClientConnectionsPath),
-    Connections(ConnectionsPath),
-    Ports(PortsPath),
-    ChannelEnds(ChannelEndsPath),
-    SeqSends(SeqSendsPath),
-    SeqRecvs(SeqRecvsPath),
-    SeqAcks(SeqAcksPath),
-    Commitments(CommitmentsPath),
-    Acks(AcksPath),
-    Receipts(ReceiptsPath),
+    ClientConnection(ClientConnectionPath),
+    Connection(ConnectionPath),
+    Ports(PortPath),
+    ChannelEnd(ChannelEndPath),
+    SeqSend(SeqSendPath),
+    SeqRecv(SeqRecvPath),
+    SeqAck(SeqAckPath),
+    Commitment(CommitmentPath),
+    Ack(AckPath),
+    Receipt(ReceiptPath),
     Upgrade(ClientUpgradePath),
 }
 
@@ -85,85 +85,85 @@ impl ClientConsensusStatePath {
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "clients/{_0}/connections")]
-pub struct ClientConnectionsPath(pub ClientId);
+pub struct ClientConnectionPath(pub ClientId);
 
-impl ClientConnectionsPath {
-    pub fn new(client_id: &ClientId) -> ClientConnectionsPath {
-        ClientConnectionsPath(client_id.clone())
+impl ClientConnectionPath {
+    pub fn new(client_id: &ClientId) -> ClientConnectionPath {
+        ClientConnectionPath(client_id.clone())
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "connections/{_0}")]
-pub struct ConnectionsPath(pub ConnectionId);
+pub struct ConnectionPath(pub ConnectionId);
 
-impl ConnectionsPath {
-    pub fn new(connection_id: &ConnectionId) -> ConnectionsPath {
-        ConnectionsPath(connection_id.clone())
+impl ConnectionPath {
+    pub fn new(connection_id: &ConnectionId) -> ConnectionPath {
+        ConnectionPath(connection_id.clone())
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "ports/{_0}")]
-pub struct PortsPath(pub PortId);
+pub struct PortPath(pub PortId);
 
-impl PortsPath {
-    pub fn new(port_id: &PortId) -> PortsPath {
-        PortsPath(port_id.clone())
+impl PortPath {
+    pub fn new(port_id: &PortId) -> PortPath {
+        PortPath(port_id.clone())
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "channelEnds/ports/{_0}/channels/{_1}")]
-pub struct ChannelEndsPath(pub PortId, pub ChannelId);
+pub struct ChannelEndPath(pub PortId, pub ChannelId);
 
-impl ChannelEndsPath {
-    pub fn new(port_id: &PortId, channel_id: &ChannelId) -> ChannelEndsPath {
-        ChannelEndsPath(port_id.clone(), channel_id.clone())
+impl ChannelEndPath {
+    pub fn new(port_id: &PortId, channel_id: &ChannelId) -> ChannelEndPath {
+        ChannelEndPath(port_id.clone(), channel_id.clone())
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "nextSequenceSend/ports/{_0}/channels/{_1}")]
-pub struct SeqSendsPath(pub PortId, pub ChannelId);
+pub struct SeqSendPath(pub PortId, pub ChannelId);
 
-impl SeqSendsPath {
-    pub fn new(port_id: &PortId, channel_id: &ChannelId) -> SeqSendsPath {
-        SeqSendsPath(port_id.clone(), channel_id.clone())
+impl SeqSendPath {
+    pub fn new(port_id: &PortId, channel_id: &ChannelId) -> SeqSendPath {
+        SeqSendPath(port_id.clone(), channel_id.clone())
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "nextSequenceRecv/ports/{_0}/channels/{_1}")]
-pub struct SeqRecvsPath(pub PortId, pub ChannelId);
+pub struct SeqRecvPath(pub PortId, pub ChannelId);
 
-impl SeqRecvsPath {
-    pub fn new(port_id: &PortId, channel_id: &ChannelId) -> SeqRecvsPath {
-        SeqRecvsPath(port_id.clone(), channel_id.clone())
+impl SeqRecvPath {
+    pub fn new(port_id: &PortId, channel_id: &ChannelId) -> SeqRecvPath {
+        SeqRecvPath(port_id.clone(), channel_id.clone())
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "nextSequenceAck/ports/{_0}/channels/{_1}")]
-pub struct SeqAcksPath(pub PortId, pub ChannelId);
+pub struct SeqAckPath(pub PortId, pub ChannelId);
 
-impl SeqAcksPath {
-    pub fn new(port_id: &PortId, channel_id: &ChannelId) -> SeqAcksPath {
-        SeqAcksPath(port_id.clone(), channel_id.clone())
+impl SeqAckPath {
+    pub fn new(port_id: &PortId, channel_id: &ChannelId) -> SeqAckPath {
+        SeqAckPath(port_id.clone(), channel_id.clone())
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "commitments/ports/{port_id}/channels/{channel_id}/sequences/{sequence}")]
-pub struct CommitmentsPath {
+pub struct CommitmentPath {
     pub port_id: PortId,
     pub channel_id: ChannelId,
     pub sequence: Sequence,
 }
 
-impl CommitmentsPath {
-    pub fn new(port_id: &PortId, channel_id: &ChannelId, sequence: Sequence) -> CommitmentsPath {
-        CommitmentsPath {
+impl CommitmentPath {
+    pub fn new(port_id: &PortId, channel_id: &ChannelId, sequence: Sequence) -> CommitmentPath {
+        CommitmentPath {
             port_id: port_id.clone(),
             channel_id: channel_id.clone(),
             sequence,
@@ -173,15 +173,15 @@ impl CommitmentsPath {
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "acks/ports/{port_id}/channels/{channel_id}/sequences/{sequence}")]
-pub struct AcksPath {
+pub struct AckPath {
     pub port_id: PortId,
     pub channel_id: ChannelId,
     pub sequence: Sequence,
 }
 
-impl AcksPath {
-    pub fn new(port_id: &PortId, channel_id: &ChannelId, sequence: Sequence) -> AcksPath {
-        AcksPath {
+impl AckPath {
+    pub fn new(port_id: &PortId, channel_id: &ChannelId, sequence: Sequence) -> AckPath {
+        AckPath {
             port_id: port_id.clone(),
             channel_id: channel_id.clone(),
             sequence,
@@ -191,15 +191,15 @@ impl AcksPath {
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "receipts/ports/{port_id}/channels/{channel_id}/sequences/{sequence}")]
-pub struct ReceiptsPath {
+pub struct ReceiptPath {
     pub port_id: PortId,
     pub channel_id: ChannelId,
     pub sequence: Sequence,
 }
 
-impl ReceiptsPath {
-    pub fn new(port_id: &PortId, channel_id: &ChannelId, sequence: Sequence) -> ReceiptsPath {
-        ReceiptsPath {
+impl ReceiptPath {
+    pub fn new(port_id: &PortId, channel_id: &ChannelId, sequence: Sequence) -> ReceiptPath {
+        ReceiptPath {
             port_id: port_id.clone(),
             channel_id: channel_id.clone(),
             sequence,
@@ -227,7 +227,7 @@ enum SubPath {
 impl Path {
     /// Indication if the path is provable.
     pub fn is_provable(&self) -> bool {
-        !matches!(&self, Path::ClientConnections(_) | Path::Ports(_))
+        !matches!(&self, Path::ClientConnection(_) | Path::Ports(_))
     }
 
     /// into_bytes implementation
@@ -286,7 +286,7 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
         match components[2] {
             "clientType" => Some(ClientTypePath(client_id).into()),
             "clientState" => Some(ClientStatePath(client_id).into()),
-            "connections" => Some(ClientConnectionsPath(client_id).into()),
+            "connections" => Some(ClientConnectionPath(client_id).into()),
             _ => None,
         }
     } else if components.len() == 4 {
@@ -355,7 +355,7 @@ fn parse_connections(components: &[&str]) -> Option<Path> {
         Err(_) => return None,
     };
 
-    Some(ConnectionsPath(connection_id).into())
+    Some(ConnectionPath(connection_id).into())
 }
 
 fn parse_ports(components: &[&str]) -> Option<Path> {
@@ -382,7 +382,7 @@ fn parse_ports(components: &[&str]) -> Option<Path> {
         Err(_) => return None,
     };
 
-    Some(PortsPath(port_id).into())
+    Some(PortPath(port_id).into())
 }
 
 fn parse_channels(components: &[&str]) -> Option<SubPath> {
@@ -454,7 +454,7 @@ fn parse_channel_ends(components: &[&str]) -> Option<Path> {
     let port = parse_ports(&components[1..=2]);
     let channel = parse_channels(&components[3..=4]);
 
-    let port_id = if let Some(Path::Ports(PortsPath(port_id))) = port {
+    let port_id = if let Some(Path::Ports(PortPath(port_id))) = port {
         port_id
     } else {
         return None;
@@ -466,7 +466,7 @@ fn parse_channel_ends(components: &[&str]) -> Option<Path> {
         return None;
     };
 
-    Some(ChannelEndsPath(port_id, channel_id).into())
+    Some(ChannelEndPath(port_id, channel_id).into())
 }
 
 fn parse_seqs(components: &[&str]) -> Option<Path> {
@@ -482,7 +482,7 @@ fn parse_seqs(components: &[&str]) -> Option<Path> {
     let port = parse_ports(&components[1..=2]);
     let channel = parse_channels(&components[3..=4]);
 
-    let port_id = if let Some(Path::Ports(PortsPath(port_id))) = port {
+    let port_id = if let Some(Path::Ports(PortPath(port_id))) = port {
         port_id
     } else {
         return None;
@@ -495,9 +495,9 @@ fn parse_seqs(components: &[&str]) -> Option<Path> {
     };
 
     match first {
-        "nextSequenceSend" => Some(SeqSendsPath(port_id, channel_id).into()),
-        "nextSequenceRecv" => Some(SeqRecvsPath(port_id, channel_id).into()),
-        "nextSequenceAck" => Some(SeqAcksPath(port_id, channel_id).into()),
+        "nextSequenceSend" => Some(SeqSendPath(port_id, channel_id).into()),
+        "nextSequenceRecv" => Some(SeqRecvPath(port_id, channel_id).into()),
+        "nextSequenceAck" => Some(SeqAckPath(port_id, channel_id).into()),
         _ => None,
     }
 }
@@ -520,7 +520,7 @@ fn parse_commitments(components: &[&str]) -> Option<Path> {
     let channel = parse_channels(&components[3..=4]);
     let sequence = parse_sequences(&components[5..]);
 
-    let port_id = if let Some(Path::Ports(PortsPath(port_id))) = port {
+    let port_id = if let Some(Path::Ports(PortPath(port_id))) = port {
         port_id
     } else {
         return None;
@@ -539,7 +539,7 @@ fn parse_commitments(components: &[&str]) -> Option<Path> {
     };
 
     Some(
-        CommitmentsPath {
+        CommitmentPath {
             port_id,
             channel_id,
             sequence,
@@ -566,7 +566,7 @@ fn parse_acks(components: &[&str]) -> Option<Path> {
     let channel = parse_channels(&components[3..=4]);
     let sequence = parse_sequences(&components[5..]);
 
-    let port_id = if let Some(Path::Ports(PortsPath(port_id))) = port {
+    let port_id = if let Some(Path::Ports(PortPath(port_id))) = port {
         port_id
     } else {
         return None;
@@ -585,7 +585,7 @@ fn parse_acks(components: &[&str]) -> Option<Path> {
     };
 
     Some(
-        AcksPath {
+        AckPath {
             port_id,
             channel_id,
             sequence,
@@ -612,7 +612,7 @@ fn parse_receipts(components: &[&str]) -> Option<Path> {
     let channel = parse_channels(&components[3..=4]);
     let sequence = parse_sequences(&components[5..]);
 
-    let port_id = if let Some(Path::Ports(PortsPath(port_id))) = port {
+    let port_id = if let Some(Path::Ports(PortPath(port_id))) = port {
         port_id
     } else {
         return None;
@@ -631,7 +631,7 @@ fn parse_receipts(components: &[&str]) -> Option<Path> {
     };
 
     Some(
-        ReceiptsPath {
+        ReceiptPath {
             port_id,
             channel_id,
             sequence,
@@ -764,7 +764,7 @@ mod tests {
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
-            Path::ClientConnections(ClientConnectionsPath(ClientId::default()))
+            Path::ClientConnection(ClientConnectionPath(ClientId::default()))
         );
     }
 
@@ -775,7 +775,7 @@ mod tests {
 
         assert_eq!(
             parse_connections(&components),
-            Some(Path::Connections(ConnectionsPath(ConnectionId::new(0)))),
+            Some(Path::Connection(ConnectionPath(ConnectionId::new(0)))),
         );
     }
 
@@ -787,7 +787,7 @@ mod tests {
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
-            Path::Connections(ConnectionsPath(ConnectionId::new(0)))
+            Path::Connection(ConnectionPath(ConnectionId::new(0)))
         );
     }
 
@@ -798,7 +798,7 @@ mod tests {
 
         assert_eq!(
             parse_ports(&components),
-            Some(Path::Ports(PortsPath(PortId::default()))),
+            Some(Path::Ports(PortPath(PortId::default()))),
         );
     }
 
@@ -808,7 +808,7 @@ mod tests {
         let path = Path::from_str(path);
 
         assert!(path.is_ok());
-        assert_eq!(path.unwrap(), Path::Ports(PortsPath(PortId::default())));
+        assert_eq!(path.unwrap(), Path::Ports(PortPath(PortId::default())));
     }
 
     #[test]
@@ -856,7 +856,7 @@ mod tests {
 
         assert_eq!(
             parse_channel_ends(&components),
-            Some(Path::ChannelEnds(ChannelEndsPath(
+            Some(Path::ChannelEnd(ChannelEndPath(
                 PortId::default(),
                 ChannelId::default()
             ))),
@@ -871,7 +871,7 @@ mod tests {
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
-            Path::ChannelEnds(ChannelEndsPath(PortId::default(), ChannelId::default())),
+            Path::ChannelEnd(ChannelEndPath(PortId::default(), ChannelId::default())),
         );
     }
 
@@ -882,7 +882,7 @@ mod tests {
 
         assert_eq!(
             parse_seqs(&components),
-            Some(Path::SeqSends(SeqSendsPath(
+            Some(Path::SeqSend(SeqSendPath(
                 PortId::default(),
                 ChannelId::default()
             ))),
@@ -893,7 +893,7 @@ mod tests {
 
         assert_eq!(
             parse_seqs(&components),
-            Some(Path::SeqRecvs(SeqRecvsPath(
+            Some(Path::SeqRecv(SeqRecvPath(
                 PortId::default(),
                 ChannelId::default()
             ))),
@@ -904,7 +904,7 @@ mod tests {
 
         assert_eq!(
             parse_seqs(&components),
-            Some(Path::SeqAcks(SeqAcksPath(
+            Some(Path::SeqAck(SeqAckPath(
                 PortId::default(),
                 ChannelId::default()
             ))),
@@ -919,7 +919,7 @@ mod tests {
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
-            Path::SeqSends(SeqSendsPath(PortId::default(), ChannelId::default())),
+            Path::SeqSend(SeqSendPath(PortId::default(), ChannelId::default())),
         );
     }
 
@@ -931,7 +931,7 @@ mod tests {
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
-            Path::SeqRecvs(SeqRecvsPath(PortId::default(), ChannelId::default())),
+            Path::SeqRecv(SeqRecvPath(PortId::default(), ChannelId::default())),
         );
     }
 
@@ -943,7 +943,7 @@ mod tests {
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
-            Path::SeqAcks(SeqAcksPath(PortId::default(), ChannelId::default())),
+            Path::SeqAck(SeqAckPath(PortId::default(), ChannelId::default())),
         );
     }
 
@@ -954,7 +954,7 @@ mod tests {
 
         assert_eq!(
             parse_commitments(&components),
-            Some(Path::Commitments(CommitmentsPath {
+            Some(Path::Commitment(CommitmentPath {
                 port_id: PortId::default(),
                 channel_id: ChannelId::default(),
                 sequence: Sequence::default(),
@@ -970,7 +970,7 @@ mod tests {
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
-            Path::Commitments(CommitmentsPath {
+            Path::Commitment(CommitmentPath {
                 port_id: PortId::default(),
                 channel_id: ChannelId::default(),
                 sequence: Sequence::default(),
@@ -985,7 +985,7 @@ mod tests {
 
         assert_eq!(
             parse_acks(&components),
-            Some(Path::Acks(AcksPath {
+            Some(Path::Ack(AckPath {
                 port_id: PortId::default(),
                 channel_id: ChannelId::default(),
                 sequence: Sequence::default(),
@@ -1001,7 +1001,7 @@ mod tests {
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
-            Path::Acks(AcksPath {
+            Path::Ack(AckPath {
                 port_id: PortId::default(),
                 channel_id: ChannelId::default(),
                 sequence: Sequence::default(),
@@ -1016,7 +1016,7 @@ mod tests {
 
         assert_eq!(
             parse_receipts(&components),
-            Some(Path::Receipts(ReceiptsPath {
+            Some(Path::Receipt(ReceiptPath {
                 port_id: PortId::default(),
                 channel_id: ChannelId::default(),
                 sequence: Sequence::default(),
@@ -1032,7 +1032,7 @@ mod tests {
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
-            Path::Receipts(ReceiptsPath {
+            Path::Receipt(ReceiptPath {
                 port_id: PortId::default(),
                 channel_id: ChannelId::default(),
                 sequence: Sequence::default(),
