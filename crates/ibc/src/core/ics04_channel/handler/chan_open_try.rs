@@ -8,6 +8,7 @@ use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::ChannelId;
+use crate::core::ics24_host::path::{ChannelEndsPath, ClientConsensusStatePath};
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
@@ -52,10 +53,11 @@ where
     {
         let client_id_on_b = conn_end_on_b.client_id();
         let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
-        let consensus_state_of_a_on_b =
-            ctx_b.consensus_state(client_id_on_b, &msg.proof_height_on_a)?;
+        let client_cons_state_path_on_b =
+            ClientConsensusStatePath::new(client_id_on_b, &msg.proof_height_on_a);
+        let consensus_state_of_a_on_b = ctx_b.consensus_state(&client_cons_state_path_on_b)?;
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
-        let port_id_on_a = &&msg.port_id_on_a;
+        let port_id_on_a = msg.port_id_on_a.clone();
         let chan_id_on_a = msg.chan_id_on_a.clone();
         let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
             ChannelError::UndefinedConnectionCounterparty {
@@ -78,6 +80,7 @@ where
             vec![conn_id_on_a.clone()],
             msg.version_supported_on_a.clone(),
         );
+        let chan_end_path_on_a = ChannelEndsPath::new(&port_id_on_a, &chan_id_on_a);
 
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
@@ -87,8 +90,7 @@ where
                 prefix_on_a,
                 &msg.proof_chan_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                port_id_on_a,
-                &chan_id_on_a,
+                &chan_end_path_on_a,
                 &expected_chan_end_on_a,
             )
             .map_err(ChannelError::VerifyChannelFailed)?;
@@ -133,10 +135,12 @@ pub(crate) fn process<Ctx: ChannelReader>(
     {
         let client_id_on_b = conn_end_on_b.client_id();
         let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
+        let client_cons_state_path_on_b =
+            ClientConsensusStatePath::new(client_id_on_b, &msg.proof_height_on_a);
         let consensus_state_of_a_on_b =
-            ctx_b.client_consensus_state(client_id_on_b, &msg.proof_height_on_a)?;
+            ctx_b.client_consensus_state(&client_cons_state_path_on_b)?;
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
-        let port_id_on_a = &&msg.port_id_on_a;
+        let port_id_on_a = msg.port_id_on_a.clone();
         let chan_id_on_a = msg.chan_id_on_a.clone();
         let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
             ChannelError::UndefinedConnectionCounterparty {
@@ -158,6 +162,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
             vec![conn_id_on_a.clone()],
             msg.version_supported_on_a.clone(),
         );
+        let chan_end_path_on_a = ChannelEndsPath::new(&port_id_on_a, &chan_id_on_a);
 
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
@@ -167,8 +172,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
                 prefix_on_a,
                 &msg.proof_chan_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                port_id_on_a,
-                &chan_id_on_a,
+                &chan_end_path_on_a,
                 &expected_chan_end_on_a,
             )
             .map_err(ChannelError::VerifyChannelFailed)?;

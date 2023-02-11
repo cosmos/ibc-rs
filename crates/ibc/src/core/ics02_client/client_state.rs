@@ -16,7 +16,11 @@ use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
-use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
+use crate::core::ics24_host::identifier::{ChainId, ClientId};
+use crate::core::ics24_host::path::{
+    AcksPath, ChannelEndsPath, ClientConsensusStatePath, ClientStatePath, CommitmentsPath,
+    ConnectionsPath, ReceiptsPath, SeqRecvsPath,
+};
 use crate::dynamic_typing::AsAny;
 use crate::erased::ErasedSerialize;
 use crate::prelude::*;
@@ -139,52 +143,46 @@ pub trait ClientState:
     /// matches the input `consensus_state`. The parameter `counterparty_height` represent the
     /// height of the counterparty chain that this proof assumes (i.e., the height at which this
     /// proof was computed).
-    #[allow(clippy::too_many_arguments)]
     fn verify_client_consensus_state(
         &self,
         proof_height: Height,
         counterparty_prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        counterparty_client_id: &ClientId,
-        consensus_height: Height,
+        client_cons_state_path: &ClientConsensusStatePath,
         expected_consensus_state: &dyn ConsensusState,
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a connection state matches that of the input `connection_end`.
-    #[allow(clippy::too_many_arguments)]
     fn verify_connection_state(
         &self,
         proof_height: Height,
         counterparty_prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        counterparty_connection_id: &ConnectionId,
+        counterparty_conn_path: &ConnectionsPath,
         expected_counterparty_connection_end: &ConnectionEnd,
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a channel state matches that of the input `channel_end`.
-    #[allow(clippy::too_many_arguments)]
     fn verify_channel_state(
         &self,
         proof_height: Height,
         counterparty_prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        counterparty_port_id: &PortId,
-        counterparty_channel_id: &ChannelId,
+        counterparty_chan_end_path: &ChannelEndsPath,
         expected_counterparty_channel_end: &ChannelEnd,
     ) -> Result<(), ClientError>;
 
     /// Verify the client state for this chain that it is stored on the counterparty chain.
-    #[allow(clippy::too_many_arguments)]
     fn verify_client_full_state(
         &self,
         proof_height: Height,
         counterparty_prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        client_id: &ClientId,
+        client_state_path: &ClientStatePath,
         expected_client_state: Any,
     ) -> Result<(), ClientError>;
 
@@ -198,9 +196,7 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        sequence: Sequence,
+        commitment_path: &CommitmentsPath,
         commitment: PacketCommitment,
     ) -> Result<(), ClientError>;
 
@@ -213,9 +209,7 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        sequence: Sequence,
+        commitment_path: &CommitmentsPath,
         commitment: PacketCommitment,
     ) -> Result<(), ClientError>;
 
@@ -229,9 +223,7 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        sequence: Sequence,
+        ack_path: &AcksPath,
         ack: AcknowledgementCommitment,
     ) -> Result<(), ClientError>;
 
@@ -244,9 +236,7 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        sequence: Sequence,
+        ack_path: &AcksPath,
         ack: AcknowledgementCommitment,
     ) -> Result<(), ClientError>;
 
@@ -260,8 +250,7 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
+        seq_recv_path: &SeqRecvsPath,
         sequence: Sequence,
     ) -> Result<(), ClientError>;
 
@@ -274,14 +263,11 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
+        seq_recv_path: &SeqRecvsPath,
         sequence: Sequence,
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a packet has not been received.
-
-    #[allow(clippy::too_many_arguments)]
     fn new_verify_packet_receipt_absence(
         &self,
         ctx: &dyn ValidationContext,
@@ -289,13 +275,10 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        sequence: Sequence,
+        receipt_path: &ReceiptsPath,
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a packet has not been received.
-    #[allow(clippy::too_many_arguments)]
     fn verify_packet_receipt_absence(
         &self,
         ctx: &dyn ChannelReader,
@@ -303,9 +286,7 @@ pub trait ClientState:
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        sequence: Sequence,
+        receipt_path: &ReceiptsPath,
     ) -> Result<(), ClientError>;
 }
 

@@ -5,6 +5,7 @@ use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::packet::{Packet, PacketResult, Sequence};
 use crate::core::ics04_channel::{context::ChannelReader, error::PacketError};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
+use crate::core::ics24_host::path::{AcksPath, ChannelEndsPath};
 use crate::prelude::*;
 use crate::{
     events::IbcEvent,
@@ -26,9 +27,9 @@ pub fn process<Ctx: ChannelReader>(
     ack: Acknowledgement,
 ) -> HandlerResult<PacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
-
+    let chan_end_path_on_b = ChannelEndsPath::new(&packet.port_on_b, &packet.chan_on_b);
     let chan_end_on_b = ctx_b
-        .channel_end(&packet.port_on_b, &packet.chan_on_b)
+        .channel_end(&chan_end_path_on_b)
         .map_err(PacketError::Channel)?;
 
     if !chan_end_on_b.state_matches(&State::Open) {
@@ -41,7 +42,8 @@ pub fn process<Ctx: ChannelReader>(
     // NOTE: IBC app modules might have written the acknowledgement synchronously on
     // the OnRecvPacket callback so we need to check if the acknowledgement is already
     // set on the store and return an error if so.
-    match ctx_b.get_packet_acknowledgement(&packet.port_on_b, &packet.chan_on_b, &packet.sequence) {
+    let ack_path_on_b = AcksPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);
+    match ctx_b.get_packet_acknowledgement(&ack_path_on_b) {
         Ok(_) => {
             return Err(PacketError::AcknowledgementExists {
                 sequence: packet.sequence,

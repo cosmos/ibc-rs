@@ -49,9 +49,21 @@ pub enum Path {
 #[display(fmt = "clients/{_0}/clientType")]
 pub struct ClientTypePath(pub ClientId);
 
+impl ClientTypePath {
+    pub fn new(client_id: &ClientId) -> ClientTypePath {
+        ClientTypePath(client_id.clone())
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "clients/{_0}/clientState")]
 pub struct ClientStatePath(pub ClientId);
+
+impl ClientStatePath {
+    pub fn new(client_id: &ClientId) -> ClientStatePath {
+        ClientStatePath(client_id.clone())
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "clients/{client_id}/consensusStates/{epoch}-{height}")]
@@ -62,9 +74,9 @@ pub struct ClientConsensusStatePath {
 }
 
 impl ClientConsensusStatePath {
-    pub fn new(client_id: ClientId, height: Height) -> ClientConsensusStatePath {
+    pub fn new(client_id: &ClientId, height: &Height) -> ClientConsensusStatePath {
         ClientConsensusStatePath {
-            client_id,
+            client_id: client_id.clone(),
             epoch: height.revision_number(),
             height: height.revision_height(),
         }
@@ -75,29 +87,71 @@ impl ClientConsensusStatePath {
 #[display(fmt = "clients/{_0}/connections")]
 pub struct ClientConnectionsPath(pub ClientId);
 
+impl ClientConnectionsPath {
+    pub fn new(client_id: &ClientId) -> ClientConnectionsPath {
+        ClientConnectionsPath(client_id.clone())
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "connections/{_0}")]
 pub struct ConnectionsPath(pub ConnectionId);
+
+impl ConnectionsPath {
+    pub fn new(connection_id: &ConnectionId) -> ConnectionsPath {
+        ConnectionsPath(connection_id.clone())
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "ports/{_0}")]
 pub struct PortsPath(pub PortId);
 
+impl PortsPath {
+    pub fn new(port_id: &PortId) -> PortsPath {
+        PortsPath(port_id.clone())
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "channelEnds/ports/{_0}/channels/{_1}")]
 pub struct ChannelEndsPath(pub PortId, pub ChannelId);
+
+impl ChannelEndsPath {
+    pub fn new(port_id: &PortId, channel_id: &ChannelId) -> ChannelEndsPath {
+        ChannelEndsPath(port_id.clone(), channel_id.clone())
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "nextSequenceSend/ports/{_0}/channels/{_1}")]
 pub struct SeqSendsPath(pub PortId, pub ChannelId);
 
+impl SeqSendsPath {
+    pub fn new(port_id: &PortId, channel_id: &ChannelId) -> SeqSendsPath {
+        SeqSendsPath(port_id.clone(), channel_id.clone())
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "nextSequenceRecv/ports/{_0}/channels/{_1}")]
 pub struct SeqRecvsPath(pub PortId, pub ChannelId);
 
+impl SeqRecvsPath {
+    pub fn new(port_id: &PortId, channel_id: &ChannelId) -> SeqRecvsPath {
+        SeqRecvsPath(port_id.clone(), channel_id.clone())
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "nextSequenceAck/ports/{_0}/channels/{_1}")]
 pub struct SeqAcksPath(pub PortId, pub ChannelId);
+
+impl SeqAcksPath {
+    pub fn new(port_id: &PortId, channel_id: &ChannelId) -> SeqAcksPath {
+        SeqAcksPath(port_id.clone(), channel_id.clone())
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "commitments/ports/{port_id}/channels/{channel_id}/sequences/{sequence}")]
@@ -105,6 +159,16 @@ pub struct CommitmentsPath {
     pub port_id: PortId,
     pub channel_id: ChannelId,
     pub sequence: Sequence,
+}
+
+impl CommitmentsPath {
+    pub fn new(port_id: &PortId, channel_id: &ChannelId, sequence: Sequence) -> CommitmentsPath {
+        CommitmentsPath {
+            port_id: port_id.clone(),
+            channel_id: channel_id.clone(),
+            sequence,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
@@ -115,12 +179,32 @@ pub struct AcksPath {
     pub sequence: Sequence,
 }
 
+impl AcksPath {
+    pub fn new(port_id: &PortId, channel_id: &ChannelId, sequence: Sequence) -> AcksPath {
+        AcksPath {
+            port_id: port_id.clone(),
+            channel_id: channel_id.clone(),
+            sequence,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "receipts/ports/{port_id}/channels/{channel_id}/sequences/{sequence}")]
 pub struct ReceiptsPath {
     pub port_id: PortId,
     pub channel_id: ChannelId,
     pub sequence: Sequence,
+}
+
+impl ReceiptsPath {
+    pub fn new(port_id: &PortId, channel_id: &ChannelId, sequence: Sequence) -> ReceiptsPath {
+        ReceiptsPath {
+            port_id: port_id.clone(),
+            channel_id: channel_id.clone(),
+            sequence,
+        }
+    }
 }
 
 /// Paths that are specific for client upgrades.

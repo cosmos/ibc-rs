@@ -1,6 +1,10 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
+use crate::core::ics24_host::path::{
+    AcksPath, ChannelEndsPath, ClientConsensusStatePath, CommitmentsPath, ReceiptsPath,
+    SeqAcksPath, SeqRecvsPath, SeqSendsPath,
+};
 use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap;
@@ -707,22 +711,18 @@ impl PortReader for MockContext {
 }
 
 impl ChannelReader for MockContext {
-    fn channel_end(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<ChannelEnd, ChannelError> {
+    fn channel_end(&self, chan_end_path: &ChannelEndsPath) -> Result<ChannelEnd, ChannelError> {
         match self
             .ibc_store
             .lock()
             .channels
-            .get(port_id)
-            .and_then(|map| map.get(channel_id))
+            .get(&chan_end_path.0)
+            .and_then(|map| map.get(&chan_end_path.1))
         {
             Some(channel_end) => Ok(channel_end.clone()),
             None => Err(ChannelError::ChannelNotFound {
-                port_id: port_id.clone(),
-                channel_id: channel_id.clone(),
+                port_id: chan_end_path.0.clone(),
+                channel_id: chan_end_path.1.clone(),
             }),
         }
     }
@@ -748,127 +748,117 @@ impl ChannelReader for MockContext {
 
     fn client_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Box<dyn ConsensusState>, ChannelError> {
-        ClientReader::consensus_state(self, client_id, height)
+        ClientReader::consensus_state(self, client_cons_state_path)
             .map_err(|e| ChannelError::Connection(ConnectionError::Client(e)))
     }
 
     fn get_next_sequence_send(
         &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
+        seq_send_path: &SeqSendsPath,
     ) -> Result<Sequence, PacketError> {
         match self
             .ibc_store
             .lock()
             .next_sequence_send
-            .get(port_id)
-            .and_then(|map| map.get(channel_id))
+            .get(&seq_send_path.0)
+            .and_then(|map| map.get(&seq_send_path.1))
         {
             Some(sequence) => Ok(*sequence),
             None => Err(PacketError::MissingNextSendSeq {
-                port_id: port_id.clone(),
-                channel_id: channel_id.clone(),
+                port_id: seq_send_path.0.clone(),
+                channel_id: seq_send_path.1.clone(),
             }),
         }
     }
 
     fn get_next_sequence_recv(
         &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
+        seq_recv_path: &SeqRecvsPath,
     ) -> Result<Sequence, PacketError> {
         match self
             .ibc_store
             .lock()
             .next_sequence_recv
-            .get(port_id)
-            .and_then(|map| map.get(channel_id))
+            .get(&seq_recv_path.0)
+            .and_then(|map| map.get(&seq_recv_path.1))
         {
             Some(sequence) => Ok(*sequence),
             None => Err(PacketError::MissingNextRecvSeq {
-                port_id: port_id.clone(),
-                channel_id: channel_id.clone(),
+                port_id: seq_recv_path.0.clone(),
+                channel_id: seq_recv_path.1.clone(),
             }),
         }
     }
 
-    fn get_next_sequence_ack(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<Sequence, PacketError> {
+    fn get_next_sequence_ack(&self, seq_acks_path: &SeqAcksPath) -> Result<Sequence, PacketError> {
         match self
             .ibc_store
             .lock()
             .next_sequence_ack
-            .get(port_id)
-            .and_then(|map| map.get(channel_id))
+            .get(&seq_acks_path.0)
+            .and_then(|map| map.get(&seq_acks_path.1))
         {
             Some(sequence) => Ok(*sequence),
             None => Err(PacketError::MissingNextAckSeq {
-                port_id: port_id.clone(),
-                channel_id: channel_id.clone(),
+                port_id: seq_acks_path.0.clone(),
+                channel_id: seq_acks_path.1.clone(),
             }),
         }
     }
 
     fn get_packet_commitment(
         &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        seq: &Sequence,
+        commitment_path: &CommitmentsPath,
     ) -> Result<PacketCommitment, PacketError> {
         match self
             .ibc_store
             .lock()
             .packet_commitment
-            .get(port_id)
-            .and_then(|map| map.get(channel_id))
-            .and_then(|map| map.get(seq))
+            .get(&commitment_path.port_id)
+            .and_then(|map| map.get(&commitment_path.channel_id))
+            .and_then(|map| map.get(&commitment_path.sequence))
         {
             Some(commitment) => Ok(commitment.clone()),
-            None => Err(PacketError::PacketCommitmentNotFound { sequence: *seq }),
+            None => Err(PacketError::PacketCommitmentNotFound {
+                sequence: commitment_path.sequence,
+            }),
         }
     }
 
-    fn get_packet_receipt(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        seq: &Sequence,
-    ) -> Result<Receipt, PacketError> {
+    fn get_packet_receipt(&self, receipt_path: &ReceiptsPath) -> Result<Receipt, PacketError> {
         match self
             .ibc_store
             .lock()
             .packet_receipt
-            .get(port_id)
-            .and_then(|map| map.get(channel_id))
-            .and_then(|map| map.get(seq))
+            .get(&receipt_path.port_id)
+            .and_then(|map| map.get(&receipt_path.channel_id))
+            .and_then(|map| map.get(&receipt_path.sequence))
         {
             Some(receipt) => Ok(receipt.clone()),
-            None => Err(PacketError::PacketReceiptNotFound { sequence: *seq }),
+            None => Err(PacketError::PacketReceiptNotFound {
+                sequence: receipt_path.sequence,
+            }),
         }
     }
 
     fn get_packet_acknowledgement(
         &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        seq: &Sequence,
+        ack_path: &AcksPath,
     ) -> Result<AcknowledgementCommitment, PacketError> {
         match self
             .ibc_store
             .lock()
             .packet_acknowledgement
-            .get(port_id)
-            .and_then(|map| map.get(channel_id))
-            .and_then(|map| map.get(seq))
+            .get(&ack_path.port_id)
+            .and_then(|map| map.get(&ack_path.channel_id))
+            .and_then(|map| map.get(&ack_path.sequence))
         {
             Some(ack) => Ok(ack.clone()),
-            None => Err(PacketError::PacketAcknowledgementNotFound { sequence: *seq }),
+            None => Err(PacketError::PacketAcknowledgementNotFound {
+                sequence: ack_path.sequence,
+            }),
         }
     }
 
@@ -1147,11 +1137,10 @@ impl ConnectionReader for MockContext {
 
     fn client_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Box<dyn ConsensusState>, ConnectionError> {
         // Forward method call to the Ics2Client-specific method.
-        ClientReader::consensus_state(self, client_id, height).map_err(ConnectionError::Client)
+        ClientReader::consensus_state(self, client_cons_state_path).map_err(ConnectionError::Client)
     }
 
     fn host_consensus_state(
@@ -1240,20 +1229,26 @@ impl ClientReader for MockContext {
 
     fn consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Box<dyn ConsensusState>, ClientError> {
-        match self.ibc_store.lock().clients.get(client_id) {
-            Some(client_record) => match client_record.consensus_states.get(height) {
+        let height =
+            Height::new(client_cons_state_path.epoch, client_cons_state_path.height).unwrap();
+        match self
+            .ibc_store
+            .lock()
+            .clients
+            .get(&client_cons_state_path.client_id)
+        {
+            Some(client_record) => match client_record.consensus_states.get(&height) {
                 Some(consensus_state) => Ok(consensus_state.clone()),
                 None => Err(ClientError::ConsensusStateNotFound {
-                    client_id: client_id.clone(),
-                    height: *height,
+                    client_id: client_cons_state_path.client_id.clone(),
+                    height,
                 }),
             },
             None => Err(ClientError::ConsensusStateNotFound {
-                client_id: client_id.clone(),
-                height: *height,
+                client_id: client_cons_state_path.client_id.clone(),
+                height,
             }),
         }
     }
@@ -1261,17 +1256,21 @@ impl ClientReader for MockContext {
     /// Search for the lowest consensus state higher than `height`.
     fn next_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        next_client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
         let ibc_store = self.ibc_store.lock();
-        let client_record =
-            ibc_store
-                .clients
-                .get(client_id)
-                .ok_or_else(|| ClientError::ClientNotFound {
-                    client_id: client_id.clone(),
-                })?;
+        let client_record = ibc_store
+            .clients
+            .get(&next_client_cons_state_path.client_id)
+            .ok_or_else(|| ClientError::ClientNotFound {
+                client_id: next_client_cons_state_path.client_id.clone(),
+            })?;
+
+        let height = Height::new(
+            next_client_cons_state_path.epoch,
+            next_client_cons_state_path.height,
+        )
+        .unwrap();
 
         // Get the consensus state heights and sort them in ascending order.
         let mut heights: Vec<Height> = client_record.consensus_states.keys().cloned().collect();
@@ -1279,7 +1278,7 @@ impl ClientReader for MockContext {
 
         // Search for next state.
         for h in heights {
-            if h > *height {
+            if h > height {
                 // unwrap should never happen, as the consensus state for h must exist
                 return Ok(Some(
                     client_record.consensus_states.get(&h).unwrap().clone(),
@@ -1292,17 +1291,21 @@ impl ClientReader for MockContext {
     /// Search for the highest consensus state lower than `height`.
     fn prev_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        prev_client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
         let ibc_store = self.ibc_store.lock();
-        let client_record =
-            ibc_store
-                .clients
-                .get(client_id)
-                .ok_or_else(|| ClientError::ClientNotFound {
-                    client_id: client_id.clone(),
-                })?;
+        let client_record = ibc_store
+            .clients
+            .get(&prev_client_cons_state_path.client_id)
+            .ok_or_else(|| ClientError::ClientNotFound {
+                client_id: prev_client_cons_state_path.client_id.clone(),
+            })?;
+
+        let height = Height::new(
+            prev_client_cons_state_path.epoch,
+            prev_client_cons_state_path.height,
+        )
+        .unwrap();
 
         // Get the consensus state heights and sort them in descending order.
         let mut heights: Vec<Height> = client_record.consensus_states.keys().cloned().collect();
@@ -1310,7 +1313,7 @@ impl ClientReader for MockContext {
 
         // Search for previous state.
         for h in heights {
-            if h < *height {
+            if h < height {
                 // unwrap should never happen, as the consensus state for h must exist
                 return Ok(Some(
                     client_record.consensus_states.get(&h).unwrap().clone(),
@@ -1507,27 +1510,25 @@ impl ValidationContext for MockContext {
 
     fn consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Box<dyn ConsensusState>, ContextError> {
-        ClientReader::consensus_state(self, client_id, height).map_err(ContextError::ClientError)
+        ClientReader::consensus_state(self, client_cons_state_path)
+            .map_err(ContextError::ClientError)
     }
 
     fn next_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        next_client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
-        ClientReader::next_consensus_state(self, client_id, height)
+        ClientReader::next_consensus_state(self, next_client_cons_state_path)
             .map_err(ContextError::ClientError)
     }
 
     fn prev_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        prev_client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
-        ClientReader::prev_consensus_state(self, client_id, height)
+        ClientReader::prev_consensus_state(self, prev_client_cons_state_path)
             .map_err(ContextError::ClientError)
     }
 
@@ -1566,12 +1567,8 @@ impl ValidationContext for MockContext {
         ConnectionReader::connection_counter(self).map_err(ContextError::ConnectionError)
     }
 
-    fn channel_end(
-        &self,
-        port_channel_id: &(PortId, ChannelId),
-    ) -> Result<ChannelEnd, ContextError> {
-        ChannelReader::channel_end(self, &port_channel_id.0, &port_channel_id.1)
-            .map_err(ContextError::ChannelError)
+    fn channel_end(&self, chan_end_path: &ChannelEndsPath) -> Result<ChannelEnd, ContextError> {
+        ChannelReader::channel_end(self, chan_end_path).map_err(ContextError::ChannelError)
     }
 
     fn connection_channels(
@@ -1583,50 +1580,41 @@ impl ValidationContext for MockContext {
 
     fn get_next_sequence_send(
         &self,
-        port_channel_id: &(PortId, ChannelId),
+        seq_send_path: &SeqSendsPath,
     ) -> Result<Sequence, ContextError> {
-        ChannelReader::get_next_sequence_send(self, &port_channel_id.0, &port_channel_id.1)
+        ChannelReader::get_next_sequence_send(self, seq_send_path)
             .map_err(ContextError::PacketError)
     }
 
     fn get_next_sequence_recv(
         &self,
-        port_channel_id: &(PortId, ChannelId),
+        seq_recv_path: &SeqRecvsPath,
     ) -> Result<Sequence, ContextError> {
-        ChannelReader::get_next_sequence_recv(self, &port_channel_id.0, &port_channel_id.1)
+        ChannelReader::get_next_sequence_recv(self, seq_recv_path)
             .map_err(ContextError::PacketError)
     }
 
-    fn get_next_sequence_ack(
-        &self,
-        port_channel_id: &(PortId, ChannelId),
-    ) -> Result<Sequence, ContextError> {
-        ChannelReader::get_next_sequence_ack(self, &port_channel_id.0, &port_channel_id.1)
-            .map_err(ContextError::PacketError)
+    fn get_next_sequence_ack(&self, seq_ack_path: &SeqAcksPath) -> Result<Sequence, ContextError> {
+        ChannelReader::get_next_sequence_ack(self, seq_ack_path).map_err(ContextError::PacketError)
     }
 
     fn get_packet_commitment(
         &self,
-        key: &(PortId, ChannelId, Sequence),
+        commitment_path: &CommitmentsPath,
     ) -> Result<PacketCommitment, ContextError> {
-        ChannelReader::get_packet_commitment(self, &key.0, &key.1, &key.2)
+        ChannelReader::get_packet_commitment(self, commitment_path)
             .map_err(ContextError::PacketError)
     }
 
-    fn get_packet_receipt(
-        &self,
-        key: &(PortId, ChannelId, Sequence),
-    ) -> Result<Receipt, ContextError> {
-        ChannelReader::get_packet_receipt(self, &key.0, &key.1, &key.2)
-            .map_err(ContextError::PacketError)
+    fn get_packet_receipt(&self, receipt_path: &ReceiptsPath) -> Result<Receipt, ContextError> {
+        ChannelReader::get_packet_receipt(self, receipt_path).map_err(ContextError::PacketError)
     }
 
     fn get_packet_acknowledgement(
         &self,
-        key: &(PortId, ChannelId, Sequence),
+        ack_path: &AcksPath,
     ) -> Result<AcknowledgementCommitment, ContextError> {
-        ChannelReader::get_packet_acknowledgement(self, &key.0, &key.1, &key.2)
-            .map_err(ContextError::PacketError)
+        ChannelReader::get_packet_acknowledgement(self, ack_path).map_err(ContextError::PacketError)
     }
 
     fn hash(&self, value: &[u8]) -> Vec<u8> {

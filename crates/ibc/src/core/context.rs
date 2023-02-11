@@ -44,8 +44,9 @@ use crate::core::ics05_port::error::PortError::UnknownPort;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics24_host::path::{
-    ClientConnectionsPath, ClientConsensusStatePath, ClientStatePath, ClientTypePath,
-    CommitmentsPath, ConnectionsPath, ReceiptsPath,
+    AcksPath, ChannelEndsPath, ClientConnectionsPath, ClientConsensusStatePath, ClientStatePath,
+    ClientTypePath, CommitmentsPath, ConnectionsPath, ReceiptsPath, SeqAcksPath, SeqRecvsPath,
+    SeqSendsPath,
 };
 use crate::core::ics26_routing::context::{Module, ModuleId};
 use crate::core::{
@@ -244,22 +245,19 @@ pub trait ValidationContext: Router {
     /// Returns an error if no such state exists.
     fn consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Box<dyn ConsensusState>, ContextError>;
 
     /// Search for the lowest consensus state higher than `height`.
     fn next_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        next_client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
 
     /// Search for the highest consensus state lower than `height`.
     fn prev_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        prev_client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
 
     /// Returns the current height of the local chain.
@@ -316,10 +314,7 @@ pub trait ValidationContext: Router {
     }
 
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
-    fn channel_end(
-        &self,
-        port_channel_id: &(PortId, ChannelId),
-    ) -> Result<ChannelEnd, ContextError>;
+    fn channel_end(&self, channel_end_path: &ChannelEndsPath) -> Result<ChannelEnd, ContextError>;
 
     fn connection_channels(
         &self,
@@ -328,32 +323,26 @@ pub trait ValidationContext: Router {
 
     fn get_next_sequence_send(
         &self,
-        port_channel_id: &(PortId, ChannelId),
+        seq_send_path: &SeqSendsPath,
     ) -> Result<Sequence, ContextError>;
 
     fn get_next_sequence_recv(
         &self,
-        port_channel_id: &(PortId, ChannelId),
+        seq_recv_path: &SeqRecvsPath,
     ) -> Result<Sequence, ContextError>;
 
-    fn get_next_sequence_ack(
-        &self,
-        port_channel_id: &(PortId, ChannelId),
-    ) -> Result<Sequence, ContextError>;
+    fn get_next_sequence_ack(&self, seq_acks_path: &SeqAcksPath) -> Result<Sequence, ContextError>;
 
     fn get_packet_commitment(
         &self,
-        key: &(PortId, ChannelId, Sequence),
+        commitment_path: &CommitmentsPath,
     ) -> Result<PacketCommitment, ContextError>;
 
-    fn get_packet_receipt(
-        &self,
-        key: &(PortId, ChannelId, Sequence),
-    ) -> Result<Receipt, ContextError>;
+    fn get_packet_receipt(&self, receipts_path: &ReceiptsPath) -> Result<Receipt, ContextError>;
 
     fn get_packet_acknowledgement(
         &self,
-        key: &(PortId, ChannelId, Sequence),
+        ack_path: &AcksPath,
     ) -> Result<AcknowledgementCommitment, ContextError>;
 
     /// Compute the commitment for a packet.
@@ -534,14 +523,14 @@ pub trait ExecutionContext: ValidationContext {
     /// Stores the given connection_end at path
     fn store_connection(
         &mut self,
-        connections_path: ConnectionsPath,
+        connection_path: ConnectionsPath,
         connection_end: ConnectionEnd,
     ) -> Result<(), ContextError>;
 
     /// Stores the given connection_id at a path associated with the client_id.
     fn store_connection_to_client(
         &mut self,
-        client_connections_path: ClientConnectionsPath,
+        client_connection_path: ClientConnectionsPath,
         conn_id: ConnectionId,
     ) -> Result<(), ContextError>;
 
@@ -552,7 +541,7 @@ pub trait ExecutionContext: ValidationContext {
 
     fn store_packet_commitment(
         &mut self,
-        commitments_path: CommitmentsPath,
+        commitment_path: CommitmentsPath,
         commitment: PacketCommitment,
     ) -> Result<(), ContextError>;
 
@@ -560,49 +549,40 @@ pub trait ExecutionContext: ValidationContext {
 
     fn store_packet_receipt(
         &mut self,
-        path: ReceiptsPath,
+        receipt_path: ReceiptsPath,
         receipt: Receipt,
     ) -> Result<(), ContextError>;
 
     fn store_packet_acknowledgement(
         &mut self,
-        key: (PortId, ChannelId, Sequence),
+        ack_path: AcksPath,
         ack_commitment: AcknowledgementCommitment,
     ) -> Result<(), ContextError>;
 
-    fn delete_packet_acknowledgement(
-        &mut self,
-        key: (PortId, ChannelId, Sequence),
-    ) -> Result<(), ContextError>;
-
-    fn store_connection_channels(
-        &mut self,
-        conn_id: ConnectionId,
-        port_channel_id: (PortId, ChannelId),
-    ) -> Result<(), ContextError>;
+    fn delete_packet_acknowledgement(&mut self, acks_path: AcksPath) -> Result<(), ContextError>;
 
     /// Stores the given channel_end at a path associated with the port_id and channel_id.
     fn store_channel(
         &mut self,
-        port_channel_id: (PortId, ChannelId),
+        channel_end_path: ChannelEndsPath,
         channel_end: ChannelEnd,
     ) -> Result<(), ContextError>;
 
     fn store_next_sequence_send(
         &mut self,
-        port_channel_id: (PortId, ChannelId),
+        seq_send_path: SeqSendsPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
 
     fn store_next_sequence_recv(
         &mut self,
-        port_channel_id: (PortId, ChannelId),
+        seq_recv_path: SeqRecvsPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
 
     fn store_next_sequence_ack(
         &mut self,
-        port_channel_id: (PortId, ChannelId),
+        seq_ack_path: SeqAcksPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
 
@@ -669,7 +649,6 @@ where
 
     // state changes
     {
-        let port_channel_id_on_a = (msg.port_id_on_a.clone(), chan_id_on_a.clone());
         let chan_end_on_a = ChannelEnd::new(
             State::Init,
             msg.ordering,
@@ -677,18 +656,20 @@ where
             msg.connection_hops_on_a.clone(),
             msg.version_proposal.clone(),
         );
-
-        ctx_a.store_channel(port_channel_id_on_a.clone(), chan_end_on_a)?;
+        let chan_end_path_on_a = ChannelEndsPath::new(&msg.port_id_on_a, &chan_id_on_a);
+        ctx_a.store_channel(chan_end_path_on_a, chan_end_on_a)?;
 
         ctx_a.increase_channel_counter();
 
-        // Associate also the channel end to its connection.
-        ctx_a.store_connection_channels(conn_id_on_a.clone(), port_channel_id_on_a.clone())?;
-
         // Initialize send, recv, and ack sequence numbers.
-        ctx_a.store_next_sequence_send(port_channel_id_on_a.clone(), 1.into())?;
-        ctx_a.store_next_sequence_recv(port_channel_id_on_a.clone(), 1.into())?;
-        ctx_a.store_next_sequence_ack(port_channel_id_on_a, 1.into())?;
+        let seq_send_path = SeqSendsPath::new(&msg.port_id_on_a, &chan_id_on_a);
+        ctx_a.store_next_sequence_send(seq_send_path, 1.into())?;
+
+        let seq_recv_path = SeqRecvsPath::new(&msg.port_id_on_a, &chan_id_on_a);
+        ctx_a.store_next_sequence_recv(seq_recv_path, 1.into())?;
+
+        let seq_ack_path = SeqAcksPath::new(&msg.port_id_on_a, &chan_id_on_a);
+        ctx_a.store_next_sequence_ack(seq_ack_path, 1.into())?;
     }
 
     // emit events and logs
@@ -769,7 +750,6 @@ where
 
     // state changes
     {
-        let port_channel_id_on_b = (msg.port_id_on_b.clone(), chan_id_on_b.clone());
         let chan_end_on_b = ChannelEnd::new(
             State::TryOpen,
             msg.ordering,
@@ -778,17 +758,19 @@ where
             version.clone(),
         );
 
-        ctx_b.store_channel(port_channel_id_on_b.clone(), chan_end_on_b)?;
-
+        let chan_end_path_on_b = ChannelEndsPath::new(&msg.port_id_on_b, &chan_id_on_b);
+        ctx_b.store_channel(chan_end_path_on_b, chan_end_on_b)?;
         ctx_b.increase_channel_counter();
 
-        // Associate also the channel end to its connection.
-        ctx_b.store_connection_channels(conn_id_on_b.clone(), port_channel_id_on_b.clone())?;
-
         // Initialize send, recv, and ack sequence numbers.
-        ctx_b.store_next_sequence_send(port_channel_id_on_b.clone(), 1.into())?;
-        ctx_b.store_next_sequence_recv(port_channel_id_on_b.clone(), 1.into())?;
-        ctx_b.store_next_sequence_ack(port_channel_id_on_b, 1.into())?;
+        let seq_send_path = SeqSendsPath::new(&msg.port_id_on_b, &chan_id_on_b);
+        ctx_b.store_next_sequence_send(seq_send_path, 1.into())?;
+
+        let seq_recv_path = SeqRecvsPath::new(&msg.port_id_on_b, &chan_id_on_b);
+        ctx_b.store_next_sequence_recv(seq_recv_path, 1.into())?;
+
+        let seq_ack_path = SeqAcksPath::new(&msg.port_id_on_b, &chan_id_on_b);
+        ctx_b.store_next_sequence_ack(seq_ack_path, 1.into())?;
     }
 
     // emit events and logs
@@ -850,12 +832,11 @@ where
         .ok_or(ChannelError::RouteNotFound)?;
     let extras =
         module.on_chan_open_ack_execute(&msg.port_id_on_a, &msg.chan_id_on_a, &msg.version_on_b)?;
-
-    let chan_end_on_a = ctx_a.channel_end(&(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()))?;
+    let chan_end_path_on_a = ChannelEndsPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     // state changes
     {
-        let port_channel_id_on_a = (msg.port_id_on_a.clone(), msg.chan_id_on_a.clone());
         let chan_end_on_a = {
             let mut chan_end_on_a = chan_end_on_a.clone();
 
@@ -865,8 +846,7 @@ where
 
             chan_end_on_a
         };
-
-        ctx_a.store_channel(port_channel_id_on_a, chan_end_on_a)?;
+        ctx_a.store_channel(chan_end_path_on_a, chan_end_on_a)?;
     }
 
     // emit events and logs
@@ -930,20 +910,18 @@ where
         .ok_or(ChannelError::RouteNotFound)?;
 
     let extras = module.on_chan_open_confirm_execute(&msg.port_id_on_b, &msg.chan_id_on_b)?;
-
-    let chan_end_on_b = ctx_b.channel_end(&(msg.port_id_on_b.clone(), msg.chan_id_on_b.clone()))?;
+    let chan_end_path_on_b = ChannelEndsPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);
+    let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     // state changes
     {
-        let port_channel_id_on_b = (msg.port_id_on_b.clone(), msg.chan_id_on_b.clone());
         let chan_end_on_b = {
             let mut chan_end_on_b = chan_end_on_b.clone();
             chan_end_on_b.set_state(State::Open);
 
             chan_end_on_b
         };
-
-        ctx_b.store_channel(port_channel_id_on_b, chan_end_on_b)?;
+        ctx_b.store_channel(chan_end_path_on_b, chan_end_on_b)?;
     }
 
     // emit events and logs
@@ -1013,8 +991,8 @@ where
         .get_route_mut(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     let extras = module.on_chan_close_init_execute(&msg.port_id_on_a, &msg.chan_id_on_a)?;
-
-    let chan_end_on_a = ctx_a.channel_end(&(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()))?;
+    let chan_end_path_on_a = ChannelEndsPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     // state changes
     {
@@ -1024,8 +1002,7 @@ where
             chan_end_on_a
         };
 
-        let port_channel_id_on_a = (msg.port_id_on_a.clone(), msg.chan_id_on_a.clone());
-        ctx_a.store_channel(port_channel_id_on_a, chan_end_on_a)?;
+        ctx_a.store_channel(chan_end_path_on_a, chan_end_on_a)?;
     }
 
     // emit events and logs
@@ -1097,8 +1074,8 @@ where
         .get_route_mut(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     let extras = module.on_chan_close_confirm_execute(&msg.port_id_on_b, &msg.chan_id_on_b)?;
-
-    let chan_end_on_b = ctx_b.channel_end(&(msg.port_id_on_b.clone(), msg.chan_id_on_b.clone()))?;
+    let chan_end_path_on_b = ChannelEndsPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);
+    let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     // state changes
     {
@@ -1107,9 +1084,7 @@ where
             chan_end_on_b.set_state(State::Closed);
             chan_end_on_b
         };
-
-        let port_channel_id_on_b = (msg.port_id_on_b.clone(), msg.chan_id_on_b.clone());
-        ctx_b.store_channel(port_channel_id_on_b, chan_end_on_b)?;
+        ctx_b.store_channel(chan_end_path_on_b, chan_end_on_b)?;
     }
 
     // emit events and logs
@@ -1169,8 +1144,8 @@ fn recv_packet_execute<ExecCtx>(
 where
     ExecCtx: ExecutionContext,
 {
-    let chan_port_id_on_b = (msg.packet.port_on_b.clone(), msg.packet.chan_on_b.clone());
-    let chan_end_on_b = ctx_b.channel_end(&chan_port_id_on_b)?;
+    let chan_end_path_on_b = ChannelEndsPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+    let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     // Check if another relayer already relayed the packet.
     // We don't want to fail the transaction in this case.
@@ -1180,13 +1155,14 @@ where
             Order::None => false,
             Order::Unordered => {
                 let packet = msg.packet.clone();
-
-                ctx_b
-                    .get_packet_receipt(&(packet.port_on_b, packet.chan_on_b, packet.sequence))
-                    .is_ok()
+                let receipt_path_on_b =
+                    ReceiptsPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);
+                ctx_b.get_packet_receipt(&receipt_path_on_b).is_ok()
             }
             Order::Ordered => {
-                let next_seq_recv = ctx_b.get_next_sequence_recv(&chan_port_id_on_b)?;
+                let seq_recv_path_on_b =
+                    SeqRecvsPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+                let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
 
                 // the sequence number has already been incremented, so
                 // another relayer already relayed the packet
@@ -1219,24 +1195,19 @@ where
                 ctx_b.store_packet_receipt(path, Receipt::Ok)?;
             }
             Order::Ordered => {
-                let port_chan_id_on_b =
-                    (msg.packet.port_on_b.clone(), msg.packet.chan_on_b.clone());
-                let next_seq_recv = ctx_b.get_next_sequence_recv(&port_chan_id_on_b)?;
-
-                ctx_b.store_next_sequence_recv(port_chan_id_on_b, next_seq_recv.increment())?;
+                let seq_recv_path = SeqRecvsPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+                let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path)?;
+                ctx_b.store_next_sequence_recv(seq_recv_path, next_seq_recv.increment())?;
             }
             _ => {}
         }
-
+        let ack_path = AcksPath::new(
+            &msg.packet.port_on_b,
+            &msg.packet.chan_on_b,
+            msg.packet.sequence,
+        );
         // `writeAcknowledgement` handler state changes
-        ctx_b.store_packet_acknowledgement(
-            (
-                msg.packet.port_on_b.clone(),
-                msg.packet.chan_on_b.clone(),
-                msg.packet.sequence,
-            ),
-            ctx_b.ack_commitment(&acknowledgement),
-        )?;
+        ctx_b.store_packet_acknowledgement(ack_path, ctx_b.ack_commitment(&acknowledgement))?;
     }
 
     // emit events and logs
@@ -1295,8 +1266,8 @@ fn acknowledgement_packet_execute<ExecCtx>(
 where
     ExecCtx: ExecutionContext,
 {
-    let port_chan_id_on_a = (msg.packet.port_on_a.clone(), msg.packet.chan_on_a.clone());
-    let chan_end_on_a = ctx_a.channel_end(&port_chan_id_on_a)?;
+    let chan_end_path_on_a = ChannelEndsPath::new(&msg.packet.port_on_a, &msg.packet.chan_on_a);
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
     let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
 
     // In all cases, this event is emitted
@@ -1306,15 +1277,14 @@ where
         conn_id_on_a.clone(),
     )));
 
+    let commitment_path = CommitmentsPath::new(
+        &msg.packet.port_on_a,
+        &msg.packet.chan_on_a,
+        msg.packet.sequence,
+    );
+
     // check if we're in the NO-OP case
-    if ctx_a
-        .get_packet_commitment(&(
-            msg.packet.port_on_a.clone(),
-            msg.packet.chan_on_a.clone(),
-            msg.packet.sequence,
-        ))
-        .is_err()
-    {
+    if ctx_a.get_packet_commitment(&commitment_path).is_err() {
         // This error indicates that the timeout has already been relayed
         // or there is a misconfigured relayer attempting to prove a timeout
         // for a packet never sent. Core IBC will treat this error as a no-op in order to
@@ -1343,7 +1313,8 @@ where
         if let Order::Ordered = chan_end_on_a.ordering {
             // Note: in validation, we verified that `msg.packet.sequence == nextSeqRecv`
             // (where `nextSeqRecv` is the value in the store)
-            ctx_a.store_next_sequence_ack(port_chan_id_on_a, msg.packet.sequence.increment())?;
+            let seq_ack_path = SeqAcksPath::new(&msg.packet.port_on_a, &msg.packet.chan_on_a);
+            ctx_a.store_next_sequence_ack(seq_ack_path, msg.packet.sequence.increment())?;
         }
     }
 
@@ -1409,9 +1380,8 @@ where
         TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),
         TimeoutMsgType::TimeoutOnClose(msg) => (msg.packet, msg.signer),
     };
-
-    let port_chan_id_on_a = (packet.port_on_a.clone(), packet.chan_on_a.clone());
-    let chan_end_on_a = ctx_a.channel_end(&port_chan_id_on_a)?;
+    let chan_end_path_on_a = ChannelEndsPath::new(&packet.port_on_a, &packet.chan_on_a);
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     // In all cases, this event is emitted
     ctx_a.emit_ibc_event(IbcEvent::TimeoutPacket(TimeoutPacket::new(
@@ -1419,15 +1389,11 @@ where
         chan_end_on_a.ordering,
     )));
 
+    let commitment_path_on_a =
+        CommitmentsPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
+
     // check if we're in the NO-OP case
-    if ctx_a
-        .get_packet_commitment(&(
-            packet.port_on_a.clone(),
-            packet.chan_on_a.clone(),
-            packet.sequence,
-        ))
-        .is_err()
-    {
+    if ctx_a.get_packet_commitment(&commitment_path_on_a).is_err() {
         // This error indicates that the timeout has already been relayed
         // or there is a misconfigured relayer attempting to prove a timeout
         // for a packet never sent. Core IBC will treat this error as a no-op in order to
@@ -1455,7 +1421,7 @@ where
         if let Order::Ordered = chan_end_on_a.ordering {
             let mut chan_end_on_a = chan_end_on_a;
             chan_end_on_a.state = State::Closed;
-            ctx_a.store_channel(port_chan_id_on_a, chan_end_on_a.clone())?;
+            ctx_a.store_channel(chan_end_path_on_a, chan_end_on_a.clone())?;
 
             chan_end_on_a
         } else {

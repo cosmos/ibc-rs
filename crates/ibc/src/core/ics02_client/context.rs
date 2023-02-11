@@ -12,6 +12,7 @@ use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::handler::ClientResult::{self, Create, Update, Upgrade};
 use crate::core::ics24_host::identifier::ClientId;
+use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::timestamp::Timestamp;
 use crate::Height;
 
@@ -32,22 +33,19 @@ pub trait ClientReader {
     /// Returns an error if no such state exists.
     fn consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Box<dyn ConsensusState>, ClientError>;
 
     /// Search for the lowest consensus state higher than `height`.
     fn next_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        next_client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Option<Box<dyn ConsensusState>>, ClientError>;
 
     /// Search for the highest consensus state lower than `height`.
     fn prev_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        prev_client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Option<Box<dyn ConsensusState>>, ClientError>;
 
     /// Returns the current height of the local chain.

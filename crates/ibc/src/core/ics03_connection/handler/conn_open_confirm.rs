@@ -14,7 +14,7 @@ use crate::core::context::ContextError;
 
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 
-use crate::core::ics24_host::path::ConnectionsPath;
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ConnectionsPath};
 
 use crate::core::{ExecutionContext, ValidationContext};
 
@@ -54,8 +54,10 @@ where
                 .map_err(|_| ConnectionError::Other {
                     description: "failed to fetch client state".to_string(),
                 })?;
+        let client_cons_state_path_on_b =
+            ClientConsensusStatePath::new(client_id_on_b, &msg.proof_height_on_a);
         let consensus_state_of_a_on_b = ctx_b
-            .consensus_state(client_id_on_b, &msg.proof_height_on_a)
+            .consensus_state(&client_cons_state_path_on_b)
             .map_err(|_| ConnectionError::Other {
                 description: "failed to fetch client consensus state".to_string(),
             })?;
@@ -81,7 +83,7 @@ where
                 prefix_on_a,
                 &msg.proof_conn_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                conn_id_on_a,
+                &ConnectionsPath(conn_id_on_a.clone()),
                 &expected_conn_end_on_a,
             )
             .map_err(ConnectionError::VerifyConnectionState)?;
@@ -192,8 +194,10 @@ pub(crate) fn process(
     // Verify proofs
     {
         let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
+        let client_cons_state_path_on_b =
+            ClientConsensusStatePath::new(client_id_on_b, &msg.proof_height_on_a);
         let consensus_state_of_a_on_b =
-            ctx_b.client_consensus_state(client_id_on_b, &msg.proof_height_on_a)?;
+            ctx_b.client_consensus_state(&client_cons_state_path_on_b)?;
 
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let prefix_on_b = ctx_b.commitment_prefix();
@@ -216,7 +220,7 @@ pub(crate) fn process(
                 prefix_on_a,
                 &msg.proof_conn_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                conn_id_on_a,
+                &ConnectionsPath::new(conn_id_on_a),
                 &expected_conn_end_on_a,
             )
             .map_err(ConnectionError::VerifyConnectionState)?;

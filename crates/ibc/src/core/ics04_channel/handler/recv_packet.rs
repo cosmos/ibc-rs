@@ -7,6 +7,10 @@ use crate::core::ics04_channel::events::ReceivePacket;
 use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
 use crate::core::ics04_channel::packet::{PacketResult, Receipt, Sequence};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
+use crate::core::ics24_host::path::{
+    AcksPath, ChannelEndsPath, ClientConsensusStatePath, CommitmentsPath, ReceiptsPath,
+    SeqRecvsPath,
+};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::timestamp::Expiry;
@@ -17,8 +21,8 @@ pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextErro
 where
     Ctx: ValidationContext,
 {
-    let port_chan_id_on_b = &(msg.packet.port_on_b.clone(), msg.packet.chan_on_b.clone());
-    let chan_end_on_b = ctx_b.channel_end(port_chan_id_on_b)?;
+    let chan_end_path_on_b = ChannelEndsPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+    let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     if !chan_end_on_b.state_matches(&State::Open) {
         return Err(PacketError::InvalidChannelState {
@@ -78,14 +82,21 @@ where
             .into());
         }
 
-        let consensus_state_of_a_on_b =
-            ctx_b.consensus_state(client_id_on_b, &msg.proof_height_on_a)?;
+        let client_cons_state_path_on_b =
+            ClientConsensusStatePath::new(client_id_on_b, &msg.proof_height_on_a);
+        let consensus_state_of_a_on_b = ctx_b.consensus_state(&client_cons_state_path_on_b)?;
 
         let expected_commitment_on_a = ctx_b.packet_commitment(
             &msg.packet.data,
             &msg.packet.timeout_height_on_b,
             &msg.packet.timeout_timestamp_on_b,
         );
+        let commitment_path_on_a = CommitmentsPath::new(
+            &msg.packet.port_on_a,
+            &msg.packet.chan_on_a,
+            msg.packet.sequence,
+        );
+
         // Verify the proof for the packet against the chain store.
         client_state_of_a_on_b
             .new_verify_packet_data(
@@ -94,9 +105,7 @@ where
                 &conn_end_on_b,
                 &msg.proof_commitment_on_a,
                 consensus_state_of_a_on_b.root(),
-                &msg.packet.port_on_a,
-                &msg.packet.chan_on_a,
-                msg.packet.sequence,
+                &commitment_path_on_a,
                 expected_commitment_on_a,
             )
             .map_err(|e| ChannelError::PacketVerificationFailed {
@@ -107,7 +116,8 @@ where
     }
 
     if chan_end_on_b.order_matches(&Order::Ordered) {
-        let next_seq_recv = ctx_b.get_next_sequence_recv(port_chan_id_on_b)?;
+        let seq_recv_path_on_b = SeqRecvsPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+        let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
         if msg.packet.sequence > next_seq_recv {
             return Err(PacketError::InvalidPacketSequence {
                 given_sequence: msg.packet.sequence,
@@ -122,11 +132,12 @@ where
             validate_write_acknowledgement(ctx_b, msg)?;
         }
     } else {
-        let packet_rec = ctx_b.get_packet_receipt(&(
-            msg.packet.port_on_b.clone(),
-            msg.packet.chan_on_b.clone(),
+        let receipt_path_on_b = ReceiptsPath::new(
+            &msg.packet.port_on_a,
+            &msg.packet.chan_on_a,
             msg.packet.sequence,
-        ));
+        );
+        let packet_rec = ctx_b.get_packet_receipt(&receipt_path_on_b);
         match packet_rec {
             Ok(_receipt) => {}
             Err(ContextError::PacketError(PacketError::PacketReceiptNotFound { sequence }))
@@ -146,10 +157,8 @@ where
     Ctx: ValidationContext,
 {
     let packet = msg.packet.clone();
-    if ctx_b
-        .get_packet_acknowledgement(&(packet.port_on_b, packet.chan_on_b, packet.sequence))
-        .is_ok()
-    {
+    let ack_path_on_b = AcksPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);
+    if ctx_b.get_packet_acknowledgement(&ack_path_on_b).is_ok() {
         return Err(PacketError::AcknowledgementExists {
             sequence: msg.packet.sequence,
         }
@@ -182,8 +191,9 @@ pub(crate) fn process<Ctx: ChannelReader>(
 ) -> HandlerResult<PacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
+    let chan_end_path_on_b = ChannelEndsPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
     let chan_end_on_b = ctx_b
-        .channel_end(&msg.packet.port_on_b, &msg.packet.chan_on_b)
+        .channel_end(&chan_end_path_on_b)
         .map_err(PacketError::Channel)?;
 
     if !chan_end_on_b.state_matches(&State::Open) {
@@ -243,8 +253,10 @@ pub(crate) fn process<Ctx: ChannelReader>(
             });
         }
 
+        let client_cons_state_path_on_b =
+            ClientConsensusStatePath::new(client_id_on_b, &msg.proof_height_on_a);
         let consensus_state_of_a_on_b = ctx_b
-            .client_consensus_state(client_id_on_b, &msg.proof_height_on_a)
+            .client_consensus_state(&client_cons_state_path_on_b)
             .map_err(PacketError::Channel)?;
 
         let expected_commitment_on_a = ctx_b.packet_commitment(
@@ -252,6 +264,13 @@ pub(crate) fn process<Ctx: ChannelReader>(
             &msg.packet.timeout_height_on_b,
             &msg.packet.timeout_timestamp_on_b,
         );
+
+        let commitment_path_on_a = CommitmentsPath::new(
+            &msg.packet.port_on_a,
+            &msg.packet.chan_on_a,
+            msg.packet.sequence,
+        );
+
         // Verify the proof for the packet against the chain store.
         client_state_of_a_on_b
             .verify_packet_data(
@@ -260,9 +279,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
                 &conn_end_on_b,
                 &msg.proof_commitment_on_a,
                 consensus_state_of_a_on_b.root(),
-                &msg.packet.port_on_a,
-                &msg.packet.chan_on_a,
-                msg.packet.sequence,
+                &commitment_path_on_a,
                 expected_commitment_on_a,
             )
             .map_err(|e| ChannelError::PacketVerificationFailed {
@@ -273,8 +290,8 @@ pub(crate) fn process<Ctx: ChannelReader>(
     }
 
     let result = if chan_end_on_b.order_matches(&Order::Ordered) {
-        let next_seq_recv =
-            ctx_b.get_next_sequence_recv(&msg.packet.port_on_b, &msg.packet.chan_on_b)?;
+        let seq_recv_path_on_b = SeqRecvsPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+        let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
         if msg.packet.sequence > next_seq_recv {
             return Err(PacketError::InvalidPacketSequence {
                 given_sequence: msg.packet.sequence,
@@ -292,12 +309,12 @@ pub(crate) fn process<Ctx: ChannelReader>(
             })
         }
     } else {
-        let packet_rec = ctx_b.get_packet_receipt(
+        let receipt_path_on_b = ReceiptsPath::new(
             &msg.packet.port_on_b,
             &msg.packet.chan_on_b,
-            &msg.packet.sequence,
+            msg.packet.sequence,
         );
-
+        let packet_rec = ctx_b.get_packet_receipt(&receipt_path_on_b);
         match packet_rec {
             Ok(_receipt) => PacketResult::Recv(RecvPacketResult::NoOp),
             Err(PacketError::PacketReceiptNotFound { sequence })

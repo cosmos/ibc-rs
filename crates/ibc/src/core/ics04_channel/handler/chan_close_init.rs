@@ -5,6 +5,7 @@ use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
+use crate::core::ics24_host::path::ChannelEndsPath;
 use crate::handler::{HandlerOutput, HandlerResult};
 
 use crate::core::{ContextError, ValidationContext};
@@ -13,7 +14,8 @@ pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelCloseInit) -> Result<(), Conte
 where
     Ctx: ValidationContext,
 {
-    let chan_end_on_a = ctx_a.channel_end(&(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()))?;
+    let chan_end_path_on_a = ChannelEndsPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     // Validate that the channel end is in a state where it can be closed.
     if chan_end_on_a.state_matches(&State::Closed) {
@@ -52,7 +54,8 @@ pub(crate) fn process<Ctx: ChannelReader>(
 ) -> HandlerResult<ChannelResult, ChannelError> {
     let mut output = HandlerOutput::builder();
 
-    let chan_end_on_a = ctx_a.channel_end(&msg.port_id_on_a, &msg.chan_id_on_a)?;
+    let chan_end_path_on_a = ChannelEndsPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     // Validate that the channel end is in a state where it can be closed.
     if chan_end_on_a.state_matches(&State::Closed) {

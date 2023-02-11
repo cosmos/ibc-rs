@@ -51,8 +51,10 @@ where
     }
 
     // Read the latest consensus state from the host chain store.
+    let old_client_cons_state_path =
+        ClientConsensusStatePath::new(&client_id, &old_client_state.latest_height());
     let old_consensus_state = ctx
-        .consensus_state(&client_id, &old_client_state.latest_height())
+        .consensus_state(&old_client_cons_state_path)
         .map_err(|_| ClientError::ConsensusStateNotFound {
             client_id: client_id.clone(),
             height: old_client_state.latest_height(),
@@ -104,7 +106,7 @@ where
 
     ctx.store_client_state(ClientStatePath(client_id.clone()), client_state.clone())?;
     ctx.store_consensus_state(
-        ClientConsensusStatePath::new(client_id.clone(), client_state.latest_height()),
+        ClientConsensusStatePath::new(&client_id, &client_state.latest_height()),
         consensus_state,
     )?;
 
@@ -140,8 +142,10 @@ pub(crate) fn process(
     }
 
     // Read the latest consensus state from the host chain store.
+    let old_client_cons_state_path =
+        ClientConsensusStatePath::new(&client_id, &old_client_state.latest_height());
     let old_consensus_state = ctx
-        .consensus_state(&client_id, &old_client_state.latest_height())
+        .consensus_state(&old_client_cons_state_path)
         .map_err(|_| ClientError::ConsensusStateNotFound {
             client_id: client_id.clone(),
             height: old_client_state.latest_height(),

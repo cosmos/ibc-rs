@@ -5,6 +5,7 @@ use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
+use crate::core::ics24_host::path::{ChannelEndsPath, ClientConsensusStatePath};
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
@@ -14,7 +15,8 @@ pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenAck) -> Result<(), Context
 where
     Ctx: ValidationContext,
 {
-    let chan_end_on_a = ctx_a.channel_end(&(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()))?;
+    let chan_end_path_on_a = ChannelEndsPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     // Validate that the channel end is in a state where it can be ack.
     if !chan_end_on_a.state_matches(&State::Init) {
@@ -48,8 +50,9 @@ where
     {
         let client_id_on_a = conn_end_on_a.client_id();
         let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
-        let consensus_state_of_b_on_a =
-            ctx_a.consensus_state(client_id_on_a, &msg.proof_height_on_b)?;
+        let client_cons_state_path_on_a =
+            ClientConsensusStatePath::new(client_id_on_a, &msg.proof_height_on_b);
+        let consensus_state_of_b_on_a = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
         let prefix_on_b = conn_end_on_a.counterparty().prefix();
         let port_id_on_b = &chan_end_on_a.counterparty().port_id;
         let conn_id_on_b = conn_end_on_a.counterparty().connection_id().ok_or(
@@ -75,6 +78,7 @@ where
             vec![conn_id_on_b.clone()],
             msg.version_on_b.clone(),
         );
+        let chan_end_path_on_b = ChannelEndsPath::new(port_id_on_b, &msg.chan_id_on_b);
 
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
@@ -84,8 +88,7 @@ where
                 prefix_on_b,
                 &msg.proof_chan_end_on_b,
                 consensus_state_of_b_on_a.root(),
-                port_id_on_b,
-                &msg.chan_id_on_b,
+                &chan_end_path_on_b,
                 &expected_chan_end_on_b,
             )
             .map_err(ChannelError::VerifyChannelFailed)?;
@@ -102,7 +105,8 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let mut output = HandlerOutput::builder();
 
     // Unwrap the old channel end and validate it against the message.
-    let chan_end_on_a = ctx_a.channel_end(&msg.port_id_on_a, &msg.chan_id_on_a)?;
+    let chan_ends_path_on_a = &ChannelEndsPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
+    let chan_end_on_a = ctx_a.channel_end(chan_ends_path_on_a)?;
 
     // Validate that the channel end is in a state where it can be ack.
     if !chan_end_on_a.state_matches(&State::Init) {
@@ -133,8 +137,10 @@ pub(crate) fn process<Ctx: ChannelReader>(
     {
         let client_id_on_a = conn_end_on_a.client_id();
         let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
+        let client_cons_state_path_on_a =
+            ClientConsensusStatePath::new(client_id_on_a, &msg.proof_height_on_b);
         let consensus_state_of_b_on_a =
-            ctx_a.client_consensus_state(client_id_on_a, &msg.proof_height_on_b)?;
+            ctx_a.client_consensus_state(&client_cons_state_path_on_a)?;
         let prefix_on_b = conn_end_on_a.counterparty().prefix();
         let port_id_on_b = &chan_end_on_a.counterparty().port_id;
         let conn_id_on_b = conn_end_on_a.counterparty().connection_id().ok_or(
@@ -159,6 +165,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
             vec![conn_id_on_b.clone()],
             msg.version_on_b.clone(),
         );
+        let chan_end_path_on_b = ChannelEndsPath::new(port_id_on_b, &msg.chan_id_on_b);
 
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
@@ -168,8 +175,7 @@ pub(crate) fn process<Ctx: ChannelReader>(
                 prefix_on_b,
                 &msg.proof_chan_end_on_b,
                 consensus_state_of_b_on_a.root(),
-                port_id_on_b,
-                &msg.chan_id_on_b,
+                &chan_end_path_on_b,
                 &expected_chan_end_on_b,
             )
             .map_err(ChannelError::VerifyChannelFailed)?;
