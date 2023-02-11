@@ -54,14 +54,14 @@ pub trait ChannelReader {
 
     fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath) -> Result<Sequence, PacketError>;
 
-    fn get_next_sequence_ack(&self, seq_acks_path: &SeqAckPath) -> Result<Sequence, PacketError>;
+    fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, PacketError>;
 
     fn get_packet_commitment(
         &self,
         commitment_path: &CommitmentPath,
     ) -> Result<PacketCommitment, PacketError>;
 
-    fn get_packet_receipt(&self, receipts_path: &ReceiptPath) -> Result<Receipt, PacketError>;
+    fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, PacketError>;
 
     fn get_packet_acknowledgement(
         &self,
