@@ -161,6 +161,7 @@ mod tests {
     use crate::core::ics24_host::identifier::PortId;
     use crate::test_utils::DummyTransferModule;
     use crate::timestamp::ZERO_DURATION;
+    use crate::Height;
     use crate::{
         core::{
             ics03_connection::connection::ConnectionEnd,
@@ -186,7 +187,8 @@ mod tests {
 
     #[fixture]
     fn fixture() -> Fixture {
-        let mut ctx = MockContext::default();
+        let client_height = Height::new(0, 2).unwrap();
+        let mut ctx = MockContext::default().with_client(&ClientId::default(), client_height);
 
         let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
         let module = DummyTransferModule::new(ctx.ibc_store_share());

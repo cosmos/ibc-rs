@@ -330,6 +330,7 @@ mod tests {
     use crate::core::ics04_channel::commitment::PacketCommitment;
     use crate::core::ics04_channel::handler::timeout_on_close::validate;
     use crate::prelude::*;
+    use crate::Height;
     use rstest::*;
 
     use crate::core::ics03_connection::connection::ConnectionEnd;
@@ -355,7 +356,8 @@ mod tests {
 
     #[fixture]
     fn fixture() -> Fixture {
-        let context = MockContext::default();
+        let client_height = Height::new(0, 2).unwrap();
+        let context = MockContext::default().with_client(&ClientId::default(), client_height);
 
         let height = 2;
         let timeout_timestamp = 5;
@@ -459,6 +461,9 @@ mod tests {
 
         let res = validate(&context, &msg);
 
-        assert!(res.is_ok(), "Happy path: validation should succeed")
+        assert!(
+            res.is_ok(),
+            "Happy path: validation should succeed. err: {res:?}"
+        )
     }
 }
