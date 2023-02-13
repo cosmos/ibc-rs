@@ -23,6 +23,7 @@ use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
+use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath, SeqSendPath};
 use crate::core::ics26_routing::context::{Module, ModuleOutputBuilder};
 use crate::mock::context::MockIbcStore;
 use crate::prelude::*;
@@ -308,22 +309,18 @@ impl TokenTransferReader for DummyTransferModule {
 }
 
 impl SendPacketReader for DummyTransferModule {
-    fn channel_end(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<ChannelEnd, PacketError> {
+    fn channel_end(&self, chan_end_path: &ChannelEndPath) -> Result<ChannelEnd, PacketError> {
         match self
             .ibc_store
             .lock()
             .channels
-            .get(port_id)
-            .and_then(|map| map.get(channel_id))
+            .get(&chan_end_path.0)
+            .and_then(|map| map.get(&chan_end_path.1))
         {
             Some(channel_end) => Ok(channel_end.clone()),
             None => Err(PacketError::ChannelNotFound {
-                port_id: port_id.clone(),
-                channel_id: channel_id.clone(),
+                port_id: chan_end_path.0.clone(),
+                channel_id: chan_end_path.1.clone(),
             }),
         }
     }
@@ -357,41 +354,43 @@ impl SendPacketReader for DummyTransferModule {
 
     fn client_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Box<dyn ConsensusState>, PacketError> {
-        match self.ibc_store.lock().clients.get(client_id) {
-            Some(client_record) => match client_record.consensus_states.get(height) {
+        let height =
+            Height::new(client_cons_state_path.epoch, client_cons_state_path.height).unwrap();
+        match self
+            .ibc_store
+            .lock()
+            .clients
+            .get(&client_cons_state_path.client_id)
+        {
+            Some(client_record) => match client_record.consensus_states.get(&height) {
                 Some(consensus_state) => Ok(consensus_state.clone()),
                 None => Err(ClientError::ConsensusStateNotFound {
-                    client_id: client_id.clone(),
-                    height: *height,
+                    client_id: client_cons_state_path.client_id.clone(),
+                    height,
                 }),
             },
             None => Err(ClientError::ConsensusStateNotFound {
-                client_id: client_id.clone(),
-                height: *height,
+                client_id: client_cons_state_path.client_id.clone(),
+                height,
             }),
         }
         .map_err(|e| PacketError::Connection(ConnectionError::Client(e)))
     }
 
-    fn get_next_sequence_send(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<Sequence, PacketError> {
+    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, PacketError> {
         match self
             .ibc_store
             .lock()
             .next_sequence_send
-            .get(port_id)
-            .and_then(|map| map.get(channel_id))
+            .get(&seq_send_path.0)
+            .and_then(|map| map.get(&seq_send_path.1))
         {
             Some(sequence) => Ok(*sequence),
             None => Err(PacketError::MissingNextSendSeq {
-                port_id: port_id.clone(),
-                channel_id: channel_id.clone(),
+                port_id: seq_send_path.0.clone(),
+                channel_id: seq_send_path.1.clone(),
             }),
         }
     }

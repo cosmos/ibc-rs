@@ -49,8 +49,9 @@ use crate::core::ics05_port::error::PortError::UnknownPort;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics24_host::path::{
-    ClientConnectionsPath, ClientConsensusStatePath, ClientStatePath, ClientTypePath,
-    CommitmentsPath, ConnectionsPath, ReceiptsPath,
+    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
+    ClientTypePath, CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath,
+    SeqSendPath,
 };
 use crate::core::ics26_routing::context::{Module, ModuleId};
 use crate::core::{
@@ -249,22 +250,19 @@ pub trait ValidationContext: Router {
     /// Returns an error if no such state exists.
     fn consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Box<dyn ConsensusState>, ContextError>;
 
     /// Search for the lowest consensus state higher than `height`.
     fn next_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        next_client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
 
     /// Search for the highest consensus state lower than `height`.
     fn prev_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        prev_client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
 
     /// Returns the current height of the local chain.
@@ -321,44 +319,31 @@ pub trait ValidationContext: Router {
     }
 
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
-    fn channel_end(
-        &self,
-        port_channel_id: &(PortId, ChannelId),
-    ) -> Result<ChannelEnd, ContextError>;
+    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
 
     fn connection_channels(
         &self,
         cid: &ConnectionId,
     ) -> Result<Vec<(PortId, ChannelId)>, ContextError>;
 
-    fn get_next_sequence_send(
-        &self,
-        port_channel_id: &(PortId, ChannelId),
-    ) -> Result<Sequence, ContextError>;
+    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
+        -> Result<Sequence, ContextError>;
 
-    fn get_next_sequence_recv(
-        &self,
-        port_channel_id: &(PortId, ChannelId),
-    ) -> Result<Sequence, ContextError>;
+    fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath)
+        -> Result<Sequence, ContextError>;
 
-    fn get_next_sequence_ack(
-        &self,
-        port_channel_id: &(PortId, ChannelId),
-    ) -> Result<Sequence, ContextError>;
+    fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, ContextError>;
 
     fn get_packet_commitment(
         &self,
-        key: &(PortId, ChannelId, Sequence),
+        commitment_path: &CommitmentPath,
     ) -> Result<PacketCommitment, ContextError>;
 
-    fn get_packet_receipt(
-        &self,
-        key: &(PortId, ChannelId, Sequence),
-    ) -> Result<Receipt, ContextError>;
+    fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, ContextError>;
 
     fn get_packet_acknowledgement(
         &self,
-        key: &(PortId, ChannelId, Sequence),
+        ack_path: &AckPath,
     ) -> Result<AcknowledgementCommitment, ContextError>;
 
     /// Compute the commitment for a packet.
@@ -539,14 +524,14 @@ pub trait ExecutionContext: ValidationContext {
     /// Stores the given connection_end at path
     fn store_connection(
         &mut self,
-        connections_path: ConnectionsPath,
+        connection_path: &ConnectionPath,
         connection_end: ConnectionEnd,
     ) -> Result<(), ContextError>;
 
     /// Stores the given connection_id at a path associated with the client_id.
     fn store_connection_to_client(
         &mut self,
-        client_connections_path: ClientConnectionsPath,
+        client_connection_path: &ClientConnectionPath,
         conn_id: ConnectionId,
     ) -> Result<(), ContextError>;
 
@@ -557,57 +542,51 @@ pub trait ExecutionContext: ValidationContext {
 
     fn store_packet_commitment(
         &mut self,
-        commitments_path: CommitmentsPath,
+        commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
     ) -> Result<(), ContextError>;
 
-    fn delete_packet_commitment(&mut self, key: CommitmentsPath) -> Result<(), ContextError>;
+    fn delete_packet_commitment(
+        &mut self,
+        commitment_path: &CommitmentPath,
+    ) -> Result<(), ContextError>;
 
     fn store_packet_receipt(
         &mut self,
-        path: ReceiptsPath,
+        receipt_path: &ReceiptPath,
         receipt: Receipt,
     ) -> Result<(), ContextError>;
 
     fn store_packet_acknowledgement(
         &mut self,
-        key: (PortId, ChannelId, Sequence),
+        ack_path: &AckPath,
         ack_commitment: AcknowledgementCommitment,
     ) -> Result<(), ContextError>;
 
-    fn delete_packet_acknowledgement(
-        &mut self,
-        key: (PortId, ChannelId, Sequence),
-    ) -> Result<(), ContextError>;
-
-    fn store_connection_channels(
-        &mut self,
-        conn_id: ConnectionId,
-        port_channel_id: (PortId, ChannelId),
-    ) -> Result<(), ContextError>;
+    fn delete_packet_acknowledgement(&mut self, ack_path: &AckPath) -> Result<(), ContextError>;
 
     /// Stores the given channel_end at a path associated with the port_id and channel_id.
     fn store_channel(
         &mut self,
-        port_channel_id: (PortId, ChannelId),
+        channel_end_path: &ChannelEndPath,
         channel_end: ChannelEnd,
     ) -> Result<(), ContextError>;
 
     fn store_next_sequence_send(
         &mut self,
-        port_channel_id: (PortId, ChannelId),
+        seq_send_path: &SeqSendPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
 
     fn store_next_sequence_recv(
         &mut self,
-        port_channel_id: (PortId, ChannelId),
+        seq_recv_path: &SeqRecvPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
 
     fn store_next_sequence_ack(
         &mut self,
-        port_channel_id: (PortId, ChannelId),
+        seq_ack_path: &SeqAckPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
 

@@ -1,5 +1,6 @@
 use crate::core::ics04_channel::events::CloseInit;
 use crate::core::ics04_channel::handler::chan_close_init;
+use crate::core::ics24_host::path::ChannelEndPath;
 use crate::{core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit, prelude::*};
 
 use crate::core::ics04_channel::channel::State;
@@ -39,8 +40,8 @@ where
         .get_route_mut(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     let extras = module.on_chan_close_init_execute(&msg.port_id_on_a, &msg.chan_id_on_a)?;
-
-    let chan_end_on_a = ctx_a.channel_end(&(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()))?;
+    let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     // state changes
     {
@@ -50,8 +51,7 @@ where
             chan_end_on_a
         };
 
-        let port_channel_id_on_a = (msg.port_id_on_a.clone(), msg.chan_id_on_a.clone());
-        ctx_a.store_channel(port_channel_id_on_a, chan_end_on_a)?;
+        ctx_a.store_channel(&chan_end_path_on_a, chan_end_on_a)?;
     }
 
     // emit events and logs

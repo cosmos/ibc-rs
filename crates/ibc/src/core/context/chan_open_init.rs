@@ -1,6 +1,7 @@
 use crate::core::ics04_channel::events::OpenInit;
 use crate::core::ics04_channel::handler::chan_open_init;
 use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
+use crate::core::ics24_host::path::{ChannelEndPath, SeqAckPath, SeqRecvPath, SeqSendPath};
 use crate::prelude::*;
 
 use crate::core::ics24_host::identifier::ChannelId;
@@ -63,7 +64,6 @@ where
 
     // state changes
     {
-        let port_channel_id_on_a = (msg.port_id_on_a.clone(), chan_id_on_a.clone());
         let chan_end_on_a = ChannelEnd::new(
             State::Init,
             msg.ordering,
@@ -71,18 +71,20 @@ where
             msg.connection_hops_on_a.clone(),
             msg.version_proposal.clone(),
         );
-
-        ctx_a.store_channel(port_channel_id_on_a.clone(), chan_end_on_a)?;
+        let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &chan_id_on_a);
+        ctx_a.store_channel(&chan_end_path_on_a, chan_end_on_a)?;
 
         ctx_a.increase_channel_counter();
 
-        // Associate also the channel end to its connection.
-        ctx_a.store_connection_channels(conn_id_on_a.clone(), port_channel_id_on_a.clone())?;
-
         // Initialize send, recv, and ack sequence numbers.
-        ctx_a.store_next_sequence_send(port_channel_id_on_a.clone(), 1.into())?;
-        ctx_a.store_next_sequence_recv(port_channel_id_on_a.clone(), 1.into())?;
-        ctx_a.store_next_sequence_ack(port_channel_id_on_a, 1.into())?;
+        let seq_send_path = SeqSendPath::new(&msg.port_id_on_a, &chan_id_on_a);
+        ctx_a.store_next_sequence_send(&seq_send_path, 1.into())?;
+
+        let seq_recv_path = SeqRecvPath::new(&msg.port_id_on_a, &chan_id_on_a);
+        ctx_a.store_next_sequence_recv(&seq_recv_path, 1.into())?;
+
+        let seq_ack_path = SeqAckPath::new(&msg.port_id_on_a, &chan_id_on_a);
+        ctx_a.store_next_sequence_ack(&seq_ack_path, 1.into())?;
     }
 
     // emit events and logs

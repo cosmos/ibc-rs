@@ -10,6 +10,7 @@ use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::version::{get_compatible_versions, pick_version, Version};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::prelude::*;
 use crate::Height;
 use ibc_proto::google::protobuf::Any;
@@ -43,8 +44,7 @@ pub trait ConnectionReader {
     /// Returns the ConsensusState that the given client stores at a specific height.
     fn client_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Box<dyn ConsensusState>, ConnectionError>;
 
     /// Returns the ConsensusState of the host (local) chain at a specific height.

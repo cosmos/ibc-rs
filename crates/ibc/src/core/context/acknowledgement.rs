@@ -1,3 +1,4 @@
+use crate::core::ics24_host::path::{ChannelEndPath, CommitmentPath, SeqAckPath};
 use crate::prelude::*;
 
 use crate::{
@@ -6,7 +7,6 @@ use crate::{
             channel::Order, error::ChannelError, events::AcknowledgePacket,
             handler::acknowledgement, msgs::acknowledgement::MsgAcknowledgement,
         },
-        ics24_host::path::CommitmentsPath,
         ics26_routing::context::ModuleId,
     },
     events::IbcEvent,
@@ -41,8 +41,8 @@ pub(super) fn acknowledgement_packet_execute<ExecCtx>(
 where
     ExecCtx: ExecutionContext,
 {
-    let port_chan_id_on_a = (msg.packet.port_on_a.clone(), msg.packet.chan_on_a.clone());
-    let chan_end_on_a = ctx_a.channel_end(&port_chan_id_on_a)?;
+    let chan_end_path_on_a = ChannelEndPath::new(&msg.packet.port_on_a, &msg.packet.chan_on_a);
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
     let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
 
     // In all cases, this event is emitted
@@ -52,15 +52,14 @@ where
         conn_id_on_a.clone(),
     )));
 
+    let commitment_path_on_a = CommitmentPath::new(
+        &msg.packet.port_on_a,
+        &msg.packet.chan_on_a,
+        msg.packet.sequence,
+    );
+
     // check if we're in the NO-OP case
-    if ctx_a
-        .get_packet_commitment(&(
-            msg.packet.port_on_a.clone(),
-            msg.packet.chan_on_a.clone(),
-            msg.packet.sequence,
-        ))
-        .is_err()
-    {
+    if ctx_a.get_packet_commitment(&commitment_path_on_a).is_err() {
         // This error indicates that the timeout has already been relayed
         // or there is a misconfigured relayer attempting to prove a timeout
         // for a packet never sent. Core IBC will treat this error as a no-op in order to
@@ -79,17 +78,18 @@ where
 
     // apply state changes
     {
-        let commitment_path = CommitmentsPath {
+        let commitment_path_on_a = CommitmentPath {
             port_id: msg.packet.port_on_a.clone(),
             channel_id: msg.packet.chan_on_a.clone(),
             sequence: msg.packet.sequence,
         };
-        ctx_a.delete_packet_commitment(commitment_path)?;
+        ctx_a.delete_packet_commitment(&commitment_path_on_a)?;
 
         if let Order::Ordered = chan_end_on_a.ordering {
             // Note: in validation, we verified that `msg.packet.sequence == nextSeqRecv`
             // (where `nextSeqRecv` is the value in the store)
-            ctx_a.store_next_sequence_ack(port_chan_id_on_a, msg.packet.sequence.increment())?;
+            let seq_ack_path_on_a = SeqAckPath::new(&msg.packet.port_on_a, &msg.packet.chan_on_a);
+            ctx_a.store_next_sequence_ack(&seq_ack_path_on_a, msg.packet.sequence.increment())?;
         }
     }
 

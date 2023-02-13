@@ -6,6 +6,9 @@ use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics04_channel::packet::{PacketResult, Sequence};
 use crate::core::ics04_channel::{context::ChannelReader, error::PacketError};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
+use crate::core::ics24_host::path::{
+    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
+};
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
@@ -17,8 +20,10 @@ pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeout) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
-    let port_chan_id_on_a = &(msg.packet.port_on_a.clone(), msg.packet.chan_on_a.clone());
-    let chan_end_on_a = ctx_a.channel_end(port_chan_id_on_a)?;
+    let chan_end_on_a = ctx_a.channel_end(&ChannelEndPath::new(
+        &msg.packet.port_on_a,
+        &msg.packet.chan_on_a,
+    ))?;
 
     if !chan_end_on_a.state_matches(&State::Open) {
         return Err(PacketError::ChannelClosed {
@@ -44,11 +49,12 @@ where
     let conn_end_on_a = ctx_a.connection_end(&conn_id_on_a)?;
 
     //verify packet commitment
-    let commitment_on_a = match ctx_a.get_packet_commitment(&(
-        msg.packet.port_on_a.clone(),
-        msg.packet.chan_on_a.clone(),
+    let commitment_path_on_a = CommitmentPath::new(
+        &msg.packet.port_on_a,
+        &msg.packet.chan_on_a,
         msg.packet.sequence,
-    )) {
+    );
+    let commitment_on_a = match ctx_a.get_packet_commitment(&commitment_path_on_a) {
         Ok(commitment_on_a) => commitment_on_a,
 
         // This error indicates that the timeout has already been relayed
@@ -87,9 +93,9 @@ where
             }
             .into());
         }
-
-        let consensus_state_of_b_on_a =
-            ctx_a.consensus_state(client_id_on_a, &msg.proof_height_on_b)?;
+        let client_cons_state_path_on_a =
+            ClientConsensusStatePath::new(client_id_on_a, &msg.proof_height_on_b);
+        let consensus_state_of_b_on_a = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
         let timestamp_of_b = consensus_state_of_b_on_a.timestamp();
 
         if let Expiry::Expired = msg
@@ -111,26 +117,29 @@ where
                 }
                 .into());
             }
+            let seq_recv_path_on_b = SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
             client_state_of_b_on_a.new_verify_next_sequence_recv(
                 ctx_a,
                 msg.proof_height_on_b,
                 &conn_end_on_a,
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
-                &msg.packet.port_on_b,
-                &msg.packet.chan_on_b,
+                &seq_recv_path_on_b,
                 msg.packet.sequence,
             )
         } else {
+            let receipt_path_on_b = ReceiptPath::new(
+                &msg.packet.port_on_b,
+                &msg.packet.chan_on_b,
+                msg.packet.sequence,
+            );
             client_state_of_b_on_a.new_verify_packet_receipt_absence(
                 ctx_a,
                 msg.proof_height_on_b,
                 &conn_end_on_a,
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
-                &msg.packet.port_on_b,
-                &msg.packet.chan_on_b,
-                msg.packet.sequence,
+                &receipt_path_on_b,
             )
         };
         next_seq_recv_verification_result
@@ -163,9 +172,9 @@ pub(crate) fn process<Ctx: ChannelReader>(
     msg: &MsgTimeout,
 ) -> HandlerResult<PacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
-
+    let chan_end_path_on_a = ChannelEndPath::new(&msg.packet.port_on_a, &msg.packet.chan_on_a);
     let mut chan_end_on_a = ctx_a
-        .channel_end(&msg.packet.port_on_a, &msg.packet.chan_on_a)
+        .channel_end(&chan_end_path_on_a)
         .map_err(PacketError::Channel)?;
 
     if !chan_end_on_a.state_matches(&State::Open) {
@@ -192,12 +201,12 @@ pub(crate) fn process<Ctx: ChannelReader>(
         .map_err(PacketError::Channel)?;
 
     //verify packet commitment
-    let commitment_on_a = ctx_a.get_packet_commitment(
+    let commitment_path_on_a = CommitmentPath::new(
         &msg.packet.port_on_a,
         &msg.packet.chan_on_a,
-        &msg.packet.sequence,
-    )?;
-
+        msg.packet.sequence,
+    );
+    let commitment_on_a = ctx_a.get_packet_commitment(&commitment_path_on_a)?;
     let expected_commitment_on_a = ctx_a.packet_commitment(
         &msg.packet.data,
         &msg.packet.timeout_height_on_b,
@@ -228,8 +237,10 @@ pub(crate) fn process<Ctx: ChannelReader>(
             });
         }
 
+        let client_cons_state_path =
+            ClientConsensusStatePath::new(client_id_on_a, &msg.proof_height_on_b);
         let consensus_state_of_b_on_a = ctx_a
-            .client_consensus_state(client_id_on_a, &msg.proof_height_on_b)
+            .client_consensus_state(&client_cons_state_path)
             .map_err(PacketError::Channel)?;
         let timestamp_of_b = consensus_state_of_b_on_a.timestamp();
 
@@ -250,26 +261,29 @@ pub(crate) fn process<Ctx: ChannelReader>(
                     next_sequence: msg.next_seq_recv_on_b,
                 });
             }
+            let seq_recv_path_on_b = SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
             client_state_of_b_on_a.verify_next_sequence_recv(
                 ctx_a,
                 msg.proof_height_on_b,
                 &conn_end_on_a,
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
-                &msg.packet.port_on_b,
-                &msg.packet.chan_on_b,
+                &seq_recv_path_on_b,
                 msg.packet.sequence,
             )
         } else {
+            let receipt_path_on_b = ReceiptPath::new(
+                &msg.packet.port_on_b,
+                &msg.packet.chan_on_b,
+                msg.packet.sequence,
+            );
             client_state_of_b_on_a.verify_packet_receipt_absence(
                 ctx_a,
                 msg.proof_height_on_b,
                 &conn_end_on_a,
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
-                &msg.packet.port_on_b,
-                &msg.packet.chan_on_b,
-                msg.packet.sequence,
+                &receipt_path_on_b,
             )
         };
         next_seq_recv_verification_result
@@ -328,6 +342,7 @@ mod tests {
     use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
+    use crate::core::ics24_host::path::ChannelEndPath;
     use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::prelude::*;
@@ -485,7 +500,7 @@ mod tests {
                     let events = proto_output.events;
                     let src_channel_end = test
                         .ctx
-                        .channel_end(&packet.port_on_a, &packet.chan_on_a)
+                        .channel_end(&ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a))
                         .unwrap();
 
                     if src_channel_end.order_matches(&Order::Ordered) {

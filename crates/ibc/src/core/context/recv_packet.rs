@@ -8,7 +8,7 @@ use crate::{
             msgs::recv_packet::MsgRecvPacket,
             packet::Receipt,
         },
-        ics24_host::path::ReceiptsPath,
+        ics24_host::path::{AckPath, ChannelEndPath, ReceiptPath, SeqRecvPath},
         ics26_routing::context::ModuleId,
     },
     events::IbcEvent,
@@ -38,8 +38,8 @@ pub(super) fn recv_packet_execute<ExecCtx>(
 where
     ExecCtx: ExecutionContext,
 {
-    let chan_port_id_on_b = (msg.packet.port_on_b.clone(), msg.packet.chan_on_b.clone());
-    let chan_end_on_b = ctx_b.channel_end(&chan_port_id_on_b)?;
+    let chan_end_path_on_b = ChannelEndPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+    let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     // Check if another relayer already relayed the packet.
     // We don't want to fail the transaction in this case.
@@ -49,13 +49,14 @@ where
             Order::None => false,
             Order::Unordered => {
                 let packet = msg.packet.clone();
-
-                ctx_b
-                    .get_packet_receipt(&(packet.port_on_b, packet.chan_on_b, packet.sequence))
-                    .is_ok()
+                let receipt_path_on_b =
+                    ReceiptPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);
+                ctx_b.get_packet_receipt(&receipt_path_on_b).is_ok()
             }
             Order::Ordered => {
-                let next_seq_recv = ctx_b.get_next_sequence_recv(&chan_port_id_on_b)?;
+                let seq_recv_path_on_b =
+                    SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+                let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
 
                 // the sequence number has already been incremented, so
                 // another relayer already relayed the packet
@@ -79,33 +80,30 @@ where
         // `recvPacket` core handler state changes
         match chan_end_on_b.ordering {
             Order::Unordered => {
-                let path = ReceiptsPath {
+                let receipt_path_on_b = ReceiptPath {
                     port_id: msg.packet.port_on_b.clone(),
                     channel_id: msg.packet.chan_on_b.clone(),
                     sequence: msg.packet.sequence,
                 };
 
-                ctx_b.store_packet_receipt(path, Receipt::Ok)?;
+                ctx_b.store_packet_receipt(&receipt_path_on_b, Receipt::Ok)?;
             }
             Order::Ordered => {
-                let port_chan_id_on_b =
-                    (msg.packet.port_on_b.clone(), msg.packet.chan_on_b.clone());
-                let next_seq_recv = ctx_b.get_next_sequence_recv(&port_chan_id_on_b)?;
-
-                ctx_b.store_next_sequence_recv(port_chan_id_on_b, next_seq_recv.increment())?;
+                let seq_recv_path_on_b =
+                    SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+                let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
+                ctx_b.store_next_sequence_recv(&seq_recv_path_on_b, next_seq_recv.increment())?;
             }
             _ => {}
         }
-
+        let ack_path_on_b = AckPath::new(
+            &msg.packet.port_on_b,
+            &msg.packet.chan_on_b,
+            msg.packet.sequence,
+        );
         // `writeAcknowledgement` handler state changes
-        ctx_b.store_packet_acknowledgement(
-            (
-                msg.packet.port_on_b.clone(),
-                msg.packet.chan_on_b.clone(),
-                msg.packet.sequence,
-            ),
-            ctx_b.ack_commitment(&acknowledgement),
-        )?;
+        ctx_b
+            .store_packet_acknowledgement(&ack_path_on_b, ctx_b.ack_commitment(&acknowledgement))?;
     }
 
     // emit events and logs

@@ -1,6 +1,7 @@
 use crate::core::ics04_channel::events::ChannelClosed;
 use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
+use crate::core::ics24_host::path::{ChannelEndPath, CommitmentPath};
 use crate::prelude::*;
 
 use crate::{
@@ -11,7 +12,6 @@ use crate::{
             events::TimeoutPacket,
             handler::{timeout, timeout_on_close},
         },
-        ics24_host::path::CommitmentsPath,
         ics26_routing::context::ModuleId,
     },
     events::IbcEvent,
@@ -63,9 +63,8 @@ where
         TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),
         TimeoutMsgType::TimeoutOnClose(msg) => (msg.packet, msg.signer),
     };
-
-    let port_chan_id_on_a = (packet.port_on_a.clone(), packet.chan_on_a.clone());
-    let chan_end_on_a = ctx_a.channel_end(&port_chan_id_on_a)?;
+    let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     // In all cases, this event is emitted
     ctx_a.emit_ibc_event(IbcEvent::TimeoutPacket(TimeoutPacket::new(
@@ -73,15 +72,11 @@ where
         chan_end_on_a.ordering,
     )));
 
+    let commitment_path_on_a =
+        CommitmentPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
+
     // check if we're in the NO-OP case
-    if ctx_a
-        .get_packet_commitment(&(
-            packet.port_on_a.clone(),
-            packet.chan_on_a.clone(),
-            packet.sequence,
-        ))
-        .is_err()
-    {
+    if ctx_a.get_packet_commitment(&commitment_path_on_a).is_err() {
         // This error indicates that the timeout has already been relayed
         // or there is a misconfigured relayer attempting to prove a timeout
         // for a packet never sent. Core IBC will treat this error as a no-op in order to
@@ -99,17 +94,17 @@ where
 
     // apply state changes
     let chan_end_on_a = {
-        let commitment_path = CommitmentsPath {
+        let commitment_path_on_a = CommitmentPath {
             port_id: packet.port_on_a.clone(),
             channel_id: packet.chan_on_a.clone(),
             sequence: packet.sequence,
         };
-        ctx_a.delete_packet_commitment(commitment_path)?;
+        ctx_a.delete_packet_commitment(&commitment_path_on_a)?;
 
         if let Order::Ordered = chan_end_on_a.ordering {
             let mut chan_end_on_a = chan_end_on_a;
             chan_end_on_a.state = State::Closed;
-            ctx_a.store_channel(port_chan_id_on_a, chan_end_on_a.clone())?;
+            ctx_a.store_channel(&chan_end_path_on_a, chan_end_on_a.clone())?;
 
             chan_end_on_a
         } else {

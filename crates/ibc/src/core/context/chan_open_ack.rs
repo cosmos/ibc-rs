@@ -1,3 +1,4 @@
+use crate::core::ics24_host::path::ChannelEndPath;
 use crate::{core::ics04_channel::events::OpenAck, prelude::*};
 
 use crate::core::ics04_channel::handler::chan_open_ack;
@@ -42,12 +43,11 @@ where
         .ok_or(ChannelError::RouteNotFound)?;
     let extras =
         module.on_chan_open_ack_execute(&msg.port_id_on_a, &msg.chan_id_on_a, &msg.version_on_b)?;
-
-    let chan_end_on_a = ctx_a.channel_end(&(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone()))?;
+    let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     // state changes
     {
-        let port_channel_id_on_a = (msg.port_id_on_a.clone(), msg.chan_id_on_a.clone());
         let chan_end_on_a = {
             let mut chan_end_on_a = chan_end_on_a.clone();
 
@@ -57,8 +57,7 @@ where
 
             chan_end_on_a
         };
-
-        ctx_a.store_channel(port_channel_id_on_a, chan_end_on_a)?;
+        ctx_a.store_channel(&chan_end_path_on_a, chan_end_on_a)?;
     }
 
     // emit events and logs

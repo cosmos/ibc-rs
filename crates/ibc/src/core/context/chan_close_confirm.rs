@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{core::ics24_host::path::ChannelEndPath, prelude::*};
 
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
@@ -41,8 +41,8 @@ where
         .get_route_mut(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     let extras = module.on_chan_close_confirm_execute(&msg.port_id_on_b, &msg.chan_id_on_b)?;
-
-    let chan_end_on_b = ctx_b.channel_end(&(msg.port_id_on_b.clone(), msg.chan_id_on_b.clone()))?;
+    let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);
+    let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     // state changes
     {
@@ -51,9 +51,7 @@ where
             chan_end_on_b.set_state(State::Closed);
             chan_end_on_b
         };
-
-        let port_channel_id_on_b = (msg.port_id_on_b.clone(), msg.chan_id_on_b.clone());
-        ctx_b.store_channel(port_channel_id_on_b, chan_end_on_b)?;
+        ctx_b.store_channel(&chan_end_path_on_b, chan_end_on_b)?;
     }
 
     // emit events and logs

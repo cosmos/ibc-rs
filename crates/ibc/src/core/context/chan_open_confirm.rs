@@ -1,5 +1,6 @@
 use crate::core::ics04_channel::events::OpenConfirm;
 use crate::core::ics04_channel::handler::chan_open_confirm;
+use crate::core::ics24_host::path::ChannelEndPath;
 use crate::{core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm, prelude::*};
 
 use crate::core::ics04_channel::channel::State;
@@ -41,20 +42,18 @@ where
         .ok_or(ChannelError::RouteNotFound)?;
 
     let extras = module.on_chan_open_confirm_execute(&msg.port_id_on_b, &msg.chan_id_on_b)?;
-
-    let chan_end_on_b = ctx_b.channel_end(&(msg.port_id_on_b.clone(), msg.chan_id_on_b.clone()))?;
+    let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);
+    let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     // state changes
     {
-        let port_channel_id_on_b = (msg.port_id_on_b.clone(), msg.chan_id_on_b.clone());
         let chan_end_on_b = {
             let mut chan_end_on_b = chan_end_on_b.clone();
             chan_end_on_b.set_state(State::Open);
 
             chan_end_on_b
         };
-
-        ctx_b.store_channel(port_channel_id_on_b, chan_end_on_b)?;
+        ctx_b.store_channel(&chan_end_path_on_b, chan_end_on_b)?;
     }
 
     // emit events and logs

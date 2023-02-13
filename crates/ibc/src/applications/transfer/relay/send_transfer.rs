@@ -6,6 +6,7 @@ use crate::applications::transfer::packet::PacketData;
 use crate::applications::transfer::{is_sender_chain_source, Coin, PrefixedCoin};
 use crate::core::ics04_channel::handler::send_packet::send_packet;
 use crate::core::ics04_channel::packet::Packet;
+use crate::core::ics24_host::path::{ChannelEndPath, SeqSendPath};
 use crate::events::ModuleEvent;
 use crate::handler::{HandlerOutput, HandlerOutputBuilder};
 use crate::prelude::*;
@@ -25,9 +26,9 @@ where
     if !ctx.is_send_enabled() {
         return Err(TokenTransferError::SendDisabled);
     }
-
+    let chan_end_path_on_a = ChannelEndPath::new(&msg.port_on_a, &msg.chan_on_a);
     let chan_end_on_a = ctx
-        .channel_end(&msg.port_on_a, &msg.chan_on_a)
+        .channel_end(&chan_end_path_on_a)
         .map_err(TokenTransferError::PacketError)?;
 
     let port_on_b = chan_end_on_a.counterparty().port_id().clone();
@@ -41,8 +42,9 @@ where
         .clone();
 
     // get the next sequence
+    let seq_send_path_on_a = SeqSendPath::new(&msg.port_on_a, &msg.chan_on_a);
     let sequence = ctx
-        .get_next_sequence_send(&msg.port_on_a, &msg.chan_on_a)
+        .get_next_sequence_send(&seq_send_path_on_a)
         .map_err(TokenTransferError::PacketError)?;
 
     let token = msg

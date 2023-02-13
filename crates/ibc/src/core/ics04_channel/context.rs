@@ -2,6 +2,10 @@
 //! the interface that any host chain must implement to be able to process any `ChannelMsg`.
 //!
 use crate::core::ics02_client::client_state::ClientState;
+use crate::core::ics24_host::path::{
+    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqAckPath,
+    SeqRecvPath, SeqSendPath,
+};
 use core::time::Duration;
 use num_traits::float::FloatCore;
 
@@ -27,11 +31,7 @@ use super::timeout::TimeoutHeight;
 /// A context supplying all the necessary read-only dependencies for processing any `ChannelMsg`.
 pub trait ChannelReader {
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
-    fn channel_end(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<ChannelEnd, ChannelError>;
+    fn channel_end(&self, chan_end_path: &ChannelEndPath) -> Result<ChannelEnd, ChannelError>;
 
     /// Returns the ConnectionState for the given identifier `connection_id`.
     fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, ChannelError>;
@@ -47,47 +47,25 @@ pub trait ChannelReader {
 
     fn client_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Box<dyn ConsensusState>, ChannelError>;
 
-    fn get_next_sequence_send(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<Sequence, PacketError>;
+    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, PacketError>;
 
-    fn get_next_sequence_recv(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<Sequence, PacketError>;
+    fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath) -> Result<Sequence, PacketError>;
 
-    fn get_next_sequence_ack(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<Sequence, PacketError>;
+    fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, PacketError>;
 
     fn get_packet_commitment(
         &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        sequence: &Sequence,
+        commitment_path: &CommitmentPath,
     ) -> Result<PacketCommitment, PacketError>;
 
-    fn get_packet_receipt(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        sequence: &Sequence,
-    ) -> Result<Receipt, PacketError>;
+    fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, PacketError>;
 
     fn get_packet_acknowledgement(
         &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        sequence: &Sequence,
+        ack_path: &AckPath,
     ) -> Result<AcknowledgementCommitment, PacketError>;
 
     /// Compute the commitment for a packet.
@@ -173,11 +151,7 @@ pub trait ChannelReader {
 
 pub trait SendPacketReader {
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
-    fn channel_end(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<ChannelEnd, PacketError>;
+    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, PacketError>;
 
     /// Returns the ConnectionState for the given identifier `connection_id`.
     fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, PacketError>;
@@ -188,15 +162,10 @@ pub trait SendPacketReader {
 
     fn client_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Box<dyn ConsensusState>, PacketError>;
 
-    fn get_next_sequence_send(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<Sequence, PacketError>;
+    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, PacketError>;
 
     fn hash(&self, value: &[u8]) -> Vec<u8>;
 
@@ -225,12 +194,8 @@ impl<T> SendPacketReader for T
 where
     T: ChannelReader,
 {
-    fn channel_end(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<ChannelEnd, PacketError> {
-        ChannelReader::channel_end(self, port_id, channel_id).map_err(PacketError::Channel)
+    fn channel_end(&self, chan_end_path: &ChannelEndPath) -> Result<ChannelEnd, PacketError> {
+        ChannelReader::channel_end(self, chan_end_path).map_err(PacketError::Channel)
     }
 
     fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, PacketError> {
@@ -243,18 +208,14 @@ where
 
     fn client_consensus_state(
         &self,
-        client_id: &ClientId,
-        height: &Height,
+        client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Box<dyn ConsensusState>, PacketError> {
-        ChannelReader::client_consensus_state(self, client_id, height).map_err(PacketError::Channel)
+        ChannelReader::client_consensus_state(self, client_cons_state_path)
+            .map_err(PacketError::Channel)
     }
 
-    fn get_next_sequence_send(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<Sequence, PacketError> {
-        ChannelReader::get_next_sequence_send(self, port_id, channel_id)
+    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, PacketError> {
+        ChannelReader::get_next_sequence_send(self, seq_send_path)
     }
 
     fn hash(&self, value: &[u8]) -> Vec<u8> {
