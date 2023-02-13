@@ -2,6 +2,7 @@ mod chan_close_confirm;
 mod chan_close_init;
 mod chan_open_ack;
 mod chan_open_confirm;
+mod chan_open_try;
 
 mod acknowledgement;
 mod recv_packet;
@@ -13,6 +14,7 @@ use self::chan_close_confirm::{chan_close_confirm_execute, chan_close_confirm_va
 use self::chan_close_init::{chan_close_init_execute, chan_close_init_validate};
 use self::chan_open_ack::{chan_open_ack_execute, chan_open_ack_validate};
 use self::chan_open_confirm::{chan_open_confirm_execute, chan_open_confirm_validate};
+use self::chan_open_try::{chan_open_try_execute, chan_open_try_validate};
 
 use self::acknowledgement::{acknowledgement_packet_execute, acknowledgement_packet_validate};
 use self::recv_packet::{recv_packet_execute, recv_packet_validate};
@@ -37,11 +39,10 @@ use crate::core::ics03_connection::version::{
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::context::calculate_block_delay;
-use crate::core::ics04_channel::events::{OpenInit, OpenTry};
-use crate::core::ics04_channel::handler::{chan_open_init, chan_open_try};
+use crate::core::ics04_channel::events::OpenInit;
+use crate::core::ics04_channel::handler::chan_open_init;
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
-use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
 use crate::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics04_channel::timeout::TimeoutHeight;
@@ -716,108 +717,6 @@ where
 
         for log_message in extras.log {
             ctx_a.log_message(log_message);
-        }
-    }
-
-    Ok(())
-}
-
-fn chan_open_try_validate<ValCtx>(
-    ctx_b: &ValCtx,
-    module_id: ModuleId,
-    msg: MsgChannelOpenTry,
-) -> Result<(), ContextError>
-where
-    ValCtx: ValidationContext,
-{
-    chan_open_try::validate(ctx_b, &msg)?;
-    let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
-
-    let module = ctx_b
-        .get_route(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
-    module.on_chan_open_try_validate(
-        msg.ordering,
-        &msg.connection_hops_on_b,
-        &msg.port_id_on_b,
-        &chan_id_on_b,
-        &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
-        &msg.version_supported_on_a,
-    )?;
-
-    Ok(())
-}
-
-fn chan_open_try_execute<ExecCtx>(
-    ctx_b: &mut ExecCtx,
-    module_id: ModuleId,
-    msg: MsgChannelOpenTry,
-) -> Result<(), ContextError>
-where
-    ExecCtx: ExecutionContext,
-{
-    let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
-    let module = ctx_b
-        .get_route_mut(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
-
-    let (extras, version) = module.on_chan_open_try_execute(
-        msg.ordering,
-        &msg.connection_hops_on_b,
-        &msg.port_id_on_b,
-        &chan_id_on_b,
-        &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
-        &msg.version_supported_on_a,
-    )?;
-
-    let conn_id_on_b = msg.connection_hops_on_b[0].clone();
-
-    // state changes
-    {
-        let port_channel_id_on_b = (msg.port_id_on_b.clone(), chan_id_on_b.clone());
-        let chan_end_on_b = ChannelEnd::new(
-            State::TryOpen,
-            msg.ordering,
-            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
-            msg.connection_hops_on_b.clone(),
-            version.clone(),
-        );
-
-        ctx_b.store_channel(port_channel_id_on_b.clone(), chan_end_on_b)?;
-
-        ctx_b.increase_channel_counter();
-
-        // Associate also the channel end to its connection.
-        ctx_b.store_connection_channels(conn_id_on_b.clone(), port_channel_id_on_b.clone())?;
-
-        // Initialize send, recv, and ack sequence numbers.
-        ctx_b.store_next_sequence_send(port_channel_id_on_b.clone(), 1.into())?;
-        ctx_b.store_next_sequence_recv(port_channel_id_on_b.clone(), 1.into())?;
-        ctx_b.store_next_sequence_ack(port_channel_id_on_b, 1.into())?;
-    }
-
-    // emit events and logs
-    {
-        ctx_b.log_message(format!(
-            "success: channel open try with channel identifier: {chan_id_on_b}"
-        ));
-
-        let core_event = IbcEvent::OpenTryChannel(OpenTry::new(
-            msg.port_id_on_b.clone(),
-            chan_id_on_b.clone(),
-            msg.port_id_on_a.clone(),
-            msg.chan_id_on_a.clone(),
-            conn_id_on_b,
-            version,
-        ));
-        ctx_b.emit_ibc_event(core_event);
-
-        for module_event in extras.events {
-            ctx_b.emit_ibc_event(IbcEvent::AppModule(module_event));
-        }
-
-        for log_message in extras.log {
-            ctx_b.log_message(log_message);
         }
     }
 
