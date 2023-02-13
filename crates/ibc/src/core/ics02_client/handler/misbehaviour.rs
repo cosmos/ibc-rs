@@ -77,7 +77,7 @@ where
         client_state.client_type(),
     )));
 
-    ctx.store_client_state(ClientStatePath(client_id), client_state)
+    ctx.store_client_state(ClientStatePath::new(&client_id), client_state)
 }
 
 pub(crate) fn process(

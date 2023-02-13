@@ -17,7 +17,9 @@ use crate::core::context::ContextError;
 
 use crate::core::ics24_host::identifier::ClientId;
 
-use crate::core::ics24_host::path::{ClientConnectionsPath, ConnectionsPath};
+use crate::core::ics24_host::path::{
+    ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath,
+};
 
 use crate::core::{ExecutionContext, ValidationContext};
 
@@ -61,8 +63,10 @@ where
                 .map_err(|_| ConnectionError::Other {
                     description: "failed to fetch client state".to_string(),
                 })?;
+        let client_cons_state_path_on_b =
+            ClientConsensusStatePath::new(&msg.client_id_on_b, &msg.proofs_height_on_a);
         let consensus_state_of_a_on_b = ctx_b
-            .consensus_state(&msg.client_id_on_b, &msg.proofs_height_on_a)
+            .consensus_state(&client_cons_state_path_on_b)
             .map_err(|_| ConnectionError::Other {
                 description: "failed to fetch client consensus state".to_string(),
             })?;
@@ -85,7 +89,7 @@ where
                     prefix_on_a,
                     &msg.proof_conn_end_on_a,
                     consensus_state_of_a_on_b.root(),
-                    &vars.conn_id_on_a,
+                    &ConnectionPath::new(&vars.conn_id_on_a),
                     &expected_conn_end_on_a,
                 )
                 .map_err(ConnectionError::VerifyConnectionState)?;
@@ -97,7 +101,7 @@ where
                 prefix_on_a,
                 &msg.proof_client_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
-                client_id_on_a,
+                &ClientStatePath::new(client_id_on_a),
                 msg.client_state_of_b_on_a.clone(),
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
@@ -110,14 +114,16 @@ where
             .map_err(|_| ConnectionError::Other {
                 description: "failed to fetch host consensus state".to_string(),
             })?;
+
+        let client_cons_state_path_on_a =
+            ClientConsensusStatePath::new(&msg.client_id_on_b, &msg.consensus_height_of_b_on_a);
         client_state_of_a_on_b
             .verify_client_consensus_state(
                 msg.proofs_height_on_a,
                 prefix_on_a,
                 &msg.proof_consensus_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
-                client_id_on_a,
-                msg.consensus_height_of_b_on_a,
+                &client_cons_state_path_on_a,
                 expected_consensus_state_of_b_on_a.as_ref(),
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
@@ -160,10 +166,10 @@ where
 
     ctx_b.increase_connection_counter();
     ctx_b.store_connection_to_client(
-        ClientConnectionsPath(msg.client_id_on_b),
+        &ClientConnectionPath::new(&msg.client_id_on_b),
         vars.conn_id_on_b.clone(),
     )?;
-    ctx_b.store_connection(ConnectionsPath(vars.conn_id_on_b), vars.conn_end_on_b)?;
+    ctx_b.store_connection(&ConnectionPath::new(&vars.conn_id_on_b), vars.conn_end_on_b)?;
 
     Ok(())
 }
@@ -240,8 +246,10 @@ pub(crate) fn process(
     // Verify proofs
     {
         let client_state_of_a_on_b = ctx_b.client_state(conn_end_on_b.client_id())?;
+        let client_cons_state_path_on_b =
+            ClientConsensusStatePath::new(&msg.client_id_on_b, &msg.proofs_height_on_a);
         let consensus_state_of_a_on_b =
-            ctx_b.client_consensus_state(&msg.client_id_on_b, &msg.proofs_height_on_a)?;
+            ctx_b.client_consensus_state(&client_cons_state_path_on_b)?;
 
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let prefix_on_b = ctx_b.commitment_prefix();
@@ -262,7 +270,7 @@ pub(crate) fn process(
                     prefix_on_a,
                     &msg.proof_conn_end_on_a,
                     consensus_state_of_a_on_b.root(),
-                    conn_id_on_a,
+                    &ConnectionPath::new(conn_id_on_a),
                     &expected_conn_end_on_a,
                 )
                 .map_err(ConnectionError::VerifyConnectionState)?;
@@ -274,7 +282,7 @@ pub(crate) fn process(
                 prefix_on_a,
                 &msg.proof_client_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
-                client_id_on_a,
+                &ClientStatePath::new(client_id_on_a),
                 msg.client_state_of_b_on_a,
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
@@ -284,14 +292,16 @@ pub(crate) fn process(
 
         let expected_consensus_state_of_b_on_a =
             ctx_b.host_consensus_state(&msg.consensus_height_of_b_on_a)?;
+
+        let client_cons_state_path_on_a =
+            ClientConsensusStatePath::new(client_id_on_a, &msg.consensus_height_of_b_on_a);
         client_state_of_a_on_b
             .verify_client_consensus_state(
                 msg.proofs_height_on_a,
                 prefix_on_a,
                 &msg.proof_consensus_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
-                client_id_on_a,
-                msg.consensus_height_of_b_on_a,
+                &client_cons_state_path_on_a,
                 expected_consensus_state_of_b_on_a.as_ref(),
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {

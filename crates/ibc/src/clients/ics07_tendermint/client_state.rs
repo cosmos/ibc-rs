@@ -29,6 +29,7 @@ use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::trust_threshold::TrustThreshold;
 use crate::core::ics03_connection::connection::ConnectionEnd;
+use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::packet::Sequence;
@@ -37,10 +38,10 @@ use crate::core::ics23_commitment::commitment::{
 };
 use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
-use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
+use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::{
-    AcksPath, ChannelEndsPath, ClientConsensusStatePath, ClientStatePath, ClientUpgradePath,
-    CommitmentsPath, ConnectionsPath, ReceiptsPath, SeqRecvsPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, ClientUpgradePath,
+    CommitmentPath, ConnectionPath, ReceiptPath, SeqRecvPath,
 };
 use crate::core::ics24_host::Path;
 use crate::timestamp::{Timestamp, ZERO_DURATION};
@@ -394,10 +395,9 @@ impl Ics2ClientState for ClientState {
     ) -> Result<UpdatedState, ClientError> {
         fn maybe_consensus_state(
             ctx: &dyn ClientReader,
-            client_id: &ClientId,
-            height: &Height,
+            client_cons_state_path: &ClientConsensusStatePath,
         ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
-            match ctx.consensus_state(client_id, height) {
+            match ctx.consensus_state(client_cons_state_path) {
                 Ok(cs) => Ok(Some(cs)),
                 Err(e) => match e {
                     ClientError::ConsensusStateNotFound {
@@ -425,27 +425,29 @@ impl Ics2ClientState for ClientState {
         // Check if a consensus state is already installed; if so it should
         // match the untrusted header.
         let header_consensus_state = TmConsensusState::from(header.clone());
-        let existing_consensus_state =
-            match maybe_consensus_state(ctx, &client_id, &header.height())? {
-                Some(cs) => {
-                    let cs = downcast_tm_consensus_state(cs.as_ref())?;
-                    // If this consensus state matches, skip verification
-                    // (optimization)
-                    if cs == header_consensus_state {
-                        // Header is already installed and matches the incoming
-                        // header (already verified)
-                        return Ok(UpdatedState {
-                            client_state: client_state.into_box(),
-                            consensus_state: cs.into_box(),
-                        });
-                    }
-                    Some(cs)
+        let client_cons_state_path = ClientConsensusStatePath::new(&client_id, &header.height());
+        let existing_consensus_state = match maybe_consensus_state(ctx, &client_cons_state_path)? {
+            Some(cs) => {
+                let cs = downcast_tm_consensus_state(cs.as_ref())?;
+                // If this consensus state matches, skip verification
+                // (optimization)
+                if cs == header_consensus_state {
+                    // Header is already installed and matches the incoming
+                    // header (already verified)
+                    return Ok(UpdatedState {
+                        client_state: client_state.into_box(),
+                        consensus_state: cs.into_box(),
+                    });
                 }
-                None => None,
-            };
+                Some(cs)
+            }
+            None => None,
+        };
 
+        let trusted_client_cons_state_path =
+            ClientConsensusStatePath::new(&client_id, &header.trusted_height);
         let trusted_consensus_state = downcast_tm_consensus_state(
-            ctx.consensus_state(&client_id, &header.trusted_height)?
+            ctx.consensus_state(&trusted_client_cons_state_path)?
                 .as_ref(),
         )?;
 
@@ -497,12 +499,12 @@ impl Ics2ClientState for ClientState {
                 });
             }
         }
-
+        let client_cons_state_path = ClientConsensusStatePath::new(&client_id, &header.height());
         // Monotonicity checks for timestamps for in-the-middle updates
         // (cs-new, cs-next, cs-latest)
         if header.height() < client_state.latest_height() {
             let maybe_next_cs = ctx
-                .next_consensus_state(&client_id, &header.height())?
+                .next_consensus_state(&client_cons_state_path)?
                 .as_ref()
                 .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
                 .transpose()?;
@@ -525,7 +527,7 @@ impl Ics2ClientState for ClientState {
         // (cs-trusted, cs-prev, cs-new)
         if header.trusted_height < header.height() {
             let maybe_prev_cs = ctx
-                .prev_consensus_state(&client_id, &header.height())?
+                .prev_consensus_state(&client_cons_state_path)?
                 .as_ref()
                 .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
                 .transpose()?;
@@ -574,13 +576,17 @@ impl Ics2ClientState for ClientState {
                 return Err(Error::MisbehaviourHeadersNotAtSameHeight.into());
             }
         }
-
+        let client_cons_state_path_1 =
+            ClientConsensusStatePath::new(&client_id, &header_1.trusted_height);
         let consensus_state_1 = {
-            let cs = ctx.consensus_state(&client_id, &header_1.trusted_height)?;
+            let cs = ctx.consensus_state(&client_cons_state_path_1)?;
             downcast_tm_consensus_state(cs.as_ref())
         }?;
+
+        let client_cons_state_path_2 =
+            ClientConsensusStatePath::new(&client_id, &header_2.trusted_height);
         let consensus_state_2 = {
-            let cs = ctx.consensus_state(&client_id, &header_2.trusted_height)?;
+            let cs = ctx.consensus_state(&client_cons_state_path_2)?;
             downcast_tm_consensus_state(cs.as_ref())
         }?;
 
@@ -637,13 +643,17 @@ impl Ics2ClientState for ClientState {
                 ));
             }
         }
-
+        let client_cons_state_path_1 =
+            ClientConsensusStatePath::new(&client_id, &header_1.trusted_height);
         let consensus_state_1 = {
-            let cs = ctx.consensus_state(&client_id, &header_1.trusted_height)?;
+            let cs = ctx.consensus_state(&client_cons_state_path_1)?;
             downcast_tm_consensus_state(cs.as_ref())
         }?;
+
+        let client_cons_state_path_2 =
+            ClientConsensusStatePath::new(&client_id, &header_2.trusted_height);
         let consensus_state_2 = {
-            let cs = ctx.consensus_state(&client_id, &header_2.trusted_height)?;
+            let cs = ctx.consensus_state(&client_cons_state_path_2)?;
             downcast_tm_consensus_state(cs.as_ref())
         }?;
 
@@ -683,10 +693,9 @@ impl Ics2ClientState for ClientState {
     ) -> Result<UpdatedState, ClientError> {
         fn maybe_consensus_state(
             ctx: &dyn ValidationContext,
-            client_id: &ClientId,
-            height: Height,
+            client_cons_state_path: &ClientConsensusStatePath,
         ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
-            match ctx.consensus_state(client_id, &height) {
+            match ctx.consensus_state(client_cons_state_path) {
                 Ok(cs) => Ok(Some(cs)),
                 Err(e) => match e {
                     ContextError::ClientError(ClientError::ConsensusStateNotFound {
@@ -717,27 +726,29 @@ impl Ics2ClientState for ClientState {
         // Check if a consensus state is already installed; if so it should
         // match the untrusted header.
         let header_consensus_state = TmConsensusState::from(header.clone());
-        let existing_consensus_state =
-            match maybe_consensus_state(ctx, &client_id, header.height())? {
-                Some(cs) => {
-                    let cs = downcast_tm_consensus_state(cs.as_ref())?;
-                    // If this consensus state matches, skip verification
-                    // (optimization)
-                    if cs == header_consensus_state {
-                        // Header is already installed and matches the incoming
-                        // header (already verified)
-                        return Ok(UpdatedState {
-                            client_state: client_state.into_box(),
-                            consensus_state: cs.into_box(),
-                        });
-                    }
-                    Some(cs)
+        let client_cons_state_path = ClientConsensusStatePath::new(&client_id, &header.height());
+        let existing_consensus_state = match maybe_consensus_state(ctx, &client_cons_state_path)? {
+            Some(cs) => {
+                let cs = downcast_tm_consensus_state(cs.as_ref())?;
+                // If this consensus state matches, skip verification
+                // (optimization)
+                if cs == header_consensus_state {
+                    // Header is already installed and matches the incoming
+                    // header (already verified)
+                    return Ok(UpdatedState {
+                        client_state: client_state.into_box(),
+                        consensus_state: cs.into_box(),
+                    });
                 }
-                None => None,
-            };
+                Some(cs)
+            }
+            None => None,
+        };
 
+        let trusted_client_cons_state_path =
+            ClientConsensusStatePath::new(&client_id, &header.trusted_height);
         let trusted_consensus_state = downcast_tm_consensus_state(
-            ctx.consensus_state(&client_id, &header.trusted_height)
+            ctx.consensus_state(&trusted_client_cons_state_path)
                 .map_err(|e| match e {
                     ContextError::ClientError(e) => e,
                     _ => todo!(),
@@ -796,11 +807,12 @@ impl Ics2ClientState for ClientState {
             }
         }
 
+        let client_cons_state_path = ClientConsensusStatePath::new(&client_id, &header.height());
         // Monotonicity checks for timestamps for in-the-middle updates
         // (cs-new, cs-next, cs-latest)
         if header.height() < client_state.latest_height() {
             let maybe_next_cs = ctx
-                .next_consensus_state(&client_id, &header.height())
+                .next_consensus_state(&client_cons_state_path)
                 .map_err(|e| match e {
                     ContextError::ClientError(e) => e,
                     _ => todo!(),
@@ -827,7 +839,7 @@ impl Ics2ClientState for ClientState {
         // (cs-trusted, cs-prev, cs-new)
         if header.trusted_height < header.height() {
             let maybe_prev_cs = ctx
-                .prev_consensus_state(&client_id, &header.height())
+                .prev_consensus_state(&client_cons_state_path)
                 .map_err(|e| match e {
                     ContextError::ClientError(e) => e,
                     _ => todo!(),
@@ -1013,23 +1025,24 @@ impl Ics2ClientState for ClientState {
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        client_id: &ClientId,
-        consensus_height: Height,
+        client_cons_state_path: &ClientConsensusStatePath,
         expected_consensus_state: &dyn ConsensusState,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
 
-        let path = ClientConsensusStatePath {
-            client_id: client_id.clone(),
-            epoch: consensus_height.revision_number(),
-            height: consensus_height.revision_height(),
-        };
         let value = expected_consensus_state
             .encode_vec()
             .map_err(ClientError::InvalidAnyConsensusState)?;
 
-        verify_membership(client_state, prefix, proof, root, path, value)
+        verify_membership(
+            client_state,
+            prefix,
+            proof,
+            root,
+            client_cons_state_path.clone(),
+            value,
+        )
     }
 
     fn verify_connection_state(
@@ -1038,17 +1051,16 @@ impl Ics2ClientState for ClientState {
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        connection_id: &ConnectionId,
+        conn_path: &ConnectionPath,
         expected_connection_end: &ConnectionEnd,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
 
-        let path = ConnectionsPath(connection_id.clone());
         let value = expected_connection_end
             .encode_vec()
             .map_err(ClientError::InvalidConnectionEnd)?;
-        verify_membership(client_state, prefix, proof, root, path, value)
+        verify_membership(client_state, prefix, proof, root, conn_path.clone(), value)
     }
 
     fn verify_channel_state(
@@ -1057,18 +1069,23 @@ impl Ics2ClientState for ClientState {
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        expected_channel_end: &crate::core::ics04_channel::channel::ChannelEnd,
+        channel_end_path: &ChannelEndPath,
+        expected_channel_end: &ChannelEnd,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
-
-        let path = ChannelEndsPath(port_id.clone(), channel_id.clone());
         let value = expected_channel_end
             .encode_vec()
             .map_err(ClientError::InvalidChannelEnd)?;
-        verify_membership(client_state, prefix, proof, root, path, value)
+
+        verify_membership(
+            client_state,
+            prefix,
+            proof,
+            root,
+            channel_end_path.clone(),
+            value,
+        )
     }
 
     fn verify_client_full_state(
@@ -1077,15 +1094,21 @@ impl Ics2ClientState for ClientState {
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        client_id: &ClientId,
+        client_state_path: &ClientStatePath,
         expected_client_state: Any,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
-
-        let path = ClientStatePath(client_id.clone());
         let value = expected_client_state.encode_to_vec();
-        verify_membership(client_state, prefix, proof, root, path, value)
+
+        verify_membership(
+            client_state,
+            prefix,
+            proof,
+            root,
+            client_state_path.clone(),
+            value,
+        )
     }
 
     fn new_verify_packet_data(
@@ -1095,27 +1118,19 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        sequence: Sequence,
+        commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
         new_verify_delay_passed(ctx, height, connection_end)?;
 
-        let commitment_path = CommitmentsPath {
-            port_id: port_id.clone(),
-            channel_id: channel_id.clone(),
-            sequence,
-        };
-
         verify_membership(
             client_state,
             connection_end.counterparty().prefix(),
             proof,
             root,
-            commitment_path,
+            commitment_path.clone(),
             commitment.into_vec(),
         )
     }
@@ -1127,27 +1142,19 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        sequence: Sequence,
+        commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
         verify_delay_passed(ctx, height, connection_end)?;
 
-        let commitment_path = CommitmentsPath {
-            port_id: port_id.clone(),
-            channel_id: channel_id.clone(),
-            sequence,
-        };
-
         verify_membership(
             client_state,
             connection_end.counterparty().prefix(),
             proof,
             root,
-            commitment_path,
+            commitment_path.clone(),
             commitment.into_vec(),
         )
     }
@@ -1159,26 +1166,19 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        sequence: Sequence,
+        ack_path: &AckPath,
         ack: AcknowledgementCommitment,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
         new_verify_delay_passed(ctx, height, connection_end)?;
 
-        let ack_path = AcksPath {
-            port_id: port_id.clone(),
-            channel_id: channel_id.clone(),
-            sequence,
-        };
         verify_membership(
             client_state,
             connection_end.counterparty().prefix(),
             proof,
             root,
-            ack_path,
+            ack_path.clone(),
             ack.into_vec(),
         )
     }
@@ -1190,26 +1190,19 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        sequence: Sequence,
+        ack_path: &AckPath,
         ack_commitment: AcknowledgementCommitment,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
         verify_delay_passed(ctx, height, connection_end)?;
 
-        let ack_path = AcksPath {
-            port_id: port_id.clone(),
-            channel_id: channel_id.clone(),
-            sequence,
-        };
         verify_membership(
             client_state,
             connection_end.counterparty().prefix(),
             proof,
             root,
-            ack_path,
+            ack_path.clone(),
             ack_commitment.into_vec(),
         )
     }
@@ -1222,8 +1215,7 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
+        seq_recv_path: &SeqRecvPath,
         sequence: Sequence,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
@@ -1235,14 +1227,12 @@ impl Ics2ClientState for ClientState {
             .encode(&mut seq_bytes)
             .expect("buffer size too small");
 
-        let seq_path = SeqRecvsPath(port_id.clone(), channel_id.clone());
-
         verify_membership(
             client_state,
             connection_end.counterparty().prefix(),
             proof,
             root,
-            seq_path,
+            seq_recv_path.clone(),
             seq_bytes,
         )
     }
@@ -1254,8 +1244,7 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
+        seq_recv_path: &SeqRecvPath,
         sequence: Sequence,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
@@ -1267,14 +1256,12 @@ impl Ics2ClientState for ClientState {
             .encode(&mut seq_bytes)
             .expect("buffer size too small");
 
-        let seq_path = SeqRecvsPath(port_id.clone(), channel_id.clone());
-
         verify_membership(
             client_state,
             connection_end.counterparty().prefix(),
             proof,
             root,
-            seq_path,
+            seq_recv_path.clone(),
             seq_bytes,
         )
     }
@@ -1287,25 +1274,18 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        sequence: Sequence,
+        receipt_path: &ReceiptPath,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
         new_verify_delay_passed(ctx, height, connection_end)?;
 
-        let receipt_path = ReceiptsPath {
-            port_id: port_id.clone(),
-            channel_id: channel_id.clone(),
-            sequence,
-        };
         verify_non_membership(
             client_state,
             connection_end.counterparty().prefix(),
             proof,
             root,
-            receipt_path,
+            receipt_path.clone(),
         )
     }
 
@@ -1316,25 +1296,18 @@ impl Ics2ClientState for ClientState {
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        sequence: Sequence,
+        receipt_path: &ReceiptPath,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
         verify_delay_passed(ctx, height, connection_end)?;
 
-        let receipt_path = ReceiptsPath {
-            port_id: port_id.clone(),
-            channel_id: channel_id.clone(),
-            sequence,
-        };
         verify_non_membership(
             client_state,
             connection_end.counterparty().prefix(),
             proof,
             root,
-            receipt_path,
+            receipt_path.clone(),
         )
     }
 }

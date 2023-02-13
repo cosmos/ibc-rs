@@ -5,6 +5,9 @@ use crate::core::ics04_channel::events::SendPacket;
 use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics04_channel::{context::SendPacketReader, error::PacketError, packet::Packet};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
+use crate::core::ics24_host::path::ChannelEndPath;
+use crate::core::ics24_host::path::ClientConsensusStatePath;
+use crate::core::ics24_host::path::SeqSendPath;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
@@ -26,7 +29,8 @@ pub fn send_packet(
 ) -> HandlerResult<SendPacketResult, PacketError> {
     let mut output = HandlerOutput::builder();
 
-    let chan_end_on_a = ctx_a.channel_end(&packet.port_on_a, &packet.chan_on_a)?;
+    let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     if chan_end_on_a.state_matches(&State::Closed) {
         return Err(PacketError::ChannelClosed {
@@ -65,15 +69,17 @@ pub fn send_packet(
         });
     }
 
-    let consensus_state_of_b_on_a =
-        ctx_a.client_consensus_state(client_id_on_a, &latest_height_on_a)?;
+    let client_cons_state_path_on_a =
+        ClientConsensusStatePath::new(client_id_on_a, &latest_height_on_a);
+    let consensus_state_of_b_on_a = ctx_a.client_consensus_state(&client_cons_state_path_on_a)?;
     let latest_timestamp = consensus_state_of_b_on_a.timestamp();
     let packet_timestamp = packet.timeout_timestamp_on_b;
     if let Expiry::Expired = latest_timestamp.check_expiry(&packet_timestamp) {
         return Err(PacketError::LowPacketTimestamp);
     }
 
-    let next_seq_send_on_a = ctx_a.get_next_sequence_send(&packet.port_on_a, &packet.chan_on_a)?;
+    let seq_send_path_on_a = SeqSendPath::new(&packet.port_on_a, &packet.chan_on_a);
+    let next_seq_send_on_a = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
     if packet.sequence != next_seq_send_on_a {
         return Err(PacketError::InvalidPacketSequence {

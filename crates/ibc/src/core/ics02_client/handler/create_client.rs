@@ -93,10 +93,10 @@ where
     })?;
     let consensus_state = client_state.initialise(consensus_state)?;
 
-    ctx.store_client_type(ClientTypePath(client_id.clone()), client_type.clone())?;
-    ctx.store_client_state(ClientStatePath(client_id.clone()), client_state.clone())?;
+    ctx.store_client_type(ClientTypePath::new(&client_id), client_type.clone())?;
+    ctx.store_client_state(ClientStatePath::new(&client_id), client_state.clone())?;
     ctx.store_consensus_state(
-        ClientConsensusStatePath::new(client_id.clone(), client_state.latest_height()),
+        ClientConsensusStatePath::new(&client_id, &client_state.latest_height()),
         consensus_state,
     )?;
     ctx.increase_client_counter();
