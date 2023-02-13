@@ -131,7 +131,7 @@ where
             new_conn_end_on_b
         };
 
-        ctx_b.store_connection(ConnectionPath(msg.conn_id_on_b.clone()), new_conn_end_on_b)?;
+        ctx_b.store_connection(&ConnectionPath(msg.conn_id_on_b.clone()), new_conn_end_on_b)?;
     }
 
     Ok(())

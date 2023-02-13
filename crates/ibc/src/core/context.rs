@@ -519,14 +519,14 @@ pub trait ExecutionContext: ValidationContext {
     /// Stores the given connection_end at path
     fn store_connection(
         &mut self,
-        connection_path: ConnectionPath,
+        connection_path: &ConnectionPath,
         connection_end: ConnectionEnd,
     ) -> Result<(), ContextError>;
 
     /// Stores the given connection_id at a path associated with the client_id.
     fn store_connection_to_client(
         &mut self,
-        client_connection_path: ClientConnectionPath,
+        client_connection_path: &ClientConnectionPath,
         conn_id: ConnectionId,
     ) -> Result<(), ContextError>;
 
@@ -537,48 +537,51 @@ pub trait ExecutionContext: ValidationContext {
 
     fn store_packet_commitment(
         &mut self,
-        commitment_path: CommitmentPath,
+        commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
     ) -> Result<(), ContextError>;
 
-    fn delete_packet_commitment(&mut self, key: CommitmentPath) -> Result<(), ContextError>;
+    fn delete_packet_commitment(
+        &mut self,
+        commitment_path: &CommitmentPath,
+    ) -> Result<(), ContextError>;
 
     fn store_packet_receipt(
         &mut self,
-        receipt_path: ReceiptPath,
+        receipt_path: &ReceiptPath,
         receipt: Receipt,
     ) -> Result<(), ContextError>;
 
     fn store_packet_acknowledgement(
         &mut self,
-        ack_path: AckPath,
+        ack_path: &AckPath,
         ack_commitment: AcknowledgementCommitment,
     ) -> Result<(), ContextError>;
 
-    fn delete_packet_acknowledgement(&mut self, ack_path: AckPath) -> Result<(), ContextError>;
+    fn delete_packet_acknowledgement(&mut self, ack_path: &AckPath) -> Result<(), ContextError>;
 
     /// Stores the given channel_end at a path associated with the port_id and channel_id.
     fn store_channel(
         &mut self,
-        channel_end_path: ChannelEndPath,
+        channel_end_path: &ChannelEndPath,
         channel_end: ChannelEnd,
     ) -> Result<(), ContextError>;
 
     fn store_next_sequence_send(
         &mut self,
-        seq_send_path: SeqSendPath,
+        seq_send_path: &SeqSendPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
 
     fn store_next_sequence_recv(
         &mut self,
-        seq_recv_path: SeqRecvPath,
+        seq_recv_path: &SeqRecvPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
 
     fn store_next_sequence_ack(
         &mut self,
-        seq_ack_path: SeqAckPath,
+        seq_ack_path: &SeqAckPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
 
@@ -653,19 +656,19 @@ where
             msg.version_proposal.clone(),
         );
         let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &chan_id_on_a);
-        ctx_a.store_channel(chan_end_path_on_a, chan_end_on_a)?;
+        ctx_a.store_channel(&chan_end_path_on_a, chan_end_on_a)?;
 
         ctx_a.increase_channel_counter();
 
         // Initialize send, recv, and ack sequence numbers.
         let seq_send_path = SeqSendPath::new(&msg.port_id_on_a, &chan_id_on_a);
-        ctx_a.store_next_sequence_send(seq_send_path, 1.into())?;
+        ctx_a.store_next_sequence_send(&seq_send_path, 1.into())?;
 
         let seq_recv_path = SeqRecvPath::new(&msg.port_id_on_a, &chan_id_on_a);
-        ctx_a.store_next_sequence_recv(seq_recv_path, 1.into())?;
+        ctx_a.store_next_sequence_recv(&seq_recv_path, 1.into())?;
 
         let seq_ack_path = SeqAckPath::new(&msg.port_id_on_a, &chan_id_on_a);
-        ctx_a.store_next_sequence_ack(seq_ack_path, 1.into())?;
+        ctx_a.store_next_sequence_ack(&seq_ack_path, 1.into())?;
     }
 
     // emit events and logs
@@ -755,18 +758,18 @@ where
         );
 
         let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &chan_id_on_b);
-        ctx_b.store_channel(chan_end_path_on_b, chan_end_on_b)?;
+        ctx_b.store_channel(&chan_end_path_on_b, chan_end_on_b)?;
         ctx_b.increase_channel_counter();
 
         // Initialize send, recv, and ack sequence numbers.
         let seq_send_path = SeqSendPath::new(&msg.port_id_on_b, &chan_id_on_b);
-        ctx_b.store_next_sequence_send(seq_send_path, 1.into())?;
+        ctx_b.store_next_sequence_send(&seq_send_path, 1.into())?;
 
         let seq_recv_path = SeqRecvPath::new(&msg.port_id_on_b, &chan_id_on_b);
-        ctx_b.store_next_sequence_recv(seq_recv_path, 1.into())?;
+        ctx_b.store_next_sequence_recv(&seq_recv_path, 1.into())?;
 
         let seq_ack_path = SeqAckPath::new(&msg.port_id_on_b, &chan_id_on_b);
-        ctx_b.store_next_sequence_ack(seq_ack_path, 1.into())?;
+        ctx_b.store_next_sequence_ack(&seq_ack_path, 1.into())?;
     }
 
     // emit events and logs
@@ -842,7 +845,7 @@ where
 
             chan_end_on_a
         };
-        ctx_a.store_channel(chan_end_path_on_a, chan_end_on_a)?;
+        ctx_a.store_channel(&chan_end_path_on_a, chan_end_on_a)?;
     }
 
     // emit events and logs
@@ -917,7 +920,7 @@ where
 
             chan_end_on_b
         };
-        ctx_b.store_channel(chan_end_path_on_b, chan_end_on_b)?;
+        ctx_b.store_channel(&chan_end_path_on_b, chan_end_on_b)?;
     }
 
     // emit events and logs
@@ -998,7 +1001,7 @@ where
             chan_end_on_a
         };
 
-        ctx_a.store_channel(chan_end_path_on_a, chan_end_on_a)?;
+        ctx_a.store_channel(&chan_end_path_on_a, chan_end_on_a)?;
     }
 
     // emit events and logs
@@ -1080,7 +1083,7 @@ where
             chan_end_on_b.set_state(State::Closed);
             chan_end_on_b
         };
-        ctx_b.store_channel(chan_end_path_on_b, chan_end_on_b)?;
+        ctx_b.store_channel(&chan_end_path_on_b, chan_end_on_b)?;
     }
 
     // emit events and logs
@@ -1188,13 +1191,13 @@ where
                     sequence: msg.packet.sequence,
                 };
 
-                ctx_b.store_packet_receipt(receipt_path_on_b, Receipt::Ok)?;
+                ctx_b.store_packet_receipt(&receipt_path_on_b, Receipt::Ok)?;
             }
             Order::Ordered => {
                 let seq_recv_path_on_b =
                     SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
                 let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
-                ctx_b.store_next_sequence_recv(seq_recv_path_on_b, next_seq_recv.increment())?;
+                ctx_b.store_next_sequence_recv(&seq_recv_path_on_b, next_seq_recv.increment())?;
             }
             _ => {}
         }
@@ -1205,7 +1208,7 @@ where
         );
         // `writeAcknowledgement` handler state changes
         ctx_b
-            .store_packet_acknowledgement(ack_path_on_b, ctx_b.ack_commitment(&acknowledgement))?;
+            .store_packet_acknowledgement(&ack_path_on_b, ctx_b.ack_commitment(&acknowledgement))?;
     }
 
     // emit events and logs
@@ -1301,18 +1304,18 @@ where
 
     // apply state changes
     {
-        let commitment_path = CommitmentPath {
+        let commitment_path_on_a = CommitmentPath {
             port_id: msg.packet.port_on_a.clone(),
             channel_id: msg.packet.chan_on_a.clone(),
             sequence: msg.packet.sequence,
         };
-        ctx_a.delete_packet_commitment(commitment_path)?;
+        ctx_a.delete_packet_commitment(&commitment_path_on_a)?;
 
         if let Order::Ordered = chan_end_on_a.ordering {
             // Note: in validation, we verified that `msg.packet.sequence == nextSeqRecv`
             // (where `nextSeqRecv` is the value in the store)
             let seq_ack_path_on_a = SeqAckPath::new(&msg.packet.port_on_a, &msg.packet.chan_on_a);
-            ctx_a.store_next_sequence_ack(seq_ack_path_on_a, msg.packet.sequence.increment())?;
+            ctx_a.store_next_sequence_ack(&seq_ack_path_on_a, msg.packet.sequence.increment())?;
         }
     }
 
@@ -1409,17 +1412,17 @@ where
 
     // apply state changes
     let chan_end_on_a = {
-        let commitment_path = CommitmentPath {
+        let commitment_path_on_a = CommitmentPath {
             port_id: packet.port_on_a.clone(),
             channel_id: packet.chan_on_a.clone(),
             sequence: packet.sequence,
         };
-        ctx_a.delete_packet_commitment(commitment_path)?;
+        ctx_a.delete_packet_commitment(&commitment_path_on_a)?;
 
         if let Order::Ordered = chan_end_on_a.ordering {
             let mut chan_end_on_a = chan_end_on_a;
             chan_end_on_a.state = State::Closed;
-            ctx_a.store_channel(chan_end_path_on_a, chan_end_on_a.clone())?;
+            ctx_a.store_channel(&chan_end_path_on_a, chan_end_on_a.clone())?;
 
             chan_end_on_a
         } else {

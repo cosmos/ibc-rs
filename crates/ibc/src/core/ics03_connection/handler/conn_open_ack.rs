@@ -180,7 +180,7 @@ where
             new_conn_end_on_a
         };
 
-        ctx_a.store_connection(ConnectionPath::new(&msg.conn_id_on_a), new_conn_end_on_a)?;
+        ctx_a.store_connection(&ConnectionPath::new(&msg.conn_id_on_a), new_conn_end_on_a)?;
     }
 
     Ok(())
