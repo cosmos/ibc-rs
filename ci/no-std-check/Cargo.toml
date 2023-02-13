@@ -13,7 +13,7 @@ tendermint-light-client-verifier = { version = "0.28.0", default-features = fals
 
 sp-core = { version = "15.0.0", default-features = false, optional = true }
 sp-io = { version = "16.0.0", default-features = false, optional = true }
-sp-runtime = { version = "17.0.0", default-features = false, optional = true }
+sp-runtime = { version = "18.0.0", default-features = false, optional = true }
 sp-std = { version = "6.0.0", default-features = false, optional = true }
 
 [features]
