@@ -145,3 +145,101 @@ where
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::applications::transfer::MODULE_ID_STR;
+    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
+    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use crate::core::ics03_connection::version::get_compatible_versions;
+    use crate::test_utils::DummyTransferModule;
+    use crate::timestamp::ZERO_DURATION;
+    use crate::{
+        core::{
+            ics03_connection::connection::ConnectionEnd,
+            ics04_channel::{
+                channel::{ChannelEnd, Counterparty},
+                msgs::timeout_on_close::test_util::get_dummy_raw_msg_timeout_on_close,
+                Version,
+            },
+            ics24_host::identifier::{ClientId, ConnectionId},
+        },
+        mock::context::MockContext,
+        Height,
+    };
+
+    #[test]
+    fn timeout_on_close_execute() {
+        let default_context = MockContext::default();
+        let height = 2;
+        let timeout_timestamp = 5;
+
+        let client_height = Height::new(0, 2).unwrap();
+
+        let msg = MsgTimeoutOnClose::try_from(get_dummy_raw_msg_timeout_on_close(
+            height,
+            timeout_timestamp,
+        ))
+        .unwrap();
+        let packet = msg.packet.clone();
+
+        let data = default_context.packet_commitment(
+            &msg.packet.data,
+            &msg.packet.timeout_height_on_b,
+            &msg.packet.timeout_timestamp_on_b,
+        );
+
+        let chan_end_on_a = ChannelEnd::new(
+            State::Open,
+            Order::Unordered,
+            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b)),
+            vec![ConnectionId::default()],
+            Version::new("ics20-1".to_string()),
+        );
+
+        let conn_end_on_a = ConnectionEnd::new(
+            ConnectionState::Open,
+            ClientId::default(),
+            ConnectionCounterparty::new(
+                ClientId::default(),
+                Some(ConnectionId::default()),
+                Default::default(),
+            ),
+            get_compatible_versions(),
+            ZERO_DURATION,
+        );
+
+        let mut ctx = MockContext::default()
+            .with_client(&ClientId::default(), client_height)
+            .with_connection(ConnectionId::default(), conn_end_on_a)
+            .with_channel(packet.port_on_a, packet.chan_on_a, chan_end_on_a)
+            .with_packet_commitment(
+                msg.packet.port_on_a.clone(),
+                msg.packet.chan_on_a.clone(),
+                msg.packet.sequence,
+                data,
+            );
+        let transfer_module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        let module = DummyTransferModule::new(ctx.ibc_store_share());
+        ctx.add_route(transfer_module_id.clone(), module).unwrap();
+
+        let res = timeout_packet_execute(
+            &mut ctx,
+            transfer_module_id,
+            TimeoutMsgType::TimeoutOnClose(msg),
+        );
+
+        assert!(res.is_ok());
+
+        // Unordered channnels only emit one event
+        assert_eq!(ctx.events.len(), 1);
+        assert!(matches!(
+            ctx.events.first().unwrap(),
+            &IbcEvent::TimeoutPacket(_)
+        ));
+    }
+
+    // TODO: test ordered channel too (ChannelClosed event also emitted)
+}
