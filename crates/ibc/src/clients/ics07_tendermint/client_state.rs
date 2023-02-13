@@ -1,4 +1,3 @@
-use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::prelude::*;
 
 use core::convert::{TryFrom, TryInto};
@@ -30,6 +29,7 @@ use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::trust_threshold::TrustThreshold;
 use crate::core::ics03_connection::connection::ConnectionEnd;
+use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::packet::Sequence;

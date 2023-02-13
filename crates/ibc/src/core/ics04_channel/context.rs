@@ -214,11 +214,8 @@ where
             .map_err(PacketError::Channel)
     }
 
-    fn get_next_sequence_send(
-        &self,
-        seq_sends_path: &SeqSendPath,
-    ) -> Result<Sequence, PacketError> {
-        ChannelReader::get_next_sequence_send(self, seq_sends_path)
+    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, PacketError> {
+        ChannelReader::get_next_sequence_send(self, seq_send_path)
     }
 
     fn hash(&self, value: &[u8]) -> Vec<u8> {

@@ -106,7 +106,7 @@ where
             chan_end_on_a.version().clone(),
         );
 
-        let chan_ends_path_on_b = ChannelEndPath(port_id_on_b, chan_id_on_b.clone());
+        let chan_end_path_on_b = ChannelEndPath(port_id_on_b, chan_id_on_b.clone());
 
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
@@ -116,7 +116,7 @@ where
                 prefix_on_b,
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
-                &chan_ends_path_on_b,
+                &chan_end_path_on_b,
                 &expected_chan_end_on_b,
             )
             .map_err(ChannelError::VerifyChannelFailed)
@@ -189,11 +189,11 @@ pub(crate) fn process<Ctx: ChannelReader>(
         });
     }
 
-    let commitment_path =
+    let commitment_path_on_a =
         CommitmentPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
 
     //verify the packet was sent, check the store
-    let commitment_on_a = ctx_a.get_packet_commitment(&commitment_path)?;
+    let commitment_on_a = ctx_a.get_packet_commitment(&commitment_path_on_a)?;
 
     let expected_commitment_on_a = ctx_a.packet_commitment(
         &packet.data,

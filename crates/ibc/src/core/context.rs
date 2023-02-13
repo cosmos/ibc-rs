@@ -1182,28 +1182,30 @@ where
         // `recvPacket` core handler state changes
         match chan_end_on_b.ordering {
             Order::Unordered => {
-                let path = ReceiptPath {
+                let receipt_path_on_b = ReceiptPath {
                     port_id: msg.packet.port_on_b.clone(),
                     channel_id: msg.packet.chan_on_b.clone(),
                     sequence: msg.packet.sequence,
                 };
 
-                ctx_b.store_packet_receipt(path, Receipt::Ok)?;
+                ctx_b.store_packet_receipt(receipt_path_on_b, Receipt::Ok)?;
             }
             Order::Ordered => {
-                let seq_recv_path = SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
-                let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path)?;
-                ctx_b.store_next_sequence_recv(seq_recv_path, next_seq_recv.increment())?;
+                let seq_recv_path_on_b =
+                    SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+                let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
+                ctx_b.store_next_sequence_recv(seq_recv_path_on_b, next_seq_recv.increment())?;
             }
             _ => {}
         }
-        let ack_path = AckPath::new(
+        let ack_path_on_b = AckPath::new(
             &msg.packet.port_on_b,
             &msg.packet.chan_on_b,
             msg.packet.sequence,
         );
         // `writeAcknowledgement` handler state changes
-        ctx_b.store_packet_acknowledgement(ack_path, ctx_b.ack_commitment(&acknowledgement))?;
+        ctx_b
+            .store_packet_acknowledgement(ack_path_on_b, ctx_b.ack_commitment(&acknowledgement))?;
     }
 
     // emit events and logs
@@ -1273,14 +1275,14 @@ where
         conn_id_on_a.clone(),
     )));
 
-    let commitment_path = CommitmentPath::new(
+    let commitment_path_on_a = CommitmentPath::new(
         &msg.packet.port_on_a,
         &msg.packet.chan_on_a,
         msg.packet.sequence,
     );
 
     // check if we're in the NO-OP case
-    if ctx_a.get_packet_commitment(&commitment_path).is_err() {
+    if ctx_a.get_packet_commitment(&commitment_path_on_a).is_err() {
         // This error indicates that the timeout has already been relayed
         // or there is a misconfigured relayer attempting to prove a timeout
         // for a packet never sent. Core IBC will treat this error as a no-op in order to
@@ -1309,8 +1311,8 @@ where
         if let Order::Ordered = chan_end_on_a.ordering {
             // Note: in validation, we verified that `msg.packet.sequence == nextSeqRecv`
             // (where `nextSeqRecv` is the value in the store)
-            let seq_ack_path = SeqAckPath::new(&msg.packet.port_on_a, &msg.packet.chan_on_a);
-            ctx_a.store_next_sequence_ack(seq_ack_path, msg.packet.sequence.increment())?;
+            let seq_ack_path_on_a = SeqAckPath::new(&msg.packet.port_on_a, &msg.packet.chan_on_a);
+            ctx_a.store_next_sequence_ack(seq_ack_path_on_a, msg.packet.sequence.increment())?;
         }
     }
 

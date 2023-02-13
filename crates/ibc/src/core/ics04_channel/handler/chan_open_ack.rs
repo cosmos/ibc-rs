@@ -105,8 +105,8 @@ pub(crate) fn process<Ctx: ChannelReader>(
     let mut output = HandlerOutput::builder();
 
     // Unwrap the old channel end and validate it against the message.
-    let chan_ends_path_on_a = &ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
-    let chan_end_on_a = ctx_a.channel_end(chan_ends_path_on_a)?;
+    let chan_end_path_on_a = &ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
+    let chan_end_on_a = ctx_a.channel_end(chan_end_path_on_a)?;
 
     // Validate that the channel end is in a state where it can be ack.
     if !chan_end_on_a.state_matches(&State::Init) {

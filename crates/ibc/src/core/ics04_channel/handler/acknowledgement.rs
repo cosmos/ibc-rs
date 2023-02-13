@@ -51,11 +51,11 @@ where
         .into());
     }
 
-    let commitments_path =
+    let commitment_path_on_a =
         CommitmentPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
 
     // Verify packet commitment
-    let commitment_on_a = match ctx_a.get_packet_commitment(&commitments_path) {
+    let commitment_on_a = match ctx_a.get_packet_commitment(&commitment_path_on_a) {
         Ok(commitment_on_a) => commitment_on_a,
 
         // This error indicates that the timeout has already been relayed
@@ -79,8 +79,8 @@ where
     }
 
     if let Order::Ordered = chan_end_on_a.ordering {
-        let seq_ack_path = SeqAckPath::new(&packet.port_on_a, &packet.chan_on_a);
-        let next_seq_ack = ctx_a.get_next_sequence_ack(&seq_ack_path)?;
+        let seq_ack_path_on_a = SeqAckPath::new(&packet.port_on_a, &packet.chan_on_a);
+        let next_seq_ack = ctx_a.get_next_sequence_ack(&seq_ack_path_on_a)?;
         if packet.sequence != next_seq_ack {
             return Err(PacketError::InvalidPacketSequence {
                 given_sequence: packet.sequence,
@@ -106,7 +106,7 @@ where
             ClientConsensusStatePath::new(client_id_on_a, &msg.proof_height_on_b);
         let consensus_state = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
         let ack_commitment = ctx_a.ack_commitment(&msg.acknowledgement);
-        let ack_path_on_b = AckPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
+        let ack_path_on_b = AckPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);
         // Verify the proof for the packet against the chain store.
         client_state_on_a
             .new_verify_packet_acknowledgement(
@@ -173,10 +173,10 @@ pub(crate) fn process<Ctx: ChannelReader>(
         });
     }
 
-    let commitments_path =
+    let commitment_path_on_a =
         CommitmentPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
     // Verify packet commitment
-    let packet_commitment = ctx_a.get_packet_commitment(&commitments_path)?;
+    let packet_commitment = ctx_a.get_packet_commitment(&commitment_path_on_a)?;
 
     if packet_commitment
         != ctx_a.packet_commitment(
