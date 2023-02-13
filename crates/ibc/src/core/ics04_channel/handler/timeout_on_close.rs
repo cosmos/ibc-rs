@@ -430,13 +430,8 @@ mod tests {
             ..
         } = fixture;
         let context = context
-            .clone()
-            .with_channel(
-                PortId::default(),
-                ChannelId::default(),
-                chan_end_on_a.clone(),
-            )
-            .with_connection(ConnectionId::default(), conn_end_on_a.clone());
+            .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a)
+            .with_connection(ConnectionId::default(), conn_end_on_a);
 
         let res = validate(&context, &msg);
 
@@ -457,13 +452,8 @@ mod tests {
             ..
         } = fixture;
         let context = context
-            .clone()
-            .with_channel(
-                PortId::default(),
-                ChannelId::default(),
-                chan_end_on_a.clone(),
-            )
-            .with_connection(ConnectionId::default(), conn_end_on_a.clone())
+            .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a)
+            .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_packet_commitment(
                 msg.packet.port_on_a.clone(),
                 msg.packet.chan_on_a.clone(),
@@ -473,10 +463,7 @@ mod tests {
 
         let res = validate(&context, &msg);
 
-        assert!(
-            res.is_ok(),
-            "Happy path: validation should succeed"
-        )
+        assert!(res.is_ok(), "Happy path: validation should succeed")
     }
 
     #[test]
