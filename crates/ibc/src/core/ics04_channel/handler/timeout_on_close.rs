@@ -327,7 +327,10 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
+    use crate::core::ics04_channel::commitment::PacketCommitment;
+    use crate::core::ics04_channel::handler::timeout_on_close::validate;
     use crate::prelude::*;
+    use rstest::*;
     use test_log::test;
 
     use crate::core::ics02_client::height::Height;
@@ -345,6 +348,136 @@ mod tests {
     use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::timestamp::ZERO_DURATION;
+
+    pub struct Fixture {
+        pub context: MockContext,
+        pub msg: MsgTimeoutOnClose,
+        pub packet_commitment: PacketCommitment,
+        pub conn_end_on_a: ConnectionEnd,
+        pub chan_end_on_a: ChannelEnd,
+    }
+
+    #[fixture]
+    fn fixture() -> Fixture {
+        let context = MockContext::default();
+
+        let height = 2;
+        let timeout_timestamp = 5;
+
+        let msg = MsgTimeoutOnClose::try_from(get_dummy_raw_msg_timeout_on_close(
+            height,
+            timeout_timestamp,
+        ))
+        .unwrap();
+
+        let packet = msg.packet.clone();
+
+        let packet_commitment = context.packet_commitment(
+            &msg.packet.data,
+            &msg.packet.timeout_height_on_b,
+            &msg.packet.timeout_timestamp_on_b,
+        );
+
+        let chan_end_on_a = ChannelEnd::new(
+            State::Open,
+            Order::Ordered,
+            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b)),
+            vec![ConnectionId::default()],
+            Version::new("ics20-1".to_string()),
+        );
+
+        let conn_end_on_a = ConnectionEnd::new(
+            ConnectionState::Open,
+            ClientId::default(),
+            ConnectionCounterparty::new(
+                ClientId::default(),
+                Some(ConnectionId::default()),
+                Default::default(),
+            ),
+            get_compatible_versions(),
+            ZERO_DURATION,
+        );
+
+        Fixture {
+            context,
+            msg,
+            packet_commitment,
+            conn_end_on_a,
+            chan_end_on_a,
+        }
+    }
+
+    #[rstest]
+    fn timeout_on_close_fail_no_channel(fixture: Fixture) {
+        let Fixture { context, msg, .. } = fixture;
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_err(),
+            "Validation fails because no channel exists in the context"
+        )
+    }
+
+    /// NO-OP case
+    #[rstest]
+    fn timeout_on_close_success_no_packet_commitment(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            conn_end_on_a,
+            chan_end_on_a,
+            ..
+        } = fixture;
+        let context = context
+            .clone()
+            .with_channel(
+                PortId::default(),
+                ChannelId::default(),
+                chan_end_on_a.clone(),
+            )
+            .with_connection(ConnectionId::default(), conn_end_on_a.clone());
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_ok(),
+            "Validation should succeed when no packet commitment is present"
+        )
+    }
+
+    #[rstest]
+    fn timeout_on_close_success_happy_path(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            packet_commitment,
+            conn_end_on_a,
+            chan_end_on_a,
+            ..
+        } = fixture;
+        let context = context
+            .clone()
+            .with_channel(
+                PortId::default(),
+                ChannelId::default(),
+                chan_end_on_a.clone(),
+            )
+            .with_connection(ConnectionId::default(), conn_end_on_a.clone())
+            .with_packet_commitment(
+                msg.packet.port_on_a.clone(),
+                msg.packet.chan_on_a.clone(),
+                msg.packet.sequence,
+                packet_commitment,
+            );
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_ok(),
+            "Happy path: validation should succeed"
+        )
+    }
 
     #[test]
     fn timeout_on_close_packet_processing() {
