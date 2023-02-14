@@ -93,7 +93,6 @@ impl Borrow<str> for ModuleId {
 pub type ModuleOutputBuilder = HandlerOutputBuilder<(), ModuleEvent>;
 
 pub trait Module: Send + Sync + AsAnyMut + Debug {
-    #[cfg(feature = "val_exec_ctx")]
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init_validate(
         &self,
@@ -105,7 +104,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         version: &Version,
     ) -> Result<Version, ChannelError>;
 
-    #[cfg(feature = "val_exec_ctx")]
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init_execute(
         &mut self,
@@ -128,7 +126,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         version: &Version,
     ) -> Result<(ModuleExtras, Version), ChannelError>;
 
-    #[cfg(feature = "val_exec_ctx")]
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_try_validate(
         &self,
@@ -140,7 +137,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         counterparty_version: &Version,
     ) -> Result<Version, ChannelError>;
 
-    #[cfg(feature = "val_exec_ctx")]
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_try_execute(
         &mut self,
@@ -163,7 +159,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         counterparty_version: &Version,
     ) -> Result<(ModuleExtras, Version), ChannelError>;
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_chan_open_ack_validate(
         &self,
         _port_id: &PortId,
@@ -173,7 +168,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_chan_open_ack_execute(
         &mut self,
         _port_id: &PortId,
@@ -192,7 +186,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(ModuleExtras::empty())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_chan_open_confirm_validate(
         &self,
         _port_id: &PortId,
@@ -201,7 +194,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_chan_open_confirm_execute(
         &mut self,
         _port_id: &PortId,
@@ -218,7 +210,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(ModuleExtras::empty())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_chan_close_init_validate(
         &self,
         _port_id: &PortId,
@@ -227,7 +218,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_chan_close_init_execute(
         &mut self,
         _port_id: &PortId,
@@ -244,7 +234,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(ModuleExtras::empty())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_chan_close_confirm_validate(
         &self,
         _port_id: &PortId,
@@ -253,7 +242,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_chan_close_confirm_execute(
         &mut self,
         _port_id: &PortId,
@@ -270,7 +258,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(ModuleExtras::empty())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn on_recv_packet_execute(
         &mut self,
         packet: &Packet,
@@ -284,6 +271,20 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         _relayer: &Signer,
     ) -> Acknowledgement;
 
+    fn on_acknowledgement_packet_validate(
+        &self,
+        _packet: &Packet,
+        _acknowledgement: &Acknowledgement,
+        _relayer: &Signer,
+    ) -> Result<(), PacketError>;
+
+    fn on_acknowledgement_packet_execute(
+        &mut self,
+        _packet: &Packet,
+        _acknowledgement: &Acknowledgement,
+        _relayer: &Signer,
+    ) -> (ModuleExtras, Result<(), PacketError>);
+
     fn on_acknowledgement_packet(
         &mut self,
         _output: &mut ModuleOutputBuilder,
@@ -293,6 +294,22 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
     ) -> Result<(), PacketError> {
         Ok(())
     }
+
+    /// Note: `MsgTimeout` and `MsgTimeoutOnClose` use the same callback
+
+    fn on_timeout_packet_validate(
+        &self,
+        packet: &Packet,
+        relayer: &Signer,
+    ) -> Result<(), PacketError>;
+
+    /// Note: `MsgTimeout` and `MsgTimeoutOnClose` use the same callback
+
+    fn on_timeout_packet_execute(
+        &mut self,
+        packet: &Packet,
+        relayer: &Signer,
+    ) -> (ModuleExtras, Result<(), PacketError>);
 
     fn on_timeout_packet(
         &mut self,

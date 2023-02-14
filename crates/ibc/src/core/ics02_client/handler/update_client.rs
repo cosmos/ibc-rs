@@ -17,11 +17,10 @@ use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::timestamp::Timestamp;
 
-#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(feature = "val_exec_ctx")]
+
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
-#[cfg(feature = "val_exec_ctx")]
+
 use crate::core::{ExecutionContext, ValidationContext};
 
 /// The result following the successful processing of a `MsgUpdateAnyClient` message.
@@ -34,7 +33,6 @@ pub struct UpdateClientResult {
     pub processed_height: Height,
 }
 
-#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -88,7 +86,6 @@ where
     Ok(())
 }
 
-#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,

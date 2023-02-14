@@ -4,9 +4,8 @@ use super::error::TokenTransferError;
 use crate::applications::transfer::acknowledgement::TokenTransferAcknowledgement;
 use crate::applications::transfer::events::{AckEvent, AckStatusEvent, RecvEvent, TimeoutEvent};
 use crate::applications::transfer::packet::PacketData;
-use crate::applications::transfer::relay::on_ack_packet::process_ack_packet;
 use crate::applications::transfer::relay::on_recv_packet::process_recv_packet;
-use crate::applications::transfer::relay::on_timeout_packet::process_timeout_packet;
+use crate::applications::transfer::relay::refund_packet_token;
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::commitment::PacketCommitment;
@@ -300,7 +299,9 @@ pub fn on_acknowledgement_packet(
         serde_json::from_slice::<TokenTransferAcknowledgement>(acknowledgement.as_ref())
             .map_err(|_| TokenTransferError::AckDeserialization)?;
 
-    process_ack_packet(ctx, packet, &data, &acknowledgement)?;
+    if !acknowledgement.is_successful() {
+        refund_packet_token(ctx, packet, &data)?;
+    }
 
     let ack_event = AckEvent {
         receiver: data.receiver,
@@ -323,7 +324,7 @@ pub fn on_timeout_packet(
     let data = serde_json::from_slice::<PacketData>(&packet.data)
         .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
 
-    process_timeout_packet(ctx, packet, &data)?;
+    refund_packet_token(ctx, packet, &data)?;
 
     let timeout_event = TimeoutEvent {
         refund_receiver: data.sender,
@@ -335,201 +336,318 @@ pub fn on_timeout_packet(
     Ok(())
 }
 
-#[cfg(feature = "val_exec_ctx")]
-pub use val_exec_ctx::*;
-#[cfg(feature = "val_exec_ctx")]
-mod val_exec_ctx {
-    use crate::applications::transfer::relay::on_recv_packet::process_recv_packet_execute;
+use crate::applications::transfer::relay::{
+    on_recv_packet::process_recv_packet_execute, refund_packet_token_validate,
+};
 
-    pub use super::*;
+pub use super::*;
 
-    #[allow(clippy::too_many_arguments)]
-    pub fn on_chan_open_init_validate(
-        ctx: &impl TokenTransferContext,
-        order: Order,
-        _connection_hops: &[ConnectionId],
-        port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty: &Counterparty,
-        version: &Version,
-    ) -> Result<(), TokenTransferError> {
-        if order != Order::Unordered {
-            return Err(TokenTransferError::ChannelNotUnordered {
-                expect_order: Order::Unordered,
-                got_order: order,
-            });
+#[allow(clippy::too_many_arguments)]
+pub fn on_chan_open_init_validate(
+    ctx: &impl TokenTransferContext,
+    order: Order,
+    _connection_hops: &[ConnectionId],
+    port_id: &PortId,
+    _channel_id: &ChannelId,
+    _counterparty: &Counterparty,
+    version: &Version,
+) -> Result<(), TokenTransferError> {
+    if order != Order::Unordered {
+        return Err(TokenTransferError::ChannelNotUnordered {
+            expect_order: Order::Unordered,
+            got_order: order,
+        });
+    }
+    let bound_port = ctx.get_port()?;
+    if port_id != &bound_port {
+        return Err(TokenTransferError::InvalidPort {
+            port_id: port_id.clone(),
+            exp_port_id: bound_port,
+        });
+    }
+
+    if !version.is_empty() && version != &Version::new(VERSION.to_string()) {
+        return Err(TokenTransferError::InvalidVersion {
+            expect_version: Version::new(VERSION.to_string()),
+            got_version: version.clone(),
+        });
+    }
+
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn on_chan_open_init_execute(
+    _ctx: &mut impl TokenTransferContext,
+    _order: Order,
+    _connection_hops: &[ConnectionId],
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+    _counterparty: &Counterparty,
+    _version: &Version,
+) -> Result<(ModuleExtras, Version), TokenTransferError> {
+    Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn on_chan_open_try_validate(
+    _ctx: &impl TokenTransferContext,
+    order: Order,
+    _connection_hops: &[ConnectionId],
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+    _counterparty: &Counterparty,
+    counterparty_version: &Version,
+) -> Result<(), TokenTransferError> {
+    if order != Order::Unordered {
+        return Err(TokenTransferError::ChannelNotUnordered {
+            expect_order: Order::Unordered,
+            got_order: order,
+        });
+    }
+    if counterparty_version != &Version::new(VERSION.to_string()) {
+        return Err(TokenTransferError::InvalidCounterpartyVersion {
+            expect_version: Version::new(VERSION.to_string()),
+            got_version: counterparty_version.clone(),
+        });
+    }
+
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn on_chan_open_try_execute(
+    _ctx: &mut impl TokenTransferContext,
+    _order: Order,
+    _connection_hops: &[ConnectionId],
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+    _counterparty: &Counterparty,
+    _counterparty_version: &Version,
+) -> Result<(ModuleExtras, Version), TokenTransferError> {
+    Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
+}
+
+pub fn on_chan_open_ack_validate(
+    _ctx: &impl TokenTransferContext,
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+    counterparty_version: &Version,
+) -> Result<(), TokenTransferError> {
+    if counterparty_version != &Version::new(VERSION.to_string()) {
+        return Err(TokenTransferError::InvalidCounterpartyVersion {
+            expect_version: Version::new(VERSION.to_string()),
+            got_version: counterparty_version.clone(),
+        });
+    }
+
+    Ok(())
+}
+
+pub fn on_chan_open_ack_execute(
+    _ctx: &mut impl TokenTransferContext,
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+    _counterparty_version: &Version,
+) -> Result<ModuleExtras, TokenTransferError> {
+    Ok(ModuleExtras::empty())
+}
+
+pub fn on_chan_open_confirm_validate(
+    _ctx: &impl TokenTransferContext,
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+) -> Result<(), TokenTransferError> {
+    Ok(())
+}
+
+pub fn on_chan_open_confirm_execute(
+    _ctx: &mut impl TokenTransferContext,
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+) -> Result<ModuleExtras, TokenTransferError> {
+    Ok(ModuleExtras::empty())
+}
+
+pub fn on_chan_close_init_validate(
+    _ctx: &impl TokenTransferContext,
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+) -> Result<(), TokenTransferError> {
+    Err(TokenTransferError::CantCloseChannel)
+}
+pub fn on_chan_close_init_execute(
+    _ctx: &mut impl TokenTransferContext,
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+) -> Result<ModuleExtras, TokenTransferError> {
+    Err(TokenTransferError::CantCloseChannel)
+}
+
+pub fn on_chan_close_confirm_validate(
+    _ctx: &impl TokenTransferContext,
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+) -> Result<(), TokenTransferError> {
+    Ok(())
+}
+
+pub fn on_chan_close_confirm_execute(
+    _ctx: &mut impl TokenTransferContext,
+    _port_id: &PortId,
+    _channel_id: &ChannelId,
+) -> Result<ModuleExtras, TokenTransferError> {
+    Ok(ModuleExtras::empty())
+}
+
+pub fn on_recv_packet_execute(
+    ctx: &mut impl TokenTransferContext,
+    packet: &Packet,
+) -> (ModuleExtras, Acknowledgement) {
+    let data = match serde_json::from_slice::<PacketData>(&packet.data) {
+        Ok(data) => data,
+        Err(_) => {
+            let ack = TokenTransferAcknowledgement::Error(
+                TokenTransferError::PacketDataDeserialization.to_string(),
+            );
+            return (ModuleExtras::empty(), ack.into());
         }
-        let bound_port = ctx.get_port()?;
-        if port_id != &bound_port {
-            return Err(TokenTransferError::InvalidPort {
-                port_id: port_id.clone(),
-                exp_port_id: bound_port,
-            });
+    };
+
+    let (mut extras, ack) = match process_recv_packet_execute(ctx, packet, data.clone()) {
+        Ok(extras) => (extras, TokenTransferAcknowledgement::success()),
+        Err((extras, error)) => (extras, TokenTransferAcknowledgement::from_error(error)),
+    };
+
+    let recv_event = RecvEvent {
+        receiver: data.receiver,
+        denom: data.token.denom,
+        amount: data.token.amount,
+        success: ack.is_successful(),
+    };
+    extras.events.push(recv_event.into());
+
+    (extras, ack.into())
+}
+
+pub fn on_acknowledgement_packet_validate<Ctx>(
+    _ctx: &Ctx,
+    packet: &Packet,
+    acknowledgement: &Acknowledgement,
+    _relayer: &Signer,
+) -> Result<(), TokenTransferError>
+where
+    Ctx: TokenTransferContext,
+{
+    let data = serde_json::from_slice::<PacketData>(&packet.data)
+        .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
+
+    let acknowledgement =
+        serde_json::from_slice::<TokenTransferAcknowledgement>(acknowledgement.as_ref())
+            .map_err(|_| TokenTransferError::AckDeserialization)?;
+
+    if !acknowledgement.is_successful() {
+        refund_packet_token_validate::<Ctx>(&data)?;
+    }
+
+    Ok(())
+}
+
+pub fn on_acknowledgement_packet_execute(
+    ctx: &mut impl TokenTransferContext,
+    packet: &Packet,
+    acknowledgement: &Acknowledgement,
+    _relayer: &Signer,
+) -> (ModuleExtras, Result<(), TokenTransferError>) {
+    let data = match serde_json::from_slice::<PacketData>(&packet.data) {
+        Ok(data) => data,
+        Err(_) => {
+            return (
+                ModuleExtras::empty(),
+                Err(TokenTransferError::PacketDataDeserialization),
+            );
         }
+    };
 
-        if !version.is_empty() && version != &Version::new(VERSION.to_string()) {
-            return Err(TokenTransferError::InvalidVersion {
-                expect_version: Version::new(VERSION.to_string()),
-                got_version: version.clone(),
-            });
-        }
-
-        Ok(())
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    pub fn on_chan_open_init_execute(
-        _ctx: &mut impl TokenTransferContext,
-        _order: Order,
-        _connection_hops: &[ConnectionId],
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty: &Counterparty,
-        _version: &Version,
-    ) -> Result<(ModuleExtras, Version), TokenTransferError> {
-        Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    pub fn on_chan_open_try_validate(
-        _ctx: &impl TokenTransferContext,
-        order: Order,
-        _connection_hops: &[ConnectionId],
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty: &Counterparty,
-        counterparty_version: &Version,
-    ) -> Result<(), TokenTransferError> {
-        if order != Order::Unordered {
-            return Err(TokenTransferError::ChannelNotUnordered {
-                expect_order: Order::Unordered,
-                got_order: order,
-            });
-        }
-        if counterparty_version != &Version::new(VERSION.to_string()) {
-            return Err(TokenTransferError::InvalidCounterpartyVersion {
-                expect_version: Version::new(VERSION.to_string()),
-                got_version: counterparty_version.clone(),
-            });
-        }
-
-        Ok(())
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    pub fn on_chan_open_try_execute(
-        _ctx: &mut impl TokenTransferContext,
-        _order: Order,
-        _connection_hops: &[ConnectionId],
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty: &Counterparty,
-        _counterparty_version: &Version,
-    ) -> Result<(ModuleExtras, Version), TokenTransferError> {
-        Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
-    }
-
-    pub fn on_chan_open_ack_validate(
-        _ctx: &impl TokenTransferContext,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        counterparty_version: &Version,
-    ) -> Result<(), TokenTransferError> {
-        if counterparty_version != &Version::new(VERSION.to_string()) {
-            return Err(TokenTransferError::InvalidCounterpartyVersion {
-                expect_version: Version::new(VERSION.to_string()),
-                got_version: counterparty_version.clone(),
-            });
-        }
-
-        Ok(())
-    }
-
-    pub fn on_chan_open_ack_execute(
-        _ctx: &mut impl TokenTransferContext,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty_version: &Version,
-    ) -> Result<ModuleExtras, TokenTransferError> {
-        Ok(ModuleExtras::empty())
-    }
-
-    pub fn on_chan_open_confirm_validate(
-        _ctx: &impl TokenTransferContext,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    pub fn on_chan_open_confirm_execute(
-        _ctx: &mut impl TokenTransferContext,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, TokenTransferError> {
-        Ok(ModuleExtras::empty())
-    }
-
-    pub fn on_chan_close_init_validate(
-        _ctx: &impl TokenTransferContext,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<(), TokenTransferError> {
-        Err(TokenTransferError::CantCloseChannel)
-    }
-    pub fn on_chan_close_init_execute(
-        _ctx: &mut impl TokenTransferContext,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, TokenTransferError> {
-        Err(TokenTransferError::CantCloseChannel)
-    }
-
-    pub fn on_chan_close_confirm_validate(
-        _ctx: &impl TokenTransferContext,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    pub fn on_chan_close_confirm_execute(
-        _ctx: &mut impl TokenTransferContext,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, TokenTransferError> {
-        Ok(ModuleExtras::empty())
-    }
-
-    pub fn on_recv_packet_execute(
-        ctx: &mut impl TokenTransferContext,
-        packet: &Packet,
-    ) -> (ModuleExtras, Acknowledgement) {
-        let data = match serde_json::from_slice::<PacketData>(&packet.data) {
-            Ok(data) => data,
+    let acknowledgement =
+        match serde_json::from_slice::<TokenTransferAcknowledgement>(acknowledgement.as_ref()) {
+            Ok(ack) => ack,
             Err(_) => {
-                let ack = TokenTransferAcknowledgement::Error(
-                    TokenTransferError::PacketDataDeserialization.to_string(),
+                return (
+                    ModuleExtras::empty(),
+                    Err(TokenTransferError::AckDeserialization),
                 );
-                return (ModuleExtras::empty(), ack.into());
             }
         };
 
-        let (mut extras, ack) = match process_recv_packet_execute(ctx, packet, data.clone()) {
-            Ok(extras) => (extras, TokenTransferAcknowledgement::success()),
-            Err((extras, error)) => (extras, TokenTransferAcknowledgement::from_error(error)),
-        };
-
-        let recv_event = RecvEvent {
-            receiver: data.receiver,
-            denom: data.token.denom,
-            amount: data.token.amount,
-            success: ack.is_successful(),
-        };
-        extras.events.push(recv_event.into());
-
-        (extras, ack.into())
+    if !acknowledgement.is_successful() {
+        if let Err(err) = refund_packet_token(ctx, packet, &data) {
+            return (ModuleExtras::empty(), Err(err));
+        }
     }
+
+    let ack_event = AckEvent {
+        receiver: data.receiver,
+        denom: data.token.denom,
+        amount: data.token.amount,
+        acknowledgement: acknowledgement.clone(),
+    };
+
+    let extras = ModuleExtras {
+        events: vec![ack_event.into(), AckStatusEvent { acknowledgement }.into()],
+        log: Vec::new(),
+    };
+
+    (extras, Ok(()))
+}
+
+pub fn on_timeout_packet_validate<Ctx>(
+    _ctx: &Ctx,
+    packet: &Packet,
+    _relayer: &Signer,
+) -> Result<(), TokenTransferError>
+where
+    Ctx: TokenTransferContext,
+{
+    let data = serde_json::from_slice::<PacketData>(&packet.data)
+        .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
+
+    refund_packet_token_validate::<Ctx>(&data)?;
+
+    Ok(())
+}
+
+pub fn on_timeout_packet_execute(
+    ctx: &mut impl TokenTransferContext,
+    packet: &Packet,
+    _relayer: &Signer,
+) -> (ModuleExtras, Result<(), TokenTransferError>) {
+    let data = match serde_json::from_slice::<PacketData>(&packet.data) {
+        Ok(data) => data,
+        Err(_) => {
+            return (
+                ModuleExtras::empty(),
+                Err(TokenTransferError::PacketDataDeserialization),
+            );
+        }
+    };
+
+    if let Err(err) = refund_packet_token(ctx, packet, &data) {
+        return (ModuleExtras::empty(), Err(err));
+    }
+
+    let timeout_event = TimeoutEvent {
+        refund_receiver: data.sender,
+        refund_denom: data.token.denom,
+        refund_amount: data.token.amount,
+    };
+
+    let extras = ModuleExtras {
+        events: vec![timeout_event.into()],
+        log: Vec::new(),
+    };
+
+    (extras, Ok(()))
 }
 
 #[cfg(test)]

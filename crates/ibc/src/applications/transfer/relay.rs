@@ -6,12 +6,10 @@ use crate::applications::transfer::packet::PacketData;
 use crate::core::ics04_channel::packet::Packet;
 use crate::prelude::*;
 
-pub mod on_ack_packet;
 pub mod on_recv_packet;
-pub mod on_timeout_packet;
 pub mod send_transfer;
 
-fn refund_packet_token(
+pub fn refund_packet_token(
     ctx: &mut impl TokenTransferContext,
     packet: &Packet,
     data: &PacketData,
@@ -37,4 +35,16 @@ fn refund_packet_token(
     else {
         ctx.mint_coins(&sender, &data.token)
     }
+}
+
+pub fn refund_packet_token_validate<Ctx: TokenTransferContext>(
+    data: &PacketData,
+) -> Result<(), TokenTransferError> {
+    let _sender: <Ctx as TokenTransferContext>::AccountId = data
+        .sender
+        .clone()
+        .try_into()
+        .map_err(|_| TokenTransferError::ParseAccountFailure)?;
+
+    Ok(())
 }

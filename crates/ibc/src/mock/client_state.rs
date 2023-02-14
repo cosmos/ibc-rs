@@ -32,7 +32,6 @@ use crate::mock::misbehaviour::Misbehaviour;
 
 use crate::Height;
 
-#[cfg(feature = "val_exec_ctx")]
 use crate::core::{ContextError, ValidationContext};
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
@@ -203,7 +202,6 @@ impl ClientState for MockClientState {
         })
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn new_check_header_and_update_state(
         &self,
         _ctx: &dyn ValidationContext,
@@ -252,7 +250,6 @@ impl ClientState for MockClientState {
         Ok(new_state.into_box())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn new_check_misbehaviour_and_update_state(
         &self,
         _ctx: &dyn ValidationContext,
@@ -372,7 +369,6 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
-    #[cfg(feature = "val_exec_ctx")]
     fn new_verify_packet_data(
         &self,
         _ctx: &dyn ValidationContext,
@@ -418,9 +414,37 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
+    fn new_verify_next_sequence_recv(
+        &self,
+        _ctx: &dyn ValidationContext,
+        _height: Height,
+        _connection_end: &ConnectionEnd,
+        _proof: &CommitmentProofBytes,
+        _root: &CommitmentRoot,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _sequence: Sequence,
+    ) -> Result<(), ClientError> {
+        Ok(())
+    }
+
     fn verify_next_sequence_recv(
         &self,
         _ctx: &dyn ChannelReader,
+        _height: Height,
+        _connection_end: &ConnectionEnd,
+        _proof: &CommitmentProofBytes,
+        _root: &CommitmentRoot,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _sequence: Sequence,
+    ) -> Result<(), ClientError> {
+        Ok(())
+    }
+
+    fn new_verify_packet_receipt_absence(
+        &self,
+        _ctx: &dyn ValidationContext,
         _height: Height,
         _connection_end: &ConnectionEnd,
         _proof: &CommitmentProofBytes,
@@ -442,6 +466,21 @@ impl ClientState for MockClientState {
         _port_id: &PortId,
         _channel_id: &ChannelId,
         _sequence: Sequence,
+    ) -> Result<(), ClientError> {
+        Ok(())
+    }
+
+    fn new_verify_packet_acknowledgement(
+        &self,
+        _ctx: &dyn ValidationContext,
+        _height: Height,
+        _connection_end: &ConnectionEnd,
+        _proof: &CommitmentProofBytes,
+        _root: &CommitmentRoot,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _sequence: Sequence,
+        _ack: AcknowledgementCommitment,
     ) -> Result<(), ClientError> {
         Ok(())
     }

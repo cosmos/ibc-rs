@@ -1,5 +1,46 @@
 # CHANGELOG
 
+## v0.28.0
+
+*February 9, 2023*
+
+With this release, the implementation of the new `ValidationContext`/`ExecutionContext` is complete, although still behind the `val_exec_ctx` feature flag. There were also important bug fixes.
+
+There are consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Implement `verify_upgrade_and_update_state` method for Tendermint clients
+  ([#19](https://github.com/cosmos/ibc-rs/issues/19)).
+- Remove support for asynchronous acknowledgements
+  ([#361](https://github.com/cosmos/ibc-rs/issues/361))
+
+### BUG FIXES
+
+- Fix acknowledgement returned by the token transfer's onRecvPacket callback
+  ([#369](https://github.com/cosmos/ibc-rs/issues/369))
+- Mend `ChanOpenConfirm` handler check of expected counterparty state
+  ([#396](https://github.com/cosmos/ibc-rs/issues/396))
+- Fix issue with the error handling in the `new_check_header_and_update_state`
+  method when consensus state is not found
+  ([#405](https://github.com/cosmos/ibc-rs/issues/405))
+- Fix the caught error by `get_packet_receipt` under `val_exec_ctx` feature when
+  the packet receipt is not found
+  ([#409](https://github.com/cosmos/ibc-rs/issues/409))
+
+### FEATURE
+
+- Finish implementing `ValidationContext::validate()` and
+  `ExecutionContext::execute()` 
+  ([#393](https://github.com/cosmos/ibc-rs/issues/393))
+
+### IMPROVEMENTS
+
+- Add tests to verify `AbciEvent` match the expected Ibc events
+([#163](https://github.com/cosmos/ibc-rs/issues/163)).
+- Add unit tests to cover edge scenarios for counterparty conn & chan ids at init phases
+  ([#175](https://github.com/cosmos/ibc-rs/issues/175)).
+
 ## v0.27.0
 
 *January 16, 2023*

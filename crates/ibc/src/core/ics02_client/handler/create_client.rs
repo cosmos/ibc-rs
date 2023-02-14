@@ -2,18 +2,16 @@
 
 use crate::prelude::*;
 
-#[cfg(feature = "val_exec_ctx")]
 use crate::core::context::ContextError;
-#[cfg(feature = "val_exec_ctx")]
+
 use crate::core::ics24_host::path::ClientConsensusStatePath;
-#[cfg(feature = "val_exec_ctx")]
+
 use crate::core::ics24_host::path::ClientStatePath;
-#[cfg(feature = "val_exec_ctx")]
+
 use crate::core::ics24_host::path::ClientTypePath;
 
-#[cfg(feature = "val_exec_ctx")]
 use crate::core::ExecutionContext;
-#[cfg(feature = "val_exec_ctx")]
+
 use crate::core::ValidationContext;
 
 use crate::core::ics02_client::client_state::ClientState;
@@ -41,7 +39,6 @@ pub struct CreateClientResult {
     pub processed_height: Height,
 }
 
-#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -70,7 +67,6 @@ where
     Ok(())
 }
 
-#[cfg(feature = "val_exec_ctx")]
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
