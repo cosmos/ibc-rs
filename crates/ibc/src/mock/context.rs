@@ -679,7 +679,6 @@ impl RouterBuilder for MockRouterBuilder {
     }
 }
 
-// TODO: REMOVE BEFORE MERGING
 #[derive(Clone, Default)]
 pub struct MockRouter(BTreeMap<ModuleId, Arc<dyn Module>>);
 
