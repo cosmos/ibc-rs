@@ -373,13 +373,10 @@ mod tests {
         .unwrap();
         let packet = msg.packet.clone();
 
-        let mut msg_ok = msg.clone();
-        msg_ok.packet.timeout_timestamp_on_b = Default::default();
-
         let data = context.packet_commitment(
-            &msg_ok.packet.data,
-            &msg_ok.packet.timeout_height_on_b,
-            &msg_ok.packet.timeout_timestamp_on_b,
+            &msg.packet.data,
+            &msg.packet.timeout_height_on_b,
+            &msg.packet.timeout_timestamp_on_b,
         );
 
         let chan_end_on_a = ChannelEnd::new(
@@ -434,7 +431,7 @@ mod tests {
                 )
                 .with_client(&ClientId::default(), client_height)
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone()),
-                msg,
+                msg: msg.clone(),
                 want_pass: false,
             },
             Test {
@@ -448,12 +445,12 @@ mod tests {
                         chan_end_on_a,
                     )
                     .with_packet_commitment(
-                        msg_ok.packet.port_on_a.clone(),
-                        msg_ok.packet.chan_on_a.clone(),
-                        msg_ok.packet.sequence,
+                        msg.packet.port_on_a.clone(),
+                        msg.packet.chan_on_a.clone(),
+                        msg.packet.sequence,
                         data.clone(),
                     ),
-                msg: msg_ok.clone(),
+                msg: msg.clone(),
                 want_pass: true,
             },
             Test {
@@ -467,9 +464,9 @@ mod tests {
                         source_ordered_channel_end,
                     )
                     .with_packet_commitment(
-                        msg_ok.packet.port_on_a.clone(),
-                        msg_ok.packet.chan_on_a.clone(),
-                        msg_ok.packet.sequence,
+                        msg.packet.port_on_a.clone(),
+                        msg.packet.chan_on_a.clone(),
+                        msg.packet.sequence,
                         data,
                     )
                     .with_ack_sequence(
@@ -477,7 +474,7 @@ mod tests {
                          packet.chan_on_b,
                          1.into(),
                      ),
-                msg: msg_ok,
+                msg: msg,
                 want_pass: true,
             },
         ]
