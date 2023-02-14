@@ -344,7 +344,10 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
+    use crate::core::ics04_channel::handler::recv_packet::validate;
     use crate::prelude::*;
+    use crate::Height;
+    use rstest::*;
 
     use test_log::test;
 
@@ -364,6 +367,154 @@ mod tests {
     use crate::timestamp::Timestamp;
     use crate::timestamp::ZERO_DURATION;
     use crate::{core::ics04_channel::packet::Packet, events::IbcEvent};
+
+    pub struct Fixture {
+        pub context: MockContext,
+        pub client_height: Height,
+        pub host_height: Height,
+        pub msg: MsgRecvPacket,
+        pub conn_end_on_b: ConnectionEnd,
+        pub chan_end_on_b: ChannelEnd,
+    }
+
+    #[fixture]
+    fn fixture() -> Fixture {
+        let context = MockContext::default();
+
+        let host_height = context.query_latest_height().unwrap().increment();
+
+        let client_height = host_height.increment();
+
+        let msg = MsgRecvPacket::try_from(get_dummy_raw_msg_recv_packet(
+            client_height.revision_height(),
+        ))
+        .unwrap();
+
+        let packet = msg.packet.clone();
+
+        let chan_end_on_b = ChannelEnd::new(
+            State::Open,
+            Order::default(),
+            Counterparty::new(packet.port_on_a, Some(packet.chan_on_a)),
+            vec![ConnectionId::default()],
+            Version::new("ics20-1".to_string()),
+        );
+
+        let conn_end_on_b = ConnectionEnd::new(
+            ConnectionState::Open,
+            ClientId::default(),
+            ConnectionCounterparty::new(
+                ClientId::default(),
+                Some(ConnectionId::default()),
+                Default::default(),
+            ),
+            get_compatible_versions(),
+            ZERO_DURATION,
+        );
+
+        Fixture {
+            context,
+            client_height,
+            host_height,
+            msg,
+            conn_end_on_b,
+            chan_end_on_b,
+        }
+    }
+
+    #[rstest]
+    fn recv_packet_fail_no_channel(fixture: Fixture) {
+        let Fixture { context, msg, .. } = fixture;
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_err(),
+            "Validation fails because no channel exists in the context"
+        )
+    }
+
+    #[rstest]
+    fn recv_packet_happy_path(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            conn_end_on_b,
+            chan_end_on_b,
+            client_height,
+            host_height,
+            ..
+        } = fixture;
+
+        let packet = msg.packet.clone();
+        let context = context
+            .with_client(&ClientId::default(), client_height)
+            .with_connection(ConnectionId::default(), conn_end_on_b)
+            .with_channel(
+                packet.port_on_b.clone(),
+                packet.chan_on_b.clone(),
+                chan_end_on_b.clone(),
+            )
+            .with_send_sequence(packet.port_on_b.clone(), packet.chan_on_b.clone(), 1.into())
+            .with_height(host_height)
+            // This `with_recv_sequence` is required for ordered channels
+            .with_recv_sequence(
+                packet.port_on_b.clone(),
+                packet.chan_on_b.clone(),
+                packet.sequence,
+            );
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_ok(),
+            "Happy path: validation should succeed. err: {res:?}"
+        )
+    }
+
+    #[rstest]
+    fn recv_packet_timeout_expired(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            conn_end_on_b,
+            chan_end_on_b,
+            client_height,
+            host_height,
+            ..
+        } = fixture;
+
+        let packet_old = Packet {
+            sequence: 1.into(),
+            port_on_a: PortId::default(),
+            chan_on_a: ChannelId::default(),
+            port_on_b: PortId::default(),
+            chan_on_b: ChannelId::default(),
+            data: Vec::new(),
+            timeout_height_on_b: client_height.into(),
+            timeout_timestamp_on_b: Timestamp::from_nanoseconds(1).unwrap(),
+        };
+
+        let msg_packet_old = MsgRecvPacket::new(
+            packet_old,
+            msg.proof_commitment_on_a.clone(),
+            msg.proof_height_on_a,
+            get_dummy_account_id(),
+        );
+        let context = context
+            .with_client(&ClientId::default(), client_height)
+            .with_connection(ConnectionId::default(), conn_end_on_b)
+            .with_channel(PortId::default(), ChannelId::default(), chan_end_on_b)
+            .with_send_sequence(PortId::default(), ChannelId::default(), 1.into())
+            .with_height(host_height);
+
+        let res = validate(&context, &msg_packet_old);
+
+        assert!(
+            res.is_err(),
+            "recv_packet validation should fail when the packet has timed out"
+        )
+    }
 
     #[test]
     fn recv_packet_processing() {
