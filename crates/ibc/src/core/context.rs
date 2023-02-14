@@ -186,7 +186,7 @@ pub trait HostChainContext {
     fn proof_specs(&self) -> &ProofSpecs;
 
     /// Returns the host unbonding period
-    fn unbonding_period(&self) -> Duration;
+    fn unbonding_period(&self) -> Option<Duration>;
 
     /// Returns the host upgrade path
     fn upgrade_path(&self) -> &[String];

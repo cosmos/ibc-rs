@@ -37,6 +37,7 @@ use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics05_port::context::PortReader;
 use crate::core::ics05_port::error::PortError;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
+use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{Module, ModuleId, Router, RouterBuilder, RouterContext};
 use crate::core::ics26_routing::handler::{deliver, dispatch, MsgReceipt};
@@ -1512,11 +1513,11 @@ impl HostChainContext for MockContext {
         ConnectionReader::host_consensus_state(self, height).map_err(ContextError::ConnectionError)
     }
 
-    fn proof_specs(&self) -> &crate::core::ics23_commitment::specs::ProofSpecs {
+    fn proof_specs(&self) -> &ProofSpecs {
         todo!()
     }
 
-    fn unbonding_period(&self) -> Duration {
+    fn unbonding_period(&self) -> Option<Duration> {
         todo!()
     }
 

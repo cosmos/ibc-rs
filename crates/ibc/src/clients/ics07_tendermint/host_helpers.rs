@@ -80,14 +80,23 @@ where
             reason: "invalid trust level".to_string(),
         })?;
 
-    if ctx.unbonding_period() != counterparty_client_state.unbonding_period {
-        return Err(HostError::InvalidSelfClientState {
-            reason: format!(
-                "invalid unbonding period. expected: {:?}, got: {:?}",
-                ctx.unbonding_period(),
-                counterparty_client_state.unbonding_period,
-            ),
-        });
+    match ctx.unbonding_period() {
+        Some(host_unbonding_period) => {
+            if host_unbonding_period != counterparty_client_state.unbonding_period {
+                return Err(HostError::InvalidSelfClientState {
+                    reason: format!(
+                        "unbonding period must be greater than trusting period. unbonding period ({:?}) < trusting period ({:?})",
+                        host_unbonding_period,
+                        counterparty_client_state.trusting_period
+                    ),
+                });
+            }
+        }
+        None => {
+            return Err(HostError::InvalidSelfClientState {
+                reason: "unbonding period must be set".to_string(),
+            });
+        }
     }
 
     if counterparty_client_state.unbonding_period < counterparty_client_state.trusting_period {
