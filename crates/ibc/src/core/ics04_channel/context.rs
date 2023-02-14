@@ -127,10 +127,9 @@ pub trait ChannelReader {
 
     /// Returns the current timestamp of the local chain.
     fn host_timestamp(&self) -> Result<Timestamp, ChannelError> {
-        let pending_consensus_state = self
-            .pending_host_consensus_state()
-            .expect("host must have pending consensus state");
-        Ok(pending_consensus_state.timestamp())
+        let host_height = self.host_height()?;
+        let host_consensus_state = self.host_consensus_state(&host_height)?;
+        Ok(host_consensus_state.timestamp())
     }
 
     /// Returns the `ConsensusState` of the host (local) chain at a specific height.

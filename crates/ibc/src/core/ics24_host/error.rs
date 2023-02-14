@@ -1,6 +1,21 @@
 use crate::prelude::*;
 use displaydoc::Display;
 
+#[derive(Debug, Display)]
+pub enum HostError {
+    /// Missing the host height
+    MissingHeight,
+    /// Missing the host timestamp
+    MissingTimestamp,
+    /// Missing the host (self) consensus state at the given height
+    MissingSelfConsensusState { height: String },
+    /// Invalid client state of the host (self) on the counterparty chain
+    InvalidSelfClientState { reason: String },
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for HostError {}
+
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Display)]
 pub enum ValidationError {

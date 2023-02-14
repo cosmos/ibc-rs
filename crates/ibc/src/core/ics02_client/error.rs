@@ -94,8 +94,6 @@ pub enum ClientError {
         latest_time: Timestamp,
         update_time: Timestamp,
     },
-    /// the local consensus state could not be retrieved for height `{height}`
-    MissingLocalConsensusState { height: Height },
     /// invalid connection end error: `{0}`
     InvalidConnectionEnd(TendermintProtoError),
     /// invalid channel end error: `{0}`

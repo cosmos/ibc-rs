@@ -4,10 +4,10 @@ use super::{
     ics02_client::error::ClientError,
     ics03_connection::error::ConnectionError,
     ics04_channel::error::{ChannelError, PacketError},
+    ics23_commitment::specs::ProofSpecs,
+    ics24_host::{error::HostError, identifier::ChainId},
 };
 use core::time::Duration;
-
-use ibc_proto::google::protobuf::Any;
 
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
@@ -63,6 +63,7 @@ use crate::core::{
 use crate::events::IbcEvent;
 use crate::timestamp::Timestamp;
 use crate::Height;
+use ibc_proto::google::protobuf::Any;
 
 use displaydoc::Display;
 
@@ -76,6 +77,8 @@ pub enum ContextError {
     ChannelError(ChannelError),
     /// ICS04 Packet error
     PacketError(PacketError),
+    /// ICS24 Host error
+    HostError(HostError),
 }
 
 impl From<ClientError> for ContextError {
@@ -110,6 +113,7 @@ impl std::error::Error for ContextError {
             Self::ConnectionError(e) => Some(e),
             Self::ChannelError(e) => Some(e),
             Self::PacketError(e) => Some(e),
+            Self::HostError(e) => Some(e),
         }
     }
 }
@@ -160,7 +164,40 @@ pub trait Router {
     }
 }
 
-pub trait ValidationContext: Router {
+/// Defines the interface that a host chain must implement in order to
+/// introspect and validate against its own on-chain data for IBC operations.
+pub trait HostChainContext {
+    /// Returns the host chain id
+    fn chain_id(&self) -> &ChainId;
+
+    /// Returns the host current height
+    fn host_height(&self) -> Result<Height, ContextError>;
+
+    /// Returns the current timestamp of the local chain.
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
+
+    /// Returns the `ConsensusState` of the host (local) chain at a specific height.
+    fn host_consensus_state(
+        &self,
+        height: &Height,
+    ) -> Result<Box<dyn ConsensusState>, ContextError>;
+
+    /// Returns the host proof specs
+    fn proof_specs(&self) -> &ProofSpecs;
+
+    /// Returns the host unbonding period
+    fn unbonding_period(&self) -> Duration;
+
+    /// Returns the host upgrade path
+    fn upgrade_path(&self) -> &[String];
+
+    /// Validates the client state of the running (host) chain that is stored on
+    /// the counterparty chain. Client must be in same revision as the executing
+    /// chain
+    fn validate_self_client(&self, counterparty_client_state: Any) -> Result<(), ContextError>;
+}
+
+pub trait ValidationContext: Router + HostChainContext {
     /// Validation entrypoint.
     fn validate(&self, msg: MsgEnvelope) -> Result<(), RouterError>
     where
@@ -262,35 +299,12 @@ pub trait ValidationContext: Router {
         height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
 
-    /// Returns the current height of the local chain.
-    fn host_height(&self) -> Result<Height, ContextError>;
-
-    /// Returns the current timestamp of the local chain.
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
-        let pending_consensus_state = self
-            .pending_host_consensus_state()
-            .expect("host must have pending consensus state");
-        Ok(pending_consensus_state.timestamp())
-    }
-
-    /// Returns the pending `ConsensusState` of the host (local) chain.
-    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ContextError>;
-
-    /// Returns the `ConsensusState` of the host (local) chain at a specific height.
-    fn host_consensus_state(
-        &self,
-        height: &Height,
-    ) -> Result<Box<dyn ConsensusState>, ContextError>;
-
     /// Returns a natural number, counting how many clients have been created thus far.
     /// The value of this counter should increase only via method `ClientKeeper::increase_client_counter`.
     fn client_counter(&self) -> Result<u64, ContextError>;
 
     /// Returns the ConnectionEnd for the given identifier `conn_id`.
     fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError>;
-
-    /// Validates the `ClientState` of the client on the counterparty chain.
-    fn validate_self_client(&self, counterparty_client_state: Any) -> Result<(), ConnectionError>;
 
     /// Returns the prefix that the local chain uses in the KV store.
     fn commitment_prefix(&self) -> CommitmentPrefix;

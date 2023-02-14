@@ -18,8 +18,8 @@ use tracing::debug;
 
 use crate::clients::ics07_tendermint::client_state::test_util::get_dummy_tendermint_client_state;
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use crate::core::context::ContextError;
 use crate::core::context::Router as NewRouter;
+use crate::core::context::{ContextError, HostChainContext};
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
@@ -880,12 +880,6 @@ impl ChannelReader for MockContext {
         Ok(self.latest_height())
     }
 
-    fn host_timestamp(&self) -> Result<Timestamp, ChannelError> {
-        ClientReader::host_timestamp(self).map_err(|e| ChannelError::Other {
-            description: e.to_string(),
-        })
-    }
-
     fn host_consensus_state(
         &self,
         height: &Height,
@@ -1340,7 +1334,9 @@ impl ClientReader for MockContext {
     ) -> Result<Box<dyn ConsensusState>, ClientError> {
         match self.host_block(height) {
             Some(block_ref) => Ok(block_ref.clone().into()),
-            None => Err(ClientError::MissingLocalConsensusState { height: *height }),
+            None => Err(ClientError::Other {
+                description: format!("Missing the host consensus state at height: {height}"),
+            }),
         }
     }
 
@@ -1496,6 +1492,43 @@ impl NewRouter for MockContext {
     }
 }
 
+impl HostChainContext for MockContext {
+    fn chain_id(&self) -> &ChainId {
+        todo!()
+    }
+
+    fn host_height(&self) -> Result<Height, ContextError> {
+        Ok(self.latest_height())
+    }
+
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
+        ClientReader::host_timestamp(self).map_err(ContextError::ClientError)
+    }
+
+    fn host_consensus_state(
+        &self,
+        height: &Height,
+    ) -> Result<Box<dyn ConsensusState>, ContextError> {
+        ConnectionReader::host_consensus_state(self, height).map_err(ContextError::ConnectionError)
+    }
+
+    fn proof_specs(&self) -> &crate::core::ics23_commitment::specs::ProofSpecs {
+        todo!()
+    }
+
+    fn unbonding_period(&self) -> Duration {
+        todo!()
+    }
+
+    fn upgrade_path(&self) -> &[String] {
+        todo!()
+    }
+
+    fn validate_self_client(&self, _counterparty_client_state: Any) -> Result<(), ContextError> {
+        Ok(())
+    }
+}
+
 impl ValidationContext for MockContext {
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
         ClientReader::client_state(self, client_id).map_err(ContextError::ClientError)
@@ -1531,31 +1564,12 @@ impl ValidationContext for MockContext {
             .map_err(ContextError::ClientError)
     }
 
-    fn host_height(&self) -> Result<Height, ContextError> {
-        Ok(self.latest_height())
-    }
-
-    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ContextError> {
-        ClientReader::pending_host_consensus_state(self).map_err(ContextError::ClientError)
-    }
-
-    fn host_consensus_state(
-        &self,
-        height: &Height,
-    ) -> Result<Box<dyn ConsensusState>, ContextError> {
-        ConnectionReader::host_consensus_state(self, height).map_err(ContextError::ConnectionError)
-    }
-
     fn client_counter(&self) -> Result<u64, ContextError> {
         ClientReader::client_counter(self).map_err(ContextError::ClientError)
     }
 
     fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError> {
         ConnectionReader::connection_end(self, conn_id).map_err(ContextError::ConnectionError)
-    }
-
-    fn validate_self_client(&self, _counterparty_client_state: Any) -> Result<(), ConnectionError> {
-        Ok(())
     }
 
     fn commitment_prefix(&self) -> CommitmentPrefix {
