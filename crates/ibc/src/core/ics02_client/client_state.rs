@@ -47,9 +47,6 @@ pub trait ClientState:
     /// Latest height the client was updated to
     fn latest_height(&self) -> Height;
 
-    /// Validate all the fields of the client state
-    fn validate(&self) -> Result<(), ClientError>;
-
     /// Freeze status of the client
     fn is_frozen(&self) -> bool {
         self.frozen_height().is_some()

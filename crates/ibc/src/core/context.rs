@@ -170,13 +170,13 @@ pub trait HostChainContext {
     /// Returns the host chain id
     fn chain_id(&self) -> &ChainId;
 
-    /// Returns the host current height
+    /// Returns the current height of the host chain.
     fn host_height(&self) -> Result<Height, ContextError>;
 
-    /// Returns the current timestamp of the local chain.
+    /// Returns the current timestamp of the host chain.
     fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
 
-    /// Returns the `ConsensusState` of the host (local) chain at a specific height.
+    /// Returns the `ConsensusState` of the host chain at a specific height.
     fn host_consensus_state(
         &self,
         height: &Height,
@@ -192,8 +192,10 @@ pub trait HostChainContext {
     fn upgrade_path(&self) -> &[String];
 
     /// Validates the client state of the running (host) chain that is stored on
-    /// the counterparty chain. Client must be in same revision as the executing
-    /// chain
+    /// the counterparty chain.
+    ///
+    /// For more information, see the [ICS24 host
+    /// requirements](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#client-state-validation).
     fn validate_self_client(&self, counterparty_client_state: Any) -> Result<(), ContextError>;
 }
 

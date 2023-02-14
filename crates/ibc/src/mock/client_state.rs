@@ -165,10 +165,6 @@ impl ClientState for MockClientState {
         self.frozen_height
     }
 
-    fn validate(&self) -> Result<(), ClientError> {
-        Ok(())
-    }
-
     fn zero_custom_fields(&mut self) {
         unimplemented!()
     }
