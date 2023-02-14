@@ -283,12 +283,10 @@ mod tests {
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
     use crate::core::ics04_channel::commitment::PacketCommitment;
     use crate::core::ics04_channel::context::ChannelReader;
-    use crate::core::ics04_channel::handler::acknowledgement::process;
     use crate::core::ics04_channel::msgs::acknowledgement::test_util::get_dummy_raw_msg_acknowledgement;
     use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-    use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::timestamp::ZERO_DURATION;
 
@@ -322,7 +320,7 @@ mod tests {
         let chan_end_on_a = ChannelEnd::new(
             State::Open,
             Order::default(),
-            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone())),
+            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b)),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
         );
@@ -348,7 +346,6 @@ mod tests {
             chan_end_on_a,
         }
     }
-
 
     #[rstest]
     fn ack_fail_no_channel(fixture: Fixture) {
@@ -414,114 +411,5 @@ mod tests {
             res.is_ok(),
             "Happy path: validation should succeed. err: {res:?}"
         )
-    }
-
-    #[test]
-    fn ack_packet_processing() {
-        struct Test {
-            name: String,
-            ctx: MockContext,
-            msg: MsgAcknowledgement,
-            want_pass: bool,
-        }
-
-        let context = MockContext::default();
-
-        let client_height = Height::new(0, 2).unwrap();
-
-        let msg = MsgAcknowledgement::try_from(get_dummy_raw_msg_acknowledgement(
-            client_height.revision_height(),
-        ))
-        .unwrap();
-        let packet = msg.packet.clone();
-
-        let data = context.packet_commitment(
-            &packet.data,
-            &packet.timeout_height_on_b,
-            &packet.timeout_timestamp_on_b,
-        );
-
-        let chan_end_on_a = ChannelEnd::new(
-            State::Open,
-            Order::default(),
-            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone())),
-            vec![ConnectionId::default()],
-            Version::new("ics20-1".to_string()),
-        );
-
-        let conn_end_on_a = ConnectionEnd::new(
-            ConnectionState::Open,
-            ClientId::default(),
-            ConnectionCounterparty::new(
-                ClientId::default(),
-                Some(ConnectionId::default()),
-                Default::default(),
-            ),
-            get_compatible_versions(),
-            ZERO_DURATION,
-        );
-
-        let tests: Vec<Test> = vec![
-            Test {
-                name: "Processing fails because no channel exists in the context".to_string(),
-                ctx: context.clone(),
-                msg: msg.clone(),
-                want_pass: false,
-            },
-            Test {
-                name: "Good parameters".to_string(),
-                ctx: context
-                    .with_client(&ClientId::default(), client_height)
-                    .with_connection(ConnectionId::default(), conn_end_on_a)
-                    .with_channel(
-                        packet.port_on_a.clone(),
-                        packet.chan_on_a.clone(),
-                        chan_end_on_a,
-                    )
-                    .with_packet_commitment(
-                        packet.port_on_a,
-                        packet.chan_on_a,
-                        packet.sequence,
-                        data,
-                    ) //with_ack_sequence required for ordered channels
-                    .with_ack_sequence(packet.port_on_b, packet.chan_on_b, 1.into()),
-                msg,
-                want_pass: true,
-            },
-        ]
-        .into_iter()
-        .collect();
-
-        for test in tests {
-            let res = process(&test.ctx, &test.msg);
-            // Additionally check the events and the output objects in the result.
-            match res {
-                Ok(proto_output) => {
-                    assert!(
-                        test.want_pass,
-                        "ack_packet: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
-                        test.name,
-                        test.msg.clone(),
-                        test.ctx.clone()
-                    );
-
-                    assert!(!proto_output.events.is_empty()); // Some events must exist.
-
-                    for e in proto_output.events.iter() {
-                        assert!(matches!(e, &IbcEvent::AcknowledgePacket(_)));
-                    }
-                }
-                Err(e) => {
-                    assert!(
-                        !test.want_pass,
-                        "ack_packet: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
-                        test.name,
-                        test.msg.clone(),
-                        test.ctx.clone(),
-                        e,
-                    );
-                }
-            }
-        }
     }
 }

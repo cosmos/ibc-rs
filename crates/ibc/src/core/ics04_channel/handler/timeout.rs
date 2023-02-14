@@ -425,7 +425,6 @@ mod tests {
         let context = context.with_client(&ClientId::default(), client_height);
         let res = validate(&context, &msg);
 
-
         assert!(
             res.is_err(),
             "Validation fails because no channel exists in the context"
@@ -484,7 +483,11 @@ mod tests {
             ..
         } = fixture;
         let context = context
-            .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a_unordered)
+            .with_channel(
+                PortId::default(),
+                ChannelId::default(),
+                chan_end_on_a_unordered,
+            )
             .with_connection(ConnectionId::default(), conn_end_on_a);
 
         let res = validate(&context, &msg);
