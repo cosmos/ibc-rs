@@ -423,8 +423,8 @@ mod tests {
             ..
         } = fixture;
         let context = context.with_client(&ClientId::default(), client_height);
-
         let res = validate(&context, &msg);
+
 
         assert!(
             res.is_err(),
@@ -471,6 +471,28 @@ mod tests {
     #[ignore = "implement and make clear that the timeout is indeed not reached"]
     fn timeout_fail_proof_timeout_not_reached(_fixture: Fixture) {
         // TODO
+    }
+
+    /// NO-OP case
+    #[rstest]
+    fn timeout_success_no_packet_commitment(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            conn_end_on_a,
+            chan_end_on_a_unordered,
+            ..
+        } = fixture;
+        let context = context
+            .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a_unordered)
+            .with_connection(ConnectionId::default(), conn_end_on_a);
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_ok(),
+            "Validation should succeed when no packet commitment is present"
+        )
     }
 
     #[rstest]
