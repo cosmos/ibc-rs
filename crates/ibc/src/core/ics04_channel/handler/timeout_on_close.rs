@@ -343,50 +343,50 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ics24_host::path::ChannelEndPath;
+    use crate::core::ics04_channel::commitment::PacketCommitment;
+    use crate::core::ics04_channel::handler::timeout_on_close::validate;
+    use crate::core::ValidationContext;
+    use crate::mock::context::MockContext;
     use crate::prelude::*;
-    use test_log::test;
+    use crate::Height;
+    use rstest::*;
 
-    use crate::core::ics02_client::height::Height;
     use crate::core::ics03_connection::connection::ConnectionEnd;
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
     use crate::core::ics03_connection::connection::State as ConnectionState;
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
-    use crate::core::ics04_channel::context::ChannelReader;
-    use crate::core::ics04_channel::handler::timeout_on_close::process;
     use crate::core::ics04_channel::msgs::timeout_on_close::test_util::get_dummy_raw_msg_timeout_on_close;
     use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::events::IbcEvent;
-    use crate::mock::context::MockContext;
     use crate::timestamp::ZERO_DURATION;
 
-    #[test]
-    fn timeout_on_close_packet_processing() {
-        struct Test {
-            name: String,
-            ctx: MockContext,
-            msg: MsgTimeoutOnClose,
-            want_pass: bool,
-        }
+    pub struct Fixture {
+        pub context: MockContext,
+        pub msg: MsgTimeoutOnClose,
+        pub packet_commitment: PacketCommitment,
+        pub conn_end_on_a: ConnectionEnd,
+        pub chan_end_on_a: ChannelEnd,
+    }
 
-        let context = MockContext::default();
+    #[fixture]
+    fn fixture() -> Fixture {
+        let client_height = Height::new(0, 2).unwrap();
+        let context = MockContext::default().with_client(&ClientId::default(), client_height);
 
         let height = 2;
         let timeout_timestamp = 5;
-
-        let client_height = Height::new(0, 2).unwrap();
 
         let msg = MsgTimeoutOnClose::try_from(get_dummy_raw_msg_timeout_on_close(
             height,
             timeout_timestamp,
         ))
         .unwrap();
+
         let packet = msg.packet.clone();
 
-        let data = context.packet_commitment(
+        let packet_commitment = context.packet_commitment(
             &msg.packet.data,
             &msg.packet.timeout_height_on_b,
             &msg.packet.timeout_timestamp_on_b,
@@ -412,91 +412,74 @@ mod tests {
             ZERO_DURATION,
         );
 
-        let tests: Vec<Test> = vec![
-            Test {
-                name: "Processing fails because no channel exists in the context".to_string(),
-                ctx: context.clone(),
-                msg: msg.clone(),
-                want_pass: false,
-            },
-            Test {
-                name: "Processing fails no packet commitment is found".to_string(),
-                ctx: context
-                    .clone()
-                    .with_channel(
-                        PortId::default(),
-                        ChannelId::default(),
-                        chan_end_on_a.clone(),
-                    )
-                    .with_connection(ConnectionId::default(), conn_end_on_a.clone()),
-                msg: msg.clone(),
-                want_pass: false,
-            },
-            Test {
-                name: "Good parameters".to_string(),
-                ctx: context
-                    .with_client(&ClientId::default(), client_height)
-                    .with_connection(ConnectionId::default(), conn_end_on_a)
-                    .with_channel(packet.port_on_a, packet.chan_on_a, chan_end_on_a)
-                    .with_packet_commitment(
-                        msg.packet.port_on_a.clone(),
-                        msg.packet.chan_on_a.clone(),
-                        msg.packet.sequence,
-                        data,
-                    ),
-                msg: msg.clone(),
-                want_pass: true,
-            },
-        ]
-        .into_iter()
-        .collect();
-
-        for test in tests {
-            let res = process(&test.ctx, &test.msg);
-            // Additionally check the events and the output objects in the result.
-            match res {
-                Ok(proto_output) => {
-                    assert!(
-                        test.want_pass,
-                        "TO_on_close_packet: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
-                        test.name,
-                        test.msg.clone(),
-                        test.ctx.clone()
-                    );
-
-                    let events = proto_output.events;
-                    let src_channel_end = test
-                        .ctx
-                        .channel_end(&ChannelEndPath::new(
-                            &msg.packet.port_on_a,
-                            &msg.packet.chan_on_a,
-                        ))
-                        .unwrap();
-
-                    if src_channel_end.order_matches(&Order::Ordered) {
-                        assert_eq!(events.len(), 2);
-
-                        assert!(matches!(events[0], IbcEvent::TimeoutPacket(_)));
-                        assert!(matches!(events[1], IbcEvent::ChannelClosed(_)));
-                    } else {
-                        assert_eq!(events.len(), 1);
-                        assert!(matches!(
-                            events.first().unwrap(),
-                            &IbcEvent::TimeoutPacket(_)
-                        ));
-                    }
-                }
-                Err(e) => {
-                    assert!(
-                        !test.want_pass,
-                        "timeout_packet: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
-                        test.name,
-                        test.msg.clone(),
-                        test.ctx.clone(),
-                        e,
-                    );
-                }
-            }
+        Fixture {
+            context,
+            msg,
+            packet_commitment,
+            conn_end_on_a,
+            chan_end_on_a,
         }
+    }
+
+    #[rstest]
+    fn timeout_on_close_fail_no_channel(fixture: Fixture) {
+        let Fixture { context, msg, .. } = fixture;
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_err(),
+            "Validation fails because no channel exists in the context"
+        )
+    }
+
+    /// NO-OP case
+    #[rstest]
+    fn timeout_on_close_success_no_packet_commitment(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            conn_end_on_a,
+            chan_end_on_a,
+            ..
+        } = fixture;
+        let context = context
+            .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a)
+            .with_connection(ConnectionId::default(), conn_end_on_a);
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_ok(),
+            "Validation should succeed when no packet commitment is present"
+        )
+    }
+
+    #[rstest]
+    fn timeout_on_close_success_happy_path(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            packet_commitment,
+            conn_end_on_a,
+            chan_end_on_a,
+            ..
+        } = fixture;
+        let context = context
+            .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a)
+            .with_connection(ConnectionId::default(), conn_end_on_a)
+            .with_packet_commitment(
+                msg.packet.port_on_a.clone(),
+                msg.packet.chan_on_a.clone(),
+                msg.packet.sequence,
+                packet_commitment,
+            );
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_ok(),
+            "Happy path: validation should succeed. err: {res:?}"
+        )
     }
 }
