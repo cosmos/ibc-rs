@@ -202,10 +202,9 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ics04_channel::context::ChannelReader;
     use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
-    use crate::core::ics04_channel::msgs::ChannelMsg;
+    use crate::core::ValidationContext;
     use crate::prelude::*;
 
     use crate::core::ics03_connection::connection::ConnectionEnd;
@@ -216,13 +215,14 @@ mod tests {
     use crate::core::ics04_channel::channel::{
         ChannelEnd, Counterparty, Order, State as ChannelState,
     };
-    use crate::core::ics04_channel::handler::channel_dispatch;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::timestamp::ZERO_DURATION;
+
+    use super::validate;
 
     #[test]
     fn chan_close_confirm_event_height() {
@@ -264,6 +264,7 @@ mod tests {
                 chan_end,
             );
 
-        channel_dispatch(&context, &ChannelMsg::CloseConfirm(msg_chan_close_confirm)).unwrap();
+        let res = validate(&context, &msg_chan_close_confirm);
+        assert!(res.is_ok(), "Validation success: happy path");
     }
 }
