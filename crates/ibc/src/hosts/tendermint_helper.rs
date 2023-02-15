@@ -15,8 +15,8 @@ use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresh
 
 /// Provides an implementation of `ValidationContext::validate_self_client` for
 /// Tendermint-based hosts.
-pub trait ValidateSelfClientContext {
-    fn validate_self_client(
+pub trait ValidateSelfTendermintClientContext {
+    fn validate_self_tendermint_client(
         &self,
         host_client_state_on_counterparty: Any,
     ) -> Result<(), ConnectionError> {
