@@ -92,7 +92,9 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
+    use crate::core::ics04_channel::handler::chan_open_init::validate;
     use crate::prelude::*;
+    use rstest::*;
 
     use test_log::test;
 
@@ -108,6 +110,82 @@ mod tests {
     use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics24_host::identifier::ConnectionId;
     use crate::mock::context::MockContext;
+
+    pub struct Fixture {
+        pub context: MockContext,
+        pub msg: MsgChannelOpenInit,
+        pub conn_end_on_a: ConnectionEnd,
+    }
+
+    #[fixture]
+    fn fixture() -> Fixture {
+        let msg = MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
+
+        let context = MockContext::default();
+
+        let msg_conn_init =
+            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init(None)).unwrap();
+
+        let conn_end_on_a = ConnectionEnd::new(
+            ConnectionState::Init,
+            msg_conn_init.client_id_on_a.clone(),
+            msg_conn_init.counterparty.clone(),
+            get_compatible_versions(),
+            msg_conn_init.delay_period,
+        );
+
+        Fixture {
+            context,
+            msg,
+            conn_end_on_a,
+        }
+    }
+
+    #[rstest]
+    fn chan_open_init_fail_no_connection(fixture: Fixture) {
+        let Fixture { context, msg, .. } = fixture;
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_err(),
+            "Validation fails because no connection exists in the context"
+        )
+    }
+
+    #[rstest]
+    fn chan_open_init_success_happy_path(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            conn_end_on_a,
+        } = fixture;
+
+        let context = context.with_connection(ConnectionId::default(), conn_end_on_a);
+
+        let res = validate(&context, &msg);
+
+        assert!(res.is_ok(), "Validation succeeds; good parameters")
+    }
+
+    #[rstest]
+    fn chan_open_init_success_counterparty_chan_id_set(fixture: Fixture) {
+        let Fixture {
+            context,
+            conn_end_on_a,
+            ..
+        } = fixture;
+
+        let context = context.with_connection(ConnectionId::default(), conn_end_on_a);
+        let msg = MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(Some(0))).unwrap();
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_ok(),
+            "Validation succeeds even if counterparty channel id is set by relayer"
+        )
+    }
 
     #[test]
     fn chan_open_init_msg_processing() {
