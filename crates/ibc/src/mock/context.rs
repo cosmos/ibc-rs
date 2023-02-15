@@ -60,6 +60,7 @@ use crate::timestamp::Timestamp;
 use crate::Height;
 
 use super::client_state::MOCK_CLIENT_TYPE;
+use super::host_helper::ValidateSelfMockClientContext;
 
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
@@ -1161,9 +1162,9 @@ impl ConnectionReader for MockContext {
 
     fn validate_self_client(
         &self,
-        _host_client_state_on_counterparty: Any,
+        host_client_state_on_counterparty: Any,
     ) -> Result<(), ConnectionError> {
-        Ok(())
+        self.validate_self_mock_client(host_client_state_on_counterparty)
     }
 }
 
@@ -1664,9 +1665,9 @@ impl ValidationContext for MockContext {
 
     fn validate_self_client(
         &self,
-        _host_client_state_on_counterparty: Any,
+        host_client_state_on_counterparty: Any,
     ) -> Result<(), ConnectionError> {
-        Ok(())
+        self.validate_self_mock_client(host_client_state_on_counterparty)
     }
 
     fn commitment_prefix(&self) -> CommitmentPrefix {
@@ -1887,6 +1888,16 @@ impl ValidationContext for MockContext {
 
     fn max_expected_time_per_block(&self) -> Duration {
         self.block_time
+    }
+}
+
+impl ValidateSelfMockClientContext for MockContext {
+    fn chain_id(&self) -> &ChainId {
+        &self.host_chain_id
+    }
+
+    fn host_height(&self) -> Height {
+        self.latest_height().increment()
     }
 }
 

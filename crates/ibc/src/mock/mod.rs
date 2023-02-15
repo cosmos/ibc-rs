@@ -11,6 +11,8 @@ pub mod header;
 #[cfg(any(test, feature = "mocks"))]
 pub mod host;
 #[cfg(any(test, feature = "mocks"))]
+pub mod host_helper;
+#[cfg(any(test, feature = "mocks"))]
 pub mod ics18_relayer;
 #[cfg(any(test, feature = "mocks", feature = "mocks-no-std"))]
 pub mod misbehaviour;
