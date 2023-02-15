@@ -205,188 +205,24 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
+    use crate::prelude::*;
     use rstest::*;
     use test_log::test;
 
     use crate::core::ics04_channel::handler::chan_open_try;
-    use crate::downcast;
-    use crate::prelude::*;
 
-    use crate::core::ics02_client::error as ics02_error;
     use crate::core::ics03_connection::connection::ConnectionEnd;
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
     use crate::core::ics03_connection::connection::State as ConnectionState;
-    use crate::core::ics03_connection::error as ics03_error;
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
     use crate::core::ics03_connection::version::get_compatible_versions;
-    use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
-    use crate::core::ics04_channel::error;
     use crate::core::ics04_channel::msgs::chan_open_try::test_util::get_dummy_raw_msg_chan_open_try;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
-    use crate::core::ics04_channel::msgs::ChannelMsg;
-    use crate::core::ics04_channel::Version;
-    use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId};
+    use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::timestamp::ZERO_DURATION;
     use crate::Height;
-
-    #[test]
-    fn chan_open_try_msg_processing() {
-        struct Test {
-            name: String,
-            ctx: MockContext,
-            msg: ChannelMsg,
-            want_pass: bool,
-            match_error: Box<dyn FnOnce(error::ChannelError)>,
-        }
-
-        // Some general-purpose variable to parametrize the messages and the context.
-        let proof_height = 10;
-        let conn_id = ConnectionId::new(2);
-        let client_id = ClientId::new(mock_client_type(), 45).unwrap();
-
-        // The context. We'll reuse this same one across all tests.
-        let context = MockContext::default();
-
-        // This is the connection underlying the channel we're trying to open.
-        let conn_end = ConnectionEnd::new(
-            ConnectionState::Open,
-            client_id.clone(),
-            ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
-            get_compatible_versions(),
-            ZERO_DURATION,
-        );
-
-        // We're going to test message processing against this message.
-        let mut msg =
-            MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(proof_height)).unwrap();
-
-        let chan_id = ChannelId::new(24);
-        let hops = vec![conn_id.clone()];
-        msg.connection_hops_on_b = hops;
-
-        // A preloaded channel end that resides in the context. This is constructed so as to be
-        // consistent with the incoming ChanOpenTry message `msg`.
-        let correct_chan_end = ChannelEnd::new(
-            State::Init,
-            msg.ordering,
-            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
-            msg.connection_hops_on_b.clone(),
-            Version::empty(),
-        );
-
-        let tests: Vec<Test> = vec![
-            Test {
-                name: "Processing fails because no connection exists in the context".to_string(),
-                ctx: context.clone(),
-                msg: ChannelMsg::OpenTry(msg.clone()),
-                want_pass: false,
-                match_error: {
-                    let connection_id = msg.connection_hops_on_b[0].clone();
-                    Box::new(move |e| match e {
-                        error::ChannelError::Connection(e) => {
-                            assert_eq!(
-                                e.to_string(),
-                                ics03_error::ConnectionError::ConnectionNotFound { connection_id }
-                                    .to_string()
-                            );
-                        }
-                        _ => {
-                            panic!("Expected MissingConnection, instead got {}", e)
-                        }
-                    })
-                },
-            },
-            Test {
-                name: "Processing fails b/c the context has no client state".to_string(),
-                ctx: context
-                    .clone()
-                    .with_connection(conn_id.clone(), conn_end.clone())
-                    .with_channel(
-                        msg.port_id_on_b.clone(),
-                        chan_id.clone(),
-                        correct_chan_end.clone(),
-                    ),
-                msg: ChannelMsg::OpenTry(msg.clone()),
-                want_pass: false,
-                match_error: Box::new(|e| match e {
-                    error::ChannelError::Connection(e) => {
-                        assert_eq!(
-                            e.to_string(),
-                            ics03_error::ConnectionError::Client(
-                                ics02_error::ClientError::ClientNotFound {
-                                    client_id: ClientId::new(mock_client_type(), 45).unwrap()
-                                }
-                            )
-                            .to_string()
-                        );
-                    }
-                    _ => {
-                        panic!("Expected MissingClientState, instead got {}", e)
-                    }
-                }),
-            },
-            Test {
-                name: "Processing is successful".to_string(),
-                ctx: context
-                    .clone()
-                    .with_client(&client_id, Height::new(0, proof_height).unwrap())
-                    .with_connection(conn_id.clone(), conn_end.clone())
-                    .with_channel(msg.port_id_on_b.clone(), chan_id, correct_chan_end),
-                msg: ChannelMsg::OpenTry(msg.clone()),
-                want_pass: true,
-                match_error: Box::new(|_| {}),
-            },
-            Test {
-                name: "Processing is successful against an empty context (no preexisting channel)"
-                    .to_string(),
-                ctx: context
-                    .with_client(&client_id, Height::new(0, proof_height).unwrap())
-                    .with_connection(conn_id, conn_end),
-                msg: ChannelMsg::OpenTry(msg),
-                want_pass: true,
-                match_error: Box::new(|_| {}),
-            },
-        ]
-        .into_iter()
-        .collect();
-
-        for test in tests {
-            let test_msg = downcast!(test.msg => ChannelMsg::OpenTry).unwrap();
-            let res = chan_open_try::process(&test.ctx, &test_msg);
-            // Additionally check the events and the output objects in the result.
-            match res {
-                Ok(proto_output) => {
-                    assert!(
-                        test.want_pass,
-                        "chan_open_ack: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
-                        test.name,
-                        test_msg,
-                        test.ctx.clone()
-                    );
-
-                    // The object in the output is a channel end, should have TryOpen state.
-                    assert_eq!(
-                        proto_output.result.channel_end.state().clone(),
-                        State::TryOpen
-                    );
-                }
-                Err(e) => {
-                    assert!(
-                        !test.want_pass,
-                        "chan_open_try: did not pass test: {}, \nparams:\n\tmsg={:?}\n\tcontext={:?}\nerror: {:?}",
-                        test.name,
-                        test_msg,
-                        test.ctx.clone(),
-                        e,
-                    );
-
-                    (test.match_error)(e);
-                }
-            }
-        }
-    }
 
     pub struct Fixture {
         pub context: MockContext,
