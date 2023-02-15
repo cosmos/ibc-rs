@@ -751,7 +751,9 @@ impl Ics2ClientState for ClientState {
             ctx.consensus_state(&trusted_client_cons_state_path)
                 .map_err(|e| match e {
                     ContextError::ClientError(e) => e,
-                    _ => todo!(),
+                    _ => ClientError::Other {
+                        description: e.to_string(),
+                    },
                 })?
                 .as_ref(),
         )?;
@@ -815,7 +817,9 @@ impl Ics2ClientState for ClientState {
                 .next_consensus_state(&client_cons_state_path)
                 .map_err(|e| match e {
                     ContextError::ClientError(e) => e,
-                    _ => todo!(),
+                    _ => ClientError::Other {
+                        description: e.to_string(),
+                    },
                 })?
                 .as_ref()
                 .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
@@ -842,7 +846,9 @@ impl Ics2ClientState for ClientState {
                 .prev_consensus_state(&client_cons_state_path)
                 .map_err(|e| match e {
                     ContextError::ClientError(e) => e,
-                    _ => todo!(),
+                    _ => ClientError::Other {
+                        description: e.to_string(),
+                    },
                 })?
                 .as_ref()
                 .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
