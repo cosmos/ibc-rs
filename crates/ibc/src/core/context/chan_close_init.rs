@@ -92,3 +92,90 @@ where
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::applications::transfer::MODULE_ID_STR;
+    use crate::core::ics04_channel::msgs::chan_close_init::test_util::get_dummy_raw_msg_chan_close_init;
+    use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
+    use crate::core::ics26_routing::context::ModuleId;
+    use crate::core::ValidationContext;
+    use crate::events::IbcEvent;
+    use crate::prelude::*;
+
+    use crate::core::ics03_connection::connection::ConnectionEnd;
+    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
+    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
+    use crate::core::ics03_connection::version::get_compatible_versions;
+    use crate::core::ics04_channel::channel::{
+        ChannelEnd, Counterparty, Order, State as ChannelState,
+    };
+    use crate::core::ics04_channel::Version;
+    use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+
+    use crate::mock::client_state::client_type as mock_client_type;
+    use crate::mock::context::MockContext;
+    use crate::test_utils::DummyTransferModule;
+    use crate::timestamp::ZERO_DURATION;
+
+    use super::chan_close_init_execute;
+    #[test]
+    fn chan_close_init_event_height() {
+        let client_id = ClientId::new(mock_client_type(), 24).unwrap();
+        let conn_id = ConnectionId::new(2);
+
+        let conn_end = ConnectionEnd::new(
+            ConnectionState::Open,
+            client_id.clone(),
+            ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
+            get_compatible_versions(),
+            ZERO_DURATION,
+        );
+
+        let msg_chan_close_init =
+            MsgChannelCloseInit::try_from(get_dummy_raw_msg_chan_close_init()).unwrap();
+
+        let chan_end = ChannelEnd::new(
+            ChannelState::Open,
+            Order::default(),
+            Counterparty::new(
+                msg_chan_close_init.port_id_on_a.clone(),
+                Some(msg_chan_close_init.chan_id_on_a.clone()),
+            ),
+            vec![conn_id.clone()],
+            Version::default(),
+        );
+
+        let mut context = {
+            let mut default_context = MockContext::default();
+            let client_consensus_state_height = default_context.host_height().unwrap();
+
+            let module = DummyTransferModule::new(default_context.ibc_store_share());
+            let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+            default_context.add_route(module_id, module).unwrap();
+
+            default_context
+                .with_client(&client_id, client_consensus_state_height)
+                .with_connection(conn_id, conn_end)
+                .with_channel(
+                    msg_chan_close_init.port_id_on_a.clone(),
+                    msg_chan_close_init.chan_id_on_a.clone(),
+                    chan_end,
+                )
+        };
+
+        let res = chan_close_init_execute(
+            &mut context,
+            MODULE_ID_STR.parse().unwrap(),
+            msg_chan_close_init,
+        );
+        assert!(res.is_ok(), "Execution happy path");
+
+        assert_eq!(context.events.len(), 1);
+        assert!(matches!(
+            context.events.first().unwrap(),
+            &IbcEvent::CloseInitChannel(_)
+        ));
+    }
+}
