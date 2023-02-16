@@ -1,7 +1,7 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 
 use super::error::TokenTransferError;
-use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
+use crate::core::ics04_channel::msgs::acknowledgement::{Acknowledgement, NoEmptyVec};
 use crate::prelude::*;
 
 /// A string constant included in error acknowledgements.
@@ -52,10 +52,6 @@ impl Display for TokenTransferAcknowledgement {
             TokenTransferAcknowledgement::Error(err_str) => write!(f, "{err_str}"),
         }
     }
-}
-
-pub struct NoEmptyVec<T> {
-    pub data: Vec<T>,
 }
 
 impl From<TokenTransferAcknowledgement> for NoEmptyVec<u8> {

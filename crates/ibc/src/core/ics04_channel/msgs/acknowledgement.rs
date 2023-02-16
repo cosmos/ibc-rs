@@ -1,4 +1,3 @@
-use crate::applications::transfer::acknowledgement::NoEmptyVec;
 use crate::prelude::*;
 
 use derive_more::Into;
@@ -55,6 +54,10 @@ impl TryFrom<Vec<u8>> for Acknowledgement {
             Ok(Self(bytes))
         }
     }
+}
+
+pub struct NoEmptyVec<T> {
+    pub data: Vec<T>,
 }
 
 impl From<NoEmptyVec<u8>> for Acknowledgement {
