@@ -261,6 +261,14 @@ impl TryFrom<IbcEvent> for abci::Event {
     }
 }
 
+impl TryFrom<&IbcEvent> for abci::Event {
+    type Error = Error;
+
+    fn try_from(event: &IbcEvent) -> Result<Self, Self::Error> {
+        abci::Event::try_from(event.clone())
+    }
+}
+
 impl IbcEvent {
     pub fn event_type(&self) -> IbcEventType {
         match self {
@@ -391,6 +399,7 @@ pub mod tests {
             Order::Unordered,
             ConnectionId::default(),
         ));
+        let _ = abci::Event::try_from(&ibc_event);
         let _ = abci::Event::try_from(ibc_event);
     }
 }
