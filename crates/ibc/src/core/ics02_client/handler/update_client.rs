@@ -257,7 +257,7 @@ mod tests {
         let mut ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
         let height = Height::new(0, 46).unwrap();
         let msg = MsgUpdateClient {
-            client_id: client_id.clone(),
+            client_id,
             header: MockHeader::new(height).with_timestamp(timestamp).into(),
             signer,
         };
@@ -323,7 +323,7 @@ mod tests {
 
         let latest_header_height = block.height();
         let msg = MsgUpdateClient {
-            client_id: client_id.clone(),
+            client_id,
             header: block.into(),
             signer,
         };
@@ -370,7 +370,7 @@ mod tests {
 
         let latest_header_height = block.height();
         let msg = MsgUpdateClient {
-            client_id: client_id.clone(),
+            client_id,
             header: block.into(),
             signer,
         };
@@ -431,7 +431,7 @@ mod tests {
 
         let latest_header_height = block.height();
         let msg = MsgUpdateClient {
-            client_id: client_id.clone(),
+            client_id,
             header: block.into(),
             signer,
         };
