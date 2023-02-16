@@ -1,3 +1,4 @@
+use crate::applications::transfer::acknowledgement::NoEmptyVec;
 use crate::prelude::*;
 
 use derive_more::Into;
@@ -53,6 +54,12 @@ impl TryFrom<Vec<u8>> for Acknowledgement {
         } else {
             Ok(Self(bytes))
         }
+    }
+}
+
+impl From<NoEmptyVec<u8>> for Acknowledgement {
+    fn from(value: NoEmptyVec<u8>) -> Self {
+        Self(value.data)
     }
 }
 

@@ -54,6 +54,16 @@ impl Display for TokenTransferAcknowledgement {
     }
 }
 
+pub struct NoEmptyVec<T> {
+    pub data: Vec<T>,
+}
+
+impl From<TokenTransferAcknowledgement> for NoEmptyVec<u8> {
+    fn from(ack: TokenTransferAcknowledgement) -> Self {
+        Self { data: ack.into() }
+    }
+}
+
 impl From<TokenTransferAcknowledgement> for Vec<u8> {
     fn from(ack: TokenTransferAcknowledgement) -> Self {
         // WARNING: Make sure all branches always return a non-empty vector.
@@ -67,10 +77,8 @@ impl From<TokenTransferAcknowledgement> for Vec<u8> {
 
 impl From<TokenTransferAcknowledgement> for Acknowledgement {
     fn from(ack: TokenTransferAcknowledgement) -> Self {
-        let v: Vec<u8> = ack.into();
-
-        v.try_into()
-            .expect("token transfer internal error: ack is never supposed to be empty")
+        let v: NoEmptyVec<u8> = ack.into();
+        v.into()
     }
 }
 
