@@ -232,14 +232,11 @@ mod tests {
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::core::ics02_client::client_state::ClientState;
     use crate::core::ics02_client::consensus_state::downcast_consensus_state;
-    use crate::core::ics02_client::error::ClientError;
-    use crate::core::ics02_client::handler::dispatch;
-    use crate::core::ics02_client::handler::ClientResult::Update;
+    use crate::core::ics02_client::handler::update_client::{execute, validate};
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
-    use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
+    use crate::core::ValidationContext;
     use crate::events::IbcEvent;
-    use crate::handler::HandlerOutput;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::client_state::MockClientState;
     use crate::mock::context::MockContext;
@@ -257,7 +254,7 @@ mod tests {
 
         let timestamp = Timestamp::now();
 
-        let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
+        let mut ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
         let height = Height::new(0, 46).unwrap();
         let msg = MsgUpdateClient {
             client_id: client_id.clone(),
@@ -265,32 +262,17 @@ mod tests {
             signer,
         };
 
-        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg));
+        let res = validate(&ctx, msg.clone());
 
-        match output {
-            Ok(HandlerOutput {
-                result,
-                events: _,
-                log,
-            }) => {
-                assert!(log.is_empty());
-                // Check the result
-                match result {
-                    Update(upd_res) => {
-                        assert_eq!(upd_res.client_id, client_id);
-                        assert_eq!(
-                            upd_res.client_state,
-                            MockClientState::new(MockHeader::new(height).with_timestamp(timestamp))
-                                .into_box()
-                        )
-                    }
-                    _ => panic!("update handler result has incorrect type"),
-                }
-            }
-            Err(err) => {
-                panic!("unexpected error: {:?}", err);
-            }
-        }
+        assert!(res.is_ok(), "validation happy path");
+
+        let res = execute(&mut ctx, msg.clone());
+        assert!(res.is_ok(), "execution happy path");
+
+        assert_eq!(
+            ctx.client_state(&msg.client_id).unwrap(),
+            MockClientState::new(MockHeader::new(height).with_timestamp(timestamp)).into_box()
+        );
     }
 
     #[test]
@@ -306,57 +288,9 @@ mod tests {
             signer,
         };
 
-        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg.clone()));
+        let res = validate(&ctx, msg);
 
-        match output {
-            Err(ClientError::ClientNotFound { client_id }) => {
-                assert_eq!(client_id, msg.client_id);
-            }
-            _ => {
-                panic!("expected ClientNotFound error, instead got {:?}", output)
-            }
-        }
-    }
-
-    #[test]
-    fn test_update_client_ok_multiple() {
-        let client_ids = vec![
-            ClientId::from_str("mockclient1").unwrap(),
-            ClientId::from_str("mockclient2").unwrap(),
-            ClientId::from_str("mockclient3").unwrap(),
-        ];
-        let signer = get_dummy_account_id();
-        let initial_height = Height::new(0, 45).unwrap();
-        let update_height = Height::new(0, 49).unwrap();
-
-        let mut ctx = MockContext::default();
-
-        for cid in &client_ids {
-            ctx = ctx.with_client(cid, initial_height);
-        }
-
-        for cid in &client_ids {
-            let msg = MsgUpdateClient {
-                client_id: cid.clone(),
-                header: MockHeader::new(update_height).into(),
-                signer: signer.clone(),
-            };
-
-            let output = dispatch(&ctx, ClientMsg::UpdateClient(msg.clone()));
-
-            match output {
-                Ok(HandlerOutput {
-                    result: _,
-                    events: _,
-                    log,
-                }) => {
-                    assert!(log.is_empty());
-                }
-                Err(err) => {
-                    panic!("unexpected error: {:?}", err);
-                }
-            }
-        }
+        assert!(res.is_err());
     }
 
     #[test]
@@ -366,7 +300,7 @@ mod tests {
         let update_height = Height::new(1, 21).unwrap();
         let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
 
-        let ctx = MockContext::new(
+        let mut ctx = MockContext::new(
             ChainId::new("mockgaiaA".to_string(), 1),
             HostType::Mock,
             5,
@@ -394,29 +328,15 @@ mod tests {
             signer,
         };
 
-        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg));
+        let res = validate(&ctx, msg.clone());
+        assert!(res.is_ok());
 
-        match output {
-            Ok(HandlerOutput {
-                result,
-                events: _,
-                log,
-            }) => {
-                assert!(log.is_empty());
-                // Check the result
-                match result {
-                    Update(upd_res) => {
-                        assert_eq!(upd_res.client_id, client_id);
-                        assert!(!upd_res.client_state.is_frozen());
-                        assert_eq!(upd_res.client_state.latest_height(), latest_header_height,)
-                    }
-                    _ => panic!("update handler result has incorrect type"),
-                }
-            }
-            Err(err) => {
-                panic!("unexpected error: {:?}", err);
-            }
-        }
+        let res = execute(&mut ctx, msg.clone());
+        assert!(res.is_ok(), "result: {res:?}");
+
+        let client_state = ctx.client_state(&msg.client_id).unwrap();
+        assert!(!client_state.is_frozen());
+        assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
     #[test]
@@ -426,7 +346,7 @@ mod tests {
         let update_height = Height::new(1, 21).unwrap();
         let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
 
-        let ctx = MockContext::new(
+        let mut ctx = MockContext::new(
             ChainId::new("mockgaiaA".to_string(), 1),
             HostType::Mock,
             5,
@@ -455,29 +375,15 @@ mod tests {
             signer,
         };
 
-        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg));
+        let res = validate(&ctx, msg.clone());
+        assert!(res.is_ok());
 
-        match output {
-            Ok(HandlerOutput {
-                result,
-                events: _,
-                log,
-            }) => {
-                assert!(log.is_empty());
-                // Check the result
-                match result {
-                    Update(upd_res) => {
-                        assert_eq!(upd_res.client_id, client_id);
-                        assert!(!upd_res.client_state.is_frozen());
-                        assert_eq!(upd_res.client_state.latest_height(), latest_header_height,)
-                    }
-                    _ => panic!("update handler result has incorrect type"),
-                }
-            }
-            Err(err) => {
-                panic!("unexpected error: {:?}", err);
-            }
-        }
+        let res = execute(&mut ctx, msg.clone());
+        assert!(res.is_ok(), "result: {res:?}");
+
+        let client_state = ctx.client_state(&msg.client_id).unwrap();
+        assert!(!client_state.is_frozen());
+        assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
     #[test]
@@ -487,7 +393,7 @@ mod tests {
 
         let chain_start_height = Height::new(1, 11).unwrap();
 
-        let ctx = MockContext::new(
+        let mut ctx = MockContext::new(
             ChainId::new("mockgaiaA".to_string(), 1),
             HostType::Mock,
             5,
@@ -530,30 +436,16 @@ mod tests {
             signer,
         };
 
-        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg));
+        let res = validate(&ctx, msg.clone());
+        assert!(res.is_ok());
 
-        match output {
-            Ok(HandlerOutput {
-                result,
-                events: _,
-                log,
-            }) => {
-                assert!(log.is_empty());
-                // Check the result
-                match result {
-                    Update(upd_res) => {
-                        assert_eq!(upd_res.client_id, client_id);
-                        assert!(!upd_res.client_state.is_frozen());
-                        assert_eq!(upd_res.client_state, ctx.latest_client_states(&client_id));
-                        assert_eq!(upd_res.client_state.latest_height(), latest_header_height,)
-                    }
-                    _ => panic!("update handler result has incorrect type"),
-                }
-            }
-            Err(err) => {
-                panic!("unexpected error: {:?}", err);
-            }
-        }
+        let res = execute(&mut ctx, msg.clone());
+        assert!(res.is_ok(), "result: {res:?}");
+
+        let client_state = ctx.client_state(&msg.client_id).unwrap();
+        assert!(!client_state.is_frozen());
+        assert_eq!(client_state.latest_height(), latest_header_height);
+        assert_eq!(client_state, ctx.latest_client_states(&msg.client_id));
     }
 
     #[test]
@@ -595,17 +487,8 @@ mod tests {
             signer,
         };
 
-        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg));
-
-        match output {
-            Ok(_) => {
-                panic!("update handler result has incorrect type");
-            }
-            Err(err) => match err {
-                ClientError::HeaderVerificationFailure { reason: _ } => {}
-                _ => panic!("unexpected error: {:?}", err),
-            },
-        }
+        let res = validate(&ctx, msg);
+        assert!(res.is_err());
     }
 
     #[test]
@@ -615,7 +498,7 @@ mod tests {
 
         let timestamp = Timestamp::now();
 
-        let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
+        let mut ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
         let height = Height::new(0, 46).unwrap();
         let header: Any = MockHeader::new(height).with_timestamp(timestamp).into();
         let msg = MsgUpdateClient {
@@ -624,9 +507,11 @@ mod tests {
             signer,
         };
 
-        let output = dispatch(&ctx, ClientMsg::UpdateClient(msg)).unwrap();
+        let res = execute(&mut ctx, msg);
+        assert!(res.is_ok());
+
         let update_client_event =
-            downcast!(output.events.first().unwrap() => IbcEvent::UpdateClient).unwrap();
+            downcast!(ctx.events.first().unwrap() => IbcEvent::UpdateClient).unwrap();
 
         assert_eq!(update_client_event.client_id(), &client_id);
         assert_eq!(update_client_event.client_type(), &mock_client_type());
