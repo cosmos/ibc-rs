@@ -165,6 +165,9 @@ mod tests {
         };
 
         let res = validate(&context, &msg_chan_close_init);
-        assert!(res.is_ok(), "Validation expected to succeed (happy path). Error: {res:?}");
+        assert!(
+            res.is_ok(),
+            "Validation expected to succeed (happy path). Error: {res:?}"
+        );
     }
 }
