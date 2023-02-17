@@ -637,7 +637,7 @@ pub struct MockIbcStore {
     /// Counter for channel identifiers (see `increase_channel_counter`).
     pub channel_ids_counter: u64,
 
-    /// All the channels in the store. TODO Make new key PortId X ChanneId
+    /// All the channels in the store. TODO Make new key PortId X ChannelId
     pub channels: PortChannelIdMap<ChannelEnd>,
 
     /// Tracks the sequence number for the next packet to be sent.
@@ -1174,7 +1174,7 @@ impl ConnectionReader for MockContext {
             });
         }
 
-        let self_chain_id = self.chain_id();
+        let self_chain_id = &self.host_chain_id;
         let self_revision_number = self_chain_id.version();
         if self_revision_number != mock_client_state.latest_height().revision_number() {
             return Err(ConnectionError::InvalidClientState {
@@ -1186,17 +1186,13 @@ impl ConnectionReader for MockContext {
             });
         }
 
-        let host_height = <MockContext as ClientReader>::host_height(&self).map_err(|_| {
-            ConnectionError::InvalidClientState {
-                reason: "host height must be valid".to_string(),
-            }
-        })?;
-        if mock_client_state.latest_height() >= host_height {
+        let host_current_height = self.latest_height().increment();
+        if mock_client_state.latest_height() >= host_current_height {
             return Err(ConnectionError::InvalidClientState {
                 reason: format!(
                     "client has latest height {} greater than or equal to chain height {}",
                     mock_client_state.latest_height(),
-                    host_height
+                    host_current_height
                 ),
             });
         }
@@ -1715,7 +1711,7 @@ impl ValidationContext for MockContext {
             });
         }
 
-        let self_chain_id = self.chain_id();
+        let self_chain_id = &self.host_chain_id;
         let self_revision_number = self_chain_id.version();
         if self_revision_number != mock_client_state.latest_height().revision_number() {
             return Err(ConnectionError::InvalidClientState {
@@ -1727,17 +1723,13 @@ impl ValidationContext for MockContext {
             });
         }
 
-        let host_height = <MockContext as ValidationContext>::host_height(&self).map_err(|_| {
-            ConnectionError::InvalidClientState {
-                reason: "failed to get host height".to_string(),
-            }
-        })?;
-        if mock_client_state.latest_height() >= host_height {
+        let host_current_height = self.latest_height().increment();
+        if mock_client_state.latest_height() >= host_current_height {
             return Err(ConnectionError::InvalidClientState {
                 reason: format!(
                     "client has latest height {} greater than or equal to chain height {}",
                     mock_client_state.latest_height(),
-                    host_height
+                    host_current_height
                 ),
             });
         }
@@ -2147,7 +2139,7 @@ impl ExecutionContext for MockContext {
         ack_commitment: AcknowledgementCommitment,
     ) -> Result<(), ContextError> {
         let port_id = ack_path.port_id.clone();
-        let channnel_id = ack_path.channel_id.clone();
+        let channel_id = ack_path.channel_id.clone();
         let seq = ack_path.sequence;
 
         self.ibc_store
@@ -2155,7 +2147,7 @@ impl ExecutionContext for MockContext {
             .packet_acknowledgement
             .entry(port_id)
             .or_default()
-            .entry(channnel_id)
+            .entry(channel_id)
             .or_default()
             .insert(seq, ack_commitment);
         Ok(())
