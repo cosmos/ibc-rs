@@ -154,6 +154,14 @@ pub mod test_util {
 
     /// Testing-specific helper methods.
     impl MsgConnectionOpenTry {
+        /// Returns a new `MsgConnectionOpenTry` with dummy values.
+        pub fn new_dummy(proof_height: u64, consensus_height: u64) -> Self {
+            MsgConnectionOpenTry::try_from(get_dummy_raw_msg_conn_open_try(
+                proof_height,
+                consensus_height,
+            ))
+            .unwrap()
+        }
         /// Setter for `client_id`.
         pub fn with_client_id(self, client_id: ClientId) -> MsgConnectionOpenTry {
             MsgConnectionOpenTry {

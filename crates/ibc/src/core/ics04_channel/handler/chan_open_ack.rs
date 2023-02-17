@@ -213,9 +213,7 @@ mod tests {
     use crate::core::ics03_connection::connection::ConnectionEnd;
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
     use crate::core::ics03_connection::connection::State as ConnectionState;
-    use crate::core::ics03_connection::msgs::conn_open_init::test_util::get_dummy_raw_msg_conn_open_init;
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
-    use crate::core::ics03_connection::msgs::conn_open_try::test_util::get_dummy_raw_msg_conn_open_try;
     use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
@@ -246,8 +244,7 @@ mod tests {
 
         let context = MockContext::default();
 
-        let msg_conn_init =
-            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init(None)).unwrap();
+        let msg_conn_init = MsgConnectionOpenInit::new_dummy();
 
         let conn_end = ConnectionEnd::new(
             ConnectionState::Open,
@@ -276,11 +273,10 @@ mod tests {
             },
         );
 
-        let msg_conn_try = MsgConnectionOpenTry::try_from(get_dummy_raw_msg_conn_open_try(
+        let msg_conn_try = MsgConnectionOpenTry::new_dummy(
             client_consensus_state_height,
             host_chain_height.revision_height(),
-        ))
-        .unwrap();
+        );
 
         let msg_chan_ack =
             MsgChannelOpenAck::try_from(get_dummy_raw_msg_chan_open_ack(proof_height)).unwrap();
