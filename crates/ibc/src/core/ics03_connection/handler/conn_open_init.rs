@@ -150,7 +150,7 @@ mod tests {
     use super::*;
 
     use crate::core::ics03_connection::connection::State;
-    use crate::core::ics03_connection::handler::test_util::{generate_error_msg, Expect, Fixture};
+    use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::version::Version;
     use crate::events::IbcEvent;
@@ -195,7 +195,7 @@ mod tests {
 
     fn conn_open_init_validate(fxt: &Fixture<MsgConnectionOpenInit>, expect: Expect) {
         let res = validate(&fxt.ctx, fxt.msg.clone());
-        let err_msg = generate_error_msg(&expect, "validation", &res, fxt);
+        let err_msg = fxt.generate_error_msg(&expect, "validation", &res);
         match expect {
             Expect::Failure(_) => {
                 assert!(res.is_err(), "{err_msg}")
@@ -212,7 +212,7 @@ mod tests {
         expected_version: Vec<Version>,
     ) {
         let res = execute(&mut fxt.ctx, fxt.msg.clone());
-        let err_msg = generate_error_msg(&expect, "execution", &res, fxt);
+        let err_msg = fxt.generate_error_msg(&expect, "execution", &res);
         match expect {
             Expect::Failure(_) => {
                 assert!(res.is_err(), "{err_msg}")

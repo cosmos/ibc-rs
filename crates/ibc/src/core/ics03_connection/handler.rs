@@ -73,16 +73,21 @@ pub mod test_util {
         pub msg: M,
     }
 
-    pub fn generate_error_msg<M: Debug>(
-        expect: &Expect,
-        process: &str,
-        res: &Result<(), ContextError>,
-        fxt: &Fixture<M>,
-    ) -> String {
-        let msg = match expect {
-            Expect::Success => "step failed!",
-            Expect::Failure(_) => "step passed but was supposed to fail!",
-        };
-        format!("{process} {msg} /n {res:?} /n {fxt:?}")
+    impl<M: Debug> Fixture<M> {
+        pub fn generate_error_msg(
+            &self,
+            expect: &Expect,
+            process: &str,
+            res: &Result<(), ContextError>,
+        ) -> String {
+            let base_error = match expect {
+                Expect::Success => "step failed!",
+                Expect::Failure(_) => "step passed but was supposed to fail!",
+            };
+            format!(
+                "{process} {base_error} /n {res:?} /n {:?} /n {:?}",
+                &self.msg, &self.ctx
+            )
+        }
     }
 }

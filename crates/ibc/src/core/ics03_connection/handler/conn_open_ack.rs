@@ -349,7 +349,7 @@ mod tests {
 
     use crate::core::ics02_client::height::Height;
     use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
-    use crate::core::ics03_connection::handler::test_util::{generate_error_msg, Expect, Fixture};
+    use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
@@ -422,7 +422,7 @@ mod tests {
 
     fn conn_open_ack_validate(fxt: &Fixture<MsgConnectionOpenAck>, expect: Expect) {
         let res = validate(&fxt.ctx, fxt.msg.clone());
-        let err_msg = generate_error_msg(&expect, "validation", &res, fxt);
+        let err_msg = fxt.generate_error_msg(&expect, "validation", &res);
         match expect {
             Expect::Failure(err) => {
                 assert!(res.is_err(), "{err_msg}");
@@ -461,7 +461,7 @@ mod tests {
 
     fn conn_open_ack_execute(fxt: &mut Fixture<MsgConnectionOpenAck>, expect: Expect) {
         let res = execute(&mut fxt.ctx, fxt.msg.clone());
-        let err_msg = generate_error_msg(&expect, "execution", &res, fxt);
+        let err_msg = fxt.generate_error_msg(&expect, "execution", &res);
         match expect {
             Expect::Failure(_) => {
                 assert!(res.is_err(), "{err_msg}");

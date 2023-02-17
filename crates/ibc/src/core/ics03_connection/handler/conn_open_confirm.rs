@@ -261,7 +261,7 @@ mod tests {
     use test_log::test;
 
     use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
-    use crate::core::ics03_connection::handler::test_util::{generate_error_msg, Expect, Fixture};
+    use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::ClientId;
@@ -315,7 +315,7 @@ mod tests {
 
     fn conn_open_confirm_validate(fxt: &Fixture<MsgConnectionOpenConfirm>, expect: Expect) {
         let res = validate(&fxt.ctx, &fxt.msg);
-        let err_msg = generate_error_msg(&expect, "validation", &res, fxt);
+        let err_msg = fxt.generate_error_msg(&expect, "validation", &res);
         match expect {
             Expect::Failure(_) => {
                 assert!(res.is_err(), "{err_msg}");
@@ -328,7 +328,7 @@ mod tests {
 
     fn conn_open_confirm_execute(fxt: &mut Fixture<MsgConnectionOpenConfirm>, expect: Expect) {
         let res = execute(&mut fxt.ctx, &fxt.msg);
-        let err_msg = generate_error_msg(&expect, "execution", &res, fxt);
+        let err_msg = fxt.generate_error_msg(&expect, "execution", &res);
         match expect {
             Expect::Failure(_) => {
                 assert!(res.is_err(), "{err_msg}");
