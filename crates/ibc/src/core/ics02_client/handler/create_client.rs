@@ -180,6 +180,8 @@ pub(crate) fn process(
 #[cfg(test)]
 mod tests {
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
+    use crate::core::ics02_client::handler::create_client::{execute, validate};
+    use crate::core::ValidationContext;
     use crate::prelude::*;
 
     use core::time::Duration;
@@ -190,13 +192,10 @@ mod tests {
     };
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
-    use crate::core::ics02_client::handler::{dispatch, ClientResult};
     use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
-    use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics02_client::trust_threshold::TrustThreshold;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ClientId;
-    use crate::handler::HandlerOutput;
     use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
     use crate::mock::consensus_state::MockConsensusState;
     use crate::mock::context::MockContext;
@@ -206,7 +205,7 @@ mod tests {
 
     #[test]
     fn test_create_client_ok() {
-        let ctx = MockContext::default();
+        let mut ctx = MockContext::default();
         let signer = get_dummy_account_id();
         let height = Height::new(0, 42).unwrap();
 
@@ -216,106 +215,31 @@ mod tests {
             signer,
         );
 
-        let output = dispatch(&ctx, ClientMsg::CreateClient(msg.clone()));
+        let client_type = mock_client_type();
 
-        match output {
-            Ok(HandlerOutput { result, .. }) => {
-                let expected_client_id = ClientId::new(mock_client_type(), 0).unwrap();
-                match result {
-                    ClientResult::Create(create_result) => {
-                        assert_eq!(create_result.client_type, mock_client_type());
-                        assert_eq!(create_result.client_id, expected_client_id);
-                        assert_eq!(
-                            create_result.client_state.as_ref().clone_into(),
-                            msg.client_state
-                        );
-                        assert_eq!(
-                            create_result.consensus_state.as_ref().clone_into(),
-                            msg.consensus_state
-                        );
-                    }
-                    _ => {
-                        panic!("unexpected result type: expected ClientResult::CreateResult!");
-                    }
-                }
-            }
-            Err(err) => {
-                panic!("unexpected error: {}", err);
-            }
-        }
-    }
+        let client_id = {
+            let id_counter = ctx.client_counter().unwrap();
+            ClientId::new(client_type.clone(), id_counter).unwrap()
+        };
 
-    #[test]
-    fn test_create_client_ok_multiple() {
-        let existing_client_id = ClientId::default();
-        let signer = get_dummy_account_id();
-        let height_1 = Height::new(0, 80).unwrap();
-        let height_2 = Height::new(0, 42).unwrap();
-        let height_3 = Height::new(0, 50).unwrap();
+        let res = validate(&ctx, msg.clone());
 
-        let ctx = MockContext::default().with_client(&existing_client_id, height_1);
+        assert!(res.is_ok(), "validation happy path");
 
-        let create_client_msgs: Vec<MsgCreateClient> = vec![
-            MsgCreateClient::new(
-                MockClientState::new(MockHeader::new(height_2)).into(),
-                MockConsensusState::new(MockHeader::new(height_2)).into(),
-                signer.clone(),
-            ),
-            MsgCreateClient::new(
-                MockClientState::new(MockHeader::new(height_2)).into(),
-                MockConsensusState::new(MockHeader::new(height_2)).into(),
-                signer.clone(),
-            ),
-            MsgCreateClient::new(
-                MockClientState::new(MockHeader::new(height_3)).into(),
-                MockConsensusState::new(MockHeader::new(height_3)).into(),
-                signer,
-            ),
-        ]
-        .into_iter()
-        .collect();
+        let res = execute(&mut ctx, msg.clone());
 
-        // The expected client id that will be generated will be identical to "9999-mock-0" for all
-        // tests. This is because we're not persisting any client results (which is done via the
-        // tests for `ics26_routing::dispatch`.
-        let expected_client_id = ClientId::new(mock_client_type(), 0).unwrap();
+        assert!(res.is_ok(), "execution happy path");
 
-        for msg in create_client_msgs {
-            let output = dispatch(&ctx, ClientMsg::CreateClient(msg.clone()));
-
-            match output {
-                Ok(HandlerOutput { result, .. }) => match result {
-                    ClientResult::Create(create_res) => {
-                        assert_eq!(
-                            create_res.client_type,
-                            create_res.client_state.client_type()
-                        );
-                        assert_eq!(create_res.client_id, expected_client_id);
-                        assert_eq!(
-                            create_res.client_state.as_ref().clone_into(),
-                            msg.client_state
-                        );
-                        assert_eq!(
-                            create_res.consensus_state.as_ref().clone_into(),
-                            msg.consensus_state
-                        );
-                    }
-                    _ => {
-                        panic!("expected result of type ClientResult::CreateResult");
-                    }
-                },
-                Err(err) => {
-                    panic!("unexpected error: {}", err);
-                }
-            }
-        }
+        let expected_client_state = ctx.decode_client_state(msg.client_state).unwrap();
+        assert_eq!(expected_client_state.client_type(), client_type);
+        assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
     }
 
     #[test]
     fn test_tm_create_client_ok() {
         let signer = get_dummy_account_id();
 
-        let ctx = MockContext::default();
+        let mut ctx = MockContext::default();
 
         let tm_header = get_dummy_tendermint_header();
 
@@ -337,38 +261,27 @@ mod tests {
         .unwrap()
         .into();
 
+        let client_type = tm_client_type();
+
+        let client_id = {
+            let id_counter = ctx.client_counter().unwrap();
+            ClientId::new(client_type.clone(), id_counter).unwrap()
+        };
+
         let msg = MsgCreateClient::new(
             tm_client_state,
             TmConsensusState::try_from(tm_header).unwrap().into(),
             signer,
         );
 
-        let output = dispatch(&ctx, ClientMsg::CreateClient(msg.clone()));
+        let res = validate(&ctx, msg.clone());
+        assert!(res.is_ok(), "tendermint client validation happy path");
 
-        match output {
-            Ok(HandlerOutput { result, .. }) => {
-                let expected_client_id = ClientId::new(tm_client_type(), 0).unwrap();
-                match result {
-                    ClientResult::Create(create_res) => {
-                        assert_eq!(create_res.client_type, tm_client_type());
-                        assert_eq!(create_res.client_id, expected_client_id);
-                        assert_eq!(
-                            create_res.client_state.as_ref().clone_into(),
-                            msg.client_state
-                        );
-                        assert_eq!(
-                            create_res.consensus_state.as_ref().clone_into(),
-                            msg.consensus_state
-                        );
-                    }
-                    _ => {
-                        panic!("expected result of type ClientResult::CreateResult");
-                    }
-                }
-            }
-            Err(err) => {
-                panic!("unexpected error: {}", err);
-            }
-        }
+        let res = execute(&mut ctx, msg.clone());
+        assert!(res.is_ok(), "tendermint client execution happy path");
+
+        let expected_client_state = ctx.decode_client_state(msg.client_state).unwrap();
+        assert_eq!(expected_client_state.client_type(), client_type);
+        assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
     }
 }

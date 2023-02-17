@@ -25,6 +25,7 @@ use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath, SeqSendPath};
 use crate::core::ics26_routing::context::{Module, ModuleOutputBuilder};
+use crate::core::ContextError;
 use crate::mock::context::MockIbcStore;
 use crate::prelude::*;
 use crate::signer::Signer;
@@ -226,7 +227,7 @@ impl TokenTransferKeeper for DummyTransferModule {
         channel_id: ChannelId,
         seq: Sequence,
         commitment: PacketCommitment,
-    ) -> Result<(), PacketError> {
+    ) -> Result<(), ContextError> {
         self.ibc_store
             .lock()
             .packet_commitment
@@ -243,7 +244,7 @@ impl TokenTransferKeeper for DummyTransferModule {
         port_id: PortId,
         channel_id: ChannelId,
         seq: Sequence,
-    ) -> Result<(), PacketError> {
+    ) -> Result<(), ContextError> {
         self.ibc_store
             .lock()
             .next_sequence_send
@@ -309,7 +310,7 @@ impl TokenTransferReader for DummyTransferModule {
 }
 
 impl SendPacketReader for DummyTransferModule {
-    fn channel_end(&self, chan_end_path: &ChannelEndPath) -> Result<ChannelEnd, PacketError> {
+    fn channel_end(&self, chan_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
         match self
             .ibc_store
             .lock()
@@ -321,11 +322,12 @@ impl SendPacketReader for DummyTransferModule {
             None => Err(PacketError::ChannelNotFound {
                 port_id: chan_end_path.0.clone(),
                 channel_id: chan_end_path.1.clone(),
-            }),
+            }
+            .into()),
         }
     }
 
-    fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, PacketError> {
+    fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, ContextError> {
         match self.ibc_store.lock().connections.get(cid) {
             Some(connection_end) => Ok(connection_end.clone()),
             None => Err(ConnectionError::ConnectionNotFound {
@@ -333,9 +335,10 @@ impl SendPacketReader for DummyTransferModule {
             }),
         }
         .map_err(PacketError::Connection)
+        .map_err(ContextError::PacketError)
     }
 
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, PacketError> {
+    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
         match self.ibc_store.lock().clients.get(client_id) {
             Some(client_record) => {
                 client_record
@@ -350,12 +353,13 @@ impl SendPacketReader for DummyTransferModule {
             }),
         }
         .map_err(|e| PacketError::Connection(ConnectionError::Client(e)))
+        .map_err(ContextError::PacketError)
     }
 
     fn client_consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Box<dyn ConsensusState>, PacketError> {
+    ) -> Result<Box<dyn ConsensusState>, ContextError> {
         let height =
             Height::new(client_cons_state_path.epoch, client_cons_state_path.height).unwrap();
         match self
@@ -377,9 +381,13 @@ impl SendPacketReader for DummyTransferModule {
             }),
         }
         .map_err(|e| PacketError::Connection(ConnectionError::Client(e)))
+        .map_err(ContextError::PacketError)
     }
 
-    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, PacketError> {
+    fn get_next_sequence_send(
+        &self,
+        seq_send_path: &SeqSendPath,
+    ) -> Result<Sequence, ContextError> {
         match self
             .ibc_store
             .lock()
@@ -391,7 +399,8 @@ impl SendPacketReader for DummyTransferModule {
             None => Err(PacketError::MissingNextSendSeq {
                 port_id: seq_send_path.0.clone(),
                 channel_id: seq_send_path.1.clone(),
-            }),
+            }
+            .into()),
         }
     }
 

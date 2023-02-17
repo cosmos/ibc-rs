@@ -6,6 +6,7 @@ use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqAckPath,
     SeqRecvPath, SeqSendPath,
 };
+use crate::core::{ContextError, ValidationContext};
 use core::time::Duration;
 use num_traits::float::FloatCore;
 
@@ -151,21 +152,22 @@ pub trait ChannelReader {
 
 pub trait SendPacketReader {
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
-    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, PacketError>;
+    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
 
     /// Returns the ConnectionState for the given identifier `connection_id`.
-    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, PacketError>;
+    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, ContextError>;
 
     /// Returns the ClientState for the given identifier `client_id`. Necessary dependency towards
     /// proof verification.
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, PacketError>;
+    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError>;
 
     fn client_consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Box<dyn ConsensusState>, PacketError>;
+    ) -> Result<Box<dyn ConsensusState>, ContextError>;
 
-    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, PacketError>;
+    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
+        -> Result<Sequence, ContextError>;
 
     fn hash(&self, value: &[u8]) -> Vec<u8>;
 
@@ -192,34 +194,36 @@ pub trait SendPacketReader {
 
 impl<T> SendPacketReader for T
 where
-    T: ChannelReader,
+    T: ValidationContext,
 {
-    fn channel_end(&self, chan_end_path: &ChannelEndPath) -> Result<ChannelEnd, PacketError> {
-        ChannelReader::channel_end(self, chan_end_path).map_err(PacketError::Channel)
+    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
+        self.channel_end(channel_end_path)
     }
 
-    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, PacketError> {
-        ChannelReader::connection_end(self, connection_id).map_err(PacketError::Channel)
+    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, ContextError> {
+        self.connection_end(connection_id)
     }
 
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, PacketError> {
-        ChannelReader::client_state(self, client_id).map_err(PacketError::Channel)
+    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
+        self.client_state(client_id)
     }
 
     fn client_consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Box<dyn ConsensusState>, PacketError> {
-        ChannelReader::client_consensus_state(self, client_cons_state_path)
-            .map_err(PacketError::Channel)
+    ) -> Result<Box<dyn ConsensusState>, ContextError> {
+        self.consensus_state(client_cons_state_path)
     }
 
-    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, PacketError> {
-        ChannelReader::get_next_sequence_send(self, seq_send_path)
+    fn get_next_sequence_send(
+        &self,
+        seq_send_path: &SeqSendPath,
+    ) -> Result<Sequence, ContextError> {
+        self.get_next_sequence_send(seq_send_path)
     }
 
     fn hash(&self, value: &[u8]) -> Vec<u8> {
-        ChannelReader::hash(self, value)
+        self.hash(value)
     }
 }
 

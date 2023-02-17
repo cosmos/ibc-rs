@@ -10,9 +10,8 @@ use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap;
 use alloc::sync::Arc;
-use core::borrow::Borrow;
 use core::cmp::min;
-use core::fmt::{Debug, Formatter};
+use core::fmt::Debug;
 use core::ops::{Add, Sub};
 use core::time::Duration;
 use parking_lot::Mutex;
@@ -24,26 +23,21 @@ use tracing::debug;
 use crate::clients::ics07_tendermint::client_state::test_util::get_dummy_tendermint_client_state;
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 use crate::core::context::ContextError;
-use crate::core::context::Router as NewRouter;
+use crate::core::context::Router;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::context::{ClientKeeper, ClientReader};
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
 use crate::core::ics03_connection::connection::ConnectionEnd;
-use crate::core::ics03_connection::context::{ConnectionKeeper, ConnectionReader};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
-use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
-use crate::core::ics05_port::context::PortReader;
-use crate::core::ics05_port::error::PortError;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ics26_routing::context::{Module, ModuleId, Router, RouterBuilder, RouterContext};
+use crate::core::ics26_routing::context::{Module, ModuleId};
 use crate::core::ics26_routing::msgs::MsgEnvelope;
 use crate::core::{dispatch, ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
@@ -85,11 +79,8 @@ pub struct MockContext {
     /// An object that stores all IBC related data.
     pub ibc_store: Arc<Mutex<MockIbcStore>>,
 
-    /// ICS26 router impl
-    router: MockRouter,
-
     /// To implement ValidationContext Router
-    new_router: BTreeMap<ModuleId, Arc<dyn Module>>,
+    router: BTreeMap<ModuleId, Arc<dyn Module>>,
 
     pub events: Vec<IbcEvent>,
 
@@ -127,7 +118,6 @@ impl Clone for MockContext {
             block_time: self.block_time,
             ibc_store,
             router: self.router.clone(),
-            new_router: self.new_router.clone(),
             events: self.events.clone(),
             logs: self.logs.clone(),
         }
@@ -190,8 +180,7 @@ impl MockContext {
                 .collect(),
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
-            router: Default::default(),
-            new_router: BTreeMap::new(),
+            router: BTreeMap::new(),
             events: Vec::new(),
             logs: Vec::new(),
         }
@@ -475,7 +464,7 @@ impl MockContext {
     }
 
     pub fn add_route(&mut self, module_id: ModuleId, module: impl Module) -> Result<(), String> {
-        match self.new_router.insert(module_id, Arc::new(module)) {
+        match self.router.insert(module_id, Arc::new(module)) {
             None => Ok(()),
             Some(_) => Err("Duplicate module_id".to_owned()),
         }
@@ -661,849 +650,18 @@ pub struct MockIbcStore {
     pub packet_receipt: PortChannelIdMap<BTreeMap<Sequence, Receipt>>,
 }
 
-#[derive(Default)]
-pub struct MockRouterBuilder(MockRouter);
-
-impl RouterBuilder for MockRouterBuilder {
-    type Router = MockRouter;
-
-    fn add_route(mut self, module_id: ModuleId, module: impl Module) -> Result<Self, String> {
-        match self.0 .0.insert(module_id, Arc::new(module)) {
-            None => Ok(self),
-            Some(_) => Err("Duplicate module_id".to_owned()),
-        }
-    }
-
-    fn build(self) -> Self::Router {
-        self.0
-    }
-}
-
-#[derive(Clone, Default)]
-pub struct MockRouter(BTreeMap<ModuleId, Arc<dyn Module>>);
-
-impl Debug for MockRouter {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{:?}", self.0.keys().collect::<Vec<&ModuleId>>())
-    }
-}
-
-impl Router for MockRouter {
-    fn get_route_mut(&mut self, module_id: &impl Borrow<ModuleId>) -> Option<&mut dyn Module> {
-        self.0.get_mut(module_id.borrow()).and_then(Arc::get_mut)
-    }
-
-    fn has_route(&self, module_id: &impl Borrow<ModuleId>) -> bool {
-        self.0.get(module_id.borrow()).is_some()
-    }
-}
-
-impl RouterContext for MockContext {
-    type Router = MockRouter;
-
-    fn router(&self) -> &Self::Router {
-        &self.router
-    }
-
-    fn router_mut(&mut self) -> &mut Self::Router {
-        &mut self.router
-    }
-}
-
-impl PortReader for MockContext {
-    fn lookup_module_by_port(&self, port_id: &PortId) -> Result<ModuleId, PortError> {
-        match self.ibc_store.lock().port_to_module.get(port_id) {
-            Some(mod_id) => Ok(mod_id.clone()),
-            None => Err(PortError::UnknownPort {
-                port_id: port_id.clone(),
-            }),
-        }
-    }
-}
-
-impl ChannelReader for MockContext {
-    fn channel_end(&self, chan_end_path: &ChannelEndPath) -> Result<ChannelEnd, ChannelError> {
-        match self
-            .ibc_store
-            .lock()
-            .channels
-            .get(&chan_end_path.0)
-            .and_then(|map| map.get(&chan_end_path.1))
-        {
-            Some(channel_end) => Ok(channel_end.clone()),
-            None => Err(ChannelError::ChannelNotFound {
-                port_id: chan_end_path.0.clone(),
-                channel_id: chan_end_path.1.clone(),
-            }),
-        }
-    }
-
-    fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, ChannelError> {
-        ConnectionReader::connection_end(self, cid).map_err(ChannelError::Connection)
-    }
-
-    fn connection_channels(
-        &self,
-        cid: &ConnectionId,
-    ) -> Result<Vec<(PortId, ChannelId)>, ChannelError> {
-        match self.ibc_store.lock().connection_channels.get(cid) {
-            Some(pcid) => Ok(pcid.clone()),
-            None => Err(ChannelError::MissingChannel),
-        }
-    }
-
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ChannelError> {
-        ClientReader::client_state(self, client_id)
-            .map_err(|e| ChannelError::Connection(ConnectionError::Client(e)))
-    }
-
-    fn client_consensus_state(
-        &self,
-        client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Box<dyn ConsensusState>, ChannelError> {
-        ClientReader::consensus_state(self, client_cons_state_path)
-            .map_err(|e| ChannelError::Connection(ConnectionError::Client(e)))
-    }
-
-    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, PacketError> {
-        match self
-            .ibc_store
-            .lock()
-            .next_sequence_send
-            .get(&seq_send_path.0)
-            .and_then(|map| map.get(&seq_send_path.1))
-        {
-            Some(sequence) => Ok(*sequence),
-            None => Err(PacketError::MissingNextSendSeq {
-                port_id: seq_send_path.0.clone(),
-                channel_id: seq_send_path.1.clone(),
-            }),
-        }
-    }
-
-    fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath) -> Result<Sequence, PacketError> {
-        match self
-            .ibc_store
-            .lock()
-            .next_sequence_recv
-            .get(&seq_recv_path.0)
-            .and_then(|map| map.get(&seq_recv_path.1))
-        {
-            Some(sequence) => Ok(*sequence),
-            None => Err(PacketError::MissingNextRecvSeq {
-                port_id: seq_recv_path.0.clone(),
-                channel_id: seq_recv_path.1.clone(),
-            }),
-        }
-    }
-
-    fn get_next_sequence_ack(&self, seq_acks_path: &SeqAckPath) -> Result<Sequence, PacketError> {
-        match self
-            .ibc_store
-            .lock()
-            .next_sequence_ack
-            .get(&seq_acks_path.0)
-            .and_then(|map| map.get(&seq_acks_path.1))
-        {
-            Some(sequence) => Ok(*sequence),
-            None => Err(PacketError::MissingNextAckSeq {
-                port_id: seq_acks_path.0.clone(),
-                channel_id: seq_acks_path.1.clone(),
-            }),
-        }
-    }
-
-    fn get_packet_commitment(
-        &self,
-        commitment_path: &CommitmentPath,
-    ) -> Result<PacketCommitment, PacketError> {
-        match self
-            .ibc_store
-            .lock()
-            .packet_commitment
-            .get(&commitment_path.port_id)
-            .and_then(|map| map.get(&commitment_path.channel_id))
-            .and_then(|map| map.get(&commitment_path.sequence))
-        {
-            Some(commitment) => Ok(commitment.clone()),
-            None => Err(PacketError::PacketCommitmentNotFound {
-                sequence: commitment_path.sequence,
-            }),
-        }
-    }
-
-    fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, PacketError> {
-        match self
-            .ibc_store
-            .lock()
-            .packet_receipt
-            .get(&receipt_path.port_id)
-            .and_then(|map| map.get(&receipt_path.channel_id))
-            .and_then(|map| map.get(&receipt_path.sequence))
-        {
-            Some(receipt) => Ok(receipt.clone()),
-            None => Err(PacketError::PacketReceiptNotFound {
-                sequence: receipt_path.sequence,
-            }),
-        }
-    }
-
-    fn get_packet_acknowledgement(
-        &self,
-        ack_path: &AckPath,
-    ) -> Result<AcknowledgementCommitment, PacketError> {
-        match self
-            .ibc_store
-            .lock()
-            .packet_acknowledgement
-            .get(&ack_path.port_id)
-            .and_then(|map| map.get(&ack_path.channel_id))
-            .and_then(|map| map.get(&ack_path.sequence))
-        {
-            Some(ack) => Ok(ack.clone()),
-            None => Err(PacketError::PacketAcknowledgementNotFound {
-                sequence: ack_path.sequence,
-            }),
-        }
-    }
-
-    fn hash(&self, value: &[u8]) -> Vec<u8> {
-        sha2::Sha256::digest(value).to_vec()
-    }
-
-    fn host_height(&self) -> Result<Height, ChannelError> {
-        Ok(self.latest_height())
-    }
-
-    fn host_timestamp(&self) -> Result<Timestamp, ChannelError> {
-        ClientReader::host_timestamp(self).map_err(|e| ChannelError::Other {
-            description: e.to_string(),
-        })
-    }
-
-    fn host_consensus_state(
-        &self,
-        height: &Height,
-    ) -> Result<Box<dyn ConsensusState>, ChannelError> {
-        ConnectionReader::host_consensus_state(self, height).map_err(ChannelError::Connection)
-    }
-
-    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ChannelError> {
-        ClientReader::pending_host_consensus_state(self)
-            .map_err(|e| ChannelError::Connection(ConnectionError::Client(e)))
-    }
-
-    fn client_update_time(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Timestamp, ChannelError> {
-        match self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .get(&(client_id.clone(), *height))
-        {
-            Some(time) => Ok(*time),
-            None => Err(ChannelError::ProcessedTimeNotFound {
-                client_id: client_id.clone(),
-                height: *height,
-            }),
-        }
-    }
-
-    fn client_update_height(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ChannelError> {
-        match self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .get(&(client_id.clone(), *height))
-        {
-            Some(height) => Ok(*height),
-            None => Err(ChannelError::ProcessedHeightNotFound {
-                client_id: client_id.clone(),
-                height: *height,
-            }),
-        }
-    }
-
-    fn channel_counter(&self) -> Result<u64, ChannelError> {
-        Ok(self.ibc_store.lock().channel_ids_counter)
-    }
-
-    fn max_expected_time_per_block(&self) -> Duration {
-        self.block_time
-    }
-}
-
-impl ChannelKeeper for MockContext {
-    fn store_packet_commitment(
-        &mut self,
-        port_id: PortId,
-        channel_id: ChannelId,
-        seq: Sequence,
-        commitment: PacketCommitment,
-    ) -> Result<(), PacketError> {
-        self.ibc_store
-            .lock()
-            .packet_commitment
-            .entry(port_id)
-            .or_default()
-            .entry(channel_id)
-            .or_default()
-            .insert(seq, commitment);
-        Ok(())
-    }
-
-    fn store_packet_acknowledgement(
-        &mut self,
-        port_id: PortId,
-        channel_id: ChannelId,
-        seq: Sequence,
-        ack_commitment: AcknowledgementCommitment,
-    ) -> Result<(), PacketError> {
-        self.ibc_store
-            .lock()
-            .packet_acknowledgement
-            .entry(port_id)
-            .or_default()
-            .entry(channel_id)
-            .or_default()
-            .insert(seq, ack_commitment);
-        Ok(())
-    }
-
-    fn delete_packet_acknowledgement(
-        &mut self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        seq: &Sequence,
-    ) -> Result<(), PacketError> {
-        self.ibc_store
-            .lock()
-            .packet_acknowledgement
-            .get_mut(port_id)
-            .and_then(|map| map.get_mut(channel_id))
-            .and_then(|map| map.remove(seq));
-        Ok(())
-    }
-
-    fn store_connection_channels(
-        &mut self,
-        cid: ConnectionId,
-        port_id: PortId,
-        channel_id: ChannelId,
-    ) -> Result<(), ChannelError> {
-        self.ibc_store
-            .lock()
-            .connection_channels
-            .entry(cid)
-            .or_insert_with(Vec::new)
-            .push((port_id, channel_id));
-        Ok(())
-    }
-
-    fn store_channel(
-        &mut self,
-        port_id: PortId,
-        channel_id: ChannelId,
-        channel_end: ChannelEnd,
-    ) -> Result<(), ChannelError> {
-        self.ibc_store
-            .lock()
-            .channels
-            .entry(port_id)
-            .or_default()
-            .insert(channel_id, channel_end);
-        Ok(())
-    }
-
-    fn store_next_sequence_send(
-        &mut self,
-        port_id: PortId,
-        channel_id: ChannelId,
-        seq: Sequence,
-    ) -> Result<(), PacketError> {
-        self.ibc_store
-            .lock()
-            .next_sequence_send
-            .entry(port_id)
-            .or_default()
-            .insert(channel_id, seq);
-        Ok(())
-    }
-
-    fn store_next_sequence_recv(
-        &mut self,
-        port_id: PortId,
-        channel_id: ChannelId,
-        seq: Sequence,
-    ) -> Result<(), PacketError> {
-        self.ibc_store
-            .lock()
-            .next_sequence_recv
-            .entry(port_id)
-            .or_default()
-            .insert(channel_id, seq);
-        Ok(())
-    }
-
-    fn store_next_sequence_ack(
-        &mut self,
-        port_id: PortId,
-        channel_id: ChannelId,
-        seq: Sequence,
-    ) -> Result<(), PacketError> {
-        self.ibc_store
-            .lock()
-            .next_sequence_ack
-            .entry(port_id)
-            .or_default()
-            .insert(channel_id, seq);
-        Ok(())
-    }
-
-    fn increase_channel_counter(&mut self) {
-        self.ibc_store.lock().channel_ids_counter += 1;
-    }
-
-    fn delete_packet_commitment(
-        &mut self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        seq: &Sequence,
-    ) -> Result<(), PacketError> {
-        self.ibc_store
-            .lock()
-            .packet_commitment
-            .get_mut(port_id)
-            .and_then(|map| map.get_mut(channel_id))
-            .and_then(|map| map.remove(seq));
-        Ok(())
-    }
-
-    fn store_packet_receipt(
-        &mut self,
-        port_id: PortId,
-        channel_id: ChannelId,
-        seq: Sequence,
-        receipt: Receipt,
-    ) -> Result<(), PacketError> {
-        self.ibc_store
-            .lock()
-            .packet_receipt
-            .entry(port_id)
-            .or_default()
-            .entry(channel_id)
-            .or_default()
-            .insert(seq, receipt);
-        Ok(())
-    }
-}
-
-impl ConnectionReader for MockContext {
-    fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, ConnectionError> {
-        match self.ibc_store.lock().connections.get(cid) {
-            Some(connection_end) => Ok(connection_end.clone()),
-            None => Err(ConnectionError::ConnectionNotFound {
-                connection_id: cid.clone(),
-            }),
-        }
-    }
-
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ConnectionError> {
-        // Forward method call to the Ics2 Client-specific method.
-        ClientReader::client_state(self, client_id).map_err(ConnectionError::Client)
-    }
-
-    fn decode_client_state(
-        &self,
-        client_state: Any,
-    ) -> Result<Box<dyn ClientState>, ConnectionError> {
-        ClientReader::decode_client_state(self, client_state).map_err(ConnectionError::Client)
-    }
-
-    fn host_current_height(&self) -> Result<Height, ConnectionError> {
-        Ok(self.latest_height())
-    }
-
-    fn host_oldest_height(&self) -> Result<Height, ConnectionError> {
-        // history must be non-empty, so `self.history[0]` is valid
-        Ok(self.history[0].height())
-    }
-
-    fn commitment_prefix(&self) -> CommitmentPrefix {
-        CommitmentPrefix::try_from(b"mock".to_vec()).unwrap()
-    }
-
-    fn client_consensus_state(
-        &self,
-        client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Box<dyn ConsensusState>, ConnectionError> {
-        // Forward method call to the Ics2Client-specific method.
-        ClientReader::consensus_state(self, client_cons_state_path).map_err(ConnectionError::Client)
-    }
-
-    fn host_consensus_state(
-        &self,
-        height: &Height,
-    ) -> Result<Box<dyn ConsensusState>, ConnectionError> {
-        ClientReader::host_consensus_state(self, height).map_err(ConnectionError::Client)
-    }
-
-    fn connection_counter(&self) -> Result<u64, ConnectionError> {
-        Ok(self.ibc_store.lock().connection_ids_counter)
-    }
-
-    fn validate_self_client(
-        &self,
-        client_state_of_host_on_counterparty: Any,
-    ) -> Result<(), ConnectionError> {
-        let mock_client_state = MockClientState::try_from(client_state_of_host_on_counterparty)
-            .map_err(|_| ConnectionError::InvalidClientState {
-                reason: "client must be a mock client".to_string(),
-            })?;
-
-        if mock_client_state.is_frozen() {
-            return Err(ConnectionError::InvalidClientState {
-                reason: "client is frozen".to_string(),
-            });
-        }
-
-        let self_chain_id = &self.host_chain_id;
-        let self_revision_number = self_chain_id.version();
-        if self_revision_number != mock_client_state.latest_height().revision_number() {
-            return Err(ConnectionError::InvalidClientState {
-                reason: format!(
-                    "client is not in the same revision as the chain. expected: {}, got: {}",
-                    self_revision_number,
-                    mock_client_state.latest_height().revision_number()
-                ),
-            });
-        }
-
-        let host_current_height = self.latest_height().increment();
-        if mock_client_state.latest_height() >= host_current_height {
-            return Err(ConnectionError::InvalidClientState {
-                reason: format!(
-                    "client has latest height {} greater than or equal to chain height {}",
-                    mock_client_state.latest_height(),
-                    host_current_height
-                ),
-            });
-        }
-
-        Ok(())
-    }
-}
-
-impl ConnectionKeeper for MockContext {
-    fn store_connection(
-        &mut self,
-        connection_id: ConnectionId,
-        connection_end: ConnectionEnd,
-    ) -> Result<(), ConnectionError> {
-        self.ibc_store
-            .lock()
-            .connections
-            .insert(connection_id, connection_end);
-        Ok(())
-    }
-
-    fn store_connection_to_client(
-        &mut self,
-        connection_id: ConnectionId,
-        client_id: ClientId,
-    ) -> Result<(), ConnectionError> {
-        self.ibc_store
-            .lock()
-            .client_connections
-            .insert(client_id, connection_id);
-        Ok(())
-    }
-
-    fn increase_connection_counter(&mut self) {
-        self.ibc_store.lock().connection_ids_counter += 1;
-    }
-}
-
-impl ClientReader for MockContext {
-    fn client_type(&self, client_id: &ClientId) -> Result<ClientType, ClientError> {
-        match self.ibc_store.lock().clients.get(client_id) {
-            Some(client_record) => Ok(client_record.client_type.clone()),
-            None => Err(ClientError::ClientNotFound {
-                client_id: client_id.clone(),
-            }),
-        }
-    }
-
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ClientError> {
-        match self.ibc_store.lock().clients.get(client_id) {
-            Some(client_record) => {
-                client_record
-                    .client_state
-                    .clone()
-                    .ok_or_else(|| ClientError::ClientNotFound {
-                        client_id: client_id.clone(),
-                    })
-            }
-            None => Err(ClientError::ClientNotFound {
-                client_id: client_id.clone(),
-            }),
-        }
-    }
-
-    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ClientError> {
-        if let Ok(client_state) = TmClientState::try_from(client_state.clone()) {
-            Ok(client_state.into_box())
-        } else if let Ok(client_state) = MockClientState::try_from(client_state.clone()) {
-            Ok(client_state.into_box())
-        } else {
-            Err(ClientError::UnknownClientStateType {
-                client_state_type: client_state.type_url,
-            })
-        }
-    }
-
-    fn consensus_state(
-        &self,
-        client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Box<dyn ConsensusState>, ClientError> {
-        let height =
-            Height::new(client_cons_state_path.epoch, client_cons_state_path.height).unwrap();
-        match self
-            .ibc_store
-            .lock()
-            .clients
-            .get(&client_cons_state_path.client_id)
-        {
-            Some(client_record) => match client_record.consensus_states.get(&height) {
-                Some(consensus_state) => Ok(consensus_state.clone()),
-                None => Err(ClientError::ConsensusStateNotFound {
-                    client_id: client_cons_state_path.client_id.clone(),
-                    height,
-                }),
-            },
-            None => Err(ClientError::ConsensusStateNotFound {
-                client_id: client_cons_state_path.client_id.clone(),
-                height,
-            }),
-        }
-    }
-
-    /// Search for the lowest consensus state higher than `height`.
-    fn next_consensus_state(
-        &self,
-        next_client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
-        let ibc_store = self.ibc_store.lock();
-        let client_record = ibc_store
-            .clients
-            .get(&next_client_cons_state_path.client_id)
-            .ok_or_else(|| ClientError::ClientNotFound {
-                client_id: next_client_cons_state_path.client_id.clone(),
-            })?;
-
-        let height = Height::new(
-            next_client_cons_state_path.epoch,
-            next_client_cons_state_path.height,
-        )
-        .unwrap();
-
-        // Get the consensus state heights and sort them in ascending order.
-        let mut heights: Vec<Height> = client_record.consensus_states.keys().cloned().collect();
-        heights.sort();
-
-        // Search for next state.
-        for h in heights {
-            if h > height {
-                // unwrap should never happen, as the consensus state for h must exist
-                return Ok(Some(
-                    client_record.consensus_states.get(&h).unwrap().clone(),
-                ));
-            }
-        }
-        Ok(None)
-    }
-
-    /// Search for the highest consensus state lower than `height`.
-    fn prev_consensus_state(
-        &self,
-        prev_client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
-        let ibc_store = self.ibc_store.lock();
-        let client_record = ibc_store
-            .clients
-            .get(&prev_client_cons_state_path.client_id)
-            .ok_or_else(|| ClientError::ClientNotFound {
-                client_id: prev_client_cons_state_path.client_id.clone(),
-            })?;
-
-        let height = Height::new(
-            prev_client_cons_state_path.epoch,
-            prev_client_cons_state_path.height,
-        )
-        .unwrap();
-
-        // Get the consensus state heights and sort them in descending order.
-        let mut heights: Vec<Height> = client_record.consensus_states.keys().cloned().collect();
-        heights.sort_by(|a, b| b.cmp(a));
-
-        // Search for previous state.
-        for h in heights {
-            if h < height {
-                // unwrap should never happen, as the consensus state for h must exist
-                return Ok(Some(
-                    client_record.consensus_states.get(&h).unwrap().clone(),
-                ));
-            }
-        }
-        Ok(None)
-    }
-
-    fn host_height(&self) -> Result<Height, ClientError> {
-        Ok(self.latest_height())
-    }
-
-    fn host_timestamp(&self) -> Result<Timestamp, ClientError> {
-        Ok(self
-            .history
-            .last()
-            .expect("history cannot be empty")
-            .timestamp()
-            .add(self.block_time)
-            .unwrap())
-    }
-
-    fn host_consensus_state(
-        &self,
-        height: &Height,
-    ) -> Result<Box<dyn ConsensusState>, ClientError> {
-        match self.host_block(height) {
-            Some(block_ref) => Ok(block_ref.clone().into()),
-            None => Err(ClientError::MissingLocalConsensusState { height: *height }),
-        }
-    }
-
-    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ClientError> {
-        Err(ClientError::ImplementationSpecific)
-    }
-
-    fn client_counter(&self) -> Result<u64, ClientError> {
-        Ok(self.ibc_store.lock().client_ids_counter)
-    }
-}
-
-impl ClientKeeper for MockContext {
-    fn store_client_type(
-        &mut self,
-        client_id: ClientId,
-        client_type: ClientType,
-    ) -> Result<(), ClientError> {
-        let mut ibc_store = self.ibc_store.lock();
-        let client_record = ibc_store
-            .clients
-            .entry(client_id)
-            .or_insert(MockClientRecord {
-                client_type: client_type.clone(),
-                consensus_states: Default::default(),
-                client_state: Default::default(),
-            });
-
-        client_record.client_type = client_type;
-        Ok(())
-    }
-
-    fn store_client_state(
-        &mut self,
-        client_id: ClientId,
-        client_state: Box<dyn ClientState>,
-    ) -> Result<(), ClientError> {
-        let mut ibc_store = self.ibc_store.lock();
-        let client_record = ibc_store
-            .clients
-            .entry(client_id)
-            .or_insert(MockClientRecord {
-                client_type: client_state.client_type(),
-                consensus_states: Default::default(),
-                client_state: Default::default(),
-            });
-
-        client_record.client_state = Some(client_state);
-        Ok(())
-    }
-
-    fn store_consensus_state(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        consensus_state: Box<dyn ConsensusState>,
-    ) -> Result<(), ClientError> {
-        let mut ibc_store = self.ibc_store.lock();
-        let client_record = ibc_store
-            .clients
-            .entry(client_id)
-            .or_insert(MockClientRecord {
-                client_type: mock_client_type(),
-                consensus_states: Default::default(),
-                client_state: Default::default(),
-            });
-
-        client_record
-            .consensus_states
-            .insert(height, consensus_state);
-        Ok(())
-    }
-
-    fn increase_client_counter(&mut self) {
-        self.ibc_store.lock().client_ids_counter += 1
-    }
-
-    fn store_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), ClientError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .insert((client_id, height), timestamp);
-        Ok(())
-    }
-
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_height: Height,
-    ) -> Result<(), ClientError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .insert((client_id, height), host_height);
-        Ok(())
-    }
-}
-
 impl RelayerContext for MockContext {
-    fn query_latest_height(&self) -> Result<Height, RelayerError> {
-        self.host_current_height().map_err(RelayerError::Connection)
+    fn query_latest_height(&self) -> Result<Height, ContextError> {
+        self.host_height()
     }
 
     fn query_client_full_state(&self, client_id: &ClientId) -> Option<Box<dyn ClientState>> {
         // Forward call to Ics2.
-        ClientReader::client_state(self, client_id).ok()
+        ValidationContext::client_state(self, client_id).ok()
     }
 
     fn query_latest_header(&self) -> Option<Box<dyn Header>> {
-        let block_ref = self.host_block(&self.host_current_height().unwrap());
+        let block_ref = self.host_block(&self.host_height().unwrap());
         block_ref.cloned().map(Header::into_box)
     }
 
@@ -1512,20 +670,20 @@ impl RelayerContext for MockContext {
     }
 }
 
-impl NewRouter for MockContext {
+impl Router for MockContext {
     fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module> {
-        self.new_router.get(module_id).map(Arc::as_ref)
+        self.router.get(module_id).map(Arc::as_ref)
     }
     fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module> {
-        self.new_router.get_mut(module_id).and_then(Arc::get_mut)
+        self.router.get_mut(module_id).and_then(Arc::get_mut)
     }
 
     fn has_route(&self, module_id: &ModuleId) -> bool {
-        self.new_router.get(module_id).is_some()
+        self.router.get(module_id).is_some()
     }
 
     fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId> {
-        <Self as PortReader>::lookup_module_by_port(self, port_id).ok()
+        self.ibc_store.lock().port_to_module.get(port_id).cloned()
     }
 }
 
@@ -1698,42 +856,8 @@ impl ValidationContext for MockContext {
 
     fn validate_self_client(
         &self,
-        client_state_of_host_on_counterparty: Any,
+        _client_state_of_host_on_counterparty: Any,
     ) -> Result<(), ConnectionError> {
-        let mock_client_state = MockClientState::try_from(client_state_of_host_on_counterparty)
-            .map_err(|_| ConnectionError::InvalidClientState {
-                reason: "client must be a mock client".to_string(),
-            })?;
-
-        if mock_client_state.is_frozen() {
-            return Err(ConnectionError::InvalidClientState {
-                reason: "client is frozen".to_string(),
-            });
-        }
-
-        let self_chain_id = &self.host_chain_id;
-        let self_revision_number = self_chain_id.version();
-        if self_revision_number != mock_client_state.latest_height().revision_number() {
-            return Err(ConnectionError::InvalidClientState {
-                reason: format!(
-                    "client is not in the same revision as the chain. expected: {}, got: {}",
-                    self_revision_number,
-                    mock_client_state.latest_height().revision_number()
-                ),
-            });
-        }
-
-        let host_current_height = self.latest_height().increment();
-        if mock_client_state.latest_height() >= host_current_height {
-            return Err(ConnectionError::InvalidClientState {
-                reason: format!(
-                    "client has latest height {} greater than or equal to chain height {}",
-                    mock_client_state.latest_height(),
-                    host_current_height
-                ),
-            });
-        }
-
         Ok(())
     }
 

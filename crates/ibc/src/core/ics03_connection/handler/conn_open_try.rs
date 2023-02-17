@@ -330,178 +330,144 @@ pub(crate) fn process(
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use super::*;
 
     use test_log::test;
 
     use crate::core::ics03_connection::connection::State;
-    use crate::core::ics03_connection::handler::{dispatch, ConnectionResult};
-    use crate::core::ics03_connection::msgs::conn_open_try::test_util::get_dummy_raw_msg_conn_open_try;
+    use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
-    use crate::core::ics03_connection::msgs::ConnectionMsg;
     use crate::core::ics24_host::identifier::ChainId;
+    use crate::core::ValidationContext;
     use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::Height;
 
-    use crate::core::ics26_routing::msgs::MsgEnvelope;
+    enum Ctx {
+        Default,
+        WithClient,
+    }
 
-    use crate::core::ValidationContext;
+    enum Msg {
+        Default,
+        HeightAdvanced,
+        HeightOld,
+        ProofHeightMissing,
+    }
 
-    #[test]
-    fn conn_open_try_msg_processing() {
-        struct Test {
-            name: String,
-            ctx: MockContext,
-            msg: ConnectionMsg,
-            want_pass: bool,
-        }
-
-        let host_chain_height = Height::new(0, 35).unwrap();
+    fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConnectionOpenTry> {
         let max_history_size = 5;
-        let context = MockContext::new(
+        let client_cons_state_height = 10;
+        let host_chain_height = Height::new(0, 35).unwrap();
+        let pruned_height = host_chain_height
+            .sub(max_history_size as u64 + 1)
+            .unwrap()
+            .revision_height();
+
+        let msg = match msg_variant {
+            Msg::Default => MsgConnectionOpenTry::new_dummy(
+                client_cons_state_height,
+                host_chain_height.revision_height(),
+            ),
+            Msg::HeightAdvanced => MsgConnectionOpenTry::new_dummy(
+                client_cons_state_height,
+                host_chain_height.increment().revision_height(),
+            ),
+            Msg::HeightOld => {
+                MsgConnectionOpenTry::new_dummy(client_cons_state_height, pruned_height)
+            }
+            Msg::ProofHeightMissing => MsgConnectionOpenTry::new_dummy(
+                client_cons_state_height - 1,
+                host_chain_height.revision_height(),
+            ),
+        };
+
+        let ctx_new = MockContext::new(
             ChainId::new("mockgaia".to_string(), 0),
             HostType::Mock,
             max_history_size,
             host_chain_height,
         );
-        let client_consensus_state_height = 10;
+        let ctx = match ctx_variant {
+            Ctx::Default => MockContext::default(),
+            Ctx::WithClient => ctx_new.with_client(
+                &msg.client_id_on_b,
+                Height::new(0, client_cons_state_height).unwrap(),
+            ),
+        };
+        Fixture { ctx, msg }
+    }
 
-        let msg_conn_try = MsgConnectionOpenTry::try_from(get_dummy_raw_msg_conn_open_try(
-            client_consensus_state_height,
-            host_chain_height.revision_height(),
-        ))
-        .unwrap();
-
-        // The proof targets a height that does not exist (i.e., too advanced) on destination chain.
-        let msg_height_advanced = MsgConnectionOpenTry::try_from(get_dummy_raw_msg_conn_open_try(
-            client_consensus_state_height,
-            host_chain_height.increment().revision_height(),
-        ))
-        .unwrap();
-        let pruned_height = host_chain_height
-            .sub(max_history_size as u64 + 1)
-            .unwrap()
-            .revision_height();
-        // The consensus proof targets a missing height (pruned) on destination chain.
-        let msg_height_old = MsgConnectionOpenTry::try_from(get_dummy_raw_msg_conn_open_try(
-            client_consensus_state_height,
-            pruned_height,
-        ))
-        .unwrap();
-
-        // The proofs in this message are created at a height which the client on destination chain does not have.
-        let msg_proof_height_missing =
-            MsgConnectionOpenTry::try_from(get_dummy_raw_msg_conn_open_try(
-                client_consensus_state_height - 1,
-                host_chain_height.revision_height(),
-            ))
-            .unwrap();
-
-        let tests: Vec<Test> = vec![
-            Test {
-                name: "Processing fails because the height is too advanced".to_string(),
-                ctx: context.clone(),
-                msg: ConnectionMsg::OpenTry(msg_height_advanced),
-                want_pass: false,
-            },
-            Test {
-                name: "Processing fails because the height is too old".to_string(),
-                ctx: context.clone(),
-                msg: ConnectionMsg::OpenTry(msg_height_old),
-                want_pass: false,
-            },
-            Test {
-                name: "Processing fails because no client exists".to_string(),
-                ctx: context.clone(),
-                msg: ConnectionMsg::OpenTry(msg_conn_try.clone()),
-                want_pass: false,
-            },
-            Test {
-                name: "Processing fails because the client misses the consensus state targeted by the proof".to_string(),
-                ctx: context.clone().with_client(&msg_proof_height_missing.client_id_on_b, Height::new(0, client_consensus_state_height).unwrap()),
-                msg: ConnectionMsg::OpenTry(msg_proof_height_missing),
-                want_pass: false,
-            },
-            Test {
-                name: "Good parameters (no previous_connection_id)".to_string(),
-                ctx: context.clone().with_client(&msg_conn_try.client_id_on_b, Height::new(0, client_consensus_state_height).unwrap()),
-                msg: ConnectionMsg::OpenTry(msg_conn_try.clone()),
-                want_pass: true,
-            },
-            Test {
-                name: "Good parameters".to_string(),
-                ctx: context.with_client(&msg_conn_try.client_id_on_b, Height::new(0, client_consensus_state_height).unwrap()),
-                msg: ConnectionMsg::OpenTry(msg_conn_try),
-                want_pass: true,
-            },
-        ]
-        .into_iter()
-        .collect();
-
-        for test in tests {
-            {
-                let res = ValidationContext::validate(
-                    &test.ctx,
-                    MsgEnvelope::Connection(test.msg.clone()),
-                );
-
-                match res {
-                    Ok(_) => {
-                        assert!(
-                        test.want_pass,
-                        "conn_open_try: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
-                        test.name,
-                        test.msg.clone(),
-                        test.ctx.clone()
-                    )
-                    }
-                    Err(e) => {
-                        assert!(
-                            !test.want_pass,
-                            "conn_open_try: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
-                            test.name,
-                            test.msg,
-                            test.ctx.clone(),
-                            e,
-                        );
-                    }
-                }
+    fn conn_open_try_validate(fxt: &Fixture<MsgConnectionOpenTry>, expect: Expect) {
+        let res = validate(&fxt.ctx, fxt.msg.clone());
+        let err_msg = fxt.generate_error_msg(&expect, "validation", &res);
+        match expect {
+            Expect::Failure(_) => {
+                assert!(res.is_err(), "{err_msg}")
             }
-            let res = dispatch(&test.ctx, test.msg.clone());
-            // Additionally check the events and the output objects in the result.
-            match res {
-                Ok(proto_output) => {
-                    assert!(
-                        test.want_pass,
-                        "conn_open_try: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
-                        test.name,
-                        test.msg.clone(),
-                        test.ctx.clone()
-                    );
-
-                    assert!(!proto_output.events.is_empty()); // Some events must exist.
-
-                    // The object in the output is a ConnectionEnd, should have TryOpen state.
-                    let res: ConnectionResult = proto_output.result;
-                    assert_eq!(res.connection_end.state().clone(), State::TryOpen);
-
-                    for e in proto_output.events.iter() {
-                        assert!(matches!(e, &IbcEvent::OpenTryConnection(_)));
-                    }
-                }
-                Err(e) => {
-                    assert!(
-                        !test.want_pass,
-                        "conn_open_try: failed for test: {}, \nparams {:?} {:?} error: {:?}",
-                        test.name,
-                        test.msg,
-                        test.ctx.clone(),
-                        e,
-                    );
-                }
+            Expect::Success => {
+                assert!(res.is_ok(), "{err_msg}");
             }
         }
+    }
+
+    fn conn_open_try_execute(fxt: &mut Fixture<MsgConnectionOpenTry>, expect: Expect) {
+        let res = execute(&mut fxt.ctx, fxt.msg.clone());
+        let err_msg = fxt.generate_error_msg(&expect, "execution", &res);
+        match expect {
+            Expect::Failure(_) => {
+                assert!(res.is_err(), "{err_msg}")
+            }
+            Expect::Success => {
+                assert!(res.is_ok(), "{err_msg}");
+                assert_eq!(fxt.ctx.events.len(), 1);
+
+                let event = fxt.ctx.events.first().unwrap();
+                assert!(matches!(event, &IbcEvent::OpenTryConnection(_)));
+
+                let conn_open_try_event = match event {
+                    IbcEvent::OpenTryConnection(e) => e,
+                    _ => unreachable!(),
+                };
+                let conn_end = <MockContext as ValidationContext>::connection_end(
+                    &fxt.ctx,
+                    conn_open_try_event.connection_id(),
+                )
+                .unwrap();
+                assert_eq!(conn_end.state().clone(), State::TryOpen);
+            }
+        }
+    }
+
+    #[test]
+    fn conn_open_try_healthy() {
+        let mut fxt = conn_open_try_fixture(Ctx::WithClient, Msg::Default);
+        conn_open_try_validate(&fxt, Expect::Success);
+        conn_open_try_execute(&mut fxt, Expect::Success);
+    }
+
+    #[test]
+    fn conn_open_try_height_advanced() {
+        let fxt = conn_open_try_fixture(Ctx::WithClient, Msg::HeightAdvanced);
+        conn_open_try_validate(&fxt, Expect::Failure(None));
+    }
+
+    #[test]
+    fn conn_open_try_height_old() {
+        let fxt = conn_open_try_fixture(Ctx::WithClient, Msg::HeightOld);
+        conn_open_try_validate(&fxt, Expect::Failure(None));
+    }
+
+    #[test]
+    fn conn_open_try_proof_height_missing() {
+        let fxt = conn_open_try_fixture(Ctx::WithClient, Msg::ProofHeightMissing);
+        conn_open_try_validate(&fxt, Expect::Failure(None));
+    }
+
+    #[test]
+    fn conn_open_try_no_client() {
+        let fxt = conn_open_try_fixture(Ctx::Default, Msg::Default);
+        conn_open_try_validate(&fxt, Expect::Failure(None));
     }
 }
