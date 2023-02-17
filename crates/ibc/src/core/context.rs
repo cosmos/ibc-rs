@@ -292,8 +292,18 @@ pub trait ValidationContext: Router {
     /// Returns the ConnectionEnd for the given identifier `conn_id`.
     fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError>;
 
-    /// Validates the `ClientState` of the client on the counterparty chain.
-    fn validate_self_client(&self, counterparty_client_state: Any) -> Result<(), ConnectionError>;
+    /// Validates the `ClientState` of the client (a client referring to host) stored on the counterparty chain against the host's internal state.
+    ///
+    /// For more information on the specific requirements for validating the
+    /// client state of a host chain, please refer to the [ICS24 host
+    /// requirements](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#client-state-validation)
+    ///
+    /// Additionally, implementations specific to individual chains can be found
+    /// in the [hosts](crate::hosts) module.
+    fn validate_self_client(
+        &self,
+        client_state_of_host_on_counterparty: Any,
+    ) -> Result<(), ConnectionError>;
 
     /// Returns the prefix that the local chain uses in the KV store.
     fn commitment_prefix(&self) -> CommitmentPrefix;

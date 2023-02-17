@@ -1159,7 +1159,10 @@ impl ConnectionReader for MockContext {
         Ok(self.ibc_store.lock().connection_ids_counter)
     }
 
-    fn validate_self_client(&self, _counterparty_client_state: Any) -> Result<(), ConnectionError> {
+    fn validate_self_client(
+        &self,
+        _client_state_of_host_on_counterparty: Any,
+    ) -> Result<(), ConnectionError> {
         Ok(())
     }
 }
@@ -1659,7 +1662,10 @@ impl ValidationContext for MockContext {
         .map_err(ContextError::ConnectionError)
     }
 
-    fn validate_self_client(&self, _counterparty_client_state: Any) -> Result<(), ConnectionError> {
+    fn validate_self_client(
+        &self,
+        _client_state_of_host_on_counterparty: Any,
+    ) -> Result<(), ConnectionError> {
         Ok(())
     }
 
