@@ -854,7 +854,10 @@ impl ValidationContext for MockContext {
         .map_err(ContextError::ConnectionError)
     }
 
-    fn validate_self_client(&self, _counterparty_client_state: Any) -> Result<(), ConnectionError> {
+    fn validate_self_client(
+        &self,
+        _client_state_of_host_on_counterparty: Any,
+    ) -> Result<(), ConnectionError> {
         Ok(())
     }
 

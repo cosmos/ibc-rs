@@ -74,8 +74,19 @@ pub trait ConnectionReader {
     /// `ConnectionKeeper::increase_connection_counter`.
     fn connection_counter(&self) -> Result<u64, ConnectionError>;
 
-    /// Validates the `ClientState` of the client on the counterparty chain.
-    fn validate_self_client(&self, counterparty_client_state: Any) -> Result<(), ConnectionError>;
+    /// Validates the client state of the host chain that is stored on the
+    /// counterparty chain.
+    ///
+    /// For more information on the specific requirements for validating the
+    /// client state of a host chain, please refer to the [ICS24 host
+    /// requirements](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#client-state-validation)
+    ///
+    /// Additionally, implementations specific to individual chains can be found
+    /// in the [hosts](crate::hosts) module.
+    fn validate_self_client(
+        &self,
+        client_state_of_host_on_counterparty: Any,
+    ) -> Result<(), ConnectionError>;
 }
 
 /// A context supplying all the necessary write-only dependencies (i.e., storage writing facility)
