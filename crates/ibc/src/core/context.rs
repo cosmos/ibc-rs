@@ -302,7 +302,7 @@ pub trait ValidationContext: Router {
     /// in the [hosts](crate::hosts) module.
     fn validate_self_client(
         &self,
-        host_client_state_on_counterparty: Any,
+        client_state_of_host_on_counterparty: Any,
     ) -> Result<(), ConnectionError>;
 
     /// Returns the prefix that the local chain uses in the KV store.

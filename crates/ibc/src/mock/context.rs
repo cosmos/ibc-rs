@@ -1161,7 +1161,7 @@ impl ConnectionReader for MockContext {
 
     fn validate_self_client(
         &self,
-        _host_client_state_on_counterparty: Any,
+        _client_state_of_host_on_counterparty: Any,
     ) -> Result<(), ConnectionError> {
         Ok(())
     }
@@ -1664,7 +1664,7 @@ impl ValidationContext for MockContext {
 
     fn validate_self_client(
         &self,
-        _host_client_state_on_counterparty: Any,
+        _client_state_of_host_on_counterparty: Any,
     ) -> Result<(), ConnectionError> {
         Ok(())
     }

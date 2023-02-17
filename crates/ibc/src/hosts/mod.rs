@@ -1,1 +1,1 @@
-pub mod tendermint_helper;
+pub mod tendermint;
