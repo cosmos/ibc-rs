@@ -60,7 +60,6 @@ use crate::timestamp::Timestamp;
 use crate::Height;
 
 use super::client_state::MOCK_CLIENT_TYPE;
-use super::host_helper::ValidateSelfMockClientContext;
 
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
@@ -1162,9 +1161,47 @@ impl ConnectionReader for MockContext {
 
     fn validate_self_client(
         &self,
-        _client_state_of_host_on_counterparty: Any,
+        client_state_of_host_on_counterparty: Any,
     ) -> Result<(), ConnectionError> {
-        self.validate_self_mock_client(host_client_state_on_counterparty)
+        let mock_client_state = MockClientState::try_from(client_state_of_host_on_counterparty)
+            .map_err(|_| ConnectionError::InvalidClientState {
+                reason: "client must be a mock client".to_string(),
+            })?;
+
+        if mock_client_state.is_frozen() {
+            return Err(ConnectionError::InvalidClientState {
+                reason: "client is frozen".to_string(),
+            });
+        }
+
+        let self_chain_id = self.chain_id();
+        let self_revision_number = self_chain_id.version();
+        if self_revision_number != mock_client_state.latest_height().revision_number() {
+            return Err(ConnectionError::InvalidClientState {
+                reason: format!(
+                    "client is not in the same revision as the chain. expected: {}, got: {}",
+                    self_revision_number,
+                    mock_client_state.latest_height().revision_number()
+                ),
+            });
+        }
+
+        let host_height = <MockContext as ClientReader>::host_height(&self).map_err(|_| {
+            ConnectionError::InvalidClientState {
+                reason: "host height must be valid".to_string(),
+            }
+        })?;
+        if mock_client_state.latest_height() >= host_height {
+            return Err(ConnectionError::InvalidClientState {
+                reason: format!(
+                    "client has latest height {} greater than or equal to chain height {}",
+                    mock_client_state.latest_height(),
+                    host_height
+                ),
+            });
+        }
+
+        Ok(())
     }
 }
 
@@ -1665,9 +1702,47 @@ impl ValidationContext for MockContext {
 
     fn validate_self_client(
         &self,
-        _client_state_of_host_on_counterparty: Any,
+        client_state_of_host_on_counterparty: Any,
     ) -> Result<(), ConnectionError> {
-        self.validate_self_mock_client(host_client_state_on_counterparty)
+        let mock_client_state = MockClientState::try_from(client_state_of_host_on_counterparty)
+            .map_err(|_| ConnectionError::InvalidClientState {
+                reason: "client must be a mock client".to_string(),
+            })?;
+
+        if mock_client_state.is_frozen() {
+            return Err(ConnectionError::InvalidClientState {
+                reason: "client is frozen".to_string(),
+            });
+        }
+
+        let self_chain_id = self.chain_id();
+        let self_revision_number = self_chain_id.version();
+        if self_revision_number != mock_client_state.latest_height().revision_number() {
+            return Err(ConnectionError::InvalidClientState {
+                reason: format!(
+                    "client is not in the same revision as the chain. expected: {}, got: {}",
+                    self_revision_number,
+                    mock_client_state.latest_height().revision_number()
+                ),
+            });
+        }
+
+        let host_height = <MockContext as ValidationContext>::host_height(&self).map_err(|_| {
+            ConnectionError::InvalidClientState {
+                reason: "failed to get host height".to_string(),
+            }
+        })?;
+        if mock_client_state.latest_height() >= host_height {
+            return Err(ConnectionError::InvalidClientState {
+                reason: format!(
+                    "client has latest height {} greater than or equal to chain height {}",
+                    mock_client_state.latest_height(),
+                    host_height
+                ),
+            });
+        }
+
+        Ok(())
     }
 
     fn commitment_prefix(&self) -> CommitmentPrefix {
@@ -1888,16 +1963,6 @@ impl ValidationContext for MockContext {
 
     fn max_expected_time_per_block(&self) -> Duration {
         self.block_time
-    }
-}
-
-impl ValidateSelfMockClientContext for MockContext {
-    fn chain_id(&self) -> &ChainId {
-        &self.host_chain_id
-    }
-
-    fn host_height(&self) -> Height {
-        self.latest_height().increment()
     }
 }
 
