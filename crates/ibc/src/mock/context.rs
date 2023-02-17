@@ -683,11 +683,7 @@ impl Router for MockContext {
     }
 
     fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId> {
-        self.ibc_store
-            .lock()
-            .port_to_module
-            .get(port_id)
-            .map(|mod_id| mod_id.clone())
+        self.ibc_store.lock().port_to_module.get(port_id).cloned()
     }
 }
 

@@ -9,20 +9,21 @@ use crate::applications::transfer::relay::refund_packet_token;
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::commitment::PacketCommitment;
-use crate::core::ics04_channel::context::{ChannelKeeper, SendPacketReader};
-use crate::core::ics04_channel::error::PacketError;
+use crate::core::ics04_channel::context::SendPacketReader;
 use crate::core::ics04_channel::handler::send_packet::SendPacketResult;
 use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+use crate::core::ics24_host::path::{CommitmentPath, SeqSendPath};
 use crate::core::ics26_routing::context::ModuleOutputBuilder;
+use crate::core::{ContextError, ExecutionContext};
 use crate::prelude::*;
 use crate::signer::Signer;
 
 pub trait TokenTransferKeeper: BankKeeper {
-    fn store_send_packet_result(&mut self, result: SendPacketResult) -> Result<(), PacketError> {
+    fn store_send_packet_result(&mut self, result: SendPacketResult) -> Result<(), ContextError> {
         self.store_next_sequence_send(
             result.port_id.clone(),
             result.channel_id.clone(),
@@ -44,14 +45,14 @@ pub trait TokenTransferKeeper: BankKeeper {
         channel_id: ChannelId,
         sequence: Sequence,
         commitment: PacketCommitment,
-    ) -> Result<(), PacketError>;
+    ) -> Result<(), ContextError>;
 
     fn store_next_sequence_send(
         &mut self,
         port_id: PortId,
         channel_id: ChannelId,
         seq: Sequence,
-    ) -> Result<(), PacketError>;
+    ) -> Result<(), ContextError>;
 }
 
 pub trait TokenTransferReader: SendPacketReader {
@@ -82,7 +83,7 @@ pub trait TokenTransferReader: SendPacketReader {
 
 impl<T> TokenTransferKeeper for T
 where
-    T: ChannelKeeper + BankKeeper,
+    T: ExecutionContext + BankKeeper,
 {
     fn store_packet_commitment(
         &mut self,
@@ -90,8 +91,14 @@ where
         channel_id: ChannelId,
         sequence: Sequence,
         commitment: PacketCommitment,
-    ) -> Result<(), PacketError> {
-        ChannelKeeper::store_packet_commitment(self, port_id, channel_id, sequence, commitment)
+    ) -> Result<(), ContextError> {
+        let commitment_path = CommitmentPath {
+            port_id,
+            channel_id,
+            sequence,
+        };
+
+        self.store_packet_commitment(&commitment_path, commitment)
     }
 
     fn store_next_sequence_send(
@@ -99,8 +106,10 @@ where
         port_id: PortId,
         channel_id: ChannelId,
         seq: Sequence,
-    ) -> Result<(), PacketError> {
-        ChannelKeeper::store_next_sequence_send(self, port_id, channel_id, seq)
+    ) -> Result<(), ContextError> {
+        let seq_send_path = SeqSendPath(port_id, channel_id);
+
+        self.store_next_sequence_send(&seq_send_path, seq)
     }
 }
 

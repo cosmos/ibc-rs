@@ -79,4 +79,3 @@ pub fn process<Ctx: ChannelReader>(
 
     Ok(output.with_result(result))
 }
-

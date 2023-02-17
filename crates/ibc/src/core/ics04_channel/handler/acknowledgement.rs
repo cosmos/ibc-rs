@@ -268,10 +268,10 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ValidationContext;
     use crate::core::ics04_channel::handler::acknowledgement::validate;
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::PortId;
+    use crate::core::ValidationContext;
     use crate::prelude::*;
     use rstest::*;
     use test_log::test;
