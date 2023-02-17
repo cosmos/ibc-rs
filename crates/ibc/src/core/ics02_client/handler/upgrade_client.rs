@@ -302,7 +302,7 @@ mod tests {
         let res = validate(&ctx, msg);
         assert!(
             res.is_err(),
-            "validation fails because the client is non-existing"
+            "validation fails because the upgrade height is too low"
         );
     }
 }
