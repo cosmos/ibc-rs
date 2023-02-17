@@ -856,8 +856,42 @@ impl ValidationContext for MockContext {
 
     fn validate_self_client(
         &self,
-        _client_state_of_host_on_counterparty: Any,
+        client_state_of_host_on_counterparty: Any,
     ) -> Result<(), ConnectionError> {
+        let mock_client_state = MockClientState::try_from(client_state_of_host_on_counterparty)
+            .map_err(|_| ConnectionError::InvalidClientState {
+                reason: "client must be a mock client".to_string(),
+            })?;
+
+        if mock_client_state.is_frozen() {
+            return Err(ConnectionError::InvalidClientState {
+                reason: "client is frozen".to_string(),
+            });
+        }
+
+        let self_chain_id = &self.host_chain_id;
+        let self_revision_number = self_chain_id.version();
+        if self_revision_number != mock_client_state.latest_height().revision_number() {
+            return Err(ConnectionError::InvalidClientState {
+                reason: format!(
+                    "client is not in the same revision as the chain. expected: {}, got: {}",
+                    self_revision_number,
+                    mock_client_state.latest_height().revision_number()
+                ),
+            });
+        }
+
+        let host_current_height = self.latest_height().increment();
+        if mock_client_state.latest_height() >= host_current_height {
+            return Err(ConnectionError::InvalidClientState {
+                reason: format!(
+                    "client has latest height {} greater than or equal to chain height {}",
+                    mock_client_state.latest_height(),
+                    host_current_height
+                ),
+            });
+        }
+
         Ok(())
     }
 
