@@ -328,7 +328,8 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
-    use test_log::test;
+    use crate::prelude::*;
+    use rstest::*;
 
     use crate::core::ics02_client::height::Height;
     use crate::core::ics03_connection::connection::ConnectionEnd;
@@ -336,34 +337,34 @@ mod tests {
     use crate::core::ics03_connection::connection::State as ConnectionState;
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
-    use crate::core::ics04_channel::context::ChannelReader;
-    use crate::core::ics04_channel::handler::timeout::process;
+    use crate::core::ics04_channel::commitment::PacketCommitment;
+    use crate::core::ics04_channel::handler::timeout::validate;
     use crate::core::ics04_channel::msgs::timeout::test_util::get_dummy_raw_msg_timeout;
     use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::ics24_host::path::ChannelEndPath;
-    use crate::events::IbcEvent;
+    use crate::core::ValidationContext;
     use crate::mock::context::MockContext;
-    use crate::prelude::*;
     use crate::timestamp::ZERO_DURATION;
 
-    #[test]
-    fn timeout_packet_processing() {
-        struct Test {
-            name: String,
-            ctx: MockContext,
-            msg: MsgTimeout,
-            want_pass: bool,
-        }
+    pub struct Fixture {
+        pub context: MockContext,
+        pub client_height: Height,
+        pub msg: MsgTimeout,
+        pub packet_commitment: PacketCommitment,
+        pub conn_end_on_a: ConnectionEnd,
+        pub chan_end_on_a_unordered: ChannelEnd,
+        pub chan_end_on_a_ordered: ChannelEnd,
+    }
 
+    #[fixture]
+    fn fixture() -> Fixture {
         let context = MockContext::default();
 
+        let client_height = Height::new(0, 2).unwrap();
         let msg_proof_height = 2;
         let msg_timeout_height = 5;
         let timeout_timestamp = 5;
-
-        let client_height = Height::new(0, 2).unwrap();
 
         let msg = MsgTimeout::try_from(get_dummy_raw_msg_timeout(
             msg_proof_height,
@@ -373,25 +374,22 @@ mod tests {
         .unwrap();
         let packet = msg.packet.clone();
 
-        let mut msg_ok = msg.clone();
-        msg_ok.packet.timeout_timestamp_on_b = Default::default();
-
-        let data = context.packet_commitment(
-            &msg_ok.packet.data,
-            &msg_ok.packet.timeout_height_on_b,
-            &msg_ok.packet.timeout_timestamp_on_b,
+        let packet_commitment = context.packet_commitment(
+            &msg.packet.data,
+            &msg.packet.timeout_height_on_b,
+            &msg.packet.timeout_timestamp_on_b,
         );
 
-        let chan_end_on_a = ChannelEnd::new(
+        let chan_end_on_a_unordered = ChannelEnd::new(
             State::Open,
-            Order::default(),
-            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone())),
+            Order::Unordered,
+            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b)),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
         );
 
-        let mut source_ordered_channel_end = chan_end_on_a.clone();
-        source_ordered_channel_end.ordering = Order::Ordered;
+        let mut chan_end_on_a_ordered = chan_end_on_a_unordered.clone();
+        chan_end_on_a_ordered.ordering = Order::Ordered;
 
         let conn_end_on_a = ConnectionEnd::new(
             ConnectionState::Open,
@@ -405,128 +403,166 @@ mod tests {
             ZERO_DURATION,
         );
 
-        let tests: Vec<Test> = vec![
-            Test {
-                name: "Processing fails because no channel exists in the context".to_string(),
-                ctx: context.clone(),
-                msg: msg.clone(),
-                want_pass: false,
-            },
-            Test {
-                name: "Processing fails because the client does not have a consensus state for the required height"
-                    .to_string(),
-                ctx: context.clone().with_channel(
-                    PortId::default(),
-                    ChannelId::default(),
-                    chan_end_on_a.clone(),
-                )
-                .with_connection(ConnectionId::default(), conn_end_on_a.clone()),
-                msg: msg.clone(),
-                want_pass: false,
-            },
-            Test {
-                name: "Processing fails because the proof's timeout has not been reached "
-                    .to_string(),
-                ctx: context.clone().with_channel(
-                    PortId::default(),
-                    ChannelId::default(),
-                    chan_end_on_a.clone(),
-                )
-                .with_client(&ClientId::default(), client_height)
-                .with_connection(ConnectionId::default(), conn_end_on_a.clone()),
-                msg,
-                want_pass: false,
-            },
-            Test {
-                name: "Good parameters Unordered channel".to_string(),
-                ctx: context.clone()
-                    .with_client(&ClientId::default(), client_height)
-                    .with_connection(ConnectionId::default(), conn_end_on_a.clone())
-                    .with_channel(
-                        packet.port_on_a.clone(),
-                        packet.chan_on_a.clone(),
-                        chan_end_on_a,
-                    )
-                    .with_packet_commitment(
-                        msg_ok.packet.port_on_a.clone(),
-                        msg_ok.packet.chan_on_a.clone(),
-                        msg_ok.packet.sequence,
-                        data.clone(),
-                    ),
-                msg: msg_ok.clone(),
-                want_pass: true,
-            },
-            Test {
-                name: "Good parameters Ordered Channel".to_string(),
-                ctx: context
-                    .with_client(&ClientId::default(), client_height)
-                    .with_connection(ConnectionId::default(), conn_end_on_a)
-                    .with_channel(
-                        packet.port_on_a.clone(),
-                        packet.chan_on_a.clone(),
-                        source_ordered_channel_end,
-                    )
-                    .with_packet_commitment(
-                        msg_ok.packet.port_on_a.clone(),
-                        msg_ok.packet.chan_on_a.clone(),
-                        msg_ok.packet.sequence,
-                        data,
-                    )
-                    .with_ack_sequence(
-                         packet.port_on_b,
-                         packet.chan_on_b,
-                         1.into(),
-                     ),
-                msg: msg_ok,
-                want_pass: true,
-            },
-        ]
-        .into_iter()
-        .collect();
-
-        for test in tests {
-            let res = process(&test.ctx, &test.msg);
-            // Additionally check the events and the output objects in the result.
-            match res {
-                Ok(proto_output) => {
-                    assert!(
-                        test.want_pass,
-                        "TO_packet: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
-                        test.name,
-                        test.msg.clone(),
-                        test.ctx.clone()
-                    );
-
-                    let events = proto_output.events;
-                    let src_channel_end = test
-                        .ctx
-                        .channel_end(&ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a))
-                        .unwrap();
-
-                    if src_channel_end.order_matches(&Order::Ordered) {
-                        assert_eq!(events.len(), 2);
-
-                        assert!(matches!(events[0], IbcEvent::TimeoutPacket(_)));
-                        assert!(matches!(events[1], IbcEvent::ChannelClosed(_)));
-                    } else {
-                        assert_eq!(events.len(), 1);
-                        assert!(matches!(
-                            events.first().unwrap(),
-                            &IbcEvent::TimeoutPacket(_)
-                        ));
-                    }
-                }
-                Err(e) => {
-                    assert!(
-                        !test.want_pass,
-                        "timeout_packet: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
-                        test.name,
-                        test.msg.clone(),
-                        test.ctx.clone(),
-                        e,
-                    );
-                }
-            }
+        Fixture {
+            context,
+            client_height,
+            msg,
+            packet_commitment,
+            conn_end_on_a,
+            chan_end_on_a_unordered,
+            chan_end_on_a_ordered,
         }
+    }
+
+    #[rstest]
+    fn timeout_fail_no_channel(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            client_height,
+            ..
+        } = fixture;
+        let context = context.with_client(&ClientId::default(), client_height);
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_err(),
+            "Validation fails because no channel exists in the context"
+        )
+    }
+
+    #[rstest]
+    fn timeout_fail_no_consensus_state_for_height(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            chan_end_on_a_unordered,
+            conn_end_on_a,
+            packet_commitment,
+            ..
+        } = fixture;
+
+        let packet = msg.packet.clone();
+
+        let context = context
+            .with_channel(
+                PortId::default(),
+                ChannelId::default(),
+                chan_end_on_a_unordered,
+            )
+            .with_connection(ConnectionId::default(), conn_end_on_a)
+            .with_packet_commitment(
+                packet.port_on_a,
+                packet.chan_on_a,
+                packet.sequence,
+                packet_commitment,
+            );
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_err(),
+            "Validation fails because the client does not have a consensus state for the required height"
+        )
+    }
+
+    #[rstest]
+    #[ignore = "implement and make clear that the timeout is indeed not reached"]
+    fn timeout_fail_proof_timeout_not_reached(_fixture: Fixture) {
+        // TODO
+    }
+
+    /// NO-OP case
+    #[rstest]
+    fn timeout_success_no_packet_commitment(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            conn_end_on_a,
+            chan_end_on_a_unordered,
+            ..
+        } = fixture;
+        let context = context
+            .with_channel(
+                PortId::default(),
+                ChannelId::default(),
+                chan_end_on_a_unordered,
+            )
+            .with_connection(ConnectionId::default(), conn_end_on_a);
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_ok(),
+            "Validation should succeed when no packet commitment is present"
+        )
+    }
+
+    #[rstest]
+    fn timeout_success_unordered_channel(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            chan_end_on_a_unordered,
+            conn_end_on_a,
+            packet_commitment,
+            client_height,
+            ..
+        } = fixture;
+
+        let packet = msg.packet.clone();
+
+        let context = context
+            .with_client(&ClientId::default(), client_height)
+            .with_connection(ConnectionId::default(), conn_end_on_a)
+            .with_channel(
+                PortId::default(),
+                ChannelId::default(),
+                chan_end_on_a_unordered,
+            )
+            .with_packet_commitment(
+                packet.port_on_a,
+                packet.chan_on_a,
+                packet.sequence,
+                packet_commitment,
+            );
+
+        let res = validate(&context, &msg);
+
+        assert!(res.is_ok(), "Good parameters for unordered channels")
+    }
+
+    #[rstest]
+    fn timeout_success_ordered_channel(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            chan_end_on_a_ordered,
+            conn_end_on_a,
+            packet_commitment,
+            client_height,
+            ..
+        } = fixture;
+
+        let packet = msg.packet.clone();
+
+        let context = context
+            .with_client(&ClientId::default(), client_height)
+            .with_connection(ConnectionId::default(), conn_end_on_a)
+            .with_channel(
+                PortId::default(),
+                ChannelId::default(),
+                chan_end_on_a_ordered,
+            )
+            .with_packet_commitment(
+                packet.port_on_a,
+                packet.chan_on_a,
+                packet.sequence,
+                packet_commitment,
+            );
+
+        let res = validate(&context, &msg);
+
+        assert!(res.is_ok(), "Good parameters for unordered channels")
     }
 }

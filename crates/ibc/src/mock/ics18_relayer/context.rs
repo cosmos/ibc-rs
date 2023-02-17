@@ -3,8 +3,8 @@ use crate::prelude::*;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::header::Header;
 
-use super::error::RelayerError;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::core::ContextError;
 use crate::signer::Signer;
 use crate::Height;
 
@@ -15,7 +15,7 @@ use crate::Height;
 /// types, light client, RPC client, etc.)
 pub trait RelayerContext {
     /// Returns the latest height of the chain.
-    fn query_latest_height(&self) -> Result<Height, RelayerError>;
+    fn query_latest_height(&self) -> Result<Height, ContextError>;
 
     /// Returns this client state for the given `client_id` on this chain.
     /// Wrapper over the `/abci_query?path=..` endpoint.

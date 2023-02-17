@@ -92,7 +92,9 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
+    use crate::core::ics04_channel::handler::chan_open_init::validate;
     use crate::prelude::*;
+    use rstest::*;
 
     use test_log::test;
 
@@ -100,34 +102,26 @@ mod tests {
     use crate::core::ics03_connection::connection::State as ConnectionState;
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::version::get_compatible_versions;
-    use crate::core::ics04_channel::channel::State;
-    use crate::core::ics04_channel::handler::channel_dispatch;
     use crate::core::ics04_channel::msgs::chan_open_init::test_util::get_dummy_raw_msg_chan_open_init;
     use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
-    use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics24_host::identifier::ConnectionId;
     use crate::mock::context::MockContext;
 
-    #[test]
-    fn chan_open_init_msg_processing() {
-        struct Test {
-            name: String,
-            ctx: MockContext,
-            msg: ChannelMsg,
-            want_pass: bool,
-        }
+    pub struct Fixture {
+        pub context: MockContext,
+        pub msg: MsgChannelOpenInit,
+        pub conn_end_on_a: ConnectionEnd,
+    }
 
-        let msg_chan_init =
-            MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
-
-        let msg_chan_init_with_counterparty_chan_id_some =
-            MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(Some(0))).unwrap();
+    #[fixture]
+    fn fixture() -> Fixture {
+        let msg = MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
 
         let context = MockContext::default();
 
         let msg_conn_init = MsgConnectionOpenInit::new_dummy();
 
-        let init_conn_end = ConnectionEnd::new(
+        let conn_end_on_a = ConnectionEnd::new(
             ConnectionState::Init,
             msg_conn_init.client_id_on_a.clone(),
             msg_conn_init.counterparty.clone(),
@@ -135,66 +129,56 @@ mod tests {
             msg_conn_init.delay_period,
         );
 
-        let cid = ConnectionId::default();
-
-        let tests: Vec<Test> = vec![
-            Test {
-                name: "Processing fails because no connection exists in the context".to_string(),
-                ctx: context.clone(),
-                msg: ChannelMsg::OpenInit(msg_chan_init.clone()),
-                want_pass: false,
-            },
-            Test {
-                name: "Good parameters".to_string(),
-                ctx: context
-                    .clone()
-                    .with_connection(cid.clone(), init_conn_end.clone()),
-                msg: ChannelMsg::OpenInit(msg_chan_init),
-                want_pass: true,
-            },
-            Test {
-                name: "Good parameters even if counterparty channel id is set some by relayer"
-                    .to_string(),
-                ctx: context.with_connection(cid, init_conn_end),
-                msg: ChannelMsg::OpenInit(msg_chan_init_with_counterparty_chan_id_some),
-                want_pass: true,
-            },
-        ]
-        .into_iter()
-        .collect();
-
-        for test in tests {
-            let res = channel_dispatch(&test.ctx, &test.msg);
-            // Additionally check the events and the output objects in the result.
-            match res {
-                Ok((_, res)) => {
-                    assert!(
-                        test.want_pass,
-                        "chan_open_init: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
-                        test.name,
-                        test.msg,
-                        test.ctx.clone()
-                    );
-
-                    // The object in the output is a ChannelEnd, should have init state.
-                    assert_eq!(res.channel_end.state().clone(), State::Init);
-                    let msg_init = test.msg;
-
-                    if let ChannelMsg::OpenInit(msg_init) = msg_init {
-                        assert_eq!(res.port_id.clone(), msg_init.port_id_on_a.clone());
-                    }
-                }
-                Err(e) => {
-                    assert!(
-                        !test.want_pass,
-                        "chan_open_init: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
-                        test.name,
-                        test.msg,
-                        test.ctx.clone(),
-                        e,
-                    );
-                }
-            }
+        Fixture {
+            context,
+            msg,
+            conn_end_on_a,
         }
+    }
+
+    #[rstest]
+    fn chan_open_init_fail_no_connection(fixture: Fixture) {
+        let Fixture { context, msg, .. } = fixture;
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_err(),
+            "Validation fails because no connection exists in the context"
+        )
+    }
+
+    #[rstest]
+    fn chan_open_init_success_happy_path(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            conn_end_on_a,
+        } = fixture;
+
+        let context = context.with_connection(ConnectionId::default(), conn_end_on_a);
+
+        let res = validate(&context, &msg);
+
+        assert!(res.is_ok(), "Validation succeeds; good parameters")
+    }
+
+    #[rstest]
+    fn chan_open_init_success_counterparty_chan_id_set(fixture: Fixture) {
+        let Fixture {
+            context,
+            conn_end_on_a,
+            ..
+        } = fixture;
+
+        let context = context.with_connection(ConnectionId::default(), conn_end_on_a);
+        let msg = MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(Some(0))).unwrap();
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_ok(),
+            "Validation succeeds even if counterparty channel id is set by relayer"
+        )
     }
 }

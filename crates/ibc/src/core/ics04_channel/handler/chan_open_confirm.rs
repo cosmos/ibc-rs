@@ -201,21 +201,20 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
+    use crate::core::ics04_channel::handler::chan_open_confirm::validate;
+    use crate::core::ics24_host::identifier::ChannelId;
     use crate::prelude::*;
-
+    use rstest::*;
     use test_log::test;
 
     use crate::core::ics03_connection::connection::ConnectionEnd;
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
     use crate::core::ics03_connection::connection::State as ConnectionState;
-    use crate::core::ics03_connection::context::ConnectionReader;
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
-    use crate::core::ics04_channel::handler::channel_dispatch;
     use crate::core::ics04_channel::msgs::chan_open_confirm::test_util::get_dummy_raw_msg_chan_open_confirm;
     use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
-    use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
     use crate::mock::client_state::client_type as mock_client_type;
@@ -223,93 +222,137 @@ mod tests {
     use crate::timestamp::ZERO_DURATION;
     use crate::Height;
 
-    // TODO: The tests here should use the same structure as `handler::chan_open_try::tests`.
-    #[test]
-    fn chan_open_confirm_msg_processing() {
-        struct Test {
-            name: String,
-            ctx: MockContext,
-            msg: ChannelMsg,
-            want_pass: bool,
-        }
-        let client_id = ClientId::new(mock_client_type(), 24).unwrap();
-        let conn_id = ConnectionId::new(2);
-        let context = MockContext::default();
-        let client_consensus_state_height =
-            context.host_current_height().unwrap().revision_height();
+    pub struct Fixture {
+        pub context: MockContext,
+        pub msg: MsgChannelOpenConfirm,
+        pub client_id_on_b: ClientId,
+        pub conn_id_on_b: ConnectionId,
+        pub conn_end_on_b: ConnectionEnd,
+        pub chan_end_on_b: ChannelEnd,
+        pub proof_height: u64,
+    }
 
-        // The connection underlying the channel we're trying to open.
-        let conn_end = ConnectionEnd::new(
+    #[fixture]
+    fn fixture() -> Fixture {
+        let proof_height = 10;
+        let context = MockContext::default();
+
+        let client_id_on_b = ClientId::new(mock_client_type(), 45).unwrap();
+        let conn_id_on_b = ConnectionId::new(2);
+        let conn_end_on_b = ConnectionEnd::new(
             ConnectionState::Open,
-            client_id.clone(),
+            client_id_on_b.clone(),
             ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
             get_compatible_versions(),
             ZERO_DURATION,
         );
 
-        let msg_chan_confirm = MsgChannelOpenConfirm::try_from(
-            get_dummy_raw_msg_chan_open_confirm(client_consensus_state_height),
-        )
-        .unwrap();
+        let msg =
+            MsgChannelOpenConfirm::try_from(get_dummy_raw_msg_chan_open_confirm(proof_height))
+                .unwrap();
 
-        let chan_end = ChannelEnd::new(
+        let chan_end_on_b = ChannelEnd::new(
             State::TryOpen,
-            Order::default(),
-            Counterparty::new(
-                msg_chan_confirm.port_id_on_b.clone(),
-                Some(msg_chan_confirm.chan_id_on_b.clone()),
-            ),
-            vec![conn_id.clone()],
+            Order::Unordered,
+            Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::default())),
+            vec![conn_id_on_b.clone()],
             Version::default(),
         );
 
-        let tests: Vec<Test> = vec![Test {
-            name: "Good parameters".to_string(),
-            ctx: context
-                .with_client(
-                    &client_id,
-                    Height::new(0, client_consensus_state_height).unwrap(),
-                )
-                .with_connection(conn_id, conn_end)
-                .with_channel(
-                    msg_chan_confirm.port_id_on_b.clone(),
-                    msg_chan_confirm.chan_id_on_b.clone(),
-                    chan_end,
-                ),
-            msg: ChannelMsg::OpenConfirm(msg_chan_confirm),
-            want_pass: true,
-        }]
-        .into_iter()
-        .collect();
-
-        for test in tests {
-            let res = channel_dispatch(&test.ctx, &test.msg);
-            // Additionally check the events and the output objects in the result.
-            match res {
-                Ok((_, res)) => {
-                    assert!(
-                            test.want_pass,
-                            "chan_open_confirm: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
-                            test.name,
-                            test.msg,
-                            test.ctx.clone()
-                        );
-
-                    // The object in the output is a ConnectionEnd, should have init state.
-                    //assert_eq!(res.channel_id, msg_chan_init.channel_id().clone());
-                    assert_eq!(res.channel_end.state().clone(), State::Open);
-                }
-                Err(e) => {
-                    assert!(
-                        !test.want_pass,
-                        "chan_open_ack: did not pass test: {}, \nparams {:?} {:?}\nerror: {:?}",
-                        test.name,
-                        test.msg,
-                        test.ctx.clone(),
-                        e,
-                    );
-                }
-            }
+        Fixture {
+            context,
+            msg,
+            client_id_on_b,
+            conn_id_on_b,
+            conn_end_on_b,
+            chan_end_on_b,
+            proof_height,
         }
+    }
+
+    #[rstest]
+    fn chan_open_confirm_fail_no_channel(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            client_id_on_b,
+            conn_id_on_b,
+            conn_end_on_b,
+            proof_height,
+            ..
+        } = fixture;
+        let context = context
+            .with_client(&client_id_on_b, Height::new(0, proof_height).unwrap())
+            .with_connection(conn_id_on_b, conn_end_on_b);
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_err(),
+            "Validation fails because no channel exists in the context"
+        )
+    }
+
+    #[rstest]
+    fn chan_open_confirm_fail_channel_wrong_state(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            client_id_on_b,
+            conn_id_on_b,
+            conn_end_on_b,
+            proof_height,
+            ..
+        } = fixture;
+
+        let wrong_chan_end = ChannelEnd::new(
+            State::Init,
+            Order::Unordered,
+            Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::default())),
+            vec![conn_id_on_b.clone()],
+            Version::default(),
+        );
+        let context = context
+            .with_client(&client_id_on_b, Height::new(0, proof_height).unwrap())
+            .with_connection(conn_id_on_b, conn_end_on_b)
+            .with_channel(
+                msg.port_id_on_b.clone(),
+                ChannelId::default(),
+                wrong_chan_end,
+            );
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_err(),
+            "Validation fails because channel is in the wrong state"
+        )
+    }
+
+    #[rstest]
+    fn chan_open_confirm_happy_path(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            client_id_on_b,
+            conn_id_on_b,
+            conn_end_on_b,
+            chan_end_on_b,
+            proof_height,
+            ..
+        } = fixture;
+
+        let context = context
+            .with_client(&client_id_on_b, Height::new(0, proof_height).unwrap())
+            .with_connection(conn_id_on_b, conn_end_on_b)
+            .with_channel(
+                msg.port_id_on_b.clone(),
+                ChannelId::default(),
+                chan_end_on_b,
+            );
+
+        let res = validate(&context, &msg);
+
+        assert!(res.is_ok(), "Validation happy path")
     }
 }

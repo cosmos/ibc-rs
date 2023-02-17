@@ -92,3 +92,126 @@ where
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        core::{context::chan_open_confirm::chan_open_confirm_execute, ics04_channel::Version},
+        events::IbcEvent,
+        prelude::*,
+        Height,
+    };
+    use rstest::*;
+
+    use crate::{
+        applications::transfer::MODULE_ID_STR,
+        core::{
+            ics03_connection::{
+                connection::ConnectionEnd, msgs::test_util::get_dummy_raw_counterparty,
+                version::get_compatible_versions,
+            },
+            ics04_channel::{
+                channel::{ChannelEnd, Counterparty, Order, State},
+                msgs::chan_open_confirm::{
+                    test_util::get_dummy_raw_msg_chan_open_confirm, MsgChannelOpenConfirm,
+                },
+            },
+            ics24_host::identifier::{ChannelId, ClientId, ConnectionId},
+            ics26_routing::context::ModuleId,
+        },
+        mock::context::MockContext,
+        test_utils::DummyTransferModule,
+        timestamp::ZERO_DURATION,
+    };
+
+    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
+    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use crate::mock::client_state::client_type as mock_client_type;
+
+    pub struct Fixture {
+        pub context: MockContext,
+        pub module_id: ModuleId,
+        pub msg: MsgChannelOpenConfirm,
+        pub client_id_on_b: ClientId,
+        pub conn_id_on_b: ConnectionId,
+        pub conn_end_on_b: ConnectionEnd,
+        pub chan_end_on_b: ChannelEnd,
+        pub proof_height: u64,
+    }
+
+    #[fixture]
+    fn fixture() -> Fixture {
+        let proof_height = 10;
+        let mut context = MockContext::default();
+        let module = DummyTransferModule::new(context.ibc_store_share());
+        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        context.add_route(module_id.clone(), module).unwrap();
+
+        let client_id_on_b = ClientId::new(mock_client_type(), 45).unwrap();
+        let conn_id_on_b = ConnectionId::new(2);
+        let conn_end_on_b = ConnectionEnd::new(
+            ConnectionState::Open,
+            client_id_on_b.clone(),
+            ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
+            get_compatible_versions(),
+            ZERO_DURATION,
+        );
+
+        let msg =
+            MsgChannelOpenConfirm::try_from(get_dummy_raw_msg_chan_open_confirm(proof_height))
+                .unwrap();
+
+        let chan_end_on_b = ChannelEnd::new(
+            State::TryOpen,
+            Order::Unordered,
+            Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::default())),
+            vec![conn_id_on_b.clone()],
+            Version::default(),
+        );
+
+        Fixture {
+            context,
+            module_id,
+            msg,
+            client_id_on_b,
+            conn_id_on_b,
+            conn_end_on_b,
+            chan_end_on_b,
+            proof_height,
+        }
+    }
+
+    #[rstest]
+    fn chan_open_confirm_execute_happy_path(fixture: Fixture) {
+        let Fixture {
+            context,
+            module_id,
+            msg,
+            client_id_on_b,
+            conn_id_on_b,
+            conn_end_on_b,
+            chan_end_on_b,
+            proof_height,
+            ..
+        } = fixture;
+
+        let mut context = context
+            .with_client(&client_id_on_b, Height::new(0, proof_height).unwrap())
+            .with_connection(conn_id_on_b, conn_end_on_b)
+            .with_channel(
+                msg.port_id_on_b.clone(),
+                ChannelId::default(),
+                chan_end_on_b,
+            );
+
+        let res = chan_open_confirm_execute(&mut context, module_id, msg);
+
+        assert!(res.is_ok(), "Execution happy path");
+
+        assert_eq!(context.events.len(), 1);
+        assert!(matches!(
+            context.events.first().unwrap(),
+            &IbcEvent::OpenConfirmChannel(_)
+        ));
+    }
+}
