@@ -54,3 +54,35 @@ where
         ConnectionMsg::OpenConfirm(msg) => conn_open_confirm::process(ctx, msg),
     }
 }
+
+#[cfg(test)]
+pub mod test_util {
+    use core::fmt::Debug;
+
+    use crate::{core::ContextError, mock::context::MockContext, prelude::String};
+    use alloc::format;
+
+    pub enum Expect {
+        Success,
+        Failure(Option<ContextError>),
+    }
+
+    #[derive(Clone, Debug)]
+    pub struct Fixture<M: Debug> {
+        pub ctx: MockContext,
+        pub msg: M,
+    }
+
+    pub fn generate_error_msg<M: Debug>(
+        expect: &Expect,
+        process: &str,
+        res: &Result<(), ContextError>,
+        fxt: &Fixture<M>,
+    ) -> String {
+        let msg = match expect {
+            Expect::Success => "step failed!",
+            Expect::Failure(_) => "step passed but was supposed to fail!",
+        };
+        format!("{process} {msg} /n {res:?} /n {fxt:?}")
+    }
+}

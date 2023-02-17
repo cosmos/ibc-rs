@@ -98,7 +98,6 @@ mod tests {
 
     use crate::core::ics03_connection::connection::ConnectionEnd;
     use crate::core::ics03_connection::connection::State as ConnectionState;
-    use crate::core::ics03_connection::msgs::conn_open_init::test_util::get_dummy_raw_msg_conn_open_init;
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::State;
@@ -126,8 +125,7 @@ mod tests {
 
         let context = MockContext::default();
 
-        let msg_conn_init =
-            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init(None)).unwrap();
+        let msg_conn_init = MsgConnectionOpenInit::new_dummy();
 
         let init_conn_end = ConnectionEnd::new(
             ConnectionState::Init,
