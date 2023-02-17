@@ -18,70 +18,62 @@ use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresh
 pub trait ValidateSelfClientContext {
     fn validate_self_tendermint_client(
         &self,
-        host_client_state_on_counterparty: Any,
+        client_state_of_host_on_counterparty: Any,
     ) -> Result<(), ConnectionError> {
-        let host_client_state_on_counterparty =
-            TmClientState::try_from(host_client_state_on_counterparty).map_err(|_| {
-                ConnectionError::InvalidClientState {
-                    reason: "client must be a tendermint client".to_string(),
-                }
+        let tm_client_state = TmClientState::try_from(client_state_of_host_on_counterparty)
+            .map_err(|_| ConnectionError::InvalidClientState {
+                reason: "client must be a tendermint client".to_string(),
             })?;
 
-        if host_client_state_on_counterparty.is_frozen() {
+        if tm_client_state.is_frozen() {
             return Err(ConnectionError::InvalidClientState {
                 reason: "client is frozen".to_string(),
             });
         }
 
         let self_chain_id = self.chain_id();
-        if self_chain_id != &host_client_state_on_counterparty.chain_id {
+        if self_chain_id != &tm_client_state.chain_id {
             return Err(ConnectionError::InvalidClientState {
                 reason: format!(
                     "invalid chain-id. expected: {}, got: {}",
-                    self_chain_id, host_client_state_on_counterparty.chain_id
+                    self_chain_id, tm_client_state.chain_id
                 ),
             });
         }
 
         let self_revision_number = self_chain_id.version();
-        if self_revision_number
-            != host_client_state_on_counterparty
-                .latest_height()
-                .revision_number()
-        {
+        if self_revision_number != tm_client_state.latest_height().revision_number() {
             return Err(ConnectionError::InvalidClientState {
                 reason: format!(
                     "client is not in the same revision as the chain. expected: {}, got: {}",
                     self_revision_number,
-                    host_client_state_on_counterparty
-                        .latest_height()
-                        .revision_number()
+                    tm_client_state.latest_height().revision_number()
                 ),
             });
         }
 
-        if host_client_state_on_counterparty.latest_height() >= self.host_current_height() {
+        if tm_client_state.latest_height() >= self.host_current_height() {
             return Err(ConnectionError::InvalidClientState {
                 reason: format!(
                     "client has latest height {} greater than or equal to chain height {}",
-                    host_client_state_on_counterparty.latest_height(),
+                    tm_client_state.latest_height(),
                     self.host_current_height()
                 ),
             });
         }
 
-        if self.proof_specs() != &host_client_state_on_counterparty.proof_specs {
+        if self.proof_specs() != &tm_client_state.proof_specs {
             return Err(ConnectionError::InvalidClientState {
                 reason: format!(
                     "client has invalid proof specs. expected: {:?}, got: {:?}",
                     self.proof_specs(),
-                    host_client_state_on_counterparty.proof_specs
+                    tm_client_state.proof_specs
                 ),
             });
         }
 
         let _ = {
-            let trust_level = host_client_state_on_counterparty.trust_level;
+            let trust_level = tm_client_state.trust_level;
 
             TendermintTrustThresholdFraction::new(
                 trust_level.numerator(),
@@ -92,34 +84,32 @@ pub trait ValidateSelfClientContext {
             })?
         };
 
-        if self.unbonding_period() != host_client_state_on_counterparty.unbonding_period {
+        if self.unbonding_period() != tm_client_state.unbonding_period {
             return Err(ConnectionError::InvalidClientState {
                 reason: format!(
                     "invalid unbonding period. expected: {:?}, got: {:?}",
                     self.unbonding_period(),
-                    host_client_state_on_counterparty.unbonding_period,
+                    tm_client_state.unbonding_period,
                 ),
             });
         }
 
-        if host_client_state_on_counterparty.unbonding_period
-            < host_client_state_on_counterparty.trusting_period
-        {
+        if tm_client_state.unbonding_period < tm_client_state.trusting_period {
             return Err(ConnectionError::InvalidClientState{ reason: format!(
                 "unbonding period must be greater than trusting period. unbonding period ({:?}) < trusting period ({:?})",
-                host_client_state_on_counterparty.unbonding_period,
-                host_client_state_on_counterparty.trusting_period
+                tm_client_state.unbonding_period,
+                tm_client_state.trusting_period
             )});
         }
 
-        if !host_client_state_on_counterparty.upgrade_path.is_empty()
-            && self.upgrade_path() != host_client_state_on_counterparty.upgrade_path
+        if !tm_client_state.upgrade_path.is_empty()
+            && self.upgrade_path() != tm_client_state.upgrade_path
         {
             return Err(ConnectionError::InvalidClientState {
                 reason: format!(
                     "invalid upgrade path. expected: {:?}, got: {:?}",
                     self.upgrade_path(),
-                    host_client_state_on_counterparty.upgrade_path
+                    tm_client_state.upgrade_path
                 ),
             });
         }
