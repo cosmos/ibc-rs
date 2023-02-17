@@ -626,7 +626,7 @@ pub struct MockIbcStore {
     /// Counter for channel identifiers (see `increase_channel_counter`).
     pub channel_ids_counter: u64,
 
-    /// All the channels in the store. TODO Make new key PortId X ChanneId
+    /// All the channels in the store. TODO Make new key PortId X ChannelId
     pub channels: PortChannelIdMap<ChannelEnd>,
 
     /// Tracks the sequence number for the next packet to be sent.
@@ -856,8 +856,42 @@ impl ValidationContext for MockContext {
 
     fn validate_self_client(
         &self,
-        _client_state_of_host_on_counterparty: Any,
+        client_state_of_host_on_counterparty: Any,
     ) -> Result<(), ConnectionError> {
+        let mock_client_state = MockClientState::try_from(client_state_of_host_on_counterparty)
+            .map_err(|_| ConnectionError::InvalidClientState {
+                reason: "client must be a mock client".to_string(),
+            })?;
+
+        if mock_client_state.is_frozen() {
+            return Err(ConnectionError::InvalidClientState {
+                reason: "client is frozen".to_string(),
+            });
+        }
+
+        let self_chain_id = &self.host_chain_id;
+        let self_revision_number = self_chain_id.version();
+        if self_revision_number != mock_client_state.latest_height().revision_number() {
+            return Err(ConnectionError::InvalidClientState {
+                reason: format!(
+                    "client is not in the same revision as the chain. expected: {}, got: {}",
+                    self_revision_number,
+                    mock_client_state.latest_height().revision_number()
+                ),
+            });
+        }
+
+        let host_current_height = self.latest_height().increment();
+        if mock_client_state.latest_height() >= host_current_height {
+            return Err(ConnectionError::InvalidClientState {
+                reason: format!(
+                    "client has latest height {} greater than or equal to chain height {}",
+                    mock_client_state.latest_height(),
+                    host_current_height
+                ),
+            });
+        }
+
         Ok(())
     }
 
@@ -1263,7 +1297,7 @@ impl ExecutionContext for MockContext {
         ack_commitment: AcknowledgementCommitment,
     ) -> Result<(), ContextError> {
         let port_id = ack_path.port_id.clone();
-        let channnel_id = ack_path.channel_id.clone();
+        let channel_id = ack_path.channel_id.clone();
         let seq = ack_path.sequence;
 
         self.ibc_store
@@ -1271,7 +1305,7 @@ impl ExecutionContext for MockContext {
             .packet_acknowledgement
             .entry(port_id)
             .or_default()
-            .entry(channnel_id)
+            .entry(channel_id)
             .or_default()
             .insert(seq, ack_commitment);
         Ok(())
