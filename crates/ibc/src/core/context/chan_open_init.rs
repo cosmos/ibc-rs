@@ -153,7 +153,7 @@ mod tests {
         context.add_route(module_id.clone(), module).unwrap();
 
         let msg_conn_init =
-            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init(None)).unwrap();
+            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init()).unwrap();
 
         let conn_end_on_a = ConnectionEnd::new(
             ConnectionState::Init,

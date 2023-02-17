@@ -123,6 +123,20 @@ pub mod test_util {
     use crate::core::ics24_host::identifier::ConnectionId;
     use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
 
+    use super::MsgConnectionOpenAck;
+
+    /// Testing-specific helper methods.
+    impl MsgConnectionOpenAck {
+        /// Returns a new `MsgConnectionOpenAck` with dummy values.
+        pub fn new_dummy(proof_height: u64, consensus_height: u64) -> Self {
+            MsgConnectionOpenAck::try_from(get_dummy_raw_msg_conn_open_ack(
+                proof_height,
+                consensus_height,
+            ))
+            .unwrap()
+        }
+    }
+
     pub fn get_dummy_raw_msg_conn_open_ack(
         proof_height: u64,
         consensus_height: u64,

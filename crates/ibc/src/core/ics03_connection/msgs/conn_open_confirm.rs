@@ -70,11 +70,20 @@ impl From<MsgConnectionOpenConfirm> for RawMsgConnectionOpenConfirm {
 
 #[cfg(test)]
 pub mod test_util {
+    use super::MsgConnectionOpenConfirm;
     use crate::prelude::*;
     use ibc_proto::ibc::core::client::v1::Height;
     use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenConfirm as RawMsgConnectionOpenConfirm;
 
     use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
+
+    /// Testing-specific helper methods.
+    impl MsgConnectionOpenConfirm {
+        /// Returns a new `MsgConnectionOpenConfirm` with dummy values.
+        pub fn new_dummy() -> Self {
+            MsgConnectionOpenConfirm::try_from(get_dummy_raw_msg_conn_open_confirm()).unwrap()
+        }
+    }
 
     pub fn get_dummy_raw_msg_conn_open_confirm() -> RawMsgConnectionOpenConfirm {
         RawMsgConnectionOpenConfirm {
