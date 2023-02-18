@@ -9,7 +9,6 @@ pub mod client_state;
 pub mod consensus_state;
 pub mod error;
 pub mod header;
-pub mod host_helpers;
 pub mod misbehaviour;
 
 pub(crate) const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";

@@ -70,8 +70,11 @@ impl From<MsgConnectionOpenInit> for RawMsgConnectionOpenInit {
 
 #[cfg(test)]
 pub mod test_util {
+    use crate::core::ics03_connection::connection::Counterparty;
     use crate::prelude::*;
-    use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenInit as RawMsgConnectionOpenInit;
+    use ibc_proto::ibc::core::connection::v1::{
+        MsgConnectionOpenInit as RawMsgConnectionOpenInit, Version as RawVersion,
+    };
 
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
@@ -81,6 +84,11 @@ pub mod test_util {
 
     /// Extends the implementation with additional helper methods.
     impl MsgConnectionOpenInit {
+        /// Returns a new `MsgConnectionOpenInit` with dummy values.
+        pub fn new_dummy() -> Self {
+            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init()).unwrap()
+        }
+
         /// Setter for `client_id`. Amenable to chaining, since it consumes the input message.
         pub fn with_client_id(self, client_id: ClientId) -> Self {
             MsgConnectionOpenInit {
@@ -88,16 +96,38 @@ pub mod test_util {
                 ..self
             }
         }
+
+        /// Setter for `counterparty`. Amenable to chaining, since it consumes the input message.\
+        pub fn with_counterparty_conn_id(self, counterparty_conn_id: u64) -> Self {
+            let counterparty =
+                Counterparty::try_from(get_dummy_raw_counterparty(Some(counterparty_conn_id)))
+                    .unwrap();
+            MsgConnectionOpenInit {
+                counterparty,
+                ..self
+            }
+        }
+
+        pub fn with_version(self, identifier: Option<&str>) -> Self {
+            let version = match identifier {
+                Some(v) => Version::try_from(RawVersion {
+                    identifier: v.to_string(),
+                    features: vec![],
+                })
+                .unwrap()
+                .into(),
+                None => None,
+            };
+            MsgConnectionOpenInit { version, ..self }
+        }
     }
 
     /// Returns a dummy message, for testing only.
     /// Other unit tests may import this if they depend on a MsgConnectionOpenInit.
-    pub fn get_dummy_raw_msg_conn_open_init(
-        counterparty_conn_id: Option<u64>,
-    ) -> RawMsgConnectionOpenInit {
+    pub fn get_dummy_raw_msg_conn_open_init() -> RawMsgConnectionOpenInit {
         RawMsgConnectionOpenInit {
             client_id: ClientId::default().to_string(),
-            counterparty: Some(get_dummy_raw_counterparty(counterparty_conn_id)),
+            counterparty: Some(get_dummy_raw_counterparty(None)),
             version: Some(Version::default().into()),
             delay_period: 0,
             signer: get_dummy_bech32_account(),
@@ -127,7 +157,7 @@ mod tests {
             want_pass: bool,
         }
 
-        let default_init_msg = get_dummy_raw_msg_conn_open_init(None);
+        let default_init_msg = get_dummy_raw_msg_conn_open_init();
 
         let tests: Vec<Test> = vec![
             Test {
@@ -176,7 +206,7 @@ mod tests {
 
     #[test]
     fn to_and_from() {
-        let raw = get_dummy_raw_msg_conn_open_init(None);
+        let raw = get_dummy_raw_msg_conn_open_init();
         let msg = MsgConnectionOpenInit::try_from(raw.clone()).unwrap();
         let raw_back = RawMsgConnectionOpenInit::from(msg.clone());
         let msg_back = MsgConnectionOpenInit::try_from(raw_back.clone()).unwrap();
@@ -185,7 +215,7 @@ mod tests {
 
         // Check if handler sets counterparty connection id to `None`
         // in case relayer passes `MsgConnectionOpenInit` message with it set to `Some(_)`.
-        let raw_with_counterpary_conn_id_some = get_dummy_raw_msg_conn_open_init(None);
+        let raw_with_counterpary_conn_id_some = get_dummy_raw_msg_conn_open_init();
         let msg_with_counterpary_conn_id_some =
             MsgConnectionOpenInit::try_from(raw_with_counterpary_conn_id_some).unwrap();
         let raw_with_counterpary_conn_id_some_back =

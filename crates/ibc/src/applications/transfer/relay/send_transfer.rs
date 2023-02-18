@@ -29,7 +29,7 @@ where
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_on_a, &msg.chan_on_a);
     let chan_end_on_a = ctx
         .channel_end(&chan_end_path_on_a)
-        .map_err(TokenTransferError::PacketError)?;
+        .map_err(TokenTransferError::ContextError)?;
 
     let port_on_b = chan_end_on_a.counterparty().port_id().clone();
     let chan_on_b = chan_end_on_a
@@ -45,7 +45,7 @@ where
     let seq_send_path_on_a = SeqSendPath::new(&msg.port_on_a, &msg.chan_on_a);
     let sequence = ctx
         .get_next_sequence_send(&seq_send_path_on_a)
-        .map_err(TokenTransferError::PacketError)?;
+        .map_err(TokenTransferError::ContextError)?;
 
     let token = msg
         .token
@@ -94,10 +94,10 @@ where
         result,
         log,
         events,
-    } = send_packet(ctx, packet).map_err(TokenTransferError::PacketError)?;
+    } = send_packet(ctx, packet).map_err(TokenTransferError::ContextError)?;
 
     ctx.store_send_packet_result(result)
-        .map_err(TokenTransferError::PacketError)?;
+        .map_err(TokenTransferError::ContextError)?;
 
     output.merge_output(
         HandlerOutput::builder()

@@ -268,6 +268,12 @@ pub(crate) fn process<Ctx: ChannelReader>(
 
 #[cfg(test)]
 mod tests {
+    use crate::core::ics04_channel::handler::acknowledgement::validate;
+    use crate::core::ics24_host::identifier::ChannelId;
+    use crate::core::ics24_host::identifier::PortId;
+    use crate::core::ValidationContext;
+    use crate::prelude::*;
+    use rstest::*;
     use test_log::test;
 
     use crate::core::ics02_client::height::Height;
@@ -276,26 +282,25 @@ mod tests {
     use crate::core::ics03_connection::connection::State as ConnectionState;
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
-    use crate::core::ics04_channel::context::ChannelReader;
-    use crate::core::ics04_channel::handler::acknowledgement::process;
+    use crate::core::ics04_channel::commitment::PacketCommitment;
     use crate::core::ics04_channel::msgs::acknowledgement::test_util::get_dummy_raw_msg_acknowledgement;
     use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-    use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
-    use crate::prelude::*;
     use crate::timestamp::ZERO_DURATION;
 
-    #[test]
-    fn ack_packet_processing() {
-        struct Test {
-            name: String,
-            ctx: MockContext,
-            msg: MsgAcknowledgement,
-            want_pass: bool,
-        }
+    pub struct Fixture {
+        pub context: MockContext,
+        pub client_height: Height,
+        pub msg: MsgAcknowledgement,
+        pub packet_commitment: PacketCommitment,
+        pub conn_end_on_a: ConnectionEnd,
+        pub chan_end_on_a: ChannelEnd,
+    }
 
+    #[fixture]
+    fn fixture() -> Fixture {
         let context = MockContext::default();
 
         let client_height = Height::new(0, 2).unwrap();
@@ -306,7 +311,7 @@ mod tests {
         .unwrap();
         let packet = msg.packet.clone();
 
-        let data = context.packet_commitment(
+        let packet_commitment = context.packet_commitment(
             &packet.data,
             &packet.timeout_height_on_b,
             &packet.timeout_timestamp_on_b,
@@ -315,7 +320,7 @@ mod tests {
         let chan_end_on_a = ChannelEnd::new(
             State::Open,
             Order::default(),
-            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone())),
+            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b)),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
         );
@@ -332,67 +337,79 @@ mod tests {
             ZERO_DURATION,
         );
 
-        let tests: Vec<Test> = vec![
-            Test {
-                name: "Processing fails because no channel exists in the context".to_string(),
-                ctx: context.clone(),
-                msg: msg.clone(),
-                want_pass: false,
-            },
-            Test {
-                name: "Good parameters".to_string(),
-                ctx: context
-                    .with_client(&ClientId::default(), client_height)
-                    .with_connection(ConnectionId::default(), conn_end_on_a)
-                    .with_channel(
-                        packet.port_on_a.clone(),
-                        packet.chan_on_a.clone(),
-                        chan_end_on_a,
-                    )
-                    .with_packet_commitment(
-                        packet.port_on_a,
-                        packet.chan_on_a,
-                        packet.sequence,
-                        data,
-                    ) //with_ack_sequence required for ordered channels
-                    .with_ack_sequence(packet.port_on_b, packet.chan_on_b, 1.into()),
-                msg,
-                want_pass: true,
-            },
-        ]
-        .into_iter()
-        .collect();
-
-        for test in tests {
-            let res = process(&test.ctx, &test.msg);
-            // Additionally check the events and the output objects in the result.
-            match res {
-                Ok(proto_output) => {
-                    assert!(
-                        test.want_pass,
-                        "ack_packet: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
-                        test.name,
-                        test.msg.clone(),
-                        test.ctx.clone()
-                    );
-
-                    assert!(!proto_output.events.is_empty()); // Some events must exist.
-
-                    for e in proto_output.events.iter() {
-                        assert!(matches!(e, &IbcEvent::AcknowledgePacket(_)));
-                    }
-                }
-                Err(e) => {
-                    assert!(
-                        !test.want_pass,
-                        "ack_packet: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
-                        test.name,
-                        test.msg.clone(),
-                        test.ctx.clone(),
-                        e,
-                    );
-                }
-            }
+        Fixture {
+            context,
+            client_height,
+            msg,
+            packet_commitment,
+            conn_end_on_a,
+            chan_end_on_a,
         }
+    }
+
+    #[rstest]
+    fn ack_fail_no_channel(fixture: Fixture) {
+        let Fixture { context, msg, .. } = fixture;
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_err(),
+            "Validation fails because no channel exists in the context"
+        )
+    }
+
+    /// NO-OP case
+    #[rstest]
+    fn ack_success_no_packet_commitment(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            conn_end_on_a,
+            chan_end_on_a,
+            client_height,
+            ..
+        } = fixture;
+        let context = context
+            .with_client(&ClientId::default(), client_height)
+            .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a)
+            .with_connection(ConnectionId::default(), conn_end_on_a);
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_ok(),
+            "Validation should succeed when no packet commitment is present"
+        )
+    }
+
+    #[rstest]
+    fn ack_success_happy_path(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            packet_commitment,
+            conn_end_on_a,
+            chan_end_on_a,
+            client_height,
+            ..
+        } = fixture;
+        let context = context
+            .with_client(&ClientId::default(), client_height)
+            .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a)
+            .with_connection(ConnectionId::default(), conn_end_on_a)
+            .with_packet_commitment(
+                msg.packet.port_on_a.clone(),
+                msg.packet.chan_on_a.clone(),
+                msg.packet.sequence,
+                packet_commitment,
+            );
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_ok(),
+            "Happy path: validation should succeed. err: {res:?}"
+        )
     }
 }

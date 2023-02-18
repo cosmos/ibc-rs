@@ -342,58 +342,43 @@ pub(crate) fn process(
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use super::*;
 
     use core::str::FromStr;
     use test_log::test;
 
+    use crate::core::ics02_client::height::Height;
     use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
-    use crate::core::ics03_connection::error;
-    use crate::core::ics03_connection::handler::{dispatch, ConnectionResult};
-    use crate::core::ics03_connection::msgs::conn_open_ack::test_util::get_dummy_raw_msg_conn_open_ack;
+    use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
-    use crate::core::ics03_connection::msgs::ConnectionMsg;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
+    use crate::core::ValidationContext;
+
     use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::timestamp::ZERO_DURATION;
 
-    use crate::core::ics26_routing::msgs::MsgEnvelope;
+    enum Ctx {
+        New,
+        NewWithConnection,
+        NewWithConnectionEndOpen,
+        DefaultWithConnection,
+    }
 
-    use crate::core::ValidationContext;
-
-    #[test]
-    fn conn_open_ack_msg_processing() {
-        struct Test {
-            name: String,
-            ctx: MockContext,
-            msg: ConnectionMsg,
-            want_pass: bool,
-            match_error: Box<dyn FnOnce(error::ConnectionError)>,
-        }
-
-        let msg_ack =
-            MsgConnectionOpenAck::try_from(get_dummy_raw_msg_conn_open_ack(10, 10)).unwrap();
-        let conn_id = msg_ack.conn_id_on_a.clone();
-        let counterparty_conn_id = msg_ack.conn_id_on_b.clone();
+    fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
+        let msg = MsgConnectionOpenAck::new_dummy(10, 10);
 
         // Client parameters -- identifier and correct height (matching the proof height)
         let client_id = ClientId::from_str("mock_clientid").unwrap();
-        let proof_height = msg_ack.proofs_height_on_b;
-        let consensus_state_height = msg_ack.consensus_height_of_a_on_b;
+        let proof_height = msg.proofs_height_on_b;
+        let conn_id = msg.conn_id_on_a.clone();
 
         // Parametrize the host chain to have a height at least as recent as the
         // the height of the proofs in the Ack msg.
         let latest_height = proof_height.increment();
         let max_history_size = 5;
-        let default_context = MockContext::new(
-            ChainId::new("mockgaia".to_string(), latest_height.revision_number()),
-            HostType::Mock,
-            max_history_size,
-            latest_height,
-        );
 
         // A connection end that will exercise the successful path.
         let default_conn_end = ConnectionEnd::new(
@@ -401,10 +386,10 @@ mod tests {
             client_id.clone(),
             Counterparty::new(
                 client_id.clone(),
-                Some(msg_ack.conn_id_on_b.clone()),
+                Some(msg.conn_id_on_b.clone()),
                 CommitmentPrefix::try_from(b"ibc".to_vec()).unwrap(),
             ),
-            vec![msg_ack.version.clone()],
+            vec![msg.version.clone()],
             ZERO_DURATION,
         );
 
@@ -412,149 +397,128 @@ mod tests {
         let mut conn_end_open = default_conn_end.clone();
         conn_end_open.set_state(State::Open); // incorrect field
 
-        let tests: Vec<Test> = vec![
-            Test {
-                name: "Successful processing of an Ack message".to_string(),
-                ctx: default_context
-                    .clone()
-                    .with_client(&client_id, proof_height)
-                    .with_connection(conn_id.clone(), default_conn_end.clone()),
-                msg: ConnectionMsg::OpenAck(msg_ack.clone()),
-                want_pass: true,
-                match_error: Box::new(|_| panic!("should not have error")),
-            },
-            Test {
-                name: "Processing fails because the connection does not exist in the context"
-                    .to_string(),
-                ctx: default_context.clone(),
-                msg: ConnectionMsg::OpenAck(msg_ack.clone()),
-                want_pass: false,
-                match_error: {
-                    let right_connection_id = conn_id.clone();
-                    Box::new(move |e| match e {
-                        error::ConnectionError::ConnectionNotFound { connection_id } => {
-                            assert_eq!(connection_id, right_connection_id)
-                        }
-                        _ => {
-                            panic!("Expected ConnectionNotFound error");
-                        }
-                    })
-                },
-            },
-            Test {
-                name: "Processing fails due to InvalidConsensusHeight".to_string(),
-                ctx: MockContext::default()
-                    .with_client(&client_id, proof_height)
-                    .with_connection(conn_id.clone(), default_conn_end),
-                msg: ConnectionMsg::OpenAck(msg_ack.clone()),
-                want_pass: false,
-                match_error: {
-                    Box::new(move |e| match e {
-                        error::ConnectionError::InvalidConsensusHeight {
-                            target_height,
-                            current_height: _,
-                        } => {
-                            assert_eq!(consensus_state_height, target_height);
-                        }
-                        _ => {
-                            panic!("Expected InvalidConsensusHeight error");
-                        }
-                    })
-                },
-            },
-            Test {
-                name: "Processing fails due to connections mismatch (incorrect 'open' state)"
-                    .to_string(),
-                ctx: default_context
-                    .with_client(&client_id, proof_height)
-                    .with_connection(conn_id.clone(), conn_end_open),
-                msg: ConnectionMsg::OpenAck(msg_ack),
-                want_pass: false,
-                match_error: {
-                    let right_connection_id = conn_id;
-                    Box::new(move |e| match e {
-                        error::ConnectionError::ConnectionMismatch { connection_id } => {
-                            assert_eq!(connection_id, right_connection_id);
-                        }
-                        _ => {
-                            panic!("Expected ConnectionMismatch error");
-                        }
-                    })
-                },
-            },
-        ];
+        let ctx_default = MockContext::default();
+        let ctx_new = MockContext::new(
+            ChainId::new("mockgaia".to_string(), latest_height.revision_number()),
+            HostType::Mock,
+            max_history_size,
+            latest_height,
+        );
+        let ctx = match ctx {
+            Ctx::New => ctx_new,
+            Ctx::NewWithConnection => ctx_new
+                .with_client(&client_id, proof_height)
+                .with_connection(conn_id, default_conn_end),
+            Ctx::DefaultWithConnection => ctx_default
+                .with_client(&client_id, proof_height)
+                .with_connection(conn_id, default_conn_end),
+            Ctx::NewWithConnectionEndOpen => ctx_new
+                .with_client(&client_id, proof_height)
+                .with_connection(conn_id, conn_end_open),
+        };
 
-        for test in tests {
-            {
-                let res = ValidationContext::validate(
-                    &test.ctx,
-                    MsgEnvelope::Connection(test.msg.clone()),
+        Fixture { ctx, msg }
+    }
+
+    fn conn_open_ack_validate(fxt: &Fixture<MsgConnectionOpenAck>, expect: Expect) {
+        let res = validate(&fxt.ctx, fxt.msg.clone());
+        let err_msg = fxt.generate_error_msg(&expect, "validation", &res);
+        match expect {
+            Expect::Failure(err) => {
+                assert!(res.is_err(), "{err_msg}");
+                assert_eq!(
+                    core::mem::discriminant(res.as_ref().unwrap_err()),
+                    core::mem::discriminant(&err.unwrap())
                 );
-
-                match res {
-                    Ok(_) => {
-                        assert!(
-                        test.want_pass,
-                        "conn_open_ack: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
-                        test.name,
-                        test.msg.clone(),
-                        test.ctx.clone()
-                    )
-                    }
-                    Err(e) => {
-                        assert!(
-                            !test.want_pass,
-                            "conn_open_ack: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
-                            test.name,
-                            test.msg,
-                            test.ctx.clone(),
-                            e,
-                        );
-                    }
-                }
             }
-            let res = dispatch(&test.ctx, test.msg.clone());
-            // Additionally check the events and the output objects in the result.
-            match res {
-                Ok(proto_output) => {
-                    assert!(
-                        test.want_pass,
-                        "conn_open_ack: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
-                        test.name,
-                        test.msg.clone(),
-                        test.ctx.clone()
-                    );
+            Expect::Success => {
+                assert!(res.is_ok(), "{err_msg}");
+                return;
+            }
+        };
+        let right_connection_id = fxt.msg.conn_id_on_a.clone();
+        let cons_state_height = fxt.msg.consensus_height_of_a_on_b;
+        match res.unwrap_err() {
+            ContextError::ConnectionError(ConnectionError::ConnectionNotFound {
+                connection_id,
+            }) => {
+                assert_eq!(connection_id, right_connection_id)
+            }
+            ContextError::ConnectionError(ConnectionError::InvalidConsensusHeight {
+                target_height,
+                current_height: _,
+            }) => {
+                assert_eq!(cons_state_height, target_height);
+            }
+            ContextError::ConnectionError(ConnectionError::ConnectionMismatch {
+                connection_id,
+            }) => {
+                assert_eq!(connection_id, right_connection_id)
+            }
+            _ => unreachable!(),
+        }
+    }
 
-                    assert!(!proto_output.events.is_empty()); // Some events must exist.
+    fn conn_open_ack_execute(fxt: &mut Fixture<MsgConnectionOpenAck>, expect: Expect) {
+        let res = execute(&mut fxt.ctx, fxt.msg.clone());
+        let err_msg = fxt.generate_error_msg(&expect, "execution", &res);
+        match expect {
+            Expect::Failure(_) => {
+                assert!(res.is_err(), "{err_msg}");
+            }
+            Expect::Success => {
+                assert!(res.is_ok(), "{err_msg}");
+                assert_eq!(fxt.ctx.events.len(), 1);
 
-                    // The object in the output is a ConnectionEnd, should have OPEN state.
-                    let res: ConnectionResult = proto_output.result;
-                    assert_eq!(res.connection_end.state().clone(), State::Open);
+                let event = fxt.ctx.events.first().unwrap();
+                assert!(matches!(event, &IbcEvent::OpenAckConnection(_)));
 
-                    // assert that counterparty connection id is correct
-                    assert_eq!(
-                        res.connection_end.counterparty().connection_id,
-                        Some(counterparty_conn_id.clone())
-                    );
-
-                    for e in proto_output.events.iter() {
-                        assert!(matches!(e, &IbcEvent::OpenAckConnection(_)));
-                    }
-                }
-                Err(e) => {
-                    assert!(
-                        !test.want_pass,
-                        "conn_open_ack: failed for test: {}, \nparams {:?} {:?} error: {:?}",
-                        test.name,
-                        test.msg,
-                        test.ctx.clone(),
-                        e,
-                    );
-
-                    // Verify that the error kind matches
-                    (test.match_error)(e);
-                }
+                let conn_open_try_event = match event {
+                    IbcEvent::OpenAckConnection(e) => e,
+                    _ => unreachable!(),
+                };
+                let conn_end = <MockContext as ValidationContext>::connection_end(
+                    &fxt.ctx,
+                    conn_open_try_event.connection_id(),
+                )
+                .unwrap();
+                assert_eq!(conn_end.state().clone(), State::Open);
             }
         }
+    }
+
+    #[test]
+    fn conn_open_ack_healthy() {
+        let mut fxt = conn_open_ack_fixture(Ctx::NewWithConnection);
+        conn_open_ack_validate(&fxt, Expect::Success);
+        conn_open_ack_execute(&mut fxt, Expect::Success);
+    }
+
+    #[test]
+    fn conn_open_ack_no_connection() {
+        let fxt = conn_open_ack_fixture(Ctx::New);
+        let expected_err = ContextError::ConnectionError(ConnectionError::ConnectionNotFound {
+            connection_id: fxt.msg.conn_id_on_a.clone(),
+        });
+        conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err)));
+    }
+
+    #[test]
+    fn conn_open_ack_invalid_consensus_height() {
+        let fxt = conn_open_ack_fixture(Ctx::DefaultWithConnection);
+        let expected_err = ContextError::ConnectionError(ConnectionError::InvalidConsensusHeight {
+            target_height: fxt.msg.consensus_height_of_a_on_b,
+            current_height: Height::new(0, 10).unwrap(),
+        });
+        conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err)));
+    }
+
+    #[test]
+    fn conn_open_ack_connection_mismatch() {
+        let fxt = conn_open_ack_fixture(Ctx::NewWithConnectionEndOpen);
+        let expected_err = ContextError::ConnectionError(ConnectionError::ConnectionMismatch {
+            connection_id: fxt.msg.conn_id_on_a.clone(),
+        });
+        conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err)));
     }
 }

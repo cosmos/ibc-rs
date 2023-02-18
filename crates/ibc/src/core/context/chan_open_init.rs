@@ -112,3 +112,84 @@ where
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::applications::transfer::MODULE_ID_STR;
+    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use crate::core::ics24_host::identifier::ConnectionId;
+    use crate::test_utils::DummyTransferModule;
+    use crate::{
+        core::{
+            ics03_connection::{
+                connection::ConnectionEnd,
+                msgs::conn_open_init::{
+                    test_util::get_dummy_raw_msg_conn_open_init, MsgConnectionOpenInit,
+                },
+                version::get_compatible_versions,
+            },
+            ics04_channel::msgs::chan_open_init::test_util::get_dummy_raw_msg_chan_open_init,
+        },
+        mock::context::MockContext,
+    };
+
+    use super::*;
+    use rstest::*;
+
+    pub struct Fixture {
+        pub context: MockContext,
+        pub module_id: ModuleId,
+        pub msg: MsgChannelOpenInit,
+        pub conn_end_on_a: ConnectionEnd,
+    }
+
+    #[fixture]
+    fn fixture() -> Fixture {
+        let msg = MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
+
+        let mut context = MockContext::default();
+        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        let module = DummyTransferModule::new(context.ibc_store_share());
+        context.add_route(module_id.clone(), module).unwrap();
+
+        let msg_conn_init =
+            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init()).unwrap();
+
+        let conn_end_on_a = ConnectionEnd::new(
+            ConnectionState::Init,
+            msg_conn_init.client_id_on_a.clone(),
+            msg_conn_init.counterparty.clone(),
+            get_compatible_versions(),
+            msg_conn_init.delay_period,
+        );
+
+        Fixture {
+            context,
+            module_id,
+            msg,
+            conn_end_on_a,
+        }
+    }
+
+    #[rstest]
+    fn chan_open_init_execute_events(fixture: Fixture) {
+        let Fixture {
+            context,
+            module_id,
+            msg,
+            conn_end_on_a,
+        } = fixture;
+
+        let mut context = context.with_connection(ConnectionId::default(), conn_end_on_a);
+
+        let res = chan_open_init_execute(&mut context, module_id, msg);
+
+        assert!(res.is_ok(), "Execution succeeds; good parameters");
+
+        assert_eq!(context.events.len(), 1);
+        assert!(matches!(
+            context.events.first().unwrap(),
+            &IbcEvent::OpenInitChannel(_)
+        ));
+    }
+}
