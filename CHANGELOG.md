@@ -1,3 +1,38 @@
+## v0.29.0
+
+*February 17, 2023*
+
+This release updates the `tendermint-rs` dependency to `v0.29.0`, which contains modularity improvements to the cryptographic routines, as well as bug fixes, and replacing `ed25519-dalek` with `ed25519-consensus`.
+
+### BREAKING CHANGES
+
+- Refactor get_* and store_* methods to take *Path structs instead
+  ([#382](https://github.com/cosmos/ibc-rs/issues/382))
+
+### BUG FIXES
+
+- Mend error variant todo!()s wherever tendermint client calls the
+  "consensus_state" method
+  ([#403](https://github.com/cosmos/ibc-rs/issues/403))
+
+### FEATURE
+
+- Remove  feature flag ([#415](https://github.com/cosmos/ibc-rs/issues/415))
+
+### IMPROVEMENT
+
+- Make all unit tests test the ValidationContext/ExecutionContext API
+  ([#430](https://github.com/cosmos/ibc-rs/issues/430))
+
+### IMPROVEMENTS
+
+- Add an implementation of `validate_self_client` for the mock client
+  ([#432](https://github.com/cosmos/ibc-rs/issues/432))
+- Add a docstring and rename the "validate_self_client" argument for improved
+  code documentation and readability
+  ([#434](https://github.com/cosmos/ibc-rs/issues/434))
+- Refactor connection handler unit tests to adapt with new Validation/Execution API
+([#440](https://github.com/cosmos/ibc-rs/issues/440)).
 # CHANGELOG
 
 ## v0.28.0
