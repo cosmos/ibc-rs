@@ -94,7 +94,7 @@ where
 
         // Verify the proof for the packet against the chain store.
         client_state_of_a_on_b
-            .new_verify_packet_data(
+            .verify_packet_data(
                 ctx_b,
                 msg.proof_height_on_a,
                 &conn_end_on_b,

@@ -106,7 +106,7 @@ where
         let ack_path_on_b = AckPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);
         // Verify the proof for the packet against the chain store.
         client_state_on_a
-            .new_verify_packet_acknowledgement(
+            .verify_packet_acknowledgement(
                 ctx_a,
                 msg.proof_height_on_b,
                 &conn_end_on_a,

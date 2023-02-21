@@ -124,7 +124,7 @@ where
                 .into());
             }
             let seq_recv_path_on_b = SeqRecvPath::new(&packet.port_on_b, &packet.chan_on_b);
-            client_state_of_b_on_a.new_verify_next_sequence_recv(
+            client_state_of_b_on_a.verify_next_sequence_recv(
                 ctx_a,
                 msg.proof_height_on_b,
                 &conn_end_on_a,
@@ -139,7 +139,7 @@ where
                 &msg.packet.chan_on_b,
                 msg.packet.sequence,
             );
-            client_state_of_b_on_a.new_verify_packet_receipt_absence(
+            client_state_of_b_on_a.verify_packet_receipt_absence(
                 ctx_a,
                 msg.proof_height_on_b,
                 &conn_end_on_a,

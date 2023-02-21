@@ -178,7 +178,7 @@ impl ClientState for MockClientState {
         MockConsensusState::try_from(consensus_state).map(MockConsensusState::into_box)
     }
 
-    fn new_check_header_and_update_state(
+    fn check_header_and_update_state(
         &self,
         _ctx: &dyn ValidationContext,
         _client_id: ClientId,
@@ -199,7 +199,7 @@ impl ClientState for MockClientState {
         })
     }
 
-    fn new_check_misbehaviour_and_update_state(
+    fn check_misbehaviour_and_update_state(
         &self,
         _ctx: &dyn ValidationContext,
         _client_id: ClientId,
@@ -312,7 +312,7 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
-    fn new_verify_packet_data(
+    fn verify_packet_data(
         &self,
         _ctx: &dyn ValidationContext,
         _height: Height,
@@ -325,7 +325,7 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
-    fn new_verify_next_sequence_recv(
+    fn verify_next_sequence_recv(
         &self,
         _ctx: &dyn ValidationContext,
         _height: Height,
@@ -338,7 +338,7 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
-    fn new_verify_packet_receipt_absence(
+    fn verify_packet_receipt_absence(
         &self,
         _ctx: &dyn ValidationContext,
         _height: Height,
@@ -350,7 +350,7 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
-    fn new_verify_packet_acknowledgement(
+    fn verify_packet_acknowledgement(
         &self,
         _ctx: &dyn ValidationContext,
         _height: Height,

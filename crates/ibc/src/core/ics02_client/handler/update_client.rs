@@ -77,7 +77,7 @@ where
     }
 
     let _ = client_state
-        .new_check_header_and_update_state(ctx, client_id.clone(), header)
+        .check_header_and_update_state(ctx, client_id.clone(), header)
         .map_err(|e| ClientError::HeaderVerificationFailure {
             reason: e.to_string(),
         })?;
@@ -103,7 +103,7 @@ where
         client_state,
         consensus_state,
     } = client_state
-        .new_check_header_and_update_state(ctx, client_id.clone(), header.clone())
+        .check_header_and_update_state(ctx, client_id.clone(), header.clone())
         .map_err(|e| ClientError::HeaderVerificationFailure {
             reason: e.to_string(),
         })?;

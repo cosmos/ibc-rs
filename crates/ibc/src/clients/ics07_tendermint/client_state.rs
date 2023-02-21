@@ -385,7 +385,7 @@ impl Ics2ClientState for ClientState {
         TmConsensusState::try_from(consensus_state).map(TmConsensusState::into_box)
     }
 
-    fn new_check_misbehaviour_and_update_state(
+    fn check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
         client_id: ClientId,
@@ -454,7 +454,7 @@ impl Ics2ClientState for ClientState {
             .into_box())
     }
 
-    fn new_check_header_and_update_state(
+    fn check_header_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
         client_id: ClientId,
@@ -886,7 +886,7 @@ impl Ics2ClientState for ClientState {
         )
     }
 
-    fn new_verify_packet_data(
+    fn verify_packet_data(
         &self,
         ctx: &dyn ValidationContext,
         height: Height,
@@ -910,7 +910,7 @@ impl Ics2ClientState for ClientState {
         )
     }
 
-    fn new_verify_packet_acknowledgement(
+    fn verify_packet_acknowledgement(
         &self,
         ctx: &dyn ValidationContext,
         height: Height,
@@ -935,7 +935,7 @@ impl Ics2ClientState for ClientState {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn new_verify_next_sequence_recv(
+    fn verify_next_sequence_recv(
         &self,
         ctx: &dyn ValidationContext,
         height: Height,
@@ -965,7 +965,7 @@ impl Ics2ClientState for ClientState {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn new_verify_packet_receipt_absence(
+    fn verify_packet_receipt_absence(
         &self,
         ctx: &dyn ValidationContext,
         height: Height,

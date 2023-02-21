@@ -38,7 +38,7 @@ where
     }
 
     let _ = client_state
-        .new_check_misbehaviour_and_update_state(ctx, client_id.clone(), misbehaviour)
+        .check_misbehaviour_and_update_state(ctx, client_id.clone(), misbehaviour)
         .map_err(|e| ClientError::MisbehaviourHandlingFailure {
             reason: e.to_string(),
         })?;
@@ -64,7 +64,7 @@ where
     }
 
     let client_state = client_state
-        .new_check_misbehaviour_and_update_state(ctx, client_id.clone(), misbehaviour)
+        .check_misbehaviour_and_update_state(ctx, client_id.clone(), misbehaviour)
         .map_err(|e| ClientError::MisbehaviourHandlingFailure {
             reason: e.to_string(),
         })?;

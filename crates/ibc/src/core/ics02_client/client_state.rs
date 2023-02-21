@@ -76,14 +76,14 @@ pub trait ClientState:
 
     fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError>;
 
-    fn new_check_header_and_update_state(
+    fn check_header_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
         client_id: ClientId,
         header: Any,
     ) -> Result<UpdatedState, ClientError>;
 
-    fn new_check_misbehaviour_and_update_state(
+    fn check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
         client_id: ClientId,
@@ -168,7 +168,7 @@ pub trait ClientState:
 
     /// Verify a `proof` that a packet has been committed.
     #[allow(clippy::too_many_arguments)]
-    fn new_verify_packet_data(
+    fn verify_packet_data(
         &self,
         ctx: &dyn ValidationContext,
         height: Height,
@@ -181,7 +181,7 @@ pub trait ClientState:
 
     /// Verify a `proof` that a packet has been committed.
     #[allow(clippy::too_many_arguments)]
-    fn new_verify_packet_acknowledgement(
+    fn verify_packet_acknowledgement(
         &self,
         ctx: &dyn ValidationContext,
         height: Height,
@@ -194,7 +194,7 @@ pub trait ClientState:
 
     /// Verify a `proof` that of the next_seq_received.
     #[allow(clippy::too_many_arguments)]
-    fn new_verify_next_sequence_recv(
+    fn verify_next_sequence_recv(
         &self,
         ctx: &dyn ValidationContext,
         height: Height,
@@ -206,7 +206,7 @@ pub trait ClientState:
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a packet has not been received.
-    fn new_verify_packet_receipt_absence(
+    fn verify_packet_receipt_absence(
         &self,
         ctx: &dyn ValidationContext,
         height: Height,
