@@ -11,7 +11,6 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
-use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
@@ -27,7 +26,6 @@ use crate::prelude::*;
 use crate::Height;
 
 use super::consensus_state::ConsensusState;
-use super::context::ClientReader;
 
 use crate::core::{ContextError, ValidationContext};
 
@@ -78,30 +76,12 @@ pub trait ClientState:
 
     fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError>;
 
-    fn check_header_and_update_state(
-        &self,
-        ctx: &dyn ClientReader,
-        client_id: ClientId,
-        header: Any,
-    ) -> Result<UpdatedState, ClientError>;
-
-    /// XXX: temporary solution until we get rid of `ClientReader`
-
     fn new_check_header_and_update_state(
         &self,
         ctx: &dyn ValidationContext,
         client_id: ClientId,
         header: Any,
     ) -> Result<UpdatedState, ClientError>;
-
-    fn check_misbehaviour_and_update_state(
-        &self,
-        ctx: &dyn ClientReader,
-        client_id: ClientId,
-        misbehaviour: Any,
-    ) -> Result<Box<dyn ClientState>, ClientError>;
-
-    /// XXX: temporary solution until we get rid of `ClientReader`
 
     fn new_check_misbehaviour_and_update_state(
         &self,
@@ -187,7 +167,6 @@ pub trait ClientState:
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a packet has been committed.
-
     #[allow(clippy::too_many_arguments)]
     fn new_verify_packet_data(
         &self,
@@ -202,20 +181,6 @@ pub trait ClientState:
 
     /// Verify a `proof` that a packet has been committed.
     #[allow(clippy::too_many_arguments)]
-    fn verify_packet_data(
-        &self,
-        ctx: &dyn ChannelReader,
-        height: Height,
-        connection_end: &ConnectionEnd,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        commitment_path: &CommitmentPath,
-        commitment: PacketCommitment,
-    ) -> Result<(), ClientError>;
-
-    /// Verify a `proof` that a packet has been committed.
-
-    #[allow(clippy::too_many_arguments)]
     fn new_verify_packet_acknowledgement(
         &self,
         ctx: &dyn ValidationContext,
@@ -227,21 +192,7 @@ pub trait ClientState:
         ack: AcknowledgementCommitment,
     ) -> Result<(), ClientError>;
 
-    /// Verify a `proof` that a packet has been committed.
-    #[allow(clippy::too_many_arguments)]
-    fn verify_packet_acknowledgement(
-        &self,
-        ctx: &dyn ChannelReader,
-        height: Height,
-        connection_end: &ConnectionEnd,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        ack_path: &AckPath,
-        ack: AcknowledgementCommitment,
-    ) -> Result<(), ClientError>;
-
     /// Verify a `proof` that of the next_seq_received.
-
     #[allow(clippy::too_many_arguments)]
     fn new_verify_next_sequence_recv(
         &self,
@@ -254,34 +205,10 @@ pub trait ClientState:
         sequence: Sequence,
     ) -> Result<(), ClientError>;
 
-    /// Verify a `proof` that of the next_seq_received.
-    #[allow(clippy::too_many_arguments)]
-    fn verify_next_sequence_recv(
-        &self,
-        ctx: &dyn ChannelReader,
-        height: Height,
-        connection_end: &ConnectionEnd,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        seq_recv_path: &SeqRecvPath,
-        sequence: Sequence,
-    ) -> Result<(), ClientError>;
-
     /// Verify a `proof` that a packet has not been received.
     fn new_verify_packet_receipt_absence(
         &self,
         ctx: &dyn ValidationContext,
-        height: Height,
-        connection_end: &ConnectionEnd,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        receipt_path: &ReceiptPath,
-    ) -> Result<(), ClientError>;
-
-    /// Verify a `proof` that a packet has not been received.
-    fn verify_packet_receipt_absence(
-        &self,
-        ctx: &dyn ChannelReader,
         height: Height,
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,

@@ -25,13 +25,11 @@ use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehavio
 use crate::core::ics02_client::client_state::{ClientState as Ics2ClientState, UpdatedState};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::trust_threshold::TrustThreshold;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
-use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
@@ -385,235 +383,6 @@ impl Ics2ClientState for ClientState {
 
     fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError> {
         TmConsensusState::try_from(consensus_state).map(TmConsensusState::into_box)
-    }
-
-    fn check_header_and_update_state(
-        &self,
-        ctx: &dyn ClientReader,
-        client_id: ClientId,
-        header: Any,
-    ) -> Result<UpdatedState, ClientError> {
-        fn maybe_consensus_state(
-            ctx: &dyn ClientReader,
-            client_cons_state_path: &ClientConsensusStatePath,
-        ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
-            match ctx.consensus_state(client_cons_state_path) {
-                Ok(cs) => Ok(Some(cs)),
-                Err(e) => match e {
-                    ClientError::ConsensusStateNotFound {
-                        client_id: _,
-                        height: _,
-                    } => Ok(None),
-                    _ => Err(e),
-                },
-            }
-        }
-
-        let client_state = downcast_tm_client_state(self)?.clone();
-        let header = TmHeader::try_from(header)?;
-
-        if header.height().revision_number() != client_state.chain_id().version() {
-            return Err(ClientError::ClientSpecific {
-                description: Error::MismatchedRevisions {
-                    current_revision: client_state.chain_id().version(),
-                    update_revision: header.height().revision_number(),
-                }
-                .to_string(),
-            });
-        }
-
-        // Check if a consensus state is already installed; if so it should
-        // match the untrusted header.
-        let header_consensus_state = TmConsensusState::from(header.clone());
-        let client_cons_state_path = ClientConsensusStatePath::new(&client_id, &header.height());
-        let existing_consensus_state = match maybe_consensus_state(ctx, &client_cons_state_path)? {
-            Some(cs) => {
-                let cs = downcast_tm_consensus_state(cs.as_ref())?;
-                // If this consensus state matches, skip verification
-                // (optimization)
-                if cs == header_consensus_state {
-                    // Header is already installed and matches the incoming
-                    // header (already verified)
-                    return Ok(UpdatedState {
-                        client_state: client_state.into_box(),
-                        consensus_state: cs.into_box(),
-                    });
-                }
-                Some(cs)
-            }
-            None => None,
-        };
-
-        let trusted_client_cons_state_path =
-            ClientConsensusStatePath::new(&client_id, &header.trusted_height);
-        let trusted_consensus_state = downcast_tm_consensus_state(
-            ctx.consensus_state(&trusted_client_cons_state_path)?
-                .as_ref(),
-        )?;
-
-        let trusted_state = TrustedBlockState {
-            chain_id: &self.chain_id.clone().into(),
-            header_time: trusted_consensus_state.timestamp,
-            height: header
-                .trusted_height
-                .revision_height()
-                .try_into()
-                .map_err(|_| ClientError::ClientSpecific {
-                    description: Error::InvalidHeaderHeight {
-                        height: header.trusted_height.revision_height(),
-                    }
-                    .to_string(),
-                })?,
-            next_validators: &header.trusted_validator_set,
-            next_validators_hash: trusted_consensus_state.next_validators_hash,
-        };
-
-        let untrusted_state = UntrustedBlockState {
-            signed_header: &header.signed_header,
-            validators: &header.validator_set,
-            // NB: This will skip the
-            // VerificationPredicates::next_validators_match check for the
-            // untrusted state.
-            next_validators: None,
-        };
-
-        let options = client_state.as_light_client_options()?;
-
-        self.verifier
-            .verify(
-                untrusted_state,
-                trusted_state,
-                &options,
-                ctx.host_timestamp()?.into_tm_time().unwrap(),
-            )
-            .into_result()?;
-
-        // If the header has verified, but its corresponding consensus state
-        // differs from the existing consensus state for that height, freeze the
-        // client and return the installed consensus state.
-        if let Some(cs) = existing_consensus_state {
-            if cs != header_consensus_state {
-                return Ok(UpdatedState {
-                    client_state: client_state.with_frozen_height(header.height()).into_box(),
-                    consensus_state: cs.into_box(),
-                });
-            }
-        }
-        let client_cons_state_path = ClientConsensusStatePath::new(&client_id, &header.height());
-        // Monotonicity checks for timestamps for in-the-middle updates
-        // (cs-new, cs-next, cs-latest)
-        if header.height() < client_state.latest_height() {
-            let maybe_next_cs = ctx
-                .next_consensus_state(&client_cons_state_path)?
-                .as_ref()
-                .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
-                .transpose()?;
-
-            if let Some(next_cs) = maybe_next_cs {
-                // New (untrusted) header timestamp cannot occur after next
-                // consensus state's height
-                if header.signed_header.header().time > next_cs.timestamp {
-                    return Err(ClientError::ClientSpecific {
-                        description: Error::HeaderTimestampTooHigh {
-                            actual: header.signed_header.header().time.to_string(),
-                            max: next_cs.timestamp.to_string(),
-                        }
-                        .to_string(),
-                    });
-                }
-            }
-        }
-
-        // (cs-trusted, cs-prev, cs-new)
-        if header.trusted_height < header.height() {
-            let maybe_prev_cs = ctx
-                .prev_consensus_state(&client_cons_state_path)?
-                .as_ref()
-                .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
-                .transpose()?;
-
-            if let Some(prev_cs) = maybe_prev_cs {
-                // New (untrusted) header timestamp cannot occur before the
-                // previous consensus state's height
-                if header.signed_header.header().time < prev_cs.timestamp {
-                    return Err(ClientError::ClientSpecific {
-                        description: Error::HeaderTimestampTooLow {
-                            actual: header.signed_header.header().time.to_string(),
-                            min: prev_cs.timestamp.to_string(),
-                        }
-                        .to_string(),
-                    });
-                }
-            }
-        }
-
-        Ok(UpdatedState {
-            client_state: client_state.with_header(header.clone())?.into_box(),
-            consensus_state: TmConsensusState::from(header).into_box(),
-        })
-    }
-
-    fn check_misbehaviour_and_update_state(
-        &self,
-        ctx: &dyn ClientReader,
-        client_id: ClientId,
-        misbehaviour: Any,
-    ) -> Result<Box<dyn Ics2ClientState>, ClientError> {
-        let misbehaviour = TmMisbehaviour::try_from(misbehaviour)?;
-        let header_1 = misbehaviour.header1();
-        let header_2 = misbehaviour.header2();
-
-        if header_1.height() == header_2.height() {
-            // Fork
-            if header_1.signed_header.commit.block_id.hash
-                == header_2.signed_header.commit.block_id.hash
-            {
-                return Err(Error::MisbehaviourHeadersBlockHashesEqual.into());
-            }
-        } else {
-            // BFT time violation
-            if header_1.signed_header.header.time > header_2.signed_header.header.time {
-                return Err(Error::MisbehaviourHeadersNotAtSameHeight.into());
-            }
-        }
-        let client_cons_state_path_1 =
-            ClientConsensusStatePath::new(&client_id, &header_1.trusted_height);
-        let consensus_state_1 = {
-            let cs = ctx.consensus_state(&client_cons_state_path_1)?;
-            downcast_tm_consensus_state(cs.as_ref())
-        }?;
-
-        let client_cons_state_path_2 =
-            ClientConsensusStatePath::new(&client_id, &header_2.trusted_height);
-        let consensus_state_2 = {
-            let cs = ctx.consensus_state(&client_cons_state_path_2)?;
-            downcast_tm_consensus_state(cs.as_ref())
-        }?;
-
-        let chain_id = self
-            .chain_id
-            .clone()
-            .with_version(header_1.height().revision_number());
-        if !misbehaviour.chain_id_matches(&chain_id) {
-            return Err(Error::MisbehaviourHeadersChainIdMismatch {
-                header_chain_id: header_1.signed_header.header.chain_id.to_string(),
-                chain_id: self.chain_id.to_string(),
-            }
-            .into());
-        }
-
-        let current_timestamp = ctx.host_timestamp()?;
-
-        self.check_header_and_validator_set(header_1, &consensus_state_1, current_timestamp)?;
-        self.check_header_and_validator_set(header_2, &consensus_state_2, current_timestamp)?;
-
-        self.verify_header_commit_against_trusted(header_1, &consensus_state_1)?;
-        self.verify_header_commit_against_trusted(header_2, &consensus_state_2)?;
-
-        let client_state = downcast_tm_client_state(self)?.clone();
-        Ok(client_state
-            .with_frozen_height(Height::new(0, 1).unwrap())
-            .into_box())
     }
 
     fn new_check_misbehaviour_and_update_state(
@@ -1129,30 +898,6 @@ impl Ics2ClientState for ClientState {
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
-        new_verify_delay_passed(ctx, height, connection_end)?;
-
-        verify_membership(
-            client_state,
-            connection_end.counterparty().prefix(),
-            proof,
-            root,
-            commitment_path.clone(),
-            commitment.into_vec(),
-        )
-    }
-
-    fn verify_packet_data(
-        &self,
-        ctx: &dyn ChannelReader,
-        height: Height,
-        connection_end: &ConnectionEnd,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        commitment_path: &CommitmentPath,
-        commitment: PacketCommitment,
-    ) -> Result<(), ClientError> {
-        let client_state = downcast_tm_client_state(self)?;
-        client_state.verify_height(height)?;
         verify_delay_passed(ctx, height, connection_end)?;
 
         verify_membership(
@@ -1177,7 +922,7 @@ impl Ics2ClientState for ClientState {
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
-        new_verify_delay_passed(ctx, height, connection_end)?;
+        verify_delay_passed(ctx, height, connection_end)?;
 
         verify_membership(
             client_state,
@@ -1189,63 +934,10 @@ impl Ics2ClientState for ClientState {
         )
     }
 
-    fn verify_packet_acknowledgement(
-        &self,
-        ctx: &dyn ChannelReader,
-        height: Height,
-        connection_end: &ConnectionEnd,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        ack_path: &AckPath,
-        ack_commitment: AcknowledgementCommitment,
-    ) -> Result<(), ClientError> {
-        let client_state = downcast_tm_client_state(self)?;
-        client_state.verify_height(height)?;
-        verify_delay_passed(ctx, height, connection_end)?;
-
-        verify_membership(
-            client_state,
-            connection_end.counterparty().prefix(),
-            proof,
-            root,
-            ack_path.clone(),
-            ack_commitment.into_vec(),
-        )
-    }
-
     #[allow(clippy::too_many_arguments)]
     fn new_verify_next_sequence_recv(
         &self,
         ctx: &dyn ValidationContext,
-        height: Height,
-        connection_end: &ConnectionEnd,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        seq_recv_path: &SeqRecvPath,
-        sequence: Sequence,
-    ) -> Result<(), ClientError> {
-        let client_state = downcast_tm_client_state(self)?;
-        client_state.verify_height(height)?;
-        new_verify_delay_passed(ctx, height, connection_end)?;
-
-        let mut seq_bytes = Vec::new();
-        u64::from(sequence)
-            .encode(&mut seq_bytes)
-            .expect("buffer size too small");
-
-        verify_membership(
-            client_state,
-            connection_end.counterparty().prefix(),
-            proof,
-            root,
-            seq_recv_path.clone(),
-            seq_bytes,
-        )
-    }
-
-    fn verify_next_sequence_recv(
-        &self,
-        ctx: &dyn ChannelReader,
         height: Height,
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
@@ -1276,28 +968,6 @@ impl Ics2ClientState for ClientState {
     fn new_verify_packet_receipt_absence(
         &self,
         ctx: &dyn ValidationContext,
-        height: Height,
-        connection_end: &ConnectionEnd,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        receipt_path: &ReceiptPath,
-    ) -> Result<(), ClientError> {
-        let client_state = downcast_tm_client_state(self)?;
-        client_state.verify_height(height)?;
-        new_verify_delay_passed(ctx, height, connection_end)?;
-
-        verify_non_membership(
-            client_state,
-            connection_end.counterparty().prefix(),
-            proof,
-            root,
-            receipt_path.clone(),
-        )
-    }
-
-    fn verify_packet_receipt_absence(
-        &self,
-        ctx: &dyn ChannelReader,
         height: Height,
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
@@ -1360,46 +1030,6 @@ fn verify_non_membership(
 }
 
 fn verify_delay_passed(
-    ctx: &dyn ChannelReader,
-    height: Height,
-    connection_end: &ConnectionEnd,
-) -> Result<(), ClientError> {
-    let current_timestamp = ctx.host_timestamp().map_err(|e| ClientError::Other {
-        description: e.to_string(),
-    })?;
-    let current_height = ctx.host_height().map_err(|e| ClientError::Other {
-        description: e.to_string(),
-    })?;
-
-    let client_id = connection_end.client_id();
-    let processed_time =
-        ctx.client_update_time(client_id, &height)
-            .map_err(|_| Error::ProcessedTimeNotFound {
-                client_id: client_id.clone(),
-                height,
-            })?;
-    let processed_height = ctx.client_update_height(client_id, &height).map_err(|_| {
-        Error::ProcessedHeightNotFound {
-            client_id: client_id.clone(),
-            height,
-        }
-    })?;
-
-    let delay_period_time = connection_end.delay_period();
-    let delay_period_height = ctx.block_delay(&delay_period_time);
-
-    ClientState::verify_delay_passed(
-        current_timestamp,
-        current_height,
-        processed_time,
-        processed_height,
-        delay_period_time,
-        delay_period_height,
-    )
-    .map_err(|e| e.into())
-}
-
-fn new_verify_delay_passed(
     ctx: &dyn ValidationContext,
     height: Height,
     connection_end: &ConnectionEnd,
