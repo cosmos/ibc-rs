@@ -3,18 +3,13 @@ use crate::prelude::*;
 
 use crate::core::context::ContextError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
-use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenInit;
-use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{ClientConnectionPath, ConnectionPath};
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
-use crate::handler::{HandlerOutput, HandlerResult};
-
-use super::ConnectionIdState;
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
@@ -84,65 +79,6 @@ where
     ctx_a.store_connection(&ConnectionPath::new(&conn_id_on_a), conn_end_on_a)?;
 
     Ok(())
-}
-
-/// Per our convention, this message is processed on chain A.
-pub(crate) fn process(
-    ctx_a: &dyn ConnectionReader,
-    msg: MsgConnectionOpenInit,
-) -> HandlerResult<ConnectionResult, ConnectionError> {
-    let mut output = HandlerOutput::builder();
-
-    // An IBC client running on the local (host) chain should exist.
-    ctx_a.client_state(&msg.client_id_on_a)?;
-
-    let versions = match msg.version {
-        Some(version) => {
-            if ctx_a.get_compatible_versions().contains(&version) {
-                Ok(vec![version])
-            } else {
-                Err(ConnectionError::VersionNotSupported { version })
-            }
-        }
-        None => Ok(ctx_a.get_compatible_versions()),
-    }?;
-
-    let conn_end_on_a = ConnectionEnd::new(
-        State::Init,
-        msg.client_id_on_a.clone(),
-        Counterparty::new(
-            msg.counterparty.client_id().clone(),
-            None,
-            msg.counterparty.prefix().clone(),
-        ),
-        versions,
-        msg.delay_period,
-    );
-
-    // Construct the identifier for the new connection.
-    let conn_id_on_a = ConnectionId::new(ctx_a.connection_counter()?);
-
-    let result = ConnectionResult {
-        connection_id: conn_id_on_a.clone(),
-        connection_end: conn_end_on_a,
-        connection_id_state: ConnectionIdState::Generated,
-    };
-
-    output.log(format!(
-        "success: conn_open_init: generated new connection identifier: {conn_id_on_a}",
-    ));
-
-    {
-        let client_id_on_b = msg.counterparty.client_id().clone();
-
-        output.emit(IbcEvent::OpenInitConnection(OpenInit::new(
-            conn_id_on_a,
-            msg.client_id_on_a,
-            client_id_on_b,
-        )));
-    }
-
-    Ok(output.with_result(result))
 }
 
 #[cfg(test)]

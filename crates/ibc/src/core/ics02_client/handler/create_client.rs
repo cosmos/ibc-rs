@@ -17,15 +17,12 @@ use crate::core::ValidationContext;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::CreateClient;
-use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::height::Height;
 use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::events::IbcEvent;
-use crate::handler::{HandlerOutput, HandlerResult};
 use crate::timestamp::Timestamp;
 
 /// The result following the successful processing of a `MsgCreateClient` message.
@@ -122,59 +119,6 @@ where
     ));
 
     Ok(())
-}
-
-pub(crate) fn process(
-    ctx: &dyn ClientReader,
-    msg: MsgCreateClient,
-) -> HandlerResult<ClientResult, ClientError> {
-    let mut output = HandlerOutput::builder();
-
-    let MsgCreateClient {
-        client_state,
-        consensus_state,
-        signer: _,
-    } = msg;
-
-    // Construct this client's identifier
-    let id_counter = ctx.client_counter()?;
-
-    let client_state = ctx.decode_client_state(client_state)?;
-
-    let client_type = client_state.client_type();
-
-    let client_id = ClientId::new(client_type.clone(), id_counter).map_err(|e| {
-        ClientError::ClientIdentifierConstructor {
-            client_type: client_state.client_type(),
-            counter: id_counter,
-            validation_error: e,
-        }
-    })?;
-
-    let consensus_state = client_state.initialise(consensus_state)?;
-
-    let consensus_height = client_state.latest_height();
-
-    let result = ClientResult::Create(CreateClientResult {
-        client_id: client_id.clone(),
-        client_type: client_type.clone(),
-        client_state,
-        consensus_state,
-        processed_time: ctx.host_timestamp()?,
-        processed_height: ctx.host_height()?,
-    });
-
-    output.emit(IbcEvent::CreateClient(CreateClient::new(
-        client_id.clone(),
-        client_type,
-        consensus_height,
-    )));
-
-    output.log(format!(
-        "success: generated new client identifier: {client_id}"
-    ));
-
-    Ok(output.with_result(result))
 }
 
 #[cfg(test)]

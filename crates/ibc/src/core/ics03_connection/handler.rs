@@ -2,11 +2,7 @@
 //! handshake) messages.
 
 use crate::core::ics03_connection::connection::ConnectionEnd;
-use crate::core::ics03_connection::context::ConnectionReader;
-use crate::core::ics03_connection::error::ConnectionError;
-use crate::core::ics03_connection::msgs::ConnectionMsg;
 use crate::core::ics24_host::identifier::ConnectionId;
-use crate::handler::HandlerOutput;
 
 pub mod conn_open_ack;
 pub mod conn_open_confirm;
@@ -36,23 +32,6 @@ pub struct ConnectionResult {
 
     /// The connection end, which the handler produced as a result of processing the message.
     pub connection_end: ConnectionEnd,
-}
-
-/// General entry point for processing any type of message related to the ICS3 connection open
-/// handshake protocol.
-pub(crate) fn dispatch<Ctx>(
-    ctx: &Ctx,
-    msg: ConnectionMsg,
-) -> Result<HandlerOutput<ConnectionResult>, ConnectionError>
-where
-    Ctx: ConnectionReader,
-{
-    match msg {
-        ConnectionMsg::OpenInit(msg) => conn_open_init::process(ctx, msg),
-        ConnectionMsg::OpenTry(msg) => conn_open_try::process(ctx, msg),
-        ConnectionMsg::OpenAck(msg) => conn_open_ack::process(ctx, msg),
-        ConnectionMsg::OpenConfirm(msg) => conn_open_confirm::process(ctx, msg),
-    }
 }
 
 #[cfg(test)]

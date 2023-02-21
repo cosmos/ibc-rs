@@ -1,16 +1,13 @@
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order};
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics04_channel::events::{ChannelClosed, TimeoutPacket};
+use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
-use crate::core::ics04_channel::packet::{PacketResult, Sequence};
-use crate::core::ics04_channel::{context::ChannelReader, error::PacketError};
+use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
-use crate::events::IbcEvent;
-use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 use crate::timestamp::Expiry;
 
@@ -159,171 +156,6 @@ pub struct TimeoutPacketResult {
     pub channel_id: ChannelId,
     pub seq: Sequence,
     pub channel: Option<ChannelEnd>,
-}
-
-/// TimeoutPacket is called by a module which originally attempted to send a
-/// packet to a counterparty module, where the timeout height has passed on the
-/// counterparty chain without the packet being committed, to prove that the
-/// packet can no longer be executed and to allow the calling module to safely
-/// perform appropriate state transitions.
-/// Per our convention, this message is processed on chain A.
-pub(crate) fn process<Ctx: ChannelReader>(
-    ctx_a: &Ctx,
-    msg: &MsgTimeout,
-) -> HandlerResult<PacketResult, PacketError> {
-    let mut output = HandlerOutput::builder();
-    let chan_end_path_on_a = ChannelEndPath::new(&msg.packet.port_on_a, &msg.packet.chan_on_a);
-    let mut chan_end_on_a = ctx_a
-        .channel_end(&chan_end_path_on_a)
-        .map_err(PacketError::Channel)?;
-
-    if !chan_end_on_a.state_matches(&State::Open) {
-        return Err(PacketError::ChannelClosed {
-            channel_id: msg.packet.chan_on_a.clone(),
-        });
-    }
-
-    let counterparty = Counterparty::new(
-        msg.packet.port_on_b.clone(),
-        Some(msg.packet.chan_on_b.clone()),
-    );
-
-    if !chan_end_on_a.counterparty_matches(&counterparty) {
-        return Err(PacketError::InvalidPacketCounterparty {
-            port_id: msg.packet.port_on_b.clone(),
-            channel_id: msg.packet.chan_on_b.clone(),
-        });
-    }
-
-    let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
-    let conn_end_on_a = ctx_a
-        .connection_end(&conn_id_on_a)
-        .map_err(PacketError::Channel)?;
-
-    //verify packet commitment
-    let commitment_path_on_a = CommitmentPath::new(
-        &msg.packet.port_on_a,
-        &msg.packet.chan_on_a,
-        msg.packet.sequence,
-    );
-    let commitment_on_a = ctx_a.get_packet_commitment(&commitment_path_on_a)?;
-    let expected_commitment_on_a = ctx_a.packet_commitment(
-        &msg.packet.data,
-        &msg.packet.timeout_height_on_b,
-        &msg.packet.timeout_timestamp_on_b,
-    );
-    if commitment_on_a != expected_commitment_on_a {
-        return Err(PacketError::IncorrectPacketCommitment {
-            sequence: msg.packet.sequence,
-        });
-    }
-
-    // Verify proofs
-    {
-        let client_id_on_a = conn_end_on_a.client_id();
-        let client_state_of_b_on_a = ctx_a
-            .client_state(client_id_on_a)
-            .map_err(PacketError::Channel)?;
-
-        // check that timeout height or timeout timestamp has passed on the other end
-        if msg
-            .packet
-            .timeout_height_on_b
-            .has_expired(msg.proof_height_on_b)
-        {
-            return Err(PacketError::PacketTimeoutHeightNotReached {
-                timeout_height: msg.packet.timeout_height_on_b,
-                chain_height: msg.proof_height_on_b,
-            });
-        }
-
-        let client_cons_state_path =
-            ClientConsensusStatePath::new(client_id_on_a, &msg.proof_height_on_b);
-        let consensus_state_of_b_on_a = ctx_a
-            .client_consensus_state(&client_cons_state_path)
-            .map_err(PacketError::Channel)?;
-        let timestamp_of_b = consensus_state_of_b_on_a.timestamp();
-
-        if let Expiry::Expired = msg
-            .packet
-            .timeout_timestamp_on_b
-            .check_expiry(&timestamp_of_b)
-        {
-            return Err(PacketError::PacketTimeoutTimestampNotReached {
-                timeout_timestamp: msg.packet.timeout_timestamp_on_b,
-                chain_timestamp: timestamp_of_b,
-            });
-        }
-        let next_seq_recv_verification_result = if chan_end_on_a.order_matches(&Order::Ordered) {
-            if msg.packet.sequence < msg.next_seq_recv_on_b {
-                return Err(PacketError::InvalidPacketSequence {
-                    given_sequence: msg.packet.sequence,
-                    next_sequence: msg.next_seq_recv_on_b,
-                });
-            }
-            let seq_recv_path_on_b = SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
-            client_state_of_b_on_a.verify_next_sequence_recv(
-                ctx_a,
-                msg.proof_height_on_b,
-                &conn_end_on_a,
-                &msg.proof_unreceived_on_b,
-                consensus_state_of_b_on_a.root(),
-                &seq_recv_path_on_b,
-                msg.packet.sequence,
-            )
-        } else {
-            let receipt_path_on_b = ReceiptPath::new(
-                &msg.packet.port_on_b,
-                &msg.packet.chan_on_b,
-                msg.packet.sequence,
-            );
-            client_state_of_b_on_a.verify_packet_receipt_absence(
-                ctx_a,
-                msg.proof_height_on_b,
-                &conn_end_on_a,
-                &msg.proof_unreceived_on_b,
-                consensus_state_of_b_on_a.root(),
-                &receipt_path_on_b,
-            )
-        };
-        next_seq_recv_verification_result
-            .map_err(|e| ChannelError::PacketVerificationFailed {
-                sequence: msg.next_seq_recv_on_b,
-                client_error: e,
-            })
-            .map_err(PacketError::Channel)?;
-    }
-
-    output.log("success: packet timeout ");
-
-    output.emit(IbcEvent::TimeoutPacket(TimeoutPacket::new(
-        msg.packet.clone(),
-        chan_end_on_a.ordering,
-    )));
-
-    let packet_res_chan = if chan_end_on_a.order_matches(&Order::Ordered) {
-        output.emit(IbcEvent::ChannelClosed(ChannelClosed::new(
-            msg.packet.port_on_a.clone(),
-            msg.packet.chan_on_a.clone(),
-            chan_end_on_a.counterparty().port_id.clone(),
-            chan_end_on_a.counterparty().channel_id.clone(),
-            conn_id_on_a,
-            chan_end_on_a.ordering,
-        )));
-        chan_end_on_a.state = State::Closed;
-        Some(chan_end_on_a)
-    } else {
-        None
-    };
-
-    let result = PacketResult::Timeout(TimeoutPacketResult {
-        port_id: msg.packet.port_on_a.clone(),
-        channel_id: msg.packet.chan_on_a.clone(),
-        seq: msg.packet.sequence,
-        channel: packet_res_chan,
-    });
-
-    Ok(output.with_result(result))
 }
 
 #[cfg(test)]
