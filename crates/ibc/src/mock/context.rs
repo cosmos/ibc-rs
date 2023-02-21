@@ -824,10 +824,6 @@ impl ValidationContext for MockContext {
             .unwrap())
     }
 
-    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ContextError> {
-        Err(ClientError::ImplementationSpecific.into())
-    }
-
     fn host_consensus_state(
         &self,
         height: &Height,
