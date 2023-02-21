@@ -1,10 +1,8 @@
 use crate::core::ics04_channel::channel::State;
-use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order};
+use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
-use crate::core::ics04_channel::packet::Sequence;
-use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
@@ -148,14 +146,6 @@ where
     }
 
     Ok(())
-}
-
-#[derive(Clone, Debug)]
-pub struct TimeoutPacketResult {
-    pub port_id: PortId,
-    pub channel_id: ChannelId,
-    pub seq: Sequence,
-    pub channel: Option<ChannelEnd>,
 }
 
 #[cfg(test)]

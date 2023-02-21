@@ -16,7 +16,6 @@ pub mod recv_packet;
 pub mod send_packet;
 pub mod timeout;
 pub mod timeout_on_close;
-pub mod write_acknowledgement;
 
 /// Defines the possible states of a channel identifier in a `ChannelResult`.
 #[derive(Clone, Debug)]

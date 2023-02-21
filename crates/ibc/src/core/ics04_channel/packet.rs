@@ -4,10 +4,6 @@ use core::str::FromStr;
 
 use ibc_proto::ibc::core::channel::v1::Packet as RawPacket;
 
-use super::handler::{
-    acknowledgement::AckPacketResult, recv_packet::RecvPacketResult, send_packet::SendPacketResult,
-    timeout::TimeoutPacketResult, write_acknowledgement::WriteAckPacketResult,
-};
 use super::timeout::TimeoutHeight;
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
@@ -22,15 +18,6 @@ pub enum PacketMsgType {
     TimeoutUnordered,
     TimeoutOrdered,
     TimeoutOnClose,
-}
-
-#[derive(Clone, Debug)]
-pub enum PacketResult {
-    Send(SendPacketResult),
-    Recv(RecvPacketResult),
-    WriteAck(WriteAckPacketResult),
-    Ack(AckPacketResult),
-    Timeout(TimeoutPacketResult),
 }
 
 #[cfg_attr(

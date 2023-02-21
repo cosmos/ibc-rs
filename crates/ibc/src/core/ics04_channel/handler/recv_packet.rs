@@ -3,8 +3,6 @@ use crate::core::ics04_channel::channel::{Counterparty, Order, State};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
-use crate::core::ics04_channel::packet::{Receipt, Sequence};
-use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
@@ -161,22 +159,6 @@ where
     }
 
     Ok(())
-}
-
-#[derive(Clone, Debug)]
-pub enum RecvPacketResult {
-    NoOp,
-    Unordered {
-        port_id: PortId,
-        channel_id: ChannelId,
-        sequence: Sequence,
-        receipt: Receipt,
-    },
-    Ordered {
-        port_id: PortId,
-        channel_id: ChannelId,
-        next_seq_recv: Sequence,
-    },
 }
 
 #[cfg(test)]

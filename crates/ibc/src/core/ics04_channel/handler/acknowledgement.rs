@@ -4,8 +4,6 @@ use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
-use crate::core::ics04_channel::packet::Sequence;
-use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqAckPath,
 };
@@ -123,14 +121,6 @@ where
     }
 
     Ok(())
-}
-
-#[derive(Clone, Debug)]
-pub struct AckPacketResult {
-    pub port_id: PortId,
-    pub channel_id: ChannelId,
-    pub seq: Sequence,
-    pub seq_number: Option<Sequence>,
 }
 
 #[cfg(test)]
