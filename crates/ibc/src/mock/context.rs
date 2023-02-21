@@ -742,14 +742,9 @@ impl ValidationContext for MockContext {
 
     fn next_consensus_state(
         &self,
-        next_client_cons_state_path: &ClientConsensusStatePath,
+        client_id: &ClientId,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
-        let client_id = &next_client_cons_state_path.client_id;
-        let height = Height::new(
-            next_client_cons_state_path.epoch,
-            next_client_cons_state_path.height,
-        )?;
-
         let ibc_store = self.ibc_store.lock();
         let client_record =
             ibc_store
@@ -765,7 +760,7 @@ impl ValidationContext for MockContext {
 
         // Search for next state.
         for h in heights {
-            if h > height {
+            if h > *height {
                 // unwrap should never happen, as the consensus state for h must exist
                 return Ok(Some(
                     client_record.consensus_states.get(&h).unwrap().clone(),
@@ -777,14 +772,9 @@ impl ValidationContext for MockContext {
 
     fn prev_consensus_state(
         &self,
-        prev_client_cons_state_path: &ClientConsensusStatePath,
+        client_id: &ClientId,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
-        let client_id = &prev_client_cons_state_path.client_id;
-        let height = Height::new(
-            prev_client_cons_state_path.epoch,
-            prev_client_cons_state_path.height,
-        )?;
-
         let ibc_store = self.ibc_store.lock();
         let client_record =
             ibc_store
@@ -800,7 +790,7 @@ impl ValidationContext for MockContext {
 
         // Search for previous state.
         for h in heights {
-            if h < height {
+            if h < *height {
                 // unwrap should never happen, as the consensus state for h must exist
                 return Ok(Some(
                     client_record.consensus_states.get(&h).unwrap().clone(),

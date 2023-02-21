@@ -256,13 +256,15 @@ pub trait ValidationContext: Router {
     /// Search for the lowest consensus state higher than `height`.
     fn next_consensus_state(
         &self,
-        next_client_cons_state_path: &ClientConsensusStatePath,
+        client_id: &ClientId,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
 
     /// Search for the highest consensus state lower than `height`.
     fn prev_consensus_state(
         &self,
-        prev_client_cons_state_path: &ClientConsensusStatePath,
+        client_id: &ClientId,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
 
     /// Returns the current height of the local chain.
