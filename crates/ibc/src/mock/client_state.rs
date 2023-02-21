@@ -11,12 +11,10 @@ use ibc_proto::protobuf::Protobuf;
 use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::context::ClientReader;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
-use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
@@ -182,27 +180,6 @@ impl ClientState for MockClientState {
 
     fn check_header_and_update_state(
         &self,
-        _ctx: &dyn ClientReader,
-        _client_id: ClientId,
-        header: Any,
-    ) -> Result<UpdatedState, ClientError> {
-        let header = MockHeader::try_from(header)?;
-
-        if self.latest_height() >= header.height() {
-            return Err(ClientError::LowHeaderHeight {
-                header_height: header.height(),
-                latest_height: self.latest_height(),
-            });
-        }
-
-        Ok(UpdatedState {
-            client_state: MockClientState::new(header).into_box(),
-            consensus_state: MockConsensusState::new(header).into_box(),
-        })
-    }
-
-    fn new_check_header_and_update_state(
-        &self,
         _ctx: &dyn ValidationContext,
         _client_id: ClientId,
         header: Any,
@@ -223,33 +200,6 @@ impl ClientState for MockClientState {
     }
 
     fn check_misbehaviour_and_update_state(
-        &self,
-        _ctx: &dyn ClientReader,
-        _client_id: ClientId,
-        misbehaviour: Any,
-    ) -> Result<Box<dyn ClientState>, ClientError> {
-        let misbehaviour = Misbehaviour::try_from(misbehaviour)?;
-        let header_1 = misbehaviour.header1;
-        let header_2 = misbehaviour.header2;
-
-        if header_1.height() != header_2.height() {
-            return Err(ClientError::InvalidHeight);
-        }
-
-        if self.latest_height() >= header_1.height() {
-            return Err(ClientError::LowHeaderHeight {
-                header_height: header_1.height(),
-                latest_height: self.latest_height(),
-            });
-        }
-
-        let new_state =
-            MockClientState::new(header_1).with_frozen_height(Height::new(0, 1).unwrap());
-
-        Ok(new_state.into_box())
-    }
-
-    fn new_check_misbehaviour_and_update_state(
         &self,
         _ctx: &dyn ValidationContext,
         _client_id: ClientId,
@@ -362,61 +312,22 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
-    fn new_verify_packet_data(
-        &self,
-        _ctx: &dyn ValidationContext,
-        _height: Height,
-        _connection_end: &ConnectionEnd,
-        _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
-        _commitment_path: &CommitmentPath,
-        _commitment: PacketCommitment,
-    ) -> Result<(), ClientError> {
-        Ok(())
-    }
-
     fn verify_packet_data(
         &self,
-        _ctx: &dyn ChannelReader,
+        _ctx: &dyn ValidationContext,
         _height: Height,
         _connection_end: &ConnectionEnd,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
         _commitment_path: &CommitmentPath,
         _commitment: PacketCommitment,
-    ) -> Result<(), ClientError> {
-        Ok(())
-    }
-
-    fn verify_packet_acknowledgement(
-        &self,
-        _ctx: &dyn ChannelReader,
-        _height: Height,
-        _connection_end: &ConnectionEnd,
-        _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
-        _ack_path: &AckPath,
-        _ack: AcknowledgementCommitment,
-    ) -> Result<(), ClientError> {
-        Ok(())
-    }
-
-    fn new_verify_next_sequence_recv(
-        &self,
-        _ctx: &dyn ValidationContext,
-        _height: Height,
-        _connection_end: &ConnectionEnd,
-        _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
-        _seq_recv_path: &SeqRecvPath,
-        _sequence: Sequence,
     ) -> Result<(), ClientError> {
         Ok(())
     }
 
     fn verify_next_sequence_recv(
         &self,
-        _ctx: &dyn ChannelReader,
+        _ctx: &dyn ValidationContext,
         _height: Height,
         _connection_end: &ConnectionEnd,
         _proof: &CommitmentProofBytes,
@@ -427,7 +338,7 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
-    fn new_verify_packet_receipt_absence(
+    fn verify_packet_receipt_absence(
         &self,
         _ctx: &dyn ValidationContext,
         _height: Height,
@@ -439,19 +350,7 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
-    fn verify_packet_receipt_absence(
-        &self,
-        _ctx: &dyn ChannelReader,
-        _height: Height,
-        _connection_end: &ConnectionEnd,
-        _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
-        _receipt_path: &ReceiptPath,
-    ) -> Result<(), ClientError> {
-        Ok(())
-    }
-
-    fn new_verify_packet_acknowledgement(
+    fn verify_packet_acknowledgement(
         &self,
         _ctx: &dyn ValidationContext,
         _height: Height,

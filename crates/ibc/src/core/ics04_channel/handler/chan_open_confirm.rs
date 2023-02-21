@@ -1,12 +1,9 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenConfirm`.
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
-use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
-use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
 use crate::core::{ContextError, ValidationContext};
@@ -97,106 +94,6 @@ where
     }
 
     Ok(())
-}
-
-/// Per our convention, this message is processed on chain B.
-pub(crate) fn process<Ctx: ChannelReader>(
-    ctx_b: &Ctx,
-    msg: &MsgChannelOpenConfirm,
-) -> HandlerResult<ChannelResult, ChannelError> {
-    let mut output = HandlerOutput::builder();
-
-    // Unwrap the old channel end and validate it against the message.
-    let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);
-    let mut chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
-
-    // Validate that the channel end is in a state where it can be confirmed.
-    if !chan_end_on_b.state_matches(&State::TryOpen) {
-        return Err(ChannelError::InvalidChannelState {
-            channel_id: msg.chan_id_on_b.clone(),
-            state: chan_end_on_b.state,
-        });
-    }
-
-    // An OPEN IBC connection running on the local (host) chain should exist.
-    if chan_end_on_b.connection_hops().len() != 1 {
-        return Err(ChannelError::InvalidConnectionHopsLength {
-            expected: 1,
-            actual: chan_end_on_b.connection_hops().len(),
-        });
-    }
-
-    let conn_end_on_b = ctx_b.connection_end(&chan_end_on_b.connection_hops()[0])?;
-
-    if !conn_end_on_b.state_matches(&ConnectionState::Open) {
-        return Err(ChannelError::ConnectionNotOpen {
-            connection_id: chan_end_on_b.connection_hops()[0].clone(),
-        });
-    }
-
-    // Verify proofs
-    {
-        let client_id_on_b = conn_end_on_b.client_id();
-        let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
-        let client_cons_state_path_on_b =
-            ClientConsensusStatePath::new(client_id_on_b, &msg.proof_height_on_a);
-        let consensus_state_of_a_on_b =
-            ctx_b.client_consensus_state(&client_cons_state_path_on_b)?;
-        let prefix_on_a = conn_end_on_b.counterparty().prefix();
-        let port_id_on_a = &chan_end_on_b.counterparty().port_id;
-        let chan_id_on_a = chan_end_on_b
-            .counterparty()
-            .channel_id()
-            .ok_or(ChannelError::InvalidCounterpartyChannelId)?;
-        let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
-            ChannelError::UndefinedConnectionCounterparty {
-                connection_id: chan_end_on_b.connection_hops()[0].clone(),
-            },
-        )?;
-
-        // The client must not be frozen.
-        if client_state_of_a_on_b.is_frozen() {
-            return Err(ChannelError::FrozenClient {
-                client_id: client_id_on_b.clone(),
-            });
-        }
-
-        let expected_chan_end_on_a = ChannelEnd::new(
-            State::Open,
-            *chan_end_on_b.ordering(),
-            Counterparty::new(msg.port_id_on_b.clone(), Some(msg.chan_id_on_b.clone())),
-            vec![conn_id_on_a.clone()],
-            chan_end_on_b.version.clone(),
-        );
-        let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, chan_id_on_a);
-
-        // Verify the proof for the channel state against the expected channel end.
-        // A counterparty channel id of None in not possible, and is checked in msg.
-        client_state_of_a_on_b
-            .verify_channel_state(
-                msg.proof_height_on_a,
-                prefix_on_a,
-                &msg.proof_chan_end_on_a,
-                consensus_state_of_a_on_b.root(),
-                &chan_end_path_on_a,
-                &expected_chan_end_on_a,
-            )
-            .map_err(ChannelError::VerifyChannelFailed)?;
-    }
-
-    output.log("success: channel open confirm ");
-
-    // Transition the channel end to the new state.
-    chan_end_on_b.set_state(State::Open);
-
-    let result = ChannelResult {
-        port_id: msg.port_id_on_b.clone(),
-        channel_id: msg.chan_id_on_b.clone(),
-        channel_id_state: ChannelIdState::Reused,
-        channel_end: chan_end_on_b,
-    };
-
-    Ok(output.with_result(result))
 }
 
 #[cfg(test)]

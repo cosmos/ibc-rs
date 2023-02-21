@@ -1,12 +1,7 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenInit`.
 
-use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
-use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
-use crate::core::ics24_host::identifier::ChannelId;
-use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
 use crate::core::{ContextError, ValidationContext};
@@ -37,57 +32,6 @@ where
     }
 
     Ok(())
-}
-
-/// Per our convention, this message is processed on chain A.
-pub(crate) fn process<Ctx: ChannelReader>(
-    ctx_a: &Ctx,
-    msg: &MsgChannelOpenInit,
-) -> HandlerResult<ChannelResult, ChannelError> {
-    let mut output = HandlerOutput::builder();
-
-    if msg.connection_hops_on_a.len() != 1 {
-        return Err(ChannelError::InvalidConnectionHopsLength {
-            expected: 1,
-            actual: msg.connection_hops_on_a.len(),
-        });
-    }
-
-    // An IBC connection running on the local (host) chain should exist.
-    let conn_end_on_a = ctx_a.connection_end(&msg.connection_hops_on_a[0])?;
-
-    let conn_version = match conn_end_on_a.versions() {
-        [version] => version,
-        _ => return Err(ChannelError::InvalidVersionLengthConnection),
-    };
-
-    let channel_feature = msg.ordering.to_string();
-    if !conn_version.is_supported_feature(channel_feature) {
-        return Err(ChannelError::ChannelFeatureNotSuportedByConnection);
-    }
-
-    let chan_end_on_a = ChannelEnd::new(
-        State::Init,
-        msg.ordering,
-        Counterparty::new(msg.port_id_on_b.clone(), None),
-        msg.connection_hops_on_a.clone(),
-        msg.version_proposal.clone(),
-    );
-
-    let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
-
-    output.log(format!(
-        "success: channel open init with channel identifier: {chan_id_on_a}"
-    ));
-
-    let result = ChannelResult {
-        port_id: msg.port_id_on_a.clone(),
-        channel_id: chan_id_on_a,
-        channel_end: chan_end_on_a,
-        channel_id_state: ChannelIdState::Generated,
-    };
-
-    Ok(output.with_result(result))
 }
 
 #[cfg(test)]

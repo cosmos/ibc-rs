@@ -2,13 +2,10 @@
 use crate::prelude::*;
 
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
-use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenAck;
-use crate::core::ics03_connection::handler::ConnectionResult;
 use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::events::IbcEvent;
-use crate::handler::{HandlerOutput, HandlerResult};
 
 use crate::core::context::ContextError;
 
@@ -17,8 +14,6 @@ use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath};
 
 use crate::core::{ExecutionContext, ValidationContext};
-
-use super::ConnectionIdState;
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
@@ -207,137 +202,6 @@ impl LocalVars {
     fn client_id_on_b(&self) -> &ClientId {
         self.conn_end_on_a.counterparty().client_id()
     }
-}
-
-/// Per our convention, this message is processed on chain A.
-pub(crate) fn process(
-    ctx_a: &dyn ConnectionReader,
-    msg: MsgConnectionOpenAck,
-) -> HandlerResult<ConnectionResult, ConnectionError> {
-    let mut output = HandlerOutput::builder();
-
-    if msg.consensus_height_of_a_on_b > ctx_a.host_current_height()? {
-        return Err(ConnectionError::InvalidConsensusHeight {
-            target_height: msg.consensus_height_of_a_on_b,
-            current_height: ctx_a.host_current_height()?,
-        });
-    }
-
-    ctx_a.validate_self_client(msg.client_state_of_a_on_b.clone())?;
-
-    let conn_end_on_a = ctx_a.connection_end(&msg.conn_id_on_a)?;
-    if !(conn_end_on_a.state_matches(&State::Init)
-        && conn_end_on_a.versions().contains(&msg.version))
-    {
-        return Err(ConnectionError::ConnectionMismatch {
-            connection_id: msg.conn_id_on_a,
-        });
-    }
-
-    let client_id_on_a = conn_end_on_a.client_id();
-    let client_id_on_b = conn_end_on_a.counterparty().client_id();
-
-    // Proof verification.
-    {
-        let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
-        let client_cons_state_path_on_a =
-            ClientConsensusStatePath::new(conn_end_on_a.client_id(), &msg.proofs_height_on_b);
-        let consensus_state_of_b_on_a =
-            ctx_a.client_consensus_state(&client_cons_state_path_on_a)?;
-
-        let prefix_on_a = ctx_a.commitment_prefix();
-        let prefix_on_b = conn_end_on_a.counterparty().prefix();
-
-        {
-            let expected_conn_end_on_b = ConnectionEnd::new(
-                State::TryOpen,
-                client_id_on_b.clone(),
-                Counterparty::new(
-                    client_id_on_a.clone(),
-                    Some(msg.conn_id_on_a.clone()),
-                    prefix_on_a,
-                ),
-                vec![msg.version.clone()],
-                conn_end_on_a.delay_period(),
-            );
-
-            client_state_of_b_on_a
-                .verify_connection_state(
-                    msg.proofs_height_on_b,
-                    prefix_on_b,
-                    &msg.proof_conn_end_on_b,
-                    consensus_state_of_b_on_a.root(),
-                    &ConnectionPath::new(&msg.conn_id_on_b),
-                    &expected_conn_end_on_b,
-                )
-                .map_err(ConnectionError::VerifyConnectionState)?;
-        }
-
-        client_state_of_b_on_a
-            .verify_client_full_state(
-                msg.proofs_height_on_b,
-                prefix_on_b,
-                &msg.proof_client_state_of_a_on_b,
-                consensus_state_of_b_on_a.root(),
-                &ClientStatePath::new(client_id_on_b),
-                msg.client_state_of_a_on_b,
-            )
-            .map_err(|e| ConnectionError::ClientStateVerificationFailure {
-                client_id: conn_end_on_a.client_id().clone(),
-                client_error: e,
-            })?;
-
-        let expected_consensus_state_of_a_on_b =
-            ctx_a.host_consensus_state(&msg.consensus_height_of_a_on_b)?;
-
-        let client_cons_state_path_on_b = ClientConsensusStatePath::new(
-            conn_end_on_a.counterparty().client_id(),
-            &msg.consensus_height_of_a_on_b,
-        );
-        client_state_of_b_on_a
-            .verify_client_consensus_state(
-                msg.proofs_height_on_b,
-                prefix_on_b,
-                &msg.proof_consensus_state_of_a_on_b,
-                consensus_state_of_b_on_a.root(),
-                &client_cons_state_path_on_b,
-                expected_consensus_state_of_a_on_b.as_ref(),
-            )
-            .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
-                height: msg.proofs_height_on_b,
-                client_error: e,
-            })?;
-    }
-
-    // Success
-    output.emit(IbcEvent::OpenAckConnection(OpenAck::new(
-        msg.conn_id_on_a.clone(),
-        client_id_on_a.clone(),
-        msg.conn_id_on_b.clone(),
-        client_id_on_b.clone(),
-    )));
-    output.log("success: conn_open_ack verification passed");
-
-    let result = {
-        let new_conn_end_on_a = {
-            let mut counterparty = conn_end_on_a.counterparty().clone();
-            counterparty.connection_id = Some(msg.conn_id_on_b.clone());
-
-            let mut new_conn_end_on_a = conn_end_on_a;
-            new_conn_end_on_a.set_state(State::Open);
-            new_conn_end_on_a.set_version(msg.version.clone());
-            new_conn_end_on_a.set_counterparty(counterparty);
-            new_conn_end_on_a
-        };
-
-        ConnectionResult {
-            connection_id: msg.conn_id_on_a,
-            connection_id_state: ConnectionIdState::Reused,
-            connection_end: new_conn_end_on_a,
-        }
-    };
-
-    Ok(output.with_result(result))
 }
 
 #[cfg(test)]
