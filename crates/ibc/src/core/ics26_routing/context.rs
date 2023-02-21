@@ -8,38 +8,15 @@ use core::{
     str::FromStr,
 };
 
-use crate::core::ics02_client::context::{ClientKeeper, ClientReader};
-use crate::core::ics03_connection::context::{ConnectionKeeper, ConnectionReader};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
-use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
-use crate::core::ics05_port::context::PortReader;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::events::ModuleEvent;
 use crate::handler::HandlerOutputBuilder;
 use crate::signer::Signer;
-
-/// This trait captures all the functional dependencies (i.e., context) which the ICS26 module
-/// requires to be able to dispatch and process IBC messages. In other words, this is the
-/// representation of a chain from the perspective of the IBC module of that chain.
-pub trait RouterContext:
-    ClientReader
-    + ClientKeeper
-    + ConnectionReader
-    + ConnectionKeeper
-    + ChannelKeeper
-    + ChannelReader
-    + PortReader
-{
-    type Router: Router;
-
-    fn router(&self) -> &Self::Router;
-
-    fn router_mut(&mut self) -> &mut Self::Router;
-}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InvalidModuleId;
