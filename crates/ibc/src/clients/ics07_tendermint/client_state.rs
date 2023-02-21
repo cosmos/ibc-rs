@@ -578,12 +578,11 @@ impl Ics2ClientState for ClientState {
             }
         }
 
-        let client_cons_state_path = ClientConsensusStatePath::new(&client_id, &header.height());
         // Monotonicity checks for timestamps for in-the-middle updates
         // (cs-new, cs-next, cs-latest)
         if header.height() < client_state.latest_height() {
             let maybe_next_cs = ctx
-                .next_consensus_state(&client_cons_state_path)
+                .next_consensus_state(&client_id, &header.height())
                 .map_err(|e| match e {
                     ContextError::ClientError(e) => e,
                     _ => ClientError::Other {
@@ -612,7 +611,7 @@ impl Ics2ClientState for ClientState {
         // (cs-trusted, cs-prev, cs-new)
         if header.trusted_height < header.height() {
             let maybe_prev_cs = ctx
-                .prev_consensus_state(&client_cons_state_path)
+                .prev_consensus_state(&client_id, &header.height())
                 .map_err(|e| match e {
                     ContextError::ClientError(e) => e,
                     _ => ClientError::Other {

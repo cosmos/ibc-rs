@@ -1,5 +1,5 @@
-//! ICS4 (channel) context. The two traits `ChannelReader ` and `ChannelKeeper` define
-//! the interface that any host chain must implement to be able to process any `ChannelMsg`.
+//! ICS4 (channel) context.
+
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath, SeqSendPath};
 use crate::core::{ContextError, ValidationContext};

@@ -256,13 +256,15 @@ pub trait ValidationContext: Router {
     /// Search for the lowest consensus state higher than `height`.
     fn next_consensus_state(
         &self,
-        next_client_cons_state_path: &ClientConsensusStatePath,
+        client_id: &ClientId,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
 
     /// Search for the highest consensus state lower than `height`.
     fn prev_consensus_state(
         &self,
-        prev_client_cons_state_path: &ClientConsensusStatePath,
+        client_id: &ClientId,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
 
     /// Returns the current height of the local chain.
@@ -277,8 +279,9 @@ pub trait ValidationContext: Router {
         height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ContextError>;
 
-    /// Returns a natural number, counting how many clients have been created thus far.
-    /// The value of this counter should increase only via method `ClientKeeper::increase_client_counter`.
+    /// Returns a natural number, counting how many clients have been created
+    /// thus far. The value of this counter should increase only via method
+    /// `ExecutionContext::increase_client_counter`.
     fn client_counter(&self) -> Result<u64, ContextError>;
 
     /// Returns the ConnectionEnd for the given identifier `conn_id`.
@@ -396,7 +399,7 @@ pub trait ValidationContext: Router {
 
     /// Returns a counter on the number of channel ids have been created thus far.
     /// The value of this counter should increase only via method
-    /// `ChannelKeeper::increase_channel_counter`.
+    /// `ExecutionContext::increase_channel_counter`.
     fn channel_counter(&self) -> Result<u64, ContextError>;
 
     /// Returns the maximum expected time per block

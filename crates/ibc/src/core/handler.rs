@@ -98,8 +98,7 @@ mod tests {
     #[test]
     /// These tests exercise two main paths: (1) the ability of the ICS26 routing module to dispatch
     /// messages to the correct module handler, and more importantly: (2) the ability of ICS handlers
-    /// to work with the context and correctly store results (i.e., the `ClientKeeper`,
-    /// `ConnectionKeeper`, and `ChannelKeeper` traits).
+    /// to work with the context and correctly store results.
     fn routing_module_and_keepers() {
         #[derive(Clone, Debug)]
         enum TestMsg {
