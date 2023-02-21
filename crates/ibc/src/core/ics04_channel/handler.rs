@@ -2,9 +2,6 @@
 use crate::events::ModuleEvent;
 use crate::prelude::*;
 
-use crate::core::ics04_channel::channel::ChannelEnd;
-use crate::core::ics24_host::identifier::{ChannelId, PortId};
-
 pub mod acknowledgement;
 pub mod chan_close_confirm;
 pub mod chan_close_init;
@@ -16,25 +13,6 @@ pub mod recv_packet;
 pub mod send_packet;
 pub mod timeout;
 pub mod timeout_on_close;
-
-/// Defines the possible states of a channel identifier in a `ChannelResult`.
-#[derive(Clone, Debug)]
-pub enum ChannelIdState {
-    /// Specifies that the channel handshake handler allocated a new channel identifier. This
-    /// happens during the processing of either the `MsgChannelOpenInit` or `MsgChannelOpenTry`.
-    Generated,
-
-    /// Specifies that the handler reused a previously-allocated channel identifier.
-    Reused,
-}
-
-#[derive(Clone, Debug)]
-pub struct ChannelResult {
-    pub port_id: PortId,
-    pub channel_id: ChannelId,
-    pub channel_id_state: ChannelIdState,
-    pub channel_end: ChannelEnd,
-}
 
 #[derive(Clone, Debug)]
 pub struct ModuleExtras {
