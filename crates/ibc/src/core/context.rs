@@ -269,15 +269,7 @@ pub trait ValidationContext: Router {
     fn host_height(&self) -> Result<Height, ContextError>;
 
     /// Returns the current timestamp of the local chain.
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
-        let pending_consensus_state = self
-            .pending_host_consensus_state()
-            .expect("host must have pending consensus state");
-        Ok(pending_consensus_state.timestamp())
-    }
-
-    /// Returns the pending `ConsensusState` of the host (local) chain.
-    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ContextError>;
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
 
     /// Returns the `ConsensusState` of the host (local) chain at a specific height.
     fn host_consensus_state(
