@@ -4,31 +4,17 @@ use tracing::debug;
 
 use crate::prelude::*;
 
-use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
-use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::client_state::UpdatedState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpdateClient;
-use crate::core::ics02_client::height::Height;
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
-use crate::core::ics24_host::identifier::ClientId;
 use crate::events::IbcEvent;
-use crate::timestamp::Timestamp;
 
 use crate::core::context::ContextError;
 
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 
 use crate::core::{ExecutionContext, ValidationContext};
-
-/// The result following the successful processing of a `MsgUpdateAnyClient` message.
-#[derive(Clone, Debug, PartialEq)]
-pub struct UpdateClientResult {
-    pub client_id: ClientId,
-    pub client_state: Box<dyn ClientState>,
-    pub consensus_state: Box<dyn ConsensusState>,
-    pub processed_time: Timestamp,
-    pub processed_height: Height,
-}
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where

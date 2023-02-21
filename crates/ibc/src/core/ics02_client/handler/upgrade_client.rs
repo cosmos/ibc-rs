@@ -2,12 +2,10 @@
 //!
 use crate::prelude::*;
 
-use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
-use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::client_state::UpdatedState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
-use crate::core::ics24_host::identifier::ClientId;
 use crate::events::IbcEvent;
 
 use crate::core::context::ContextError;
@@ -15,14 +13,6 @@ use crate::core::context::ContextError;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 
 use crate::core::{ExecutionContext, ValidationContext};
-
-/// The result following the successful processing of a `MsgUpgradeAnyClient` message.
-#[derive(Clone, Debug, PartialEq)]
-pub struct UpgradeClientResult {
-    pub client_id: ClientId,
-    pub client_state: Box<dyn ClientState>,
-    pub consensus_state: Box<dyn ConsensusState>,
-}
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where

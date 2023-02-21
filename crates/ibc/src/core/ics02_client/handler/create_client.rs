@@ -14,27 +14,11 @@ use crate::core::ExecutionContext;
 
 use crate::core::ValidationContext;
 
-use crate::core::ics02_client::client_state::ClientState;
-use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::CreateClient;
-use crate::core::ics02_client::height::Height;
 use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::events::IbcEvent;
-use crate::timestamp::Timestamp;
-
-/// The result following the successful processing of a `MsgCreateClient` message.
-#[derive(Clone, Debug, PartialEq)]
-pub struct CreateClientResult {
-    pub client_id: ClientId,
-    pub client_type: ClientType,
-    pub client_state: Box<dyn ClientState>,
-    pub consensus_state: Box<dyn ConsensusState>,
-    pub processed_time: Timestamp,
-    pub processed_height: Height,
-}
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
