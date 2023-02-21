@@ -1,6 +1,5 @@
-//! The designs and logic pertaining to the transport, authentication, and
-//! ordering layers of the IBC protocol.
-//!
+//! Implementation of the core IBC protocol.
+//! 
 //! Naming is hard in the IBC handlers, since we deal with a client on a
 //! *counterparty* chain, which is itself a light client of *self* (the chain
 //! the handler is currently running on). So depending on the frame of reference
