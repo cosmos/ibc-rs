@@ -254,7 +254,6 @@ Our release process is as follows:
 3. Bump all relevant versions in the `crates/ibc/Cargo.toml` file (making sure
       dependencies' versions are updated too) to the new version and push these
       changes to the release PR.
-
 4. In the `crates/ibc/` directory, run `cargo doc --all-features --open` locally to double-check that all the
    documentation compiles and seems up-to-date and coherent. Fix any potential
    issues here and push them to the release PR.
