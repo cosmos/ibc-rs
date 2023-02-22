@@ -268,4 +268,5 @@ Our release process is as follows:
 10. Once the tag is pushed, create a GitHub release and append
    `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)`
    to the release description.
-11. All done! 🎉
+11. Make sure that the [Release workflow](https://github.com/cosmos/ibc-rs/actions/workflows/release.yml) to crates.io has completed successfully.
+12. All done! 🎉
