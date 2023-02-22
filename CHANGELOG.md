@@ -1,5 +1,48 @@
 # CHANGELOG
 
+## v0.29.0
+
+*February 22, 2023*
+
+This release includes the latest Tendermint-rs v0.29.0 and replaces the
+old API with the new `ValidationContext`/`ExecutionContext` API as the default.
+Additionally, unit tests have been updated to work with the new API.
+
+There are consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Remove Reader and Keeper API
+  ([#279](https://github.com/cosmos/ibc-rs/issues/279))
+- Refactor `get_*` and `store_*` methods to take `*Path` structs instead
+  ([#382](https://github.com/cosmos/ibc-rs/issues/382))
+- Make `ValidationContext::host_timestamp()` abstract and remove
+  `ValidationContext::pending_host_consensus_state()`
+  ([#418](https://github.com/cosmos/ibc-rs/issues/418))
+
+### BUG FIXES
+
+- Mend error variant todo!()s wherever tendermint client calls the
+  "consensus_state" method
+  ([#403](https://github.com/cosmos/ibc-rs/issues/403))
+
+### FEATURE
+
+- Remove `val_exec_ctx` feature flag
+  ([#415](https://github.com/cosmos/ibc-rs/issues/415))
+
+### IMPROVEMENTS
+
+- Make all unit tests test the ValidationContext/ExecutionContext API
+  ([#430](https://github.com/cosmos/ibc-rs/issues/430))
+- Add an implementation of `validate_self_client` for the mock client
+  ([#432](https://github.com/cosmos/ibc-rs/issues/432))
+- Add a docstring and rename the `validate_self_client` argument for improved
+  code documentation and readability
+  ([#434](https://github.com/cosmos/ibc-rs/issues/434))
+- Refactor connection handler unit tests to adapt with new Validation/Execution API
+  ([#440](https://github.com/cosmos/ibc-rs/issues/440))
+
 ## v0.28.0
 
 *February 9, 2023*
