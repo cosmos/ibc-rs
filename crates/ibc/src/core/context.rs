@@ -9,7 +9,7 @@ mod acknowledgement;
 mod recv_packet;
 mod timeout;
 
-use crate::prelude::*;
+use crate::{events::IbcEvent, prelude::*};
 
 use super::{
     ics02_client::error::ClientError,
@@ -44,7 +44,6 @@ use crate::core::ics24_host::path::{
     SeqSendPath,
 };
 use crate::core::ics26_routing::context::{Module, ModuleId};
-use crate::events::IbcEvent;
 use crate::timestamp::Timestamp;
 use crate::Height;
 
@@ -150,36 +149,11 @@ pub trait Router {
     }
 }
 
-pub trait ReaderContext: Router {
-    /// Returns the ClientState for the given identifier `client_id`.
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError>;
-
-    /// Tries to decode the given `client_state` into a concrete light client state.
-    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ContextError>;
-
-    /// Retrieve the consensus state for the given client ID at the specified
-    /// height.
-    ///
-    /// Returns an error if no such state exists.
-    fn consensus_state(
-        &self,
-        client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Box<dyn ConsensusState>, ContextError>;
-
-    /// Search for the lowest consensus state higher than `height`.
-    fn next_consensus_state(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
-
-    /// Search for the highest consensus state lower than `height`.
-    fn prev_consensus_state(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
-
+// HostContext provide minimal set of interfaces which must be provided by an
+// IBC enabled blockchain. It contains methods that read or modify a host state not
+// accessible through the IBC path from key-value store, and includes some
+// operational methods.
+pub trait HostContext: Router + EventLogger + MsgLogger {
     /// Returns the current height of the local chain.
     fn host_height(&self) -> Result<Height, ContextError>;
 
@@ -192,13 +166,42 @@ pub trait ReaderContext: Router {
         height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ContextError>;
 
-    /// Returns a natural number, counting how many clients have been created
-    /// thus far. The value of this counter should increase only via method
-    /// `ExecutionContext::increase_client_counter`.
-    fn client_counter(&self) -> Result<u64, ContextError>;
+    /// Tries to decode the given `client_state` into a concrete light client state.
+    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ContextError>;
 
-    /// Returns the ConnectionEnd for the given identifier `conn_id`.
-    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError>;
+    /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
+    fn client_update_time(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Timestamp, ContextError>;
+
+    /// Called upon successful client update.
+    /// Implementations are expected to use this to record the specified time as the time at which
+    /// this update (or header) was processed.
+    fn store_update_time(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        timestamp: Timestamp,
+    ) -> Result<(), ContextError>;
+
+    /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
+    fn client_update_height(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Height, ContextError>;
+
+    /// Called upon successful client update.
+    /// Implementations are expected to use this to record the specified height as the height at
+    /// at which this update (or header) was processed.
+    fn store_update_height(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        host_height: Height,
+    ) -> Result<(), ContextError>;
 
     /// Validates the `ClientState` of the client (a client referring to host) stored on the counterparty chain against the host's internal state.
     ///
@@ -213,11 +216,33 @@ pub trait ReaderContext: Router {
         client_state_of_host_on_counterparty: Any,
     ) -> Result<(), ConnectionError>;
 
-    /// Returns the prefix that the local chain uses in the KV store.
-    fn commitment_prefix(&self) -> CommitmentPrefix;
+    /// Returns a natural number, counting how many clients have been created
+    /// thus far. The value of this counter should increase only via method
+    /// `ExecutionContext::increase_client_counter`.
+    fn client_counter(&self) -> Result<u64, ContextError>;
+
+    /// Called upon client creation.
+    /// Increases the counter which keeps track of how many clients have been created.
+    /// Should never fail.
+    fn increase_client_counter(&mut self);
 
     /// Returns a counter on how many connections have been created thus far.
     fn connection_counter(&self) -> Result<u64, ContextError>;
+
+    /// Called upon connection identifier creation (Init or Try process).
+    /// Increases the counter which keeps track of how many connections have been created.
+    /// Should never fail.
+    fn increase_connection_counter(&mut self);
+
+    /// Returns a counter on the number of channel ids have been created thus far.
+    /// The value of this counter should increase only via method
+    /// `ExecutionContext::increase_channel_counter`.
+    fn channel_counter(&self) -> Result<u64, ContextError>;
+
+    /// Called upon channel identifier creation (Init or Try message processing).
+    /// Increases the counter which keeps track of how many channels have been created.
+    /// Should never fail.
+    fn increase_channel_counter(&mut self);
 
     /// Function required by ICS 03. Returns the list of all possible versions that the connection
     /// handshake protocol supports.
@@ -236,33 +261,8 @@ pub trait ReaderContext: Router {
             .map_err(ContextError::ConnectionError)
     }
 
-    /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
-    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
-
-    fn connection_channels(
-        &self,
-        cid: &ConnectionId,
-    ) -> Result<Vec<(PortId, ChannelId)>, ContextError>;
-
-    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
-        -> Result<Sequence, ContextError>;
-
-    fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath)
-        -> Result<Sequence, ContextError>;
-
-    fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, ContextError>;
-
-    fn get_packet_commitment(
-        &self,
-        commitment_path: &CommitmentPath,
-    ) -> Result<PacketCommitment, ContextError>;
-
-    fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, ContextError>;
-
-    fn get_packet_acknowledgement(
-        &self,
-        ack_path: &AckPath,
-    ) -> Result<AcknowledgementCommitment, ContextError>;
+    /// A hashing function for packet commitments
+    fn hash(&self, value: &[u8]) -> Vec<u8>;
 
     /// Compute the commitment for a packet.
     /// Note that the absence of `timeout_height` is treated as
@@ -293,27 +293,8 @@ pub trait ReaderContext: Router {
         self.hash(ack.as_ref()).into()
     }
 
-    /// A hashing function for packet commitments
-    fn hash(&self, value: &[u8]) -> Vec<u8>;
-
-    /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_time(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Timestamp, ContextError>;
-
-    /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_height(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ContextError>;
-
-    /// Returns a counter on the number of channel ids have been created thus far.
-    /// The value of this counter should increase only via method
-    /// `ExecutionContext::increase_channel_counter`.
-    fn channel_counter(&self) -> Result<u64, ContextError>;
+    /// Returns the prefix that the host chain uses in the KV store.
+    fn commitment_prefix(&self) -> CommitmentPrefix;
 
     /// Returns the maximum expected time per block
     fn max_expected_time_per_block(&self) -> Duration;
@@ -325,6 +306,69 @@ pub trait ReaderContext: Router {
     }
 }
 
+// ReaderContext provides methods that enable access to states that can be
+// retrieved from key-value store through the IBC path.
+pub trait ReaderContext: HostContext {
+    /// Returns the ClientState for the given identifier `client_id`.
+    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError>;
+
+    /// Retrieve the consensus state for the given client ID at the specified
+    /// height.
+    ///
+    /// Returns an error if no such state exists.
+    fn consensus_state(
+        &self,
+        client_cons_state_path: &ClientConsensusStatePath,
+    ) -> Result<Box<dyn ConsensusState>, ContextError>;
+
+    /// Search for the lowest consensus state higher than `height`.
+    fn next_consensus_state(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
+
+    /// Search for the highest consensus state lower than `height`.
+    fn prev_consensus_state(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
+
+    /// Returns the ConnectionEnd for the given identifier `conn_id`.
+    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError>;
+
+    /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
+    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
+
+    fn connection_channels(
+        &self,
+        cid: &ConnectionId,
+    ) -> Result<Vec<(PortId, ChannelId)>, ContextError>;
+
+    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
+        -> Result<Sequence, ContextError>;
+
+    fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath)
+        -> Result<Sequence, ContextError>;
+
+    fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, ContextError>;
+
+    fn get_packet_commitment(
+        &self,
+        commitment_path: &CommitmentPath,
+    ) -> Result<PacketCommitment, ContextError>;
+
+    fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, ContextError>;
+
+    fn get_packet_acknowledgement(
+        &self,
+        ack_path: &AckPath,
+    ) -> Result<AcknowledgementCommitment, ContextError>;
+}
+
+// KeeperContext provides methods that enable setting states in the key-value
+// store and can be performed via the IBC path.
 pub trait KeeperContext: ReaderContext {
     /// Called upon successful client creation
     fn store_client_type(
@@ -347,31 +391,6 @@ pub trait KeeperContext: ReaderContext {
         consensus_state: Box<dyn ConsensusState>,
     ) -> Result<(), ContextError>;
 
-    /// Called upon client creation.
-    /// Increases the counter which keeps track of how many clients have been created.
-    /// Should never fail.
-    fn increase_client_counter(&mut self);
-
-    /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified time as the time at which
-    /// this update (or header) was processed.
-    fn store_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), ContextError>;
-
-    /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified height as the height at
-    /// at which this update (or header) was processed.
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_height: Height,
-    ) -> Result<(), ContextError>;
-
     /// Stores the given connection_end at path
     fn store_connection(
         &mut self,
@@ -385,11 +404,6 @@ pub trait KeeperContext: ReaderContext {
         client_connection_path: &ClientConnectionPath,
         conn_id: ConnectionId,
     ) -> Result<(), ContextError>;
-
-    /// Called upon connection identifier creation (Init or Try process).
-    /// Increases the counter which keeps track of how many connections have been created.
-    /// Should never fail.
-    fn increase_connection_counter(&mut self);
 
     fn store_packet_commitment(
         &mut self,
@@ -440,15 +454,22 @@ pub trait KeeperContext: ReaderContext {
         seq_ack_path: &SeqAckPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
+}
 
-    /// Called upon channel identifier creation (Init or Try message processing).
-    /// Increases the counter which keeps track of how many channels have been created.
-    /// Should never fail.
-    fn increase_channel_counter(&mut self);
+/// Provides event logging facilities
+pub trait EventLogger {
+    /// Return the events emitted so far in the block
+    fn get_events(&self) -> Vec<IbcEvent>;
 
     /// Ibc events
     fn emit_ibc_event(&mut self, event: IbcEvent);
+}
 
-    /// Logging facility
+/// Provides message logging facilities
+pub trait MsgLogger {
+    /// Return the messages processed so far in the block
+    fn get_messages(&self) -> Vec<String>;
+
+    /// Logged messages
     fn log_message(&mut self, message: String);
 }

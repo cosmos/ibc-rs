@@ -175,6 +175,7 @@ mod tests {
     use core::str::FromStr;
     use test_log::test;
 
+    use crate::core::context::HostContext;
     use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
@@ -208,7 +209,7 @@ mod tests {
             State::Init,
             client_id.clone(),
             counterparty,
-            ReaderContext::get_compatible_versions(&ctx_default),
+            HostContext::get_compatible_versions(&ctx_default),
             ZERO_DURATION,
         );
 

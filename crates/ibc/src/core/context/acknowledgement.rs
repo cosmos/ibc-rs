@@ -114,8 +114,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rstest::*;
-
+    use crate::core::context::HostContext;
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
     use crate::core::ics03_connection::connection::State as ConnectionState;
     use crate::core::ics04_channel::channel::Counterparty;
@@ -138,6 +137,7 @@ mod tests {
         timestamp::ZERO_DURATION,
         Height,
     };
+    use rstest::*;
 
     struct Fixture {
         ctx: MockContext,

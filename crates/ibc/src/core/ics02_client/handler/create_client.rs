@@ -101,6 +101,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
+    use crate::core::context::HostContext;
     use crate::core::handler::{ExecutionHandler, ValidationHandler};
     use crate::core::ReaderContext;
     use crate::prelude::*;

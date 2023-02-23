@@ -148,6 +148,7 @@ mod tests {
     use rstest::*;
 
     use crate::applications::transfer::MODULE_ID_STR;
+    use crate::core::context::HostContext;
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
     use crate::core::ics03_connection::connection::State as ConnectionState;
     use crate::core::ics03_connection::version::get_compatible_versions;

@@ -1,3 +1,4 @@
+use crate::core::context::HostContext;
 use crate::core::handler::{ExecutionHandler, ValidationHandler};
 use crate::core::ics02_client::handler as client_handler;
 use crate::core::ics03_connection::handler as conn_handler;
@@ -137,7 +138,7 @@ impl TryFrom<Any> for MsgEnvelope {
 
 impl<Ctx> ValidationHandler<MsgEnvelope> for Ctx
 where
-    Ctx: ReaderContext,
+    Ctx: ReaderContext + HostContext,
 {
     fn validate(&self, msg: &MsgEnvelope) -> Result<(), ContextError> {
         match msg {

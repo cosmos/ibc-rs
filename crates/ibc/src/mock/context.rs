@@ -22,8 +22,8 @@ use tracing::debug;
 
 use crate::clients::ics07_tendermint::client_state::test_util::get_dummy_tendermint_client_state;
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use crate::core::context::ContextError;
-use crate::core::context::Router;
+use crate::core::context::{ContextError, HostContext, MsgLogger};
+use crate::core::context::{EventLogger, Router};
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
@@ -687,6 +687,213 @@ impl Router for MockContext {
     }
 }
 
+impl HostContext for MockContext {
+    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ContextError> {
+        if let Ok(client_state) = TmClientState::try_from(client_state.clone()) {
+            Ok(client_state.into_box())
+        } else if let Ok(client_state) = MockClientState::try_from(client_state.clone()) {
+            Ok(client_state.into_box())
+        } else {
+            Err(ClientError::UnknownClientStateType {
+                client_state_type: client_state.type_url,
+            })
+        }
+        .map_err(ContextError::ClientError)
+    }
+
+    fn host_height(&self) -> Result<Height, ContextError> {
+        Ok(self.latest_height())
+    }
+
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
+        Ok(self
+            .history
+            .last()
+            .expect("history cannot be empty")
+            .timestamp()
+            .add(self.block_time)
+            .unwrap())
+    }
+
+    fn host_consensus_state(
+        &self,
+        height: &Height,
+    ) -> Result<Box<dyn ConsensusState>, ContextError> {
+        match self.host_block(height) {
+            Some(block_ref) => Ok(block_ref.clone().into()),
+            None => Err(ClientError::MissingLocalConsensusState { height: *height }),
+        }
+        .map_err(ConnectionError::Client)
+        .map_err(ContextError::ConnectionError)
+    }
+
+    fn client_counter(&self) -> Result<u64, ContextError> {
+        Ok(self.ibc_store.lock().client_ids_counter)
+    }
+
+    fn validate_self_client(
+        &self,
+        client_state_of_host_on_counterparty: Any,
+    ) -> Result<(), ConnectionError> {
+        let mock_client_state = MockClientState::try_from(client_state_of_host_on_counterparty)
+            .map_err(|_| ConnectionError::InvalidClientState {
+                reason: "client must be a mock client".to_string(),
+            })?;
+
+        if mock_client_state.is_frozen() {
+            return Err(ConnectionError::InvalidClientState {
+                reason: "client is frozen".to_string(),
+            });
+        }
+
+        let self_chain_id = &self.host_chain_id;
+        let self_revision_number = self_chain_id.version();
+        if self_revision_number != mock_client_state.latest_height().revision_number() {
+            return Err(ConnectionError::InvalidClientState {
+                reason: format!(
+                    "client is not in the same revision as the chain. expected: {}, got: {}",
+                    self_revision_number,
+                    mock_client_state.latest_height().revision_number()
+                ),
+            });
+        }
+
+        let host_current_height = self.latest_height().increment();
+        if mock_client_state.latest_height() >= host_current_height {
+            return Err(ConnectionError::InvalidClientState {
+                reason: format!(
+                    "client has latest height {} greater than or equal to chain height {}",
+                    mock_client_state.latest_height(),
+                    host_current_height
+                ),
+            });
+        }
+
+        Ok(())
+    }
+
+    fn commitment_prefix(&self) -> CommitmentPrefix {
+        CommitmentPrefix::try_from(b"mock".to_vec()).unwrap()
+    }
+
+    fn connection_counter(&self) -> Result<u64, ContextError> {
+        Ok(self.ibc_store.lock().connection_ids_counter)
+    }
+
+    fn hash(&self, value: &[u8]) -> Vec<u8> {
+        sha2::Sha256::digest(value).to_vec()
+    }
+
+    fn client_update_time(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Timestamp, ContextError> {
+        match self
+            .ibc_store
+            .lock()
+            .client_processed_times
+            .get(&(client_id.clone(), *height))
+        {
+            Some(time) => Ok(*time),
+            None => Err(ChannelError::ProcessedTimeNotFound {
+                client_id: client_id.clone(),
+                height: *height,
+            }),
+        }
+        .map_err(ContextError::ChannelError)
+    }
+
+    fn client_update_height(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Height, ContextError> {
+        match self
+            .ibc_store
+            .lock()
+            .client_processed_heights
+            .get(&(client_id.clone(), *height))
+        {
+            Some(height) => Ok(*height),
+            None => Err(ChannelError::ProcessedHeightNotFound {
+                client_id: client_id.clone(),
+                height: *height,
+            }),
+        }
+        .map_err(ContextError::ChannelError)
+    }
+
+    fn channel_counter(&self) -> Result<u64, ContextError> {
+        Ok(self.ibc_store.lock().channel_ids_counter)
+    }
+
+    fn max_expected_time_per_block(&self) -> Duration {
+        self.block_time
+    }
+
+    fn increase_client_counter(&mut self) {
+        self.ibc_store.lock().client_ids_counter += 1
+    }
+
+    fn store_update_time(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        timestamp: Timestamp,
+    ) -> Result<(), ContextError> {
+        let _ = self
+            .ibc_store
+            .lock()
+            .client_processed_times
+            .insert((client_id, height), timestamp);
+        Ok(())
+    }
+
+    fn store_update_height(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        host_height: Height,
+    ) -> Result<(), ContextError> {
+        let _ = self
+            .ibc_store
+            .lock()
+            .client_processed_heights
+            .insert((client_id, height), host_height);
+        Ok(())
+    }
+
+    fn increase_connection_counter(&mut self) {
+        self.ibc_store.lock().connection_ids_counter += 1;
+    }
+
+    fn increase_channel_counter(&mut self) {
+        self.ibc_store.lock().channel_ids_counter += 1;
+    }
+}
+
+impl EventLogger for MockContext {
+    /// Return the events emitted so far in the block
+    fn get_events(&self) -> Vec<IbcEvent> {
+        self.events
+    }
+
+    fn emit_ibc_event(&mut self, event: IbcEvent) {
+        self.events.push(event);
+    }
+}
+
+impl MsgLogger for MockContext {
+    fn get_messages(&self) -> Vec<String> {
+        self.logs.clone()
+    }
+
+    fn log_message(&mut self, message: String) {
+        self.logs.push(message);
+    }
+}
+
 impl ReaderContext for MockContext {
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
         match self.ibc_store.lock().clients.get(client_id) {
@@ -701,19 +908,6 @@ impl ReaderContext for MockContext {
             None => Err(ClientError::ClientNotFound {
                 client_id: client_id.clone(),
             }),
-        }
-        .map_err(ContextError::ClientError)
-    }
-
-    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ContextError> {
-        if let Ok(client_state) = TmClientState::try_from(client_state.clone()) {
-            Ok(client_state.into_box())
-        } else if let Ok(client_state) = MockClientState::try_from(client_state.clone()) {
-            Ok(client_state.into_box())
-        } else {
-            Err(ClientError::UnknownClientStateType {
-                client_state_type: client_state.type_url,
-            })
         }
         .map_err(ContextError::ClientError)
     }
@@ -800,36 +994,6 @@ impl ReaderContext for MockContext {
         Ok(None)
     }
 
-    fn host_height(&self) -> Result<Height, ContextError> {
-        Ok(self.latest_height())
-    }
-
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
-        Ok(self
-            .history
-            .last()
-            .expect("history cannot be empty")
-            .timestamp()
-            .add(self.block_time)
-            .unwrap())
-    }
-
-    fn host_consensus_state(
-        &self,
-        height: &Height,
-    ) -> Result<Box<dyn ConsensusState>, ContextError> {
-        match self.host_block(height) {
-            Some(block_ref) => Ok(block_ref.clone().into()),
-            None => Err(ClientError::MissingLocalConsensusState { height: *height }),
-        }
-        .map_err(ConnectionError::Client)
-        .map_err(ContextError::ConnectionError)
-    }
-
-    fn client_counter(&self) -> Result<u64, ContextError> {
-        Ok(self.ibc_store.lock().client_ids_counter)
-    }
-
     fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, ContextError> {
         match self.ibc_store.lock().connections.get(cid) {
             Some(connection_end) => Ok(connection_end.clone()),
@@ -838,55 +1002,6 @@ impl ReaderContext for MockContext {
             }),
         }
         .map_err(ContextError::ConnectionError)
-    }
-
-    fn validate_self_client(
-        &self,
-        client_state_of_host_on_counterparty: Any,
-    ) -> Result<(), ConnectionError> {
-        let mock_client_state = MockClientState::try_from(client_state_of_host_on_counterparty)
-            .map_err(|_| ConnectionError::InvalidClientState {
-                reason: "client must be a mock client".to_string(),
-            })?;
-
-        if mock_client_state.is_frozen() {
-            return Err(ConnectionError::InvalidClientState {
-                reason: "client is frozen".to_string(),
-            });
-        }
-
-        let self_chain_id = &self.host_chain_id;
-        let self_revision_number = self_chain_id.version();
-        if self_revision_number != mock_client_state.latest_height().revision_number() {
-            return Err(ConnectionError::InvalidClientState {
-                reason: format!(
-                    "client is not in the same revision as the chain. expected: {}, got: {}",
-                    self_revision_number,
-                    mock_client_state.latest_height().revision_number()
-                ),
-            });
-        }
-
-        let host_current_height = self.latest_height().increment();
-        if mock_client_state.latest_height() >= host_current_height {
-            return Err(ConnectionError::InvalidClientState {
-                reason: format!(
-                    "client has latest height {} greater than or equal to chain height {}",
-                    mock_client_state.latest_height(),
-                    host_current_height
-                ),
-            });
-        }
-
-        Ok(())
-    }
-
-    fn commitment_prefix(&self) -> CommitmentPrefix {
-        CommitmentPrefix::try_from(b"mock".to_vec()).unwrap()
-    }
-
-    fn connection_counter(&self) -> Result<u64, ContextError> {
-        Ok(self.ibc_store.lock().connection_ids_counter)
     }
 
     fn channel_end(&self, chan_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
@@ -1048,58 +1163,6 @@ impl ReaderContext for MockContext {
         }
         .map_err(ContextError::PacketError)
     }
-
-    fn hash(&self, value: &[u8]) -> Vec<u8> {
-        sha2::Sha256::digest(value).to_vec()
-    }
-
-    fn client_update_time(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Timestamp, ContextError> {
-        match self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .get(&(client_id.clone(), *height))
-        {
-            Some(time) => Ok(*time),
-            None => Err(ChannelError::ProcessedTimeNotFound {
-                client_id: client_id.clone(),
-                height: *height,
-            }),
-        }
-        .map_err(ContextError::ChannelError)
-    }
-
-    fn client_update_height(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ContextError> {
-        match self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .get(&(client_id.clone(), *height))
-        {
-            Some(height) => Ok(*height),
-            None => Err(ChannelError::ProcessedHeightNotFound {
-                client_id: client_id.clone(),
-                height: *height,
-            }),
-        }
-        .map_err(ContextError::ChannelError)
-    }
-
-    fn channel_counter(&self) -> Result<u64, ContextError> {
-        Ok(self.ibc_store.lock().channel_ids_counter)
-    }
-
-    fn max_expected_time_per_block(&self) -> Duration {
-        self.block_time
-    }
 }
 
 impl KeeperContext for MockContext {
@@ -1170,38 +1233,6 @@ impl KeeperContext for MockContext {
         Ok(())
     }
 
-    fn increase_client_counter(&mut self) {
-        self.ibc_store.lock().client_ids_counter += 1
-    }
-
-    fn store_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .insert((client_id, height), timestamp);
-        Ok(())
-    }
-
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_height: Height,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .insert((client_id, height), host_height);
-        Ok(())
-    }
-
     fn store_connection(
         &mut self,
         connection_path: &ConnectionPath,
@@ -1226,10 +1257,6 @@ impl KeeperContext for MockContext {
             .client_connections
             .insert(client_id, conn_id);
         Ok(())
-    }
-
-    fn increase_connection_counter(&mut self) {
-        self.ibc_store.lock().connection_ids_counter += 1;
     }
 
     fn store_packet_commitment(
@@ -1377,18 +1404,6 @@ impl KeeperContext for MockContext {
             .or_default()
             .insert(channel_id, seq);
         Ok(())
-    }
-
-    fn increase_channel_counter(&mut self) {
-        self.ibc_store.lock().channel_ids_counter += 1;
-    }
-
-    fn emit_ibc_event(&mut self, event: IbcEvent) {
-        self.events.push(event);
-    }
-
-    fn log_message(&mut self, message: String) {
-        self.logs.push(message);
     }
 }
 

@@ -125,10 +125,10 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::core::context::HostContext;
     use crate::core::ics04_channel::handler::acknowledgement::validate;
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::PortId;
-    use crate::core::ReaderContext;
     use crate::prelude::*;
     use rstest::*;
     use test_log::test;

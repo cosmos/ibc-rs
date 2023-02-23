@@ -97,10 +97,10 @@ where
 mod tests {
     use crate::applications::transfer::MODULE_ID_STR;
     use crate::core::context::chan_close_confirm::chan_close_confirm_execute;
+    use crate::core::context::HostContext;
     use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
     use crate::core::ics26_routing::context::ModuleId;
-    use crate::core::ReaderContext;
     use crate::events::IbcEvent;
     use crate::prelude::*;
 

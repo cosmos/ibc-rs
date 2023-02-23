@@ -97,9 +97,9 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::core::context::HostContext;
     use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
-    use crate::core::ReaderContext;
     use crate::prelude::*;
 
     use crate::core::ics03_connection::connection::ConnectionEnd;
