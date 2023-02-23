@@ -5,11 +5,11 @@ use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
 use crate::core::ics24_host::path::ChannelEndPath;
 
-use crate::core::{ContextError, ValidationContext};
+use crate::core::{ContextError, ReaderContext};
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelCloseInit) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
@@ -48,7 +48,7 @@ where
 mod tests {
     use crate::core::ics04_channel::msgs::chan_close_init::test_util::get_dummy_raw_msg_chan_close_init;
     use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
-    use crate::core::ValidationContext;
+    use crate::core::ReaderContext;
     use crate::prelude::*;
 
     use crate::core::ics03_connection::connection::ConnectionEnd;

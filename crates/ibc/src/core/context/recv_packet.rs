@@ -15,14 +15,14 @@ use crate::{
     prelude::*,
 };
 
-use super::{ContextError, ExecutionContext, ValidationContext};
+use super::{ContextError, KeeperContext, ReaderContext};
 
 pub(super) fn recv_packet_validate<ValCtx>(
     ctx_b: &ValCtx,
     msg: MsgRecvPacket,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: ReaderContext,
 {
     // Note: this contains the validation for `write_acknowledgement` as well.
     recv_packet::validate(ctx_b, &msg)
@@ -36,7 +36,7 @@ pub(super) fn recv_packet_execute<ExecCtx>(
     msg: MsgRecvPacket,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: KeeperContext,
 {
     let chan_end_path_on_b = ChannelEndPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
     let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;

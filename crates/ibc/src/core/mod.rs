@@ -40,8 +40,8 @@ pub use handler::execute;
 
 pub use handler::validate;
 
-pub use context::ExecutionContext;
+pub use context::KeeperContext;
 
-pub use context::ValidationContext;
+pub use context::ReaderContext;
 
 pub use context::ContextError;

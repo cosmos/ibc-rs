@@ -2,6 +2,7 @@
 
 use tracing::debug;
 
+use crate::core::handler::{ExecutionHandler, ValidationHandler};
 use crate::prelude::*;
 
 use crate::core::ics02_client::client_state::UpdatedState;
@@ -14,131 +15,129 @@ use crate::core::context::ContextError;
 
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 
-use crate::core::{ExecutionContext, ValidationContext};
+use crate::core::{KeeperContext, ReaderContext};
 
-pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
+// Blanket implementation of `MsgUpdateClient` validation handler for all contexts implementing `ValidationContext`.
+impl<Ctx> ValidationHandler<MsgUpdateClient> for Ctx
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
-    let MsgUpdateClient {
-        client_id,
-        header,
-        signer: _,
-    } = msg;
+    fn validate(&self, msg: &MsgUpdateClient) -> Result<(), ContextError>
+    where
+        Ctx: ReaderContext,
+    {
+        // Read client type from the host chain store. The client should already exist.
+        // Read client state from the host chain store.
+        let client_state = self.client_state(&msg.client_id)?;
 
-    // Read client type from the host chain store. The client should already exist.
-    // Read client state from the host chain store.
-    let client_state = ctx.client_state(&client_id)?;
-
-    if client_state.is_frozen() {
-        return Err(ClientError::ClientFrozen { client_id }.into());
-    }
-
-    // Read consensus state from the host chain store.
-    let latest_client_cons_state_path =
-        ClientConsensusStatePath::new(&client_id, &client_state.latest_height());
-    let latest_consensus_state = ctx
-        .consensus_state(&latest_client_cons_state_path)
-        .map_err(|_| ClientError::ConsensusStateNotFound {
-            client_id: client_id.clone(),
-            height: client_state.latest_height(),
-        })?;
-
-    debug!("latest consensus state: {:?}", latest_consensus_state);
-
-    let now = ctx.host_timestamp()?;
-    let duration = now
-        .duration_since(&latest_consensus_state.timestamp())
-        .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
-            time1: latest_consensus_state.timestamp(),
-            time2: now,
-        })?;
-
-    if client_state.expired(duration) {
-        return Err(ClientError::HeaderNotWithinTrustPeriod {
-            latest_time: latest_consensus_state.timestamp(),
-            update_time: now,
+        if client_state.is_frozen() {
+            return Err(ClientError::ClientFrozen {
+                client_id: msg.client_id.clone(),
+            }
+            .into());
         }
-        .into());
+
+        // Read consensus state from the host chain store.
+        let latest_client_cons_state_path =
+            ClientConsensusStatePath::new(&msg.client_id, &client_state.latest_height());
+        let latest_consensus_state = self
+            .consensus_state(&latest_client_cons_state_path)
+            .map_err(|_| ClientError::ConsensusStateNotFound {
+                client_id: msg.client_id.clone(),
+                height: client_state.latest_height(),
+            })?;
+
+        debug!("latest consensus state: {:?}", latest_consensus_state);
+
+        let now = self.host_timestamp()?;
+        let duration = now
+            .duration_since(&latest_consensus_state.timestamp())
+            .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
+                time1: latest_consensus_state.timestamp(),
+                time2: now,
+            })?;
+
+        if client_state.expired(duration) {
+            return Err(ClientError::HeaderNotWithinTrustPeriod {
+                latest_time: latest_consensus_state.timestamp(),
+                update_time: now,
+            }
+            .into());
+        }
+
+        let _ = client_state
+            .check_header_and_update_state(self, msg.client_id.clone(), msg.header.clone())
+            .map_err(|e| ClientError::HeaderVerificationFailure {
+                reason: e.to_string(),
+            })?;
+
+        Ok(())
     }
-
-    let _ = client_state
-        .check_header_and_update_state(ctx, client_id.clone(), header)
-        .map_err(|e| ClientError::HeaderVerificationFailure {
-            reason: e.to_string(),
-        })?;
-
-    Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
+impl<Ctx> ExecutionHandler<MsgUpdateClient> for Ctx
 where
-    Ctx: ExecutionContext,
+    Ctx: KeeperContext,
 {
-    let MsgUpdateClient {
-        client_id,
-        header,
-        signer: _,
-    } = msg;
-
-    // Read client type from the host chain store. The client should already exist.
-    // Read client state from the host chain store.
-    let client_state = ctx.client_state(&client_id)?;
-
-    let UpdatedState {
-        client_state,
-        consensus_state,
-    } = client_state
-        .check_header_and_update_state(ctx, client_id.clone(), header.clone())
-        .map_err(|e| ClientError::HeaderVerificationFailure {
-            reason: e.to_string(),
-        })?;
-
-    ctx.store_client_state(ClientStatePath::new(&client_id), client_state.clone())?;
-    ctx.store_consensus_state(
-        ClientConsensusStatePath::new(&client_id, &client_state.latest_height()),
-        consensus_state,
-    )?;
-    ctx.store_update_time(
-        client_id.clone(),
-        client_state.latest_height(),
-        ctx.host_timestamp()?,
-    )?;
-    ctx.store_update_height(
-        client_id.clone(),
-        client_state.latest_height(),
-        ctx.host_height()?,
-    )?;
-
+    fn execute(&mut self, msg: &MsgUpdateClient) -> Result<(), ContextError>
+    where
+        Ctx: KeeperContext,
     {
-        let consensus_height = client_state.latest_height();
+        // Read client type from the host chain store. The client should already exist.
+        // Read client state from the host chain store.
+        let client_state = self.client_state(&msg.client_id)?;
 
-        ctx.emit_ibc_event(IbcEvent::UpdateClient(UpdateClient::new(
-            client_id,
-            client_state.client_type(),
-            consensus_height,
-            vec![consensus_height],
-            header,
-        )));
+        let UpdatedState {
+            client_state,
+            consensus_state,
+        } = client_state
+            .check_header_and_update_state(self, msg.client_id.clone(), msg.header.clone())
+            .map_err(|e| ClientError::HeaderVerificationFailure {
+                reason: e.to_string(),
+            })?;
+
+        self.store_client_state(ClientStatePath::new(&msg.client_id), client_state.clone())?;
+        self.store_consensus_state(
+            ClientConsensusStatePath::new(&msg.client_id, &client_state.latest_height()),
+            consensus_state,
+        )?;
+        self.store_update_time(
+            msg.client_id.clone(),
+            client_state.latest_height(),
+            self.host_timestamp()?,
+        )?;
+        self.store_update_height(
+            msg.client_id.clone(),
+            client_state.latest_height(),
+            self.host_height()?,
+        )?;
+
+        {
+            let consensus_height = client_state.latest_height();
+
+            self.emit_ibc_event(IbcEvent::UpdateClient(UpdateClient::new(
+                msg.client_id.clone(),
+                client_state.client_type(),
+                consensus_height,
+                vec![consensus_height],
+                msg.header.clone(),
+            )));
+        }
+
+        Ok(())
     }
-
-    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use core::str::FromStr;
-    use ibc_proto::google::protobuf::Any;
-    use test_log::test;
-
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
+    use crate::core::handler::{ExecutionHandler, ValidationHandler};
     use crate::core::ics02_client::client_state::ClientState;
     use crate::core::ics02_client::consensus_state::downcast_consensus_state;
-    use crate::core::ics02_client::handler::update_client::{execute, validate};
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
-    use crate::core::ValidationContext;
+    use crate::core::ReaderContext;
     use crate::events::IbcEvent;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::client_state::MockClientState;
@@ -149,6 +148,9 @@ mod tests {
     use crate::timestamp::Timestamp;
     use crate::Height;
     use crate::{downcast, prelude::*};
+    use core::str::FromStr;
+    use ibc_proto::google::protobuf::Any;
+    use test_log::test;
 
     #[test]
     fn test_update_client_ok() {
@@ -165,11 +167,11 @@ mod tests {
             signer,
         };
 
-        let res = validate(&ctx, msg.clone());
+        let res = ctx.validate(&msg);
 
         assert!(res.is_ok(), "validation happy path");
 
-        let res = execute(&mut ctx, msg.clone());
+        let res = ctx.execute(&msg);
         assert!(res.is_ok(), "execution happy path");
 
         assert_eq!(
@@ -183,7 +185,7 @@ mod tests {
         let client_id = ClientId::from_str("mockclient1").unwrap();
         let signer = get_dummy_account_id();
 
-        let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
+        let mut ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
 
         let msg = MsgUpdateClient {
             client_id: ClientId::from_str("nonexistingclient").unwrap(),
@@ -191,7 +193,7 @@ mod tests {
             signer,
         };
 
-        let res = validate(&ctx, msg);
+        let res = ctx.execute(&msg);
 
         assert!(res.is_err());
     }
@@ -231,10 +233,10 @@ mod tests {
             signer,
         };
 
-        let res = validate(&ctx, msg.clone());
+        let res = ctx.validate(&msg);
         assert!(res.is_ok());
 
-        let res = execute(&mut ctx, msg.clone());
+        let res = ctx.execute(&msg);
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
@@ -278,10 +280,10 @@ mod tests {
             signer,
         };
 
-        let res = validate(&ctx, msg.clone());
+        let res = ctx.validate(&msg);
         assert!(res.is_ok());
 
-        let res = execute(&mut ctx, msg.clone());
+        let res = ctx.execute(&msg);
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
@@ -339,10 +341,10 @@ mod tests {
             signer,
         };
 
-        let res = validate(&ctx, msg.clone());
+        let res = ctx.validate(&msg);
         assert!(res.is_ok());
 
-        let res = execute(&mut ctx, msg.clone());
+        let res = ctx.execute(&msg);
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
@@ -390,7 +392,7 @@ mod tests {
             signer,
         };
 
-        let res = validate(&ctx, msg);
+        let res = ctx.validate(&msg);
         assert!(res.is_err());
     }
 
@@ -410,7 +412,7 @@ mod tests {
             signer,
         };
 
-        let res = execute(&mut ctx, msg);
+        let res = ctx.execute(&msg);
         assert!(res.is_ok());
 
         let update_client_event =

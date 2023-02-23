@@ -17,7 +17,7 @@ use crate::{
     events::IbcEvent,
 };
 
-use super::{ContextError, ExecutionContext, ValidationContext};
+use super::{ContextError, KeeperContext, ReaderContext};
 
 pub(super) enum TimeoutMsgType {
     Timeout(MsgTimeout),
@@ -30,7 +30,7 @@ pub(super) fn timeout_packet_validate<ValCtx>(
     timeout_msg_type: TimeoutMsgType,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: ReaderContext,
 {
     match &timeout_msg_type {
         TimeoutMsgType::Timeout(msg) => timeout::validate(ctx_a, msg),
@@ -57,7 +57,7 @@ pub(super) fn timeout_packet_execute<ExecCtx>(
     timeout_msg_type: TimeoutMsgType,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: KeeperContext,
 {
     let (packet, signer) = match timeout_msg_type {
         TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),

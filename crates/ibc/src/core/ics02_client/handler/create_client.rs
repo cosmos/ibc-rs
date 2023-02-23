@@ -1,5 +1,6 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
+use crate::core::handler::{ExecutionHandler, ValidationHandler};
 use crate::prelude::*;
 
 use crate::core::context::ContextError;
@@ -10,9 +11,9 @@ use crate::core::ics24_host::path::ClientStatePath;
 
 use crate::core::ics24_host::path::ClientTypePath;
 
-use crate::core::ExecutionContext;
+use crate::core::KeeperContext;
 
-use crate::core::ValidationContext;
+use crate::core::ReaderContext;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::CreateClient;
@@ -20,96 +21,88 @@ use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::events::IbcEvent;
 
-pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
+impl<Ctx> ValidationHandler<MsgCreateClient> for Ctx
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
-    let MsgCreateClient {
-        client_state,
-        consensus_state: _,
-        signer: _,
-    } = msg;
+    fn validate(&self, msg: &MsgCreateClient) -> Result<(), ContextError> {
+        // Construct this client's identifier
+        let id_counter = self.client_counter()?;
 
-    // Construct this client's identifier
-    let id_counter = ctx.client_counter()?;
+        let client_state = self.decode_client_state(msg.client_state.clone())?;
 
-    let client_state = ctx.decode_client_state(client_state)?;
+        let client_type = client_state.client_type();
 
-    let client_type = client_state.client_type();
+        let _client_id = ClientId::new(client_type, id_counter).map_err(|e| {
+            ClientError::ClientIdentifierConstructor {
+                client_type: client_state.client_type(),
+                counter: id_counter,
+                validation_error: e,
+            }
+        })?;
 
-    let _client_id = ClientId::new(client_type, id_counter).map_err(|e| {
-        ClientError::ClientIdentifierConstructor {
-            client_type: client_state.client_type(),
-            counter: id_counter,
-            validation_error: e,
-        }
-    })?;
-
-    Ok(())
+        Ok(())
+    }
 }
 
-pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
+impl<Ctx> ExecutionHandler<MsgCreateClient> for Ctx
 where
-    Ctx: ExecutionContext,
+    Ctx: KeeperContext,
 {
-    let MsgCreateClient {
-        client_state,
-        consensus_state,
-        signer: _,
-    } = msg;
+    fn execute(&mut self, msg: &MsgCreateClient) -> Result<(), ContextError> {
+        // Construct this client's identifier
+        let id_counter = self.client_counter()?;
 
-    // Construct this client's identifier
-    let id_counter = ctx.client_counter()?;
+        let client_state = self.decode_client_state(msg.client_state.clone())?;
 
-    let client_state = ctx.decode_client_state(client_state)?;
+        let client_type = client_state.client_type();
 
-    let client_type = client_state.client_type();
+        let client_id = ClientId::new(client_type.clone(), id_counter).map_err(|e| {
+            ContextError::from(ClientError::ClientIdentifierConstructor {
+                client_type: client_state.client_type(),
+                counter: id_counter,
+                validation_error: e,
+            })
+        })?;
+        let consensus_state = client_state.initialise(msg.consensus_state.clone())?;
 
-    let client_id = ClientId::new(client_type.clone(), id_counter).map_err(|e| {
-        ContextError::from(ClientError::ClientIdentifierConstructor {
-            client_type: client_state.client_type(),
-            counter: id_counter,
-            validation_error: e,
-        })
-    })?;
-    let consensus_state = client_state.initialise(consensus_state)?;
+        self.store_client_type(ClientTypePath::new(&client_id), client_type.clone())?;
+        self.store_client_state(ClientStatePath::new(&client_id), client_state.clone())?;
+        self.store_consensus_state(
+            ClientConsensusStatePath::new(&client_id, &client_state.latest_height()),
+            consensus_state,
+        )?;
+        self.increase_client_counter();
+        self.store_update_time(
+            client_id.clone(),
+            client_state.latest_height(),
+            self.host_timestamp()?,
+        )?;
+        self.store_update_height(
+            client_id.clone(),
+            client_state.latest_height(),
+            self.host_height()?,
+        )?;
 
-    ctx.store_client_type(ClientTypePath::new(&client_id), client_type.clone())?;
-    ctx.store_client_state(ClientStatePath::new(&client_id), client_state.clone())?;
-    ctx.store_consensus_state(
-        ClientConsensusStatePath::new(&client_id, &client_state.latest_height()),
-        consensus_state,
-    )?;
-    ctx.increase_client_counter();
-    ctx.store_update_time(
-        client_id.clone(),
-        client_state.latest_height(),
-        ctx.host_timestamp()?,
-    )?;
-    ctx.store_update_height(
-        client_id.clone(),
-        client_state.latest_height(),
-        ctx.host_height()?,
-    )?;
+        self.emit_ibc_event(IbcEvent::CreateClient(CreateClient::new(
+            client_id.clone(),
+            client_type,
+            client_state.latest_height(),
+        )));
 
-    ctx.emit_ibc_event(IbcEvent::CreateClient(CreateClient::new(
-        client_id.clone(),
-        client_type,
-        client_state.latest_height(),
-    )));
+        self.log_message(format!(
+            "success: generated new client identifier: {client_id}"
+        ));
 
-    ctx.log_message(format!(
-        "success: generated new client identifier: {client_id}"
-    ));
-
-    Ok(())
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
-    use crate::core::ics02_client::handler::create_client::{execute, validate};
-    use crate::core::ValidationContext;
+    use crate::core::handler::{ExecutionHandler, ValidationHandler};
+    use crate::core::ReaderContext;
     use crate::prelude::*;
 
     use core::time::Duration;
@@ -149,12 +142,11 @@ mod tests {
             let id_counter = ctx.client_counter().unwrap();
             ClientId::new(client_type.clone(), id_counter).unwrap()
         };
-
-        let res = validate(&ctx, msg.clone());
+        let res = ctx.validate(&msg);
 
         assert!(res.is_ok(), "validation happy path");
 
-        let res = execute(&mut ctx, msg.clone());
+        let res = ctx.execute(&msg);
 
         assert!(res.is_ok(), "execution happy path");
 
@@ -202,10 +194,10 @@ mod tests {
             signer,
         );
 
-        let res = validate(&ctx, msg.clone());
+        let res = ctx.validate(&msg);
         assert!(res.is_ok(), "tendermint client validation happy path");
 
-        let res = execute(&mut ctx, msg.clone());
+        let res = ctx.execute(&msg);
         assert!(res.is_ok(), "tendermint client execution happy path");
 
         let expected_client_state = ctx.decode_client_state(msg.client_state).unwrap();

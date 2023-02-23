@@ -18,7 +18,7 @@ use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics24_host::path::{CommitmentPath, SeqSendPath};
 use crate::core::ics26_routing::context::ModuleOutputBuilder;
-use crate::core::{ContextError, ExecutionContext};
+use crate::core::{ContextError, KeeperContext};
 use crate::prelude::*;
 use crate::signer::Signer;
 
@@ -83,7 +83,7 @@ pub trait TokenTransferReader: SendPacketReader {
 
 impl<T> TokenTransferKeeper for T
 where
-    T: ExecutionContext + BankKeeper,
+    T: KeeperContext + BankKeeper,
 {
     fn store_packet_commitment(
         &mut self,

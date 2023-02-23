@@ -39,7 +39,7 @@ use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{Module, ModuleId};
 use crate::core::ics26_routing::msgs::MsgEnvelope;
-use crate::core::{dispatch, ExecutionContext, ValidationContext};
+use crate::core::{dispatch, KeeperContext, ReaderContext};
 use crate::events::IbcEvent;
 use crate::mock::client_state::{
     client_type as mock_client_type, MockClientRecord, MockClientState,
@@ -516,7 +516,7 @@ impl MockContext {
     }
 
     /// Validates this context. Should be called after the context is mutated by a test.
-    pub fn validate(&self) -> Result<(), String> {
+    pub fn validate_ctx(&self) -> Result<(), String> {
         // Check that the number of entries is not higher than window size.
         if self.history.len() > self.max_history_size {
             return Err("too many entries".to_string());
@@ -657,7 +657,7 @@ impl RelayerContext for MockContext {
 
     fn query_client_full_state(&self, client_id: &ClientId) -> Option<Box<dyn ClientState>> {
         // Forward call to Ics2.
-        ValidationContext::client_state(self, client_id).ok()
+        ReaderContext::client_state(self, client_id).ok()
     }
 
     fn query_latest_header(&self) -> Option<Box<dyn Header>> {
@@ -687,7 +687,7 @@ impl Router for MockContext {
     }
 }
 
-impl ValidationContext for MockContext {
+impl ReaderContext for MockContext {
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
         match self.ibc_store.lock().clients.get(client_id) {
             Some(client_record) => {
@@ -1102,7 +1102,7 @@ impl ValidationContext for MockContext {
     }
 }
 
-impl ExecutionContext for MockContext {
+impl KeeperContext for MockContext {
     fn store_client_type(
         &mut self,
         client_type_path: ClientTypePath,
@@ -1518,7 +1518,7 @@ mod tests {
         for mut test in tests {
             // All tests should yield a valid context after initialization.
             assert!(
-                test.ctx.validate().is_ok(),
+                test.ctx.validate_ctx().is_ok(),
                 "failed in test {} while validating context {:?}",
                 test.name,
                 test.ctx
@@ -1529,7 +1529,7 @@ mod tests {
             // After advancing the chain's height, the context should still be valid.
             test.ctx.advance_host_chain_height();
             assert!(
-                test.ctx.validate().is_ok(),
+                test.ctx.validate_ctx().is_ok(),
                 "failed in test {} while validating context {:?}",
                 test.name,
                 test.ctx

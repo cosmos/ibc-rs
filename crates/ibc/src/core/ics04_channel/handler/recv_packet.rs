@@ -8,11 +8,11 @@ use crate::core::ics24_host::path::{
 };
 use crate::timestamp::Expiry;
 
-use crate::core::{ContextError, ValidationContext};
+use crate::core::{ContextError, ReaderContext};
 
 pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     let chan_end_path_on_b = ChannelEndPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
     let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
@@ -147,7 +147,7 @@ where
 
 fn validate_write_acknowledgement<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     let packet = msg.packet.clone();
     let ack_path_on_b = AckPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);

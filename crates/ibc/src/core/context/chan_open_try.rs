@@ -10,15 +10,15 @@ use crate::core::ics26_routing::context::ModuleId;
 
 use crate::events::IbcEvent;
 
-use super::{ContextError, ExecutionContext, ValidationContext};
+use super::{ContextError, KeeperContext, ReaderContext};
 
-pub(super) fn chan_open_try_validate<ValCtx>(
+pub(crate) fn chan_open_try_validate<ValCtx>(
     ctx_b: &ValCtx,
     module_id: ModuleId,
     msg: MsgChannelOpenTry,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: ReaderContext,
 {
     chan_open_try::validate(ctx_b, &msg)?;
     let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
@@ -38,13 +38,13 @@ where
     Ok(())
 }
 
-pub(super) fn chan_open_try_execute<ExecCtx>(
+pub(crate) fn chan_open_try_execute<ExecCtx>(
     ctx_b: &mut ExecCtx,
     module_id: ModuleId,
     msg: MsgChannelOpenTry,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: KeeperContext,
 {
     let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
     let module = ctx_b

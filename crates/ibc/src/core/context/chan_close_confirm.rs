@@ -9,7 +9,7 @@ use crate::core::ics26_routing::context::ModuleId;
 
 use crate::events::IbcEvent;
 
-use super::{ContextError, ExecutionContext, ValidationContext};
+use super::{ContextError, KeeperContext, ReaderContext};
 
 pub(super) fn chan_close_confirm_validate<ValCtx>(
     ctx_b: &ValCtx,
@@ -17,7 +17,7 @@ pub(super) fn chan_close_confirm_validate<ValCtx>(
     msg: MsgChannelCloseConfirm,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: ReaderContext,
 {
     chan_close_confirm::validate(ctx_b, &msg)?;
 
@@ -35,7 +35,7 @@ pub(super) fn chan_close_confirm_execute<ExecCtx>(
     msg: MsgChannelCloseConfirm,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: KeeperContext,
 {
     let module = ctx_b
         .get_route_mut(&module_id)
@@ -100,7 +100,7 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
     use crate::core::ics26_routing::context::ModuleId;
-    use crate::core::ValidationContext;
+    use crate::core::ReaderContext;
     use crate::events::IbcEvent;
     use crate::prelude::*;
 

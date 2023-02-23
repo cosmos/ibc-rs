@@ -13,11 +13,11 @@ use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ConnectionPath};
 
-use crate::core::{ExecutionContext, ValidationContext};
+use crate::core::{KeeperContext, ReaderContext};
 
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     let vars = LocalVars::new(ctx_b, msg)?;
     validate_impl(ctx_b, msg, &vars)
@@ -29,7 +29,7 @@ fn validate_impl<Ctx>(
     vars: &LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     let conn_end_on_b = vars.conn_end_on_b();
     if !conn_end_on_b.state_matches(&State::TryOpen) {
@@ -94,7 +94,7 @@ pub(crate) fn execute<Ctx>(
     msg: &MsgConnectionOpenConfirm,
 ) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    Ctx: KeeperContext,
 {
     let vars = LocalVars::new(ctx_b, msg)?;
     execute_impl(ctx_b, msg, vars)
@@ -106,7 +106,7 @@ fn execute_impl<Ctx>(
     vars: LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    Ctx: KeeperContext,
 {
     let client_id_on_a = vars.client_id_on_a();
     let client_id_on_b = vars.client_id_on_b();
@@ -141,7 +141,7 @@ struct LocalVars {
 impl LocalVars {
     fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<Self, ContextError>
     where
-        Ctx: ValidationContext,
+        Ctx: ReaderContext,
     {
         Ok(Self {
             conn_end_on_b: ctx_b.connection_end(&msg.conn_id_on_b)?,
@@ -185,7 +185,7 @@ mod tests {
     use crate::timestamp::ZERO_DURATION;
     use crate::Height;
 
-    use crate::core::ValidationContext;
+    use crate::core::ReaderContext;
 
     enum Ctx {
         Default,
@@ -208,7 +208,7 @@ mod tests {
             State::Init,
             client_id.clone(),
             counterparty,
-            ValidationContext::get_compatible_versions(&ctx_default),
+            ReaderContext::get_compatible_versions(&ctx_default),
             ZERO_DURATION,
         );
 
@@ -259,7 +259,7 @@ mod tests {
                     IbcEvent::OpenConfirmConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = <MockContext as ValidationContext>::connection_end(
+                let conn_end = <MockContext as ReaderContext>::connection_end(
                     &fxt.ctx,
                     conn_open_try_event.connection_id(),
                 )

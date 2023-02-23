@@ -7,11 +7,11 @@ use crate::core::ics24_host::path::{
 };
 use crate::prelude::*;
 
-use crate::core::{ContextError, ValidationContext};
+use crate::core::{ContextError, ReaderContext};
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     let packet = &msg.packet;
     let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
@@ -163,7 +163,7 @@ where
 mod tests {
     use crate::core::ics04_channel::commitment::PacketCommitment;
     use crate::core::ics04_channel::handler::timeout_on_close::validate;
-    use crate::core::ValidationContext;
+    use crate::core::ReaderContext;
     use crate::mock::context::MockContext;
     use crate::prelude::*;
     use crate::Height;

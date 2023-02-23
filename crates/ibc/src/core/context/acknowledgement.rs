@@ -12,7 +12,7 @@ use crate::{
     events::IbcEvent,
 };
 
-use super::{ContextError, ExecutionContext, ValidationContext};
+use super::{ContextError, KeeperContext, ReaderContext};
 
 pub(super) fn acknowledgement_packet_validate<ValCtx>(
     ctx_a: &ValCtx,
@@ -20,7 +20,7 @@ pub(super) fn acknowledgement_packet_validate<ValCtx>(
     msg: MsgAcknowledgement,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: ReaderContext,
 {
     acknowledgement::validate(ctx_a, &msg)?;
 
@@ -39,7 +39,7 @@ pub(super) fn acknowledgement_packet_execute<ExecCtx>(
     msg: MsgAcknowledgement,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: KeeperContext,
 {
     let chan_end_path_on_a = ChannelEndPath::new(&msg.packet.port_on_a, &msg.packet.chan_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;

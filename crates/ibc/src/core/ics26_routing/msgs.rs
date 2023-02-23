@@ -1,3 +1,7 @@
+use crate::core::handler::{ExecutionHandler, ValidationHandler};
+use crate::core::ics02_client::handler as client_handler;
+use crate::core::ics03_connection::handler as conn_handler;
+use crate::core::{ContextError, KeeperContext, ReaderContext};
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
@@ -127,6 +131,98 @@ impl TryFrom<Any> for MsgEnvelope {
             _ => Err(RouterError::UnknownMessageTypeUrl {
                 url: any_msg.type_url,
             }),
+        }
+    }
+}
+
+impl<Ctx> ValidationHandler<MsgEnvelope> for Ctx
+where
+    Ctx: ReaderContext,
+{
+    fn validate(&self, msg: &MsgEnvelope) -> Result<(), ContextError> {
+        match msg {
+            MsgEnvelope::Client(msg) => match msg {
+                ClientMsg::CreateClient(msg) => self.validate(msg),
+                ClientMsg::UpdateClient(msg) => self.validate(msg),
+                ClientMsg::Misbehaviour(_msg) => todo!(),
+                ClientMsg::UpgradeClient(_msg) => todo!(),
+            },
+            MsgEnvelope::Connection(msg) => match msg {
+                ConnectionMsg::OpenInit(_msg) => todo!(),
+                ConnectionMsg::OpenTry(_msg) => todo!(),
+                ConnectionMsg::OpenAck(_msg) => todo!(),
+                ConnectionMsg::OpenConfirm(ref _msg) => todo!(),
+            },
+            MsgEnvelope::Channel(msg) => match msg {
+                ChannelMsg::OpenInit(msg) => self.validate(msg),
+                ChannelMsg::OpenTry(_msg) => todo!(),
+                ChannelMsg::OpenAck(_msg) => todo!(),
+                ChannelMsg::OpenConfirm(_msg) => todo!(),
+                ChannelMsg::CloseInit(_msg) => todo!(),
+                ChannelMsg::CloseConfirm(_msg) => todo!(),
+            },
+            MsgEnvelope::Packet(msg) => match msg {
+                PacketMsg::Recv(_msg) => todo!(),
+                PacketMsg::Ack(_msg) => todo!(),
+                PacketMsg::Timeout(_msg) => {
+                    todo!()
+                }
+                PacketMsg::TimeoutOnClose(_msg) => todo!(),
+            },
+        }
+    }
+}
+
+impl<Ctx> ExecutionHandler<MsgEnvelope> for Ctx
+where
+    Ctx: KeeperContext,
+{
+    fn execute(&mut self, msg: &MsgEnvelope) -> Result<(), ContextError> {
+        match msg {
+            MsgEnvelope::Client(msg) => match msg {
+                ClientMsg::CreateClient(msg) => self.execute(msg),
+                ClientMsg::UpdateClient(msg) => self.execute(msg),
+                ClientMsg::Misbehaviour(msg) => {
+                    client_handler::misbehaviour::execute(self, msg.clone())
+                }
+                ClientMsg::UpgradeClient(msg) => {
+                    client_handler::upgrade_client::execute(self, msg.clone())
+                }
+            },
+            MsgEnvelope::Connection(msg) => match msg {
+                ConnectionMsg::OpenInit(msg) => {
+                    conn_handler::conn_open_init::execute(self, msg.clone())
+                }
+                ConnectionMsg::OpenTry(msg) => {
+                    conn_handler::conn_open_try::execute(self, msg.clone())
+                }
+                ConnectionMsg::OpenAck(msg) => {
+                    conn_handler::conn_open_ack::execute(self, msg.clone())
+                }
+                ConnectionMsg::OpenConfirm(ref msg) => {
+                    conn_handler::conn_open_confirm::execute(self, msg)
+                }
+            },
+            MsgEnvelope::Channel(msg) => match msg {
+                ChannelMsg::OpenInit(msg) => self.execute(msg),
+                ChannelMsg::OpenTry(_msg) => todo!(),
+                ChannelMsg::OpenAck(_msg) => todo!(),
+                ChannelMsg::OpenConfirm(_msg) => {
+                    todo!()
+                }
+                ChannelMsg::CloseInit(_msg) => todo!(),
+                ChannelMsg::CloseConfirm(_msg) => {
+                    todo!()
+                }
+            },
+            MsgEnvelope::Packet(msg) => match msg {
+                PacketMsg::Recv(_msg) => todo!(),
+                PacketMsg::Ack(_msg) => todo!(),
+                PacketMsg::Timeout(_msg) => {
+                    todo!()
+                }
+                PacketMsg::TimeoutOnClose(_msg) => todo!(),
+            },
         }
     }
 }

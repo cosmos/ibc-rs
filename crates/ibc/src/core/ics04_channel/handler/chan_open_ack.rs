@@ -6,11 +6,11 @@ use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::prelude::*;
 
-use crate::core::{ContextError, ValidationContext};
+use crate::core::{ContextError, ReaderContext};
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenAck) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;

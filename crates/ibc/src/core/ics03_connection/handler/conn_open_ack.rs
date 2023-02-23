@@ -13,11 +13,11 @@ use crate::core::ics24_host::identifier::ClientId;
 
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath};
 
-use crate::core::{ExecutionContext, ValidationContext};
+use crate::core::{KeeperContext, ReaderContext};
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     let vars = LocalVars::new(ctx_a, &msg)?;
     validate_impl(ctx_a, &msg, &vars)
@@ -29,7 +29,7 @@ fn validate_impl<Ctx>(
     vars: &LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     let host_height = ctx_a.host_height().map_err(|_| ConnectionError::Other {
         description: "failed to get host height".to_string(),
@@ -140,7 +140,7 @@ where
 
 pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    Ctx: KeeperContext,
 {
     let vars = LocalVars::new(ctx_a, &msg)?;
     execute_impl(ctx_a, msg, vars)
@@ -152,7 +152,7 @@ fn execute_impl<Ctx>(
     vars: LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    Ctx: KeeperContext,
 {
     ctx_a.emit_ibc_event(IbcEvent::OpenAckConnection(OpenAck::new(
         msg.conn_id_on_a.clone(),
@@ -188,7 +188,7 @@ struct LocalVars {
 impl LocalVars {
     fn new<Ctx>(ctx_a: &Ctx, msg: &MsgConnectionOpenAck) -> Result<Self, ContextError>
     where
-        Ctx: ValidationContext,
+        Ctx: ReaderContext,
     {
         Ok(LocalVars {
             conn_end_on_a: ctx_a.connection_end(&msg.conn_id_on_a)?,
@@ -217,7 +217,7 @@ mod tests {
     use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
-    use crate::core::ValidationContext;
+    use crate::core::ReaderContext;
 
     use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
@@ -341,7 +341,7 @@ mod tests {
                     IbcEvent::OpenAckConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = <MockContext as ValidationContext>::connection_end(
+                let conn_end = <MockContext as ReaderContext>::connection_end(
                     &fxt.ctx,
                     conn_open_try_event.connection_id(),
                 )

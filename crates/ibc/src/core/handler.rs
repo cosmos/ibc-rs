@@ -2,31 +2,51 @@ use ibc_proto::google::protobuf::Any;
 
 use super::{
     ics26_routing::{error::RouterError, msgs::MsgEnvelope},
-    ExecutionContext, ValidationContext,
+    ContextError, KeeperContext, ReaderContext,
 };
 
 /// Entrypoint which only performs message validation
 pub fn validate<Ctx>(ctx: &Ctx, message: Any) -> Result<(), RouterError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     let envelope: MsgEnvelope = message.try_into()?;
-    ctx.validate(envelope)
+    // let a = decode_any_msg(message)?;
+    ctx.validate(&envelope)
+        .map_err(|e| RouterError::ContextError(e))
+    // The above map_err can be removed once we have a proper error handling
 }
 
 /// Entrypoint which only performs message execution
-pub fn execute<Ctx>(ctx: &mut Ctx, message: Any) -> Result<(), RouterError>
+pub fn execute<Ctx>(ctx: &mut Ctx, msg: Any) -> Result<(), RouterError>
 where
-    Ctx: ExecutionContext,
+    Ctx: KeeperContext,
 {
-    let envelope: MsgEnvelope = message.try_into()?;
-    ctx.execute(envelope)
+    let envelope: MsgEnvelope = msg.clone().try_into()?;
+    ctx.execute(&envelope)
+        .map_err(|e| RouterError::ContextError(e))
+    // The above map_err can be removed once we have a proper error handling
 }
 
 /// Entrypoint which performs both validation and message execution
-pub fn dispatch(ctx: &mut impl ExecutionContext, msg: MsgEnvelope) -> Result<(), RouterError> {
-    ctx.validate(msg.clone())?;
-    ctx.execute(msg)
+pub fn dispatch(ctx: &mut impl KeeperContext, msg: MsgEnvelope) -> Result<(), RouterError> {
+    ctx.validate(&msg)?;
+    ctx.execute(&msg)?;
+    Ok(())
+}
+
+pub(crate) trait ValidationHandler<M>
+where
+    Self: ReaderContext,
+{
+    fn validate(&self, msg: &M) -> Result<(), ContextError>;
+}
+
+pub(crate) trait ExecutionHandler<M>: ValidationHandler<M>
+where
+    Self: KeeperContext,
+{
+    fn execute(&mut self, msg: &M) -> Result<(), ContextError>;
 }
 
 #[cfg(test)]
@@ -83,7 +103,7 @@ mod tests {
     use crate::core::ics26_routing::context::ModuleId;
     use crate::core::ics26_routing::error::RouterError;
     use crate::core::ics26_routing::msgs::MsgEnvelope;
-    use crate::core::{dispatch, ValidationContext};
+    use crate::core::{dispatch, ReaderContext};
     use crate::events::IbcEvent;
     use crate::handler::HandlerOutputBuilder;
     use crate::mock::client_state::MockClientState;

@@ -6,11 +6,11 @@ use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::prelude::*;
 
-use crate::core::{ContextError, ValidationContext};
+use crate::core::{ContextError, ReaderContext};
 
 pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenConfirm) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     // Unwrap the old channel end and validate it against the message.
     let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);

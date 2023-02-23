@@ -10,7 +10,7 @@ use crate::core::ics26_routing::context::ModuleId;
 
 use crate::events::IbcEvent;
 
-use super::{ContextError, ExecutionContext, ValidationContext};
+use super::{ContextError, KeeperContext, ReaderContext};
 
 pub(super) fn chan_open_ack_validate<ValCtx>(
     ctx_a: &ValCtx,
@@ -18,7 +18,7 @@ pub(super) fn chan_open_ack_validate<ValCtx>(
     msg: MsgChannelOpenAck,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: ReaderContext,
 {
     chan_open_ack::validate(ctx_a, &msg)?;
 
@@ -36,7 +36,7 @@ pub(super) fn chan_open_ack_execute<ExecCtx>(
     msg: MsgChannelOpenAck,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: KeeperContext,
 {
     let module = ctx_a
         .get_route_mut(&module_id)

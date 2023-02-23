@@ -12,11 +12,11 @@ use crate::core::context::ContextError;
 
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 
-use crate::core::{ExecutionContext, ValidationContext};
+use crate::core::{KeeperContext, ReaderContext};
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     let MsgUpgradeClient { client_id, .. } = msg;
 
@@ -79,7 +79,7 @@ where
 
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    Ctx: KeeperContext,
 {
     let MsgUpgradeClient { client_id, .. } = msg;
 
@@ -111,7 +111,7 @@ where
 mod tests {
     use crate::core::ics02_client::handler::upgrade_client::execute;
     use crate::core::ics24_host::path::ClientConsensusStatePath;
-    use crate::core::ValidationContext;
+    use crate::core::ReaderContext;
     use crate::events::IbcEvent;
     use crate::{downcast, prelude::*};
     use rstest::*;

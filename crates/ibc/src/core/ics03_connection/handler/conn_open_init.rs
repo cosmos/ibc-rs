@@ -8,12 +8,12 @@ use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{ClientConnectionPath, ConnectionPath};
-use crate::core::{ExecutionContext, ValidationContext};
+use crate::core::{KeeperContext, ReaderContext};
 use crate::events::IbcEvent;
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     // An IBC client running on the local (host) chain should exist.
     ctx_a.client_state(&msg.client_id_on_a)?;
@@ -29,7 +29,7 @@ where
 
 pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    Ctx: KeeperContext,
 {
     let versions = match msg.version {
         Some(version) => {
@@ -164,7 +164,7 @@ mod tests {
                     IbcEvent::OpenInitConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = <MockContext as ValidationContext>::connection_end(
+                let conn_end = <MockContext as ReaderContext>::connection_end(
                     &fxt.ctx,
                     conn_open_init_event.connection_id(),
                 )
@@ -193,7 +193,7 @@ mod tests {
     fn conn_open_init_no_version() {
         let mut fxt = conn_open_init_fixture(Ctx::WithClient, Msg::NoVersion);
         conn_open_init_validate(&fxt, Expect::Success);
-        let expected_version = ValidationContext::get_compatible_versions(&fxt.ctx.clone());
+        let expected_version = ReaderContext::get_compatible_versions(&fxt.ctx.clone());
         conn_open_init_execute(&mut fxt, Expect::Success, expected_version);
     }
     #[test]

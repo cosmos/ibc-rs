@@ -9,11 +9,11 @@ use crate::core::ics24_host::path::{
 use crate::prelude::*;
 use crate::timestamp::Expiry;
 
-use crate::core::{ContextError, ValidationContext};
+use crate::core::{ContextError, ReaderContext};
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeout) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     let chan_end_on_a = ctx_a.channel_end(&ChannelEndPath::new(
         &msg.packet.port_on_a,
@@ -165,7 +165,7 @@ mod tests {
     use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::ValidationContext;
+    use crate::core::ReaderContext;
     use crate::mock::context::MockContext;
     use crate::timestamp::ZERO_DURATION;
 

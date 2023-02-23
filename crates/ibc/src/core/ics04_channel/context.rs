@@ -2,7 +2,7 @@
 
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath, SeqSendPath};
-use crate::core::{ContextError, ValidationContext};
+use crate::core::{ContextError, ReaderContext};
 use crate::prelude::*;
 use core::time::Duration;
 use num_traits::float::FloatCore;
@@ -61,7 +61,7 @@ pub trait SendPacketReader {
 
 impl<T> SendPacketReader for T
 where
-    T: ValidationContext,
+    T: ReaderContext,
 {
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
         self.channel_end(channel_end_path)

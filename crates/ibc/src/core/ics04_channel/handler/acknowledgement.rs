@@ -9,11 +9,11 @@ use crate::core::ics24_host::path::{
 };
 use crate::prelude::*;
 
-use crate::core::{ContextError, ValidationContext};
+use crate::core::{ContextError, ReaderContext};
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgAcknowledgement) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     let packet = &msg.packet;
     let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
@@ -128,7 +128,7 @@ mod tests {
     use crate::core::ics04_channel::handler::acknowledgement::validate;
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::PortId;
-    use crate::core::ValidationContext;
+    use crate::core::ReaderContext;
     use crate::prelude::*;
     use rstest::*;
     use test_log::test;

@@ -9,11 +9,11 @@ use crate::events::IbcEvent;
 
 use crate::core::ics24_host::path::ClientStatePath;
 
-use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::core::{ContextError, KeeperContext, ReaderContext};
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgSubmitMisbehaviour) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: ReaderContext,
 {
     let MsgSubmitMisbehaviour {
         client_id,
@@ -39,7 +39,7 @@ where
 
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgSubmitMisbehaviour) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    Ctx: KeeperContext,
 {
     let MsgSubmitMisbehaviour {
         client_id,
@@ -81,7 +81,7 @@ mod tests {
     use crate::core::ics02_client::handler::misbehaviour::validate;
     use crate::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
-    use crate::core::ValidationContext;
+    use crate::core::ReaderContext;
     use crate::events::IbcEvent;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;

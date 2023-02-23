@@ -56,6 +56,22 @@ impl From<MsgUpdateClient> for RawMsgUpdateClient {
     }
 }
 
+impl TryFrom<Any> for MsgUpdateClient {
+    type Error = ClientError;
+
+    fn try_from(any: Any) -> Result<Self, Self::Error> {
+        match any.type_url.as_str() {
+            TYPE_URL => {
+                let msg = MsgUpdateClient::decode_vec(&any.value).map_err(ClientError::Encode)?;
+                Ok(msg)
+            }
+            _ => Err(ClientError::Other {
+                description: "unknown type url".to_string(),
+            }),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
