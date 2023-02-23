@@ -298,19 +298,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
     }
 }
 
-pub trait RouterBuilder: Sized {
-    /// The `Router` type that the builder must build
-    type Router: Router;
-
-    /// Registers `Module` against the specified `ModuleId` in the `Router`'s internal map
-    ///
-    /// Returns an error if a `Module` has already been registered against the specified `ModuleId`
-    fn add_route(self, module_id: ModuleId, module: impl Module) -> Result<Self, String>;
-
-    /// Consumes the `RouterBuilder` and returns a `Router` as configured
-    fn build(self) -> Self::Router;
-}
-
 pub trait AsAnyMut: Any {
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
@@ -319,15 +306,4 @@ impl<M: Any + Module> AsAnyMut for M {
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
     }
-}
-
-/// A router maintains a mapping of `ModuleId`s against `Modules`. Implementations must not publicly
-/// expose APIs to add new routes once constructed. Routes may only be added at the time of
-/// instantiation using the `RouterBuilder`.
-pub trait Router {
-    /// Returns a mutable reference to a `Module` registered against the specified `ModuleId`
-    fn get_route_mut(&mut self, module_id: &impl Borrow<ModuleId>) -> Option<&mut dyn Module>;
-
-    /// Returns true if the `Router` has a `Module` registered against the specified `ModuleId`
-    fn has_route(&self, module_id: &impl Borrow<ModuleId>) -> bool;
 }
