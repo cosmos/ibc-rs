@@ -1,3 +1,4 @@
+use crate::core::ValidationContext;
 use crate::core::ics04_channel::channel::Counterparty;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::commitment::PacketCommitment;
@@ -116,6 +117,78 @@ pub fn send_packet(
 
     Ok(output.with_result(result))
 }
+
+pub fn send_packet_validate(
+    ctx_a: &impl ValidationContext,
+    packet: Packet,
+) -> Result<(), ContextError> {
+    let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
+
+    if chan_end_on_a.state_matches(&State::Closed) {
+        return Err(PacketError::ChannelClosed {
+            channel_id: packet.chan_on_a,
+        }
+        .into());
+    }
+
+    let counterparty = Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone()));
+
+    if !chan_end_on_a.counterparty_matches(&counterparty) {
+        return Err(PacketError::InvalidPacketCounterparty {
+            port_id: packet.port_on_b.clone(),
+            channel_id: packet.chan_on_b,
+        }
+        .into());
+    }
+    let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
+    let conn_end_on_a = ctx_a.connection_end(conn_id_on_a)?;
+
+    let client_id_on_a = conn_end_on_a.client_id();
+
+    let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
+
+    // prevent accidental sends with clients that cannot be updated
+    if client_state_of_b_on_a.is_frozen() {
+        return Err(PacketError::FrozenClient {
+            client_id: conn_end_on_a.client_id().clone(),
+        }
+        .into());
+    }
+
+    let latest_height_on_a = client_state_of_b_on_a.latest_height();
+
+    if packet.timeout_height_on_b.has_expired(latest_height_on_a) {
+        return Err(PacketError::LowPacketHeight {
+            chain_height: latest_height_on_a,
+            timeout_height: packet.timeout_height_on_b,
+        }
+        .into());
+    }
+
+    let client_cons_state_path_on_a =
+        ClientConsensusStatePath::new(client_id_on_a, &latest_height_on_a);
+    let consensus_state_of_b_on_a = ctx_a.client_consensus_state(&client_cons_state_path_on_a)?;
+    let latest_timestamp = consensus_state_of_b_on_a.timestamp();
+    let packet_timestamp = packet.timeout_timestamp_on_b;
+    if let Expiry::Expired = latest_timestamp.check_expiry(&packet_timestamp) {
+        return Err(PacketError::LowPacketTimestamp.into());
+    }
+
+    let seq_send_path_on_a = SeqSendPath::new(&packet.port_on_a, &packet.chan_on_a);
+    let next_seq_send_on_a = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
+
+    if packet.sequence != next_seq_send_on_a {
+        return Err(PacketError::InvalidPacketSequence {
+            given_sequence: packet.sequence,
+            next_sequence: next_seq_send_on_a,
+        }
+        .into());
+    }
+
+    Ok(())
+}
+
 
 #[cfg(test)]
 mod tests {
