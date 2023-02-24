@@ -1407,7 +1407,7 @@ mod tests {
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-    use crate::core::ics26_routing::context::{Module, ModuleId, ModuleOutputBuilder};
+    use crate::core::ics26_routing::context::{Module, ModuleId};
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::signer::Signer;
@@ -1646,17 +1646,6 @@ mod tests {
                 )
             }
 
-            fn on_recv_packet(
-                &mut self,
-                _output: &mut ModuleOutputBuilder,
-                _packet: &Packet,
-                _relayer: &Signer,
-            ) -> Acknowledgement {
-                self.counter += 1;
-
-                Acknowledgement::try_from(vec![1u8]).unwrap()
-            }
-
             fn on_timeout_packet_validate(
                 &self,
                 _packet: &Packet,
@@ -1779,15 +1768,6 @@ mod tests {
                 )
             }
 
-            fn on_recv_packet(
-                &mut self,
-                _output: &mut ModuleOutputBuilder,
-                _packet: &Packet,
-                _relayer: &Signer,
-            ) -> Acknowledgement {
-                Acknowledgement::try_from(vec![1u8]).unwrap()
-            }
-
             fn on_timeout_packet_validate(
                 &self,
                 _packet: &Packet,
@@ -1837,8 +1817,7 @@ mod tests {
         let mut on_recv_packet_result = |module_id: &'static str| {
             let module_id = ModuleId::from_str(module_id).unwrap();
             let m = ctx.get_route_mut(&module_id).unwrap();
-            let result = m.on_recv_packet(
-                &mut ModuleOutputBuilder::new(),
+            let result = m.on_recv_packet_execute(
                 &Packet::default(),
                 &get_dummy_bech32_account().parse().unwrap(),
             );

@@ -27,7 +27,7 @@ use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, Por
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
-use crate::core::ics26_routing::context::{Module, ModuleOutputBuilder};
+use crate::core::ics26_routing::context::Module;
 use crate::core::ContextError;
 use crate::events::IbcEvent;
 use crate::mock::context::MockIbcStore;
@@ -178,15 +178,6 @@ impl Module for DummyTransferModule {
             ModuleExtras::empty(),
             Acknowledgement::try_from(vec![1u8]).unwrap(),
         )
-    }
-
-    fn on_recv_packet(
-        &mut self,
-        _output: &mut ModuleOutputBuilder,
-        _packet: &Packet,
-        _relayer: &Signer,
-    ) -> Acknowledgement {
-        Acknowledgement::try_from(vec![1u8]).unwrap()
     }
 
     fn on_timeout_packet_validate(

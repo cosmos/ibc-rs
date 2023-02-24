@@ -241,13 +241,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         relayer: &Signer,
     ) -> (ModuleExtras, Acknowledgement);
 
-    fn on_recv_packet(
-        &mut self,
-        _output: &mut ModuleOutputBuilder,
-        _packet: &Packet,
-        _relayer: &Signer,
-    ) -> Acknowledgement;
-
     fn on_acknowledgement_packet_validate(
         &self,
         _packet: &Packet,

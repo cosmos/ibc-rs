@@ -6,7 +6,6 @@ use super::error::TokenTransferError;
 use crate::applications::transfer::acknowledgement::TokenTransferAcknowledgement;
 use crate::applications::transfer::events::{AckEvent, AckStatusEvent, RecvEvent, TimeoutEvent};
 use crate::applications::transfer::packet::PacketData;
-use crate::applications::transfer::relay::on_recv_packet::process_recv_packet;
 use crate::applications::transfer::relay::refund_packet_token;
 use crate::applications::transfer::relay::{
     on_recv_packet::process_recv_packet_execute, refund_packet_token_validate,
@@ -21,7 +20,6 @@ use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use crate::core::ics26_routing::context::ModuleOutputBuilder;
 use crate::signer::Signer;
 
 pub trait TokenTransferExecutionContext:
@@ -88,39 +86,6 @@ pub fn cosmos_adr028_escrow_address(port_id: &PortId, channel_id: &ChannelId) ->
     let mut hash = hasher.finalize().to_vec();
     hash.truncate(20);
     hash
-}
-
-pub fn on_recv_packet<Ctx: 'static + TokenTransferExecutionContext>(
-    ctx: &mut Ctx,
-    output: &mut ModuleOutputBuilder,
-    packet: &Packet,
-    _relayer: &Signer,
-) -> Acknowledgement {
-    let data = match serde_json::from_slice::<PacketData>(&packet.data) {
-        Ok(data) => data,
-        Err(_) => {
-            let ack = TokenTransferAcknowledgement::Error(
-                TokenTransferError::PacketDataDeserialization.to_string(),
-            );
-            return ack.into();
-        }
-    };
-
-    let ack: TokenTransferAcknowledgement =
-        match process_recv_packet(ctx, output, packet, data.clone()) {
-            Ok(()) => TokenTransferAcknowledgement::success(),
-            Err(e) => TokenTransferAcknowledgement::from_error(e),
-        };
-
-    let recv_event = RecvEvent {
-        receiver: data.receiver,
-        denom: data.token.denom,
-        amount: data.token.amount,
-        success: ack.is_successful(),
-    };
-    output.emit(recv_event.into());
-
-    ack.into()
 }
 
 #[allow(clippy::too_many_arguments)]
