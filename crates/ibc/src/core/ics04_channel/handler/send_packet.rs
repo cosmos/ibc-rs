@@ -108,11 +108,7 @@ pub fn send_packet_execute(
     }
 
     ctx_a.store_packet_commitment(
-        &CommitmentPath {
-            port_id: packet.port_on_a.clone(),
-            channel_id: packet.chan_on_a.clone(),
-            sequence: packet.sequence,
-        },
+        &CommitmentPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence),
         ctx_a.compute_packet_commitment(
             &packet.data,
             &packet.timeout_height_on_b,
