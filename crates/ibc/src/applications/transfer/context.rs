@@ -55,6 +55,30 @@ pub trait TokenTransferKeeper: BankKeeper {
     ) -> Result<(), ContextError>;
 }
 
+pub trait TokenTransferExecutionContext: TokenTransferValidationContext + ExecutionContext {
+    /// This function should enable sending ibc fungible tokens from one account to another
+    fn send_coins(
+        &mut self,
+        from: &Self::AccountId,
+        to: &Self::AccountId,
+        amt: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError>;
+
+    /// This function to enable minting ibc tokens to a user account
+    fn mint_coins(
+        &mut self,
+        account: &Self::AccountId,
+        amt: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError>;
+
+    /// This function should enable burning of minted tokens in a user account
+    fn burn_coins(
+        &mut self,
+        account: &Self::AccountId,
+        amt: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError>;
+}
+
 pub trait TokenTransferValidationContext: ValidationContext {
     type AccountId: TryFrom<Signer>;
 
