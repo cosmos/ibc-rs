@@ -1,4 +1,4 @@
-use crate::applications::transfer::context::TokenTransferContext;
+use crate::applications::transfer::context::TokenTransferExecutionContext;
 use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::events::DenomTraceEvent;
 use crate::applications::transfer::packet::PacketData;
@@ -8,7 +8,8 @@ use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics26_routing::context::ModuleOutputBuilder;
 use crate::prelude::*;
 
-pub fn process_recv_packet<Ctx: 'static + TokenTransferContext>(
+// TODO: REMOVE BEFORE MERGE
+pub fn process_recv_packet<Ctx: 'static + TokenTransferExecutionContext>(
     ctx: &mut Ctx,
     output: &mut ModuleOutputBuilder,
     packet: &Packet,
@@ -62,7 +63,7 @@ pub fn process_recv_packet<Ctx: 'static + TokenTransferContext>(
     Ok(())
 }
 
-pub fn process_recv_packet_execute<Ctx: TokenTransferContext>(
+pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
     ctx: &mut Ctx,
     packet: &Packet,
     data: PacketData,

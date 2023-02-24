@@ -1,16 +1,17 @@
 //! This module implements the processing logic for ICS20 (token transfer) message.
-use crate::applications::transfer::context::TokenTransferContext;
 use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::is_sender_chain_source;
 use crate::applications::transfer::packet::PacketData;
 use crate::core::ics04_channel::packet::Packet;
 use crate::prelude::*;
 
+use super::context::{TokenTransferExecutionContext, TokenTransferValidationContext};
+
 pub mod on_recv_packet;
 pub mod send_transfer;
 
 pub fn refund_packet_token(
-    ctx: &mut impl TokenTransferContext,
+    ctx: &mut impl TokenTransferExecutionContext,
     packet: &Packet,
     data: &PacketData,
 ) -> Result<(), TokenTransferError> {
@@ -37,10 +38,11 @@ pub fn refund_packet_token(
     }
 }
 
-pub fn refund_packet_token_validate<Ctx: TokenTransferContext>(
-    data: &PacketData,
-) -> Result<(), TokenTransferError> {
-    let _sender: <Ctx as TokenTransferContext>::AccountId = data
+pub fn refund_packet_token_validate<Ctx>(data: &PacketData) -> Result<(), TokenTransferError>
+where
+    Ctx: TokenTransferValidationContext,
+{
+    let _sender: Ctx::AccountId = data
         .sender
         .clone()
         .try_into()
