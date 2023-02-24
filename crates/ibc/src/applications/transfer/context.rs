@@ -9,7 +9,7 @@ use crate::applications::transfer::relay::refund_packet_token;
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::commitment::PacketCommitment;
-use crate::core::ics04_channel::context::SendPacketReader;
+use crate::core::ics04_channel::context::SendPacketValidationContext;
 use crate::core::ics04_channel::handler::send_packet::SendPacketResult;
 use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
@@ -105,7 +105,7 @@ pub trait TokenTransferValidationContext: ValidationContext {
     }
 }
 
-pub trait TokenTransferReader: SendPacketReader {
+pub trait TokenTransferReader: SendPacketValidationContext {
     type AccountId: TryFrom<Signer>;
 
     /// get_port returns the portID for the transfer module.

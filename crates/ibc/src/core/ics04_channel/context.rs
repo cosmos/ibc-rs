@@ -17,7 +17,7 @@ use crate::timestamp::Timestamp;
 use super::packet::Sequence;
 use super::timeout::TimeoutHeight;
 
-pub trait SendPacketReader {
+pub trait SendPacketValidationContext {
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
 
@@ -38,28 +38,15 @@ pub trait SendPacketReader {
 
     fn hash(&self, value: &[u8]) -> Vec<u8>;
 
-    fn packet_commitment(
+    fn compute_packet_commitment(
         &self,
         packet_data: &[u8],
         timeout_height: &TimeoutHeight,
         timeout_timestamp: &Timestamp,
-    ) -> PacketCommitment {
-        let mut hash_input = timeout_timestamp.nanoseconds().to_be_bytes().to_vec();
-
-        let revision_number = timeout_height.commitment_revision_number().to_be_bytes();
-        hash_input.append(&mut revision_number.to_vec());
-
-        let revision_height = timeout_height.commitment_revision_height().to_be_bytes();
-        hash_input.append(&mut revision_height.to_vec());
-
-        let packet_data_hash = self.hash(packet_data);
-        hash_input.append(&mut packet_data_hash.to_vec());
-
-        self.hash(&hash_input).into()
-    }
+    ) -> PacketCommitment;
 }
 
-impl<T> SendPacketReader for T
+impl<T> SendPacketValidationContext for T
 where
     T: ValidationContext,
 {
@@ -91,6 +78,15 @@ where
 
     fn hash(&self, value: &[u8]) -> Vec<u8> {
         self.hash(value)
+    }
+
+    fn compute_packet_commitment(
+        &self,
+        packet_data: &[u8],
+        timeout_height: &TimeoutHeight,
+        timeout_timestamp: &Timestamp,
+    ) -> PacketCommitment {
+        self.compute_packet_commitment(packet_data, timeout_height, timeout_timestamp)
     }
 }
 

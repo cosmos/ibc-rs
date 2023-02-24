@@ -3,7 +3,7 @@ use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::commitment::PacketCommitment;
 use crate::core::ics04_channel::events::SendPacket;
 use crate::core::ics04_channel::packet::Sequence;
-use crate::core::ics04_channel::{context::SendPacketReader, error::PacketError, packet::Packet};
+use crate::core::ics04_channel::{context::SendPacketValidationContext, error::PacketError, packet::Packet};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::ics24_host::path::ChannelEndPath;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
@@ -29,7 +29,7 @@ pub struct SendPacketResult {
 // TODO BEFORE MERGE: send_packet() should now call validate() and execute()
 
 pub fn send_packet(
-    ctx_a: &impl SendPacketReader,
+    ctx_a: &impl SendPacketValidationContext,
     packet: Packet,
 ) -> HandlerResult<SendPacketResult, ContextError> {
     let mut output = HandlerOutput::builder();
@@ -105,7 +105,7 @@ pub fn send_packet(
         channel_id: packet.chan_on_a.clone(),
         seq: packet.sequence,
         seq_number: next_seq_send_on_a.increment(),
-        commitment: ctx_a.packet_commitment(
+        commitment: ctx_a.compute_packet_commitment(
             &packet.data,
             &packet.timeout_height_on_b,
             &packet.timeout_timestamp_on_b,
