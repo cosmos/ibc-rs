@@ -139,13 +139,12 @@ where
         .channel_end(&chan_end_path_on_a)
         .map_err(TokenTransferError::ContextError)?;
 
-    let _chan_on_b = chan_end_on_a
-        .counterparty()
-        .channel_id()
-        .ok_or_else(|| TokenTransferError::DestinationChannelNotFound {
+    let _chan_on_b = chan_end_on_a.counterparty().channel_id().ok_or_else(|| {
+        TokenTransferError::DestinationChannelNotFound {
             port_id: msg.port_on_a.clone(),
             channel_id: msg.chan_on_a.clone(),
-        })?;
+        }
+    })?;
 
     let seq_send_path_on_a = SeqSendPath::new(&msg.port_on_a, &msg.chan_on_a);
     let _sequence = ctx_a
