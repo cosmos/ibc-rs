@@ -9,7 +9,9 @@ use crate::applications::transfer::relay::refund_packet_token;
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::commitment::PacketCommitment;
-use crate::core::ics04_channel::context::SendPacketValidationContext;
+use crate::core::ics04_channel::context::{
+    SendPacketExecutionContext, SendPacketValidationContext,
+};
 use crate::core::ics04_channel::handler::send_packet::SendPacketResult;
 use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
@@ -18,7 +20,7 @@ use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics24_host::path::{CommitmentPath, SeqSendPath};
 use crate::core::ics26_routing::context::ModuleOutputBuilder;
-use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::core::{ContextError, ExecutionContext};
 use crate::prelude::*;
 use crate::signer::Signer;
 
@@ -55,7 +57,9 @@ pub trait TokenTransferKeeper: BankKeeper {
     ) -> Result<(), ContextError>;
 }
 
-pub trait TokenTransferExecutionContext: TokenTransferValidationContext + ExecutionContext {
+pub trait TokenTransferExecutionContext:
+    TokenTransferValidationContext + SendPacketExecutionContext
+{
     /// This function should enable sending ibc fungible tokens from one account to another
     fn send_coins(
         &mut self,
@@ -79,7 +83,7 @@ pub trait TokenTransferExecutionContext: TokenTransferValidationContext + Execut
     ) -> Result<(), TokenTransferError>;
 }
 
-pub trait TokenTransferValidationContext: ValidationContext {
+pub trait TokenTransferValidationContext: SendPacketValidationContext {
     type AccountId: TryFrom<Signer>;
 
     /// get_port returns the portID for the transfer module.
