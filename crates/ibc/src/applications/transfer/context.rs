@@ -18,7 +18,7 @@ use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics24_host::path::{CommitmentPath, SeqSendPath};
 use crate::core::ics26_routing::context::ModuleOutputBuilder;
-use crate::core::{ContextError, ExecutionContext};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 use crate::prelude::*;
 use crate::signer::Signer;
 
@@ -53,6 +53,32 @@ pub trait TokenTransferKeeper: BankKeeper {
         channel_id: ChannelId,
         seq: Sequence,
     ) -> Result<(), ContextError>;
+}
+
+pub trait TokenTransferValidationContext: ValidationContext {
+    type AccountId: TryFrom<Signer>;
+
+    /// get_port returns the portID for the transfer module.
+    fn get_port(&self) -> Result<PortId, TokenTransferError>;
+
+    /// Returns the escrow account id for a port and channel combination
+    fn get_channel_escrow_address(
+        &self,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+    ) -> Result<Self::AccountId, TokenTransferError>;
+
+    /// Returns true iff send is enabled.
+    fn is_send_enabled(&self) -> bool;
+
+    /// Returns true iff receive is enabled.
+    fn is_receive_enabled(&self) -> bool;
+
+    /// Returns a hash of the prefixed denom.
+    /// Implement only if the host chain supports hashed denominations.
+    fn denom_hash_string(&self, _denom: &PrefixedDenom) -> Option<String> {
+        None
+    }
 }
 
 pub trait TokenTransferReader: SendPacketReader {

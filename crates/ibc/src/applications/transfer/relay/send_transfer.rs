@@ -1,4 +1,6 @@
-use crate::applications::transfer::context::TokenTransferContext;
+use crate::applications::transfer::context::{
+    TokenTransferContext, TokenTransferValidationContext,
+};
 use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::events::TransferEvent;
 use crate::applications::transfer::msgs::transfer::MsgTransfer;
@@ -116,6 +118,50 @@ where
         receiver: msg.receiver,
     };
     output.emit(ModuleEvent::from(transfer_event).into());
+
+    Ok(())
+}
+
+pub fn send_transfer_validate<C, Ctx>(
+    ctx_a: &Ctx,
+    msg: MsgTransfer<C>,
+) -> Result<(), TokenTransferError>
+where
+    C: TryInto<PrefixedCoin>,
+    Ctx: TokenTransferValidationContext,
+{
+    if !ctx_a.is_send_enabled() {
+        return Err(TokenTransferError::SendDisabled);
+    }
+
+    let chan_end_path_on_a = ChannelEndPath::new(&msg.port_on_a, &msg.chan_on_a);
+    let chan_end_on_a = ctx_a
+        .channel_end(&chan_end_path_on_a)
+        .map_err(TokenTransferError::ContextError)?;
+
+    let _chan_on_b = chan_end_on_a
+        .counterparty()
+        .channel_id()
+        .ok_or_else(|| TokenTransferError::DestinationChannelNotFound {
+            port_id: msg.port_on_a.clone(),
+            channel_id: msg.chan_on_a.clone(),
+        })?;
+
+    let seq_send_path_on_a = SeqSendPath::new(&msg.port_on_a, &msg.chan_on_a);
+    let _sequence = ctx_a
+        .get_next_sequence_send(&seq_send_path_on_a)
+        .map_err(TokenTransferError::ContextError)?;
+
+    let _token = msg
+        .token
+        .try_into()
+        .map_err(|_| TokenTransferError::InvalidToken)?;
+
+    let _sender: Ctx::AccountId = msg
+        .sender
+        .clone()
+        .try_into()
+        .map_err(|_| TokenTransferError::ParseAccountFailure)?;
 
     Ok(())
 }
