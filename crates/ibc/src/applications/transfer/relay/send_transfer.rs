@@ -12,6 +12,9 @@ use crate::core::ics24_host::path::{ChannelEndPath, SeqSendPath};
 use crate::events::ModuleEvent;
 use crate::prelude::*;
 
+/// This function handles the transfer sending logic.
+/// If this method returns an error, the runtime is expected to rollback all state modifications to
+/// the `Ctx` caused by all messages from the transaction that this `msg` is a part of.
 pub fn send_transfer<C, Ctx>(ctx_a: &mut Ctx, msg: MsgTransfer<C>) -> Result<(), TokenTransferError>
 where
     C: TryInto<PrefixedCoin> + Clone,
