@@ -309,7 +309,7 @@ pub trait ValidationContext: ValidationRouter {
     /// `{revision_number: 0, revision_height: 0}` to be consistent with ibc-go,
     /// where this value is used to mean "no timeout height":
     /// <https://github.com/cosmos/ibc-go/blob/04791984b3d6c83f704c4f058e6ca0038d155d91/modules/core/04-channel/keeper/packet.go#L206>
-    fn packet_commitment(
+    fn compute_packet_commitment(
         &self,
         packet_data: &[u8],
         timeout_height: &TimeoutHeight,

@@ -17,8 +17,6 @@ use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
 use crate::core::ics05_port::error::PortError::UnknownPort;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use crate::events::ModuleEvent;
-use crate::handler::HandlerOutputBuilder;
 use crate::signer::Signer;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -69,8 +67,6 @@ impl Borrow<str> for ModuleId {
         self.0.as_str()
     }
 }
-
-pub type ModuleOutputBuilder = HandlerOutputBuilder<(), ModuleEvent>;
 
 pub trait Module: ValidationModule + ExecutionModule {
     fn as_validation_module(&self) -> &dyn ValidationModule;

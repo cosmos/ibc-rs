@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## v0.30.0
+
+*February 24, 2023*
+
+This release contains an overhaul of the `send_packet()` and `send_transfer()` architecture.
+The main gain is to separate into `send_packet_{validate,execute}()`, and similarly for 
+`send_transfer()`.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Update send_packet/transfer(), and related contexts
+  ([#442](https://github.com/cosmos/ibc-rs/issues/442))
+
 ## v0.29.0
 
 *February 22, 2023*

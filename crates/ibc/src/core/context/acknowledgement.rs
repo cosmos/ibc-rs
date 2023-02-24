@@ -165,7 +165,7 @@ mod tests {
 
         let packet = msg.packet.clone();
 
-        let packet_commitment = ctx.packet_commitment(
+        let packet_commitment = ctx.compute_packet_commitment(
             &msg.packet.data,
             &msg.packet.timeout_height_on_b,
             &msg.packet.timeout_timestamp_on_b,

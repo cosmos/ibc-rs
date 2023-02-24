@@ -44,7 +44,7 @@ where
         Err(_) => return Ok(()),
     };
 
-    let expected_commitment_on_a = ctx_a.packet_commitment(
+    let expected_commitment_on_a = ctx_a.compute_packet_commitment(
         &packet.data,
         &packet.timeout_height_on_b,
         &packet.timeout_timestamp_on_b,
@@ -204,7 +204,7 @@ mod tests {
 
         let packet = msg.packet.clone();
 
-        let packet_commitment = context.packet_commitment(
+        let packet_commitment = context.compute_packet_commitment(
             &msg.packet.data,
             &msg.packet.timeout_height_on_b,
             &msg.packet.timeout_timestamp_on_b,
