@@ -14,8 +14,6 @@ use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use crate::events::ModuleEvent;
-use crate::handler::HandlerOutputBuilder;
 use crate::signer::Signer;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -67,8 +65,6 @@ impl Borrow<str> for ModuleId {
     }
 }
 
-pub type ModuleOutputBuilder = HandlerOutputBuilder<(), ModuleEvent>;
-
 pub trait Module: Send + Sync + AsAnyMut + Debug {
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init_validate(
@@ -83,17 +79,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
 
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init_execute(
-        &mut self,
-        order: Order,
-        connection_hops: &[ConnectionId],
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        counterparty: &Counterparty,
-        version: &Version,
-    ) -> Result<(ModuleExtras, Version), ChannelError>;
-
-    #[allow(clippy::too_many_arguments)]
-    fn on_chan_open_init(
         &mut self,
         order: Order,
         connection_hops: &[ConnectionId],
@@ -125,17 +110,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         counterparty_version: &Version,
     ) -> Result<(ModuleExtras, Version), ChannelError>;
 
-    #[allow(clippy::too_many_arguments)]
-    fn on_chan_open_try(
-        &mut self,
-        order: Order,
-        connection_hops: &[ConnectionId],
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        counterparty: &Counterparty,
-        counterparty_version: &Version,
-    ) -> Result<(ModuleExtras, Version), ChannelError>;
-
     fn on_chan_open_ack_validate(
         &self,
         _port_id: &PortId,
@@ -146,15 +120,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
     }
 
     fn on_chan_open_ack_execute(
-        &mut self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty_version: &Version,
-    ) -> Result<ModuleExtras, ChannelError> {
-        Ok(ModuleExtras::empty())
-    }
-
-    fn on_chan_open_ack(
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
@@ -179,14 +144,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(ModuleExtras::empty())
     }
 
-    fn on_chan_open_confirm(
-        &mut self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, ChannelError> {
-        Ok(ModuleExtras::empty())
-    }
-
     fn on_chan_close_init_validate(
         &self,
         _port_id: &PortId,
@@ -196,14 +153,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
     }
 
     fn on_chan_close_init_execute(
-        &mut self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, ChannelError> {
-        Ok(ModuleExtras::empty())
-    }
-
-    fn on_chan_close_init(
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
@@ -227,26 +176,11 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(ModuleExtras::empty())
     }
 
-    fn on_chan_close_confirm(
-        &mut self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, ChannelError> {
-        Ok(ModuleExtras::empty())
-    }
-
     fn on_recv_packet_execute(
         &mut self,
         packet: &Packet,
         relayer: &Signer,
     ) -> (ModuleExtras, Acknowledgement);
-
-    fn on_recv_packet(
-        &mut self,
-        _output: &mut ModuleOutputBuilder,
-        _packet: &Packet,
-        _relayer: &Signer,
-    ) -> Acknowledgement;
 
     fn on_acknowledgement_packet_validate(
         &self,
@@ -261,16 +195,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         _acknowledgement: &Acknowledgement,
         _relayer: &Signer,
     ) -> (ModuleExtras, Result<(), PacketError>);
-
-    fn on_acknowledgement_packet(
-        &mut self,
-        _output: &mut ModuleOutputBuilder,
-        _packet: &Packet,
-        _acknowledgement: &Acknowledgement,
-        _relayer: &Signer,
-    ) -> Result<(), PacketError> {
-        Ok(())
-    }
 
     /// Note: `MsgTimeout` and `MsgTimeoutOnClose` use the same callback
 
@@ -287,15 +211,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         packet: &Packet,
         relayer: &Signer,
     ) -> (ModuleExtras, Result<(), PacketError>);
-
-    fn on_timeout_packet(
-        &mut self,
-        _output: &mut ModuleOutputBuilder,
-        _packet: &Packet,
-        _relayer: &Signer,
-    ) -> Result<(), PacketError> {
-        Ok(())
-    }
 }
 
 pub trait AsAnyMut: Any {

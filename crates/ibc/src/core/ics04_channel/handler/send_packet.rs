@@ -1,41 +1,39 @@
 use crate::core::ics04_channel::channel::Counterparty;
 use crate::core::ics04_channel::channel::State;
-use crate::core::ics04_channel::commitment::PacketCommitment;
+use crate::core::ics04_channel::context::SendPacketExecutionContext;
 use crate::core::ics04_channel::events::SendPacket;
-use crate::core::ics04_channel::packet::Sequence;
-use crate::core::ics04_channel::{context::SendPacketReader, error::PacketError, packet::Packet};
-use crate::core::ics24_host::identifier::{ChannelId, PortId};
+use crate::core::ics04_channel::{
+    context::SendPacketValidationContext, error::PacketError, packet::Packet,
+};
 use crate::core::ics24_host::path::ChannelEndPath;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
+use crate::core::ics24_host::path::CommitmentPath;
 use crate::core::ics24_host::path::SeqSendPath;
 use crate::core::ContextError;
 use crate::events::IbcEvent;
-use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 use crate::timestamp::Expiry;
 
-#[derive(Clone, Debug)]
-pub struct SendPacketResult {
-    pub port_id: PortId,
-    pub channel_id: ChannelId,
-    pub seq: Sequence,
-    pub seq_number: Sequence,
-    pub commitment: PacketCommitment,
+/// Per our convention, this message is processed on chain A.
+pub fn send_packet(
+    ctx_a: &mut impl SendPacketExecutionContext,
+    packet: Packet,
+) -> Result<(), ContextError> {
+    send_packet_validate(ctx_a, &packet)?;
+    send_packet_execute(ctx_a, packet)
 }
 
 /// Per our convention, this message is processed on chain A.
-pub fn send_packet(
-    ctx_a: &impl SendPacketReader,
-    packet: Packet,
-) -> HandlerResult<SendPacketResult, ContextError> {
-    let mut output = HandlerOutput::builder();
-
+pub fn send_packet_validate(
+    ctx_a: &impl SendPacketValidationContext,
+    packet: &Packet,
+) -> Result<(), ContextError> {
     let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     if chan_end_on_a.state_matches(&State::Closed) {
         return Err(PacketError::ChannelClosed {
-            channel_id: packet.chan_on_a,
+            channel_id: packet.chan_on_a.clone(),
         }
         .into());
     }
@@ -45,7 +43,7 @@ pub fn send_packet(
     if !chan_end_on_a.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
             port_id: packet.port_on_b.clone(),
-            channel_id: packet.chan_on_b,
+            channel_id: packet.chan_on_b.clone(),
         }
         .into());
     }
@@ -94,27 +92,45 @@ pub fn send_packet(
         .into());
     }
 
-    output.log("success: packet send ");
+    Ok(())
+}
 
-    let result = SendPacketResult {
-        port_id: packet.port_on_a.clone(),
-        channel_id: packet.chan_on_a.clone(),
-        seq: packet.sequence,
-        seq_number: next_seq_send_on_a.increment(),
-        commitment: ctx_a.packet_commitment(
+/// Per our convention, this message is processed on chain A.
+pub fn send_packet_execute(
+    ctx_a: &mut impl SendPacketExecutionContext,
+    packet: Packet,
+) -> Result<(), ContextError> {
+    {
+        let seq_send_path_on_a = SeqSendPath::new(&packet.port_on_a, &packet.chan_on_a);
+        let next_seq_send_on_a = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
+
+        ctx_a.store_next_sequence_send(&seq_send_path_on_a, next_seq_send_on_a.increment())?;
+    }
+
+    ctx_a.store_packet_commitment(
+        &CommitmentPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence),
+        ctx_a.compute_packet_commitment(
             &packet.data,
             &packet.timeout_height_on_b,
             &packet.timeout_timestamp_on_b,
         ),
-    };
+    )?;
 
-    output.emit(IbcEvent::SendPacket(SendPacket::new(
-        packet,
-        chan_end_on_a.ordering,
-        conn_id_on_a.clone(),
-    )));
+    // emit events and logs
+    {
+        let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
+        let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
+        let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
 
-    Ok(output.with_result(result))
+        ctx_a.log_message("success: packet send".to_string());
+        ctx_a.emit_ibc_event(IbcEvent::SendPacket(SendPacket::new(
+            packet,
+            chan_end_on_a.ordering,
+            conn_id_on_a.clone(),
+        )));
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]
@@ -269,11 +285,11 @@ mod tests {
         .into_iter()
         .collect();
 
-        for test in tests {
-            let res = send_packet(&test.ctx, test.packet.clone());
+        for mut test in tests {
+            let res = send_packet(&mut test.ctx, test.packet.clone());
             // Additionally check the events and the output objects in the result.
             match res {
-                Ok(proto_output) => {
+                Ok(()) => {
                     assert!(
                         test.want_pass,
                         "send_packet: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
@@ -282,10 +298,10 @@ mod tests {
                         test.ctx.clone()
                     );
 
-                    assert!(!proto_output.events.is_empty()); // Some events must exist.
+                    assert!(!test.ctx.events.is_empty()); // Some events must exist.
 
                     // TODO: The object in the output is a PacketResult what can we check on it?
-                    for e in proto_output.events.iter() {
+                    for e in test.ctx.events.iter() {
                         assert!(matches!(e, &IbcEvent::SendPacket(_)));
                     }
                 }

@@ -1,8 +1,11 @@
 //! ICS4 (channel) context.
 
 use crate::core::ics02_client::client_state::ClientState;
-use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath, SeqSendPath};
-use crate::core::{ContextError, ValidationContext};
+use crate::core::ics24_host::path::{
+    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
+};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::events::IbcEvent;
 use crate::prelude::*;
 use core::time::Duration;
 use num_traits::float::FloatCore;
@@ -17,7 +20,7 @@ use crate::timestamp::Timestamp;
 use super::packet::Sequence;
 use super::timeout::TimeoutHeight;
 
-pub trait SendPacketReader {
+pub trait SendPacketValidationContext {
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
 
@@ -38,28 +41,15 @@ pub trait SendPacketReader {
 
     fn hash(&self, value: &[u8]) -> Vec<u8>;
 
-    fn packet_commitment(
+    fn compute_packet_commitment(
         &self,
         packet_data: &[u8],
         timeout_height: &TimeoutHeight,
         timeout_timestamp: &Timestamp,
-    ) -> PacketCommitment {
-        let mut hash_input = timeout_timestamp.nanoseconds().to_be_bytes().to_vec();
-
-        let revision_number = timeout_height.commitment_revision_number().to_be_bytes();
-        hash_input.append(&mut revision_number.to_vec());
-
-        let revision_height = timeout_height.commitment_revision_height().to_be_bytes();
-        hash_input.append(&mut revision_height.to_vec());
-
-        let packet_data_hash = self.hash(packet_data);
-        hash_input.append(&mut packet_data_hash.to_vec());
-
-        self.hash(&hash_input).into()
-    }
+    ) -> PacketCommitment;
 }
 
-impl<T> SendPacketReader for T
+impl<T> SendPacketValidationContext for T
 where
     T: ValidationContext,
 {
@@ -91,6 +81,64 @@ where
 
     fn hash(&self, value: &[u8]) -> Vec<u8> {
         self.hash(value)
+    }
+
+    fn compute_packet_commitment(
+        &self,
+        packet_data: &[u8],
+        timeout_height: &TimeoutHeight,
+        timeout_timestamp: &Timestamp,
+    ) -> PacketCommitment {
+        self.compute_packet_commitment(packet_data, timeout_height, timeout_timestamp)
+    }
+}
+
+pub trait SendPacketExecutionContext: SendPacketValidationContext {
+    fn store_next_sequence_send(
+        &mut self,
+        seq_send_path: &SeqSendPath,
+        seq: Sequence,
+    ) -> Result<(), ContextError>;
+
+    fn store_packet_commitment(
+        &mut self,
+        commitment_path: &CommitmentPath,
+        commitment: PacketCommitment,
+    ) -> Result<(), ContextError>;
+
+    /// Ibc events
+    fn emit_ibc_event(&mut self, event: IbcEvent);
+
+    /// Logging facility
+    fn log_message(&mut self, message: String);
+}
+
+impl<T> SendPacketExecutionContext for T
+where
+    T: ExecutionContext,
+{
+    fn store_next_sequence_send(
+        &mut self,
+        seq_send_path: &SeqSendPath,
+        seq: Sequence,
+    ) -> Result<(), ContextError> {
+        self.store_next_sequence_send(seq_send_path, seq)
+    }
+
+    fn store_packet_commitment(
+        &mut self,
+        commitment_path: &CommitmentPath,
+        commitment: PacketCommitment,
+    ) -> Result<(), ContextError> {
+        self.store_packet_commitment(commitment_path, commitment)
+    }
+
+    fn emit_ibc_event(&mut self, event: IbcEvent) {
+        self.emit_ibc_event(event)
+    }
+
+    fn log_message(&mut self, message: String) {
+        self.log_message(message)
     }
 }
 

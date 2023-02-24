@@ -79,7 +79,7 @@ where
             ClientConsensusStatePath::new(client_id_on_b, &msg.proof_height_on_a);
         let consensus_state_of_a_on_b = ctx_b.consensus_state(&client_cons_state_path_on_b)?;
 
-        let expected_commitment_on_a = ctx_b.packet_commitment(
+        let expected_commitment_on_a = ctx_b.compute_packet_commitment(
             &msg.packet.data,
             &msg.packet.timeout_height_on_b,
             &msg.packet.timeout_timestamp_on_b,
