@@ -11,12 +11,12 @@ use crate::core::ics24_host::path::CommitmentPath;
 use crate::core::ics24_host::path::SeqSendPath;
 use crate::core::ContextError;
 use crate::core::ExecutionContext;
-use crate::core::ValidationContext;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 use crate::timestamp::Expiry;
 
+// TODO BEFORE MERGE: REMOVE
 #[derive(Clone, Debug)]
 pub struct SendPacketResult {
     pub port_id: PortId,
@@ -123,7 +123,7 @@ pub fn send_packet(
 
 /// Per our convention, this message is processed on chain A.
 pub fn send_packet_validate(
-    ctx_a: &impl ValidationContext,
+    ctx_a: &impl SendPacketValidationContext,
     packet: Packet,
 ) -> Result<(), ContextError> {
     let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
