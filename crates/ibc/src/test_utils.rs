@@ -109,24 +109,6 @@ impl Module for DummyTransferModule {
         Ok((ModuleExtras::empty(), version.clone()))
     }
 
-    fn on_chan_open_init(
-        &mut self,
-        _order: Order,
-        _connection_hops: &[ConnectionId],
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty: &Counterparty,
-        version: &Version,
-    ) -> Result<(ModuleExtras, Version), ChannelError> {
-        Ok((
-            ModuleExtras {
-                events: Vec::new(),
-                log: Vec::new(),
-            },
-            version.clone(),
-        ))
-    }
-
     fn on_chan_open_try_validate(
         &self,
         _order: Order,
@@ -149,24 +131,6 @@ impl Module for DummyTransferModule {
         counterparty_version: &Version,
     ) -> Result<(ModuleExtras, Version), ChannelError> {
         Ok((ModuleExtras::empty(), counterparty_version.clone()))
-    }
-
-    fn on_chan_open_try(
-        &mut self,
-        _order: Order,
-        _connection_hops: &[ConnectionId],
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty: &Counterparty,
-        counterparty_version: &Version,
-    ) -> Result<(ModuleExtras, Version), ChannelError> {
-        Ok((
-            ModuleExtras {
-                events: Vec::new(),
-                log: Vec::new(),
-            },
-            counterparty_version.clone(),
-        ))
     }
 
     fn on_recv_packet_execute(
