@@ -26,7 +26,7 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - name: Publish crates
-        run: ./release.sh
-        env:
-          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+      - name: Publish crate
+        run: |
+          cd crates/ibc
+          cargo publish --token ${{ secrets.CRATES_TOKEN }}
