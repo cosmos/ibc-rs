@@ -1,4 +1,3 @@
-use crate::core::ValidationContext;
 use crate::core::ics04_channel::channel::Counterparty;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::commitment::PacketCommitment;
@@ -8,8 +7,11 @@ use crate::core::ics04_channel::{context::SendPacketReader, error::PacketError, 
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::ics24_host::path::ChannelEndPath;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
+use crate::core::ics24_host::path::CommitmentPath;
 use crate::core::ics24_host::path::SeqSendPath;
 use crate::core::ContextError;
+use crate::core::ExecutionContext;
+use crate::core::ValidationContext;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
@@ -24,7 +26,8 @@ pub struct SendPacketResult {
     pub commitment: PacketCommitment,
 }
 
-/// Per our convention, this message is processed on chain A.
+// TODO BEFORE MERGE: send_packet() should now call validate() and execute()
+
 pub fn send_packet(
     ctx_a: &impl SendPacketReader,
     packet: Packet,
@@ -118,6 +121,7 @@ pub fn send_packet(
     Ok(output.with_result(result))
 }
 
+/// Per our convention, this message is processed on chain A.
 pub fn send_packet_validate(
     ctx_a: &impl ValidationContext,
     packet: Packet,
@@ -189,6 +193,47 @@ pub fn send_packet_validate(
     Ok(())
 }
 
+/// Per our convention, this message is processed on chain A.
+pub fn send_packet_execute(
+    ctx_a: &mut impl ExecutionContext,
+    packet: Packet,
+) -> Result<(), ContextError> {
+    {
+        let seq_send_path_on_a = SeqSendPath::new(&packet.port_on_a, &packet.chan_on_a);
+        let next_seq_send_on_a = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
+
+        ctx_a.store_next_sequence_send(&seq_send_path_on_a, next_seq_send_on_a.increment())?;
+    }
+
+    ctx_a.store_packet_commitment(
+        &CommitmentPath {
+            port_id: packet.port_on_a.clone(),
+            channel_id: packet.chan_on_a.clone(),
+            sequence: packet.sequence,
+        },
+        ctx_a.compute_packet_commitment(
+            &packet.data,
+            &packet.timeout_height_on_b,
+            &packet.timeout_timestamp_on_b,
+        ),
+    )?;
+
+    // emit events and logs
+    {
+        let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
+        let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
+        let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
+
+        ctx_a.log_message("success: packet send".to_string());
+        ctx_a.emit_ibc_event(IbcEvent::SendPacket(SendPacket::new(
+            packet,
+            chan_end_on_a.ordering,
+            conn_id_on_a.clone(),
+        )));
+    }
+
+    Ok(())
+}
 
 #[cfg(test)]
 mod tests {
