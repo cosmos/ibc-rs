@@ -14,8 +14,6 @@ use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use crate::events::ModuleEvent;
-use crate::handler::HandlerOutputBuilder;
 use crate::signer::Signer;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -66,8 +64,6 @@ impl Borrow<str> for ModuleId {
         self.0.as_str()
     }
 }
-
-pub type ModuleOutputBuilder = HandlerOutputBuilder<(), ModuleEvent>;
 
 pub trait Module: Send + Sync + AsAnyMut + Debug {
     #[allow(clippy::too_many_arguments)]
@@ -255,16 +251,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         _relayer: &Signer,
     ) -> (ModuleExtras, Result<(), PacketError>);
 
-    fn on_acknowledgement_packet(
-        &mut self,
-        _output: &mut ModuleOutputBuilder,
-        _packet: &Packet,
-        _acknowledgement: &Acknowledgement,
-        _relayer: &Signer,
-    ) -> Result<(), PacketError> {
-        Ok(())
-    }
-
     /// Note: `MsgTimeout` and `MsgTimeoutOnClose` use the same callback
 
     fn on_timeout_packet_validate(
@@ -280,15 +266,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         packet: &Packet,
         relayer: &Signer,
     ) -> (ModuleExtras, Result<(), PacketError>);
-
-    fn on_timeout_packet(
-        &mut self,
-        _output: &mut ModuleOutputBuilder,
-        _packet: &Packet,
-        _relayer: &Signer,
-    ) -> Result<(), PacketError> {
-        Ok(())
-    }
 }
 
 pub trait AsAnyMut: Any {
