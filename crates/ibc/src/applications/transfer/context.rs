@@ -17,7 +17,7 @@ use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics24_host::path::{CommitmentPath, SeqSendPath};
-use crate::core::ics26_routing::context::ModuleOutputBuilder;
+use crate::core::ics26_routing::module::ModuleOutputBuilder;
 use crate::core::{ContextError, ExecutionContext};
 use crate::prelude::*;
 use crate::signer::Signer;

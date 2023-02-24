@@ -5,7 +5,7 @@ use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::events::CloseConfirm;
 use crate::core::ics04_channel::handler::chan_close_confirm;
 use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::ics26_routing::module::ModuleId;
 
 use crate::events::IbcEvent;
 
@@ -22,7 +22,7 @@ where
     chan_close_confirm::validate(ctx_b, &msg)?;
 
     let module = ctx_b
-        .get_route(&module_id)
+        .get_validation_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     module.on_chan_close_confirm_validate(&msg.port_id_on_b, &msg.chan_id_on_b)?;
 
@@ -38,7 +38,7 @@ where
     ExecCtx: ExecutionContext,
 {
     let module = ctx_b
-        .get_route_mut(&module_id)
+        .get_execution_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     let extras = module.on_chan_close_confirm_execute(&msg.port_id_on_b, &msg.chan_id_on_b)?;
     let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);
@@ -99,7 +99,7 @@ mod tests {
     use crate::core::context::chan_close_confirm::chan_close_confirm_execute;
     use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
-    use crate::core::ics26_routing::context::ModuleId;
+    use crate::core::ics26_routing::module::ModuleId;
     use crate::core::ValidationContext;
     use crate::events::IbcEvent;
     use crate::prelude::*;
@@ -162,7 +162,7 @@ mod tests {
 
         let module = DummyTransferModule::new(context.ibc_store_share());
         let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
-        context.add_route(module_id.clone(), module).unwrap();
+        context.add_exec_route(module_id.clone(), module).unwrap();
 
         let res = chan_close_confirm_execute(&mut context, module_id, msg_chan_close_confirm);
         assert!(res.is_ok(), "Execution success: happy path");

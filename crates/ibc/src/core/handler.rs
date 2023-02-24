@@ -41,7 +41,6 @@ mod tests {
         context::test::deliver as ics20_deliver, msgs::transfer::test_util::get_dummy_msg_transfer,
         msgs::transfer::MsgTransfer, packet::PacketData, PrefixedCoin, MODULE_ID_STR,
     };
-    use crate::core::context::Router;
     use crate::core::ics02_client::msgs::{
         create_client::MsgCreateClient, update_client::MsgUpdateClient,
         upgrade_client::MsgUpgradeClient, ClientMsg,
@@ -80,9 +79,10 @@ mod tests {
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
     use crate::core::ics24_host::path::CommitmentPath;
-    use crate::core::ics26_routing::context::ModuleId;
     use crate::core::ics26_routing::error::RouterError;
+    use crate::core::ics26_routing::module::ModuleId;
     use crate::core::ics26_routing::msgs::MsgEnvelope;
+    use crate::core::ics26_routing::router::ExecutionRouter;
     use crate::core::{dispatch, ValidationContext};
     use crate::events::IbcEvent;
     use crate::handler::HandlerOutputBuilder;
@@ -145,7 +145,10 @@ mod tests {
         let mut ctx = {
             let mut ctx = MockContext::default();
             let module = DummyTransferModule::new(ctx.ibc_store_share());
-            ctx.add_route(transfer_module_id.clone(), module).unwrap();
+            ctx.add_val_route(transfer_module_id.clone(), module.clone())
+                .unwrap();
+            ctx.add_exec_route(transfer_module_id.clone(), module)
+                .unwrap();
 
             ctx
         };
@@ -471,7 +474,7 @@ mod tests {
             let res = match test.msg.clone() {
                 TestMsg::Ics26(msg) => dispatch(&mut ctx, msg).map(|_| ()),
                 TestMsg::Ics20(msg) => {
-                    let transfer_module = ctx.get_route_mut(&transfer_module_id).unwrap();
+                    let transfer_module = ctx.get_execution_route(&transfer_module_id).unwrap();
                     ics20_deliver(
                         transfer_module
                             .as_any_mut()
@@ -527,7 +530,9 @@ mod tests {
             );
         let module = DummyTransferModule::new(ctx.ibc_store_share());
 
-        ctx.add_route(module_id.clone(), module).unwrap();
+        ctx.add_val_route(module_id.clone(), module.clone())
+            .unwrap();
+        ctx.add_exec_route(module_id.clone(), module).unwrap();
 
         // Note: messages will be using the default port
         ctx.scope_port_to_module(PortId::default(), module_id);

@@ -8,7 +8,7 @@ use crate::core::ics24_host::identifier::ChannelId;
 
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::ics26_routing::module::ModuleId;
 
 use crate::events::IbcEvent;
 
@@ -25,7 +25,7 @@ where
     let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
 
     let module = ctx_a
-        .get_route(&module_id)
+        .get_validation_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     module.on_chan_open_init_validate(
         msg.ordering,
@@ -49,7 +49,7 @@ where
 {
     let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
     let module = ctx_a
-        .get_route_mut(&module_id)
+        .get_execution_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     let (extras, version) = module.on_chan_open_init_execute(
         msg.ordering,
@@ -150,7 +150,7 @@ mod tests {
         let mut context = MockContext::default();
         let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
         let module = DummyTransferModule::new(context.ibc_store_share());
-        context.add_route(module_id.clone(), module).unwrap();
+        context.add_exec_route(module_id.clone(), module).unwrap();
 
         let msg_conn_init =
             MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init()).unwrap();

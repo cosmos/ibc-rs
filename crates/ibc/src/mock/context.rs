@@ -6,6 +6,7 @@ use crate::core::ics24_host::path::{
     ClientTypePath, CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath,
     SeqSendPath,
 };
+use crate::core::ics26_routing::router::{ExecutionRouter, ValidationRouter};
 use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap;
@@ -23,7 +24,6 @@ use tracing::debug;
 use crate::clients::ics07_tendermint::client_state::test_util::get_dummy_tendermint_client_state;
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 use crate::core::context::ContextError;
-use crate::core::context::Router;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
@@ -37,7 +37,9 @@ use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ics26_routing::context::{Module, ModuleId};
+use crate::core::ics26_routing::module::{
+    ExecutionModule, ModuleId, ModuleLookup, ValidationModule,
+};
 use crate::core::ics26_routing::msgs::MsgEnvelope;
 use crate::core::{dispatch, ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
@@ -80,7 +82,10 @@ pub struct MockContext {
     pub ibc_store: Arc<Mutex<MockIbcStore>>,
 
     /// To implement ValidationContext Router
-    router: BTreeMap<ModuleId, Arc<dyn Module>>,
+    val_router: BTreeMap<ModuleId, Arc<dyn ValidationModule>>,
+
+    /// To implement ExecutionContext Router
+    exec_router: BTreeMap<ModuleId, Arc<dyn ExecutionModule>>,
 
     pub events: Vec<IbcEvent>,
 
@@ -117,7 +122,8 @@ impl Clone for MockContext {
             history: self.history.clone(),
             block_time: self.block_time,
             ibc_store,
-            router: self.router.clone(),
+            val_router: self.val_router.clone(),
+            exec_router: self.exec_router.clone(),
             events: self.events.clone(),
             logs: self.logs.clone(),
         }
@@ -180,7 +186,8 @@ impl MockContext {
                 .collect(),
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
-            router: BTreeMap::new(),
+            val_router: BTreeMap::new(),
+            exec_router: BTreeMap::new(),
             events: Vec::new(),
             logs: Vec::new(),
         }
@@ -463,8 +470,23 @@ impl MockContext {
         self
     }
 
-    pub fn add_route(&mut self, module_id: ModuleId, module: impl Module) -> Result<(), String> {
-        match self.router.insert(module_id, Arc::new(module)) {
+    pub fn add_val_route(
+        &mut self,
+        module_id: ModuleId,
+        module: impl ValidationModule,
+    ) -> Result<(), String> {
+        match self.val_router.insert(module_id, Arc::new(module)) {
+            None => Ok(()),
+            Some(_) => Err("Duplicate module_id".to_owned()),
+        }
+    }
+
+    pub fn add_exec_route(
+        &mut self,
+        module_id: ModuleId,
+        module: impl ExecutionModule,
+    ) -> Result<(), String> {
+        match self.exec_router.insert(module_id, Arc::new(module)) {
             None => Ok(()),
             Some(_) => Err("Duplicate module_id".to_owned()),
         }
@@ -670,22 +692,37 @@ impl RelayerContext for MockContext {
     }
 }
 
-impl Router for MockContext {
-    fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module> {
-        self.router.get(module_id).map(Arc::as_ref)
-    }
-    fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module> {
-        self.router.get_mut(module_id).and_then(Arc::get_mut)
-    }
-
-    fn has_route(&self, module_id: &ModuleId) -> bool {
-        self.router.get(module_id).is_some()
-    }
-
+impl ModuleLookup for MockContext {
     fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId> {
         self.ibc_store.lock().port_to_module.get(port_id).cloned()
     }
 }
+
+impl ValidationRouter for MockContext {
+    fn get_validation_route(&self, module_id: &ModuleId) -> Option<&dyn ValidationModule> {
+        self.val_router.get(module_id).map(Arc::as_ref)
+    }
+}
+
+impl ExecutionRouter for MockContext {
+    fn get_execution_route(&mut self, module_id: &ModuleId) -> Option<&mut dyn ExecutionModule> {
+        self.exec_router.get_mut(module_id).and_then(Arc::get_mut)
+    }
+}
+
+// For cases where MockContext uses the same router for both validation and execution
+//
+// impl Router for MockContext {
+//     /// Returns a reference to a `Module` registered against the specified `ModuleId`
+//     fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module> {
+//         self.val_router.get(module_id).map(Arc::as_ref)
+//     }
+
+//     /// Returns a mutable reference to a `Module` registered against the specified `ModuleId`
+//     fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module> {
+//         self.exec_router.get_mut(module_id).and_then(Arc::get_mut)
+//     }
+// }
 
 impl ValidationContext for MockContext {
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
@@ -1407,7 +1444,7 @@ mod tests {
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-    use crate::core::ics26_routing::context::{Module, ModuleId, ModuleOutputBuilder};
+    use crate::core::ics26_routing::module::{ExecutionModule, ModuleId, ValidationModule};
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::signer::Signer;
@@ -1557,10 +1594,10 @@ mod tests {
     fn test_router() {
         #[derive(Debug, Default)]
         struct FooModule {
-            counter: usize,
+            _counter: usize,
         }
 
-        impl Module for FooModule {
+        impl ValidationModule for FooModule {
             fn on_chan_open_init_validate(
                 &self,
                 _order: Order,
@@ -1571,30 +1608,6 @@ mod tests {
                 version: &Version,
             ) -> Result<Version, ChannelError> {
                 Ok(version.clone())
-            }
-
-            fn on_chan_open_init_execute(
-                &mut self,
-                _order: Order,
-                _connection_hops: &[ConnectionId],
-                _port_id: &PortId,
-                _channel_id: &ChannelId,
-                _counterparty: &Counterparty,
-                version: &Version,
-            ) -> Result<(ModuleExtras, Version), ChannelError> {
-                Ok((ModuleExtras::empty(), version.clone()))
-            }
-
-            fn on_chan_open_init(
-                &mut self,
-                _order: Order,
-                _connection_hops: &[ConnectionId],
-                _port_id: &PortId,
-                _channel_id: &ChannelId,
-                _counterparty: &Counterparty,
-                version: &Version,
-            ) -> Result<(ModuleExtras, Version), ChannelError> {
-                Ok((ModuleExtras::empty(), version.clone()))
             }
 
             fn on_chan_open_try_validate(
@@ -1609,68 +1622,12 @@ mod tests {
                 Ok(counterparty_version.clone())
             }
 
-            fn on_chan_open_try_execute(
-                &mut self,
-                _order: Order,
-                _connection_hops: &[ConnectionId],
-                _port_id: &PortId,
-                _channel_id: &ChannelId,
-                _counterparty: &Counterparty,
-                counterparty_version: &Version,
-            ) -> Result<(ModuleExtras, Version), ChannelError> {
-                Ok((ModuleExtras::empty(), counterparty_version.clone()))
-            }
-
-            fn on_chan_open_try(
-                &mut self,
-                _order: Order,
-                _connection_hops: &[ConnectionId],
-                _port_id: &PortId,
-                _channel_id: &ChannelId,
-                _counterparty: &Counterparty,
-                counterparty_version: &Version,
-            ) -> Result<(ModuleExtras, Version), ChannelError> {
-                Ok((ModuleExtras::empty(), counterparty_version.clone()))
-            }
-
-            fn on_recv_packet_execute(
-                &mut self,
-                _packet: &Packet,
-                _relayer: &Signer,
-            ) -> (ModuleExtras, Acknowledgement) {
-                self.counter += 1;
-
-                (
-                    ModuleExtras::empty(),
-                    Acknowledgement::try_from(vec![1u8]).unwrap(),
-                )
-            }
-
-            fn on_recv_packet(
-                &mut self,
-                _output: &mut ModuleOutputBuilder,
-                _packet: &Packet,
-                _relayer: &Signer,
-            ) -> Acknowledgement {
-                self.counter += 1;
-
-                Acknowledgement::try_from(vec![1u8]).unwrap()
-            }
-
             fn on_timeout_packet_validate(
                 &self,
                 _packet: &Packet,
                 _relayer: &Signer,
             ) -> Result<(), PacketError> {
                 Ok(())
-            }
-
-            fn on_timeout_packet_execute(
-                &mut self,
-                _packet: &Packet,
-                _relayer: &Signer,
-            ) -> (ModuleExtras, Result<(), PacketError>) {
-                (ModuleExtras::empty(), Ok(()))
             }
 
             fn on_acknowledgement_packet_validate(
@@ -1681,33 +1638,11 @@ mod tests {
             ) -> Result<(), PacketError> {
                 Ok(())
             }
-
-            fn on_acknowledgement_packet_execute(
-                &mut self,
-                _packet: &Packet,
-                _acknowledgement: &Acknowledgement,
-                _relayer: &Signer,
-            ) -> (ModuleExtras, Result<(), PacketError>) {
-                (ModuleExtras::empty(), Ok(()))
-            }
         }
-
         #[derive(Debug, Default)]
         struct BarModule;
 
-        impl Module for BarModule {
-            fn on_chan_open_init_validate(
-                &self,
-                _order: Order,
-                _connection_hops: &[ConnectionId],
-                _port_id: &PortId,
-                _channel_id: &ChannelId,
-                _counterparty: &Counterparty,
-                version: &Version,
-            ) -> Result<Version, ChannelError> {
-                Ok(version.clone())
-            }
-
+        impl ExecutionModule for BarModule {
             fn on_chan_open_init_execute(
                 &mut self,
                 _order: Order,
@@ -1720,43 +1655,7 @@ mod tests {
                 Ok((ModuleExtras::empty(), version.clone()))
             }
 
-            fn on_chan_open_init(
-                &mut self,
-                _order: Order,
-                _connection_hops: &[ConnectionId],
-                _port_id: &PortId,
-                _channel_id: &ChannelId,
-                _counterparty: &Counterparty,
-                version: &Version,
-            ) -> Result<(ModuleExtras, Version), ChannelError> {
-                Ok((ModuleExtras::empty(), version.clone()))
-            }
-
-            fn on_chan_open_try_validate(
-                &self,
-                _order: Order,
-                _connection_hops: &[ConnectionId],
-                _port_id: &PortId,
-                _channel_id: &ChannelId,
-                _counterparty: &Counterparty,
-                counterparty_version: &Version,
-            ) -> Result<Version, ChannelError> {
-                Ok(counterparty_version.clone())
-            }
-
             fn on_chan_open_try_execute(
-                &mut self,
-                _order: Order,
-                _connection_hops: &[ConnectionId],
-                _port_id: &PortId,
-                _channel_id: &ChannelId,
-                _counterparty: &Counterparty,
-                counterparty_version: &Version,
-            ) -> Result<(ModuleExtras, Version), ChannelError> {
-                Ok((ModuleExtras::empty(), counterparty_version.clone()))
-            }
-
-            fn on_chan_open_try(
                 &mut self,
                 _order: Order,
                 _connection_hops: &[ConnectionId],
@@ -1779,38 +1678,12 @@ mod tests {
                 )
             }
 
-            fn on_recv_packet(
-                &mut self,
-                _output: &mut ModuleOutputBuilder,
-                _packet: &Packet,
-                _relayer: &Signer,
-            ) -> Acknowledgement {
-                Acknowledgement::try_from(vec![1u8]).unwrap()
-            }
-
-            fn on_timeout_packet_validate(
-                &self,
-                _packet: &Packet,
-                _relayer: &Signer,
-            ) -> Result<(), PacketError> {
-                Ok(())
-            }
-
             fn on_timeout_packet_execute(
                 &mut self,
                 _packet: &Packet,
                 _relayer: &Signer,
             ) -> (ModuleExtras, Result<(), PacketError>) {
                 (ModuleExtras::empty(), Ok(()))
-            }
-
-            fn on_acknowledgement_packet_validate(
-                &self,
-                _packet: &Packet,
-                _acknowledgement: &Acknowledgement,
-                _relayer: &Signer,
-            ) -> Result<(), PacketError> {
-                Ok(())
             }
 
             fn on_acknowledgement_packet_execute(
@@ -1829,25 +1702,21 @@ mod tests {
             1,
             Height::new(1, 1).unwrap(),
         );
-        ctx.add_route("foomodule".parse().unwrap(), FooModule::default())
+        ctx.add_val_route("foomodule".parse().unwrap(), FooModule::default())
             .unwrap();
-        ctx.add_route("barmodule".parse().unwrap(), BarModule::default())
+        ctx.add_exec_route("barmodule".parse().unwrap(), BarModule::default())
             .unwrap();
 
         let mut on_recv_packet_result = |module_id: &'static str| {
             let module_id = ModuleId::from_str(module_id).unwrap();
-            let m = ctx.get_route_mut(&module_id).unwrap();
-            let result = m.on_recv_packet(
-                &mut ModuleOutputBuilder::new(),
+            let m = ctx.get_execution_route(&module_id).unwrap();
+            let result = m.on_recv_packet_execute(
                 &Packet::default(),
                 &get_dummy_bech32_account().parse().unwrap(),
             );
             (module_id, result)
         };
 
-        let _results = vec![
-            on_recv_packet_result("foomodule"),
-            on_recv_packet_result("barmodule"),
-        ];
+        let _results = vec![on_recv_packet_result("barmodule")];
     }
 }

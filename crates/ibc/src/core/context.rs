@@ -22,6 +22,7 @@ use self::acknowledgement::{acknowledgement_packet_execute, acknowledgement_pack
 use self::recv_packet::{recv_packet_execute, recv_packet_validate};
 use self::timeout::{timeout_packet_execute, timeout_packet_validate, TimeoutMsgType};
 
+use super::ics26_routing::router::{ExecutionRouter, ValidationRouter};
 use super::{
     ics02_client::error::ClientError,
     ics03_connection::error::ConnectionError,
@@ -45,7 +46,6 @@ use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics04_channel::timeout::TimeoutHeight;
-use crate::core::ics05_port::error::PortError::UnknownPort;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics24_host::path::{
@@ -53,7 +53,6 @@ use crate::core::ics24_host::path::{
     ClientTypePath, CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath,
     SeqSendPath,
 };
-use crate::core::ics26_routing::context::{Module, ModuleId};
 use crate::core::{
     ics02_client::{
         handler::{create_client, misbehaviour, update_client, upgrade_client},
@@ -120,53 +119,7 @@ impl std::error::Error for ContextError {
     }
 }
 
-pub trait Router {
-    /// Returns a reference to a `Module` registered against the specified `ModuleId`
-    fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module>;
-
-    /// Returns a mutable reference to a `Module` registered against the specified `ModuleId`
-    fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module>;
-
-    /// Returns true if the `Router` has a `Module` registered against the specified `ModuleId`
-    fn has_route(&self, module_id: &ModuleId) -> bool;
-
-    /// Return the module_id associated with a given port_id
-    fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId>;
-
-    fn lookup_module_channel(&self, msg: &ChannelMsg) -> Result<ModuleId, ChannelError> {
-        let port_id = match msg {
-            ChannelMsg::OpenInit(msg) => &msg.port_id_on_a,
-            ChannelMsg::OpenTry(msg) => &msg.port_id_on_b,
-            ChannelMsg::OpenAck(msg) => &msg.port_id_on_a,
-            ChannelMsg::OpenConfirm(msg) => &msg.port_id_on_b,
-            ChannelMsg::CloseInit(msg) => &msg.port_id_on_a,
-            ChannelMsg::CloseConfirm(msg) => &msg.port_id_on_b,
-        };
-        let module_id = self
-            .lookup_module_by_port(port_id)
-            .ok_or(ChannelError::Port(UnknownPort {
-                port_id: port_id.clone(),
-            }))?;
-        Ok(module_id)
-    }
-
-    fn lookup_module_packet(&self, msg: &PacketMsg) -> Result<ModuleId, ChannelError> {
-        let port_id = match msg {
-            PacketMsg::Recv(msg) => &msg.packet.port_on_b,
-            PacketMsg::Ack(msg) => &msg.packet.port_on_a,
-            PacketMsg::Timeout(msg) => &msg.packet.port_on_a,
-            PacketMsg::TimeoutOnClose(msg) => &msg.packet.port_on_a,
-        };
-        let module_id = self
-            .lookup_module_by_port(port_id)
-            .ok_or(ChannelError::Port(UnknownPort {
-                port_id: port_id.clone(),
-            }))?;
-        Ok(module_id)
-    }
-}
-
-pub trait ValidationContext: Router {
+pub trait ValidationContext: ValidationRouter {
     /// Validation entrypoint.
     fn validate(&self, msg: MsgEnvelope) -> Result<(), RouterError>
     where
@@ -191,7 +144,7 @@ pub trait ValidationContext: Router {
                 let module_id = self
                     .lookup_module_channel(&msg)
                     .map_err(ContextError::from)?;
-                if !self.has_route(&module_id) {
+                if !self.has_validation_route(&module_id) {
                     return Err(ChannelError::RouteNotFound)
                         .map_err(ContextError::ChannelError)
                         .map_err(RouterError::ContextError);
@@ -215,7 +168,7 @@ pub trait ValidationContext: Router {
                 let module_id = self
                     .lookup_module_packet(&msg)
                     .map_err(ContextError::from)?;
-                if !self.has_route(&module_id) {
+                if !self.has_validation_route(&module_id) {
                     return Err(ChannelError::RouteNotFound)
                         .map_err(ContextError::ChannelError)
                         .map_err(RouterError::ContextError);
@@ -412,7 +365,7 @@ pub trait ValidationContext: Router {
     }
 }
 
-pub trait ExecutionContext: ValidationContext {
+pub trait ExecutionContext: ValidationContext + ExecutionRouter {
     /// Execution entrypoint
     fn execute(&mut self, msg: MsgEnvelope) -> Result<(), RouterError>
     where
@@ -437,7 +390,7 @@ pub trait ExecutionContext: ValidationContext {
                 let module_id = self
                     .lookup_module_channel(&msg)
                     .map_err(ContextError::from)?;
-                if !self.has_route(&module_id) {
+                if !self.has_execution_route(&module_id) {
                     return Err(ChannelError::RouteNotFound)
                         .map_err(ContextError::ChannelError)
                         .map_err(RouterError::ContextError);
@@ -459,7 +412,7 @@ pub trait ExecutionContext: ValidationContext {
                 let module_id = self
                     .lookup_module_packet(&msg)
                     .map_err(ContextError::from)?;
-                if !self.has_route(&module_id) {
+                if !self.has_execution_route(&module_id) {
                     return Err(ChannelError::RouteNotFound)
                         .map_err(ContextError::ChannelError)
                         .map_err(RouterError::ContextError);

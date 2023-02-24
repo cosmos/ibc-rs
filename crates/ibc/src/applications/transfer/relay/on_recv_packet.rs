@@ -5,7 +5,7 @@ use crate::applications::transfer::packet::PacketData;
 use crate::applications::transfer::{is_receiver_chain_source, TracePrefix};
 use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::packet::Packet;
-use crate::core::ics26_routing::context::ModuleOutputBuilder;
+use crate::core::ics26_routing::module::ModuleOutputBuilder;
 use crate::prelude::*;
 
 pub fn process_recv_packet<Ctx: 'static + TokenTransferContext>(

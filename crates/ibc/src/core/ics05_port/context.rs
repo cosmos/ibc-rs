@@ -1,6 +1,6 @@
 use crate::core::ics05_port::error::PortError;
 use crate::core::ics24_host::identifier::PortId;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::ics26_routing::module::ModuleId;
 use crate::prelude::*;
 
 /// A context supplying all the necessary read-only dependencies for processing any information regarding a port.

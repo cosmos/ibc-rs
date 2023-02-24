@@ -7,7 +7,7 @@ use crate::{
             channel::Order, error::ChannelError, events::AcknowledgePacket,
             handler::acknowledgement, msgs::acknowledgement::MsgAcknowledgement,
         },
-        ics26_routing::context::ModuleId,
+        ics26_routing::module::ModuleId,
     },
     events::IbcEvent,
 };
@@ -25,7 +25,7 @@ where
     acknowledgement::validate(ctx_a, &msg)?;
 
     let module = ctx_a
-        .get_route(&module_id)
+        .get_validation_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
 
     module
@@ -68,7 +68,7 @@ where
     };
 
     let module = ctx_a
-        .get_route_mut(&module_id)
+        .get_execution_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
 
     let (extras, cb_result) =
@@ -156,7 +156,7 @@ mod tests {
 
         let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
         let module = DummyTransferModule::new(ctx.ibc_store_share());
-        ctx.add_route(module_id.clone(), module).unwrap();
+        ctx.add_exec_route(module_id.clone(), module).unwrap();
 
         let msg = MsgAcknowledgement::try_from(get_dummy_raw_msg_acknowledgement(
             client_height.revision_height(),

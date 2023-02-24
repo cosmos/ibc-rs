@@ -9,7 +9,7 @@ use crate::{
             packet::Receipt,
         },
         ics24_host::path::{AckPath, ChannelEndPath, ReceiptPath, SeqRecvPath},
-        ics26_routing::context::ModuleId,
+        ics26_routing::module::ModuleId,
     },
     events::IbcEvent,
     prelude::*,
@@ -70,7 +70,7 @@ where
     }
 
     let module = ctx_b
-        .get_route_mut(&module_id)
+        .get_execution_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
 
     let (extras, acknowledgement) = module.on_recv_packet_execute(&msg.packet, &msg.signer);
@@ -143,7 +143,7 @@ mod tests {
             context::recv_packet::recv_packet_execute,
             ics03_connection::version::get_compatible_versions,
             ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId},
-            ics26_routing::context::ModuleId,
+            ics26_routing::module::ModuleId,
         },
         events::IbcEvent,
         prelude::*,
@@ -183,7 +183,7 @@ mod tests {
 
         let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
         let module = DummyTransferModule::new(context.ibc_store_share());
-        context.add_route(module_id.clone(), module).unwrap();
+        context.add_exec_route(module_id.clone(), module).unwrap();
 
         let host_height = context.query_latest_height().unwrap().increment();
 

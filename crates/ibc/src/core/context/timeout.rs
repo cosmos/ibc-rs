@@ -12,7 +12,7 @@ use crate::{
             events::TimeoutPacket,
             handler::{timeout, timeout_on_close},
         },
-        ics26_routing::context::ModuleId,
+        ics26_routing::module::ModuleId,
     },
     events::IbcEvent,
 };
@@ -38,7 +38,7 @@ where
     }?;
 
     let module = ctx_a
-        .get_route(&module_id)
+        .get_validation_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
 
     let (packet, signer) = match timeout_msg_type {
@@ -85,7 +85,7 @@ where
     };
 
     let module = ctx_a
-        .get_route_mut(&module_id)
+        .get_execution_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
 
     let (extras, cb_result) = module.on_timeout_packet_execute(&packet, &signer);
@@ -187,7 +187,7 @@ mod tests {
 
         let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
         let module = DummyTransferModule::new(ctx.ibc_store_share());
-        ctx.add_route(module_id.clone(), module).unwrap();
+        ctx.add_exec_route(module_id.clone(), module).unwrap();
 
         let height = 2;
         let timeout_timestamp = 5;

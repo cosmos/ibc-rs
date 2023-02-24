@@ -5,7 +5,7 @@ use crate::{core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm,
 
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::ics26_routing::module::ModuleId;
 
 use crate::events::IbcEvent;
 
@@ -22,7 +22,7 @@ where
     chan_open_confirm::validate(ctx_b, &msg)?;
 
     let module = ctx_b
-        .get_route(&module_id)
+        .get_validation_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     module.on_chan_open_confirm_validate(&msg.port_id_on_b, &msg.chan_id_on_b)?;
 
@@ -38,7 +38,7 @@ where
     ExecCtx: ExecutionContext,
 {
     let module = ctx_b
-        .get_route_mut(&module_id)
+        .get_execution_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
 
     let extras = module.on_chan_open_confirm_execute(&msg.port_id_on_b, &msg.chan_id_on_b)?;
@@ -117,7 +117,7 @@ mod tests {
                 },
             },
             ics24_host::identifier::{ChannelId, ClientId, ConnectionId},
-            ics26_routing::context::ModuleId,
+            ics26_routing::module::ModuleId,
         },
         mock::context::MockContext,
         test_utils::DummyTransferModule,
@@ -145,7 +145,7 @@ mod tests {
         let mut context = MockContext::default();
         let module = DummyTransferModule::new(context.ibc_store_share());
         let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
-        context.add_route(module_id.clone(), module).unwrap();
+        context.add_exec_route(module_id.clone(), module).unwrap();
 
         let client_id_on_b = ClientId::new(mock_client_type(), 45).unwrap();
         let conn_id_on_b = ConnectionId::new(2);

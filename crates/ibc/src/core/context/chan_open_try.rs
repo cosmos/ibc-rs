@@ -6,7 +6,7 @@ use crate::{core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry, prelude
 
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::ics26_routing::module::ModuleId;
 
 use crate::events::IbcEvent;
 
@@ -24,7 +24,7 @@ where
     let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
 
     let module = ctx_b
-        .get_route(&module_id)
+        .get_validation_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     module.on_chan_open_try_validate(
         msg.ordering,
@@ -48,7 +48,7 @@ where
 {
     let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
     let module = ctx_b
-        .get_route_mut(&module_id)
+        .get_execution_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
 
     let (extras, version) = module.on_chan_open_try_execute(
@@ -119,7 +119,7 @@ where
 mod tests {
     use crate::{
         applications::transfer::MODULE_ID_STR,
-        core::{context::chan_open_try::chan_open_try_execute, ics26_routing::context::ModuleId},
+        core::{context::chan_open_try::chan_open_try_execute, ics26_routing::module::ModuleId},
         events::IbcEvent,
         prelude::*,
         test_utils::DummyTransferModule,
@@ -182,7 +182,7 @@ mod tests {
         let mut context = MockContext::default();
         let module = DummyTransferModule::new(context.ibc_store_share());
         let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
-        context.add_route(module_id.clone(), module).unwrap();
+        context.add_exec_route(module_id.clone(), module).unwrap();
 
         Fixture {
             context,
