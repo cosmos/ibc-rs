@@ -1,16 +1,18 @@
 use crate::core::ics04_channel::channel::Counterparty;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::commitment::PacketCommitment;
+use crate::core::ics04_channel::context::SendPacketExecutionContext;
 use crate::core::ics04_channel::events::SendPacket;
 use crate::core::ics04_channel::packet::Sequence;
-use crate::core::ics04_channel::{context::SendPacketValidationContext, error::PacketError, packet::Packet};
+use crate::core::ics04_channel::{
+    context::SendPacketValidationContext, error::PacketError, packet::Packet,
+};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::ics24_host::path::ChannelEndPath;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::ics24_host::path::CommitmentPath;
 use crate::core::ics24_host::path::SeqSendPath;
 use crate::core::ContextError;
-use crate::core::ExecutionContext;
 use crate::events::IbcEvent;
 use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
@@ -195,7 +197,7 @@ pub fn send_packet_validate(
 
 /// Per our convention, this message is processed on chain A.
 pub fn send_packet_execute(
-    ctx_a: &mut impl ExecutionContext,
+    ctx_a: &mut impl SendPacketExecutionContext,
     packet: Packet,
 ) -> Result<(), ContextError> {
     {

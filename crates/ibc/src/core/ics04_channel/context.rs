@@ -1,8 +1,11 @@
 //! ICS4 (channel) context.
 
 use crate::core::ics02_client::client_state::ClientState;
-use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath, SeqSendPath};
-use crate::core::{ContextError, ValidationContext};
+use crate::core::ics24_host::path::{
+    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
+};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::events::IbcEvent;
 use crate::prelude::*;
 use core::time::Duration;
 use num_traits::float::FloatCore;
@@ -87,6 +90,55 @@ where
         timeout_timestamp: &Timestamp,
     ) -> PacketCommitment {
         self.compute_packet_commitment(packet_data, timeout_height, timeout_timestamp)
+    }
+}
+
+pub trait SendPacketExecutionContext: SendPacketValidationContext {
+    fn store_next_sequence_send(
+        &mut self,
+        seq_send_path: &SeqSendPath,
+        seq: Sequence,
+    ) -> Result<(), ContextError>;
+
+    fn store_packet_commitment(
+        &mut self,
+        commitment_path: &CommitmentPath,
+        commitment: PacketCommitment,
+    ) -> Result<(), ContextError>;
+
+    /// Ibc events
+    fn emit_ibc_event(&mut self, event: IbcEvent);
+
+    /// Logging facility
+    fn log_message(&mut self, message: String);
+}
+
+impl<T> SendPacketExecutionContext for T
+where
+    T: ExecutionContext,
+{
+    fn store_next_sequence_send(
+        &mut self,
+        seq_send_path: &SeqSendPath,
+        seq: Sequence,
+    ) -> Result<(), ContextError> {
+        self.store_next_sequence_send(seq_send_path, seq)
+    }
+
+    fn store_packet_commitment(
+        &mut self,
+        commitment_path: &CommitmentPath,
+        commitment: PacketCommitment,
+    ) -> Result<(), ContextError> {
+        self.store_packet_commitment(commitment_path, commitment)
+    }
+
+    fn emit_ibc_event(&mut self, event: IbcEvent) {
+        self.emit_ibc_event(event)
+    }
+
+    fn log_message(&mut self, message: String) {
+        self.log_message(message)
     }
 }
 
