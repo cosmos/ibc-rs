@@ -37,7 +37,7 @@ pub enum TokenTransferError {
     InvalidPacketTimeoutTimestamp { timestamp: u64 },
     /// base denomination is empty
     EmptyBaseDenom,
-    /// invalid prot id n trace at postion: `{pos}`, validation error: `{validation_error}`
+    /// invalid prot id n trace at position: `{pos}`, validation error: `{validation_error}`
     InvalidTracePortId {
         pos: usize,
         validation_error: ValidationError,

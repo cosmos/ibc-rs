@@ -40,7 +40,7 @@ where
 
     let channel_feature = msg.ordering.to_string();
     if !conn_version.is_supported_feature(channel_feature) {
-        return Err(ChannelError::ChannelFeatureNotSuportedByConnection)
+        return Err(ChannelError::ChannelFeatureNotSupportedByConnection)
             .map_err(ContextError::ChannelError);
     }
 

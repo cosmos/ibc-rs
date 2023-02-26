@@ -33,14 +33,14 @@ pub enum ChannelError {
     NonUtf8PacketData,
     /// missing counterparty
     MissingCounterparty,
-    /// no commong version
+    /// no common version
     NoCommonVersion,
     /// missing channel end
     MissingChannel,
-    /// single version must be negociated on connection before opening channel
+    /// single version must be negotiated on connection before opening channel
     InvalidVersionLengthConnection,
     /// the channel ordering is not supported by connection
-    ChannelFeatureNotSuportedByConnection,
+    ChannelFeatureNotSupportedByConnection,
     /// the channel end (`{port_id}`, `{channel_id}`) does not exist
     ChannelNotFound {
         port_id: PortId,
