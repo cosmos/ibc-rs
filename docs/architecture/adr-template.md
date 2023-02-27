@@ -5,7 +5,7 @@
 
 ## Context
 
-> This section contains all the context one needs to understand the current state, and why there is a problem. It should be as succinct as possible and introduce the high level idea behind the solution. 
+> This section contains all the context one needs to understand the current state, and why there is a problem. It should be as succinct as possible and introduce the high level idea behind the solution.
 ## Decision
 
 > This section explains all of the details of the proposed solution, including implementation details.
@@ -31,6 +31,6 @@ If the proposed change will be large, please also indicate a way to do the chang
 
 ## References
 
-> Are there any relevant PR comments, issues that led up to this, or articles referrenced for why we made the given design choice? If so link them here!
+> Are there any relevant PR comments, issues that led up to this, or articles referenced for why we made the given design choice? If so link them here!
 
 * {reference link}

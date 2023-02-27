@@ -78,7 +78,7 @@ Now we have to modify [lib.rs](./src/lib.rs) again and only import the crate if 
 use my_package;
 ```
 
-Retore the original `use-unsupported` list, and add `my-package` to the end of the list:
+Restore the original `use-unsupported` list, and add `my-package` to the end of the list:
 
 ```toml
 use-unsupported = [
@@ -130,7 +130,7 @@ error: could not compile `no-std-check`
   - Crates must be listed on both `Cargo.toml` and `lib.rs`.
   - Crates that are listed in `Cargo.toml` but not imported inside `lib.rs` are not checked.
 
-### Overrride std crates using Cargo Nightly
+### Override std crates using Cargo Nightly
 
 This uses the unstable `build-std` feature provided by
 [Cargo Nightly](https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#build-std).

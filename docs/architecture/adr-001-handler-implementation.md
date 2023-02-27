@@ -316,7 +316,7 @@ pub fn keep(
 > the actual requirements.
 
 Each submodule is responsible for dispatching the messages it is given to the appropriate
-message processing function and, if successful, pass the resulting data to the persistance
+message processing function and, if successful, pass the resulting data to the persistence
 function defined in the previous section.
 
 To this end, the submodule should define an enumeration of all messages, in order
@@ -554,7 +554,7 @@ pub trait ClientKeeper {
 
 This way, only one implementation of the `ClientReader` and `ClientKeeper` trait is required,
 as it can delegate eg. the serialization of the underlying datatypes to the `Serialize` bound
-of the `Any...` wrappper.
+of the `Any...` wrapper.
 
 Both the `process` and `keep` function are defined to take a message generic over
 the actual client type:
