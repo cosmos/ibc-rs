@@ -51,7 +51,6 @@ pub mod core;
 pub mod dynamic_typing;
 mod erased;
 pub mod events;
-pub mod handler;
 pub mod hosts;
 pub mod signer;
 pub mod timestamp;
