@@ -33,9 +33,3 @@ impl From<u64> for Amount {
         Self(v.into())
     }
 }
-
-impl From<Amount> for u64 {
-    fn from(v: Amount) -> Self {
-        v.0.as_u64()
-    }
-}
