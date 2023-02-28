@@ -913,17 +913,6 @@ impl ValidationContext for MockContext {
         .map_err(ContextError::ChannelError)
     }
 
-    fn connection_channels(
-        &self,
-        cid: &ConnectionId,
-    ) -> Result<Vec<(PortId, ChannelId)>, ContextError> {
-        match self.ibc_store.lock().connection_channels.get(cid) {
-            Some(pcid) => Ok(pcid.clone()),
-            None => Err(ChannelError::MissingChannel),
-        }
-        .map_err(ContextError::ChannelError)
-    }
-
     fn get_next_sequence_send(
         &self,
         seq_send_path: &SeqSendPath,
