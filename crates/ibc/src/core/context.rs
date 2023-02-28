@@ -298,7 +298,7 @@ pub trait ValidationContext: Router {
     fn validate_self_client(
         &self,
         client_state_of_host_on_counterparty: Any,
-    ) -> Result<(), ConnectionError>;
+    ) -> Result<(), ContextError>;
 
     /// Returns the prefix that the local chain uses in the KV store.
     fn commitment_prefix(&self) -> CommitmentPrefix;

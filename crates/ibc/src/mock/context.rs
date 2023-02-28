@@ -843,16 +843,18 @@ impl ValidationContext for MockContext {
     fn validate_self_client(
         &self,
         client_state_of_host_on_counterparty: Any,
-    ) -> Result<(), ConnectionError> {
+    ) -> Result<(), ContextError> {
         let mock_client_state = MockClientState::try_from(client_state_of_host_on_counterparty)
             .map_err(|_| ConnectionError::InvalidClientState {
                 reason: "client must be a mock client".to_string(),
-            })?;
+            })
+            .map_err(ContextError::ConnectionError)?;
 
         if mock_client_state.is_frozen() {
             return Err(ConnectionError::InvalidClientState {
                 reason: "client is frozen".to_string(),
-            });
+            })
+            .map_err(ContextError::ConnectionError);
         }
 
         let self_chain_id = &self.host_chain_id;
@@ -864,7 +866,8 @@ impl ValidationContext for MockContext {
                     self_revision_number,
                     mock_client_state.latest_height().revision_number()
                 ),
-            });
+            })
+            .map_err(ContextError::ConnectionError);
         }
 
         let host_current_height = self.latest_height().increment();
@@ -875,7 +878,8 @@ impl ValidationContext for MockContext {
                     mock_client_state.latest_height(),
                     host_current_height
                 ),
-            });
+            })
+            .map_err(ContextError::ConnectionError);
         }
 
         Ok(())

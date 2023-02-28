@@ -9,6 +9,7 @@ use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::ChainId;
+use crate::core::ContextError;
 use crate::Height;
 
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
@@ -19,16 +20,18 @@ pub trait ValidateSelfClientContext {
     fn validate_self_tendermint_client(
         &self,
         client_state_of_host_on_counterparty: Any,
-    ) -> Result<(), ConnectionError> {
+    ) -> Result<(), ContextError> {
         let tm_client_state = TmClientState::try_from(client_state_of_host_on_counterparty)
             .map_err(|_| ConnectionError::InvalidClientState {
                 reason: "client must be a tendermint client".to_string(),
-            })?;
+            })
+            .map_err(ContextError::ConnectionError)?;
 
         if tm_client_state.is_frozen() {
             return Err(ConnectionError::InvalidClientState {
                 reason: "client is frozen".to_string(),
-            });
+            })
+            .map_err(ContextError::ConnectionError);
         }
 
         let self_chain_id = self.chain_id();
@@ -38,7 +41,8 @@ pub trait ValidateSelfClientContext {
                     "invalid chain-id. expected: {}, got: {}",
                     self_chain_id, tm_client_state.chain_id
                 ),
-            });
+            })
+            .map_err(ContextError::ConnectionError);
         }
 
         let self_revision_number = self_chain_id.version();
@@ -49,7 +53,8 @@ pub trait ValidateSelfClientContext {
                     self_revision_number,
                     tm_client_state.latest_height().revision_number()
                 ),
-            });
+            })
+            .map_err(ContextError::ConnectionError);
         }
 
         if tm_client_state.latest_height() >= self.host_current_height() {
@@ -59,7 +64,8 @@ pub trait ValidateSelfClientContext {
                     tm_client_state.latest_height(),
                     self.host_current_height()
                 ),
-            });
+            })
+            .map_err(ContextError::ConnectionError);
         }
 
         if self.proof_specs() != &tm_client_state.proof_specs {
@@ -69,7 +75,8 @@ pub trait ValidateSelfClientContext {
                     self.proof_specs(),
                     tm_client_state.proof_specs
                 ),
-            });
+            })
+            .map_err(ContextError::ConnectionError);
         }
 
         let _ = {
@@ -91,7 +98,8 @@ pub trait ValidateSelfClientContext {
                     self.unbonding_period(),
                     tm_client_state.unbonding_period,
                 ),
-            });
+            })
+            .map_err(ContextError::ConnectionError);
         }
 
         if tm_client_state.unbonding_period < tm_client_state.trusting_period {
@@ -99,7 +107,8 @@ pub trait ValidateSelfClientContext {
                 "unbonding period must be greater than trusting period. unbonding period ({:?}) < trusting period ({:?})",
                 tm_client_state.unbonding_period,
                 tm_client_state.trusting_period
-            )});
+            )})
+            .map_err(ContextError::ConnectionError);
         }
 
         if !tm_client_state.upgrade_path.is_empty()
@@ -111,7 +120,8 @@ pub trait ValidateSelfClientContext {
                     self.upgrade_path(),
                     tm_client_state.upgrade_path
                 ),
-            });
+            })
+            .map_err(ContextError::ConnectionError);
         }
 
         Ok(())
