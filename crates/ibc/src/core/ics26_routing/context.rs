@@ -65,7 +65,7 @@ impl Borrow<str> for ModuleId {
     }
 }
 
-pub trait Module: Send + Sync + AsAnyMut + Debug {
+pub trait Module: AsAnyMut + Debug {
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init_validate(
         &self,
