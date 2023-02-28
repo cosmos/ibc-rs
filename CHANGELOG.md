@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## v0.31.0
+
+*February 28, 2023*
+
+This release contains quality of life improvements.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Remove ibc::handler module ([#478](https://github.com/cosmos/ibc-rs/issues/478))
+- Discard the `connection-channels` method under `ValidationContext` since it is
+  no longer used by the core handlers. 
+  ([#479](https://github.com/cosmos/ibc-rs/issues/479))
+- Remove Send + Sync supertraits on the Module trait
+  ([#480](https://github.com/cosmos/ibc-rs/issues/480))
+- Modify `validate_self_client` error type to return `ContextError` instead of
+  `ConnectionError` 
+  ([#482](https://github.com/cosmos/ibc-rs/issues/482))
+
+### IMPROVEMENTS
+
+- Fix typos ([\#472](https://github.com/cosmos/ibc-rs/issues/472))
+
 ## v0.30.0
 
 *February 24, 2023*
