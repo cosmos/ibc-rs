@@ -47,7 +47,7 @@ use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics04_channel::timeout::TimeoutHeight;
 use crate::core::ics05_port::error::PortError::UnknownPort;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+use crate::core::ics24_host::identifier::{ConnectionId, PortId};
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     ClientTypePath, CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath,
@@ -325,11 +325,6 @@ pub trait ValidationContext: Router {
 
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
-
-    fn connection_channels(
-        &self,
-        cid: &ConnectionId,
-    ) -> Result<Vec<(PortId, ChannelId)>, ContextError>;
 
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
         -> Result<Sequence, ContextError>;
