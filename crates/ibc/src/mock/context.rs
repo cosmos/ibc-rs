@@ -7,7 +7,7 @@ use crate::core::ics24_host::path::{
     SeqSendPath,
 };
 use crate::prelude::*;
-use crate::test_utils::DummyTransferContext;
+use crate::test_utils::{get_dummy_transfer_context, DummyTransferContext};
 
 use alloc::collections::btree_map::BTreeMap;
 use alloc::sync::Arc;
@@ -83,6 +83,8 @@ pub struct MockContext {
     /// To implement ValidationContext Router
     router: BTreeMap<ModuleId, Arc<dyn Module>>,
 
+    transfer_ctx: DummyTransferContext,
+
     pub events: Vec<IbcEvent>,
 
     pub logs: Vec<String>,
@@ -119,6 +121,7 @@ impl Clone for MockContext {
             block_time: self.block_time,
             ibc_store,
             router: self.router.clone(),
+            transfer_ctx: get_dummy_transfer_context(),
             events: self.events.clone(),
             logs: self.logs.clone(),
         }
@@ -160,6 +163,8 @@ impl MockContext {
 
         let block_time = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS);
         let next_block_timestamp = Timestamp::now().add(block_time).unwrap();
+
+        let ibc_store = Arc::new(Mutex::new(MockIbcStore::default()));
         MockContext {
             host_chain_type: host_type,
             host_chain_id: host_id.clone(),
@@ -180,8 +185,9 @@ impl MockContext {
                 })
                 .collect(),
             block_time,
-            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+            ibc_store: ibc_store.clone(),
             router: BTreeMap::new(),
+            transfer_ctx: DummyTransferContext::new(ibc_store.clone()),
             events: Vec::new(),
             logs: Vec::new(),
         }
@@ -465,7 +471,7 @@ impl MockContext {
     }
 
     pub fn get_transfer_context_mut(&mut self) -> &mut DummyTransferContext {
-        todo!()
+        &mut self.transfer_ctx
     }
 
     pub fn add_route(&mut self, module_id: ModuleId, module: impl Module) -> Result<(), String> {

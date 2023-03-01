@@ -84,6 +84,12 @@ pub struct DummyTransferContext {
     ibc_store: Arc<Mutex<MockIbcStore>>,
 }
 
+impl DummyTransferContext {
+    pub fn new(ibc_store: Arc<Mutex<MockIbcStore>>) -> Self {
+        Self { ibc_store }
+    }
+}
+
 impl TokenTransferValidationContext for DummyTransferContext {
     type AccountId = Signer;
 
