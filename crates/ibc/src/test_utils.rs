@@ -73,113 +73,18 @@ pub fn get_dummy_transfer_module() -> DummyTransferModule {
     let ibc_store = Arc::new(Mutex::new(MockIbcStore::default()));
     DummyTransferModule { ibc_store }
 }
+
+pub fn get_dummy_transfer_context() -> DummyTransferContext {
+    let ibc_store = Arc::new(Mutex::new(MockIbcStore::default()));
+    DummyTransferContext { ibc_store }
+}
+
 #[derive(Debug)]
-pub struct DummyTransferModule {
+pub struct DummyTransferContext {
     ibc_store: Arc<Mutex<MockIbcStore>>,
 }
 
-impl DummyTransferModule {
-    pub fn new(ibc_store: Arc<Mutex<MockIbcStore>>) -> Self {
-        Self { ibc_store }
-    }
-}
-
-impl Module for DummyTransferModule {
-    fn on_chan_open_init_validate(
-        &self,
-        _order: Order,
-        _connection_hops: &[ConnectionId],
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty: &Counterparty,
-        version: &Version,
-    ) -> Result<Version, ChannelError> {
-        Ok(version.clone())
-    }
-
-    fn on_chan_open_init_execute(
-        &mut self,
-        _order: Order,
-        _connection_hops: &[ConnectionId],
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty: &Counterparty,
-        version: &Version,
-    ) -> Result<(ModuleExtras, Version), ChannelError> {
-        Ok((ModuleExtras::empty(), version.clone()))
-    }
-
-    fn on_chan_open_try_validate(
-        &self,
-        _order: Order,
-        _connection_hops: &[ConnectionId],
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty: &Counterparty,
-        counterparty_version: &Version,
-    ) -> Result<Version, ChannelError> {
-        Ok(counterparty_version.clone())
-    }
-
-    fn on_chan_open_try_execute(
-        &mut self,
-        _order: Order,
-        _connection_hops: &[ConnectionId],
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty: &Counterparty,
-        counterparty_version: &Version,
-    ) -> Result<(ModuleExtras, Version), ChannelError> {
-        Ok((ModuleExtras::empty(), counterparty_version.clone()))
-    }
-
-    fn on_recv_packet_execute(
-        &mut self,
-        _packet: &Packet,
-        _relayer: &Signer,
-    ) -> (ModuleExtras, Acknowledgement) {
-        (
-            ModuleExtras::empty(),
-            Acknowledgement::try_from(vec![1u8]).unwrap(),
-        )
-    }
-
-    fn on_timeout_packet_validate(
-        &self,
-        _packet: &Packet,
-        _relayer: &Signer,
-    ) -> Result<(), PacketError> {
-        Ok(())
-    }
-
-    fn on_timeout_packet_execute(
-        &mut self,
-        _packet: &Packet,
-        _relayer: &Signer,
-    ) -> (ModuleExtras, Result<(), PacketError>) {
-        (ModuleExtras::empty(), Ok(()))
-    }
-
-    fn on_acknowledgement_packet_validate(
-        &self,
-        _packet: &Packet,
-        _acknowledgement: &Acknowledgement,
-        _relayer: &Signer,
-    ) -> Result<(), PacketError> {
-        Ok(())
-    }
-
-    fn on_acknowledgement_packet_execute(
-        &mut self,
-        _packet: &Packet,
-        _acknowledgement: &Acknowledgement,
-        _relayer: &Signer,
-    ) -> (ModuleExtras, Result<(), PacketError>) {
-        (ModuleExtras::empty(), Ok(()))
-    }
-}
-
-impl TokenTransferValidationContext for DummyTransferModule {
+impl TokenTransferValidationContext for DummyTransferContext {
     type AccountId = Signer;
 
     fn get_port(&self) -> Result<PortId, TokenTransferError> {
@@ -204,7 +109,7 @@ impl TokenTransferValidationContext for DummyTransferModule {
     }
 }
 
-impl TokenTransferExecutionContext for DummyTransferModule {
+impl TokenTransferExecutionContext for DummyTransferContext {
     fn send_coins(
         &mut self,
         _from: &Self::AccountId,
@@ -231,7 +136,7 @@ impl TokenTransferExecutionContext for DummyTransferModule {
     }
 }
 
-impl SendPacketValidationContext for DummyTransferModule {
+impl SendPacketValidationContext for DummyTransferContext {
     fn channel_end(&self, chan_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
         match self
             .ibc_store
@@ -353,7 +258,7 @@ impl SendPacketValidationContext for DummyTransferModule {
     }
 }
 
-impl SendPacketExecutionContext for DummyTransferModule {
+impl SendPacketExecutionContext for DummyTransferContext {
     fn store_packet_commitment(
         &mut self,
         commitment_path: &CommitmentPath,
@@ -394,4 +299,112 @@ impl SendPacketExecutionContext for DummyTransferModule {
     fn emit_ibc_event(&mut self, _event: IbcEvent) {}
 
     fn log_message(&mut self, _message: String) {}
+}
+
+#[derive(Debug)]
+pub struct DummyTransferModule {
+    // TODO: remove
+    #[allow(unused)]
+    ibc_store: Arc<Mutex<MockIbcStore>>,
+}
+
+impl DummyTransferModule {
+    pub fn new(ibc_store: Arc<Mutex<MockIbcStore>>) -> Self {
+        Self { ibc_store }
+    }
+}
+
+impl Module for DummyTransferModule {
+    fn on_chan_open_init_validate(
+        &self,
+        _order: Order,
+        _connection_hops: &[ConnectionId],
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty: &Counterparty,
+        version: &Version,
+    ) -> Result<Version, ChannelError> {
+        Ok(version.clone())
+    }
+
+    fn on_chan_open_init_execute(
+        &mut self,
+        _order: Order,
+        _connection_hops: &[ConnectionId],
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty: &Counterparty,
+        version: &Version,
+    ) -> Result<(ModuleExtras, Version), ChannelError> {
+        Ok((ModuleExtras::empty(), version.clone()))
+    }
+
+    fn on_chan_open_try_validate(
+        &self,
+        _order: Order,
+        _connection_hops: &[ConnectionId],
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty: &Counterparty,
+        counterparty_version: &Version,
+    ) -> Result<Version, ChannelError> {
+        Ok(counterparty_version.clone())
+    }
+
+    fn on_chan_open_try_execute(
+        &mut self,
+        _order: Order,
+        _connection_hops: &[ConnectionId],
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty: &Counterparty,
+        counterparty_version: &Version,
+    ) -> Result<(ModuleExtras, Version), ChannelError> {
+        Ok((ModuleExtras::empty(), counterparty_version.clone()))
+    }
+
+    fn on_recv_packet_execute(
+        &mut self,
+        _packet: &Packet,
+        _relayer: &Signer,
+    ) -> (ModuleExtras, Acknowledgement) {
+        (
+            ModuleExtras::empty(),
+            Acknowledgement::try_from(vec![1u8]).unwrap(),
+        )
+    }
+
+    fn on_timeout_packet_validate(
+        &self,
+        _packet: &Packet,
+        _relayer: &Signer,
+    ) -> Result<(), PacketError> {
+        Ok(())
+    }
+
+    fn on_timeout_packet_execute(
+        &mut self,
+        _packet: &Packet,
+        _relayer: &Signer,
+    ) -> (ModuleExtras, Result<(), PacketError>) {
+        (ModuleExtras::empty(), Ok(()))
+    }
+
+    fn on_acknowledgement_packet_validate(
+        &self,
+        _packet: &Packet,
+        _acknowledgement: &Acknowledgement,
+        _relayer: &Signer,
+    ) -> Result<(), PacketError> {
+        Ok(())
+    }
+
+    fn on_acknowledgement_packet_execute(
+        &mut self,
+        _packet: &Packet,
+        _acknowledgement: &Acknowledgement,
+        _relayer: &Signer,
+    ) -> (ModuleExtras, Result<(), PacketError>) {
+        (ModuleExtras::empty(), Ok(()))
+    }
 }

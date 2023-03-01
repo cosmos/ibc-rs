@@ -402,34 +402,20 @@ pub(crate) mod test {
     use subtle_encoding::bech32;
 
     use crate::applications::transfer::context::cosmos_adr028_escrow_address;
-    use crate::applications::transfer::error::TokenTransferError;
-    use crate::applications::transfer::msgs::transfer::MsgTransfer;
-    use crate::applications::transfer::relay::send_transfer::send_transfer;
-    use crate::applications::transfer::PrefixedCoin;
     use crate::core::ics04_channel::channel::{Counterparty, Order};
-    use crate::core::ics04_channel::error::ChannelError;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-    use crate::test_utils::{get_dummy_transfer_module, DummyTransferModule};
-
-    pub(crate) fn deliver(
-        ctx: &mut DummyTransferModule,
-        msg: MsgTransfer<PrefixedCoin>,
-    ) -> Result<(), ChannelError> {
-        send_transfer(ctx, msg).map_err(|e: TokenTransferError| ChannelError::AppModule {
-            description: e.to_string(),
-        })
-    }
+    use crate::test_utils::{get_dummy_transfer_context, DummyTransferContext};
 
     fn get_defaults() -> (
-        DummyTransferModule,
+        DummyTransferContext,
         Order,
         Vec<ConnectionId>,
         PortId,
         ChannelId,
         Counterparty,
     ) {
-        let ctx = get_dummy_transfer_module();
+        let ctx = get_dummy_transfer_context();
         let order = Order::Unordered;
         let connection_hops = vec![ConnectionId::new(1)];
         let port_id = PortId::transfer();

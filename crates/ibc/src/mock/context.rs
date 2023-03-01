@@ -7,6 +7,7 @@ use crate::core::ics24_host::path::{
     SeqSendPath,
 };
 use crate::prelude::*;
+use crate::test_utils::DummyTransferContext;
 
 use alloc::collections::btree_map::BTreeMap;
 use alloc::sync::Arc;
@@ -461,6 +462,10 @@ impl MockContext {
             .insert(seq, data);
         self.ibc_store.lock().packet_commitment = packet_commitment;
         self
+    }
+
+    pub fn get_transfer_context_mut(&mut self) -> &mut DummyTransferContext {
+        todo!()
     }
 
     pub fn add_route(&mut self, module_id: ModuleId, module: impl Module) -> Result<(), String> {
