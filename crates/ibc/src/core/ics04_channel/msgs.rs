@@ -1,7 +1,6 @@
 //! Message definitions for all ICS4 domain types: channel open & close handshake datagrams, as well
 //! as packets.
 
-use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
 use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
@@ -12,7 +11,6 @@ use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
 use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
 use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
-use crate::core::ics26_routing::context::{ModuleId, RouterContext};
 
 // Opening handshake messages.
 pub mod chan_open_ack;
@@ -41,42 +39,10 @@ pub enum ChannelMsg {
     CloseConfirm(MsgChannelCloseConfirm),
 }
 
-impl ChannelMsg {
-    pub(super) fn lookup_module(&self, ctx: &impl RouterContext) -> Result<ModuleId, ChannelError> {
-        let port_id = match self {
-            ChannelMsg::OpenInit(msg) => &msg.port_id_on_a,
-            ChannelMsg::OpenTry(msg) => &msg.port_id_on_b,
-            ChannelMsg::OpenAck(msg) => &msg.port_id_on_a,
-            ChannelMsg::OpenConfirm(msg) => &msg.port_id_on_b,
-            ChannelMsg::CloseInit(msg) => &msg.port_id_on_a,
-            ChannelMsg::CloseConfirm(msg) => &msg.port_id_on_b,
-        };
-        let module_id = ctx
-            .lookup_module_by_port(port_id)
-            .map_err(ChannelError::Port)?;
-        Ok(module_id)
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PacketMsg {
     Recv(MsgRecvPacket),
     Ack(MsgAcknowledgement),
     Timeout(MsgTimeout),
     TimeoutOnClose(MsgTimeoutOnClose),
-}
-
-impl PacketMsg {
-    pub(super) fn lookup_module(&self, ctx: &impl RouterContext) -> Result<ModuleId, ChannelError> {
-        let port_id = match self {
-            PacketMsg::Recv(msg) => &msg.packet.port_on_b,
-            PacketMsg::Ack(msg) => &msg.packet.port_on_a,
-            PacketMsg::Timeout(msg) => &msg.packet.port_on_a,
-            PacketMsg::TimeoutOnClose(msg) => &msg.packet.port_on_a,
-        };
-        let module_id = ctx
-            .lookup_module_by_port(port_id)
-            .map_err(ChannelError::Port)?;
-        Ok(module_id)
-    }
 }

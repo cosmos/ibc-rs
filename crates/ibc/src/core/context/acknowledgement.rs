@@ -110,3 +110,175 @@ where
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::*;
+
+    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
+    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use crate::core::ics04_channel::channel::Counterparty;
+    use crate::core::ics04_channel::channel::State;
+    use crate::core::ics04_channel::Version;
+    use crate::core::ics24_host::identifier::ChannelId;
+    use crate::core::ics24_host::identifier::PortId;
+    use crate::{
+        applications::transfer::MODULE_ID_STR,
+        core::{
+            ics03_connection::{connection::ConnectionEnd, version::get_compatible_versions},
+            ics04_channel::{
+                channel::ChannelEnd, commitment::PacketCommitment,
+                msgs::acknowledgement::test_util::get_dummy_raw_msg_acknowledgement,
+            },
+            ics24_host::identifier::{ClientId, ConnectionId},
+        },
+        mock::context::MockContext,
+        test_utils::DummyTransferModule,
+        timestamp::ZERO_DURATION,
+        Height,
+    };
+
+    struct Fixture {
+        ctx: MockContext,
+        module_id: ModuleId,
+        msg: MsgAcknowledgement,
+        packet_commitment: PacketCommitment,
+        conn_end_on_a: ConnectionEnd,
+        chan_end_on_a_ordered: ChannelEnd,
+        chan_end_on_a_unordered: ChannelEnd,
+    }
+
+    #[fixture]
+    fn fixture() -> Fixture {
+        let client_height = Height::new(0, 2).unwrap();
+        let mut ctx = MockContext::default().with_client(&ClientId::default(), client_height);
+
+        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        let module = DummyTransferModule::new(ctx.ibc_store_share());
+        ctx.add_route(module_id.clone(), module).unwrap();
+
+        let msg = MsgAcknowledgement::try_from(get_dummy_raw_msg_acknowledgement(
+            client_height.revision_height(),
+        ))
+        .unwrap();
+
+        let packet = msg.packet.clone();
+
+        let packet_commitment = ctx.compute_packet_commitment(
+            &msg.packet.data,
+            &msg.packet.timeout_height_on_b,
+            &msg.packet.timeout_timestamp_on_b,
+        );
+
+        let chan_end_on_a_unordered = ChannelEnd::new(
+            State::Open,
+            Order::Unordered,
+            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone())),
+            vec![ConnectionId::default()],
+            Version::new("ics20-1".to_string()),
+        );
+
+        let chan_end_on_a_ordered = ChannelEnd::new(
+            State::Open,
+            Order::Ordered,
+            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b)),
+            vec![ConnectionId::default()],
+            Version::new("ics20-1".to_string()),
+        );
+
+        let conn_end_on_a = ConnectionEnd::new(
+            ConnectionState::Open,
+            ClientId::default(),
+            ConnectionCounterparty::new(
+                ClientId::default(),
+                Some(ConnectionId::default()),
+                Default::default(),
+            ),
+            get_compatible_versions(),
+            ZERO_DURATION,
+        );
+
+        Fixture {
+            ctx,
+            module_id,
+            msg,
+            packet_commitment,
+            conn_end_on_a,
+            chan_end_on_a_unordered,
+            chan_end_on_a_ordered,
+        }
+    }
+
+    #[rstest]
+    fn ack_unordered_chan_execute(fixture: Fixture) {
+        let Fixture {
+            ctx,
+            module_id,
+            msg,
+            packet_commitment,
+            conn_end_on_a,
+            chan_end_on_a_unordered,
+            ..
+        } = fixture;
+        let mut ctx = ctx
+            .with_channel(
+                PortId::default(),
+                ChannelId::default(),
+                chan_end_on_a_unordered,
+            )
+            .with_connection(ConnectionId::default(), conn_end_on_a)
+            .with_packet_commitment(
+                msg.packet.port_on_a.clone(),
+                msg.packet.chan_on_a.clone(),
+                msg.packet.sequence,
+                packet_commitment,
+            );
+
+        let res = acknowledgement_packet_execute(&mut ctx, module_id, msg);
+
+        assert!(res.is_ok());
+
+        assert_eq!(ctx.events.len(), 1);
+        assert!(matches!(
+            ctx.events.first().unwrap(),
+            &IbcEvent::AcknowledgePacket(_)
+        ));
+    }
+
+    #[rstest]
+    fn ack_ordered_chan_execute(fixture: Fixture) {
+        let Fixture {
+            ctx,
+            module_id,
+            msg,
+            packet_commitment,
+            conn_end_on_a,
+            chan_end_on_a_ordered,
+            ..
+        } = fixture;
+        let mut ctx = ctx
+            .with_channel(
+                PortId::default(),
+                ChannelId::default(),
+                chan_end_on_a_ordered,
+            )
+            .with_connection(ConnectionId::default(), conn_end_on_a)
+            .with_packet_commitment(
+                msg.packet.port_on_a.clone(),
+                msg.packet.chan_on_a.clone(),
+                msg.packet.sequence,
+                packet_commitment,
+            );
+
+        let res = acknowledgement_packet_execute(&mut ctx, module_id, msg);
+
+        assert!(res.is_ok());
+
+        assert_eq!(ctx.events.len(), 1);
+        assert!(matches!(
+            ctx.events.first().unwrap(),
+            &IbcEvent::AcknowledgePacket(_)
+        ));
+    }
+}

@@ -5,17 +5,17 @@ use ibc_proto::protobuf::Error as TendermintProtoError;
 use uint::FromDecStrErr;
 
 use crate::core::ics04_channel::channel::Order;
-use crate::core::ics04_channel::error as channel_error;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
+use crate::core::ContextError;
 use crate::prelude::*;
 use crate::signer::SignerError;
 
 #[derive(Display, Debug)]
 pub enum TokenTransferError {
-    /// packet error: `{0}`
-    PacketError(channel_error::PacketError),
+    /// context error: `{0}`
+    ContextError(ContextError),
     /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
     DestinationChannelNotFound {
         port_id: PortId,
@@ -37,7 +37,7 @@ pub enum TokenTransferError {
     InvalidPacketTimeoutTimestamp { timestamp: u64 },
     /// base denomination is empty
     EmptyBaseDenom,
-    /// invalid prot id n trace at postion: `{pos}`, validation error: `{validation_error}`
+    /// invalid prot id n trace at position: `{pos}`, validation error: `{validation_error}`
     InvalidTracePortId {
         pos: usize,
         validation_error: ValidationError,
@@ -101,7 +101,7 @@ pub enum TokenTransferError {
 impl std::error::Error for TokenTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::PacketError(e) => Some(e),
+            Self::ContextError(e) => Some(e),
             Self::InvalidPortId {
                 validation_error: e,
                 ..

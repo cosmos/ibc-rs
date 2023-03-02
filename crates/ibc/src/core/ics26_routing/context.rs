@@ -8,38 +8,13 @@ use core::{
     str::FromStr,
 };
 
-use crate::core::ics02_client::context::{ClientKeeper, ClientReader};
-use crate::core::ics03_connection::context::{ConnectionKeeper, ConnectionReader};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
-use crate::core::ics04_channel::context::{ChannelKeeper, ChannelReader};
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
-use crate::core::ics05_port::context::PortReader;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use crate::events::ModuleEvent;
-use crate::handler::HandlerOutputBuilder;
 use crate::signer::Signer;
-
-/// This trait captures all the functional dependencies (i.e., context) which the ICS26 module
-/// requires to be able to dispatch and process IBC messages. In other words, this is the
-/// representation of a chain from the perspective of the IBC module of that chain.
-pub trait RouterContext:
-    ClientReader
-    + ClientKeeper
-    + ConnectionReader
-    + ConnectionKeeper
-    + ChannelKeeper
-    + ChannelReader
-    + PortReader
-{
-    type Router: Router;
-
-    fn router(&self) -> &Self::Router;
-
-    fn router_mut(&mut self) -> &mut Self::Router;
-}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InvalidModuleId;
@@ -90,9 +65,7 @@ impl Borrow<str> for ModuleId {
     }
 }
 
-pub type ModuleOutputBuilder = HandlerOutputBuilder<(), ModuleEvent>;
-
-pub trait Module: Send + Sync + AsAnyMut + Debug {
+pub trait Module: AsAnyMut + Debug {
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init_validate(
         &self,
@@ -106,17 +79,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
 
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init_execute(
-        &mut self,
-        order: Order,
-        connection_hops: &[ConnectionId],
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        counterparty: &Counterparty,
-        version: &Version,
-    ) -> Result<(ModuleExtras, Version), ChannelError>;
-
-    #[allow(clippy::too_many_arguments)]
-    fn on_chan_open_init(
         &mut self,
         order: Order,
         connection_hops: &[ConnectionId],
@@ -148,17 +110,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         counterparty_version: &Version,
     ) -> Result<(ModuleExtras, Version), ChannelError>;
 
-    #[allow(clippy::too_many_arguments)]
-    fn on_chan_open_try(
-        &mut self,
-        order: Order,
-        connection_hops: &[ConnectionId],
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        counterparty: &Counterparty,
-        counterparty_version: &Version,
-    ) -> Result<(ModuleExtras, Version), ChannelError>;
-
     fn on_chan_open_ack_validate(
         &self,
         _port_id: &PortId,
@@ -169,15 +120,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
     }
 
     fn on_chan_open_ack_execute(
-        &mut self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty_version: &Version,
-    ) -> Result<ModuleExtras, ChannelError> {
-        Ok(ModuleExtras::empty())
-    }
-
-    fn on_chan_open_ack(
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
@@ -202,14 +144,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(ModuleExtras::empty())
     }
 
-    fn on_chan_open_confirm(
-        &mut self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, ChannelError> {
-        Ok(ModuleExtras::empty())
-    }
-
     fn on_chan_close_init_validate(
         &self,
         _port_id: &PortId,
@@ -219,14 +153,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
     }
 
     fn on_chan_close_init_execute(
-        &mut self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, ChannelError> {
-        Ok(ModuleExtras::empty())
-    }
-
-    fn on_chan_close_init(
         &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
@@ -250,26 +176,11 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         Ok(ModuleExtras::empty())
     }
 
-    fn on_chan_close_confirm(
-        &mut self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, ChannelError> {
-        Ok(ModuleExtras::empty())
-    }
-
     fn on_recv_packet_execute(
         &mut self,
         packet: &Packet,
         relayer: &Signer,
     ) -> (ModuleExtras, Acknowledgement);
-
-    fn on_recv_packet(
-        &mut self,
-        _output: &mut ModuleOutputBuilder,
-        _packet: &Packet,
-        _relayer: &Signer,
-    ) -> Acknowledgement;
 
     fn on_acknowledgement_packet_validate(
         &self,
@@ -284,16 +195,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         _acknowledgement: &Acknowledgement,
         _relayer: &Signer,
     ) -> (ModuleExtras, Result<(), PacketError>);
-
-    fn on_acknowledgement_packet(
-        &mut self,
-        _output: &mut ModuleOutputBuilder,
-        _packet: &Packet,
-        _acknowledgement: &Acknowledgement,
-        _relayer: &Signer,
-    ) -> Result<(), PacketError> {
-        Ok(())
-    }
 
     /// Note: `MsgTimeout` and `MsgTimeoutOnClose` use the same callback
 
@@ -310,28 +211,6 @@ pub trait Module: Send + Sync + AsAnyMut + Debug {
         packet: &Packet,
         relayer: &Signer,
     ) -> (ModuleExtras, Result<(), PacketError>);
-
-    fn on_timeout_packet(
-        &mut self,
-        _output: &mut ModuleOutputBuilder,
-        _packet: &Packet,
-        _relayer: &Signer,
-    ) -> Result<(), PacketError> {
-        Ok(())
-    }
-}
-
-pub trait RouterBuilder: Sized {
-    /// The `Router` type that the builder must build
-    type Router: Router;
-
-    /// Registers `Module` against the specified `ModuleId` in the `Router`'s internal map
-    ///
-    /// Returns an error if a `Module` has already been registered against the specified `ModuleId`
-    fn add_route(self, module_id: ModuleId, module: impl Module) -> Result<Self, String>;
-
-    /// Consumes the `RouterBuilder` and returns a `Router` as configured
-    fn build(self) -> Self::Router;
 }
 
 pub trait AsAnyMut: Any {
@@ -342,15 +221,4 @@ impl<M: Any + Module> AsAnyMut for M {
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
     }
-}
-
-/// A router maintains a mapping of `ModuleId`s against `Modules`. Implementations must not publicly
-/// expose APIs to add new routes once constructed. Routes may only be added at the time of
-/// instantiation using the `RouterBuilder`.
-pub trait Router {
-    /// Returns a mutable reference to a `Module` registered against the specified `ModuleId`
-    fn get_route_mut(&mut self, module_id: &impl Borrow<ModuleId>) -> Option<&mut dyn Module>;
-
-    /// Returns true if the `Router` has a `Module` registered against the specified `ModuleId`
-    fn has_route(&self, module_id: &impl Borrow<ModuleId>) -> bool;
 }

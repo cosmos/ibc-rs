@@ -50,10 +50,8 @@ mod tests {
         ConnectionEnd, Counterparty as ConnCounterparty, State as ConnState,
     };
     use crate::core::ics03_connection::msgs::{
-        conn_open_ack::{test_util::get_dummy_raw_msg_conn_open_ack, MsgConnectionOpenAck},
-        conn_open_init::{test_util::get_dummy_raw_msg_conn_open_init, MsgConnectionOpenInit},
-        conn_open_try::{test_util::get_dummy_raw_msg_conn_open_try, MsgConnectionOpenTry},
-        ConnectionMsg,
+        conn_open_ack::MsgConnectionOpenAck, conn_open_init::MsgConnectionOpenInit,
+        conn_open_try::MsgConnectionOpenTry, ConnectionMsg,
     };
     use crate::core::ics03_connection::version::Version as ConnVersion;
     use crate::core::ics04_channel::channel::ChannelEnd;
@@ -87,7 +85,6 @@ mod tests {
     use crate::core::ics26_routing::msgs::MsgEnvelope;
     use crate::core::{dispatch, ValidationContext};
     use crate::events::IbcEvent;
-    use crate::handler::HandlerOutputBuilder;
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
     use crate::mock::context::MockContext;
@@ -100,8 +97,7 @@ mod tests {
     #[test]
     /// These tests exercise two main paths: (1) the ability of the ICS26 routing module to dispatch
     /// messages to the correct module handler, and more importantly: (2) the ability of ICS handlers
-    /// to work with the context and correctly store results (i.e., the `ClientKeeper`,
-    /// `ConnectionKeeper`, and `ChannelKeeper` traits).
+    /// to work with the context and correctly store results.
     fn routing_module_and_keepers() {
         #[derive(Clone, Debug)]
         enum TestMsg {
@@ -162,26 +158,15 @@ mod tests {
         //
         // Connection handshake messages.
         //
-        let msg_conn_init =
-            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init(None)).unwrap();
+        let msg_conn_init = MsgConnectionOpenInit::new_dummy();
 
-        let correct_msg_conn_try = MsgConnectionOpenTry::try_from(get_dummy_raw_msg_conn_open_try(
-            client_height,
-            client_height,
-        ))
-        .unwrap();
+        let correct_msg_conn_try = MsgConnectionOpenTry::new_dummy(client_height, client_height);
 
         // The handler will fail to process this msg because the client height is too advanced.
-        let incorrect_msg_conn_try = MsgConnectionOpenTry::try_from(
-            get_dummy_raw_msg_conn_open_try(client_height + 1, client_height + 1),
-        )
-        .unwrap();
+        let incorrect_msg_conn_try =
+            MsgConnectionOpenTry::new_dummy(client_height + 1, client_height + 1);
 
-        let msg_conn_ack = MsgConnectionOpenAck::try_from(get_dummy_raw_msg_conn_open_ack(
-            client_height,
-            client_height,
-        ))
-        .unwrap();
+        let msg_conn_ack = MsgConnectionOpenAck::new_dummy(client_height, client_height);
 
         //
         // Channel handshake messages.
@@ -491,7 +476,6 @@ mod tests {
                             .as_any_mut()
                             .downcast_mut::<DummyTransferModule>()
                             .unwrap(),
-                        &mut HandlerOutputBuilder::new(),
                         msg,
                     )
                     .map(|_| ())

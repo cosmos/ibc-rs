@@ -89,3 +89,122 @@ where
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        core::context::chan_open_ack::chan_open_ack_execute, events::IbcEvent, prelude::*, Height,
+    };
+    use rstest::*;
+
+    use crate::{
+        applications::transfer::MODULE_ID_STR,
+        core::{
+            ics03_connection::{
+                connection::ConnectionEnd, msgs::test_util::get_dummy_raw_counterparty,
+                version::get_compatible_versions,
+            },
+            ics04_channel::{
+                channel::{ChannelEnd, Counterparty, Order, State},
+                msgs::chan_open_ack::{
+                    test_util::get_dummy_raw_msg_chan_open_ack, MsgChannelOpenAck,
+                },
+            },
+            ics24_host::identifier::{ClientId, ConnectionId},
+            ics26_routing::context::ModuleId,
+        },
+        mock::context::MockContext,
+        test_utils::DummyTransferModule,
+        timestamp::ZERO_DURATION,
+    };
+
+    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
+    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use crate::mock::client_state::client_type as mock_client_type;
+
+    pub struct Fixture {
+        pub context: MockContext,
+        pub module_id: ModuleId,
+        pub msg: MsgChannelOpenAck,
+        pub client_id_on_a: ClientId,
+        pub conn_id_on_a: ConnectionId,
+        pub conn_end_on_a: ConnectionEnd,
+        pub chan_end_on_a: ChannelEnd,
+        pub proof_height: u64,
+    }
+
+    #[fixture]
+    fn fixture() -> Fixture {
+        let proof_height = 10;
+        let mut context = MockContext::default();
+        let module = DummyTransferModule::new(context.ibc_store_share());
+        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        context.add_route(module_id.clone(), module).unwrap();
+
+        let client_id_on_a = ClientId::new(mock_client_type(), 45).unwrap();
+        let conn_id_on_a = ConnectionId::new(2);
+        let conn_end_on_a = ConnectionEnd::new(
+            ConnectionState::Open,
+            client_id_on_a.clone(),
+            ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
+            get_compatible_versions(),
+            ZERO_DURATION,
+        );
+
+        let msg =
+            MsgChannelOpenAck::try_from(get_dummy_raw_msg_chan_open_ack(proof_height)).unwrap();
+
+        let chan_end_on_a = ChannelEnd::new(
+            State::Init,
+            Order::Unordered,
+            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_b.clone())),
+            vec![conn_id_on_a.clone()],
+            msg.version_on_b.clone(),
+        );
+
+        Fixture {
+            context,
+            module_id,
+            msg,
+            client_id_on_a,
+            conn_id_on_a,
+            conn_end_on_a,
+            chan_end_on_a,
+            proof_height,
+        }
+    }
+
+    #[rstest]
+    fn chan_open_ack_execute_happy_path(fixture: Fixture) {
+        let Fixture {
+            context,
+            module_id,
+            msg,
+            client_id_on_a,
+            conn_id_on_a,
+            conn_end_on_a,
+            chan_end_on_a,
+            proof_height,
+            ..
+        } = fixture;
+
+        let mut context = context
+            .with_client(&client_id_on_a, Height::new(0, proof_height).unwrap())
+            .with_connection(conn_id_on_a, conn_end_on_a)
+            .with_channel(
+                msg.port_id_on_a.clone(),
+                msg.chan_id_on_a.clone(),
+                chan_end_on_a,
+            );
+
+        let res = chan_open_ack_execute(&mut context, module_id, msg);
+
+        assert!(res.is_ok(), "Execution happy path");
+
+        assert_eq!(context.events.len(), 1);
+        assert!(matches!(
+            context.events.first().unwrap(),
+            &IbcEvent::OpenAckChannel(_)
+        ));
+    }
+}

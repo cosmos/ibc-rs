@@ -47,7 +47,7 @@ use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics04_channel::timeout::TimeoutHeight;
 use crate::core::ics05_port::error::PortError::UnknownPort;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+use crate::core::ics24_host::identifier::{ConnectionId, PortId};
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     ClientTypePath, CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath,
@@ -256,28 +256,22 @@ pub trait ValidationContext: Router {
     /// Search for the lowest consensus state higher than `height`.
     fn next_consensus_state(
         &self,
-        next_client_cons_state_path: &ClientConsensusStatePath,
+        client_id: &ClientId,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
 
     /// Search for the highest consensus state lower than `height`.
     fn prev_consensus_state(
         &self,
-        prev_client_cons_state_path: &ClientConsensusStatePath,
+        client_id: &ClientId,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
 
     /// Returns the current height of the local chain.
     fn host_height(&self) -> Result<Height, ContextError>;
 
     /// Returns the current timestamp of the local chain.
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
-        let pending_consensus_state = self
-            .pending_host_consensus_state()
-            .expect("host must have pending consensus state");
-        Ok(pending_consensus_state.timestamp())
-    }
-
-    /// Returns the pending `ConsensusState` of the host (local) chain.
-    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ContextError>;
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
 
     /// Returns the `ConsensusState` of the host (local) chain at a specific height.
     fn host_consensus_state(
@@ -285,15 +279,26 @@ pub trait ValidationContext: Router {
         height: &Height,
     ) -> Result<Box<dyn ConsensusState>, ContextError>;
 
-    /// Returns a natural number, counting how many clients have been created thus far.
-    /// The value of this counter should increase only via method `ClientKeeper::increase_client_counter`.
+    /// Returns a natural number, counting how many clients have been created
+    /// thus far. The value of this counter should increase only via method
+    /// `ExecutionContext::increase_client_counter`.
     fn client_counter(&self) -> Result<u64, ContextError>;
 
     /// Returns the ConnectionEnd for the given identifier `conn_id`.
     fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError>;
 
-    /// Validates the `ClientState` of the client on the counterparty chain.
-    fn validate_self_client(&self, counterparty_client_state: Any) -> Result<(), ConnectionError>;
+    /// Validates the `ClientState` of the client (a client referring to host) stored on the counterparty chain against the host's internal state.
+    ///
+    /// For more information on the specific requirements for validating the
+    /// client state of a host chain, please refer to the [ICS24 host
+    /// requirements](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#client-state-validation)
+    ///
+    /// Additionally, implementations specific to individual chains can be found
+    /// in the [hosts](crate::hosts) module.
+    fn validate_self_client(
+        &self,
+        client_state_of_host_on_counterparty: Any,
+    ) -> Result<(), ContextError>;
 
     /// Returns the prefix that the local chain uses in the KV store.
     fn commitment_prefix(&self) -> CommitmentPrefix;
@@ -321,11 +326,6 @@ pub trait ValidationContext: Router {
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
 
-    fn connection_channels(
-        &self,
-        cid: &ConnectionId,
-    ) -> Result<Vec<(PortId, ChannelId)>, ContextError>;
-
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
         -> Result<Sequence, ContextError>;
 
@@ -351,7 +351,7 @@ pub trait ValidationContext: Router {
     /// `{revision_number: 0, revision_height: 0}` to be consistent with ibc-go,
     /// where this value is used to mean "no timeout height":
     /// <https://github.com/cosmos/ibc-go/blob/04791984b3d6c83f704c4f058e6ca0038d155d91/modules/core/04-channel/keeper/packet.go#L206>
-    fn packet_commitment(
+    fn compute_packet_commitment(
         &self,
         packet_data: &[u8],
         timeout_height: &TimeoutHeight,
@@ -394,7 +394,7 @@ pub trait ValidationContext: Router {
 
     /// Returns a counter on the number of channel ids have been created thus far.
     /// The value of this counter should increase only via method
-    /// `ChannelKeeper::increase_channel_counter`.
+    /// `ExecutionContext::increase_channel_counter`.
     fn channel_counter(&self) -> Result<u64, ContextError>;
 
     /// Returns the maximum expected time per block

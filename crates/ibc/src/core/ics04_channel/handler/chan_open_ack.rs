@@ -1,12 +1,9 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenAck`.
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
-use crate::core::ics04_channel::context::ChannelReader;
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics04_channel::handler::{ChannelIdState, ChannelResult};
 use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
-use crate::handler::{HandlerOutput, HandlerResult};
 use crate::prelude::*;
 
 use crate::core::{ContextError, ValidationContext};
@@ -97,319 +94,187 @@ where
     Ok(())
 }
 
-/// Per our convention, this message is processed on chain A.
-pub(crate) fn process<Ctx: ChannelReader>(
-    ctx_a: &Ctx,
-    msg: &MsgChannelOpenAck,
-) -> HandlerResult<ChannelResult, ChannelError> {
-    let mut output = HandlerOutput::builder();
-
-    // Unwrap the old channel end and validate it against the message.
-    let chan_end_path_on_a = &ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
-    let chan_end_on_a = ctx_a.channel_end(chan_end_path_on_a)?;
-
-    // Validate that the channel end is in a state where it can be ack.
-    if !chan_end_on_a.state_matches(&State::Init) {
-        return Err(ChannelError::InvalidChannelState {
-            channel_id: msg.chan_id_on_a.clone(),
-            state: chan_end_on_a.state,
-        });
-    }
-
-    // An OPEN IBC connection running on the local (host) chain should exist.
-
-    if chan_end_on_a.connection_hops().len() != 1 {
-        return Err(ChannelError::InvalidConnectionHopsLength {
-            expected: 1,
-            actual: chan_end_on_a.connection_hops().len(),
-        });
-    }
-
-    let conn_end_on_a = ctx_a.connection_end(&chan_end_on_a.connection_hops()[0])?;
-
-    if !conn_end_on_a.state_matches(&ConnectionState::Open) {
-        return Err(ChannelError::ConnectionNotOpen {
-            connection_id: chan_end_on_a.connection_hops()[0].clone(),
-        });
-    }
-
-    // Verify proofs
-    {
-        let client_id_on_a = conn_end_on_a.client_id();
-        let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
-        let client_cons_state_path_on_a =
-            ClientConsensusStatePath::new(client_id_on_a, &msg.proof_height_on_b);
-        let consensus_state_of_b_on_a =
-            ctx_a.client_consensus_state(&client_cons_state_path_on_a)?;
-        let prefix_on_b = conn_end_on_a.counterparty().prefix();
-        let port_id_on_b = &chan_end_on_a.counterparty().port_id;
-        let conn_id_on_b = conn_end_on_a.counterparty().connection_id().ok_or(
-            ChannelError::UndefinedConnectionCounterparty {
-                connection_id: chan_end_on_a.connection_hops()[0].clone(),
-            },
-        )?;
-
-        // The client must not be frozen.
-        if client_state_of_b_on_a.is_frozen() {
-            return Err(ChannelError::FrozenClient {
-                client_id: client_id_on_a.clone(),
-            });
-        }
-
-        let expected_chan_end_on_b = ChannelEnd::new(
-            State::TryOpen,
-            // Note: Both ends of a channel must have the same ordering, so it's
-            // fine to use A's ordering here
-            *chan_end_on_a.ordering(),
-            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
-            vec![conn_id_on_b.clone()],
-            msg.version_on_b.clone(),
-        );
-        let chan_end_path_on_b = ChannelEndPath::new(port_id_on_b, &msg.chan_id_on_b);
-
-        // Verify the proof for the channel state against the expected channel end.
-        // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
-        client_state_of_b_on_a
-            .verify_channel_state(
-                msg.proof_height_on_b,
-                prefix_on_b,
-                &msg.proof_chan_end_on_b,
-                consensus_state_of_b_on_a.root(),
-                &chan_end_path_on_b,
-                &expected_chan_end_on_b,
-            )
-            .map_err(ChannelError::VerifyChannelFailed)?;
-    }
-
-    output.log("success: channel open ack");
-
-    // Transition the channel end to the new state & pick a version.
-    let new_chan_end_on_a = {
-        let mut chan_end_on_a = chan_end_on_a;
-
-        chan_end_on_a.set_state(State::Open);
-        chan_end_on_a.set_version(msg.version_on_b.clone());
-        chan_end_on_a.set_counterparty_channel_id(msg.chan_id_on_b.clone());
-
-        chan_end_on_a
-    };
-
-    let result = ChannelResult {
-        port_id: msg.port_id_on_a.clone(),
-        channel_id: msg.chan_id_on_a.clone(),
-        channel_id_state: ChannelIdState::Reused,
-        channel_end: new_chan_end_on_a,
-    };
-
-    Ok(output.with_result(result))
-}
-
 #[cfg(test)]
 mod tests {
-    use core::str::FromStr;
 
+    use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
+    use crate::core::ics04_channel::channel::Order;
+    use crate::core::ics04_channel::handler::chan_open_ack::validate;
+    use crate::core::ics24_host::identifier::ClientId;
+    use crate::prelude::*;
+    use crate::timestamp::ZERO_DURATION;
+    use rstest::*;
     use test_log::test;
 
     use crate::core::ics03_connection::connection::ConnectionEnd;
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
     use crate::core::ics03_connection::connection::State as ConnectionState;
-    use crate::core::ics03_connection::msgs::conn_open_init::test_util::get_dummy_raw_msg_conn_open_init;
-    use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
-    use crate::core::ics03_connection::msgs::conn_open_try::test_util::get_dummy_raw_msg_conn_open_try;
-    use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
-    use crate::core::ics04_channel::handler::channel_dispatch;
     use crate::core::ics04_channel::msgs::chan_open_ack::test_util::get_dummy_raw_msg_chan_open_ack;
     use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
-    use crate::core::ics04_channel::msgs::chan_open_try::test_util::get_dummy_raw_msg_chan_open_try;
-    use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
-    use crate::core::ics04_channel::msgs::ChannelMsg;
     use crate::core::ics24_host::identifier::ConnectionId;
+    use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
-    use crate::prelude::*;
     use crate::Height;
 
-    // TODO: The tests here are very fragile and complex.
-    //  Should be adapted to use the same structure as `handler::chan_open_try::tests`.
-    #[test]
-    fn chan_open_ack_msg_processing() {
-        struct Test {
-            name: String,
-            ctx: MockContext,
-            msg: ChannelMsg,
-            want_pass: bool,
-        }
-        let proof_height = 10;
-        let client_consensus_state_height = 10;
-        let host_chain_height = Height::new(0, 35).unwrap();
+    pub struct Fixture {
+        pub context: MockContext,
+        pub msg: MsgChannelOpenAck,
+        pub client_id_on_a: ClientId,
+        pub conn_id_on_a: ConnectionId,
+        pub conn_end_on_a: ConnectionEnd,
+        pub chan_end_on_a: ChannelEnd,
+        pub proof_height: u64,
+    }
 
+    #[fixture]
+    fn fixture() -> Fixture {
+        let proof_height = 10;
         let context = MockContext::default();
 
-        let msg_conn_init =
-            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init(None)).unwrap();
-
-        let conn_end = ConnectionEnd::new(
+        let client_id_on_a = ClientId::new(mock_client_type(), 45).unwrap();
+        let conn_id_on_a = ConnectionId::new(2);
+        let conn_end_on_a = ConnectionEnd::new(
             ConnectionState::Open,
-            msg_conn_init.client_id_on_a.clone(),
-            ConnectionCounterparty::new(
-                msg_conn_init.counterparty.client_id().clone(),
-                Some(ConnectionId::from_str("defaultConnection-1").unwrap()),
-                msg_conn_init.counterparty.prefix().clone(),
-            ),
+            client_id_on_a.clone(),
+            ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
             get_compatible_versions(),
-            msg_conn_init.delay_period,
+            ZERO_DURATION,
         );
 
-        let ccid = <ConnectionId as FromStr>::from_str("defaultConnection-0");
-        let cid = match ccid {
-            Ok(v) => v,
-            Err(_e) => ConnectionId::default(),
-        };
-
-        let mut connection_vec0 = Vec::new();
-        connection_vec0.insert(
-            0,
-            match <ConnectionId as FromStr>::from_str("defaultConnection-0") {
-                Ok(a) => a,
-                _ => unreachable!(),
-            },
-        );
-
-        let msg_conn_try = MsgConnectionOpenTry::try_from(get_dummy_raw_msg_conn_open_try(
-            client_consensus_state_height,
-            host_chain_height.revision_height(),
-        ))
-        .unwrap();
-
-        let msg_chan_ack =
+        let msg =
             MsgChannelOpenAck::try_from(get_dummy_raw_msg_chan_open_ack(proof_height)).unwrap();
 
-        let msg_chan_try =
-            MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(proof_height)).unwrap();
-
-        let chan_end = ChannelEnd::new(
+        let chan_end_on_a = ChannelEnd::new(
             State::Init,
-            msg_chan_try.ordering,
-            Counterparty::new(
-                msg_chan_ack.port_id_on_a.clone(),
-                Some(msg_chan_ack.chan_id_on_a.clone()),
-            ),
-            connection_vec0.clone(),
-            msg_chan_try.version_supported_on_a.clone(),
+            Order::Unordered,
+            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_b.clone())),
+            vec![conn_id_on_a.clone()],
+            msg.version_on_b.clone(),
         );
 
-        let failed_chan_end = ChannelEnd::new(
-            State::Open,
-            msg_chan_try.ordering,
-            Counterparty::new(
-                msg_chan_ack.port_id_on_a.clone(),
-                Some(msg_chan_ack.chan_id_on_a.clone()),
-            ),
-            connection_vec0,
-            msg_chan_try.version_supported_on_a,
-        );
-
-        let tests: Vec<Test> = vec![
-            Test {
-                name: "Processing fails because no channel exists in the context".to_string(),
-                ctx: context.clone(),
-                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
-                want_pass: false,
-            },
-            Test {
-                name: "Processing fails because the channel is in the wrong state".to_string(),
-                ctx: context
-                    .clone()
-                    .with_client(
-                        &msg_conn_try.client_id_on_b,
-                        Height::new(0, client_consensus_state_height).unwrap(),
-                    )
-                    .with_channel(
-                        msg_chan_ack.port_id_on_a.clone(),
-                        msg_chan_ack.chan_id_on_a.clone(),
-                        failed_chan_end,
-                    ),
-                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
-                want_pass: false,
-            },
-            Test {
-                name: "Processing fails because a connection does exist".to_string(),
-                ctx: context
-                    .clone()
-                    .with_client(
-                        &msg_conn_try.client_id_on_b,
-                        Height::new(0, client_consensus_state_height).unwrap(),
-                    )
-                    .with_channel(
-                        msg_chan_ack.port_id_on_a.clone(),
-                        msg_chan_ack.chan_id_on_a.clone(),
-                        chan_end.clone(),
-                    ),
-                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
-                want_pass: false,
-            },
-            Test {
-                name: "Processing fails due to missing client state ".to_string(),
-                ctx: context
-                    .clone()
-                    .with_connection(cid.clone(), conn_end.clone())
-                    .with_channel(
-                        msg_chan_ack.port_id_on_a.clone(),
-                        msg_chan_ack.chan_id_on_a.clone(),
-                        chan_end.clone(),
-                    ),
-                msg: ChannelMsg::OpenAck(msg_chan_ack.clone()),
-                want_pass: false,
-            },
-            Test {
-                name: "Good parameters".to_string(),
-                ctx: context //  .clone()
-                    .with_client(
-                        &msg_conn_try.client_id_on_b,
-                        Height::new(0, client_consensus_state_height).unwrap(),
-                    )
-                    .with_connection(cid, conn_end)
-                    .with_channel(
-                        msg_chan_ack.port_id_on_a.clone(),
-                        msg_chan_ack.chan_id_on_a.clone(),
-                        chan_end,
-                    ),
-                msg: ChannelMsg::OpenAck(msg_chan_ack),
-                want_pass: true,
-            },
-        ]
-        .into_iter()
-        .collect();
-
-        for test in tests {
-            let res = channel_dispatch(&test.ctx, &test.msg);
-            // Additionally check the events and the output objects in the result.
-            match res {
-                Ok((_, res)) => {
-                    assert!(
-                            test.want_pass,
-                            "chan_open_ack: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
-                            test.name,
-                            test.msg,
-                            test.ctx.clone()
-                        );
-
-                    // The object in the output is a ConnectionEnd, should have init state.
-                    //assert_eq!(res.channel_id, msg_chan_init.channel_id().clone());
-                    assert_eq!(res.channel_end.state().clone(), State::Open);
-                }
-                Err(e) => {
-                    assert!(
-                        !test.want_pass,
-                        "chan_open_ack: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
-                        test.name,
-                        test.msg,
-                        test.ctx.clone(),
-                        e,
-                    );
-                }
-            }
+        Fixture {
+            context,
+            msg,
+            client_id_on_a,
+            conn_id_on_a,
+            conn_end_on_a,
+            chan_end_on_a,
+            proof_height,
         }
+    }
+
+    #[rstest]
+    fn chan_open_ack_fail_no_channel(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            client_id_on_a,
+            conn_id_on_a,
+            conn_end_on_a,
+            proof_height,
+            ..
+        } = fixture;
+        let context = context
+            .with_client(&client_id_on_a, Height::new(0, proof_height).unwrap())
+            .with_connection(conn_id_on_a, conn_end_on_a);
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_err(),
+            "Validation fails because no channel exists in the context"
+        )
+    }
+
+    #[rstest]
+    fn chan_open_ack_fail_channel_wrong_state(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            client_id_on_a,
+            conn_id_on_a,
+            conn_end_on_a,
+            proof_height,
+            ..
+        } = fixture;
+
+        let wrong_chan_end = ChannelEnd::new(
+            State::Open,
+            Order::Unordered,
+            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_b.clone())),
+            vec![conn_id_on_a.clone()],
+            msg.version_on_b.clone(),
+        );
+        let context = context
+            .with_client(&client_id_on_a, Height::new(0, proof_height).unwrap())
+            .with_connection(conn_id_on_a, conn_end_on_a)
+            .with_channel(
+                msg.port_id_on_a.clone(),
+                msg.chan_id_on_a.clone(),
+                wrong_chan_end,
+            );
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_err(),
+            "Validation fails because channel is in the wrong state"
+        )
+    }
+
+    #[rstest]
+    fn chan_open_ack_fail_no_connection(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            client_id_on_a,
+            chan_end_on_a,
+            proof_height,
+            ..
+        } = fixture;
+
+        let context = context
+            .with_client(&client_id_on_a, Height::new(0, proof_height).unwrap())
+            .with_channel(
+                msg.port_id_on_a.clone(),
+                msg.chan_id_on_a.clone(),
+                chan_end_on_a,
+            );
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_err(),
+            "Validation fails because no connection exists in the context"
+        )
+    }
+
+    #[rstest]
+    fn chan_open_ack_happy_path(fixture: Fixture) {
+        let Fixture {
+            context,
+            msg,
+            client_id_on_a,
+            conn_id_on_a,
+            conn_end_on_a,
+            chan_end_on_a,
+            proof_height,
+            ..
+        } = fixture;
+
+        let context = context
+            .with_client(&client_id_on_a, Height::new(0, proof_height).unwrap())
+            .with_connection(conn_id_on_a, conn_end_on_a)
+            .with_channel(
+                msg.port_id_on_a.clone(),
+                msg.chan_id_on_a.clone(),
+                chan_end_on_a,
+            );
+
+        let res = validate(&context, &msg);
+
+        assert!(res.is_ok(), "Validation happy path")
     }
 }
