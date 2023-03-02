@@ -6,19 +6,13 @@ use super::{
 };
 
 /// Entrypoint which only performs message validation
-pub fn validate<'m, ValCtx>(ctx: &ValCtx, message: Any) -> Result<(), RouterError>
-where
-    ValCtx: ValidationContext<'m>,
-{
+pub fn validate<'m>(ctx: &impl ValidationContext<'m>, message: Any) -> Result<(), RouterError> {
     let envelope: MsgEnvelope = message.try_into()?;
     ctx.validate(envelope)
 }
 
 /// Entrypoint which only performs message execution
-pub fn execute<'m, Ctx>(ctx: &mut Ctx, message: Any) -> Result<(), RouterError>
-where
-    Ctx: ExecutionContext<'m>,
-{
+pub fn execute<'m>(ctx: &mut impl ExecutionContext<'m>, message: Any) -> Result<(), RouterError> {
     let envelope: MsgEnvelope = message.try_into()?;
     ctx.execute(envelope)
 }
