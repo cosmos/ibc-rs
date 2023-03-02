@@ -231,10 +231,10 @@ pub enum IbcEvent {
     AppModule(ModuleEvent),
 }
 
-impl TryFrom<IbcEvent> for abci::Event {
+impl TryFrom<&IbcEvent> for abci::Event {
     type Error = Error;
 
-    fn try_from(event: IbcEvent) -> Result<Self, Self::Error> {
+    fn try_from(event: &IbcEvent) -> Result<Self, Self::Error> {
         Ok(match event {
             IbcEvent::CreateClient(event) => event.into(),
             IbcEvent::UpdateClient(event) => event.into(),
@@ -258,14 +258,6 @@ impl TryFrom<IbcEvent> for abci::Event {
             IbcEvent::ChannelClosed(event) => event.into(),
             IbcEvent::AppModule(event) => event.try_into()?,
         })
-    }
-}
-
-impl TryFrom<&IbcEvent> for abci::Event {
-    type Error = Error;
-
-    fn try_from(event: &IbcEvent) -> Result<Self, Self::Error> {
-        abci::Event::try_from(event.clone())
     }
 }
 
@@ -317,17 +309,19 @@ pub struct ModuleEvent {
     pub attributes: Vec<ModuleEventAttribute>,
 }
 
-impl TryFrom<ModuleEvent> for abci::Event {
+impl TryFrom<&ModuleEvent> for abci::Event {
     type Error = Error;
 
-    fn try_from(event: ModuleEvent) -> Result<Self, Self::Error> {
+    fn try_from(event: &ModuleEvent) -> Result<Self, Self::Error> {
         if IbcEventType::from_str(event.kind.as_str()).is_ok() {
-            return Err(Error::MalformedModuleEvent { event });
+            return Err(Error::MalformedModuleEvent {
+                event: event.clone(),
+            });
         }
 
-        let attributes = event.attributes.into_iter().map(Into::into).collect();
+        let attributes = event.attributes.iter().map(Into::into).collect();
         Ok(abci::Event {
-            kind: event.kind,
+            kind: event.kind.clone(),
             attributes,
         })
     }
@@ -367,9 +361,9 @@ impl<K: ToString, V: ToString> From<(K, V)> for ModuleEventAttribute {
     }
 }
 
-impl From<ModuleEventAttribute> for abci::EventAttribute {
-    fn from(attr: ModuleEventAttribute) -> Self {
-        (attr.key, attr.value).into()
+impl From<&ModuleEventAttribute> for abci::EventAttribute {
+    fn from(attr: &ModuleEventAttribute) -> Self {
+        (attr.key.clone(), attr.value.clone()).into()
     }
 }
 
@@ -400,6 +394,5 @@ pub mod tests {
             ConnectionId::default(),
         ));
         let _ = abci::Event::try_from(&ibc_event);
-        let _ = abci::Event::try_from(ibc_event);
     }
 }

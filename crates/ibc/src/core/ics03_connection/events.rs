@@ -34,8 +34,8 @@ struct Attributes {
 }
 
 /// Convert attributes to Tendermint ABCI tags
-impl From<Attributes> for Vec<abci::EventAttribute> {
-    fn from(a: Attributes) -> Self {
+impl From<&Attributes> for Vec<abci::EventAttribute> {
+    fn from(a: &Attributes) -> Self {
         let conn_id = (CONN_ID_ATTRIBUTE_KEY, a.connection_id.as_str()).into();
         let client_id = (CLIENT_ID_ATTRIBUTE_KEY, a.client_id.as_str()).into();
 
@@ -108,11 +108,11 @@ impl OpenInit {
     }
 }
 
-impl From<OpenInit> for abci::Event {
-    fn from(v: OpenInit) -> Self {
+impl From<&OpenInit> for abci::Event {
+    fn from(v: &OpenInit) -> Self {
         abci::Event {
             kind: IbcEventType::OpenInitConnection.as_str().to_owned(),
-            attributes: v.0.into(),
+            attributes: Vec::<abci::EventAttribute>::from(&v.0),
         }
     }
 }
@@ -163,11 +163,11 @@ impl OpenTry {
     }
 }
 
-impl From<OpenTry> for abci::Event {
-    fn from(v: OpenTry) -> Self {
+impl From<&OpenTry> for abci::Event {
+    fn from(v: &OpenTry) -> Self {
         abci::Event {
             kind: IbcEventType::OpenTryConnection.as_str().to_owned(),
-            attributes: v.0.into(),
+            attributes: Vec::<abci::EventAttribute>::from(&v.0),
         }
     }
 }
@@ -218,11 +218,11 @@ impl OpenAck {
     }
 }
 
-impl From<OpenAck> for abci::Event {
-    fn from(v: OpenAck) -> Self {
+impl From<&OpenAck> for abci::Event {
+    fn from(v: &OpenAck) -> Self {
         abci::Event {
             kind: IbcEventType::OpenAckConnection.as_str().to_owned(),
-            attributes: v.0.into(),
+            attributes: Vec::<abci::EventAttribute>::from(&v.0),
         }
     }
 }
@@ -273,11 +273,11 @@ impl OpenConfirm {
     }
 }
 
-impl From<OpenConfirm> for abci::Event {
-    fn from(v: OpenConfirm) -> Self {
+impl From<&OpenConfirm> for abci::Event {
+    fn from(v: &OpenConfirm) -> Self {
         abci::Event {
             kind: IbcEventType::OpenConfirmConnection.as_str().to_owned(),
-            attributes: v.0.into(),
+            attributes: Vec::<abci::EventAttribute>::from(&v.0),
         }
     }
 }
@@ -318,12 +318,11 @@ mod tests {
         let tests: Vec<Test> = vec![
             Test {
                 kind: IbcEventType::OpenInitConnection,
-                event: OpenInit::new(
+                event: AbciEvent::from(&OpenInit::new(
                     conn_id_on_a.clone(),
                     client_id_on_a.clone(),
                     client_id_on_b.clone(),
-                )
-                .into(),
+                )),
                 expected_keys: expected_keys.clone(),
                 expected_values: expected_values
                     .iter()
@@ -333,32 +332,34 @@ mod tests {
             },
             Test {
                 kind: IbcEventType::OpenTryConnection,
-                event: OpenTry::new(
+                event: AbciEvent::from(&OpenTry::new(
                     conn_id_on_b.clone(),
                     client_id_on_b.clone(),
                     conn_id_on_a.clone(),
                     client_id_on_a.clone(),
-                )
-                .into(),
+                )),
                 expected_keys: expected_keys.clone(),
                 expected_values: expected_values.iter().rev().cloned().collect(),
             },
             Test {
                 kind: IbcEventType::OpenAckConnection,
-                event: OpenAck::new(
+                event: AbciEvent::from(&OpenAck::new(
                     conn_id_on_a.clone(),
                     client_id_on_a.clone(),
                     conn_id_on_b.clone(),
                     client_id_on_b.clone(),
-                )
-                .into(),
+                )),
                 expected_keys: expected_keys.clone(),
                 expected_values: expected_values.clone(),
             },
             Test {
                 kind: IbcEventType::OpenConfirmConnection,
-                event: OpenConfirm::new(conn_id_on_b, client_id_on_b, conn_id_on_a, client_id_on_a)
-                    .into(),
+                event: AbciEvent::from(&OpenConfirm::new(
+                    conn_id_on_b,
+                    client_id_on_b,
+                    conn_id_on_a,
+                    client_id_on_a,
+                )),
                 expected_keys: expected_keys.clone(),
                 expected_values: expected_values.iter().rev().cloned().collect(),
             },
