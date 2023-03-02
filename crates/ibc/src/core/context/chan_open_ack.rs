@@ -12,13 +12,13 @@ use crate::events::IbcEvent;
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 
-pub(super) fn chan_open_ack_validate<ValCtx>(
+pub(super) fn chan_open_ack_validate<'m, ValCtx>(
     ctx_a: &ValCtx,
     module_id: ModuleId,
     msg: MsgChannelOpenAck,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     chan_open_ack::validate(ctx_a, &msg)?;
 
@@ -30,13 +30,13 @@ where
     Ok(())
 }
 
-pub(super) fn chan_open_ack_execute<ExecCtx>(
+pub(super) fn chan_open_ack_execute<'m, ExecCtx>(
     ctx_a: &mut ExecCtx,
     module_id: ModuleId,
     msg: MsgChannelOpenAck,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let module = ctx_a
         .get_route_mut(&module_id)
@@ -123,7 +123,7 @@ mod tests {
     use crate::mock::client_state::client_type as mock_client_type;
 
     pub struct Fixture {
-        pub context: MockContext,
+        pub context: MockContext<'static>,
         pub module_id: ModuleId,
         pub msg: MsgChannelOpenAck,
         pub client_id_on_a: ClientId,

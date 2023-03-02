@@ -180,7 +180,7 @@ impl ClientState for MockClientState {
 
     fn check_header_and_update_state(
         &self,
-        _ctx: &dyn ValidationContext,
+        _ctx: &dyn ValidationContext<'_>,
         _client_id: ClientId,
         header: Any,
     ) -> Result<UpdatedState, ClientError> {
@@ -201,7 +201,7 @@ impl ClientState for MockClientState {
 
     fn check_misbehaviour_and_update_state(
         &self,
-        _ctx: &dyn ValidationContext,
+        _ctx: &dyn ValidationContext<'_>,
         _client_id: ClientId,
         misbehaviour: Any,
     ) -> Result<Box<dyn ClientState>, ContextError> {
@@ -314,7 +314,7 @@ impl ClientState for MockClientState {
 
     fn verify_packet_data(
         &self,
-        _ctx: &dyn ValidationContext,
+        _ctx: &dyn ValidationContext<'_>,
         _height: Height,
         _connection_end: &ConnectionEnd,
         _proof: &CommitmentProofBytes,
@@ -327,7 +327,7 @@ impl ClientState for MockClientState {
 
     fn verify_next_sequence_recv(
         &self,
-        _ctx: &dyn ValidationContext,
+        _ctx: &dyn ValidationContext<'_>,
         _height: Height,
         _connection_end: &ConnectionEnd,
         _proof: &CommitmentProofBytes,
@@ -340,7 +340,7 @@ impl ClientState for MockClientState {
 
     fn verify_packet_receipt_absence(
         &self,
-        _ctx: &dyn ValidationContext,
+        _ctx: &dyn ValidationContext<'_>,
         _height: Height,
         _connection_end: &ConnectionEnd,
         _proof: &CommitmentProofBytes,
@@ -352,7 +352,7 @@ impl ClientState for MockClientState {
 
     fn verify_packet_acknowledgement(
         &self,
-        _ctx: &dyn ValidationContext,
+        _ctx: &dyn ValidationContext<'_>,
         _height: Height,
         _connection_end: &ConnectionEnd,
         _proof: &CommitmentProofBytes,

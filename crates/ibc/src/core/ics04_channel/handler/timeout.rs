@@ -11,9 +11,9 @@ use crate::timestamp::Expiry;
 
 use crate::core::{ContextError, ValidationContext};
 
-pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeout) -> Result<(), ContextError>
+pub fn validate<'m, ValCtx>(ctx_a: &ValCtx, msg: &MsgTimeout) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     let chan_end_on_a = ctx_a.channel_end(&ChannelEndPath::new(
         &msg.packet.port_on_a,
@@ -170,7 +170,7 @@ mod tests {
     use crate::timestamp::ZERO_DURATION;
 
     pub struct Fixture {
-        pub context: MockContext,
+        pub context: MockContext<'static>,
         pub client_height: Height,
         pub msg: MsgTimeout,
         pub packet_commitment: PacketCommitment,

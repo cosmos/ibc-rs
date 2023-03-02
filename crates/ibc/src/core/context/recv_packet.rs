@@ -17,12 +17,12 @@ use crate::{
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 
-pub(super) fn recv_packet_validate<ValCtx>(
+pub(super) fn recv_packet_validate<'m, ValCtx>(
     ctx_b: &ValCtx,
     msg: MsgRecvPacket,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     // Note: this contains the validation for `write_acknowledgement` as well.
     recv_packet::validate(ctx_b, &msg)
@@ -30,13 +30,13 @@ where
     // nothing to validate with the module, since `onRecvPacket` cannot fail.
 }
 
-pub(super) fn recv_packet_execute<ExecCtx>(
+pub(super) fn recv_packet_execute<'m, ExecCtx>(
     ctx_b: &mut ExecCtx,
     module_id: ModuleId,
     msg: MsgRecvPacket,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let chan_end_path_on_b = ChannelEndPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
     let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
@@ -168,7 +168,7 @@ mod tests {
     };
 
     pub struct Fixture {
-        pub context: MockContext,
+        pub context: MockContext<'static>,
         pub module_id: ModuleId,
         pub client_height: Height,
         pub host_height: Height,

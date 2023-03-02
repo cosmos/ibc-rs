@@ -11,9 +11,12 @@ use crate::core::ics24_host::path::ClientStatePath;
 
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
-pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgSubmitMisbehaviour) -> Result<(), ContextError>
+pub(crate) fn validate<'m, ValCtx>(
+    ctx: &ValCtx,
+    msg: MsgSubmitMisbehaviour,
+) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     let MsgSubmitMisbehaviour {
         client_id,
@@ -37,9 +40,12 @@ where
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgSubmitMisbehaviour) -> Result<(), ContextError>
+pub(crate) fn execute<'m, ExecCtx>(
+    ctx: &mut ExecCtx,
+    msg: MsgSubmitMisbehaviour,
+) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let MsgSubmitMisbehaviour {
         client_id,
@@ -93,7 +99,11 @@ mod tests {
     use crate::Height;
     use crate::{downcast, prelude::*};
 
-    fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &ClientType) {
+    fn ensure_misbehaviour(
+        ctx: &MockContext<'static>,
+        client_id: &ClientId,
+        client_type: &ClientType,
+    ) {
         let client_state = ctx.client_state(client_id).unwrap();
 
         assert!(client_state.is_frozen());

@@ -9,9 +9,9 @@ use crate::prelude::*;
 
 use crate::core::{ContextError, ValidationContext};
 
-pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), ContextError>
+pub fn validate<'m, ValCtx>(ctx_a: &ValCtx, msg: &MsgTimeoutOnClose) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     let packet = &msg.packet;
     let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
@@ -181,7 +181,7 @@ mod tests {
     use crate::timestamp::ZERO_DURATION;
 
     pub struct Fixture {
-        pub context: MockContext,
+        pub context: MockContext<'static>,
         pub msg: MsgTimeoutOnClose,
         pub packet_commitment: PacketCommitment,
         pub conn_end_on_a: ConnectionEnd,

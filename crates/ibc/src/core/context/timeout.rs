@@ -24,13 +24,13 @@ pub(super) enum TimeoutMsgType {
     TimeoutOnClose(MsgTimeoutOnClose),
 }
 
-pub(super) fn timeout_packet_validate<ValCtx>(
+pub(super) fn timeout_packet_validate<'m, ValCtx>(
     ctx_a: &ValCtx,
     module_id: ModuleId,
     timeout_msg_type: TimeoutMsgType,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     match &timeout_msg_type {
         TimeoutMsgType::Timeout(msg) => timeout::validate(ctx_a, msg),
@@ -51,13 +51,13 @@ where
         .map_err(ContextError::PacketError)
 }
 
-pub(super) fn timeout_packet_execute<ExecCtx>(
+pub(super) fn timeout_packet_execute<'m, ExecCtx>(
     ctx_a: &mut ExecCtx,
     module_id: ModuleId,
     timeout_msg_type: TimeoutMsgType,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let (packet, signer) = match timeout_msg_type {
         TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),
@@ -171,7 +171,7 @@ mod tests {
     };
 
     struct Fixture {
-        ctx: MockContext,
+        ctx: MockContext<'static>,
         module_id: ModuleId,
         msg: MsgTimeoutOnClose,
         packet_commitment: PacketCommitment,

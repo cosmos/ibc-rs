@@ -161,7 +161,7 @@ mod tests {
     fn send_packet_processing() {
         struct Test {
             name: String,
-            ctx: MockContext,
+            ctx: MockContext<'static>,
             packet: Packet,
             want_pass: bool,
         }

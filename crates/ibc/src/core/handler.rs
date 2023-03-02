@@ -6,25 +6,28 @@ use super::{
 };
 
 /// Entrypoint which only performs message validation
-pub fn validate<Ctx>(ctx: &Ctx, message: Any) -> Result<(), RouterError>
+pub fn validate<'m, ValCtx>(ctx: &ValCtx, message: Any) -> Result<(), RouterError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     let envelope: MsgEnvelope = message.try_into()?;
     ctx.validate(envelope)
 }
 
 /// Entrypoint which only performs message execution
-pub fn execute<Ctx>(ctx: &mut Ctx, message: Any) -> Result<(), RouterError>
+pub fn execute<'m, Ctx>(ctx: &mut Ctx, message: Any) -> Result<(), RouterError>
 where
-    Ctx: ExecutionContext,
+    Ctx: ExecutionContext<'m>,
 {
     let envelope: MsgEnvelope = message.try_into()?;
     ctx.execute(envelope)
 }
 
 /// Entrypoint which performs both validation and message execution
-pub fn dispatch(ctx: &mut impl ExecutionContext, msg: MsgEnvelope) -> Result<(), RouterError> {
+pub fn dispatch<'m>(
+    ctx: &mut impl ExecutionContext<'m>,
+    msg: MsgEnvelope,
+) -> Result<(), RouterError> {
     ctx.validate(msg.clone())?;
     ctx.execute(msg)
 }
@@ -119,7 +122,7 @@ mod tests {
             }
         }
 
-        type StateCheckFn = dyn FnOnce(&MockContext) -> bool;
+        type StateCheckFn = dyn FnOnce(&MockContext<'_>) -> bool;
 
         // Test parameters
         struct Test {
@@ -503,7 +506,7 @@ mod tests {
         }
     }
 
-    fn get_channel_events_ctx() -> MockContext {
+    fn get_channel_events_ctx() -> MockContext<'static> {
         let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
         let mut ctx = MockContext::default()
             .with_client(&ClientId::default(), Height::new(0, 1).unwrap())

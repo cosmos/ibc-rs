@@ -10,9 +10,9 @@ use crate::timestamp::Expiry;
 
 use crate::core::{ContextError, ValidationContext};
 
-pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextError>
+pub fn validate<'m, ValCtx>(ctx_b: &ValCtx, msg: &MsgRecvPacket) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     let chan_end_path_on_b = ChannelEndPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
     let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
@@ -145,9 +145,12 @@ where
     Ok(())
 }
 
-fn validate_write_acknowledgement<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextError>
+fn validate_write_acknowledgement<'m, ValCtx>(
+    ctx_b: &ValCtx,
+    msg: &MsgRecvPacket,
+) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     let packet = msg.packet.clone();
     let ack_path_on_b = AckPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);
@@ -187,7 +190,7 @@ mod tests {
     use crate::timestamp::ZERO_DURATION;
 
     pub struct Fixture {
-        pub context: MockContext,
+        pub context: MockContext<'static>,
         pub client_height: Height,
         pub host_height: Height,
         pub msg: MsgRecvPacket,

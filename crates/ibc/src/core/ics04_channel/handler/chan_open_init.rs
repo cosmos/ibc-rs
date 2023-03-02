@@ -6,9 +6,9 @@ use crate::prelude::*;
 
 use crate::core::{ContextError, ValidationContext};
 
-pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenInit) -> Result<(), ContextError>
+pub fn validate<'m, ValCtx>(ctx_a: &ValCtx, msg: &MsgChannelOpenInit) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     if msg.connection_hops_on_a.len() != 1 {
         return Err(ChannelError::InvalidConnectionHopsLength {
@@ -52,7 +52,7 @@ mod tests {
     use crate::mock::context::MockContext;
 
     pub struct Fixture {
-        pub context: MockContext,
+        pub context: MockContext<'static>,
         pub msg: MsgChannelOpenInit,
         pub conn_end_on_a: ConnectionEnd,
     }

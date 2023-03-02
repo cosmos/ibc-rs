@@ -14,9 +14,9 @@ use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 
 use crate::core::{ExecutionContext, ValidationContext};
 
-pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
+pub(crate) fn validate<'m, ValCtx>(ctx: &ValCtx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     let MsgUpgradeClient { client_id, .. } = msg;
 
@@ -77,9 +77,12 @@ where
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
+pub(crate) fn execute<'m, ExecCtx>(
+    ctx: &mut ExecCtx,
+    msg: MsgUpgradeClient,
+) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let MsgUpgradeClient { client_id, .. } = msg;
 
@@ -131,7 +134,7 @@ mod tests {
     use super::validate;
 
     pub struct Fixture {
-        pub ctx: MockContext,
+        pub ctx: MockContext<'static>,
         pub msg: MsgUpgradeClient,
     }
 

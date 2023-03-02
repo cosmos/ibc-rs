@@ -15,21 +15,24 @@ use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, C
 
 use crate::core::{ExecutionContext, ValidationContext};
 
-pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
+pub(crate) fn validate<'m, ValCtx>(
+    ctx_a: &ValCtx,
+    msg: MsgConnectionOpenAck,
+) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     let vars = LocalVars::new(ctx_a, &msg)?;
     validate_impl(ctx_a, &msg, &vars)
 }
 
-fn validate_impl<Ctx>(
-    ctx_a: &Ctx,
+fn validate_impl<'m, ValCtx>(
+    ctx_a: &ValCtx,
     msg: &MsgConnectionOpenAck,
     vars: &LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     let host_height = ctx_a.host_height().map_err(|_| ConnectionError::Other {
         description: "failed to get host height".to_string(),
@@ -138,21 +141,24 @@ where
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
+pub(crate) fn execute<'m, ExecCtx>(
+    ctx_a: &mut ExecCtx,
+    msg: MsgConnectionOpenAck,
+) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let vars = LocalVars::new(ctx_a, &msg)?;
     execute_impl(ctx_a, msg, vars)
 }
 
-fn execute_impl<Ctx>(
-    ctx_a: &mut Ctx,
+fn execute_impl<'m, ExecCtx>(
+    ctx_a: &mut ExecCtx,
     msg: MsgConnectionOpenAck,
     vars: LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     ctx_a.emit_ibc_event(IbcEvent::OpenAckConnection(OpenAck::new(
         msg.conn_id_on_a.clone(),
@@ -186,9 +192,9 @@ struct LocalVars {
 }
 
 impl LocalVars {
-    fn new<Ctx>(ctx_a: &Ctx, msg: &MsgConnectionOpenAck) -> Result<Self, ContextError>
+    fn new<'m, ValCtx>(ctx_a: &ValCtx, msg: &MsgConnectionOpenAck) -> Result<Self, ContextError>
     where
-        Ctx: ValidationContext,
+        ValCtx: ValidationContext<'m>,
     {
         Ok(LocalVars {
             conn_end_on_a: ctx_a.connection_end(&msg.conn_id_on_a)?,
@@ -341,7 +347,7 @@ mod tests {
                     IbcEvent::OpenAckConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = <MockContext as ValidationContext>::connection_end(
+                let conn_end = <MockContext<'static> as ValidationContext>::connection_end(
                     &fxt.ctx,
                     conn_open_try_event.connection_id(),
                 )

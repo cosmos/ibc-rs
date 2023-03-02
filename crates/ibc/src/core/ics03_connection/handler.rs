@@ -20,7 +20,7 @@ pub mod test_util {
 
     #[derive(Clone, Debug)]
     pub struct Fixture<M: Debug> {
-        pub ctx: MockContext,
+        pub ctx: MockContext<'static>,
         pub msg: M,
     }
 

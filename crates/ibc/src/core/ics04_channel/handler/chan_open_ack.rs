@@ -8,9 +8,9 @@ use crate::prelude::*;
 
 use crate::core::{ContextError, ValidationContext};
 
-pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenAck) -> Result<(), ContextError>
+pub fn validate<'m, ValCtx>(ctx_a: &ValCtx, msg: &MsgChannelOpenAck) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
@@ -119,7 +119,7 @@ mod tests {
     use crate::Height;
 
     pub struct Fixture {
-        pub context: MockContext,
+        pub context: MockContext<'static>,
         pub msg: MsgChannelOpenAck,
         pub client_id_on_a: ClientId,
         pub conn_id_on_a: ConnectionId,

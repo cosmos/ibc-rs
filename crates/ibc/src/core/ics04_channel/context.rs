@@ -49,9 +49,9 @@ pub trait SendPacketValidationContext {
     ) -> PacketCommitment;
 }
 
-impl<T> SendPacketValidationContext for T
+impl<'m, T> SendPacketValidationContext for T
 where
-    T: ValidationContext,
+    T: ValidationContext<'m>,
 {
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
         self.channel_end(channel_end_path)
@@ -113,9 +113,9 @@ pub trait SendPacketExecutionContext: SendPacketValidationContext {
     fn log_message(&mut self, message: String);
 }
 
-impl<T> SendPacketExecutionContext for T
+impl<'m, T> SendPacketExecutionContext for T
 where
-    T: ExecutionContext,
+    T: ExecutionContext<'m>,
 {
     fn store_next_sequence_send(
         &mut self,

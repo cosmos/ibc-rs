@@ -11,13 +11,14 @@ use crate::events::IbcEvent;
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 
-pub(super) fn chan_open_confirm_validate<ValCtx>(
+// this 'm tracks the lifetime of the (dyn `Module + m`) in the Router
+pub(super) fn chan_open_confirm_validate<'m, ValCtx>(
     ctx_b: &ValCtx,
     module_id: ModuleId,
     msg: MsgChannelOpenConfirm,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     chan_open_confirm::validate(ctx_b, &msg)?;
 
@@ -29,13 +30,13 @@ where
     Ok(())
 }
 
-pub(super) fn chan_open_confirm_execute<ExecCtx>(
+pub(super) fn chan_open_confirm_execute<'m, ExecCtx>(
     ctx_b: &mut ExecCtx,
     module_id: ModuleId,
     msg: MsgChannelOpenConfirm,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let module = ctx_b
         .get_route_mut(&module_id)
@@ -129,7 +130,7 @@ mod tests {
     use crate::mock::client_state::client_type as mock_client_type;
 
     pub struct Fixture {
-        pub context: MockContext,
+        pub context: MockContext<'static>,
         pub module_id: ModuleId,
         pub msg: MsgChannelOpenConfirm,
         pub client_id_on_b: ClientId,

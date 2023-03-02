@@ -20,9 +20,9 @@ use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::events::IbcEvent;
 
-pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
+pub(crate) fn validate<'m, ValCtx>(ctx: &ValCtx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     let MsgCreateClient {
         client_state,
@@ -48,9 +48,12 @@ where
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
+pub(crate) fn execute<'m, ExecCtx>(
+    ctx: &mut ExecCtx,
+    msg: MsgCreateClient,
+) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let MsgCreateClient {
         client_state,

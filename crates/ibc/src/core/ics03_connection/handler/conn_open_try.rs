@@ -18,21 +18,24 @@ use crate::core::ics24_host::path::{
 
 use crate::core::{ExecutionContext, ValidationContext};
 
-pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
+pub(crate) fn validate<'m, ValCtx>(
+    ctx_b: &ValCtx,
+    msg: MsgConnectionOpenTry,
+) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     let vars = LocalVars::new(ctx_b, &msg)?;
     validate_impl(ctx_b, &msg, &vars)
 }
 
-fn validate_impl<Ctx>(
-    ctx_b: &Ctx,
+fn validate_impl<'m, ValCtx>(
+    ctx_b: &ValCtx,
     msg: &MsgConnectionOpenTry,
     vars: &LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     ctx_b.validate_self_client(msg.client_state_of_b_on_a.clone())?;
 
@@ -130,21 +133,24 @@ where
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx_b: &mut Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
+pub(crate) fn execute<'m, ExecCtx>(
+    ctx_b: &mut ExecCtx,
+    msg: MsgConnectionOpenTry,
+) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let vars = LocalVars::new(ctx_b, &msg)?;
     execute_impl(ctx_b, msg, vars)
 }
 
-fn execute_impl<Ctx>(
-    ctx_b: &mut Ctx,
+fn execute_impl<'m, ExecCtx>(
+    ctx_b: &mut ExecCtx,
     msg: MsgConnectionOpenTry,
     vars: LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let conn_id_on_a = vars
         .conn_end_on_b
@@ -177,9 +183,9 @@ struct LocalVars {
 }
 
 impl LocalVars {
-    fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenTry) -> Result<Self, ContextError>
+    fn new<'m, ValCtx>(ctx_b: &ValCtx, msg: &MsgConnectionOpenTry) -> Result<Self, ContextError>
     where
-        Ctx: ValidationContext,
+        ValCtx: ValidationContext<'m>,
     {
         let version_on_b =
             ctx_b.pick_version(&ctx_b.get_compatible_versions(), &msg.versions_on_a)?;
@@ -305,7 +311,7 @@ mod tests {
                     IbcEvent::OpenTryConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = <MockContext as ValidationContext>::connection_end(
+                let conn_end = <MockContext<'static> as ValidationContext>::connection_end(
                     &fxt.ctx,
                     conn_open_try_event.connection_id(),
                 )

@@ -12,13 +12,13 @@ use crate::events::IbcEvent;
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 
-pub(super) fn chan_open_try_validate<ValCtx>(
+pub(super) fn chan_open_try_validate<'m, ValCtx>(
     ctx_b: &ValCtx,
     module_id: ModuleId,
     msg: MsgChannelOpenTry,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     chan_open_try::validate(ctx_b, &msg)?;
     let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
@@ -38,13 +38,13 @@ where
     Ok(())
 }
 
-pub(super) fn chan_open_try_execute<ExecCtx>(
+pub(super) fn chan_open_try_execute<'m, ExecCtx>(
     ctx_b: &mut ExecCtx,
     module_id: ModuleId,
     msg: MsgChannelOpenTry,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
     let module = ctx_b
@@ -147,7 +147,7 @@ mod tests {
     use crate::mock::client_state::client_type as mock_client_type;
 
     pub struct Fixture {
-        pub context: MockContext,
+        pub context: MockContext<'static>,
         pub module_id: ModuleId,
         pub msg: MsgChannelOpenTry,
         pub client_id_on_b: ClientId,

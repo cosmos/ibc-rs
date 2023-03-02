@@ -16,9 +16,9 @@ use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 
 use crate::core::{ExecutionContext, ValidationContext};
 
-pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
+pub(crate) fn validate<'m, ValCtx>(ctx: &ValCtx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     let MsgUpdateClient {
         client_id,
@@ -71,9 +71,12 @@ where
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
+pub(crate) fn execute<'m, ExecCtx>(
+    ctx: &mut ExecCtx,
+    msg: MsgUpdateClient,
+) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let MsgUpdateClient {
         client_id,

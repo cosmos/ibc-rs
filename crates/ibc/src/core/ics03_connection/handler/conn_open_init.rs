@@ -11,9 +11,12 @@ use crate::core::ics24_host::path::{ClientConnectionPath, ConnectionPath};
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 
-pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
+pub(crate) fn validate<'m, ValCtx>(
+    ctx_a: &ValCtx,
+    msg: MsgConnectionOpenInit,
+) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     // An IBC client running on the local (host) chain should exist.
     ctx_a.client_state(&msg.client_id_on_a)?;
@@ -27,9 +30,12 @@ where
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
+pub(crate) fn execute<'m, ExecCtx>(
+    ctx_a: &mut ExecCtx,
+    msg: MsgConnectionOpenInit,
+) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let versions = match msg.version {
         Some(version) => {
@@ -164,7 +170,7 @@ mod tests {
                     IbcEvent::OpenInitConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = <MockContext as ValidationContext>::connection_end(
+                let conn_end = <MockContext<'static> as ValidationContext>::connection_end(
                     &fxt.ctx,
                     conn_open_init_event.connection_id(),
                 )

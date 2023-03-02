@@ -14,13 +14,13 @@ use crate::{
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 
-pub(super) fn acknowledgement_packet_validate<ValCtx>(
+pub(super) fn acknowledgement_packet_validate<'m, ValCtx>(
     ctx_a: &ValCtx,
     module_id: ModuleId,
     msg: MsgAcknowledgement,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     acknowledgement::validate(ctx_a, &msg)?;
 
@@ -33,13 +33,13 @@ where
         .map_err(ContextError::PacketError)
 }
 
-pub(super) fn acknowledgement_packet_execute<ExecCtx>(
+pub(super) fn acknowledgement_packet_execute<'m, ExecCtx>(
     ctx_a: &mut ExecCtx,
     module_id: ModuleId,
     msg: MsgAcknowledgement,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let chan_end_path_on_a = ChannelEndPath::new(&msg.packet.port_on_a, &msg.packet.chan_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
@@ -140,7 +140,7 @@ mod tests {
     };
 
     struct Fixture {
-        ctx: MockContext,
+        ctx: MockContext<'static>,
         module_id: ModuleId,
         msg: MsgAcknowledgement,
         packet_commitment: PacketCommitment,

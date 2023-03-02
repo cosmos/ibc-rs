@@ -13,13 +13,13 @@ use crate::core::ics26_routing::context::ModuleId;
 use crate::events::IbcEvent;
 
 use super::{ContextError, ExecutionContext, ValidationContext};
-pub(super) fn chan_open_init_validate<ValCtx>(
+pub(super) fn chan_open_init_validate<'m, ValCtx>(
     ctx_a: &ValCtx,
     module_id: ModuleId,
     msg: MsgChannelOpenInit,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     chan_open_init::validate(ctx_a, &msg)?;
     let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
@@ -39,13 +39,13 @@ where
     Ok(())
 }
 
-pub(super) fn chan_open_init_execute<ExecCtx>(
+pub(super) fn chan_open_init_execute<'m, ExecCtx>(
     ctx_a: &mut ExecCtx,
     module_id: ModuleId,
     msg: MsgChannelOpenInit,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
     let module = ctx_a
@@ -137,7 +137,7 @@ mod tests {
     use rstest::*;
 
     pub struct Fixture {
-        pub context: MockContext,
+        pub context: MockContext<'static>,
         pub module_id: ModuleId,
         pub msg: MsgChannelOpenInit,
         pub conn_end_on_a: ConnectionEnd,

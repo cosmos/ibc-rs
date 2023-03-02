@@ -11,13 +11,13 @@ use crate::events::IbcEvent;
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 
-pub(super) fn chan_close_confirm_validate<ValCtx>(
+pub(super) fn chan_close_confirm_validate<'m, ValCtx>(
     ctx_b: &ValCtx,
     module_id: ModuleId,
     msg: MsgChannelCloseConfirm,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     chan_close_confirm::validate(ctx_b, &msg)?;
 
@@ -29,13 +29,13 @@ where
     Ok(())
 }
 
-pub(super) fn chan_close_confirm_execute<ExecCtx>(
+pub(super) fn chan_close_confirm_execute<'m, ExecCtx>(
     ctx_b: &mut ExecCtx,
     module_id: ModuleId,
     msg: MsgChannelCloseConfirm,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: ExecutionContext<'m>,
 {
     let module = ctx_b
         .get_route_mut(&module_id)

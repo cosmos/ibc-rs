@@ -9,9 +9,9 @@ use crate::prelude::*;
 
 use crate::core::{ContextError, ValidationContext};
 
-pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), ContextError>
+pub fn validate<'m, ValCtx>(ctx_b: &ValCtx, msg: &MsgChannelOpenTry) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     // An IBC connection running on the local (host) chain should exist.
     if msg.connection_hops_on_b.len() != 1 {
@@ -116,7 +116,7 @@ mod tests {
     use crate::Height;
 
     pub struct Fixture {
-        pub context: MockContext,
+        pub context: MockContext<'static>,
         pub msg: MsgChannelOpenTry,
         pub client_id_on_b: ClientId,
         pub conn_id_on_b: ConnectionId,

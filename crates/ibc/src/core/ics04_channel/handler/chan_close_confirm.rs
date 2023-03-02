@@ -8,9 +8,12 @@ use crate::prelude::*;
 
 use crate::core::{ContextError, ValidationContext};
 
-pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelCloseConfirm) -> Result<(), ContextError>
+pub fn validate<'m, ValCtx>(
+    ctx_b: &ValCtx,
+    msg: &MsgChannelCloseConfirm,
+) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    ValCtx: ValidationContext<'m>,
 {
     // Retrieve the old channel end and validate it against the message.
     let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);

@@ -120,12 +120,12 @@ impl std::error::Error for ContextError {
     }
 }
 
-pub trait Router {
+pub trait Router<'m> {
     /// Returns a reference to a `Module` registered against the specified `ModuleId`
-    fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module>;
+    fn get_route(&self, module_id: &ModuleId) -> Option<&(dyn Module + 'm)>;
 
     /// Returns a mutable reference to a `Module` registered against the specified `ModuleId`
-    fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module>;
+    fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut (dyn Module + 'm)>;
 
     /// Returns true if the `Router` has a `Module` registered against the specified `ModuleId`
     fn has_route(&self, module_id: &ModuleId) -> bool;
@@ -166,7 +166,7 @@ pub trait Router {
     }
 }
 
-pub trait ValidationContext: Router {
+pub trait ValidationContext<'m>: Router<'m> {
     /// Validation entrypoint.
     fn validate(&self, msg: MsgEnvelope) -> Result<(), RouterError>
     where
@@ -407,7 +407,7 @@ pub trait ValidationContext: Router {
     }
 }
 
-pub trait ExecutionContext: ValidationContext {
+pub trait ExecutionContext<'m>: ValidationContext<'m> {
     /// Execution entrypoint
     fn execute(&mut self, msg: MsgEnvelope) -> Result<(), RouterError>
     where

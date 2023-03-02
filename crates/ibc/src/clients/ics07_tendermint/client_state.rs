@@ -387,7 +387,7 @@ impl Ics2ClientState for ClientState {
 
     fn check_misbehaviour_and_update_state(
         &self,
-        ctx: &dyn ValidationContext,
+        ctx: &dyn ValidationContext<'_>,
         client_id: ClientId,
         misbehaviour: Any,
     ) -> Result<Box<dyn Ics2ClientState>, ContextError> {
@@ -456,12 +456,12 @@ impl Ics2ClientState for ClientState {
 
     fn check_header_and_update_state(
         &self,
-        ctx: &dyn ValidationContext,
+        ctx: &dyn ValidationContext<'_>,
         client_id: ClientId,
         header: Any,
     ) -> Result<UpdatedState, ClientError> {
         fn maybe_consensus_state(
-            ctx: &dyn ValidationContext,
+            ctx: &dyn ValidationContext<'_>,
             client_cons_state_path: &ClientConsensusStatePath,
         ) -> Result<Option<Box<dyn ConsensusState>>, ClientError> {
             match ctx.consensus_state(client_cons_state_path) {
@@ -887,7 +887,7 @@ impl Ics2ClientState for ClientState {
 
     fn verify_packet_data(
         &self,
-        ctx: &dyn ValidationContext,
+        ctx: &dyn ValidationContext<'_>,
         height: Height,
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
@@ -911,7 +911,7 @@ impl Ics2ClientState for ClientState {
 
     fn verify_packet_acknowledgement(
         &self,
-        ctx: &dyn ValidationContext,
+        ctx: &dyn ValidationContext<'_>,
         height: Height,
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
@@ -936,7 +936,7 @@ impl Ics2ClientState for ClientState {
     #[allow(clippy::too_many_arguments)]
     fn verify_next_sequence_recv(
         &self,
-        ctx: &dyn ValidationContext,
+        ctx: &dyn ValidationContext<'_>,
         height: Height,
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
@@ -966,7 +966,7 @@ impl Ics2ClientState for ClientState {
     #[allow(clippy::too_many_arguments)]
     fn verify_packet_receipt_absence(
         &self,
-        ctx: &dyn ValidationContext,
+        ctx: &dyn ValidationContext<'_>,
         height: Height,
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
@@ -1029,7 +1029,7 @@ fn verify_non_membership(
 }
 
 fn verify_delay_passed(
-    ctx: &dyn ValidationContext,
+    ctx: &dyn ValidationContext<'_>,
     height: Height,
     connection_end: &ConnectionEnd,
 ) -> Result<(), ClientError> {

@@ -60,7 +60,7 @@ pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
 /// A context implementing the dependencies necessary for testing any IBC module.
 #[derive(Debug)]
-pub struct MockContext {
+pub struct MockContext<'m> {
     /// The type of host chain underlying this mock context.
     host_chain_type: HostType,
 
@@ -81,7 +81,7 @@ pub struct MockContext {
     pub ibc_store: Arc<Mutex<MockIbcStore>>,
 
     /// To implement ValidationContext Router
-    router: BTreeMap<ModuleId, Arc<dyn Module>>,
+    router: BTreeMap<ModuleId, Arc<dyn Module + 'm>>,
 
     transfer_ctx: DummyTransferContext,
 
@@ -93,7 +93,7 @@ pub struct MockContext {
 /// Returns a MockContext with bare minimum initialization: no clients, no connections and no channels are
 /// present, and the chain has Height(5). This should be used sparingly, mostly for testing the
 /// creation of new domain objects.
-impl Default for MockContext {
+impl Default for MockContext<'_> {
     fn default() -> Self {
         Self::new(
             ChainId::new("mockgaia".to_string(), 0),
@@ -106,7 +106,7 @@ impl Default for MockContext {
 
 /// A manual clone impl is provided because the tests are oblivious to the fact that the `ibc_store`
 /// is a shared ptr.
-impl Clone for MockContext {
+impl Clone for MockContext<'_> {
     fn clone(&self) -> Self {
         let ibc_store = {
             let ibc_store = self.ibc_store.lock().clone();
@@ -130,7 +130,7 @@ impl Clone for MockContext {
 
 /// Implementation of internal interface for use in testing. The methods in this interface should
 /// _not_ be accessible to any Ics handler.
-impl MockContext {
+impl<'a> MockContext<'a> {
     /// Creates a mock context. Parameter `max_history_size` determines how many blocks will
     /// the chain maintain in its history, which also determines the pruning window. Parameter
     /// `latest_height` determines the current height of the chain. This context
@@ -187,7 +187,7 @@ impl MockContext {
             block_time,
             ibc_store: ibc_store.clone(),
             router: BTreeMap::new(),
-            transfer_ctx: DummyTransferContext::new(ibc_store.clone()),
+            transfer_ctx: DummyTransferContext::new(ibc_store),
             events: Vec::new(),
             logs: Vec::new(),
         }
@@ -474,7 +474,11 @@ impl MockContext {
         &mut self.transfer_ctx
     }
 
-    pub fn add_route(&mut self, module_id: ModuleId, module: impl Module) -> Result<(), String> {
+    pub fn add_route(
+        &mut self,
+        module_id: ModuleId,
+        module: impl Module + 'a,
+    ) -> Result<(), String> {
         match self.router.insert(module_id, Arc::new(module)) {
             None => Ok(()),
             Some(_) => Err("Duplicate module_id".to_owned()),
@@ -661,7 +665,7 @@ pub struct MockIbcStore {
     pub packet_receipt: PortChannelIdMap<BTreeMap<Sequence, Receipt>>,
 }
 
-impl RelayerContext for MockContext {
+impl RelayerContext for MockContext<'_> {
     fn query_latest_height(&self) -> Result<Height, ContextError> {
         self.host_height()
     }
@@ -681,11 +685,11 @@ impl RelayerContext for MockContext {
     }
 }
 
-impl Router for MockContext {
-    fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module> {
+impl<'m> Router<'m> for MockContext<'m> {
+    fn get_route(&self, module_id: &ModuleId) -> Option<&(dyn Module + 'm)> {
         self.router.get(module_id).map(Arc::as_ref)
     }
-    fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module> {
+    fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut (dyn Module + 'm)> {
         self.router.get_mut(module_id).and_then(Arc::get_mut)
     }
 
@@ -698,7 +702,7 @@ impl Router for MockContext {
     }
 }
 
-impl ValidationContext for MockContext {
+impl<'m> ValidationContext<'m> for MockContext<'m> {
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
         match self.ibc_store.lock().clients.get(client_id) {
             Some(client_record) => {
@@ -1106,7 +1110,7 @@ impl ValidationContext for MockContext {
     }
 }
 
-impl ExecutionContext for MockContext {
+impl<'m> ExecutionContext<'m> for MockContext<'m> {
     fn store_client_type(
         &mut self,
         client_type_path: ClientTypePath,
@@ -1420,13 +1424,13 @@ mod tests {
 
     #[test]
     fn test_history_manipulation() {
-        pub struct Test {
+        pub struct Test<'m> {
             name: String,
-            ctx: MockContext,
+            ctx: MockContext<'m>,
         }
         let cv = 1; // The version to use for all chains.
 
-        let tests: Vec<Test> = vec![
+        let tests: Vec<Test<'_>> = vec![
             Test {
                 name: "Empty history, small pruning window".to_string(),
                 ctx: MockContext::new(
