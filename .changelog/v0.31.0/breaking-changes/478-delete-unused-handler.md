@@ -1,0 +1,1 @@
+- Remove ibc::handler module ([#478](https://github.com/cosmos/ibc-rs/issues/478))

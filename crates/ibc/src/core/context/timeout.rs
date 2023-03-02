@@ -200,7 +200,7 @@ mod tests {
 
         let packet = msg.packet.clone();
 
-        let packet_commitment = ctx.packet_commitment(
+        let packet_commitment = ctx.compute_packet_commitment(
             &msg.packet.data,
             &msg.packet.timeout_height_on_b,
             &msg.packet.timeout_timestamp_on_b,
@@ -274,7 +274,7 @@ mod tests {
 
         assert!(res.is_ok());
 
-        // Unordered channnels only emit one event
+        // Unordered channels only emit one event
         assert_eq!(ctx.events.len(), 1);
         assert!(matches!(
             ctx.events.first().unwrap(),
@@ -311,7 +311,7 @@ mod tests {
 
         assert!(res.is_ok());
 
-        // Ordered channnels emit 2 events
+        // Ordered channels emit 2 events
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(ctx.events[0], IbcEvent::TimeoutPacket(_)));
         assert!(matches!(ctx.events[1], IbcEvent::ChannelClosed(_)));

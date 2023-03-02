@@ -39,7 +39,7 @@ pub enum ConnectionError {
     MissingConsensusHeight,
     /// invalid connection proof error
     InvalidProof,
-    /// verifying connnection state error: `{0}`
+    /// verifying connection state error: `{0}`
     VerifyConnectionState(client_error::ClientError),
     /// invalid signer error: `{0}`
     Signer(SignerError),

@@ -2,13 +2,10 @@
 use crate::prelude::*;
 
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
-use crate::core::ics03_connection::context::ConnectionReader;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenConfirm;
-use crate::core::ics03_connection::handler::{ConnectionIdState, ConnectionResult};
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
 use crate::events::IbcEvent;
-use crate::handler::{HandlerOutput, HandlerResult};
 
 use crate::core::context::ContextError;
 
@@ -169,88 +166,6 @@ impl LocalVars {
             .connection_id()
             .ok_or(ConnectionError::InvalidCounterparty)
     }
-}
-
-/// Per our convention, this message is processed on chain B.
-pub(crate) fn process(
-    ctx_b: &dyn ConnectionReader,
-    msg: MsgConnectionOpenConfirm,
-) -> HandlerResult<ConnectionResult, ConnectionError> {
-    let mut output = HandlerOutput::builder();
-
-    let conn_end_on_b = ctx_b.connection_end(&msg.conn_id_on_b)?;
-    if !conn_end_on_b.state_matches(&State::TryOpen) {
-        return Err(ConnectionError::ConnectionMismatch {
-            connection_id: msg.conn_id_on_b,
-        });
-    }
-    let client_id_on_a = conn_end_on_b.counterparty().client_id();
-    let client_id_on_b = conn_end_on_b.client_id();
-    let conn_id_on_a = conn_end_on_b
-        .counterparty()
-        .connection_id()
-        .ok_or(ConnectionError::InvalidCounterparty)?;
-
-    // Verify proofs
-    {
-        let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
-        let client_cons_state_path_on_b =
-            ClientConsensusStatePath::new(client_id_on_b, &msg.proof_height_on_a);
-        let consensus_state_of_a_on_b =
-            ctx_b.client_consensus_state(&client_cons_state_path_on_b)?;
-
-        let prefix_on_a = conn_end_on_b.counterparty().prefix();
-        let prefix_on_b = ctx_b.commitment_prefix();
-
-        let expected_conn_end_on_a = ConnectionEnd::new(
-            State::Open,
-            client_id_on_a.clone(),
-            Counterparty::new(
-                client_id_on_b.clone(),
-                Some(msg.conn_id_on_b.clone()),
-                prefix_on_b,
-            ),
-            conn_end_on_b.versions().to_vec(),
-            conn_end_on_b.delay_period(),
-        );
-
-        client_state_of_a_on_b
-            .verify_connection_state(
-                msg.proof_height_on_a,
-                prefix_on_a,
-                &msg.proof_conn_end_on_a,
-                consensus_state_of_a_on_b.root(),
-                &ConnectionPath::new(conn_id_on_a),
-                &expected_conn_end_on_a,
-            )
-            .map_err(ConnectionError::VerifyConnectionState)?;
-    }
-
-    // Success
-    output.emit(IbcEvent::OpenConfirmConnection(OpenConfirm::new(
-        msg.conn_id_on_b.clone(),
-        client_id_on_b.clone(),
-        conn_id_on_a.clone(),
-        client_id_on_a.clone(),
-    )));
-    output.log("success: conn_open_confirm verification passed");
-
-    let result = {
-        let new_conn_end_on_b = {
-            let mut new_conn_end_on_b = conn_end_on_b;
-
-            new_conn_end_on_b.set_state(State::Open);
-            new_conn_end_on_b
-        };
-
-        ConnectionResult {
-            connection_id: msg.conn_id_on_b,
-            connection_id_state: ConnectionIdState::Reused,
-            connection_end: new_conn_end_on_b,
-        }
-    };
-
-    Ok(output.with_result(result))
 }
 
 #[cfg(test)]

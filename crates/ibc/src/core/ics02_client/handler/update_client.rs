@@ -4,34 +4,17 @@ use tracing::debug;
 
 use crate::prelude::*;
 
-use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
-use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::context::ClientReader;
+use crate::core::ics02_client::client_state::UpdatedState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpdateClient;
-use crate::core::ics02_client::handler::ClientResult;
-use crate::core::ics02_client::height::Height;
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
-use crate::core::ics24_host::identifier::ClientId;
 use crate::events::IbcEvent;
-use crate::handler::{HandlerOutput, HandlerResult};
-use crate::timestamp::Timestamp;
 
 use crate::core::context::ContextError;
 
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 
 use crate::core::{ExecutionContext, ValidationContext};
-
-/// The result following the successful processing of a `MsgUpdateAnyClient` message.
-#[derive(Clone, Debug, PartialEq)]
-pub struct UpdateClientResult {
-    pub client_id: ClientId,
-    pub client_state: Box<dyn ClientState>,
-    pub consensus_state: Box<dyn ConsensusState>,
-    pub processed_time: Timestamp,
-    pub processed_height: Height,
-}
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
@@ -80,7 +63,7 @@ where
     }
 
     let _ = client_state
-        .new_check_header_and_update_state(ctx, client_id.clone(), header)
+        .check_header_and_update_state(ctx, client_id.clone(), header)
         .map_err(|e| ClientError::HeaderVerificationFailure {
             reason: e.to_string(),
         })?;
@@ -106,7 +89,7 @@ where
         client_state,
         consensus_state,
     } = client_state
-        .new_check_header_and_update_state(ctx, client_id.clone(), header.clone())
+        .check_header_and_update_state(ctx, client_id.clone(), header.clone())
         .map_err(|e| ClientError::HeaderVerificationFailure {
             reason: e.to_string(),
         })?;
@@ -140,86 +123,6 @@ where
     }
 
     Ok(())
-}
-
-pub(crate) fn process<Ctx: ClientReader>(
-    ctx: &Ctx,
-    msg: MsgUpdateClient,
-) -> HandlerResult<ClientResult, ClientError> {
-    let mut output = HandlerOutput::builder();
-
-    let MsgUpdateClient {
-        client_id,
-        header,
-        signer: _,
-    } = msg;
-
-    // Read client type from the host chain store. The client should already exist.
-    // Read client state from the host chain store.
-    let client_state = ctx.client_state(&client_id)?;
-
-    if client_state.is_frozen() {
-        return Err(ClientError::ClientFrozen { client_id });
-    }
-
-    // Read consensus state from the host chain store.
-    let client_cons_state_path =
-        ClientConsensusStatePath::new(&client_id, &client_state.latest_height());
-    let latest_consensus_state = ClientReader::consensus_state(ctx, &client_cons_state_path)
-        .map_err(|_| ClientError::ConsensusStateNotFound {
-            client_id: client_id.clone(),
-            height: client_state.latest_height(),
-        })?;
-
-    debug!("latest consensus state: {:?}", latest_consensus_state);
-
-    let now = ClientReader::host_timestamp(ctx)?;
-    let duration = now
-        .duration_since(&latest_consensus_state.timestamp())
-        .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
-            time1: latest_consensus_state.timestamp(),
-            time2: now,
-        })?;
-
-    if client_state.expired(duration) {
-        return Err(ClientError::HeaderNotWithinTrustPeriod {
-            latest_time: latest_consensus_state.timestamp(),
-            update_time: now,
-        });
-    }
-
-    // Use client_state to validate the new header against the latest consensus_state.
-    // This function will return the new client_state (its latest_height changed) and a
-    // consensus_state obtained from header. These will be later persisted by the keeper.
-    let UpdatedState {
-        client_state,
-        consensus_state,
-    } = client_state
-        .check_header_and_update_state(ctx, client_id.clone(), header.clone())
-        .map_err(|e| ClientError::HeaderVerificationFailure {
-            reason: e.to_string(),
-        })?;
-
-    let client_type = client_state.client_type();
-    let consensus_height = client_state.latest_height();
-
-    let result = ClientResult::Update(UpdateClientResult {
-        client_id: client_id.clone(),
-        client_state,
-        consensus_state,
-        processed_time: ClientReader::host_timestamp(ctx)?,
-        processed_height: ctx.host_height()?,
-    });
-
-    output.emit(IbcEvent::UpdateClient(UpdateClient::new(
-        client_id,
-        client_type,
-        consensus_height,
-        vec![consensus_height],
-        header,
-    )));
-
-    Ok(output.with_result(result))
 }
 
 #[cfg(test)]

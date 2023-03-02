@@ -2,30 +2,17 @@
 //!
 use crate::prelude::*;
 
-use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
-use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::context::ClientReader;
+use crate::core::ics02_client::client_state::UpdatedState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeClient;
-use crate::core::ics02_client::handler::ClientResult;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
-use crate::core::ics24_host::identifier::ClientId;
 use crate::events::IbcEvent;
-use crate::handler::{HandlerOutput, HandlerResult};
 
 use crate::core::context::ContextError;
 
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 
 use crate::core::{ExecutionContext, ValidationContext};
-
-/// The result following the successful processing of a `MsgUpgradeAnyClient` message.
-#[derive(Clone, Debug, PartialEq)]
-pub struct UpgradeClientResult {
-    pub client_id: ClientId,
-    pub client_state: Box<dyn ClientState>,
-    pub consensus_state: Box<dyn ConsensusState>,
-}
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
@@ -117,85 +104,6 @@ where
     )));
 
     Ok(())
-}
-
-pub(crate) fn process(
-    ctx: &dyn ClientReader,
-    msg: MsgUpgradeClient,
-) -> HandlerResult<ClientResult, ClientError> {
-    let mut output = HandlerOutput::builder();
-    let MsgUpgradeClient { client_id, .. } = msg;
-
-    // Temporary has been disabled until we have a better understanding of some design implications
-    if !cfg!(feature = "upgrade_client") {
-        return Err(ClientError::Other {
-            description: "upgrade_client feature is not supported".to_string(),
-        });
-    }
-
-    // Read the current latest client state from the host chain store.
-    let old_client_state = ctx.client_state(&client_id)?;
-
-    // Check if the client is frozen.
-    if old_client_state.is_frozen() {
-        return Err(ClientError::ClientFrozen { client_id });
-    }
-
-    // Read the latest consensus state from the host chain store.
-    let old_client_cons_state_path =
-        ClientConsensusStatePath::new(&client_id, &old_client_state.latest_height());
-    let old_consensus_state = ctx
-        .consensus_state(&old_client_cons_state_path)
-        .map_err(|_| ClientError::ConsensusStateNotFound {
-            client_id: client_id.clone(),
-            height: old_client_state.latest_height(),
-        })?;
-
-    let now = ctx.host_timestamp()?;
-    let duration = now
-        .duration_since(&old_consensus_state.timestamp())
-        .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
-            time1: old_consensus_state.timestamp(),
-            time2: now,
-        })?;
-
-    // Check if the latest consensus state is within the trust period.
-    if old_client_state.expired(duration) {
-        return Err(ClientError::HeaderNotWithinTrustPeriod {
-            latest_time: old_consensus_state.timestamp(),
-            update_time: now,
-        });
-    };
-
-    // Validate the upgraded client state and consensus state and verify proofs against the root
-    old_client_state.verify_upgrade_client(
-        msg.client_state.clone(),
-        msg.consensus_state.clone(),
-        msg.proof_upgrade_client.clone(),
-        msg.proof_upgrade_consensus_state.clone(),
-        old_consensus_state.root(),
-    )?;
-
-    // Create updated new client state and consensus state
-    let UpdatedState {
-        client_state,
-        consensus_state,
-    } = old_client_state
-        .update_state_with_upgrade_client(msg.client_state.clone(), msg.consensus_state)?;
-
-    let result = ClientResult::Upgrade(UpgradeClientResult {
-        client_id: client_id.clone(),
-        client_state: client_state.clone(),
-        consensus_state,
-    });
-
-    output.emit(IbcEvent::UpgradeClient(UpgradeClient::new(
-        client_id,
-        client_state.client_type(),
-        client_state.latest_height(),
-    )));
-
-    Ok(output.with_result(result))
 }
 
 #[cfg(feature = "upgrade_client")]

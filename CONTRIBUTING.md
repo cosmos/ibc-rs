@@ -251,12 +251,9 @@ Our release process is as follows:
    3. Committing the updated `CHANGELOG.md` file and `.changelog` directory to the repo.
 2. Push this to a branch `release/vX.Y.Z` according to the version number of
    the anticipated release (e.g. `release/v0.18.0`) and open a **draft PR**.
-3. Bump all relevant versions in the codebase to the new version and push these
-   changes to the release PR. This includes:
-   1. `crates/ibc/Cargo.toml` file (making sure dependencies' versions are updated
-      too).
-   2. `crates/ibc/lib.rs` file documentation references' `html_root_url`
-      parameters must point to the new version.
+3. Bump all relevant versions in the `crates/ibc/Cargo.toml` file (making sure
+      dependencies' versions are updated too) to the new version and push these
+      changes to the release PR.
 
 4. In the `crates/ibc/` directory, run `cargo doc --all-features --open` locally to double-check that all the
    documentation compiles and seems up-to-date and coherent. Fix any potential
@@ -270,6 +267,6 @@ Our release process is as follows:
    GitHub: `git tag -s -a vX.Y.Z`. In the tag message, write the version and the link
    to the corresponding section of the changelog.
 10. Once the tag is pushed, create a GitHub release and append
-   `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)` 
+   `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)`
    to the release description.
 11. All done! 🎉

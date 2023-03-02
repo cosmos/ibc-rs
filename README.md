@@ -9,7 +9,7 @@
 ![Rust Stable][rustc-image]
 ![Rust 1.60+][rustc-version]
 
-Rust implementation of the Inter-Blockchain Communication (IBC) protocol. This project hosts 
+Rust implementation of the Inter-Blockchain Communication (IBC) protocol. This project hosts
 the `ibc` rust crate which defines the main data structures and on-chain logic for the IBC protocol.
 
 See the [ibc](crates/ibc) crate's README.md for more detailed information on the `ibc` crate.

@@ -1,0 +1,1 @@
+- Fix typos ([\#472](https://github.com/cosmos/ibc-rs/issues/472))

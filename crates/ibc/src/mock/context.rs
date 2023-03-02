@@ -742,14 +742,9 @@ impl ValidationContext for MockContext {
 
     fn next_consensus_state(
         &self,
-        next_client_cons_state_path: &ClientConsensusStatePath,
+        client_id: &ClientId,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
-        let client_id = &next_client_cons_state_path.client_id;
-        let height = Height::new(
-            next_client_cons_state_path.epoch,
-            next_client_cons_state_path.height,
-        )?;
-
         let ibc_store = self.ibc_store.lock();
         let client_record =
             ibc_store
@@ -765,7 +760,7 @@ impl ValidationContext for MockContext {
 
         // Search for next state.
         for h in heights {
-            if h > height {
+            if h > *height {
                 // unwrap should never happen, as the consensus state for h must exist
                 return Ok(Some(
                     client_record.consensus_states.get(&h).unwrap().clone(),
@@ -777,14 +772,9 @@ impl ValidationContext for MockContext {
 
     fn prev_consensus_state(
         &self,
-        prev_client_cons_state_path: &ClientConsensusStatePath,
+        client_id: &ClientId,
+        height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
-        let client_id = &prev_client_cons_state_path.client_id;
-        let height = Height::new(
-            prev_client_cons_state_path.epoch,
-            prev_client_cons_state_path.height,
-        )?;
-
         let ibc_store = self.ibc_store.lock();
         let client_record =
             ibc_store
@@ -800,7 +790,7 @@ impl ValidationContext for MockContext {
 
         // Search for previous state.
         for h in heights {
-            if h < height {
+            if h < *height {
                 // unwrap should never happen, as the consensus state for h must exist
                 return Ok(Some(
                     client_record.consensus_states.get(&h).unwrap().clone(),
@@ -822,10 +812,6 @@ impl ValidationContext for MockContext {
             .timestamp()
             .add(self.block_time)
             .unwrap())
-    }
-
-    fn pending_host_consensus_state(&self) -> Result<Box<dyn ConsensusState>, ContextError> {
-        Err(ClientError::ImplementationSpecific.into())
     }
 
     fn host_consensus_state(
@@ -857,16 +843,18 @@ impl ValidationContext for MockContext {
     fn validate_self_client(
         &self,
         client_state_of_host_on_counterparty: Any,
-    ) -> Result<(), ConnectionError> {
+    ) -> Result<(), ContextError> {
         let mock_client_state = MockClientState::try_from(client_state_of_host_on_counterparty)
             .map_err(|_| ConnectionError::InvalidClientState {
                 reason: "client must be a mock client".to_string(),
-            })?;
+            })
+            .map_err(ContextError::ConnectionError)?;
 
         if mock_client_state.is_frozen() {
             return Err(ConnectionError::InvalidClientState {
                 reason: "client is frozen".to_string(),
-            });
+            })
+            .map_err(ContextError::ConnectionError);
         }
 
         let self_chain_id = &self.host_chain_id;
@@ -878,7 +866,8 @@ impl ValidationContext for MockContext {
                     self_revision_number,
                     mock_client_state.latest_height().revision_number()
                 ),
-            });
+            })
+            .map_err(ContextError::ConnectionError);
         }
 
         let host_current_height = self.latest_height().increment();
@@ -889,7 +878,8 @@ impl ValidationContext for MockContext {
                     mock_client_state.latest_height(),
                     host_current_height
                 ),
-            });
+            })
+            .map_err(ContextError::ConnectionError);
         }
 
         Ok(())
@@ -919,17 +909,6 @@ impl ValidationContext for MockContext {
                 port_id: port_id.clone(),
                 channel_id: channel_id.clone(),
             }),
-        }
-        .map_err(ContextError::ChannelError)
-    }
-
-    fn connection_channels(
-        &self,
-        cid: &ConnectionId,
-    ) -> Result<Vec<(PortId, ChannelId)>, ContextError> {
-        match self.ibc_store.lock().connection_channels.get(cid) {
-            Some(pcid) => Ok(pcid.clone()),
-            None => Err(ChannelError::MissingChannel),
         }
         .map_err(ContextError::ChannelError)
     }
@@ -1421,7 +1400,7 @@ mod tests {
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-    use crate::core::ics26_routing::context::{Module, ModuleId, ModuleOutputBuilder};
+    use crate::core::ics26_routing::context::{Module, ModuleId};
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::signer::Signer;
@@ -1599,18 +1578,6 @@ mod tests {
                 Ok((ModuleExtras::empty(), version.clone()))
             }
 
-            fn on_chan_open_init(
-                &mut self,
-                _order: Order,
-                _connection_hops: &[ConnectionId],
-                _port_id: &PortId,
-                _channel_id: &ChannelId,
-                _counterparty: &Counterparty,
-                version: &Version,
-            ) -> Result<(ModuleExtras, Version), ChannelError> {
-                Ok((ModuleExtras::empty(), version.clone()))
-            }
-
             fn on_chan_open_try_validate(
                 &self,
                 _order: Order,
@@ -1635,18 +1602,6 @@ mod tests {
                 Ok((ModuleExtras::empty(), counterparty_version.clone()))
             }
 
-            fn on_chan_open_try(
-                &mut self,
-                _order: Order,
-                _connection_hops: &[ConnectionId],
-                _port_id: &PortId,
-                _channel_id: &ChannelId,
-                _counterparty: &Counterparty,
-                counterparty_version: &Version,
-            ) -> Result<(ModuleExtras, Version), ChannelError> {
-                Ok((ModuleExtras::empty(), counterparty_version.clone()))
-            }
-
             fn on_recv_packet_execute(
                 &mut self,
                 _packet: &Packet,
@@ -1658,17 +1613,6 @@ mod tests {
                     ModuleExtras::empty(),
                     Acknowledgement::try_from(vec![1u8]).unwrap(),
                 )
-            }
-
-            fn on_recv_packet(
-                &mut self,
-                _output: &mut ModuleOutputBuilder,
-                _packet: &Packet,
-                _relayer: &Signer,
-            ) -> Acknowledgement {
-                self.counter += 1;
-
-                Acknowledgement::try_from(vec![1u8]).unwrap()
             }
 
             fn on_timeout_packet_validate(
@@ -1734,18 +1678,6 @@ mod tests {
                 Ok((ModuleExtras::empty(), version.clone()))
             }
 
-            fn on_chan_open_init(
-                &mut self,
-                _order: Order,
-                _connection_hops: &[ConnectionId],
-                _port_id: &PortId,
-                _channel_id: &ChannelId,
-                _counterparty: &Counterparty,
-                version: &Version,
-            ) -> Result<(ModuleExtras, Version), ChannelError> {
-                Ok((ModuleExtras::empty(), version.clone()))
-            }
-
             fn on_chan_open_try_validate(
                 &self,
                 _order: Order,
@@ -1770,18 +1702,6 @@ mod tests {
                 Ok((ModuleExtras::empty(), counterparty_version.clone()))
             }
 
-            fn on_chan_open_try(
-                &mut self,
-                _order: Order,
-                _connection_hops: &[ConnectionId],
-                _port_id: &PortId,
-                _channel_id: &ChannelId,
-                _counterparty: &Counterparty,
-                counterparty_version: &Version,
-            ) -> Result<(ModuleExtras, Version), ChannelError> {
-                Ok((ModuleExtras::empty(), counterparty_version.clone()))
-            }
-
             fn on_recv_packet_execute(
                 &mut self,
                 _packet: &Packet,
@@ -1791,15 +1711,6 @@ mod tests {
                     ModuleExtras::empty(),
                     Acknowledgement::try_from(vec![1u8]).unwrap(),
                 )
-            }
-
-            fn on_recv_packet(
-                &mut self,
-                _output: &mut ModuleOutputBuilder,
-                _packet: &Packet,
-                _relayer: &Signer,
-            ) -> Acknowledgement {
-                Acknowledgement::try_from(vec![1u8]).unwrap()
             }
 
             fn on_timeout_packet_validate(
@@ -1851,8 +1762,7 @@ mod tests {
         let mut on_recv_packet_result = |module_id: &'static str| {
             let module_id = ModuleId::from_str(module_id).unwrap();
             let m = ctx.get_route_mut(&module_id).unwrap();
-            let result = m.on_recv_packet(
-                &mut ModuleOutputBuilder::new(),
+            let result = m.on_recv_packet_execute(
                 &Packet::default(),
                 &get_dummy_bech32_account().parse().unwrap(),
             );
