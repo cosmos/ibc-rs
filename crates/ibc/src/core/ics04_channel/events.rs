@@ -534,7 +534,7 @@ impl From<&ChannelClosed> for abci::Event {
                 abci::EventAttribute::from(&ev.counterparty_port_id),
                 ev.maybe_counterparty_channel_id.as_ref().map_or_else(
                     || (COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY, "").into(),
-                    |c| abci::EventAttribute::from(c),
+                    abci::EventAttribute::from,
                 ),
                 abci::EventAttribute::from(&ev.connection_id),
                 abci::EventAttribute::from(&ev.channel_ordering),
