@@ -151,6 +151,7 @@ mod tests {
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
     use crate::core::ics03_connection::connection::State as ConnectionState;
     use crate::core::ics03_connection::version::get_compatible_versions;
+    use crate::core::ics04_channel::commitment::compute_packet_commitment;
     use crate::core::ics04_channel::commitment::PacketCommitment;
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::PortId;
@@ -200,7 +201,7 @@ mod tests {
 
         let packet = msg.packet.clone();
 
-        let packet_commitment = ctx.compute_packet_commitment(
+        let packet_commitment = compute_packet_commitment(
             &msg.packet.data,
             &msg.packet.timeout_height_on_b,
             &msg.packet.timeout_timestamp_on_b,

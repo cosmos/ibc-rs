@@ -41,10 +41,8 @@ use crate::core::ics03_connection::version::{
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::context::calculate_block_delay;
-use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
-use crate::core::ics04_channel::timeout::TimeoutHeight;
 use crate::core::ics05_port::error::PortError::UnknownPort;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ConnectionId, PortId};
@@ -345,38 +343,6 @@ pub trait ValidationContext: Router {
         &self,
         ack_path: &AckPath,
     ) -> Result<AcknowledgementCommitment, ContextError>;
-
-    /// Compute the commitment for a packet.
-    /// Note that the absence of `timeout_height` is treated as
-    /// `{revision_number: 0, revision_height: 0}` to be consistent with ibc-go,
-    /// where this value is used to mean "no timeout height":
-    /// <https://github.com/cosmos/ibc-go/blob/04791984b3d6c83f704c4f058e6ca0038d155d91/modules/core/04-channel/keeper/packet.go#L206>
-    fn compute_packet_commitment(
-        &self,
-        packet_data: &[u8],
-        timeout_height: &TimeoutHeight,
-        timeout_timestamp: &Timestamp,
-    ) -> PacketCommitment {
-        let mut hash_input = timeout_timestamp.nanoseconds().to_be_bytes().to_vec();
-
-        let revision_number = timeout_height.commitment_revision_number().to_be_bytes();
-        hash_input.append(&mut revision_number.to_vec());
-
-        let revision_height = timeout_height.commitment_revision_height().to_be_bytes();
-        hash_input.append(&mut revision_height.to_vec());
-
-        let packet_data_hash = self.hash(packet_data);
-        hash_input.append(&mut packet_data_hash.to_vec());
-
-        self.hash(&hash_input).into()
-    }
-
-    fn ack_commitment(&self, ack: &Acknowledgement) -> AcknowledgementCommitment {
-        self.hash(ack.as_ref()).into()
-    }
-
-    /// A hashing function for packet commitments
-    fn hash(&self, value: &[u8]) -> Vec<u8>;
 
     /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
     fn client_update_time(

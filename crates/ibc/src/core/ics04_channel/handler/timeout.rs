@@ -1,5 +1,6 @@
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::channel::{Counterparty, Order};
+use crate::core::ics04_channel::commitment::compute_packet_commitment;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
@@ -59,7 +60,7 @@ where
         Err(_) => return Ok(()),
     };
 
-    let expected_commitment_on_a = ctx_a.compute_packet_commitment(
+    let expected_commitment_on_a = compute_packet_commitment(
         &msg.packet.data,
         &msg.packet.timeout_height_on_b,
         &msg.packet.timeout_timestamp_on_b,
@@ -150,6 +151,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::core::ics04_channel::commitment::compute_packet_commitment;
     use crate::prelude::*;
     use rstest::*;
 
@@ -165,7 +167,6 @@ mod tests {
     use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::ValidationContext;
     use crate::mock::context::MockContext;
     use crate::timestamp::ZERO_DURATION;
 
@@ -196,7 +197,7 @@ mod tests {
         .unwrap();
         let packet = msg.packet.clone();
 
-        let packet_commitment = context.compute_packet_commitment(
+        let packet_commitment = compute_packet_commitment(
             &msg.packet.data,
             &msg.packet.timeout_height_on_b,
             &msg.packet.timeout_timestamp_on_b,

@@ -1,6 +1,7 @@
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::channel::{Counterparty, Order};
+use crate::core::ics04_channel::commitment::{compute_ack_commitment, compute_packet_commitment};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
@@ -61,7 +62,7 @@ where
     };
 
     if commitment_on_a
-        != ctx_a.compute_packet_commitment(
+        != compute_packet_commitment(
             &packet.data,
             &packet.timeout_height_on_b,
             &packet.timeout_timestamp_on_b,
@@ -100,7 +101,7 @@ where
         let client_cons_state_path_on_a =
             ClientConsensusStatePath::new(client_id_on_a, &msg.proof_height_on_b);
         let consensus_state = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
-        let ack_commitment = ctx_a.ack_commitment(&msg.acknowledgement);
+        let ack_commitment = compute_ack_commitment(&msg.acknowledgement);
         let ack_path_on_b = AckPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);
         // Verify the proof for the packet against the chain store.
         client_state_on_a
@@ -125,10 +126,10 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::core::ics04_channel::commitment::compute_packet_commitment;
     use crate::core::ics04_channel::handler::acknowledgement::validate;
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::PortId;
-    use crate::core::ValidationContext;
     use crate::prelude::*;
     use rstest::*;
     use test_log::test;
@@ -168,7 +169,7 @@ mod tests {
         .unwrap();
         let packet = msg.packet.clone();
 
-        let packet_commitment = context.compute_packet_commitment(
+        let packet_commitment = compute_packet_commitment(
             &packet.data,
             &packet.timeout_height_on_b,
             &packet.timeout_timestamp_on_b,

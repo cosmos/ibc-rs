@@ -1,5 +1,6 @@
 use crate::core::ics04_channel::channel::Counterparty;
 use crate::core::ics04_channel::channel::State;
+use crate::core::ics04_channel::commitment::compute_packet_commitment;
 use crate::core::ics04_channel::context::SendPacketExecutionContext;
 use crate::core::ics04_channel::events::SendPacket;
 use crate::core::ics04_channel::{
@@ -109,7 +110,7 @@ pub fn send_packet_execute(
 
     ctx_a.store_packet_commitment(
         &CommitmentPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence),
-        ctx_a.compute_packet_commitment(
+        compute_packet_commitment(
             &packet.data,
             &packet.timeout_height_on_b,
             &packet.timeout_timestamp_on_b,

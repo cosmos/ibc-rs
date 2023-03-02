@@ -2,6 +2,7 @@ use crate::{
     core::{
         ics04_channel::{
             channel::Order,
+            commitment::compute_ack_commitment,
             error::ChannelError,
             events::{ReceivePacket, WriteAcknowledgement},
             handler::recv_packet,
@@ -102,8 +103,10 @@ where
             msg.packet.sequence,
         );
         // `writeAcknowledgement` handler state changes
-        ctx_b
-            .store_packet_acknowledgement(&ack_path_on_b, ctx_b.ack_commitment(&acknowledgement))?;
+        ctx_b.store_packet_acknowledgement(
+            &ack_path_on_b,
+            compute_ack_commitment(&acknowledgement),
+        )?;
     }
 
     // emit events and logs
