@@ -35,8 +35,8 @@ pub struct PortIdAttribute {
     pub port_id: PortId,
 }
 
-impl From<PortIdAttribute> for abci::EventAttribute {
-    fn from(attr: PortIdAttribute) -> Self {
+impl From<&PortIdAttribute> for abci::EventAttribute {
+    fn from(attr: &PortIdAttribute) -> Self {
         (PORT_ID_ATTRIBUTE_KEY, attr.port_id.as_str()).into()
     }
 }
@@ -59,8 +59,8 @@ pub struct ChannelIdAttribute {
     pub channel_id: ChannelId,
 }
 
-impl From<ChannelIdAttribute> for abci::EventAttribute {
-    fn from(attr: ChannelIdAttribute) -> Self {
+impl From<&ChannelIdAttribute> for abci::EventAttribute {
+    fn from(attr: &ChannelIdAttribute) -> Self {
         (CHANNEL_ID_ATTRIBUTE_KEY, attr.channel_id.as_str()).into()
     }
 }
@@ -82,8 +82,8 @@ pub struct CounterpartyPortIdAttribute {
     pub counterparty_port_id: PortId,
 }
 
-impl From<CounterpartyPortIdAttribute> for abci::EventAttribute {
-    fn from(attr: CounterpartyPortIdAttribute) -> Self {
+impl From<&CounterpartyPortIdAttribute> for abci::EventAttribute {
+    fn from(attr: &CounterpartyPortIdAttribute) -> Self {
         (
             COUNTERPARTY_PORT_ID_ATTRIBUTE_KEY,
             attr.counterparty_port_id.as_str(),
@@ -109,8 +109,8 @@ pub struct CounterpartyChannelIdAttribute {
     pub counterparty_channel_id: ChannelId,
 }
 
-impl From<CounterpartyChannelIdAttribute> for abci::EventAttribute {
-    fn from(attr: CounterpartyChannelIdAttribute) -> Self {
+impl From<&CounterpartyChannelIdAttribute> for abci::EventAttribute {
+    fn from(attr: &CounterpartyChannelIdAttribute) -> Self {
         (
             COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY,
             attr.counterparty_channel_id.as_str(),
@@ -143,8 +143,8 @@ pub struct ConnectionIdAttribute {
     pub connection_id: ConnectionId,
 }
 
-impl From<ConnectionIdAttribute> for abci::EventAttribute {
-    fn from(attr: ConnectionIdAttribute) -> Self {
+impl From<&ConnectionIdAttribute> for abci::EventAttribute {
+    fn from(attr: &ConnectionIdAttribute) -> Self {
         (CONNECTION_ID_ATTRIBUTE_KEY, attr.connection_id.as_str()).into()
     }
 }
@@ -167,8 +167,8 @@ pub struct VersionAttribute {
     pub version: Version,
 }
 
-impl From<VersionAttribute> for abci::EventAttribute {
-    fn from(attr: VersionAttribute) -> Self {
+impl From<&VersionAttribute> for abci::EventAttribute {
+    fn from(attr: &VersionAttribute) -> Self {
         (VERSION_ATTRIBUTE_KEY, attr.version.as_str()).into()
     }
 }

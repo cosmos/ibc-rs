@@ -84,17 +84,17 @@ impl OpenInit {
     }
 }
 
-impl From<OpenInit> for abci::Event {
-    fn from(o: OpenInit) -> Self {
+impl From<&OpenInit> for abci::Event {
+    fn from(o: &OpenInit) -> Self {
         abci::Event {
             kind: IbcEventType::OpenInitChannel.as_str().to_owned(),
             attributes: vec![
-                o.port_id.into(),
-                o.channel_id.into(),
-                o.counterparty_port_id.into(),
+                abci::EventAttribute::from(&o.port_id),
+                abci::EventAttribute::from(&o.channel_id),
+                abci::EventAttribute::from(&o.counterparty_port_id),
                 (COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY, "").into(),
-                o.connection_id.into(),
-                o.version.into(),
+                abci::EventAttribute::from(&o.connection_id),
+                abci::EventAttribute::from(&o.version),
             ],
         }
     }
@@ -161,17 +161,17 @@ impl OpenTry {
     }
 }
 
-impl From<OpenTry> for abci::Event {
-    fn from(o: OpenTry) -> Self {
+impl From<&OpenTry> for abci::Event {
+    fn from(o: &OpenTry) -> Self {
         abci::Event {
             kind: IbcEventType::OpenTryChannel.as_str().to_owned(),
             attributes: vec![
-                o.port_id.into(),
-                o.channel_id.into(),
-                o.counterparty_port_id.into(),
-                o.counterparty_channel_id.into(),
-                o.connection_id.into(),
-                o.version.into(),
+                abci::EventAttribute::from(&o.port_id),
+                abci::EventAttribute::from(&o.channel_id),
+                abci::EventAttribute::from(&o.counterparty_port_id),
+                abci::EventAttribute::from(&o.counterparty_channel_id),
+                abci::EventAttribute::from(&o.connection_id),
+                abci::EventAttribute::from(&o.version),
             ],
         }
     }
@@ -232,16 +232,16 @@ impl OpenAck {
     }
 }
 
-impl From<OpenAck> for abci::Event {
-    fn from(o: OpenAck) -> Self {
+impl From<&OpenAck> for abci::Event {
+    fn from(o: &OpenAck) -> Self {
         abci::Event {
             kind: IbcEventType::OpenAckChannel.as_str().to_owned(),
             attributes: vec![
-                o.port_id.into(),
-                o.channel_id.into(),
-                o.counterparty_port_id.into(),
-                o.counterparty_channel_id.into(),
-                o.connection_id.into(),
+                abci::EventAttribute::from(&o.port_id),
+                abci::EventAttribute::from(&o.channel_id),
+                abci::EventAttribute::from(&o.counterparty_port_id),
+                abci::EventAttribute::from(&o.counterparty_channel_id),
+                abci::EventAttribute::from(&o.connection_id),
             ],
         }
     }
@@ -302,16 +302,16 @@ impl OpenConfirm {
     }
 }
 
-impl From<OpenConfirm> for abci::Event {
-    fn from(o: OpenConfirm) -> Self {
+impl From<&OpenConfirm> for abci::Event {
+    fn from(o: &OpenConfirm) -> Self {
         abci::Event {
             kind: IbcEventType::OpenConfirmChannel.as_str().to_owned(),
             attributes: vec![
-                o.port_id.into(),
-                o.channel_id.into(),
-                o.counterparty_port_id.into(),
-                o.counterparty_channel_id.into(),
-                o.connection_id.into(),
+                abci::EventAttribute::from(&o.port_id),
+                abci::EventAttribute::from(&o.channel_id),
+                abci::EventAttribute::from(&o.counterparty_port_id),
+                abci::EventAttribute::from(&o.counterparty_channel_id),
+                abci::EventAttribute::from(&o.connection_id),
             ],
         }
     }
@@ -372,16 +372,16 @@ impl CloseInit {
     }
 }
 
-impl From<CloseInit> for abci::Event {
-    fn from(o: CloseInit) -> Self {
+impl From<&CloseInit> for abci::Event {
+    fn from(o: &CloseInit) -> Self {
         abci::Event {
             kind: IbcEventType::CloseInitChannel.as_str().to_owned(),
             attributes: vec![
-                o.port_id.into(),
-                o.channel_id.into(),
-                o.counterparty_port_id.into(),
-                o.counterparty_channel_id.into(),
-                o.connection_id.into(),
+                abci::EventAttribute::from(&o.port_id),
+                abci::EventAttribute::from(&o.channel_id),
+                abci::EventAttribute::from(&o.counterparty_port_id),
+                abci::EventAttribute::from(&o.counterparty_channel_id),
+                abci::EventAttribute::from(&o.connection_id),
             ],
         }
     }
@@ -442,16 +442,16 @@ impl CloseConfirm {
     }
 }
 
-impl From<CloseConfirm> for abci::Event {
-    fn from(o: CloseConfirm) -> Self {
+impl From<&CloseConfirm> for abci::Event {
+    fn from(o: &CloseConfirm) -> Self {
         abci::Event {
             kind: IbcEventType::CloseConfirmChannel.as_str().to_owned(),
             attributes: vec![
-                o.port_id.into(),
-                o.channel_id.into(),
-                o.counterparty_port_id.into(),
-                o.counterparty_channel_id.into(),
-                o.connection_id.into(),
+                abci::EventAttribute::from(&o.port_id),
+                abci::EventAttribute::from(&o.channel_id),
+                abci::EventAttribute::from(&o.counterparty_port_id),
+                abci::EventAttribute::from(&o.counterparty_channel_id),
+                abci::EventAttribute::from(&o.connection_id),
             ],
         }
     }
@@ -524,20 +524,20 @@ impl ChannelClosed {
     }
 }
 
-impl From<ChannelClosed> for abci::Event {
-    fn from(ev: ChannelClosed) -> Self {
+impl From<&ChannelClosed> for abci::Event {
+    fn from(ev: &ChannelClosed) -> Self {
         abci::Event {
             kind: IbcEventType::ChannelClosed.as_str().to_owned(),
             attributes: vec![
-                ev.port_id.into(),
-                ev.channel_id.into(),
-                ev.counterparty_port_id.into(),
-                ev.maybe_counterparty_channel_id.map_or_else(
+                abci::EventAttribute::from(&ev.port_id),
+                abci::EventAttribute::from(&ev.channel_id),
+                abci::EventAttribute::from(&ev.counterparty_port_id),
+                ev.maybe_counterparty_channel_id.as_ref().map_or_else(
                     || (COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY, "").into(),
-                    |c| c.into(),
+                    abci::EventAttribute::from,
                 ),
-                ev.connection_id.into(),
-                ev.channel_ordering.into(),
+                abci::EventAttribute::from(&ev.connection_id),
+                abci::EventAttribute::from(&ev.channel_ordering),
             ],
         }
     }
@@ -627,21 +627,21 @@ impl SendPacket {
     }
 }
 
-impl TryFrom<SendPacket> for abci::Event {
+impl TryFrom<&SendPacket> for abci::Event {
     type Error = ChannelError;
 
-    fn try_from(v: SendPacket) -> Result<Self, Self::Error> {
+    fn try_from(v: &SendPacket) -> Result<Self, Self::Error> {
         let mut attributes = Vec::with_capacity(11);
-        attributes.append(&mut v.packet_data.try_into()?);
-        attributes.push(v.timeout_height.into());
-        attributes.push(v.timeout_timestamp.into());
-        attributes.push(v.sequence.into());
-        attributes.push(v.src_port_id.into());
-        attributes.push(v.src_channel_id.into());
-        attributes.push(v.dst_port_id.into());
-        attributes.push(v.dst_channel_id.into());
-        attributes.push(v.channel_ordering.into());
-        attributes.push(v.src_connection_id.into());
+        attributes.append(&mut Vec::<abci::EventAttribute>::try_from(&v.packet_data)?);
+        attributes.push(abci::EventAttribute::from(&v.timeout_height));
+        attributes.push(abci::EventAttribute::from(&v.timeout_timestamp));
+        attributes.push(abci::EventAttribute::from(&v.sequence));
+        attributes.push(abci::EventAttribute::from(&v.src_port_id));
+        attributes.push(abci::EventAttribute::from(&v.src_channel_id));
+        attributes.push(abci::EventAttribute::from(&v.dst_port_id));
+        attributes.push(abci::EventAttribute::from(&v.dst_channel_id));
+        attributes.push(abci::EventAttribute::from(&v.channel_ordering));
+        attributes.push(abci::EventAttribute::from(&v.src_connection_id));
 
         Ok(abci::Event {
             kind: IbcEventType::SendPacket.as_str().to_owned(),
@@ -734,21 +734,21 @@ impl ReceivePacket {
     }
 }
 
-impl TryFrom<ReceivePacket> for abci::Event {
+impl TryFrom<&ReceivePacket> for abci::Event {
     type Error = ChannelError;
 
-    fn try_from(v: ReceivePacket) -> Result<Self, Self::Error> {
+    fn try_from(v: &ReceivePacket) -> Result<Self, Self::Error> {
         let mut attributes = Vec::with_capacity(11);
-        attributes.append(&mut v.packet_data.try_into()?);
-        attributes.push(v.timeout_height.into());
-        attributes.push(v.timeout_timestamp.into());
-        attributes.push(v.sequence.into());
-        attributes.push(v.src_port_id.into());
-        attributes.push(v.src_channel_id.into());
-        attributes.push(v.dst_port_id.into());
-        attributes.push(v.dst_channel_id.into());
-        attributes.push(v.channel_ordering.into());
-        attributes.push(v.dst_connection_id.into());
+        attributes.append(&mut Vec::<abci::EventAttribute>::try_from(&v.packet_data)?);
+        attributes.push(abci::EventAttribute::from(&v.timeout_height));
+        attributes.push(abci::EventAttribute::from(&v.timeout_timestamp));
+        attributes.push(abci::EventAttribute::from(&v.sequence));
+        attributes.push(abci::EventAttribute::from(&v.src_port_id));
+        attributes.push(abci::EventAttribute::from(&v.src_channel_id));
+        attributes.push(abci::EventAttribute::from(&v.dst_port_id));
+        attributes.push(abci::EventAttribute::from(&v.dst_channel_id));
+        attributes.push(abci::EventAttribute::from(&v.channel_ordering));
+        attributes.push(abci::EventAttribute::from(&v.dst_connection_id));
 
         Ok(abci::Event {
             kind: IbcEventType::ReceivePacket.as_str().to_owned(),
@@ -845,21 +845,23 @@ impl WriteAcknowledgement {
     }
 }
 
-impl TryFrom<WriteAcknowledgement> for abci::Event {
+impl TryFrom<&WriteAcknowledgement> for abci::Event {
     type Error = ChannelError;
 
-    fn try_from(v: WriteAcknowledgement) -> Result<Self, Self::Error> {
+    fn try_from(v: &WriteAcknowledgement) -> Result<Self, Self::Error> {
         let mut attributes = Vec::with_capacity(11);
-        attributes.append(&mut v.packet_data.try_into()?);
-        attributes.push(v.timeout_height.into());
-        attributes.push(v.timeout_timestamp.into());
-        attributes.push(v.sequence.into());
-        attributes.push(v.src_port_id.into());
-        attributes.push(v.src_channel_id.into());
-        attributes.push(v.dst_port_id.into());
-        attributes.push(v.dst_channel_id.into());
-        attributes.append(&mut v.acknowledgement.try_into()?);
-        attributes.push(v.dst_connection_id.into());
+        attributes.append(&mut Vec::<abci::EventAttribute>::try_from(&v.packet_data)?);
+        attributes.push(abci::EventAttribute::from(&v.timeout_height));
+        attributes.push(abci::EventAttribute::from(&v.timeout_timestamp));
+        attributes.push(abci::EventAttribute::from(&v.sequence));
+        attributes.push(abci::EventAttribute::from(&v.src_port_id));
+        attributes.push(abci::EventAttribute::from(&v.src_channel_id));
+        attributes.push(abci::EventAttribute::from(&v.dst_port_id));
+        attributes.push(abci::EventAttribute::from(&v.dst_channel_id));
+        attributes.append(&mut Vec::<abci::EventAttribute>::try_from(
+            &v.acknowledgement,
+        )?);
+        attributes.push(abci::EventAttribute::from(&v.dst_connection_id));
 
         Ok(abci::Event {
             kind: IbcEventType::WriteAck.as_str().to_owned(),
@@ -946,22 +948,22 @@ impl AcknowledgePacket {
     }
 }
 
-impl TryFrom<AcknowledgePacket> for abci::Event {
+impl TryFrom<&AcknowledgePacket> for abci::Event {
     type Error = ChannelError;
 
-    fn try_from(v: AcknowledgePacket) -> Result<Self, Self::Error> {
+    fn try_from(v: &AcknowledgePacket) -> Result<Self, Self::Error> {
         Ok(abci::Event {
             kind: IbcEventType::AckPacket.as_str().to_owned(),
             attributes: vec![
-                v.timeout_height.into(),
-                v.timeout_timestamp.into(),
-                v.sequence.into(),
-                v.src_port_id.into(),
-                v.src_channel_id.into(),
-                v.dst_port_id.into(),
-                v.dst_channel_id.into(),
-                v.channel_ordering.into(),
-                v.src_connection_id.into(),
+                abci::EventAttribute::from(&v.timeout_height),
+                abci::EventAttribute::from(&v.timeout_timestamp),
+                abci::EventAttribute::from(&v.sequence),
+                abci::EventAttribute::from(&v.src_port_id),
+                abci::EventAttribute::from(&v.src_channel_id),
+                abci::EventAttribute::from(&v.dst_port_id),
+                abci::EventAttribute::from(&v.dst_channel_id),
+                abci::EventAttribute::from(&v.channel_ordering),
+                abci::EventAttribute::from(&v.src_connection_id),
             ],
         })
     }
@@ -1039,21 +1041,21 @@ impl TimeoutPacket {
     }
 }
 
-impl TryFrom<TimeoutPacket> for abci::Event {
+impl TryFrom<&TimeoutPacket> for abci::Event {
     type Error = ChannelError;
 
-    fn try_from(v: TimeoutPacket) -> Result<Self, Self::Error> {
+    fn try_from(v: &TimeoutPacket) -> Result<Self, Self::Error> {
         Ok(abci::Event {
             kind: IbcEventType::Timeout.as_str().to_owned(),
             attributes: vec![
-                v.timeout_height.into(),
-                v.timeout_timestamp.into(),
-                v.sequence.into(),
-                v.src_port_id.into(),
-                v.src_channel_id.into(),
-                v.dst_port_id.into(),
-                v.dst_channel_id.into(),
-                v.channel_ordering.into(),
+                abci::EventAttribute::from(&v.timeout_height),
+                abci::EventAttribute::from(&v.timeout_timestamp),
+                abci::EventAttribute::from(&v.sequence),
+                abci::EventAttribute::from(&v.src_port_id),
+                abci::EventAttribute::from(&v.src_channel_id),
+                abci::EventAttribute::from(&v.dst_port_id),
+                abci::EventAttribute::from(&v.dst_channel_id),
+                abci::EventAttribute::from(&v.channel_ordering),
             ],
         })
     }
@@ -1099,14 +1101,13 @@ mod tests {
         let tests: Vec<Test> = vec![
             Test {
                 kind: IbcEventType::OpenInitChannel,
-                event: OpenInit::new(
+                event: AbciEvent::from(&OpenInit::new(
                     port_id.clone(),
                     channel_id.clone(),
                     counterparty_port_id.clone(),
                     connection_id.clone(),
                     version.clone(),
-                )
-                .into(),
+                )),
                 expected_keys: expected_keys.clone(),
                 expected_values: expected_values
                     .iter()
@@ -1116,67 +1117,62 @@ mod tests {
             },
             Test {
                 kind: IbcEventType::OpenTryChannel,
-                event: OpenTry::new(
+                event: AbciEvent::from(&OpenTry::new(
                     port_id.clone(),
                     channel_id.clone(),
                     counterparty_port_id.clone(),
                     counterparty_channel_id.clone(),
                     connection_id.clone(),
                     version,
-                )
-                .into(),
+                )),
                 expected_keys: expected_keys.clone(),
                 expected_values: expected_values.clone(),
             },
             Test {
                 kind: IbcEventType::OpenAckChannel,
-                event: OpenAck::new(
+                event: AbciEvent::from(&OpenAck::new(
                     port_id.clone(),
                     channel_id.clone(),
                     counterparty_port_id.clone(),
                     counterparty_channel_id.clone(),
                     connection_id.clone(),
-                )
-                .into(),
+                )),
                 expected_keys: expected_keys[0..5].to_vec(),
                 expected_values: expected_values[0..5].to_vec(),
             },
             Test {
                 kind: IbcEventType::OpenConfirmChannel,
-                event: OpenConfirm::new(
+                event: AbciEvent::from(&OpenConfirm::new(
                     port_id.clone(),
                     channel_id.clone(),
                     counterparty_port_id.clone(),
                     counterparty_channel_id.clone(),
                     connection_id.clone(),
-                )
-                .into(),
+                )),
                 expected_keys: expected_keys[0..5].to_vec(),
                 expected_values: expected_values[0..5].to_vec(),
             },
             Test {
                 kind: IbcEventType::CloseInitChannel,
-                event: CloseInit::new(
+                event: AbciEvent::from(&CloseInit::new(
                     port_id.clone(),
                     channel_id.clone(),
                     counterparty_port_id.clone(),
                     counterparty_channel_id.clone(),
                     connection_id.clone(),
-                )
-                .into(),
+                )),
                 expected_keys: expected_keys[0..5].to_vec(),
                 expected_values: expected_values[0..5].to_vec(),
             },
             Test {
                 kind: IbcEventType::CloseConfirmChannel,
-                event: CloseConfirm::new(
+                event: AbciEvent::from(&CloseConfirm::new(
                     port_id,
                     channel_id,
                     counterparty_port_id,
                     counterparty_channel_id,
                     connection_id,
-                )
-                .into(),
+                )),
                 expected_keys: expected_keys[0..5].to_vec(),
                 expected_values: expected_values[0..5].to_vec(),
             },
