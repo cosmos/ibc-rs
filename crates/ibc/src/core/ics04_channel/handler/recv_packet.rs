@@ -1,6 +1,6 @@
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{Counterparty, Order, State};
-use crate::core::ics04_channel::commitment::compute::compute_packet_commitment;
+use crate::core::ics04_channel::commitment::compute_packet_commitment;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
