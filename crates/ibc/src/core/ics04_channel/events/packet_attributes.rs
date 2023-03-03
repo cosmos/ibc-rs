@@ -50,10 +50,10 @@ pub struct PacketDataAttribute {
     pub packet_data: Vec<u8>,
 }
 
-impl TryFrom<&PacketDataAttribute> for Vec<abci::EventAttribute> {
+impl TryFrom<PacketDataAttribute> for Vec<abci::EventAttribute> {
     type Error = ChannelError;
 
-    fn try_from(attr: &PacketDataAttribute) -> Result<Self, Self::Error> {
+    fn try_from(attr: PacketDataAttribute) -> Result<Self, Self::Error> {
         let tags = vec![
             (
                 PKT_DATA_ATTRIBUTE_KEY,
@@ -62,7 +62,7 @@ impl TryFrom<&PacketDataAttribute> for Vec<abci::EventAttribute> {
                 .into(),
             (
                 PKT_DATA_HEX_ATTRIBUTE_KEY,
-                String::from_utf8(hex::encode(&attr.packet_data)).unwrap(),
+                String::from_utf8(hex::encode(attr.packet_data)).unwrap(),
             )
                 .into(),
         ];
@@ -89,8 +89,8 @@ pub struct TimeoutHeightAttribute {
     pub timeout_height: TimeoutHeight,
 }
 
-impl From<&TimeoutHeightAttribute> for abci::EventAttribute {
-    fn from(attr: &TimeoutHeightAttribute) -> Self {
+impl From<TimeoutHeightAttribute> for abci::EventAttribute {
+    fn from(attr: TimeoutHeightAttribute) -> Self {
         match attr.timeout_height {
             TimeoutHeight::Never => (PKT_TIMEOUT_HEIGHT_ATTRIBUTE_KEY, "0-0").into(),
             TimeoutHeight::At(height) => {
@@ -118,8 +118,8 @@ pub struct TimeoutTimestampAttribute {
     pub timeout_timestamp: Timestamp,
 }
 
-impl From<&TimeoutTimestampAttribute> for abci::EventAttribute {
-    fn from(attr: &TimeoutTimestampAttribute) -> Self {
+impl From<TimeoutTimestampAttribute> for abci::EventAttribute {
+    fn from(attr: TimeoutTimestampAttribute) -> Self {
         (
             PKT_TIMEOUT_TIMESTAMP_ATTRIBUTE_KEY,
             attr.timeout_timestamp.nanoseconds().to_string(),
@@ -146,8 +146,8 @@ pub struct SequenceAttribute {
     pub sequence: Sequence,
 }
 
-impl From<&SequenceAttribute> for abci::EventAttribute {
-    fn from(attr: &SequenceAttribute) -> Self {
+impl From<SequenceAttribute> for abci::EventAttribute {
+    fn from(attr: SequenceAttribute) -> Self {
         (PKT_SEQ_ATTRIBUTE_KEY, attr.sequence.to_string()).into()
     }
 }
@@ -170,8 +170,8 @@ pub struct SrcPortIdAttribute {
     pub src_port_id: PortId,
 }
 
-impl From<&SrcPortIdAttribute> for abci::EventAttribute {
-    fn from(attr: &SrcPortIdAttribute) -> Self {
+impl From<SrcPortIdAttribute> for abci::EventAttribute {
+    fn from(attr: SrcPortIdAttribute) -> Self {
         (PKT_SRC_PORT_ATTRIBUTE_KEY, attr.src_port_id.as_str()).into()
     }
 }
@@ -194,8 +194,8 @@ pub struct SrcChannelIdAttribute {
     pub src_channel_id: ChannelId,
 }
 
-impl From<&SrcChannelIdAttribute> for abci::EventAttribute {
-    fn from(attr: &SrcChannelIdAttribute) -> Self {
+impl From<SrcChannelIdAttribute> for abci::EventAttribute {
+    fn from(attr: SrcChannelIdAttribute) -> Self {
         (PKT_SRC_CHANNEL_ATTRIBUTE_KEY, attr.src_channel_id.as_str()).into()
     }
 }
@@ -218,8 +218,8 @@ pub struct DstPortIdAttribute {
     pub dst_port_id: PortId,
 }
 
-impl From<&DstPortIdAttribute> for abci::EventAttribute {
-    fn from(attr: &DstPortIdAttribute) -> Self {
+impl From<DstPortIdAttribute> for abci::EventAttribute {
+    fn from(attr: DstPortIdAttribute) -> Self {
         (PKT_DST_PORT_ATTRIBUTE_KEY, attr.dst_port_id.as_str()).into()
     }
 }
@@ -242,8 +242,8 @@ pub struct DstChannelIdAttribute {
     pub dst_channel_id: ChannelId,
 }
 
-impl From<&DstChannelIdAttribute> for abci::EventAttribute {
-    fn from(attr: &DstChannelIdAttribute) -> Self {
+impl From<DstChannelIdAttribute> for abci::EventAttribute {
+    fn from(attr: DstChannelIdAttribute) -> Self {
         (PKT_DST_CHANNEL_ATTRIBUTE_KEY, attr.dst_channel_id.as_str()).into()
     }
 }
@@ -266,8 +266,8 @@ pub struct ChannelOrderingAttribute {
     pub order: Order,
 }
 
-impl From<&ChannelOrderingAttribute> for abci::EventAttribute {
-    fn from(attr: &ChannelOrderingAttribute) -> Self {
+impl From<ChannelOrderingAttribute> for abci::EventAttribute {
+    fn from(attr: ChannelOrderingAttribute) -> Self {
         (PKT_CHANNEL_ORDERING_ATTRIBUTE_KEY, attr.order.as_str()).into()
     }
 }
@@ -290,8 +290,8 @@ pub struct PacketConnectionIdAttribute {
     pub connection_id: ConnectionId,
 }
 
-impl From<&PacketConnectionIdAttribute> for abci::EventAttribute {
-    fn from(attr: &PacketConnectionIdAttribute) -> Self {
+impl From<PacketConnectionIdAttribute> for abci::EventAttribute {
+    fn from(attr: PacketConnectionIdAttribute) -> Self {
         (PKT_CONNECTION_ID_ATTRIBUTE_KEY, attr.connection_id.as_str()).into()
     }
 }
@@ -314,10 +314,10 @@ pub struct AcknowledgementAttribute {
     pub acknowledgement: Acknowledgement,
 }
 
-impl TryFrom<&AcknowledgementAttribute> for Vec<abci::EventAttribute> {
+impl TryFrom<AcknowledgementAttribute> for Vec<abci::EventAttribute> {
     type Error = ChannelError;
 
-    fn try_from(attr: &AcknowledgementAttribute) -> Result<Self, Self::Error> {
+    fn try_from(attr: AcknowledgementAttribute) -> Result<Self, Self::Error> {
         let tags = vec![
             (
                 PKT_ACK_ATTRIBUTE_KEY,
@@ -331,7 +331,7 @@ impl TryFrom<&AcknowledgementAttribute> for Vec<abci::EventAttribute> {
                 .into(),
             (
                 PKT_ACK_HEX_ATTRIBUTE_KEY,
-                String::from_utf8(hex::encode(&attr.acknowledgement)).unwrap(),
+                String::from_utf8(hex::encode(attr.acknowledgement)).unwrap(),
             )
                 .into(),
         ];
