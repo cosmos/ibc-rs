@@ -154,7 +154,9 @@ where
 #[cfg(test)]
 mod tests {
     use crate::core::ics04_channel::commitment::compute_packet_commitment;
+    use crate::core::ExecutionContext;
     use crate::prelude::*;
+    use crate::timestamp::Timestamp;
     use rstest::*;
 
     use crate::core::ics02_client::height::Height;
@@ -337,7 +339,7 @@ mod tests {
 
         let packet = msg.packet.clone();
 
-        let context = context
+        let mut context = context
             .with_client(&ClientId::default(), client_height)
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_channel(
@@ -351,6 +353,21 @@ mod tests {
                 packet.sequence,
                 packet_commitment,
             );
+
+        context
+            .store_update_time(
+                ClientId::default(),
+                client_height,
+                Timestamp::from_nanoseconds(1000).unwrap(),
+            )
+            .unwrap();
+        context
+            .store_update_height(
+                ClientId::default(),
+                client_height,
+                Height::new(0, 5).unwrap(),
+            )
+            .unwrap();
 
         let res = validate(&context, &msg);
 
@@ -371,7 +388,7 @@ mod tests {
 
         let packet = msg.packet.clone();
 
-        let context = context
+        let mut context = context
             .with_client(&ClientId::default(), client_height)
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_channel(
@@ -385,6 +402,21 @@ mod tests {
                 packet.sequence,
                 packet_commitment,
             );
+
+        context
+            .store_update_time(
+                ClientId::default(),
+                client_height,
+                Timestamp::from_nanoseconds(1000).unwrap(),
+            )
+            .unwrap();
+        context
+            .store_update_height(
+                ClientId::default(),
+                client_height,
+                Height::new(0, 4).unwrap(),
+            )
+            .unwrap();
 
         let res = validate(&context, &msg);
 

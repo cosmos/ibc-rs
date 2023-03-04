@@ -166,8 +166,10 @@ mod tests {
     use crate::core::ics04_channel::commitment::compute_packet_commitment;
     use crate::core::ics04_channel::commitment::PacketCommitment;
     use crate::core::ics04_channel::handler::timeout_on_close::validate;
+    use crate::core::ExecutionContext;
     use crate::mock::context::MockContext;
     use crate::prelude::*;
+    use crate::timestamp::Timestamp;
     use crate::Height;
     use rstest::*;
 
@@ -285,7 +287,7 @@ mod tests {
             chan_end_on_a,
             ..
         } = fixture;
-        let context = context
+        let mut context = context
             .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a)
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_packet_commitment(
@@ -294,6 +296,21 @@ mod tests {
                 msg.packet.sequence,
                 packet_commitment,
             );
+
+        context
+            .store_update_time(
+                ClientId::default(),
+                Height::new(0, 2).unwrap(),
+                Timestamp::from_nanoseconds(5000).unwrap(),
+            )
+            .unwrap();
+        context
+            .store_update_height(
+                ClientId::default(),
+                Height::new(0, 2).unwrap(),
+                Height::new(0, 5).unwrap(),
+            )
+            .unwrap();
 
         let res = validate(&context, &msg);
 

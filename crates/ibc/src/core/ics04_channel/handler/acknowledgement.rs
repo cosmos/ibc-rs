@@ -133,7 +133,9 @@ mod tests {
     use crate::core::ics04_channel::handler::acknowledgement::validate;
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::PortId;
+    use crate::core::ExecutionContext;
     use crate::prelude::*;
+    use crate::timestamp::Timestamp;
     use rstest::*;
     use test_log::test;
 
@@ -163,9 +165,7 @@ mod tests {
     #[fixture]
     fn fixture() -> Fixture {
         let context = MockContext::default();
-
         let client_height = Height::new(0, 2).unwrap();
-
         let msg = MsgAcknowledgement::try_from(get_dummy_raw_msg_acknowledgement(
             client_height.revision_height(),
         ))
@@ -255,7 +255,7 @@ mod tests {
             client_height,
             ..
         } = fixture;
-        let context = context
+        let mut context = context
             .with_client(&ClientId::default(), client_height)
             .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a)
             .with_connection(ConnectionId::default(), conn_end_on_a)
@@ -265,6 +265,20 @@ mod tests {
                 msg.packet.sequence,
                 packet_commitment,
             );
+        context
+            .store_update_time(
+                ClientId::default(),
+                client_height,
+                Timestamp::from_nanoseconds(1000).unwrap(),
+            )
+            .unwrap();
+        context
+            .store_update_height(
+                ClientId::default(),
+                client_height,
+                Height::new(0, 4).unwrap(),
+            )
+            .unwrap();
 
         let res = validate(&context, &msg);
 
