@@ -1,4 +1,5 @@
 use crate::core::ics03_connection::connection::State as ConnectionState;
+use crate::core::ics03_connection::delay::verify_conn_delay_passed;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::commitment::{compute_ack_commitment, compute_packet_commitment};
@@ -103,10 +104,12 @@ where
         let consensus_state = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
         let ack_commitment = compute_ack_commitment(&msg.acknowledgement);
         let ack_path_on_b = AckPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);
+
+        verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
+
         // Verify the proof for the packet against the chain store.
         client_state_on_a
             .verify_packet_acknowledgement(
-                ctx_a,
                 msg.proof_height_on_b,
                 &conn_end_on_a,
                 &msg.proof_acked_on_b,

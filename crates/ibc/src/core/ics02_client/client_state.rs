@@ -167,10 +167,8 @@ pub trait ClientState:
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a packet has been committed.
-    #[allow(clippy::too_many_arguments)]
     fn verify_packet_data(
         &self,
-        ctx: &dyn ValidationContext,
         height: Height,
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
@@ -180,10 +178,8 @@ pub trait ClientState:
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that a packet has been committed.
-    #[allow(clippy::too_many_arguments)]
     fn verify_packet_acknowledgement(
         &self,
-        ctx: &dyn ValidationContext,
         height: Height,
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
@@ -193,10 +189,8 @@ pub trait ClientState:
     ) -> Result<(), ClientError>;
 
     /// Verify a `proof` that of the next_seq_received.
-    #[allow(clippy::too_many_arguments)]
     fn verify_next_sequence_recv(
         &self,
-        ctx: &dyn ValidationContext,
         height: Height,
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,
@@ -208,7 +202,6 @@ pub trait ClientState:
     /// Verify a `proof` that a packet has not been received.
     fn verify_packet_receipt_absence(
         &self,
-        ctx: &dyn ValidationContext,
         height: Height,
         connection_end: &ConnectionEnd,
         proof: &CommitmentProofBytes,

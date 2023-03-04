@@ -1,4 +1,5 @@
 use crate::core::ics03_connection::connection::State as ConnectionState;
+use crate::core::ics03_connection::delay::verify_conn_delay_passed;
 use crate::core::ics04_channel::channel::{Counterparty, Order, State};
 use crate::core::ics04_channel::commitment::compute_packet_commitment;
 use crate::core::ics04_channel::error::ChannelError;
@@ -91,10 +92,11 @@ where
             msg.packet.sequence,
         );
 
+        verify_conn_delay_passed(ctx_b, msg.proof_height_on_a, &conn_end_on_b)?;
+
         // Verify the proof for the packet against the chain store.
         client_state_of_a_on_b
             .verify_packet_data(
-                ctx_b,
                 msg.proof_height_on_a,
                 &conn_end_on_b,
                 &msg.proof_commitment_on_a,

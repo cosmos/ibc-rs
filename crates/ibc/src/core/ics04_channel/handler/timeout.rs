@@ -1,3 +1,4 @@
+use crate::core::ics03_connection::delay::verify_conn_delay_passed;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::commitment::compute_packet_commitment;
@@ -105,6 +106,9 @@ where
             }
             .into());
         }
+
+        verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
+
         let next_seq_recv_verification_result = if chan_end_on_a.order_matches(&Order::Ordered) {
             if msg.packet.sequence < msg.next_seq_recv_on_b {
                 return Err(PacketError::InvalidPacketSequence {
@@ -115,7 +119,6 @@ where
             }
             let seq_recv_path_on_b = SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
             client_state_of_b_on_a.verify_next_sequence_recv(
-                ctx_a,
                 msg.proof_height_on_b,
                 &conn_end_on_a,
                 &msg.proof_unreceived_on_b,
@@ -130,7 +133,6 @@ where
                 msg.packet.sequence,
             );
             client_state_of_b_on_a.verify_packet_receipt_absence(
-                ctx_a,
                 msg.proof_height_on_b,
                 &conn_end_on_a,
                 &msg.proof_unreceived_on_b,
