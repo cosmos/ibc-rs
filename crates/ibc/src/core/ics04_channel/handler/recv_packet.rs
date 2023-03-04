@@ -98,7 +98,7 @@ where
         client_state_of_a_on_b
             .verify_packet_data(
                 msg.proof_height_on_a,
-                &conn_end_on_b,
+                conn_end_on_b.counterparty().prefix(),
                 &msg.proof_commitment_on_a,
                 consensus_state_of_a_on_b.root(),
                 &commitment_path_on_a,

@@ -859,7 +859,7 @@ impl Ics2ClientState for ClientState {
     fn verify_packet_data(
         &self,
         height: Height,
-        connection_end: &ConnectionEnd,
+        prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         commitment_path: &CommitmentPath,
@@ -870,7 +870,7 @@ impl Ics2ClientState for ClientState {
 
         verify_membership(
             client_state,
-            connection_end.counterparty().prefix(),
+            prefix,
             proof,
             root,
             commitment_path.clone(),
@@ -881,7 +881,7 @@ impl Ics2ClientState for ClientState {
     fn verify_packet_acknowledgement(
         &self,
         height: Height,
-        connection_end: &ConnectionEnd,
+        prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         ack_path: &AckPath,
@@ -892,7 +892,7 @@ impl Ics2ClientState for ClientState {
 
         verify_membership(
             client_state,
-            connection_end.counterparty().prefix(),
+            prefix,
             proof,
             root,
             ack_path.clone(),
@@ -903,7 +903,7 @@ impl Ics2ClientState for ClientState {
     fn verify_next_sequence_recv(
         &self,
         height: Height,
-        connection_end: &ConnectionEnd,
+        prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         seq_recv_path: &SeqRecvPath,
@@ -919,7 +919,7 @@ impl Ics2ClientState for ClientState {
 
         verify_membership(
             client_state,
-            connection_end.counterparty().prefix(),
+            prefix,
             proof,
             root,
             seq_recv_path.clone(),
@@ -930,7 +930,7 @@ impl Ics2ClientState for ClientState {
     fn verify_packet_receipt_absence(
         &self,
         height: Height,
-        connection_end: &ConnectionEnd,
+        prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         receipt_path: &ReceiptPath,
@@ -938,13 +938,7 @@ impl Ics2ClientState for ClientState {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
 
-        verify_non_membership(
-            client_state,
-            connection_end.counterparty().prefix(),
-            proof,
-            root,
-            receipt_path.clone(),
-        )
+        verify_non_membership(client_state, prefix, proof, root, receipt_path.clone())
     }
 }
 

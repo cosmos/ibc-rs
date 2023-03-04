@@ -130,7 +130,7 @@ where
             let seq_recv_path_on_b = SeqRecvPath::new(&packet.port_on_b, &packet.chan_on_b);
             client_state_of_b_on_a.verify_next_sequence_recv(
                 msg.proof_height_on_b,
-                &conn_end_on_a,
+                conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 &seq_recv_path_on_b,
@@ -144,7 +144,7 @@ where
             );
             client_state_of_b_on_a.verify_packet_receipt_absence(
                 msg.proof_height_on_b,
-                &conn_end_on_a,
+                conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 &receipt_path_on_b,

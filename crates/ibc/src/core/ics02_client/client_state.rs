@@ -170,7 +170,7 @@ pub trait ClientState:
     fn verify_packet_data(
         &self,
         height: Height,
-        connection_end: &ConnectionEnd,
+        prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         commitment_path: &CommitmentPath,
@@ -181,7 +181,7 @@ pub trait ClientState:
     fn verify_packet_acknowledgement(
         &self,
         height: Height,
-        connection_end: &ConnectionEnd,
+        prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         ack_path: &AckPath,
@@ -192,7 +192,7 @@ pub trait ClientState:
     fn verify_next_sequence_recv(
         &self,
         height: Height,
-        connection_end: &ConnectionEnd,
+        prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         seq_recv_path: &SeqRecvPath,
@@ -203,7 +203,7 @@ pub trait ClientState:
     fn verify_packet_receipt_absence(
         &self,
         height: Height,
-        connection_end: &ConnectionEnd,
+        prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         receipt_path: &ReceiptPath,

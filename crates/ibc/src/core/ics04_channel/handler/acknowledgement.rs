@@ -111,7 +111,7 @@ where
         client_state_on_a
             .verify_packet_acknowledgement(
                 msg.proof_height_on_b,
-                &conn_end_on_a,
+                conn_end_on_a.counterparty().prefix(),
                 &msg.proof_acked_on_b,
                 consensus_state.root(),
                 &ack_path_on_b,
