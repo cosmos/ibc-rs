@@ -15,10 +15,8 @@ use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::PacketCommitment;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-use crate::timestamp::Timestamp;
 
 use super::packet::Sequence;
-use super::timeout::TimeoutHeight;
 
 pub trait SendPacketValidationContext {
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
@@ -38,15 +36,6 @@ pub trait SendPacketValidationContext {
 
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
         -> Result<Sequence, ContextError>;
-
-    fn hash(&self, value: &[u8]) -> Vec<u8>;
-
-    fn compute_packet_commitment(
-        &self,
-        packet_data: &[u8],
-        timeout_height: &TimeoutHeight,
-        timeout_timestamp: &Timestamp,
-    ) -> PacketCommitment;
 }
 
 impl<T> SendPacketValidationContext for T
@@ -77,19 +66,6 @@ where
         seq_send_path: &SeqSendPath,
     ) -> Result<Sequence, ContextError> {
         self.get_next_sequence_send(seq_send_path)
-    }
-
-    fn hash(&self, value: &[u8]) -> Vec<u8> {
-        self.hash(value)
-    }
-
-    fn compute_packet_commitment(
-        &self,
-        packet_data: &[u8],
-        timeout_height: &TimeoutHeight,
-        timeout_timestamp: &Timestamp,
-    ) -> PacketCommitment {
-        self.compute_packet_commitment(packet_data, timeout_height, timeout_timestamp)
     }
 }
 

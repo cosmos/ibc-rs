@@ -17,7 +17,6 @@ use core::time::Duration;
 use parking_lot::Mutex;
 
 use ibc_proto::google::protobuf::Any;
-use sha2::Digest;
 use tracing::debug;
 
 use crate::clients::ics07_tendermint::client_state::test_util::get_dummy_tendermint_client_state;
@@ -1040,10 +1039,6 @@ impl ValidationContext for MockContext {
             None => Err(PacketError::PacketAcknowledgementNotFound { sequence: *seq }),
         }
         .map_err(ContextError::PacketError)
-    }
-
-    fn hash(&self, value: &[u8]) -> Vec<u8> {
-        sha2::Sha256::digest(value).to_vec()
     }
 
     fn client_update_time(
