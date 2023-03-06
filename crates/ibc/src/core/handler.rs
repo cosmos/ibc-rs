@@ -239,10 +239,7 @@ mod tests {
             "ICS26 routing dispatch test 'client creation' failed for message {create_client_msg:?} with result: {res:?}",
         );
 
-        ctx.scope_port_to_module(
-            msg_chan_init.port_id_on_a.clone(),
-            transfer_module_id.clone(),
-        );
+        ctx.scope_port_to_module(msg_chan_init.port_id_on_a.clone(), transfer_module_id);
 
         // Figure out the ID of the client that was just created.
         let client_id_event = ctx.events.first();
