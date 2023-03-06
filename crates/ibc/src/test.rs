@@ -10,7 +10,7 @@ use serde::{de::DeserializeOwned, Serialize};
 #[cfg(feature = "serde")]
 pub fn test_serialization_roundtrip<T>(json_data: &str)
 where
-    T: core::fmt::Debug + Serialize + DeserializeOwned,
+    T: core::fmt::Debug + PartialEq + Serialize + DeserializeOwned,
 {
     let parsed0 = serde_json::from_str::<T>(json_data);
     assert!(parsed0.is_ok());
@@ -22,7 +22,7 @@ where
 
     let parsed1 = serde_json::from_str::<T>(&serialized);
     assert!(parsed1.is_ok());
+    let parsed1 = parsed1.unwrap();
 
-    // TODO - fix PartialEq bound issue in AbciQuery
-    //assert_eq!(parsed0, parsed1);
+    assert_eq!(parsed0, parsed1);
 }
