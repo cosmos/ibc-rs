@@ -36,12 +36,13 @@ mod tests {
 
     use test_log::test;
 
+    use crate::applications::transfer::error::TokenTransferError;
     use crate::applications::transfer::msgs::transfer::test_util::get_dummy_transfer_packet;
+    use crate::applications::transfer::relay::send_transfer::send_transfer;
     use crate::applications::transfer::{
-        context::test::deliver as ics20_deliver, msgs::transfer::test_util::get_dummy_msg_transfer,
-        msgs::transfer::MsgTransfer, packet::PacketData, PrefixedCoin, MODULE_ID_STR,
+        msgs::transfer::test_util::get_dummy_msg_transfer, msgs::transfer::MsgTransfer,
+        packet::PacketData, PrefixedCoin, MODULE_ID_STR,
     };
-    use crate::core::context::Router;
     use crate::core::ics02_client::msgs::{
         create_client::MsgCreateClient, update_client::MsgUpdateClient,
         upgrade_client::MsgUpgradeClient, ClientMsg,
@@ -58,6 +59,7 @@ mod tests {
     use crate::core::ics04_channel::channel::Counterparty as ChannelCounterparty;
     use crate::core::ics04_channel::channel::Order as ChannelOrder;
     use crate::core::ics04_channel::channel::State as ChannelState;
+    use crate::core::ics04_channel::error::ChannelError;
     use crate::core::ics04_channel::msgs::acknowledgement::test_util::get_dummy_raw_msg_ack_with_packet;
     use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
     use crate::core::ics04_channel::msgs::chan_open_confirm::test_util::get_dummy_raw_msg_chan_open_confirm;
@@ -469,18 +471,11 @@ mod tests {
         for test in tests {
             let res = match test.msg.clone() {
                 TestMsg::Ics26(msg) => dispatch(&mut ctx, msg).map(|_| ()),
-                TestMsg::Ics20(msg) => {
-                    let transfer_module = ctx.get_route_mut(&transfer_module_id).unwrap();
-                    ics20_deliver(
-                        transfer_module
-                            .as_any_mut()
-                            .downcast_mut::<DummyTransferModule>()
-                            .unwrap(),
-                        msg,
-                    )
-                    .map(|_| ())
-                    .map_err(|e| RouterError::ContextError(e.into()))
-                }
+                TestMsg::Ics20(msg) => send_transfer(&mut ctx, msg)
+                    .map_err(|e: TokenTransferError| ChannelError::AppModule {
+                        description: e.to_string(),
+                    })
+                    .map_err(|e| RouterError::ContextError(e.into())),
             };
 
             assert_eq!(
