@@ -180,7 +180,7 @@ mod tests {
         msg.connection_hops_on_b = hops;
 
         let mut context = MockContext::default();
-        let module = DummyTransferModule::new(context.ibc_store_share());
+        let module = DummyTransferModule::new();
         let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
         context.add_route(module_id.clone(), module).unwrap();
 

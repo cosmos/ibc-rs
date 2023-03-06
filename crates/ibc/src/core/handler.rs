@@ -145,7 +145,7 @@ mod tests {
         // We reuse this same context across all tests. Nothing in particular needs parametrizing.
         let mut ctx = {
             let mut ctx = MockContext::default();
-            let module = DummyTransferModule::new(ctx.ibc_store_share());
+            let module = DummyTransferModule::new();
             ctx.add_route(transfer_module_id.clone(), module).unwrap();
 
             ctx
@@ -515,7 +515,7 @@ mod tests {
                     Duration::MAX,
                 ),
             );
-        let module = DummyTransferModule::new(ctx.ibc_store_share());
+        let module = DummyTransferModule::new();
 
         ctx.add_route(module_id.clone(), module).unwrap();
 

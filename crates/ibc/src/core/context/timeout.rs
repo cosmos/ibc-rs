@@ -187,7 +187,7 @@ mod tests {
         let mut ctx = MockContext::default().with_client(&ClientId::default(), client_height);
 
         let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
-        let module = DummyTransferModule::new(ctx.ibc_store_share());
+        let module = DummyTransferModule::new();
         ctx.add_route(module_id.clone(), module).unwrap();
 
         let height = 2;
