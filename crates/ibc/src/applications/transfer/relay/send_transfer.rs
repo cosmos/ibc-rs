@@ -43,7 +43,7 @@ where
     let chan_id_on_b = chan_end_on_a
         .counterparty()
         .channel_id()
-        .ok_or_else(|| TokenTransferError::DestinationChannelNotFound {
+        .ok_or(TokenTransferError::DestinationChannelNotFound {
             port_id: msg.port_id_on_a.clone(),
             channel_id: msg.chan_id_on_a.clone(),
         })?

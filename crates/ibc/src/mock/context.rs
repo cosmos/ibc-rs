@@ -1402,7 +1402,25 @@ impl TokenTransferValidationContext for MockContext {
     type AccountId = Signer;
 
     fn get_port(&self) -> Result<PortId, TokenTransferError> {
-        Ok(PortId::transfer())
+        let token_transfer_module_id = self
+            .router
+            .iter()
+            .find(|(m, _)| m.to_string() == "fooModule")
+            .map(|(m, _)| m.clone())
+            .ok_or(TokenTransferError::StorageError {
+                reason: "There is no token transfer module".to_string(),
+            })?;
+        let port_id = self
+            .ibc_store
+            .lock()
+            .port_to_module
+            .iter()
+            .find(|(_, m)| m == &&token_transfer_module_id)
+            .map(|(p, _)| p.clone())
+            .ok_or(TokenTransferError::StorageError {
+                reason: "There is no port id bonded to this token transfer module".to_string(),
+            })?;
+        Ok(port_id)
     }
 
     fn get_prefixed_denom(

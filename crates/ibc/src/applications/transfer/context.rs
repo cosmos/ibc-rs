@@ -28,10 +28,8 @@ pub trait TokenTransferValidationContext: SendPacketValidationContext {
     /// Returns the portID for the transfer module.
     fn get_port(&self) -> Result<PortId, TokenTransferError>;
 
-    /// Fetches the denomination trace for a given hash and returns Some(_) if
-    /// it exists, None otherwise.
-    ///
-    /// Implement only if the host chain supports hashed denominations.
+    /// Fetches the denomination trace for a given hash and returns Some(_)
+    /// if it exists, None otherwise.
     fn get_prefixed_denom(
         &self,
         hash: [u8; 32],
@@ -64,7 +62,7 @@ pub trait TokenTransferExecutionContext:
     /// Sets the portID for the transfer module.
     fn set_port(&mut self, port_id: PortId) -> Result<(), TokenTransferError>;
 
-    /// Sets a new {trace hash -> denom trace} pair to the store.
+    /// Sets a new {trace hash -> prefixed denom} pair to the store.
     fn set_prefixed_denom(&mut self, _denom: PrefixedDenom) -> Result<(), TokenTransferError>;
 
     /// This function should enable sending ibc fungible tokens from one account to another
