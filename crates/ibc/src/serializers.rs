@@ -11,7 +11,6 @@ where
 }
 
 pub mod serde_string {
-    use alloc::string::String;
     use core::fmt::Display;
     use core::str::FromStr;
 
@@ -31,7 +30,7 @@ pub mod serde_string {
         T::Err: Display,
         D: Deserializer<'de>,
     {
-        String::deserialize(deserializer)?
+        <&str>::deserialize(deserializer)?
             .parse()
             .map_err(de::Error::custom)
     }

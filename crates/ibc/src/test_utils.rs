@@ -1,40 +1,15 @@
-use alloc::sync::Arc;
-use parking_lot::Mutex;
-
-use subtle_encoding::bech32;
 use tendermint::{block, consensus, evidence, public_key::Algorithm};
 
-use crate::applications::transfer::context::{
-    cosmos_adr028_escrow_address, TokenTransferExecutionContext, TokenTransferValidationContext,
-};
-use crate::applications::transfer::PrefixedDenom;
-use crate::applications::transfer::{error::TokenTransferError, PrefixedCoin};
-use crate::core::ics02_client::client_state::ClientState;
-use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::error::ClientError;
-use crate::core::ics03_connection::connection::ConnectionEnd;
-use crate::core::ics03_connection::error::ConnectionError;
-use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order};
-use crate::core::ics04_channel::commitment::PacketCommitment;
-use crate::core::ics04_channel::context::{
-    SendPacketExecutionContext, SendPacketValidationContext,
-};
+use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
-use crate::core::ics04_channel::packet::{Packet, Sequence};
+use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
-use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ics24_host::path::{
-    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
-};
+use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::Module;
-use crate::core::ContextError;
-use crate::events::IbcEvent;
-use crate::mock::context::MockIbcStore;
 use crate::prelude::*;
 use crate::signer::Signer;
-use crate::Height;
 
 // Needed in mocks.
 pub fn default_consensus_params() -> consensus::Params {
@@ -71,17 +46,20 @@ pub fn get_dummy_bech32_account() -> String {
 }
 
 pub fn get_dummy_transfer_module() -> DummyTransferModule {
-    let ibc_store = Arc::new(Mutex::new(MockIbcStore::default()));
-    DummyTransferModule { ibc_store }
+    DummyTransferModule
 }
 #[derive(Debug)]
-pub struct DummyTransferModule {
-    ibc_store: Arc<Mutex<MockIbcStore>>,
-}
+pub struct DummyTransferModule;
 
 impl DummyTransferModule {
-    pub fn new(ibc_store: Arc<Mutex<MockIbcStore>>) -> Self {
-        Self { ibc_store }
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl Default for DummyTransferModule {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -178,218 +156,4 @@ impl Module for DummyTransferModule {
     ) -> (ModuleExtras, Result<(), PacketError>) {
         (ModuleExtras::empty(), Ok(()))
     }
-}
-
-impl TokenTransferValidationContext for DummyTransferModule {
-    type AccountId = Signer;
-
-    fn get_port(&self) -> Result<PortId, TokenTransferError> {
-        Ok(PortId::transfer())
-    }
-
-    fn get_escrow_account(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<Self::AccountId, TokenTransferError> {
-        let addr = cosmos_adr028_escrow_address(port_id, channel_id);
-        Ok(bech32::encode("cosmos", addr).parse().unwrap())
-    }
-
-    fn is_send_enabled(&self) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    fn is_receive_enabled(&self) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    fn is_account_blocked(&self, _account: &Self::AccountId) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    fn get_prefixed_denom(
-        &self,
-        _hash: [u8; 32],
-    ) -> Result<Option<PrefixedDenom>, TokenTransferError> {
-        Ok(None)
-    }
-
-    fn get_all_prefixed_denoms(&self) -> Result<Vec<PrefixedDenom>, TokenTransferError> {
-        todo!()
-    }
-}
-
-impl TokenTransferExecutionContext for DummyTransferModule {
-    fn set_port(&mut self, _port_id: PortId) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    fn set_prefixed_denom(&mut self, _denom: PrefixedDenom) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    fn send_coins(
-        &mut self,
-        _from: &Self::AccountId,
-        _to: &Self::AccountId,
-        _amt: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    fn mint_coins(
-        &mut self,
-        _account: &Self::AccountId,
-        _amt: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    fn burn_coins(
-        &mut self,
-        _account: &Self::AccountId,
-        _amt: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-}
-
-impl SendPacketValidationContext for DummyTransferModule {
-    fn channel_end(&self, chan_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
-        match self
-            .ibc_store
-            .lock()
-            .channels
-            .get(&chan_end_path.0)
-            .and_then(|map| map.get(&chan_end_path.1))
-        {
-            Some(channel_end) => Ok(channel_end.clone()),
-            None => Err(PacketError::ChannelNotFound {
-                port_id: chan_end_path.0.clone(),
-                channel_id: chan_end_path.1.clone(),
-            }
-            .into()),
-        }
-    }
-
-    fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, ContextError> {
-        match self.ibc_store.lock().connections.get(cid) {
-            Some(connection_end) => Ok(connection_end.clone()),
-            None => Err(ConnectionError::ConnectionNotFound {
-                connection_id: cid.clone(),
-            }),
-        }
-        .map_err(PacketError::Connection)
-        .map_err(ContextError::PacketError)
-    }
-
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
-        match self.ibc_store.lock().clients.get(client_id) {
-            Some(client_record) => {
-                client_record
-                    .client_state
-                    .clone()
-                    .ok_or_else(|| ClientError::ClientNotFound {
-                        client_id: client_id.clone(),
-                    })
-            }
-            None => Err(ClientError::ClientNotFound {
-                client_id: client_id.clone(),
-            }),
-        }
-        .map_err(|e| PacketError::Connection(ConnectionError::Client(e)))
-        .map_err(ContextError::PacketError)
-    }
-
-    fn client_consensus_state(
-        &self,
-        client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Box<dyn ConsensusState>, ContextError> {
-        let height =
-            Height::new(client_cons_state_path.epoch, client_cons_state_path.height).unwrap();
-        match self
-            .ibc_store
-            .lock()
-            .clients
-            .get(&client_cons_state_path.client_id)
-        {
-            Some(client_record) => match client_record.consensus_states.get(&height) {
-                Some(consensus_state) => Ok(consensus_state.clone()),
-                None => Err(ClientError::ConsensusStateNotFound {
-                    client_id: client_cons_state_path.client_id.clone(),
-                    height,
-                }),
-            },
-            None => Err(ClientError::ConsensusStateNotFound {
-                client_id: client_cons_state_path.client_id.clone(),
-                height,
-            }),
-        }
-        .map_err(|e| PacketError::Connection(ConnectionError::Client(e)))
-        .map_err(ContextError::PacketError)
-    }
-
-    fn get_next_sequence_send(
-        &self,
-        seq_send_path: &SeqSendPath,
-    ) -> Result<Sequence, ContextError> {
-        match self
-            .ibc_store
-            .lock()
-            .next_sequence_send
-            .get(&seq_send_path.0)
-            .and_then(|map| map.get(&seq_send_path.1))
-        {
-            Some(sequence) => Ok(*sequence),
-            None => Err(PacketError::MissingNextSendSeq {
-                port_id: seq_send_path.0.clone(),
-                channel_id: seq_send_path.1.clone(),
-            }
-            .into()),
-        }
-    }
-}
-
-impl SendPacketExecutionContext for DummyTransferModule {
-    fn store_packet_commitment(
-        &mut self,
-        commitment_path: &CommitmentPath,
-        commitment: PacketCommitment,
-    ) -> Result<(), ContextError> {
-        let port_id = commitment_path.port_id.clone();
-        let channel_id = commitment_path.channel_id.clone();
-        let seq = commitment_path.sequence;
-
-        self.ibc_store
-            .lock()
-            .packet_commitment
-            .entry(port_id)
-            .or_default()
-            .entry(channel_id)
-            .or_default()
-            .insert(seq, commitment);
-        Ok(())
-    }
-
-    fn store_next_sequence_send(
-        &mut self,
-        seq_send_path: &SeqSendPath,
-        seq: Sequence,
-    ) -> Result<(), ContextError> {
-        let port_id = seq_send_path.0.clone();
-        let channel_id = seq_send_path.1.clone();
-
-        self.ibc_store
-            .lock()
-            .next_sequence_send
-            .entry(port_id)
-            .or_default()
-            .insert(channel_id, seq);
-        Ok(())
-    }
-
-    fn emit_ibc_event(&mut self, _event: IbcEvent) {}
-
-    fn log_message(&mut self, _message: String) {}
 }
