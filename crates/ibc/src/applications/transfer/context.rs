@@ -28,8 +28,7 @@ pub trait TokenTransferValidationContext: SendPacketValidationContext {
     /// Returns the portID for the transfer module.
     fn get_port(&self) -> Result<PortId, TokenTransferError>;
 
-    /// Fetches the denomination trace for a given hash and returns Some(_)
-    /// if it exists, None otherwise.
+    /// Fetches the denomination trace for a given hash and returns Ok() if it exists.
     fn get_prefixed_denom(&self, hash: [u8; 32]) -> Result<PrefixedDenom, TokenTransferError>;
 
     /// Returns a list of all the denominations that are prefixed with the port
