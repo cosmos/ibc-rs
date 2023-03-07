@@ -185,7 +185,7 @@ mod tests {
         let mut context = MockContext::default();
 
         let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
-        let module = DummyTransferModule::new(context.ibc_store_share());
+        let module = DummyTransferModule::new();
         context.add_route(module_id.clone(), module).unwrap();
 
         let host_height = context.query_latest_height().unwrap().increment();
