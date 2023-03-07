@@ -123,7 +123,7 @@ impl From<TimeoutEvent> for ModuleEvent {
 }
 
 pub struct DenomTraceEvent {
-    pub trace_hash: Option<String>,
+    pub trace_hash: String,
     pub denom: PrefixedDenom,
 }
 
@@ -135,9 +135,7 @@ impl From<DenomTraceEvent> for ModuleEvent {
             module_name: MODULE_ID_STR.parse().expect("invalid ModuleId"),
             attributes: vec![("denom", denom).into()],
         };
-        if let Some(hash) = trace_hash {
-            ev.attributes.push(("trace_hash", hash).into());
-        }
+        ev.attributes.push(("trace_hash", trace_hash).into());
         ev
     }
 }

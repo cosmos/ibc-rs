@@ -7,6 +7,7 @@ use tendermint::{block, consensus, evidence, public_key::Algorithm};
 use crate::applications::transfer::context::{
     cosmos_adr028_escrow_address, TokenTransferExecutionContext, TokenTransferValidationContext,
 };
+use crate::applications::transfer::PrefixedDenom;
 use crate::applications::transfer::{error::TokenTransferError, PrefixedCoin};
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::consensus_state::ConsensusState;
@@ -186,7 +187,7 @@ impl TokenTransferValidationContext for DummyTransferModule {
         Ok(PortId::transfer())
     }
 
-    fn get_channel_escrow_address(
+    fn get_escrow_account(
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
@@ -195,16 +196,39 @@ impl TokenTransferValidationContext for DummyTransferModule {
         Ok(bech32::encode("cosmos", addr).parse().unwrap())
     }
 
-    fn is_send_enabled(&self) -> bool {
-        true
+    fn is_send_enabled(&self) -> Result<(), TokenTransferError> {
+        Ok(())
     }
 
-    fn is_receive_enabled(&self) -> bool {
-        true
+    fn is_receive_enabled(&self) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    fn is_account_blocked(&self, _account: &Self::AccountId) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    fn get_prefixed_denom(
+        &self,
+        _hash: [u8; 32],
+    ) -> Result<Option<PrefixedDenom>, TokenTransferError> {
+        Ok(None)
+    }
+
+    fn get_all_prefixed_denoms(&self) -> Result<Vec<PrefixedDenom>, TokenTransferError> {
+        todo!()
     }
 }
 
 impl TokenTransferExecutionContext for DummyTransferModule {
+    fn set_port(&mut self, _port_id: PortId) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    fn set_prefixed_denom(&mut self, _denom: PrefixedDenom) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
     fn send_coins(
         &mut self,
         _from: &Self::AccountId,

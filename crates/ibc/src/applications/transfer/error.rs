@@ -5,6 +5,7 @@ use ibc_proto::protobuf::Error as TendermintProtoError;
 use uint::FromDecStrErr;
 
 use crate::core::ics04_channel::channel::Order;
+use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
@@ -53,6 +54,8 @@ pub enum TokenTransferError {
     InvalidAmount(FromDecStrErr),
     /// invalid token
     InvalidToken,
+    /// Account `{account}` is blocked
+    BlockedAccount { account: String },
     /// failed to parse signer error: `{0}`
     Signer(SignerError),
     /// expected `{expect_order}` channel, got `{got_order}`
@@ -95,6 +98,10 @@ pub enum TokenTransferError {
     InvalidCoin { coin: String },
     /// decoding raw bytes as UTF8 string error: `{0}`
     Utf8Decode(Utf8Error),
+    /// failed to send coins
+    CannotMintCoins { extras: ModuleExtras },
+    /// failed to retrieve data from the storage: `{reason}`
+    StorageError { reason: String },
 }
 
 #[cfg(feature = "std")]

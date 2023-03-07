@@ -41,7 +41,8 @@ pub(super) fn acknowledgement_packet_execute<ExecCtx>(
 where
     ExecCtx: ExecutionContext,
 {
-    let chan_end_path_on_a = ChannelEndPath::new(&msg.packet.port_on_a, &msg.packet.chan_on_a);
+    let chan_end_path_on_a =
+        ChannelEndPath::new(&msg.packet.port_id_on_a, &msg.packet.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
     let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
 
@@ -53,9 +54,9 @@ where
     )));
 
     let commitment_path_on_a = CommitmentPath::new(
-        &msg.packet.port_on_a,
-        &msg.packet.chan_on_a,
-        msg.packet.sequence,
+        &msg.packet.port_id_on_a,
+        &msg.packet.chan_id_on_a,
+        msg.packet.seq_on_a,
     );
 
     // check if we're in the NO-OP case
@@ -79,17 +80,18 @@ where
     // apply state changes
     {
         let commitment_path_on_a = CommitmentPath {
-            port_id: msg.packet.port_on_a.clone(),
-            channel_id: msg.packet.chan_on_a.clone(),
-            sequence: msg.packet.sequence,
+            port_id: msg.packet.port_id_on_a.clone(),
+            channel_id: msg.packet.chan_id_on_a.clone(),
+            sequence: msg.packet.seq_on_a,
         };
         ctx_a.delete_packet_commitment(&commitment_path_on_a)?;
 
         if let Order::Ordered = chan_end_on_a.ordering {
             // Note: in validation, we verified that `msg.packet.sequence == nextSeqRecv`
             // (where `nextSeqRecv` is the value in the store)
-            let seq_ack_path_on_a = SeqAckPath::new(&msg.packet.port_on_a, &msg.packet.chan_on_a);
-            ctx_a.store_next_sequence_ack(&seq_ack_path_on_a, msg.packet.sequence.increment())?;
+            let seq_ack_path_on_a =
+                SeqAckPath::new(&msg.packet.port_id_on_a, &msg.packet.chan_id_on_a);
+            ctx_a.store_next_sequence_ack(&seq_ack_path_on_a, msg.packet.seq_on_a.increment())?;
         }
     }
 
@@ -175,7 +177,10 @@ mod tests {
         let chan_end_on_a_unordered = ChannelEnd::new(
             State::Open,
             Order::Unordered,
-            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone())),
+            Counterparty::new(
+                packet.port_id_on_b.clone(),
+                Some(packet.chan_id_on_b.clone()),
+            ),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
         );
@@ -183,7 +188,7 @@ mod tests {
         let chan_end_on_a_ordered = ChannelEnd::new(
             State::Open,
             Order::Ordered,
-            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b)),
+            Counterparty::new(packet.port_id_on_b.clone(), Some(packet.chan_id_on_b)),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
         );
@@ -230,9 +235,9 @@ mod tests {
             )
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_packet_commitment(
-                msg.packet.port_on_a.clone(),
-                msg.packet.chan_on_a.clone(),
-                msg.packet.sequence,
+                msg.packet.port_id_on_a.clone(),
+                msg.packet.chan_id_on_a.clone(),
+                msg.packet.seq_on_a,
                 packet_commitment,
             );
 
@@ -266,9 +271,9 @@ mod tests {
             )
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_packet_commitment(
-                msg.packet.port_on_a.clone(),
-                msg.packet.chan_on_a.clone(),
-                msg.packet.sequence,
+                msg.packet.port_id_on_a.clone(),
+                msg.packet.chan_id_on_a.clone(),
+                msg.packet.seq_on_a,
                 packet_commitment,
             );
 

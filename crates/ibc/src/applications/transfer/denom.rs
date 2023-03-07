@@ -64,7 +64,7 @@ impl Display for TracePrefix {
 pub struct TracePath(Vec<TracePrefix>);
 
 impl TracePath {
-    /// Returns true iff this path starts with the specified prefix
+    /// Returns true if this path starts with the specified prefix
     pub fn starts_with(&self, prefix: &TracePrefix) -> bool {
         self.0.last().map(|p| p == prefix).unwrap_or(false)
     }

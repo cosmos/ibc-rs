@@ -32,27 +32,25 @@ where
     C: TryInto<PrefixedCoin>,
     Ctx: TokenTransferValidationContext,
 {
-    if !ctx_a.is_send_enabled() {
-        return Err(TokenTransferError::SendDisabled);
-    }
+    ctx_a.is_send_enabled()?;
 
-    let chan_end_path_on_a = ChannelEndPath::new(&msg.port_on_a, &msg.chan_on_a);
+    let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let chan_end_on_a = ctx_a
         .channel_end(&chan_end_path_on_a)
         .map_err(TokenTransferError::ContextError)?;
 
-    let port_on_b = chan_end_on_a.counterparty().port_id().clone();
-    let chan_on_b = chan_end_on_a
+    let port_id_on_b = chan_end_on_a.counterparty().port_id().clone();
+    let chan_id_on_b = chan_end_on_a
         .counterparty()
         .channel_id()
         .ok_or_else(|| TokenTransferError::DestinationChannelNotFound {
-            port_id: msg.port_on_a.clone(),
-            channel_id: msg.chan_on_a.clone(),
+            port_id: msg.port_id_on_a.clone(),
+            channel_id: msg.chan_id_on_a.clone(),
         })?
         .clone();
 
-    let seq_send_path_on_a = SeqSendPath::new(&msg.port_on_a, &msg.chan_on_a);
-    let sequence = ctx_a
+    let seq_send_path_on_a = SeqSendPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
+    let seq_on_a = ctx_a
         .get_next_sequence_send(&seq_send_path_on_a)
         .map_err(TokenTransferError::ContextError)?;
 
@@ -60,11 +58,7 @@ where
         .token
         .try_into()
         .map_err(|_| TokenTransferError::InvalidToken)?;
-    let denom = token.denom.clone();
-    let coin = Coin {
-        denom,
-        amount: token.amount,
-    };
+    let coin = Coin::new(token.denom, token.amount);
 
     let _sender: Ctx::AccountId = msg
         .sender
@@ -82,11 +76,11 @@ where
     };
 
     let packet = Packet {
-        sequence,
-        port_on_a: msg.port_on_a,
-        chan_on_a: msg.chan_on_a,
-        port_on_b,
-        chan_on_b,
+        seq_on_a,
+        port_id_on_a: msg.port_id_on_a,
+        chan_id_on_a: msg.chan_id_on_a,
+        port_id_on_b,
+        chan_id_on_b,
         data,
         timeout_height_on_b: msg.timeout_height_on_b,
         timeout_timestamp_on_b: msg.timeout_timestamp_on_b,
@@ -105,24 +99,24 @@ where
     C: TryInto<PrefixedCoin>,
     Ctx: TokenTransferExecutionContext,
 {
-    let chan_end_path_on_a = ChannelEndPath::new(&msg.port_on_a, &msg.chan_on_a);
+    let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let chan_end_on_a = ctx_a
         .channel_end(&chan_end_path_on_a)
         .map_err(TokenTransferError::ContextError)?;
 
-    let port_on_b = chan_end_on_a.counterparty().port_id().clone();
-    let chan_on_b = chan_end_on_a
+    let port_id_on_b = chan_end_on_a.counterparty().port_id().clone();
+    let chan_id_on_b = chan_end_on_a
         .counterparty()
         .channel_id()
         .ok_or_else(|| TokenTransferError::DestinationChannelNotFound {
-            port_id: msg.port_on_a.clone(),
-            channel_id: msg.chan_on_a.clone(),
+            port_id: msg.port_id_on_a.clone(),
+            channel_id: msg.chan_id_on_a.clone(),
         })?
         .clone();
 
     // get the next sequence
-    let seq_send_path_on_a = SeqSendPath::new(&msg.port_on_a, &msg.chan_on_a);
-    let sequence = ctx_a
+    let seq_send_path_on_a = SeqSendPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
+    let seq_on_a = ctx_a
         .get_next_sequence_send(&seq_send_path_on_a)
         .map_err(TokenTransferError::ContextError)?;
 
@@ -131,10 +125,7 @@ where
         .try_into()
         .map_err(|_| TokenTransferError::InvalidToken)?;
     let denom = token.denom.clone();
-    let coin = Coin {
-        denom: denom.clone(),
-        amount: token.amount,
-    };
+    let coin = Coin::new(denom.clone(), token.amount);
 
     let sender = msg
         .sender
@@ -142,8 +133,8 @@ where
         .try_into()
         .map_err(|_| TokenTransferError::ParseAccountFailure)?;
 
-    if is_sender_chain_source(msg.port_on_a.clone(), msg.chan_on_a.clone(), &denom) {
-        let escrow_address = ctx_a.get_channel_escrow_address(&msg.port_on_a, &msg.chan_on_a)?;
+    if is_sender_chain_source(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone(), &denom) {
+        let escrow_address = ctx_a.get_escrow_account(&msg.port_id_on_a, &msg.chan_id_on_a)?;
         ctx_a.send_coins(&sender, &escrow_address, &coin)?;
     } else {
         ctx_a.burn_coins(&sender, &coin)?;
@@ -159,11 +150,11 @@ where
     };
 
     let packet = Packet {
-        sequence,
-        port_on_a: msg.port_on_a,
-        chan_on_a: msg.chan_on_a,
-        port_on_b,
-        chan_on_b,
+        seq_on_a,
+        port_id_on_a: msg.port_id_on_a,
+        chan_id_on_a: msg.chan_id_on_a,
+        port_id_on_b,
+        chan_id_on_b,
         data,
         timeout_height_on_b: msg.timeout_height_on_b,
         timeout_timestamp_on_b: msg.timeout_timestamp_on_b,

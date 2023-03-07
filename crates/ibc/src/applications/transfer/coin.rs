@@ -30,6 +30,12 @@ pub struct Coin<D> {
     pub amount: Amount,
 }
 
+impl<D> Coin<D> {
+    pub fn new(denom: D, amount: Amount) -> Self {
+        Self { denom, amount }
+    }
+}
+
 impl<D: FromStr> Coin<D>
 where
     D::Err: Into<TokenTransferError>,

@@ -22,9 +22,51 @@ use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::signer::Signer;
 
+pub trait TokenTransferValidationContext: SendPacketValidationContext {
+    type AccountId: TryFrom<Signer>;
+
+    /// Returns the portID for the transfer module.
+    fn get_port(&self) -> Result<PortId, TokenTransferError>;
+
+    /// Fetches the denomination trace for a given hash and returns Some(_) if
+    /// it exists, None otherwise.
+    ///
+    /// Implement only if the host chain supports hashed denominations.
+    fn get_prefixed_denom(
+        &self,
+        hash: [u8; 32],
+    ) -> Result<Option<PrefixedDenom>, TokenTransferError>;
+
+    /// Returns a list of all the denominations that are prefixed with the port
+    /// and channel id of the host chain.
+    fn get_all_prefixed_denoms(&self) -> Result<Vec<PrefixedDenom>, TokenTransferError>;
+
+    /// Returns the escrow account id for a port and channel combination
+    fn get_escrow_account(
+        &self,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+    ) -> Result<Self::AccountId, TokenTransferError>;
+
+    /// Returns Ok() if the account is not blocked from receiving tokens.
+    fn is_account_blocked(&self, account: &Self::AccountId) -> Result<(), TokenTransferError>;
+
+    /// Returns Ok() if the send is enabled.
+    fn is_send_enabled(&self) -> Result<(), TokenTransferError>;
+
+    /// Returns Ok() if the receive is enabled.
+    fn is_receive_enabled(&self) -> Result<(), TokenTransferError>;
+}
+
 pub trait TokenTransferExecutionContext:
     TokenTransferValidationContext + SendPacketExecutionContext
 {
+    /// Sets the portID for the transfer module.
+    fn set_port(&mut self, port_id: PortId) -> Result<(), TokenTransferError>;
+
+    /// Sets a new {trace hash -> denom trace} pair to the store.
+    fn set_prefixed_denom(&mut self, _denom: PrefixedDenom) -> Result<(), TokenTransferError>;
+
     /// This function should enable sending ibc fungible tokens from one account to another
     fn send_coins(
         &mut self,
@@ -46,32 +88,6 @@ pub trait TokenTransferExecutionContext:
         account: &Self::AccountId,
         amt: &PrefixedCoin,
     ) -> Result<(), TokenTransferError>;
-}
-
-pub trait TokenTransferValidationContext: SendPacketValidationContext {
-    type AccountId: TryFrom<Signer>;
-
-    /// get_port returns the portID for the transfer module.
-    fn get_port(&self) -> Result<PortId, TokenTransferError>;
-
-    /// Returns the escrow account id for a port and channel combination
-    fn get_channel_escrow_address(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<Self::AccountId, TokenTransferError>;
-
-    /// Returns true iff send is enabled.
-    fn is_send_enabled(&self) -> bool;
-
-    /// Returns true iff receive is enabled.
-    fn is_receive_enabled(&self) -> bool;
-
-    /// Returns a hash of the prefixed denom.
-    /// Implement only if the host chain supports hashed denominations.
-    fn denom_hash_string(&self, _denom: &PrefixedDenom) -> Option<String> {
-        None
-    }
 }
 
 // https://github.com/cosmos/cosmos-sdk/blob/master/docs/architecture/adr-028-public-key-addresses.md
@@ -262,7 +278,13 @@ pub fn on_recv_packet_execute(
 
     let (mut extras, ack) = match process_recv_packet_execute(ctx, packet, data.clone()) {
         Ok(extras) => (extras, TokenTransferAcknowledgement::success()),
-        Err((extras, error)) => (extras, TokenTransferAcknowledgement::from_error(error)),
+        Err(err) => {
+            let extras = match &err {
+                TokenTransferError::CannotMintCoins { extras } => extras.clone(),
+                _ => ModuleExtras::empty(),
+            };
+            (extras, TokenTransferAcknowledgement::from_error(err))
+        }
     };
 
     let recv_event = RecvEvent {

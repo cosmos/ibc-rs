@@ -201,7 +201,7 @@ mod tests {
 
         let mut msg_to_on_close =
             MsgTimeoutOnClose::try_from(get_dummy_raw_msg_timeout_on_close(36, 5)).unwrap();
-        msg_to_on_close.packet.sequence = 2.into();
+        msg_to_on_close.packet.seq_on_a = 2.into();
         msg_to_on_close.packet.timeout_height_on_b = msg_transfer_two.timeout_height_on_b;
         msg_to_on_close.packet.timeout_timestamp_on_b = msg_transfer_two.timeout_timestamp_on_b;
 
@@ -375,9 +375,9 @@ mod tests {
                 want_pass: true,
                 state_check: Some(Box::new(move |ctx| {
                     ctx.get_packet_commitment(&CommitmentPath::new(
-                        &msg_ack_packet.packet.port_on_a,
-                        &msg_ack_packet.packet.chan_on_a,
-                        msg_ack_packet.packet.sequence,
+                        &msg_ack_packet.packet.port_id_on_a,
+                        &msg_ack_packet.packet.chan_id_on_a,
+                        msg_ack_packet.packet.seq_on_a,
                     ))
                     .is_err()
                 })),

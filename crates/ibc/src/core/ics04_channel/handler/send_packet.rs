@@ -29,22 +29,25 @@ pub fn send_packet_validate(
     ctx_a: &impl SendPacketValidationContext,
     packet: &Packet,
 ) -> Result<(), ContextError> {
-    let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
+    let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     if chan_end_on_a.state_matches(&State::Closed) {
         return Err(PacketError::ChannelClosed {
-            channel_id: packet.chan_on_a.clone(),
+            channel_id: packet.chan_id_on_a.clone(),
         }
         .into());
     }
 
-    let counterparty = Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone()));
+    let counterparty = Counterparty::new(
+        packet.port_id_on_b.clone(),
+        Some(packet.chan_id_on_b.clone()),
+    );
 
     if !chan_end_on_a.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
-            port_id: packet.port_on_b.clone(),
-            channel_id: packet.chan_on_b.clone(),
+            port_id: packet.port_id_on_b.clone(),
+            channel_id: packet.chan_id_on_b.clone(),
         }
         .into());
     }
@@ -82,12 +85,12 @@ pub fn send_packet_validate(
         return Err(PacketError::LowPacketTimestamp.into());
     }
 
-    let seq_send_path_on_a = SeqSendPath::new(&packet.port_on_a, &packet.chan_on_a);
+    let seq_send_path_on_a = SeqSendPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
     let next_seq_send_on_a = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
-    if packet.sequence != next_seq_send_on_a {
+    if packet.seq_on_a != next_seq_send_on_a {
         return Err(PacketError::InvalidPacketSequence {
-            given_sequence: packet.sequence,
+            given_sequence: packet.seq_on_a,
             next_sequence: next_seq_send_on_a,
         }
         .into());
@@ -102,14 +105,14 @@ pub fn send_packet_execute(
     packet: Packet,
 ) -> Result<(), ContextError> {
     {
-        let seq_send_path_on_a = SeqSendPath::new(&packet.port_on_a, &packet.chan_on_a);
+        let seq_send_path_on_a = SeqSendPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
         let next_seq_send_on_a = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
         ctx_a.store_next_sequence_send(&seq_send_path_on_a, next_seq_send_on_a.increment())?;
     }
 
     ctx_a.store_packet_commitment(
-        &CommitmentPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence),
+        &CommitmentPath::new(&packet.port_id_on_a, &packet.chan_id_on_a, packet.seq_on_a),
         compute_packet_commitment(
             &packet.data,
             &packet.timeout_height_on_b,
@@ -119,7 +122,7 @@ pub fn send_packet_execute(
 
     // emit events and logs
     {
-        let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
+        let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
         let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
         let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
 
@@ -198,14 +201,14 @@ mod tests {
             get_dummy_raw_packet(timeout_height_future, timestamp_future.nanoseconds())
                 .try_into()
                 .unwrap();
-        packet.sequence = 1.into();
+        packet.seq_on_a = 1.into();
         packet.data = vec![0];
 
         let mut packet_with_timestamp_old: Packet =
             get_dummy_raw_packet(timeout_height_future, timestamp_ns_past)
                 .try_into()
                 .unwrap();
-        packet_with_timestamp_old.sequence = 1.into();
+        packet_with_timestamp_old.seq_on_a = 1.into();
         packet_with_timestamp_old.data = vec![0];
 
         let client_raw_height = 5;

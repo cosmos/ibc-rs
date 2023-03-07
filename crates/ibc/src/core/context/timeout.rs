@@ -63,7 +63,7 @@ where
         TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),
         TimeoutMsgType::TimeoutOnClose(msg) => (msg.packet, msg.signer),
     };
-    let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
+    let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     // In all cases, this event is emitted
@@ -73,7 +73,7 @@ where
     )));
 
     let commitment_path_on_a =
-        CommitmentPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
+        CommitmentPath::new(&packet.port_id_on_a, &packet.chan_id_on_a, packet.seq_on_a);
 
     // check if we're in the NO-OP case
     if ctx_a.get_packet_commitment(&commitment_path_on_a).is_err() {
@@ -95,9 +95,9 @@ where
     // apply state changes
     let chan_end_on_a = {
         let commitment_path_on_a = CommitmentPath {
-            port_id: packet.port_on_a.clone(),
-            channel_id: packet.chan_on_a.clone(),
-            sequence: packet.sequence,
+            port_id: packet.port_id_on_a.clone(),
+            channel_id: packet.chan_id_on_a.clone(),
+            sequence: packet.seq_on_a,
         };
         ctx_a.delete_packet_commitment(&commitment_path_on_a)?;
 
@@ -120,8 +120,8 @@ where
             let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
 
             ctx_a.emit_ibc_event(IbcEvent::ChannelClosed(ChannelClosed::new(
-                packet.port_on_a.clone(),
-                packet.chan_on_a.clone(),
+                packet.port_id_on_a.clone(),
+                packet.chan_id_on_a.clone(),
                 chan_end_on_a.counterparty().port_id.clone(),
                 chan_end_on_a.counterparty().channel_id.clone(),
                 conn_id_on_a,
@@ -210,7 +210,10 @@ mod tests {
         let chan_end_on_a_ordered = ChannelEnd::new(
             State::Open,
             Order::Ordered,
-            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone())),
+            Counterparty::new(
+                packet.port_id_on_b.clone(),
+                Some(packet.chan_id_on_b.clone()),
+            ),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
         );
@@ -218,7 +221,7 @@ mod tests {
         let chan_end_on_a_unordered = ChannelEnd::new(
             State::Open,
             Order::Unordered,
-            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b)),
+            Counterparty::new(packet.port_id_on_b.clone(), Some(packet.chan_id_on_b)),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
         );
@@ -265,9 +268,9 @@ mod tests {
             )
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_packet_commitment(
-                msg.packet.port_on_a.clone(),
-                msg.packet.chan_on_a.clone(),
-                msg.packet.sequence,
+                msg.packet.port_id_on_a.clone(),
+                msg.packet.chan_id_on_a.clone(),
+                msg.packet.seq_on_a,
                 packet_commitment,
             );
 
@@ -302,9 +305,9 @@ mod tests {
             )
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_packet_commitment(
-                msg.packet.port_on_a.clone(),
-                msg.packet.chan_on_a.clone(),
-                msg.packet.sequence,
+                msg.packet.port_id_on_a.clone(),
+                msg.packet.chan_id_on_a.clone(),
+                msg.packet.seq_on_a,
                 packet_commitment,
             );
 

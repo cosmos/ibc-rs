@@ -2,6 +2,7 @@ use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::timeout::TimeoutHeight;
 use crate::prelude::*;
 use crate::timestamp::Timestamp;
+use crate::utils::hash::hash;
 
 /// Packet commitment
 #[cfg_attr(
@@ -95,20 +96,10 @@ pub(crate) fn compute_packet_commitment(
     let packet_data_hash = hash(packet_data);
     hash_input.append(&mut packet_data_hash.to_vec());
 
-    hash(&hash_input).into()
+    hash(&hash_input).to_vec().into()
 }
 
 /// Compute the commitment for an acknowledgement.
 pub(crate) fn compute_ack_commitment(ack: &Acknowledgement) -> AcknowledgementCommitment {
-    hash(ack.as_ref()).into()
-}
-
-/// Helper function to hash a byte slice using SHA256.
-///
-/// Note that computing commitments with anything other than SHA256 will
-/// break the Merkle proofs of the IBC provable store.
-fn hash(data: impl AsRef<[u8]>) -> Vec<u8> {
-    use sha2::Digest;
-
-    sha2::Sha256::digest(&data).to_vec()
+    hash(ack.as_ref()).to_vec().into()
 }
