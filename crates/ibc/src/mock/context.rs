@@ -12,6 +12,7 @@ use crate::core::ics24_host::path::{
     SeqSendPath,
 };
 use crate::prelude::*;
+use crate::utils::hash::hash;
 
 use alloc::collections::btree_map::BTreeMap;
 use alloc::sync::Arc;
@@ -649,6 +650,9 @@ pub struct MockIbcStore {
 
     // Used by unordered channel
     pub packet_receipt: PortChannelIdMap<BTreeMap<Sequence, Receipt>>,
+
+    /// Tracks the trace hash for the denoms
+    pub trace_hash_to_denom: BTreeMap<[u8; 32], PrefixedDenom>,
 }
 
 impl RelayerContext for MockContext {
@@ -1403,13 +1407,26 @@ impl TokenTransferValidationContext for MockContext {
 
     fn get_prefixed_denom(
         &self,
-        _hash: [u8; 32],
+        hash: [u8; 32],
     ) -> Result<Option<PrefixedDenom>, TokenTransferError> {
-        todo!()
+        let prefixed_denom = self
+            .ibc_store
+            .lock()
+            .trace_hash_to_denom
+            .get(&hash)
+            .cloned();
+        Ok(prefixed_denom)
     }
 
     fn get_all_prefixed_denoms(&self) -> Result<Vec<PrefixedDenom>, TokenTransferError> {
-        todo!()
+        let prefixed_denoms = self
+            .ibc_store
+            .lock()
+            .trace_hash_to_denom
+            .values()
+            .cloned()
+            .collect();
+        Ok(prefixed_denoms)
     }
 
     fn get_escrow_account(
@@ -1444,8 +1461,13 @@ impl TokenTransferExecutionContext for MockContext {
         Ok(())
     }
 
-    fn set_prefixed_denom(&mut self, _denom: PrefixedDenom) -> Result<(), TokenTransferError> {
-        todo!()
+    fn set_prefixed_denom(&mut self, denom: PrefixedDenom) -> Result<(), TokenTransferError> {
+        let trace_hash = hash(&denom.to_string().as_bytes());
+        self.ibc_store
+            .lock()
+            .trace_hash_to_denom
+            .insert(trace_hash, denom);
+        Ok(())
     }
     fn send_coins(
         &mut self,
