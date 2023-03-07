@@ -1462,7 +1462,7 @@ impl TokenTransferExecutionContext for MockContext {
     }
 
     fn set_prefixed_denom(&mut self, denom: PrefixedDenom) -> Result<(), TokenTransferError> {
-        let trace_hash = hash(&denom.to_string().as_bytes());
+        let trace_hash = hash(denom.to_string().as_bytes());
         self.ibc_store
             .lock()
             .trace_hash_to_denom
