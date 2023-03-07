@@ -100,6 +100,8 @@ pub enum TokenTransferError {
     Utf8Decode(Utf8Error),
     /// failed to send coins
     CannotMintCoins { extras: ModuleExtras },
+    /// denomination trace not found for the given hash
+    DenomTraceNotFound,
     /// failed to retrieve data from the storage: `{reason}`
     StorageError { reason: String },
 }

@@ -11,6 +11,7 @@ use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::path::{ChannelEndPath, SeqSendPath};
 use crate::events::ModuleEvent;
 use crate::prelude::*;
+use crate::utils::hash::hash;
 
 /// This function handles the transfer sending logic.
 /// If this method returns an error, the runtime is expected to rollback all state modifications to
@@ -59,6 +60,10 @@ where
         .try_into()
         .map_err(|_| TokenTransferError::InvalidToken)?;
     let coin = Coin::new(token.denom, token.amount);
+
+    // Check if the prefixed denom is registered on the chain.
+    let denom_hash = hash(coin.denom.to_string().as_bytes());
+    ctx_a.get_prefixed_denom(denom_hash)?;
 
     let _sender: Ctx::AccountId = msg
         .sender

@@ -53,7 +53,8 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
         };
 
         let denom_hash = hash(coin.denom.to_string().as_bytes());
-        if ctx.get_prefixed_denom(denom_hash)?.is_none() {
+        let restored_prefixed_denom = ctx.get_prefixed_denom(denom_hash);
+        if let Err(TokenTransferError::DenomTraceNotFound) = restored_prefixed_denom {
             ctx.set_prefixed_denom(coin.denom.clone())?;
         }
 

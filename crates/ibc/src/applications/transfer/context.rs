@@ -30,10 +30,7 @@ pub trait TokenTransferValidationContext: SendPacketValidationContext {
 
     /// Fetches the denomination trace for a given hash and returns Some(_)
     /// if it exists, None otherwise.
-    fn get_prefixed_denom(
-        &self,
-        hash: [u8; 32],
-    ) -> Result<Option<PrefixedDenom>, TokenTransferError>;
+    fn get_prefixed_denom(&self, hash: [u8; 32]) -> Result<PrefixedDenom, TokenTransferError>;
 
     /// Returns a list of all the denominations that are prefixed with the port
     /// and channel id of the host chain.

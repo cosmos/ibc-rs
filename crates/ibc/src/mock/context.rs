@@ -1423,16 +1423,14 @@ impl TokenTransferValidationContext for MockContext {
         Ok(port_id)
     }
 
-    fn get_prefixed_denom(
-        &self,
-        hash: [u8; 32],
-    ) -> Result<Option<PrefixedDenom>, TokenTransferError> {
+    fn get_prefixed_denom(&self, hash: [u8; 32]) -> Result<PrefixedDenom, TokenTransferError> {
         let prefixed_denom = self
             .ibc_store
             .lock()
             .trace_hash_to_denom
             .get(&hash)
-            .cloned();
+            .cloned()
+            .ok_or(TokenTransferError::DenomTraceNotFound)?;
         Ok(prefixed_denom)
     }
 
