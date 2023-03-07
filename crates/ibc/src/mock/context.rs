@@ -4,7 +4,7 @@ use crate::applications::transfer::context::{
     cosmos_adr028_escrow_address, TokenTransferExecutionContext, TokenTransferValidationContext,
 };
 use crate::applications::transfer::error::TokenTransferError;
-use crate::applications::transfer::{PrefixedCoin, PrefixedDenom};
+use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, MODULE_ID_STR};
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
@@ -551,13 +551,6 @@ impl MockContext {
             }
         }
         Ok(())
-    }
-
-    pub fn scope_port_to_module(&mut self, port_id: PortId, module_id: ModuleId) {
-        self.ibc_store
-            .lock()
-            .port_to_module
-            .insert(port_id, module_id);
     }
 
     pub fn latest_client_states(&self, client_id: &ClientId) -> Box<dyn ClientState> {
@@ -1469,11 +1462,11 @@ impl TokenTransferValidationContext for MockContext {
 
 impl TokenTransferExecutionContext for MockContext {
     fn set_port(&mut self, port_id: PortId) -> Result<(), TokenTransferError> {
-        let module_id = ModuleId::new(format!("module{port_id}").into()).unwrap();
+        let transfer_module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
         self.ibc_store
             .lock()
             .port_to_module
-            .insert(port_id, module_id);
+            .insert(port_id, transfer_module_id);
         Ok(())
     }
 

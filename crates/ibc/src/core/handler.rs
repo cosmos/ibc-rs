@@ -36,6 +36,7 @@ mod tests {
 
     use test_log::test;
 
+    use crate::applications::transfer::context::TokenTransferExecutionContext;
     use crate::applications::transfer::error::TokenTransferError;
     use crate::applications::transfer::msgs::transfer::test_util::get_dummy_transfer_packet;
     use crate::applications::transfer::relay::send_transfer::send_transfer;
@@ -208,6 +209,7 @@ mod tests {
         msg_to_on_close.packet.timeout_timestamp_on_b = msg_transfer_two.timeout_timestamp_on_b;
 
         let denom = msg_transfer_two.token.denom.clone();
+        ctx.set_prefixed_denom(denom.clone()).unwrap();
         let packet_data = {
             let data = PacketData {
                 token: PrefixedCoin {
@@ -239,7 +241,7 @@ mod tests {
             "ICS26 routing dispatch test 'client creation' failed for message {create_client_msg:?} with result: {res:?}",
         );
 
-        ctx.scope_port_to_module(msg_chan_init.port_id_on_a.clone(), transfer_module_id);
+        ctx.set_port(msg_chan_init.port_id_on_a.clone()).unwrap();
 
         // Figure out the ID of the client that was just created.
         let client_id_event = ctx.events.first();
@@ -520,7 +522,7 @@ mod tests {
         ctx.add_route(module_id.clone(), module).unwrap();
 
         // Note: messages will be using the default port
-        ctx.scope_port_to_module(PortId::default(), module_id);
+        ctx.set_port(PortId::default()).unwrap();
 
         ctx
     }
