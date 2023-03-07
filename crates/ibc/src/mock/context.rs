@@ -552,14 +552,6 @@ impl MockContext {
         Ok(())
     }
 
-    pub fn add_port(&mut self, port_id: PortId) {
-        let module_id = ModuleId::new(format!("module{port_id}").into()).unwrap();
-        self.ibc_store
-            .lock()
-            .port_to_module
-            .insert(port_id, module_id);
-    }
-
     pub fn scope_port_to_module(&mut self, port_id: PortId, module_id: ModuleId) {
         self.ibc_store
             .lock()
@@ -1443,8 +1435,13 @@ impl TokenTransferValidationContext for MockContext {
 }
 
 impl TokenTransferExecutionContext for MockContext {
-    fn set_port(&mut self, _port_id: PortId) -> Result<(), TokenTransferError> {
-        todo!()
+    fn set_port(&mut self, port_id: PortId) -> Result<(), TokenTransferError> {
+        let module_id = ModuleId::new(format!("module{port_id}").into()).unwrap();
+        self.ibc_store
+            .lock()
+            .port_to_module
+            .insert(port_id, module_id);
+        Ok(())
     }
 
     fn set_prefixed_denom(&mut self, _denom: PrefixedDenom) -> Result<(), TokenTransferError> {
