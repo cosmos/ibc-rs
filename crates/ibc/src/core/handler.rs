@@ -147,7 +147,7 @@ mod tests {
         let mut ctx = {
             let mut ctx = MockContext::default();
             let module = DummyTransferModule::new();
-            ctx.add_route(transfer_module_id.clone(), module).unwrap();
+            ctx.add_route(transfer_module_id, module).unwrap();
 
             ctx
         };
@@ -519,7 +519,7 @@ mod tests {
             );
         let module = DummyTransferModule::new();
 
-        ctx.add_route(module_id.clone(), module).unwrap();
+        ctx.add_route(module_id, module).unwrap();
 
         // Note: messages will be using the default port
         ctx.set_port(PortId::default()).unwrap();
