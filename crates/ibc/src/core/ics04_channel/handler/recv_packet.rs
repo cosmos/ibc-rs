@@ -1,4 +1,5 @@
 use crate::core::ics03_connection::connection::State as ConnectionState;
+use crate::core::ics03_connection::delay::verify_conn_delay_passed;
 use crate::core::ics04_channel::channel::{Counterparty, Order, State};
 use crate::core::ics04_channel::commitment::compute_packet_commitment;
 use crate::core::ics04_channel::error::ChannelError;
@@ -92,12 +93,13 @@ where
             msg.packet.seq_on_a,
         );
 
+        verify_conn_delay_passed(ctx_b, msg.proof_height_on_a, &conn_end_on_b)?;
+
         // Verify the proof for the packet against the chain store.
         client_state_of_a_on_b
             .verify_packet_data(
-                ctx_b,
                 msg.proof_height_on_a,
-                &conn_end_on_b,
+                conn_end_on_b.counterparty().prefix(),
                 &msg.proof_commitment_on_a,
                 consensus_state_of_a_on_b.root(),
                 &commitment_path_on_a,
@@ -167,6 +169,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::core::ics04_channel::handler::recv_packet::validate;
+    use crate::core::ExecutionContext;
     use crate::prelude::*;
     use crate::Height;
     use rstest::*;
@@ -268,7 +271,7 @@ mod tests {
         } = fixture;
 
         let packet = msg.packet.clone();
-        let context = context
+        let mut context = context
             .with_client(&ClientId::default(), client_height)
             .with_connection(ConnectionId::default(), conn_end_on_b)
             .with_channel(
@@ -288,6 +291,21 @@ mod tests {
                 packet.chan_id_on_b.clone(),
                 packet.seq_on_a,
             );
+
+        context
+            .store_update_time(
+                ClientId::default(),
+                client_height,
+                Timestamp::from_nanoseconds(1000).unwrap(),
+            )
+            .unwrap();
+        context
+            .store_update_height(
+                ClientId::default(),
+                client_height,
+                Height::new(0, 5).unwrap(),
+            )
+            .unwrap();
 
         let res = validate(&context, &msg);
 

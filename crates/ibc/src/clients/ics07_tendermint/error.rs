@@ -2,7 +2,6 @@ use crate::prelude::*;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::timestamp::{Timestamp, TimestampOverflowError};
 use crate::Height;
 
 use core::time::Duration;
@@ -66,18 +65,6 @@ pub enum Error {
     HeaderTimestampTooHigh { actual: String, max: String },
     /// given other previous updates, header timestamp should be at least `{min}`, but was `{actual}`
     HeaderTimestampTooLow { actual: String, min: String },
-    /// timestamp overflowed error: `{0}`
-    TimestampOverflow(TimestampOverflowError),
-    /// not enough time elapsed, current timestamp `{current_time}` is still less than earliest acceptable timestamp `{earliest_time}`
-    NotEnoughTimeElapsed {
-        current_time: Timestamp,
-        earliest_time: Timestamp,
-    },
-    /// not enough blocks elapsed, current height `{current_height}` is still less than earliest acceptable height `{earliest_height}`
-    NotEnoughBlocksElapsed {
-        current_height: Height,
-        earliest_height: Height,
-    },
     /// header revision height = `{height}` is invalid
     InvalidHeaderHeight { height: u64 },
     /// the header's current/trusted revision number (`{current_revision}`) and the update's revision number (`{update_revision}`) should be the same
@@ -135,7 +122,6 @@ impl std::error::Error for Error {
             Self::InvalidTendermintTrustThreshold(e) => Some(e),
             Self::InvalidRawHeader(e) => Some(e),
             Self::Decode(e) => Some(e),
-            Self::TimestampOverflow(e) => Some(e),
             _ => None,
         }
     }

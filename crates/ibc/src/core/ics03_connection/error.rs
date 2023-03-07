@@ -3,6 +3,7 @@ use crate::core::ics03_connection::version::Version;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::signer::SignerError;
+use crate::timestamp::{Timestamp, TimestampOverflowError};
 use crate::Height;
 
 use alloc::string::String;
@@ -64,6 +65,18 @@ pub enum ConnectionError {
     },
     /// invalid client state: `{reason}`
     InvalidClientState { reason: String },
+    /// not enough blocks elapsed, current height `{current_host_height}` is still less than earliest acceptable height `{earliest_valid_height}`
+    NotEnoughBlocksElapsed {
+        current_host_height: Height,
+        earliest_valid_height: Height,
+    },
+    /// not enough time elapsed, current timestamp `{current_host_time}` is still less than earliest acceptable timestamp `{earliest_valid_time}`
+    NotEnoughTimeElapsed {
+        current_host_time: Timestamp,
+        earliest_valid_time: Timestamp,
+    },
+    /// timestamp overflowed error: `{0}`
+    TimestampOverflow(TimestampOverflowError),
     /// other error: `{description}`
     Other { description: String },
 }
@@ -82,6 +95,7 @@ impl std::error::Error for ConnectionError {
             Self::ClientStateVerificationFailure {
                 client_error: e, ..
             } => Some(e),
+            Self::TimestampOverflow(e) => Some(e),
             _ => None,
         }
     }

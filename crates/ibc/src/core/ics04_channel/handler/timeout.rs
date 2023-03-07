@@ -1,3 +1,4 @@
+use crate::core::ics03_connection::delay::verify_conn_delay_passed;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::commitment::compute_packet_commitment;
@@ -105,6 +106,9 @@ where
             }
             .into());
         }
+
+        verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
+
         let next_seq_recv_verification_result = if chan_end_on_a.order_matches(&Order::Ordered) {
             if msg.packet.seq_on_a < msg.next_seq_recv_on_b {
                 return Err(PacketError::InvalidPacketSequence {
@@ -116,9 +120,8 @@ where
             let seq_recv_path_on_b =
                 SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
             client_state_of_b_on_a.verify_next_sequence_recv(
-                ctx_a,
                 msg.proof_height_on_b,
-                &conn_end_on_a,
+                conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 &seq_recv_path_on_b,
@@ -131,9 +134,8 @@ where
                 msg.packet.seq_on_a,
             );
             client_state_of_b_on_a.verify_packet_receipt_absence(
-                ctx_a,
                 msg.proof_height_on_b,
-                &conn_end_on_a,
+                conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 &receipt_path_on_b,
@@ -153,7 +155,9 @@ where
 #[cfg(test)]
 mod tests {
     use crate::core::ics04_channel::commitment::compute_packet_commitment;
+    use crate::core::ExecutionContext;
     use crate::prelude::*;
+    use crate::timestamp::Timestamp;
     use rstest::*;
 
     use crate::core::ics02_client::height::Height;
@@ -336,7 +340,7 @@ mod tests {
 
         let packet = msg.packet.clone();
 
-        let context = context
+        let mut context = context
             .with_client(&ClientId::default(), client_height)
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_channel(
@@ -350,6 +354,21 @@ mod tests {
                 packet.seq_on_a,
                 packet_commitment,
             );
+
+        context
+            .store_update_time(
+                ClientId::default(),
+                client_height,
+                Timestamp::from_nanoseconds(1000).unwrap(),
+            )
+            .unwrap();
+        context
+            .store_update_height(
+                ClientId::default(),
+                client_height,
+                Height::new(0, 5).unwrap(),
+            )
+            .unwrap();
 
         let res = validate(&context, &msg);
 
@@ -370,7 +389,7 @@ mod tests {
 
         let packet = msg.packet.clone();
 
-        let context = context
+        let mut context = context
             .with_client(&ClientId::default(), client_height)
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_channel(
@@ -384,6 +403,21 @@ mod tests {
                 packet.seq_on_a,
                 packet_commitment,
             );
+
+        context
+            .store_update_time(
+                ClientId::default(),
+                client_height,
+                Timestamp::from_nanoseconds(1000).unwrap(),
+            )
+            .unwrap();
+        context
+            .store_update_height(
+                ClientId::default(),
+                client_height,
+                Height::new(0, 4).unwrap(),
+            )
+            .unwrap();
 
         let res = validate(&context, &msg);
 

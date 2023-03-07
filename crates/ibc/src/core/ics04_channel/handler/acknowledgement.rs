@@ -1,4 +1,5 @@
 use crate::core::ics03_connection::connection::State as ConnectionState;
+use crate::core::ics03_connection::delay::verify_conn_delay_passed;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::commitment::{compute_ack_commitment, compute_packet_commitment};
@@ -107,12 +108,14 @@ where
         let ack_commitment = compute_ack_commitment(&msg.acknowledgement);
         let ack_path_on_b =
             AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
+
+        verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
+
         // Verify the proof for the packet against the chain store.
         client_state_on_a
             .verify_packet_acknowledgement(
-                ctx_a,
                 msg.proof_height_on_b,
-                &conn_end_on_a,
+                conn_end_on_a.counterparty().prefix(),
                 &msg.proof_acked_on_b,
                 consensus_state.root(),
                 &ack_path_on_b,
@@ -134,7 +137,9 @@ mod tests {
     use crate::core::ics04_channel::handler::acknowledgement::validate;
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::PortId;
+    use crate::core::ExecutionContext;
     use crate::prelude::*;
+    use crate::timestamp::Timestamp;
     use rstest::*;
     use test_log::test;
 
@@ -164,9 +169,7 @@ mod tests {
     #[fixture]
     fn fixture() -> Fixture {
         let context = MockContext::default();
-
         let client_height = Height::new(0, 2).unwrap();
-
         let msg = MsgAcknowledgement::try_from(get_dummy_raw_msg_acknowledgement(
             client_height.revision_height(),
         ))
@@ -256,7 +259,7 @@ mod tests {
             client_height,
             ..
         } = fixture;
-        let context = context
+        let mut context = context
             .with_client(&ClientId::default(), client_height)
             .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a)
             .with_connection(ConnectionId::default(), conn_end_on_a)
@@ -266,6 +269,20 @@ mod tests {
                 msg.packet.seq_on_a,
                 packet_commitment,
             );
+        context
+            .store_update_time(
+                ClientId::default(),
+                client_height,
+                Timestamp::from_nanoseconds(1000).unwrap(),
+            )
+            .unwrap();
+        context
+            .store_update_height(
+                ClientId::default(),
+                client_height,
+                Height::new(0, 4).unwrap(),
+            )
+            .unwrap();
 
         let res = validate(&context, &msg);
 
