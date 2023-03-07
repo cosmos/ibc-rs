@@ -1,5 +1,8 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
+use crate::applications::transfer::context::{
+    cosmos_adr028_escrow_address, TokenTransferExecutionContext, TokenTransferValidationContext,
+};
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
@@ -15,6 +18,7 @@ use core::fmt::Debug;
 use core::ops::{Add, Sub};
 use core::time::Duration;
 use parking_lot::Mutex;
+use subtle_encoding::bech32;
 
 use ibc_proto::google::protobuf::Any;
 use tracing::debug;
@@ -462,7 +466,11 @@ impl MockContext {
         self
     }
 
-    pub fn add_route(&mut self, module_id: ModuleId, module: impl Module) -> Result<(), String> {
+    pub fn add_route(
+        &mut self,
+        module_id: ModuleId,
+        module: impl Module + 'static,
+    ) -> Result<(), String> {
         match self.router.insert(module_id, Arc::new(module)) {
             None => Ok(()),
             Some(_) => Err("Duplicate module_id".to_owned()),
@@ -674,7 +682,19 @@ impl Router for MockContext {
         self.router.get(module_id).map(Arc::as_ref)
     }
     fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module> {
-        self.router.get_mut(module_id).and_then(Arc::get_mut)
+        // NOTE: The following:
+
+        // self.router.get_mut(module_id).and_then(Arc::get_mut)
+
+        // doesn't work due to a compiler bug. So we expand it out manually.
+
+        match self.router.get_mut(module_id) {
+            Some(arc_mod) => match Arc::get_mut(arc_mod) {
+                Some(m) => Some(m),
+                None => None,
+            },
+            None => None,
+        }
     }
 
     fn has_route(&self, module_id: &ModuleId) -> bool {
@@ -1377,6 +1397,58 @@ impl ExecutionContext for MockContext {
 
     fn log_message(&mut self, message: String) {
         self.logs.push(message);
+    }
+}
+
+impl TokenTransferValidationContext for MockContext {
+    type AccountId = Signer;
+
+    fn get_port(&self) -> Result<PortId, crate::applications::transfer::error::TokenTransferError> {
+        Ok(PortId::transfer())
+    }
+
+    fn get_channel_escrow_address(
+        &self,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+    ) -> Result<Self::AccountId, crate::applications::transfer::error::TokenTransferError> {
+        let addr = cosmos_adr028_escrow_address(port_id, channel_id);
+        Ok(bech32::encode("cosmos", addr).parse().unwrap())
+    }
+
+    fn is_send_enabled(&self) -> bool {
+        true
+    }
+
+    fn is_receive_enabled(&self) -> bool {
+        true
+    }
+}
+
+impl TokenTransferExecutionContext for MockContext {
+    fn send_coins(
+        &mut self,
+        _from: &Self::AccountId,
+        _to: &Self::AccountId,
+        _amt: &crate::applications::transfer::PrefixedCoin,
+    ) -> Result<(), crate::applications::transfer::error::TokenTransferError> {
+        Ok(())
+    }
+
+    fn mint_coins(
+        &mut self,
+        _account: &Self::AccountId,
+        _amt: &crate::applications::transfer::PrefixedCoin,
+    ) -> Result<(), crate::applications::transfer::error::TokenTransferError> {
+        Ok(())
+    }
+
+    fn burn_coins(
+        &mut self,
+        _account: &Self::AccountId,
+        _amt: &crate::applications::transfer::PrefixedCoin,
+    ) -> Result<(), crate::applications::transfer::error::TokenTransferError> {
+        Ok(())
     }
 }
 

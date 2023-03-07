@@ -2,7 +2,6 @@ use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::prelude::*;
 
 use alloc::borrow::{Borrow, Cow};
-use core::any::Any;
 use core::{
     fmt::{Debug, Display, Error as FmtError, Formatter},
     str::FromStr,
@@ -65,7 +64,7 @@ impl Borrow<str> for ModuleId {
     }
 }
 
-pub trait Module: AsAnyMut + Debug {
+pub trait Module: Debug {
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init_validate(
         &self,
@@ -211,14 +210,4 @@ pub trait Module: AsAnyMut + Debug {
         packet: &Packet,
         relayer: &Signer,
     ) -> (ModuleExtras, Result<(), PacketError>);
-}
-
-pub trait AsAnyMut: Any {
-    fn as_any_mut(&mut self) -> &mut dyn Any;
-}
-
-impl<M: Any + Module> AsAnyMut for M {
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
-    }
 }
