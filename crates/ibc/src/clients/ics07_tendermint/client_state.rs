@@ -227,35 +227,6 @@ impl ClientState {
         })
     }
 
-    /// Verify the time and height delays
-    pub fn verify_delay_passed(
-        current_time: Timestamp,
-        current_height: Height,
-        processed_time: Timestamp,
-        processed_height: Height,
-        delay_period_time: Duration,
-        delay_period_blocks: u64,
-    ) -> Result<(), Error> {
-        let earliest_time =
-            (processed_time + delay_period_time).map_err(Error::TimestampOverflow)?;
-        if !(current_time == earliest_time || current_time.after(&earliest_time)) {
-            return Err(Error::NotEnoughTimeElapsed {
-                current_time,
-                earliest_time,
-            });
-        }
-
-        let earliest_height = processed_height.add(delay_period_blocks);
-        if current_height < earliest_height {
-            return Err(Error::NotEnoughBlocksElapsed {
-                current_height,
-                earliest_height,
-            });
-        }
-
-        Ok(())
-    }
-
     /// Verify that the client is at a sufficient height and unfrozen at the given height
     pub fn verify_height(&self, height: Height) -> Result<(), Error> {
         if self.latest_height < height {
@@ -887,9 +858,8 @@ impl Ics2ClientState for ClientState {
 
     fn verify_packet_data(
         &self,
-        ctx: &dyn ValidationContext,
         height: Height,
-        connection_end: &ConnectionEnd,
+        prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         commitment_path: &CommitmentPath,
@@ -897,11 +867,10 @@ impl Ics2ClientState for ClientState {
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
-        verify_delay_passed(ctx, height, connection_end)?;
 
         verify_membership(
             client_state,
-            connection_end.counterparty().prefix(),
+            prefix,
             proof,
             root,
             commitment_path.clone(),
@@ -911,9 +880,8 @@ impl Ics2ClientState for ClientState {
 
     fn verify_packet_acknowledgement(
         &self,
-        ctx: &dyn ValidationContext,
         height: Height,
-        connection_end: &ConnectionEnd,
+        prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         ack_path: &AckPath,
@@ -921,11 +889,10 @@ impl Ics2ClientState for ClientState {
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
-        verify_delay_passed(ctx, height, connection_end)?;
 
         verify_membership(
             client_state,
-            connection_end.counterparty().prefix(),
+            prefix,
             proof,
             root,
             ack_path.clone(),
@@ -933,12 +900,10 @@ impl Ics2ClientState for ClientState {
         )
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn verify_next_sequence_recv(
         &self,
-        ctx: &dyn ValidationContext,
         height: Height,
-        connection_end: &ConnectionEnd,
+        prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         seq_recv_path: &SeqRecvPath,
@@ -946,7 +911,6 @@ impl Ics2ClientState for ClientState {
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
-        verify_delay_passed(ctx, height, connection_end)?;
 
         let mut seq_bytes = Vec::new();
         u64::from(sequence)
@@ -955,7 +919,7 @@ impl Ics2ClientState for ClientState {
 
         verify_membership(
             client_state,
-            connection_end.counterparty().prefix(),
+            prefix,
             proof,
             root,
             seq_recv_path.clone(),
@@ -963,27 +927,18 @@ impl Ics2ClientState for ClientState {
         )
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn verify_packet_receipt_absence(
         &self,
-        ctx: &dyn ValidationContext,
         height: Height,
-        connection_end: &ConnectionEnd,
+        prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         receipt_path: &ReceiptPath,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(height)?;
-        verify_delay_passed(ctx, height, connection_end)?;
 
-        verify_non_membership(
-            client_state,
-            connection_end.counterparty().prefix(),
-            proof,
-            root,
-            receipt_path.clone(),
-        )
+        verify_non_membership(client_state, prefix, proof, root, receipt_path.clone())
     }
 }
 
@@ -1026,46 +981,6 @@ fn verify_non_membership(
     merkle_proof
         .verify_non_membership(&client_state.proof_specs, root.clone().into(), merkle_path)
         .map_err(ClientError::Ics23Verification)
-}
-
-fn verify_delay_passed(
-    ctx: &dyn ValidationContext,
-    height: Height,
-    connection_end: &ConnectionEnd,
-) -> Result<(), ClientError> {
-    let current_timestamp = ctx.host_timestamp().map_err(|e| ClientError::Other {
-        description: e.to_string(),
-    })?;
-    let current_height = ctx.host_height().map_err(|e| ClientError::Other {
-        description: e.to_string(),
-    })?;
-
-    let client_id = connection_end.client_id();
-    let processed_time =
-        ctx.client_update_time(client_id, &height)
-            .map_err(|_| Error::ProcessedTimeNotFound {
-                client_id: client_id.clone(),
-                height,
-            })?;
-    let processed_height = ctx.client_update_height(client_id, &height).map_err(|_| {
-        Error::ProcessedHeightNotFound {
-            client_id: client_id.clone(),
-            height,
-        }
-    })?;
-
-    let delay_period_time = connection_end.delay_period();
-    let delay_period_height = ctx.block_delay(&delay_period_time);
-
-    ClientState::verify_delay_passed(
-        current_timestamp,
-        current_height,
-        processed_time,
-        processed_height,
-        delay_period_time,
-        delay_period_height,
-    )
-    .map_err(|e| e.into())
 }
 
 fn downcast_tm_client_state(cs: &dyn Ics2ClientState) -> Result<&ClientState, ClientError> {
@@ -1234,7 +1149,7 @@ mod tests {
     use crate::core::ics02_client::trust_threshold::TrustThreshold;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ChainId;
-    use crate::timestamp::{Timestamp, ZERO_DURATION};
+    use crate::timestamp::ZERO_DURATION;
 
     #[derive(Clone, Debug, PartialEq)]
     struct ClientStateParams {
@@ -1412,84 +1327,6 @@ mod tests {
                 test.name,
                 test.params.clone(),
                 cs_result.err(),
-            );
-        }
-    }
-
-    #[test]
-    fn client_state_verify_delay_passed() {
-        #[derive(Debug, Clone)]
-        struct Params {
-            current_time: Timestamp,
-            current_height: Height,
-            processed_time: Timestamp,
-            processed_height: Height,
-            delay_period_time: Duration,
-            delay_period_blocks: u64,
-        }
-        struct Test {
-            name: String,
-            params: Params,
-            want_pass: bool,
-        }
-        let now = Timestamp::now();
-
-        let tests: Vec<Test> = vec![
-            Test {
-                name: "Successful delay verification".to_string(),
-                params: Params {
-                    current_time: (now + Duration::from_nanos(2000)).unwrap(),
-                    current_height: Height::new(0, 5).unwrap(),
-                    processed_time: (now + Duration::from_nanos(1000)).unwrap(),
-                    processed_height: Height::new(0, 3).unwrap(),
-                    delay_period_time: Duration::from_nanos(500),
-                    delay_period_blocks: 2,
-                },
-                want_pass: true,
-            },
-            Test {
-                name: "Delay period(time) has not elapsed".to_string(),
-                params: Params {
-                    current_time: (now + Duration::from_nanos(1200)).unwrap(),
-                    current_height: Height::new(0, 5).unwrap(),
-                    processed_time: (now + Duration::from_nanos(1000)).unwrap(),
-                    processed_height: Height::new(0, 3).unwrap(),
-                    delay_period_time: Duration::from_nanos(500),
-                    delay_period_blocks: 2,
-                },
-                want_pass: false,
-            },
-            Test {
-                name: "Delay period(blocks) has not elapsed".to_string(),
-                params: Params {
-                    current_time: (now + Duration::from_nanos(2000)).unwrap(),
-                    current_height: Height::new(0, 5).unwrap(),
-                    processed_time: (now + Duration::from_nanos(1000)).unwrap(),
-                    processed_height: Height::new(0, 4).unwrap(),
-                    delay_period_time: Duration::from_nanos(500),
-                    delay_period_blocks: 2,
-                },
-                want_pass: false,
-            },
-        ];
-
-        for test in tests {
-            let res = ClientState::verify_delay_passed(
-                test.params.current_time,
-                test.params.current_height,
-                test.params.processed_time,
-                test.params.processed_height,
-                test.params.delay_period_time,
-                test.params.delay_period_blocks,
-            );
-
-            assert_eq!(
-                test.want_pass,
-                res.is_ok(),
-                "ClientState::verify_delay_passed() failed for test {}, \nmsg{:?} with error {:?}",
-                test.name,
-                test.params.clone(),
-                res.err(),
             );
         }
     }

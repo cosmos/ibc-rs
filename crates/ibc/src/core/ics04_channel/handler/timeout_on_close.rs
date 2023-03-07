@@ -1,3 +1,4 @@
+use crate::core::ics03_connection::delay::verify_conn_delay_passed;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order};
 use crate::core::ics04_channel::commitment::compute_packet_commitment;
@@ -116,6 +117,8 @@ where
             .map_err(ChannelError::VerifyChannelFailed)
             .map_err(PacketError::Channel)?;
 
+        verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
+
         let next_seq_recv_verification_result = if chan_end_on_a.order_matches(&Order::Ordered) {
             if packet.sequence < msg.next_seq_recv_on_b {
                 return Err(PacketError::InvalidPacketSequence {
@@ -126,9 +129,8 @@ where
             }
             let seq_recv_path_on_b = SeqRecvPath::new(&packet.port_on_b, &packet.chan_on_b);
             client_state_of_b_on_a.verify_next_sequence_recv(
-                ctx_a,
                 msg.proof_height_on_b,
-                &conn_end_on_a,
+                conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 &seq_recv_path_on_b,
@@ -141,9 +143,8 @@ where
                 msg.packet.sequence,
             );
             client_state_of_b_on_a.verify_packet_receipt_absence(
-                ctx_a,
                 msg.proof_height_on_b,
-                &conn_end_on_a,
+                conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 &receipt_path_on_b,
@@ -165,8 +166,10 @@ mod tests {
     use crate::core::ics04_channel::commitment::compute_packet_commitment;
     use crate::core::ics04_channel::commitment::PacketCommitment;
     use crate::core::ics04_channel::handler::timeout_on_close::validate;
+    use crate::core::ExecutionContext;
     use crate::mock::context::MockContext;
     use crate::prelude::*;
+    use crate::timestamp::Timestamp;
     use crate::Height;
     use rstest::*;
 
@@ -284,7 +287,7 @@ mod tests {
             chan_end_on_a,
             ..
         } = fixture;
-        let context = context
+        let mut context = context
             .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a)
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_packet_commitment(
@@ -293,6 +296,21 @@ mod tests {
                 msg.packet.sequence,
                 packet_commitment,
             );
+
+        context
+            .store_update_time(
+                ClientId::default(),
+                Height::new(0, 2).unwrap(),
+                Timestamp::from_nanoseconds(5000).unwrap(),
+            )
+            .unwrap();
+        context
+            .store_update_height(
+                ClientId::default(),
+                Height::new(0, 2).unwrap(),
+                Height::new(0, 5).unwrap(),
+            )
+            .unwrap();
 
         let res = validate(&context, &msg);
 

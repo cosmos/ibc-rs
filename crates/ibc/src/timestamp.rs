@@ -21,7 +21,7 @@ pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 /// represented as a `u64` Unix timestamp in nanoseconds, with 0 representing the absence
 /// of timestamp.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(PartialEq, Eq, Copy, Clone, Debug, Default)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug, Default, PartialOrd, Ord)]
 pub struct Timestamp {
     time: Option<Time>,
 }
@@ -219,16 +219,6 @@ impl Timestamp {
                 }
             }
             _ => Expiry::InvalidTimestamp,
-        }
-    }
-
-    /// Checks whether the current timestamp is strictly more advanced
-    /// than the `other` timestamp. Return true if so, and false
-    /// otherwise.
-    pub fn after(&self, other: &Timestamp) -> bool {
-        match (self.time, other.time) {
-            (Some(time1), Some(time2)) => time1 > time2,
-            _ => false,
         }
     }
 }

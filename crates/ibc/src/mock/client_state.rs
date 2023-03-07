@@ -314,9 +314,8 @@ impl ClientState for MockClientState {
 
     fn verify_packet_data(
         &self,
-        _ctx: &dyn ValidationContext,
         _height: Height,
-        _connection_end: &ConnectionEnd,
+        _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
         _commitment_path: &CommitmentPath,
@@ -327,9 +326,8 @@ impl ClientState for MockClientState {
 
     fn verify_next_sequence_recv(
         &self,
-        _ctx: &dyn ValidationContext,
         _height: Height,
-        _connection_end: &ConnectionEnd,
+        _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
         _seq_recv_path: &SeqRecvPath,
@@ -340,9 +338,8 @@ impl ClientState for MockClientState {
 
     fn verify_packet_receipt_absence(
         &self,
-        _ctx: &dyn ValidationContext,
         _height: Height,
-        _connection_end: &ConnectionEnd,
+        _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
         _receipt_path: &ReceiptPath,
@@ -352,9 +349,8 @@ impl ClientState for MockClientState {
 
     fn verify_packet_acknowledgement(
         &self,
-        _ctx: &dyn ValidationContext,
         _height: Height,
-        _connection_end: &ConnectionEnd,
+        _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
         _ack_path: &AckPath,
