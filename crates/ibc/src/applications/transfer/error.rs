@@ -98,7 +98,7 @@ pub enum TokenTransferError {
     InvalidCoin { coin: String },
     /// decoding raw bytes as UTF8 string error: `{0}`
     Utf8Decode(Utf8Error),
-    /// failed to send coins
+    /// failed to mint coins
     CannotMintCoins { extras: ModuleExtras },
     /// denomination trace not found for the given hash
     DenomTraceNotFound,
