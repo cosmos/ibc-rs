@@ -175,6 +175,11 @@ pub trait Module: Debug {
         Ok(ModuleExtras::empty())
     }
 
+    // Note: no `on_recv_packet_validate()`
+    // the `onRecvPacket` callback always succeeds
+    // if any error occurs, than an "error acknowledgement"
+    // must be returned
+
     fn on_recv_packet_execute(
         &mut self,
         packet: &Packet,

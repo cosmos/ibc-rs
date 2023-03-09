@@ -29,6 +29,7 @@ where
     recv_packet::validate(ctx_b, &msg)
 
     // nothing to validate with the module, since `onRecvPacket` cannot fail.
+    // If any error occurs, then an "error acknowledgement" must be returned.
 }
 
 pub(super) fn recv_packet_execute<ExecCtx>(
