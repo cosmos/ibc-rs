@@ -1,5 +1,44 @@
 # CHANGELOG
 
+## v0.32.0
+
+*March 9, 2023*
+
+This release mainly removes the `'static` bound on the `Module` trait. It exposes
+new methods in the token transfer module to better perform validation.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Move `verify_delay_passed` process and its associated errors under the
+  `ics03_connection` section and reduce entanglements with the
+  `ValidationContext`.
+  ([#404](https://github.com/cosmos/ibc-rs/issues/404))
+- Refactor and privatize Packet/Ack commitment computations for improved security
+  and modularity.
+  ([#470](https://github.com/cosmos/ibc-rs/issues/470))
+- Allow for non-'static bound Modules 
+  [#490](https://github.com/cosmos/ibc-rs/issues/490))
+- Separate the validation from the execution process for `send/mint/burn_coins`
+  operations.
+  ([#502](https://github.com/cosmos/ibc-rs/issues/502))
+- Refactor naming in the Transfer application to align with the repo naming
+  conventions.
+  ([#506](https://github.com/cosmos/ibc-rs/issues/506))
+
+### DEPENDENCIES
+
+- Upgrade ibc-proto-rs to v0.27.0 and tendermint-rs to v0.30.0
+  ([#510](https://github.com/cosmos/ibc-rs/pull/510))
+
+### IMPROVEMENTS
+
+- Use `<&str>::deserialize` instead of `String::deserialize` to avoid an extra
+  allocation ([#496](https://github.com/cosmos/ibc-rs/issues/496))
+- In `test_serialization_roundtrip`, check that round-tripped data is equal
+  ([#497](https://github.com/cosmos/ibc-rs/issues/497))
+
 ## v0.31.0
 
 *February 28, 2023*
