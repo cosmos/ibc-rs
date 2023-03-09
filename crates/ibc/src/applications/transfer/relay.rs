@@ -10,7 +10,7 @@ use super::context::{TokenTransferExecutionContext, TokenTransferValidationConte
 pub mod on_recv_packet;
 pub mod send_transfer;
 
-pub fn refund_packet_token(
+pub fn refund_packet_token_execute(
     ctx: &mut impl TokenTransferExecutionContext,
     packet: &Packet,
     data: &PacketData,
@@ -30,23 +30,35 @@ pub fn refund_packet_token(
         let escrow_address =
             ctx.get_channel_escrow_address(&packet.port_on_a, &packet.chan_on_a)?;
 
-        ctx.send_coins(&escrow_address, &sender, &data.token)
+        ctx.send_coins_execute(&escrow_address, &sender, &data.token)
     }
     // mint vouchers back to sender
     else {
-        ctx.mint_coins(&sender, &data.token)
+        ctx.mint_coins_execute(&sender, &data.token)
     }
 }
 
-pub fn refund_packet_token_validate<Ctx>(data: &PacketData) -> Result<(), TokenTransferError>
-where
-    Ctx: TokenTransferValidationContext,
-{
-    let _sender: Ctx::AccountId = data
+pub fn refund_packet_token_validate(
+    ctx: &impl TokenTransferValidationContext,
+    packet: &Packet,
+    data: &PacketData,
+) -> Result<(), TokenTransferError> {
+    let sender = data
         .sender
         .clone()
         .try_into()
         .map_err(|_| TokenTransferError::ParseAccountFailure)?;
 
-    Ok(())
+    if is_sender_chain_source(
+        packet.port_on_a.clone(),
+        packet.chan_on_a.clone(),
+        &data.token.denom,
+    ) {
+        let escrow_address =
+            ctx.get_channel_escrow_address(&packet.port_on_a, &packet.chan_on_a)?;
+
+        ctx.send_coins_validate(&escrow_address, &sender, &data.token)
+    } else {
+        ctx.mint_coins_validate(&sender, &data.token)
+    }
 }

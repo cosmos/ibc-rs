@@ -3,6 +3,8 @@
 use crate::applications::transfer::context::{
     cosmos_adr028_escrow_address, TokenTransferExecutionContext, TokenTransferValidationContext,
 };
+use crate::applications::transfer::error::TokenTransferError;
+use crate::applications::transfer::PrefixedCoin;
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
@@ -1403,7 +1405,7 @@ impl ExecutionContext for MockContext {
 impl TokenTransferValidationContext for MockContext {
     type AccountId = Signer;
 
-    fn get_port(&self) -> Result<PortId, crate::applications::transfer::error::TokenTransferError> {
+    fn get_port(&self) -> Result<PortId, TokenTransferError> {
         Ok(PortId::transfer())
     }
 
@@ -1411,7 +1413,7 @@ impl TokenTransferValidationContext for MockContext {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-    ) -> Result<Self::AccountId, crate::applications::transfer::error::TokenTransferError> {
+    ) -> Result<Self::AccountId, TokenTransferError> {
         let addr = cosmos_adr028_escrow_address(port_id, channel_id);
         Ok(bech32::encode("cosmos", addr).parse().unwrap())
     }
@@ -1423,31 +1425,56 @@ impl TokenTransferValidationContext for MockContext {
     fn is_receive_enabled(&self) -> bool {
         true
     }
+
+    fn send_coins_validate(
+        &self,
+        _from_account: &Self::AccountId,
+        _to_account: &Self::AccountId,
+        _coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    fn mint_coins_validate(
+        &self,
+        _account: &Self::AccountId,
+        _coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    fn burn_coins_validate(
+        &self,
+        _account: &Self::AccountId,
+        _coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
 }
 
 impl TokenTransferExecutionContext for MockContext {
-    fn send_coins(
+    fn send_coins_execute(
         &mut self,
-        _from: &Self::AccountId,
-        _to: &Self::AccountId,
-        _amt: &crate::applications::transfer::PrefixedCoin,
-    ) -> Result<(), crate::applications::transfer::error::TokenTransferError> {
+        _from_account: &Self::AccountId,
+        _to_account: &Self::AccountId,
+        _coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError> {
         Ok(())
     }
 
-    fn mint_coins(
+    fn mint_coins_execute(
         &mut self,
         _account: &Self::AccountId,
-        _amt: &crate::applications::transfer::PrefixedCoin,
-    ) -> Result<(), crate::applications::transfer::error::TokenTransferError> {
+        _coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError> {
         Ok(())
     }
 
-    fn burn_coins(
+    fn burn_coins_execute(
         &mut self,
         _account: &Self::AccountId,
-        _amt: &crate::applications::transfer::PrefixedCoin,
-    ) -> Result<(), crate::applications::transfer::error::TokenTransferError> {
+        _coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError> {
         Ok(())
     }
 }

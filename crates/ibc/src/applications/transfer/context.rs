@@ -6,7 +6,7 @@ use super::error::TokenTransferError;
 use crate::applications::transfer::acknowledgement::TokenTransferAcknowledgement;
 use crate::applications::transfer::events::{AckEvent, AckStatusEvent, RecvEvent, TimeoutEvent};
 use crate::applications::transfer::packet::PacketData;
-use crate::applications::transfer::relay::refund_packet_token;
+use crate::applications::transfer::relay::refund_packet_token_execute;
 use crate::applications::transfer::relay::{
     on_recv_packet::process_recv_packet_execute, refund_packet_token_validate,
 };
@@ -21,32 +21,6 @@ use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::signer::Signer;
-
-pub trait TokenTransferExecutionContext:
-    TokenTransferValidationContext + SendPacketExecutionContext
-{
-    /// This function should enable sending ibc fungible tokens from one account to another
-    fn send_coins(
-        &mut self,
-        from: &Self::AccountId,
-        to: &Self::AccountId,
-        amt: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError>;
-
-    /// This function to enable minting ibc tokens to a user account
-    fn mint_coins(
-        &mut self,
-        account: &Self::AccountId,
-        amt: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError>;
-
-    /// This function should enable burning of minted tokens in a user account
-    fn burn_coins(
-        &mut self,
-        account: &Self::AccountId,
-        amt: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError>;
-}
 
 pub trait TokenTransferValidationContext: SendPacketValidationContext {
     type AccountId: TryFrom<Signer>;
@@ -67,11 +41,59 @@ pub trait TokenTransferValidationContext: SendPacketValidationContext {
     /// Returns true iff receive is enabled.
     fn is_receive_enabled(&self) -> bool;
 
+    /// Validates the sender and receiver accounts and the coin inputs
+    fn send_coins_validate(
+        &self,
+        from_account: &Self::AccountId,
+        to_account: &Self::AccountId,
+        coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError>;
+
+    /// Validates the receiver account and the coin input
+    fn mint_coins_validate(
+        &self,
+        account: &Self::AccountId,
+        coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError>;
+
+    /// Validates the sender account and the coin input
+    fn burn_coins_validate(
+        &self,
+        account: &Self::AccountId,
+        coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError>;
+
     /// Returns a hash of the prefixed denom.
     /// Implement only if the host chain supports hashed denominations.
     fn denom_hash_string(&self, _denom: &PrefixedDenom) -> Option<String> {
         None
     }
+}
+
+pub trait TokenTransferExecutionContext:
+    TokenTransferValidationContext + SendPacketExecutionContext
+{
+    /// This function should enable sending ibc fungible tokens from one account to another
+    fn send_coins_execute(
+        &mut self,
+        from_account: &Self::AccountId,
+        to_account: &Self::AccountId,
+        coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError>;
+
+    /// This function to enable minting ibc tokens to a user account
+    fn mint_coins_execute(
+        &mut self,
+        account: &Self::AccountId,
+        coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError>;
+
+    /// This function should enable burning of minted tokens in a user account
+    fn burn_coins_execute(
+        &mut self,
+        account: &Self::AccountId,
+        coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError>;
 }
 
 // https://github.com/cosmos/cosmos-sdk/blob/master/docs/architecture/adr-028-public-key-addresses.md
@@ -277,7 +299,7 @@ pub fn on_recv_packet_execute(
 }
 
 pub fn on_acknowledgement_packet_validate<Ctx>(
-    _ctx: &Ctx,
+    ctx: &Ctx,
     packet: &Packet,
     acknowledgement: &Acknowledgement,
     _relayer: &Signer,
@@ -293,7 +315,7 @@ where
             .map_err(|_| TokenTransferError::AckDeserialization)?;
 
     if !acknowledgement.is_successful() {
-        refund_packet_token_validate::<Ctx>(&data)?;
+        refund_packet_token_validate(ctx, packet, &data)?;
     }
 
     Ok(())
@@ -327,7 +349,7 @@ pub fn on_acknowledgement_packet_execute(
         };
 
     if !acknowledgement.is_successful() {
-        if let Err(err) = refund_packet_token(ctx, packet, &data) {
+        if let Err(err) = refund_packet_token_execute(ctx, packet, &data) {
             return (ModuleExtras::empty(), Err(err));
         }
     }
@@ -348,7 +370,7 @@ pub fn on_acknowledgement_packet_execute(
 }
 
 pub fn on_timeout_packet_validate<Ctx>(
-    _ctx: &Ctx,
+    ctx: &Ctx,
     packet: &Packet,
     _relayer: &Signer,
 ) -> Result<(), TokenTransferError>
@@ -358,7 +380,7 @@ where
     let data = serde_json::from_slice::<PacketData>(&packet.data)
         .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
 
-    refund_packet_token_validate::<Ctx>(&data)?;
+    refund_packet_token_validate(ctx, packet, &data)?;
 
     Ok(())
 }
@@ -378,7 +400,7 @@ pub fn on_timeout_packet_execute(
         }
     };
 
-    if let Err(err) = refund_packet_token(ctx, packet, &data) {
+    if let Err(err) = refund_packet_token_execute(ctx, packet, &data) {
         return (ModuleExtras::empty(), Err(err));
     }
 
