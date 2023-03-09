@@ -1,5 +1,43 @@
 # CHANGELOG
 
+## v0.32.0
+
+*March 9, 2023*
+
+This release primarily removes the `'static` lifetime bound on the `Module` trait,
+and adds some methods to the token transfer validation trait.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Move `verify_delay_passed` process and its associated errors under the
+  `ics03_connection` section and reduce entanglements with the
+  `ValidationContext`.
+  ([#404](https://github.com/cosmos/ibc-rs/issues/404))
+- Refactor and privatize Packet/Ack commitment computations for improved security
+  and modularity.
+  ([#470](https://github.com/cosmos/ibc-rs/issues/470))
+- Allow for non-'static bound Modules 
+  [#490](https://github.com/cosmos/ibc-rs/issues/490))
+- Separate the validation from the execution process for `send/mint/burn_coins`
+  operations.
+  ([#502](https://github.com/cosmos/ibc-rs/issues/502))
+- Refactor naming in the Transfer application to align with the repo naming
+  conventions.
+  ([#506](https://github.com/cosmos/ibc-rs/issues/506))
+- Refactor `is_send/receive_enabled` interfaces within the transfer application
+  to `can_send/receive_coins` returning `Result<(), TokenTransferError>` type
+  for a better failure handler
+  ([#508](https://github.com/cosmos/ibc-rs/issues/508))
+
+### IMPROVEMENTS
+
+- Use `<&str>::deserialize` instead of `String::deserialize` to avoid an extra
+  allocation ([#496](https://github.com/cosmos/ibc-rs/issues/496))
+- In `test_serialization_roundtrip`, check that round-tripped data is equal
+  ([#497](https://github.com/cosmos/ibc-rs/issues/497))
+
 ## v0.31.0
 
 *February 28, 2023*
