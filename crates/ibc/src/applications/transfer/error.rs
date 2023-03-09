@@ -77,9 +77,9 @@ pub enum TokenTransferError {
     /// failed to deserialize acknowledgement
     AckDeserialization,
     /// receive is not enabled
-    ReceiveDisabled,
+    ReceiveDisabled { reason: String },
     /// send is not enabled
-    SendDisabled,
+    SendDisabled { reason: String },
     /// failed to parse as AccountId
     ParseAccountFailure,
     /// invalid port: `{port_id}`, expected `{exp_port_id}`

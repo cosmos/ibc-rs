@@ -18,9 +18,9 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
     packet: &Packet,
     data: PacketData,
 ) -> Result<ModuleExtras, (ModuleExtras, TokenTransferError)> {
-    if !ctx_b.is_receive_enabled() {
-        return Err((ModuleExtras::empty(), TokenTransferError::ReceiveDisabled));
-    }
+    ctx_b
+        .can_receive_coins()
+        .map_err(|err| (ModuleExtras::empty(), err))?;
 
     let receiver_account = data.receiver.clone().try_into().map_err(|_| {
         (

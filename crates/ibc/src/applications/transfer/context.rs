@@ -35,11 +35,11 @@ pub trait TokenTransferValidationContext: SendPacketValidationContext {
         channel_id: &ChannelId,
     ) -> Result<Self::AccountId, TokenTransferError>;
 
-    /// Returns true iff send is enabled.
-    fn is_send_enabled(&self) -> bool;
+    /// Returns Ok() if the host chain supports sending coins.
+    fn can_send_coins(&self) -> Result<(), TokenTransferError>;
 
-    /// Returns true iff receive is enabled.
-    fn is_receive_enabled(&self) -> bool;
+    /// Returns Ok() if the host chain supports receiving coins.
+    fn can_receive_coins(&self) -> Result<(), TokenTransferError>;
 
     /// Validates the sender and receiver accounts and the coin inputs
     fn send_coins_validate(
