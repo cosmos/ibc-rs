@@ -122,11 +122,11 @@ impl core::fmt::Display for Sequence {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Default, Hash, PartialEq, Eq)]
 pub struct Packet {
-    pub sequence: Sequence,
-    pub port_on_a: PortId,
-    pub chan_on_a: ChannelId,
-    pub port_on_b: PortId,
-    pub chan_on_b: ChannelId,
+    pub seq_on_a: Sequence,
+    pub port_id_on_a: PortId,
+    pub chan_id_on_a: ChannelId,
+    pub port_id_on_b: PortId,
+    pub chan_id_on_b: ChannelId,
     #[cfg_attr(
         feature = "serde",
         serde(serialize_with = "crate::serializers::ser_hex_upper")
@@ -151,11 +151,11 @@ impl core::fmt::Debug for Packet {
         //    this function)
         // 2. update this destructuring assignment accordingly
         let Packet {
-            sequence: _,
-            port_on_a: _,
-            chan_on_a: _,
-            port_on_b: _,
-            chan_on_b: _,
+            seq_on_a: _,
+            port_id_on_a: _,
+            chan_id_on_a: _,
+            port_id_on_b: _,
+            chan_id_on_b: _,
             data,
             timeout_height_on_b: _,
             timeout_timestamp_on_b: _,
@@ -164,11 +164,11 @@ impl core::fmt::Debug for Packet {
 
         formatter
             .debug_struct("Packet")
-            .field("sequence", &self.sequence)
-            .field("source_port", &self.port_on_a)
-            .field("source_channel", &self.chan_on_a)
-            .field("destination_port", &self.port_on_b)
-            .field("destination_channel", &self.chan_on_b)
+            .field("sequence", &self.seq_on_a)
+            .field("source_port", &self.port_id_on_a)
+            .field("source_channel", &self.chan_id_on_a)
+            .field("destination_port", &self.port_id_on_b)
+            .field("destination_channel", &self.chan_id_on_b)
             .field("data", &data_wrapper)
             .field("timeout_height", &self.timeout_height_on_b)
             .field("timeout_timestamp", &self.timeout_timestamp_on_b)
@@ -206,11 +206,11 @@ impl core::fmt::Display for Packet {
         write!(
             f,
             "seq:{}, path:{}/{}->{}/{}, toh:{}, tos:{})",
-            self.sequence,
-            self.chan_on_a,
-            self.port_on_a,
-            self.chan_on_b,
-            self.port_on_b,
+            self.seq_on_a,
+            self.chan_id_on_a,
+            self.port_id_on_a,
+            self.chan_id_on_b,
+            self.port_id_on_b,
             self.timeout_height_on_b,
             self.timeout_timestamp_on_b
         )
@@ -246,20 +246,20 @@ impl TryFrom<RawPacket> for Packet {
             .map_err(PacketError::InvalidPacketTimestamp)?;
 
         Ok(Packet {
-            sequence: Sequence::from(raw_pkt.sequence),
-            port_on_a: raw_pkt
+            seq_on_a: Sequence::from(raw_pkt.sequence),
+            port_id_on_a: raw_pkt
                 .source_port
                 .parse()
                 .map_err(PacketError::Identifier)?,
-            chan_on_a: raw_pkt
+            chan_id_on_a: raw_pkt
                 .source_channel
                 .parse()
                 .map_err(PacketError::Identifier)?,
-            port_on_b: raw_pkt
+            port_id_on_b: raw_pkt
                 .destination_port
                 .parse()
                 .map_err(PacketError::Identifier)?,
-            chan_on_b: raw_pkt
+            chan_id_on_b: raw_pkt
                 .destination_channel
                 .parse()
                 .map_err(PacketError::Identifier)?,
@@ -273,11 +273,11 @@ impl TryFrom<RawPacket> for Packet {
 impl From<Packet> for RawPacket {
     fn from(packet: Packet) -> Self {
         RawPacket {
-            sequence: packet.sequence.0,
-            source_port: packet.port_on_a.to_string(),
-            source_channel: packet.chan_on_a.to_string(),
-            destination_port: packet.port_on_b.to_string(),
-            destination_channel: packet.chan_on_b.to_string(),
+            sequence: packet.seq_on_a.0,
+            source_port: packet.port_id_on_a.to_string(),
+            source_channel: packet.chan_id_on_a.to_string(),
+            destination_port: packet.port_id_on_b.to_string(),
+            destination_channel: packet.chan_id_on_b.to_string(),
             data: packet.data,
             timeout_height: packet.timeout_height_on_b.into(),
             timeout_timestamp: packet.timeout_timestamp_on_b.nanoseconds(),

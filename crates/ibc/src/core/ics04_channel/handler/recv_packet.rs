@@ -16,26 +16,27 @@ pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextErro
 where
     Ctx: ValidationContext,
 {
-    let chan_end_path_on_b = ChannelEndPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+    let chan_end_path_on_b =
+        ChannelEndPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
     let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     if !chan_end_on_b.state_matches(&State::Open) {
         return Err(PacketError::InvalidChannelState {
-            channel_id: msg.packet.chan_on_a.clone(),
+            channel_id: msg.packet.chan_id_on_a.clone(),
             state: chan_end_on_b.state,
         }
         .into());
     }
 
     let counterparty = Counterparty::new(
-        msg.packet.port_on_a.clone(),
-        Some(msg.packet.chan_on_a.clone()),
+        msg.packet.port_id_on_a.clone(),
+        Some(msg.packet.chan_id_on_a.clone()),
     );
 
     if !chan_end_on_b.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
-            port_id: msg.packet.port_on_a.clone(),
-            channel_id: msg.packet.chan_on_a.clone(),
+            port_id: msg.packet.port_id_on_a.clone(),
+            channel_id: msg.packet.chan_id_on_a.clone(),
         }
         .into());
     }
@@ -87,9 +88,9 @@ where
             &msg.packet.timeout_timestamp_on_b,
         );
         let commitment_path_on_a = CommitmentPath::new(
-            &msg.packet.port_on_a,
-            &msg.packet.chan_on_a,
-            msg.packet.sequence,
+            &msg.packet.port_id_on_a,
+            &msg.packet.chan_id_on_a,
+            msg.packet.seq_on_a,
         );
 
         verify_conn_delay_passed(ctx_b, msg.proof_height_on_a, &conn_end_on_b)?;
@@ -105,39 +106,40 @@ where
                 expected_commitment_on_a,
             )
             .map_err(|e| ChannelError::PacketVerificationFailed {
-                sequence: msg.packet.sequence,
+                sequence: msg.packet.seq_on_a,
                 client_error: e,
             })
             .map_err(PacketError::Channel)?;
     }
 
     if chan_end_on_b.order_matches(&Order::Ordered) {
-        let seq_recv_path_on_b = SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+        let seq_recv_path_on_b =
+            SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
         let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
-        if msg.packet.sequence > next_seq_recv {
+        if msg.packet.seq_on_a > next_seq_recv {
             return Err(PacketError::InvalidPacketSequence {
-                given_sequence: msg.packet.sequence,
+                given_sequence: msg.packet.seq_on_a,
                 next_sequence: next_seq_recv,
             }
             .into());
         }
 
-        if msg.packet.sequence == next_seq_recv {
+        if msg.packet.seq_on_a == next_seq_recv {
             // Case where the recvPacket is successful and an
             // acknowledgement will be written (not a no-op)
             validate_write_acknowledgement(ctx_b, msg)?;
         }
     } else {
         let receipt_path_on_b = ReceiptPath::new(
-            &msg.packet.port_on_a,
-            &msg.packet.chan_on_a,
-            msg.packet.sequence,
+            &msg.packet.port_id_on_a,
+            &msg.packet.chan_id_on_a,
+            msg.packet.seq_on_a,
         );
         let packet_rec = ctx_b.get_packet_receipt(&receipt_path_on_b);
         match packet_rec {
             Ok(_receipt) => {}
             Err(ContextError::PacketError(PacketError::PacketReceiptNotFound { sequence }))
-                if sequence == msg.packet.sequence => {}
+                if sequence == msg.packet.seq_on_a => {}
             Err(e) => return Err(e),
         }
         // Case where the recvPacket is successful and an
@@ -153,10 +155,10 @@ where
     Ctx: ValidationContext,
 {
     let packet = msg.packet.clone();
-    let ack_path_on_b = AckPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);
+    let ack_path_on_b = AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
     if ctx_b.get_packet_acknowledgement(&ack_path_on_b).is_ok() {
         return Err(PacketError::AcknowledgementExists {
-            sequence: msg.packet.sequence,
+            sequence: msg.packet.seq_on_a,
         }
         .into());
     }
@@ -217,7 +219,7 @@ mod tests {
         let chan_end_on_b = ChannelEnd::new(
             State::Open,
             Order::default(),
-            Counterparty::new(packet.port_on_a, Some(packet.chan_on_a)),
+            Counterparty::new(packet.port_id_on_a, Some(packet.chan_id_on_a)),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
         );
@@ -273,17 +275,21 @@ mod tests {
             .with_client(&ClientId::default(), client_height)
             .with_connection(ConnectionId::default(), conn_end_on_b)
             .with_channel(
-                packet.port_on_b.clone(),
-                packet.chan_on_b.clone(),
+                packet.port_id_on_b.clone(),
+                packet.chan_id_on_b.clone(),
                 chan_end_on_b,
             )
-            .with_send_sequence(packet.port_on_b.clone(), packet.chan_on_b.clone(), 1.into())
+            .with_send_sequence(
+                packet.port_id_on_b.clone(),
+                packet.chan_id_on_b.clone(),
+                1.into(),
+            )
             .with_height(host_height)
             // This `with_recv_sequence` is required for ordered channels
             .with_recv_sequence(
-                packet.port_on_b.clone(),
-                packet.chan_on_b.clone(),
-                packet.sequence,
+                packet.port_id_on_b.clone(),
+                packet.chan_id_on_b.clone(),
+                packet.seq_on_a,
             );
 
         context
@@ -322,11 +328,11 @@ mod tests {
         } = fixture;
 
         let packet_old = Packet {
-            sequence: 1.into(),
-            port_on_a: PortId::default(),
-            chan_on_a: ChannelId::default(),
-            port_on_b: PortId::default(),
-            chan_on_b: ChannelId::default(),
+            seq_on_a: 1.into(),
+            port_id_on_a: PortId::default(),
+            chan_id_on_a: ChannelId::default(),
+            port_id_on_b: PortId::default(),
+            chan_id_on_b: ChannelId::default(),
             data: Vec::new(),
             timeout_height_on_b: client_height.into(),
             timeout_timestamp_on_b: Timestamp::from_nanoseconds(1).unwrap(),

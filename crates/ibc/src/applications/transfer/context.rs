@@ -29,7 +29,7 @@ pub trait TokenTransferValidationContext: SendPacketValidationContext {
     fn get_port(&self) -> Result<PortId, TokenTransferError>;
 
     /// Returns the escrow account id for a port and channel combination
-    fn get_channel_escrow_address(
+    fn get_escrow_account(
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
@@ -269,7 +269,7 @@ pub fn on_chan_close_confirm_execute(
 }
 
 pub fn on_recv_packet_execute(
-    ctx: &mut impl TokenTransferExecutionContext,
+    ctx_b: &mut impl TokenTransferExecutionContext,
     packet: &Packet,
 ) -> (ModuleExtras, Acknowledgement) {
     let data = match serde_json::from_slice::<PacketData>(&packet.data) {
@@ -282,7 +282,7 @@ pub fn on_recv_packet_execute(
         }
     };
 
-    let (mut extras, ack) = match process_recv_packet_execute(ctx, packet, data.clone()) {
+    let (mut extras, ack) = match process_recv_packet_execute(ctx_b, packet, data.clone()) {
         Ok(extras) => (extras, TokenTransferAcknowledgement::success()),
         Err((extras, error)) => (extras, TokenTransferAcknowledgement::from_error(error)),
     };

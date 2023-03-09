@@ -150,10 +150,10 @@ pub trait Router {
 
     fn lookup_module_packet(&self, msg: &PacketMsg) -> Result<ModuleId, ChannelError> {
         let port_id = match msg {
-            PacketMsg::Recv(msg) => &msg.packet.port_on_b,
-            PacketMsg::Ack(msg) => &msg.packet.port_on_a,
-            PacketMsg::Timeout(msg) => &msg.packet.port_on_a,
-            PacketMsg::TimeoutOnClose(msg) => &msg.packet.port_on_a,
+            PacketMsg::Recv(msg) => &msg.packet.port_id_on_b,
+            PacketMsg::Ack(msg) => &msg.packet.port_id_on_a,
+            PacketMsg::Timeout(msg) => &msg.packet.port_id_on_a,
+            PacketMsg::TimeoutOnClose(msg) => &msg.packet.port_id_on_a,
         };
         let module_id = self
             .lookup_module_by_port(port_id)

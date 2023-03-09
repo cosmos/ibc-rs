@@ -26,9 +26,9 @@ pub const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgTransfer<C = Coin> {
     /// the port on which the packet will be sent
-    pub port_on_a: PortId,
+    pub port_id_on_a: PortId,
     /// the channel by which the packet will be sent
-    pub chan_on_a: ChannelId,
+    pub chan_id_on_a: ChannelId,
     /// the tokens to be transferred
     pub token: C,
     /// the sender address
@@ -68,13 +68,13 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
             })?;
 
         Ok(MsgTransfer {
-            port_on_a: raw_msg.source_port.parse().map_err(|e| {
+            port_id_on_a: raw_msg.source_port.parse().map_err(|e| {
                 TokenTransferError::InvalidPortId {
                     context: raw_msg.source_port.clone(),
                     validation_error: e,
                 }
             })?,
-            chan_on_a: raw_msg.source_channel.parse().map_err(|e| {
+            chan_id_on_a: raw_msg.source_channel.parse().map_err(|e| {
                 TokenTransferError::InvalidChannelId {
                     context: raw_msg.source_channel.clone(),
                     validation_error: e,
@@ -95,8 +95,8 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
 impl From<MsgTransfer> for RawMsgTransfer {
     fn from(domain_msg: MsgTransfer) -> Self {
         RawMsgTransfer {
-            source_port: domain_msg.port_on_a.to_string(),
-            source_channel: domain_msg.chan_on_a.to_string(),
+            source_port: domain_msg.port_id_on_a.to_string(),
+            source_channel: domain_msg.chan_id_on_a.to_string(),
             token: Some(domain_msg.token),
             sender: domain_msg.sender.to_string(),
             receiver: domain_msg.receiver.to_string(),
@@ -150,8 +150,8 @@ pub mod test_util {
     ) -> MsgTransfer<PrefixedCoin> {
         let address: Signer = get_dummy_bech32_account().as_str().parse().unwrap();
         MsgTransfer {
-            port_on_a: PortId::default(),
-            chan_on_a: ChannelId::default(),
+            port_id_on_a: PortId::default(),
+            chan_id_on_a: ChannelId::default(),
             token: BaseCoin {
                 denom: "uatom".parse().unwrap(),
                 amount: U256::from(10).into(),
@@ -181,11 +181,11 @@ pub mod test_util {
         };
 
         Packet {
-            sequence,
-            port_on_a: msg.port_on_a,
-            chan_on_a: msg.chan_on_a,
-            port_on_b: PortId::default(),
-            chan_on_b: ChannelId::default(),
+            seq_on_a: sequence,
+            port_id_on_a: msg.port_id_on_a,
+            chan_id_on_a: msg.chan_id_on_a,
+            port_id_on_b: PortId::default(),
+            chan_id_on_b: ChannelId::default(),
             data,
             timeout_height_on_b: msg.timeout_height_on_b,
             timeout_timestamp_on_b: msg.timeout_timestamp_on_b,
