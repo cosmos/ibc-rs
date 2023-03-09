@@ -62,15 +62,22 @@ where
         .map_err(|_| TokenTransferError::InvalidToken)?;
     let denom = token.denom.clone();
     let coin = Coin {
-        denom,
+        denom: denom.clone(),
         amount: token.amount,
     };
 
-    let _sender: Ctx::AccountId = msg
+    let sender: Ctx::AccountId = msg
         .sender
         .clone()
         .try_into()
         .map_err(|_| TokenTransferError::ParseAccountFailure)?;
+
+    if is_sender_chain_source(msg.port_on_a.clone(), msg.chan_on_a.clone(), &denom) {
+        let escrow_address = ctx_a.get_channel_escrow_address(&msg.port_on_a, &msg.chan_on_a)?;
+        ctx_a.send_coins_validate(&sender, &escrow_address, &coin)?;
+    } else {
+        ctx_a.burn_coins_validate(&sender, &coin)?;
+    }
 
     let data = {
         let data = PacketData {
@@ -144,9 +151,9 @@ where
 
     if is_sender_chain_source(msg.port_on_a.clone(), msg.chan_on_a.clone(), &denom) {
         let escrow_address = ctx_a.get_channel_escrow_address(&msg.port_on_a, &msg.chan_on_a)?;
-        ctx_a.send_coins(&sender, &escrow_address, &coin)?;
+        ctx_a.send_coins_execute(&sender, &escrow_address, &coin)?;
     } else {
-        ctx_a.burn_coins(&sender, &coin)?;
+        ctx_a.burn_coins_execute(&sender, &coin)?;
     }
 
     let data = {

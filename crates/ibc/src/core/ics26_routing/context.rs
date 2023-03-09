@@ -175,7 +175,7 @@ pub trait Module: Debug {
         Ok(ModuleExtras::empty())
     }
 
-    fn on_recv_packet_execute(
+    fn on_recv_packet(
         &mut self,
         packet: &Packet,
         relayer: &Signer,

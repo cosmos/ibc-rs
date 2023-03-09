@@ -74,7 +74,7 @@ where
         .get_route_mut(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
 
-    let (extras, acknowledgement) = module.on_recv_packet_execute(&msg.packet, &msg.signer);
+    let (extras, acknowledgement) = module.on_recv_packet(&msg.packet, &msg.signer);
 
     // state changes
     {

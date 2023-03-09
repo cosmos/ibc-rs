@@ -7,7 +7,7 @@ use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::packet::Packet;
 use crate::prelude::*;
 
-pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
+pub fn process_recv_packet<Ctx: TokenTransferExecutionContext>(
     ctx: &mut Ctx,
     packet: &Packet,
     data: PacketData,
@@ -40,7 +40,10 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
             .get_channel_escrow_address(&packet.port_on_b, &packet.chan_on_b)
             .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
 
-        ctx.send_coins(&escrow_address, &receiver_account, &coin)
+        ctx.send_coins_validate(&escrow_address, &receiver_account, &coin)
+            .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
+
+        ctx.send_coins_execute(&escrow_address, &receiver_account, &coin)
             .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
 
         ModuleExtras::empty()
@@ -63,10 +66,12 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
                 log: Vec::new(),
             }
         };
-        let extras_closure = extras.clone();
 
-        ctx.mint_coins(&receiver_account, &coin)
-            .map_err(|token_err| (extras_closure, token_err))?;
+        ctx.mint_coins_validate(&receiver_account, &coin)
+            .map_err(|token_err| (extras.clone(), token_err))?;
+
+        ctx.mint_coins_execute(&receiver_account, &coin)
+            .map_err(|token_err| (extras.clone(), token_err))?;
 
         extras
     };

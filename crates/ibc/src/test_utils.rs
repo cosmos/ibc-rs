@@ -112,7 +112,7 @@ impl Module for DummyTransferModule {
         Ok((ModuleExtras::empty(), counterparty_version.clone()))
     }
 
-    fn on_recv_packet_execute(
+    fn on_recv_packet(
         &mut self,
         _packet: &Packet,
         _relayer: &Signer,
