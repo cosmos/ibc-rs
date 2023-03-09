@@ -1418,12 +1418,12 @@ impl TokenTransferValidationContext for MockContext {
         Ok(bech32::encode("cosmos", addr).parse().unwrap())
     }
 
-    fn is_send_enabled(&self) -> bool {
-        true
+    fn can_send_coins(&self) -> Result<(), TokenTransferError> {
+        Ok(())
     }
 
-    fn is_receive_enabled(&self) -> bool {
-        true
+    fn can_receive_coins(&self) -> Result<(), TokenTransferError> {
+        Ok(())
     }
 
     fn send_coins_validate(
