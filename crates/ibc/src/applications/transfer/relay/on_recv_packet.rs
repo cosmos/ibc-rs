@@ -7,7 +7,13 @@ use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::packet::Packet;
 use crate::prelude::*;
 
-pub fn process_recv_packet<Ctx: TokenTransferExecutionContext>(
+/// This function handles the transfer receiving logic.
+///
+/// Note that `send/mint_coins_validate` steps are performed on the host chain
+/// to validate accounts and token info. But the result is then used for
+/// execution on the IBC side, including storing acknowledgements and emitting
+/// events.
+pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
     ctx: &mut Ctx,
     packet: &Packet,
     data: PacketData,

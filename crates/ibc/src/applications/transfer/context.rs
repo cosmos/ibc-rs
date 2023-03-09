@@ -8,7 +8,7 @@ use crate::applications::transfer::events::{AckEvent, AckStatusEvent, RecvEvent,
 use crate::applications::transfer::packet::PacketData;
 use crate::applications::transfer::relay::refund_packet_token_execute;
 use crate::applications::transfer::relay::{
-    on_recv_packet::process_recv_packet, refund_packet_token_validate,
+    on_recv_packet::process_recv_packet_execute, refund_packet_token_validate,
 };
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
@@ -268,7 +268,7 @@ pub fn on_chan_close_confirm_execute(
     Ok(ModuleExtras::empty())
 }
 
-pub fn on_recv_packet(
+pub fn on_recv_packet_execute(
     ctx: &mut impl TokenTransferExecutionContext,
     packet: &Packet,
 ) -> (ModuleExtras, Acknowledgement) {
@@ -282,7 +282,7 @@ pub fn on_recv_packet(
         }
     };
 
-    let (mut extras, ack) = match process_recv_packet(ctx, packet, data.clone()) {
+    let (mut extras, ack) = match process_recv_packet_execute(ctx, packet, data.clone()) {
         Ok(extras) => (extras, TokenTransferAcknowledgement::success()),
         Err((extras, error)) => (extras, TokenTransferAcknowledgement::from_error(error)),
     };

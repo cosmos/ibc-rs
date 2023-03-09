@@ -1696,7 +1696,7 @@ mod tests {
                 Ok((ModuleExtras::empty(), counterparty_version.clone()))
             }
 
-            fn on_recv_packet(
+            fn on_recv_packet_execute(
                 &mut self,
                 _packet: &Packet,
                 _relayer: &Signer,
@@ -1796,7 +1796,7 @@ mod tests {
                 Ok((ModuleExtras::empty(), counterparty_version.clone()))
             }
 
-            fn on_recv_packet(
+            fn on_recv_packet_execute(
                 &mut self,
                 _packet: &Packet,
                 _relayer: &Signer,
@@ -1856,7 +1856,7 @@ mod tests {
         let mut on_recv_packet_result = |module_id: &'static str| {
             let module_id = ModuleId::from_str(module_id).unwrap();
             let m = ctx.get_route_mut(&module_id).unwrap();
-            let result = m.on_recv_packet(
+            let result = m.on_recv_packet_execute(
                 &Packet::default(),
                 &get_dummy_bech32_account().parse().unwrap(),
             );
