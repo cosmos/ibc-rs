@@ -46,6 +46,16 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
             .get_channel_escrow_address(&packet.port_on_b, &packet.chan_on_b)
             .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
 
+        // Note: it is correct to do the validation here because `recv_packet()`
+        // works slightly differently. We do not have a
+        // `on_recv_packet_validate()` callback because regardless of whether or
+        // not the app succeeds to receive the packet, we want to run the
+        // `execute()` phase. And this is because the app failing to receive
+        // does not constitute a failure of the message processing.
+        // Specifically, when the app fails to receive, we need to return
+        // a `TokenTransferAcknowledgement::Error` acknowledgement, which
+        // gets relayed back to the sender so that the escrowed tokens
+        // can be refunded.
         ctx.send_coins_validate(&escrow_address, &receiver_account, &coin)
             .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
 
@@ -73,6 +83,16 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
             }
         };
 
+        // Note: it is correct to do the validation here because `recv_packet()`
+        // works slightly differently. We do not have a
+        // `on_recv_packet_validate()` callback because regardless of whether or
+        // not the app succeeds to receive the packet, we want to run the
+        // `execute()` phase. And this is because the app failing to receive
+        // does not constitute a failure of the message processing.
+        // Specifically, when the app fails to receive, we need to return
+        // a `TokenTransferAcknowledgement::Error` acknowledgement, which
+        // gets relayed back to the sender so that the escrowed tokens
+        // can be refunded.
         ctx.mint_coins_validate(&receiver_account, &coin)
             .map_err(|token_err| (extras.clone(), token_err))?;
 
