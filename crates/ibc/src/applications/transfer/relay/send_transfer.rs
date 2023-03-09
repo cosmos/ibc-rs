@@ -32,9 +32,7 @@ where
     C: TryInto<PrefixedCoin>,
     Ctx: TokenTransferValidationContext,
 {
-    if !ctx_a.is_send_enabled() {
-        return Err(TokenTransferError::SendDisabled);
-    }
+    ctx_a.can_send_coins()?;
 
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let chan_end_on_a = ctx_a
