@@ -41,7 +41,7 @@ pub trait TokenTransferValidationContext: SendPacketValidationContext {
     /// Returns true iff receive is enabled.
     fn is_receive_enabled(&self) -> bool;
 
-    /// This function should enable sending ibc fungible tokens from one account to another
+    /// Validates the sender and receiver accounts and the coin inputs
     fn send_coins_validate(
         &self,
         from_account: &Self::AccountId,
@@ -49,14 +49,14 @@ pub trait TokenTransferValidationContext: SendPacketValidationContext {
         coin: &PrefixedCoin,
     ) -> Result<(), TokenTransferError>;
 
-    /// This function to enable minting ibc tokens to a user account
+    /// Validates the receiver account and the coin input
     fn mint_coins_validate(
         &self,
         account: &Self::AccountId,
         coin: &PrefixedCoin,
     ) -> Result<(), TokenTransferError>;
 
-    /// This function should enable burning of minted tokens in a user account
+    /// Validates the sender account and the coin input
     fn burn_coins_validate(
         &self,
         account: &Self::AccountId,
