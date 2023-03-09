@@ -1409,7 +1409,7 @@ impl TokenTransferValidationContext for MockContext {
         Ok(PortId::transfer())
     }
 
-    fn get_channel_escrow_address(
+    fn get_escrow_account(
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,

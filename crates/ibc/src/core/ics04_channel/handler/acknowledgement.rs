@@ -18,22 +18,25 @@ where
     Ctx: ValidationContext,
 {
     let packet = &msg.packet;
-    let chan_end_path_on_a = ChannelEndPath::new(&packet.port_on_a, &packet.chan_on_a);
+    let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     if !chan_end_on_a.state_matches(&State::Open) {
         return Err(PacketError::ChannelClosed {
-            channel_id: packet.chan_on_a.clone(),
+            channel_id: packet.chan_id_on_a.clone(),
         }
         .into());
     }
 
-    let counterparty = Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b.clone()));
+    let counterparty = Counterparty::new(
+        packet.port_id_on_b.clone(),
+        Some(packet.chan_id_on_b.clone()),
+    );
 
     if !chan_end_on_a.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
-            port_id: packet.port_on_b.clone(),
-            channel_id: packet.chan_on_b.clone(),
+            port_id: packet.port_id_on_b.clone(),
+            channel_id: packet.chan_id_on_b.clone(),
         }
         .into());
     }
@@ -49,7 +52,7 @@ where
     }
 
     let commitment_path_on_a =
-        CommitmentPath::new(&packet.port_on_a, &packet.chan_on_a, packet.sequence);
+        CommitmentPath::new(&packet.port_id_on_a, &packet.chan_id_on_a, packet.seq_on_a);
 
     // Verify packet commitment
     let commitment_on_a = match ctx_a.get_packet_commitment(&commitment_path_on_a) {
@@ -70,17 +73,17 @@ where
         )
     {
         return Err(PacketError::IncorrectPacketCommitment {
-            sequence: packet.sequence,
+            sequence: packet.seq_on_a,
         }
         .into());
     }
 
     if let Order::Ordered = chan_end_on_a.ordering {
-        let seq_ack_path_on_a = SeqAckPath::new(&packet.port_on_a, &packet.chan_on_a);
+        let seq_ack_path_on_a = SeqAckPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
         let next_seq_ack = ctx_a.get_next_sequence_ack(&seq_ack_path_on_a)?;
-        if packet.sequence != next_seq_ack {
+        if packet.seq_on_a != next_seq_ack {
             return Err(PacketError::InvalidPacketSequence {
-                given_sequence: packet.sequence,
+                given_sequence: packet.seq_on_a,
                 next_sequence: next_seq_ack,
             }
             .into());
@@ -103,7 +106,8 @@ where
             ClientConsensusStatePath::new(client_id_on_a, &msg.proof_height_on_b);
         let consensus_state = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
         let ack_commitment = compute_ack_commitment(&msg.acknowledgement);
-        let ack_path_on_b = AckPath::new(&packet.port_on_b, &packet.chan_on_b, packet.sequence);
+        let ack_path_on_b =
+            AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
 
         verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
 
@@ -118,7 +122,7 @@ where
                 ack_commitment,
             )
             .map_err(|e| ChannelError::PacketVerificationFailed {
-                sequence: packet.sequence,
+                sequence: packet.seq_on_a,
                 client_error: e,
             })
             .map_err(PacketError::Channel)?;
@@ -181,7 +185,7 @@ mod tests {
         let chan_end_on_a = ChannelEnd::new(
             State::Open,
             Order::default(),
-            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b)),
+            Counterparty::new(packet.port_id_on_b.clone(), Some(packet.chan_id_on_b)),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
         );
@@ -260,9 +264,9 @@ mod tests {
             .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a)
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_packet_commitment(
-                msg.packet.port_on_a.clone(),
-                msg.packet.chan_on_a.clone(),
-                msg.packet.sequence,
+                msg.packet.port_id_on_a.clone(),
+                msg.packet.chan_id_on_a.clone(),
+                msg.packet.seq_on_a,
                 packet_commitment,
             );
         context

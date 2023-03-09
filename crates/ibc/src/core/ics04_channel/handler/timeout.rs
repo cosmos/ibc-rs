@@ -18,26 +18,26 @@ where
     Ctx: ValidationContext,
 {
     let chan_end_on_a = ctx_a.channel_end(&ChannelEndPath::new(
-        &msg.packet.port_on_a,
-        &msg.packet.chan_on_a,
+        &msg.packet.port_id_on_a,
+        &msg.packet.chan_id_on_a,
     ))?;
 
     if !chan_end_on_a.state_matches(&State::Open) {
         return Err(PacketError::ChannelClosed {
-            channel_id: msg.packet.chan_on_a.clone(),
+            channel_id: msg.packet.chan_id_on_a.clone(),
         }
         .into());
     }
 
     let counterparty = Counterparty::new(
-        msg.packet.port_on_b.clone(),
-        Some(msg.packet.chan_on_b.clone()),
+        msg.packet.port_id_on_b.clone(),
+        Some(msg.packet.chan_id_on_b.clone()),
     );
 
     if !chan_end_on_a.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
-            port_id: msg.packet.port_on_b.clone(),
-            channel_id: msg.packet.chan_on_b.clone(),
+            port_id: msg.packet.port_id_on_b.clone(),
+            channel_id: msg.packet.chan_id_on_b.clone(),
         }
         .into());
     }
@@ -47,9 +47,9 @@ where
 
     //verify packet commitment
     let commitment_path_on_a = CommitmentPath::new(
-        &msg.packet.port_on_a,
-        &msg.packet.chan_on_a,
-        msg.packet.sequence,
+        &msg.packet.port_id_on_a,
+        &msg.packet.chan_id_on_a,
+        msg.packet.seq_on_a,
     );
     let commitment_on_a = match ctx_a.get_packet_commitment(&commitment_path_on_a) {
         Ok(commitment_on_a) => commitment_on_a,
@@ -68,7 +68,7 @@ where
     );
     if commitment_on_a != expected_commitment_on_a {
         return Err(PacketError::IncorrectPacketCommitment {
-            sequence: msg.packet.sequence,
+            sequence: msg.packet.seq_on_a,
         }
         .into());
     }
@@ -110,27 +110,28 @@ where
         verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
 
         let next_seq_recv_verification_result = if chan_end_on_a.order_matches(&Order::Ordered) {
-            if msg.packet.sequence < msg.next_seq_recv_on_b {
+            if msg.packet.seq_on_a < msg.next_seq_recv_on_b {
                 return Err(PacketError::InvalidPacketSequence {
-                    given_sequence: msg.packet.sequence,
+                    given_sequence: msg.packet.seq_on_a,
                     next_sequence: msg.next_seq_recv_on_b,
                 }
                 .into());
             }
-            let seq_recv_path_on_b = SeqRecvPath::new(&msg.packet.port_on_b, &msg.packet.chan_on_b);
+            let seq_recv_path_on_b =
+                SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
             client_state_of_b_on_a.verify_next_sequence_recv(
                 msg.proof_height_on_b,
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 &seq_recv_path_on_b,
-                msg.packet.sequence,
+                msg.packet.seq_on_a,
             )
         } else {
             let receipt_path_on_b = ReceiptPath::new(
-                &msg.packet.port_on_b,
-                &msg.packet.chan_on_b,
-                msg.packet.sequence,
+                &msg.packet.port_id_on_b,
+                &msg.packet.chan_id_on_b,
+                msg.packet.seq_on_a,
             );
             client_state_of_b_on_a.verify_packet_receipt_absence(
                 msg.proof_height_on_b,
@@ -210,7 +211,7 @@ mod tests {
         let chan_end_on_a_unordered = ChannelEnd::new(
             State::Open,
             Order::Unordered,
-            Counterparty::new(packet.port_on_b.clone(), Some(packet.chan_on_b)),
+            Counterparty::new(packet.port_id_on_b.clone(), Some(packet.chan_id_on_b)),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
         );
@@ -279,9 +280,9 @@ mod tests {
             )
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_packet_commitment(
-                packet.port_on_a,
-                packet.chan_on_a,
-                packet.sequence,
+                packet.port_id_on_a,
+                packet.chan_id_on_a,
+                packet.seq_on_a,
                 packet_commitment,
             );
 
@@ -348,9 +349,9 @@ mod tests {
                 chan_end_on_a_unordered,
             )
             .with_packet_commitment(
-                packet.port_on_a,
-                packet.chan_on_a,
-                packet.sequence,
+                packet.port_id_on_a,
+                packet.chan_id_on_a,
+                packet.seq_on_a,
                 packet_commitment,
             );
 
@@ -397,9 +398,9 @@ mod tests {
                 chan_end_on_a_ordered,
             )
             .with_packet_commitment(
-                packet.port_on_a,
-                packet.chan_on_a,
-                packet.sequence,
+                packet.port_id_on_a,
+                packet.chan_id_on_a,
+                packet.seq_on_a,
                 packet_commitment,
             );
 

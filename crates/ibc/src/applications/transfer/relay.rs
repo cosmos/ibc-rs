@@ -11,7 +11,7 @@ pub mod on_recv_packet;
 pub mod send_transfer;
 
 pub fn refund_packet_token_execute(
-    ctx: &mut impl TokenTransferExecutionContext,
+    ctx_a: &mut impl TokenTransferExecutionContext,
     packet: &Packet,
     data: &PacketData,
 ) -> Result<(), TokenTransferError> {
@@ -22,24 +22,24 @@ pub fn refund_packet_token_execute(
         .map_err(|_| TokenTransferError::ParseAccountFailure)?;
 
     if is_sender_chain_source(
-        packet.port_on_a.clone(),
-        packet.chan_on_a.clone(),
+        packet.port_id_on_a.clone(),
+        packet.chan_id_on_a.clone(),
         &data.token.denom,
     ) {
         // unescrow tokens back to sender
         let escrow_address =
-            ctx.get_channel_escrow_address(&packet.port_on_a, &packet.chan_on_a)?;
+            ctx_a.get_escrow_account(&packet.port_id_on_a, &packet.chan_id_on_a)?;
 
-        ctx.send_coins_execute(&escrow_address, &sender, &data.token)
+        ctx_a.send_coins_execute(&escrow_address, &sender, &data.token)
     }
     // mint vouchers back to sender
     else {
-        ctx.mint_coins_execute(&sender, &data.token)
+        ctx_a.mint_coins_execute(&sender, &data.token)
     }
 }
 
 pub fn refund_packet_token_validate(
-    ctx: &impl TokenTransferValidationContext,
+    ctx_a: &impl TokenTransferValidationContext,
     packet: &Packet,
     data: &PacketData,
 ) -> Result<(), TokenTransferError> {
@@ -50,15 +50,15 @@ pub fn refund_packet_token_validate(
         .map_err(|_| TokenTransferError::ParseAccountFailure)?;
 
     if is_sender_chain_source(
-        packet.port_on_a.clone(),
-        packet.chan_on_a.clone(),
+        packet.port_id_on_a.clone(),
+        packet.chan_id_on_a.clone(),
         &data.token.denom,
     ) {
         let escrow_address =
-            ctx.get_channel_escrow_address(&packet.port_on_a, &packet.chan_on_a)?;
+            ctx_a.get_escrow_account(&packet.port_id_on_a, &packet.chan_id_on_a)?;
 
-        ctx.send_coins_validate(&escrow_address, &sender, &data.token)
+        ctx_a.send_coins_validate(&escrow_address, &sender, &data.token)
     } else {
-        ctx.mint_coins_validate(&sender, &data.token)
+        ctx_a.mint_coins_validate(&sender, &data.token)
     }
 }

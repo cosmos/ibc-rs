@@ -14,11 +14,11 @@ use crate::prelude::*;
 /// execution on the IBC side, including storing acknowledgements and emitting
 /// events.
 pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
-    ctx: &mut Ctx,
+    ctx_b: &mut Ctx,
     packet: &Packet,
     data: PacketData,
 ) -> Result<ModuleExtras, (ModuleExtras, TokenTransferError)> {
-    if !ctx.is_receive_enabled() {
+    if !ctx_b.is_receive_enabled() {
         return Err((ModuleExtras::empty(), TokenTransferError::ReceiveDisabled));
     }
 
@@ -30,20 +30,20 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
     })?;
 
     let extras = if is_receiver_chain_source(
-        packet.port_on_a.clone(),
-        packet.chan_on_a.clone(),
+        packet.port_id_on_a.clone(),
+        packet.chan_id_on_a.clone(),
         &data.token.denom,
     ) {
         // sender chain is not the source, unescrow tokens
-        let prefix = TracePrefix::new(packet.port_on_a.clone(), packet.chan_on_a.clone());
+        let prefix = TracePrefix::new(packet.port_id_on_a.clone(), packet.chan_id_on_a.clone());
         let coin = {
             let mut c = data.token;
             c.denom.remove_trace_prefix(&prefix);
             c
         };
 
-        let escrow_address = ctx
-            .get_channel_escrow_address(&packet.port_on_b, &packet.chan_on_b)
+        let escrow_address = ctx_b
+            .get_escrow_account(&packet.port_id_on_b, &packet.chan_id_on_b)
             .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
 
         // Note: it is correct to do the validation here because `recv_packet()`
@@ -56,16 +56,18 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
         // a `TokenTransferAcknowledgement::Error` acknowledgement, which
         // gets relayed back to the sender so that the escrowed tokens
         // can be refunded.
-        ctx.send_coins_validate(&escrow_address, &receiver_account, &coin)
+        ctx_b
+            .send_coins_validate(&escrow_address, &receiver_account, &coin)
             .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
 
-        ctx.send_coins_execute(&escrow_address, &receiver_account, &coin)
+        ctx_b
+            .send_coins_execute(&escrow_address, &receiver_account, &coin)
             .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
 
         ModuleExtras::empty()
     } else {
         // sender chain is the source, mint vouchers
-        let prefix = TracePrefix::new(packet.port_on_b.clone(), packet.chan_on_b.clone());
+        let prefix = TracePrefix::new(packet.port_id_on_b.clone(), packet.chan_id_on_b.clone());
         let coin = {
             let mut c = data.token;
             c.denom.add_trace_prefix(prefix);
@@ -74,7 +76,7 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
 
         let extras = {
             let denom_trace_event = DenomTraceEvent {
-                trace_hash: ctx.denom_hash_string(&coin.denom),
+                trace_hash: ctx_b.denom_hash_string(&coin.denom),
                 denom: coin.denom.clone(),
             };
             ModuleExtras {
@@ -93,10 +95,12 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
         // a `TokenTransferAcknowledgement::Error` acknowledgement, which
         // gets relayed back to the sender so that the escrowed tokens
         // can be refunded.
-        ctx.mint_coins_validate(&receiver_account, &coin)
+        ctx_b
+            .mint_coins_validate(&receiver_account, &coin)
             .map_err(|token_err| (extras.clone(), token_err))?;
 
-        ctx.mint_coins_execute(&receiver_account, &coin)
+        ctx_b
+            .mint_coins_execute(&receiver_account, &coin)
             .map_err(|token_err| (extras.clone(), token_err))?;
 
         extras
