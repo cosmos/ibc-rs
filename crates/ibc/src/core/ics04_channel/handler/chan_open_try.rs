@@ -5,9 +5,9 @@ use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
-use crate::prelude::*;
-
+use crate::core::ics24_host::Path;
 use crate::core::{ContextError, ValidationContext};
+use crate::prelude::*;
 
 pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), ContextError>
 where
@@ -80,13 +80,13 @@ where
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
         client_state_of_a_on_b
-            .verify_channel_state(
+            .verify_membership(
                 msg.proof_height_on_a,
                 prefix_on_a,
                 &msg.proof_chan_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                &chan_end_path_on_a,
-                &expected_chan_end_on_a,
+                Path::ChannelEnd(chan_end_path_on_a),
+                expected_chan_end_on_a.try_into()?,
             )
             .map_err(ChannelError::VerifyChannelFailed)?;
     }

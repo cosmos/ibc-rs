@@ -1,19 +1,19 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenAck`.
-use crate::prelude::*;
 
+use prost::Message;
+
+use crate::core::context::ContextError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenAck;
 use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
-use crate::events::IbcEvent;
-
-use crate::core::context::ContextError;
-
 use crate::core::ics24_host::identifier::ClientId;
-
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath};
-
+use crate::core::ics24_host::Path;
 use crate::core::{ExecutionContext, ValidationContext};
+use crate::prelude::*;
+
+use crate::events::IbcEvent;
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
@@ -86,25 +86,25 @@ where
             );
 
             client_state_of_b_on_a
-                .verify_connection_state(
+                .verify_membership(
                     msg.proofs_height_on_b,
                     prefix_on_b,
                     &msg.proof_conn_end_on_b,
                     consensus_state_of_b_on_a.root(),
-                    &ConnectionPath::new(&msg.conn_id_on_b),
-                    &expected_conn_end_on_b,
+                    Path::Connection(ConnectionPath::new(&msg.conn_id_on_b)),
+                    expected_conn_end_on_b.try_into()?,
                 )
                 .map_err(ConnectionError::VerifyConnectionState)?;
         }
 
         client_state_of_b_on_a
-            .verify_client_full_state(
+            .verify_membership(
                 msg.proofs_height_on_b,
                 prefix_on_b,
                 &msg.proof_client_state_of_a_on_b,
                 consensus_state_of_b_on_a.root(),
-                &ClientStatePath::new(vars.client_id_on_a()),
-                msg.client_state_of_a_on_b.clone(),
+                Path::ClientState(ClientStatePath::new(vars.client_id_on_a())),
+                msg.client_state_of_a_on_b.encode_to_vec(),
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
                 client_id: vars.client_id_on_a().clone(),
@@ -121,13 +121,13 @@ where
             ClientConsensusStatePath::new(vars.client_id_on_b(), &msg.consensus_height_of_a_on_b);
 
         client_state_of_b_on_a
-            .verify_client_consensus_state(
+            .verify_membership(
                 msg.proofs_height_on_b,
                 prefix_on_b,
                 &msg.proof_consensus_state_of_a_on_b,
                 consensus_state_of_b_on_a.root(),
-                &client_cons_state_path_on_b,
-                expected_consensus_state_of_a_on_b.as_ref(),
+                Path::ClientConsensusState(client_cons_state_path_on_b),
+                expected_consensus_state_of_a_on_b.try_into()?,
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
                 height: msg.proofs_height_on_b,

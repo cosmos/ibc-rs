@@ -8,6 +8,7 @@ use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
+use crate::core::ics24_host::Path;
 use crate::timestamp::Expiry;
 
 use crate::core::{ContextError, ValidationContext};
@@ -97,13 +98,13 @@ where
 
         // Verify the proof for the packet against the chain store.
         client_state_of_a_on_b
-            .verify_packet_data(
+            .verify_membership(
                 msg.proof_height_on_a,
                 conn_end_on_b.counterparty().prefix(),
                 &msg.proof_commitment_on_a,
                 consensus_state_of_a_on_b.root(),
-                &commitment_path_on_a,
-                expected_commitment_on_a,
+                Path::Commitment(commitment_path_on_a),
+                expected_commitment_on_a.into_vec(),
             )
             .map_err(|e| ChannelError::PacketVerificationFailed {
                 sequence: msg.packet.seq_on_a,

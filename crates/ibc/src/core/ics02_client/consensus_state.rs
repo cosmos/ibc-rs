@@ -55,6 +55,15 @@ pub fn downcast_consensus_state<CS: ConsensusState>(h: &dyn ConsensusState) -> O
     h.as_any().downcast_ref::<CS>()
 }
 
+impl TryFrom<Box<dyn ConsensusState>> for Vec<u8> {
+    type Error = ClientError;
+
+    fn try_from(value: Box<dyn ConsensusState>) -> Result<Self, Self::Error> {
+        let value = value.encode_vec().map_err(ClientError::Encode)?;
+        Ok(value)
+    }
+}
+
 impl PartialEq for dyn ConsensusState {
     fn eq(&self, other: &Self) -> bool {
         self.eq_consensus_state(other)

@@ -12,6 +12,7 @@ use crate::timestamp::Timestamp;
 use crate::Height;
 
 use displaydoc::Display;
+use ibc_proto::protobuf::Error as ProtoError;
 
 #[derive(Debug, Display)]
 pub enum ChannelError {
@@ -23,6 +24,8 @@ pub enum ChannelError {
     UnknownState { state: i32 },
     /// channel order type unknown: `{type_id}`
     UnknownOrderType { type_id: String },
+    /// invalid channel end error: `{0}`
+    InvalidChannelEnd(ProtoError),
     /// invalid connection hops length: expected `{expected}`; actual `{actual}`
     InvalidConnectionHopsLength { expected: usize, actual: usize },
     /// invalid signer address error: `{0}`

@@ -7,9 +7,9 @@ use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
-use crate::prelude::*;
-
+use crate::core::ics24_host::Path;
 use crate::core::{ContextError, ValidationContext};
+use crate::prelude::*;
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), ContextError>
 where
@@ -111,13 +111,13 @@ where
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
         client_state_of_b_on_a
-            .verify_channel_state(
+            .verify_membership(
                 msg.proof_height_on_b,
                 prefix_on_b,
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
-                &chan_end_path_on_b,
-                &expected_chan_end_on_b,
+                Path::ChannelEnd(chan_end_path_on_b),
+                expected_chan_end_on_b.try_into()?,
             )
             .map_err(ChannelError::VerifyChannelFailed)
             .map_err(PacketError::Channel)?;
@@ -133,13 +133,14 @@ where
                 .into());
             }
             let seq_recv_path_on_b = SeqRecvPath::new(&packet.port_id_on_b, &packet.chan_id_on_b);
-            client_state_of_b_on_a.verify_next_sequence_recv(
+
+            client_state_of_b_on_a.verify_membership(
                 msg.proof_height_on_b,
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
-                &seq_recv_path_on_b,
-                packet.seq_on_a,
+                Path::SeqRecv(seq_recv_path_on_b),
+                packet.seq_on_a.try_into()?,
             )
         } else {
             let receipt_path_on_b = ReceiptPath::new(
@@ -147,12 +148,13 @@ where
                 &msg.packet.chan_id_on_b,
                 msg.packet.seq_on_a,
             );
-            client_state_of_b_on_a.verify_packet_receipt_absence(
+
+            client_state_of_b_on_a.verify_non_membership(
                 msg.proof_height_on_b,
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
-                &receipt_path_on_b,
+                Path::Receipt(receipt_path_on_b),
             )
         };
         next_seq_recv_verification_result
