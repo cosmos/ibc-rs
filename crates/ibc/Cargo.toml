@@ -88,7 +88,7 @@ version = "0.29"
 default-features = false
 
 [dependencies.tendermint-light-client-verifier]
-version = "0.29"
+version = "0.30"
 default-features = false
 features = ["rust-crypto"]
 
