@@ -29,7 +29,7 @@ where
     // Read client type from the host chain store. The client should already exist.
     // Read client state from the host chain store.
     let client_state = ctx.client_state(&client_id)?;
-    std::println!("client state: {:?}", client_state);
+
     client_state.assert_not_frozen()?;
 
     // Read consensus state from the host chain store.
