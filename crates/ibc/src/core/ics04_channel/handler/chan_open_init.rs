@@ -21,6 +21,10 @@ where
     // An IBC connection running on the local (host) chain should exist.
     let conn_end_on_a = ctx_a.connection_end(&msg.connection_hops_on_a[0])?;
 
+    let client_id_on_a = conn_end_on_a.client_id();
+    let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
+    client_state_of_b_on_a.assert_not_frozen()?;
+
     let conn_version = match conn_end_on_a.versions() {
         [version] => version,
         _ => return Err(ChannelError::InvalidVersionLengthConnection.into()),
