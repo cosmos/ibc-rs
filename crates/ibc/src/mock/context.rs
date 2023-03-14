@@ -159,6 +159,7 @@ impl MockContext {
 
         let block_time = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS);
         let next_block_timestamp = Timestamp::now().add(block_time).unwrap();
+        let ibc_store = Arc::new(Mutex::new(MockIbcStore::default()));
         MockContext {
             host_chain_type: host_type,
             host_chain_id: host_id.clone(),
@@ -179,8 +180,8 @@ impl MockContext {
                 })
                 .collect(),
             block_time,
-            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
-            router: IbcRouter::new(),
+            ibc_store: ibc_store.clone(),
+            router: IbcRouter::new(ibc_store),
             events: Vec::new(),
             logs: Vec::new(),
         }
@@ -655,9 +656,9 @@ pub struct IbcRouter {
 }
 
 impl IbcRouter {
-    pub fn new() -> Self {
+    pub fn new(ibc_store: Arc<Mutex<MockIbcStore>>) -> Self {
         Self {
-            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+            ibc_store,
             modules: BTreeMap::new(),
         }
     }
@@ -665,7 +666,7 @@ impl IbcRouter {
 
 impl Default for IbcRouter {
     fn default() -> Self {
-        Self::new()
+        Self::new(Arc::new(Mutex::new(MockIbcStore::default())))
     }
 }
 

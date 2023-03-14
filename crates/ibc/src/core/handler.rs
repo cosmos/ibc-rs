@@ -143,7 +143,7 @@ mod tests {
 
         // We reuse this same context across all tests. Nothing in particular needs parametrizing.
         let mut ctx = MockContext::default();
-        let mut module = DummyTransferModule::new();
+        let mut module = DummyTransferModule::new(ctx.ibc_store.clone());
         let module_id = module.module_id();
         ctx.add_route(module_id.clone(), Box::new(module.clone()))
             .unwrap();
@@ -467,11 +467,13 @@ mod tests {
         for test in tests {
             let res = match test.msg.clone() {
                 TestMsg::Ics26(msg) => dispatch(&mut ctx, msg).map(|_| ()),
-                TestMsg::Ics20(msg) => send_transfer(&mut DummyTransferModule::new(), msg)
-                    .map_err(|e: TokenTransferError| ChannelError::AppModule {
-                        description: e.to_string(),
-                    })
-                    .map_err(|e| RouterError::ContextError(e.into())),
+                TestMsg::Ics20(msg) => {
+                    send_transfer(&mut DummyTransferModule::new(ctx.ibc_store.clone()), msg)
+                        .map_err(|e: TokenTransferError| ChannelError::AppModule {
+                            description: e.to_string(),
+                        })
+                        .map_err(|e| RouterError::ContextError(e.into()))
+                }
             };
 
             assert_eq!(
@@ -513,17 +515,14 @@ mod tests {
                     Duration::MAX,
                 ),
             );
-        let mut module = DummyTransferModule::new();
+        let mut module = DummyTransferModule::new(ctx.ibc_store.clone());
         let module_id = module.module_id();
-
         ctx.add_route(module_id.clone(), Box::new(module.clone()))
             .unwrap();
-
         // Note: messages will be using the default port
         module
             .bind_port(PortPath(PortId::default()), module_id)
             .unwrap();
-
         ctx
     }
 
@@ -533,7 +532,6 @@ mod tests {
 
         let msg_chan_open_init =
             MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
-
         dispatch(
             &mut ctx,
             MsgEnvelope::Channel(ChannelMsg::OpenInit(msg_chan_open_init)),

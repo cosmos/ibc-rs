@@ -152,7 +152,7 @@ mod tests {
         let mut default_context = MockContext::default();
         let client_consensus_state_height = default_context.host_height().unwrap();
 
-        let module = DummyTransferModule::new();
+        let module = DummyTransferModule::new(default_context.ibc_store.clone());
         let module_id = module.module_id();
         default_context
             .add_route(module_id.clone(), Box::new(module))

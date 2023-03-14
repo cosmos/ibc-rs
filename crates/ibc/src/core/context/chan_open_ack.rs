@@ -143,9 +143,11 @@ mod tests {
     fn fixture() -> Fixture {
         let proof_height = 10;
         let mut context = MockContext::default();
-        let module = DummyTransferModule::new();
+        let module = DummyTransferModule::new(context.ibc_store.clone());
         let module_id = module.module_id();
-        context.add_route(module_id.clone(), Box::new(module)).unwrap();
+        context
+            .add_route(module_id.clone(), Box::new(module))
+            .unwrap();
 
         let client_id_on_a = ClientId::new(mock_client_type(), 45).unwrap();
         let conn_id_on_a = ConnectionId::new(2);

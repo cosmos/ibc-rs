@@ -188,9 +188,11 @@ mod tests {
     fn fixture() -> Fixture {
         let mut context = MockContext::default();
 
-        let module = DummyTransferModule::new();
+        let module = DummyTransferModule::new(context.ibc_store.clone());
         let module_id = module.module_id();
-        context.add_route(module_id.clone(), Box::new(module)).unwrap();
+        context
+            .add_route(module_id.clone(), Box::new(module))
+            .unwrap();
 
         let host_height = context.query_latest_height().unwrap().increment();
 

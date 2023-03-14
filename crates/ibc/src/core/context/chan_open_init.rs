@@ -149,9 +149,11 @@ mod tests {
         let msg = MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
 
         let mut context = MockContext::default();
-        let module = DummyTransferModule::new();
+        let module = DummyTransferModule::new(context.ibc_store.clone());
         let module_id = module.module_id();
-        context.add_route(module_id.clone(), Box::new(module)).unwrap();
+        context
+            .add_route(module_id.clone(), Box::new(module))
+            .unwrap();
 
         let msg_conn_init =
             MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init()).unwrap();

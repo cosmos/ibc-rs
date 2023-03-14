@@ -72,27 +72,24 @@ pub fn get_dummy_bech32_account() -> String {
     "cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng".to_string()
 }
 
-pub fn get_dummy_transfer_module() -> DummyTransferModule {
-    DummyTransferModule::new()
-}
 #[derive(Debug, Clone)]
 pub struct DummyTransferModule {
-    module_id: ModuleId,
-    ibc_store: Arc<Mutex<MockIbcStore>>,
+    pub module_id: ModuleId,
+    pub ibc_store: Arc<Mutex<MockIbcStore>>,
 }
 
 impl DummyTransferModule {
-    pub fn new() -> Self {
+    pub fn new(ibc_store: Arc<Mutex<MockIbcStore>>) -> Self {
         Self {
             module_id: MODULE_ID_STR.parse().unwrap(),
-            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+            ibc_store,
         }
     }
 }
 
 impl Default for DummyTransferModule {
     fn default() -> Self {
-        Self::new()
+        Self::new(Arc::new(Mutex::new(MockIbcStore::default())))
     }
 }
 
@@ -111,7 +108,7 @@ impl ModuleContext for DummyTransferModule {
     }
 
     fn bind_port(&mut self, port_path: PortPath, port_owner: ModuleId) -> Result<(), PortError> {
-        let ibc_store = self.ibc_store.lock();
+        let mut ibc_store = self.ibc_store.lock();
         let fetched_owner = ibc_store.port_to_module.get(&port_path.0);
         if let Some(owner) = fetched_owner {
             return Err(PortError::PortAlreadyBound {
@@ -119,10 +116,7 @@ impl ModuleContext for DummyTransferModule {
                 port_id_owner: owner.to_string(),
             });
         }
-        self.ibc_store
-            .lock()
-            .port_to_module
-            .insert(port_path.0, port_owner);
+        ibc_store.port_to_module.insert(port_path.0, port_owner);
         Ok(())
     }
 

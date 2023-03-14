@@ -159,10 +159,10 @@ mod tests {
         let client_height = Height::new(0, 2).unwrap();
         let mut ctx = MockContext::default().with_client(&ClientId::default(), client_height);
 
-        let module = DummyTransferModule::new();
+        let module = DummyTransferModule::new(ctx.ibc_store.clone());
         let module_id = module.module_id();
         ctx.add_route(module_id.clone(), Box::new(module)).unwrap();
-        
+
         let msg = MsgAcknowledgement::try_from(get_dummy_raw_msg_acknowledgement(
             client_height.revision_height(),
         ))

@@ -161,7 +161,7 @@ mod tests {
                 chan_end,
             );
 
-        let module = DummyTransferModule::new();
+        let module = DummyTransferModule::new(context.ibc_store.clone());
         let module_id = module.module_id();
         context
             .add_route(module_id.clone(), Box::new(module))

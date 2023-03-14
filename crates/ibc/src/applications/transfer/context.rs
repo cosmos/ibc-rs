@@ -436,7 +436,7 @@ pub(crate) mod test {
         ChannelId,
         Counterparty,
     ) {
-        let ctx = DummyTransferModule::new();
+        let ctx = DummyTransferModule::default();
         let order = Order::Unordered;
         let connection_hops = vec![ConnectionId::new(1)];
         let port_id = PortId::transfer();
