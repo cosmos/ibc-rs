@@ -29,7 +29,7 @@ where
     // Read client type from the host chain store. The client should already exist.
     // Read client state from the host chain store.
     let client_state = ctx.client_state(&client_id)?;
-
+    std::println!("client state: {:?}", client_state);
     client_state.assert_not_frozen()?;
 
     // Read consensus state from the host chain store.
@@ -236,7 +236,7 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(client_state.assert_not_frozen().is_err());
+        assert!(client_state.assert_not_frozen().is_ok());
         assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
@@ -283,7 +283,7 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(client_state.assert_not_frozen().is_err());
+        assert!(client_state.assert_not_frozen().is_ok());
         assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
@@ -344,7 +344,7 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(client_state.assert_not_frozen().is_err());
+        assert!(client_state.assert_not_frozen().is_ok());
         assert_eq!(client_state.latest_height(), latest_header_height);
         assert_eq!(client_state, ctx.latest_client_states(&msg.client_id));
     }

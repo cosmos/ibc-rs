@@ -90,7 +90,7 @@ mod tests {
     fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &ClientType) {
         let client_state = ctx.client_state(client_id).unwrap();
 
-        assert!(client_state.assert_not_frozen().is_ok());
+        assert!(client_state.assert_not_frozen().is_err());
         assert_eq!(
             client_state.frozen_height(),
             Some(Height::new(0, 1).unwrap())
