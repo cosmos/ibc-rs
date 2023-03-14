@@ -79,8 +79,6 @@ pub enum ChannelError {
     ConnectionNotOpen { connection_id: ConnectionId },
     /// Undefined counterparty connection for `{connection_id}`
     UndefinedConnectionCounterparty { connection_id: ConnectionId },
-    /// Client with id `{client_id}` is frozen
-    FrozenClient { client_id: ClientId },
     /// Channel `{channel_id}` should not be state `{state}`
     InvalidChannelState { channel_id: ChannelId, state: State },
     /// invalid proof: empty proof
@@ -102,8 +100,6 @@ pub enum PacketError {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// Client with id `{client_id}` is frozen
-    FrozenClient { client_id: ClientId },
     /// Receiving chain block height `{chain_height}` >= packet timeout height `{timeout_height}`
     LowPacketHeight {
         chain_height: Height,

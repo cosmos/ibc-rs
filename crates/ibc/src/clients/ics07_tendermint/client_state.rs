@@ -216,24 +216,6 @@ impl ClientState {
         })
     }
 
-    /// Verify that the client is at a sufficient height and unfrozen at the given height
-    pub fn verify_height(&self, height: Height) -> Result<(), Error> {
-        if self.latest_height < height {
-            return Err(Error::InsufficientHeight {
-                latest_height: self.latest_height(),
-                target_height: height,
-            });
-        }
-
-        match self.frozen_height {
-            Some(frozen_height) if frozen_height <= height => Err(Error::ClientFrozen {
-                frozen_height,
-                target_height: height,
-            }),
-            _ => Ok(()),
-        }
-    }
-
     fn check_header_validator_set(
         trusted_consensus_state: &TmConsensusState,
         header: &Header,
@@ -755,7 +737,6 @@ impl Ics2ClientState for ClientState {
 
     fn verify_membership(
         &self,
-        proof_height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
@@ -763,7 +744,6 @@ impl Ics2ClientState for ClientState {
         value: Vec<u8>,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
-        client_state.verify_height(proof_height)?;
 
         let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
         let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
@@ -783,14 +763,12 @@ impl Ics2ClientState for ClientState {
 
     fn verify_non_membership(
         &self,
-        proof_height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         path: Path,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
-        client_state.verify_height(proof_height)?;
 
         let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
         let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
@@ -965,7 +943,10 @@ mod tests {
 
     use ibc_proto::ics23::ProofSpec as Ics23ProofSpec;
 
-    use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState};
+    use crate::clients::ics07_tendermint::client_state::{
+        AllowUpdate, ClientState as TmClientState,
+    };
+    use crate::core::ics02_client::client_state::ClientState;
     use crate::core::ics02_client::trust_threshold::TrustThreshold;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ChainId;
@@ -1127,7 +1108,7 @@ mod tests {
         for test in tests {
             let p = test.params.clone();
 
-            let cs_result = ClientState::new(
+            let cs_result = TmClientState::new(
                 p.id,
                 p.trust_level,
                 p.trusting_period,
@@ -1172,7 +1153,7 @@ mod tests {
         struct Test {
             name: String,
             height: Height,
-            setup: Option<Box<dyn FnOnce(ClientState) -> ClientState>>,
+            setup: Option<Box<dyn FnOnce(TmClientState) -> TmClientState>>,
             want_pass: bool,
         }
 
@@ -1201,7 +1182,7 @@ mod tests {
 
         for test in tests {
             let p = default_params.clone();
-            let client_state = ClientState::new(
+            let client_state = TmClientState::new(
                 p.id,
                 p.trust_level,
                 p.trusting_period,
@@ -1218,7 +1199,7 @@ mod tests {
                 Some(setup) => (setup)(client_state),
                 _ => client_state,
             };
-            let res = client_state.verify_height(test.height);
+            let res = client_state.validate_proof_height(test.height);
 
             assert_eq!(
                 test.want_pass,

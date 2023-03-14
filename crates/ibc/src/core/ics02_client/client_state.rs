@@ -42,13 +42,27 @@ pub trait ClientState:
     /// Latest height the client was updated to
     fn latest_height(&self) -> Height;
 
-    /// Freeze status of the client
-    fn is_frozen(&self) -> bool {
-        self.frozen_height().is_some()
+    /// Check if the given proof has a valid height for the client
+    fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
+        if self.latest_height() < proof_height {
+            return Err(ClientError::InvalidProofHeight {
+                latest_height: self.latest_height(),
+                proof_height,
+            });
+        }
+        Ok(())
     }
 
     /// Frozen height of the client
     fn frozen_height(&self) -> Option<Height>;
+
+    /// Assert that the client is not frozen
+    fn assert_not_frozen(&self) -> Result<(), ClientError> {
+        if let Some(frozen_height) = self.frozen_height() {
+            return Err(ClientError::ClientFrozen { frozen_height });
+        }
+        Ok(())
+    }
 
     /// Check if the state is expired when `elapsed` time has passed since the latest consensus
     /// state timestamp
@@ -113,7 +127,6 @@ pub trait ClientState:
     // proof of the existence of a value at a given Path at the specified height.
     fn verify_membership(
         &self,
-        proof_height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
@@ -125,7 +138,6 @@ pub trait ClientState:
     // verifies the absence of a given commitment at a specified height.
     fn verify_non_membership(
         &self,
-        proof_height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,

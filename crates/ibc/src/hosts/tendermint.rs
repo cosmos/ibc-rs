@@ -27,12 +27,7 @@ pub trait ValidateSelfClientContext {
             })
             .map_err(ContextError::ConnectionError)?;
 
-        if tm_client_state.is_frozen() {
-            return Err(ConnectionError::InvalidClientState {
-                reason: "client is frozen".to_string(),
-            })
-            .map_err(ContextError::ConnectionError);
-        }
+        tm_client_state.assert_not_frozen()?;
 
         let self_chain_id = self.chain_id();
         if self_chain_id != &tm_client_state.chain_id {

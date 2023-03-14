@@ -58,6 +58,10 @@ where
                 .map_err(|_| ConnectionError::Other {
                     description: "failed to fetch client state".to_string(),
                 })?;
+
+        client_state_of_a_on_b.assert_not_frozen()?;
+        client_state_of_a_on_b.validate_proof_height(msg.proofs_height_on_a)?;
+
         let client_cons_state_path_on_b =
             ClientConsensusStatePath::new(&msg.client_id_on_b, &msg.proofs_height_on_a);
         let consensus_state_of_a_on_b = ctx_b
@@ -80,7 +84,6 @@ where
 
             client_state_of_a_on_b
                 .verify_membership(
-                    msg.proofs_height_on_a,
                     prefix_on_a,
                     &msg.proof_conn_end_on_a,
                     consensus_state_of_a_on_b.root(),
@@ -92,7 +95,6 @@ where
 
         client_state_of_a_on_b
             .verify_membership(
-                msg.proofs_height_on_a,
                 prefix_on_a,
                 &msg.proof_client_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
@@ -115,7 +117,6 @@ where
 
         client_state_of_a_on_b
             .verify_membership(
-                msg.proofs_height_on_a,
                 prefix_on_a,
                 &msg.proof_consensus_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),

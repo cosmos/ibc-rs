@@ -121,7 +121,6 @@ where
                 SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
 
             client_state_of_b_on_a.verify_membership(
-                msg.proof_height_on_b,
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
@@ -136,7 +135,6 @@ where
             );
 
             client_state_of_b_on_a.verify_non_membership(
-                msg.proof_height_on_b,
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),

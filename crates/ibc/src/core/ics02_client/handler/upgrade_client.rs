@@ -31,11 +31,7 @@ where
     let old_client_state = ctx.client_state(&client_id)?;
 
     // Check if the client is frozen.
-    if old_client_state.is_frozen() {
-        return Err(ContextError::ClientError(ClientError::ClientFrozen {
-            client_id,
-        }));
-    }
+    old_client_state.assert_not_frozen()?;
 
     // Read the latest consensus state from the host chain store.
     let old_client_cons_state_path =

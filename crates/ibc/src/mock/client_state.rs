@@ -252,7 +252,6 @@ impl ClientState for MockClientState {
 
     fn verify_membership(
         &self,
-        _proof_height: Height,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
@@ -264,7 +263,6 @@ impl ClientState for MockClientState {
 
     fn verify_non_membership(
         &self,
-        _proof_height: Height,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,

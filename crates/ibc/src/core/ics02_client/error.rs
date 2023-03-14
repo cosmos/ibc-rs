@@ -21,8 +21,8 @@ pub enum ClientError {
     },
     /// client not found: `{client_id}`
     ClientNotFound { client_id: ClientId },
-    /// client is frozen: `{client_id}`
-    ClientFrozen { client_id: ClientId },
+    /// client is frozen: frozen_height=`{frozen_height}`
+    ClientFrozen { frozen_height: Height },
     /// consensus state not found at: `{client_id}` at height `{height}`
     ConsensusStateNotFound { client_id: ClientId, height: Height },
     /// implementation specific error
@@ -67,6 +67,11 @@ pub enum ClientError {
     InvalidHeight,
     /// height cannot end up zero or negative
     InvalidHeightResult,
+    /// the proof height is insufficient: latest_height=`{latest_height}` proof_height=`{proof_height}`
+    InvalidProofHeight {
+        latest_height: Height,
+        proof_height: Height,
+    },
     /// invalid proof for the upgraded client state error: `{0}`
     InvalidUpgradeClientProof(CommitmentError),
     /// invalid proof for the upgraded consensus state error: `{0}`
