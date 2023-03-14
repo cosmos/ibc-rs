@@ -764,7 +764,21 @@ impl Ics2ClientState for ClientState {
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(proof_height)?;
-        verify_membership(client_state, prefix, proof, root, path, value)
+
+        let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
+        let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
+            .map_err(ClientError::InvalidCommitmentProof)?
+            .into();
+
+        merkle_proof
+            .verify_membership(
+                &client_state.proof_specs,
+                root.clone().into(),
+                merkle_path,
+                value,
+                0,
+            )
+            .map_err(ClientError::Ics23Verification)
     }
 
     fn verify_non_membership(
@@ -777,49 +791,16 @@ impl Ics2ClientState for ClientState {
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
         client_state.verify_height(proof_height)?;
-        verify_non_membership(client_state, prefix, proof, root, path)
+
+        let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
+        let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
+            .map_err(ClientError::InvalidCommitmentProof)?
+            .into();
+
+        merkle_proof
+            .verify_non_membership(&client_state.proof_specs, root.clone().into(), merkle_path)
+            .map_err(ClientError::Ics23Verification)
     }
-}
-
-fn verify_membership(
-    client_state: &ClientState,
-    prefix: &CommitmentPrefix,
-    proof: &CommitmentProofBytes,
-    root: &CommitmentRoot,
-    path: impl Into<Path>,
-    value: Vec<u8>,
-) -> Result<(), ClientError> {
-    let merkle_path = apply_prefix(prefix, vec![path.into().to_string()]);
-    let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
-        .map_err(ClientError::InvalidCommitmentProof)?
-        .into();
-
-    merkle_proof
-        .verify_membership(
-            &client_state.proof_specs,
-            root.clone().into(),
-            merkle_path,
-            value,
-            0,
-        )
-        .map_err(ClientError::Ics23Verification)
-}
-
-fn verify_non_membership(
-    client_state: &ClientState,
-    prefix: &CommitmentPrefix,
-    proof: &CommitmentProofBytes,
-    root: &CommitmentRoot,
-    path: impl Into<Path>,
-) -> Result<(), ClientError> {
-    let merkle_path = apply_prefix(prefix, vec![path.into().to_string()]);
-    let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
-        .map_err(ClientError::InvalidCommitmentProof)?
-        .into();
-
-    merkle_proof
-        .verify_non_membership(&client_state.proof_specs, root.clone().into(), merkle_path)
-        .map_err(ClientError::Ics23Verification)
 }
 
 fn downcast_tm_client_state(cs: &dyn Ics2ClientState) -> Result<&ClientState, ClientError> {
