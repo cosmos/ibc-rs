@@ -1,3 +1,4 @@
+use crate::core::ics26_routing::module::{ExecutionModule, ValidationModule};
 use crate::prelude::*;
 
 use sha2::{Digest, Sha256};
@@ -22,11 +23,13 @@ use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::signer::Signer;
 
-pub trait TokenTransferValidationContext: SendPacketValidationContext {
+pub trait TokenTransferValidationContext: SendPacketValidationContext + ValidationModule {
     type AccountId: TryFrom<Signer>;
 
     /// get_port returns the portID for the transfer module.
-    fn get_port(&self) -> Result<PortId, TokenTransferError>;
+    fn get_port(&self) -> Result<PortId, TokenTransferError> {
+        Ok(PortId::transfer())
+    }
 
     /// Returns the escrow account id for a port and channel combination
     fn get_escrow_account(
@@ -71,7 +74,7 @@ pub trait TokenTransferValidationContext: SendPacketValidationContext {
 }
 
 pub trait TokenTransferExecutionContext:
-    TokenTransferValidationContext + SendPacketExecutionContext
+    TokenTransferValidationContext + SendPacketExecutionContext + ExecutionModule
 {
     /// This function should enable sending ibc fungible tokens from one account to another
     fn send_coins_execute(
@@ -110,7 +113,6 @@ pub fn cosmos_adr028_escrow_address(port_id: &PortId, channel_id: &ChannelId) ->
     hash
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_init_validate(
     ctx: &impl TokenTransferValidationContext,
     order: Order,
@@ -144,7 +146,6 @@ pub fn on_chan_open_init_validate(
     Ok(())
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_init_execute(
     _ctx: &mut impl TokenTransferExecutionContext,
     _order: Order,
@@ -157,7 +158,6 @@ pub fn on_chan_open_init_execute(
     Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_try_validate(
     _ctx: &impl TokenTransferValidationContext,
     order: Order,
@@ -183,7 +183,6 @@ pub fn on_chan_open_try_validate(
     Ok(())
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_try_execute(
     _ctx: &mut impl TokenTransferExecutionContext,
     _order: Order,
@@ -427,17 +426,17 @@ pub(crate) mod test {
     use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-    use crate::mock::context::MockContext;
+    use crate::test_utils::DummyTransferModule;
 
     fn get_defaults() -> (
-        MockContext,
+        DummyTransferModule,
         Order,
         Vec<ConnectionId>,
         PortId,
         ChannelId,
         Counterparty,
     ) {
-        let ctx = MockContext::default();
+        let ctx = DummyTransferModule::new();
         let order = Order::Unordered;
         let connection_hops = vec![ConnectionId::new(1)];
         let port_id = PortId::transfer();

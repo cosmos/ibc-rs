@@ -1,11 +1,12 @@
 use crate::core::ics04_channel::events::CloseInit;
 use crate::core::ics04_channel::handler::chan_close_init;
 use crate::core::ics24_host::path::ChannelEndPath;
+use crate::core::ics26_routing::router::{RouterMut, RouterRef};
 use crate::{core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit, prelude::*};
 
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::ics26_routing::module::ModuleId;
 
 use crate::events::IbcEvent;
 
@@ -95,10 +96,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::applications::transfer::MODULE_ID_STR;
+
     use crate::core::ics04_channel::msgs::chan_close_init::test_util::get_dummy_raw_msg_chan_close_init;
     use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
-    use crate::core::ics26_routing::context::ModuleId;
+    use crate::core::ics26_routing::module::ModuleContext;
+    use crate::core::ics26_routing::router::RouterMut;
     use crate::core::ValidationContext;
     use crate::events::IbcEvent;
     use crate::prelude::*;
@@ -147,29 +149,25 @@ mod tests {
             Version::default(),
         );
 
-        let mut context = {
-            let mut default_context = MockContext::default();
-            let client_consensus_state_height = default_context.host_height().unwrap();
+        let mut default_context = MockContext::default();
+        let client_consensus_state_height = default_context.host_height().unwrap();
 
-            let module = DummyTransferModule::new();
-            let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
-            default_context.add_route(module_id, module).unwrap();
+        let module = DummyTransferModule::new();
+        let module_id = module.module_id();
+        default_context
+            .add_route(module_id.clone(), Box::new(module))
+            .unwrap();
 
-            default_context
-                .with_client(&client_id, client_consensus_state_height)
-                .with_connection(conn_id, conn_end)
-                .with_channel(
-                    msg_chan_close_init.port_id_on_a.clone(),
-                    msg_chan_close_init.chan_id_on_a.clone(),
-                    chan_end,
-                )
-        };
+        let mut context = default_context
+            .with_client(&client_id, client_consensus_state_height)
+            .with_connection(conn_id, conn_end)
+            .with_channel(
+                msg_chan_close_init.port_id_on_a.clone(),
+                msg_chan_close_init.chan_id_on_a.clone(),
+                chan_end,
+            );
 
-        let res = chan_close_init_execute(
-            &mut context,
-            MODULE_ID_STR.parse().unwrap(),
-            msg_chan_close_init,
-        );
+        let res = chan_close_init_execute(&mut context, module_id, msg_chan_close_init);
         assert!(res.is_ok(), "Execution happy path");
 
         assert_eq!(context.events.len(), 1);

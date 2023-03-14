@@ -1,4 +1,5 @@
 use crate::core::ics24_host::path::{ChannelEndPath, CommitmentPath, SeqAckPath};
+use crate::core::ics26_routing::router::{RouterMut, RouterRef};
 use crate::prelude::*;
 
 use crate::{
@@ -7,7 +8,7 @@ use crate::{
             channel::Order, error::ChannelError, events::AcknowledgePacket,
             handler::acknowledgement, msgs::acknowledgement::MsgAcknowledgement,
         },
-        ics26_routing::context::ModuleId,
+        ics26_routing::module::ModuleId,
     },
     events::IbcEvent,
 };
@@ -126,8 +127,9 @@ mod tests {
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::PortId;
+    use crate::core::ics26_routing::module::ModuleContext;
+    use crate::core::ics26_routing::router::RouterMut;
     use crate::{
-        applications::transfer::MODULE_ID_STR,
         core::{
             ics03_connection::{connection::ConnectionEnd, version::get_compatible_versions},
             ics04_channel::{
@@ -157,10 +159,10 @@ mod tests {
         let client_height = Height::new(0, 2).unwrap();
         let mut ctx = MockContext::default().with_client(&ClientId::default(), client_height);
 
-        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
         let module = DummyTransferModule::new();
-        ctx.add_route(module_id.clone(), module).unwrap();
-
+        let module_id = module.module_id();
+        ctx.add_route(module_id.clone(), Box::new(module)).unwrap();
+        
         let msg = MsgAcknowledgement::try_from(get_dummy_raw_msg_acknowledgement(
             client_height.revision_height(),
         ))

@@ -1,4 +1,5 @@
 use crate::core::ics24_host::path::ChannelEndPath;
+use crate::core::ics26_routing::router::{RouterMut, RouterRef};
 use crate::{core::ics04_channel::events::OpenAck, prelude::*};
 
 use crate::core::ics04_channel::handler::chan_open_ack;
@@ -6,7 +7,7 @@ use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::ics26_routing::module::ModuleId;
 
 use crate::events::IbcEvent;
 
@@ -93,12 +94,17 @@ where
 #[cfg(test)]
 mod tests {
     use crate::{
-        core::context::chan_open_ack::chan_open_ack_execute, events::IbcEvent, prelude::*, Height,
+        core::{
+            context::chan_open_ack::chan_open_ack_execute,
+            ics26_routing::{module::ModuleContext, router::RouterMut},
+        },
+        events::IbcEvent,
+        prelude::*,
+        Height,
     };
     use rstest::*;
 
     use crate::{
-        applications::transfer::MODULE_ID_STR,
         core::{
             ics03_connection::{
                 connection::ConnectionEnd, msgs::test_util::get_dummy_raw_counterparty,
@@ -111,7 +117,7 @@ mod tests {
                 },
             },
             ics24_host::identifier::{ClientId, ConnectionId},
-            ics26_routing::context::ModuleId,
+            ics26_routing::module::ModuleId,
         },
         mock::context::MockContext,
         test_utils::DummyTransferModule,
@@ -138,8 +144,8 @@ mod tests {
         let proof_height = 10;
         let mut context = MockContext::default();
         let module = DummyTransferModule::new();
-        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
-        context.add_route(module_id.clone(), module).unwrap();
+        let module_id = module.module_id();
+        context.add_route(module_id.clone(), Box::new(module)).unwrap();
 
         let client_id_on_a = ClientId::new(mock_client_type(), 45).unwrap();
         let conn_id_on_a = ConnectionId::new(2);

@@ -2,11 +2,12 @@ use crate::core::ics04_channel::events::OpenTry;
 use crate::core::ics04_channel::handler::chan_open_try;
 use crate::core::ics24_host::identifier::ChannelId;
 use crate::core::ics24_host::path::{ChannelEndPath, SeqAckPath, SeqRecvPath, SeqSendPath};
+use crate::core::ics26_routing::router::{RouterMut, RouterRef};
 use crate::{core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry, prelude::*};
 
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::ics26_routing::module::ModuleId;
 
 use crate::events::IbcEvent;
 
@@ -118,8 +119,13 @@ where
 #[cfg(test)]
 mod tests {
     use crate::{
-        applications::transfer::MODULE_ID_STR,
-        core::{context::chan_open_try::chan_open_try_execute, ics26_routing::context::ModuleId},
+        core::{
+            context::chan_open_try::chan_open_try_execute,
+            ics26_routing::{
+                module::{ModuleContext, ModuleId},
+                router::RouterMut,
+            },
+        },
         events::IbcEvent,
         prelude::*,
         test_utils::DummyTransferModule,
@@ -181,8 +187,8 @@ mod tests {
 
         let mut context = MockContext::default();
         let module = DummyTransferModule::new();
-        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
-        context.add_route(module_id.clone(), module).unwrap();
+        let module_id = module.module_id();
+        context.add_route(module_id.clone(), Box::new(module)).unwrap();
 
         Fixture {
             context,

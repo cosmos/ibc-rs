@@ -27,20 +27,13 @@ use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::trust_threshold::TrustThreshold;
-use crate::core::ics03_connection::connection::ConnectionEnd;
-use crate::core::ics04_channel::channel::ChannelEnd;
-use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
-use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::core::ics24_host::path::{
-    AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, ClientUpgradePath,
-    CommitmentPath, ConnectionPath, ReceiptPath, SeqRecvPath,
-};
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientUpgradePath};
 use crate::core::ics24_host::Path;
 use crate::timestamp::{Timestamp, ZERO_DURATION};
 use crate::Height;
@@ -182,10 +175,6 @@ impl ClientState {
             frozen_height,
             verifier: ProdVerifier::default(),
         })
-    }
-
-    pub fn latest_height(&self) -> Height {
-        self.latest_height
     }
 
     pub fn with_header(self, h: TmHeader) -> Result<Self, Error> {
@@ -764,181 +753,31 @@ impl Ics2ClientState for ClientState {
         })
     }
 
-    fn verify_client_consensus_state(
+    fn verify_membership(
         &self,
-        height: Height,
+        proof_height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        client_cons_state_path: &ClientConsensusStatePath,
-        expected_consensus_state: &dyn ConsensusState,
+        path: Path,
+        value: Vec<u8>,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
-        client_state.verify_height(height)?;
-
-        let value = expected_consensus_state
-            .encode_vec()
-            .map_err(ClientError::InvalidAnyConsensusState)?;
-
-        verify_membership(
-            client_state,
-            prefix,
-            proof,
-            root,
-            client_cons_state_path.clone(),
-            value,
-        )
+        client_state.verify_height(proof_height)?;
+        verify_membership(client_state, prefix, proof, root, path, value)
     }
 
-    fn verify_connection_state(
+    fn verify_non_membership(
         &self,
-        height: Height,
+        proof_height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        conn_path: &ConnectionPath,
-        expected_connection_end: &ConnectionEnd,
+        path: Path,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
-        client_state.verify_height(height)?;
-
-        let value = expected_connection_end
-            .encode_vec()
-            .map_err(ClientError::InvalidConnectionEnd)?;
-        verify_membership(client_state, prefix, proof, root, conn_path.clone(), value)
-    }
-
-    fn verify_channel_state(
-        &self,
-        height: Height,
-        prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        channel_end_path: &ChannelEndPath,
-        expected_channel_end: &ChannelEnd,
-    ) -> Result<(), ClientError> {
-        let client_state = downcast_tm_client_state(self)?;
-        client_state.verify_height(height)?;
-        let value = expected_channel_end
-            .encode_vec()
-            .map_err(ClientError::InvalidChannelEnd)?;
-
-        verify_membership(
-            client_state,
-            prefix,
-            proof,
-            root,
-            channel_end_path.clone(),
-            value,
-        )
-    }
-
-    fn verify_client_full_state(
-        &self,
-        height: Height,
-        prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        client_state_path: &ClientStatePath,
-        expected_client_state: Any,
-    ) -> Result<(), ClientError> {
-        let client_state = downcast_tm_client_state(self)?;
-        client_state.verify_height(height)?;
-        let value = expected_client_state.encode_to_vec();
-
-        verify_membership(
-            client_state,
-            prefix,
-            proof,
-            root,
-            client_state_path.clone(),
-            value,
-        )
-    }
-
-    fn verify_packet_data(
-        &self,
-        height: Height,
-        prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        commitment_path: &CommitmentPath,
-        commitment: PacketCommitment,
-    ) -> Result<(), ClientError> {
-        let client_state = downcast_tm_client_state(self)?;
-        client_state.verify_height(height)?;
-
-        verify_membership(
-            client_state,
-            prefix,
-            proof,
-            root,
-            commitment_path.clone(),
-            commitment.into_vec(),
-        )
-    }
-
-    fn verify_packet_acknowledgement(
-        &self,
-        height: Height,
-        prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        ack_path: &AckPath,
-        ack: AcknowledgementCommitment,
-    ) -> Result<(), ClientError> {
-        let client_state = downcast_tm_client_state(self)?;
-        client_state.verify_height(height)?;
-
-        verify_membership(
-            client_state,
-            prefix,
-            proof,
-            root,
-            ack_path.clone(),
-            ack.into_vec(),
-        )
-    }
-
-    fn verify_next_sequence_recv(
-        &self,
-        height: Height,
-        prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        seq_recv_path: &SeqRecvPath,
-        sequence: Sequence,
-    ) -> Result<(), ClientError> {
-        let client_state = downcast_tm_client_state(self)?;
-        client_state.verify_height(height)?;
-
-        let mut seq_bytes = Vec::new();
-        u64::from(sequence)
-            .encode(&mut seq_bytes)
-            .expect("buffer size too small");
-
-        verify_membership(
-            client_state,
-            prefix,
-            proof,
-            root,
-            seq_recv_path.clone(),
-            seq_bytes,
-        )
-    }
-
-    fn verify_packet_receipt_absence(
-        &self,
-        height: Height,
-        prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        receipt_path: &ReceiptPath,
-    ) -> Result<(), ClientError> {
-        let client_state = downcast_tm_client_state(self)?;
-        client_state.verify_height(height)?;
-
-        verify_non_membership(client_state, prefix, proof, root, receipt_path.clone())
+        client_state.verify_height(proof_height)?;
+        verify_non_membership(client_state, prefix, proof, root, path)
     }
 }
 

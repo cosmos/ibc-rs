@@ -10,7 +10,7 @@ use crate::{
             packet::Receipt,
         },
         ics24_host::path::{AckPath, ChannelEndPath, ReceiptPath, SeqRecvPath},
-        ics26_routing::context::ModuleId,
+        ics26_routing::{module::ModuleId, router::RouterMut},
     },
     events::IbcEvent,
     prelude::*,
@@ -143,12 +143,14 @@ where
 #[cfg(test)]
 mod tests {
     use crate::{
-        applications::transfer::MODULE_ID_STR,
         core::{
             context::recv_packet::recv_packet_execute,
             ics03_connection::version::get_compatible_versions,
             ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId},
-            ics26_routing::context::ModuleId,
+            ics26_routing::{
+                module::{ModuleContext, ModuleId},
+                router::RouterMut,
+            },
         },
         events::IbcEvent,
         prelude::*,
@@ -186,9 +188,9 @@ mod tests {
     fn fixture() -> Fixture {
         let mut context = MockContext::default();
 
-        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
         let module = DummyTransferModule::new();
-        context.add_route(module_id.clone(), module).unwrap();
+        let module_id = module.module_id();
+        context.add_route(module_id.clone(), Box::new(module)).unwrap();
 
         let host_height = context.query_latest_height().unwrap().increment();
 

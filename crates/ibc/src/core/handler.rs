@@ -41,7 +41,7 @@ mod tests {
     use crate::applications::transfer::relay::send_transfer::send_transfer;
     use crate::applications::transfer::{
         msgs::transfer::test_util::get_dummy_msg_transfer, msgs::transfer::MsgTransfer,
-        packet::PacketData, PrefixedCoin, MODULE_ID_STR,
+        packet::PacketData, PrefixedCoin,
     };
     use crate::core::ics02_client::msgs::{
         create_client::MsgCreateClient, update_client::MsgUpdateClient,
@@ -81,10 +81,11 @@ mod tests {
     use crate::core::ics23_commitment::commitment::test_util::get_dummy_merkle_proof;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::ics24_host::path::CommitmentPath;
-    use crate::core::ics26_routing::context::ModuleId;
+    use crate::core::ics24_host::path::{CommitmentPath, PortPath};
     use crate::core::ics26_routing::error::RouterError;
+    use crate::core::ics26_routing::module::ModuleContext;
     use crate::core::ics26_routing::msgs::MsgEnvelope;
+    use crate::core::ics26_routing::router::RouterMut;
     use crate::core::{dispatch, ValidationContext};
     use crate::events::IbcEvent;
     use crate::mock::client_state::MockClientState;
@@ -140,16 +141,12 @@ mod tests {
 
         let upgrade_client_height_second = Height::new(1, 1).unwrap();
 
-        let transfer_module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
-
         // We reuse this same context across all tests. Nothing in particular needs parametrizing.
-        let mut ctx = {
-            let mut ctx = MockContext::default();
-            let module = DummyTransferModule::new();
-            ctx.add_route(transfer_module_id.clone(), module).unwrap();
-
-            ctx
-        };
+        let mut ctx = MockContext::default();
+        let mut module = DummyTransferModule::new();
+        let module_id = module.module_id();
+        ctx.add_route(module_id.clone(), Box::new(module.clone()))
+            .unwrap();
 
         let create_client_msg = MsgCreateClient::new(
             MockClientState::new(MockHeader::new(start_client_height)).into(),
@@ -239,7 +236,9 @@ mod tests {
             "ICS26 routing dispatch test 'client creation' failed for message {create_client_msg:?} with result: {res:?}",
         );
 
-        ctx.scope_port_to_module(msg_chan_init.port_id_on_a.clone(), transfer_module_id);
+        module
+            .bind_port(PortPath(msg_chan_init.port_id_on_a.clone()), module_id)
+            .unwrap();
 
         // Figure out the ID of the client that was just created.
         let client_id_event = ctx.events.first();
@@ -468,7 +467,7 @@ mod tests {
         for test in tests {
             let res = match test.msg.clone() {
                 TestMsg::Ics26(msg) => dispatch(&mut ctx, msg).map(|_| ()),
-                TestMsg::Ics20(msg) => send_transfer(&mut ctx, msg)
+                TestMsg::Ics20(msg) => send_transfer(&mut DummyTransferModule::new(), msg)
                     .map_err(|e: TokenTransferError| ChannelError::AppModule {
                         description: e.to_string(),
                     })
@@ -498,7 +497,6 @@ mod tests {
     }
 
     fn get_channel_events_ctx() -> MockContext {
-        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
         let mut ctx = MockContext::default()
             .with_client(&ClientId::default(), Height::new(0, 1).unwrap())
             .with_connection(
@@ -515,12 +513,16 @@ mod tests {
                     Duration::MAX,
                 ),
             );
-        let module = DummyTransferModule::new();
+        let mut module = DummyTransferModule::new();
+        let module_id = module.module_id();
 
-        ctx.add_route(module_id.clone(), module).unwrap();
+        ctx.add_route(module_id.clone(), Box::new(module.clone()))
+            .unwrap();
 
         // Note: messages will be using the default port
-        ctx.scope_port_to_module(PortId::default(), module_id);
+        module
+            .bind_port(PortPath(PortId::default()), module_id)
+            .unwrap();
 
         ctx
     }

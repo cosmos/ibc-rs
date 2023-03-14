@@ -96,12 +96,6 @@ pub enum ClientError {
     },
     /// the local consensus state could not be retrieved for height `{height}`
     MissingLocalConsensusState { height: Height },
-    /// invalid connection end error: `{0}`
-    InvalidConnectionEnd(TendermintProtoError),
-    /// invalid channel end error: `{0}`
-    InvalidChannelEnd(TendermintProtoError),
-    /// invalid any client consensus state error: `{0}`
-    InvalidAnyConsensusState(TendermintProtoError),
     /// failed to parse signer error: `{0}`
     Signer(SignerError),
     /// ics23 verification failure error: `{0}`
@@ -130,9 +124,6 @@ impl std::error::Error for ClientError {
             Self::InvalidUpgradeConsensusStateProof(e) => Some(e),
             Self::InvalidCommitmentProof(e) => Some(e),
             Self::InvalidPacketTimestamp(e) => Some(e),
-            Self::InvalidConnectionEnd(e) => Some(e),
-            Self::InvalidChannelEnd(e) => Some(e),
-            Self::InvalidAnyConsensusState(e) => Some(e),
             Self::Signer(e) => Some(e),
             Self::Ics23Verification(e) => Some(e),
             _ => None,

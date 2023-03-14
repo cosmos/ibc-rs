@@ -8,18 +8,11 @@ use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics03_connection::connection::ConnectionEnd;
-use crate::core::ics04_channel::channel::ChannelEnd;
-use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
-use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::core::ics24_host::path::{
-    AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath,
-    ConnectionPath, ReceiptPath, SeqRecvPath,
-};
+use crate::core::ics24_host::Path;
 use crate::dynamic_typing::AsAny;
 use crate::erased::ErasedSerialize;
 use crate::prelude::*;
@@ -116,97 +109,27 @@ pub trait ClientState:
         upgraded_consensus_state: Any,
     ) -> Result<UpdatedState, ClientError>;
 
-    /// Verification functions as specified in:
-    /// <https://github.com/cosmos/ibc/tree/master/spec/core/ics-002-client-semantics>
-    ///
-    /// Verify a `proof` that the consensus state of a given client (at height `consensus_height`)
-    /// matches the input `consensus_state`. The parameter `counterparty_height` represent the
-    /// height of the counterparty chain that this proof assumes (i.e., the height at which this
-    /// proof was computed).
-    fn verify_client_consensus_state(
+    // Verify_membership is a generic proof verification method which verifies a
+    // proof of the existence of a value at a given Path at the specified height.
+    fn verify_membership(
         &self,
         proof_height: Height,
-        counterparty_prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        client_cons_state_path: &ClientConsensusStatePath,
-        expected_consensus_state: &dyn ConsensusState,
-    ) -> Result<(), ClientError>;
-
-    /// Verify a `proof` that a connection state matches that of the input `connection_end`.
-    fn verify_connection_state(
-        &self,
-        proof_height: Height,
-        counterparty_prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        counterparty_conn_path: &ConnectionPath,
-        expected_counterparty_connection_end: &ConnectionEnd,
-    ) -> Result<(), ClientError>;
-
-    /// Verify a `proof` that a channel state matches that of the input `channel_end`.
-    fn verify_channel_state(
-        &self,
-        proof_height: Height,
-        counterparty_prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        counterparty_chan_end_path: &ChannelEndPath,
-        expected_counterparty_channel_end: &ChannelEnd,
-    ) -> Result<(), ClientError>;
-
-    /// Verify the client state for this chain that it is stored on the counterparty chain.
-    fn verify_client_full_state(
-        &self,
-        proof_height: Height,
-        counterparty_prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        client_state_path: &ClientStatePath,
-        expected_client_state: Any,
-    ) -> Result<(), ClientError>;
-
-    /// Verify a `proof` that a packet has been committed.
-    fn verify_packet_data(
-        &self,
-        height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        commitment_path: &CommitmentPath,
-        commitment: PacketCommitment,
+        path: Path,
+        value: Vec<u8>,
     ) -> Result<(), ClientError>;
 
-    /// Verify a `proof` that a packet has been committed.
-    fn verify_packet_acknowledgement(
+    // Verify_non_membership is a generic proof verification method which
+    // verifies the absence of a given commitment at a specified height.
+    fn verify_non_membership(
         &self,
-        height: Height,
+        proof_height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        ack_path: &AckPath,
-        ack: AcknowledgementCommitment,
-    ) -> Result<(), ClientError>;
-
-    /// Verify a `proof` that of the next_seq_received.
-    fn verify_next_sequence_recv(
-        &self,
-        height: Height,
-        prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        seq_recv_path: &SeqRecvPath,
-        sequence: Sequence,
-    ) -> Result<(), ClientError>;
-
-    /// Verify a `proof` that a packet has not been received.
-    fn verify_packet_receipt_absence(
-        &self,
-        height: Height,
-        prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        receipt_path: &ReceiptPath,
+        path: Path,
     ) -> Result<(), ClientError>;
 }
 

@@ -1,4 +1,5 @@
-use crate::core::ics04_channel::handler::ModuleExtras;
+use crate::core::ics05_port::error::PortError;
+use crate::core::{ics04_channel::handler::ModuleExtras, ics24_host::path::PortPath};
 use crate::prelude::*;
 
 use alloc::borrow::{Borrow, Cow};
@@ -64,8 +65,38 @@ impl Borrow<str> for ModuleId {
     }
 }
 
-pub trait Module: Debug {
-    #[allow(clippy::too_many_arguments)]
+pub trait ModuleContext {
+    /// Returns the identifier of the module.
+    fn module_id(&self) -> ModuleId;
+
+    /// Returns the owned ports by the module.
+    fn get_owned_ports(&self) -> Vec<PortId>;
+
+    /// Stores an identifier of the module at a path associated with the port_id and bind the port.
+    fn bind_port(&mut self, port_path: PortPath, port_owner: ModuleId) -> Result<(), PortError>;
+
+    /// Deletes the identifier of the module at a path associated with the port_id and unbind the port.
+    fn release_port(&mut self, port_path: PortPath) -> Result<(), PortError>;
+}
+
+pub trait Module: ValidationModule + ExecutionModule {
+    fn as_validation_module(&self) -> &dyn ValidationModule;
+    fn as_execution_module(&mut self) -> &mut dyn ExecutionModule;
+}
+
+impl<M> Module for M
+where
+    M: ValidationModule + ExecutionModule,
+{
+    fn as_validation_module(&self) -> &dyn ValidationModule {
+        self
+    }
+    fn as_execution_module(&mut self) -> &mut dyn ExecutionModule {
+        self
+    }
+}
+
+pub trait ValidationModule: ModuleContext + Debug {
     fn on_chan_open_init_validate(
         &self,
         order: Order,
@@ -76,18 +107,6 @@ pub trait Module: Debug {
         version: &Version,
     ) -> Result<Version, ChannelError>;
 
-    #[allow(clippy::too_many_arguments)]
-    fn on_chan_open_init_execute(
-        &mut self,
-        order: Order,
-        connection_hops: &[ConnectionId],
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        counterparty: &Counterparty,
-        version: &Version,
-    ) -> Result<(ModuleExtras, Version), ChannelError>;
-
-    #[allow(clippy::too_many_arguments)]
     fn on_chan_open_try_validate(
         &self,
         order: Order,
@@ -98,17 +117,6 @@ pub trait Module: Debug {
         counterparty_version: &Version,
     ) -> Result<Version, ChannelError>;
 
-    #[allow(clippy::too_many_arguments)]
-    fn on_chan_open_try_execute(
-        &mut self,
-        order: Order,
-        connection_hops: &[ConnectionId],
-        port_id: &PortId,
-        channel_id: &ChannelId,
-        counterparty: &Counterparty,
-        counterparty_version: &Version,
-    ) -> Result<(ModuleExtras, Version), ChannelError>;
-
     fn on_chan_open_ack_validate(
         &self,
         _port_id: &PortId,
@@ -116,15 +124,6 @@ pub trait Module: Debug {
         _counterparty_version: &Version,
     ) -> Result<(), ChannelError> {
         Ok(())
-    }
-
-    fn on_chan_open_ack_execute(
-        &mut self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-        _counterparty_version: &Version,
-    ) -> Result<ModuleExtras, ChannelError> {
-        Ok(ModuleExtras::empty())
     }
 
     fn on_chan_open_confirm_validate(
@@ -135,28 +134,12 @@ pub trait Module: Debug {
         Ok(())
     }
 
-    fn on_chan_open_confirm_execute(
-        &mut self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, ChannelError> {
-        Ok(ModuleExtras::empty())
-    }
-
     fn on_chan_close_init_validate(
         &self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
     ) -> Result<(), ChannelError> {
         Ok(())
-    }
-
-    fn on_chan_close_init_execute(
-        &mut self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, ChannelError> {
-        Ok(ModuleExtras::empty())
     }
 
     fn on_chan_close_confirm_validate(
@@ -167,24 +150,10 @@ pub trait Module: Debug {
         Ok(())
     }
 
-    fn on_chan_close_confirm_execute(
-        &mut self,
-        _port_id: &PortId,
-        _channel_id: &ChannelId,
-    ) -> Result<ModuleExtras, ChannelError> {
-        Ok(ModuleExtras::empty())
-    }
-
     // Note: no `on_recv_packet_validate()`
     // the `onRecvPacket` callback always succeeds
     // if any error occurs, than an "error acknowledgement"
     // must be returned
-
-    fn on_recv_packet_execute(
-        &mut self,
-        packet: &Packet,
-        relayer: &Signer,
-    ) -> (ModuleExtras, Acknowledgement);
 
     fn on_acknowledgement_packet_validate(
         &self,
@@ -193,13 +162,6 @@ pub trait Module: Debug {
         _relayer: &Signer,
     ) -> Result<(), PacketError>;
 
-    fn on_acknowledgement_packet_execute(
-        &mut self,
-        _packet: &Packet,
-        _acknowledgement: &Acknowledgement,
-        _relayer: &Signer,
-    ) -> (ModuleExtras, Result<(), PacketError>);
-
     /// Note: `MsgTimeout` and `MsgTimeoutOnClose` use the same callback
 
     fn on_timeout_packet_validate(
@@ -207,6 +169,74 @@ pub trait Module: Debug {
         packet: &Packet,
         relayer: &Signer,
     ) -> Result<(), PacketError>;
+}
+
+pub trait ExecutionModule: ModuleContext + Debug {
+    fn on_chan_open_init_execute(
+        &mut self,
+        order: Order,
+        connection_hops: &[ConnectionId],
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        counterparty: &Counterparty,
+        version: &Version,
+    ) -> Result<(ModuleExtras, Version), ChannelError>;
+
+    fn on_chan_open_try_execute(
+        &mut self,
+        order: Order,
+        connection_hops: &[ConnectionId],
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        counterparty: &Counterparty,
+        counterparty_version: &Version,
+    ) -> Result<(ModuleExtras, Version), ChannelError>;
+
+    fn on_chan_open_ack_execute(
+        &mut self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _counterparty_version: &Version,
+    ) -> Result<ModuleExtras, ChannelError> {
+        Ok(ModuleExtras::empty())
+    }
+
+    fn on_chan_open_confirm_execute(
+        &mut self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<ModuleExtras, ChannelError> {
+        Ok(ModuleExtras::empty())
+    }
+
+    fn on_chan_close_init_execute(
+        &mut self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<ModuleExtras, ChannelError> {
+        Ok(ModuleExtras::empty())
+    }
+
+    fn on_chan_close_confirm_execute(
+        &mut self,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+    ) -> Result<ModuleExtras, ChannelError> {
+        Ok(ModuleExtras::empty())
+    }
+
+    fn on_recv_packet_execute(
+        &mut self,
+        packet: &Packet,
+        relayer: &Signer,
+    ) -> (ModuleExtras, Acknowledgement);
+
+    fn on_acknowledgement_packet_execute(
+        &mut self,
+        _packet: &Packet,
+        _acknowledgement: &Acknowledgement,
+        _relayer: &Signer,
+    ) -> (ModuleExtras, Result<(), PacketError>);
 
     /// Note: `MsgTimeout` and `MsgTimeoutOnClose` use the same callback
 

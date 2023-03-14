@@ -9,6 +9,7 @@ use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqAckPath,
 };
+use crate::core::ics24_host::Path;
 use crate::prelude::*;
 
 use crate::core::{ContextError, ValidationContext};
@@ -104,7 +105,7 @@ where
         }
         let client_cons_state_path_on_a =
             ClientConsensusStatePath::new(client_id_on_a, &msg.proof_height_on_b);
-        let consensus_state = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
+        let consensus_state_of_b_on_a = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
         let ack_commitment = compute_ack_commitment(&msg.acknowledgement);
         let ack_path_on_b =
             AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
@@ -113,13 +114,13 @@ where
 
         // Verify the proof for the packet against the chain store.
         client_state_on_a
-            .verify_packet_acknowledgement(
+            .verify_membership(
                 msg.proof_height_on_b,
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_acked_on_b,
-                consensus_state.root(),
-                &ack_path_on_b,
-                ack_commitment,
+                consensus_state_of_b_on_a.root(),
+                Path::Ack(ack_path_on_b),
+                ack_commitment.into_vec(),
             )
             .map_err(|e| ChannelError::PacketVerificationFailed {
                 sequence: packet.seq_on_a,

@@ -1,19 +1,17 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenConfirm`.
-use crate::prelude::*;
 
+use crate::core::context::ContextError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenConfirm;
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
-use crate::events::IbcEvent;
-
-use crate::core::context::ContextError;
-
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ConnectionPath};
-
+use crate::core::ics24_host::Path;
 use crate::core::{ExecutionContext, ValidationContext};
+use crate::prelude::*;
+
+use crate::events::IbcEvent;
 
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ContextError>
 where
@@ -75,13 +73,13 @@ where
         );
 
         client_state_of_a_on_b
-            .verify_connection_state(
+            .verify_membership(
                 msg.proof_height_on_a,
                 prefix_on_a,
                 &msg.proof_conn_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                &ConnectionPath::new(conn_id_on_a),
-                &expected_conn_end_on_a,
+                Path::Connection(ConnectionPath::new(conn_id_on_a)),
+                expected_conn_end_on_a.try_into()?,
             )
             .map_err(ConnectionError::VerifyConnectionState)?;
     }

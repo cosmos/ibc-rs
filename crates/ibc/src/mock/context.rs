@@ -1,14 +1,11 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
-use crate::applications::transfer::context::{
-    cosmos_adr028_escrow_address, TokenTransferExecutionContext, TokenTransferValidationContext,
-};
-use crate::applications::transfer::error::TokenTransferError;
-use crate::applications::transfer::PrefixedCoin;
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
+use crate::core::context::HostContext;
+use crate::core::ics05_port::error::PortError;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
-    ClientTypePath, CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath,
+    ClientTypePath, CommitmentPath, ConnectionPath, PortPath, ReceiptPath, SeqAckPath, SeqRecvPath,
     SeqSendPath,
 };
 use crate::prelude::*;
@@ -20,15 +17,12 @@ use core::fmt::Debug;
 use core::ops::{Add, Sub};
 use core::time::Duration;
 use parking_lot::Mutex;
-use subtle_encoding::bech32;
 
 use ibc_proto::google::protobuf::Any;
 use tracing::debug;
 
 use crate::clients::ics07_tendermint::client_state::test_util::get_dummy_tendermint_client_state;
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use crate::core::context::ContextError;
-use crate::core::context::Router;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
@@ -42,9 +36,10 @@ use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ics26_routing::context::{Module, ModuleId};
+use crate::core::ics26_routing::module::{Module, ModuleId};
 use crate::core::ics26_routing::msgs::MsgEnvelope;
-use crate::core::{dispatch, ExecutionContext, ValidationContext};
+use crate::core::ics26_routing::router::{RouterMut, RouterRef};
+use crate::core::{dispatch, ContextError, ExecutionContext, ValidationContext};
 use crate::events::IbcEvent;
 use crate::mock::client_state::{
     client_type as mock_client_type, MockClientRecord, MockClientState,
@@ -85,7 +80,7 @@ pub struct MockContext {
     pub ibc_store: Arc<Mutex<MockIbcStore>>,
 
     /// To implement ValidationContext Router
-    router: BTreeMap<ModuleId, Arc<dyn Module>>,
+    router: IbcRouter,
 
     pub events: Vec<IbcEvent>,
 
@@ -185,7 +180,7 @@ impl MockContext {
                 .collect(),
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
-            router: BTreeMap::new(),
+            router: IbcRouter::new(),
             events: Vec::new(),
             logs: Vec::new(),
         }
@@ -468,17 +463,6 @@ impl MockContext {
         self
     }
 
-    pub fn add_route(
-        &mut self,
-        module_id: ModuleId,
-        module: impl Module + 'static,
-    ) -> Result<(), String> {
-        match self.router.insert(module_id, Arc::new(module)) {
-            None => Ok(()),
-            Some(_) => Err("Duplicate module_id".to_owned()),
-        }
-    }
-
     /// Accessor for a block of the local (host) chain from this context.
     /// Returns `None` if the block at the requested height does not exist.
     pub fn host_block(&self, target_height: &Height) -> Option<&HostBlock> {
@@ -550,21 +534,6 @@ impl MockContext {
             }
         }
         Ok(())
-    }
-
-    pub fn add_port(&mut self, port_id: PortId) {
-        let module_id = ModuleId::new(format!("module{port_id}").into()).unwrap();
-        self.ibc_store
-            .lock()
-            .port_to_module
-            .insert(port_id, module_id);
-    }
-
-    pub fn scope_port_to_module(&mut self, port_id: PortId, module_id: ModuleId) {
-        self.ibc_store
-            .lock()
-            .port_to_module
-            .insert(port_id, module_id);
     }
 
     pub fn latest_client_states(&self, client_id: &ClientId) -> Box<dyn ClientState> {
@@ -679,10 +648,57 @@ impl RelayerContext for MockContext {
     }
 }
 
-impl Router for MockContext {
-    fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module> {
-        self.router.get(module_id).map(Arc::as_ref)
+#[derive(Clone, Debug)]
+pub struct IbcRouter {
+    ibc_store: Arc<Mutex<MockIbcStore>>,
+    modules: BTreeMap<ModuleId, Arc<dyn Module>>,
+}
+
+impl IbcRouter {
+    pub fn new() -> Self {
+        Self {
+            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+            modules: BTreeMap::new(),
+        }
     }
+}
+
+impl Default for IbcRouter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl RouterRef for IbcRouter {
+    fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module> {
+        self.modules.get(module_id).map(Arc::as_ref)
+    }
+
+    fn lookup_module(&self, port_path: &PortPath) -> Result<ModuleId, ContextError> {
+        let module_id = self
+            .ibc_store
+            .lock()
+            .port_to_module
+            .get(&port_path.0)
+            .cloned()
+            .ok_or_else(|| PortError::UnknownPort {
+                port_id: port_path.0.clone(),
+            })
+            .map_err(ChannelError::Port)
+            .map_err(ContextError::ChannelError)?;
+        Ok(module_id)
+    }
+}
+
+impl RouterMut for IbcRouter {
+    fn add_route(&mut self, module_id: ModuleId, module: Box<dyn Module>) -> Result<(), String> {
+        let arc_module = Arc::from(module);
+        match self.modules.insert(module_id, arc_module) {
+            None => Ok(()),
+            Some(_) => Err("Duplicate module_id".to_owned()),
+        }
+    }
+
     fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module> {
         // NOTE: The following:
 
@@ -690,7 +706,7 @@ impl Router for MockContext {
 
         // doesn't work due to a compiler bug. So we expand it out manually.
 
-        match self.router.get_mut(module_id) {
+        match self.modules.get_mut(module_id) {
             Some(arc_mod) => match Arc::get_mut(arc_mod) {
                 Some(m) => Some(m),
                 None => None,
@@ -698,13 +714,15 @@ impl Router for MockContext {
             None => None,
         }
     }
+}
 
-    fn has_route(&self, module_id: &ModuleId) -> bool {
-        self.router.get(module_id).is_some()
+impl HostContext for MockContext {
+    fn router(&self) -> &dyn RouterRef {
+        &self.router
     }
 
-    fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId> {
-        self.ibc_store.lock().port_to_module.get(port_id).cloned()
+    fn router_mut(&mut self) -> &mut dyn RouterMut {
+        &mut self.router
     }
 }
 
@@ -1402,86 +1420,10 @@ impl ExecutionContext for MockContext {
     }
 }
 
-impl TokenTransferValidationContext for MockContext {
-    type AccountId = Signer;
-
-    fn get_port(&self) -> Result<PortId, TokenTransferError> {
-        Ok(PortId::transfer())
-    }
-
-    fn get_escrow_account(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<Self::AccountId, TokenTransferError> {
-        let addr = cosmos_adr028_escrow_address(port_id, channel_id);
-        Ok(bech32::encode("cosmos", addr).parse().unwrap())
-    }
-
-    fn can_send_coins(&self) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    fn can_receive_coins(&self) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    fn send_coins_validate(
-        &self,
-        _from_account: &Self::AccountId,
-        _to_account: &Self::AccountId,
-        _coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    fn mint_coins_validate(
-        &self,
-        _account: &Self::AccountId,
-        _coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    fn burn_coins_validate(
-        &self,
-        _account: &Self::AccountId,
-        _coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-}
-
-impl TokenTransferExecutionContext for MockContext {
-    fn send_coins_execute(
-        &mut self,
-        _from_account: &Self::AccountId,
-        _to_account: &Self::AccountId,
-        _coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    fn mint_coins_execute(
-        &mut self,
-        _account: &Self::AccountId,
-        _coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    fn burn_coins_execute(
-        &mut self,
-        _account: &Self::AccountId,
-        _coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::borrow::Cow;
     use test_log::test;
 
     use alloc::str::FromStr;
@@ -1494,7 +1436,9 @@ mod tests {
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-    use crate::core::ics26_routing::context::{Module, ModuleId};
+    use crate::core::ics26_routing::module::{
+        ExecutionModule, ModuleContext, ModuleId, ValidationModule,
+    };
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::signer::Signer;
@@ -1642,12 +1586,58 @@ mod tests {
 
     #[test]
     fn test_router() {
-        #[derive(Debug, Default)]
+        #[derive(Debug)]
         struct FooModule {
-            counter: usize,
+            counter: u64,
+            module_id: ModuleId,
+            owned_ports: Vec<PortId>,
         }
 
-        impl Module for FooModule {
+        impl FooModule {
+            fn new() -> Self {
+                Self {
+                    counter: 0,
+                    module_id: ModuleId::new(Cow::Borrowed("foomodule")).unwrap(),
+                    owned_ports: vec![PortId::default()],
+                }
+            }
+        }
+
+        impl ModuleContext for FooModule {
+            fn module_id(&self) -> ModuleId {
+                self.module_id.clone()
+            }
+
+            fn get_owned_ports(&self) -> Vec<PortId> {
+                self.owned_ports.clone()
+            }
+
+            fn bind_port(
+                &mut self,
+                port_path: PortPath,
+                port_owner: ModuleId,
+            ) -> Result<(), PortError> {
+                if self.owned_ports.contains(&port_path.0) {
+                    return Err(PortError::PortAlreadyBound {
+                        port_id: port_path.clone().0,
+                        port_id_owner: port_owner.to_string(),
+                    });
+                }
+                self.owned_ports.push(port_path.0.clone());
+                Ok(())
+            }
+
+            fn release_port(&mut self, port_path: PortPath) -> Result<(), PortError> {
+                if !self.owned_ports.contains(&port_path.0) {
+                    return Err(PortError::PortNotBound {
+                        port_id: port_path.clone().0,
+                    });
+                }
+                Ok(())
+            }
+        }
+
+        impl ValidationModule for FooModule {
             fn on_chan_open_init_validate(
                 &self,
                 _order: Order,
@@ -1660,18 +1650,6 @@ mod tests {
                 Ok(version.clone())
             }
 
-            fn on_chan_open_init_execute(
-                &mut self,
-                _order: Order,
-                _connection_hops: &[ConnectionId],
-                _port_id: &PortId,
-                _channel_id: &ChannelId,
-                _counterparty: &Counterparty,
-                version: &Version,
-            ) -> Result<(ModuleExtras, Version), ChannelError> {
-                Ok((ModuleExtras::empty(), version.clone()))
-            }
-
             fn on_chan_open_try_validate(
                 &self,
                 _order: Order,
@@ -1682,6 +1660,37 @@ mod tests {
                 counterparty_version: &Version,
             ) -> Result<Version, ChannelError> {
                 Ok(counterparty_version.clone())
+            }
+
+            fn on_timeout_packet_validate(
+                &self,
+                _packet: &Packet,
+                _relayer: &Signer,
+            ) -> Result<(), PacketError> {
+                Ok(())
+            }
+
+            fn on_acknowledgement_packet_validate(
+                &self,
+                _packet: &Packet,
+                _acknowledgement: &Acknowledgement,
+                _relayer: &Signer,
+            ) -> Result<(), PacketError> {
+                Ok(())
+            }
+        }
+
+        impl ExecutionModule for FooModule {
+            fn on_chan_open_init_execute(
+                &mut self,
+                _order: Order,
+                _connection_hops: &[ConnectionId],
+                _port_id: &PortId,
+                _channel_id: &ChannelId,
+                _counterparty: &Counterparty,
+                version: &Version,
+            ) -> Result<(ModuleExtras, Version), ChannelError> {
+                Ok((ModuleExtras::empty(), version.clone()))
             }
 
             fn on_chan_open_try_execute(
@@ -1709,29 +1718,12 @@ mod tests {
                 )
             }
 
-            fn on_timeout_packet_validate(
-                &self,
-                _packet: &Packet,
-                _relayer: &Signer,
-            ) -> Result<(), PacketError> {
-                Ok(())
-            }
-
             fn on_timeout_packet_execute(
                 &mut self,
                 _packet: &Packet,
                 _relayer: &Signer,
             ) -> (ModuleExtras, Result<(), PacketError>) {
                 (ModuleExtras::empty(), Ok(()))
-            }
-
-            fn on_acknowledgement_packet_validate(
-                &self,
-                _packet: &Packet,
-                _acknowledgement: &Acknowledgement,
-                _relayer: &Signer,
-            ) -> Result<(), PacketError> {
-                Ok(())
             }
 
             fn on_acknowledgement_packet_execute(
@@ -1744,10 +1736,56 @@ mod tests {
             }
         }
 
-        #[derive(Debug, Default)]
-        struct BarModule;
+        #[derive(Debug)]
+        struct BarModule {
+            module_id: ModuleId,
+            owned_ports: Vec<PortId>,
+        }
 
-        impl Module for BarModule {
+        impl BarModule {
+            fn new() -> Self {
+                Self {
+                    module_id: ModuleId::new(Cow::Borrowed("barmodule")).unwrap(),
+                    owned_ports: vec![PortId::default()],
+                }
+            }
+        }
+
+        impl ModuleContext for BarModule {
+            fn module_id(&self) -> ModuleId {
+                self.module_id.clone()
+            }
+
+            fn get_owned_ports(&self) -> Vec<PortId> {
+                self.owned_ports.clone()
+            }
+
+            fn bind_port(
+                &mut self,
+                port_path: PortPath,
+                port_owner: ModuleId,
+            ) -> Result<(), PortError> {
+                if self.owned_ports.contains(&port_path.0) {
+                    return Err(PortError::PortAlreadyBound {
+                        port_id: port_path.clone().0,
+                        port_id_owner: port_owner.to_string(),
+                    });
+                }
+                self.owned_ports.push(port_path.0.clone());
+                Ok(())
+            }
+
+            fn release_port(&mut self, port_path: PortPath) -> Result<(), PortError> {
+                if !self.owned_ports.contains(&port_path.0) {
+                    return Err(PortError::PortNotBound {
+                        port_id: port_path.clone().0,
+                    });
+                }
+                Ok(())
+            }
+        }
+
+        impl ValidationModule for BarModule {
             fn on_chan_open_init_validate(
                 &self,
                 _order: Order,
@@ -1760,18 +1798,6 @@ mod tests {
                 Ok(version.clone())
             }
 
-            fn on_chan_open_init_execute(
-                &mut self,
-                _order: Order,
-                _connection_hops: &[ConnectionId],
-                _port_id: &PortId,
-                _channel_id: &ChannelId,
-                _counterparty: &Counterparty,
-                version: &Version,
-            ) -> Result<(ModuleExtras, Version), ChannelError> {
-                Ok((ModuleExtras::empty(), version.clone()))
-            }
-
             fn on_chan_open_try_validate(
                 &self,
                 _order: Order,
@@ -1782,6 +1808,37 @@ mod tests {
                 counterparty_version: &Version,
             ) -> Result<Version, ChannelError> {
                 Ok(counterparty_version.clone())
+            }
+
+            fn on_timeout_packet_validate(
+                &self,
+                _packet: &Packet,
+                _relayer: &Signer,
+            ) -> Result<(), PacketError> {
+                Ok(())
+            }
+
+            fn on_acknowledgement_packet_validate(
+                &self,
+                _packet: &Packet,
+                _acknowledgement: &Acknowledgement,
+                _relayer: &Signer,
+            ) -> Result<(), PacketError> {
+                Ok(())
+            }
+        }
+
+        impl ExecutionModule for BarModule {
+            fn on_chan_open_init_execute(
+                &mut self,
+                _order: Order,
+                _connection_hops: &[ConnectionId],
+                _port_id: &PortId,
+                _channel_id: &ChannelId,
+                _counterparty: &Counterparty,
+                version: &Version,
+            ) -> Result<(ModuleExtras, Version), ChannelError> {
+                Ok((ModuleExtras::empty(), version.clone()))
             }
 
             fn on_chan_open_try_execute(
@@ -1807,35 +1864,18 @@ mod tests {
                 )
             }
 
-            fn on_timeout_packet_validate(
-                &self,
-                _packet: &Packet,
-                _relayer: &Signer,
-            ) -> Result<(), PacketError> {
-                Ok(())
-            }
-
-            fn on_timeout_packet_execute(
+            fn on_acknowledgement_packet_execute(
                 &mut self,
                 _packet: &Packet,
+                _acknowledgement: &Acknowledgement,
                 _relayer: &Signer,
             ) -> (ModuleExtras, Result<(), PacketError>) {
                 (ModuleExtras::empty(), Ok(()))
             }
 
-            fn on_acknowledgement_packet_validate(
-                &self,
-                _packet: &Packet,
-                _acknowledgement: &Acknowledgement,
-                _relayer: &Signer,
-            ) -> Result<(), PacketError> {
-                Ok(())
-            }
-
-            fn on_acknowledgement_packet_execute(
+            fn on_timeout_packet_execute(
                 &mut self,
                 _packet: &Packet,
-                _acknowledgement: &Acknowledgement,
                 _relayer: &Signer,
             ) -> (ModuleExtras, Result<(), PacketError>) {
                 (ModuleExtras::empty(), Ok(()))
@@ -1848,9 +1888,9 @@ mod tests {
             1,
             Height::new(1, 1).unwrap(),
         );
-        ctx.add_route("foomodule".parse().unwrap(), FooModule::default())
+        ctx.add_route("foomodule".parse().unwrap(), Box::new(FooModule::new()))
             .unwrap();
-        ctx.add_route("barmodule".parse().unwrap(), BarModule::default())
+        ctx.add_route("barmodule".parse().unwrap(), Box::new(BarModule::new()))
             .unwrap();
 
         let mut on_recv_packet_result = |module_id: &'static str| {

@@ -1,5 +1,7 @@
 use crate::prelude::*;
 
+use prost::Message;
+
 use core::str::FromStr;
 
 use ibc_proto::ibc::core::channel::v1::Packet as RawPacket;
@@ -98,6 +100,18 @@ impl From<u64> for Sequence {
 impl From<Sequence> for u64 {
     fn from(s: Sequence) -> u64 {
         s.0
+    }
+}
+
+impl TryFrom<Sequence> for Vec<u8> {
+    type Error = PacketError;
+
+    fn try_from(seq: Sequence) -> Result<Self, Self::Error> {
+        let mut value = Vec::new();
+        u64::from(seq)
+            .encode(&mut value)
+            .expect("buffer size too small");
+        Ok(value)
     }
 }
 

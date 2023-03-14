@@ -1,3 +1,4 @@
+use crate::core::ics26_routing::router::{RouterMut, RouterRef};
 use crate::{core::ics24_host::path::ChannelEndPath, prelude::*};
 
 use crate::core::ics04_channel::channel::State;
@@ -5,7 +6,7 @@ use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::events::CloseConfirm;
 use crate::core::ics04_channel::handler::chan_close_confirm;
 use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::ics26_routing::module::ModuleId;
 
 use crate::events::IbcEvent;
 
@@ -95,11 +96,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::applications::transfer::MODULE_ID_STR;
     use crate::core::context::chan_close_confirm::chan_close_confirm_execute;
     use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
-    use crate::core::ics26_routing::context::ModuleId;
+    use crate::core::ics26_routing::module::ModuleContext;
+    use crate::core::ics26_routing::router::RouterMut;
     use crate::core::ValidationContext;
     use crate::events::IbcEvent;
     use crate::prelude::*;
@@ -161,8 +162,10 @@ mod tests {
             );
 
         let module = DummyTransferModule::new();
-        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
-        context.add_route(module_id.clone(), module).unwrap();
+        let module_id = module.module_id();
+        context
+            .add_route(module_id.clone(), Box::new(module))
+            .unwrap();
 
         let res = chan_close_confirm_execute(&mut context, module_id, msg_chan_close_confirm);
         assert!(res.is_ok(), "Execution success: happy path");

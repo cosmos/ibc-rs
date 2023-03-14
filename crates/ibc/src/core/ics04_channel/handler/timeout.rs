@@ -8,10 +8,10 @@ use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
+use crate::core::ics24_host::Path;
+use crate::core::{ContextError, ValidationContext};
 use crate::prelude::*;
 use crate::timestamp::Expiry;
-
-use crate::core::{ContextError, ValidationContext};
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeout) -> Result<(), ContextError>
 where
@@ -119,13 +119,14 @@ where
             }
             let seq_recv_path_on_b =
                 SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
-            client_state_of_b_on_a.verify_next_sequence_recv(
+
+            client_state_of_b_on_a.verify_membership(
                 msg.proof_height_on_b,
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
-                &seq_recv_path_on_b,
-                msg.packet.seq_on_a,
+                Path::SeqRecv(seq_recv_path_on_b),
+                msg.packet.seq_on_a.try_into()?,
             )
         } else {
             let receipt_path_on_b = ReceiptPath::new(
@@ -133,12 +134,13 @@ where
                 &msg.packet.chan_id_on_b,
                 msg.packet.seq_on_a,
             );
-            client_state_of_b_on_a.verify_packet_receipt_absence(
+
+            client_state_of_b_on_a.verify_non_membership(
                 msg.proof_height_on_b,
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
-                &receipt_path_on_b,
+                Path::Receipt(receipt_path_on_b),
             )
         };
         next_seq_recv_verification_result
