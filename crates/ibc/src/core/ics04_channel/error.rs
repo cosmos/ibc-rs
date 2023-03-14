@@ -23,7 +23,7 @@ pub enum ChannelError {
     UnknownState { state: i32 },
     /// channel order type unknown: `{type_id}`
     UnknownOrderType { type_id: String },
-    /// invalid channel end error: `{channel_end}`
+    /// invalid channel end: `{channel_end}`
     InvalidChannelEnd { channel_end: String },
     /// invalid connection hops length: expected `{expected}`; actual `{actual}`
     InvalidConnectionHopsLength { expected: usize, actual: usize },
