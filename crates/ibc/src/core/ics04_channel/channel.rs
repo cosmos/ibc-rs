@@ -191,7 +191,9 @@ impl TryFrom<ChannelEnd> for Vec<u8> {
     fn try_from(value: ChannelEnd) -> Result<Self, Self::Error> {
         let value = value
             .encode_vec()
-            .map_err(ChannelError::InvalidChannelEnd)?;
+            .map_err(|_| ChannelError::InvalidChannelEnd {
+                channel_end: value.to_string(),
+            })?;
         Ok(value)
     }
 }
