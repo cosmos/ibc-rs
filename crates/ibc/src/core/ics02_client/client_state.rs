@@ -124,7 +124,7 @@ pub trait ClientState:
     ) -> Result<UpdatedState, ClientError>;
 
     // Verify_membership is a generic proof verification method which verifies a
-    // proof of the existence of a value at a given Path at the specified height.
+    // proof of the existence of a value at a given Path.
     fn verify_membership(
         &self,
         prefix: &CommitmentPrefix,
@@ -135,7 +135,7 @@ pub trait ClientState:
     ) -> Result<(), ClientError>;
 
     // Verify_non_membership is a generic proof verification method which
-    // verifies the absence of a given commitment at a specified height.
+    // verifies the absence of a given commitment.
     fn verify_non_membership(
         &self,
         prefix: &CommitmentPrefix,
