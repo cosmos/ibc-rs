@@ -50,7 +50,7 @@ where
                     description: "failed to fetch client state".to_string(),
                 })?;
 
-        client_state_of_a_on_b.assert_not_frozen()?;
+        client_state_of_a_on_b.confirm_not_frozen()?;
         client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
 
         let client_cons_state_path_on_b =

@@ -43,26 +43,13 @@ pub trait ClientState:
     fn latest_height(&self) -> Height;
 
     /// Check if the given proof has a valid height for the client
-    fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
-        if self.latest_height() < proof_height {
-            return Err(ClientError::InvalidProofHeight {
-                latest_height: self.latest_height(),
-                proof_height,
-            });
-        }
-        Ok(())
-    }
+    fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError>;
 
     /// Frozen height of the client
     fn frozen_height(&self) -> Option<Height>;
 
     /// Assert that the client is not frozen
-    fn assert_not_frozen(&self) -> Result<(), ClientError> {
-        if let Some(frozen_height) = self.frozen_height() {
-            return Err(ClientError::ClientFrozen { frozen_height });
-        }
-        Ok(())
-    }
+    fn confirm_not_frozen(&self) -> Result<(), ClientError>;
 
     /// Check if the state is expired when `elapsed` time has passed since the latest consensus
     /// state timestamp

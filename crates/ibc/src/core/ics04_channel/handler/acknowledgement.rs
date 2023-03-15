@@ -96,7 +96,7 @@ where
         let client_id_on_a = conn_end_on_a.client_id();
         let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
 
-        client_state_of_b_on_a.assert_not_frozen()?;
+        client_state_of_b_on_a.confirm_not_frozen()?;
         client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
 
         let client_cons_state_path_on_a =

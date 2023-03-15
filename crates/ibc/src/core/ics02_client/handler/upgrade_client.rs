@@ -31,7 +31,7 @@ where
     let old_client_state = ctx.client_state(&client_id)?;
 
     // Check if the client is frozen.
-    old_client_state.assert_not_frozen()?;
+    old_client_state.confirm_not_frozen()?;
 
     // Read the latest consensus state from the host chain store.
     let old_client_cons_state_path =

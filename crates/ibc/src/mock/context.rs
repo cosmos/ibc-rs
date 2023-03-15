@@ -871,7 +871,7 @@ impl ValidationContext for MockContext {
             })
             .map_err(ContextError::ConnectionError)?;
 
-        mock_client_state.assert_not_frozen()?;
+        mock_client_state.confirm_not_frozen()?;
 
         let self_chain_id = &self.host_chain_id;
         let self_revision_number = self_chain_id.version();
