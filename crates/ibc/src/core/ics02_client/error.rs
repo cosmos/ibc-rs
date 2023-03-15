@@ -21,8 +21,8 @@ pub enum ClientError {
     },
     /// client not found: `{client_id}`
     ClientNotFound { client_id: ClientId },
-    /// client is frozen: frozen_height=`{frozen_height}`
-    ClientFrozen { frozen_height: Height },
+    /// client is frozen with description: `{description}`
+    ClientFrozen { description: String },
     /// consensus state not found at: `{client_id}` at height `{height}`
     ConsensusStateNotFound { client_id: ClientId, height: Height },
     /// implementation specific error
