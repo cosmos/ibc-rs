@@ -117,7 +117,7 @@ where
         ctx_a.log_message("success: packet timeout".to_string());
 
         if let Order::Ordered = chan_end_on_a.ordering {
-            let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
+            let conn_id_on_a = chan_end_on_a.connection_hops()[0];
 
             ctx_a.emit_ibc_event(IbcEvent::ChannelClosed(ChannelClosed::new(
                 packet.port_id_on_a.clone(),

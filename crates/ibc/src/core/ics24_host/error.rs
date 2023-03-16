@@ -19,6 +19,8 @@ pub enum ValidationError {
     Empty,
     /// Invalid channel id in counterparty
     InvalidCounterpartyChannelId,
+    /// Connection Id parse failure
+    ConnectionlIdParseFailure(String),
 }
 
 #[cfg(feature = "std")]

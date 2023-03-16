@@ -413,7 +413,7 @@ impl From<Counterparty> for RawCounterparty {
             client_id: value.client_id.as_str().to_string(),
             connection_id: value
                 .connection_id
-                .map_or_else(|| "".to_string(), |v| v.as_str().to_string()),
+                .map_or_else(|| "".to_string(), |v| v.to_string()),
             prefix: Some(ibc_proto::ibc::core::commitment::v1::MerklePrefix {
                 key_prefix: value.prefix.into_vec(),
             }),

@@ -60,7 +60,7 @@ where
         &msg.version_proposal,
     )?;
 
-    let conn_id_on_a = msg.connection_hops_on_a[0].clone();
+    let conn_id_on_a = msg.connection_hops_on_a[0];
 
     // state changes
     {

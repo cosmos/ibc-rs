@@ -116,16 +116,16 @@ where
         ctx_b.log_message("success: packet receive".to_string());
         ctx_b.log_message("success: packet write acknowledgement".to_string());
 
-        let conn_id_on_b = &chan_end_on_b.connection_hops()[0];
+        let conn_id_on_b = chan_end_on_b.connection_hops()[0];
         ctx_b.emit_ibc_event(IbcEvent::ReceivePacket(ReceivePacket::new(
             msg.packet.clone(),
             chan_end_on_b.ordering,
-            conn_id_on_b.clone(),
+            conn_id_on_b,
         )));
         ctx_b.emit_ibc_event(IbcEvent::WriteAcknowledgement(WriteAcknowledgement::new(
             msg.packet,
             acknowledgement,
-            conn_id_on_b.clone(),
+            conn_id_on_b,
         )));
 
         for module_event in extras.events {

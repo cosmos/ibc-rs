@@ -124,13 +124,13 @@ pub fn send_packet_execute(
     {
         let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
         let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
-        let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
+        let conn_id_on_a = chan_end_on_a.connection_hops()[0];
 
         ctx_a.log_message("success: packet send".to_string());
         ctx_a.emit_ibc_event(IbcEvent::SendPacket(SendPacket::new(
             packet,
             chan_end_on_a.ordering,
-            conn_id_on_a.clone(),
+            conn_id_on_a,
         )));
     }
 

@@ -69,7 +69,7 @@ where
                     "internal error: ChannelEnd doesn't have a counterparty channel id in CloseInit"
                         .to_string(),
             }))?;
-            let conn_id_on_b = chan_end_on_b.connection_hops[0].clone();
+            let conn_id_on_b = chan_end_on_b.connection_hops[0];
 
             IbcEvent::CloseConfirmChannel(CloseConfirm::new(
                 msg.port_id_on_b.clone(),
@@ -147,7 +147,7 @@ mod tests {
                 msg_chan_close_confirm.port_id_on_b.clone(),
                 Some(msg_chan_close_confirm.chan_id_on_b.clone()),
             ),
-            vec![conn_id.clone()],
+            vec![conn_id],
             Version::default(),
         );
 

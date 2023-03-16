@@ -65,7 +65,7 @@ where
         let client_id_on_b = msg.counterparty.client_id().clone();
 
         ctx_a.emit_ibc_event(IbcEvent::OpenInitConnection(OpenInit::new(
-            conn_id_on_a.clone(),
+            conn_id_on_a,
             msg.client_id_on_a.clone(),
             client_id_on_b,
         )));
@@ -74,7 +74,7 @@ where
     ctx_a.increase_connection_counter();
     ctx_a.store_connection_to_client(
         &ClientConnectionPath::new(&msg.client_id_on_a),
-        conn_id_on_a.clone(),
+        conn_id_on_a,
     )?;
     ctx_a.store_connection(&ConnectionPath::new(&conn_id_on_a), conn_end_on_a)?;
 

@@ -292,7 +292,11 @@ pub struct PacketConnectionIdAttribute {
 
 impl From<PacketConnectionIdAttribute> for abci::EventAttribute {
     fn from(attr: PacketConnectionIdAttribute) -> Self {
-        (PKT_CONNECTION_ID_ATTRIBUTE_KEY, attr.connection_id.as_str()).into()
+        (
+            PKT_CONNECTION_ID_ATTRIBUTE_KEY,
+            attr.connection_id.to_string(),
+        )
+            .into()
     }
 }
 

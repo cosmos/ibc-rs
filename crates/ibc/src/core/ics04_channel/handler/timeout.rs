@@ -42,7 +42,7 @@ where
         .into());
     }
 
-    let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
+    let conn_id_on_a = chan_end_on_a.connection_hops()[0];
     let conn_end_on_a = ctx_a.connection_end(&conn_id_on_a)?;
 
     //verify packet commitment

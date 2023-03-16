@@ -25,7 +25,7 @@ where
     let conn_end_on_b = ctx_b.connection_end(&msg.connection_hops_on_b[0])?;
     if !conn_end_on_b.state_matches(&ConnectionState::Open) {
         return Err(ChannelError::ConnectionNotOpen {
-            connection_id: msg.connection_hops_on_b[0].clone(),
+            connection_id: msg.connection_hops_on_b[0],
         })
         .map_err(ContextError::ChannelError);
     }
@@ -56,7 +56,7 @@ where
         let chan_id_on_a = msg.chan_id_on_a.clone();
         let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
             ChannelError::UndefinedConnectionCounterparty {
-                connection_id: msg.connection_hops_on_b[0].clone(),
+                connection_id: msg.connection_hops_on_b[0],
             },
         )?;
 
@@ -72,7 +72,7 @@ where
             State::Init,
             msg.ordering,
             Counterparty::new(msg.port_id_on_b.clone(), None),
-            vec![conn_id_on_a.clone()],
+            vec![*conn_id_on_a],
             msg.version_supported_on_a.clone(),
         );
         let chan_end_path_on_a = ChannelEndPath::new(&port_id_on_a, &chan_id_on_a);
@@ -144,7 +144,7 @@ mod tests {
         let mut msg =
             MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(proof_height)).unwrap();
 
-        let hops = vec![conn_id_on_b.clone()];
+        let hops = vec![conn_id_on_b];
         msg.connection_hops_on_b = hops;
 
         let context = MockContext::default();

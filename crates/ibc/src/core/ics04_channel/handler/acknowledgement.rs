@@ -46,7 +46,7 @@ where
 
     if !conn_end_on_a.state_matches(&ConnectionState::Open) {
         return Err(PacketError::ConnectionNotOpen {
-            connection_id: chan_end_on_a.connection_hops()[0].clone(),
+            connection_id: chan_end_on_a.connection_hops()[0],
         }
         .into());
     }

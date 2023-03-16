@@ -1,3 +1,4 @@
+use alloc::string::ToString;
 ///! This module holds all the abci event attributes for IBC events emitted
 ///! during the channel handshake.
 use derive_more::From;
@@ -145,7 +146,7 @@ pub struct ConnectionIdAttribute {
 
 impl From<ConnectionIdAttribute> for abci::EventAttribute {
     fn from(attr: ConnectionIdAttribute) -> Self {
-        (CONNECTION_ID_ATTRIBUTE_KEY, attr.connection_id.as_str()).into()
+        (CONNECTION_ID_ATTRIBUTE_KEY, attr.connection_id.to_string()).into()
     }
 }
 

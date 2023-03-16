@@ -269,9 +269,8 @@ impl PartialEq<str> for ClientId {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ConnectionId(String);
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ConnectionId(u64);
 
 impl ConnectionId {
     /// Builds a new connection identifier. Connection identifiers are deterministically formed from
@@ -285,30 +284,19 @@ impl ConnectionId {
     /// assert_eq!(&conn_id, "connection-11");
     /// ```
     pub fn new(identifier: u64) -> Self {
-        let id = format!("{}-{}", Self::prefix(), identifier);
-        Self::from_str(id.as_str()).unwrap()
+        Self(identifier)
     }
 
     /// Returns the static prefix to be used across all connection identifiers.
-    pub fn prefix() -> &'static str {
-        "connection"
-    }
-
-    /// Get this identifier as a borrowed `&str`
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-
-    /// Get this identifier as a borrowed byte slice
-    pub fn as_bytes(&self) -> &[u8] {
-        self.0.as_bytes()
+    const fn prefix() -> &'static str {
+        "connection-"
     }
 }
 
 /// This implementation provides a `to_string` method.
 impl Display for ConnectionId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "{}", self.0)
+        write!(f, "{}{}", Self::prefix(), self.0)
     }
 }
 
@@ -316,7 +304,12 @@ impl FromStr for ConnectionId {
     type Err = ValidationError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        validate_connection_identifier(s).map(|_| Self(s.to_string()))
+        let s = s
+            .strip_prefix(Self::prefix())
+            .ok_or_else(|| ValidationError::InvalidCharacter { id: s.to_string() })?;
+        let counter = u64::from_str(s)
+            .map_err(|e| ValidationError::ConnectionlIdParseFailure(e.to_string()))?;
+        Ok(Self(counter))
     }
 }
 
@@ -326,17 +319,30 @@ impl Default for ConnectionId {
     }
 }
 
-/// Equality check against string literal (satisfies &ConnectionId == &str).
-/// ```
-/// use core::str::FromStr;
-/// use ibc::core::ics24_host::identifier::ConnectionId;
-/// let conn_id = ConnectionId::from_str("connectionId-0");
-/// assert!(conn_id.is_ok());
-/// conn_id.map(|id| {assert_eq!(&id, "connectionId-0")});
-/// ```
-impl PartialEq<str> for ConnectionId {
-    fn eq(&self, other: &str) -> bool {
-        self.as_str().eq(other)
+#[cfg(feature = "serde")]
+mod seald {
+    use super::ConnectionId;
+    use crate::prelude::String;
+    use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+
+    impl Serialize for ConnectionId {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            serializer.collect_str(self)
+        }
+    }
+
+    impl<'de> Deserialize<'de> for ConnectionId {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            String::deserialize(deserializer)?
+                .parse()
+                .map_err(de::Error::custom)
+        }
     }
 }
 

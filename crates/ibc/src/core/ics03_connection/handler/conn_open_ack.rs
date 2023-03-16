@@ -48,7 +48,7 @@ where
         && vars.conn_end_on_a.versions().contains(&msg.version))
     {
         return Err(ConnectionError::ConnectionMismatch {
-            connection_id: msg.conn_id_on_a.clone(),
+            connection_id: msg.conn_id_on_a,
         }
         .into());
     }
@@ -78,7 +78,7 @@ where
                 vars.client_id_on_b().clone(),
                 Counterparty::new(
                     vars.client_id_on_a().clone(),
-                    Some(msg.conn_id_on_a.clone()),
+                    Some(msg.conn_id_on_a),
                     prefix_on_a,
                 ),
                 vec![msg.version.clone()],
@@ -155,9 +155,9 @@ where
     Ctx: ExecutionContext,
 {
     ctx_a.emit_ibc_event(IbcEvent::OpenAckConnection(OpenAck::new(
-        msg.conn_id_on_a.clone(),
+        msg.conn_id_on_a,
         vars.client_id_on_a().clone(),
-        msg.conn_id_on_b.clone(),
+        msg.conn_id_on_b,
         vars.client_id_on_b().clone(),
     )));
 
@@ -166,7 +166,7 @@ where
     {
         let new_conn_end_on_a = {
             let mut counterparty = vars.conn_end_on_a.counterparty().clone();
-            counterparty.connection_id = Some(msg.conn_id_on_b.clone());
+            counterparty.connection_id = Some(msg.conn_id_on_b);
 
             let mut new_conn_end_on_a = vars.conn_end_on_a;
             new_conn_end_on_a.set_state(State::Open);
@@ -237,7 +237,7 @@ mod tests {
         // Client parameters -- identifier and correct height (matching the proof height)
         let client_id = ClientId::from_str("mock_clientid").unwrap();
         let proof_height = msg.proofs_height_on_b;
-        let conn_id = msg.conn_id_on_a.clone();
+        let conn_id = msg.conn_id_on_a;
 
         // Parametrize the host chain to have a height at least as recent as the
         // the height of the proofs in the Ack msg.
@@ -250,7 +250,7 @@ mod tests {
             client_id.clone(),
             Counterparty::new(
                 client_id.clone(),
-                Some(msg.conn_id_on_b.clone()),
+                Some(msg.conn_id_on_b),
                 CommitmentPrefix::try_from(b"ibc".to_vec()).unwrap(),
             ),
             vec![msg.version.clone()],
@@ -300,7 +300,7 @@ mod tests {
                 return;
             }
         };
-        let right_connection_id = fxt.msg.conn_id_on_a.clone();
+        let right_connection_id = fxt.msg.conn_id_on_a;
         let cons_state_height = fxt.msg.consensus_height_of_a_on_b;
         match res.unwrap_err() {
             ContextError::ConnectionError(ConnectionError::ConnectionNotFound {
@@ -362,7 +362,7 @@ mod tests {
     fn conn_open_ack_no_connection() {
         let fxt = conn_open_ack_fixture(Ctx::New);
         let expected_err = ContextError::ConnectionError(ConnectionError::ConnectionNotFound {
-            connection_id: fxt.msg.conn_id_on_a.clone(),
+            connection_id: fxt.msg.conn_id_on_a,
         });
         conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err)));
     }
@@ -381,7 +381,7 @@ mod tests {
     fn conn_open_ack_connection_mismatch() {
         let fxt = conn_open_ack_fixture(Ctx::NewWithConnectionEndOpen);
         let expected_err = ContextError::ConnectionError(ConnectionError::ConnectionMismatch {
-            connection_id: fxt.msg.conn_id_on_a.clone(),
+            connection_id: fxt.msg.conn_id_on_a,
         });
         conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err)));
     }

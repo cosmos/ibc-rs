@@ -152,9 +152,9 @@ where
         .connection_id()
         .ok_or(ConnectionError::InvalidCounterparty)?;
     ctx_b.emit_ibc_event(IbcEvent::OpenTryConnection(OpenTry::new(
-        vars.conn_id_on_b.clone(),
+        vars.conn_id_on_b,
         msg.client_id_on_b.clone(),
-        conn_id_on_a.clone(),
+        *conn_id_on_a,
         vars.client_id_on_a.clone(),
     )));
     ctx_b.log_message("success: conn_open_try verification passed".to_string());
@@ -162,7 +162,7 @@ where
     ctx_b.increase_connection_counter();
     ctx_b.store_connection_to_client(
         &ClientConnectionPath::new(&msg.client_id_on_b),
-        vars.conn_id_on_b.clone(),
+        vars.conn_id_on_b,
     )?;
     ctx_b.store_connection(&ConnectionPath::new(&vars.conn_id_on_b), vars.conn_end_on_b)?;
 
@@ -194,11 +194,10 @@ impl LocalVars {
                 msg.delay_period,
             ),
             client_id_on_a: msg.counterparty.client_id().clone(),
-            conn_id_on_a: msg
+            conn_id_on_a: *msg
                 .counterparty
                 .connection_id()
-                .ok_or(ConnectionError::InvalidCounterparty)?
-                .clone(),
+                .ok_or(ConnectionError::InvalidCounterparty)?,
         })
     }
 }

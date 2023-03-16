@@ -60,7 +60,7 @@ where
     {
         ctx_b.log_message("success: channel open confirm".to_string());
 
-        let conn_id_on_b = chan_end_on_b.connection_hops[0].clone();
+        let conn_id_on_b = chan_end_on_b.connection_hops[0];
         let port_id_on_a = chan_end_on_b.counterparty().port_id.clone();
         let chan_id_on_a = chan_end_on_b
             .counterparty()
@@ -165,7 +165,7 @@ mod tests {
             State::TryOpen,
             Order::Unordered,
             Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::default())),
-            vec![conn_id_on_b.clone()],
+            vec![conn_id_on_b],
             Version::default(),
         );
 

@@ -99,7 +99,7 @@ pub struct ConnectionPath(pub ConnectionId);
 
 impl ConnectionPath {
     pub fn new(connection_id: &ConnectionId) -> ConnectionPath {
-        ConnectionPath(connection_id.clone())
+        ConnectionPath(*connection_id)
     }
 }
 

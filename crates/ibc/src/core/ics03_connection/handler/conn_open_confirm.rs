@@ -34,7 +34,7 @@ where
     let conn_end_on_b = vars.conn_end_on_b();
     if !conn_end_on_b.state_matches(&State::TryOpen) {
         return Err(ConnectionError::ConnectionMismatch {
-            connection_id: msg.conn_id_on_b.clone(),
+            connection_id: msg.conn_id_on_b,
         }
         .into());
     }
@@ -65,11 +65,7 @@ where
         let expected_conn_end_on_a = ConnectionEnd::new(
             State::Open,
             client_id_on_a.clone(),
-            Counterparty::new(
-                client_id_on_b.clone(),
-                Some(msg.conn_id_on_b.clone()),
-                prefix_on_b,
-            ),
+            Counterparty::new(client_id_on_b.clone(), Some(msg.conn_id_on_b), prefix_on_b),
             conn_end_on_b.versions().to_vec(),
             conn_end_on_b.delay_period(),
         );
@@ -113,9 +109,9 @@ where
     let conn_id_on_a = vars.conn_id_on_a()?;
 
     ctx_b.emit_ibc_event(IbcEvent::OpenConfirmConnection(OpenConfirm::new(
-        msg.conn_id_on_b.clone(),
+        msg.conn_id_on_b,
         client_id_on_b.clone(),
-        conn_id_on_a.clone(),
+        *conn_id_on_a,
         client_id_on_a.clone(),
     )));
     ctx_b.log_message("success: conn_open_confirm verification passed".to_string());
@@ -128,7 +124,7 @@ where
             new_conn_end_on_b
         };
 
-        ctx_b.store_connection(&ConnectionPath(msg.conn_id_on_b.clone()), new_conn_end_on_b)?;
+        ctx_b.store_connection(&ConnectionPath(msg.conn_id_on_b), new_conn_end_on_b)?;
     }
 
     Ok(())
@@ -198,7 +194,7 @@ mod tests {
         let msg = MsgConnectionOpenConfirm::new_dummy();
         let counterparty = Counterparty::new(
             client_id.clone(),
-            Some(msg.conn_id_on_b.clone()),
+            Some(msg.conn_id_on_b),
             CommitmentPrefix::try_from(b"ibc".to_vec()).unwrap(),
         );
 
@@ -219,10 +215,10 @@ mod tests {
             Ctx::Default => ctx_default,
             Ctx::IncorrectConnection => ctx_default
                 .with_client(&client_id, Height::new(0, 10).unwrap())
-                .with_connection(msg.conn_id_on_b.clone(), incorrect_conn_end_state),
+                .with_connection(msg.conn_id_on_b, incorrect_conn_end_state),
             Ctx::CorrectConnection => ctx_default
                 .with_client(&client_id, Height::new(0, 10).unwrap())
-                .with_connection(msg.conn_id_on_b.clone(), correct_conn_end),
+                .with_connection(msg.conn_id_on_b, correct_conn_end),
         };
 
         Fixture { ctx, msg }

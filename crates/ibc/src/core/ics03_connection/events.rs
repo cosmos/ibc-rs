@@ -36,15 +36,15 @@ struct Attributes {
 /// Convert attributes to Tendermint ABCI tags
 impl From<Attributes> for Vec<abci::EventAttribute> {
     fn from(a: Attributes) -> Self {
-        let conn_id = (CONN_ID_ATTRIBUTE_KEY, a.connection_id.as_str()).into();
+        let conn_id = (CONN_ID_ATTRIBUTE_KEY, a.connection_id.to_string()).into();
         let client_id = (CLIENT_ID_ATTRIBUTE_KEY, a.client_id.as_str()).into();
 
         let counterparty_conn_id = (
             COUNTERPARTY_CONN_ID_ATTRIBUTE_KEY,
             a.counterparty_connection_id
                 .as_ref()
-                .map(|id| id.as_str())
-                .unwrap_or(""),
+                .map(|id| id.to_string())
+                .unwrap_or("".into()),
         )
             .into();
 
@@ -318,12 +318,8 @@ mod tests {
         let tests: Vec<Test> = vec![
             Test {
                 kind: IbcEventType::OpenInitConnection,
-                event: OpenInit::new(
-                    conn_id_on_a.clone(),
-                    client_id_on_a.clone(),
-                    client_id_on_b.clone(),
-                )
-                .into(),
+                event: OpenInit::new(conn_id_on_a, client_id_on_a.clone(), client_id_on_b.clone())
+                    .into(),
                 expected_keys: expected_keys.clone(),
                 expected_values: expected_values
                     .iter()
@@ -334,9 +330,9 @@ mod tests {
             Test {
                 kind: IbcEventType::OpenTryConnection,
                 event: OpenTry::new(
-                    conn_id_on_b.clone(),
+                    conn_id_on_b,
                     client_id_on_b.clone(),
-                    conn_id_on_a.clone(),
+                    conn_id_on_a,
                     client_id_on_a.clone(),
                 )
                 .into(),
@@ -346,9 +342,9 @@ mod tests {
             Test {
                 kind: IbcEventType::OpenAckConnection,
                 event: OpenAck::new(
-                    conn_id_on_a.clone(),
+                    conn_id_on_a,
                     client_id_on_a.clone(),
-                    conn_id_on_b.clone(),
+                    conn_id_on_b,
                     client_id_on_b.clone(),
                 )
                 .into(),

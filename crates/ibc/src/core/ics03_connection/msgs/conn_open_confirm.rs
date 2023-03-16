@@ -60,7 +60,7 @@ impl TryFrom<RawMsgConnectionOpenConfirm> for MsgConnectionOpenConfirm {
 impl From<MsgConnectionOpenConfirm> for RawMsgConnectionOpenConfirm {
     fn from(msg: MsgConnectionOpenConfirm) -> Self {
         RawMsgConnectionOpenConfirm {
-            connection_id: msg.conn_id_on_b.as_str().to_string(),
+            connection_id: msg.conn_id_on_b.to_string(),
             proof_ack: msg.proof_conn_end_on_a.into(),
             proof_height: Some(msg.proof_height_on_a.into()),
             signer: msg.signer.to_string(),

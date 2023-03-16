@@ -37,7 +37,7 @@ where
 
     if !conn_end_on_b.state_matches(&ConnectionState::Open) {
         return Err(ChannelError::ConnectionNotOpen {
-            connection_id: chan_end_on_b.connection_hops()[0].clone(),
+            connection_id: chan_end_on_b.connection_hops()[0],
         }
         .into());
     }
@@ -57,7 +57,7 @@ where
             .ok_or(ChannelError::InvalidCounterpartyChannelId)?;
         let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
             ChannelError::UndefinedConnectionCounterparty {
-                connection_id: chan_end_on_b.connection_hops()[0].clone(),
+                connection_id: chan_end_on_b.connection_hops()[0],
             },
         )?;
 
@@ -73,7 +73,7 @@ where
             State::Closed,
             *chan_end_on_b.ordering(),
             Counterparty::new(msg.port_id_on_b.clone(), Some(msg.chan_id_on_b.clone())),
-            vec![conn_id_on_a.clone()],
+            vec![*conn_id_on_a],
             chan_end_on_b.version().clone(),
         );
         let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, chan_id_on_a);
@@ -146,7 +146,7 @@ mod tests {
                 msg_chan_close_confirm.port_id_on_b.clone(),
                 Some(msg_chan_close_confirm.chan_id_on_b.clone()),
             ),
-            vec![conn_id.clone()],
+            vec![conn_id],
             Version::default(),
         );
 

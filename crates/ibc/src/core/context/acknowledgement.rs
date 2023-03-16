@@ -50,7 +50,7 @@ where
     ctx_a.emit_ibc_event(IbcEvent::AcknowledgePacket(AcknowledgePacket::new(
         msg.packet.clone(),
         chan_end_on_a.ordering,
-        conn_id_on_a.clone(),
+        *conn_id_on_a,
     )));
 
     let commitment_path_on_a = CommitmentPath::new(

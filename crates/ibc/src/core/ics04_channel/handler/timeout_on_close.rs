@@ -61,7 +61,7 @@ where
         .into());
     }
 
-    let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
+    let conn_id_on_a = chan_end_on_a.connection_hops()[0];
     let conn_end_on_a = ctx_a.connection_end(&conn_id_on_a)?;
 
     // Verify proofs
@@ -90,10 +90,10 @@ where
                 ))?;
         let conn_id_on_b = conn_end_on_a.counterparty().connection_id().ok_or(
             PacketError::UndefinedConnectionCounterparty {
-                connection_id: chan_end_on_a.connection_hops()[0].clone(),
+                connection_id: chan_end_on_a.connection_hops()[0],
             },
         )?;
-        let expected_conn_hops_on_b = vec![conn_id_on_b.clone()];
+        let expected_conn_hops_on_b = vec![*conn_id_on_b];
         let expected_counterparty = Counterparty::new(
             packet.port_id_on_a.clone(),
             Some(packet.chan_id_on_a.clone()),

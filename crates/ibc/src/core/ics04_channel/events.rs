@@ -1103,7 +1103,7 @@ mod tests {
                     port_id.clone(),
                     channel_id.clone(),
                     counterparty_port_id.clone(),
-                    connection_id.clone(),
+                    connection_id,
                     version.clone(),
                 )
                 .into(),
@@ -1121,7 +1121,7 @@ mod tests {
                     channel_id.clone(),
                     counterparty_port_id.clone(),
                     counterparty_channel_id.clone(),
-                    connection_id.clone(),
+                    connection_id,
                     version,
                 )
                 .into(),
@@ -1135,7 +1135,7 @@ mod tests {
                     channel_id.clone(),
                     counterparty_port_id.clone(),
                     counterparty_channel_id.clone(),
-                    connection_id.clone(),
+                    connection_id,
                 )
                 .into(),
                 expected_keys: expected_keys[0..5].to_vec(),
@@ -1148,7 +1148,7 @@ mod tests {
                     channel_id.clone(),
                     counterparty_port_id.clone(),
                     counterparty_channel_id.clone(),
-                    connection_id.clone(),
+                    connection_id,
                 )
                 .into(),
                 expected_keys: expected_keys[0..5].to_vec(),
@@ -1161,7 +1161,7 @@ mod tests {
                     channel_id.clone(),
                     counterparty_port_id.clone(),
                     counterparty_channel_id.clone(),
-                    connection_id.clone(),
+                    connection_id,
                 )
                 .into(),
                 expected_keys: expected_keys[0..5].to_vec(),

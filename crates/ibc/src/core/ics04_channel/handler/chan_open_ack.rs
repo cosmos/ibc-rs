@@ -38,7 +38,7 @@ where
 
     if !conn_end_on_a.state_matches(&ConnectionState::Open) {
         return Err(ChannelError::ConnectionNotOpen {
-            connection_id: chan_end_on_a.connection_hops()[0].clone(),
+            connection_id: chan_end_on_a.connection_hops()[0],
         }
         .into());
     }
@@ -54,7 +54,7 @@ where
         let port_id_on_b = &chan_end_on_a.counterparty().port_id;
         let conn_id_on_b = conn_end_on_a.counterparty().connection_id().ok_or(
             ChannelError::UndefinedConnectionCounterparty {
-                connection_id: chan_end_on_a.connection_hops()[0].clone(),
+                connection_id: chan_end_on_a.connection_hops()[0],
             },
         )?;
 
@@ -72,7 +72,7 @@ where
             // fine to use A's ordering here
             *chan_end_on_a.ordering(),
             Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
-            vec![conn_id_on_b.clone()],
+            vec![*conn_id_on_b],
             msg.version_on_b.clone(),
         );
         let chan_end_path_on_b = ChannelEndPath::new(port_id_on_b, &msg.chan_id_on_b);
@@ -150,7 +150,7 @@ mod tests {
             State::Init,
             Order::Unordered,
             Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_b.clone())),
-            vec![conn_id_on_a.clone()],
+            vec![conn_id_on_a],
             msg.version_on_b.clone(),
         );
 
@@ -204,7 +204,7 @@ mod tests {
             State::Open,
             Order::Unordered,
             Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_b.clone())),
-            vec![conn_id_on_a.clone()],
+            vec![conn_id_on_a],
             msg.version_on_b.clone(),
         );
         let context = context

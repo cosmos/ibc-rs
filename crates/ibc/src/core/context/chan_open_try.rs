@@ -60,7 +60,7 @@ where
         &msg.version_supported_on_a,
     )?;
 
-    let conn_id_on_b = msg.connection_hops_on_b[0].clone();
+    let conn_id_on_b = msg.connection_hops_on_b[0];
 
     // state changes
     {
@@ -176,7 +176,7 @@ mod tests {
         let mut msg =
             MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(proof_height)).unwrap();
 
-        let hops = vec![conn_id_on_b.clone()];
+        let hops = vec![conn_id_on_b];
         msg.connection_hops_on_b = hops;
 
         let mut context = MockContext::default();

@@ -96,8 +96,8 @@ impl TryFrom<RawMsgConnectionOpenAck> for MsgConnectionOpenAck {
 impl From<MsgConnectionOpenAck> for RawMsgConnectionOpenAck {
     fn from(msg: MsgConnectionOpenAck) -> Self {
         RawMsgConnectionOpenAck {
-            connection_id: msg.conn_id_on_a.as_str().to_string(),
-            counterparty_connection_id: msg.conn_id_on_b.as_str().to_string(),
+            connection_id: msg.conn_id_on_a.to_string(),
+            counterparty_connection_id: msg.conn_id_on_b.to_string(),
             client_state: Some(msg.client_state_of_a_on_b),
             proof_height: Some(msg.proofs_height_on_b.into()),
             proof_try: msg.proof_conn_end_on_b.into(),

@@ -855,7 +855,7 @@ impl ValidationContext for MockContext {
         match self.ibc_store.lock().connections.get(cid) {
             Some(connection_end) => Ok(connection_end.clone()),
             None => Err(ConnectionError::ConnectionNotFound {
-                connection_id: cid.clone(),
+                connection_id: *cid,
             }),
         }
         .map_err(ContextError::ConnectionError)
@@ -1217,7 +1217,7 @@ impl ExecutionContext for MockContext {
         connection_path: &ConnectionPath,
         connection_end: ConnectionEnd,
     ) -> Result<(), ContextError> {
-        let connection_id = connection_path.0.clone();
+        let connection_id = connection_path.0;
         self.ibc_store
             .lock()
             .connections

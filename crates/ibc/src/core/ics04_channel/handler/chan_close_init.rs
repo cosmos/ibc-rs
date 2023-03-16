@@ -36,7 +36,7 @@ where
 
     if !conn_end_on_a.state_matches(&ConnectionState::Open) {
         return Err(ChannelError::ConnectionNotOpen {
-            connection_id: chan_end_on_a.connection_hops()[0].clone(),
+            connection_id: chan_end_on_a.connection_hops()[0],
         }
         .into());
     }
@@ -91,7 +91,7 @@ mod tests {
                 msg_chan_close_init.port_id_on_a.clone(),
                 Some(msg_chan_close_init.chan_id_on_a.clone()),
             ),
-            vec![conn_id.clone()],
+            vec![conn_id],
             Version::default(),
         );
 
