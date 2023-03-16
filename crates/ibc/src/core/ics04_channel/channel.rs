@@ -613,7 +613,7 @@ mod tests {
                 name: "Raw channel end with two correct connection ids in connection hops"
                     .to_string(),
                 params: RawChannel {
-                    connection_hops: vec!["connection1".to_string(), "connection2".to_string()]
+                    connection_hops: vec!["connection-1".to_string(), "connection-2".to_string()]
                         .into_iter()
                         .collect(),
                     ..raw_channel_end.clone()

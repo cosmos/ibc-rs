@@ -279,9 +279,10 @@ impl ConnectionId {
     /// `ConnectionId::prefix()`) so this method accepts a single argument, the `counter`.
     ///
     /// ```
+    /// # use std::str::FromStr;
     /// # use ibc::core::ics24_host::identifier::ConnectionId;
     /// let conn_id = ConnectionId::new(11);
-    /// assert_eq!(&conn_id, "connection-11");
+    /// assert_eq!(conn_id, ConnectionId::from_str("connection-11").unwrap());
     /// ```
     pub fn new(identifier: u64) -> Self {
         Self(identifier)
@@ -304,6 +305,8 @@ impl FromStr for ConnectionId {
     type Err = ValidationError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        validate_connection_identifier(s)?;
+
         let s = s
             .strip_prefix(Self::prefix())
             .ok_or_else(|| ValidationError::InvalidCharacter { id: s.to_string() })?;
