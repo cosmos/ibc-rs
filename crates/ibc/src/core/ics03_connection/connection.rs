@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use ibc_proto::protobuf::Protobuf;
 
 use core::time::Duration;
 use core::{
@@ -10,7 +11,6 @@ use ibc_proto::ibc::core::connection::v1::{
     ConnectionEnd as RawConnectionEnd, Counterparty as RawCounterparty,
     IdentifiedConnection as RawIdentifiedConnection,
 };
-use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::error::ConnectionError;
@@ -111,15 +111,18 @@ pub struct ConnectionEnd {
     versions: Vec<Version>,
     delay_period: Duration,
 }
+mod private {
+    use super::*;
 
-impl TryFrom<ConnectionEnd> for Vec<u8> {
-    type Error = ConnectionError;
+    impl TryFrom<ConnectionEnd> for Vec<u8> {
+        type Error = ConnectionError;
 
-    fn try_from(value: ConnectionEnd) -> Result<Self, Self::Error> {
-        let value = value
-            .encode_vec()
-            .map_err(ConnectionError::InvalidConnectionEnd)?;
-        Ok(value)
+        fn try_from(value: ConnectionEnd) -> Result<Self, Self::Error> {
+            let value = value
+                .encode_vec()
+                .map_err(ConnectionError::InvalidConnectionEnd)?;
+            Ok(value)
+        }
     }
 }
 
