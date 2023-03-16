@@ -449,6 +449,8 @@ impl FromStr for ChannelId {
     type Err = ValidationError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        validate_channel_identifier(s)?;
+
         let s = s
             .strip_prefix(Self::PREFIX)
             .ok_or_else(|| ValidationError::InvalidCharacter { id: s.to_string() })?;
