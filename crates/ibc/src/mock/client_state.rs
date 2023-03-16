@@ -233,7 +233,7 @@ impl ClientState for MockClientState {
         upgraded_consensus_state: Any,
         _proof_upgrade_client: MerkleProof,
         _proof_upgrade_consensus_state: MerkleProof,
-        _root: &CommitmentRoot,
+        _root: Option<&CommitmentRoot>,
     ) -> Result<(), ClientError> {
         let upgraded_mock_client_state = MockClientState::try_from(upgraded_client_state)?;
         MockConsensusState::try_from(upgraded_consensus_state)?;
@@ -264,7 +264,7 @@ impl ClientState for MockClientState {
         _height: Height,
         prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
+        _root: Option<&CommitmentRoot>,
         client_cons_state_path: &ClientConsensusStatePath,
         _expected_consensus_state: &dyn ConsensusState,
     ) -> Result<(), ClientError> {
@@ -281,7 +281,7 @@ impl ClientState for MockClientState {
         _height: Height,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
+        _root: Option<&CommitmentRoot>,
         _conn_path: &ConnectionPath,
         _expected_connection_end: &ConnectionEnd,
     ) -> Result<(), ClientError> {
@@ -293,7 +293,7 @@ impl ClientState for MockClientState {
         _height: Height,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
+        _root: Option<&CommitmentRoot>,
         _chan_end_path: &ChannelEndPath,
         _expected_channel_end: &ChannelEnd,
     ) -> Result<(), ClientError> {
@@ -305,7 +305,7 @@ impl ClientState for MockClientState {
         _height: Height,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
+        _root: Option<&CommitmentRoot>,
         _client_state_path: &ClientStatePath,
         _expected_client_state: Any,
     ) -> Result<(), ClientError> {
@@ -317,7 +317,7 @@ impl ClientState for MockClientState {
         _height: Height,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
+        _root: Option<&CommitmentRoot>,
         _commitment_path: &CommitmentPath,
         _commitment: PacketCommitment,
     ) -> Result<(), ClientError> {
@@ -329,7 +329,7 @@ impl ClientState for MockClientState {
         _height: Height,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
+        _root: Option<&CommitmentRoot>,
         _seq_recv_path: &SeqRecvPath,
         _sequence: Sequence,
     ) -> Result<(), ClientError> {
@@ -341,7 +341,7 @@ impl ClientState for MockClientState {
         _height: Height,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
+        _root: Option<&CommitmentRoot>,
         _receipt_path: &ReceiptPath,
     ) -> Result<(), ClientError> {
         Ok(())
@@ -352,7 +352,7 @@ impl ClientState for MockClientState {
         _height: Height,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
+        _root: Option<&CommitmentRoot>,
         _ack_path: &AckPath,
         _ack: AcknowledgementCommitment,
     ) -> Result<(), ClientError> {

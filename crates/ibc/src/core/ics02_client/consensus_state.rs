@@ -30,7 +30,7 @@ pub trait ConsensusState:
     + Sync
 {
     /// Commitment root of the consensus state, which is used for key-value pair verification.
-    fn root(&self) -> &CommitmentRoot;
+    fn root(&self) -> Option<&CommitmentRoot>;
 
     /// The timestamp of the consensus state
     fn timestamp(&self) -> Timestamp;

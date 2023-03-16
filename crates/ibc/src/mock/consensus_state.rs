@@ -96,8 +96,8 @@ impl From<MockConsensusState> for Any {
 }
 
 impl ConsensusState for MockConsensusState {
-    fn root(&self) -> &CommitmentRoot {
-        &self.root
+    fn root(&self) -> Option<&CommitmentRoot> {
+        Some(&self.root)
     }
 
     fn timestamp(&self) -> Timestamp {

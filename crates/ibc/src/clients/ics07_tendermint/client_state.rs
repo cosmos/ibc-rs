@@ -627,7 +627,7 @@ impl Ics2ClientState for ClientState {
         upgraded_consensus_state: Any,
         proof_upgrade_client: RawMerkleProof,
         proof_upgrade_consensus_state: RawMerkleProof,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
     ) -> Result<(), ClientError> {
         // Make sure that the client type is of Tendermint type `ClientState`
         let mut upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
@@ -677,7 +677,7 @@ impl Ics2ClientState for ClientState {
         merkle_proof_upgrade_client
             .verify_membership(
                 &self.proof_specs,
-                root.clone().into(),
+                root.map(|v| v.clone().into()).unwrap_or_default(),
                 client_upgrade_merkle_path,
                 client_state_value,
                 0,
@@ -699,7 +699,7 @@ impl Ics2ClientState for ClientState {
         merkle_proof_upgrade_cons_state
             .verify_membership(
                 &self.proof_specs,
-                root.clone().into(),
+                root.map(|v| v.clone().into()).unwrap_or_default(),
                 cons_upgrade_merkle_path,
                 cons_state_value,
                 0,
@@ -769,7 +769,7 @@ impl Ics2ClientState for ClientState {
         height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         client_cons_state_path: &ClientConsensusStatePath,
         expected_consensus_state: &dyn ConsensusState,
     ) -> Result<(), ClientError> {
@@ -795,7 +795,7 @@ impl Ics2ClientState for ClientState {
         height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         conn_path: &ConnectionPath,
         expected_connection_end: &ConnectionEnd,
     ) -> Result<(), ClientError> {
@@ -813,7 +813,7 @@ impl Ics2ClientState for ClientState {
         height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         channel_end_path: &ChannelEndPath,
         expected_channel_end: &ChannelEnd,
     ) -> Result<(), ClientError> {
@@ -838,7 +838,7 @@ impl Ics2ClientState for ClientState {
         height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         client_state_path: &ClientStatePath,
         expected_client_state: Any,
     ) -> Result<(), ClientError> {
@@ -861,7 +861,7 @@ impl Ics2ClientState for ClientState {
         height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
     ) -> Result<(), ClientError> {
@@ -883,7 +883,7 @@ impl Ics2ClientState for ClientState {
         height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         ack_path: &AckPath,
         ack: AcknowledgementCommitment,
     ) -> Result<(), ClientError> {
@@ -905,7 +905,7 @@ impl Ics2ClientState for ClientState {
         height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         seq_recv_path: &SeqRecvPath,
         sequence: Sequence,
     ) -> Result<(), ClientError> {
@@ -932,7 +932,7 @@ impl Ics2ClientState for ClientState {
         height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         receipt_path: &ReceiptPath,
     ) -> Result<(), ClientError> {
         let client_state = downcast_tm_client_state(self)?;
@@ -946,7 +946,7 @@ fn verify_membership(
     client_state: &ClientState,
     prefix: &CommitmentPrefix,
     proof: &CommitmentProofBytes,
-    root: &CommitmentRoot,
+    root: Option<&CommitmentRoot>,
     path: impl Into<Path>,
     value: Vec<u8>,
 ) -> Result<(), ClientError> {
@@ -958,7 +958,7 @@ fn verify_membership(
     merkle_proof
         .verify_membership(
             &client_state.proof_specs,
-            root.clone().into(),
+            root.map(|v| v.clone().into()).unwrap_or_default(),
             merkle_path,
             value,
             0,
@@ -970,7 +970,7 @@ fn verify_non_membership(
     client_state: &ClientState,
     prefix: &CommitmentPrefix,
     proof: &CommitmentProofBytes,
-    root: &CommitmentRoot,
+    root: Option<&CommitmentRoot>,
     path: impl Into<Path>,
 ) -> Result<(), ClientError> {
     let merkle_path = apply_prefix(prefix, vec![path.into().to_string()]);
@@ -979,7 +979,11 @@ fn verify_non_membership(
         .into();
 
     merkle_proof
-        .verify_non_membership(&client_state.proof_specs, root.clone().into(), merkle_path)
+        .verify_non_membership(
+            &client_state.proof_specs,
+            root.map(|v| v.clone().into()).unwrap_or_default(),
+            merkle_path,
+        )
         .map_err(ClientError::Ics23Verification)
 }
 

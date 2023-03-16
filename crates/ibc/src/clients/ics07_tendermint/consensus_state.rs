@@ -34,8 +34,8 @@ impl ConsensusState {
 }
 
 impl crate::core::ics02_client::consensus_state::ConsensusState for ConsensusState {
-    fn root(&self) -> &CommitmentRoot {
-        &self.root
+    fn root(&self) -> Option<&CommitmentRoot> {
+        Some(&self.root)
     }
 
     fn timestamp(&self) -> Timestamp {

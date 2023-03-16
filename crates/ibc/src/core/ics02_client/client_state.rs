@@ -106,7 +106,7 @@ pub trait ClientState:
         upgraded_consensus_state: Any,
         proof_upgrade_client: MerkleProof,
         proof_upgrade_consensus_state: MerkleProof,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
     ) -> Result<(), ClientError>;
 
     // Update the client state and consensus state in the store with the upgraded ones.
@@ -128,7 +128,7 @@ pub trait ClientState:
         proof_height: Height,
         counterparty_prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         client_cons_state_path: &ClientConsensusStatePath,
         expected_consensus_state: &dyn ConsensusState,
     ) -> Result<(), ClientError>;
@@ -139,7 +139,7 @@ pub trait ClientState:
         proof_height: Height,
         counterparty_prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         counterparty_conn_path: &ConnectionPath,
         expected_counterparty_connection_end: &ConnectionEnd,
     ) -> Result<(), ClientError>;
@@ -150,7 +150,7 @@ pub trait ClientState:
         proof_height: Height,
         counterparty_prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         counterparty_chan_end_path: &ChannelEndPath,
         expected_counterparty_channel_end: &ChannelEnd,
     ) -> Result<(), ClientError>;
@@ -161,7 +161,7 @@ pub trait ClientState:
         proof_height: Height,
         counterparty_prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         client_state_path: &ClientStatePath,
         expected_client_state: Any,
     ) -> Result<(), ClientError>;
@@ -172,7 +172,7 @@ pub trait ClientState:
         height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
     ) -> Result<(), ClientError>;
@@ -183,7 +183,7 @@ pub trait ClientState:
         height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         ack_path: &AckPath,
         ack: AcknowledgementCommitment,
     ) -> Result<(), ClientError>;
@@ -194,7 +194,7 @@ pub trait ClientState:
         height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         seq_recv_path: &SeqRecvPath,
         sequence: Sequence,
     ) -> Result<(), ClientError>;
@@ -205,7 +205,7 @@ pub trait ClientState:
         height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
+        root: Option<&CommitmentRoot>,
         receipt_path: &ReceiptPath,
     ) -> Result<(), ClientError>;
 }
