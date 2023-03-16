@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## v0.33.0
+
+*March 16, 2023*
+
+This release primarily updates the `ClientState` trait.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Replace specific verify_functions inside `ics02_client` with generic
+  `verify_membership` and `verify_non_membership` interfaces.
+  ([#530](https://github.com/cosmos/ibc-rs/issues/530))
+- Replace `ClientState::frozen_height()` and `ClientState::is_frozen()`
+  with `ClientState::confirm_frozen()`
+  ([#545](https://github.com/cosmos/ibc-rs/issues/545))
+
+### IMPROVEMENT
+
+- Fix `ContextError` Display output 
+  ([#547](https://github.com/cosmos/ibc-rs/issues/547))
+
 ## v0.32.0
 
 *March 9, 2023*
