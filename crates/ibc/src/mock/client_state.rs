@@ -163,19 +163,13 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
-    fn frozen_height(&self) -> Option<Height> {
-        self.frozen_height
-    }
-
     fn confirm_not_frozen(&self) -> Result<(), ClientError> {
-        {
-            if let Some(frozen_height) = self.frozen_height() {
-                return Err(ClientError::ClientFrozen {
-                    description: format!("The client is frozen at height {frozen_height}"),
-                });
-            }
-            Ok(())
+        if let Some(frozen_height) = self.frozen_height {
+            return Err(ClientError::ClientFrozen {
+                description: format!("The client is frozen at height {frozen_height}"),
+            });
         }
+        Ok(())
     }
 
     fn zero_custom_fields(&mut self) {

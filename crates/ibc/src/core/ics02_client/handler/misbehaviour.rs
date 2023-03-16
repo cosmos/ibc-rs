@@ -91,10 +91,6 @@ mod tests {
         let client_state = ctx.client_state(client_id).unwrap();
 
         assert!(client_state.confirm_not_frozen().is_err());
-        assert_eq!(
-            client_state.frozen_height(),
-            Some(Height::new(0, 1).unwrap())
-        );
 
         // check events
         let misbehaviour_client_event =

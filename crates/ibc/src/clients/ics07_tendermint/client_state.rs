@@ -315,12 +315,8 @@ impl Ics2ClientState for ClientState {
         Ok(())
     }
 
-    fn frozen_height(&self) -> Option<Height> {
-        self.frozen_height
-    }
-
     fn confirm_not_frozen(&self) -> Result<(), ClientError> {
-        if let Some(frozen_height) = self.frozen_height() {
+        if let Some(frozen_height) = self.frozen_height {
             return Err(ClientError::ClientFrozen {
                 description: format!("the client is frozen at height {frozen_height}"),
             });

@@ -45,9 +45,6 @@ pub trait ClientState:
     /// Check if the given proof has a valid height for the client
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError>;
 
-    /// Frozen height of the client
-    fn frozen_height(&self) -> Option<Height>;
-
     /// Assert that the client is not frozen
     fn confirm_not_frozen(&self) -> Result<(), ClientError>;
 
