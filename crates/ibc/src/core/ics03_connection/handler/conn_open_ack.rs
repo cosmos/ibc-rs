@@ -96,7 +96,7 @@ where
                     &msg.proof_conn_end_on_b,
                     consensus_state_of_b_on_a.root(),
                     Path::Connection(ConnectionPath::new(&msg.conn_id_on_b)),
-                    expected_conn_end_on_b.try_into()?,
+                    expected_conn_end_on_b.proto_encode_vec()?,
                 )
                 .map_err(ConnectionError::VerifyConnectionState)?;
         }

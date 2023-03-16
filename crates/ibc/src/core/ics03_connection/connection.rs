@@ -111,20 +111,6 @@ pub struct ConnectionEnd {
     versions: Vec<Version>,
     delay_period: Duration,
 }
-mod private {
-    use super::*;
-
-    impl TryFrom<ConnectionEnd> for Vec<u8> {
-        type Error = ConnectionError;
-
-        fn try_from(value: ConnectionEnd) -> Result<Self, Self::Error> {
-            let value = value
-                .encode_vec()
-                .map_err(ConnectionError::InvalidConnectionEnd)?;
-            Ok(value)
-        }
-    }
-}
 
 mod sealed {
     use super::*;
@@ -363,6 +349,13 @@ impl ConnectionEnd {
     /// TODO: Clean this up, probably not necessary.
     pub fn validate_basic(&self) -> Result<(), ValidationError> {
         self.counterparty.validate_basic()
+    }
+
+    pub(crate) fn proto_encode_vec(&self) -> Result<Vec<u8>, ConnectionError> {
+        let value = self
+            .encode_vec()
+            .map_err(ConnectionError::InvalidConnectionEnd)?;
+        Ok(value)
     }
 }
 

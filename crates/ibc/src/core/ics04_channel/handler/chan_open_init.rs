@@ -40,22 +40,22 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ics02_client::height::Height;
-    use crate::core::ics04_channel::handler::chan_open_init::validate;
-    use crate::core::ics24_host::identifier::ClientId;
     use crate::prelude::*;
     use rstest::*;
 
     use test_log::test;
 
+    use crate::clients::ics07_tendermint::client_type as tm_client_type;
+    use crate::core::ics02_client::height::Height;
     use crate::core::ics03_connection::connection::ConnectionEnd;
     use crate::core::ics03_connection::connection::State as ConnectionState;
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::version::get_compatible_versions;
+    use crate::core::ics04_channel::handler::chan_open_init::validate;
     use crate::core::ics04_channel::msgs::chan_open_init::test_util::get_dummy_raw_msg_chan_open_init;
     use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
+    use crate::core::ics24_host::identifier::ClientId;
     use crate::core::ics24_host::identifier::ConnectionId;
-    use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
 
     pub struct Fixture {
@@ -78,7 +78,7 @@ mod tests {
             msg_conn_init.delay_period,
         );
 
-        let client_id_on_a = ClientId::new(mock_client_type(), 45).unwrap();
+        let client_id_on_a = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(0, 10).unwrap();
 
         let context = default_context

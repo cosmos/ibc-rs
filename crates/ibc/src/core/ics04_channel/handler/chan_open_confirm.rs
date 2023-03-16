@@ -84,7 +84,7 @@ where
                 &msg.proof_chan_end_on_a,
                 consensus_state_of_a_on_b.root(),
                 Path::ChannelEnd(chan_end_path_on_a),
-                expected_chan_end_on_a.try_into()?,
+                expected_chan_end_on_a.proto_encode_vec()?,
             )
             .map_err(ChannelError::VerifyChannelFailed)?;
     }

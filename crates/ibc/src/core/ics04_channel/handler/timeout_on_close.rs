@@ -114,7 +114,7 @@ where
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 Path::ChannelEnd(chan_end_path_on_b),
-                expected_chan_end_on_b.try_into()?,
+                expected_chan_end_on_b.proto_encode_vec()?,
             )
             .map_err(ChannelError::VerifyChannelFailed)
             .map_err(PacketError::Channel)?;
