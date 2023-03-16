@@ -65,7 +65,6 @@ where
         let chan_id_on_a = chan_end_on_b
             .counterparty()
             .channel_id
-            .clone()
             .ok_or(ContextError::ChannelError(ChannelError::Other {
             description:
                 "internal error: ChannelEnd doesn't have a counterparty channel id in OpenConfirm"
@@ -74,7 +73,7 @@ where
 
         let core_event = IbcEvent::OpenConfirmChannel(OpenConfirm::new(
             msg.port_id_on_b.clone(),
-            msg.chan_id_on_b.clone(),
+            msg.chan_id_on_b,
             port_id_on_a,
             chan_id_on_a,
             conn_id_on_b,

@@ -19,7 +19,7 @@ where
     // Validate that the channel end is in a state where it can be confirmed.
     if !chan_end_on_b.state_matches(&State::TryOpen) {
         return Err(ChannelError::InvalidChannelState {
-            channel_id: msg.chan_id_on_b.clone(),
+            channel_id: msg.chan_id_on_b,
             state: chan_end_on_b.state,
         }
         .into());
@@ -73,7 +73,7 @@ where
         let expected_chan_end_on_a = ChannelEnd::new(
             State::Open,
             *chan_end_on_b.ordering(),
-            Counterparty::new(msg.port_id_on_b.clone(), Some(msg.chan_id_on_b.clone())),
+            Counterparty::new(msg.port_id_on_b.clone(), Some(msg.chan_id_on_b)),
             vec![conn_id_on_a.clone()],
             chan_end_on_b.version.clone(),
         );

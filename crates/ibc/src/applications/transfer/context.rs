@@ -442,7 +442,7 @@ pub(crate) mod test {
         let connection_hops = vec![ConnectionId::new(1)];
         let port_id = PortId::transfer();
         let channel_id = ChannelId::new(1);
-        let counterparty = Counterparty::new(port_id.clone(), Some(channel_id.clone()));
+        let counterparty = Counterparty::new(port_id.clone(), Some(channel_id));
 
         (
             ctx,

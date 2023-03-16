@@ -94,7 +94,7 @@ where
         ));
         let core_event = IbcEvent::OpenInitChannel(OpenInit::new(
             msg.port_id_on_a.clone(),
-            chan_id_on_a.clone(),
+            chan_id_on_a,
             msg.port_id_on_b,
             conn_id_on_a,
             version,

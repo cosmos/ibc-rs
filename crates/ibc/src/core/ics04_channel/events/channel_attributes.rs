@@ -61,7 +61,11 @@ pub struct ChannelIdAttribute {
 
 impl From<ChannelIdAttribute> for abci::EventAttribute {
     fn from(attr: ChannelIdAttribute) -> Self {
-        (CHANNEL_ID_ATTRIBUTE_KEY, attr.channel_id.as_str()).into()
+        (
+            CHANNEL_ID_ATTRIBUTE_KEY,
+            alloc::format!("{}", attr.channel_id),
+        )
+            .into()
     }
 }
 #[cfg_attr(
@@ -113,7 +117,7 @@ impl From<CounterpartyChannelIdAttribute> for abci::EventAttribute {
     fn from(attr: CounterpartyChannelIdAttribute) -> Self {
         (
             COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY,
-            attr.counterparty_channel_id.as_str(),
+            alloc::format!("{}", attr.counterparty_channel_id),
         )
             .into()
     }

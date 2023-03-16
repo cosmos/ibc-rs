@@ -19,15 +19,12 @@ where
     let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
-    let counterparty = Counterparty::new(
-        packet.port_id_on_b.clone(),
-        Some(packet.chan_id_on_b.clone()),
-    );
+    let counterparty = Counterparty::new(packet.port_id_on_b.clone(), Some(packet.chan_id_on_b));
 
     if !chan_end_on_a.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
             port_id: packet.port_id_on_b.clone(),
-            channel_id: packet.chan_id_on_b.clone(),
+            channel_id: packet.chan_id_on_b,
         }
         .into());
     }
@@ -94,10 +91,8 @@ where
             },
         )?;
         let expected_conn_hops_on_b = vec![conn_id_on_b.clone()];
-        let expected_counterparty = Counterparty::new(
-            packet.port_id_on_a.clone(),
-            Some(packet.chan_id_on_a.clone()),
-        );
+        let expected_counterparty =
+            Counterparty::new(packet.port_id_on_a.clone(), Some(packet.chan_id_on_a));
         let expected_chan_end_on_b = ChannelEnd::new(
             State::Closed,
             *chan_end_on_a.ordering(),
@@ -106,7 +101,7 @@ where
             chan_end_on_a.version().clone(),
         );
 
-        let chan_end_path_on_b = ChannelEndPath(port_id_on_b, chan_id_on_b.clone());
+        let chan_end_path_on_b = ChannelEndPath(port_id_on_b, *chan_id_on_b);
 
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
@@ -297,7 +292,7 @@ mod tests {
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_packet_commitment(
                 msg.packet.port_id_on_a.clone(),
-                msg.packet.chan_id_on_a.clone(),
+                msg.packet.chan_id_on_a,
                 msg.packet.seq_on_a,
                 packet_commitment,
             );

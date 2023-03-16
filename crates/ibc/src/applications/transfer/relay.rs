@@ -23,7 +23,7 @@ pub fn refund_packet_token_execute(
 
     if is_sender_chain_source(
         packet.port_id_on_a.clone(),
-        packet.chan_id_on_a.clone(),
+        packet.chan_id_on_a,
         &data.token.denom,
     ) {
         // unescrow tokens back to sender
@@ -51,7 +51,7 @@ pub fn refund_packet_token_validate(
 
     if is_sender_chain_source(
         packet.port_id_on_a.clone(),
-        packet.chan_id_on_a.clone(),
+        packet.chan_id_on_a,
         &data.token.denom,
     ) {
         let escrow_address =

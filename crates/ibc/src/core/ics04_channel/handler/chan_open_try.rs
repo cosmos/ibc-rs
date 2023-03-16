@@ -53,7 +53,7 @@ where
         let consensus_state_of_a_on_b = ctx_b.consensus_state(&client_cons_state_path_on_b)?;
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let port_id_on_a = msg.port_id_on_a.clone();
-        let chan_id_on_a = msg.chan_id_on_a.clone();
+        let chan_id_on_a = msg.chan_id_on_a;
         let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
             ChannelError::UndefinedConnectionCounterparty {
                 connection_id: msg.connection_hops_on_b[0].clone(),

@@ -24,20 +24,20 @@ where
 
     if !chan_end_on_a.state_matches(&State::Open) {
         return Err(PacketError::ChannelClosed {
-            channel_id: msg.packet.chan_id_on_a.clone(),
+            channel_id: msg.packet.chan_id_on_a,
         }
         .into());
     }
 
     let counterparty = Counterparty::new(
         msg.packet.port_id_on_b.clone(),
-        Some(msg.packet.chan_id_on_b.clone()),
+        Some(msg.packet.chan_id_on_b),
     );
 
     if !chan_end_on_a.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
             port_id: msg.packet.port_id_on_b.clone(),
-            channel_id: msg.packet.chan_id_on_b.clone(),
+            channel_id: msg.packet.chan_id_on_b,
         }
         .into());
     }

@@ -31,11 +31,11 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
 
     let extras = if is_receiver_chain_source(
         packet.port_id_on_a.clone(),
-        packet.chan_id_on_a.clone(),
+        packet.chan_id_on_a,
         &data.token.denom,
     ) {
         // sender chain is not the source, unescrow tokens
-        let prefix = TracePrefix::new(packet.port_id_on_a.clone(), packet.chan_id_on_a.clone());
+        let prefix = TracePrefix::new(packet.port_id_on_a.clone(), packet.chan_id_on_a);
         let coin = {
             let mut c = data.token;
             c.denom.remove_trace_prefix(&prefix);
@@ -67,7 +67,7 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
         ModuleExtras::empty()
     } else {
         // sender chain is the source, mint vouchers
-        let prefix = TracePrefix::new(packet.port_id_on_b.clone(), packet.chan_id_on_b.clone());
+        let prefix = TracePrefix::new(packet.port_id_on_b.clone(), packet.chan_id_on_b);
         let coin = {
             let mut c = data.token;
             c.denom.add_trace_prefix(prefix);

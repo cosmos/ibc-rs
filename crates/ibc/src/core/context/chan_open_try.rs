@@ -31,7 +31,7 @@ where
         &msg.connection_hops_on_b,
         &msg.port_id_on_b,
         &chan_id_on_b,
-        &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+        &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a)),
         &msg.version_supported_on_a,
     )?;
 
@@ -56,7 +56,7 @@ where
         &msg.connection_hops_on_b,
         &msg.port_id_on_b,
         &chan_id_on_b,
-        &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+        &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a)),
         &msg.version_supported_on_a,
     )?;
 
@@ -67,7 +67,7 @@ where
         let chan_end_on_b = ChannelEnd::new(
             State::TryOpen,
             msg.ordering,
-            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a)),
             msg.connection_hops_on_b.clone(),
             version.clone(),
         );
@@ -95,9 +95,9 @@ where
 
         let core_event = IbcEvent::OpenTryChannel(OpenTry::new(
             msg.port_id_on_b.clone(),
-            chan_id_on_b.clone(),
+            chan_id_on_b,
             msg.port_id_on_a.clone(),
-            msg.chan_id_on_a.clone(),
+            msg.chan_id_on_a,
             conn_id_on_b,
             version,
         ));

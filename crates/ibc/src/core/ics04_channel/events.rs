@@ -1101,7 +1101,7 @@ mod tests {
                 kind: IbcEventType::OpenInitChannel,
                 event: OpenInit::new(
                     port_id.clone(),
-                    channel_id.clone(),
+                    channel_id,
                     counterparty_port_id.clone(),
                     connection_id.clone(),
                     version.clone(),
@@ -1118,9 +1118,9 @@ mod tests {
                 kind: IbcEventType::OpenTryChannel,
                 event: OpenTry::new(
                     port_id.clone(),
-                    channel_id.clone(),
+                    channel_id,
                     counterparty_port_id.clone(),
-                    counterparty_channel_id.clone(),
+                    counterparty_channel_id,
                     connection_id.clone(),
                     version,
                 )
@@ -1132,9 +1132,9 @@ mod tests {
                 kind: IbcEventType::OpenAckChannel,
                 event: OpenAck::new(
                     port_id.clone(),
-                    channel_id.clone(),
+                    channel_id,
                     counterparty_port_id.clone(),
-                    counterparty_channel_id.clone(),
+                    counterparty_channel_id,
                     connection_id.clone(),
                 )
                 .into(),
@@ -1145,9 +1145,9 @@ mod tests {
                 kind: IbcEventType::OpenConfirmChannel,
                 event: OpenConfirm::new(
                     port_id.clone(),
-                    channel_id.clone(),
+                    channel_id,
                     counterparty_port_id.clone(),
-                    counterparty_channel_id.clone(),
+                    counterparty_channel_id,
                     connection_id.clone(),
                 )
                 .into(),
@@ -1158,9 +1158,9 @@ mod tests {
                 kind: IbcEventType::CloseInitChannel,
                 event: CloseInit::new(
                     port_id.clone(),
-                    channel_id.clone(),
+                    channel_id,
                     counterparty_port_id.clone(),
-                    counterparty_channel_id.clone(),
+                    counterparty_channel_id,
                     connection_id.clone(),
                 )
                 .into(),

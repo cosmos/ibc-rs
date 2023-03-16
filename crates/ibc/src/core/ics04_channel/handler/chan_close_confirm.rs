@@ -19,7 +19,7 @@ where
     // Validate that the channel end is in a state where it can be closed.
     if chan_end_on_b.state_matches(&State::Closed) {
         return Err(ChannelError::ChannelClosed {
-            channel_id: msg.chan_id_on_b.clone(),
+            channel_id: msg.chan_id_on_b,
         }
         .into());
     }
@@ -72,7 +72,7 @@ where
         let expected_chan_end_on_a = ChannelEnd::new(
             State::Closed,
             *chan_end_on_b.ordering(),
-            Counterparty::new(msg.port_id_on_b.clone(), Some(msg.chan_id_on_b.clone())),
+            Counterparty::new(msg.port_id_on_b.clone(), Some(msg.chan_id_on_b)),
             vec![conn_id_on_a.clone()],
             chan_end_on_b.version().clone(),
         );
@@ -144,7 +144,7 @@ mod tests {
             Order::default(),
             Counterparty::new(
                 msg_chan_close_confirm.port_id_on_b.clone(),
-                Some(msg_chan_close_confirm.chan_id_on_b.clone()),
+                Some(msg_chan_close_confirm.chan_id_on_b),
             ),
             vec![conn_id.clone()],
             Version::default(),
@@ -155,7 +155,7 @@ mod tests {
             .with_connection(conn_id, conn_end)
             .with_channel(
                 msg_chan_close_confirm.port_id_on_b.clone(),
-                msg_chan_close_confirm.chan_id_on_b.clone(),
+                msg_chan_close_confirm.chan_id_on_b,
                 chan_end,
             );
 

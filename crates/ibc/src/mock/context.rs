@@ -916,19 +916,19 @@ impl ValidationContext for MockContext {
 
     fn channel_end(&self, chan_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
         let port_id = &chan_end_path.0;
-        let channel_id = &chan_end_path.1;
+        let channel_id = chan_end_path.1;
 
         match self
             .ibc_store
             .lock()
             .channels
             .get(port_id)
-            .and_then(|map| map.get(channel_id))
+            .and_then(|map| map.get(&channel_id))
         {
             Some(channel_end) => Ok(channel_end.clone()),
             None => Err(ChannelError::ChannelNotFound {
                 port_id: port_id.clone(),
-                channel_id: channel_id.clone(),
+                channel_id,
             }),
         }
         .map_err(ContextError::ChannelError)
@@ -939,19 +939,19 @@ impl ValidationContext for MockContext {
         seq_send_path: &SeqSendPath,
     ) -> Result<Sequence, ContextError> {
         let port_id = &seq_send_path.0;
-        let channel_id = &seq_send_path.1;
+        let channel_id = seq_send_path.1;
 
         match self
             .ibc_store
             .lock()
             .next_sequence_send
             .get(port_id)
-            .and_then(|map| map.get(channel_id))
+            .and_then(|map| map.get(&channel_id))
         {
             Some(sequence) => Ok(*sequence),
             None => Err(PacketError::MissingNextSendSeq {
                 port_id: port_id.clone(),
-                channel_id: channel_id.clone(),
+                channel_id,
             }),
         }
         .map_err(ContextError::PacketError)
@@ -962,19 +962,19 @@ impl ValidationContext for MockContext {
         seq_recv_path: &SeqRecvPath,
     ) -> Result<Sequence, ContextError> {
         let port_id = &seq_recv_path.0;
-        let channel_id = &seq_recv_path.1;
+        let channel_id = seq_recv_path.1;
 
         match self
             .ibc_store
             .lock()
             .next_sequence_recv
             .get(port_id)
-            .and_then(|map| map.get(channel_id))
+            .and_then(|map| map.get(&channel_id))
         {
             Some(sequence) => Ok(*sequence),
             None => Err(PacketError::MissingNextRecvSeq {
                 port_id: port_id.clone(),
-                channel_id: channel_id.clone(),
+                channel_id,
             }),
         }
         .map_err(ContextError::PacketError)
@@ -982,19 +982,19 @@ impl ValidationContext for MockContext {
 
     fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, ContextError> {
         let port_id = &seq_ack_path.0;
-        let channel_id = &seq_ack_path.1;
+        let channel_id = seq_ack_path.1;
 
         match self
             .ibc_store
             .lock()
             .next_sequence_ack
             .get(port_id)
-            .and_then(|map| map.get(channel_id))
+            .and_then(|map| map.get(&channel_id))
         {
             Some(sequence) => Ok(*sequence),
             None => Err(PacketError::MissingNextAckSeq {
                 port_id: port_id.clone(),
-                channel_id: channel_id.clone(),
+                channel_id,
             }),
         }
         .map_err(ContextError::PacketError)
@@ -1005,7 +1005,7 @@ impl ValidationContext for MockContext {
         commitment_path: &CommitmentPath,
     ) -> Result<PacketCommitment, ContextError> {
         let port_id = &commitment_path.port_id;
-        let channel_id = &commitment_path.channel_id;
+        let channel_id = commitment_path.channel_id;
         let seq = &commitment_path.sequence;
 
         match self
@@ -1013,7 +1013,7 @@ impl ValidationContext for MockContext {
             .lock()
             .packet_commitment
             .get(port_id)
-            .and_then(|map| map.get(channel_id))
+            .and_then(|map| map.get(&channel_id))
             .and_then(|map| map.get(seq))
         {
             Some(commitment) => Ok(commitment.clone()),
@@ -1024,7 +1024,7 @@ impl ValidationContext for MockContext {
 
     fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, ContextError> {
         let port_id = &receipt_path.port_id;
-        let channel_id = &receipt_path.channel_id;
+        let channel_id = receipt_path.channel_id;
         let seq = &receipt_path.sequence;
 
         match self
@@ -1032,7 +1032,7 @@ impl ValidationContext for MockContext {
             .lock()
             .packet_receipt
             .get(port_id)
-            .and_then(|map| map.get(channel_id))
+            .and_then(|map| map.get(&channel_id))
             .and_then(|map| map.get(seq))
         {
             Some(receipt) => Ok(receipt.clone()),
@@ -1046,7 +1046,7 @@ impl ValidationContext for MockContext {
         ack_path: &AckPath,
     ) -> Result<AcknowledgementCommitment, ContextError> {
         let port_id = &ack_path.port_id;
-        let channel_id = &ack_path.channel_id;
+        let channel_id = ack_path.channel_id;
         let seq = &ack_path.sequence;
 
         match self
@@ -1054,7 +1054,7 @@ impl ValidationContext for MockContext {
             .lock()
             .packet_acknowledgement
             .get(port_id)
-            .and_then(|map| map.get(channel_id))
+            .and_then(|map| map.get(&channel_id))
             .and_then(|map| map.get(seq))
         {
             Some(ack) => Ok(ack.clone()),
@@ -1252,7 +1252,7 @@ impl ExecutionContext for MockContext {
             .packet_commitment
             .entry(commitment_path.port_id.clone())
             .or_default()
-            .entry(commitment_path.channel_id.clone())
+            .entry(commitment_path.channel_id)
             .or_default()
             .insert(commitment_path.sequence, commitment);
         Ok(())
@@ -1281,7 +1281,7 @@ impl ExecutionContext for MockContext {
             .packet_receipt
             .entry(path.port_id.clone())
             .or_default()
-            .entry(path.channel_id.clone())
+            .entry(path.channel_id)
             .or_default()
             .insert(path.sequence, receipt);
         Ok(())
@@ -1293,7 +1293,7 @@ impl ExecutionContext for MockContext {
         ack_commitment: AcknowledgementCommitment,
     ) -> Result<(), ContextError> {
         let port_id = ack_path.port_id.clone();
-        let channel_id = ack_path.channel_id.clone();
+        let channel_id = ack_path.channel_id;
         let seq = ack_path.sequence;
 
         self.ibc_store
@@ -1309,7 +1309,7 @@ impl ExecutionContext for MockContext {
 
     fn delete_packet_acknowledgement(&mut self, ack_path: &AckPath) -> Result<(), ContextError> {
         let port_id = ack_path.port_id.clone();
-        let channel_id = ack_path.channel_id.clone();
+        let channel_id = ack_path.channel_id;
         let sequence = ack_path.sequence;
 
         self.ibc_store
@@ -1327,7 +1327,7 @@ impl ExecutionContext for MockContext {
         channel_end: ChannelEnd,
     ) -> Result<(), ContextError> {
         let port_id = channel_end_path.0.clone();
-        let channel_id = channel_end_path.1.clone();
+        let channel_id = channel_end_path.1;
 
         self.ibc_store
             .lock()
@@ -1344,7 +1344,7 @@ impl ExecutionContext for MockContext {
         seq: Sequence,
     ) -> Result<(), ContextError> {
         let port_id = seq_send_path.0.clone();
-        let channel_id = seq_send_path.1.clone();
+        let channel_id = seq_send_path.1;
 
         self.ibc_store
             .lock()
@@ -1361,7 +1361,7 @@ impl ExecutionContext for MockContext {
         seq: Sequence,
     ) -> Result<(), ContextError> {
         let port_id = seq_recv_path.0.clone();
-        let channel_id = seq_recv_path.1.clone();
+        let channel_id = seq_recv_path.1;
 
         self.ibc_store
             .lock()
@@ -1378,7 +1378,7 @@ impl ExecutionContext for MockContext {
         seq: Sequence,
     ) -> Result<(), ContextError> {
         let port_id = seq_ack_path.0.clone();
-        let channel_id = seq_ack_path.1.clone();
+        let channel_id = seq_ack_path.1;
 
         self.ibc_store
             .lock()

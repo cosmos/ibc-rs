@@ -96,7 +96,7 @@ where
     let chan_end_on_a = {
         let commitment_path_on_a = CommitmentPath {
             port_id: packet.port_id_on_a.clone(),
-            channel_id: packet.chan_id_on_a.clone(),
+            channel_id: packet.chan_id_on_a,
             sequence: packet.seq_on_a,
         };
         ctx_a.delete_packet_commitment(&commitment_path_on_a)?;
@@ -121,9 +121,9 @@ where
 
             ctx_a.emit_ibc_event(IbcEvent::ChannelClosed(ChannelClosed::new(
                 packet.port_id_on_a.clone(),
-                packet.chan_id_on_a.clone(),
+                packet.chan_id_on_a,
                 chan_end_on_a.counterparty().port_id.clone(),
-                chan_end_on_a.counterparty().channel_id.clone(),
+                chan_end_on_a.counterparty().channel_id,
                 conn_id_on_a,
                 chan_end_on_a.ordering,
             )));
@@ -210,10 +210,7 @@ mod tests {
         let chan_end_on_a_ordered = ChannelEnd::new(
             State::Open,
             Order::Ordered,
-            Counterparty::new(
-                packet.port_id_on_b.clone(),
-                Some(packet.chan_id_on_b.clone()),
-            ),
+            Counterparty::new(packet.port_id_on_b.clone(), Some(packet.chan_id_on_b)),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
         );
@@ -269,7 +266,7 @@ mod tests {
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_packet_commitment(
                 msg.packet.port_id_on_a.clone(),
-                msg.packet.chan_id_on_a.clone(),
+                msg.packet.chan_id_on_a,
                 msg.packet.seq_on_a,
                 packet_commitment,
             );
@@ -306,7 +303,7 @@ mod tests {
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_packet_commitment(
                 msg.packet.port_id_on_a.clone(),
-                msg.packet.chan_id_on_a.clone(),
+                msg.packet.chan_id_on_a,
                 msg.packet.seq_on_a,
                 packet_commitment,
             );

@@ -85,7 +85,7 @@ where
             Order::Unordered => {
                 let receipt_path_on_b = ReceiptPath {
                     port_id: msg.packet.port_id_on_b.clone(),
-                    channel_id: msg.packet.chan_id_on_b.clone(),
+                    channel_id: msg.packet.chan_id_on_b,
                     sequence: msg.packet.seq_on_a,
                 };
 

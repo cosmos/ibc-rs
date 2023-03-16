@@ -17,7 +17,7 @@ where
     // Validate that the channel end is in a state where it can be closed.
     if chan_end_on_a.state_matches(&State::Closed) {
         return Err(ChannelError::InvalidChannelState {
-            channel_id: msg.chan_id_on_a.clone(),
+            channel_id: msg.chan_id_on_a,
             state: chan_end_on_a.state,
         }
         .into());
@@ -89,7 +89,7 @@ mod tests {
             Order::default(),
             Counterparty::new(
                 msg_chan_close_init.port_id_on_a.clone(),
-                Some(msg_chan_close_init.chan_id_on_a.clone()),
+                Some(msg_chan_close_init.chan_id_on_a),
             ),
             vec![conn_id.clone()],
             Version::default(),
@@ -104,7 +104,7 @@ mod tests {
                 .with_connection(conn_id, conn_end)
                 .with_channel(
                     msg_chan_close_init.port_id_on_a.clone(),
-                    msg_chan_close_init.chan_id_on_a.clone(),
+                    msg_chan_close_init.chan_id_on_a,
                     chan_end,
                 )
         };

@@ -196,7 +196,11 @@ pub struct SrcChannelIdAttribute {
 
 impl From<SrcChannelIdAttribute> for abci::EventAttribute {
     fn from(attr: SrcChannelIdAttribute) -> Self {
-        (PKT_SRC_CHANNEL_ATTRIBUTE_KEY, attr.src_channel_id.as_str()).into()
+        (
+            PKT_SRC_CHANNEL_ATTRIBUTE_KEY,
+            format!("{}", attr.src_channel_id),
+        )
+            .into()
     }
 }
 
@@ -244,7 +248,11 @@ pub struct DstChannelIdAttribute {
 
 impl From<DstChannelIdAttribute> for abci::EventAttribute {
     fn from(attr: DstChannelIdAttribute) -> Self {
-        (PKT_DST_CHANNEL_ATTRIBUTE_KEY, attr.dst_channel_id.as_str()).into()
+        (
+            PKT_DST_CHANNEL_ATTRIBUTE_KEY,
+            format!("{}", attr.dst_channel_id),
+        )
+            .into()
     }
 }
 

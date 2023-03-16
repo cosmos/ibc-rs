@@ -113,7 +113,7 @@ pub struct ChannelEndPath(pub PortId, pub ChannelId);
 
 impl ChannelEndPath {
     pub fn new(port_id: &PortId, channel_id: &ChannelId) -> ChannelEndPath {
-        ChannelEndPath(port_id.clone(), channel_id.clone())
+        ChannelEndPath(port_id.clone(), *channel_id)
     }
 }
 
@@ -123,7 +123,7 @@ pub struct SeqSendPath(pub PortId, pub ChannelId);
 
 impl SeqSendPath {
     pub fn new(port_id: &PortId, channel_id: &ChannelId) -> SeqSendPath {
-        SeqSendPath(port_id.clone(), channel_id.clone())
+        SeqSendPath(port_id.clone(), *channel_id)
     }
 }
 
@@ -133,7 +133,7 @@ pub struct SeqRecvPath(pub PortId, pub ChannelId);
 
 impl SeqRecvPath {
     pub fn new(port_id: &PortId, channel_id: &ChannelId) -> SeqRecvPath {
-        SeqRecvPath(port_id.clone(), channel_id.clone())
+        SeqRecvPath(port_id.clone(), *channel_id)
     }
 }
 
@@ -143,7 +143,7 @@ pub struct SeqAckPath(pub PortId, pub ChannelId);
 
 impl SeqAckPath {
     pub fn new(port_id: &PortId, channel_id: &ChannelId) -> SeqAckPath {
-        SeqAckPath(port_id.clone(), channel_id.clone())
+        SeqAckPath(port_id.clone(), *channel_id)
     }
 }
 
@@ -159,7 +159,7 @@ impl CommitmentPath {
     pub fn new(port_id: &PortId, channel_id: &ChannelId, sequence: Sequence) -> CommitmentPath {
         CommitmentPath {
             port_id: port_id.clone(),
-            channel_id: channel_id.clone(),
+            channel_id: *channel_id,
             sequence,
         }
     }
@@ -177,7 +177,7 @@ impl AckPath {
     pub fn new(port_id: &PortId, channel_id: &ChannelId, sequence: Sequence) -> AckPath {
         AckPath {
             port_id: port_id.clone(),
-            channel_id: channel_id.clone(),
+            channel_id: *channel_id,
             sequence,
         }
     }
@@ -195,7 +195,7 @@ impl ReceiptPath {
     pub fn new(port_id: &PortId, channel_id: &ChannelId, sequence: Sequence) -> ReceiptPath {
         ReceiptPath {
             port_id: port_id.clone(),
-            channel_id: channel_id.clone(),
+            channel_id: *channel_id,
             sequence,
         }
     }

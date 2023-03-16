@@ -18,7 +18,7 @@ where
     // Validate that the channel end is in a state where it can be ack.
     if !chan_end_on_a.state_matches(&State::Init) {
         return Err(ChannelError::InvalidChannelState {
-            channel_id: msg.chan_id_on_a.clone(),
+            channel_id: msg.chan_id_on_a,
             state: chan_end_on_a.state,
         }
         .into());
@@ -71,7 +71,7 @@ where
             // Note: Both ends of a channel must have the same ordering, so it's
             // fine to use A's ordering here
             *chan_end_on_a.ordering(),
-            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a)),
             vec![conn_id_on_b.clone()],
             msg.version_on_b.clone(),
         );
@@ -149,7 +149,7 @@ mod tests {
         let chan_end_on_a = ChannelEnd::new(
             State::Init,
             Order::Unordered,
-            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_b.clone())),
+            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_b)),
             vec![conn_id_on_a.clone()],
             msg.version_on_b.clone(),
         );
@@ -203,18 +203,14 @@ mod tests {
         let wrong_chan_end = ChannelEnd::new(
             State::Open,
             Order::Unordered,
-            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_b.clone())),
+            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_b)),
             vec![conn_id_on_a.clone()],
             msg.version_on_b.clone(),
         );
         let context = context
             .with_client(&client_id_on_a, Height::new(0, proof_height).unwrap())
             .with_connection(conn_id_on_a, conn_end_on_a)
-            .with_channel(
-                msg.port_id_on_a.clone(),
-                msg.chan_id_on_a.clone(),
-                wrong_chan_end,
-            );
+            .with_channel(msg.port_id_on_a.clone(), msg.chan_id_on_a, wrong_chan_end);
 
         let res = validate(&context, &msg);
 
@@ -237,11 +233,7 @@ mod tests {
 
         let context = context
             .with_client(&client_id_on_a, Height::new(0, proof_height).unwrap())
-            .with_channel(
-                msg.port_id_on_a.clone(),
-                msg.chan_id_on_a.clone(),
-                chan_end_on_a,
-            );
+            .with_channel(msg.port_id_on_a.clone(), msg.chan_id_on_a, chan_end_on_a);
 
         let res = validate(&context, &msg);
 
@@ -267,11 +259,7 @@ mod tests {
         let context = context
             .with_client(&client_id_on_a, Height::new(0, proof_height).unwrap())
             .with_connection(conn_id_on_a, conn_end_on_a)
-            .with_channel(
-                msg.port_id_on_a.clone(),
-                msg.chan_id_on_a.clone(),
-                chan_end_on_a,
-            );
+            .with_channel(msg.port_id_on_a.clone(), msg.chan_id_on_a, chan_end_on_a);
 
         let res = validate(&context, &msg);
 

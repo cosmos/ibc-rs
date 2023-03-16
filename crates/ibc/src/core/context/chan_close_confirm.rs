@@ -63,7 +63,6 @@ where
             let chan_id_on_a = chan_end_on_b
                 .counterparty()
                 .channel_id
-                .clone()
                 .ok_or(ContextError::ChannelError(ChannelError::Other {
                 description:
                     "internal error: ChannelEnd doesn't have a counterparty channel id in CloseInit"
@@ -73,7 +72,7 @@ where
 
             IbcEvent::CloseConfirmChannel(CloseConfirm::new(
                 msg.port_id_on_b.clone(),
-                msg.chan_id_on_b.clone(),
+                msg.chan_id_on_b,
                 port_id_on_a,
                 chan_id_on_a,
                 conn_id_on_b,
@@ -145,7 +144,7 @@ mod tests {
             Order::default(),
             Counterparty::new(
                 msg_chan_close_confirm.port_id_on_b.clone(),
-                Some(msg_chan_close_confirm.chan_id_on_b.clone()),
+                Some(msg_chan_close_confirm.chan_id_on_b),
             ),
             vec![conn_id.clone()],
             Version::default(),
@@ -156,7 +155,7 @@ mod tests {
             .with_connection(conn_id, conn_end)
             .with_channel(
                 msg_chan_close_confirm.port_id_on_b.clone(),
-                msg_chan_close_confirm.chan_id_on_b.clone(),
+                msg_chan_close_confirm.chan_id_on_b,
                 chan_end,
             );
 

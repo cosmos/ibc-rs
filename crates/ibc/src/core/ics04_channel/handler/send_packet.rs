@@ -34,20 +34,17 @@ pub fn send_packet_validate(
 
     if chan_end_on_a.state_matches(&State::Closed) {
         return Err(PacketError::ChannelClosed {
-            channel_id: packet.chan_id_on_a.clone(),
+            channel_id: packet.chan_id_on_a,
         }
         .into());
     }
 
-    let counterparty = Counterparty::new(
-        packet.port_id_on_b.clone(),
-        Some(packet.chan_id_on_b.clone()),
-    );
+    let counterparty = Counterparty::new(packet.port_id_on_b.clone(), Some(packet.chan_id_on_b));
 
     if !chan_end_on_a.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
             port_id: packet.port_id_on_b.clone(),
-            channel_id: packet.chan_id_on_b.clone(),
+            channel_id: packet.chan_id_on_b,
         }
         .into());
     }

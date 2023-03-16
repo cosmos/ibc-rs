@@ -22,7 +22,7 @@ where
 
     if !chan_end_on_b.state_matches(&State::Open) {
         return Err(PacketError::InvalidChannelState {
-            channel_id: msg.packet.chan_id_on_a.clone(),
+            channel_id: msg.packet.chan_id_on_a,
             state: chan_end_on_b.state,
         }
         .into());
@@ -30,13 +30,13 @@ where
 
     let counterparty = Counterparty::new(
         msg.packet.port_id_on_a.clone(),
-        Some(msg.packet.chan_id_on_a.clone()),
+        Some(msg.packet.chan_id_on_a),
     );
 
     if !chan_end_on_b.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
             port_id: msg.packet.port_id_on_a.clone(),
-            channel_id: msg.packet.chan_id_on_a.clone(),
+            channel_id: msg.packet.chan_id_on_a,
         }
         .into());
     }
@@ -276,19 +276,15 @@ mod tests {
             .with_connection(ConnectionId::default(), conn_end_on_b)
             .with_channel(
                 packet.port_id_on_b.clone(),
-                packet.chan_id_on_b.clone(),
+                packet.chan_id_on_b,
                 chan_end_on_b,
             )
-            .with_send_sequence(
-                packet.port_id_on_b.clone(),
-                packet.chan_id_on_b.clone(),
-                1.into(),
-            )
+            .with_send_sequence(packet.port_id_on_b.clone(), packet.chan_id_on_b, 1.into())
             .with_height(host_height)
             // This `with_recv_sequence` is required for ordered channels
             .with_recv_sequence(
                 packet.port_id_on_b.clone(),
-                packet.chan_id_on_b.clone(),
+                packet.chan_id_on_b,
                 packet.seq_on_a,
             );
 

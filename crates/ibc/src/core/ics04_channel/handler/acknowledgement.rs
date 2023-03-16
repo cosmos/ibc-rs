@@ -23,20 +23,17 @@ where
 
     if !chan_end_on_a.state_matches(&State::Open) {
         return Err(PacketError::ChannelClosed {
-            channel_id: packet.chan_id_on_a.clone(),
+            channel_id: packet.chan_id_on_a,
         }
         .into());
     }
 
-    let counterparty = Counterparty::new(
-        packet.port_id_on_b.clone(),
-        Some(packet.chan_id_on_b.clone()),
-    );
+    let counterparty = Counterparty::new(packet.port_id_on_b.clone(), Some(packet.chan_id_on_b));
 
     if !chan_end_on_a.counterparty_matches(&counterparty) {
         return Err(PacketError::InvalidPacketCounterparty {
             port_id: packet.port_id_on_b.clone(),
-            channel_id: packet.chan_id_on_b.clone(),
+            channel_id: packet.chan_id_on_b,
         }
         .into());
     }
@@ -265,7 +262,7 @@ mod tests {
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_packet_commitment(
                 msg.packet.port_id_on_a.clone(),
-                msg.packet.chan_id_on_a.clone(),
+                msg.packet.chan_id_on_a,
                 msg.packet.seq_on_a,
                 packet_commitment,
             );

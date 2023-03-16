@@ -53,7 +53,7 @@ where
 
             chan_end_on_a.set_state(State::Open);
             chan_end_on_a.set_version(msg.version_on_b.clone());
-            chan_end_on_a.set_counterparty_channel_id(msg.chan_id_on_b.clone());
+            chan_end_on_a.set_counterparty_channel_id(msg.chan_id_on_b);
 
             chan_end_on_a
         };
@@ -70,7 +70,7 @@ where
 
             IbcEvent::OpenAckChannel(OpenAck::new(
                 msg.port_id_on_a.clone(),
-                msg.chan_id_on_a.clone(),
+                msg.chan_id_on_a,
                 port_id_on_b,
                 msg.chan_id_on_b,
                 conn_id_on_a,
@@ -157,7 +157,7 @@ mod tests {
         let chan_end_on_a = ChannelEnd::new(
             State::Init,
             Order::Unordered,
-            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_b.clone())),
+            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_b)),
             vec![conn_id_on_a.clone()],
             msg.version_on_b.clone(),
         );
@@ -191,11 +191,7 @@ mod tests {
         let mut context = context
             .with_client(&client_id_on_a, Height::new(0, proof_height).unwrap())
             .with_connection(conn_id_on_a, conn_end_on_a)
-            .with_channel(
-                msg.port_id_on_a.clone(),
-                msg.chan_id_on_a.clone(),
-                chan_end_on_a,
-            );
+            .with_channel(msg.port_id_on_a.clone(), msg.chan_id_on_a, chan_end_on_a);
 
         let res = chan_open_ack_execute(&mut context, module_id, msg);
 
