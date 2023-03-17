@@ -80,16 +80,6 @@ pub enum Error {
     ProcessedTimeNotFound { client_id: ClientId, height: Height },
     /// Processed height for the client `{client_id}` at height `{height}` not found
     ProcessedHeightNotFound { client_id: ClientId, height: Height },
-    /// the height is insufficient: latest_height=`{latest_height}` target_height=`{target_height}`
-    InsufficientHeight {
-        latest_height: Height,
-        target_height: Height,
-    },
-    /// the client is frozen: frozen_height=`{frozen_height}` target_height=`{target_height}`
-    ClientFrozen {
-        frozen_height: Height,
-        target_height: Height,
-    },
     /// trusted validators `{trusted_validator_set:?}`, does not hash to latest trusted validators. Expected: `{next_validators_hash}`, got: `{trusted_val_hash}`
     MisbehaviourTrustedValidatorHashMismatch {
         trusted_validator_set: Vec<Validator>,

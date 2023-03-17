@@ -8,6 +8,7 @@ use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
+use crate::core::ics24_host::Path;
 use crate::timestamp::Expiry;
 
 use crate::core::{ContextError, ValidationContext};
@@ -70,13 +71,8 @@ where
         let client_id_on_b = conn_end_on_b.client_id();
         let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
 
-        // The client must not be frozen.
-        if client_state_of_a_on_b.is_frozen() {
-            return Err(PacketError::FrozenClient {
-                client_id: client_id_on_b.clone(),
-            }
-            .into());
-        }
+        client_state_of_a_on_b.confirm_not_frozen()?;
+        client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
 
         let client_cons_state_path_on_b =
             ClientConsensusStatePath::new(client_id_on_b, &msg.proof_height_on_a);
@@ -97,13 +93,12 @@ where
 
         // Verify the proof for the packet against the chain store.
         client_state_of_a_on_b
-            .verify_packet_data(
-                msg.proof_height_on_a,
+            .verify_membership(
                 conn_end_on_b.counterparty().prefix(),
                 &msg.proof_commitment_on_a,
                 consensus_state_of_a_on_b.root(),
-                &commitment_path_on_a,
-                expected_commitment_on_a,
+                Path::Commitment(commitment_path_on_a),
+                expected_commitment_on_a.into_vec(),
             )
             .map_err(|e| ChannelError::PacketVerificationFailed {
                 sequence: msg.packet.seq_on_a,

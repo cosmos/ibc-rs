@@ -21,8 +21,8 @@ pub enum ClientError {
     },
     /// client not found: `{client_id}`
     ClientNotFound { client_id: ClientId },
-    /// client is frozen: `{client_id}`
-    ClientFrozen { client_id: ClientId },
+    /// client is frozen with description: `{description}`
+    ClientFrozen { description: String },
     /// consensus state not found at: `{client_id}` at height `{height}`
     ConsensusStateNotFound { client_id: ClientId, height: Height },
     /// implementation specific error
@@ -67,6 +67,11 @@ pub enum ClientError {
     InvalidHeight,
     /// height cannot end up zero or negative
     InvalidHeightResult,
+    /// the proof height is insufficient: latest_height=`{latest_height}` proof_height=`{proof_height}`
+    InvalidProofHeight {
+        latest_height: Height,
+        proof_height: Height,
+    },
     /// invalid proof for the upgraded client state error: `{0}`
     InvalidUpgradeClientProof(CommitmentError),
     /// invalid proof for the upgraded consensus state error: `{0}`
@@ -96,12 +101,6 @@ pub enum ClientError {
     },
     /// the local consensus state could not be retrieved for height `{height}`
     MissingLocalConsensusState { height: Height },
-    /// invalid connection end error: `{0}`
-    InvalidConnectionEnd(TendermintProtoError),
-    /// invalid channel end error: `{0}`
-    InvalidChannelEnd(TendermintProtoError),
-    /// invalid any client consensus state error: `{0}`
-    InvalidAnyConsensusState(TendermintProtoError),
     /// failed to parse signer error: `{0}`
     Signer(SignerError),
     /// ics23 verification failure error: `{0}`
@@ -130,9 +129,6 @@ impl std::error::Error for ClientError {
             Self::InvalidUpgradeConsensusStateProof(e) => Some(e),
             Self::InvalidCommitmentProof(e) => Some(e),
             Self::InvalidPacketTimestamp(e) => Some(e),
-            Self::InvalidConnectionEnd(e) => Some(e),
-            Self::InvalidChannelEnd(e) => Some(e),
-            Self::InvalidAnyConsensusState(e) => Some(e),
             Self::Signer(e) => Some(e),
             Self::Ics23Verification(e) => Some(e),
             _ => None,

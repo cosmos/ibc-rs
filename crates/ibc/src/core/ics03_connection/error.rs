@@ -8,6 +8,7 @@ use crate::Height;
 
 use alloc::string::String;
 use displaydoc::Display;
+use ibc_proto::protobuf::Error as ProtoError;
 
 #[derive(Debug, Display)]
 pub enum ConnectionError {
@@ -17,6 +18,8 @@ pub enum ConnectionError {
     InvalidState { state: i32 },
     /// connection end for identifier `{connection_id}` was never initialized
     ConnectionMismatch { connection_id: ConnectionId },
+    /// invalid connection end error: `{0}`
+    InvalidConnectionEnd(ProtoError),
     /// consensus height claimed by the client on the other party is too advanced: `{target_height}` (host chain current height: `{current_height}`)
     InvalidConsensusHeight {
         target_height: Height,

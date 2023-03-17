@@ -1,22 +1,23 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenTry`.
-use crate::prelude::*;
 
+use prost::Message;
+
+use crate::core::context::ContextError;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenTry;
 use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
-use crate::core::ics24_host::identifier::ConnectionId;
-use crate::events::IbcEvent;
-
-use crate::core::context::ContextError;
-
 use crate::core::ics24_host::identifier::ClientId;
-
+use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{
     ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath,
 };
-
+use crate::core::ics24_host::Path;
 use crate::core::{ExecutionContext, ValidationContext};
+use crate::prelude::*;
+
+use crate::events::IbcEvent;
 
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
@@ -58,6 +59,10 @@ where
                 .map_err(|_| ConnectionError::Other {
                     description: "failed to fetch client state".to_string(),
                 })?;
+
+        client_state_of_a_on_b.confirm_not_frozen()?;
+        client_state_of_a_on_b.validate_proof_height(msg.proofs_height_on_a)?;
+
         let client_cons_state_path_on_b =
             ClientConsensusStatePath::new(&msg.client_id_on_b, &msg.proofs_height_on_a);
         let consensus_state_of_a_on_b = ctx_b
@@ -79,25 +84,23 @@ where
             );
 
             client_state_of_a_on_b
-                .verify_connection_state(
-                    msg.proofs_height_on_a,
+                .verify_membership(
                     prefix_on_a,
                     &msg.proof_conn_end_on_a,
                     consensus_state_of_a_on_b.root(),
-                    &ConnectionPath::new(&vars.conn_id_on_a),
-                    &expected_conn_end_on_a,
+                    Path::Connection(ConnectionPath::new(&vars.conn_id_on_a)),
+                    expected_conn_end_on_a.proto_encode_vec()?,
                 )
                 .map_err(ConnectionError::VerifyConnectionState)?;
         }
 
         client_state_of_a_on_b
-            .verify_client_full_state(
-                msg.proofs_height_on_a,
+            .verify_membership(
                 prefix_on_a,
                 &msg.proof_client_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
-                &ClientStatePath::new(client_id_on_a),
-                msg.client_state_of_b_on_a.clone(),
+                Path::ClientState(ClientStatePath::new(client_id_on_a)),
+                msg.client_state_of_b_on_a.encode_to_vec(),
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
                 client_id: msg.client_id_on_b.clone(),
@@ -112,17 +115,19 @@ where
 
         let client_cons_state_path_on_a =
             ClientConsensusStatePath::new(&msg.client_id_on_b, &msg.consensus_height_of_b_on_a);
+
         client_state_of_a_on_b
-            .verify_client_consensus_state(
-                msg.proofs_height_on_a,
+            .verify_membership(
                 prefix_on_a,
                 &msg.proof_consensus_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
-                &client_cons_state_path_on_a,
-                expected_consensus_state_of_b_on_a.as_ref(),
+                Path::ClientConsensusState(client_cons_state_path_on_a),
+                expected_consensus_state_of_b_on_a
+                    .encode_vec()
+                    .map_err(ClientError::Encode)?,
             )
-            .map_err(|e| ConnectionError::ClientStateVerificationFailure {
-                client_id: client_id_on_a.clone(),
+            .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
+                height: msg.proofs_height_on_a,
                 client_error: e,
             })?;
     }
