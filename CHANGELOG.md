@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## v0.34.0
+
+*March 17, 2023*
+
+This release fixes a bug in the connection handshake.
+
+This is a consensus-breaking change.
+
+### BUG
+
+- Fix client IDs for the proof verifications in `ConnectionOpenTry` and `ConnectionOpenAck` ([#550](https://github.com/cosmos/ibc-
+  rs/issues/550))
+
 ## v0.33.0
 
 *March 16, 2023*
