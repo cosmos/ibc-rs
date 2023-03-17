@@ -114,7 +114,7 @@ where
             })?;
 
         let client_cons_state_path_on_a =
-            ClientConsensusStatePath::new(&msg.client_id_on_b, &msg.consensus_height_of_b_on_a);
+            ClientConsensusStatePath::new(client_id_on_a, &msg.consensus_height_of_b_on_a);
 
         client_state_of_a_on_b
             .verify_membership(
