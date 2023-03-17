@@ -1,12 +1,11 @@
 use crate::prelude::*;
+use ibc_proto::protobuf::Protobuf;
 
 use core::time::Duration;
 use core::{
     fmt::{Display, Error as FmtError, Formatter},
     u64,
 };
-
-use ibc_proto::protobuf::Protobuf;
 
 use ibc_proto::ibc::core::connection::v1::{
     ConnectionEnd as RawConnectionEnd, Counterparty as RawCounterparty,
@@ -350,6 +349,13 @@ impl ConnectionEnd {
     /// TODO: Clean this up, probably not necessary.
     pub fn validate_basic(&self) -> Result<(), ValidationError> {
         self.counterparty.validate_basic()
+    }
+
+    pub(crate) fn proto_encode_vec(&self) -> Result<Vec<u8>, ConnectionError> {
+        let value = self
+            .encode_vec()
+            .map_err(ConnectionError::InvalidConnectionEnd)?;
+        Ok(value)
     }
 }
 

@@ -58,13 +58,7 @@ pub fn send_packet_validate(
 
     let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
 
-    // prevent accidental sends with clients that cannot be updated
-    if client_state_of_b_on_a.is_frozen() {
-        return Err(PacketError::FrozenClient {
-            client_id: conn_end_on_a.client_id().clone(),
-        }
-        .into());
-    }
+    client_state_of_b_on_a.confirm_not_frozen()?;
 
     let latest_height_on_a = client_state_of_b_on_a.latest_height();
 

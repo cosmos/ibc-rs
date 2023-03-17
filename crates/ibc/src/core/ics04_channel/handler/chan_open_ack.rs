@@ -4,9 +4,9 @@ use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
-use crate::prelude::*;
-
+use crate::core::ics24_host::Path;
 use crate::core::{ContextError, ValidationContext};
+use crate::prelude::*;
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenAck) -> Result<(), ContextError>
 where
@@ -47,6 +47,10 @@ where
     {
         let client_id_on_a = conn_end_on_a.client_id();
         let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
+
+        client_state_of_b_on_a.confirm_not_frozen()?;
+        client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
+
         let client_cons_state_path_on_a =
             ClientConsensusStatePath::new(client_id_on_a, &msg.proof_height_on_b);
         let consensus_state_of_b_on_a = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
@@ -57,14 +61,6 @@ where
                 connection_id: chan_end_on_a.connection_hops()[0],
             },
         )?;
-
-        // The client must not be frozen.
-        if client_state_of_b_on_a.is_frozen() {
-            return Err(ChannelError::FrozenClient {
-                client_id: client_id_on_a.clone(),
-            }
-            .into());
-        }
 
         let expected_chan_end_on_b = ChannelEnd::new(
             State::TryOpen,
@@ -80,13 +76,12 @@ where
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
         client_state_of_b_on_a
-            .verify_channel_state(
-                msg.proof_height_on_b,
+            .verify_membership(
                 prefix_on_b,
                 &msg.proof_chan_end_on_b,
                 consensus_state_of_b_on_a.root(),
-                &chan_end_path_on_b,
-                &expected_chan_end_on_b,
+                Path::ChannelEnd(chan_end_path_on_b),
+                expected_chan_end_on_b.proto_encode_vec()?,
             )
             .map_err(ChannelError::VerifyChannelFailed)?;
     }

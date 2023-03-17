@@ -16,7 +16,8 @@ where
     Ctx: ValidationContext,
 {
     // An IBC client running on the local (host) chain should exist.
-    ctx_a.client_state(&msg.client_id_on_a)?;
+    let client_state_of_b_on_a = ctx_a.client_state(&msg.client_id_on_a)?;
+    client_state_of_b_on_a.confirm_not_frozen()?;
 
     if let Some(version) = msg.version {
         if !ctx_a.get_compatible_versions().contains(&version) {

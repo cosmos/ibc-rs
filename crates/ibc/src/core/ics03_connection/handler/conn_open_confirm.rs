@@ -1,19 +1,17 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenConfirm`.
-use crate::prelude::*;
 
+use crate::core::context::ContextError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenConfirm;
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
-use crate::events::IbcEvent;
-
-use crate::core::context::ContextError;
-
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ConnectionPath};
-
+use crate::core::ics24_host::Path;
 use crate::core::{ExecutionContext, ValidationContext};
+use crate::prelude::*;
+
+use crate::events::IbcEvent;
 
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ContextError>
 where
@@ -51,6 +49,10 @@ where
                 .map_err(|_| ConnectionError::Other {
                     description: "failed to fetch client state".to_string(),
                 })?;
+
+        client_state_of_a_on_b.confirm_not_frozen()?;
+        client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
+
         let client_cons_state_path_on_b =
             ClientConsensusStatePath::new(client_id_on_b, &msg.proof_height_on_a);
         let consensus_state_of_a_on_b = ctx_b
@@ -71,13 +73,12 @@ where
         );
 
         client_state_of_a_on_b
-            .verify_connection_state(
-                msg.proof_height_on_a,
+            .verify_membership(
                 prefix_on_a,
                 &msg.proof_conn_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                &ConnectionPath::new(conn_id_on_a),
-                &expected_conn_end_on_a,
+                Path::Connection(ConnectionPath::new(conn_id_on_a)),
+                expected_conn_end_on_a.proto_encode_vec()?,
             )
             .map_err(ConnectionError::VerifyConnectionState)?;
     }
