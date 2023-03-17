@@ -12,19 +12,10 @@ use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics03_connection::connection::ConnectionEnd;
-use crate::core::ics04_channel::channel::ChannelEnd;
-use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
-use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
-use crate::core::ics23_commitment::merkle::apply_prefix;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::core::ics24_host::path::{
-    AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath,
-    ConnectionPath, ReceiptPath, SeqRecvPath,
-};
 use crate::core::ics24_host::Path;
 use crate::mock::client_state::client_type as mock_client_type;
 use crate::mock::consensus_state::MockConsensusState;
@@ -162,8 +153,23 @@ impl ClientState for MockClientState {
         self.header.height()
     }
 
-    fn frozen_height(&self) -> Option<Height> {
-        self.frozen_height
+    fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
+        if self.latest_height() < proof_height {
+            return Err(ClientError::InvalidProofHeight {
+                latest_height: self.latest_height(),
+                proof_height,
+            });
+        }
+        Ok(())
+    }
+
+    fn confirm_not_frozen(&self) -> Result<(), ClientError> {
+        if let Some(frozen_height) = self.frozen_height {
+            return Err(ClientError::ClientFrozen {
+                description: format!("The client is frozen at height {frozen_height}"),
+            });
+        }
+        Ok(())
     }
 
     fn zero_custom_fields(&mut self) {
@@ -259,102 +265,23 @@ impl ClientState for MockClientState {
         })
     }
 
-    fn verify_client_consensus_state(
+    fn verify_membership(
         &self,
-        _height: Height,
-        prefix: &CommitmentPrefix,
-        _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
-        client_cons_state_path: &ClientConsensusStatePath,
-        _expected_consensus_state: &dyn ConsensusState,
-    ) -> Result<(), ClientError> {
-        let client_prefixed_path =
-            Path::ClientConsensusState(client_cons_state_path.clone()).to_string();
-
-        let _path = apply_prefix(prefix, vec![client_prefixed_path]);
-
-        Ok(())
-    }
-
-    fn verify_connection_state(
-        &self,
-        _height: Height,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _conn_path: &ConnectionPath,
-        _expected_connection_end: &ConnectionEnd,
+        _path: Path,
+        _value: Vec<u8>,
     ) -> Result<(), ClientError> {
         Ok(())
     }
 
-    fn verify_channel_state(
+    fn verify_non_membership(
         &self,
-        _height: Height,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _chan_end_path: &ChannelEndPath,
-        _expected_channel_end: &ChannelEnd,
-    ) -> Result<(), ClientError> {
-        Ok(())
-    }
-
-    fn verify_client_full_state(
-        &self,
-        _height: Height,
-        _prefix: &CommitmentPrefix,
-        _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
-        _client_state_path: &ClientStatePath,
-        _expected_client_state: Any,
-    ) -> Result<(), ClientError> {
-        Ok(())
-    }
-
-    fn verify_packet_data(
-        &self,
-        _height: Height,
-        _prefix: &CommitmentPrefix,
-        _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
-        _commitment_path: &CommitmentPath,
-        _commitment: PacketCommitment,
-    ) -> Result<(), ClientError> {
-        Ok(())
-    }
-
-    fn verify_next_sequence_recv(
-        &self,
-        _height: Height,
-        _prefix: &CommitmentPrefix,
-        _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
-        _seq_recv_path: &SeqRecvPath,
-        _sequence: Sequence,
-    ) -> Result<(), ClientError> {
-        Ok(())
-    }
-
-    fn verify_packet_receipt_absence(
-        &self,
-        _height: Height,
-        _prefix: &CommitmentPrefix,
-        _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
-        _receipt_path: &ReceiptPath,
-    ) -> Result<(), ClientError> {
-        Ok(())
-    }
-
-    fn verify_packet_acknowledgement(
-        &self,
-        _height: Height,
-        _prefix: &CommitmentPrefix,
-        _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
-        _ack_path: &AckPath,
-        _ack: AcknowledgementCommitment,
+        _path: Path,
     ) -> Result<(), ClientError> {
         Ok(())
     }

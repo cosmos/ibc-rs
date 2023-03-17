@@ -72,13 +72,13 @@ use displaydoc::Display;
 
 #[derive(Debug, Display)]
 pub enum ContextError {
-    /// ICS02 Client error
+    /// ICS02 Client error: {0}
     ClientError(ClientError),
-    /// ICS03 Connection error
+    /// ICS03 Connection error: {0}
     ConnectionError(ConnectionError),
-    /// Ics04 Channel error
+    /// Ics04 Channel error: {0}
     ChannelError(ChannelError),
-    /// ICS04 Packet error
+    /// ICS04 Packet error: {0}
     PacketError(PacketError),
 }
 

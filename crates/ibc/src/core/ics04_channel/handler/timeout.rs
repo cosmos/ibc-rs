@@ -1,3 +1,5 @@
+use prost::Message;
+
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::channel::{Counterparty, Order};
@@ -8,10 +10,10 @@ use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
+use crate::core::ics24_host::Path;
+use crate::core::{ContextError, ValidationContext};
 use crate::prelude::*;
 use crate::timestamp::Expiry;
-
-use crate::core::{ContextError, ValidationContext};
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeout) -> Result<(), ContextError>
 where
@@ -77,6 +79,8 @@ where
     {
         let client_id_on_a = conn_end_on_a.client_id();
         let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
+        client_state_of_b_on_a.confirm_not_frozen()?;
+        client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
 
         // check that timeout height or timeout timestamp has passed on the other end
         if msg
@@ -119,13 +123,20 @@ where
             }
             let seq_recv_path_on_b =
                 SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
-            client_state_of_b_on_a.verify_next_sequence_recv(
-                msg.proof_height_on_b,
+
+            let mut value = Vec::new();
+            u64::from(msg.packet.seq_on_a)
+                .encode(&mut value)
+                .map_err(|_| PacketError::CannotEncodeSequence {
+                    sequence: msg.packet.seq_on_a,
+                })?;
+
+            client_state_of_b_on_a.verify_membership(
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
-                &seq_recv_path_on_b,
-                msg.packet.seq_on_a,
+                Path::SeqRecv(seq_recv_path_on_b),
+                value,
             )
         } else {
             let receipt_path_on_b = ReceiptPath::new(
@@ -133,12 +144,12 @@ where
                 &msg.packet.chan_id_on_b,
                 msg.packet.seq_on_a,
             );
-            client_state_of_b_on_a.verify_packet_receipt_absence(
-                msg.proof_height_on_b,
+
+            client_state_of_b_on_a.verify_non_membership(
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
-                &receipt_path_on_b,
+                Path::Receipt(receipt_path_on_b),
             )
         };
         next_seq_recv_verification_result
