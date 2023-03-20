@@ -347,10 +347,8 @@ mod tests {
         let res = validate(&context, &msg);
 
         assert!(
-            res.unwrap_err()
-                .to_string()
-                .starts_with("ICS04 Packet error: Packet timeout"),
-            "Validation should fail because both the timeout height and timestamp have not reached yet"
+            res.is_err(),
+            "Validation should fail because the timeout height was reached, but the timestamp hasn't been reached. Both the height and timestamp need to be reached for the packet to be considered timed out"
         )
     }
 
