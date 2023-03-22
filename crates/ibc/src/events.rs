@@ -103,6 +103,18 @@ const TIMEOUT_EVENT: &str = "timeout_packet";
 const CHANNEL_CLOSED_EVENT: &str = "channel_close";
 
 /// Events types
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IbcEventType {
