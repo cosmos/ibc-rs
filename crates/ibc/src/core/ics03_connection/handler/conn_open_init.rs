@@ -65,11 +65,13 @@ where
     {
         let client_id_on_b = msg.counterparty.client_id().clone();
 
-        ctx_a.emit_ibc_event(IbcEvent::OpenInitConnection(OpenInit::new(
+        let event = IbcEvent::OpenInitConnection(OpenInit::new(
             conn_id_on_a.clone(),
             msg.client_id_on_a.clone(),
             client_id_on_b,
-        )));
+        ));
+        ctx_a.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx_a.emit_ibc_event(event);
     }
 
     ctx_a.increase_connection_counter();
@@ -90,7 +92,7 @@ mod tests {
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::version::Version;
-    use crate::events::IbcEvent;
+    use crate::events::{IbcEvent, IbcEventType};
     use crate::mock::context::MockContext;
     use crate::Height;
     use test_log::test;
@@ -156,9 +158,13 @@ mod tests {
             }
             Expect::Success => {
                 assert!(res.is_ok(), "{err_msg}");
-                assert_eq!(fxt.ctx.events.len(), 1);
+                assert_eq!(fxt.ctx.events.len(), 2);
 
-                let event = fxt.ctx.events.first().unwrap();
+                assert!(matches!(
+                    fxt.ctx.events[0],
+                    IbcEvent::Message(IbcEventType::OpenInitConnection)
+                ));
+                let event = &fxt.ctx.events[1];
                 assert!(matches!(event, &IbcEvent::OpenInitConnection(_)));
 
                 let conn_open_init_event = match event {

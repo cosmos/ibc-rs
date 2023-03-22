@@ -13,6 +13,7 @@ use crate::core::ics04_channel::error as channel_error;
 use crate::core::ics04_channel::events as ChannelEvents;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics26_routing::context::ModuleId;
+use crate::signer::Signer;
 use crate::timestamp::ParseTimestampError;
 
 #[derive(Debug, Display)]
@@ -75,6 +76,7 @@ impl WithBlockDataType {
 }
 
 const APP_MODULE_EVENT: &str = "app_module";
+const MESSAGE_EVENT: &str = "message";
 /// Client event types
 const CREATE_CLIENT_EVENT: &str = "create_client";
 const UPDATE_CLIENT_EVENT: &str = "update_client";
@@ -125,6 +127,7 @@ pub enum IbcEventType {
     AckPacket,
     Timeout,
     AppModule,
+    Message,
 }
 
 impl IbcEventType {
@@ -151,6 +154,7 @@ impl IbcEventType {
             IbcEventType::AckPacket => ACK_PACKET_EVENT,
             IbcEventType::Timeout => TIMEOUT_EVENT,
             IbcEventType::AppModule => APP_MODULE_EVENT,
+            IbcEventType::Message => MESSAGE_EVENT,
         }
     }
 }
@@ -183,6 +187,57 @@ impl FromStr for IbcEventType {
             // from_str() for `APP_MODULE_EVENT` MUST fail because a `ModuleEvent`'s type isn't constant
             _ => Err(Error::IncorrectEventType {
                 event: s.to_string(),
+            }),
+        }
+    }
+}
+
+/// Message event from an IbcEventType
+impl TryFrom<IbcEventType> for abci::Event {
+    type Error = Error;
+
+    fn try_from(event_type: IbcEventType) -> Result<Self, Self::Error> {
+        match event_type {
+            IbcEventType::CreateClient
+            | IbcEventType::UpdateClient
+            | IbcEventType::UpgradeClient
+            | IbcEventType::ClientMisbehaviour => Ok(Self {
+                kind: "message".to_string(),
+                attributes: vec![
+                    ("module", "ibc_client", true).into(),
+                    ("action", event_type.as_str(), true).into(),
+                ],
+            }),
+            IbcEventType::OpenInitConnection
+            | IbcEventType::OpenTryConnection
+            | IbcEventType::OpenAckConnection
+            | IbcEventType::OpenConfirmConnection => Ok(Self {
+                kind: "message".to_string(),
+                attributes: vec![
+                    ("module", "ibc_connection", true).into(),
+                    ("action", event_type.as_str(), true).into(),
+                ],
+            }),
+            IbcEventType::OpenInitChannel
+            | IbcEventType::OpenTryChannel
+            | IbcEventType::OpenAckChannel
+            | IbcEventType::OpenConfirmChannel
+            | IbcEventType::CloseInitChannel
+            | IbcEventType::CloseConfirmChannel
+            | IbcEventType::SendPacket
+            | IbcEventType::ReceivePacket
+            | IbcEventType::WriteAck
+            | IbcEventType::AckPacket
+            | IbcEventType::Timeout
+            | IbcEventType::ChannelClosed => Ok(Self {
+                kind: "message".to_string(),
+                attributes: vec![
+                    ("module", "ibc_channel", true).into(),
+                    ("action", event_type.as_str(), true).into(),
+                ],
+            }),
+            _ => Err(Error::IncorrectEventType {
+                event: event_type.as_str().to_string(),
             }),
         }
     }
@@ -229,6 +284,9 @@ pub enum IbcEvent {
     ChannelClosed(ChannelEvents::ChannelClosed),
 
     AppModule(ModuleEvent),
+
+    Message(IbcEventType),
+    ClientMisbehaviourMessage(Signer),
 }
 
 impl TryFrom<IbcEvent> for abci::Event {
@@ -257,6 +315,14 @@ impl TryFrom<IbcEvent> for abci::Event {
             IbcEvent::TimeoutPacket(event) => event.try_into().map_err(Error::Channel)?,
             IbcEvent::ChannelClosed(event) => event.into(),
             IbcEvent::AppModule(event) => event.try_into()?,
+            IbcEvent::Message(event_type) => event_type.try_into()?,
+            IbcEvent::ClientMisbehaviourMessage(signer) => {
+                let mut message_event: Self = IbcEventType::ClientMisbehaviour.try_into()?;
+                message_event
+                    .attributes
+                    .push(("sender", &signer.to_string()).into());
+                message_event
+            }
         })
     }
 }
@@ -285,6 +351,8 @@ impl IbcEvent {
             IbcEvent::TimeoutPacket(_) => IbcEventType::Timeout,
             IbcEvent::ChannelClosed(_) => IbcEventType::ChannelClosed,
             IbcEvent::AppModule(_) => IbcEventType::AppModule,
+            IbcEvent::Message(_) => IbcEventType::Message,
+            IbcEvent::ClientMisbehaviourMessage(_) => IbcEventType::Message,
         }
     }
 }

@@ -42,7 +42,7 @@ where
     let MsgSubmitMisbehaviour {
         client_id,
         misbehaviour,
-        signer: _,
+        signer,
     } = msg;
 
     // Read client state from the host chain store.
@@ -54,6 +54,7 @@ where
             reason: e.to_string(),
         })?;
 
+    ctx.emit_ibc_event(IbcEvent::ClientMisbehaviourMessage(signer));
     ctx.emit_ibc_event(IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(
         client_id.clone(),
         client_state.client_type(),
@@ -93,9 +94,13 @@ mod tests {
         assert!(client_state.confirm_not_frozen().is_err());
 
         // check events
+        assert_eq!(ctx.events.len(), 2);
+        assert!(matches!(
+            ctx.events[0],
+            IbcEvent::ClientMisbehaviourMessage(_)
+        ));
         let misbehaviour_client_event =
-            downcast!(ctx.events.first().unwrap() => IbcEvent::ClientMisbehaviour).unwrap();
-        assert_eq!(ctx.events.len(), 1);
+            downcast!(&ctx.events[1] => IbcEvent::ClientMisbehaviour).unwrap();
         assert_eq!(misbehaviour_client_event.client_id(), client_id);
         assert_eq!(misbehaviour_client_event.client_type(), client_type);
     }
