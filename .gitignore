@@ -28,4 +28,7 @@ mc.log
 # Ignore OSX .DS_Store file
 .DS_Store
 
-Cargo.lock
+# only ignore the top-level Cargo.lock
+# Specifically, we want the CI's Cargo.lock to be committed
+# to ensure a reproducible CI build
+/Cargo.lock
