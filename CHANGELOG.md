@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## v0.35.0
+
+*March 22, 2023*
+
+This release fixes a bug in the packet timeout handler.
+
+This is a consensus-breaking change.
+
+### BUG
+
+- Timeout handler returns an error only when both height and timestamp have not reached yet 
+  ([#555](https://github.com/cosmos/ibc-rs/issues/555))
+
 ## v0.34.0
 
 *March 17, 2023*
