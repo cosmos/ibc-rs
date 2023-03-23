@@ -13,7 +13,6 @@ use crate::core::ics04_channel::error as channel_error;
 use crate::core::ics04_channel::events as ChannelEvents;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics26_routing::context::ModuleId;
-use crate::signer::Signer;
 use crate::timestamp::ParseTimestampError;
 
 #[derive(Debug, Display)]
@@ -215,20 +214,14 @@ impl TryFrom<IbcEventType> for abci::Event {
             | IbcEventType::UpgradeClient
             | IbcEventType::ClientMisbehaviour => Ok(Self {
                 kind: "message".to_string(),
-                attributes: vec![
-                    ("module", "ibc_client", true).into(),
-                    ("action", event_type.as_str(), true).into(),
-                ],
+                attributes: vec![("module", "ibc_client", true).into()],
             }),
             IbcEventType::OpenInitConnection
             | IbcEventType::OpenTryConnection
             | IbcEventType::OpenAckConnection
             | IbcEventType::OpenConfirmConnection => Ok(Self {
                 kind: "message".to_string(),
-                attributes: vec![
-                    ("module", "ibc_connection", true).into(),
-                    ("action", event_type.as_str(), true).into(),
-                ],
+                attributes: vec![("module", "ibc_connection", true).into()],
             }),
             IbcEventType::OpenInitChannel
             | IbcEventType::OpenTryChannel
@@ -243,10 +236,7 @@ impl TryFrom<IbcEventType> for abci::Event {
             | IbcEventType::Timeout
             | IbcEventType::ChannelClosed => Ok(Self {
                 kind: "message".to_string(),
-                attributes: vec![
-                    ("module", "ibc_channel", true).into(),
-                    ("action", event_type.as_str(), true).into(),
-                ],
+                attributes: vec![("module", "ibc_channel", true).into()],
             }),
             _ => Err(Error::IncorrectEventType {
                 event: event_type.as_str().to_string(),
@@ -298,7 +288,6 @@ pub enum IbcEvent {
     AppModule(ModuleEvent),
 
     Message(IbcEventType),
-    ClientMisbehaviourMessage(Signer),
 }
 
 impl TryFrom<IbcEvent> for abci::Event {
@@ -328,13 +317,6 @@ impl TryFrom<IbcEvent> for abci::Event {
             IbcEvent::ChannelClosed(event) => event.into(),
             IbcEvent::AppModule(event) => event.try_into()?,
             IbcEvent::Message(event_type) => event_type.try_into()?,
-            IbcEvent::ClientMisbehaviourMessage(signer) => {
-                let mut message_event: Self = IbcEventType::ClientMisbehaviour.try_into()?;
-                message_event
-                    .attributes
-                    .push(("sender", &signer.to_string()).into());
-                message_event
-            }
         })
     }
 }
@@ -364,7 +346,6 @@ impl IbcEvent {
             IbcEvent::ChannelClosed(_) => IbcEventType::ChannelClosed,
             IbcEvent::AppModule(_) => IbcEventType::AppModule,
             IbcEvent::Message(_) => IbcEventType::Message,
-            IbcEvent::ClientMisbehaviourMessage(_) => IbcEventType::Message,
         }
     }
 }

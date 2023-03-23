@@ -42,7 +42,7 @@ where
     let MsgSubmitMisbehaviour {
         client_id,
         misbehaviour,
-        signer,
+        signer: _,
     } = msg;
 
     // Read client state from the host chain store.
@@ -54,11 +54,12 @@ where
             reason: e.to_string(),
         })?;
 
-    ctx.emit_ibc_event(IbcEvent::ClientMisbehaviourMessage(signer));
-    ctx.emit_ibc_event(IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(
+    let event = IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(
         client_id.clone(),
         client_state.client_type(),
-    )));
+    ));
+    ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx.emit_ibc_event(event);
 
     ctx.store_client_state(ClientStatePath::new(&client_id), client_state)
 }
@@ -77,7 +78,7 @@ mod tests {
     use crate::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ValidationContext;
-    use crate::events::IbcEvent;
+    use crate::events::{IbcEvent, IbcEventType};
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
@@ -97,7 +98,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::ClientMisbehaviourMessage(_)
+            IbcEvent::Message(IbcEventType::ClientMisbehaviour),
         ));
         let misbehaviour_client_event =
             downcast!(&ctx.events[1] => IbcEvent::ClientMisbehaviour).unwrap();
