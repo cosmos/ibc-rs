@@ -125,13 +125,10 @@ pub enum PacketError {
     UndefinedConnectionCounterparty { connection_id: ConnectionId },
     /// invalid proof: empty proof
     InvalidProof,
-    /// Packet timeout height `{timeout_height}` > chain height `{chain_height}`
-    PacketTimeoutHeightNotReached {
+    /// Packet timeout height `{timeout_height}` > chain height `{chain_height} and timeout timestamp `{timeout_timestamp}` > chain timestamp `{chain_timestamp}`
+    PacketTimeoutNotReached {
         timeout_height: TimeoutHeight,
         chain_height: Height,
-    },
-    /// Packet timeout timestamp `{timeout_timestamp}` > chain timestamp `{chain_timestamp}`
-    PacketTimeoutTimestampNotReached {
         timeout_timestamp: Timestamp,
         chain_timestamp: Timestamp,
     },

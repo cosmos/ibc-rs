@@ -13,7 +13,6 @@ use crate::core::ics24_host::path::{
 use crate::core::ics24_host::Path;
 use crate::core::{ContextError, ValidationContext};
 use crate::prelude::*;
-use crate::timestamp::Expiry;
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeout) -> Result<(), ContextError>
 where
@@ -83,28 +82,15 @@ where
         client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
 
         // check that timeout height or timeout timestamp has passed on the other end
-        if msg
-            .packet
-            .timeout_height_on_b
-            .has_expired(msg.proof_height_on_b)
-        {
-            return Err(PacketError::PacketTimeoutHeightNotReached {
-                timeout_height: msg.packet.timeout_height_on_b,
-                chain_height: msg.proof_height_on_b,
-            }
-            .into());
-        }
         let client_cons_state_path_on_a =
             ClientConsensusStatePath::new(client_id_on_a, &msg.proof_height_on_b);
         let consensus_state_of_b_on_a = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
         let timestamp_of_b = consensus_state_of_b_on_a.timestamp();
 
-        if let Expiry::Expired = msg
-            .packet
-            .timeout_timestamp_on_b
-            .check_expiry(&timestamp_of_b)
-        {
-            return Err(PacketError::PacketTimeoutTimestampNotReached {
+        if !msg.packet.timed_out(&timestamp_of_b, msg.proof_height_on_b) {
+            return Err(PacketError::PacketTimeoutNotReached {
+                timeout_height: msg.packet.timeout_height_on_b,
+                chain_height: msg.proof_height_on_b,
                 timeout_timestamp: msg.packet.timeout_timestamp_on_b,
                 chain_timestamp: timestamp_of_b,
             }
@@ -203,7 +189,7 @@ mod tests {
         let client_height = Height::new(0, 2).unwrap();
         let msg_proof_height = 2;
         let msg_timeout_height = 5;
-        let timeout_timestamp = 5;
+        let timeout_timestamp = Timestamp::now().nanoseconds();
 
         let msg = MsgTimeout::try_from(get_dummy_raw_msg_timeout(
             msg_proof_height,
@@ -306,9 +292,64 @@ mod tests {
     }
 
     #[rstest]
-    #[ignore = "implement and make clear that the timeout is indeed not reached"]
-    fn timeout_fail_proof_timeout_not_reached(_fixture: Fixture) {
-        // TODO
+    fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
+        let Fixture {
+            context,
+            mut msg,
+            chan_end_on_a_unordered,
+            conn_end_on_a,
+            client_height,
+            ..
+        } = fixture;
+
+        // timeout timestamp has not reached yet
+        let timeout_timestamp_on_b =
+            (msg.packet.timeout_timestamp_on_b + core::time::Duration::new(10, 0)).unwrap();
+        msg.packet.timeout_timestamp_on_b = timeout_timestamp_on_b;
+        let packet_commitment = compute_packet_commitment(
+            &msg.packet.data,
+            &msg.packet.timeout_height_on_b,
+            &msg.packet.timeout_timestamp_on_b,
+        );
+
+        let packet = msg.packet.clone();
+
+        let mut context = context
+            .with_client(&ClientId::default(), client_height)
+            .with_connection(ConnectionId::default(), conn_end_on_a)
+            .with_channel(
+                PortId::default(),
+                ChannelId::default(),
+                chan_end_on_a_unordered,
+            )
+            .with_packet_commitment(
+                packet.port_id_on_a,
+                packet.chan_id_on_a,
+                packet.seq_on_a,
+                packet_commitment,
+            );
+
+        context
+            .store_update_time(
+                ClientId::default(),
+                client_height,
+                Timestamp::from_nanoseconds(5).unwrap(),
+            )
+            .unwrap();
+        context
+            .store_update_height(
+                ClientId::default(),
+                client_height,
+                Height::new(0, 4).unwrap(),
+            )
+            .unwrap();
+
+        let res = validate(&context, &msg);
+
+        assert!(
+            res.is_err(),
+            "Validation should fail because the timeout height was reached, but the timestamp hasn't been reached. Both the height and timestamp need to be reached for the packet to be considered timed out"
+        )
     }
 
     /// NO-OP case
