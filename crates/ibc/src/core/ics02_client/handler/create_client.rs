@@ -92,11 +92,13 @@ where
         ctx.host_height()?,
     )?;
 
-    ctx.emit_ibc_event(IbcEvent::CreateClient(CreateClient::new(
+    let event = IbcEvent::CreateClient(CreateClient::new(
         client_id.clone(),
         client_type,
         client_state.latest_height(),
-    )));
+    ));
+    ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx.emit_ibc_event(event);
 
     ctx.log_message(format!(
         "success: generated new client identifier: {client_id}"

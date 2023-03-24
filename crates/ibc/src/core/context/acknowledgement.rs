@@ -47,11 +47,13 @@ where
     let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
 
     // In all cases, this event is emitted
-    ctx_a.emit_ibc_event(IbcEvent::AcknowledgePacket(AcknowledgePacket::new(
+    let event = IbcEvent::AcknowledgePacket(AcknowledgePacket::new(
         msg.packet.clone(),
         chan_end_on_a.ordering,
         conn_id_on_a.clone(),
-    )));
+    ));
+    ctx_a.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx_a.emit_ibc_event(event);
 
     let commitment_path_on_a = CommitmentPath::new(
         &msg.packet.port_id_on_a,
@@ -136,6 +138,7 @@ mod tests {
             },
             ics24_host::identifier::{ClientId, ConnectionId},
         },
+        events::IbcEventType,
         mock::context::MockContext,
         test_utils::DummyTransferModule,
         timestamp::ZERO_DURATION,
@@ -245,11 +248,12 @@ mod tests {
 
         assert!(res.is_ok());
 
-        assert_eq!(ctx.events.len(), 1);
+        assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
-            ctx.events.first().unwrap(),
-            &IbcEvent::AcknowledgePacket(_)
+            ctx.events[0],
+            IbcEvent::Message(IbcEventType::AckPacket)
         ));
+        assert!(matches!(ctx.events[1], IbcEvent::AcknowledgePacket(_)));
     }
 
     #[rstest]
@@ -281,10 +285,11 @@ mod tests {
 
         assert!(res.is_ok());
 
-        assert_eq!(ctx.events.len(), 1);
+        assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
-            ctx.events.first().unwrap(),
-            &IbcEvent::AcknowledgePacket(_)
+            ctx.events[0],
+            IbcEvent::Message(IbcEventType::AckPacket)
         ));
+        assert!(matches!(ctx.events[1], IbcEvent::AcknowledgePacket(_)));
     }
 }

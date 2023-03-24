@@ -111,13 +111,15 @@ where
     {
         let consensus_height = client_state.latest_height();
 
-        ctx.emit_ibc_event(IbcEvent::UpdateClient(UpdateClient::new(
+        let event = IbcEvent::UpdateClient(UpdateClient::new(
             client_id,
             client_state.client_type(),
             consensus_height,
             vec![consensus_height],
             header,
-        )));
+        ));
+        ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx.emit_ibc_event(event);
     }
 
     Ok(())
@@ -137,7 +139,7 @@ mod tests {
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ValidationContext;
-    use crate::events::IbcEvent;
+    use crate::events::{IbcEvent, IbcEventType};
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::client_state::MockClientState;
     use crate::mock::context::MockContext;
@@ -411,8 +413,11 @@ mod tests {
         let res = execute(&mut ctx, msg);
         assert!(res.is_ok());
 
-        let update_client_event =
-            downcast!(ctx.events.first().unwrap() => IbcEvent::UpdateClient).unwrap();
+        assert!(matches!(
+            ctx.events[0],
+            IbcEvent::Message(IbcEventType::UpdateClient)
+        ));
+        let update_client_event = downcast!(&ctx.events[1] => IbcEvent::UpdateClient).unwrap();
 
         assert_eq!(update_client_event.client_id(), &client_id);
         assert_eq!(update_client_event.client_type(), &mock_client_type());

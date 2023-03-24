@@ -156,12 +156,14 @@ where
         .counterparty()
         .connection_id()
         .ok_or(ConnectionError::InvalidCounterparty)?;
-    ctx_b.emit_ibc_event(IbcEvent::OpenTryConnection(OpenTry::new(
+    let event = IbcEvent::OpenTryConnection(OpenTry::new(
         vars.conn_id_on_b.clone(),
         msg.client_id_on_b.clone(),
         conn_id_on_a.clone(),
         vars.client_id_on_a.clone(),
-    )));
+    ));
+    ctx_b.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx_b.emit_ibc_event(event);
     ctx_b.log_message("success: conn_open_try verification passed".to_string());
 
     ctx_b.increase_connection_counter();
@@ -219,7 +221,7 @@ mod tests {
     use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::ValidationContext;
-    use crate::events::IbcEvent;
+    use crate::events::{IbcEvent, IbcEventType};
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::Height;
@@ -301,9 +303,13 @@ mod tests {
             }
             Expect::Success => {
                 assert!(res.is_ok(), "{err_msg}");
-                assert_eq!(fxt.ctx.events.len(), 1);
+                assert_eq!(fxt.ctx.events.len(), 2);
 
-                let event = fxt.ctx.events.first().unwrap();
+                assert!(matches!(
+                    fxt.ctx.events[0],
+                    IbcEvent::Message(IbcEventType::OpenTryConnection)
+                ));
+                let event = &fxt.ctx.events[1];
                 assert!(matches!(event, &IbcEvent::OpenTryConnection(_)));
 
                 let conn_open_try_event = match event {

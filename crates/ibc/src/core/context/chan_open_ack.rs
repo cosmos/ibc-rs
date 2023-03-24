@@ -76,6 +76,7 @@ where
                 conn_id_on_a,
             ))
         };
+        ctx_a.emit_ibc_event(IbcEvent::Message(core_event.event_type()));
         ctx_a.emit_ibc_event(core_event);
 
         for module_event in extras.events {
@@ -113,6 +114,7 @@ mod tests {
             ics24_host::identifier::{ClientId, ConnectionId},
             ics26_routing::context::ModuleId,
         },
+        events::IbcEventType,
         mock::context::MockContext,
         test_utils::DummyTransferModule,
         timestamp::ZERO_DURATION,
@@ -201,10 +203,11 @@ mod tests {
 
         assert!(res.is_ok(), "Execution happy path");
 
-        assert_eq!(context.events.len(), 1);
+        assert_eq!(context.events.len(), 2);
         assert!(matches!(
-            context.events.first().unwrap(),
-            &IbcEvent::OpenAckChannel(_)
+            context.events[0],
+            IbcEvent::Message(IbcEventType::OpenAckChannel)
         ));
+        assert!(matches!(context.events[1], IbcEvent::OpenAckChannel(_)));
     }
 }

@@ -67,10 +67,9 @@ where
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     // In all cases, this event is emitted
-    ctx_a.emit_ibc_event(IbcEvent::TimeoutPacket(TimeoutPacket::new(
-        packet.clone(),
-        chan_end_on_a.ordering,
-    )));
+    let event = IbcEvent::TimeoutPacket(TimeoutPacket::new(packet.clone(), chan_end_on_a.ordering));
+    ctx_a.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx_a.emit_ibc_event(event);
 
     let commitment_path_on_a =
         CommitmentPath::new(&packet.port_id_on_a, &packet.chan_id_on_a, packet.seq_on_a);
@@ -119,14 +118,16 @@ where
         if let Order::Ordered = chan_end_on_a.ordering {
             let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
 
-            ctx_a.emit_ibc_event(IbcEvent::ChannelClosed(ChannelClosed::new(
+            let event = IbcEvent::ChannelClosed(ChannelClosed::new(
                 packet.port_id_on_a.clone(),
                 packet.chan_id_on_a.clone(),
                 chan_end_on_a.counterparty().port_id.clone(),
                 chan_end_on_a.counterparty().channel_id.clone(),
                 conn_id_on_a,
                 chan_end_on_a.ordering,
-            )));
+            ));
+            ctx_a.emit_ibc_event(IbcEvent::Message(event.event_type()));
+            ctx_a.emit_ibc_event(event);
         }
 
         for module_event in extras.events {
@@ -168,6 +169,7 @@ mod tests {
             },
             ics24_host::identifier::{ClientId, ConnectionId},
         },
+        events::IbcEventType,
         mock::context::MockContext,
     };
 
@@ -279,11 +281,12 @@ mod tests {
         assert!(res.is_ok());
 
         // Unordered channels only emit one event
-        assert_eq!(ctx.events.len(), 1);
+        assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
-            ctx.events.first().unwrap(),
-            &IbcEvent::TimeoutPacket(_)
+            ctx.events[0],
+            IbcEvent::Message(IbcEventType::Timeout)
         ));
+        assert!(matches!(ctx.events[1], IbcEvent::TimeoutPacket(_)));
     }
 
     #[rstest]
@@ -316,8 +319,16 @@ mod tests {
         assert!(res.is_ok());
 
         // Ordered channels emit 2 events
-        assert_eq!(ctx.events.len(), 2);
-        assert!(matches!(ctx.events[0], IbcEvent::TimeoutPacket(_)));
-        assert!(matches!(ctx.events[1], IbcEvent::ChannelClosed(_)));
+        assert_eq!(ctx.events.len(), 4);
+        assert!(matches!(
+            ctx.events[0],
+            IbcEvent::Message(IbcEventType::Timeout)
+        ));
+        assert!(matches!(ctx.events[1], IbcEvent::TimeoutPacket(_)));
+        assert!(matches!(
+            ctx.events[2],
+            IbcEvent::Message(IbcEventType::ChannelClosed)
+        ));
+        assert!(matches!(ctx.events[3], IbcEvent::ChannelClosed(_)));
     }
 }
