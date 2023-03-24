@@ -261,12 +261,12 @@ Our release process is as follows:
    any potential issues here and push them to the release PR.
 6. Mark the PR as **Ready for Review** and incorporate feedback on the release.
 7. Once approved, merge the PR, and pull the `main` branch.
-8. From the `crates/ibc` folder, run `cargo publish`
-9. Once all crates have been successfully released, create a signed tag and push it to
+8. Once all crates have been successfully released, create a signed tag and push it to
    GitHub: `git tag -s -a vX.Y.Z`. In the tag message, write the version and the link
-   to the corresponding section of the changelog.
-10. Once the tag is pushed, create a GitHub release and append
-   `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)`
+   to the corresponding section of the changelog. Pushing the tag will trigger the [Release workflow](https://github.com/cosmos/ibc-rs/actions/workflows/release.yml),
+   which publishes the crate on crates.io.
+9. Once the tag is pushed, create a GitHub release and append
+   `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)` 
    to the release description.
-11. Make sure that the [Release workflow](https://github.com/cosmos/ibc-rs/actions/workflows/release.yml) to crates.io has completed successfully.
-12. All done! 🎉
+10. Make sure that the [Release workflow](https://github.com/cosmos/ibc-rs/actions/workflows/release.yml) to crates.io has completed successfully.
+11. All done! 🎉
