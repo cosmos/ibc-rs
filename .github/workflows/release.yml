@@ -1,14 +1,5 @@
-# Written by Thane Thomson: https://github.com/informalsystems/tendermint-rs/commit/8ba855004b1f2d180e0c6e15f2f81436db3e9003
-# Attempts to perform a release when a particular tag is pushed. This uses the
-# release.sh script in the root of the repository, and assumes that the
-# CRATES_TOKEN secret has been set and contains an API token with which we can
-# publish our crates to crates.io.
-#
-# If release operation fails partway through due to a temporary error (e.g. the
-# crate being published depends on the crate published just prior, but the
-# prior crate isn't yet available via crates.io), one can simply rerun this
-# workflow. The release.sh script aims to be an idempotent operation, skipping
-# the publishing of crates that have already been published.
+# This workflow publishes the `ibc` on crates.io when a semver tag is
+# pushed to main.
 name: Release
 
 on:
