@@ -203,48 +203,6 @@ impl FromStr for IbcEventType {
     }
 }
 
-/// Message event from an IbcEventType
-impl TryFrom<IbcEventType> for abci::Event {
-    type Error = Error;
-
-    fn try_from(event_type: IbcEventType) -> Result<Self, Self::Error> {
-        match event_type {
-            IbcEventType::CreateClient
-            | IbcEventType::UpdateClient
-            | IbcEventType::UpgradeClient
-            | IbcEventType::ClientMisbehaviour => Ok(Self {
-                kind: "message".to_string(),
-                attributes: vec![("module", "ibc_client", true).into()],
-            }),
-            IbcEventType::OpenInitConnection
-            | IbcEventType::OpenTryConnection
-            | IbcEventType::OpenAckConnection
-            | IbcEventType::OpenConfirmConnection => Ok(Self {
-                kind: "message".to_string(),
-                attributes: vec![("module", "ibc_connection", true).into()],
-            }),
-            IbcEventType::OpenInitChannel
-            | IbcEventType::OpenTryChannel
-            | IbcEventType::OpenAckChannel
-            | IbcEventType::OpenConfirmChannel
-            | IbcEventType::CloseInitChannel
-            | IbcEventType::CloseConfirmChannel
-            | IbcEventType::SendPacket
-            | IbcEventType::ReceivePacket
-            | IbcEventType::WriteAck
-            | IbcEventType::AckPacket
-            | IbcEventType::Timeout
-            | IbcEventType::ChannelClosed => Ok(Self {
-                kind: "message".to_string(),
-                attributes: vec![("module", "ibc_channel", true).into()],
-            }),
-            _ => Err(Error::IncorrectEventType {
-                event: event_type.as_str().to_string(),
-            }),
-        }
-    }
-}
-
 /// Events created by the IBC component of a chain, destined for a relayer.
 #[cfg_attr(
     feature = "parity-scale-codec",
@@ -316,7 +274,7 @@ impl TryFrom<IbcEvent> for abci::Event {
             IbcEvent::TimeoutPacket(event) => event.try_into().map_err(Error::Channel)?,
             IbcEvent::ChannelClosed(event) => event.into(),
             IbcEvent::AppModule(event) => event.try_into()?,
-            IbcEvent::Message(event_type) => event_type.try_into()?,
+            IbcEvent::Message(event_type) => try_message_event_from_event_type(event_type)?,
         })
     }
 }
@@ -423,6 +381,43 @@ impl<K: ToString, V: ToString> From<(K, V)> for ModuleEventAttribute {
 impl From<ModuleEventAttribute> for abci::EventAttribute {
     fn from(attr: ModuleEventAttribute) -> Self {
         (attr.key, attr.value).into()
+    }
+}
+
+fn try_message_event_from_event_type(event_type: IbcEventType) -> Result<abci::Event, Error> {
+    match event_type {
+        IbcEventType::CreateClient
+        | IbcEventType::UpdateClient
+        | IbcEventType::UpgradeClient
+        | IbcEventType::ClientMisbehaviour => Ok(abci::Event {
+            kind: "message".to_string(),
+            attributes: vec![("module", "ibc_client", true).into()],
+        }),
+        IbcEventType::OpenInitConnection
+        | IbcEventType::OpenTryConnection
+        | IbcEventType::OpenAckConnection
+        | IbcEventType::OpenConfirmConnection => Ok(abci::Event {
+            kind: "message".to_string(),
+            attributes: vec![("module", "ibc_connection", true).into()],
+        }),
+        IbcEventType::OpenInitChannel
+        | IbcEventType::OpenTryChannel
+        | IbcEventType::OpenAckChannel
+        | IbcEventType::OpenConfirmChannel
+        | IbcEventType::CloseInitChannel
+        | IbcEventType::CloseConfirmChannel
+        | IbcEventType::SendPacket
+        | IbcEventType::ReceivePacket
+        | IbcEventType::WriteAck
+        | IbcEventType::AckPacket
+        | IbcEventType::Timeout
+        | IbcEventType::ChannelClosed => Ok(abci::Event {
+            kind: "message".to_string(),
+            attributes: vec![("module", "ibc_channel", true).into()],
+        }),
+        _ => Err(Error::IncorrectEventType {
+            event: event_type.as_str().to_string(),
+        }),
     }
 }
 
