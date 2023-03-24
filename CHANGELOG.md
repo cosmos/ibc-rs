@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## v0.36.0
+
+*March 27, 2023*
+
+This release adds the emission a `"message"` event for all handlers, which hermes currently
+depends on.
+
+There are no consensus-breaking changes.
+
 ## v0.35.0
 
 *March 22, 2023*
