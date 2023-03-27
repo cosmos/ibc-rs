@@ -9,6 +9,11 @@ depends on.
 
 There are no consensus-breaking changes.
 
+### BUG
+
+- Emit a message event for each IBC handling
+  ([#563](https://github.com/cosmos/ibc-rs/issues/563))
+
 ## v0.35.0
 
 *March 22, 2023*
@@ -32,8 +37,8 @@ This is a consensus-breaking change.
 
 ### BUG
 
-- Fix client IDs for the proof verifications in `ConnectionOpenTry` and `ConnectionOpenAck` ([#550](https://github.com/cosmos/ibc-
-  rs/issues/550))
+- Fix client IDs for the proof verifications in `ConnectionOpenTry` and `ConnectionOpenAck` 
+([#550](https://github.com/cosmos/ibc-rs/issues/550))
 
 ## v0.33.0
 
