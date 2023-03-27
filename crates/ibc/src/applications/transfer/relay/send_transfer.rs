@@ -54,15 +54,10 @@ where
         .get_next_sequence_send(&seq_send_path_on_a)
         .map_err(TokenTransferError::ContextError)?;
 
-    let token = msg
+    let token: PrefixedCoin = msg
         .token
         .try_into()
         .map_err(|_| TokenTransferError::InvalidToken)?;
-    let denom = token.denom.clone();
-    let coin = Coin {
-        denom: denom.clone(),
-        amount: token.amount,
-    };
 
     let sender: Ctx::AccountId = msg
         .sender
@@ -70,16 +65,20 @@ where
         .try_into()
         .map_err(|_| TokenTransferError::ParseAccountFailure)?;
 
-    if is_sender_chain_source(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone(), &denom) {
+    if is_sender_chain_source(
+        msg.port_id_on_a.clone(),
+        msg.chan_id_on_a.clone(),
+        &token.denom,
+    ) {
         let escrow_address = ctx_a.get_escrow_account(&msg.port_id_on_a, &msg.chan_id_on_a)?;
-        ctx_a.send_coins_validate(&sender, &escrow_address, &coin)?;
+        ctx_a.send_coins_validate(&sender, &escrow_address, &token)?;
     } else {
-        ctx_a.burn_coins_validate(&sender, &coin)?;
+        ctx_a.burn_coins_validate(&sender, &token)?;
     }
 
     let data = {
         let data = PacketData {
-            token: coin,
+            token,
             sender: msg.sender.clone(),
             receiver: msg.receiver.clone(),
         };
