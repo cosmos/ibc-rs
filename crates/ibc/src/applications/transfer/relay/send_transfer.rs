@@ -3,9 +3,8 @@ use crate::applications::transfer::context::{
 };
 use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::events::TransferEvent;
+use crate::applications::transfer::is_sender_chain_source;
 use crate::applications::transfer::msgs::transfer::MsgTransfer;
-use crate::applications::transfer::packet::PacketData;
-use crate::applications::transfer::{is_sender_chain_source, Coin, PrefixedCoin};
 use crate::core::ics04_channel::handler::send_packet::{send_packet_execute, send_packet_validate};
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::path::{ChannelEndPath, SeqSendPath};
@@ -15,21 +14,16 @@ use crate::prelude::*;
 /// This function handles the transfer sending logic.
 /// If this method returns an error, the runtime is expected to rollback all state modifications to
 /// the `Ctx` caused by all messages from the transaction that this `msg` is a part of.
-pub fn send_transfer<C, Ctx>(ctx_a: &mut Ctx, msg: MsgTransfer<C>) -> Result<(), TokenTransferError>
+pub fn send_transfer<Ctx>(ctx_a: &mut Ctx, msg: MsgTransfer) -> Result<(), TokenTransferError>
 where
-    C: TryInto<PrefixedCoin> + Clone,
     Ctx: TokenTransferExecutionContext,
 {
     send_transfer_validate(ctx_a, msg.clone())?;
     send_transfer_execute(ctx_a, msg)
 }
 
-pub fn send_transfer_validate<C, Ctx>(
-    ctx_a: &Ctx,
-    msg: MsgTransfer<C>,
-) -> Result<(), TokenTransferError>
+pub fn send_transfer_validate<Ctx>(ctx_a: &Ctx, msg: MsgTransfer) -> Result<(), TokenTransferError>
 where
-    C: TryInto<PrefixedCoin>,
     Ctx: TokenTransferValidationContext,
 {
     ctx_a.can_send_coins()?;
@@ -54,12 +48,10 @@ where
         .get_next_sequence_send(&seq_send_path_on_a)
         .map_err(TokenTransferError::ContextError)?;
 
-    let token: PrefixedCoin = msg
-        .token
-        .try_into()
-        .map_err(|_| TokenTransferError::InvalidToken)?;
+    let token = &msg.packet_data.token;
 
     let sender: Ctx::AccountId = msg
+        .packet_data
         .sender
         .clone()
         .try_into()
@@ -71,29 +63,25 @@ where
         &token.denom,
     ) {
         let escrow_address = ctx_a.get_escrow_account(&msg.port_id_on_a, &msg.chan_id_on_a)?;
-        ctx_a.send_coins_validate(&sender, &escrow_address, &token)?;
+        ctx_a.send_coins_validate(&sender, &escrow_address, token)?;
     } else {
-        ctx_a.burn_coins_validate(&sender, &token)?;
+        ctx_a.burn_coins_validate(&sender, token)?;
     }
 
-    let data = {
-        let data = PacketData {
-            token,
-            sender: msg.sender.clone(),
-            receiver: msg.receiver.clone(),
-        };
-        serde_json::to_vec(&data).expect("PacketData's infallible Serialize impl failed")
-    };
+    let packet = {
+        let data = serde_json::to_vec(&msg.packet_data)
+            .expect("PacketData's infallible Serialize impl failed");
 
-    let packet = Packet {
-        seq_on_a: sequence,
-        port_id_on_a: msg.port_id_on_a,
-        chan_id_on_a: msg.chan_id_on_a,
-        port_id_on_b,
-        chan_id_on_b,
-        data,
-        timeout_height_on_b: msg.timeout_height_on_b,
-        timeout_timestamp_on_b: msg.timeout_timestamp_on_b,
+        Packet {
+            seq_on_a: sequence,
+            port_id_on_a: msg.port_id_on_a,
+            chan_id_on_a: msg.chan_id_on_a,
+            port_id_on_b,
+            chan_id_on_b,
+            data,
+            timeout_height_on_b: msg.timeout_height_on_b,
+            timeout_timestamp_on_b: msg.timeout_timestamp_on_b,
+        }
     };
 
     send_packet_validate(ctx_a, &packet).map_err(TokenTransferError::ContextError)?;
@@ -101,12 +89,11 @@ where
     Ok(())
 }
 
-pub fn send_transfer_execute<C, Ctx>(
+pub fn send_transfer_execute<Ctx>(
     ctx_a: &mut Ctx,
-    msg: MsgTransfer<C>,
+    msg: MsgTransfer,
 ) -> Result<(), TokenTransferError>
 where
-    C: TryInto<PrefixedCoin>,
     Ctx: TokenTransferExecutionContext,
 {
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
@@ -130,47 +117,42 @@ where
         .get_next_sequence_send(&seq_send_path_on_a)
         .map_err(TokenTransferError::ContextError)?;
 
-    let token = msg
-        .token
-        .try_into()
-        .map_err(|_| TokenTransferError::InvalidToken)?;
-    let denom = token.denom.clone();
-    let coin = Coin {
-        denom: denom.clone(),
-        amount: token.amount,
-    };
+    let token = &msg.packet_data.token;
 
     let sender = msg
+        .packet_data
         .sender
         .clone()
         .try_into()
         .map_err(|_| TokenTransferError::ParseAccountFailure)?;
 
-    if is_sender_chain_source(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone(), &denom) {
+    if is_sender_chain_source(
+        msg.port_id_on_a.clone(),
+        msg.chan_id_on_a.clone(),
+        &token.denom,
+    ) {
         let escrow_address = ctx_a.get_escrow_account(&msg.port_id_on_a, &msg.chan_id_on_a)?;
-        ctx_a.send_coins_execute(&sender, &escrow_address, &coin)?;
+        ctx_a.send_coins_execute(&sender, &escrow_address, token)?;
     } else {
-        ctx_a.burn_coins_execute(&sender, &coin)?;
+        ctx_a.burn_coins_execute(&sender, token)?;
     }
 
-    let data = {
-        let data = PacketData {
-            token: coin,
-            sender: msg.sender.clone(),
-            receiver: msg.receiver.clone(),
+    let packet = {
+        let data = {
+            serde_json::to_vec(&msg.packet_data)
+                .expect("PacketData's infallible Serialize impl failed")
         };
-        serde_json::to_vec(&data).expect("PacketData's infallible Serialize impl failed")
-    };
 
-    let packet = Packet {
-        seq_on_a: sequence,
-        port_id_on_a: msg.port_id_on_a,
-        chan_id_on_a: msg.chan_id_on_a,
-        port_id_on_b: port_on_b,
-        chan_id_on_b: chan_on_b,
-        data,
-        timeout_height_on_b: msg.timeout_height_on_b,
-        timeout_timestamp_on_b: msg.timeout_timestamp_on_b,
+        Packet {
+            seq_on_a: sequence,
+            port_id_on_a: msg.port_id_on_a,
+            chan_id_on_a: msg.chan_id_on_a,
+            port_id_on_b: port_on_b,
+            chan_id_on_b: chan_on_b,
+            data,
+            timeout_height_on_b: msg.timeout_height_on_b,
+            timeout_timestamp_on_b: msg.timeout_timestamp_on_b,
+        }
     };
 
     send_packet_execute(ctx_a, packet).map_err(TokenTransferError::ContextError)?;
@@ -178,12 +160,12 @@ where
     {
         ctx_a.log_message(format!(
             "IBC fungible token transfer: {} --({})--> {}",
-            msg.sender, token, msg.receiver
+            msg.packet_data.sender, token, msg.packet_data.receiver
         ));
 
         let transfer_event = TransferEvent {
-            sender: msg.sender,
-            receiver: msg.receiver,
+            sender: msg.packet_data.sender,
+            receiver: msg.packet_data.receiver,
         };
         ctx_a.emit_ibc_event(ModuleEvent::from(transfer_event).into());
     }
