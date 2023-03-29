@@ -14,6 +14,14 @@ use crate::serializers::serde_string;
 /// Base denomination type
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Display)]
 pub struct BaseDenom(String);
 
@@ -35,6 +43,14 @@ impl FromStr for BaseDenom {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
 #[derive(Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub struct TracePrefix {
     port_id: PortId,
@@ -60,6 +76,14 @@ impl Display for TracePrefix {
 // Internally, the `TracePath` is modelled as a `Vec<TracePrefix>` but with the order reversed, i.e.
 // "transfer/channel-0/transfer/channel-1/uatom" => `["transfer/channel-1", "transfer/channel-0"]`
 // This is done for ease of addition/removal of prefixes.
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
 #[derive(Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord, From)]
 pub struct TracePath(Vec<TracePrefix>);
 
@@ -150,6 +174,14 @@ impl Display for TracePath {
 
 /// A type that contains the base denomination for ICS20 and the source tracing information path.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct PrefixedDenom {
     /// A series of `{port-id}/{channel-id}`s for tracing the source of the token.
