@@ -42,13 +42,11 @@ pub trait ClientState:
     /// Latest height the client was updated to
     fn latest_height(&self) -> Height;
 
-    /// Freeze status of the client
-    fn is_frozen(&self) -> bool {
-        self.frozen_height().is_some()
-    }
+    /// Check if the given proof has a valid height for the client
+    fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError>;
 
-    /// Frozen height of the client
-    fn frozen_height(&self) -> Option<Height>;
+    /// Assert that the client is not frozen
+    fn confirm_not_frozen(&self) -> Result<(), ClientError>;
 
     /// Check if the state is expired when `elapsed` time has passed since the latest consensus
     /// state timestamp
@@ -110,10 +108,9 @@ pub trait ClientState:
     ) -> Result<UpdatedState, ClientError>;
 
     // Verify_membership is a generic proof verification method which verifies a
-    // proof of the existence of a value at a given Path at the specified height.
+    // proof of the existence of a value at a given Path.
     fn verify_membership(
         &self,
-        proof_height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
@@ -122,10 +119,9 @@ pub trait ClientState:
     ) -> Result<(), ClientError>;
 
     // Verify_non_membership is a generic proof verification method which
-    // verifies the absence of a given commitment at a specified height.
+    // verifies the absence of a given commitment.
     fn verify_non_membership(
         &self,
-        proof_height: Height,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,

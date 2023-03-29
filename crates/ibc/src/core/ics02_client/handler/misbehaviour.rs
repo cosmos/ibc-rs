@@ -24,9 +24,7 @@ where
     // Read client state from the host chain store.
     let client_state = ctx.client_state(&client_id)?;
 
-    if client_state.is_frozen() {
-        return Err(ClientError::ClientFrozen { client_id }.into());
-    }
+    client_state.confirm_not_frozen()?;
 
     let _ = client_state
         .check_misbehaviour_and_update_state(ctx, client_id.clone(), misbehaviour)
@@ -50,20 +48,18 @@ where
     // Read client state from the host chain store.
     let client_state = ctx.client_state(&client_id)?;
 
-    if client_state.is_frozen() {
-        return Err(ClientError::ClientFrozen { client_id }.into());
-    }
-
     let client_state = client_state
         .check_misbehaviour_and_update_state(ctx, client_id.clone(), misbehaviour)
         .map_err(|e| ClientError::MisbehaviourHandlingFailure {
             reason: e.to_string(),
         })?;
 
-    ctx.emit_ibc_event(IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(
+    let event = IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(
         client_id.clone(),
         client_state.client_type(),
-    )));
+    ));
+    ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx.emit_ibc_event(event);
 
     ctx.store_client_state(ClientStatePath::new(&client_id), client_state)
 }
@@ -82,7 +78,7 @@ mod tests {
     use crate::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ValidationContext;
-    use crate::events::IbcEvent;
+    use crate::events::{IbcEvent, IbcEventType};
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
@@ -96,16 +92,16 @@ mod tests {
     fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &ClientType) {
         let client_state = ctx.client_state(client_id).unwrap();
 
-        assert!(client_state.is_frozen());
-        assert_eq!(
-            client_state.frozen_height(),
-            Some(Height::new(0, 1).unwrap())
-        );
+        assert!(client_state.confirm_not_frozen().is_err());
 
         // check events
+        assert_eq!(ctx.events.len(), 2);
+        assert!(matches!(
+            ctx.events[0],
+            IbcEvent::Message(IbcEventType::ClientMisbehaviour),
+        ));
         let misbehaviour_client_event =
-            downcast!(ctx.events.first().unwrap() => IbcEvent::ClientMisbehaviour).unwrap();
-        assert_eq!(ctx.events.len(), 1);
+            downcast!(&ctx.events[1] => IbcEvent::ClientMisbehaviour).unwrap();
         assert_eq!(misbehaviour_client_event.client_id(), client_id);
         assert_eq!(misbehaviour_client_event.client_type(), client_type);
     }

@@ -191,7 +191,9 @@ impl TryFrom<ChannelEnd> for Vec<u8> {
     fn try_from(value: ChannelEnd) -> Result<Self, Self::Error> {
         let value = value
             .encode_vec()
-            .map_err(ChannelError::InvalidChannelEnd)?;
+            .map_err(|_| ChannelError::InvalidChannelEnd {
+                channel_end: value.to_string(),
+            })?;
         Ok(value)
     }
 }
@@ -282,6 +284,15 @@ impl ChannelEnd {
 
     pub fn version_matches(&self, other: &Version) -> bool {
         self.version().eq(other)
+    }
+
+    pub(crate) fn proto_encode_vec(&self) -> Result<Vec<u8>, ChannelError> {
+        let value = self
+            .encode_vec()
+            .map_err(|_| ChannelError::InvalidChannelEnd {
+                channel_end: self.to_string(),
+            })?;
+        Ok(value)
     }
 }
 

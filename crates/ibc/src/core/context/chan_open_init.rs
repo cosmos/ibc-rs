@@ -100,6 +100,7 @@ where
             conn_id_on_a,
             version,
         ));
+        ctx_a.emit_ibc_event(IbcEvent::Message(core_event.event_type()));
         ctx_a.emit_ibc_event(core_event);
 
         for module_event in extras.events {
@@ -131,6 +132,7 @@ mod tests {
             },
             ics04_channel::msgs::chan_open_init::test_util::get_dummy_raw_msg_chan_open_init,
         },
+        events::IbcEventType,
         mock::context::MockContext,
     };
 
@@ -189,10 +191,11 @@ mod tests {
 
         assert!(res.is_ok(), "Execution succeeds; good parameters");
 
-        assert_eq!(context.events.len(), 1);
+        assert_eq!(context.events.len(), 2);
         assert!(matches!(
-            context.events.first().unwrap(),
-            &IbcEvent::OpenInitChannel(_)
+            context.events[0],
+            IbcEvent::Message(IbcEventType::OpenInitChannel)
         ));
+        assert!(matches!(context.events[1], IbcEvent::OpenInitChannel(_)));
     }
 }

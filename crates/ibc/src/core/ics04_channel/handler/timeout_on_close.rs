@@ -1,3 +1,5 @@
+use prost::Message;
+
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order};
@@ -69,13 +71,9 @@ where
         let client_id_on_a = conn_end_on_a.client_id();
         let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
 
-        // The client must not be frozen.
-        if client_state_of_b_on_a.is_frozen() {
-            return Err(PacketError::FrozenClient {
-                client_id: client_id_on_a.clone(),
-            }
-            .into());
-        }
+        client_state_of_b_on_a.confirm_not_frozen()?;
+        client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
+
         let client_cons_state_path_on_a =
             ClientConsensusStatePath::new(client_id_on_a, &msg.proof_height_on_b);
         let consensus_state_of_b_on_a = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
@@ -112,12 +110,11 @@ where
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
         client_state_of_b_on_a
             .verify_membership(
-                msg.proof_height_on_b,
                 prefix_on_b,
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 Path::ChannelEnd(chan_end_path_on_b),
-                expected_chan_end_on_b.try_into()?,
+                expected_chan_end_on_b.proto_encode_vec()?,
             )
             .map_err(ChannelError::VerifyChannelFailed)
             .map_err(PacketError::Channel)?;
@@ -134,13 +131,19 @@ where
             }
             let seq_recv_path_on_b = SeqRecvPath::new(&packet.port_id_on_b, &packet.chan_id_on_b);
 
+            let mut value = Vec::new();
+            u64::from(packet.seq_on_a).encode(&mut value).map_err(|_| {
+                PacketError::CannotEncodeSequence {
+                    sequence: packet.seq_on_a,
+                }
+            })?;
+
             client_state_of_b_on_a.verify_membership(
-                msg.proof_height_on_b,
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 Path::SeqRecv(seq_recv_path_on_b),
-                packet.seq_on_a.try_into()?,
+                value,
             )
         } else {
             let receipt_path_on_b = ReceiptPath::new(
@@ -150,7 +153,6 @@ where
             );
 
             client_state_of_b_on_a.verify_non_membership(
-                msg.proof_height_on_b,
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),

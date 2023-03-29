@@ -80,6 +80,7 @@ where
             chan_id_on_a,
             conn_id_on_b,
         ));
+        ctx_b.emit_ibc_event(IbcEvent::Message(core_event.event_type()));
         ctx_b.emit_ibc_event(core_event);
 
         for module_event in extras.events {
@@ -102,7 +103,7 @@ mod tests {
             ics04_channel::Version,
             ics26_routing::{module::ModuleContext, router::RouterMut},
         },
-        events::IbcEvent,
+        events::{IbcEvent, IbcEventType},
         prelude::*,
         Height,
     };
@@ -214,10 +215,11 @@ mod tests {
 
         assert!(res.is_ok(), "Execution happy path");
 
-        assert_eq!(context.events.len(), 1);
+        assert_eq!(context.events.len(), 2);
         assert!(matches!(
-            context.events.first().unwrap(),
-            &IbcEvent::OpenConfirmChannel(_)
+            context.events[0],
+            IbcEvent::Message(IbcEventType::OpenConfirmChannel)
         ));
+        assert!(matches!(context.events[1], IbcEvent::OpenConfirmChannel(_)));
     }
 }

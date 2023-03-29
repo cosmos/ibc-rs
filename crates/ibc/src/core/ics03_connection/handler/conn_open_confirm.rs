@@ -49,6 +49,10 @@ where
                 .map_err(|_| ConnectionError::Other {
                     description: "failed to fetch client state".to_string(),
                 })?;
+
+        client_state_of_a_on_b.confirm_not_frozen()?;
+        client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
+
         let client_cons_state_path_on_b =
             ClientConsensusStatePath::new(client_id_on_b, &msg.proof_height_on_a);
         let consensus_state_of_a_on_b = ctx_b
@@ -74,12 +78,11 @@ where
 
         client_state_of_a_on_b
             .verify_membership(
-                msg.proof_height_on_a,
                 prefix_on_a,
                 &msg.proof_conn_end_on_a,
                 consensus_state_of_a_on_b.root(),
                 Path::Connection(ConnectionPath::new(conn_id_on_a)),
-                expected_conn_end_on_a.try_into()?,
+                expected_conn_end_on_a.proto_encode_vec()?,
             )
             .map_err(ConnectionError::VerifyConnectionState)?;
     }
@@ -110,12 +113,14 @@ where
     let client_id_on_b = vars.client_id_on_b();
     let conn_id_on_a = vars.conn_id_on_a()?;
 
-    ctx_b.emit_ibc_event(IbcEvent::OpenConfirmConnection(OpenConfirm::new(
+    let event = IbcEvent::OpenConfirmConnection(OpenConfirm::new(
         msg.conn_id_on_b.clone(),
         client_id_on_b.clone(),
         conn_id_on_a.clone(),
         client_id_on_a.clone(),
-    )));
+    ));
+    ctx_b.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx_b.emit_ibc_event(event);
     ctx_b.log_message("success: conn_open_confirm verification passed".to_string());
 
     {
@@ -178,7 +183,7 @@ mod tests {
     use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::ClientId;
-    use crate::events::IbcEvent;
+    use crate::events::{IbcEvent, IbcEventType};
     use crate::mock::context::MockContext;
     use crate::timestamp::ZERO_DURATION;
     use crate::Height;
@@ -248,9 +253,13 @@ mod tests {
             }
             Expect::Success => {
                 assert!(res.is_ok(), "{err_msg}");
-                assert_eq!(fxt.ctx.events.len(), 1);
+                assert_eq!(fxt.ctx.events.len(), 2);
 
-                let event = fxt.ctx.events.first().unwrap();
+                assert!(matches!(
+                    fxt.ctx.events[0],
+                    IbcEvent::Message(IbcEventType::OpenConfirmConnection)
+                ));
+                let event = &fxt.ctx.events[1];
                 assert!(matches!(event, &IbcEvent::OpenConfirmConnection(_)));
 
                 let conn_open_try_event = match event {

@@ -1,5 +1,67 @@
 # CHANGELOG
 
+## v0.36.0
+
+*March 27, 2023*
+
+This release adds the emission a `"message"` event for all handlers, which hermes currently
+depends on.
+
+There are no consensus-breaking changes.
+
+### BUG
+
+- Emit a message event for each IBC handling
+  ([#563](https://github.com/cosmos/ibc-rs/issues/563))
+
+## v0.35.0
+
+*March 22, 2023*
+
+This release fixes a bug in the packet timeout handler.
+
+This is a consensus-breaking change.
+
+### BUG
+
+- Timeout handler returns an error only when both height and timestamp have not reached yet 
+  ([#555](https://github.com/cosmos/ibc-rs/issues/555))
+
+## v0.34.0
+
+*March 17, 2023*
+
+This release fixes a bug in the connection handshake.
+
+This is a consensus-breaking change.
+
+### BUG
+
+- Fix client IDs for the proof verifications in `ConnectionOpenTry` and `ConnectionOpenAck` 
+([#550](https://github.com/cosmos/ibc-rs/issues/550))
+
+## v0.33.0
+
+*March 16, 2023*
+
+This release primarily updates the `ClientState` trait.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Replace specific verify_functions inside `ics02_client` with generic
+  `verify_membership` and `verify_non_membership` interfaces.
+  ([#530](https://github.com/cosmos/ibc-rs/issues/530))
+- Replace `ClientState::frozen_height()` and `ClientState::is_frozen()`
+  with `ClientState::confirm_frozen()`
+  ([#545](https://github.com/cosmos/ibc-rs/issues/545))
+
+### IMPROVEMENT
+
+- Fix `ContextError` Display output 
+  ([#547](https://github.com/cosmos/ibc-rs/issues/547))
+
 ## v0.32.0
 
 *March 9, 2023*

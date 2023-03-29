@@ -153,8 +153,23 @@ impl ClientState for MockClientState {
         self.header.height()
     }
 
-    fn frozen_height(&self) -> Option<Height> {
-        self.frozen_height
+    fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
+        if self.latest_height() < proof_height {
+            return Err(ClientError::InvalidProofHeight {
+                latest_height: self.latest_height(),
+                proof_height,
+            });
+        }
+        Ok(())
+    }
+
+    fn confirm_not_frozen(&self) -> Result<(), ClientError> {
+        if let Some(frozen_height) = self.frozen_height {
+            return Err(ClientError::ClientFrozen {
+                description: format!("The client is frozen at height {frozen_height}"),
+            });
+        }
+        Ok(())
     }
 
     fn zero_custom_fields(&mut self) {
@@ -252,7 +267,6 @@ impl ClientState for MockClientState {
 
     fn verify_membership(
         &self,
-        _proof_height: Height,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
@@ -264,7 +278,6 @@ impl ClientState for MockClientState {
 
     fn verify_non_membership(
         &self,
-        _proof_height: Height,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,

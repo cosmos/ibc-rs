@@ -48,6 +48,10 @@ where
     {
         let client_id_on_b = conn_end_on_b.client_id();
         let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
+
+        client_state_of_a_on_b.confirm_not_frozen()?;
+        client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
+
         let client_cons_state_path_on_b =
             ClientConsensusStatePath::new(client_id_on_b, &msg.proof_height_on_a);
         let consensus_state_of_a_on_b = ctx_b.consensus_state(&client_cons_state_path_on_b)?;
@@ -59,14 +63,6 @@ where
                 connection_id: msg.connection_hops_on_b[0].clone(),
             },
         )?;
-
-        // The client must not be frozen.
-        if client_state_of_a_on_b.is_frozen() {
-            return Err(ChannelError::FrozenClient {
-                client_id: client_id_on_b.clone(),
-            })
-            .map_err(ContextError::ChannelError);
-        }
 
         let expected_chan_end_on_a = ChannelEnd::new(
             State::Init,
@@ -81,12 +77,11 @@ where
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
         client_state_of_a_on_b
             .verify_membership(
-                msg.proof_height_on_a,
                 prefix_on_a,
                 &msg.proof_chan_end_on_a,
                 consensus_state_of_a_on_b.root(),
                 Path::ChannelEnd(chan_end_path_on_a),
-                expected_chan_end_on_a.try_into()?,
+                expected_chan_end_on_a.proto_encode_vec()?,
             )
             .map_err(ChannelError::VerifyChannelFailed)?;
     }

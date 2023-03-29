@@ -31,11 +31,7 @@ where
     let old_client_state = ctx.client_state(&client_id)?;
 
     // Check if the client is frozen.
-    if old_client_state.is_frozen() {
-        return Err(ContextError::ClientError(ClientError::ClientFrozen {
-            client_id,
-        }));
-    }
+    old_client_state.confirm_not_frozen()?;
 
     // Read the latest consensus state from the host chain store.
     let old_client_cons_state_path =
@@ -97,11 +93,13 @@ where
         consensus_state,
     )?;
 
-    ctx.emit_ibc_event(IbcEvent::UpgradeClient(UpgradeClient::new(
+    let event = IbcEvent::UpgradeClient(UpgradeClient::new(
         client_id,
         client_state.client_type(),
         client_state.latest_height(),
-    )));
+    ));
+    ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx.emit_ibc_event(event);
 
     Ok(())
 }
@@ -112,7 +110,7 @@ mod tests {
     use crate::core::ics02_client::handler::upgrade_client::execute;
     use crate::core::ics24_host::path::ClientConsensusStatePath;
     use crate::core::ValidationContext;
-    use crate::events::IbcEvent;
+    use crate::events::{IbcEvent, IbcEventType};
     use crate::{downcast, prelude::*};
     use rstest::*;
 
@@ -163,8 +161,11 @@ mod tests {
         let res = execute(&mut ctx, msg.clone());
         assert!(res.is_ok(), "execution happy path");
 
-        let upgrade_client_event =
-            downcast!(ctx.events.first().unwrap() => IbcEvent::UpgradeClient).unwrap();
+        assert!(matches!(
+            ctx.events[0],
+            IbcEvent::Message(IbcEventType::UpgradeClient)
+        ));
+        let upgrade_client_event = downcast!(&ctx.events[1] => IbcEvent::UpgradeClient).unwrap();
         assert_eq!(upgrade_client_event.client_id(), &msg.client_id);
         assert_eq!(upgrade_client_event.client_type(), &mock_client_type());
         assert_eq!(

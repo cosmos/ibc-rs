@@ -1,0 +1,23 @@
+# This workflow publishes the `ibc` on crates.io when a semver tag is
+# pushed to main.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"             # Push events to matching v*, i.e. v0.26.0, v1.0.0
+      - "v[0-9]+.[0-9]+.[0-9]+-pre.[0-9]+"  # e.g. v0.26.0-pre.1
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Publish crate
+        run: |
+          cd crates/ibc
+          cargo publish --token ${{ secrets.CRATES_TOKEN }}

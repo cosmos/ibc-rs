@@ -22,6 +22,11 @@ sp-io = { version = "20.0.0", default-features = false, optional = true }
 sp-runtime = { version = "21.0.0", default-features = false, optional = true }
 sp-std = { version = "7.0.0", default-features = false, optional = true }
 
+# The indirect dependency `syn` 2.0.4 has a bug that causes
+# compilation errors in `tendermint`. This is fixed in 2.0.5.
+# See https://github.com/informalsystems/tendermint-rs/issues/1286
+syn = ">=2.0.5"
+
 [features]
 panic-handler = []
 use-substrate = ["sp-core", "sp-io", "sp-runtime", "sp-std"]

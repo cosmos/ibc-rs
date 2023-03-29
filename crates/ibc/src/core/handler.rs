@@ -87,7 +87,7 @@ mod tests {
     use crate::core::ics26_routing::msgs::MsgEnvelope;
     use crate::core::ics26_routing::router::RouterMut;
     use crate::core::{dispatch, ValidationContext};
-    use crate::events::IbcEvent;
+    use crate::events::{IbcEvent, IbcEventType};
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
     use crate::mock::context::MockContext;
@@ -241,7 +241,11 @@ mod tests {
             .unwrap();
 
         // Figure out the ID of the client that was just created.
-        let client_id_event = ctx.events.first();
+        assert!(matches!(
+            ctx.events[0],
+            IbcEvent::Message(IbcEventType::CreateClient)
+        ));
+        let client_id_event = ctx.events.get(1);
         assert!(
             client_id_event.is_some(),
             "There was no event generated for client creation!"
@@ -538,11 +542,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(ctx.events.len(), 1);
-
-        let event = ctx.events.first().unwrap();
-
-        assert!(matches!(event, IbcEvent::OpenInitChannel(_)));
+        assert_eq!(ctx.events.len(), 2);
+        assert!(matches!(
+            ctx.events[0],
+            IbcEvent::Message(IbcEventType::OpenInitChannel)
+        ));
+        assert!(matches!(ctx.events[1], IbcEvent::OpenInitChannel(_)));
     }
 
     #[test]
@@ -558,11 +563,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(ctx.events.len(), 1);
-
-        let event = ctx.events.first().unwrap();
-
-        assert!(matches!(event, IbcEvent::OpenTryChannel(_)));
+        assert_eq!(ctx.events.len(), 2);
+        assert!(matches!(
+            ctx.events[0],
+            IbcEvent::Message(IbcEventType::OpenTryChannel)
+        ));
+        assert!(matches!(ctx.events[1], IbcEvent::OpenTryChannel(_)));
     }
 
     #[test]
@@ -588,11 +594,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(ctx.events.len(), 1);
-
-        let event = ctx.events.first().unwrap();
-
-        assert!(matches!(event, IbcEvent::OpenAckChannel(_)));
+        assert_eq!(ctx.events.len(), 2);
+        assert!(matches!(
+            ctx.events[0],
+            IbcEvent::Message(IbcEventType::OpenAckChannel)
+        ));
+        assert!(matches!(ctx.events[1], IbcEvent::OpenAckChannel(_)));
     }
 
     #[test]
@@ -618,11 +625,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(ctx.events.len(), 1);
-
-        let event = ctx.events.first().unwrap();
-
-        assert!(matches!(event, IbcEvent::OpenConfirmChannel(_)));
+        assert_eq!(ctx.events.len(), 2);
+        assert!(matches!(
+            ctx.events[0],
+            IbcEvent::Message(IbcEventType::OpenConfirmChannel)
+        ));
+        assert!(matches!(ctx.events[1], IbcEvent::OpenConfirmChannel(_)));
     }
 
     #[test]
@@ -648,11 +656,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(ctx.events.len(), 1);
-
-        let event = ctx.events.first().unwrap();
-
-        assert!(matches!(event, IbcEvent::CloseInitChannel(_)));
+        assert_eq!(ctx.events.len(), 2);
+        assert!(matches!(
+            ctx.events[0],
+            IbcEvent::Message(IbcEventType::CloseInitChannel)
+        ));
+        assert!(matches!(ctx.events[1], IbcEvent::CloseInitChannel(_)));
     }
 
     #[test]
@@ -678,10 +687,11 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(ctx.events.len(), 1);
-
-        let event = ctx.events.first().unwrap();
-
-        assert!(matches!(event, IbcEvent::CloseConfirmChannel(_)));
+        assert_eq!(ctx.events.len(), 2);
+        assert!(matches!(
+            ctx.events[0],
+            IbcEvent::Message(IbcEventType::CloseConfirmChannel)
+        ));
+        assert!(matches!(ctx.events[1], IbcEvent::CloseConfirmChannel(_)));
     }
 }

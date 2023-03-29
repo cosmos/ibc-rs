@@ -102,6 +102,7 @@ where
             conn_id_on_b,
             version,
         ));
+        ctx_b.emit_ibc_event(IbcEvent::Message(core_event.event_type()));
         ctx_b.emit_ibc_event(core_event);
 
         for module_event in extras.events {
@@ -126,7 +127,7 @@ mod tests {
                 router::RouterMut,
             },
         },
-        events::IbcEvent,
+        events::{IbcEvent, IbcEventType},
         prelude::*,
         test_utils::DummyTransferModule,
         Height,
@@ -224,10 +225,11 @@ mod tests {
 
         assert!(res.is_ok(), "Execution success: happy path");
 
-        assert_eq!(context.events.len(), 1);
+        assert_eq!(context.events.len(), 2);
         assert!(matches!(
-            context.events.first().unwrap(),
-            &IbcEvent::OpenTryChannel(_)
+            context.events[0],
+            IbcEvent::Message(IbcEventType::OpenTryChannel)
         ));
+        assert!(matches!(context.events[1], IbcEvent::OpenTryChannel(_)));
     }
 }

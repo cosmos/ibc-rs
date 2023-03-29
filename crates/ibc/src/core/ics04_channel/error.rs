@@ -12,7 +12,6 @@ use crate::timestamp::Timestamp;
 use crate::Height;
 
 use displaydoc::Display;
-use ibc_proto::protobuf::Error as ProtoError;
 
 #[derive(Debug, Display)]
 pub enum ChannelError {
@@ -24,8 +23,8 @@ pub enum ChannelError {
     UnknownState { state: i32 },
     /// channel order type unknown: `{type_id}`
     UnknownOrderType { type_id: String },
-    /// invalid channel end error: `{0}`
-    InvalidChannelEnd(ProtoError),
+    /// invalid channel end: `{channel_end}`
+    InvalidChannelEnd { channel_end: String },
     /// invalid connection hops length: expected `{expected}`; actual `{actual}`
     InvalidConnectionHopsLength { expected: usize, actual: usize },
     /// invalid signer address error: `{0}`
@@ -79,8 +78,6 @@ pub enum ChannelError {
     ConnectionNotOpen { connection_id: ConnectionId },
     /// Undefined counterparty connection for `{connection_id}`
     UndefinedConnectionCounterparty { connection_id: ConnectionId },
-    /// Client with id `{client_id}` is frozen
-    FrozenClient { client_id: ClientId },
     /// Channel `{channel_id}` should not be state `{state}`
     InvalidChannelState { channel_id: ChannelId, state: State },
     /// invalid proof: empty proof
@@ -102,8 +99,6 @@ pub enum PacketError {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// Client with id `{client_id}` is frozen
-    FrozenClient { client_id: ClientId },
     /// Receiving chain block height `{chain_height}` >= packet timeout height `{timeout_height}`
     LowPacketHeight {
         chain_height: Height,
@@ -130,13 +125,10 @@ pub enum PacketError {
     UndefinedConnectionCounterparty { connection_id: ConnectionId },
     /// invalid proof: empty proof
     InvalidProof,
-    /// Packet timeout height `{timeout_height}` > chain height `{chain_height}`
-    PacketTimeoutHeightNotReached {
+    /// Packet timeout height `{timeout_height}` > chain height `{chain_height} and timeout timestamp `{timeout_timestamp}` > chain timestamp `{chain_timestamp}`
+    PacketTimeoutNotReached {
         timeout_height: TimeoutHeight,
         chain_height: Height,
-    },
-    /// Packet timeout timestamp `{timeout_timestamp}` > chain timestamp `{chain_timestamp}`
-    PacketTimeoutTimestampNotReached {
         timeout_timestamp: Timestamp,
         chain_timestamp: Timestamp,
     },
@@ -188,6 +180,8 @@ pub enum PacketError {
         port_id: PortId,
         channel_id: ChannelId,
     },
+    /// Cannot encode sequence `{sequence}`
+    CannotEncodeSequence { sequence: Sequence },
 }
 
 #[cfg(feature = "std")]

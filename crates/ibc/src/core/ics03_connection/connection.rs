@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use ibc_proto::protobuf::Protobuf;
 
 use core::time::Duration;
 use core::{
@@ -10,7 +11,6 @@ use ibc_proto::ibc::core::connection::v1::{
     ConnectionEnd as RawConnectionEnd, Counterparty as RawCounterparty,
     IdentifiedConnection as RawIdentifiedConnection,
 };
-use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::error::ConnectionError;
@@ -360,6 +360,13 @@ impl ConnectionEnd {
     /// TODO: Clean this up, probably not necessary.
     pub fn validate_basic(&self) -> Result<(), ValidationError> {
         self.counterparty.validate_basic()
+    }
+
+    pub(crate) fn proto_encode_vec(&self) -> Result<Vec<u8>, ConnectionError> {
+        let value = self
+            .encode_vec()
+            .map_err(ConnectionError::InvalidConnectionEnd)?;
+        Ok(value)
     }
 }
 

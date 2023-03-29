@@ -58,13 +58,7 @@ pub fn send_packet_validate(
 
     let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
 
-    // prevent accidental sends with clients that cannot be updated
-    if client_state_of_b_on_a.is_frozen() {
-        return Err(PacketError::FrozenClient {
-            client_id: conn_end_on_a.client_id().clone(),
-        }
-        .into());
-    }
+    client_state_of_b_on_a.confirm_not_frozen()?;
 
     let latest_height_on_a = client_state_of_b_on_a.latest_height();
 
@@ -127,11 +121,13 @@ pub fn send_packet_execute(
         let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
 
         ctx_a.log_message("success: packet send".to_string());
-        ctx_a.emit_ibc_event(IbcEvent::SendPacket(SendPacket::new(
+        let event = IbcEvent::SendPacket(SendPacket::new(
             packet,
             chan_end_on_a.ordering,
             conn_id_on_a.clone(),
-        )));
+        ));
+        ctx_a.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx_a.emit_ibc_event(event);
     }
 
     Ok(())
@@ -155,7 +151,7 @@ mod tests {
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::events::IbcEvent;
+    use crate::events::{IbcEvent, IbcEventType};
     use crate::mock::context::MockContext;
     use crate::prelude::*;
     use crate::timestamp::Timestamp;
@@ -304,10 +300,13 @@ mod tests {
 
                     assert!(!test.ctx.events.is_empty()); // Some events must exist.
 
+                    assert_eq!(test.ctx.events.len(), 2);
+                    assert!(matches!(
+                        &test.ctx.events[0],
+                        &IbcEvent::Message(IbcEventType::SendPacket)
+                    ));
                     // TODO: The object in the output is a PacketResult what can we check on it?
-                    for e in test.ctx.events.iter() {
-                        assert!(matches!(e, &IbcEvent::SendPacket(_)));
-                    }
+                    assert!(matches!(&test.ctx.events[1], &IbcEvent::SendPacket(_)));
                 }
                 Err(e) => {
                     assert!(

@@ -117,16 +117,20 @@ where
         ctx_b.log_message("success: packet write acknowledgement".to_string());
 
         let conn_id_on_b = &chan_end_on_b.connection_hops()[0];
-        ctx_b.emit_ibc_event(IbcEvent::ReceivePacket(ReceivePacket::new(
+        let event = IbcEvent::ReceivePacket(ReceivePacket::new(
             msg.packet.clone(),
             chan_end_on_b.ordering,
             conn_id_on_b.clone(),
-        )));
-        ctx_b.emit_ibc_event(IbcEvent::WriteAcknowledgement(WriteAcknowledgement::new(
+        ));
+        ctx_b.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx_b.emit_ibc_event(event);
+        let event = IbcEvent::WriteAcknowledgement(WriteAcknowledgement::new(
             msg.packet,
             acknowledgement,
             conn_id_on_b.clone(),
-        )));
+        ));
+        ctx_b.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx_b.emit_ibc_event(event);
 
         for module_event in extras.events {
             ctx_b.emit_ibc_event(IbcEvent::AppModule(module_event));
@@ -152,7 +156,7 @@ mod tests {
                 router::RouterMut,
             },
         },
-        events::IbcEvent,
+        events::{IbcEvent, IbcEventType},
         prelude::*,
         test_utils::DummyTransferModule,
         timestamp::ZERO_DURATION,
@@ -256,8 +260,16 @@ mod tests {
 
         assert!(res.is_ok());
 
-        assert_eq!(ctx.events.len(), 2);
-        assert!(matches!(&ctx.events[0], &IbcEvent::ReceivePacket(_)));
-        assert!(matches!(&ctx.events[1], &IbcEvent::WriteAcknowledgement(_)));
+        assert_eq!(ctx.events.len(), 4);
+        assert!(matches!(
+            &ctx.events[0],
+            &IbcEvent::Message(IbcEventType::ReceivePacket)
+        ));
+        assert!(matches!(&ctx.events[1], &IbcEvent::ReceivePacket(_)));
+        assert!(matches!(
+            &ctx.events[2],
+            &IbcEvent::Message(IbcEventType::WriteAck)
+        ));
+        assert!(matches!(&ctx.events[3], &IbcEvent::WriteAcknowledgement(_)));
     }
 }

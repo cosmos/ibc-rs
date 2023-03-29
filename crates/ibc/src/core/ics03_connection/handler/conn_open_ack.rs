@@ -3,6 +3,7 @@
 use prost::Message;
 
 use crate::core::context::ContextError;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenAck;
@@ -11,9 +12,9 @@ use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath};
 use crate::core::ics24_host::Path;
 use crate::core::{ExecutionContext, ValidationContext};
-use crate::prelude::*;
 
 use crate::events::IbcEvent;
+use crate::prelude::*;
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
@@ -61,6 +62,10 @@ where
                 .map_err(|_| ConnectionError::Other {
                     description: "failed to fetch client state".to_string(),
                 })?;
+
+        client_state_of_b_on_a.confirm_not_frozen()?;
+        client_state_of_b_on_a.validate_proof_height(msg.proofs_height_on_b)?;
+
         let client_cons_state_path_on_a =
             ClientConsensusStatePath::new(vars.client_id_on_a(), &msg.proofs_height_on_b);
         let consensus_state_of_b_on_a = ctx_a
@@ -87,27 +92,25 @@ where
 
             client_state_of_b_on_a
                 .verify_membership(
-                    msg.proofs_height_on_b,
                     prefix_on_b,
                     &msg.proof_conn_end_on_b,
                     consensus_state_of_b_on_a.root(),
                     Path::Connection(ConnectionPath::new(&msg.conn_id_on_b)),
-                    expected_conn_end_on_b.try_into()?,
+                    expected_conn_end_on_b.proto_encode_vec()?,
                 )
                 .map_err(ConnectionError::VerifyConnectionState)?;
         }
 
         client_state_of_b_on_a
             .verify_membership(
-                msg.proofs_height_on_b,
                 prefix_on_b,
                 &msg.proof_client_state_of_a_on_b,
                 consensus_state_of_b_on_a.root(),
-                Path::ClientState(ClientStatePath::new(vars.client_id_on_a())),
+                Path::ClientState(ClientStatePath::new(vars.client_id_on_b())),
                 msg.client_state_of_a_on_b.encode_to_vec(),
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
-                client_id: vars.client_id_on_a().clone(),
+                client_id: vars.client_id_on_b().clone(),
                 client_error: e,
             })?;
 
@@ -122,12 +125,13 @@ where
 
         client_state_of_b_on_a
             .verify_membership(
-                msg.proofs_height_on_b,
                 prefix_on_b,
                 &msg.proof_consensus_state_of_a_on_b,
                 consensus_state_of_b_on_a.root(),
                 Path::ClientConsensusState(client_cons_state_path_on_b),
-                expected_consensus_state_of_a_on_b.try_into()?,
+                expected_consensus_state_of_a_on_b
+                    .encode_vec()
+                    .map_err(ClientError::Encode)?,
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
                 height: msg.proofs_height_on_b,
@@ -154,12 +158,14 @@ fn execute_impl<Ctx>(
 where
     Ctx: ExecutionContext,
 {
-    ctx_a.emit_ibc_event(IbcEvent::OpenAckConnection(OpenAck::new(
+    let event = IbcEvent::OpenAckConnection(OpenAck::new(
         msg.conn_id_on_a.clone(),
         vars.client_id_on_a().clone(),
         msg.conn_id_on_b.clone(),
         vars.client_id_on_b().clone(),
-    )));
+    ));
+    ctx_a.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx_a.emit_ibc_event(event);
 
     ctx_a.log_message("success: conn_open_ack verification passed".to_string());
 
@@ -219,7 +225,7 @@ mod tests {
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ValidationContext;
 
-    use crate::events::IbcEvent;
+    use crate::events::{IbcEvent, IbcEventType};
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::timestamp::ZERO_DURATION;
@@ -332,9 +338,13 @@ mod tests {
             }
             Expect::Success => {
                 assert!(res.is_ok(), "{err_msg}");
-                assert_eq!(fxt.ctx.events.len(), 1);
+                assert_eq!(fxt.ctx.events.len(), 2);
 
-                let event = fxt.ctx.events.first().unwrap();
+                assert!(matches!(
+                    fxt.ctx.events[0],
+                    IbcEvent::Message(IbcEventType::OpenAckConnection)
+                ));
+                let event = &fxt.ctx.events[1];
                 assert!(matches!(event, &IbcEvent::OpenAckConnection(_)));
 
                 let conn_open_try_event = match event {

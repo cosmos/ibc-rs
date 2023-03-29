@@ -3,6 +3,7 @@
 use prost::Message;
 
 use crate::core::context::ContextError;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenTry;
@@ -58,6 +59,10 @@ where
                 .map_err(|_| ConnectionError::Other {
                     description: "failed to fetch client state".to_string(),
                 })?;
+
+        client_state_of_a_on_b.confirm_not_frozen()?;
+        client_state_of_a_on_b.validate_proof_height(msg.proofs_height_on_a)?;
+
         let client_cons_state_path_on_b =
             ClientConsensusStatePath::new(&msg.client_id_on_b, &msg.proofs_height_on_a);
         let consensus_state_of_a_on_b = ctx_b
@@ -80,19 +85,17 @@ where
 
             client_state_of_a_on_b
                 .verify_membership(
-                    msg.proofs_height_on_a,
                     prefix_on_a,
                     &msg.proof_conn_end_on_a,
                     consensus_state_of_a_on_b.root(),
                     Path::Connection(ConnectionPath::new(&vars.conn_id_on_a)),
-                    expected_conn_end_on_a.try_into()?,
+                    expected_conn_end_on_a.proto_encode_vec()?,
                 )
                 .map_err(ConnectionError::VerifyConnectionState)?;
         }
 
         client_state_of_a_on_b
             .verify_membership(
-                msg.proofs_height_on_a,
                 prefix_on_a,
                 &msg.proof_client_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
@@ -111,16 +114,17 @@ where
             })?;
 
         let client_cons_state_path_on_a =
-            ClientConsensusStatePath::new(&msg.client_id_on_b, &msg.consensus_height_of_b_on_a);
+            ClientConsensusStatePath::new(client_id_on_a, &msg.consensus_height_of_b_on_a);
 
         client_state_of_a_on_b
             .verify_membership(
-                msg.proofs_height_on_a,
                 prefix_on_a,
                 &msg.proof_consensus_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
                 Path::ClientConsensusState(client_cons_state_path_on_a),
-                expected_consensus_state_of_b_on_a.try_into()?,
+                expected_consensus_state_of_b_on_a
+                    .encode_vec()
+                    .map_err(ClientError::Encode)?,
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
                 height: msg.proofs_height_on_a,
@@ -152,12 +156,14 @@ where
         .counterparty()
         .connection_id()
         .ok_or(ConnectionError::InvalidCounterparty)?;
-    ctx_b.emit_ibc_event(IbcEvent::OpenTryConnection(OpenTry::new(
+    let event = IbcEvent::OpenTryConnection(OpenTry::new(
         vars.conn_id_on_b.clone(),
         msg.client_id_on_b.clone(),
         conn_id_on_a.clone(),
         vars.client_id_on_a.clone(),
-    )));
+    ));
+    ctx_b.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx_b.emit_ibc_event(event);
     ctx_b.log_message("success: conn_open_try verification passed".to_string());
 
     ctx_b.increase_connection_counter();
@@ -215,7 +221,7 @@ mod tests {
     use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::ValidationContext;
-    use crate::events::IbcEvent;
+    use crate::events::{IbcEvent, IbcEventType};
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::Height;
@@ -297,9 +303,13 @@ mod tests {
             }
             Expect::Success => {
                 assert!(res.is_ok(), "{err_msg}");
-                assert_eq!(fxt.ctx.events.len(), 1);
+                assert_eq!(fxt.ctx.events.len(), 2);
 
-                let event = fxt.ctx.events.first().unwrap();
+                assert!(matches!(
+                    fxt.ctx.events[0],
+                    IbcEvent::Message(IbcEventType::OpenTryConnection)
+                ));
+                let event = &fxt.ctx.events[1];
                 assert!(matches!(event, &IbcEvent::OpenTryConnection(_)));
 
                 let conn_open_try_event = match event {

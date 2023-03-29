@@ -30,9 +30,7 @@ where
     // Read client state from the host chain store.
     let client_state = ctx.client_state(&client_id)?;
 
-    if client_state.is_frozen() {
-        return Err(ClientError::ClientFrozen { client_id }.into());
-    }
+    client_state.confirm_not_frozen()?;
 
     // Read consensus state from the host chain store.
     let latest_client_cons_state_path =
@@ -113,13 +111,15 @@ where
     {
         let consensus_height = client_state.latest_height();
 
-        ctx.emit_ibc_event(IbcEvent::UpdateClient(UpdateClient::new(
+        let event = IbcEvent::UpdateClient(UpdateClient::new(
             client_id,
             client_state.client_type(),
             consensus_height,
             vec![consensus_height],
             header,
-        )));
+        ));
+        ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx.emit_ibc_event(event);
     }
 
     Ok(())
@@ -139,7 +139,7 @@ mod tests {
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ValidationContext;
-    use crate::events::IbcEvent;
+    use crate::events::{IbcEvent, IbcEventType};
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::client_state::MockClientState;
     use crate::mock::context::MockContext;
@@ -238,7 +238,7 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(!client_state.is_frozen());
+        assert!(client_state.confirm_not_frozen().is_ok());
         assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
@@ -285,7 +285,7 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(!client_state.is_frozen());
+        assert!(client_state.confirm_not_frozen().is_ok());
         assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
@@ -346,7 +346,7 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(!client_state.is_frozen());
+        assert!(client_state.confirm_not_frozen().is_ok());
         assert_eq!(client_state.latest_height(), latest_header_height);
         assert_eq!(client_state, ctx.latest_client_states(&msg.client_id));
     }
@@ -413,8 +413,11 @@ mod tests {
         let res = execute(&mut ctx, msg);
         assert!(res.is_ok());
 
-        let update_client_event =
-            downcast!(ctx.events.first().unwrap() => IbcEvent::UpdateClient).unwrap();
+        assert!(matches!(
+            ctx.events[0],
+            IbcEvent::Message(IbcEventType::UpdateClient)
+        ));
+        let update_client_event = downcast!(&ctx.events[1] => IbcEvent::UpdateClient).unwrap();
 
         assert_eq!(update_client_event.client_id(), &client_id);
         assert_eq!(update_client_event.client_type(), &mock_client_type());

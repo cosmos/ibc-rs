@@ -80,6 +80,7 @@ where
                 conn_id_on_a,
             ))
         };
+        ctx_a.emit_ibc_event(IbcEvent::Message(core_event.event_type()));
         ctx_a.emit_ibc_event(core_event);
 
         for module_event in extras.events {
@@ -102,7 +103,7 @@ mod tests {
     use crate::core::ics26_routing::module::ModuleContext;
     use crate::core::ics26_routing::router::RouterMut;
     use crate::core::ValidationContext;
-    use crate::events::IbcEvent;
+    use crate::events::{IbcEvent, IbcEventType};
     use crate::prelude::*;
 
     use crate::core::ics03_connection::connection::ConnectionEnd;
@@ -170,10 +171,11 @@ mod tests {
         let res = chan_close_init_execute(&mut context, module_id, msg_chan_close_init);
         assert!(res.is_ok(), "Execution happy path");
 
-        assert_eq!(context.events.len(), 1);
+        assert_eq!(context.events.len(), 2);
         assert!(matches!(
-            context.events.first().unwrap(),
-            &IbcEvent::CloseInitChannel(_)
+            context.events[0],
+            IbcEvent::Message(IbcEventType::CloseInitChannel)
         ));
+        assert!(matches!(context.events[1], IbcEvent::CloseInitChannel(_)));
     }
 }

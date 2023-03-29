@@ -890,12 +890,7 @@ impl ValidationContext for MockContext {
             })
             .map_err(ContextError::ConnectionError)?;
 
-        if mock_client_state.is_frozen() {
-            return Err(ConnectionError::InvalidClientState {
-                reason: "client is frozen".to_string(),
-            })
-            .map_err(ContextError::ConnectionError);
-        }
+        mock_client_state.confirm_not_frozen()?;
 
         let self_chain_id = &self.host_chain_id;
         let self_revision_number = self_chain_id.version();
@@ -1620,18 +1615,18 @@ mod tests {
             ) -> Result<(), PortError> {
                 if self.owned_ports.contains(&port_path.0) {
                     return Err(PortError::PortAlreadyBound {
-                        port_id: port_path.clone().0,
+                        port_id: port_path.0,
                         port_id_owner: port_owner.to_string(),
                     });
                 }
-                self.owned_ports.push(port_path.0.clone());
+                self.owned_ports.push(port_path.0);
                 Ok(())
             }
 
             fn release_port(&mut self, port_path: PortPath) -> Result<(), PortError> {
                 if !self.owned_ports.contains(&port_path.0) {
                     return Err(PortError::PortNotBound {
-                        port_id: port_path.clone().0,
+                        port_id: port_path.0,
                     });
                 }
                 Ok(())
@@ -1768,18 +1763,18 @@ mod tests {
             ) -> Result<(), PortError> {
                 if self.owned_ports.contains(&port_path.0) {
                     return Err(PortError::PortAlreadyBound {
-                        port_id: port_path.clone().0,
+                        port_id: port_path.0,
                         port_id_owner: port_owner.to_string(),
                     });
                 }
-                self.owned_ports.push(port_path.0.clone());
+                self.owned_ports.push(port_path.0);
                 Ok(())
             }
 
             fn release_port(&mut self, port_path: PortPath) -> Result<(), PortError> {
                 if !self.owned_ports.contains(&port_path.0) {
                     return Err(PortError::PortNotBound {
-                        port_id: port_path.clone().0,
+                        port_id: port_path.0,
                     });
                 }
                 Ok(())
