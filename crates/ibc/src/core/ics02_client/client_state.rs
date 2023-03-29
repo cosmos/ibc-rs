@@ -19,6 +19,7 @@ use crate::prelude::*;
 use crate::Height;
 
 use super::consensus_state::ConsensusState;
+use super::msgs::update_client::UpdateClientKind;
 
 use crate::core::{ContextError, ValidationContext};
 
@@ -66,6 +67,15 @@ pub trait ClientState:
     }
 
     fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError>;
+
+    /// checks the that the structure of a ClientMessage is correct and that all
+    /// authentication data provided is valid.
+    fn verify_client_message(
+        &self,
+        ctx: &dyn ValidationContext,
+        client_id: ClientId,
+        client_message: UpdateClientKind,
+    ) -> Result<(), ClientError>;
 
     fn check_header_and_update_state(
         &self,

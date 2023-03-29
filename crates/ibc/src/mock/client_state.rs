@@ -1,3 +1,4 @@
+use crate::core::ics02_client::msgs::update_client::UpdateClientKind;
 use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap as HashMap;
@@ -282,6 +283,15 @@ impl ClientState for MockClientState {
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
         _path: Path,
+    ) -> Result<(), ClientError> {
+        Ok(())
+    }
+
+    fn verify_client_message(
+        &self,
+        _ctx: &dyn ValidationContext,
+        _client_id: ClientId,
+        _client_message: UpdateClientKind,
     ) -> Result<(), ClientError> {
         Ok(())
     }

@@ -1,3 +1,4 @@
+use crate::core::ics02_client::msgs::update_client::UpdateClientKind;
 use crate::prelude::*;
 
 use core::convert::{TryFrom, TryInto};
@@ -216,6 +217,74 @@ impl ClientState {
         })
     }
 
+    fn verify_header(
+        &self,
+        ctx: &dyn ValidationContext,
+        client_id: ClientId,
+        header: TmHeader,
+    ) -> Result<(), ClientError> {
+        let trusted_state = {
+            let trusted_client_cons_state_path =
+                ClientConsensusStatePath::new(&client_id, &header.trusted_height);
+            let trusted_consensus_state = downcast_tm_consensus_state(
+                ctx.consensus_state(&trusted_client_cons_state_path)
+                    .map_err(|e| match e {
+                        ContextError::ClientError(e) => e,
+                        _ => ClientError::Other {
+                            description: e.to_string(),
+                        },
+                    })?
+                    .as_ref(),
+            )?;
+
+            TrustedBlockState {
+                chain_id: &self.chain_id.clone().into(),
+                header_time: trusted_consensus_state.timestamp,
+                height: header
+                    .trusted_height
+                    .revision_height()
+                    .try_into()
+                    .map_err(|_| ClientError::ClientSpecific {
+                        description: Error::InvalidHeaderHeight {
+                            height: header.trusted_height.revision_height(),
+                        }
+                        .to_string(),
+                    })?,
+                next_validators: &header.trusted_validator_set,
+                next_validators_hash: trusted_consensus_state.next_validators_hash,
+            }
+        };
+
+        let untrusted_state = UntrustedBlockState {
+            signed_header: &header.signed_header,
+            validators: &header.validator_set,
+            // NB: This will skip the
+            // VerificationPredicates::next_validators_match check for the
+            // untrusted state.
+            next_validators: None,
+        };
+
+        let options = self.as_light_client_options()?;
+        let now = ctx
+            .host_timestamp()
+            .map_err(|e| ClientError::Other {
+                description: e.to_string(),
+            })?
+            .into_tm_time()
+            .unwrap();
+
+        self.verifier
+            .verify(untrusted_state, trusted_state, &options, now)
+            .into_result()?;
+
+        // FIXME (BEFORE MERGE):
+        // do we need the checks under the comments "Monotonicity checks for timestamps ..."
+        // and "(cs-trusted, cs-prev, cs-new)"?
+        // Aren't these covered in the `self.verifier.verify()` call?
+
+        Ok(())
+    }
+
     fn check_header_validator_set(
         trusted_consensus_state: &TmConsensusState,
         header: &Header,
@@ -270,6 +339,9 @@ impl ClientState {
                 current_timestamp.into_tm_time().unwrap(),
             )
             .into_result()?;
+
+        // FIXME (BEFORE MERGE):
+        //
 
         Ok(())
     }
@@ -340,6 +412,21 @@ impl Ics2ClientState for ClientState {
 
     fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError> {
         TmConsensusState::try_from(consensus_state).map(TmConsensusState::into_box)
+    }
+
+    fn verify_client_message(
+        &self,
+        ctx: &dyn ValidationContext,
+        client_id: ClientId,
+        client_message: UpdateClientKind,
+    ) -> Result<(), ClientError> {
+        match client_message {
+            UpdateClientKind::UpdateHeader(header) => {
+                let header = TmHeader::try_from(header)?;
+                self.verify_header(ctx, client_id, header)
+            }
+            UpdateClientKind::Misbehaviour(_) => todo!(),
+        }
     }
 
     fn check_misbehaviour_and_update_state(
