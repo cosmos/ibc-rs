@@ -104,7 +104,7 @@ mod tests {
         #[derive(Clone, Debug)]
         enum TestMsg {
             Ics26(MsgEnvelope),
-            Ics20(MsgTransfer<PrefixedCoin>),
+            Ics20(MsgTransfer),
         }
 
         impl From<MsgEnvelope> for TestMsg {
@@ -113,8 +113,8 @@ mod tests {
             }
         }
 
-        impl From<MsgTransfer<PrefixedCoin>> for TestMsg {
-            fn from(msg: MsgTransfer<PrefixedCoin>) -> Self {
+        impl From<MsgTransfer> for TestMsg {
+            fn from(msg: MsgTransfer) -> Self {
                 Self::Ics20(msg)
             }
         }
@@ -207,15 +207,15 @@ mod tests {
         msg_to_on_close.packet.timeout_height_on_b = msg_transfer_two.timeout_height_on_b;
         msg_to_on_close.packet.timeout_timestamp_on_b = msg_transfer_two.timeout_timestamp_on_b;
 
-        let denom = msg_transfer_two.token.denom.clone();
+        let denom = msg_transfer_two.packet_data.token.denom.clone();
         let packet_data = {
             let data = PacketData {
                 token: PrefixedCoin {
                     denom,
-                    amount: msg_transfer_two.token.amount,
+                    amount: msg_transfer_two.packet_data.token.amount,
                 },
-                sender: msg_transfer_two.sender.clone(),
-                receiver: msg_transfer_two.receiver.clone(),
+                sender: msg_transfer_two.packet_data.sender.clone(),
+                receiver: msg_transfer_two.packet_data.receiver.clone(),
             };
             serde_json::to_vec(&data).expect("PacketData's infallible Serialize impl failed")
         };
