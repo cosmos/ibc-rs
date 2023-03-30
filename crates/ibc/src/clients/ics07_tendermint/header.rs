@@ -29,8 +29,7 @@ pub struct Header {
     pub signed_header: SignedHeader, // contains the commitment root
     pub validator_set: ValidatorSet, // the validator set that signed Header
     pub trusted_height: Height, // the height of a trusted header seen by client less than or equal to Header
-    // TODO(thane): Rename this to trusted_next_validator_set?
-    pub trusted_validator_set: ValidatorSet, // the last trusted validator set at trusted height
+    pub trusted_next_validator_set: ValidatorSet, // the last trusted validator set at trusted height
 }
 
 impl core::fmt::Debug for Header {
@@ -41,7 +40,7 @@ impl core::fmt::Debug for Header {
 
 impl Display for Header {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "Header {{ signed_header: {}, validator_set: {}, trusted_height: {}, trusted_validator_set: {} }}", PrettySignedHeader(&self.signed_header), PrettyValidatorSet(&self.validator_set), self.trusted_height, PrettyValidatorSet(&self.trusted_validator_set))
+        write!(f, "Header {{ signed_header: {}, validator_set: {}, trusted_height: {}, trusted_validator_set: {} }}", PrettySignedHeader(&self.signed_header), PrettyValidatorSet(&self.validator_set), self.trusted_height, PrettyValidatorSet(&self.trusted_next_validator_set))
     }
 }
 
@@ -81,7 +80,7 @@ impl Header {
                 .map_err(|_| Error::InvalidHeaderHeight {
                     height: self.trusted_height.revision_height(),
                 })?,
-            next_validators: &self.trusted_validator_set,
+            next_validators: &self.trusted_next_validator_set,
             next_validators_hash: consensus_state.next_validators_hash,
         })
     }
@@ -141,7 +140,7 @@ impl TryFrom<RawHeader> for Header {
                 .trusted_height
                 .and_then(|raw_height| raw_height.try_into().ok())
                 .ok_or(Error::MissingTrustedHeight)?,
-            trusted_validator_set: raw
+            trusted_next_validator_set: raw
                 .trusted_validators
                 .ok_or(Error::MissingTrustedValidatorSet)?
                 .try_into()
@@ -196,7 +195,7 @@ impl From<Header> for RawHeader {
             signed_header: Some(value.signed_header.into()),
             validator_set: Some(value.validator_set.into()),
             trusted_height: Some(value.trusted_height.into()),
-            trusted_validators: Some(value.trusted_validator_set.into()),
+            trusted_validators: Some(value.trusted_next_validator_set.into()),
         }
     }
 }
@@ -263,7 +262,7 @@ pub mod test_util {
             signed_header: shdr,
             validator_set: vs.clone(),
             trusted_height: Height::new(0, 1).unwrap(),
-            trusted_validator_set: vs,
+            trusted_next_validator_set: vs,
         }
     }
 
@@ -277,7 +276,7 @@ pub mod test_util {
                 signed_header: light_block.signed_header,
                 validator_set: light_block.validators,
                 trusted_height,
-                trusted_validator_set: light_block.next_validators,
+                trusted_next_validator_set: light_block.next_validators,
             }
         }
     }

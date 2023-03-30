@@ -237,6 +237,19 @@ impl ClientState {
                     .as_ref(),
             )?;
 
+            // `header.trusted_validator_set` was given to us by the relayer. Thus, we need to
+            // ensure that the relayer gave us the right set, according to the hash we have
+            // stored on chain.
+            if header.trusted_next_validator_set.hash()
+                != trusted_consensus_state.next_validators_hash
+            {
+                return Err(ClientError::HeaderVerificationFailure {
+                    reason:
+                        "header trusted next validator set hash does not match hash stored on chain"
+                            .to_string(),
+                });
+            }
+
             TrustedBlockState {
                 chain_id: &self.chain_id.clone().into(),
                 header_time: trusted_consensus_state.timestamp,
@@ -250,7 +263,7 @@ impl ClientState {
                         }
                         .to_string(),
                     })?,
-                next_validators: &header.trusted_validator_set,
+                next_validators: &header.trusted_next_validator_set,
                 next_validators_hash: trusted_consensus_state.next_validators_hash,
             }
         };
@@ -289,11 +302,11 @@ impl ClientState {
         trusted_consensus_state: &TmConsensusState,
         header: &Header,
     ) -> Result<(), ClientError> {
-        let trusted_val_hash = header.trusted_validator_set.hash();
+        let trusted_val_hash = header.trusted_next_validator_set.hash();
 
         if trusted_consensus_state.next_validators_hash != trusted_val_hash {
             return Err(Error::MisbehaviourTrustedValidatorHashMismatch {
-                trusted_validator_set: header.trusted_validator_set.validators().clone(),
+                trusted_validator_set: header.trusted_next_validator_set.validators().clone(),
                 next_validators_hash: trusted_consensus_state.next_validators_hash,
                 trusted_val_hash,
             }
@@ -584,7 +597,7 @@ impl Ics2ClientState for ClientState {
                     }
                     .to_string(),
                 })?,
-            next_validators: &header.trusted_validator_set,
+            next_validators: &header.trusted_next_validator_set,
             next_validators_hash: trusted_consensus_state.next_validators_hash,
         };
 
