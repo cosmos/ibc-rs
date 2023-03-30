@@ -235,6 +235,20 @@ impl ClientState {
             });
         }
 
+        // We also need to ensure that the trusted height (representing the
+        // height of the header already on chain for which this client update is
+        // based on) must be smaller than height of the new header that we're
+        // installing.
+        if header.height() <= header.trusted_height {
+            return Err(ClientError::HeaderVerificationFailure {
+                reason: format!(
+                    "header height <= header trusted height ({} <= {})",
+                    header.height(),
+                    header.trusted_height
+                ),
+            });
+        }
+
         // Call into tendermint-light-client, which contains (almost) all the verification we need
         {
             let trusted_state =
@@ -304,7 +318,6 @@ impl ClientState {
                 .verify(untrusted_state, trusted_state, &options, now)
                 .into_result()?;
         }
-
 
         // The final 2 checks ensure that:
         // 1. for all headers, the new header has a larger timestamp than the “previous header”
