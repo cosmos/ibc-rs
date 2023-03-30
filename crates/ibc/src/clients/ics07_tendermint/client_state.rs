@@ -223,73 +223,88 @@ impl ClientState {
         client_id: ClientId,
         header: TmHeader,
     ) -> Result<(), ClientError> {
-        let trusted_state = {
-            let trusted_client_cons_state_path =
-                ClientConsensusStatePath::new(&client_id, &header.trusted_height);
-            let trusted_consensus_state = downcast_tm_consensus_state(
-                ctx.consensus_state(&trusted_client_cons_state_path)
-                    .map_err(|e| match e {
-                        ContextError::ClientError(e) => e,
-                        _ => ClientError::Other {
-                            description: e.to_string(),
-                        },
-                    })?
-                    .as_ref(),
-            )?;
+        // The tendermint-light-client crate though works on heights that are assumed
+        // to have the same revision number. We ensure this here.
+        if header.height().revision_number() != self.chain_id().version() {
+            return Err(ClientError::ClientSpecific {
+                description: Error::MismatchedRevisions {
+                    current_revision: self.chain_id().version(),
+                    update_revision: header.height().revision_number(),
+                }
+                .to_string(),
+            });
+        }
 
-            // `header.trusted_validator_set` was given to us by the relayer. Thus, we need to
-            // ensure that the relayer gave us the right set, according to the hash we have
-            // stored on chain.
-            if header.trusted_next_validator_set.hash()
-                != trusted_consensus_state.next_validators_hash
-            {
-                return Err(ClientError::HeaderVerificationFailure {
+        // Call into tendermint-light-client, which contains (almost) all the verification we need
+        {
+            let trusted_state =
+                {
+                    let trusted_client_cons_state_path =
+                        ClientConsensusStatePath::new(&client_id, &header.trusted_height);
+                    let trusted_consensus_state = downcast_tm_consensus_state(
+                        ctx.consensus_state(&trusted_client_cons_state_path)
+                            .map_err(|e| match e {
+                                ContextError::ClientError(e) => e,
+                                _ => ClientError::Other {
+                                    description: e.to_string(),
+                                },
+                            })?
+                            .as_ref(),
+                    )?;
+
+                    // `header.trusted_validator_set` was given to us by the relayer. Thus, we need to
+                    // ensure that the relayer gave us the right set, according to the hash we have
+                    // stored on chain.
+                    if header.trusted_next_validator_set.hash()
+                        != trusted_consensus_state.next_validators_hash
+                    {
+                        return Err(ClientError::HeaderVerificationFailure {
                     reason:
                         "header trusted next validator set hash does not match hash stored on chain"
                             .to_string(),
                 });
-            }
+                    }
 
-            TrustedBlockState {
-                chain_id: &self.chain_id.clone().into(),
-                header_time: trusted_consensus_state.timestamp,
-                height: header
-                    .trusted_height
-                    .revision_height()
-                    .try_into()
-                    .map_err(|_| ClientError::ClientSpecific {
-                        description: Error::InvalidHeaderHeight {
-                            height: header.trusted_height.revision_height(),
-                        }
-                        .to_string(),
-                    })?,
-                next_validators: &header.trusted_next_validator_set,
-                next_validators_hash: trusted_consensus_state.next_validators_hash,
-            }
-        };
+                    TrustedBlockState {
+                        chain_id: &self.chain_id.clone().into(),
+                        header_time: trusted_consensus_state.timestamp,
+                        height: header.trusted_height.revision_height().try_into().map_err(
+                            |_| ClientError::ClientSpecific {
+                                description: Error::InvalidHeaderHeight {
+                                    height: header.trusted_height.revision_height(),
+                                }
+                                .to_string(),
+                            },
+                        )?,
+                        next_validators: &header.trusted_next_validator_set,
+                        next_validators_hash: trusted_consensus_state.next_validators_hash,
+                    }
+                };
 
-        let untrusted_state = UntrustedBlockState {
-            signed_header: &header.signed_header,
-            validators: &header.validator_set,
-            // NB: This will skip the
-            // VerificationPredicates::next_validators_match check for the
-            // untrusted state.
-            next_validators: None,
-        };
+            let untrusted_state = UntrustedBlockState {
+                signed_header: &header.signed_header,
+                validators: &header.validator_set,
+                // NB: This will skip the
+                // VerificationPredicates::next_validators_match check for the
+                // untrusted state.
+                next_validators: None,
+            };
 
-        let options = self.as_light_client_options()?;
-        let now = ctx
-            .host_timestamp()
-            .map_err(|e| ClientError::Other {
-                description: e.to_string(),
-            })?
-            .into_tm_time()
-            .unwrap();
+            let options = self.as_light_client_options()?;
+            let now = ctx
+                .host_timestamp()
+                .map_err(|e| ClientError::Other {
+                    description: e.to_string(),
+                })?
+                .into_tm_time()
+                .unwrap();
 
-        // main header verification, delegated to the tendermint-light-client crate.
-        self.verifier
-            .verify(untrusted_state, trusted_state, &options, now)
-            .into_result()?;
+            // main header verification, delegated to the tendermint-light-client crate.
+            self.verifier
+                .verify(untrusted_state, trusted_state, &options, now)
+                .into_result()?;
+        }
+
 
         // The final 2 checks ensure that:
         // 1. for all headers, the new header has a larger timestamp than the “previous header”
