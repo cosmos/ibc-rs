@@ -15,9 +15,9 @@ pub const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
 
 pub enum UpdateClientKind {
     /// this is the typical scenario where a new header is submitted to the client
-    /// to update the client 
+    /// to update the client
     UpdateHeader(Any),
-    /// this is the scenario where misbehaviour is submitted to the client 
+    /// this is the scenario where misbehaviour is submitted to the client
     /// (e.g 2 headers with the same height in Tendermint)
     Misbehaviour(Any),
 }
