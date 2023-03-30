@@ -290,10 +290,64 @@ impl ClientState {
             .verify(untrusted_state, trusted_state, &options, now)
             .into_result()?;
 
-        // FIXME (BEFORE MERGE):
-        // do we need the checks under the comments "Monotonicity checks for timestamps ..."
-        // and "(cs-trusted, cs-prev, cs-new)"?
-        // Aren't these covered in the `self.verifier.verify()` call?
+        // The final 2 checks ensure that:
+        // 1. for all headers, the new header has a larger timestamp than the “previous header”
+        // 2. if a header comes in and is not the “last” header, then we also ensure that its timestamp
+        //    is less than the “next header”
+        // Together, these 2 checks ensure the monotonicity of timestamps.
+        let maybe_prev_cs = ctx
+            .prev_consensus_state(&client_id, &header.height())
+            .map_err(|e| match e {
+                ContextError::ClientError(e) => e,
+                _ => ClientError::Other {
+                    description: e.to_string(),
+                },
+            })?
+            .as_ref()
+            .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
+            .transpose()?;
+
+        if let Some(prev_cs) = maybe_prev_cs {
+            // New (untrusted) header timestamp cannot occur before the
+            // previous consensus state's height
+            if header.signed_header.header().time < prev_cs.timestamp {
+                return Err(ClientError::ClientSpecific {
+                    description: Error::HeaderTimestampTooLow {
+                        actual: header.signed_header.header().time.to_string(),
+                        min: prev_cs.timestamp.to_string(),
+                    }
+                    .to_string(),
+                });
+            }
+        }
+
+        if header.height() < self.latest_height() {
+            let maybe_next_cs = ctx
+                .next_consensus_state(&client_id, &header.height())
+                .map_err(|e| match e {
+                    ContextError::ClientError(e) => e,
+                    _ => ClientError::Other {
+                        description: e.to_string(),
+                    },
+                })?
+                .as_ref()
+                .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
+                .transpose()?;
+
+            if let Some(next_cs) = maybe_next_cs {
+                // New (untrusted) header timestamp cannot occur after next
+                // consensus state's height
+                if header.signed_header.header().time > next_cs.timestamp {
+                    return Err(ClientError::ClientSpecific {
+                        description: Error::HeaderTimestampTooHigh {
+                            actual: header.signed_header.header().time.to_string(),
+                            max: next_cs.timestamp.to_string(),
+                        }
+                        .to_string(),
+                    });
+                }
+            }
+        }
 
         Ok(())
     }
