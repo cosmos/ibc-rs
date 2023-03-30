@@ -353,9 +353,6 @@ impl ClientState {
             )
             .into_result()?;
 
-        // FIXME (BEFORE MERGE):
-        //
-
         Ok(())
     }
 
