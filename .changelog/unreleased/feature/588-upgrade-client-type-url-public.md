@@ -1,0 +1,1 @@
+- upgrade_client: Make `TYPE_URL` public ([#588](https://github.com/cosmos/ibc-rs/issues/588))
