@@ -217,6 +217,26 @@ impl ClientState {
         })
     }
 
+    // `header.trusted_validator_set` was given to us by the relayer. Thus, we
+    // need to ensure that the relayer gave us the right set, i.e. by ensuring
+    // that it matches the hash we have stored on chain.
+    fn check_header_trusted_next_validator_set(
+        &self,
+        header: &TmHeader,
+        trusted_consensus_state: &TmConsensusState,
+    ) -> Result<(), ClientError> {
+        if header.trusted_next_validator_set.hash() == trusted_consensus_state.next_validators_hash
+        {
+            Ok(())
+        } else {
+            Err(ClientError::HeaderVerificationFailure {
+                reason:
+                    "header trusted next validator set hash does not match hash stored on chain"
+                        .to_string(),
+            })
+        }
+    }
+
     fn verify_header(
         &self,
         ctx: &dyn ValidationContext,
@@ -249,52 +269,42 @@ impl ClientState {
             });
         }
 
-        // Delegate to tendermint-light-client, which contains the required checks 
+        // Delegate to tendermint-light-client, which contains the required checks
         // of the new header against the trusted consensus state.
         {
-            let trusted_state =
-                {
-                    let trusted_client_cons_state_path =
-                        ClientConsensusStatePath::new(&client_id, &header.trusted_height);
-                    let trusted_consensus_state = downcast_tm_consensus_state(
-                        ctx.consensus_state(&trusted_client_cons_state_path)
-                            .map_err(|e| match e {
-                                ContextError::ClientError(e) => e,
-                                _ => ClientError::Other {
-                                    description: e.to_string(),
-                                },
-                            })?
-                            .as_ref(),
-                    )?;
-
-                    // `header.trusted_validator_set` was given to us by the relayer. Thus, we need to
-                    // ensure that the relayer gave us the right set, according to the hash we have
-                    // stored on chain.
-                    if header.trusted_next_validator_set.hash()
-                        != trusted_consensus_state.next_validators_hash
-                    {
-                        return Err(ClientError::HeaderVerificationFailure {
-                    reason:
-                        "header trusted next validator set hash does not match hash stored on chain"
-                            .to_string(),
-                });
-                    }
-
-                    TrustedBlockState {
-                        chain_id: &self.chain_id.clone().into(),
-                        header_time: trusted_consensus_state.timestamp,
-                        height: header.trusted_height.revision_height().try_into().map_err(
-                            |_| ClientError::ClientSpecific {
-                                description: Error::InvalidHeaderHeight {
-                                    height: header.trusted_height.revision_height(),
-                                }
-                                .to_string(),
+            let trusted_state = {
+                let trusted_client_cons_state_path =
+                    ClientConsensusStatePath::new(&client_id, &header.trusted_height);
+                let trusted_consensus_state = downcast_tm_consensus_state(
+                    ctx.consensus_state(&trusted_client_cons_state_path)
+                        .map_err(|e| match e {
+                            ContextError::ClientError(e) => e,
+                            _ => ClientError::Other {
+                                description: e.to_string(),
                             },
-                        )?,
-                        next_validators: &header.trusted_next_validator_set,
-                        next_validators_hash: trusted_consensus_state.next_validators_hash,
-                    }
-                };
+                        })?
+                        .as_ref(),
+                )?;
+
+                self.check_header_trusted_next_validator_set(&header, &trusted_consensus_state)?;
+
+                TrustedBlockState {
+                    chain_id: &self.chain_id.clone().into(),
+                    header_time: trusted_consensus_state.timestamp,
+                    height: header
+                        .trusted_height
+                        .revision_height()
+                        .try_into()
+                        .map_err(|_| ClientError::ClientSpecific {
+                            description: Error::InvalidHeaderHeight {
+                                height: header.trusted_height.revision_height(),
+                            }
+                            .to_string(),
+                        })?,
+                    next_validators: &header.trusted_next_validator_set,
+                    next_validators_hash: trusted_consensus_state.next_validators_hash,
+                }
+            };
 
             let untrusted_state = UntrustedBlockState {
                 signed_header: &header.signed_header,
@@ -383,6 +393,68 @@ impl ClientState {
         }
 
         Ok(())
+    }
+
+    // verify_misbehaviour determines whether or not two conflicting headers at
+    // the same height would have convinced the light client.
+    fn verify_misbehaviour(
+        &self,
+        ctx: &dyn ValidationContext,
+        client_id: ClientId,
+        misbehaviour: TmMisbehaviour,
+    ) -> Result<(), ClientError> {
+        let header_1 = misbehaviour.header1();
+        let trusted_consensus_state_1 = {
+            let consensus_state_path =
+                ClientConsensusStatePath::new(&client_id, &header_1.trusted_height);
+            let consensus_state =
+                ctx.consensus_state(&consensus_state_path)
+                    .map_err(|e| match e {
+                        ContextError::ClientError(e) => e,
+                        _ => ClientError::Other {
+                            description: e.to_string(),
+                        },
+                    })?;
+
+            downcast_tm_consensus_state(consensus_state.as_ref())
+        }?;
+
+        let header_2 = misbehaviour.header2();
+        let trusted_consensus_state_2 = {
+            let consensus_state_path =
+                ClientConsensusStatePath::new(&client_id, &header_2.trusted_height);
+            let consensus_state =
+                ctx.consensus_state(&consensus_state_path)
+                    .map_err(|e| match e {
+                        ContextError::ClientError(e) => e,
+                        _ => ClientError::Other {
+                            description: e.to_string(),
+                        },
+                    })?;
+
+            downcast_tm_consensus_state(consensus_state.as_ref())
+        }?;
+
+        let current_timestamp = ctx.host_timestamp().map_err(|e| match e {
+            ContextError::ClientError(e) => e,
+            _ => ClientError::Other {
+                description: e.to_string(),
+            },
+        })?;
+
+        self.check_misbehaviour_header(header_1, &trusted_consensus_state_1, current_timestamp)?;
+        self.check_misbehaviour_header(header_2, &trusted_consensus_state_2, current_timestamp)
+    }
+
+    fn check_misbehaviour_header(
+        &self,
+        header: &TmHeader,
+        trusted_consensus_state: &TmConsensusState,
+        _current_timestamp: Timestamp,
+    ) -> Result<(), ClientError> {
+        self.check_header_trusted_next_validator_set(header, trusted_consensus_state)?;
+
+        todo!()
     }
 
     fn check_header_validator_set(
@@ -522,7 +594,10 @@ impl Ics2ClientState for ClientState {
                 let header = TmHeader::try_from(header)?;
                 self.verify_header(ctx, client_id, header)
             }
-            UpdateClientKind::Misbehaviour(_) => todo!(),
+            UpdateClientKind::Misbehaviour(misbehaviour) => {
+                let misbehaviour = TmMisbehaviour::try_from(misbehaviour)?;
+                self.verify_misbehaviour(ctx, client_id, misbehaviour)
+            }
         }
     }
 
