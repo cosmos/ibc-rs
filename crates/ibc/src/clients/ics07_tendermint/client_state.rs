@@ -469,6 +469,25 @@ impl ClientState {
                 .into_result()?;
         }
 
+        // run the verification checks on the header based on the trusted
+        // consensus state
+        {
+            let untrusted_state = header.as_untrusted_block_state();
+            let chain_id = self.chain_id.clone().into();
+            let trusted_state =
+                header.as_trusted_block_state(trusted_consensus_state, &chain_id)?;
+            let options = self.as_light_client_options()?;
+
+            self.verifier
+                .validate_against_trusted(
+                    &untrusted_state,
+                    &trusted_state,
+                    &options,
+                    current_timestamp.into_tm_time().unwrap(),
+                )
+                .into_result()?;
+        }
+
         Ok(())
     }
 
