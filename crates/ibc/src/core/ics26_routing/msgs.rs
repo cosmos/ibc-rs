@@ -13,6 +13,7 @@ use crate::core::ics04_channel::msgs::{
     chan_open_init, chan_open_try, recv_packet, timeout, timeout_on_close, ChannelMsg, PacketMsg,
 };
 use crate::core::ics26_routing::error::RouterError;
+use crate::tx_msg::Msg as _;
 use ibc_proto::protobuf::Protobuf;
 
 /// Enumeration of all messages that the local ICS26 module is capable of routing.
@@ -23,6 +24,8 @@ pub enum MsgEnvelope {
     Channel(ChannelMsg),
     Packet(PacketMsg),
 }
+
+impl Protobuf<Any> for MsgEnvelope {}
 
 impl TryFrom<Any> for MsgEnvelope {
     type Error = RouterError;
@@ -134,6 +137,37 @@ impl TryFrom<Any> for MsgEnvelope {
             _ => Err(RouterError::UnknownMessageTypeUrl {
                 url: any_msg.type_url,
             }),
+        }
+    }
+}
+
+impl From<MsgEnvelope> for Any {
+    fn from(ics_msg: MsgEnvelope) -> Self {
+        match ics_msg {
+            // ICS2 messages
+            MsgEnvelope::Client(ClientMsg::CreateClient(domain_msg)) => domain_msg.to_any(),
+            MsgEnvelope::Client(ClientMsg::UpdateClient(domain_msg)) => domain_msg.to_any(),
+            MsgEnvelope::Client(ClientMsg::UpgradeClient(domain_msg)) => domain_msg.to_any(),
+            MsgEnvelope::Client(ClientMsg::Misbehaviour(domain_msg)) => domain_msg.to_any(),
+
+            // ICS03
+            MsgEnvelope::Connection(ConnectionMsg::OpenInit(domain_msg)) => domain_msg.to_any(),
+            MsgEnvelope::Connection(ConnectionMsg::OpenTry(domain_msg)) => domain_msg.to_any(),
+            MsgEnvelope::Connection(ConnectionMsg::OpenAck(domain_msg)) => domain_msg.to_any(),
+            MsgEnvelope::Connection(ConnectionMsg::OpenConfirm(domain_msg)) => domain_msg.to_any(),
+
+            // ICS04 channel messages
+            MsgEnvelope::Channel(ChannelMsg::OpenInit(domain_msg)) => domain_msg.to_any(),
+            MsgEnvelope::Channel(ChannelMsg::OpenTry(domain_msg)) => domain_msg.to_any(),
+            MsgEnvelope::Channel(ChannelMsg::OpenAck(domain_msg)) => domain_msg.to_any(),
+            MsgEnvelope::Channel(ChannelMsg::OpenConfirm(domain_msg)) => domain_msg.to_any(),
+            MsgEnvelope::Channel(ChannelMsg::CloseInit(domain_msg)) => domain_msg.to_any(),
+            MsgEnvelope::Channel(ChannelMsg::CloseConfirm(domain_msg)) => domain_msg.to_any(),
+            // ICS04 packet messages
+            MsgEnvelope::Packet(PacketMsg::Recv(domain_msg)) => domain_msg.to_any(),
+            MsgEnvelope::Packet(PacketMsg::Ack(domain_msg)) => domain_msg.to_any(),
+            MsgEnvelope::Packet(PacketMsg::Timeout(domain_msg)) => domain_msg.to_any(),
+            MsgEnvelope::Packet(PacketMsg::TimeoutOnClose(domain_msg)) => domain_msg.to_any(),
         }
     }
 }

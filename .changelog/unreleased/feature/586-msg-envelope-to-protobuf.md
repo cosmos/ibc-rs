@@ -1,0 +1,1 @@
+- Impl `Protobuf<Any>` for `MsgEnvelope` ([#586](https://github.com/cosmos/ibc-rs/issues/586))
