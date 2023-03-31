@@ -453,7 +453,23 @@ impl ClientState {
         }
 
         // ensure that 2/3 of trusted validators have signed the new header
-        self.verify_header_commit_against_trusted(header, trusted_consensus_state)
+        {
+            let untrusted_state = header.as_untrusted_block_state();
+            let chain_id = self
+                .chain_id
+                .clone()
+                .with_version(header.height().revision_number())
+                .into();
+            let trusted_state =
+                Header::as_trusted_block_state(header, trusted_consensus_state, &chain_id)?;
+            let options = self.as_light_client_options()?;
+
+            self.verifier
+                .verify_commit_against_trusted(&untrusted_state, &trusted_state, &options)
+                .into_result()?;
+        }
+
+        Ok(())
     }
 
     fn check_header_and_validator_set(
