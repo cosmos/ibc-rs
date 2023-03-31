@@ -252,39 +252,38 @@ impl ClientState {
         // Delegate to tendermint-light-client, which contains the required checks
         // of the new header against the trusted consensus state.
         {
-            let trusted_state = {
-                let trusted_client_cons_state_path =
-                    ClientConsensusStatePath::new(&client_id, &header.trusted_height);
-                let trusted_consensus_state = downcast_tm_consensus_state(
-                    ctx.consensus_state(&trusted_client_cons_state_path)
-                        .map_err(|e| match e {
-                            ContextError::ClientError(e) => e,
-                            _ => ClientError::Other {
-                                description: e.to_string(),
+            let trusted_state =
+                {
+                    let trusted_client_cons_state_path =
+                        ClientConsensusStatePath::new(&client_id, &header.trusted_height);
+                    let trusted_consensus_state = downcast_tm_consensus_state(
+                        ctx.consensus_state(&trusted_client_cons_state_path)
+                            .map_err(|e| match e {
+                                ContextError::ClientError(e) => e,
+                                _ => ClientError::Other {
+                                    description: e.to_string(),
+                                },
+                            })?
+                            .as_ref(),
+                    )?;
+
+                    check_header_trusted_next_validator_set(&header, &trusted_consensus_state)?;
+
+                    TrustedBlockState {
+                        chain_id: &self.chain_id.clone().into(),
+                        header_time: trusted_consensus_state.timestamp,
+                        height: header.trusted_height.revision_height().try_into().map_err(
+                            |_| ClientError::ClientSpecific {
+                                description: Error::InvalidHeaderHeight {
+                                    height: header.trusted_height.revision_height(),
+                                }
+                                .to_string(),
                             },
-                        })?
-                        .as_ref(),
-                )?;
-
-                check_header_trusted_next_validator_set(&header, &trusted_consensus_state)?;
-
-                TrustedBlockState {
-                    chain_id: &self.chain_id.clone().into(),
-                    header_time: trusted_consensus_state.timestamp,
-                    height: header
-                        .trusted_height
-                        .revision_height()
-                        .try_into()
-                        .map_err(|_| ClientError::ClientSpecific {
-                            description: Error::InvalidHeaderHeight {
-                                height: header.trusted_height.revision_height(),
-                            }
-                            .to_string(),
-                        })?,
-                    next_validators: &header.trusted_next_validator_set,
-                    next_validators_hash: trusted_consensus_state.next_validators_hash,
-                }
-            };
+                        )?,
+                        next_validators: &header.trusted_next_validator_set,
+                        next_validators_hash: trusted_consensus_state.next_validators_hash,
+                    }
+                };
 
             let untrusted_state = UntrustedBlockState {
                 signed_header: &header.signed_header,
@@ -430,11 +429,31 @@ impl ClientState {
         &self,
         header: &TmHeader,
         trusted_consensus_state: &TmConsensusState,
-        _current_timestamp: Timestamp,
+        current_timestamp: Timestamp,
     ) -> Result<(), ClientError> {
+        // ensure correctness of the trusted next validator set provided by the relayer
         check_header_trusted_next_validator_set(header, trusted_consensus_state)?;
 
-        todo!()
+        // ensure header timestamp is within trusted period from the trusted consensus state
+        {
+            let duration_since_consensus_state = current_timestamp
+                .duration_since(&trusted_consensus_state.timestamp())
+                .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
+                    time1: trusted_consensus_state.timestamp(),
+                    time2: current_timestamp,
+                })?;
+
+            if duration_since_consensus_state >= self.trusting_period {
+                return Err(Error::ConsensusStateTimestampGteTrustingPeriod {
+                    duration_since_consensus_state,
+                    trusting_period: self.trusting_period,
+                }
+                .into());
+            }
+        }
+
+        // ensure that 2/3 of trusted validators have signed the new header
+        self.verify_header_commit_against_trusted(header, trusted_consensus_state)
     }
 
     fn check_header_and_validator_set(
@@ -443,7 +462,7 @@ impl ClientState {
         consensus_state: &TmConsensusState,
         current_timestamp: Timestamp,
     ) -> Result<(), ClientError> {
-        check_header_trusted_next_validator_set(header,consensus_state)?;
+        check_header_trusted_next_validator_set(header, consensus_state)?;
 
         let duration_since_consensus_state = current_timestamp
             .duration_since(&consensus_state.timestamp())
