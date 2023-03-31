@@ -249,7 +249,8 @@ impl ClientState {
             });
         }
 
-        // Call into tendermint-light-client, which contains (almost) all the verification we need
+        // Delegate to tendermint-light-client, which contains the required checks 
+        // of the new header against the trusted consensus state.
         {
             let trusted_state =
                 {
