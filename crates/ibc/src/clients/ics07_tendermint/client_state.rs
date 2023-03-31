@@ -217,26 +217,6 @@ impl ClientState {
         })
     }
 
-    // `header.trusted_validator_set` was given to us by the relayer. Thus, we
-    // need to ensure that the relayer gave us the right set, i.e. by ensuring
-    // that it matches the hash we have stored on chain.
-    fn check_header_trusted_next_validator_set(
-        &self,
-        header: &TmHeader,
-        trusted_consensus_state: &TmConsensusState,
-    ) -> Result<(), ClientError> {
-        if header.trusted_next_validator_set.hash() == trusted_consensus_state.next_validators_hash
-        {
-            Ok(())
-        } else {
-            Err(ClientError::HeaderVerificationFailure {
-                reason:
-                    "header trusted next validator set hash does not match hash stored on chain"
-                        .to_string(),
-            })
-        }
-    }
-
     fn verify_header(
         &self,
         ctx: &dyn ValidationContext,
@@ -286,7 +266,7 @@ impl ClientState {
                         .as_ref(),
                 )?;
 
-                self.check_header_trusted_next_validator_set(&header, &trusted_consensus_state)?;
+                check_header_trusted_next_validator_set(&header, &trusted_consensus_state)?;
 
                 TrustedBlockState {
                     chain_id: &self.chain_id.clone().into(),
@@ -452,27 +432,9 @@ impl ClientState {
         trusted_consensus_state: &TmConsensusState,
         _current_timestamp: Timestamp,
     ) -> Result<(), ClientError> {
-        self.check_header_trusted_next_validator_set(header, trusted_consensus_state)?;
+        check_header_trusted_next_validator_set(header, trusted_consensus_state)?;
 
         todo!()
-    }
-
-    fn check_header_validator_set(
-        trusted_consensus_state: &TmConsensusState,
-        header: &Header,
-    ) -> Result<(), ClientError> {
-        let trusted_val_hash = header.trusted_next_validator_set.hash();
-
-        if trusted_consensus_state.next_validators_hash != trusted_val_hash {
-            return Err(Error::MisbehaviourTrustedValidatorHashMismatch {
-                trusted_validator_set: header.trusted_next_validator_set.validators().clone(),
-                next_validators_hash: trusted_consensus_state.next_validators_hash,
-                trusted_val_hash,
-            }
-            .into());
-        }
-
-        Ok(())
     }
 
     fn check_header_and_validator_set(
@@ -481,7 +443,7 @@ impl ClientState {
         consensus_state: &TmConsensusState,
         current_timestamp: Timestamp,
     ) -> Result<(), ClientError> {
-        Self::check_header_validator_set(consensus_state, header)?;
+        check_header_trusted_next_validator_set(header,consensus_state)?;
 
         let duration_since_consensus_state = current_timestamp
             .duration_since(&consensus_state.timestamp())
@@ -1052,6 +1014,23 @@ impl Ics2ClientState for ClientState {
         merkle_proof
             .verify_non_membership(&client_state.proof_specs, root.clone().into(), merkle_path)
             .map_err(ClientError::Ics23Verification)
+    }
+}
+
+// `header.trusted_validator_set` was given to us by the relayer. Thus, we
+// need to ensure that the relayer gave us the right set, i.e. by ensuring
+// that it matches the hash we have stored on chain.
+fn check_header_trusted_next_validator_set(
+    header: &TmHeader,
+    trusted_consensus_state: &TmConsensusState,
+) -> Result<(), ClientError> {
+    if header.trusted_next_validator_set.hash() == trusted_consensus_state.next_validators_hash {
+        Ok(())
+    } else {
+        Err(ClientError::HeaderVerificationFailure {
+            reason: "header trusted next validator set hash does not match hash stored on chain"
+                .to_string(),
+        })
     }
 }
 
