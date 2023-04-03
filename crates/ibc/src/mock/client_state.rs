@@ -304,6 +304,14 @@ impl ClientState for MockClientState {
     ) -> Result<bool, ClientError> {
         todo!()
     }
+
+    fn update_state_on_misbehaviour(
+        &self,
+        _ctx: &mut dyn crate::core::ExecutionContext,
+        _client_id: ClientId,
+    ) -> Result<(), ClientError> {
+        todo!()
+    }
 }
 
 impl From<MockConsensusState> for MockClientState {

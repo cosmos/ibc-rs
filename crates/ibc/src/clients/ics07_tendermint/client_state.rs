@@ -34,7 +34,7 @@ use crate::core::ics23_commitment::commitment::{
 use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientUpgradePath};
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ClientUpgradePath};
 use crate::core::ics24_host::Path;
 use crate::timestamp::{Timestamp, ZERO_DURATION};
 use crate::Height;
@@ -43,7 +43,7 @@ use super::client_type as tm_client_type;
 
 use crate::core::context::ContextError;
 
-use crate::core::ValidationContext;
+use crate::core::{ExecutionContext, ValidationContext};
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
@@ -665,6 +665,27 @@ impl Ics2ClientState for ClientState {
                 }
             }
         }
+    }
+
+    fn update_state_on_misbehaviour(
+        &self,
+        ctx: &mut dyn ExecutionContext,
+        client_id: ClientId,
+    ) -> Result<(), ClientError> {
+        let frozen_client_state = self
+            .clone()
+            .with_frozen_height(Height::new(0, 1).unwrap())
+            .into_box();
+
+        ctx.store_client_state(ClientStatePath::new(&client_id), frozen_client_state)
+            .map_err(|e| match e {
+                ContextError::ClientError(e) => e,
+                _ => ClientError::Other {
+                    description: e.to_string(),
+                },
+            })?;
+
+        Ok(())
     }
 
     fn check_misbehaviour_and_update_state(

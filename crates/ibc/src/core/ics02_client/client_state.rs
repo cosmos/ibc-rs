@@ -21,7 +21,7 @@ use crate::Height;
 use super::consensus_state::ConsensusState;
 use super::msgs::update_client::UpdateClientKind;
 
-use crate::core::{ContextError, ValidationContext};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub trait ClientState:
     AsAny
@@ -84,6 +84,12 @@ pub trait ClientState:
         client_id: ClientId,
         client_message: UpdateClientKind,
     ) -> Result<bool, ClientError>;
+
+    fn update_state_on_misbehaviour(
+        &self,
+        ctx: &mut dyn ExecutionContext,
+        client_id: ClientId,
+    ) -> Result<(), ClientError>;
 
     fn check_header_and_update_state(
         &self,
