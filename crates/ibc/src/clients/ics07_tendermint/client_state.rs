@@ -657,8 +657,28 @@ impl Ics2ClientState for ClientState {
                     }
                 }
             }
-            UpdateClientKind::Misbehaviour(_misbehaviour) => {
-                todo!()
+            UpdateClientKind::Misbehaviour(misbehaviour) => {
+                let misbehaviour = TmMisbehaviour::try_from(misbehaviour)?;
+                let header_1 = misbehaviour.header1();
+                let header_2 = misbehaviour.header2();
+
+                if header_1.height() == header_2.height() {
+                    // when the height of the 2 headers are equal, we only have evidence
+                    // of misbehaviour in the case where the headers are different
+                    // (otherwise, the same header was added twice in the message,
+                    // and this is evidence of nothing)
+                    Ok(header_1.signed_header.commit.block_id.hash
+                        != header_2.signed_header.commit.block_id.hash)
+                } else {
+                    // FIXME BEFORE MERGE: ibc-go ensures that header_1.height > header_2.height
+                    // in Misbehaviour.ValidateBasic(). We are missing all these checks.
+
+                    // header_1 is at greater height than header_2, therefore
+                    // header_1 time must be less than or equal to
+                    // header_2 time in order to be valid misbehaviour (violation of
+                    // monotonic time).
+                    Ok(header_1.signed_header.header.time <= header_2.signed_header.header.time)
+                }
             }
         }
     }
