@@ -252,13 +252,7 @@ impl ClientState {
                     let trusted_client_cons_state_path =
                         ClientConsensusStatePath::new(&client_id, &header.trusted_height);
                     let trusted_consensus_state = downcast_tm_consensus_state(
-                        ctx.consensus_state(&trusted_client_cons_state_path)
-                            .map_err(|e| match e {
-                                ContextError::ClientError(e) => e,
-                                _ => ClientError::Other {
-                                    description: e.to_string(),
-                                },
-                            })?
+                        ctx.consensus_state(&trusted_client_cons_state_path)?
                             .as_ref(),
                     )?;
 
@@ -290,13 +284,7 @@ impl ClientState {
             };
 
             let options = self.as_light_client_options()?;
-            let now = ctx
-                .host_timestamp()
-                .map_err(|e| ClientError::Other {
-                    description: e.to_string(),
-                })?
-                .into_tm_time()
-                .unwrap();
+            let now = ctx.host_timestamp()?.into_tm_time().unwrap();
 
             // main header verification, delegated to the tendermint-light-client crate.
             self.verifier
@@ -319,14 +307,7 @@ impl ClientState {
         let trusted_consensus_state_1 = {
             let consensus_state_path =
                 ClientConsensusStatePath::new(&client_id, &header_1.trusted_height);
-            let consensus_state =
-                ctx.consensus_state(&consensus_state_path)
-                    .map_err(|e| match e {
-                        ContextError::ClientError(e) => e,
-                        _ => ClientError::Other {
-                            description: e.to_string(),
-                        },
-                    })?;
+            let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
             downcast_tm_consensus_state(consensus_state.as_ref())
         }?;
@@ -335,24 +316,12 @@ impl ClientState {
         let trusted_consensus_state_2 = {
             let consensus_state_path =
                 ClientConsensusStatePath::new(&client_id, &header_2.trusted_height);
-            let consensus_state =
-                ctx.consensus_state(&consensus_state_path)
-                    .map_err(|e| match e {
-                        ContextError::ClientError(e) => e,
-                        _ => ClientError::Other {
-                            description: e.to_string(),
-                        },
-                    })?;
+            let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
             downcast_tm_consensus_state(consensus_state.as_ref())
         }?;
 
-        let current_timestamp = ctx.host_timestamp().map_err(|e| match e {
-            ContextError::ClientError(e) => e,
-            _ => ClientError::Other {
-                description: e.to_string(),
-            },
-        })?;
+        let current_timestamp = ctx.host_timestamp()?;
 
         self.check_misbehaviour_header(header_1, &trusted_consensus_state_1, current_timestamp)?;
         self.check_misbehaviour_header(header_2, &trusted_consensus_state_2, current_timestamp)
@@ -589,14 +558,8 @@ impl Ics2ClientState for ClientState {
                         // 1. for all headers, the new header needs to have a larger timestamp than
                         //    the “previous header”
                         {
-                            let maybe_prev_cs = ctx
-                                .prev_consensus_state(&client_id, &header.height())
-                                .map_err(|e| match e {
-                                    ContextError::ClientError(e) => e,
-                                    _ => ClientError::Other {
-                                        description: e.to_string(),
-                                    },
-                                })?;
+                            let maybe_prev_cs =
+                                ctx.prev_consensus_state(&client_id, &header.height())?;
 
                             if let Some(prev_cs) = maybe_prev_cs {
                                 // New header timestamp cannot occur *before* the
@@ -612,14 +575,8 @@ impl Ics2ClientState for ClientState {
                         // 2. if a header comes in and is not the “last” header, then we also ensure
                         //    that its timestamp is less than the “next header”
                         if header.height() < self.latest_height() {
-                            let maybe_next_cs = ctx
-                                .next_consensus_state(&client_id, &header.height())
-                                .map_err(|e| match e {
-                                    ContextError::ClientError(e) => e,
-                                    _ => ClientError::Other {
-                                        description: e.to_string(),
-                                    },
-                                })?;
+                            let maybe_next_cs =
+                                ctx.next_consensus_state(&client_id, &header.height())?;
 
                             if let Some(next_cs) = maybe_next_cs {
                                 // New (untrusted) header timestamp cannot occur *after* next
@@ -704,7 +661,6 @@ impl Ics2ClientState for ClientState {
         }
     }
 
-    // TODO: make self mut and don't clone
     fn update_state_on_misbehaviour(
         &self,
         ctx: &mut dyn ExecutionContext,
@@ -715,13 +671,7 @@ impl Ics2ClientState for ClientState {
             .with_frozen_height(Height::new(0, 1).unwrap())
             .into_box();
 
-        ctx.store_client_state(ClientStatePath::new(&client_id), frozen_client_state)
-            .map_err(|e| match e {
-                ContextError::ClientError(e) => e,
-                _ => ClientError::Other {
-                    description: e.to_string(),
-                },
-            })?;
+        ctx.store_client_state(ClientStatePath::new(&client_id), frozen_client_state)?;
 
         Ok(())
     }
@@ -911,13 +861,7 @@ impl Ics2ClientState for ClientState {
         // (cs-new, cs-next, cs-latest)
         if header.height() < client_state.latest_height() {
             let maybe_next_cs = ctx
-                .next_consensus_state(&client_id, &header.height())
-                .map_err(|e| match e {
-                    ContextError::ClientError(e) => e,
-                    _ => ClientError::Other {
-                        description: e.to_string(),
-                    },
-                })?
+                .next_consensus_state(&client_id, &header.height())?
                 .as_ref()
                 .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
                 .transpose()?;
@@ -940,13 +884,7 @@ impl Ics2ClientState for ClientState {
         // (cs-trusted, cs-prev, cs-new)
         if header.trusted_height < header.height() {
             let maybe_prev_cs = ctx
-                .prev_consensus_state(&client_id, &header.height())
-                .map_err(|e| match e {
-                    ContextError::ClientError(e) => e,
-                    _ => ClientError::Other {
-                        description: e.to_string(),
-                    },
-                })?
+                .prev_consensus_state(&client_id, &header.height())?
                 .as_ref()
                 .map(|cs| downcast_tm_consensus_state(cs.as_ref()))
                 .transpose()?;
