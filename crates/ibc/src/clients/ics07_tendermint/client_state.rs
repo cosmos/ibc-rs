@@ -617,6 +617,52 @@ impl Ics2ClientState for ClientState {
         }
     }
 
+    // The misbehaviour checked for depends on the kind of message submitted:
+    // + For a submitted `Header`, detects duplicate height misbehaviour and BFT time violation misbehaviour
+    // + For a submitted `Misbehaviour`, verifies the correctness of the message
+    fn check_for_misbehaviour(
+        &self,
+        ctx: &dyn ValidationContext,
+        client_id: ClientId,
+        client_message: UpdateClientKind,
+    ) -> Result<bool, ClientError> {
+        match client_message {
+            UpdateClientKind::UpdateHeader(header) => {
+                let header = TmHeader::try_from(header)?;
+
+                let header_consensus_state = TmConsensusState::from(header.clone());
+
+                let maybe_existing_consensus_state = {
+                    let path_at_header_height =
+                        ClientConsensusStatePath::new(&client_id, &header.height());
+
+                    ctx.consensus_state(&path_at_header_height).ok()
+                };
+
+                match maybe_existing_consensus_state {
+                    Some(existing_consensus_state) => {
+                        let existing_consensus_state =
+                            downcast_tm_consensus_state(existing_consensus_state.as_ref())?;
+
+                        // check if there is already a consensus state stored for the
+                        // submitted header. If there is, there is no misbehaviour to report.
+                        // Otherwise, we just confirmed that 2 headers exist with the same
+                        // height, which is evidence of misbehaviour.
+                        Ok(existing_consensus_state != header_consensus_state)
+                    }
+                    None => {
+                        // FIXME timestamp monotonicity checks ?
+                        // awaiting confirmation of whether we should do them here or in `check_client_message`
+                        todo!()
+                    }
+                }
+            }
+            UpdateClientKind::Misbehaviour(_misbehaviour) => {
+                todo!()
+            }
+        }
+    }
+
     fn check_misbehaviour_and_update_state(
         &self,
         ctx: &dyn ValidationContext,

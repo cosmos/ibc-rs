@@ -293,7 +293,16 @@ impl ClientState for MockClientState {
         _client_id: ClientId,
         _client_message: UpdateClientKind,
     ) -> Result<(), ClientError> {
-        Ok(())
+        todo!()
+    }
+
+    fn check_for_misbehaviour(
+        &self,
+        _ctx: &dyn ValidationContext,
+        _client_id: ClientId,
+        _client_message: UpdateClientKind,
+    ) -> Result<bool, ClientError> {
+        todo!()
     }
 }
 
