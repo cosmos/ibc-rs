@@ -1,6 +1,7 @@
 use crate::core::ics02_client::msgs::update_client::UpdateClientKind;
 use crate::prelude::*;
 
+use core::cmp::max;
 use core::convert::{TryFrom, TryInto};
 use core::time::Duration;
 
@@ -178,15 +179,9 @@ impl ClientState {
         })
     }
 
-    pub fn with_header(self, h: TmHeader) -> Result<Self, Error> {
+    pub fn with_header(self, header: TmHeader) -> Result<Self, Error> {
         Ok(ClientState {
-            latest_height: Height::new(
-                self.latest_height.revision_number(),
-                h.signed_header.header.height.into(),
-            )
-            .map_err(|_| Error::InvalidHeaderHeight {
-                height: h.signed_header.header.height.value(),
-            })?,
+            latest_height: max(header.height(), self.latest_height),
             ..self
         })
     }
@@ -666,7 +661,50 @@ impl Ics2ClientState for ClientState {
             }
         }
     }
+    fn update_state(
+        &self,
+        ctx: &mut dyn ExecutionContext,
+        client_id: ClientId,
+        header: Any,
+    ) -> Result<(), ClientError> {
+        let header = TmHeader::try_from(header)?;
 
+        let maybe_existing_consensus_state = {
+            let path_at_header_height = ClientConsensusStatePath::new(&client_id, &header.height());
+
+            ctx.consensus_state(&path_at_header_height).ok()
+        };
+
+        if maybe_existing_consensus_state.is_some() {
+            // if we already had the header installed by a previous relayer
+            // then this is a no-op.
+            Ok(())
+        } else {
+            let new_consensus_state = TmConsensusState::from(header.clone()).into_box();
+            let new_client_state = self.clone().with_header(header)?.into_box();
+
+            ctx.store_update_time(
+                client_id.clone(),
+                new_client_state.latest_height(),
+                ctx.host_timestamp()?,
+            )?;
+            ctx.store_update_height(
+                client_id.clone(),
+                new_client_state.latest_height(),
+                ctx.host_height()?,
+            )?;
+
+            ctx.store_consensus_state(
+                ClientConsensusStatePath::new(&client_id, &new_client_state.latest_height()),
+                new_consensus_state,
+            )?;
+            ctx.store_client_state(ClientStatePath::new(&client_id), new_client_state)?;
+
+            Ok(())
+        }
+    }
+
+    // TODO: make self mut and don't clone
     fn update_state_on_misbehaviour(
         &self,
         ctx: &mut dyn ExecutionContext,
@@ -820,13 +858,7 @@ impl Ics2ClientState for ClientState {
         let trusted_client_cons_state_path =
             ClientConsensusStatePath::new(&client_id, &header.trusted_height);
         let trusted_consensus_state = downcast_tm_consensus_state(
-            ctx.consensus_state(&trusted_client_cons_state_path)
-                .map_err(|e| match e {
-                    ContextError::ClientError(e) => e,
-                    _ => ClientError::Other {
-                        description: e.to_string(),
-                    },
-                })?
+            ctx.consensus_state(&trusted_client_cons_state_path)?
                 .as_ref(),
         )?;
 
@@ -857,13 +889,7 @@ impl Ics2ClientState for ClientState {
         };
 
         let options = client_state.as_light_client_options()?;
-        let now = ctx
-            .host_timestamp()
-            .map_err(|e| ClientError::Other {
-                description: e.to_string(),
-            })?
-            .into_tm_time()
-            .unwrap();
+        let now = ctx.host_timestamp()?.into_tm_time().unwrap();
 
         self.verifier
             .verify(untrusted_state, trusted_state, &options, now)

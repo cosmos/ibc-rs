@@ -85,6 +85,13 @@ pub trait ClientState:
         client_message: UpdateClientKind,
     ) -> Result<bool, ClientError>;
 
+    fn update_state(
+        &self,
+        ctx: &mut dyn ExecutionContext,
+        client_id: ClientId,
+        header: Any,
+    ) -> Result<(), ClientError>;
+
     fn update_state_on_misbehaviour(
         &self,
         ctx: &mut dyn ExecutionContext,

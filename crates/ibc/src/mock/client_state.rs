@@ -25,7 +25,7 @@ use crate::mock::misbehaviour::Misbehaviour;
 
 use crate::Height;
 
-use crate::core::{ContextError, ValidationContext};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
 
@@ -307,8 +307,17 @@ impl ClientState for MockClientState {
 
     fn update_state_on_misbehaviour(
         &self,
-        _ctx: &mut dyn crate::core::ExecutionContext,
+        _ctx: &mut dyn ExecutionContext,
         _client_id: ClientId,
+    ) -> Result<(), ClientError> {
+        todo!()
+    }
+
+    fn update_state(
+        &self,
+        _ctx: &mut dyn ExecutionContext,
+        _client_id: ClientId,
+        _header: Any,
     ) -> Result<(), ClientError> {
         todo!()
     }
