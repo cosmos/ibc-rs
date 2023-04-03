@@ -309,68 +309,6 @@ impl ClientState {
                 .into_result()?;
         }
 
-        // The final 2 checks ensure that:
-        // 1. for all headers, the new header has a larger timestamp than the “previous header”
-        // 2. if a header comes in and is not the “last” header, then we also ensure that its timestamp
-        //    is less than the “next header”
-        // Together, these 2 checks ensure the monotonicity of timestamps.
-
-        // 1.
-        {
-            let maybe_prev_cs = ctx
-                .prev_consensus_state(&client_id, &header.height())
-                .map_err(|e| match e {
-                    ContextError::ClientError(e) => e,
-                    _ => ClientError::Other {
-                        description: e.to_string(),
-                    },
-                })?;
-
-            if let Some(prev_cs) = maybe_prev_cs {
-                // New header timestamp cannot occur *before* the
-                // previous consensus state's height
-                let prev_cs = downcast_tm_consensus_state(prev_cs.as_ref())?;
-
-                if header.signed_header.header().time < prev_cs.timestamp {
-                    return Err(ClientError::ClientSpecific {
-                        description: Error::HeaderTimestampTooLow {
-                            actual: header.signed_header.header().time.to_string(),
-                            min: prev_cs.timestamp.to_string(),
-                        }
-                        .to_string(),
-                    });
-                }
-            }
-        }
-
-        // 2.
-        if header.height() < self.latest_height() {
-            let maybe_next_cs = ctx
-                .next_consensus_state(&client_id, &header.height())
-                .map_err(|e| match e {
-                    ContextError::ClientError(e) => e,
-                    _ => ClientError::Other {
-                        description: e.to_string(),
-                    },
-                })?;
-
-            if let Some(next_cs) = maybe_next_cs {
-                // New (untrusted) header timestamp cannot occur *after* next
-                // consensus state's height
-                let next_cs = downcast_tm_consensus_state(next_cs.as_ref())?;
-
-                if header.signed_header.header().time > next_cs.timestamp {
-                    return Err(ClientError::ClientSpecific {
-                        description: Error::HeaderTimestampTooHigh {
-                            actual: header.signed_header.header().time.to_string(),
-                            max: next_cs.timestamp.to_string(),
-                        }
-                        .to_string(),
-                    });
-                }
-            }
-        }
-
         Ok(())
     }
 
@@ -651,9 +589,55 @@ impl Ics2ClientState for ClientState {
                         Ok(existing_consensus_state != header_consensus_state)
                     }
                     None => {
-                        // FIXME timestamp monotonicity checks ?
-                        // awaiting confirmation of whether we should do them here or in `check_client_message`
-                        todo!()
+                        // If no header was previously installed, we ensure the monotonicity of timestamps.
+
+                        // 1. for all headers, the new header needs to have a larger timestamp than
+                        //    the “previous header”
+                        {
+                            let maybe_prev_cs = ctx
+                                .prev_consensus_state(&client_id, &header.height())
+                                .map_err(|e| match e {
+                                    ContextError::ClientError(e) => e,
+                                    _ => ClientError::Other {
+                                        description: e.to_string(),
+                                    },
+                                })?;
+
+                            if let Some(prev_cs) = maybe_prev_cs {
+                                // New header timestamp cannot occur *before* the
+                                // previous consensus state's height
+                                let prev_cs = downcast_tm_consensus_state(prev_cs.as_ref())?;
+
+                                if header.signed_header.header().time < prev_cs.timestamp {
+                                    return Ok(true);
+                                }
+                            }
+                        }
+
+                        // 2. if a header comes in and is not the “last” header, then we also ensure
+                        //    that its timestamp is less than the “next header”
+                        if header.height() < self.latest_height() {
+                            let maybe_next_cs = ctx
+                                .next_consensus_state(&client_id, &header.height())
+                                .map_err(|e| match e {
+                                    ContextError::ClientError(e) => e,
+                                    _ => ClientError::Other {
+                                        description: e.to_string(),
+                                    },
+                                })?;
+
+                            if let Some(next_cs) = maybe_next_cs {
+                                // New (untrusted) header timestamp cannot occur *after* next
+                                // consensus state's height
+                                let next_cs = downcast_tm_consensus_state(next_cs.as_ref())?;
+
+                                if header.signed_header.header().time > next_cs.timestamp {
+                                    return Ok(true);
+                                }
+                            }
+                        }
+
+                        Ok(false)
                     }
                 }
             }
