@@ -64,7 +64,6 @@ where
     } else {
         client_state.update_state(ctx, &client_id, client_message.clone(), &update_kind)?;
 
-        // TODO: fix events stuff
         let consensus_height = client_state.latest_height();
 
         let event = IbcEvent::UpdateClient(UpdateClient::new(
