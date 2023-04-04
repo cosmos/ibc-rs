@@ -149,8 +149,8 @@ mod tests {
     use crate::mock::client_state::MockClientState;
     use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
-    use crate::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
     use crate::mock::host::{HostBlock, HostType};
+    use crate::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
     use crate::test_utils::get_dummy_account_id;
     use crate::timestamp::Timestamp;
     use crate::Height;
