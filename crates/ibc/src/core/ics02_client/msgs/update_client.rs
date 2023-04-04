@@ -3,6 +3,7 @@
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
+use ibc_proto::ibc::core::client::v1::MsgSubmitMisbehaviour as RawMsgSubmitMisbehaviour;
 use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;
 use ibc_proto::protobuf::Protobuf;
 
@@ -60,6 +61,37 @@ impl From<MsgUpdateClient> for RawMsgUpdateClient {
         RawMsgUpdateClient {
             client_id: ics_msg.client_id.to_string(),
             header: Some(ics_msg.client_message),
+            signer: ics_msg.signer.to_string(),
+        }
+    }
+}
+
+impl Protobuf<RawMsgSubmitMisbehaviour> for MsgUpdateClient {}
+
+impl TryFrom<RawMsgSubmitMisbehaviour> for MsgUpdateClient {
+    type Error = ClientError;
+
+    fn try_from(raw: RawMsgSubmitMisbehaviour) -> Result<Self, Self::Error> {
+        let raw_misbehaviour = raw
+            .misbehaviour
+            .ok_or(ClientError::MissingRawMisbehaviour)?;
+
+        Ok(MsgUpdateClient {
+            client_id: raw
+                .client_id
+                .parse()
+                .map_err(ClientError::InvalidRawMisbehaviour)?,
+            client_message: raw_misbehaviour,
+            signer: raw.signer.parse().map_err(ClientError::Signer)?,
+        })
+    }
+}
+
+impl From<MsgUpdateClient> for RawMsgSubmitMisbehaviour {
+    fn from(ics_msg: MsgUpdateClient) -> Self {
+        RawMsgSubmitMisbehaviour {
+            client_id: ics_msg.client_id.to_string(),
+            misbehaviour: Some(ics_msg.client_message),
             signer: ics_msg.signer.to_string(),
         }
     }
