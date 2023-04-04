@@ -1,7 +1,5 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpdateAnyClient`.
 
-use tracing::debug;
-
 use crate::prelude::*;
 
 use crate::core::ics02_client::client_state::UpdatedState;
@@ -22,8 +20,8 @@ where
 {
     let MsgUpdateClient {
         client_id,
-        client_message: header,
-        update_kind: _update_kind,
+        client_message,
+        update_kind,
         signer: _,
     } = msg;
 
@@ -33,41 +31,9 @@ where
 
     client_state.confirm_not_frozen()?;
 
-    // Read consensus state from the host chain store.
-    let latest_client_cons_state_path =
-        ClientConsensusStatePath::new(&client_id, &client_state.latest_height());
-    let latest_consensus_state = ctx
-        .consensus_state(&latest_client_cons_state_path)
-        .map_err(|_| ClientError::ConsensusStateNotFound {
-            client_id: client_id.clone(),
-            height: client_state.latest_height(),
-        })?;
-
-    debug!("latest consensus state: {:?}", latest_consensus_state);
-
-    let now = ctx.host_timestamp()?;
-    let duration = now
-        .duration_since(&latest_consensus_state.timestamp())
-        .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
-            time1: latest_consensus_state.timestamp(),
-            time2: now,
-        })?;
-
-    if client_state.expired(duration) {
-        return Err(ClientError::HeaderNotWithinTrustPeriod {
-            latest_time: latest_consensus_state.timestamp(),
-            update_time: now,
-        }
-        .into());
-    }
-
-    let _ = client_state
-        .check_header_and_update_state(ctx, client_id.clone(), header)
-        .map_err(|e| ClientError::HeaderVerificationFailure {
-            reason: e.to_string(),
-        })?;
-
-    Ok(())
+    client_state
+        .verify_client_message(ctx, client_id, client_message, update_kind)
+        .map_err(ContextError::from)
 }
 
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
