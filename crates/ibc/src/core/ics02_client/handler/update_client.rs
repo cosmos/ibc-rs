@@ -2,7 +2,7 @@
 
 use crate::prelude::*;
 
-use crate::core::ics02_client::events::UpdateClient;
+use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
 use crate::events::IbcEvent;
 
@@ -59,14 +59,17 @@ where
             client_message.clone(),
             &update_kind,
         )?;
+
+        let event = IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(
+            client_id.clone(),
+            client_state.client_type(),
+        ));
+        ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx.emit_ibc_event(event);
     } else {
         client_state.update_state(ctx, &client_id, client_message.clone(), &update_kind)?;
-    }
 
-    // TODO: fix events stuff
-    // + misbehaviour or update_client
-    // + use return consensus_heights from update_state
-    {
+        // TODO: fix events stuff
         let consensus_height = client_state.latest_height();
 
         let event = IbcEvent::UpdateClient(UpdateClient::new(
