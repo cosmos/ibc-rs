@@ -215,7 +215,7 @@ impl ClientState {
     fn verify_header(
         &self,
         ctx: &dyn ValidationContext,
-        client_id: ClientId,
+        client_id: &ClientId,
         header: TmHeader,
     ) -> Result<(), ClientError> {
         // The tendermint-light-client crate though works on heights that are assumed
@@ -250,7 +250,7 @@ impl ClientState {
             let trusted_state =
                 {
                     let trusted_client_cons_state_path =
-                        ClientConsensusStatePath::new(&client_id, &header.trusted_height);
+                        ClientConsensusStatePath::new(client_id, &header.trusted_height);
                     let trusted_consensus_state = downcast_tm_consensus_state(
                         ctx.consensus_state(&trusted_client_cons_state_path)?
                             .as_ref(),
@@ -300,13 +300,13 @@ impl ClientState {
     fn verify_misbehaviour(
         &self,
         ctx: &dyn ValidationContext,
-        client_id: ClientId,
+        client_id: &ClientId,
         misbehaviour: TmMisbehaviour,
     ) -> Result<(), ClientError> {
         let header_1 = misbehaviour.header1();
         let trusted_consensus_state_1 = {
             let consensus_state_path =
-                ClientConsensusStatePath::new(&client_id, &header_1.trusted_height);
+                ClientConsensusStatePath::new(client_id, &header_1.trusted_height);
             let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
             downcast_tm_consensus_state(consensus_state.as_ref())
@@ -315,7 +315,7 @@ impl ClientState {
         let header_2 = misbehaviour.header2();
         let trusted_consensus_state_2 = {
             let consensus_state_path =
-                ClientConsensusStatePath::new(&client_id, &header_2.trusted_height);
+                ClientConsensusStatePath::new(client_id, &header_2.trusted_height);
             let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
             downcast_tm_consensus_state(consensus_state.as_ref())
@@ -504,9 +504,9 @@ impl Ics2ClientState for ClientState {
     fn verify_client_message(
         &self,
         ctx: &dyn ValidationContext,
-        client_id: ClientId,
+        client_id: &ClientId,
         client_message: Any,
-        update_kind: UpdateClientKind,
+        update_kind: &UpdateClientKind,
     ) -> Result<(), ClientError> {
         match update_kind {
             UpdateClientKind::UpdateHeader => {
@@ -526,9 +526,9 @@ impl Ics2ClientState for ClientState {
     fn check_for_misbehaviour(
         &self,
         ctx: &dyn ValidationContext,
-        client_id: ClientId,
+        client_id: &ClientId,
         client_message: Any,
-        update_kind: UpdateClientKind,
+        update_kind: &UpdateClientKind,
     ) -> Result<bool, ClientError> {
         match update_kind {
             UpdateClientKind::UpdateHeader => {
@@ -538,7 +538,7 @@ impl Ics2ClientState for ClientState {
 
                 let maybe_existing_consensus_state = {
                     let path_at_header_height =
-                        ClientConsensusStatePath::new(&client_id, &header.height());
+                        ClientConsensusStatePath::new(client_id, &header.height());
 
                     ctx.consensus_state(&path_at_header_height).ok()
                 };
@@ -561,7 +561,7 @@ impl Ics2ClientState for ClientState {
                         //    the “previous header”
                         {
                             let maybe_prev_cs =
-                                ctx.prev_consensus_state(&client_id, &header.height())?;
+                                ctx.prev_consensus_state(client_id, &header.height())?;
 
                             if let Some(prev_cs) = maybe_prev_cs {
                                 // New header timestamp cannot occur *before* the
@@ -578,7 +578,7 @@ impl Ics2ClientState for ClientState {
                         //    that its timestamp is less than the “next header”
                         if header.height() < self.latest_height() {
                             let maybe_next_cs =
-                                ctx.next_consensus_state(&client_id, &header.height())?;
+                                ctx.next_consensus_state(client_id, &header.height())?;
 
                             if let Some(next_cs) = maybe_next_cs {
                                 // New (untrusted) header timestamp cannot occur *after* next
@@ -608,9 +608,6 @@ impl Ics2ClientState for ClientState {
                     Ok(header_1.signed_header.commit.block_id.hash
                         != header_2.signed_header.commit.block_id.hash)
                 } else {
-                    // FIXME BEFORE MERGE: ibc-go ensures that header_1.height > header_2.height
-                    // in Misbehaviour.ValidateBasic(). We are missing all these checks.
-
                     // header_1 is at greater height than header_2, therefore
                     // header_1 time must be less than or equal to
                     // header_2 time in order to be valid misbehaviour (violation of
@@ -623,13 +620,17 @@ impl Ics2ClientState for ClientState {
     fn update_state(
         &self,
         ctx: &mut dyn ExecutionContext,
-        client_id: ClientId,
-        header: Any,
+        client_id: &ClientId,
+        client_message: Any,
+        _update_kind: &UpdateClientKind,
     ) -> Result<(), ClientError> {
-        let header = TmHeader::try_from(header)?;
+        // we only expect headers to make it here; if a TmMisbehaviour makes it to here,
+        // then it is not a valid misbehaviour (check_for_misbehaviour returned false),
+        // and so transaction should fail.
+        let header = TmHeader::try_from(client_message)?;
 
         let maybe_existing_consensus_state = {
-            let path_at_header_height = ClientConsensusStatePath::new(&client_id, &header.height());
+            let path_at_header_height = ClientConsensusStatePath::new(client_id, &header.height());
 
             ctx.consensus_state(&path_at_header_height).ok()
         };
@@ -654,10 +655,10 @@ impl Ics2ClientState for ClientState {
             )?;
 
             ctx.store_consensus_state(
-                ClientConsensusStatePath::new(&client_id, &new_client_state.latest_height()),
+                ClientConsensusStatePath::new(client_id, &new_client_state.latest_height()),
                 new_consensus_state,
             )?;
-            ctx.store_client_state(ClientStatePath::new(&client_id), new_client_state)?;
+            ctx.store_client_state(ClientStatePath::new(client_id), new_client_state)?;
 
             Ok(())
         }
@@ -666,15 +667,16 @@ impl Ics2ClientState for ClientState {
     fn update_state_on_misbehaviour(
         &self,
         ctx: &mut dyn ExecutionContext,
-        client_id: ClientId,
-        _misbehaviour: Any,
+        client_id: &ClientId,
+        _client_message: Any,
+        _update_kind: &UpdateClientKind,
     ) -> Result<(), ClientError> {
         let frozen_client_state = self
             .clone()
             .with_frozen_height(Height::new(0, 1).unwrap())
             .into_box();
 
-        ctx.store_client_state(ClientStatePath::new(&client_id), frozen_client_state)?;
+        ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state)?;
 
         Ok(())
     }

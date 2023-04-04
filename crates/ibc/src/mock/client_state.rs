@@ -287,21 +287,12 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
-    fn update_state(
-        &self,
-        _ctx: &mut dyn ExecutionContext,
-        _client_id: ClientId,
-        _header: Any,
-    ) -> Result<(), ClientError> {
-        todo!()
-    }
-
     fn verify_client_message(
         &self,
         _ctx: &dyn ValidationContext,
-        _client_id: ClientId,
+        _client_id: &ClientId,
         _client_message: Any,
-        _update_kind: UpdateClientKind,
+        _update_kind: &UpdateClientKind,
     ) -> Result<(), ClientError> {
         todo!()
     }
@@ -309,18 +300,29 @@ impl ClientState for MockClientState {
     fn check_for_misbehaviour(
         &self,
         _ctx: &dyn ValidationContext,
-        _client_id: ClientId,
+        _client_id: &ClientId,
         _client_message: Any,
-        _update_kind: UpdateClientKind,
+        _update_kind: &UpdateClientKind,
     ) -> Result<bool, ClientError> {
+        todo!()
+    }
+
+    fn update_state(
+        &self,
+        _ctx: &mut dyn ExecutionContext,
+        _client_id: &ClientId,
+        _client_message: Any,
+        _update_kind: &UpdateClientKind,
+    ) -> Result<(), ClientError> {
         todo!()
     }
 
     fn update_state_on_misbehaviour(
         &self,
         _ctx: &mut dyn ExecutionContext,
-        _client_id: ClientId,
-        _misbehaviour: Any,
+        _client_id: &ClientId,
+        _client_message: Any,
+        _update_kind: &UpdateClientKind,
     ) -> Result<(), ClientError> {
         todo!()
     }

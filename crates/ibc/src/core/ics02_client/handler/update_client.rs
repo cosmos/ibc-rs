@@ -2,15 +2,11 @@
 
 use crate::prelude::*;
 
-use crate::core::ics02_client::client_state::UpdatedState;
-use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpdateClient;
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
 use crate::events::IbcEvent;
 
 use crate::core::context::ContextError;
-
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 
 use crate::core::{ExecutionContext, ValidationContext};
 
@@ -32,7 +28,7 @@ where
     client_state.confirm_not_frozen()?;
 
     client_state
-        .verify_client_message(ctx, client_id, client_message, update_kind)
+        .verify_client_message(ctx, &client_id, client_message, &update_kind)
         .map_err(ContextError::from)
 }
 
@@ -42,40 +38,34 @@ where
 {
     let MsgUpdateClient {
         client_id,
-        client_message: header,
-        update_kind: _update_kind,
+        client_message,
+        update_kind,
         signer: _,
     } = msg;
 
-    // Read client type from the host chain store. The client should already exist.
-    // Read client state from the host chain store.
     let client_state = ctx.client_state(&client_id)?;
 
-    let UpdatedState {
-        client_state,
-        consensus_state,
-    } = client_state
-        .check_header_and_update_state(ctx, client_id.clone(), header.clone())
-        .map_err(|e| ClientError::HeaderVerificationFailure {
-            reason: e.to_string(),
-        })?;
-
-    ctx.store_client_state(ClientStatePath::new(&client_id), client_state.clone())?;
-    ctx.store_consensus_state(
-        ClientConsensusStatePath::new(&client_id, &client_state.latest_height()),
-        consensus_state,
-    )?;
-    ctx.store_update_time(
-        client_id.clone(),
-        client_state.latest_height(),
-        ctx.host_timestamp()?,
-    )?;
-    ctx.store_update_height(
-        client_id.clone(),
-        client_state.latest_height(),
-        ctx.host_height()?,
+    let found_misbehaviour = client_state.check_for_misbehaviour(
+        ctx,
+        &client_id,
+        client_message.clone(),
+        &update_kind,
     )?;
 
+    if found_misbehaviour {
+        client_state.update_state_on_misbehaviour(
+            ctx,
+            &client_id,
+            client_message.clone(),
+            &update_kind,
+        )?;
+    } else {
+        client_state.update_state(ctx, &client_id, client_message.clone(), &update_kind)?;
+    }
+
+    // TODO: fix events stuff
+    // + misbehaviour or update_client
+    // + use return consensus_heights from update_state
     {
         let consensus_height = client_state.latest_height();
 
@@ -84,7 +74,7 @@ where
             client_state.client_type(),
             consensus_height,
             vec![consensus_height],
-            header,
+            client_message,
         ));
         ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
         ctx.emit_ibc_event(event);
