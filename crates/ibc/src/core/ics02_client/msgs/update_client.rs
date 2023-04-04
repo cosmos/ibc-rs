@@ -10,9 +10,9 @@ use ibc_proto::protobuf::Protobuf;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 
-pub const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
+pub const UPDATE_CLIENT_TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
+pub const MISBEHAVIOUR_TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum UpdateClientKind {
@@ -31,14 +31,6 @@ pub struct MsgUpdateClient {
     pub client_message: Any,
     pub update_kind: UpdateClientKind,
     pub signer: Signer,
-}
-
-impl Msg for MsgUpdateClient {
-    type Raw = RawMsgUpdateClient;
-
-    fn type_url(&self) -> String {
-        TYPE_URL.to_string()
-    }
 }
 
 impl Protobuf<RawMsgUpdateClient> for MsgUpdateClient {}

@@ -37,7 +37,7 @@ impl TryFrom<Any> for MsgEnvelope {
                     .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::Client(ClientMsg::CreateClient(domain_msg)))
             }
-            update_client::TYPE_URL => {
+            update_client::UPDATE_CLIENT_TYPE_URL => {
                 let domain_msg =
                     <update_client::MsgUpdateClient as Protobuf<RawMsgUpdateClient>>::decode_vec(
                         &any_msg.value,
