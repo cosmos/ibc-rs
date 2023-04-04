@@ -68,8 +68,12 @@ pub trait ClientState:
 
     fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError>;
 
-    /// checks the that the structure of a ClientMessage is correct and that all
-    /// authentication data provided is valid.
+    /// verify_client_message must verify a client_message. A client_message
+    /// could be a Header, Misbehaviour. It must handle each type of
+    /// client_message appropriately. Calls to check_for_misbehaviour,
+    /// update_state, and update_state_on_misbehaviour will assume that the
+    /// content of the client_message has been verified and can be trusted. An
+    /// error should be returned if the client_message fails to verify.
     fn verify_client_message(
         &self,
         ctx: &dyn ValidationContext,
@@ -78,7 +82,8 @@ pub trait ClientState:
         update_kind: &UpdateClientKind,
     ) -> Result<(), ClientError>;
 
-    /// Check whether misbehaviour has occured
+    /// Checks for evidence of a misbehaviour in Header or Misbehaviour type. It
+    /// assumes the client_message has already been verified.
     fn check_for_misbehaviour(
         &self,
         ctx: &dyn ValidationContext,
@@ -87,14 +92,20 @@ pub trait ClientState:
         update_kind: &UpdateClientKind,
     ) -> Result<bool, ClientError>;
 
+    /// Updates and stores as necessary any associated information for an IBC
+    /// client, such as the ClientState and corresponding ConsensusState. Upon
+    /// successful update, a list of consensus heights is returned. It assumes
+    /// the client_message has already been verified.
     fn update_state(
         &self,
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateClientKind,
-    ) -> Result<(), ClientError>;
+    ) -> Result<Vec<Height>, ClientError>;
 
+    /// update_state_on_misbehaviour should perform appropriate state changes on
+    /// a client state given that misbehaviour has been detected and verified
     fn update_state_on_misbehaviour(
         &self,
         ctx: &mut dyn ExecutionContext,

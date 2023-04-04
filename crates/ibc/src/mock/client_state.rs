@@ -313,7 +313,7 @@ impl ClientState for MockClientState {
         _client_id: &ClientId,
         _client_message: Any,
         _update_kind: &UpdateClientKind,
-    ) -> Result<(), ClientError> {
+    ) -> Result<Vec<Height>, ClientError> {
         todo!()
     }
 

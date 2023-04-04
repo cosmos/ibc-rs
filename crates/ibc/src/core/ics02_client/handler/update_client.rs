@@ -53,12 +53,7 @@ where
     )?;
 
     if found_misbehaviour {
-        client_state.update_state_on_misbehaviour(
-            ctx,
-            &client_id,
-            client_message.clone(),
-            &update_kind,
-        )?;
+        client_state.update_state_on_misbehaviour(ctx, &client_id, client_message, &update_kind)?;
 
         let event = IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(
             client_id.clone(),

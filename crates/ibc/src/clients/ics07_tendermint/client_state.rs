@@ -623,14 +623,15 @@ impl Ics2ClientState for ClientState {
         client_id: &ClientId,
         client_message: Any,
         _update_kind: &UpdateClientKind,
-    ) -> Result<(), ClientError> {
+    ) -> Result<Vec<Height>, ClientError> {
         // we only expect headers to make it here; if a TmMisbehaviour makes it to here,
         // then it is not a valid misbehaviour (check_for_misbehaviour returned false),
         // and so transaction should fail.
         let header = TmHeader::try_from(client_message)?;
+        let header_height = header.height();
 
         let maybe_existing_consensus_state = {
-            let path_at_header_height = ClientConsensusStatePath::new(client_id, &header.height());
+            let path_at_header_height = ClientConsensusStatePath::new(client_id, &header_height);
 
             ctx.consensus_state(&path_at_header_height).ok()
         };
@@ -638,7 +639,8 @@ impl Ics2ClientState for ClientState {
         if maybe_existing_consensus_state.is_some() {
             // if we already had the header installed by a previous relayer
             // then this is a no-op.
-            Ok(())
+            //
+            // Do nothing.
         } else {
             let new_consensus_state = TmConsensusState::from(header.clone()).into_box();
             let new_client_state = self.clone().with_header(header)?.into_box();
@@ -659,9 +661,10 @@ impl Ics2ClientState for ClientState {
                 new_consensus_state,
             )?;
             ctx.store_client_state(ClientStatePath::new(client_id), new_client_state)?;
-
-            Ok(())
         }
+
+        let updated_heights = vec![header_height];
+        Ok(updated_heights)
     }
 
     fn update_state_on_misbehaviour(
