@@ -82,7 +82,6 @@ impl ClientState {
         proof_specs: ProofSpecs,
         upgrade_path: Vec<String>,
         allow_update: AllowUpdate,
-        frozen_height: Option<Height>,
     ) -> Result<ClientState, Error> {
         if chain_id.as_str().len() > MaxChainIdLen {
             return Err(Error::ChainIdTooLong {
@@ -172,7 +171,7 @@ impl ClientState {
             proof_specs,
             upgrade_path,
             allow_update,
-            frozen_height,
+            frozen_height: None,
             verifier: ProdVerifier::default(),
         })
     }
@@ -704,9 +703,6 @@ impl Ics2ClientState for ClientState {
         let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
         let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
 
-        // Frozen height is set to None fo the new client state
-        let new_frozen_height = None;
-
         // Construct new client state and consensus state relayer chosen client
         // parameters are ignored. All chain-chosen parameters come from
         // committed client, all client-chosen parameters come from current
@@ -721,7 +717,6 @@ impl Ics2ClientState for ClientState {
             upgraded_tm_client_state.proof_specs,
             upgraded_tm_client_state.upgrade_path,
             self.allow_update,
-            new_frozen_height,
         )?;
 
         // The new consensus state is merely used as a trusted kernel against
@@ -860,9 +855,13 @@ impl TryFrom<RawTmClientState> for ClientState {
         // In `RawClientState`, a `frozen_height` of `0` means "not frozen".
         // See:
         // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
-        let frozen_height = raw
+        if raw
             .frozen_height
-            .and_then(|raw_height| raw_height.try_into().ok());
+            .and_then(|h| Height::try_from(h).ok())
+            .is_some()
+        {
+            return Err(Error::FrozenHeightNotAllowed);
+        }
 
         // We use set this deprecated field just so that we can properly convert
         // it back in its raw form
@@ -882,7 +881,6 @@ impl TryFrom<RawTmClientState> for ClientState {
             raw.proof_specs.into(),
             raw.upgrade_path,
             allow_update,
-            frozen_height,
         )?;
 
         Ok(client_state)
@@ -951,16 +949,20 @@ impl From<ClientState> for Any {
 
 #[cfg(test)]
 mod tests {
+    use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
     use crate::prelude::*;
     use crate::Height;
     use core::time::Duration;
     use test_log::test;
 
+    use ibc_proto::google::protobuf::Any;
+    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use ibc_proto::ics23::ProofSpec as Ics23ProofSpec;
 
     use crate::clients::ics07_tendermint::client_state::{
         AllowUpdate, ClientState as TmClientState,
     };
+    use crate::clients::ics07_tendermint::error::Error;
     use crate::core::ics02_client::client_state::ClientState;
     use crate::core::ics02_client::trust_threshold::TrustThreshold;
     use crate::core::ics23_commitment::specs::ProofSpecs;
@@ -1133,7 +1135,6 @@ mod tests {
                 p.proof_specs,
                 p.upgrade_path,
                 p.allow_update,
-                None,
             );
 
             assert_eq!(
@@ -1199,7 +1200,6 @@ mod tests {
                 p.proof_specs,
                 p.upgrade_path,
                 p.allow_update,
-                None,
             )
             .unwrap();
             let client_state = match test.setup {
@@ -1216,6 +1216,48 @@ mod tests {
                 test.height,
                 res.err(),
             );
+        }
+    }
+
+    #[test]
+    fn tm_client_state_conversions_healthy() {
+        // check client state creation path from a proto type
+        let tm_client_state_from_raw = TmClientState::new_dummy_from_raw(RawHeight {
+            revision_number: 0,
+            revision_height: 0,
+        });
+        assert!(tm_client_state_from_raw.is_ok());
+
+        let any_from_tm_client_state =
+            Any::from(tm_client_state_from_raw.as_ref().unwrap().clone());
+        let tm_client_state_from_any = TmClientState::try_from(any_from_tm_client_state);
+        assert!(tm_client_state_from_any.is_ok());
+        assert_eq!(
+            tm_client_state_from_raw.unwrap(),
+            tm_client_state_from_any.unwrap()
+        );
+
+        // check client state creation path from a tendermint header
+        let tm_header = get_dummy_tendermint_header();
+        let tm_client_state_from_header = TmClientState::new_dummy_from_header(tm_header);
+        let any_from_header = Any::from(tm_client_state_from_header.clone());
+        let tm_client_state_from_any = TmClientState::try_from(any_from_header);
+        assert!(tm_client_state_from_any.is_ok());
+        assert_eq!(
+            tm_client_state_from_header,
+            tm_client_state_from_any.unwrap()
+        );
+    }
+
+    #[test]
+    fn tm_client_state_malformed_with_frozen_height() {
+        let tm_client_state_from_raw = TmClientState::new_dummy_from_raw(RawHeight {
+            revision_number: 0,
+            revision_height: 10,
+        });
+        match tm_client_state_from_raw {
+            Err(Error::FrozenHeightNotAllowed) => {}
+            _ => panic!("Expected to fail with FrozenHeightNotAllowed error"),
         }
     }
 }
@@ -1249,29 +1291,58 @@ pub mod test_util {
     use tendermint::block::Header;
 
     use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState};
+    use crate::clients::ics07_tendermint::error::Error;
     use crate::core::ics02_client::height::Height;
+    use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ChainId;
+    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
+    use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
 
-    pub fn get_dummy_tendermint_client_state(tm_header: Header) -> ClientState {
-        ClientState::new(
-            ChainId::from(tm_header.chain_id.clone()),
-            Default::default(),
-            Duration::from_secs(64000),
-            Duration::from_secs(128000),
-            Duration::from_millis(3000),
-            Height::new(
-                ChainId::chain_version(tm_header.chain_id.as_str()),
-                u64::from(tm_header.height),
+    impl ClientState {
+        pub fn new_dummy_from_raw(frozen_height: RawHeight) -> Result<Self, Error> {
+            ClientState::try_from(get_dummy_raw_tm_client_state(frozen_height))
+        }
+
+        pub fn new_dummy_from_header(tm_header: Header) -> ClientState {
+            ClientState::new(
+                tm_header.chain_id.clone().into(),
+                Default::default(),
+                Duration::from_secs(64000),
+                Duration::from_secs(128000),
+                Duration::from_millis(3000),
+                Height::new(
+                    ChainId::chain_version(tm_header.chain_id.as_str()),
+                    u64::from(tm_header.height),
+                )
+                .unwrap(),
+                Default::default(),
+                Default::default(),
+                AllowUpdate {
+                    after_expiry: false,
+                    after_misbehaviour: false,
+                },
             )
-            .unwrap(),
-            Default::default(),
-            Default::default(),
-            AllowUpdate {
-                after_expiry: false,
-                after_misbehaviour: false,
-            },
-            None,
-        )
-        .unwrap()
+            .unwrap()
+        }
+    }
+
+    pub fn get_dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
+        #[allow(deprecated)]
+        RawTmClientState {
+            chain_id: ChainId::new("ibc".to_string(), 0).to_string(),
+            trust_level: Some(Fraction {
+                numerator: 1,
+                denominator: 3,
+            }),
+            trusting_period: Some(Duration::from_secs(64000).into()),
+            unbonding_period: Some(Duration::from_secs(128000).into()),
+            max_clock_drift: Some(Duration::from_millis(3000).into()),
+            latest_height: Some(Height::new(0, 10).unwrap().into()),
+            proof_specs: ProofSpecs::default().into(),
+            upgrade_path: Default::default(),
+            frozen_height: Some(frozen_height),
+            allow_update_after_expiry: false,
+            allow_update_after_misbehaviour: false,
+        }
     }
 }

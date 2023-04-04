@@ -25,7 +25,6 @@ use subtle_encoding::bech32;
 use ibc_proto::google::protobuf::Any;
 use tracing::debug;
 
-use crate::clients::ics07_tendermint::client_state::test_util::get_dummy_tendermint_client_state;
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 use crate::core::context::ContextError;
 use crate::core::context::Router;
@@ -245,7 +244,7 @@ impl MockContext {
             );
 
             let client_state =
-                get_dummy_tendermint_client_state(light_block.header().clone()).into_box();
+                TmClientState::new_dummy_from_header(light_block.header().clone()).into_box();
 
             // Return the tuple.
             (Some(client_state), light_block.into())
@@ -312,7 +311,7 @@ impl MockContext {
                 HostBlock::generate_tm_block(client_chain_id, cs_height.revision_height(), now);
 
             let client_state =
-                get_dummy_tendermint_client_state(light_block.header().clone()).into_box();
+                TmClientState::new_dummy_from_header(light_block.header().clone()).into_box();
 
             // Return the tuple.
             (Some(client_state), light_block.into())
