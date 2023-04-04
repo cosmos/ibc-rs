@@ -287,11 +287,21 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
+    fn update_state(
+        &self,
+        _ctx: &mut dyn ExecutionContext,
+        _client_id: ClientId,
+        _header: Any,
+    ) -> Result<(), ClientError> {
+        todo!()
+    }
+
     fn verify_client_message(
         &self,
         _ctx: &dyn ValidationContext,
         _client_id: ClientId,
-        _client_message: UpdateClientKind,
+        _client_message: Any,
+        _update_kind: UpdateClientKind,
     ) -> Result<(), ClientError> {
         todo!()
     }
@@ -300,7 +310,8 @@ impl ClientState for MockClientState {
         &self,
         _ctx: &dyn ValidationContext,
         _client_id: ClientId,
-        _client_message: UpdateClientKind,
+        _client_message: Any,
+        _update_kind: UpdateClientKind,
     ) -> Result<bool, ClientError> {
         todo!()
     }
@@ -309,15 +320,7 @@ impl ClientState for MockClientState {
         &self,
         _ctx: &mut dyn ExecutionContext,
         _client_id: ClientId,
-    ) -> Result<(), ClientError> {
-        todo!()
-    }
-
-    fn update_state(
-        &self,
-        _ctx: &mut dyn ExecutionContext,
-        _client_id: ClientId,
-        _header: Any,
+        _misbehaviour: Any,
     ) -> Result<(), ClientError> {
         todo!()
     }

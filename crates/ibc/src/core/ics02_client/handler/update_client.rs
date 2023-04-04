@@ -23,6 +23,7 @@ where
     let MsgUpdateClient {
         client_id,
         client_message: header,
+        update_kind: _update_kind,
         signer: _,
     } = msg;
 
@@ -76,6 +77,7 @@ where
     let MsgUpdateClient {
         client_id,
         client_message: header,
+        update_kind: _update_kind,
         signer: _,
     } = msg;
 
@@ -136,7 +138,7 @@ mod tests {
     use crate::core::ics02_client::client_state::ClientState;
     use crate::core::ics02_client::consensus_state::downcast_consensus_state;
     use crate::core::ics02_client::handler::update_client::{execute, validate};
-    use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
+    use crate::core::ics02_client::msgs::update_client::{MsgUpdateClient, UpdateClientKind};
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ValidationContext;
     use crate::events::{IbcEvent, IbcEventType};
@@ -162,6 +164,7 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id,
             client_message: MockHeader::new(height).with_timestamp(timestamp).into(),
+            update_kind: UpdateClientKind::UpdateHeader,
             signer,
         };
 
@@ -188,6 +191,7 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id: ClientId::from_str("nonexistingclient").unwrap(),
             client_message: MockHeader::new(Height::new(0, 46).unwrap()).into(),
+            update_kind: UpdateClientKind::UpdateHeader,
             signer,
         };
 
@@ -228,6 +232,7 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id,
             client_message: block.into(),
+            update_kind: UpdateClientKind::UpdateHeader,
             signer,
         };
 
@@ -275,6 +280,7 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id,
             client_message: block.into(),
+            update_kind: UpdateClientKind::UpdateHeader,
             signer,
         };
 
@@ -336,6 +342,7 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id,
             client_message: block.into(),
+            update_kind: UpdateClientKind::UpdateHeader,
             signer,
         };
 
@@ -387,6 +394,7 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id,
             client_message: block_ref.clone().into(),
+            update_kind: UpdateClientKind::UpdateHeader,
             signer,
         };
 
@@ -407,6 +415,7 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id: client_id.clone(),
             client_message: header.clone(),
+            update_kind: UpdateClientKind::UpdateHeader,
             signer,
         };
 

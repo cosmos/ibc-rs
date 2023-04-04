@@ -505,15 +505,16 @@ impl Ics2ClientState for ClientState {
         &self,
         ctx: &dyn ValidationContext,
         client_id: ClientId,
-        client_message: UpdateClientKind,
+        client_message: Any,
+        update_kind: UpdateClientKind,
     ) -> Result<(), ClientError> {
-        match client_message {
-            UpdateClientKind::UpdateHeader(header) => {
-                let header = TmHeader::try_from(header)?;
+        match update_kind {
+            UpdateClientKind::UpdateHeader => {
+                let header = TmHeader::try_from(client_message)?;
                 self.verify_header(ctx, client_id, header)
             }
-            UpdateClientKind::Misbehaviour(misbehaviour) => {
-                let misbehaviour = TmMisbehaviour::try_from(misbehaviour)?;
+            UpdateClientKind::Misbehaviour => {
+                let misbehaviour = TmMisbehaviour::try_from(client_message)?;
                 self.verify_misbehaviour(ctx, client_id, misbehaviour)
             }
         }
@@ -526,11 +527,12 @@ impl Ics2ClientState for ClientState {
         &self,
         ctx: &dyn ValidationContext,
         client_id: ClientId,
-        client_message: UpdateClientKind,
+        client_message: Any,
+        update_kind: UpdateClientKind,
     ) -> Result<bool, ClientError> {
-        match client_message {
-            UpdateClientKind::UpdateHeader(header) => {
-                let header = TmHeader::try_from(header)?;
+        match update_kind {
+            UpdateClientKind::UpdateHeader => {
+                let header = TmHeader::try_from(client_message)?;
 
                 let header_consensus_state = TmConsensusState::from(header.clone());
 
@@ -593,8 +595,8 @@ impl Ics2ClientState for ClientState {
                     }
                 }
             }
-            UpdateClientKind::Misbehaviour(misbehaviour) => {
-                let misbehaviour = TmMisbehaviour::try_from(misbehaviour)?;
+            UpdateClientKind::Misbehaviour => {
+                let misbehaviour = TmMisbehaviour::try_from(client_message)?;
                 let header_1 = misbehaviour.header1();
                 let header_2 = misbehaviour.header2();
 
@@ -665,6 +667,7 @@ impl Ics2ClientState for ClientState {
         &self,
         ctx: &mut dyn ExecutionContext,
         client_id: ClientId,
+        _misbehaviour: Any,
     ) -> Result<(), ClientError> {
         let frozen_client_state = self
             .clone()

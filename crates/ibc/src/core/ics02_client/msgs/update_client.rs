@@ -14,13 +14,14 @@ use crate::tx_msg::Msg;
 
 pub const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum UpdateClientKind {
     /// this is the typical scenario where a new header is submitted to the client
     /// to update the client
-    UpdateHeader(Any),
+    UpdateHeader,
     /// this is the scenario where misbehaviour is submitted to the client
     /// (e.g 2 headers with the same height in Tendermint)
-    Misbehaviour(Any),
+    Misbehaviour,
 }
 
 /// A type of message that triggers the update of an on-chain (IBC) client with new headers.
@@ -28,6 +29,7 @@ pub enum UpdateClientKind {
 pub struct MsgUpdateClient {
     pub client_id: ClientId,
     pub client_message: Any,
+    pub update_kind: UpdateClientKind,
     pub signer: Signer,
 }
 
@@ -51,6 +53,7 @@ impl TryFrom<RawMsgUpdateClient> for MsgUpdateClient {
                 .parse()
                 .map_err(ClientError::InvalidMsgUpdateClientId)?,
             client_message: raw.header.ok_or(ClientError::MissingRawHeader)?,
+            update_kind: UpdateClientKind::UpdateHeader,
             signer: raw.signer.parse().map_err(ClientError::Signer)?,
         })
     }
@@ -82,6 +85,7 @@ impl TryFrom<RawMsgSubmitMisbehaviour> for MsgUpdateClient {
                 .parse()
                 .map_err(ClientError::InvalidRawMisbehaviour)?,
             client_message: raw_misbehaviour,
+            update_kind: UpdateClientKind::Misbehaviour,
             signer: raw.signer.parse().map_err(ClientError::Signer)?,
         })
     }
@@ -99,6 +103,7 @@ impl From<MsgUpdateClient> for RawMsgSubmitMisbehaviour {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
 
     use test_log::test;
 
@@ -116,6 +121,7 @@ mod tests {
             MsgUpdateClient {
                 client_id,
                 client_message: header,
+                update_kind: UpdateClientKind::UpdateHeader,
                 signer,
             }
         }

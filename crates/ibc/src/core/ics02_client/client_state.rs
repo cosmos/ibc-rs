@@ -74,7 +74,8 @@ pub trait ClientState:
         &self,
         ctx: &dyn ValidationContext,
         client_id: ClientId,
-        client_message: UpdateClientKind,
+        client_message: Any,
+        update_kind: UpdateClientKind,
     ) -> Result<(), ClientError>;
 
     /// Check whether misbehaviour has occured
@@ -82,7 +83,8 @@ pub trait ClientState:
         &self,
         ctx: &dyn ValidationContext,
         client_id: ClientId,
-        client_message: UpdateClientKind,
+        client_message: Any,
+        update_kind: UpdateClientKind,
     ) -> Result<bool, ClientError>;
 
     fn update_state(
@@ -96,6 +98,7 @@ pub trait ClientState:
         &self,
         ctx: &mut dyn ExecutionContext,
         client_id: ClientId,
+        misbehaviour: Any,
     ) -> Result<(), ClientError>;
 
     fn check_header_and_update_state(
