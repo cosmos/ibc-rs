@@ -90,6 +90,7 @@ mod tests {
     use ibc_proto::google::protobuf::Any;
     use test_log::test;
 
+    use crate::clients::ics07_tendermint::client_state::test_util::get_dummy_tendermint_client_state;
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::clients::ics07_tendermint::header::Header as TmHeader;
     use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
@@ -273,29 +274,6 @@ mod tests {
                 Some(start_height),
             );
 
-        // Update the client height to `client_height`
-        //
-        // Note: The current MockContext interface doesn't allow us to
-        // do this without a major redesign.
-        {
-            let consensus_state: Box<dyn ConsensusState> = {
-                let light_block = HostBlock::generate_tm_block(
-                    ctx_b_chain_id.clone(),
-                    client_height.revision_height(),
-                    Timestamp::now(),
-                );
-
-                light_block.into()
-            };
-
-            let mut ibc_store = ctx_a.ibc_store.lock();
-            let client_record = ibc_store.clients.get_mut(&client_id).unwrap();
-
-            client_record
-                .consensus_states
-                .insert(client_height, consensus_state);
-        }
-
         let ctx_b = MockContext::new(
             ctx_b_chain_id,
             HostType::SyntheticTendermint,
@@ -314,12 +292,38 @@ mod tests {
         // do this without a major redesign.
         let block = match block {
             HostBlock::SyntheticTendermint(mut theader) => {
+                // current problem: the timestamp of the new header doesn't match the timestamp of
+                // the stored consensus state. If we hack them to match, then commit check fails.
+                // FIXME: figure out why they don't match.
                 theader.trusted_height = start_height;
 
                 HostBlock::SyntheticTendermint(theader)
             }
             _ => block,
         };
+
+        // Update the client height to `client_height`
+        //
+        // Note: The current MockContext interface doesn't allow us to
+        // do this without a major redesign.
+        {
+            // FIXME: idea: we need to update the light client with the latest block from
+            // chain B
+            let consensus_state: Box<dyn ConsensusState> = block.clone().into();
+
+            let tm_block = downcast!(block.clone() => HostBlock::SyntheticTendermint).unwrap();
+            let client_state =
+                get_dummy_tendermint_client_state(tm_block.header().clone()).into_box();
+
+            let mut ibc_store = ctx_a.ibc_store.lock();
+            let client_record = ibc_store.clients.get_mut(&client_id).unwrap();
+
+            client_record
+                .consensus_states
+                .insert(client_height, consensus_state);
+
+            client_record.client_state = Some(client_state);
+        }
 
         let latest_header_height = block.height();
         let msg = MsgUpdateClient {
