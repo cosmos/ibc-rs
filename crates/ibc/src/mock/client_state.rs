@@ -331,7 +331,7 @@ impl ClientState for MockClientState {
                 let header_1 = misbehaviour.header1;
                 let header_2 = misbehaviour.header2;
 
-                let header_heights_equal = header_1.height() != header_2.height();
+                let header_heights_equal = header_1.height() == header_2.height();
                 let headers_are_in_future = self.latest_height() < header_1.height();
 
                 Ok(header_heights_equal && headers_are_in_future)
