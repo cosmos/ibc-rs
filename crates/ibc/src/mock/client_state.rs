@@ -352,6 +352,16 @@ impl ClientState for MockClientState {
         let new_client_state = MockClientState::new(header).into_box();
         let new_consensus_state = MockConsensusState::new(header).into_box();
 
+        ctx.store_update_time(
+            client_id.clone(),
+            new_client_state.latest_height(),
+            ctx.host_timestamp()?,
+        )?;
+        ctx.store_update_height(
+            client_id.clone(),
+            new_client_state.latest_height(),
+            ctx.host_height()?,
+        )?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(client_id, &new_client_state.latest_height()),
             new_consensus_state,
