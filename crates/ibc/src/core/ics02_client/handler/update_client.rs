@@ -265,7 +265,7 @@ mod tests {
         let ctx_b_chain_id = ChainId::new("mockgaiaB".to_string(), 1);
         let start_height = Height::new(1, 11).unwrap();
 
-        let mut ctx_a = MockContext::new(ctx_a_chain_id.clone(), HostType::Mock, 5, start_height)
+        let mut ctx_a = MockContext::new(ctx_a_chain_id, HostType::Mock, 5, start_height)
             .with_client_parametrized_with_chain_id(
                 ctx_b_chain_id.clone(),
                 &client_id,

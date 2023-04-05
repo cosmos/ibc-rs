@@ -96,8 +96,8 @@ pub trait ClientState:
     /// client, such as the ClientState and corresponding ConsensusState. Upon
     /// successful update, a list of consensus heights is returned. It assumes
     /// the client_message has already been verified.
-    /// 
-    /// Post-condition: on success, the return value MUST contain at least one 
+    ///
+    /// Post-condition: on success, the return value MUST contain at least one
     /// height.
     fn update_state(
         &self,
