@@ -19,10 +19,12 @@ pub enum ClientError {
         counter: u64,
         validation_error: ValidationError,
     },
-    /// client not found: `{client_id}`
-    ClientNotFound { client_id: ClientId },
     /// client is frozen with description: `{description}`
     ClientFrozen { description: String },
+    /// client state not found: `{client_id}`
+    ClientStateNotFound { client_id: ClientId },
+    /// client state already exists: `{client_id}`
+    ClientStateAlreadyExists { client_id: ClientId },
     /// consensus state not found at: `{client_id}` at height `{height}`
     ConsensusStateNotFound { client_id: ClientId, height: Height },
     /// implementation specific error
