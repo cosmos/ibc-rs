@@ -319,10 +319,37 @@ impl ClientState {
             downcast_tm_consensus_state(consensus_state.as_ref())
         }?;
 
-        let current_timestamp = ctx.host_timestamp()?;
+        self.check_misbehaviour_headers_consistency(header_1, header_2)?;
 
+        let current_timestamp = ctx.host_timestamp()?;
         self.check_misbehaviour_header(header_1, &trusted_consensus_state_1, current_timestamp)?;
         self.check_misbehaviour_header(header_2, &trusted_consensus_state_2, current_timestamp)
+    }
+
+    fn check_misbehaviour_headers_consistency(
+        &self,
+        header_1: &TmHeader,
+        header_2: &TmHeader,
+    ) -> Result<(), ClientError> {
+        if header_1.signed_header.header.chain_id != header_2.signed_header.header.chain_id {
+            return Err(Error::InvalidRawMisbehaviour {
+                reason: "headers must have identical chain_ids".to_owned(),
+            }
+            .into());
+        }
+
+        if header_1.height() < header_2.height() {
+            return Err(Error::InvalidRawMisbehaviour {
+                reason: format!(
+                    "headers1 height is less than header2 height ({} < {})",
+                    header_1.height(),
+                    header_2.height()
+                ),
+            }
+            .into());
+        }
+
+        Ok(())
     }
 
     fn check_misbehaviour_header(
