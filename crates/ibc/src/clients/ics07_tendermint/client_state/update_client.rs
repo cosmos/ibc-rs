@@ -1,16 +1,16 @@
-use tendermint_light_client_verifier::Verifier;
-use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
-
 use crate::prelude::*;
+
+use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
+use tendermint_light_client_verifier::Verifier;
 
 use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
-use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::client_state::ClientState as Ics2ClientState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::{ics24_host::identifier::ClientId, ValidationContext};
 
-use super::{ClientState, downcast_tm_consensus_state, check_header_trusted_next_validator_set};
+use super::{check_header_trusted_next_validator_set, downcast_tm_consensus_state, ClientState};
 
 impl ClientState {
     pub fn verify_header(
