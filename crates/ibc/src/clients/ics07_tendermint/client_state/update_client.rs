@@ -5,6 +5,7 @@ use tendermint_light_client_verifier::Verifier;
 
 use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
+use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::core::ics02_client::client_state::ClientState as Ics2ClientState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
@@ -94,5 +95,68 @@ impl ClientState {
         }
 
         Ok(())
+    }
+
+    pub fn check_for_misbehaviour_update_client(
+        &self,
+        ctx: &dyn ValidationContext,
+        client_id: &ClientId,
+        header: TmHeader,
+    ) -> Result<bool, ClientError> {
+        let header_consensus_state = TmConsensusState::from(header.clone());
+
+        let maybe_existing_consensus_state = {
+            let path_at_header_height = ClientConsensusStatePath::new(client_id, &header.height());
+
+            ctx.consensus_state(&path_at_header_height).ok()
+        };
+
+        match maybe_existing_consensus_state {
+            Some(existing_consensus_state) => {
+                let existing_consensus_state =
+                    downcast_tm_consensus_state(existing_consensus_state.as_ref())?;
+
+                // There is evidence of misbehaviour if the stored consensus state
+                // is different from the new one we received.
+                Ok(existing_consensus_state != header_consensus_state)
+            }
+            None => {
+                // If no header was previously installed, we ensure the monotonicity of timestamps.
+
+                // 1. for all headers, the new header needs to have a larger timestamp than
+                //    the “previous header”
+                {
+                    let maybe_prev_cs = ctx.prev_consensus_state(client_id, &header.height())?;
+
+                    if let Some(prev_cs) = maybe_prev_cs {
+                        // New header timestamp cannot occur *before* the
+                        // previous consensus state's height
+                        let prev_cs = downcast_tm_consensus_state(prev_cs.as_ref())?;
+
+                        if header.signed_header.header().time < prev_cs.timestamp {
+                            return Ok(true);
+                        }
+                    }
+                }
+
+                // 2. if a header comes in and is not the “last” header, then we also ensure
+                //    that its timestamp is less than the “next header”
+                if header.height() < self.latest_height() {
+                    let maybe_next_cs = ctx.next_consensus_state(client_id, &header.height())?;
+
+                    if let Some(next_cs) = maybe_next_cs {
+                        // New (untrusted) header timestamp cannot occur *after* next
+                        // consensus state's height
+                        let next_cs = downcast_tm_consensus_state(next_cs.as_ref())?;
+
+                        if header.signed_header.header().time > next_cs.timestamp {
+                            return Ok(true);
+                        }
+                    }
+                }
+
+                Ok(false)
+            }
+        }
     }
 }
