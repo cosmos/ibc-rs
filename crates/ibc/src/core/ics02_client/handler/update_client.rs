@@ -1,5 +1,6 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpdateAnyClient`.
 
+use crate::core::ics02_client::error::ClientError;
 use crate::prelude::*;
 
 use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
@@ -62,15 +63,18 @@ where
         ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
         ctx.emit_ibc_event(event);
     } else {
-        client_state.update_state(ctx, &client_id, client_message.clone(), &update_kind)?;
+        let consensus_heights =
+            client_state.update_state(ctx, &client_id, client_message.clone(), &update_kind)?;
 
-        let consensus_height = client_state.latest_height();
+        let consensus_height = consensus_heights.get(0).ok_or(ClientError::Other {
+            description: "client update state returned no updated height".to_string(),
+        })?;
 
         let event = IbcEvent::UpdateClient(UpdateClient::new(
             client_id,
             client_state.client_type(),
-            consensus_height,
-            vec![consensus_height],
+            *consensus_height,
+            consensus_heights,
             client_message,
         ));
         ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
