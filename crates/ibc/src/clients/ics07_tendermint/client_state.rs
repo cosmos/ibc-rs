@@ -548,10 +548,8 @@ impl Ics2ClientState for ClientState {
                         let existing_consensus_state =
                             downcast_tm_consensus_state(existing_consensus_state.as_ref())?;
 
-                        // check if there is already a consensus state stored for the
-                        // submitted header. If there is, there is no misbehaviour to report.
-                        // Otherwise, we just confirmed that 2 headers exist with the same
-                        // height, which is evidence of misbehaviour.
+                        // There is evidence of misbehaviour if the stored consensus state
+                        // is different from the new one we received.
                         Ok(existing_consensus_state != header_consensus_state)
                     }
                     None => {

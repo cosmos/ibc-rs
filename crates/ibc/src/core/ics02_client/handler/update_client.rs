@@ -91,12 +91,11 @@ mod tests {
     use test_log::test;
 
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
-    use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::clients::ics07_tendermint::header::Header as TmHeader;
     use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
     use crate::core::ics02_client::client_state::ClientState;
     use crate::core::ics02_client::client_type::ClientType;
-    use crate::core::ics02_client::consensus_state::downcast_consensus_state;
+    use crate::core::ics02_client::consensus_state::ConsensusState;
     use crate::core::ics02_client::handler::update_client::{execute, validate};
     use crate::core::ics02_client::msgs::update_client::{MsgUpdateClient, UpdateClientKind};
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
@@ -261,23 +260,44 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
 
-        let ctx_a_start_height = Height::new(1, 11).unwrap();
+        let ctx_a_chain_id = ChainId::new("mockgaiaA".to_string(), 1);
+        let ctx_b_chain_id = ChainId::new("mockgaiaB".to_string(), 1);
+        let start_height = Height::new(1, 11).unwrap();
 
-        let mut ctx_a = MockContext::new(
-            ChainId::new("mockgaiaA".to_string(), 1),
-            HostType::Mock,
-            5,
-            ctx_a_start_height,
-        )
-        .with_client_parametrized(
-            &client_id,
-            client_height,
-            Some(tm_client_type()), // The target host chain (B) is synthetic TM.
-            Some(client_height),
-        );
+        let mut ctx_a = MockContext::new(ctx_a_chain_id.clone(), HostType::Mock, 5, start_height)
+            .with_client_parametrized_with_chain_id(
+                ctx_b_chain_id.clone(),
+                &client_id,
+                client_height,
+                Some(tm_client_type()), // The target host chain (B) is synthetic TM.
+                Some(start_height),
+            );
+
+        // Update the client height to `client_height`
+        //
+        // Note: The current MockContext interface doesn't allow us to
+        // do this without a major redesign.
+        {
+            let consensus_state: Box<dyn ConsensusState> = {
+                let light_block = HostBlock::generate_tm_block(
+                    ctx_b_chain_id.clone(),
+                    client_height.revision_height(),
+                    Timestamp::now(),
+                );
+
+                light_block.into()
+            };
+
+            let mut ibc_store = ctx_a.ibc_store.lock();
+            let client_record = ibc_store.clients.get_mut(&client_id).unwrap();
+
+            client_record
+                .consensus_states
+                .insert(client_height, consensus_state);
+        }
 
         let ctx_b = MockContext::new(
-            ChainId::new("mockgaiaB".to_string(), 1),
+            ctx_b_chain_id,
             HostType::SyntheticTendermint,
             5,
             client_height,
@@ -286,14 +306,16 @@ mod tests {
         let signer = get_dummy_account_id();
 
         let block = ctx_b.host_block(&client_height).unwrap().clone();
+
+        // Update the trusted height of the header to point to the previous height
+        // (`start_height` in this case).
+        //
+        // Note: The current MockContext interface doesn't allow us to
+        // do this without a major redesign.
         let block = match block {
             HostBlock::SyntheticTendermint(mut theader) => {
-                let cons_state = ctx_a.latest_consensus_states(&client_id, &client_height);
-                if let Some(tcs) = downcast_consensus_state::<TmConsensusState>(cons_state.as_ref())
-                {
-                    theader.light_block.signed_header.header.time = tcs.timestamp;
-                    theader.trusted_height = ctx_a_start_height;
-                }
+                theader.trusted_height = start_height;
+
                 HostBlock::SyntheticTendermint(theader)
             }
             _ => block,
@@ -308,7 +330,7 @@ mod tests {
         };
 
         let res = validate(&ctx_a, msg.clone());
-        assert!(res.is_ok());
+        assert!(res.is_ok(), "result: {res:?}");
 
         let res = execute(&mut ctx_a, msg.clone());
         assert!(res.is_ok(), "result: {res:?}");
