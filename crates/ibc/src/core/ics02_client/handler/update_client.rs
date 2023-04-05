@@ -425,7 +425,7 @@ mod tests {
                 header2: MockHeader::new(height).with_timestamp(timestamp),
             }
             .into(),
-            update_kind: UpdateClientKind::UpdateHeader,
+            update_kind: UpdateClientKind::Misbehaviour,
             signer: get_dummy_account_id(),
         };
 
