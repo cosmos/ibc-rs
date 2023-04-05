@@ -261,13 +261,13 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
 
-        let chain_start_height = Height::new(1, 11).unwrap();
+        let ctx_a_start_height = Height::new(1, 11).unwrap();
 
-        let mut ctx = MockContext::new(
+        let mut ctx_a = MockContext::new(
             ChainId::new("mockgaiaA".to_string(), 1),
             HostType::Mock,
             5,
-            chain_start_height,
+            ctx_a_start_height,
         )
         .with_client_parametrized(
             &client_id,
@@ -288,11 +288,11 @@ mod tests {
         let block = ctx_b.host_block(&client_height).unwrap().clone();
         let block = match block {
             HostBlock::SyntheticTendermint(mut theader) => {
-                let cons_state = ctx.latest_consensus_states(&client_id, &client_height);
+                let cons_state = ctx_a.latest_consensus_states(&client_id, &client_height);
                 if let Some(tcs) = downcast_consensus_state::<TmConsensusState>(cons_state.as_ref())
                 {
                     theader.light_block.signed_header.header.time = tcs.timestamp;
-                    theader.trusted_height = Height::new(1, 11).unwrap();
+                    theader.trusted_height = ctx_a_start_height;
                 }
                 HostBlock::SyntheticTendermint(theader)
             }
@@ -307,16 +307,16 @@ mod tests {
             signer,
         };
 
-        let res = validate(&ctx, msg.clone());
+        let res = validate(&ctx_a, msg.clone());
         assert!(res.is_ok());
 
-        let res = execute(&mut ctx, msg.clone());
+        let res = execute(&mut ctx_a, msg.clone());
         assert!(res.is_ok(), "result: {res:?}");
 
-        let client_state = ctx.client_state(&msg.client_id).unwrap();
+        let client_state = ctx_a.client_state(&msg.client_id).unwrap();
         assert!(client_state.confirm_not_frozen().is_ok());
         assert_eq!(client_state.latest_height(), latest_header_height);
-        assert_eq!(client_state, ctx.latest_client_states(&msg.client_id));
+        assert_eq!(client_state, ctx_a.latest_client_states(&msg.client_id));
     }
 
     #[test]
