@@ -21,7 +21,7 @@ use crate::Height;
 use super::consensus_state::ConsensusState;
 use super::msgs::update_client::UpdateClientKind;
 
-use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::core::{ExecutionContext, ValidationContext};
 
 pub trait ClientState:
     AsAny
@@ -116,20 +116,6 @@ pub trait ClientState:
         client_message: Any,
         update_kind: &UpdateClientKind,
     ) -> Result<(), ClientError>;
-
-    fn check_header_and_update_state(
-        &self,
-        ctx: &dyn ValidationContext,
-        client_id: ClientId,
-        header: Any,
-    ) -> Result<UpdatedState, ClientError>;
-
-    fn check_misbehaviour_and_update_state(
-        &self,
-        ctx: &dyn ValidationContext,
-        client_id: ClientId,
-        misbehaviour: Any,
-    ) -> Result<Box<dyn ClientState>, ContextError>;
 
     /// Verify the upgraded client and consensus states and validate proofs
     /// against the given root.

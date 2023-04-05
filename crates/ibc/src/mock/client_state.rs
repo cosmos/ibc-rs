@@ -26,7 +26,7 @@ use crate::mock::misbehaviour::Misbehaviour;
 
 use crate::Height;
 
-use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::core::{ExecutionContext, ValidationContext};
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
 
@@ -184,55 +184,6 @@ impl ClientState for MockClientState {
 
     fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError> {
         MockConsensusState::try_from(consensus_state).map(MockConsensusState::into_box)
-    }
-
-    fn check_header_and_update_state(
-        &self,
-        _ctx: &dyn ValidationContext,
-        _client_id: ClientId,
-        header: Any,
-    ) -> Result<UpdatedState, ClientError> {
-        let header = MockHeader::try_from(header)?;
-
-        if self.latest_height() >= header.height() {
-            return Err(ClientError::LowHeaderHeight {
-                header_height: header.height(),
-                latest_height: self.latest_height(),
-            });
-        }
-
-        Ok(UpdatedState {
-            client_state: MockClientState::new(header).into_box(),
-            consensus_state: MockConsensusState::new(header).into_box(),
-        })
-    }
-
-    fn check_misbehaviour_and_update_state(
-        &self,
-        _ctx: &dyn ValidationContext,
-        _client_id: ClientId,
-        misbehaviour: Any,
-    ) -> Result<Box<dyn ClientState>, ContextError> {
-        let misbehaviour = Misbehaviour::try_from(misbehaviour)?;
-        let header_1 = misbehaviour.header1;
-        let header_2 = misbehaviour.header2;
-
-        if header_1.height() != header_2.height() {
-            return Err(ClientError::InvalidHeight.into());
-        }
-
-        if self.latest_height() >= header_1.height() {
-            return Err(ClientError::LowHeaderHeight {
-                header_height: header_1.height(),
-                latest_height: self.latest_height(),
-            }
-            .into());
-        }
-
-        let new_state =
-            MockClientState::new(header_1).with_frozen_height(Height::new(0, 1).unwrap());
-
-        Ok(new_state.into_box())
     }
 
     fn verify_upgrade_client(
