@@ -297,7 +297,14 @@ impl ClientState for MockClientState {
     ) -> Result<(), ClientError> {
         match update_kind {
             UpdateClientKind::UpdateHeader => {
-                let _header = MockHeader::try_from(client_message)?;
+                let header = MockHeader::try_from(client_message)?;
+
+                if self.latest_height() >= header.height() {
+                    return Err(ClientError::LowHeaderHeight {
+                        header_height: header.height(),
+                        latest_height: self.latest_height(),
+                    });
+                }
             }
             UpdateClientKind::Misbehaviour => {
                 let _misbehaviour = Misbehaviour::try_from(client_message)?;
@@ -308,7 +315,7 @@ impl ClientState for MockClientState {
     }
 
     /// We consider the following to be misbehaviour:
-    /// + UpdateHeader: new header is at a lower height
+    /// + UpdateHeader: no misbehaviour possible
     /// + Misbehaviour: headers are at same height and are in the future
     fn check_for_misbehaviour(
         &self,
@@ -318,11 +325,7 @@ impl ClientState for MockClientState {
         update_kind: &UpdateClientKind,
     ) -> Result<bool, ClientError> {
         match update_kind {
-            UpdateClientKind::UpdateHeader => {
-                let header = MockHeader::try_from(client_message)?;
-
-                Ok(self.latest_height() < header.height())
-            }
+            UpdateClientKind::UpdateHeader => Ok(false),
             UpdateClientKind::Misbehaviour => {
                 let misbehaviour = Misbehaviour::try_from(client_message)?;
                 let header_1 = misbehaviour.header1;
