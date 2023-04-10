@@ -293,6 +293,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "bs58"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
+
+[[package]]
 name = "bumpalo"
 version = "3.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1362,7 +1368,7 @@ version = "0.1.0"
 dependencies = [
  "ibc",
  "ibc-proto",
- "sp-core",
+ "sp-core 20.0.0",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -2140,7 +2146,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sp-core",
+ "sp-core 19.0.0",
  "sp-io",
  "sp-std",
 ]
@@ -2171,6 +2177,50 @@ dependencies = [
  "bitflags",
  "blake2",
  "bounded-collections",
+ "dyn-clonable",
+ "ed25519-zebra",
+ "futures",
+ "hash-db",
+ "hash256-std-hasher",
+ "impl-serde",
+ "lazy_static",
+ "libsecp256k1",
+ "log",
+ "merlin",
+ "parity-scale-codec",
+ "parking_lot",
+ "primitive-types",
+ "rand 0.8.5",
+ "regex",
+ "scale-info",
+ "schnorrkel",
+ "secp256k1",
+ "secrecy",
+ "serde",
+ "sp-core-hashing",
+ "sp-debug-derive",
+ "sp-externalities",
+ "sp-runtime-interface",
+ "sp-std",
+ "sp-storage",
+ "ss58-registry",
+ "substrate-bip39",
+ "thiserror",
+ "tiny-bip39",
+ "zeroize",
+]
+
+[[package]]
+name = "sp-core"
+version = "20.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7789372146f8ad40d0b40fad0596cb1db5771187a258eabe19b06f00767fcbd6"
+dependencies = [
+ "array-bytes",
+ "bitflags",
+ "blake2",
+ "bounded-collections",
+ "bs58",
  "dyn-clonable",
  "ed25519-zebra",
  "futures",
@@ -2256,7 +2306,7 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "secp256k1",
- "sp-core",
+ "sp-core 19.0.0",
  "sp-externalities",
  "sp-keystore",
  "sp-runtime-interface",
@@ -2279,7 +2329,7 @@ dependencies = [
  "parity-scale-codec",
  "parking_lot",
  "schnorrkel",
- "sp-core",
+ "sp-core 19.0.0",
  "sp-externalities",
  "thiserror",
 ]
@@ -2312,7 +2362,7 @@ dependencies = [
  "serde",
  "sp-application-crypto",
  "sp-arithmetic",
- "sp-core",
+ "sp-core 19.0.0",
  "sp-io",
  "sp-std",
  "sp-weights",
@@ -2362,7 +2412,7 @@ dependencies = [
  "parking_lot",
  "rand 0.8.5",
  "smallvec",
- "sp-core",
+ "sp-core 19.0.0",
  "sp-externalities",
  "sp-panic-handler",
  "sp-std",
@@ -2420,7 +2470,7 @@ dependencies = [
  "parking_lot",
  "scale-info",
  "schnellru",
- "sp-core",
+ "sp-core 19.0.0",
  "sp-std",
  "thiserror",
  "tracing",
@@ -2454,7 +2504,7 @@ dependencies = [
  "serde",
  "smallvec",
  "sp-arithmetic",
- "sp-core",
+ "sp-core 19.0.0",
  "sp-debug-derive",
  "sp-std",
 ]
