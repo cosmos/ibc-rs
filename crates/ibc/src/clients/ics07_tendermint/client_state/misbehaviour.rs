@@ -99,7 +99,7 @@ impl ClientState {
             }
         }
 
-        // ensure that 2/3 of trusted validators have signed the new header
+        // ensure the client trust_threshold overlap between the validator sets of the trusted and untrusted states.
         {
             let untrusted_state = header.as_untrusted_block_state();
             let chain_id = self
