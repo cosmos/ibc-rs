@@ -45,10 +45,8 @@ where
         }
     })?;
 
-    let stored_client_state = ctx.client_state(&client_id);
-    match stored_client_state {
-        Err(ContextError::ClientError(ClientError::ClientStateNotFound { client_id: _ })) => (),
-        _ => return Err(ClientError::ClientStateAlreadyExists { client_id }.into()),
+    if ctx.client_state(&client_id).is_ok() {
+        return Err(ClientError::ClientStateAlreadyExists { client_id }.into());
     };
 
     Ok(())
