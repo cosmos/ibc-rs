@@ -6,7 +6,7 @@ use super::{
 };
 
 /// Entrypoint which only performs message validation
-/// 
+///
 /// If a transaction contains `n` messages `m_1` ... `m_n`, then
 /// they MUST be processed as follows:
 ///     validate(m_1), execute(m_1), ..., validate(m_n), execute(m_n)
