@@ -81,7 +81,7 @@ impl ClientState {
         // ensure correctness of the trusted next validator set provided by the relayer
         check_header_trusted_next_validator_set(header, trusted_consensus_state)?;
 
-        // ensure header timestamp is within trusted period from the trusted consensus state
+        // ensure trusted consensus state is within trusting period
         {
             let duration_since_consensus_state = current_timestamp
                 .duration_since(&trusted_consensus_state.timestamp())
