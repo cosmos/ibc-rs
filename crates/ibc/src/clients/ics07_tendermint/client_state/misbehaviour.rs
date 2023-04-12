@@ -1,3 +1,5 @@
+use tendermint_light_client_verifier::Verifier;
+
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::prelude::*;
 
@@ -42,8 +44,8 @@ impl ClientState {
         self.check_misbehaviour_headers_consistency(header_1, header_2)?;
 
         let current_timestamp = ctx.host_timestamp()?;
-        self.check_misbehaviour_header(header_1, &trusted_consensus_state_1, current_timestamp)?;
-        self.check_misbehaviour_header(header_2, &trusted_consensus_state_2, current_timestamp)
+        self.verify_misbehaviour_header(header_1, &trusted_consensus_state_1, current_timestamp)?;
+        self.verify_misbehaviour_header(header_2, &trusted_consensus_state_2, current_timestamp)
     }
 
     pub fn check_misbehaviour_headers_consistency(
@@ -72,7 +74,7 @@ impl ClientState {
         Ok(())
     }
 
-    pub fn check_misbehaviour_header(
+    pub fn verify_misbehaviour_header(
         &self,
         header: &TmHeader,
         trusted_consensus_state: &TmConsensusState,
@@ -99,41 +101,20 @@ impl ClientState {
             }
         }
 
-        // ensure the client trust_threshold overlap between the validator sets of the trusted and untrusted states.
-        {
-            let untrusted_state = header.as_untrusted_block_state();
-            let chain_id = self
-                .chain_id
-                .clone()
-                .with_version(header.height().revision_number())
-                .into();
-            let trusted_state =
-                TmHeader::as_trusted_block_state(header, trusted_consensus_state, &chain_id)?;
-            let options = self.as_light_client_options()?;
+        // main header verification, delegated to the tendermint-light-client crate.
+        let untrusted_state = header.as_untrusted_block_state();
 
-            self.verifier
-                .verify_commit_against_trusted(&untrusted_state, &trusted_state, &options)
-                .into_result()?;
-        }
+        let chain_id = self.chain_id.clone().into();
+        let trusted_state = header.as_trusted_block_state(trusted_consensus_state, &chain_id)?;
 
-        // run the verification checks on the header based on the trusted
-        // consensus state
-        {
-            let untrusted_state = header.as_untrusted_block_state();
-            let chain_id = self.chain_id.clone().into();
-            let trusted_state =
-                header.as_trusted_block_state(trusted_consensus_state, &chain_id)?;
-            let options = self.as_light_client_options()?;
+        let options = self.as_light_client_options()?;
+        let current_timestamp = current_timestamp.into_tm_time().ok_or(ClientError::Other {
+            description: "host timestamp must not be zero".to_string(),
+        })?;
 
-            self.verifier
-                .validate_against_trusted(
-                    &untrusted_state,
-                    &trusted_state,
-                    &options,
-                    current_timestamp.into_tm_time().unwrap(),
-                )
-                .into_result()?;
-        }
+        self.verifier
+            .verify(untrusted_state, trusted_state, &options, current_timestamp)
+            .into_result()?;
 
         Ok(())
     }
