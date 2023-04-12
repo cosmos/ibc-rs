@@ -23,12 +23,12 @@ pub struct Misbehaviour {
 }
 
 impl Misbehaviour {
-    pub fn new(client_id: ClientId, header1: Header, header2: Header) -> Result<Self, Error> {
-        Ok(Self {
+    pub fn new(client_id: ClientId, header1: Header, header2: Header) -> Self {
+        Self {
             client_id,
             header1,
             header2,
-        })
+        }
     }
 
     pub fn client_id(&self) -> &ClientId {
@@ -88,7 +88,7 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
             })?
             .try_into()?;
 
-        Self::new(client_id, header1, header2)
+        Ok(Self::new(client_id, header1, header2))
     }
 }
 

@@ -543,9 +543,7 @@ mod tests {
 
         let msg = MsgUpdateClient {
             client_id: client_id.clone(),
-            client_message: TmMisbehaviour::new(client_id.clone(), header1, header2)
-                .unwrap()
-                .into(),
+            client_message: TmMisbehaviour::new(client_id.clone(), header1, header2).into(),
             update_kind: UpdateClientKind::Misbehaviour,
             signer: get_dummy_account_id(),
         };
@@ -608,7 +606,6 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id: client_id.clone(),
             client_message: TmMisbehaviour::new(client_id.clone(), header1.into(), header2.into())
-                .unwrap()
                 .into(),
             update_kind: UpdateClientKind::Misbehaviour,
             signer: get_dummy_account_id(),
