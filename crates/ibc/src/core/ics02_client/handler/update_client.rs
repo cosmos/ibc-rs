@@ -87,10 +87,11 @@ where
 #[cfg(test)]
 mod tests {
     use core::str::FromStr;
+    use core::time::Duration;
     use ibc_proto::google::protobuf::Any;
     use test_log::test;
 
-    use crate::clients::ics07_tendermint::client_state::test_util::get_dummy_tendermint_client_state;
+    use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::clients::ics07_tendermint::header::Header as TmHeader;
     use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
@@ -99,6 +100,7 @@ mod tests {
     use crate::core::ics02_client::consensus_state::ConsensusState;
     use crate::core::ics02_client::handler::update_client::{execute, validate};
     use crate::core::ics02_client::msgs::update_client::{MsgUpdateClient, UpdateKind};
+    use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ValidationContext;
     use crate::events::{IbcEvent, IbcEventType};
@@ -112,6 +114,7 @@ mod tests {
     use crate::timestamp::Timestamp;
     use crate::Height;
     use crate::{downcast, prelude::*};
+    use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
 
     #[test]
     fn test_update_client_ok() {
@@ -312,8 +315,37 @@ mod tests {
             let consensus_state: Box<dyn ConsensusState> = block.clone().into();
 
             let tm_block = downcast!(block.clone() => HostBlock::SyntheticTendermint).unwrap();
-            let client_state =
-                get_dummy_tendermint_client_state(tm_block.header().clone()).into_box();
+
+            let client_state = {
+                #[allow(deprecated)]
+                let raw_client_state = RawTmClientState {
+                    chain_id: ChainId::from(tm_block.header().chain_id.clone()).to_string(),
+                    trust_level: Some(Fraction {
+                        numerator: 1,
+                        denominator: 3,
+                    }),
+                    trusting_period: Some(Duration::from_secs(64000).into()),
+                    unbonding_period: Some(Duration::from_secs(128000).into()),
+                    max_clock_drift: Some(Duration::from_millis(3000).into()),
+                    latest_height: Some(
+                        Height::new(
+                            ChainId::chain_version(tm_block.header().chain_id.as_str()),
+                            u64::from(tm_block.header().height),
+                        )
+                        .unwrap()
+                        .into(),
+                    ),
+                    proof_specs: ProofSpecs::default().into(),
+                    upgrade_path: Default::default(),
+                    frozen_height: None,
+                    allow_update_after_expiry: false,
+                    allow_update_after_misbehaviour: false,
+                };
+
+                let client_state = TmClientState::try_from(raw_client_state).unwrap();
+
+                client_state.into_box()
+            };
 
             let mut ibc_store = ctx_a.ibc_store.lock();
             let client_record = ibc_store.clients.get_mut(&client_id).unwrap();
