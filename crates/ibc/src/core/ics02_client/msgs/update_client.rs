@@ -19,8 +19,8 @@ pub const MISBEHAVIOUR_TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehavio
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum UpdateKind {
     /// this is the typical scenario where a new header is submitted to the client
-    /// to update the client. Note that light clients are free to define the type 
-    /// of the object used to update them (e.g. could be a list of headers). 
+    /// to update the client. Note that light clients are free to define the type
+    /// of the object used to update them (e.g. could be a list of headers).
     UpdateClient,
     /// this is the scenario where misbehaviour is submitted to the client
     /// (e.g 2 headers with the same height in Tendermint)
