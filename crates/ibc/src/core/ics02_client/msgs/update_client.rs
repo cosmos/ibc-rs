@@ -14,22 +14,28 @@ use crate::signer::Signer;
 pub const UPDATE_CLIENT_TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
 pub const MISBEHAVIOUR_TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
 
+/// `UpdateKind` represents the 2 ways that a client can be updated
+/// in IBC: either through a `MsgUpdateClient`, or a `MsgSubmitMisbehaviour`.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum UpdateClientKind {
+pub enum UpdateKind {
     /// this is the typical scenario where a new header is submitted to the client
-    /// to update the client
-    UpdateHeader,
+    /// to update the client. Note that light clients are free to define the type 
+    /// of the object used to update them (e.g. could be a list of headers). 
+    UpdateClient,
     /// this is the scenario where misbehaviour is submitted to the client
     /// (e.g 2 headers with the same height in Tendermint)
-    Misbehaviour,
+    SubmitMisbehaviour,
 }
 
-/// A type of message that triggers the update of an on-chain (IBC) client with new headers.
+/// Represents the message that triggers the update of an on-chain (IBC) client
+/// either with new headers, or evidence of misbehaviour.
+/// Note that some types of misbehaviour can be detected when a headers
+/// are updated (`UpdateKind::UpdateClient`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgUpdateClient {
     pub client_id: ClientId,
     pub client_message: Any,
-    pub update_kind: UpdateClientKind,
+    pub update_kind: UpdateKind,
     pub signer: Signer,
 }
 
@@ -45,7 +51,7 @@ impl TryFrom<RawMsgUpdateClient> for MsgUpdateClient {
                 .parse()
                 .map_err(ClientError::InvalidMsgUpdateClientId)?,
             client_message: raw.header.ok_or(ClientError::MissingRawHeader)?,
-            update_kind: UpdateClientKind::UpdateHeader,
+            update_kind: UpdateKind::UpdateClient,
             signer: raw.signer.parse().map_err(ClientError::Signer)?,
         })
     }
@@ -77,7 +83,7 @@ impl TryFrom<RawMsgSubmitMisbehaviour> for MsgUpdateClient {
                 .parse()
                 .map_err(ClientError::InvalidRawMisbehaviour)?,
             client_message: raw_misbehaviour,
-            update_kind: UpdateClientKind::Misbehaviour,
+            update_kind: UpdateKind::SubmitMisbehaviour,
             signer: raw.signer.parse().map_err(ClientError::Signer)?,
         })
     }
@@ -113,7 +119,7 @@ mod tests {
             MsgUpdateClient {
                 client_id,
                 client_message: header,
-                update_kind: UpdateClientKind::UpdateHeader,
+                update_kind: UpdateKind::UpdateClient,
                 signer,
             }
         }

@@ -19,7 +19,7 @@ use crate::prelude::*;
 use crate::Height;
 
 use super::consensus_state::ConsensusState;
-use super::msgs::update_client::UpdateClientKind;
+use super::msgs::update_client::UpdateKind;
 
 use crate::core::{ExecutionContext, ValidationContext};
 
@@ -79,7 +79,7 @@ pub trait ClientState:
         ctx: &dyn ValidationContext,
         client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateClientKind,
+        update_kind: &UpdateKind,
     ) -> Result<(), ClientError>;
 
     /// Checks for evidence of a misbehaviour in Header or Misbehaviour type. It
@@ -89,7 +89,7 @@ pub trait ClientState:
         ctx: &dyn ValidationContext,
         client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateClientKind,
+        update_kind: &UpdateKind,
     ) -> Result<bool, ClientError>;
 
     /// Updates and stores as necessary any associated information for an IBC
@@ -104,7 +104,7 @@ pub trait ClientState:
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateClientKind,
+        update_kind: &UpdateKind,
     ) -> Result<Vec<Height>, ClientError>;
 
     /// update_state_on_misbehaviour should perform appropriate state changes on
@@ -114,7 +114,7 @@ pub trait ClientState:
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateClientKind,
+        update_kind: &UpdateKind,
     ) -> Result<(), ClientError>;
 
     /// Verify the upgraded client and consensus states and validate proofs

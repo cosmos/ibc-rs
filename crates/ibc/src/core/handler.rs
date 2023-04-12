@@ -50,7 +50,7 @@ mod tests {
         msgs::transfer::test_util::get_dummy_msg_transfer, msgs::transfer::MsgTransfer,
         packet::PacketData, PrefixedCoin, MODULE_ID_STR,
     };
-    use crate::core::ics02_client::msgs::update_client::UpdateClientKind;
+    use crate::core::ics02_client::msgs::update_client::UpdateKind;
     use crate::core::ics02_client::msgs::{
         create_client::MsgCreateClient, update_client::MsgUpdateClient,
         upgrade_client::MsgUpgradeClient, ClientMsg,
@@ -273,7 +273,7 @@ mod tests {
                     client_message: MockHeader::new(update_client_height)
                         .with_timestamp(Timestamp::now())
                         .into(),
-                    update_kind: UpdateClientKind::UpdateHeader,
+                    update_kind: UpdateKind::UpdateClient,
                     signer: default_signer.clone(),
                 }))
                 .into(),
@@ -285,7 +285,7 @@ mod tests {
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
                     client_message: MockHeader::new(update_client_height).into(),
-                    update_kind: UpdateClientKind::UpdateHeader,
+                    update_kind: UpdateKind::UpdateClient,
                     signer: default_signer.clone(),
                 }))
                 .into(),
@@ -363,7 +363,7 @@ mod tests {
                     client_message: MockHeader::new(update_client_height_after_send)
                         .with_timestamp(Timestamp::now())
                         .into(),
-                    update_kind: UpdateClientKind::UpdateHeader,
+                    update_kind: UpdateKind::UpdateClient,
                     signer: default_signer.clone(),
                 }))
                 .into(),
@@ -407,7 +407,7 @@ mod tests {
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
                     client_message: MockHeader::new(update_client_height_after_second_send).into(),
-                    update_kind: UpdateClientKind::UpdateHeader,
+                    update_kind: UpdateKind::UpdateClient,
                     signer: default_signer.clone(),
                 }))
                 .into(),

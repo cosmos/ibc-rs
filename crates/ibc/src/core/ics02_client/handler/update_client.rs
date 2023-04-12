@@ -98,7 +98,7 @@ mod tests {
     use crate::core::ics02_client::client_type::ClientType;
     use crate::core::ics02_client::consensus_state::ConsensusState;
     use crate::core::ics02_client::handler::update_client::{execute, validate};
-    use crate::core::ics02_client::msgs::update_client::{MsgUpdateClient, UpdateClientKind};
+    use crate::core::ics02_client::msgs::update_client::{MsgUpdateClient, UpdateKind};
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ValidationContext;
     use crate::events::{IbcEvent, IbcEventType};
@@ -125,7 +125,7 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id,
             client_message: MockHeader::new(height).with_timestamp(timestamp).into(),
-            update_kind: UpdateClientKind::UpdateHeader,
+            update_kind: UpdateKind::UpdateClient,
             signer,
         };
 
@@ -152,7 +152,7 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id: ClientId::from_str("nonexistingclient").unwrap(),
             client_message: MockHeader::new(Height::new(0, 46).unwrap()).into(),
-            update_kind: UpdateClientKind::UpdateHeader,
+            update_kind: UpdateKind::UpdateClient,
             signer,
         };
 
@@ -193,7 +193,7 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id,
             client_message: block.into(),
-            update_kind: UpdateClientKind::UpdateHeader,
+            update_kind: UpdateKind::UpdateClient,
             signer,
         };
 
@@ -241,7 +241,7 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id,
             client_message: block.into(),
-            update_kind: UpdateClientKind::UpdateHeader,
+            update_kind: UpdateKind::UpdateClient,
             signer,
         };
 
@@ -329,7 +329,7 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id,
             client_message: block.into(),
-            update_kind: UpdateClientKind::UpdateHeader,
+            update_kind: UpdateKind::UpdateClient,
             signer,
         };
 
@@ -381,7 +381,7 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id,
             client_message: block_ref.clone().into(),
-            update_kind: UpdateClientKind::UpdateHeader,
+            update_kind: UpdateKind::UpdateClient,
             signer,
         };
 
@@ -402,7 +402,7 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id: client_id.clone(),
             client_message: header.clone(),
-            update_kind: UpdateClientKind::UpdateHeader,
+            update_kind: UpdateKind::UpdateClient,
             signer,
         };
 
@@ -455,7 +455,7 @@ mod tests {
                 header2: MockHeader::new(height).with_timestamp(timestamp),
             }
             .into(),
-            update_kind: UpdateClientKind::Misbehaviour,
+            update_kind: UpdateKind::SubmitMisbehaviour,
             signer: get_dummy_account_id(),
         };
 
@@ -482,7 +482,7 @@ mod tests {
                 header2: MockHeader::new(height),
             }
             .into(),
-            update_kind: UpdateClientKind::Misbehaviour,
+            update_kind: UpdateKind::SubmitMisbehaviour,
             signer: get_dummy_account_id(),
         };
 
@@ -544,7 +544,7 @@ mod tests {
         let msg = MsgUpdateClient {
             client_id: client_id.clone(),
             client_message: TmMisbehaviour::new(client_id.clone(), header1, header2).into(),
-            update_kind: UpdateClientKind::Misbehaviour,
+            update_kind: UpdateKind::SubmitMisbehaviour,
             signer: get_dummy_account_id(),
         };
 
@@ -607,7 +607,7 @@ mod tests {
             client_id: client_id.clone(),
             client_message: TmMisbehaviour::new(client_id.clone(), header1.into(), header2.into())
                 .into(),
-            update_kind: UpdateClientKind::Misbehaviour,
+            update_kind: UpdateKind::SubmitMisbehaviour,
             signer: get_dummy_account_id(),
         };
 

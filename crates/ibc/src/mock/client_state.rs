@@ -1,4 +1,4 @@
-use crate::core::ics02_client::msgs::update_client::UpdateClientKind;
+use crate::core::ics02_client::msgs::update_client::UpdateKind;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 use crate::prelude::*;
 
@@ -244,10 +244,10 @@ impl ClientState for MockClientState {
         _ctx: &dyn ValidationContext,
         _client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateClientKind,
+        update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
         match update_kind {
-            UpdateClientKind::UpdateHeader => {
+            UpdateKind::UpdateClient => {
                 let header = MockHeader::try_from(client_message)?;
 
                 if self.latest_height() >= header.height() {
@@ -257,7 +257,7 @@ impl ClientState for MockClientState {
                     });
                 }
             }
-            UpdateClientKind::Misbehaviour => {
+            UpdateKind::SubmitMisbehaviour => {
                 let _misbehaviour = Misbehaviour::try_from(client_message)?;
             }
         }
@@ -273,11 +273,11 @@ impl ClientState for MockClientState {
         _ctx: &dyn ValidationContext,
         _client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateClientKind,
+        update_kind: &UpdateKind,
     ) -> Result<bool, ClientError> {
         match update_kind {
-            UpdateClientKind::UpdateHeader => Ok(false),
-            UpdateClientKind::Misbehaviour => {
+            UpdateKind::UpdateClient => Ok(false),
+            UpdateKind::SubmitMisbehaviour => {
                 let misbehaviour = Misbehaviour::try_from(client_message)?;
                 let header_1 = misbehaviour.header1;
                 let header_2 = misbehaviour.header2;
@@ -295,7 +295,7 @@ impl ClientState for MockClientState {
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
         client_message: Any,
-        _update_kind: &UpdateClientKind,
+        _update_kind: &UpdateKind,
     ) -> Result<Vec<Height>, ClientError> {
         let header = MockHeader::try_from(client_message)?;
         let header_height = header.height;
@@ -327,7 +327,7 @@ impl ClientState for MockClientState {
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
         _client_message: Any,
-        _update_kind: &UpdateClientKind,
+        _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
         let frozen_client_state = self
             .with_frozen_height(Height::new(0, 1).unwrap())

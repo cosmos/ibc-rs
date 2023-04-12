@@ -1,7 +1,7 @@
 mod misbehaviour;
 mod update_client;
 
-use crate::core::ics02_client::msgs::update_client::UpdateClientKind;
+use crate::core::ics02_client::msgs::update_client::UpdateKind;
 use crate::prelude::*;
 
 use core::cmp::max;
@@ -268,14 +268,14 @@ impl Ics2ClientState for ClientState {
         ctx: &dyn ValidationContext,
         client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateClientKind,
+        update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
         match update_kind {
-            UpdateClientKind::UpdateHeader => {
+            UpdateKind::UpdateClient => {
                 let header = TmHeader::try_from(client_message)?;
                 self.verify_header(ctx, client_id, header)
             }
-            UpdateClientKind::Misbehaviour => {
+            UpdateKind::SubmitMisbehaviour => {
                 let misbehaviour = TmMisbehaviour::try_from(client_message)?;
                 self.verify_misbehaviour(ctx, client_id, misbehaviour)
             }
@@ -290,14 +290,14 @@ impl Ics2ClientState for ClientState {
         ctx: &dyn ValidationContext,
         client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateClientKind,
+        update_kind: &UpdateKind,
     ) -> Result<bool, ClientError> {
         match update_kind {
-            UpdateClientKind::UpdateHeader => {
+            UpdateKind::UpdateClient => {
                 let header = TmHeader::try_from(client_message)?;
                 self.check_for_misbehaviour_update_client(ctx, client_id, header)
             }
-            UpdateClientKind::Misbehaviour => {
+            UpdateKind::SubmitMisbehaviour => {
                 let misbehaviour = TmMisbehaviour::try_from(client_message)?;
                 self.check_for_misbehaviour_misbehavior(&misbehaviour)
             }
@@ -308,7 +308,7 @@ impl Ics2ClientState for ClientState {
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
         client_message: Any,
-        _update_kind: &UpdateClientKind,
+        _update_kind: &UpdateKind,
     ) -> Result<Vec<Height>, ClientError> {
         // we only expect headers to make it here; if a TmMisbehaviour makes it to here,
         // then it is not a valid misbehaviour (check_for_misbehaviour returned false),
@@ -358,7 +358,7 @@ impl Ics2ClientState for ClientState {
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
         _client_message: Any,
-        _update_kind: &UpdateClientKind,
+        _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
         let frozen_client_state = self
             .clone()
