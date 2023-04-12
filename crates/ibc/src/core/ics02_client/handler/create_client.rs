@@ -37,13 +37,17 @@ where
 
     let client_type = client_state.client_type();
 
-    let _client_id = ClientId::new(client_type, id_counter).map_err(|e| {
+    let client_id = ClientId::new(client_type, id_counter).map_err(|e| {
         ClientError::ClientIdentifierConstructor {
             client_type: client_state.client_type(),
             counter: id_counter,
             validation_error: e,
         }
     })?;
+
+    if ctx.client_state(&client_id).is_ok() {
+        return Err(ClientError::ClientStateAlreadyExists { client_id }.into());
+    };
 
     Ok(())
 }
