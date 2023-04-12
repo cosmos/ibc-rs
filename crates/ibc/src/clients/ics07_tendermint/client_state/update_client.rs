@@ -133,7 +133,7 @@ impl ClientState {
                         // previous consensus state's height
                         let prev_cs = downcast_tm_consensus_state(prev_cs.as_ref())?;
 
-                        if header.signed_header.header().time < prev_cs.timestamp {
+                        if header.signed_header.header().time <= prev_cs.timestamp {
                             return Ok(true);
                         }
                     }
