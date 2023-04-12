@@ -720,11 +720,11 @@ impl ValidationContext for MockContext {
                 client_record
                     .client_state
                     .clone()
-                    .ok_or_else(|| ClientError::ClientNotFound {
+                    .ok_or_else(|| ClientError::ClientStateNotFound {
                         client_id: client_id.clone(),
                     })
             }
-            None => Err(ClientError::ClientNotFound {
+            None => Err(ClientError::ClientStateNotFound {
                 client_id: client_id.clone(),
             }),
         }
@@ -776,7 +776,7 @@ impl ValidationContext for MockContext {
             ibc_store
                 .clients
                 .get(client_id)
-                .ok_or_else(|| ClientError::ClientNotFound {
+                .ok_or_else(|| ClientError::ClientStateNotFound {
                     client_id: client_id.clone(),
                 })?;
 
@@ -806,7 +806,7 @@ impl ValidationContext for MockContext {
             ibc_store
                 .clients
                 .get(client_id)
-                .ok_or_else(|| ClientError::ClientNotFound {
+                .ok_or_else(|| ClientError::ClientStateNotFound {
                     client_id: client_id.clone(),
                 })?;
 
