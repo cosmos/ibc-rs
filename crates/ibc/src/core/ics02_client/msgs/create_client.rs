@@ -75,7 +75,7 @@ mod tests {
 
     use ibc_proto::ibc::core::client::v1::MsgCreateClient as RawMsgCreateClient;
 
-    use crate::clients::ics07_tendermint::client_state::test_util::get_dummy_tendermint_client_state;
+    use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
     use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
@@ -86,7 +86,7 @@ mod tests {
         let signer = get_dummy_account_id();
 
         let tm_header = get_dummy_tendermint_header();
-        let tm_client_state = get_dummy_tendermint_client_state(tm_header.clone()).into();
+        let tm_client_state = TmClientState::new_dummy_from_header(tm_header.clone()).into();
 
         let msg = MsgCreateClient::new(
             tm_client_state,
