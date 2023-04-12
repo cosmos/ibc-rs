@@ -10,7 +10,6 @@ use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::Height;
 
 pub const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
 
@@ -50,16 +49,6 @@ impl Misbehaviour {
         );
 
         self.header1.signed_header.header.chain_id.as_str() == chain_id.as_str()
-    }
-}
-
-impl crate::core::ics02_client::misbehaviour::Misbehaviour for Misbehaviour {
-    fn client_id(&self) -> &ClientId {
-        &self.client_id
-    }
-
-    fn height(&self) -> Height {
-        self.header1.height()
     }
 }
 
