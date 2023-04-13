@@ -1,3 +1,4 @@
+use crate::core::ContextError;
 use crate::prelude::*;
 
 use displaydoc::Display;
@@ -113,6 +114,17 @@ pub enum ClientError {
     ClientSpecific { description: String },
     /// other error: `{description}`
     Other { description: String },
+}
+
+impl From<ContextError> for ClientError {
+    fn from(context_error: ContextError) -> Self {
+        match context_error {
+            ContextError::ClientError(e) => e,
+            _ => ClientError::Other {
+                description: context_error.to_string(),
+            },
+        }
+    }
 }
 
 #[cfg(feature = "std")]

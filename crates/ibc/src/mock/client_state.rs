@@ -1,3 +1,5 @@
+use crate::core::ics02_client::msgs::update_client::UpdateKind;
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap as HashMap;
@@ -24,7 +26,7 @@ use crate::mock::misbehaviour::Misbehaviour;
 
 use crate::Height;
 
-use crate::core::{ContextError, ValidationContext};
+use crate::core::{ExecutionContext, ValidationContext};
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
 
@@ -184,55 +186,6 @@ impl ClientState for MockClientState {
         MockConsensusState::try_from(consensus_state).map(MockConsensusState::into_box)
     }
 
-    fn check_header_and_update_state(
-        &self,
-        _ctx: &dyn ValidationContext,
-        _client_id: ClientId,
-        header: Any,
-    ) -> Result<UpdatedState, ClientError> {
-        let header = MockHeader::try_from(header)?;
-
-        if self.latest_height() >= header.height() {
-            return Err(ClientError::LowHeaderHeight {
-                header_height: header.height(),
-                latest_height: self.latest_height(),
-            });
-        }
-
-        Ok(UpdatedState {
-            client_state: MockClientState::new(header).into_box(),
-            consensus_state: MockConsensusState::new(header).into_box(),
-        })
-    }
-
-    fn check_misbehaviour_and_update_state(
-        &self,
-        _ctx: &dyn ValidationContext,
-        _client_id: ClientId,
-        misbehaviour: Any,
-    ) -> Result<Box<dyn ClientState>, ContextError> {
-        let misbehaviour = Misbehaviour::try_from(misbehaviour)?;
-        let header_1 = misbehaviour.header1;
-        let header_2 = misbehaviour.header2;
-
-        if header_1.height() != header_2.height() {
-            return Err(ClientError::InvalidHeight.into());
-        }
-
-        if self.latest_height() >= header_1.height() {
-            return Err(ClientError::LowHeaderHeight {
-                header_height: header_1.height(),
-                latest_height: self.latest_height(),
-            }
-            .into());
-        }
-
-        let new_state =
-            MockClientState::new(header_1).with_frozen_height(Height::new(0, 1).unwrap());
-
-        Ok(new_state.into_box())
-    }
-
     fn verify_upgrade_client(
         &self,
         upgraded_client_state: Any,
@@ -283,6 +236,105 @@ impl ClientState for MockClientState {
         _root: &CommitmentRoot,
         _path: Path,
     ) -> Result<(), ClientError> {
+        Ok(())
+    }
+
+    fn verify_client_message(
+        &self,
+        _ctx: &dyn ValidationContext,
+        _client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<(), ClientError> {
+        match update_kind {
+            UpdateKind::UpdateClient => {
+                let header = MockHeader::try_from(client_message)?;
+
+                if self.latest_height() >= header.height() {
+                    return Err(ClientError::LowHeaderHeight {
+                        header_height: header.height(),
+                        latest_height: self.latest_height(),
+                    });
+                }
+            }
+            UpdateKind::SubmitMisbehaviour => {
+                let _misbehaviour = Misbehaviour::try_from(client_message)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// We consider the following to be misbehaviour:
+    /// + UpdateHeader: no misbehaviour possible
+    /// + Misbehaviour: headers are at same height and are in the future
+    fn check_for_misbehaviour(
+        &self,
+        _ctx: &dyn ValidationContext,
+        _client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<bool, ClientError> {
+        match update_kind {
+            UpdateKind::UpdateClient => Ok(false),
+            UpdateKind::SubmitMisbehaviour => {
+                let misbehaviour = Misbehaviour::try_from(client_message)?;
+                let header_1 = misbehaviour.header1;
+                let header_2 = misbehaviour.header2;
+
+                let header_heights_equal = header_1.height() == header_2.height();
+                let headers_are_in_future = self.latest_height() < header_1.height();
+
+                Ok(header_heights_equal && headers_are_in_future)
+            }
+        }
+    }
+
+    fn update_state(
+        &self,
+        ctx: &mut dyn ExecutionContext,
+        client_id: &ClientId,
+        client_message: Any,
+        _update_kind: &UpdateKind,
+    ) -> Result<Vec<Height>, ClientError> {
+        let header = MockHeader::try_from(client_message)?;
+        let header_height = header.height;
+
+        let new_client_state = MockClientState::new(header).into_box();
+        let new_consensus_state = MockConsensusState::new(header).into_box();
+
+        ctx.store_update_time(
+            client_id.clone(),
+            new_client_state.latest_height(),
+            ctx.host_timestamp()?,
+        )?;
+        ctx.store_update_height(
+            client_id.clone(),
+            new_client_state.latest_height(),
+            ctx.host_height()?,
+        )?;
+        ctx.store_consensus_state(
+            ClientConsensusStatePath::new(client_id, &new_client_state.latest_height()),
+            new_consensus_state,
+        )?;
+        ctx.store_client_state(ClientStatePath::new(client_id), new_client_state)?;
+
+        Ok(vec![header_height])
+    }
+
+    fn update_state_on_misbehaviour(
+        &self,
+        ctx: &mut dyn ExecutionContext,
+        client_id: &ClientId,
+        _client_message: Any,
+        _update_kind: &UpdateKind,
+    ) -> Result<(), ClientError> {
+        let frozen_client_state = self
+            .with_frozen_height(Height::new(0, 1).unwrap())
+            .into_box();
+
+        ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state)?;
+
         Ok(())
     }
 }

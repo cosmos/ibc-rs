@@ -19,8 +19,9 @@ use crate::prelude::*;
 use crate::Height;
 
 use super::consensus_state::ConsensusState;
+use super::msgs::update_client::UpdateKind;
 
-use crate::core::{ContextError, ValidationContext};
+use crate::core::{ExecutionContext, ValidationContext};
 
 pub trait ClientState:
     AsAny
@@ -67,19 +68,54 @@ pub trait ClientState:
 
     fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError>;
 
-    fn check_header_and_update_state(
+    /// verify_client_message must verify a client_message. A client_message
+    /// could be a Header, Misbehaviour. It must handle each type of
+    /// client_message appropriately. Calls to check_for_misbehaviour,
+    /// update_state, and update_state_on_misbehaviour will assume that the
+    /// content of the client_message has been verified and can be trusted. An
+    /// error should be returned if the client_message fails to verify.
+    fn verify_client_message(
         &self,
         ctx: &dyn ValidationContext,
-        client_id: ClientId,
-        header: Any,
-    ) -> Result<UpdatedState, ClientError>;
+        client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<(), ClientError>;
 
-    fn check_misbehaviour_and_update_state(
+    /// Checks for evidence of a misbehaviour in Header or Misbehaviour type. It
+    /// assumes the client_message has already been verified.
+    fn check_for_misbehaviour(
         &self,
         ctx: &dyn ValidationContext,
-        client_id: ClientId,
-        misbehaviour: Any,
-    ) -> Result<Box<dyn ClientState>, ContextError>;
+        client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<bool, ClientError>;
+
+    /// Updates and stores as necessary any associated information for an IBC
+    /// client, such as the ClientState and corresponding ConsensusState. Upon
+    /// successful update, a list of consensus heights is returned. It assumes
+    /// the client_message has already been verified.
+    ///
+    /// Post-condition: on success, the return value MUST contain at least one
+    /// height.
+    fn update_state(
+        &self,
+        ctx: &mut dyn ExecutionContext,
+        client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<Vec<Height>, ClientError>;
+
+    /// update_state_on_misbehaviour should perform appropriate state changes on
+    /// a client state given that misbehaviour has been detected and verified
+    fn update_state_on_misbehaviour(
+        &self,
+        ctx: &mut dyn ExecutionContext,
+        client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<(), ClientError>;
 
     /// Verify the upgraded client and consensus states and validate proofs
     /// against the given root.

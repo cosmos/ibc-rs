@@ -32,7 +32,7 @@ pub trait RelayerContext {
 mod tests {
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::core::ics02_client::header::{downcast_header, Header};
-    use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
+    use crate::core::ics02_client::msgs::update_client::{MsgUpdateClient, UpdateKind};
     use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ics26_routing::msgs::MsgEnvelope;
@@ -86,7 +86,8 @@ mod tests {
         // Client on destination chain can be updated.
         Ok(ClientMsg::UpdateClient(MsgUpdateClient {
             client_id: client_id.clone(),
-            header: src_header.clone_into(),
+            client_message: src_header.clone_into(),
+            update_kind: UpdateKind::UpdateClient,
             signer: dest.signer(),
         }))
     }

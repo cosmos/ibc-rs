@@ -210,7 +210,12 @@ impl MockContext {
         client_type: Option<ClientType>,
         consensus_state_height: Option<Height>,
     ) -> Self {
+        // NOTE: this is wrong; the client chain ID is supposed to represent
+        // the chain ID of the counterparty chain. But at this point this is
+        // too ingrained in our tests; `with_client()` is called everywhere,
+        // which delegates to this.
         let client_chain_id = self.host_chain_id.clone();
+
         self.with_client_parametrized_with_chain_id(
             client_chain_id,
             client_id,
