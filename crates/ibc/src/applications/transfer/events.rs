@@ -146,14 +146,27 @@ impl From<DenomTraceEvent> for ModuleEvent {
 pub struct TransferEvent {
     pub sender: Signer,
     pub receiver: Signer,
+    pub amount: Amount,
+    pub denom: PrefixedDenom,
 }
 
 impl From<TransferEvent> for ModuleEvent {
     fn from(ev: TransferEvent) -> Self {
-        let TransferEvent { sender, receiver } = ev;
+        let TransferEvent {
+            sender,
+            receiver,
+            amount,
+            denom,
+        } = ev;
+
         Self {
             kind: EVENT_TYPE_TRANSFER.to_string(),
-            attributes: vec![("sender", sender).into(), ("receiver", receiver).into()],
+            attributes: vec![
+                ("sender", sender).into(),
+                ("receiver", receiver).into(),
+                ("amount", amount).into(),
+                ("denom", denom).into(),
+            ],
         }
     }
 }
