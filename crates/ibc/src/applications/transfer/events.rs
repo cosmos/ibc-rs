@@ -87,18 +87,15 @@ pub struct AckStatusEvent {
 impl From<AckStatusEvent> for ModuleEvent {
     fn from(ev: AckStatusEvent) -> Self {
         let AckStatusEvent { acknowledgement } = ev;
-        let mut event = Self {
-            kind: EVENT_TYPE_PACKET.to_string(),
-            attributes: vec![],
-        };
         let attr_label = match acknowledgement {
             TokenTransferAcknowledgement::Success(_) => "success",
             TokenTransferAcknowledgement::Error(_) => "error",
         };
-        event
-            .attributes
-            .push((attr_label, acknowledgement.to_string()).into());
-        event
+
+        Self {
+            kind: EVENT_TYPE_PACKET.to_string(),
+            attributes: vec![(attr_label, acknowledgement.to_string()).into()],
+        }
     }
 }
 
