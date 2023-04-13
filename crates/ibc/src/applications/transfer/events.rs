@@ -37,6 +37,7 @@ impl From<RecvEvent> for ModuleEvent {
             kind: EVENT_TYPE_PACKET.to_string(),
             module_name: MODULE_ID_STR.parse().expect("invalid ModuleId"),
             attributes: vec![
+                ("module", MODULE_ID_STR).into(),
                 ("receiver", receiver).into(),
                 ("denom", denom).into(),
                 ("amount", amount).into(),
@@ -65,6 +66,7 @@ impl From<AckEvent> for ModuleEvent {
             kind: EVENT_TYPE_PACKET.to_string(),
             module_name: MODULE_ID_STR.parse().expect("invalid ModuleId"),
             attributes: vec![
+                ("module", MODULE_ID_STR).into(),
                 ("receiver", receiver).into(),
                 ("denom", denom).into(),
                 ("amount", amount).into(),
@@ -114,6 +116,7 @@ impl From<TimeoutEvent> for ModuleEvent {
             kind: EVENT_TYPE_TIMEOUT.to_string(),
             module_name: MODULE_ID_STR.parse().expect("invalid ModuleId"),
             attributes: vec![
+                ("module", MODULE_ID_STR).into(),
                 ("refund_receiver", refund_receiver).into(),
                 ("refund_denom", refund_denom).into(),
                 ("refund_amount", refund_amount).into(),
