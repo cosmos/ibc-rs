@@ -19,6 +19,7 @@ pub enum Event {
 }
 
 pub struct RecvEvent {
+    pub sender: Signer,
     pub receiver: Signer,
     pub denom: PrefixedDenom,
     pub amount: Amount,
@@ -28,6 +29,7 @@ pub struct RecvEvent {
 impl From<RecvEvent> for ModuleEvent {
     fn from(ev: RecvEvent) -> Self {
         let RecvEvent {
+            sender,
             receiver,
             denom,
             amount,
@@ -37,6 +39,7 @@ impl From<RecvEvent> for ModuleEvent {
             kind: EVENT_TYPE_PACKET.to_string(),
             attributes: vec![
                 ("module", MODULE_ID_STR).into(),
+                ("sender", sender).into(),
                 ("receiver", receiver).into(),
                 ("denom", denom).into(),
                 ("amount", amount).into(),
@@ -47,6 +50,7 @@ impl From<RecvEvent> for ModuleEvent {
 }
 
 pub struct AckEvent {
+    pub sender: Signer,
     pub receiver: Signer,
     pub denom: PrefixedDenom,
     pub amount: Amount,
@@ -56,6 +60,7 @@ pub struct AckEvent {
 impl From<AckEvent> for ModuleEvent {
     fn from(ev: AckEvent) -> Self {
         let AckEvent {
+            sender,
             receiver,
             denom,
             amount,
@@ -65,6 +70,7 @@ impl From<AckEvent> for ModuleEvent {
             kind: EVENT_TYPE_PACKET.to_string(),
             attributes: vec![
                 ("module", MODULE_ID_STR).into(),
+                ("sender", sender).into(),
                 ("receiver", receiver).into(),
                 ("denom", denom).into(),
                 ("amount", amount).into(),
