@@ -12,7 +12,6 @@ use crate::core::ics03_connection::events as ConnectionEvents;
 use crate::core::ics04_channel::error as channel_error;
 use crate::core::ics04_channel::events as ChannelEvents;
 use crate::core::ics24_host::error::ValidationError;
-use crate::core::ics26_routing::context::ModuleId;
 use crate::timestamp::ParseTimestampError;
 
 #[derive(Debug, Display)]
@@ -324,7 +323,6 @@ impl IbcEvent {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ModuleEvent {
     pub kind: String,
-    pub module_name: ModuleId,
     pub attributes: Vec<ModuleEventAttribute>,
 }
 
