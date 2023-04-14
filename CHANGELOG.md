@@ -1,5 +1,57 @@
 # CHANGELOG
 
+## v0.37.0
+
+*April 13, 2023*
+
+This release primarily updates `ClientState` to adopt a better API for client updates and misbehaviour detection, borrowed from ibc-go's ADR 6. In the process of updating the API, a few bugs were found in the tendermint light client and fixed.
+
+There are consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- `ClientState`: Split `check_misbehaviour_and_update_state` 
+  and `check_header_and_update_state`
+  ([#535](https://github.com/cosmos/ibc-rs/issues/535))
+- Improve MsgTransfer struct
+  ([#567](https://github.com/cosmos/ibc-rs/issues/567))
+- Remove `ics05_port::context::PortReader` ([#580](https://github.com/cosmos/ibc-rs/issues/580))
+- Check if `ClientStatePath` is empty during client creation process
+  ([#604](https://github.com/cosmos/ibc-rs/issues/604))
+
+### BUG
+
+- Disallow creation of new Tendermint client state instance with a frozen height
+ ([#178](https://github.com/cosmos/ibc-rs/issues/178))
+- Emit a message event for SendPacket ([#574](https://github.com/cosmos/ibc-rs/issues/574))
+- Properly convert from `Any` to `MsgEnvelope` 
+  ([#578](https://github.com/cosmos/ibc-rs/issues/578))
+- Tendermint light client: fix missing trusted_validator_set 
+  hash check
+  ([#583](https://github.com/cosmos/ibc-rs/issues/583))
+- Tendermint light client: fix missing `Header.height()` 
+  vs `Header.trusted_height` check
+  ([#585](https://github.com/cosmos/ibc-rs/issues/585))
+- Tendermint light client: ensure that we use the correct
+  chain ID in commit verification
+  ([#589](https://github.com/cosmos/ibc-rs/issues/589))
+- tx_msg: Remove panic in `Msg::get_sign_bytes`
+  ([#593](https://github.com/cosmos/ibc-rs/issues/593))
+- Tendermint light client: add check that ensure that
+  the consensus state timestamps are monotonic, otherwise
+  freeze the client
+  ([#598](https://github.com/cosmos/ibc-rs/issues/598))
+- Tendermint light client: fix how the client's latest
+  height is updated
+  ([#601](https://github.com/cosmos/ibc-rs/issues/601))
+
+### FEATURE
+
+- Prefixed denom parity scale codec enabled
+  ([#577](https://github.com/cosmos/ibc-rs/pull/577))
+- Add (de)serialization for `ics04_channel::handler::ModuleExtras`
+  ([#581](https://github.com/cosmos/ibc-rs/issues/581))
+
 ## v0.36.0
 
 *March 27, 2023*

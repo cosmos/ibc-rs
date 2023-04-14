@@ -54,7 +54,7 @@ use crate::core::ics24_host::path::{
 use crate::core::ics26_routing::context::{Module, ModuleId};
 use crate::core::{
     ics02_client::{
-        handler::{create_client, misbehaviour, update_client, upgrade_client},
+        handler::{create_client, update_client, upgrade_client},
         msgs::ClientMsg,
     },
     ics03_connection::{
@@ -174,7 +174,6 @@ pub trait ValidationContext: Router {
             MsgEnvelope::Client(msg) => match msg {
                 ClientMsg::CreateClient(msg) => create_client::validate(self, msg),
                 ClientMsg::UpdateClient(msg) => update_client::validate(self, msg),
-                ClientMsg::Misbehaviour(msg) => misbehaviour::validate(self, msg),
                 ClientMsg::UpgradeClient(msg) => upgrade_client::validate(self, msg),
             }
             .map_err(RouterError::ContextError),
@@ -383,7 +382,6 @@ pub trait ExecutionContext: ValidationContext {
             MsgEnvelope::Client(msg) => match msg {
                 ClientMsg::CreateClient(msg) => create_client::execute(self, msg),
                 ClientMsg::UpdateClient(msg) => update_client::execute(self, msg),
-                ClientMsg::Misbehaviour(msg) => misbehaviour::execute(self, msg),
                 ClientMsg::UpgradeClient(msg) => upgrade_client::execute(self, msg),
             }
             .map_err(RouterError::ContextError),

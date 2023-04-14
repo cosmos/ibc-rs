@@ -6,6 +6,13 @@ use super::{
 };
 
 /// Entrypoint which only performs message validation
+///
+/// If a transaction contains `n` messages `m_1` ... `m_n`, then
+/// they MUST be processed as follows:
+///     validate(m_1), execute(m_1), ..., validate(m_n), execute(m_n)
+/// That is, the state transition of message `i` must be applied before
+/// message `i+1` is validated. This is equivalent to calling
+/// `dispatch()` on each successively.
 pub fn validate<Ctx>(ctx: &Ctx, message: Any) -> Result<(), RouterError>
 where
     Ctx: ValidationContext,
@@ -43,6 +50,7 @@ mod tests {
         msgs::transfer::test_util::get_dummy_msg_transfer, msgs::transfer::MsgTransfer,
         packet::PacketData, PrefixedCoin, MODULE_ID_STR,
     };
+    use crate::core::ics02_client::msgs::update_client::UpdateKind;
     use crate::core::ics02_client::msgs::{
         create_client::MsgCreateClient, update_client::MsgUpdateClient,
         upgrade_client::MsgUpgradeClient, ClientMsg,
@@ -262,9 +270,10 @@ mod tests {
                 name: "Client update successful".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    header: MockHeader::new(update_client_height)
+                    client_message: MockHeader::new(update_client_height)
                         .with_timestamp(Timestamp::now())
                         .into(),
+                    update_kind: UpdateKind::UpdateClient,
                     signer: default_signer.clone(),
                 }))
                 .into(),
@@ -275,7 +284,8 @@ mod tests {
                 name: "Client update fails due to stale header".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    header: MockHeader::new(update_client_height).into(),
+                    client_message: MockHeader::new(update_client_height).into(),
+                    update_kind: UpdateKind::UpdateClient,
                     signer: default_signer.clone(),
                 }))
                 .into(),
@@ -350,9 +360,10 @@ mod tests {
                 name: "Client update successful #2".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    header: MockHeader::new(update_client_height_after_send)
+                    client_message: MockHeader::new(update_client_height_after_send)
                         .with_timestamp(Timestamp::now())
                         .into(),
+                    update_kind: UpdateKind::UpdateClient,
                     signer: default_signer.clone(),
                 }))
                 .into(),
@@ -395,7 +406,8 @@ mod tests {
                 name: "Client update successful".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    header: MockHeader::new(update_client_height_after_second_send).into(),
+                    client_message: MockHeader::new(update_client_height_after_second_send).into(),
+                    update_kind: UpdateKind::UpdateClient,
                     signer: default_signer.clone(),
                 }))
                 .into(),
