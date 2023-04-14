@@ -115,9 +115,7 @@ pub enum IbcEvent {
     TimeoutPacket(ChannelEvents::TimeoutPacket),
     ChannelClosed(ChannelEvents::ChannelClosed),
 
-    AppModule(ModuleEvent),
-
-    // stores the module name
+    Module(ModuleEvent),
     Message(MessageEvent),
 }
 
@@ -146,7 +144,7 @@ impl TryFrom<IbcEvent> for abci::Event {
             IbcEvent::AcknowledgePacket(event) => event.try_into().map_err(Error::Channel)?,
             IbcEvent::TimeoutPacket(event) => event.try_into().map_err(Error::Channel)?,
             IbcEvent::ChannelClosed(event) => event.into(),
-            IbcEvent::AppModule(event) => event.try_into()?,
+            IbcEvent::Module(event) => event.try_into()?,
             IbcEvent::Message(event) => abci::Event {
                 kind: MESSAGE_EVENT.to_string(),
                 attributes: vec![("module", event.module_attribute(), true).into()],
@@ -178,7 +176,7 @@ impl IbcEvent {
             IbcEvent::AcknowledgePacket(event) => event.event_type(),
             IbcEvent::TimeoutPacket(event) => event.event_type(),
             IbcEvent::ChannelClosed(event) => event.event_type(),
-            IbcEvent::AppModule(module_event) => module_event.kind.as_str(),
+            IbcEvent::Module(module_event) => module_event.kind.as_str(),
             IbcEvent::Message(_) => MESSAGE_EVENT,
         }
     }
@@ -218,7 +216,7 @@ impl TryFrom<ModuleEvent> for abci::Event {
 
 impl From<ModuleEvent> for IbcEvent {
     fn from(e: ModuleEvent) -> Self {
-        IbcEvent::AppModule(e)
+        IbcEvent::Module(e)
     }
 }
 

@@ -80,7 +80,7 @@ where
         ctx_a.emit_ibc_event(core_event);
 
         for module_event in extras.events {
-            ctx_a.emit_ibc_event(IbcEvent::AppModule(module_event));
+            ctx_a.emit_ibc_event(IbcEvent::Module(module_event));
         }
 
         for log_message in extras.log {

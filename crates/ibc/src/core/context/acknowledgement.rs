@@ -105,7 +105,7 @@ where
         // Note: Acknowledgement event was emitted at the beginning
 
         for module_event in extras.events {
-            ctx_a.emit_ibc_event(IbcEvent::AppModule(module_event));
+            ctx_a.emit_ibc_event(IbcEvent::Module(module_event));
         }
 
         for log_message in extras.log {
