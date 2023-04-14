@@ -1,5 +1,6 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
+use crate::events::MessageEvent;
 use crate::prelude::*;
 
 use crate::core::context::ContextError;
@@ -101,7 +102,7 @@ where
         client_type,
         client_state.latest_height(),
     ));
-    ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
     ctx.emit_ibc_event(event);
 
     ctx.log_message(format!(
@@ -113,7 +114,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use super::*;
 
     use test_log::test;
 

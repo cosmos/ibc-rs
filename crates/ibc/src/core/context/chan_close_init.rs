@@ -7,7 +7,7 @@ use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics26_routing::context::ModuleId;
 
-use crate::events::IbcEvent;
+use crate::events::{IbcEvent, MessageEvent};
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 pub(super) fn chan_close_init_validate<ValCtx>(
@@ -79,7 +79,7 @@ where
                 conn_id_on_a,
             ))
         };
-        ctx_a.emit_ibc_event(IbcEvent::Message(core_event.event_type()));
+        ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
         ctx_a.emit_ibc_event(core_event);
 
         for module_event in extras.events {
@@ -96,13 +96,14 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     use crate::applications::transfer::MODULE_ID_STR;
     use crate::core::ics04_channel::msgs::chan_close_init::test_util::get_dummy_raw_msg_chan_close_init;
     use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
     use crate::core::ics26_routing::context::ModuleId;
     use crate::core::ValidationContext;
-    use crate::events::{IbcEvent, IbcEventType};
-    use crate::prelude::*;
+    use crate::events::IbcEvent;
 
     use crate::core::ics03_connection::connection::ConnectionEnd;
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
@@ -176,7 +177,7 @@ mod tests {
         assert_eq!(context.events.len(), 2);
         assert!(matches!(
             context.events[0],
-            IbcEvent::Message(IbcEventType::CloseInitChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(context.events[1], IbcEvent::CloseInitChannel(_)));
     }

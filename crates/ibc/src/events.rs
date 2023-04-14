@@ -73,7 +73,6 @@ impl WithBlockDataType {
     }
 }
 
-const APP_MODULE_EVENT: &str = "app_module";
 const MESSAGE_EVENT: &str = "message";
 /// Client event types
 const CREATE_CLIENT_EVENT: &str = "create_client";
@@ -163,7 +162,7 @@ impl IbcEventType {
             IbcEventType::WriteAck => WRITE_ACK_EVENT,
             IbcEventType::AckPacket => ACK_PACKET_EVENT,
             IbcEventType::Timeout => TIMEOUT_EVENT,
-            IbcEventType::AppModule => APP_MODULE_EVENT,
+            IbcEventType::AppModule => "", // REMOVED ANYWAY
             IbcEventType::Message => MESSAGE_EVENT,
         }
     }
@@ -211,7 +210,8 @@ pub enum IbcEvent {
 
     AppModule(ModuleEvent),
 
-    Message(IbcEventType),
+    // stores the module name
+    Message(MessageEvent),
 }
 
 impl TryFrom<IbcEvent> for abci::Event {
@@ -240,36 +240,39 @@ impl TryFrom<IbcEvent> for abci::Event {
             IbcEvent::TimeoutPacket(event) => event.try_into().map_err(Error::Channel)?,
             IbcEvent::ChannelClosed(event) => event.into(),
             IbcEvent::AppModule(event) => event.try_into()?,
-            IbcEvent::Message(event_type) => try_message_event_from_event_type(event_type)?,
+            IbcEvent::Message(event) => abci::Event {
+                kind: "message".to_string(),
+                attributes: vec![("module", event.module_attribute(), true).into()],
+            },
         })
     }
 }
 
 impl IbcEvent {
-    pub fn event_type(&self) -> IbcEventType {
+    pub fn event_type(&self) -> &str {
         match self {
-            IbcEvent::CreateClient(_) => IbcEventType::CreateClient,
-            IbcEvent::UpdateClient(_) => IbcEventType::UpdateClient,
-            IbcEvent::ClientMisbehaviour(_) => IbcEventType::ClientMisbehaviour,
-            IbcEvent::UpgradeClient(_) => IbcEventType::UpgradeClient,
-            IbcEvent::OpenInitConnection(_) => IbcEventType::OpenInitConnection,
-            IbcEvent::OpenTryConnection(_) => IbcEventType::OpenTryConnection,
-            IbcEvent::OpenAckConnection(_) => IbcEventType::OpenAckConnection,
-            IbcEvent::OpenConfirmConnection(_) => IbcEventType::OpenConfirmConnection,
-            IbcEvent::OpenInitChannel(_) => IbcEventType::OpenInitChannel,
-            IbcEvent::OpenTryChannel(_) => IbcEventType::OpenTryChannel,
-            IbcEvent::OpenAckChannel(_) => IbcEventType::OpenAckChannel,
-            IbcEvent::OpenConfirmChannel(_) => IbcEventType::OpenConfirmChannel,
-            IbcEvent::CloseInitChannel(_) => IbcEventType::CloseInitChannel,
-            IbcEvent::CloseConfirmChannel(_) => IbcEventType::CloseConfirmChannel,
-            IbcEvent::SendPacket(_) => IbcEventType::SendPacket,
-            IbcEvent::ReceivePacket(_) => IbcEventType::ReceivePacket,
-            IbcEvent::WriteAcknowledgement(_) => IbcEventType::WriteAck,
-            IbcEvent::AcknowledgePacket(_) => IbcEventType::AckPacket,
-            IbcEvent::TimeoutPacket(_) => IbcEventType::Timeout,
-            IbcEvent::ChannelClosed(_) => IbcEventType::ChannelClosed,
-            IbcEvent::AppModule(_) => IbcEventType::AppModule,
-            IbcEvent::Message(_) => IbcEventType::Message,
+            IbcEvent::CreateClient(_) => CREATE_CLIENT_EVENT,
+            IbcEvent::UpdateClient(_) => UPDATE_CLIENT_EVENT,
+            IbcEvent::ClientMisbehaviour(_) => CLIENT_MISBEHAVIOUR_EVENT,
+            IbcEvent::UpgradeClient(_) => UPGRADE_CLIENT_EVENT,
+            IbcEvent::OpenInitConnection(_) => CONNECTION_INIT_EVENT,
+            IbcEvent::OpenTryConnection(_) => CONNECTION_TRY_EVENT,
+            IbcEvent::OpenAckConnection(_) => CONNECTION_ACK_EVENT,
+            IbcEvent::OpenConfirmConnection(_) => CONNECTION_CONFIRM_EVENT,
+            IbcEvent::OpenInitChannel(_) => CHANNEL_OPEN_INIT_EVENT,
+            IbcEvent::OpenTryChannel(_) => CHANNEL_OPEN_TRY_EVENT,
+            IbcEvent::OpenAckChannel(_) => CHANNEL_OPEN_ACK_EVENT,
+            IbcEvent::OpenConfirmChannel(_) => CHANNEL_OPEN_CONFIRM_EVENT,
+            IbcEvent::CloseInitChannel(_) => CHANNEL_CLOSE_INIT_EVENT,
+            IbcEvent::CloseConfirmChannel(_) => CHANNEL_CLOSE_CONFIRM_EVENT,
+            IbcEvent::SendPacket(_) => SEND_PACKET_EVENT,
+            IbcEvent::ReceivePacket(_) => RECEIVE_PACKET_EVENT,
+            IbcEvent::WriteAcknowledgement(_) => WRITE_ACK_EVENT,
+            IbcEvent::AcknowledgePacket(_) => ACK_PACKET_EVENT,
+            IbcEvent::TimeoutPacket(_) => TIMEOUT_EVENT,
+            IbcEvent::ChannelClosed(_) => CHANNEL_CLOSED_EVENT,
+            IbcEvent::AppModule(_) => todo!(),
+            IbcEvent::Message(_) => MESSAGE_EVENT,
         }
     }
 }
@@ -346,40 +349,36 @@ impl From<ModuleEventAttribute> for abci::EventAttribute {
     }
 }
 
-fn try_message_event_from_event_type(event_type: IbcEventType) -> Result<abci::Event, Error> {
-    match event_type {
-        IbcEventType::CreateClient
-        | IbcEventType::UpdateClient
-        | IbcEventType::UpgradeClient
-        | IbcEventType::ClientMisbehaviour => Ok(abci::Event {
-            kind: "message".to_string(),
-            attributes: vec![("module", "ibc_client", true).into()],
-        }),
-        IbcEventType::OpenInitConnection
-        | IbcEventType::OpenTryConnection
-        | IbcEventType::OpenAckConnection
-        | IbcEventType::OpenConfirmConnection => Ok(abci::Event {
-            kind: "message".to_string(),
-            attributes: vec![("module", "ibc_connection", true).into()],
-        }),
-        IbcEventType::OpenInitChannel
-        | IbcEventType::OpenTryChannel
-        | IbcEventType::OpenAckChannel
-        | IbcEventType::OpenConfirmChannel
-        | IbcEventType::CloseInitChannel
-        | IbcEventType::CloseConfirmChannel
-        | IbcEventType::SendPacket
-        | IbcEventType::ReceivePacket
-        | IbcEventType::WriteAck
-        | IbcEventType::AckPacket
-        | IbcEventType::Timeout
-        | IbcEventType::ChannelClosed => Ok(abci::Event {
-            kind: "message".to_string(),
-            attributes: vec![("module", "ibc_channel", true).into()],
-        }),
-        _ => Err(Error::IncorrectEventType {
-            event: event_type.as_str().to_string(),
-        }),
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MessageEvent {
+    Client,
+    Connection,
+    Channel,
+    // stores the module name
+    Module(String),
+}
+
+impl MessageEvent {
+    pub fn module_attribute(&self) -> String {
+        match self {
+            MessageEvent::Client => "ibc_client".to_string(),
+            MessageEvent::Connection => "ibc_connection".to_string(),
+            MessageEvent::Channel => "ibc_channel".to_string(),
+            MessageEvent::Module(module_name) => module_name.clone(),
+        }
     }
 }
 

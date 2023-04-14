@@ -5,7 +5,7 @@ use crate::prelude::*;
 
 use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
-use crate::events::IbcEvent;
+use crate::events::{IbcEvent, MessageEvent};
 
 use crate::core::context::ContextError;
 
@@ -60,7 +60,7 @@ where
             client_id.clone(),
             client_state.client_type(),
         ));
-        ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
         ctx.emit_ibc_event(event);
     } else {
         let consensus_heights =
@@ -77,7 +77,7 @@ where
             consensus_heights,
             client_message,
         ));
-        ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
         ctx.emit_ibc_event(event);
     }
 
@@ -86,6 +86,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     use core::str::FromStr;
     use core::time::Duration;
     use ibc_proto::google::protobuf::Any;
@@ -103,7 +105,8 @@ mod tests {
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ValidationContext;
-    use crate::events::{IbcEvent, IbcEventType};
+    use crate::downcast;
+    use crate::events::IbcEvent;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::client_state::MockClientState;
     use crate::mock::context::MockContext;
@@ -113,7 +116,6 @@ mod tests {
     use crate::test_utils::get_dummy_account_id;
     use crate::timestamp::Timestamp;
     use crate::Height;
-    use crate::{downcast, prelude::*};
     use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
 
     #[test]
@@ -443,7 +445,7 @@ mod tests {
 
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::UpdateClient)
+            IbcEvent::Message(MessageEvent::Client)
         ));
         let update_client_event = downcast!(&ctx.events[1] => IbcEvent::UpdateClient).unwrap();
 
@@ -463,7 +465,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::ClientMisbehaviour),
+            IbcEvent::Message(MessageEvent::Client),
         ));
         let misbehaviour_client_event =
             downcast!(&ctx.events[1] => IbcEvent::ClientMisbehaviour).unwrap();

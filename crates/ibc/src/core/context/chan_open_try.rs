@@ -8,7 +8,7 @@ use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics26_routing::context::ModuleId;
 
-use crate::events::IbcEvent;
+use crate::events::{IbcEvent, MessageEvent};
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 
@@ -101,7 +101,7 @@ where
             conn_id_on_b,
             version,
         ));
-        ctx_b.emit_ibc_event(IbcEvent::Message(core_event.event_type()));
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
         ctx_b.emit_ibc_event(core_event);
 
         for module_event in extras.events {
@@ -118,11 +118,11 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::{
         applications::transfer::MODULE_ID_STR,
         core::{context::chan_open_try::chan_open_try_execute, ics26_routing::context::ModuleId},
-        events::{IbcEvent, IbcEventType},
-        prelude::*,
+        events::IbcEvent,
         test_utils::DummyTransferModule,
         Height,
     };
@@ -220,7 +220,7 @@ mod tests {
         assert_eq!(context.events.len(), 2);
         assert!(matches!(
             context.events[0],
-            IbcEvent::Message(IbcEventType::OpenTryChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(context.events[1], IbcEvent::OpenTryChannel(_)));
     }

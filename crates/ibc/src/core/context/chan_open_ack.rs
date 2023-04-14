@@ -8,7 +8,7 @@ use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics26_routing::context::ModuleId;
 
-use crate::events::IbcEvent;
+use crate::events::{IbcEvent, MessageEvent};
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 
@@ -76,7 +76,7 @@ where
                 conn_id_on_a,
             ))
         };
-        ctx_a.emit_ibc_event(IbcEvent::Message(core_event.event_type()));
+        ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
         ctx_a.emit_ibc_event(core_event);
 
         for module_event in extras.events {
@@ -93,9 +93,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        core::context::chan_open_ack::chan_open_ack_execute, events::IbcEvent, prelude::*, Height,
-    };
+    use super::*;
+    use crate::{core::context::chan_open_ack::chan_open_ack_execute, events::IbcEvent, Height};
     use rstest::*;
 
     use crate::{
@@ -114,7 +113,6 @@ mod tests {
             ics24_host::identifier::{ClientId, ConnectionId},
             ics26_routing::context::ModuleId,
         },
-        events::IbcEventType,
         mock::context::MockContext,
         test_utils::DummyTransferModule,
         timestamp::ZERO_DURATION,
@@ -206,7 +204,7 @@ mod tests {
         assert_eq!(context.events.len(), 2);
         assert!(matches!(
             context.events[0],
-            IbcEvent::Message(IbcEventType::OpenAckChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(context.events[1], IbcEvent::OpenAckChannel(_)));
     }

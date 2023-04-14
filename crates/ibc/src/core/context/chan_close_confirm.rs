@@ -7,7 +7,7 @@ use crate::core::ics04_channel::handler::chan_close_confirm;
 use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
 use crate::core::ics26_routing::context::ModuleId;
 
-use crate::events::IbcEvent;
+use crate::events::{IbcEvent, MessageEvent};
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 
@@ -79,7 +79,7 @@ where
                 conn_id_on_b,
             ))
         };
-        ctx_b.emit_ibc_event(IbcEvent::Message(core_event.event_type()));
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
         ctx_b.emit_ibc_event(core_event);
 
         for module_event in extras.events {
@@ -96,14 +96,15 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     use crate::applications::transfer::MODULE_ID_STR;
     use crate::core::context::chan_close_confirm::chan_close_confirm_execute;
     use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
     use crate::core::ics26_routing::context::ModuleId;
     use crate::core::ValidationContext;
-    use crate::events::{IbcEvent, IbcEventType};
-    use crate::prelude::*;
+    use crate::events::{IbcEvent, MessageEvent};
 
     use crate::core::ics03_connection::connection::ConnectionEnd;
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
@@ -171,7 +172,7 @@ mod tests {
         assert_eq!(context.events.len(), 2);
         assert!(matches!(
             context.events[0],
-            IbcEvent::Message(IbcEventType::CloseConfirmChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(
             context.events[1],
