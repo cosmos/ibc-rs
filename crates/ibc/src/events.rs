@@ -1,7 +1,6 @@
 use crate::prelude::*;
 
 use core::convert::{TryFrom, TryInto};
-use core::str::FromStr;
 use displaydoc::Display;
 use tendermint::abci;
 
@@ -170,39 +169,6 @@ impl IbcEventType {
     }
 }
 
-impl FromStr for IbcEventType {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            CREATE_CLIENT_EVENT => Ok(IbcEventType::CreateClient),
-            UPDATE_CLIENT_EVENT => Ok(IbcEventType::UpdateClient),
-            UPGRADE_CLIENT_EVENT => Ok(IbcEventType::UpgradeClient),
-            CLIENT_MISBEHAVIOUR_EVENT => Ok(IbcEventType::ClientMisbehaviour),
-            CONNECTION_INIT_EVENT => Ok(IbcEventType::OpenInitConnection),
-            CONNECTION_TRY_EVENT => Ok(IbcEventType::OpenTryConnection),
-            CONNECTION_ACK_EVENT => Ok(IbcEventType::OpenAckConnection),
-            CONNECTION_CONFIRM_EVENT => Ok(IbcEventType::OpenConfirmConnection),
-            CHANNEL_OPEN_INIT_EVENT => Ok(IbcEventType::OpenInitChannel),
-            CHANNEL_OPEN_TRY_EVENT => Ok(IbcEventType::OpenTryChannel),
-            CHANNEL_OPEN_ACK_EVENT => Ok(IbcEventType::OpenAckChannel),
-            CHANNEL_OPEN_CONFIRM_EVENT => Ok(IbcEventType::OpenConfirmChannel),
-            CHANNEL_CLOSE_INIT_EVENT => Ok(IbcEventType::CloseInitChannel),
-            CHANNEL_CLOSE_CONFIRM_EVENT => Ok(IbcEventType::CloseConfirmChannel),
-            SEND_PACKET_EVENT => Ok(IbcEventType::SendPacket),
-            RECEIVE_PACKET_EVENT => Ok(IbcEventType::ReceivePacket),
-            WRITE_ACK_EVENT => Ok(IbcEventType::WriteAck),
-            ACK_PACKET_EVENT => Ok(IbcEventType::AckPacket),
-            TIMEOUT_EVENT => Ok(IbcEventType::Timeout),
-            CHANNEL_CLOSED_EVENT => Ok(IbcEventType::ChannelClosed),
-            // from_str() for `APP_MODULE_EVENT` MUST fail because a `ModuleEvent`'s type isn't constant
-            _ => Err(Error::IncorrectEventType {
-                event: s.to_string(),
-            }),
-        }
-    }
-}
-
 /// Events created by the IBC component of a chain, destined for a relayer.
 #[cfg_attr(
     feature = "parity-scale-codec",
@@ -332,10 +298,6 @@ impl TryFrom<ModuleEvent> for abci::Event {
     type Error = Error;
 
     fn try_from(event: ModuleEvent) -> Result<Self, Self::Error> {
-        if IbcEventType::from_str(event.kind.as_str()).is_ok() {
-            return Err(Error::MalformedModuleEvent { event });
-        }
-
         let attributes = event.attributes.into_iter().map(Into::into).collect();
         Ok(abci::Event {
             kind: event.kind,
