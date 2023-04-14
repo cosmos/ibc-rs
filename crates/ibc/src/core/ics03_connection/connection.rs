@@ -332,8 +332,8 @@ impl ConnectionEnd {
 
     /// Getter for the list of versions in this connection end.
     pub fn versions(&self) -> Result<Vec<Version>, ConnectionError> {
-        if self.versions.is_empty() {
-            return Err(ConnectionError::EmptyVersions);
+        if self.versions.len() != 1 {
+            return Err(ConnectionError::InvalidVersionLength);
         }
         Ok(self.versions.clone())
     }

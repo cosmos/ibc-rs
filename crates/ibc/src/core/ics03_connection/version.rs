@@ -37,7 +37,7 @@ impl Version {
         &self,
         supported_versions: Vec<Version>,
     ) -> Result<(), ConnectionError> {
-        let maybe_supported_version = supported_versions
+        let maybe_version_supported = supported_versions
             .iter()
             .find(|sv| sv.identifier == self.identifier)
             .ok_or(ConnectionError::VersionNotSupported {
@@ -45,7 +45,7 @@ impl Version {
             })?;
 
         for feature in self.features.iter() {
-            maybe_supported_version.ensure_feature_supported(feature.to_string())?;
+            maybe_version_supported.ensure_feature_supported(feature.to_string())?;
         }
         Ok(())
     }
