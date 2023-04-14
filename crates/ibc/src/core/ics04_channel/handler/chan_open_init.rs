@@ -27,9 +27,7 @@ where
 
     let conn_version = conn_end_on_a.versions()?;
 
-    for version in conn_version {
-        version.ensure_feature_supported(msg.ordering.to_string())?;
-    }
+    conn_version[0].ensure_feature_supported(msg.ordering.to_string())?;
 
     Ok(())
 }
