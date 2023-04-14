@@ -22,15 +22,14 @@ where
         signer: _,
     } = msg;
 
-    // Read client type from the host chain store. The client should already exist.
-    // Read client state from the host chain store.
+    // Read client state from the host chain store. The client should already exist.
     let client_state = ctx.client_state(&client_id)?;
 
     client_state.confirm_not_frozen()?;
 
-    client_state
-        .verify_client_message(ctx, &client_id, client_message, &update_kind)
-        .map_err(ContextError::from)
+    client_state.verify_client_message(ctx, &client_id, client_message, &update_kind)?;
+
+    Ok(())
 }
 
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>

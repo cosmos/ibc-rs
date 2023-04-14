@@ -19,7 +19,7 @@ There are consensus-breaking changes.
 - Check if `ClientStatePath` is empty during client creation process
   ([#604](https://github.com/cosmos/ibc-rs/issues/604))
 
-### BUG
+### BUG FIXES
 
 - Disallow creation of new Tendermint client state instance with a frozen height
  ([#178](https://github.com/cosmos/ibc-rs/issues/178))
@@ -45,7 +45,7 @@ There are consensus-breaking changes.
   height is updated
   ([#601](https://github.com/cosmos/ibc-rs/issues/601))
 
-### FEATURE
+### FEATURES
 
 - Prefixed denom parity scale codec enabled
   ([#577](https://github.com/cosmos/ibc-rs/pull/577))

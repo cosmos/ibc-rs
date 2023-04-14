@@ -117,7 +117,7 @@ impl TryFrom<RawHeader> for Header {
                 .ok_or(Error::MissingTrustedHeight)?,
             trusted_next_validator_set: raw
                 .trusted_validators
-                .ok_or(Error::MissingTrustedValidatorSet)?
+                .ok_or(Error::MissingTrustedNextValidatorSet)?
                 .try_into()
                 .map_err(Error::InvalidRawHeader)?,
         };
