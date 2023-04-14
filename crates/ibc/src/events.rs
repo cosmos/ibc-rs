@@ -241,7 +241,7 @@ impl TryFrom<IbcEvent> for abci::Event {
             IbcEvent::ChannelClosed(event) => event.into(),
             IbcEvent::AppModule(event) => event.try_into()?,
             IbcEvent::Message(event) => abci::Event {
-                kind: "message".to_string(),
+                kind: MESSAGE_EVENT.to_string(),
                 attributes: vec![("module", event.module_attribute(), true).into()],
             },
         })
@@ -271,7 +271,7 @@ impl IbcEvent {
             IbcEvent::AcknowledgePacket(_) => ACK_PACKET_EVENT,
             IbcEvent::TimeoutPacket(_) => TIMEOUT_EVENT,
             IbcEvent::ChannelClosed(_) => CHANNEL_CLOSED_EVENT,
-            IbcEvent::AppModule(_) => todo!(),
+            IbcEvent::AppModule(module_event) => module_event.kind.as_str(),
             IbcEvent::Message(_) => MESSAGE_EVENT,
         }
     }
@@ -372,6 +372,8 @@ pub enum MessageEvent {
 }
 
 impl MessageEvent {
+    /// The ABCI event attribute has only one attribute, with key `module`.
+    /// This method gets the associated value.
     pub fn module_attribute(&self) -> String {
         match self {
             MessageEvent::Client => "ibc_client".to_string(),
