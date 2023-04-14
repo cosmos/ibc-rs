@@ -74,99 +74,6 @@ impl WithBlockDataType {
 }
 
 const MESSAGE_EVENT: &str = "message";
-/// Client event types
-const CREATE_CLIENT_EVENT: &str = "create_client";
-const UPDATE_CLIENT_EVENT: &str = "update_client";
-const CLIENT_MISBEHAVIOUR_EVENT: &str = "client_misbehaviour";
-const UPGRADE_CLIENT_EVENT: &str = "upgrade_client";
-/// Connection event types
-const CONNECTION_INIT_EVENT: &str = "connection_open_init";
-const CONNECTION_TRY_EVENT: &str = "connection_open_try";
-const CONNECTION_ACK_EVENT: &str = "connection_open_ack";
-const CONNECTION_CONFIRM_EVENT: &str = "connection_open_confirm";
-/// Channel event types
-const CHANNEL_OPEN_INIT_EVENT: &str = "channel_open_init";
-const CHANNEL_OPEN_TRY_EVENT: &str = "channel_open_try";
-const CHANNEL_OPEN_ACK_EVENT: &str = "channel_open_ack";
-const CHANNEL_OPEN_CONFIRM_EVENT: &str = "channel_open_confirm";
-const CHANNEL_CLOSE_INIT_EVENT: &str = "channel_close_init";
-const CHANNEL_CLOSE_CONFIRM_EVENT: &str = "channel_close_confirm";
-/// Packet event types
-const SEND_PACKET_EVENT: &str = "send_packet";
-const RECEIVE_PACKET_EVENT: &str = "receive_packet";
-const WRITE_ACK_EVENT: &str = "write_acknowledgement";
-const ACK_PACKET_EVENT: &str = "acknowledge_packet";
-const TIMEOUT_EVENT: &str = "timeout_packet";
-const CHANNEL_CLOSED_EVENT: &str = "channel_close";
-
-/// Events types
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum IbcEventType {
-    CreateClient,
-    UpdateClient,
-    UpgradeClient,
-    ClientMisbehaviour,
-    OpenInitConnection,
-    OpenTryConnection,
-    OpenAckConnection,
-    OpenConfirmConnection,
-    OpenInitChannel,
-    OpenTryChannel,
-    OpenAckChannel,
-    OpenConfirmChannel,
-    CloseInitChannel,
-    CloseConfirmChannel,
-    ChannelClosed,
-    SendPacket,
-    ReceivePacket,
-    WriteAck,
-    AckPacket,
-    Timeout,
-    AppModule,
-    Message,
-}
-
-impl IbcEventType {
-    pub fn as_str(&self) -> &'static str {
-        match *self {
-            IbcEventType::CreateClient => CREATE_CLIENT_EVENT,
-            IbcEventType::UpdateClient => UPDATE_CLIENT_EVENT,
-            IbcEventType::UpgradeClient => UPGRADE_CLIENT_EVENT,
-            IbcEventType::ClientMisbehaviour => CLIENT_MISBEHAVIOUR_EVENT,
-            IbcEventType::OpenInitConnection => CONNECTION_INIT_EVENT,
-            IbcEventType::OpenTryConnection => CONNECTION_TRY_EVENT,
-            IbcEventType::OpenAckConnection => CONNECTION_ACK_EVENT,
-            IbcEventType::OpenConfirmConnection => CONNECTION_CONFIRM_EVENT,
-            IbcEventType::OpenInitChannel => CHANNEL_OPEN_INIT_EVENT,
-            IbcEventType::OpenTryChannel => CHANNEL_OPEN_TRY_EVENT,
-            IbcEventType::OpenAckChannel => CHANNEL_OPEN_ACK_EVENT,
-            IbcEventType::OpenConfirmChannel => CHANNEL_OPEN_CONFIRM_EVENT,
-            IbcEventType::CloseInitChannel => CHANNEL_CLOSE_INIT_EVENT,
-            IbcEventType::CloseConfirmChannel => CHANNEL_CLOSE_CONFIRM_EVENT,
-            IbcEventType::ChannelClosed => CHANNEL_CLOSED_EVENT,
-            IbcEventType::SendPacket => SEND_PACKET_EVENT,
-            IbcEventType::ReceivePacket => RECEIVE_PACKET_EVENT,
-            IbcEventType::WriteAck => WRITE_ACK_EVENT,
-            IbcEventType::AckPacket => ACK_PACKET_EVENT,
-            IbcEventType::Timeout => TIMEOUT_EVENT,
-            IbcEventType::AppModule => "", // REMOVED ANYWAY
-            IbcEventType::Message => MESSAGE_EVENT,
-        }
-    }
-}
 
 /// Events created by the IBC component of a chain, destined for a relayer.
 #[cfg_attr(
@@ -251,26 +158,26 @@ impl TryFrom<IbcEvent> for abci::Event {
 impl IbcEvent {
     pub fn event_type(&self) -> &str {
         match self {
-            IbcEvent::CreateClient(_) => CREATE_CLIENT_EVENT,
-            IbcEvent::UpdateClient(_) => UPDATE_CLIENT_EVENT,
-            IbcEvent::ClientMisbehaviour(_) => CLIENT_MISBEHAVIOUR_EVENT,
-            IbcEvent::UpgradeClient(_) => UPGRADE_CLIENT_EVENT,
-            IbcEvent::OpenInitConnection(_) => CONNECTION_INIT_EVENT,
-            IbcEvent::OpenTryConnection(_) => CONNECTION_TRY_EVENT,
-            IbcEvent::OpenAckConnection(_) => CONNECTION_ACK_EVENT,
-            IbcEvent::OpenConfirmConnection(_) => CONNECTION_CONFIRM_EVENT,
-            IbcEvent::OpenInitChannel(_) => CHANNEL_OPEN_INIT_EVENT,
-            IbcEvent::OpenTryChannel(_) => CHANNEL_OPEN_TRY_EVENT,
-            IbcEvent::OpenAckChannel(_) => CHANNEL_OPEN_ACK_EVENT,
-            IbcEvent::OpenConfirmChannel(_) => CHANNEL_OPEN_CONFIRM_EVENT,
-            IbcEvent::CloseInitChannel(_) => CHANNEL_CLOSE_INIT_EVENT,
-            IbcEvent::CloseConfirmChannel(_) => CHANNEL_CLOSE_CONFIRM_EVENT,
-            IbcEvent::SendPacket(_) => SEND_PACKET_EVENT,
-            IbcEvent::ReceivePacket(_) => RECEIVE_PACKET_EVENT,
-            IbcEvent::WriteAcknowledgement(_) => WRITE_ACK_EVENT,
-            IbcEvent::AcknowledgePacket(_) => ACK_PACKET_EVENT,
-            IbcEvent::TimeoutPacket(_) => TIMEOUT_EVENT,
-            IbcEvent::ChannelClosed(_) => CHANNEL_CLOSED_EVENT,
+            IbcEvent::CreateClient(event) => event.event_type(),
+            IbcEvent::UpdateClient(event) => event.event_type(),
+            IbcEvent::ClientMisbehaviour(event) => event.event_type(),
+            IbcEvent::UpgradeClient(event) => event.event_type(),
+            IbcEvent::OpenInitConnection(event) => event.event_type(),
+            IbcEvent::OpenTryConnection(event) => event.event_type(),
+            IbcEvent::OpenAckConnection(event) => event.event_type(),
+            IbcEvent::OpenConfirmConnection(event) => event.event_type(),
+            IbcEvent::OpenInitChannel(event) => event.event_type(),
+            IbcEvent::OpenTryChannel(event) => event.event_type(),
+            IbcEvent::OpenAckChannel(event) => event.event_type(),
+            IbcEvent::OpenConfirmChannel(event) => event.event_type(),
+            IbcEvent::CloseInitChannel(event) => event.event_type(),
+            IbcEvent::CloseConfirmChannel(event) => event.event_type(),
+            IbcEvent::SendPacket(event) => event.event_type(),
+            IbcEvent::ReceivePacket(event) => event.event_type(),
+            IbcEvent::WriteAcknowledgement(event) => event.event_type(),
+            IbcEvent::AcknowledgePacket(event) => event.event_type(),
+            IbcEvent::TimeoutPacket(event) => event.event_type(),
+            IbcEvent::ChannelClosed(event) => event.event_type(),
             IbcEvent::AppModule(module_event) => module_event.kind.as_str(),
             IbcEvent::Message(_) => MESSAGE_EVENT,
         }
