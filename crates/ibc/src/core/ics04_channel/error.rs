@@ -39,10 +39,6 @@ pub enum ChannelError {
     NoCommonVersion,
     /// missing channel end
     MissingChannel,
-    /// single version must be negotiated on connection before opening channel
-    InvalidVersionLengthConnection,
-    /// the channel ordering is not supported by connection
-    ChannelFeatureNotSupportedByConnection,
     /// the channel end (`{port_id}`, `{channel_id}`) does not exist
     ChannelNotFound {
         port_id: PortId,

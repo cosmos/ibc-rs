@@ -30,18 +30,10 @@ where
         .map_err(ContextError::ChannelError);
     }
 
-    let conn_version = match conn_end_on_b.versions() {
-        [version] => version,
-        _ => {
-            return Err(ChannelError::InvalidVersionLengthConnection)
-                .map_err(ContextError::ChannelError)
-        }
-    };
+    let conn_version = conn_end_on_b.versions()?;
 
-    let channel_feature = msg.ordering.to_string();
-    if !conn_version.is_supported_feature(channel_feature) {
-        return Err(ChannelError::ChannelFeatureNotSupportedByConnection)
-            .map_err(ContextError::ChannelError);
+    for version in conn_version {
+        version.ensure_feature_supported(msg.ordering.to_string())?;
     }
 
     // Verify proofs

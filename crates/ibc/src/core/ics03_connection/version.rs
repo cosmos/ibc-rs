@@ -32,9 +32,33 @@ pub struct Version {
 }
 
 impl Version {
+    /// Check whether or not the given version is compatible with supported versions
+    pub fn ensure_version_supported(
+        &self,
+        supported_versions: Vec<Version>,
+    ) -> Result<(), ConnectionError> {
+        let maybe_supported_version = supported_versions
+            .iter()
+            .find(|sv| sv.identifier == self.identifier)
+            .ok_or(ConnectionError::VersionNotSupported {
+                version: self.clone(),
+            })?;
+
+        for feature in self.features.iter() {
+            maybe_supported_version.ensure_feature_supported(feature.to_string())?;
+        }
+        Ok(())
+    }
+
     /// Checks whether or not the given feature is supported in this version
-    pub fn is_supported_feature(&self, feature: String) -> bool {
-        self.features.contains(&feature)
+    pub fn ensure_feature_supported(&self, feature: String) -> Result<(), ConnectionError> {
+        if feature.trim().is_empty() {
+            return Err(ConnectionError::EmptyFeatures);
+        }
+        if !self.features.contains(&feature) {
+            return Err(ConnectionError::FeatureNotSupported { feature });
+        }
+        Ok(())
     }
 }
 
@@ -101,23 +125,19 @@ pub fn pick_version(
     counterparty_versions: &[Version],
 ) -> Result<Version, ConnectionError> {
     let mut intersection: Vec<Version> = Vec::new();
-    for s in supported_versions.iter() {
-        for c in counterparty_versions.iter() {
-            if c.identifier != s.identifier {
-                continue;
-            }
-            for feature in c.features.iter() {
-                if feature.trim().is_empty() {
-                    return Err(ConnectionError::EmptyFeatures);
-                }
-            }
-            intersection.append(&mut vec![s.clone()]);
+    for v in counterparty_versions.iter() {
+        if v.ensure_version_supported(supported_versions.to_vec())
+            .is_ok()
+        {
+            intersection.append(&mut vec![v.clone()]);
         }
     }
-    intersection.sort_by(|a, b| a.identifier.cmp(&b.identifier));
+
     if intersection.is_empty() {
         return Err(ConnectionError::NoCommonVersion);
     }
+
+    intersection.sort_by(|a, b| a.identifier.cmp(&b.identifier));
     Ok(intersection[0].clone())
 }
 

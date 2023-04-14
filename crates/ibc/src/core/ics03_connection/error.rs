@@ -37,6 +37,8 @@ pub enum ConnectionError {
     NoCommonVersion,
     /// version \"`{version}`\" not supported
     VersionNotSupported { version: Version },
+    /// feature \"`{feature}`\" not supported
+    FeatureNotSupported { feature: String },
     /// missing proof height
     MissingProofHeight,
     /// missing consensus height

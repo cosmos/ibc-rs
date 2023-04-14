@@ -188,8 +188,7 @@ impl LocalVars {
     where
         Ctx: ValidationContext,
     {
-        let version_on_b =
-            ctx_b.pick_version(&ctx_b.get_compatible_versions(), &msg.versions_on_a)?;
+        let version_on_b = ctx_b.pick_version(&msg.versions_on_a)?;
 
         Ok(Self {
             conn_id_on_b: ConnectionId::new(ctx_b.connection_counter()?),
