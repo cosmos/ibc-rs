@@ -22,7 +22,6 @@ use self::acknowledgement::{acknowledgement_packet_execute, acknowledgement_pack
 use self::recv_packet::{recv_packet_execute, recv_packet_validate};
 use self::timeout::{timeout_packet_execute, timeout_packet_validate, TimeoutMsgType};
 
-use super::ics03_connection::version::pick_version;
 use super::{
     ics02_client::error::ClientError,
     ics03_connection::error::ConnectionError,
@@ -37,7 +36,7 @@ use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::version::{
-    get_compatible_versions, Version as ConnectionVersion,
+    get_compatible_versions, pick_version, Version as ConnectionVersion,
 };
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
@@ -317,7 +316,7 @@ pub trait ValidationContext: Router {
         counterparty_candidate_versions: &[ConnectionVersion],
     ) -> Result<ConnectionVersion, ContextError> {
         pick_version(
-            self.get_compatible_versions().as_slice(),
+            &self.get_compatible_versions(),
             counterparty_candidate_versions,
         )
         .map_err(ContextError::ConnectionError)
