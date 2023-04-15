@@ -32,7 +32,7 @@ where
 
     let conn_version = conn_end_on_b.versions()?;
 
-    conn_version[0].ensure_feature_supported(msg.ordering.to_string())?;
+    conn_version[0].verify_feature_supported(msg.ordering.to_string())?;
 
     // Verify proofs
     {

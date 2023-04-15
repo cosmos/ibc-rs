@@ -315,11 +315,11 @@ pub trait ValidationContext: Router {
         &self,
         counterparty_candidate_versions: &[ConnectionVersion],
     ) -> Result<ConnectionVersion, ContextError> {
-        pick_version(
+        let version = pick_version(
             &self.get_compatible_versions(),
             counterparty_candidate_versions,
-        )
-        .map_err(ContextError::ConnectionError)
+        )?;
+        Ok(version)
     }
 
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.

@@ -8,6 +8,8 @@ use core::str::FromStr;
 
 use crate::prelude::*;
 
+use super::error::ChannelError;
+
 /// The version field for a `ChannelEnd`.
 ///
 /// This field is opaque to the core IBC protocol.
@@ -44,6 +46,16 @@ impl Version {
 
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+
+    pub fn verify_version_supported(&self, expected_version: Version) -> Result<(), ChannelError> {
+        if self != &expected_version {
+            return Err(ChannelError::VersionNotSupported {
+                expected_version,
+                got_version: self.clone(),
+            });
+        }
+        Ok(())
     }
 }
 

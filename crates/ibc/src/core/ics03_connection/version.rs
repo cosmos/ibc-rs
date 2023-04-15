@@ -33,7 +33,7 @@ pub struct Version {
 
 impl Version {
     /// Check whether or not the given version is compatible with supported versions
-    pub fn ensure_version_supported(
+    pub fn verify_version_supported(
         &self,
         supported_versions: Vec<Version>,
     ) -> Result<(), ConnectionError> {
@@ -45,13 +45,13 @@ impl Version {
             })?;
 
         for feature in self.features.iter() {
-            maybe_version_supported.ensure_feature_supported(feature.to_string())?;
+            maybe_version_supported.verify_feature_supported(feature.to_string())?;
         }
         Ok(())
     }
 
     /// Checks whether or not the given feature is supported in this version
-    pub fn ensure_feature_supported(&self, feature: String) -> Result<(), ConnectionError> {
+    pub fn verify_feature_supported(&self, feature: String) -> Result<(), ConnectionError> {
         if feature.trim().is_empty() {
             return Err(ConnectionError::EmptyFeatures);
         }
@@ -119,19 +119,19 @@ pub fn get_compatible_versions() -> Vec<Version> {
     vec![Version::default()]
 }
 
-/// Selects a version from the intersection of locally supported and counterparty versions.
+/// Selects only one version from the intersection of locally supported and counterparty versions.
 pub fn pick_version(
     supported_versions: &[Version],
     counterparty_versions: &[Version],
 ) -> Result<Version, ConnectionError> {
-    let mut intersection: Vec<Version> = Vec::new();
-    for v in counterparty_versions.iter() {
-        if v.ensure_version_supported(supported_versions.to_vec())
-            .is_ok()
-        {
-            intersection.append(&mut vec![v.clone()]);
-        }
-    }
+    let mut intersection: Vec<Version> = counterparty_versions
+        .iter()
+        .filter(|v| {
+            v.verify_version_supported(supported_versions.to_vec())
+                .is_ok()
+        })
+        .cloned()
+        .collect();
 
     if intersection.is_empty() {
         return Err(ConnectionError::NoCommonVersion);

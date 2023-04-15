@@ -46,7 +46,7 @@ where
     ctx_a.validate_self_client(msg.client_state_of_a_on_b.clone())?;
 
     msg.version
-        .ensure_version_supported(vars.conn_end_on_a.versions()?)?;
+        .verify_version_supported(vars.conn_end_on_a.versions()?)?;
 
     if !vars.conn_end_on_a.state_matches(&State::Init) {
         return Err(ConnectionError::ConnectionMismatch {

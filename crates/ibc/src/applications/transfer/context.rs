@@ -1,3 +1,4 @@
+use crate::core::ContextError;
 use crate::prelude::*;
 
 use sha2::{Digest, Sha256};
@@ -134,12 +135,9 @@ pub fn on_chan_open_init_validate(
         });
     }
 
-    if !version.is_empty() && version != &Version::new(VERSION.to_string()) {
-        return Err(TokenTransferError::InvalidVersion {
-            expect_version: Version::new(VERSION.to_string()),
-            got_version: version.clone(),
-        });
-    }
+    version
+        .verify_version_supported(Version::new(VERSION.to_string()))
+        .map_err(ContextError::from)?;
 
     Ok(())
 }
@@ -173,12 +171,10 @@ pub fn on_chan_open_try_validate(
             got_order: order,
         });
     }
-    if counterparty_version != &Version::new(VERSION.to_string()) {
-        return Err(TokenTransferError::InvalidCounterpartyVersion {
-            expect_version: Version::new(VERSION.to_string()),
-            got_version: counterparty_version.clone(),
-        });
-    }
+
+    counterparty_version
+        .verify_version_supported(Version::new(VERSION.to_string()))
+        .map_err(ContextError::from)?;
 
     Ok(())
 }
@@ -202,12 +198,9 @@ pub fn on_chan_open_ack_validate(
     _channel_id: &ChannelId,
     counterparty_version: &Version,
 ) -> Result<(), TokenTransferError> {
-    if counterparty_version != &Version::new(VERSION.to_string()) {
-        return Err(TokenTransferError::InvalidCounterpartyVersion {
-            expect_version: Version::new(VERSION.to_string()),
-            got_version: counterparty_version.clone(),
-        });
-    }
+    counterparty_version
+        .verify_version_supported(Version::new(VERSION.to_string()))
+        .map_err(ContextError::from)?;
 
     Ok(())
 }
