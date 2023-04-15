@@ -1,9 +1,9 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenAck`.
 
+use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
 use crate::core::context::ContextError;
-use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenAck;
@@ -99,7 +99,7 @@ where
                     &msg.proof_conn_end_on_b,
                     consensus_state_of_b_on_a.root(),
                     Path::Connection(ConnectionPath::new(&msg.conn_id_on_b)),
-                    expected_conn_end_on_b.proto_encode_vec()?,
+                    expected_conn_end_on_b.encode_vec(),
                 )
                 .map_err(ConnectionError::VerifyConnectionState)?;
         }
@@ -132,9 +132,7 @@ where
                 &msg.proof_consensus_state_of_a_on_b,
                 consensus_state_of_b_on_a.root(),
                 Path::ClientConsensusState(client_cons_state_path_on_b),
-                expected_consensus_state_of_a_on_b
-                    .encode_vec()
-                    .map_err(ClientError::Encode)?,
+                expected_consensus_state_of_a_on_b.encode_vec(),
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
                 height: msg.proofs_height_on_b,
