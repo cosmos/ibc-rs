@@ -80,7 +80,7 @@ parking_lot = { version = "0.12.1", default-features = false, optional = true }
 cfg-if = { version = "1.0.0", optional = true }
 
 [dependencies.tendermint]
-version = "0.29"
+version = "0.31"
 default-features = false
 
 [dependencies.tendermint-proto]
