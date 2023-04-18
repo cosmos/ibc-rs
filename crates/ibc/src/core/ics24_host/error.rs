@@ -15,10 +15,10 @@ pub enum ValidationError {
     },
     /// identifier `{id}` must only contain alphanumeric characters or `.`, `_`, `+`, `-`, `#`, - `[`, `]`, `<`, `>`
     InvalidCharacter { id: String },
+    /// identifier prefix `{prefix}` is invalid
+    InvalidPrefix { prefix: String },
     /// identifier cannot be empty
     Empty,
-    /// Invalid channel id in counterparty
-    InvalidCounterpartyChannelId,
 }
 
 #[cfg(feature = "std")]

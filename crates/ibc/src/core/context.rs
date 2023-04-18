@@ -32,7 +32,6 @@ use core::time::Duration;
 use ibc_proto::google::protobuf::Any;
 
 use crate::core::ics02_client::client_state::ClientState;
-use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::version::{
@@ -45,7 +44,7 @@ use crate::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics05_port::error::PortError::UnknownPort;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-use crate::core::ics24_host::identifier::{ConnectionId, PortId};
+use crate::core::ics24_host::identifier::{ClientType, ConnectionId, PortId};
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     ClientTypePath, CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath,

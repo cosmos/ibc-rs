@@ -6,7 +6,6 @@ use derive_more::Into;
 
 use super::validate::*;
 use crate::clients::ics07_tendermint::client_type as tm_client_type;
-use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics24_host::error::ValidationError;
 use crate::prelude::*;
 
@@ -177,6 +176,90 @@ impl From<String> for ChainId {
     }
 }
 
+use crate::core::ics24_host::validate::validate_client_identifier;
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+/// Type of the client, depending on the specific consensus algorithm.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ClientType(String);
+
+impl ClientType {
+    /// Constructs a new `ClientType` from the given `String` without performing any validation.
+    pub fn new_unchecked(s: String) -> Self {
+        Self(s)
+    }
+
+    /// Constructs a new `ClientType` from the given `String` if it ends with a valid client identifier.
+    pub fn new(s: String) -> Result<Self, ValidationError> {
+        let client_type = Self::new_unchecked(s);
+        client_type.validate()?;
+        Ok(client_type)
+    }
+
+    /// Yields this identifier as a borrowed `&str`
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    /// Validates the client type. It cannot be blank or empty. It must be a valid
+    /// client identifier when used with '0' or the maximum uint64 as the sequence
+    /// ```
+    /// # use ibc::core::ics24_host::identifier::ClientType;
+    /// let healthy_client_type = ClientType::new("07-tendermint".to_string());
+    /// assert!(healthy_client_type.is_ok());
+    ///
+    /// let faulty_client_type = ClientType::new("07-tendermint-".to_string());
+    /// assert!(faulty_client_type.is_err());
+    ///
+    /// let short_client_type = ClientType::new("<7Char".to_string());
+    /// assert!(short_client_type.is_err());
+    ///
+    /// let lengthy_client_type = ClientType::new("InvalidClientTypeWithLengthOfClientId>65Char".to_string());
+    /// assert!(lengthy_client_type.is_err());
+    /// ```
+    pub fn validate(&self) -> Result<(), ValidationError> {
+        let client_type_str = self.as_str().trim();
+
+        // Check that the client type is not blank
+        if client_type_str.is_empty() {
+            return Err(ValidationError::Empty)?;
+        }
+
+        // Check that the client type does not end with a dash
+        let re = safe_regex::regex!(br".*[^-]");
+        if !re.is_match(client_type_str.as_bytes()) {
+            return Err(ValidationError::InvalidPrefix {
+                prefix: client_type_str.to_string(),
+            })?;
+        }
+
+        // Check that the client type is a valid client identifier when used with `0`
+        validate_client_identifier(&format!("{client_type_str}-{}", u64::MIN))?;
+
+        // Check that the client type is a valid client identifier when used with `u64::MAX`
+        validate_client_identifier(&format!("{client_type_str}-{}", u64::MAX))?;
+        Ok(())
+    }
+}
+
+impl Display for ClientType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+        write!(f, "ClientType({})", self.0)
+    }
+}
+
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -200,13 +283,14 @@ impl ClientId {
     ///
     /// ```
     /// # use ibc::core::ics24_host::identifier::ClientId;
-    /// # use ibc::core::ics02_client::client_type::ClientType;
-    /// let tm_client_id = ClientId::new(ClientType::new("07-tendermint".to_string()), 0);
+    /// # use ibc::core::ics24_host::identifier::ClientType;
+    /// let tm_client_id = ClientId::new(ClientType::new("07-tendermint".to_string()).unwrap(), 0);
     /// assert!(tm_client_id.is_ok());
     /// tm_client_id.map(|id| { assert_eq!(&id, "07-tendermint-0") });
     /// ```
     pub fn new(client_type: ClientType, counter: u64) -> Result<Self, ValidationError> {
-        let prefix = client_type.as_str();
+        client_type.validate()?;
+        let prefix = client_type.as_str().trim();
         let id = format!("{prefix}-{counter}");
         Self::from_str(id.as_str())
     }

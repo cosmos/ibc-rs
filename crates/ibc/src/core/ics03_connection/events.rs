@@ -284,8 +284,9 @@ impl From<OpenConfirm> for abci::Event {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
-    use crate::core::ics02_client::client_type::ClientType;
+    use crate::core::ics24_host::identifier::ClientType;
     use tendermint::abci::Event as AbciEvent;
 
     #[test]
@@ -297,7 +298,7 @@ mod tests {
             expected_values: Vec<&'static str>,
         }
 
-        let client_type = ClientType::new("07-tendermint".to_string());
+        let client_type = ClientType::new_unchecked("07-tendermint".to_string());
         let conn_id_on_a = ConnectionId::default();
         let client_id_on_a = ClientId::new(client_type.clone(), 0).unwrap();
         let conn_id_on_b = ConnectionId::new(1);
