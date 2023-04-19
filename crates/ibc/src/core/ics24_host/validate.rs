@@ -97,6 +97,7 @@ pub fn validate_client_identifier_format(id: &str) -> Result<(), Error> {
 ///  the ICS-24 spec.
 pub fn validate_client_identifier(id: &str) -> Result<(), Error> {
     validate_identifier_default(id, 9, 64)?;
+    std::println!("Validating client identifier: {}", id);
     validate_client_identifier_format(id)
 }
 

@@ -174,7 +174,7 @@ mod tests {
 
     #[test]
     fn msg_upgrade_client_serialization() {
-        let client_id: ClientId = "tendermint".parse().unwrap();
+        let client_id: ClientId = "tendermint-0".parse().unwrap();
         let signer = get_dummy_account_id();
 
         let height = Height::new(1, 1).unwrap();
