@@ -12,7 +12,7 @@ const VALID_SPECIAL_CHARS: &str = "._+-#[]<>";
 /// max length as specified in the
 /// [`ICS-24`](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#paths-identifiers-separators)]
 /// spec.
-pub fn validate_identifier_default(id: &str, min: usize, max: usize) -> Result<(), Error> {
+pub fn validate_default_identifier(id: &str, min: usize, max: usize) -> Result<(), Error> {
     assert!(max >= min);
 
     // Check identifier is not empty
@@ -67,10 +67,10 @@ pub fn validate_client_type(client_type: &str) -> Result<(), Error> {
     }
 
     // Check that the client type is a valid client identifier when used with `0`
-    validate_identifier_default(&format!("{client_type}-{}", u64::MIN), 9, 64)?;
+    validate_default_identifier(&format!("{client_type}-{}", u64::MIN), 9, 64)?;
 
     // Check that the client type is a valid client identifier when used with `u64::MAX`
-    validate_identifier_default(&format!("{client_type}-{}", u64::MAX), 9, 64)?;
+    validate_default_identifier(&format!("{client_type}-{}", u64::MAX), 9, 64)?;
 
     Ok(())
 }
@@ -96,8 +96,7 @@ pub fn validate_client_identifier_format(id: &str) -> Result<(), Error> {
 /// A valid client identifier must be between 9-64 characters as specified in
 ///  the ICS-24 spec.
 pub fn validate_client_identifier(id: &str) -> Result<(), Error> {
-    validate_identifier_default(id, 9, 64)?;
-    std::println!("Validating client identifier: {}", id);
+    validate_default_identifier(id, 9, 64)?;
     validate_client_identifier_format(id)
 }
 
@@ -106,7 +105,7 @@ pub fn validate_client_identifier(id: &str) -> Result<(), Error> {
 /// A valid connection identifier must be between 10-64 characters as specified
 /// in the ICS-24 spec.
 pub fn validate_connection_identifier(id: &str) -> Result<(), Error> {
-    validate_identifier_default(id, 10, 64)
+    validate_default_identifier(id, 10, 64)
 }
 
 /// Default validator function for Port identifiers.
@@ -114,7 +113,7 @@ pub fn validate_connection_identifier(id: &str) -> Result<(), Error> {
 /// A valid port identifier must be between 2-128 characters as specified in the
 /// ICS-24 spec.
 pub fn validate_port_identifier(id: &str) -> Result<(), Error> {
-    validate_identifier_default(id, 2, 128)
+    validate_default_identifier(id, 2, 128)
 }
 
 /// Default validator function for Channel identifiers.
@@ -122,14 +121,14 @@ pub fn validate_port_identifier(id: &str) -> Result<(), Error> {
 /// A valid channel identifier must be between 8-64 characters as specified in
 /// the ICS-24 spec.
 pub fn validate_channel_identifier(id: &str) -> Result<(), Error> {
-    validate_identifier_default(id, 8, 64)
+    validate_default_identifier(id, 8, 64)
 }
 
 #[cfg(test)]
 mod tests {
     use crate::core::ics24_host::validate::{
         validate_channel_identifier, validate_client_identifier, validate_client_type,
-        validate_connection_identifier, validate_identifier_default, validate_port_identifier,
+        validate_connection_identifier, validate_default_identifier, validate_port_identifier,
     };
     use test_log::test;
 
@@ -200,21 +199,21 @@ mod tests {
     #[test]
     fn parse_invalid_id_chars() {
         // invalid id chars
-        let id = validate_identifier_default("channel@01", 1, 10);
+        let id = validate_default_identifier("channel@01", 1, 10);
         assert!(id.is_err())
     }
 
     #[test]
     fn parse_invalid_id_empty() {
         // invalid id empty
-        let id = validate_identifier_default("", 1, 10);
+        let id = validate_default_identifier("", 1, 10);
         assert!(id.is_err())
     }
 
     #[test]
     fn parse_invalid_id_path_separator() {
         // invalid id with path separator
-        let id = validate_identifier_default("id/1", 1, 10);
+        let id = validate_default_identifier("id/1", 1, 10);
         assert!(id.is_err())
     }
 
