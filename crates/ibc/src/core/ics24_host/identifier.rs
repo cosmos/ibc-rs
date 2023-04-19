@@ -203,9 +203,9 @@ impl ClientType {
 
     /// Constructs a new `ClientType` from the given `String` if it ends with a valid client identifier.
     pub fn new(s: String) -> Result<Self, ValidationError> {
-        let client_type = Self::new_unchecked(s);
-        client_type.validate()?;
-        Ok(client_type)
+        let s_trim = s.trim();
+        validate_client_type(s_trim)?;
+        Ok(Self(s_trim.to_string()))
     }
 
     /// Yields this identifier as a borrowed `&str`
@@ -230,27 +230,7 @@ impl ClientType {
     /// assert!(lengthy_client_type.is_err());
     /// ```
     pub fn validate(&self) -> Result<(), ValidationError> {
-        let client_type_str = self.as_str().trim();
-
-        // Check that the client type is not blank
-        if client_type_str.is_empty() {
-            return Err(ValidationError::Empty)?;
-        }
-
-        // Check that the client type does not end with a dash
-        let re = safe_regex::regex!(br".*[^-]");
-        if !re.is_match(client_type_str.as_bytes()) {
-            return Err(ValidationError::InvalidPrefix {
-                prefix: client_type_str.to_string(),
-            })?;
-        }
-
-        // Check that the client type is a valid client identifier when used with `0`
-        validate_client_identifier(&format!("{client_type_str}-{}", u64::MIN))?;
-
-        // Check that the client type is a valid client identifier when used with `u64::MAX`
-        validate_client_identifier(&format!("{client_type_str}-{}", u64::MAX))?;
-        Ok(())
+        validate_client_type(self.as_str())
     }
 }
 
@@ -289,7 +269,6 @@ impl ClientId {
     /// tm_client_id.map(|id| { assert_eq!(&id, "07-tendermint-0") });
     /// ```
     pub fn new(client_type: ClientType, counter: u64) -> Result<Self, ValidationError> {
-        client_type.validate()?;
         let prefix = client_type.as_str().trim();
         let id = format!("{prefix}-{counter}");
         Self::from_str(id.as_str())
@@ -303,6 +282,12 @@ impl ClientId {
     /// Get this identifier as a borrowed byte slice
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_bytes()
+    }
+
+    /// Validates that the client identifier string is formatted correctly and
+    /// only contains valid characters.
+    pub fn validate(&self) -> Result<(), ValidationError> {
+        validate_client_identifier(self.as_str())
     }
 }
 
