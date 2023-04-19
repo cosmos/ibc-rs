@@ -213,22 +213,7 @@ impl ClientType {
         &self.0
     }
 
-    /// Validates the client type. It cannot be blank or empty. It must be a valid
-    /// client identifier when used with '0' or the maximum uint64 as the sequence
-    /// ```
-    /// # use ibc::core::ics24_host::identifier::ClientType;
-    /// let healthy_client_type = ClientType::new("07-tendermint".to_string());
-    /// assert!(healthy_client_type.is_ok());
-    ///
-    /// let faulty_client_type = ClientType::new("07-tendermint-".to_string());
-    /// assert!(faulty_client_type.is_err());
-    ///
-    /// let short_client_type = ClientType::new("<7Char".to_string());
-    /// assert!(short_client_type.is_err());
-    ///
-    /// let lengthy_client_type = ClientType::new("InvalidClientTypeWithLengthOfClientId>65Char".to_string());
-    /// assert!(lengthy_client_type.is_err());
-    /// ```
+    /// Validates the client type to ensure it ends with a valid client identifier.
     pub fn validate(&self) -> Result<(), ValidationError> {
         validate_client_type(self.as_str())
     }

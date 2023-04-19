@@ -67,19 +67,20 @@ pub fn validate_client_type(client_type: &str) -> Result<(), Error> {
     }
 
     // Check that the client type is a valid client identifier when used with `0`
-    validate_client_identifier(&format!("{client_type}-{}", u64::MIN))?;
+    validate_identifier_default(&format!("{client_type}-{}", u64::MIN), 9, 64)?;
 
     // Check that the client type is a valid client identifier when used with `u64::MAX`
-    validate_client_identifier(&format!("{client_type}-{}", u64::MAX))?;
+    validate_identifier_default(&format!("{client_type}-{}", u64::MAX), 9, 64)?;
+
     Ok(())
 }
 
 /// Checks if the client identifier is of valid format and can be parsed into
 /// the `ClientId` type.
 pub fn validate_client_identifier_format(id: &str) -> Result<(), Error> {
-    let split_id: Vec<_> = id.split("-").collect();
+    let split_id: Vec<_> = id.split('-').collect();
     let last_index = split_id.len() - 1;
-    let client_type_str = &id[..last_index];
+    let client_type_str = split_id[..last_index].join("-");
 
     validate_client_type(client_type_str.trim())?;
 
@@ -126,8 +127,8 @@ pub fn validate_channel_identifier(id: &str) -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use crate::core::ics24_host::validate::{
-        validate_channel_identifier, validate_client_identifier, validate_connection_identifier,
-        validate_identifier_default, validate_port_identifier,
+        validate_channel_identifier, validate_client_identifier, validate_client_type,
+        validate_connection_identifier, validate_identifier_default, validate_port_identifier,
     };
     use test_log::test;
 
@@ -213,6 +214,30 @@ mod tests {
     fn parse_invalid_id_path_separator() {
         // invalid id with path separator
         let id = validate_identifier_default("id/1", 1, 10);
+        assert!(id.is_err())
+    }
+
+    #[test]
+    fn parse_healthy_client_type() {
+        let id = validate_client_type("07-tendermint");
+        assert!(id.is_ok())
+    }
+
+    #[test]
+    fn parse_faulty_client_type() {
+        let id = validate_client_type("07-tendermint-");
+        assert!(id.is_err())
+    }
+
+    #[test]
+    fn parse_short_client_type() {
+        let id = validate_client_type("<7Char");
+        assert!(id.is_err())
+    }
+
+    #[test]
+    fn parse_lengthy_client_type() {
+        let id = validate_client_type("InvalidClientTypeWithLengthOfClientId>65Char");
         assert!(id.is_err())
     }
 }
