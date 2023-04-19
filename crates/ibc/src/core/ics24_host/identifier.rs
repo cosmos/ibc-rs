@@ -6,6 +6,8 @@ use derive_more::Into;
 
 use super::validate::*;
 use crate::clients::ics07_tendermint::client_type as tm_client_type;
+use crate::core::ics24_host::validate::validate_client_identifier;
+
 use crate::core::ics24_host::error::ValidationError;
 use crate::prelude::*;
 
@@ -176,8 +178,6 @@ impl From<String> for ChainId {
     }
 }
 
-use crate::core::ics24_host::validate::validate_client_identifier;
-
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -196,8 +196,8 @@ use crate::core::ics24_host::validate::validate_client_identifier;
 pub struct ClientType(String);
 
 impl ClientType {
-    /// Constructs a new `ClientType` from the given `String` without performing any validation.
-    pub fn new_unchecked(s: String) -> Self {
+    /// Constructs a new instance without performing any validation primarily for use in testing.
+    pub(crate) fn new_unchecked(s: String) -> Self {
         Self(s)
     }
 
