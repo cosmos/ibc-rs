@@ -190,7 +190,7 @@ mod tests {
     fn upgrade_client_fail_nonexisting_client(fixture: Fixture) {
         let Fixture { ctx, mut msg } = fixture;
 
-        msg.client_id = ClientId::from_str("nonexistingclient").unwrap();
+        msg.client_id = ClientId::from_str("nonexistingclient-0").unwrap();
 
         let res = validate(&ctx, msg);
         assert!(
