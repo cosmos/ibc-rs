@@ -6,7 +6,7 @@ use crate::core::ics02_client::client_state::UpdatedState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
-use crate::events::IbcEvent;
+use crate::events::{IbcEvent, MessageEvent};
 
 use crate::core::context::ContextError;
 
@@ -98,7 +98,7 @@ where
         client_state.client_type(),
         client_state.latest_height(),
     ));
-    ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
     ctx.emit_ibc_event(event);
 
     Ok(())
@@ -107,11 +107,12 @@ where
 #[cfg(feature = "upgrade_client")]
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::core::ics02_client::handler::upgrade_client::execute;
     use crate::core::ics24_host::path::ClientConsensusStatePath;
     use crate::core::ValidationContext;
-    use crate::events::{IbcEvent, IbcEventType};
-    use crate::{downcast, prelude::*};
+    use crate::downcast;
+    use crate::events::IbcEvent;
     use rstest::*;
 
     use core::str::FromStr;
@@ -163,7 +164,7 @@ mod tests {
 
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::UpgradeClient)
+            IbcEvent::Message(MessageEvent::Client)
         ));
         let upgrade_client_event = downcast!(&ctx.events[1] => IbcEvent::UpgradeClient).unwrap();
         assert_eq!(upgrade_client_event.client_id(), &msg.client_id);
