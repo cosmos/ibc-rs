@@ -40,9 +40,6 @@ pub fn client_type() -> ClientType {
 /// For testing ICS02 handlers mostly, cf. `MockClientContext`.
 #[derive(Clone, Debug)]
 pub struct MockClientRecord {
-    /// The type of this client.
-    pub client_type: ClientType,
-
     /// The client state (representing only the latest height at the moment).
     pub client_state: Option<Box<dyn ClientState>>,
 

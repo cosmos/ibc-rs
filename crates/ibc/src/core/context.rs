@@ -32,7 +32,6 @@ use core::time::Duration;
 use ibc_proto::google::protobuf::Any;
 
 use crate::core::ics02_client::client_state::ClientState;
-use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::version::{
@@ -48,8 +47,7 @@ use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ConnectionId, PortId};
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
-    ClientTypePath, CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath,
-    SeqSendPath,
+    CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use crate::core::ics26_routing::context::{Module, ModuleId};
 use crate::core::{
@@ -438,13 +436,6 @@ pub trait ExecutionContext: ValidationContext {
             }
         }
     }
-
-    /// Called upon successful client creation
-    fn store_client_type(
-        &mut self,
-        client_type_path: ClientTypePath,
-        client_type: ClientType,
-    ) -> Result<(), ContextError>;
 
     /// Called upon successful client creation and update
     fn store_client_state(

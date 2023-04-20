@@ -9,8 +9,6 @@ use crate::core::ics24_host::path::ClientConsensusStatePath;
 
 use crate::core::ics24_host::path::ClientStatePath;
 
-use crate::core::ics24_host::path::ClientTypePath;
-
 use crate::core::ExecutionContext;
 
 use crate::core::ValidationContext;
@@ -79,7 +77,6 @@ where
     })?;
     let consensus_state = client_state.initialise(consensus_state)?;
 
-    ctx.store_client_type(ClientTypePath::new(&client_id), client_type.clone())?;
     ctx.store_client_state(ClientStatePath::new(&client_id), client_state.clone())?;
     ctx.store_consensus_state(
         ClientConsensusStatePath::new(&client_id, &client_state.latest_height()),
