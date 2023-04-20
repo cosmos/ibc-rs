@@ -3,12 +3,12 @@ use crate::applications::transfer::context::{
 };
 use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::events::TransferEvent;
-use crate::applications::transfer::is_sender_chain_source;
 use crate::applications::transfer::msgs::transfer::MsgTransfer;
+use crate::applications::transfer::{is_sender_chain_source, MODULE_ID_STR};
 use crate::core::ics04_channel::handler::send_packet::{send_packet_execute, send_packet_validate};
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::path::{ChannelEndPath, SeqSendPath};
-use crate::events::ModuleEvent;
+use crate::events::{MessageEvent, ModuleEvent};
 use crate::prelude::*;
 
 /// This function handles the transfer sending logic.
@@ -170,6 +170,8 @@ where
             denom: msg.packet_data.token.denom,
         };
         ctx_a.emit_ibc_event(ModuleEvent::from(transfer_event).into());
+
+        ctx_a.emit_ibc_event(MessageEvent::Module(MODULE_ID_STR.to_string()).into());
     }
 
     Ok(())

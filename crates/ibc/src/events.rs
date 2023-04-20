@@ -287,6 +287,12 @@ impl MessageEvent {
     }
 }
 
+impl From<MessageEvent> for IbcEvent {
+    fn from(e: MessageEvent) -> Self {
+        IbcEvent::Message(e)
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
     use super::*;
