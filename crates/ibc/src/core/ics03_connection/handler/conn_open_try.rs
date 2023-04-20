@@ -39,6 +39,11 @@ where
         .validate()
         .map_err(ClientError::InvalidClientIdentifier)?;
 
+    msg.counterparty
+        .client_id()
+        .validate()
+        .map_err(ClientError::InvalidClientIdentifier)?;
+
     ctx_b.validate_self_client(msg.client_state_of_b_on_a.clone())?;
 
     let host_height = ctx_b.host_height().map_err(|_| ConnectionError::Other {

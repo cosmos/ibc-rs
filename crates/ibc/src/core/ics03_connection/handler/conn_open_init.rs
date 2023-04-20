@@ -20,6 +20,11 @@ where
         .validate()
         .map_err(ClientError::InvalidClientIdentifier)?;
 
+    msg.counterparty
+        .client_id()
+        .validate()
+        .map_err(ClientError::InvalidClientIdentifier)?;
+
     // An IBC client running on the local (host) chain should exist.
     let client_state_of_b_on_a = ctx_a.client_state(&msg.client_id_on_a)?;
     client_state_of_b_on_a.confirm_not_frozen()?;
