@@ -1,3 +1,4 @@
+use crate::clients::ics06_solomachine::consensus_state::ConsensusState;
 use crate::clients::ics06_solomachine::error::Error;
 use crate::core::ics02_client::error::ClientError;
 use crate::prelude::*;
@@ -16,7 +17,7 @@ pub struct ClientState {
     pub sequence: u64,
     /// frozen sequence of the solo machine
     pub frozen_sequence: u64,
-    // pub consensus_state: ::core::option::Option<ConsensusState>,
+    pub consensus_state: Option<ConsensusState>,
     /// when set to true, will allow governance to update a solo machine client.
     /// The client will be unfrozen if it is frozen.
     pub allow_update_after_proposal: bool,
