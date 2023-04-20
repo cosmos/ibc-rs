@@ -50,39 +50,50 @@ pub fn validate_default_identifier(id: &str, min: usize, max: usize) -> Result<(
     Ok(())
 }
 
-/// Checks if the client type is of valid format and can be parsed into the
-/// client identifier.
-pub fn validate_client_type(client_type: &str) -> Result<(), Error> {
-    // Check that the client type is not blank
-    if client_type.is_empty() {
+/// Checks if the prefix is valid and can form valid domain identifiers.
+pub fn validate_prefix_identifier(
+    prefix: &str,
+    min_id_length: usize,
+    max_id_length: usize,
+) -> Result<(), Error> {
+    // Checks if the prefix is not blank
+    if prefix.is_empty() {
         return Err(Error::Empty)?;
     }
 
-    // Check that the client type does not end with a dash
+    // Checks of the prefix does not end with a dash
     let re = safe_regex::regex!(br".*[^-]");
-    if !re.is_match(client_type.as_bytes()) {
+    if !re.is_match(prefix.as_bytes()) {
         return Err(Error::InvalidPrefix {
-            prefix: client_type.to_string(),
+            prefix: prefix.to_string(),
         })?;
     }
 
-    // Check that the client type is a valid client identifier when used with `0`
-    validate_default_identifier(&format!("{client_type}-{}", u64::MIN), 9, 64)?;
+    // Checks if the prefix forms a valid default identifier when used with `0`
+    validate_default_identifier(
+        &format!("{prefix}-{}", u64::MIN),
+        min_id_length,
+        max_id_length,
+    )?;
 
-    // Check that the client type is a valid client identifier when used with `u64::MAX`
-    validate_default_identifier(&format!("{client_type}-{}", u64::MAX), 9, 64)?;
+    // Checks if the prefix forms a valid default identifier when used with `u64::MAX`
+    validate_default_identifier(
+        &format!("{prefix}-{}", u64::MAX),
+        min_id_length,
+        max_id_length,
+    )?;
 
     Ok(())
 }
 
-/// Checks if the client identifier is of valid format and can be parsed into
-/// the `ClientId` type.
-pub fn validate_client_identifier_format(id: &str) -> Result<(), Error> {
+/// Checks if the identifier is of valid format and can be parsed into the
+/// correct domain identifier type.
+pub fn validate_identifier(id: &str, min: usize, max: usize) -> Result<(), Error> {
     let split_id: Vec<_> = id.split('-').collect();
     let last_index = split_id.len() - 1;
-    let client_type_str = split_id[..last_index].join("-");
+    let prefix = split_id[..last_index].join("-");
 
-    validate_client_type(client_type_str.trim())?;
+    validate_prefix_identifier(prefix.trim(), min, max)?;
 
     split_id[last_index]
         .parse::<u64>()
@@ -91,13 +102,17 @@ pub fn validate_client_identifier_format(id: &str) -> Result<(), Error> {
     Ok(())
 }
 
+/// Default validator function for the Client types.
+pub fn validate_client_type(id: &str) -> Result<(), Error> {
+    validate_prefix_identifier(id, 9, 64)
+}
+
 /// Default validator function for Client identifiers.
 ///
 /// A valid client identifier must be between 9-64 characters as specified in
-///  the ICS-24 spec.
+/// the ICS-24 spec.
 pub fn validate_client_identifier(id: &str) -> Result<(), Error> {
-    validate_default_identifier(id, 9, 64)?;
-    validate_client_identifier_format(id)
+    validate_identifier(id, 9, 64)
 }
 
 /// Default validator function for Connection identifiers.
