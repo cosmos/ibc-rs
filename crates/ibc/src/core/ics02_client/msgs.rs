@@ -4,10 +4,13 @@
 //! subsequently calls into the chain-specific (e.g., ICS 07) client handler. See:
 //! <https://github.com/cosmos/ibc/tree/master/spec/core/ics-002-client-semantics#create>.
 
+use ibc_proto::google::protobuf::Any;
+
 use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
 use crate::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
+use crate::core::ics24_host::identifier::ClientId;
 
 pub mod create_client;
 pub mod misbehaviour;
@@ -21,4 +24,25 @@ pub enum ClientMsg {
     UpdateClient(MsgUpdateClient),
     Misbehaviour(MsgSubmitMisbehaviour),
     UpgradeClient(MsgUpgradeClient),
+}
+
+pub(crate) enum MsgUpdateOrMisbehaviour {
+    UpdateClient(MsgUpdateClient),
+    Misbehaviour(MsgSubmitMisbehaviour),
+}
+
+impl MsgUpdateOrMisbehaviour {
+    pub(crate) fn client_id(&self) -> &ClientId {
+        match self {
+            MsgUpdateOrMisbehaviour::UpdateClient(msg) => &msg.client_id,
+            MsgUpdateOrMisbehaviour::Misbehaviour(msg) => &msg.client_id,
+        }
+    }
+
+    pub(crate) fn client_message(self) -> Any {
+        match self {
+            MsgUpdateOrMisbehaviour::UpdateClient(msg) => msg.header,
+            MsgUpdateOrMisbehaviour::Misbehaviour(msg) => msg.misbehaviour,
+        } 
+    }
 }

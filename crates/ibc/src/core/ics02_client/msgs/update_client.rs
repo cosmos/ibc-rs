@@ -33,7 +33,7 @@ pub enum UpdateKind {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgUpdateClient {
     pub client_id: ClientId,
-    pub client_message: Any,
+    pub header: Any,
     pub update_kind: UpdateKind,
     pub signer: Signer,
 }
@@ -49,7 +49,7 @@ impl TryFrom<RawMsgUpdateClient> for MsgUpdateClient {
                 .client_id
                 .parse()
                 .map_err(ClientError::InvalidMsgUpdateClientId)?,
-            client_message: raw.header.ok_or(ClientError::MissingRawHeader)?,
+            header: raw.header.ok_or(ClientError::MissingRawHeader)?,
             update_kind: UpdateKind::UpdateClient,
             signer: raw.signer.parse().map_err(ClientError::Signer)?,
         })
@@ -60,7 +60,7 @@ impl From<MsgUpdateClient> for RawMsgUpdateClient {
     fn from(ics_msg: MsgUpdateClient) -> Self {
         RawMsgUpdateClient {
             client_id: ics_msg.client_id.to_string(),
-            header: Some(ics_msg.client_message),
+            header: Some(ics_msg.header),
             signer: ics_msg.signer.to_string(),
         }
     }
@@ -85,7 +85,7 @@ mod tests {
         pub fn new(client_id: ClientId, header: Any, signer: Signer) -> Self {
             MsgUpdateClient {
                 client_id,
-                client_message: header,
+                header,
                 update_kind: UpdateKind::UpdateClient,
                 signer,
             }

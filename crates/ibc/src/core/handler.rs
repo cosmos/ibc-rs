@@ -270,7 +270,7 @@ mod tests {
                 name: "Client update successful".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    client_message: MockHeader::new(update_client_height)
+                    header: MockHeader::new(update_client_height)
                         .with_timestamp(Timestamp::now())
                         .into(),
                     update_kind: UpdateKind::UpdateClient,
@@ -284,7 +284,7 @@ mod tests {
                 name: "Client update fails due to stale header".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    client_message: MockHeader::new(update_client_height).into(),
+                    header: MockHeader::new(update_client_height).into(),
                     update_kind: UpdateKind::UpdateClient,
                     signer: default_signer.clone(),
                 }))
@@ -360,7 +360,7 @@ mod tests {
                 name: "Client update successful #2".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    client_message: MockHeader::new(update_client_height_after_send)
+                    header: MockHeader::new(update_client_height_after_send)
                         .with_timestamp(Timestamp::now())
                         .into(),
                     update_kind: UpdateKind::UpdateClient,
@@ -406,7 +406,7 @@ mod tests {
                 name: "Client update successful".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    client_message: MockHeader::new(update_client_height_after_second_send).into(),
+                    header: MockHeader::new(update_client_height_after_second_send).into(),
                     update_kind: UpdateKind::UpdateClient,
                     signer: default_signer.clone(),
                 }))
