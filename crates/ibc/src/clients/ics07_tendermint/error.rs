@@ -43,8 +43,8 @@ pub enum Error {
     InvalidRawClientState { reason: String },
     /// missing validator set
     MissingValidatorSet,
-    /// missing trusted validator set
-    MissingTrustedValidatorSet,
+    /// missing trusted next validator set
+    MissingTrustedNextValidatorSet,
     /// missing trusted height
     MissingTrustedHeight,
     /// missing trusting period

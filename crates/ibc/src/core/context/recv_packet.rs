@@ -12,7 +12,7 @@ use crate::{
         ics24_host::path::{AckPath, ChannelEndPath, ReceiptPath, SeqRecvPath},
         ics26_routing::context::ModuleId,
     },
-    events::IbcEvent,
+    events::{IbcEvent, MessageEvent},
     prelude::*,
 };
 
@@ -122,18 +122,18 @@ where
             chan_end_on_b.ordering,
             conn_id_on_b.clone(),
         ));
-        ctx_b.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
         ctx_b.emit_ibc_event(event);
         let event = IbcEvent::WriteAcknowledgement(WriteAcknowledgement::new(
             msg.packet,
             acknowledgement,
             conn_id_on_b.clone(),
         ));
-        ctx_b.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
         ctx_b.emit_ibc_event(event);
 
         for module_event in extras.events {
-            ctx_b.emit_ibc_event(IbcEvent::AppModule(module_event));
+            ctx_b.emit_ibc_event(IbcEvent::Module(module_event));
         }
 
         for log_message in extras.log {
@@ -146,6 +146,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     use crate::{
         applications::transfer::MODULE_ID_STR,
         core::{
@@ -154,8 +156,7 @@ mod tests {
             ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId},
             ics26_routing::context::ModuleId,
         },
-        events::{IbcEvent, IbcEventType},
-        prelude::*,
+        events::IbcEvent,
         test_utils::DummyTransferModule,
         timestamp::ZERO_DURATION,
     };
@@ -259,12 +260,12 @@ mod tests {
         assert_eq!(ctx.events.len(), 4);
         assert!(matches!(
             &ctx.events[0],
-            &IbcEvent::Message(IbcEventType::ReceivePacket)
+            &IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(&ctx.events[1], &IbcEvent::ReceivePacket(_)));
         assert!(matches!(
             &ctx.events[2],
-            &IbcEvent::Message(IbcEventType::WriteAck)
+            &IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(&ctx.events[3], &IbcEvent::WriteAcknowledgement(_)));
     }
