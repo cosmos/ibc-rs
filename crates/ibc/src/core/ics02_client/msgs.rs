@@ -9,6 +9,7 @@ use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
 
 pub mod create_client;
+pub mod misbehaviour;
 pub mod update_client;
 pub mod upgrade_client;
 
