@@ -70,7 +70,7 @@ impl From<ClientState> for Any {
         Any {
             type_url: SOLOMACHINE_CLIENT_STATE_TYPE_URL.to_string(),
             value: Protobuf::<RawSolClientState>::encode_vec(&client_state)
-                .expect("encoding to `Any` from `TmClientState`"),
+                .expect("encoding to `Any` from `RawSolClientState`"),
         }
     }
 }

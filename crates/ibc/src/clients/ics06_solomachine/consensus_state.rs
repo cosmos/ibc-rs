@@ -70,7 +70,7 @@ impl From<ConsensusState> for Any {
         Any {
             type_url: SOLOMACHINE_CONSENSUS_STATE_TYPE_URL.to_string(),
             value: Protobuf::<RawSolConsensusState>::encode_vec(&consensus_state)
-                .expect("encoding to `Any` from `TmConsensusState`"),
+                .expect("encoding to `Any` from `RawSolConsensusState`"),
         }
     }
 }
