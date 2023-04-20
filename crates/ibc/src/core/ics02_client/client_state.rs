@@ -96,6 +96,8 @@ pub trait ClientState:
     /// client, such as the ClientState and corresponding ConsensusState. Upon
     /// successful update, a list of consensus heights is returned. It assumes
     /// the client_message has already been verified.
+    /// 
+    /// Note that `header` is the field associated with `UpdateKind::UpdateClient`.
     ///
     /// Post-condition: on success, the return value MUST contain at least one
     /// height.
@@ -103,8 +105,7 @@ pub trait ClientState:
         &self,
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
-        client_message: Any,
-        update_kind: &UpdateKind,
+        header: Any,
     ) -> Result<Vec<Height>, ClientError>;
 
     /// update_state_on_misbehaviour should perform appropriate state changes on

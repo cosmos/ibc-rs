@@ -306,13 +306,9 @@ impl Ics2ClientState for ClientState {
         &self,
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
-        client_message: Any,
-        _update_kind: &UpdateKind,
+        header: Any,
     ) -> Result<Vec<Height>, ClientError> {
-        // we only expect headers to make it here; if a TmMisbehaviour makes it to here,
-        // then it is not a valid misbehaviour (check_for_misbehaviour returned false),
-        // and so transaction should fail.
-        let header = TmHeader::try_from(client_message)?;
+        let header = TmHeader::try_from(header)?;
         let header_height = header.height();
 
         let maybe_existing_consensus_state = {

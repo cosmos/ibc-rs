@@ -294,10 +294,9 @@ impl ClientState for MockClientState {
         &self,
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
-        client_message: Any,
-        _update_kind: &UpdateKind,
+        header: Any,
     ) -> Result<Vec<Height>, ClientError> {
-        let header = MockHeader::try_from(client_message)?;
+        let header = MockHeader::try_from(header)?;
         let header_height = header.height;
 
         let new_client_state = MockClientState::new(header).into_box();

@@ -4,7 +4,7 @@ use crate::core::ics02_client::error::ClientError;
 use crate::prelude::*;
 
 use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
-use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
+use crate::core::ics02_client::msgs::update_client::{MsgUpdateClient, UpdateKind};
 use crate::events::{IbcEvent, MessageEvent};
 
 use crate::core::context::ContextError;
@@ -62,8 +62,16 @@ where
         ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
         ctx.emit_ibc_event(event);
     } else {
-        let consensus_heights =
-            client_state.update_state(ctx, &client_id, client_message.clone(), &update_kind)?;
+        if !matches!(update_kind, UpdateKind::UpdateClient) {
+            return Err(ClientError::MisbehaviourHandlingFailure {
+                reason: "misbehaviour submitted, but none found".to_string(),
+            }
+            .into());
+        }
+
+        let header = client_message;
+
+        let consensus_heights = client_state.update_state(ctx, &client_id, header.clone())?;
 
         let consensus_height = consensus_heights.get(0).ok_or(ClientError::Other {
             description: "client update state returned no updated height".to_string(),
@@ -74,7 +82,7 @@ where
             client_state.client_type(),
             *consensus_height,
             consensus_heights,
-            client_message,
+            header,
         ));
         ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
         ctx.emit_ibc_event(event);
