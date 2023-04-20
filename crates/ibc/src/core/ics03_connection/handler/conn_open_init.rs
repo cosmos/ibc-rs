@@ -2,7 +2,6 @@
 use crate::prelude::*;
 
 use crate::core::context::ContextError;
-use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenInit;
@@ -16,15 +15,6 @@ pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(
 where
     Ctx: ValidationContext,
 {
-    msg.client_id_on_a
-        .validate()
-        .map_err(ClientError::InvalidClientIdentifier)?;
-
-    msg.counterparty
-        .client_id()
-        .validate()
-        .map_err(ClientError::InvalidClientIdentifier)?;
-
     // An IBC client running on the local (host) chain should exist.
     let client_state_of_b_on_a = ctx_a.client_state(&msg.client_id_on_a)?;
     client_state_of_b_on_a.confirm_not_frozen()?;

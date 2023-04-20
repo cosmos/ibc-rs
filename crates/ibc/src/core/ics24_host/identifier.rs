@@ -212,11 +212,6 @@ impl ClientType {
     pub fn as_str(&self) -> &str {
         &self.0
     }
-
-    /// Validates the client type to ensure it ends with a valid client identifier.
-    pub fn validate(&self) -> Result<(), ValidationError> {
-        validate_client_type(self.as_str())
-    }
 }
 
 impl Display for ClientType {
@@ -267,12 +262,6 @@ impl ClientId {
     /// Get this identifier as a borrowed byte slice
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_bytes()
-    }
-
-    /// Validates that the client identifier string is formatted correctly and
-    /// only contains valid characters.
-    pub fn validate(&self) -> Result<(), ValidationError> {
-        validate_client_identifier(self.as_str())
     }
 }
 

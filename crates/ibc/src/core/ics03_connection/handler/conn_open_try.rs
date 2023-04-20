@@ -35,15 +35,6 @@ fn validate_impl<Ctx>(
 where
     Ctx: ValidationContext,
 {
-    msg.client_id_on_b
-        .validate()
-        .map_err(ClientError::InvalidClientIdentifier)?;
-
-    msg.counterparty
-        .client_id()
-        .validate()
-        .map_err(ClientError::InvalidClientIdentifier)?;
-
     ctx_b.validate_self_client(msg.client_state_of_b_on_a.clone())?;
 
     let host_height = ctx_b.host_height().map_err(|_| ConnectionError::Other {
@@ -59,10 +50,6 @@ where
     }
 
     let client_id_on_a = msg.counterparty.client_id();
-
-    client_id_on_a
-        .validate()
-        .map_err(ClientError::InvalidClientIdentifier)?;
 
     // Verify proofs
     {
