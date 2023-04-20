@@ -1,10 +1,15 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the connection module.
 
+use crate::prelude::*;
 use tendermint::abci;
 
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-use crate::events::IbcEventType;
-use crate::prelude::*;
+
+/// Connection event types
+const CONNECTION_OPEN_INIT_EVENT: &str = "connection_open_init";
+const CONNECTION_OPEN_TRY_EVENT: &str = "connection_open_try";
+const CONNECTION_OPEN_ACK_EVENT: &str = "connection_open_ack";
+const CONNECTION_OPEN_CONFIRM_EVENT: &str = "connection_open_confirm";
 
 /// The content of the `key` field for the attribute containing the connection identifier.
 pub const CONN_ID_ATTRIBUTE_KEY: &str = "connection_id";
@@ -106,12 +111,16 @@ impl OpenInit {
     pub fn counterparty_client_id(&self) -> &ClientId {
         &self.0.counterparty_client_id
     }
+
+    pub fn event_type(&self) -> &str {
+        CONNECTION_OPEN_INIT_EVENT
+    }
 }
 
 impl From<OpenInit> for abci::Event {
     fn from(v: OpenInit) -> Self {
         abci::Event {
-            kind: IbcEventType::OpenInitConnection.as_str().to_owned(),
+            kind: CONNECTION_OPEN_INIT_EVENT.to_string(),
             attributes: v.0.into(),
         }
     }
@@ -161,12 +170,16 @@ impl OpenTry {
     pub fn counterparty_client_id(&self) -> &ClientId {
         &self.0.counterparty_client_id
     }
+
+    pub fn event_type(&self) -> &str {
+        CONNECTION_OPEN_TRY_EVENT
+    }
 }
 
 impl From<OpenTry> for abci::Event {
     fn from(v: OpenTry) -> Self {
         abci::Event {
-            kind: IbcEventType::OpenTryConnection.as_str().to_owned(),
+            kind: CONNECTION_OPEN_TRY_EVENT.to_string(),
             attributes: v.0.into(),
         }
     }
@@ -216,12 +229,16 @@ impl OpenAck {
     pub fn counterparty_client_id(&self) -> &ClientId {
         &self.0.counterparty_client_id
     }
+
+    pub fn event_type(&self) -> &str {
+        CONNECTION_OPEN_ACK_EVENT
+    }
 }
 
 impl From<OpenAck> for abci::Event {
     fn from(v: OpenAck) -> Self {
         abci::Event {
-            kind: IbcEventType::OpenAckConnection.as_str().to_owned(),
+            kind: CONNECTION_OPEN_ACK_EVENT.to_string(),
             attributes: v.0.into(),
         }
     }
@@ -271,12 +288,16 @@ impl OpenConfirm {
     pub fn counterparty_client_id(&self) -> &ClientId {
         &self.0.counterparty_client_id
     }
+
+    pub fn event_type(&self) -> &str {
+        CONNECTION_OPEN_CONFIRM_EVENT
+    }
 }
 
 impl From<OpenConfirm> for abci::Event {
     fn from(v: OpenConfirm) -> Self {
         abci::Event {
-            kind: IbcEventType::OpenConfirmConnection.as_str().to_owned(),
+            kind: CONNECTION_OPEN_CONFIRM_EVENT.to_string(),
             attributes: v.0.into(),
         }
     }
@@ -292,7 +313,7 @@ mod tests {
     #[test]
     fn ibc_to_abci_connection_events() {
         struct Test {
-            kind: IbcEventType,
+            kind: &'static str,
             event: AbciEvent,
             expected_keys: Vec<&'static str>,
             expected_values: Vec<&'static str>,
@@ -318,7 +339,7 @@ mod tests {
 
         let tests: Vec<Test> = vec![
             Test {
-                kind: IbcEventType::OpenInitConnection,
+                kind: CONNECTION_OPEN_INIT_EVENT,
                 event: OpenInit::new(
                     conn_id_on_a.clone(),
                     client_id_on_a.clone(),
@@ -333,7 +354,7 @@ mod tests {
                     .collect(),
             },
             Test {
-                kind: IbcEventType::OpenTryConnection,
+                kind: CONNECTION_OPEN_TRY_EVENT,
                 event: OpenTry::new(
                     conn_id_on_b.clone(),
                     client_id_on_b.clone(),
@@ -345,7 +366,7 @@ mod tests {
                 expected_values: expected_values.iter().rev().cloned().collect(),
             },
             Test {
-                kind: IbcEventType::OpenAckConnection,
+                kind: CONNECTION_OPEN_ACK_EVENT,
                 event: OpenAck::new(
                     conn_id_on_a.clone(),
                     client_id_on_a.clone(),
@@ -357,7 +378,7 @@ mod tests {
                 expected_values: expected_values.clone(),
             },
             Test {
-                kind: IbcEventType::OpenConfirmConnection,
+                kind: CONNECTION_OPEN_CONFIRM_EVENT,
                 event: OpenConfirm::new(conn_id_on_b, client_id_on_b, conn_id_on_a, client_id_on_a)
                     .into(),
                 expected_keys: expected_keys.clone(),
@@ -366,22 +387,16 @@ mod tests {
         ];
 
         for t in tests {
-            assert_eq!(t.kind.as_str(), t.event.kind);
+            assert_eq!(t.kind, t.event.kind);
             assert_eq!(t.expected_keys.len(), t.event.attributes.len());
             for (i, e) in t.event.attributes.iter().enumerate() {
-                assert_eq!(
-                    e.key,
-                    t.expected_keys[i],
-                    "key mismatch for {:?}",
-                    t.kind.as_str()
-                );
+                assert_eq!(e.key, t.expected_keys[i], "key mismatch for {:?}", t.kind);
             }
             for (i, e) in t.event.attributes.iter().enumerate() {
                 assert_eq!(
-                    e.value,
-                    t.expected_values[i],
+                    e.value, t.expected_values[i],
                     "value mismatch for {:?}",
-                    t.kind.as_str()
+                    t.kind
                 );
             }
         }

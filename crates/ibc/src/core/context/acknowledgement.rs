@@ -1,4 +1,5 @@
 use crate::core::ics24_host::path::{ChannelEndPath, CommitmentPath, SeqAckPath};
+use crate::events::MessageEvent;
 use crate::prelude::*;
 
 use crate::{
@@ -52,7 +53,7 @@ where
         chan_end_on_a.ordering,
         conn_id_on_a.clone(),
     ));
-    ctx_a.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
     ctx_a.emit_ibc_event(event);
 
     let commitment_path_on_a = CommitmentPath::new(
@@ -104,7 +105,7 @@ where
         // Note: Acknowledgement event was emitted at the beginning
 
         for module_event in extras.events {
-            ctx_a.emit_ibc_event(IbcEvent::AppModule(module_event));
+            ctx_a.emit_ibc_event(IbcEvent::Module(module_event));
         }
 
         for log_message in extras.log {
@@ -138,7 +139,6 @@ mod tests {
             },
             ics24_host::identifier::{ClientId, ConnectionId},
         },
-        events::IbcEventType,
         mock::context::MockContext,
         test_utils::DummyTransferModule,
         timestamp::ZERO_DURATION,
@@ -251,7 +251,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::AckPacket)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::AcknowledgePacket(_)));
     }
@@ -288,7 +288,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::AckPacket)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::AcknowledgePacket(_)));
     }

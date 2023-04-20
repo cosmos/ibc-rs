@@ -11,7 +11,7 @@ use crate::core::ics24_host::Path;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 
-use crate::events::IbcEvent;
+use crate::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ContextError>
 where
@@ -119,7 +119,7 @@ where
         conn_id_on_a.clone(),
         client_id_on_a.clone(),
     ));
-    ctx_b.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection));
     ctx_b.emit_ibc_event(event);
     ctx_b.log_message("success: conn_open_confirm verification passed".to_string());
 
@@ -183,7 +183,7 @@ mod tests {
     use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::ClientId;
-    use crate::events::{IbcEvent, IbcEventType};
+    use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::timestamp::ZERO_DURATION;
     use crate::Height;
@@ -257,7 +257,7 @@ mod tests {
 
                 assert!(matches!(
                     fxt.ctx.events[0],
-                    IbcEvent::Message(IbcEventType::OpenConfirmConnection)
+                    IbcEvent::Message(MessageEvent::Connection)
                 ));
                 let event = &fxt.ctx.events[1];
                 assert!(matches!(event, &IbcEvent::OpenConfirmConnection(_)));

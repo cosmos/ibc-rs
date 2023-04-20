@@ -12,6 +12,7 @@ use crate::core::ics24_host::path::CommitmentPath;
 use crate::core::ics24_host::path::SeqSendPath;
 use crate::core::ContextError;
 use crate::events::IbcEvent;
+use crate::events::MessageEvent;
 use crate::prelude::*;
 use crate::timestamp::Expiry;
 
@@ -126,7 +127,7 @@ pub fn send_packet_execute(
             chan_end_on_a.ordering,
             conn_id_on_a.clone(),
         ));
-        ctx_a.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
         ctx_a.emit_ibc_event(event);
     }
 
@@ -135,6 +136,7 @@ pub fn send_packet_execute(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use core::ops::Add;
     use core::time::Duration;
 
@@ -151,9 +153,8 @@ mod tests {
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::events::{IbcEvent, IbcEventType};
+    use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
-    use crate::prelude::*;
     use crate::timestamp::Timestamp;
     use crate::timestamp::ZERO_DURATION;
 
@@ -303,7 +304,7 @@ mod tests {
                     assert_eq!(test.ctx.events.len(), 2);
                     assert!(matches!(
                         &test.ctx.events[0],
-                        &IbcEvent::Message(IbcEventType::SendPacket)
+                        &IbcEvent::Message(MessageEvent::Channel)
                     ));
                     // TODO: The object in the output is a PacketResult what can we check on it?
                     assert!(matches!(&test.ctx.events[1], &IbcEvent::SendPacket(_)));
