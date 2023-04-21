@@ -12,6 +12,7 @@ pub const SOLOMACHINE_CONSENSUS_STATE_TYPE_URL: &str =
 /// ConsensusState defines a solo machine consensus state. The sequence of a
 /// consensus state is contained in the "height" key used in storing the
 /// consensus state.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, PartialEq)]
 pub struct ConsensusState {
     /// public key of the solo machine
@@ -19,7 +20,7 @@ pub struct ConsensusState {
     /// diversifier allows the same public key to be re-used across different solo
     /// machine clients (potentially on different chains) without being considered
     /// misbehaviour.
-    pub diversifier: ::prost::alloc::string::String,
+    pub diversifier: String,
     pub timestamp: u64,
 }
 
