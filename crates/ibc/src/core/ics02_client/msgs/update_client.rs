@@ -10,8 +10,7 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::signer::Signer;
 
-pub const UPDATE_CLIENT_TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
-pub const MISBEHAVIOUR_TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
+pub const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
 
 /// `UpdateKind` represents the 2 ways that a client can be updated
 /// in IBC: either through a `MsgUpdateClient`, or a `MsgSubmitMisbehaviour`.
