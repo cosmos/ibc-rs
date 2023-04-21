@@ -135,9 +135,11 @@ pub fn on_chan_open_init_validate(
         });
     }
 
-    version
-        .verify_version_supported(Version::new(VERSION.to_string()))
-        .map_err(ContextError::from)?;
+    if !version.is_empty() {
+        version
+            .verify_version_supported(Version::new(VERSION.to_string()))
+            .map_err(ContextError::from)?;
+    }
 
     Ok(())
 }
