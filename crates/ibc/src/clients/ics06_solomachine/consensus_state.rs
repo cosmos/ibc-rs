@@ -1,6 +1,8 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::core::ics02_client::error::ClientError;
+use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::prelude::*;
+use crate::timestamp::Timestamp;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::solomachine::v1::ConsensusState as RawSolConsensusState;
 use ibc_proto::protobuf::Protobuf;
@@ -13,7 +15,7 @@ pub const SOLOMACHINE_CONSENSUS_STATE_TYPE_URL: &str =
 /// consensus state is contained in the "height" key used in storing the
 /// consensus state.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct ConsensusState {
     /// public key of the solo machine
     pub public_key: Option<Any>,
@@ -22,6 +24,16 @@ pub struct ConsensusState {
     /// misbehaviour.
     pub diversifier: String,
     pub timestamp: u64,
+}
+
+impl crate::core::ics02_client::consensus_state::ConsensusState for ConsensusState {
+    fn root(&self) -> &CommitmentRoot {
+        todo!()
+    }
+
+    fn timestamp(&self) -> Timestamp {
+        todo!()
+    }
 }
 
 impl Protobuf<RawSolConsensusState> for ConsensusState {}

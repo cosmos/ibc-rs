@@ -1,7 +1,10 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::core::ics02_client::error::ClientError;
 use crate::prelude::*;
+use crate::timestamp::Timestamp;
+use crate::Height;
 use bytes::Buf;
+use core::fmt::{Display, Error as FmtError, Formatter};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::solomachine::v1::Header as RawSolHeader;
 use ibc_proto::protobuf::Protobuf;
@@ -19,6 +22,28 @@ pub struct Header {
     pub signature: Vec<u8>,
     pub new_public_key: Option<Any>,
     pub new_diversifier: String,
+}
+
+impl core::fmt::Debug for Header {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+        todo!()
+    }
+}
+
+impl Display for Header {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+        todo!()
+    }
+}
+
+impl crate::core::ics02_client::header::Header for Header {
+    fn height(&self) -> Height {
+        todo!()
+    }
+
+    fn timestamp(&self) -> Timestamp {
+        todo!()
+    }
 }
 
 impl Protobuf<RawSolHeader> for Header {}
