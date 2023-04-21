@@ -1,8 +1,6 @@
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::core::client::v1::MsgSubmitMisbehaviour as RawMsgSubmitMisbehaviour;
-use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;
 
 use crate::core::ics02_client::msgs::{
     create_client, misbehaviour, update_client, upgrade_client, ClientMsg,
@@ -39,10 +37,7 @@ impl TryFrom<Any> for MsgEnvelope {
                 Ok(MsgEnvelope::Client(ClientMsg::CreateClient(domain_msg)))
             }
             update_client::TYPE_URL => {
-                let domain_msg =
-                    <update_client::MsgUpdateClient as Protobuf<RawMsgUpdateClient>>::decode_vec(
-                        &any_msg.value,
-                    )
+                let domain_msg = update_client::MsgUpdateClient::decode_vec(&any_msg.value)
                     .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::Client(ClientMsg::UpdateClient(domain_msg)))
             }
@@ -52,10 +47,8 @@ impl TryFrom<Any> for MsgEnvelope {
                 Ok(MsgEnvelope::Client(ClientMsg::UpgradeClient(domain_msg)))
             }
             misbehaviour::TYPE_URL => {
-                let domain_msg = <misbehaviour::MsgSubmitMisbehaviour as Protobuf<
-                    RawMsgSubmitMisbehaviour,
-                >>::decode_vec(&any_msg.value)
-                .map_err(RouterError::MalformedMessageBytes)?;
+                let domain_msg = misbehaviour::MsgSubmitMisbehaviour::decode_vec(&any_msg.value)
+                    .map_err(RouterError::MalformedMessageBytes)?;
                 Ok(MsgEnvelope::Client(ClientMsg::Misbehaviour(domain_msg)))
             }
 
