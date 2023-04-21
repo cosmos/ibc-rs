@@ -22,6 +22,7 @@ use self::acknowledgement::{acknowledgement_packet_execute, acknowledgement_pack
 use self::recv_packet::{recv_packet_execute, recv_packet_validate};
 use self::timeout::{timeout_packet_execute, timeout_packet_validate, TimeoutMsgType};
 
+use super::ics02_client::msgs::MsgUpdateOrMisbehaviour;
 use super::{
     ics02_client::error::ClientError,
     ics03_connection::error::ConnectionError,
@@ -173,8 +174,12 @@ pub trait ValidationContext: Router {
         match msg {
             MsgEnvelope::Client(msg) => match msg {
                 ClientMsg::CreateClient(msg) => create_client::validate(self, msg),
-                ClientMsg::UpdateClient(msg) => update_client::validate(self, msg),
-                ClientMsg::Misbehaviour(_msg) => todo!(),
+                ClientMsg::UpdateClient(msg) => {
+                    update_client::validate(self, MsgUpdateOrMisbehaviour::UpdateClient(msg))
+                }
+                ClientMsg::Misbehaviour(msg) => {
+                    update_client::validate(self, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
+                }
                 ClientMsg::UpgradeClient(msg) => upgrade_client::validate(self, msg),
             }
             .map_err(RouterError::ContextError),
@@ -382,8 +387,12 @@ pub trait ExecutionContext: ValidationContext {
         match msg {
             MsgEnvelope::Client(msg) => match msg {
                 ClientMsg::CreateClient(msg) => create_client::execute(self, msg),
-                ClientMsg::UpdateClient(msg) => update_client::execute(self, msg),
-                ClientMsg::Misbehaviour(_) => todo!(),
+                ClientMsg::UpdateClient(msg) => {
+                    update_client::execute(self, MsgUpdateOrMisbehaviour::UpdateClient(msg))
+                }
+                ClientMsg::Misbehaviour(msg) => {
+                    update_client::execute(self, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
+                }
                 ClientMsg::UpgradeClient(msg) => upgrade_client::execute(self, msg),
             }
             .map_err(RouterError::ContextError),

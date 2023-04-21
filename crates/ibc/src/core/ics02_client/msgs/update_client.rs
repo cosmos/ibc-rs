@@ -34,7 +34,6 @@ pub enum UpdateKind {
 pub struct MsgUpdateClient {
     pub client_id: ClientId,
     pub header: Any,
-    pub update_kind: UpdateKind,
     pub signer: Signer,
 }
 
@@ -50,7 +49,6 @@ impl TryFrom<RawMsgUpdateClient> for MsgUpdateClient {
                 .parse()
                 .map_err(ClientError::InvalidMsgUpdateClientId)?,
             header: raw.header.ok_or(ClientError::MissingRawHeader)?,
-            update_kind: UpdateKind::UpdateClient,
             signer: raw.signer.parse().map_err(ClientError::Signer)?,
         })
     }
@@ -86,7 +84,6 @@ mod tests {
             MsgUpdateClient {
                 client_id,
                 header,
-                update_kind: UpdateKind::UpdateClient,
                 signer,
             }
         }

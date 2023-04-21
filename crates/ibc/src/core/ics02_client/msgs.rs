@@ -43,6 +43,6 @@ impl MsgUpdateOrMisbehaviour {
         match self {
             MsgUpdateOrMisbehaviour::UpdateClient(msg) => msg.header,
             MsgUpdateOrMisbehaviour::Misbehaviour(msg) => msg.misbehaviour,
-        } 
+        }
     }
 }
