@@ -1,6 +1,7 @@
 //! Definition of domain type message `MsgUpdateAnyClient`.
 
 use crate::prelude::*;
+use crate::tx_msg::Msg;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;
@@ -21,6 +22,14 @@ pub struct MsgUpdateClient {
     pub client_id: ClientId,
     pub header: Any,
     pub signer: Signer,
+}
+
+impl Msg for MsgUpdateClient {
+    type Raw = RawMsgUpdateClient;
+
+    fn type_url(&self) -> String {
+        TYPE_URL.to_string()
+    }
 }
 
 impl Protobuf<RawMsgUpdateClient> for MsgUpdateClient {}
