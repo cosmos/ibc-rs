@@ -8,7 +8,7 @@ use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{ClientConnectionPath, ConnectionPath};
 use crate::core::{ExecutionContext, ValidationContext};
-use crate::events::IbcEvent;
+use crate::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
@@ -63,7 +63,7 @@ where
             msg.client_id_on_a.clone(),
             client_id_on_b,
         ));
-        ctx_a.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection));
         ctx_a.emit_ibc_event(event);
     }
 
@@ -85,7 +85,7 @@ mod tests {
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::version::Version;
-    use crate::events::{IbcEvent, IbcEventType};
+    use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::Height;
     use test_log::test;
@@ -155,7 +155,7 @@ mod tests {
 
                 assert!(matches!(
                     fxt.ctx.events[0],
-                    IbcEvent::Message(IbcEventType::OpenInitConnection)
+                    IbcEvent::Message(MessageEvent::Connection)
                 ));
                 let event = &fxt.ctx.events[1];
                 assert!(matches!(event, &IbcEvent::OpenInitConnection(_)));

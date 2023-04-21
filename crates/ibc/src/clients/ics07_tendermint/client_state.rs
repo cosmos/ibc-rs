@@ -1,7 +1,6 @@
 mod misbehaviour;
 mod update_client;
 
-use crate::core::ics02_client::msgs::update_client::UpdateKind;
 use crate::prelude::*;
 
 use core::cmp::max;
@@ -26,7 +25,9 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConse
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
-use crate::core::ics02_client::client_state::{ClientState as Ics2ClientState, UpdatedState};
+use crate::core::ics02_client::client_state::{
+    ClientState as Ics2ClientState, UpdateKind, UpdatedState,
+};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
@@ -306,13 +307,9 @@ impl Ics2ClientState for ClientState {
         &self,
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
-        client_message: Any,
-        _update_kind: &UpdateKind,
+        header: Any,
     ) -> Result<Vec<Height>, ClientError> {
-        // we only expect headers to make it here; if a TmMisbehaviour makes it to here,
-        // then it is not a valid misbehaviour (check_for_misbehaviour returned false),
-        // and so transaction should fail.
-        let header = TmHeader::try_from(client_message)?;
+        let header = TmHeader::try_from(header)?;
         let header_height = header.height();
 
         let maybe_existing_consensus_state = {

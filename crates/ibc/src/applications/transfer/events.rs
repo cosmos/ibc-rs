@@ -19,6 +19,7 @@ pub enum Event {
 }
 
 pub struct RecvEvent {
+    pub sender: Signer,
     pub receiver: Signer,
     pub denom: PrefixedDenom,
     pub amount: Amount,
@@ -28,6 +29,7 @@ pub struct RecvEvent {
 impl From<RecvEvent> for ModuleEvent {
     fn from(ev: RecvEvent) -> Self {
         let RecvEvent {
+            sender,
             receiver,
             denom,
             amount,
@@ -35,8 +37,9 @@ impl From<RecvEvent> for ModuleEvent {
         } = ev;
         Self {
             kind: EVENT_TYPE_PACKET.to_string(),
-            module_name: MODULE_ID_STR.parse().expect("invalid ModuleId"),
             attributes: vec![
+                ("module", MODULE_ID_STR).into(),
+                ("sender", sender).into(),
                 ("receiver", receiver).into(),
                 ("denom", denom).into(),
                 ("amount", amount).into(),
@@ -47,6 +50,7 @@ impl From<RecvEvent> for ModuleEvent {
 }
 
 pub struct AckEvent {
+    pub sender: Signer,
     pub receiver: Signer,
     pub denom: PrefixedDenom,
     pub amount: Amount,
@@ -56,6 +60,7 @@ pub struct AckEvent {
 impl From<AckEvent> for ModuleEvent {
     fn from(ev: AckEvent) -> Self {
         let AckEvent {
+            sender,
             receiver,
             denom,
             amount,
@@ -63,8 +68,9 @@ impl From<AckEvent> for ModuleEvent {
         } = ev;
         Self {
             kind: EVENT_TYPE_PACKET.to_string(),
-            module_name: MODULE_ID_STR.parse().expect("invalid ModuleId"),
             attributes: vec![
+                ("module", MODULE_ID_STR).into(),
+                ("sender", sender).into(),
                 ("receiver", receiver).into(),
                 ("denom", denom).into(),
                 ("amount", amount).into(),
@@ -81,19 +87,15 @@ pub struct AckStatusEvent {
 impl From<AckStatusEvent> for ModuleEvent {
     fn from(ev: AckStatusEvent) -> Self {
         let AckStatusEvent { acknowledgement } = ev;
-        let mut event = Self {
-            kind: EVENT_TYPE_PACKET.to_string(),
-            module_name: MODULE_ID_STR.parse().expect("invalid ModuleId"),
-            attributes: vec![],
-        };
         let attr_label = match acknowledgement {
             TokenTransferAcknowledgement::Success(_) => "success",
             TokenTransferAcknowledgement::Error(_) => "error",
         };
-        event
-            .attributes
-            .push((attr_label, acknowledgement.to_string()).into());
-        event
+
+        Self {
+            kind: EVENT_TYPE_PACKET.to_string(),
+            attributes: vec![(attr_label, acknowledgement.to_string()).into()],
+        }
     }
 }
 
@@ -112,8 +114,8 @@ impl From<TimeoutEvent> for ModuleEvent {
         } = ev;
         Self {
             kind: EVENT_TYPE_TIMEOUT.to_string(),
-            module_name: MODULE_ID_STR.parse().expect("invalid ModuleId"),
             attributes: vec![
+                ("module", MODULE_ID_STR).into(),
                 ("refund_receiver", refund_receiver).into(),
                 ("refund_denom", refund_denom).into(),
                 ("refund_amount", refund_amount).into(),
@@ -132,7 +134,6 @@ impl From<DenomTraceEvent> for ModuleEvent {
         let DenomTraceEvent { trace_hash, denom } = ev;
         let mut ev = Self {
             kind: EVENT_TYPE_DENOM_TRACE.to_string(),
-            module_name: MODULE_ID_STR.parse().expect("invalid ModuleId"),
             attributes: vec![("denom", denom).into()],
         };
         if let Some(hash) = trace_hash {
@@ -145,15 +146,27 @@ impl From<DenomTraceEvent> for ModuleEvent {
 pub struct TransferEvent {
     pub sender: Signer,
     pub receiver: Signer,
+    pub amount: Amount,
+    pub denom: PrefixedDenom,
 }
 
 impl From<TransferEvent> for ModuleEvent {
     fn from(ev: TransferEvent) -> Self {
-        let TransferEvent { sender, receiver } = ev;
+        let TransferEvent {
+            sender,
+            receiver,
+            amount,
+            denom,
+        } = ev;
+
         Self {
             kind: EVENT_TYPE_TRANSFER.to_string(),
-            module_name: MODULE_ID_STR.parse().expect("invalid ModuleId"),
-            attributes: vec![("sender", sender).into(), ("receiver", receiver).into()],
+            attributes: vec![
+                ("sender", sender).into(),
+                ("receiver", receiver).into(),
+                ("amount", amount).into(),
+                ("denom", denom).into(),
+            ],
         }
     }
 }

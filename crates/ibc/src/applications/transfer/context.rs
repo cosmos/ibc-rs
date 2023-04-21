@@ -281,6 +281,7 @@ pub fn on_recv_packet_execute(
     };
 
     let recv_event = RecvEvent {
+        sender: data.sender,
         receiver: data.receiver,
         denom: data.token.denom,
         amount: data.token.amount,
@@ -348,6 +349,7 @@ pub fn on_acknowledgement_packet_execute(
     }
 
     let ack_event = AckEvent {
+        sender: data.sender,
         receiver: data.receiver,
         denom: data.token.denom,
         amount: data.token.amount,
