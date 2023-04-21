@@ -150,12 +150,16 @@ mod tests {
     use crate::core::ics03_connection::error::ConnectionError;
     use crate::core::ics03_connection::version::{get_compatible_versions, pick_version, Version};
 
+    fn get_dummy_features() -> Vec<String> {
+        vec!["ORDER_RANDOM".to_string(), "ORDER_UNORDERED".to_string()]
+    }
+
     fn good_versions() -> Vec<RawVersion> {
         vec![
             Version::default().into(),
             RawVersion {
                 identifier: "2".to_string(),
-                features: vec!["ORDER_RANDOM".to_string(), "ORDER_UNORDERED".to_string()],
+                features: get_dummy_features(),
             },
         ]
         .into_iter()
@@ -165,7 +169,7 @@ mod tests {
     fn bad_versions_identifier() -> Vec<RawVersion> {
         vec![RawVersion {
             identifier: "".to_string(),
-            features: vec!["ORDER_RANDOM".to_string(), "ORDER_UNORDERED".to_string()],
+            features: get_dummy_features(),
         }]
         .into_iter()
         .collect()
@@ -186,11 +190,11 @@ mod tests {
                 Version::default(),
                 Version {
                     identifier: "3".to_string(),
-                    features: Vec::new(),
+                    features: get_dummy_features(),
                 },
                 Version {
                     identifier: "4".to_string(),
-                    features: Vec::new(),
+                    features: get_dummy_features(),
                 },
             ]
             .into_iter()
@@ -198,15 +202,15 @@ mod tests {
             vec![
                 Version {
                     identifier: "2".to_string(),
-                    features: Vec::new(),
+                    features: get_dummy_features(),
                 },
                 Version {
                     identifier: "4".to_string(),
-                    features: Vec::new(),
+                    features: get_dummy_features(),
                 },
                 Version {
                     identifier: "3".to_string(),
-                    features: Vec::new(),
+                    features: get_dummy_features(),
                 },
             ]
             .into_iter()
@@ -214,7 +218,7 @@ mod tests {
             // Should pick version 3 as it's the lowest of the intersection {3, 4}
             Version {
                 identifier: "3".to_string(),
-                features: Vec::new(),
+                features: get_dummy_features(),
             },
         )
     }
