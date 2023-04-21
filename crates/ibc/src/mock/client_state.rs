@@ -1,4 +1,3 @@
-use crate::core::ics02_client::msgs::update_client::UpdateKind;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 use crate::prelude::*;
 
@@ -10,7 +9,7 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::mock::ClientState as RawMockClientState;
 use ibc_proto::protobuf::Protobuf;
 
-use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
+use crate::core::ics02_client::client_state::{ClientState, UpdatedState, UpdateKind};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;

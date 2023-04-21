@@ -12,19 +12,6 @@ use crate::signer::Signer;
 
 pub const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
 
-/// `UpdateKind` represents the 2 ways that a client can be updated
-/// in IBC: either through a `MsgUpdateClient`, or a `MsgSubmitMisbehaviour`.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum UpdateKind {
-    /// this is the typical scenario where a new header is submitted to the client
-    /// to update the client. Note that light clients are free to define the type
-    /// of the object used to update them (e.g. could be a list of headers).
-    UpdateClient,
-    /// this is the scenario where misbehaviour is submitted to the client
-    /// (e.g 2 headers with the same height in Tendermint)
-    SubmitMisbehaviour,
-}
-
 /// Represents the message that triggers the update of an on-chain (IBC) client
 /// either with new headers, or evidence of misbehaviour.
 /// Note that some types of misbehaviour can be detected when a headers
