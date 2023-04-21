@@ -44,6 +44,10 @@ impl Version {
                 version: self.clone(),
             })?;
 
+        if self.features.len() == 0 {
+            return Err(ConnectionError::EmptyFeatures);
+        }
+
         for feature in self.features.iter() {
             maybe_version_supported.verify_feature_supported(feature.to_string())?;
         }
@@ -52,9 +56,6 @@ impl Version {
 
     /// Checks whether or not the given feature is supported in this version
     pub fn verify_feature_supported(&self, feature: String) -> Result<(), ConnectionError> {
-        if feature.trim().is_empty() {
-            return Err(ConnectionError::EmptyFeatures);
-        }
         if !self.features.contains(&feature) {
             return Err(ConnectionError::FeatureNotSupported { feature });
         }
