@@ -44,7 +44,7 @@ impl Version {
                 version: self.clone(),
             })?;
 
-        if self.features.len() == 0 {
+        if self.features.is_empty() {
             return Err(ConnectionError::EmptyFeatures);
         }
 
