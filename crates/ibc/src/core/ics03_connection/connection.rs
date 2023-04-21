@@ -331,12 +331,12 @@ impl ConnectionEnd {
     }
 
     /// Getter for the list of versions in this connection end.
-    pub fn versions(&self) -> Result<Vec<Version>, ConnectionError> {
+    pub fn versions(&self) -> Result<&[Version], ConnectionError> {
         // Note: With the current implementation, only one version is supported per connection.
         if self.versions.len() != 1 {
             return Err(ConnectionError::InvalidVersionLength);
         }
-        Ok(self.versions.clone())
+        Ok(&self.versions)
     }
 
     /// Getter for the counterparty.

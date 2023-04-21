@@ -35,7 +35,7 @@ impl Version {
     /// Check whether or not the given version is compatible with supported versions
     pub fn verify_version_supported(
         &self,
-        supported_versions: Vec<Version>,
+        supported_versions: &[Version],
     ) -> Result<(), ConnectionError> {
         let maybe_version_supported = supported_versions
             .iter()
@@ -126,10 +126,7 @@ pub fn pick_version(
 ) -> Result<Version, ConnectionError> {
     let mut intersection: Vec<Version> = counterparty_versions
         .iter()
-        .filter(|v| {
-            v.verify_version_supported(supported_versions.to_vec())
-                .is_ok()
-        })
+        .filter(|v| v.verify_version_supported(supported_versions).is_ok())
         .cloned()
         .collect();
 

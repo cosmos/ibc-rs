@@ -72,7 +72,7 @@ where
                 Some(msg.conn_id_on_b.clone()),
                 prefix_on_b,
             ),
-            conn_end_on_b.versions()?,
+            conn_end_on_b.versions()?.to_vec(),
             conn_end_on_b.delay_period(),
         );
 
