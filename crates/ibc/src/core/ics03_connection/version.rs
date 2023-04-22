@@ -32,29 +32,25 @@ pub struct Version {
 }
 
 impl Version {
-    /// Check whether or not the given version is compatible with supported versions
+    /// Checks whether the version has a matching version identifier and its
+    /// feature set is a subset of the supported features
     pub fn verify_version_supported(
         &self,
         supported_versions: &[Version],
     ) -> Result<(), ConnectionError> {
-        let maybe_version_supported = supported_versions
-            .iter()
-            .find(|sv| sv.identifier == self.identifier)
-            .ok_or(ConnectionError::VersionNotSupported {
-                version: self.clone(),
-            })?;
+        let maybe_supported_version = find_supported_version(self, supported_versions)?;
 
         if self.features.is_empty() {
             return Err(ConnectionError::EmptyFeatures);
         }
 
         for feature in self.features.iter() {
-            maybe_version_supported.verify_feature_supported(feature.to_string())?;
+            maybe_supported_version.verify_feature_supported(feature.to_string())?;
         }
         Ok(())
     }
 
-    /// Checks whether or not the given feature is supported in this version
+    /// Checks whether the given feature is supported in this version
     pub fn verify_feature_supported(&self, feature: String) -> Result<(), ConnectionError> {
         if !self.features.contains(&feature) {
             return Err(ConnectionError::FeatureNotSupported { feature });
@@ -120,16 +116,30 @@ pub fn get_compatible_versions() -> Vec<Version> {
     vec![Version::default()]
 }
 
-/// Selects only one version from the intersection of locally supported and counterparty versions.
+/// Iterates over the descending ordered set of compatible IBC versions and
+/// selects the first version with a version identifier that is supported by the
+/// counterparty. The returned version contains a feature set with the
+/// intersection of the features supported by the source and counterparty
+/// chains. If the feature set intersection is nil then the search for a
+/// compatible version continues. This function is called in the `conn_open_try`
+/// handshake procedure.
+///
+/// NOTE: Empty feature set is not currently allowed for a chosen version.
 pub fn pick_version(
     supported_versions: &[Version],
     counterparty_versions: &[Version],
 ) -> Result<Version, ConnectionError> {
-    let mut intersection: Vec<Version> = counterparty_versions
-        .iter()
-        .filter(|v| v.verify_version_supported(supported_versions).is_ok())
-        .cloned()
-        .collect();
+    let mut intersection: Vec<Version> = Vec::new();
+    for sv in supported_versions.iter() {
+        if let Ok(cv) = find_supported_version(sv, counterparty_versions) {
+            if let Ok(feature_set) = get_feature_set_intersection(&sv.features, &cv.features) {
+                intersection.push(Version {
+                    identifier: cv.identifier,
+                    features: feature_set,
+                })
+            }
+        }
+    }
 
     if intersection.is_empty() {
         return Err(ConnectionError::NoCommonVersion);
@@ -137,6 +147,42 @@ pub fn pick_version(
 
     intersection.sort_by(|a, b| a.identifier.cmp(&b.identifier));
     Ok(intersection[0].clone())
+}
+
+/// Returns the version from the list of supported versions that matches the
+/// given reference version.
+fn find_supported_version(
+    version: &Version,
+    supported_versions: &[Version],
+) -> Result<Version, ConnectionError> {
+    supported_versions
+        .iter()
+        .find(|sv| sv.identifier == version.identifier)
+        .ok_or(ConnectionError::VersionNotSupported {
+            version: version.clone(),
+        })
+        .cloned()
+}
+
+/// Returns the intersections of supported features by a host and the
+/// counterparty features. This is done by iterating over all the features in
+/// the host supported version and seeing if they exist in the feature set for
+/// the counterparty version.
+fn get_feature_set_intersection(
+    supported_features: &[String],
+    counterparty_features: &[String],
+) -> Result<Vec<String>, ConnectionError> {
+    let feature_set_intersection: Vec<String> = supported_features
+        .iter()
+        .filter(|f| counterparty_features.contains(f))
+        .cloned()
+        .collect();
+
+    if feature_set_intersection.is_empty() {
+        return Err(ConnectionError::NoCommonFeatures);
+    }
+
+    Ok(feature_set_intersection)
 }
 
 #[cfg(test)]

@@ -41,6 +41,8 @@ pub enum ConnectionError {
     EmptyFeatures,
     /// feature \"`{feature}`\" not supported
     FeatureNotSupported { feature: String },
+    /// no common features
+    NoCommonFeatures,
     /// missing proof height
     MissingProofHeight,
     /// missing consensus height
