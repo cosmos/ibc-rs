@@ -28,13 +28,36 @@ pub const SOLOMACHINE_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.solomachi
 #[derive(Clone, PartialEq, Debug)]
 pub struct ClientState {
     /// latest sequence of the client state
-    pub sequence: u64,
+    pub sequence: Height,
     /// frozen sequence of the solo machine
-    pub frozen_sequence: u64,
+    pub frozen_sequence: Option<Height>,
     pub consensus_state: Option<SoloMachineConsensusState>,
     /// when set to true, will allow governance to update a solo machine client.
     /// The client will be unfrozen if it is frozen.
     pub allow_update_after_proposal: bool,
+}
+
+impl ClientState {
+    /// Create a new ClientState Instance.
+    pub fn new(
+        sequence: Height,
+        frozen_sequence: Option<Height>,
+        consensus_state: Option<SoloMachineConsensusState>,
+        allow_update_after_proposal: bool,
+    ) -> Self {
+        Self {
+            sequence,
+            frozen_sequence,
+            consensus_state,
+            allow_update_after_proposal,
+        }
+    }
+
+    /// Return exported.Height to satisfy ClientState interface
+    /// Revision number is always 0 for a solo-machine.
+    pub fn latest_height(&self) -> Height {
+        self.sequence
+    }
 }
 
 impl Ics2ClientState for ClientState {
@@ -44,14 +67,14 @@ impl Ics2ClientState for ClientState {
         todo!()
     }
 
-    /// Type of client associated with this state (eg. Tendermint)
+    /// ClientType is Solo Machine.
     fn client_type(&self) -> ClientType {
-        todo!()
+        super::client_type()
     }
 
-    /// Latest height the client was updated to
+    /// latest_height returns the latest sequence number.
     fn latest_height(&self) -> Height {
-        todo!()
+        self.latest_height()
     }
 
     /// Check if the given proof has a valid height for the client
@@ -61,7 +84,12 @@ impl Ics2ClientState for ClientState {
 
     /// Assert that the client is not frozen
     fn confirm_not_frozen(&self) -> Result<(), ClientError> {
-        todo!()
+        if let Some(frozen_height) = self.frozen_sequence {
+            return Err(ClientError::ClientFrozen {
+                description: format!("the client is frozen at height {frozen_height}"),
+            });
+        }
+        Ok(())
     }
 
     /// Check if the state is expired when `elapsed` time has passed since the latest consensus
@@ -73,8 +101,9 @@ impl Ics2ClientState for ClientState {
     /// Helper function to verify the upgrade client procedure.
     /// Resets all fields except the blockchain-specific ones,
     /// and updates the given fields.
+    // ref: https://github.com/cosmos/ibc-go/blob/fa9418f5ba39de38d995ec83d9abd289dfab5f9f/modules/light-clients/06-solomachine/client_state.go#L75
     fn zero_custom_fields(&mut self) {
-        todo!()
+        // zero_custom_fields is not implemented for solo machine
     }
 
     fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError> {
