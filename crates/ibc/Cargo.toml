@@ -18,24 +18,7 @@ all-features = true
 
 [features]
 default = ["std"]
-std = [ 
-    "ibc-proto/std",
-    "ics23/std",
-    "serde/std",
-    "serde_json/std",
-    "erased-serde/std",
-    "tracing/std",
-    "prost/std",
-    "bytes/std",
-    "subtle-encoding/std",
-    "sha2/std",
-    "displaydoc/std",
-    "num-traits/std",
-    "uint/std",
-    "primitive-types/std",
-    "tendermint/clock",
-    "tendermint/std",
-]
+std = ["ibc-proto/std", "ics23/std", "serde/std", "serde_json/std", "erased-serde/std", "tracing/std", "prost/std", "bytes/std", "subtle-encoding/std", "sha2/std", "displaydoc/std", "num-traits/std", "uint/std", "primitive-types/std", "tendermint/clock", "tendermint/std"]
 parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info"]
 borsh = ["dep:borsh"]
 
@@ -78,6 +61,7 @@ scale-info = { version = "2.1.2", default-features = false, features = ["derive"
 borsh = {version = "0.10.0", default-features = false, optional = true }
 parking_lot = { version = "0.12.1", default-features = false, optional = true }
 cfg-if = { version = "1.0.0", optional = true }
+cosmrs = "0.13.0"
 
 [dependencies.tendermint]
 version = "0.29"

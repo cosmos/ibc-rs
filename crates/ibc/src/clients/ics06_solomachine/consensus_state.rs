@@ -7,6 +7,7 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::solomachine::v1::ConsensusState as RawSolConsensusState;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
+use tendermint_proto::crypto::public_key;
 
 pub const SOLOMACHINE_CONSENSUS_STATE_TYPE_URL: &str =
     "/ibc.lightclients.solomachine.v1.ConsensusState";
@@ -23,7 +24,39 @@ pub struct ConsensusState {
     /// machine clients (potentially on different chains) without being considered
     /// misbehaviour.
     pub diversifier: String,
-    pub timestamp: u64,
+    pub timestamp: Timestamp,
+}
+
+impl ConsensusState {
+    pub fn new(public_key: Option<Any>, diversifier: String, timestamp: Timestamp) -> Self {
+        Self {
+            public_key,
+            diversifier,
+            timestamp,
+        }
+    }
+
+    pub fn valida_basic(&self) -> Result<(), Error> {
+        todo!()
+    }
+
+    // GetPubKey unmarshals the public key into a cryptotypes.PubKey type.
+    // An error is returned if the public key is nil or the cached value
+    // is not a PubKey.
+
+    // publicKey, ok := cs.PublicKey.GetCachedValue().(cryptotypes.PubKey)
+    // if !ok {
+    // 	return nil, errorsmod.Wrap(clienttypes.ErrInvalidConsensus, "consensus state PublicKey is not cryptotypes.PubKey")
+    // }
+
+    // return publicKey, nil
+    //    }
+    pub fn public_key(&self) -> Result<(), Error> {
+        if self.public_key.is_none() {
+            return Err(Error::EmptyConsensusStatePublicKey);
+        }
+        todo!()
+    }
 }
 
 impl crate::core::ics02_client::consensus_state::ConsensusState for ConsensusState {
@@ -32,7 +65,7 @@ impl crate::core::ics02_client::consensus_state::ConsensusState for ConsensusSta
     }
 
     fn timestamp(&self) -> Timestamp {
-        todo!()
+        self.timestamp
     }
 }
 

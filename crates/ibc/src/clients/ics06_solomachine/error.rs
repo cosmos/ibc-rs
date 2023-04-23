@@ -13,6 +13,8 @@ pub enum Error {
     Dummy,
     /// decode error: `{0}`
     Decode(prost::DecodeError),
+    /// consensus state PublicKey is None
+    EmptyConsensusStatePublicKey,
 }
 
 impl From<Error> for ClientError {
