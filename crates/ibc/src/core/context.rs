@@ -317,11 +317,13 @@ pub trait ValidationContext: Router {
     /// connection handshake protocol prefers.
     fn pick_version(
         &self,
-        supported_versions: &[ConnectionVersion],
         counterparty_candidate_versions: &[ConnectionVersion],
     ) -> Result<ConnectionVersion, ContextError> {
-        pick_version(supported_versions, counterparty_candidate_versions)
-            .map_err(ContextError::ConnectionError)
+        let version = pick_version(
+            &self.get_compatible_versions(),
+            counterparty_candidate_versions,
+        )?;
+        Ok(version)
     }
 
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
