@@ -30,7 +30,7 @@ where
         .map_err(ContextError::ChannelError);
     }
 
-    let conn_version = conn_end_on_b.versions()?;
+    let conn_version = conn_end_on_b.versions();
 
     conn_version[0].verify_feature_supported(msg.ordering.to_string())?;
 

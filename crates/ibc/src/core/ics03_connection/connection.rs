@@ -338,8 +338,8 @@ impl ConnectionEnd {
     }
 
     /// Getter for the list of versions in this connection end.
-    pub fn versions(&self) -> Result<&[Version], ConnectionError> {
-        Ok(&self.versions)
+    pub fn versions(&self) -> &[Version] {
+        &self.versions
     }
 
     /// Getter for the counterparty.

@@ -171,7 +171,7 @@ mod tests {
                 )
                 .unwrap();
                 assert_eq!(conn_end.state().clone(), State::Init);
-                assert_eq!(conn_end.versions().unwrap(), expected_version);
+                assert_eq!(conn_end.versions(), expected_version);
             }
         }
     }

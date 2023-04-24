@@ -25,7 +25,7 @@ where
     let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
     client_state_of_b_on_a.confirm_not_frozen()?;
 
-    let conn_version = conn_end_on_a.versions()?;
+    let conn_version = conn_end_on_a.versions();
 
     conn_version[0].verify_feature_supported(msg.ordering.to_string())?;
 
