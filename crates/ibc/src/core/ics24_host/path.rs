@@ -29,7 +29,6 @@ const UPGRADED_CLIENT_CONSENSUS_STATE: &str = "upgradedConsState";
 /// The Path enum abstracts out the different sub-paths.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, From, Display)]
 pub enum Path {
-    ClientType(ClientTypePath),
     ClientState(ClientStatePath),
     ClientConsensusState(ClientConsensusStatePath),
     ClientConnection(ClientConnectionPath),
@@ -43,16 +42,6 @@ pub enum Path {
     Ack(AckPath),
     Receipt(ReceiptPath),
     Upgrade(ClientUpgradePath),
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "clients/{_0}/clientType")]
-pub struct ClientTypePath(pub ClientId);
-
-impl ClientTypePath {
-    pub fn new(client_id: &ClientId) -> ClientTypePath {
-        ClientTypePath(client_id.clone())
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
@@ -278,7 +267,6 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
 
     if components.len() == 3 {
         match components[2] {
-            "clientType" => Some(ClientTypePath(client_id).into()),
             "clientState" => Some(ClientStatePath(client_id).into()),
             "connections" => Some(ClientConnectionPath(client_id).into()),
             _ => None,
@@ -681,14 +669,6 @@ mod tests {
 
     #[test]
     fn test_parse_client_paths_fn() {
-        let path = "clients/07-tendermint-0/clientType";
-        let components: Vec<&str> = path.split('/').collect();
-
-        assert_eq!(
-            parse_client_paths(&components),
-            Some(Path::ClientType(ClientTypePath(ClientId::default())))
-        );
-
         let path = "clients/07-tendermint-0/clientState";
         let components: Vec<&str> = path.split('/').collect();
 
@@ -707,18 +687,6 @@ mod tests {
                 epoch: 15,
                 height: 31,
             }))
-        );
-    }
-
-    #[test]
-    fn client_type_path_parses() {
-        let path = "clients/07-tendermint-0/clientType";
-        let path = Path::from_str(path);
-
-        assert!(path.is_ok());
-        assert_eq!(
-            path.unwrap(),
-            Path::ClientType(ClientTypePath(ClientId::default()))
         );
     }
 
