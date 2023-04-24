@@ -137,7 +137,7 @@ pub fn on_chan_open_init_validate(
 
     if !version.is_empty() {
         version
-            .verify_version_supported(Version::new(VERSION.to_string()))
+            .verify_is_expected(Version::new(VERSION.to_string()))
             .map_err(ContextError::from)?;
     }
 
@@ -175,7 +175,7 @@ pub fn on_chan_open_try_validate(
     }
 
     counterparty_version
-        .verify_version_supported(Version::new(VERSION.to_string()))
+        .verify_is_expected(Version::new(VERSION.to_string()))
         .map_err(ContextError::from)?;
 
     Ok(())
@@ -201,7 +201,7 @@ pub fn on_chan_open_ack_validate(
     counterparty_version: &Version,
 ) -> Result<(), TokenTransferError> {
     counterparty_version
-        .verify_version_supported(Version::new(VERSION.to_string()))
+        .verify_is_expected(Version::new(VERSION.to_string()))
         .map_err(ContextError::from)?;
 
     Ok(())

@@ -34,7 +34,7 @@ pub struct Version {
 impl Version {
     /// Checks whether the version has a matching version identifier and its
     /// feature set is a subset of the supported features
-    pub fn verify_version_supported(
+    pub fn verify_is_supported(
         &self,
         supported_versions: &[Version],
     ) -> Result<(), ConnectionError> {

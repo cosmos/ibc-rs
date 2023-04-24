@@ -48,7 +48,7 @@ impl Version {
         &self.0
     }
 
-    pub fn verify_version_supported(&self, expected_version: Version) -> Result<(), ChannelError> {
+    pub fn verify_is_expected(&self, expected_version: Version) -> Result<(), ChannelError> {
         if self != &expected_version {
             return Err(ChannelError::VersionNotSupported {
                 expected_version,

@@ -19,7 +19,7 @@ where
     client_state_of_b_on_a.confirm_not_frozen()?;
 
     if let Some(version) = msg.version {
-        version.verify_version_supported(&ctx_a.get_compatible_versions())?;
+        version.verify_is_supported(&ctx_a.get_compatible_versions())?;
     }
 
     Ok(())
@@ -30,7 +30,7 @@ where
     Ctx: ExecutionContext,
 {
     let versions = if let Some(version) = msg.version {
-        version.verify_version_supported(&ctx_a.get_compatible_versions())?;
+        version.verify_is_supported(&ctx_a.get_compatible_versions())?;
         vec![version]
     } else {
         ctx_a.get_compatible_versions()
