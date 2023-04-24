@@ -227,7 +227,7 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
             return Err(ConnectionError::EmptyProtoConnectionEnd);
         }
 
-        Ok(Self::new(
+        Self::new(
             state,
             value
                 .client_id
@@ -243,7 +243,7 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
                 .map(Version::try_from)
                 .collect::<Result<Vec<_>, _>>()?,
             Duration::from_nanos(value.delay_period),
-        ))
+        )
     }
 }
 
@@ -270,14 +270,21 @@ impl ConnectionEnd {
         counterparty: Counterparty,
         versions: Vec<Version>,
         delay_period: Duration,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, ConnectionError> {
+        // Note: `versions`'s semantics vary based on the `State` of the connection:
+        // + Init: contains the set of compatible versions,
+        // + TryOpen/Open: contains the single version chosen by the handshake protocol.
+        if state != State::Init && versions.len() != 1 {
+            return Err(ConnectionError::InvalidVersionLength);
+        }
+
+        Ok(Self {
             state,
             client_id,
             counterparty,
             versions,
             delay_period,
-        }
+        })
     }
 
     /// Getter for the state of this connection end.

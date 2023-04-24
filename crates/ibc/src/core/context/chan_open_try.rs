@@ -170,7 +170,8 @@ mod tests {
             ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
             get_compatible_versions(),
             ZERO_DURATION,
-        );
+        )
+        .unwrap();
 
         // We're going to test message processing against this message.
         // Note: we make the counterparty's channel_id `None`.

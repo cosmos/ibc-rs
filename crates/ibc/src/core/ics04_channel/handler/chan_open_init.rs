@@ -25,15 +25,9 @@ where
     let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
     client_state_of_b_on_a.confirm_not_frozen()?;
 
-    let conn_version = match conn_end_on_a.versions() {
-        [version] => version,
-        _ => return Err(ChannelError::InvalidVersionLengthConnection.into()),
-    };
+    let conn_version = conn_end_on_a.versions();
 
-    let channel_feature = msg.ordering.to_string();
-    if !conn_version.is_supported_feature(channel_feature) {
-        return Err(ChannelError::ChannelFeatureNotSupportedByConnection.into());
-    }
+    conn_version[0].verify_feature_supported(msg.ordering.to_string())?;
 
     Ok(())
 }
@@ -76,7 +70,8 @@ mod tests {
             msg_conn_init.counterparty.clone(),
             get_compatible_versions(),
             msg_conn_init.delay_period,
-        );
+        )
+        .unwrap();
 
         let client_id_on_a = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(0, 10).unwrap();

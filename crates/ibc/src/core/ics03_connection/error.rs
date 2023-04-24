@@ -31,12 +31,18 @@ pub enum ConnectionError {
     EmptyProtoConnectionEnd,
     /// empty supported versions
     EmptyVersions,
-    /// empty supported features
-    EmptyFeatures,
-    /// no common version
-    NoCommonVersion,
+    /// single version must be negotiated on connection before opening channel
+    InvalidVersionLength,
     /// version \"`{version}`\" not supported
     VersionNotSupported { version: Version },
+    /// no common version
+    NoCommonVersion,
+    /// empty supported features
+    EmptyFeatures,
+    /// feature \"`{feature}`\" not supported
+    FeatureNotSupported { feature: String },
+    /// no common features
+    NoCommonFeatures,
     /// missing proof height
     MissingProofHeight,
     /// missing consensus height
