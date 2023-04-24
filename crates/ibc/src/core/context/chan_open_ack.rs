@@ -149,7 +149,8 @@ mod tests {
             ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
             get_compatible_versions(),
             ZERO_DURATION,
-        );
+        )
+        .unwrap();
 
         let msg =
             MsgChannelOpenAck::try_from(get_dummy_raw_msg_chan_open_ack(proof_height)).unwrap();

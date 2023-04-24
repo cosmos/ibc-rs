@@ -8,8 +8,7 @@ use crate::applications::transfer::PrefixedCoin;
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
-    ClientTypePath, CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath,
-    SeqSendPath,
+    CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use crate::prelude::*;
 
@@ -263,7 +262,6 @@ impl MockContext {
         debug!("consensus states: {:?}", consensus_states);
 
         let client_record = MockClientRecord {
-            client_type,
             client_state,
             consensus_states,
         };
@@ -348,7 +346,6 @@ impl MockContext {
         debug!("consensus states: {:?}", consensus_states);
 
         let client_record = MockClientRecord {
-            client_type,
             client_state,
             consensus_states,
         };
@@ -1113,28 +1110,6 @@ impl ValidationContext for MockContext {
 }
 
 impl ExecutionContext for MockContext {
-    fn store_client_type(
-        &mut self,
-        client_type_path: ClientTypePath,
-        client_type: ClientType,
-    ) -> Result<(), ContextError> {
-        let mut ibc_store = self.ibc_store.lock();
-
-        let client_id = client_type_path.0;
-        let client_record = ibc_store
-            .clients
-            .entry(client_id)
-            .or_insert(MockClientRecord {
-                client_type: client_type.clone(),
-                consensus_states: Default::default(),
-                client_state: Default::default(),
-            });
-
-        client_record.client_type = client_type;
-
-        Ok(())
-    }
-
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
@@ -1147,7 +1122,6 @@ impl ExecutionContext for MockContext {
             .clients
             .entry(client_id)
             .or_insert(MockClientRecord {
-                client_type: client_state.client_type(),
                 consensus_states: Default::default(),
                 client_state: Default::default(),
             });
@@ -1168,7 +1142,6 @@ impl ExecutionContext for MockContext {
             .clients
             .entry(consensus_state_path.client_id)
             .or_insert(MockClientRecord {
-                client_type: mock_client_type(),
                 consensus_states: Default::default(),
                 client_state: Default::default(),
             });

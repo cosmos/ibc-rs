@@ -187,7 +187,8 @@ mod tests {
             ),
             get_compatible_versions(),
             ZERO_DURATION,
-        );
+        )
+        .unwrap();
 
         let timestamp_future = Timestamp::now().add(Duration::from_secs(10)).unwrap();
         let timestamp_ns_past = 1;

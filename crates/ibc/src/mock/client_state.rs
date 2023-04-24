@@ -1,4 +1,3 @@
-use crate::core::ics02_client::msgs::update_client::UpdateKind;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 use crate::prelude::*;
 
@@ -10,7 +9,7 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::mock::ClientState as RawMockClientState;
 use ibc_proto::protobuf::Protobuf;
 
-use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
+use crate::core::ics02_client::client_state::{ClientState, UpdateKind, UpdatedState};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::{
@@ -39,9 +38,6 @@ pub fn client_type() -> ClientType {
 /// For testing ICS02 handlers mostly, cf. `MockClientContext`.
 #[derive(Clone, Debug)]
 pub struct MockClientRecord {
-    /// The type of this client.
-    pub client_type: ClientType,
-
     /// The client state (representing only the latest height at the moment).
     pub client_state: Option<Box<dyn ClientState>>,
 
@@ -293,10 +289,9 @@ impl ClientState for MockClientState {
         &self,
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
-        client_message: Any,
-        _update_kind: &UpdateKind,
+        header: Any,
     ) -> Result<Vec<Height>, ClientError> {
-        let header = MockHeader::try_from(client_message)?;
+        let header = MockHeader::try_from(header)?;
         let header_height = header.height;
 
         let new_client_state = MockClientState::new(header).into_box();

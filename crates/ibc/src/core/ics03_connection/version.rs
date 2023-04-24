@@ -32,9 +32,30 @@ pub struct Version {
 }
 
 impl Version {
-    /// Checks whether or not the given feature is supported in this version
-    pub fn is_supported_feature(&self, feature: String) -> bool {
-        self.features.contains(&feature)
+    /// Checks whether the version has a matching version identifier and its
+    /// feature set is a subset of the supported features
+    pub fn verify_is_supported(
+        &self,
+        supported_versions: &[Version],
+    ) -> Result<(), ConnectionError> {
+        let maybe_supported_version = find_supported_version(self, supported_versions)?;
+
+        if self.features.is_empty() {
+            return Err(ConnectionError::EmptyFeatures);
+        }
+
+        for feature in self.features.iter() {
+            maybe_supported_version.verify_feature_supported(feature.to_string())?;
+        }
+        Ok(())
+    }
+
+    /// Checks whether the given feature is supported in this version
+    pub fn verify_feature_supported(&self, feature: String) -> Result<(), ConnectionError> {
+        if !self.features.contains(&feature) {
+            return Err(ConnectionError::FeatureNotSupported { feature });
+        }
+        Ok(())
     }
 }
 
@@ -95,30 +116,73 @@ pub fn get_compatible_versions() -> Vec<Version> {
     vec![Version::default()]
 }
 
-/// Selects a version from the intersection of locally supported and counterparty versions.
+/// Iterates over the descending ordered set of compatible IBC versions and
+/// selects the first version with a version identifier that is supported by the
+/// counterparty. The returned version contains a feature set with the
+/// intersection of the features supported by the source and counterparty
+/// chains. If the feature set intersection is nil then the search for a
+/// compatible version continues. This function is called in the `conn_open_try`
+/// handshake procedure.
+///
+/// NOTE: Empty feature set is not currently allowed for a chosen version.
 pub fn pick_version(
     supported_versions: &[Version],
     counterparty_versions: &[Version],
 ) -> Result<Version, ConnectionError> {
     let mut intersection: Vec<Version> = Vec::new();
-    for s in supported_versions.iter() {
-        for c in counterparty_versions.iter() {
-            if c.identifier != s.identifier {
-                continue;
+    for sv in supported_versions.iter() {
+        if let Ok(cv) = find_supported_version(sv, counterparty_versions) {
+            if let Ok(feature_set) = get_feature_set_intersection(&sv.features, &cv.features) {
+                intersection.push(Version {
+                    identifier: cv.identifier,
+                    features: feature_set,
+                })
             }
-            for feature in c.features.iter() {
-                if feature.trim().is_empty() {
-                    return Err(ConnectionError::EmptyFeatures);
-                }
-            }
-            intersection.append(&mut vec![s.clone()]);
         }
     }
-    intersection.sort_by(|a, b| a.identifier.cmp(&b.identifier));
+
     if intersection.is_empty() {
         return Err(ConnectionError::NoCommonVersion);
     }
+
+    intersection.sort_by(|a, b| a.identifier.cmp(&b.identifier));
     Ok(intersection[0].clone())
+}
+
+/// Returns the version from the list of supported versions that matches the
+/// given reference version.
+fn find_supported_version(
+    version: &Version,
+    supported_versions: &[Version],
+) -> Result<Version, ConnectionError> {
+    supported_versions
+        .iter()
+        .find(|sv| sv.identifier == version.identifier)
+        .ok_or(ConnectionError::VersionNotSupported {
+            version: version.clone(),
+        })
+        .cloned()
+}
+
+/// Returns the intersections of supported features by a host and the
+/// counterparty features. This is done by iterating over all the features in
+/// the host supported version and seeing if they exist in the feature set for
+/// the counterparty version.
+fn get_feature_set_intersection(
+    supported_features: &[String],
+    counterparty_features: &[String],
+) -> Result<Vec<String>, ConnectionError> {
+    let feature_set_intersection: Vec<String> = supported_features
+        .iter()
+        .filter(|f| counterparty_features.contains(f))
+        .cloned()
+        .collect();
+
+    if feature_set_intersection.is_empty() {
+        return Err(ConnectionError::NoCommonFeatures);
+    }
+
+    Ok(feature_set_intersection)
 }
 
 #[cfg(test)]
@@ -132,12 +196,16 @@ mod tests {
     use crate::core::ics03_connection::error::ConnectionError;
     use crate::core::ics03_connection::version::{get_compatible_versions, pick_version, Version};
 
+    fn get_dummy_features() -> Vec<String> {
+        vec!["ORDER_RANDOM".to_string(), "ORDER_UNORDERED".to_string()]
+    }
+
     fn good_versions() -> Vec<RawVersion> {
         vec![
             Version::default().into(),
             RawVersion {
                 identifier: "2".to_string(),
-                features: vec!["ORDER_RANDOM".to_string(), "ORDER_UNORDERED".to_string()],
+                features: get_dummy_features(),
             },
         ]
         .into_iter()
@@ -147,7 +215,7 @@ mod tests {
     fn bad_versions_identifier() -> Vec<RawVersion> {
         vec![RawVersion {
             identifier: "".to_string(),
-            features: vec!["ORDER_RANDOM".to_string(), "ORDER_UNORDERED".to_string()],
+            features: get_dummy_features(),
         }]
         .into_iter()
         .collect()
@@ -168,11 +236,11 @@ mod tests {
                 Version::default(),
                 Version {
                     identifier: "3".to_string(),
-                    features: Vec::new(),
+                    features: get_dummy_features(),
                 },
                 Version {
                     identifier: "4".to_string(),
-                    features: Vec::new(),
+                    features: get_dummy_features(),
                 },
             ]
             .into_iter()
@@ -180,15 +248,15 @@ mod tests {
             vec![
                 Version {
                     identifier: "2".to_string(),
-                    features: Vec::new(),
+                    features: get_dummy_features(),
                 },
                 Version {
                     identifier: "4".to_string(),
-                    features: Vec::new(),
+                    features: get_dummy_features(),
                 },
                 Version {
                     identifier: "3".to_string(),
-                    features: Vec::new(),
+                    features: get_dummy_features(),
                 },
             ]
             .into_iter()
@@ -196,7 +264,7 @@ mod tests {
             // Should pick version 3 as it's the lowest of the intersection {3, 4}
             Version {
                 identifier: "3".to_string(),
-                features: Vec::new(),
+                features: get_dummy_features(),
             },
         )
     }

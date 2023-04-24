@@ -3,6 +3,7 @@ use super::timeout::TimeoutHeight;
 use crate::core::ics02_client::error as client_error;
 use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics04_channel::channel::State;
+use crate::core::ics04_channel::Version;
 use crate::core::ics05_port::error as port_error;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
@@ -15,8 +16,6 @@ use displaydoc::Display;
 
 #[derive(Debug, Display)]
 pub enum ChannelError {
-    /// connection error: `{0}`
-    Connection(connection_error::ConnectionError),
     /// port error: `{0}`
     Port(port_error::PortError),
     /// channel state unknown: `{state}`
@@ -35,14 +34,13 @@ pub enum ChannelError {
     NonUtf8PacketData,
     /// missing counterparty
     MissingCounterparty,
-    /// no common version
-    NoCommonVersion,
+    /// expected version `{expected_version}` , got `{got_version}`
+    VersionNotSupported {
+        expected_version: Version,
+        got_version: Version,
+    },
     /// missing channel end
     MissingChannel,
-    /// single version must be negotiated on connection before opening channel
-    InvalidVersionLengthConnection,
-    /// the channel ordering is not supported by connection
-    ChannelFeatureNotSupportedByConnection,
     /// the channel end (`{port_id}`, `{channel_id}`) does not exist
     ChannelNotFound {
         port_id: PortId,
@@ -201,7 +199,6 @@ impl std::error::Error for PacketError {
 impl std::error::Error for ChannelError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::Connection(e) => Some(e),
             Self::Port(e) => Some(e),
             Self::Identifier(e) => Some(e),
             Self::Signer(e) => Some(e),

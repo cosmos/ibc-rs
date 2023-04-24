@@ -138,7 +138,8 @@ mod tests {
             ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
             get_compatible_versions(),
             ZERO_DURATION,
-        );
+        )
+        .unwrap();
 
         let msg =
             MsgChannelOpenConfirm::try_from(get_dummy_raw_msg_chan_open_confirm(proof_height))
