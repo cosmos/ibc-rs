@@ -274,7 +274,7 @@ impl ConnectionEnd {
         // Note: `versions`'s semantics vary based on the `State` of the connection:
         // + Init: contains the set of compatible versions,
         // + TryOpen/Open: contains the single version chosen by the handshake protocol.
-        if !state.state_matches(&State::Init) && versions.len() != 1 {
+        if state != State::Init && versions.len() != 1 {
             return Err(ConnectionError::InvalidVersionLength);
         }
 
@@ -509,14 +509,9 @@ impl State {
         }
     }
 
-    /// Returns true if this connection state matches the expected.
-    pub fn state_matches(&self, expected: &State) -> bool {
-        self == expected
-    }
-
     /// Returns whether or not this connection state is `Open`.
     pub fn is_open(self) -> bool {
-        self.state_matches(&State::Open)
+        self == State::Open
     }
 
     /// Returns whether or not this connection with this state
