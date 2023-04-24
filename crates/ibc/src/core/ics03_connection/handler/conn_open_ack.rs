@@ -89,7 +89,7 @@ where
                 ),
                 vec![msg.version.clone()],
                 vars.conn_end_on_a.delay_period(),
-            );
+            )?;
 
             client_state_of_b_on_a
                 .verify_membership(
@@ -262,7 +262,8 @@ mod tests {
             ),
             vec![msg.version.clone()],
             ZERO_DURATION,
-        );
+        )
+        .unwrap();
 
         // A connection end with incorrect state `Open`; will be part of the context.
         let mut conn_end_open = default_conn_end.clone();

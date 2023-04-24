@@ -162,7 +162,8 @@ mod tests {
             msg_conn_init.counterparty.clone(),
             get_compatible_versions(),
             msg_conn_init.delay_period,
-        );
+        )
+        .unwrap();
 
         Fixture {
             context,

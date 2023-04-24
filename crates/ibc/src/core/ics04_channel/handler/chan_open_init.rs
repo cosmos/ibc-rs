@@ -70,7 +70,8 @@ mod tests {
             msg_conn_init.counterparty.clone(),
             get_compatible_versions(),
             msg_conn_init.delay_period,
-        );
+        )
+        .unwrap();
 
         let client_id_on_a = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(0, 10).unwrap();

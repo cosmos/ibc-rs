@@ -227,7 +227,7 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
             return Err(ConnectionError::EmptyProtoConnectionEnd);
         }
 
-        Ok(Self::new(
+        Self::new(
             state,
             value
                 .client_id
@@ -243,7 +243,7 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
                 .map(Version::try_from)
                 .collect::<Result<Vec<_>, _>>()?,
             Duration::from_nanos(value.delay_period),
-        ))
+        )
     }
 }
 
@@ -270,14 +270,21 @@ impl ConnectionEnd {
         counterparty: Counterparty,
         versions: Vec<Version>,
         delay_period: Duration,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, ConnectionError> {
+        // Note: "versions" may contains a set of compatible versions initially,
+        // provided by the relayer or default values, but during the (TRY, ACK,
+        // CONFIRM), it holds the single version chosen by the handshake protocol.
+        if !state.state_matches(&State::Init) && versions.len() != 1 {
+            return Err(ConnectionError::InvalidVersionLength);
+        }
+
+        Ok(Self {
             state,
             client_id,
             counterparty,
             versions,
             delay_period,
-        }
+        })
     }
 
     /// Getter for the state of this connection end.
@@ -332,10 +339,6 @@ impl ConnectionEnd {
 
     /// Getter for the list of versions in this connection end.
     pub fn versions(&self) -> Result<&[Version], ConnectionError> {
-        // Note: With the current implementation, only one version is supported per connection.
-        if self.versions.len() != 1 {
-            return Err(ConnectionError::InvalidVersionLength);
-        }
         Ok(&self.versions)
     }
 
@@ -506,9 +509,14 @@ impl State {
         }
     }
 
+    /// Returns true if this connection state matches the expected.
+    pub fn state_matches(&self, expected: &State) -> bool {
+        self == expected
+    }
+
     /// Returns whether or not this connection state is `Open`.
     pub fn is_open(self) -> bool {
-        self == State::Open
+        self.state_matches(&State::Open)
     }
 
     /// Returns whether or not this connection with this state

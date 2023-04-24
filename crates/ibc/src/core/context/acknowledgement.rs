@@ -206,7 +206,8 @@ mod tests {
             ),
             get_compatible_versions(),
             ZERO_DURATION,
-        );
+        )
+        .unwrap();
 
         Fixture {
             ctx,

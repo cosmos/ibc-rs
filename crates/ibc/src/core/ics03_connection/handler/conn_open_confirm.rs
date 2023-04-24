@@ -74,7 +74,7 @@ where
             ),
             conn_end_on_b.versions()?.to_vec(),
             conn_end_on_b.delay_period(),
-        );
+        )?;
 
         client_state_of_a_on_b
             .verify_membership(
@@ -213,7 +213,8 @@ mod tests {
             counterparty,
             ValidationContext::get_compatible_versions(&ctx_default),
             ZERO_DURATION,
-        );
+        )
+        .unwrap();
 
         let mut correct_conn_end = incorrect_conn_end_state.clone();
         correct_conn_end.set_state(State::TryOpen);

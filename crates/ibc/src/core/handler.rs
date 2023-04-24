@@ -524,7 +524,8 @@ mod tests {
                     ),
                     vec![ConnVersion::default()],
                     Duration::MAX,
-                ),
+                )
+                .unwrap(),
             );
         let module = DummyTransferModule::new();
 

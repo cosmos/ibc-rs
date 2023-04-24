@@ -81,7 +81,7 @@ where
                 Counterparty::new(msg.client_id_on_b.clone(), None, prefix_on_b),
                 msg.versions_on_a.clone(),
                 msg.delay_period,
-            );
+            )?;
 
             client_state_of_a_on_b
                 .verify_membership(
@@ -198,7 +198,8 @@ impl LocalVars {
                 msg.counterparty.clone(),
                 vec![version_on_b],
                 msg.delay_period,
-            ),
+            )
+            .unwrap(),
             client_id_on_a: msg.counterparty.client_id().clone(),
             conn_id_on_a: msg
                 .counterparty
