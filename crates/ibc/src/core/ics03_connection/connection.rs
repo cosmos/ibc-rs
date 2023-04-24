@@ -271,9 +271,9 @@ impl ConnectionEnd {
         versions: Vec<Version>,
         delay_period: Duration,
     ) -> Result<Self, ConnectionError> {
-        // Note: "versions" may contains a set of compatible versions initially,
-        // provided by the relayer or default values, but during the (TRY, ACK,
-        // CONFIRM), it holds the single version chosen by the handshake protocol.
+        // Note: `versions`'s semantics vary based on the `State` of the connection:
+        // + Init: contains the set of compatible versions,
+        // + TryOpen/Open: contains the single version chosen by the handshake protocol.
         if !state.state_matches(&State::Init) && versions.len() != 1 {
             return Err(ConnectionError::InvalidVersionLength);
         }
