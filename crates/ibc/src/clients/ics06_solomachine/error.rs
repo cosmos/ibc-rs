@@ -1,3 +1,4 @@
+use crate::core::ics04_channel::error::ChannelError;
 use crate::prelude::*;
 
 use crate::core::ics02_client::error::ClientError;
@@ -20,6 +21,8 @@ pub enum Error {
     UnknownDataType(i32),
     /// prase time error
     ParseTimeError(ParseTimestampError),
+    /// Channel error: `{0}`
+    ChannelError(ChannelError),
 }
 
 impl From<Error> for ClientError {

@@ -1,7 +1,9 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::prelude::*;
+use crate::timestamp::Timestamp;
 use ibc_proto::ibc::lightclients::solomachine::v1::SignBytes as RawSignBytes;
-use ibc_proto::ibc::lightclients::solomachine::v1::TimestampedSignatureData as RawTimestampedSignatureData;
+
+use super::DataType;
 // use ibc_proto::protobuf::Protobuf;
 
 /// SignBytes defines the signed bytes used for signature verification.
@@ -9,10 +11,10 @@ use ibc_proto::ibc::lightclients::solomachine::v1::TimestampedSignatureData as R
 #[derive(Clone, PartialEq)]
 pub struct SignBytes {
     pub sequence: u64,
-    pub timestamp: u64,
+    pub timestamp: Timestamp,
     pub diversifier: String,
     /// type of the data used
-    pub data_type: i32,
+    pub data_type: DataType,
     /// marshaled data
     pub data: Vec<u8>,
 }
@@ -23,12 +25,24 @@ impl TryFrom<RawSignBytes> for SignBytes {
     type Error = Error;
 
     fn try_from(raw: RawSignBytes) -> Result<Self, Self::Error> {
-        todo!()
+        Ok(Self {
+            sequence: raw.sequence,
+            timestamp: Timestamp::from_nanoseconds(raw.timestamp).map_err(Error::ParseTimeError)?,
+            diversifier: raw.diversifier,
+            data_type: DataType::try_from(raw.data_type)?,
+            data: raw.data,
+        })
     }
 }
 
-impl From<SignBytes> for RawTimestampedSignatureData {
+impl From<SignBytes> for RawSignBytes {
     fn from(value: SignBytes) -> Self {
-        todo!()
+        Self {
+            sequence: value.sequence,
+            timestamp: value.timestamp.nanoseconds(),
+            diversifier: value.diversifier,
+            data_type: i32::from(value.data_type),
+            data: value.data,
+        }
     }
 }

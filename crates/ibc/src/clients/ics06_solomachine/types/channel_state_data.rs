@@ -17,12 +17,22 @@ impl TryFrom<RawChannelStateData> for ChannelStateData {
     type Error = Error;
 
     fn try_from(raw: RawChannelStateData) -> Result<Self, Self::Error> {
-        todo!()
+        Ok(Self {
+            path: raw.path,
+            channel: raw
+                .channel
+                .map(TryInto::try_into)
+                .transpose()
+                .map_err(Error::ChannelError)?,
+        })
     }
 }
 
 impl From<ChannelStateData> for RawChannelStateData {
     fn from(value: ChannelStateData) -> Self {
-        todo!()
+        Self {
+            path: value.path,
+            channel: value.channel.map(Into::into),
+        }
     }
 }

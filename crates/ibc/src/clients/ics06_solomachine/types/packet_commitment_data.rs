@@ -17,12 +17,18 @@ impl TryFrom<RawPacketCommitmentData> for PacketCommitmentData {
     type Error = Error;
 
     fn try_from(raw: RawPacketCommitmentData) -> Result<Self, Self::Error> {
-        todo!()
+        Ok(Self {
+            path: raw.path,
+            commitment: raw.commitment,
+        })
     }
 }
 
 impl From<PacketCommitmentData> for RawPacketCommitmentData {
     fn from(value: PacketCommitmentData) -> Self {
-        todo!()
+        Self {
+            path: value.path,
+            commitment: value.commitment,
+        }
     }
 }

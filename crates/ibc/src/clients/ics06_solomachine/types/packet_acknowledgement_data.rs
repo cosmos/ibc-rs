@@ -17,12 +17,18 @@ impl TryFrom<RawPacketAcknowledgementData> for PacketAcknowledgementData {
     type Error = Error;
 
     fn try_from(raw: RawPacketAcknowledgementData) -> Result<Self, Self::Error> {
-        todo!()
+        Ok(Self {
+            path: raw.path,
+            acknowledgement: raw.acknowledgement,
+        })
     }
 }
 
 impl From<PacketAcknowledgementData> for RawPacketAcknowledgementData {
     fn from(value: PacketAcknowledgementData) -> Self {
-        todo!()
+        Self {
+            path: value.path,
+            acknowledgement: value.acknowledgement,
+        }
     }
 }

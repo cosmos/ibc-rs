@@ -1,6 +1,6 @@
+use crate::clients::ics06_solomachine::client_state::ClientState;
 use crate::clients::ics06_solomachine::error::Error;
 use crate::prelude::*;
-use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::solomachine::v1::ClientStateData as RawClientStateData;
 use ibc_proto::protobuf::Protobuf;
 
@@ -8,7 +8,8 @@ use ibc_proto::protobuf::Protobuf;
 #[derive(Clone, PartialEq)]
 pub struct ClientStateData {
     pub path: Vec<u8>,
-    pub client_state: Option<Any>,
+    // Ics06 solomachine client state
+    pub client_state: Option<ClientState>,
 }
 
 impl Protobuf<RawClientStateData> for ClientStateData {}

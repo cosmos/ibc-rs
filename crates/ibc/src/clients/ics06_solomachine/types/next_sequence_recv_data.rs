@@ -18,12 +18,18 @@ impl TryFrom<RawNextSequenceRecvData> for NextSequenceRecvData {
     type Error = Error;
 
     fn try_from(raw: RawNextSequenceRecvData) -> Result<Self, Self::Error> {
-        todo!()
+        Ok(Self {
+            path: raw.path,
+            next_seq_recv: raw.next_seq_recv,
+        })
     }
 }
 
 impl From<NextSequenceRecvData> for RawNextSequenceRecvData {
     fn from(value: NextSequenceRecvData) -> Self {
-        todo!()
+        Self {
+            path: value.path,
+            next_seq_recv: value.next_seq_recv,
+        }
     }
 }
