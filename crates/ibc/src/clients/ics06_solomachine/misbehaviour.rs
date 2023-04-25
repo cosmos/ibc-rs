@@ -1,6 +1,7 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::core::ics02_client::error::ClientError;
-use crate::prelude::*;
+use crate::core::ics24_host::identifier::ClientId;
+use crate::{prelude::*, Height};
 use bytes::Buf;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::solomachine::v1::Misbehaviour as RawSolMisbehaviour;
@@ -18,8 +19,8 @@ pub const SOLOMACHINE_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.solomachi
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, PartialEq)]
 pub struct Misbehaviour {
-    pub client_id: String,
-    pub sequence: u64,
+    pub client_id: ClientId,
+    pub sequence: Height,
     pub signature_one: Option<SignatureAndData>,
     pub signature_two: Option<SignatureAndData>,
 }
@@ -30,13 +31,37 @@ impl TryFrom<RawSolMisbehaviour> for Misbehaviour {
     type Error = Error;
 
     fn try_from(raw: RawSolMisbehaviour) -> Result<Self, Self::Error> {
-        todo!()
+        let client_id: ClientId = raw
+            .client_id
+            .parse()
+            .map_err(|_| Error::InvalidRawClientId {
+                client_id: raw.client_id.clone(),
+            })?;
+        let sequence = Height::new(0, raw.sequence).map_err(Error::InvalidHeight)?;
+        let signature_one: Option<SignatureAndData> =
+            raw.signature_one.map(TryInto::try_into).transpose()?;
+        let signature_two: Option<SignatureAndData> =
+            raw.signature_two.map(TryInto::try_into).transpose()?;
+        Ok(Self {
+            client_id,
+            sequence,
+            signature_one,
+            signature_two,
+        })
     }
 }
 
 impl From<Misbehaviour> for RawSolMisbehaviour {
     fn from(value: Misbehaviour) -> Self {
-        todo!()
+        let client_id = value.client_id.to_string();
+        let sequence = value.sequence.revision_height();
+
+        Self {
+            client_id,
+            sequence,
+            signature_one: value.signature_one.map(Into::into),
+            signature_two: value.signature_two.map(Into::into),
+        }
     }
 }
 

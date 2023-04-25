@@ -1,10 +1,7 @@
 use crate::prelude::*;
 
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::Height;
-use core::time::Duration;
-
+use crate::timestamp::ParseTimestampError;
 use displaydoc::Display;
 
 #[derive(Debug, Display)]
@@ -17,6 +14,12 @@ pub enum Error {
     EmptyConsensusStatePublicKey,
     /// invlid height
     InvalidHeight(ClientError),
+    /// invalid raw client id: `{client_id}`
+    InvalidRawClientId { client_id: String },
+    /// unknow data type: `{0}`
+    UnknownDataType(i32),
+    /// prase time error
+    ParseTimeError(ParseTimestampError),
 }
 
 impl From<Error> for ClientError {

@@ -9,7 +9,6 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::solomachine::v1::Header as RawSolHeader;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
-
 pub const SOLOMACHINE_HEADER_TYPE_URL: &str = "/ibc.lightclients.solomachine.v1.Header";
 
 /// Header defines a solo machine consensus header
@@ -17,8 +16,8 @@ pub const SOLOMACHINE_HEADER_TYPE_URL: &str = "/ibc.lightclients.solomachine.v1.
 #[derive(Clone, PartialEq)]
 pub struct Header {
     /// sequence to update solo machine public key at
-    pub sequence: u64,
-    pub timestamp: u64,
+    pub sequence: Height,
+    pub timestamp: Timestamp,
     pub signature: Vec<u8>,
     pub new_public_key: Option<Any>,
     pub new_diversifier: String,
@@ -38,11 +37,11 @@ impl Display for Header {
 
 impl crate::core::ics02_client::header::Header for Header {
     fn height(&self) -> Height {
-        todo!()
+        self.sequence
     }
 
     fn timestamp(&self) -> Timestamp {
-        todo!()
+        self.timestamp
     }
 }
 
@@ -52,6 +51,12 @@ impl TryFrom<RawSolHeader> for Header {
     type Error = Error;
 
     fn try_from(raw: RawSolHeader) -> Result<Self, Self::Error> {
+        todo!()
+    }
+}
+
+impl From<Header> for RawSolHeader {
+    fn from(value: Header) -> Self {
         todo!()
     }
 }
@@ -85,10 +90,4 @@ impl From<Header> for Any {
 
 pub fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
     RawSolHeader::decode(buf).map_err(Error::Decode)?.try_into()
-}
-
-impl From<Header> for RawSolHeader {
-    fn from(value: Header) -> Self {
-        todo!()
-    }
 }

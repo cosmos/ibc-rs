@@ -1,6 +1,7 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::clients::ics06_solomachine::types::DataType;
 use crate::prelude::*;
+use crate::timestamp::Timestamp;
 use ibc_proto::ibc::lightclients::solomachine::v1::SignatureAndData as RawSignatureAndData;
 use ibc_proto::protobuf::Protobuf;
 
@@ -12,7 +13,7 @@ pub struct SignatureAndData {
     pub signature: Vec<u8>,
     pub data_type: DataType,
     pub data: Vec<u8>,
-    pub timestamp: u64,
+    pub timestamp: Timestamp,
 }
 
 impl Protobuf<RawSignatureAndData> for SignatureAndData {}
@@ -21,12 +22,27 @@ impl TryFrom<RawSignatureAndData> for SignatureAndData {
     type Error = Error;
 
     fn try_from(raw: RawSignatureAndData) -> Result<Self, Self::Error> {
-        todo!()
+        let signature = raw.signature;
+        let data_type = DataType::try_from(raw.data_type)?;
+        let data = raw.data;
+        let timestamp =
+            Timestamp::from_nanoseconds(raw.timestamp).map_err(Error::ParseTimeError)?;
+        Ok(Self {
+            signature,
+            data_type,
+            data,
+            timestamp,
+        })
     }
 }
 
 impl From<SignatureAndData> for RawSignatureAndData {
     fn from(value: SignatureAndData) -> Self {
-        todo!()
+        Self {
+            signature: value.signature,
+            data_type: i32::from(value.data_type),
+            data: value.data,
+            timestamp: value.timestamp.nanoseconds(),
+        }
     }
 }
