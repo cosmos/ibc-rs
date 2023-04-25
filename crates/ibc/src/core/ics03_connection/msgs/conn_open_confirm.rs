@@ -87,7 +87,7 @@ pub mod test_util {
 
     pub fn get_dummy_raw_msg_conn_open_confirm() -> RawMsgConnectionOpenConfirm {
         RawMsgConnectionOpenConfirm {
-            connection_id: "srcconnection".to_string(),
+            connection_id: "src-connection-0".to_string(),
             proof_ack: get_dummy_proof(),
             proof_height: Some(Height {
                 revision_number: 0,

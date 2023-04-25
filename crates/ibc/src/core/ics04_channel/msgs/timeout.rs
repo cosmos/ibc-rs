@@ -40,7 +40,9 @@ impl TryFrom<RawMsgTimeout> for MsgTimeout {
     type Error = PacketError;
 
     fn try_from(raw_msg: RawMsgTimeout) -> Result<Self, Self::Error> {
-        // TODO: Domain type verification for the next sequence: this should probably be > 0.
+        if raw_msg.next_sequence_recv == 0 {
+            return Err(PacketError::ZeroPacketSequence);
+        }
         Ok(MsgTimeout {
             packet: raw_msg
                 .packet

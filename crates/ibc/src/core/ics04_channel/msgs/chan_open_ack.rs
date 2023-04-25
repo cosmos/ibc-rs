@@ -41,15 +41,9 @@ impl TryFrom<RawMsgChannelOpenAck> for MsgChannelOpenAck {
 
     fn try_from(raw_msg: RawMsgChannelOpenAck) -> Result<Self, Self::Error> {
         Ok(MsgChannelOpenAck {
-            port_id_on_a: raw_msg.port_id.parse().map_err(ChannelError::Identifier)?,
-            chan_id_on_a: raw_msg
-                .channel_id
-                .parse()
-                .map_err(ChannelError::Identifier)?,
-            chan_id_on_b: raw_msg
-                .counterparty_channel_id
-                .parse()
-                .map_err(ChannelError::Identifier)?,
+            port_id_on_a: raw_msg.port_id.parse()?,
+            chan_id_on_a: raw_msg.channel_id.parse()?,
+            chan_id_on_b: raw_msg.counterparty_channel_id.parse()?,
             version_on_b: raw_msg.counterparty_version.into(),
             proof_chan_end_on_b: raw_msg
                 .proof_try

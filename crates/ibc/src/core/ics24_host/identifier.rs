@@ -11,6 +11,13 @@ use crate::core::ics24_host::validate::validate_client_identifier;
 use crate::core::ics24_host::error::ValidationError;
 use crate::prelude::*;
 
+const CONNECTION_ID_PREFIX: &str = "connection";
+const CHANNEL_ID_PREFIX: &str = "channel";
+
+const DEFAULT_CHAIN_ID: &str = "defaultChainId";
+const DEFAULT_PORT_ID: &str = "defaultPort";
+const TRANSFER_PORT_ID: &str = "transfer";
+
 /// This type is subject to future changes.
 ///
 /// TODO: ChainId validation is not standardized yet.
@@ -131,7 +138,9 @@ impl ChainId {
             self.id = {
                 let mut split: Vec<&str> = self.id.split('-').collect();
                 let version = version.to_string();
-                *split.last_mut().unwrap() = &version;
+                if let Some(last_elem) = split.last_mut() {
+                    *last_elem = &version;
+                }
                 split.join("-")
             };
             self.version = version;
@@ -162,13 +171,13 @@ impl From<ChainId> for tendermint::chain::Id {
 
 impl From<tendermint::chain::Id> for ChainId {
     fn from(id: tendermint::chain::Id) -> Self {
-        ChainId::from_str(id.as_str()).unwrap()
+        ChainId::from(id.to_string())
     }
 }
 
 impl Default for ChainId {
     fn default() -> Self {
-        "defaultChainId".to_string().parse().unwrap()
+        Self::from_string(DEFAULT_CHAIN_ID)
     }
 }
 
@@ -329,12 +338,12 @@ impl ConnectionId {
     /// ```
     pub fn new(identifier: u64) -> Self {
         let id = format!("{}-{}", Self::prefix(), identifier);
-        Self::from_str(id.as_str()).unwrap()
+        Self(id)
     }
 
     /// Returns the static prefix to be used across all connection identifiers.
     pub fn prefix() -> &'static str {
-        "connection"
+        CONNECTION_ID_PREFIX
     }
 
     /// Get this identifier as a borrowed `&str`
@@ -400,9 +409,13 @@ impl PartialEq<str> for ConnectionId {
 pub struct PortId(String);
 
 impl PortId {
+    pub fn new(id: String) -> Result<Self, ValidationError> {
+        Self::from_str(&id)
+    }
+
     /// Infallible creation of the well-known transfer port
     pub fn transfer() -> Self {
-        Self("transfer".to_string())
+        Self(TRANSFER_PORT_ID.to_string())
     }
 
     /// Get this identifier as a borrowed `&str`
@@ -413,6 +426,10 @@ impl PortId {
     /// Get this identifier as a borrowed byte slice
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_bytes()
+    }
+
+    pub fn validate(&self) -> Result<(), ValidationError> {
+        validate_port_identifier(self.as_str())
     }
 }
 
@@ -439,7 +456,7 @@ impl AsRef<str> for PortId {
 
 impl Default for PortId {
     fn default() -> Self {
-        "defaultPort".to_string().parse().unwrap()
+        Self(DEFAULT_PORT_ID.to_string())
     }
 }
 
@@ -460,8 +477,6 @@ impl Default for PortId {
 pub struct ChannelId(String);
 
 impl ChannelId {
-    const PREFIX: &'static str = "channel-";
-
     /// Builds a new channel identifier. Like client and connection identifiers, channel ids are
     /// deterministically formed from two elements: a prefix `prefix`, and a monotonically
     /// increasing `counter`, separated by a dash "-".
@@ -474,8 +489,13 @@ impl ChannelId {
     /// assert_eq!(chan_id.to_string(), "channel-27");
     /// ```
     pub fn new(identifier: u64) -> Self {
-        let id = format!("{}{}", Self::PREFIX, identifier);
+        let id = format!("{}-{}", Self::prefix(), identifier);
         Self(id)
+    }
+
+    /// Returns the static prefix to be used across all channel identifiers.
+    pub fn prefix() -> &'static str {
+        CHANNEL_ID_PREFIX
     }
 
     /// Get this identifier as a borrowed `&str`
@@ -527,40 +547,5 @@ impl Default for ChannelId {
 impl PartialEq<str> for ChannelId {
     fn eq(&self, other: &str) -> bool {
         self.as_str().eq(other)
-    }
-}
-
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-/// A pair of [`PortId`] and [`ChannelId`] are used together for sending IBC packets.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct PortChannelId {
-    pub channel_id: ChannelId,
-    pub port_id: PortId,
-}
-
-impl PortChannelId {
-    pub fn new(channel_id: ChannelId, port_id: PortId) -> Self {
-        Self {
-            channel_id,
-            port_id,
-        }
-    }
-}
-
-impl Display for PortChannelId {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "{}/{}", self.port_id, self.channel_id)
     }
 }

@@ -23,25 +23,14 @@ where
         &msg.packet.chan_id_on_a,
     ))?;
 
-    if !chan_end_on_a.state_matches(&State::Open) {
-        return Err(PacketError::ChannelClosed {
-            channel_id: msg.packet.chan_id_on_a.clone(),
-        }
-        .into());
-    }
+    chan_end_on_a.verify_state_matches(&State::Open)?;
 
     let counterparty = Counterparty::new(
         msg.packet.port_id_on_b.clone(),
         Some(msg.packet.chan_id_on_b.clone()),
     );
 
-    if !chan_end_on_a.counterparty_matches(&counterparty) {
-        return Err(PacketError::InvalidPacketCounterparty {
-            port_id: msg.packet.port_id_on_b.clone(),
-            channel_id: msg.packet.chan_id_on_b.clone(),
-        }
-        .into());
-    }
+    chan_end_on_a.verify_counterparty_matches(&counterparty)?;
 
     let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
     let conn_end_on_a = ctx_a.connection_end(&conn_id_on_a)?;
@@ -211,7 +200,8 @@ mod tests {
             Counterparty::new(packet.port_id_on_b.clone(), Some(packet.chan_id_on_b)),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
-        );
+        )
+        .unwrap();
 
         let mut chan_end_on_a_ordered = chan_end_on_a_unordered.clone();
         chan_end_on_a_ordered.ordering = Order::Ordered;

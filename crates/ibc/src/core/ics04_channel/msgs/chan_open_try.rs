@@ -56,9 +56,20 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
             .channel
             .ok_or(ChannelError::MissingChannel)?
             .try_into()?;
+
+        chan_end_on_b.verify_state_matches(&State::TryOpen)?;
+
+        #[allow(deprecated)]
+        if !raw_msg.previous_channel_id.is_empty() {
+            return Err(ChannelError::InvalidChannelId {
+                expected: "previous channel id must be empty. It has been deprecated as crossing hellos are no longer supported".to_string(),
+                actual: raw_msg.previous_channel_id,
+            });
+        }
+
         #[allow(deprecated)]
         let msg = MsgChannelOpenTry {
-            port_id_on_b: raw_msg.port_id.parse().map_err(ChannelError::Identifier)?,
+            port_id_on_b: raw_msg.port_id.parse()?,
             ordering: chan_end_on_b.ordering,
             previous_channel_id: raw_msg.previous_channel_id,
             connection_hops_on_b: chan_end_on_b.connection_hops,
@@ -66,7 +77,7 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
             chan_id_on_a: chan_end_on_b
                 .remote
                 .channel_id
-                .ok_or(ChannelError::InvalidCounterpartyChannelId)?,
+                .ok_or(ChannelError::MissingCounterparty)?,
             version_supported_on_a: raw_msg.counterparty_version.into(),
             proof_chan_end_on_a: raw_msg
                 .proof_init
@@ -86,8 +97,8 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
 
 impl From<MsgChannelOpenTry> for RawMsgChannelOpenTry {
     fn from(domain_msg: MsgChannelOpenTry) -> Self {
-        let chan_end_on_b = ChannelEnd::new(
-            State::Init,
+        let chan_end_on_b = ChannelEnd::new_unchecked(
+            State::TryOpen,
             domain_msg.ordering,
             Counterparty::new(domain_msg.port_id_on_a, Some(domain_msg.chan_id_on_a)),
             domain_msg.connection_hops_on_b,
@@ -112,7 +123,7 @@ pub mod test_util {
     use ibc_proto::ibc::core::channel::v1::MsgChannelOpenTry as RawMsgChannelOpenTry;
 
     use crate::core::ics04_channel::channel::test_util::get_dummy_raw_channel_end;
-    use crate::core::ics24_host::identifier::{ChannelId, PortId};
+    use crate::core::ics24_host::identifier::PortId;
     use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
     use ibc_proto::ibc::core::client::v1::Height;
 
@@ -121,8 +132,8 @@ pub mod test_util {
         #[allow(deprecated)]
         RawMsgChannelOpenTry {
             port_id: PortId::default().to_string(),
-            previous_channel_id: ChannelId::default().to_string(),
-            channel: Some(get_dummy_raw_channel_end(Some(0))),
+            previous_channel_id: "".to_string(),
+            channel: Some(get_dummy_raw_channel_end(2, Some(0))),
             counterparty_version: "".to_string(),
             proof_init: get_dummy_proof(),
             proof_height: Some(Height {

@@ -46,8 +46,11 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
             .channel
             .ok_or(ChannelError::MissingChannel)?
             .try_into()?;
+        chan_end_on_a.verify_state_matches(&State::Init)?;
+        chan_end_on_a.verify_empty_counterparty_channel_id()?;
+
         Ok(MsgChannelOpenInit {
-            port_id_on_a: raw_msg.port_id.parse().map_err(ChannelError::Identifier)?,
+            port_id_on_a: raw_msg.port_id.parse()?,
             connection_hops_on_a: chan_end_on_a.connection_hops,
             port_id_on_b: chan_end_on_a.remote.port_id,
             ordering: chan_end_on_a.ordering,
@@ -56,9 +59,10 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
         })
     }
 }
+
 impl From<MsgChannelOpenInit> for RawMsgChannelOpenInit {
     fn from(domain_msg: MsgChannelOpenInit) -> Self {
-        let chan_end_on_a = ChannelEnd::new(
+        let chan_end_on_a = ChannelEnd::new_unchecked(
             State::Init,
             domain_msg.ordering,
             Counterparty::new(domain_msg.port_id_on_b, None),
@@ -88,7 +92,7 @@ pub mod test_util {
     ) -> RawMsgChannelOpenInit {
         RawMsgChannelOpenInit {
             port_id: PortId::default().to_string(),
-            channel: Some(get_dummy_raw_channel_end(counterparty_channel_id)),
+            channel: Some(get_dummy_raw_channel_end(1, counterparty_channel_id)),
             signer: get_dummy_bech32_account(),
         }
     }

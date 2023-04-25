@@ -20,31 +20,12 @@ impl ClientState {
         client_id: &ClientId,
         header: TmHeader,
     ) -> Result<(), ClientError> {
+        // Checks that the header fields are valid.
+        header.validate_basic()?;
+
         // The tendermint-light-client crate though works on heights that are assumed
         // to have the same revision number. We ensure this here.
-        if header.height().revision_number() != self.chain_id().version() {
-            return Err(ClientError::ClientSpecific {
-                description: Error::MismatchedRevisions {
-                    current_revision: self.chain_id().version(),
-                    update_revision: header.height().revision_number(),
-                }
-                .to_string(),
-            });
-        }
-
-        // We also need to ensure that the trusted height (representing the
-        // height of the header already on chain for which this client update is
-        // based on) must be smaller than height of the new header that we're
-        // installing.
-        if header.height() <= header.trusted_height {
-            return Err(ClientError::HeaderVerificationFailure {
-                reason: format!(
-                    "header height <= header trusted height ({} <= {})",
-                    header.height(),
-                    header.trusted_height
-                ),
-            });
-        }
+        header.verify_chain_id_matches(&self.chain_id())?;
 
         // Delegate to tendermint-light-client, which contains the required checks
         // of the new header against the trusted consensus state.

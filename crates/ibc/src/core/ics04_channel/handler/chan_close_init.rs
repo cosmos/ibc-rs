@@ -1,7 +1,5 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelCloseInit`.
 use crate::core::ics03_connection::connection::State as ConnectionState;
-use crate::core::ics04_channel::channel::State;
-use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
 use crate::core::ics24_host::path::ChannelEndPath;
 
@@ -15,31 +13,14 @@ where
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     // Validate that the channel end is in a state where it can be closed.
-    if chan_end_on_a.state_matches(&State::Closed) {
-        return Err(ChannelError::InvalidChannelState {
-            channel_id: msg.chan_id_on_a.clone(),
-            state: chan_end_on_a.state,
-        }
-        .into());
-    }
+    chan_end_on_a.verify_not_closed()?;
 
     // An OPEN IBC connection running on the local (host) chain should exist.
-    if chan_end_on_a.connection_hops().len() != 1 {
-        return Err(ChannelError::InvalidConnectionHopsLength {
-            expected: 1,
-            actual: chan_end_on_a.connection_hops().len(),
-        }
-        .into());
-    }
+    chan_end_on_a.verify_connection_hops_length(1)?;
 
     let conn_end_on_a = ctx_a.connection_end(&chan_end_on_a.connection_hops()[0])?;
 
-    if !conn_end_on_a.state_matches(&ConnectionState::Open) {
-        return Err(ChannelError::ConnectionNotOpen {
-            connection_id: chan_end_on_a.connection_hops()[0].clone(),
-        }
-        .into());
-    }
+    conn_end_on_a.verify_state_matches(&ConnectionState::Open)?;
 
     let client_id_on_a = conn_end_on_a.client_id();
     let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
@@ -98,7 +79,8 @@ mod tests {
             ),
             vec![conn_id.clone()],
             Version::default(),
-        );
+        )
+        .unwrap();
 
         let context = {
             let default_context = MockContext::default();

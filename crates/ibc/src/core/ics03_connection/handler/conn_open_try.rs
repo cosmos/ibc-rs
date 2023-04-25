@@ -53,23 +53,14 @@ where
 
     // Verify proofs
     {
-        let client_state_of_a_on_b =
-            ctx_b
-                .client_state(vars.conn_end_on_b.client_id())
-                .map_err(|_| ConnectionError::Other {
-                    description: "failed to fetch client state".to_string(),
-                })?;
+        let client_state_of_a_on_b = ctx_b.client_state(vars.conn_end_on_b.client_id())?;
 
         client_state_of_a_on_b.confirm_not_frozen()?;
         client_state_of_a_on_b.validate_proof_height(msg.proofs_height_on_a)?;
 
         let client_cons_state_path_on_b =
             ClientConsensusStatePath::new(&msg.client_id_on_b, &msg.proofs_height_on_a);
-        let consensus_state_of_a_on_b = ctx_b
-            .consensus_state(&client_cons_state_path_on_b)
-            .map_err(|_| ConnectionError::Other {
-                description: "failed to fetch client consensus state".to_string(),
-            })?;
+        let consensus_state_of_a_on_b = ctx_b.consensus_state(&client_cons_state_path_on_b)?;
 
         let prefix_on_a = vars.conn_end_on_b.counterparty().prefix();
         let prefix_on_b = ctx_b.commitment_prefix();
@@ -107,11 +98,8 @@ where
                 client_error: e,
             })?;
 
-        let expected_consensus_state_of_b_on_a = ctx_b
-            .host_consensus_state(&msg.consensus_height_of_b_on_a)
-            .map_err(|_| ConnectionError::Other {
-                description: "failed to fetch host consensus state".to_string(),
-            })?;
+        let expected_consensus_state_of_b_on_a =
+            ctx_b.host_consensus_state(&msg.consensus_height_of_b_on_a)?;
 
         let client_cons_state_path_on_a =
             ClientConsensusStatePath::new(client_id_on_a, &msg.consensus_height_of_b_on_a);

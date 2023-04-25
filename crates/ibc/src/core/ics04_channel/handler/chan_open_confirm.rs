@@ -1,7 +1,7 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenConfirm`.
 
 use crate::core::ics03_connection::connection::State as ConnectionState;
-use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
+use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State as ChannelState};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
@@ -18,31 +18,14 @@ where
     let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     // Validate that the channel end is in a state where it can be confirmed.
-    if !chan_end_on_b.state_matches(&State::TryOpen) {
-        return Err(ChannelError::InvalidChannelState {
-            channel_id: msg.chan_id_on_b.clone(),
-            state: chan_end_on_b.state,
-        }
-        .into());
-    }
+    chan_end_on_b.verify_state_matches(&ChannelState::TryOpen)?;
 
     // An OPEN IBC connection running on the local (host) chain should exist.
-    if chan_end_on_b.connection_hops().len() != 1 {
-        return Err(ChannelError::InvalidConnectionHopsLength {
-            expected: 1,
-            actual: chan_end_on_b.connection_hops().len(),
-        }
-        .into());
-    }
+    chan_end_on_b.verify_connection_hops_length(1)?;
 
     let conn_end_on_b = ctx_b.connection_end(&chan_end_on_b.connection_hops()[0])?;
 
-    if !conn_end_on_b.state_matches(&ConnectionState::Open) {
-        return Err(ChannelError::ConnectionNotOpen {
-            connection_id: chan_end_on_b.connection_hops()[0].clone(),
-        }
-        .into());
-    }
+    conn_end_on_b.verify_state_matches(&ConnectionState::Open)?;
 
     // Verify proofs
     {
@@ -60,7 +43,7 @@ where
         let chan_id_on_a = chan_end_on_b
             .counterparty()
             .channel_id()
-            .ok_or(ChannelError::InvalidCounterpartyChannelId)?;
+            .ok_or(ChannelError::MissingCounterparty)?;
         let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
             ChannelError::UndefinedConnectionCounterparty {
                 connection_id: chan_end_on_b.connection_hops()[0].clone(),
@@ -68,12 +51,12 @@ where
         )?;
 
         let expected_chan_end_on_a = ChannelEnd::new(
-            State::Open,
+            ChannelState::Open,
             *chan_end_on_b.ordering(),
             Counterparty::new(msg.port_id_on_b.clone(), Some(msg.chan_id_on_b.clone())),
             vec![conn_id_on_a.clone()],
             chan_end_on_b.version.clone(),
-        );
+        )?;
         let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, chan_id_on_a);
 
         // Verify the proof for the channel state against the expected channel end.
@@ -151,7 +134,8 @@ mod tests {
             Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::default())),
             vec![conn_id_on_b.clone()],
             Version::default(),
-        );
+        )
+        .unwrap();
 
         Fixture {
             context,
@@ -205,7 +189,8 @@ mod tests {
             Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::default())),
             vec![conn_id_on_b.clone()],
             Version::default(),
-        );
+        )
+        .unwrap();
         let context = context
             .with_client(&client_id_on_b, Height::new(0, proof_height).unwrap())
             .with_connection(conn_id_on_b, conn_end_on_b)

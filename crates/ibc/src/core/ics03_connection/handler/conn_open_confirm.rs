@@ -30,12 +30,8 @@ where
     Ctx: ValidationContext,
 {
     let conn_end_on_b = vars.conn_end_on_b();
-    if !conn_end_on_b.state_matches(&State::TryOpen) {
-        return Err(ConnectionError::ConnectionMismatch {
-            connection_id: msg.conn_id_on_b.clone(),
-        }
-        .into());
-    }
+
+    conn_end_on_b.verify_state_matches(&State::TryOpen)?;
 
     let client_id_on_a = vars.client_id_on_a();
     let client_id_on_b = vars.client_id_on_b();
@@ -43,23 +39,14 @@ where
 
     // Verify proofs
     {
-        let client_state_of_a_on_b =
-            ctx_b
-                .client_state(client_id_on_b)
-                .map_err(|_| ConnectionError::Other {
-                    description: "failed to fetch client state".to_string(),
-                })?;
+        let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
 
         client_state_of_a_on_b.confirm_not_frozen()?;
         client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
 
         let client_cons_state_path_on_b =
             ClientConsensusStatePath::new(client_id_on_b, &msg.proof_height_on_a);
-        let consensus_state_of_a_on_b = ctx_b
-            .consensus_state(&client_cons_state_path_on_b)
-            .map_err(|_| ConnectionError::Other {
-                description: "failed to fetch client consensus state".to_string(),
-            })?;
+        let consensus_state_of_a_on_b = ctx_b.consensus_state(&client_cons_state_path_on_b)?;
 
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let prefix_on_b = ctx_b.commitment_prefix();

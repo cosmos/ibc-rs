@@ -1,6 +1,6 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenAck`.
 use crate::core::ics03_connection::connection::State as ConnectionState;
-use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
+use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State as ChannelState};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
@@ -16,32 +16,14 @@ where
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     // Validate that the channel end is in a state where it can be ack.
-    if !chan_end_on_a.state_matches(&State::Init) {
-        return Err(ChannelError::InvalidChannelState {
-            channel_id: msg.chan_id_on_a.clone(),
-            state: chan_end_on_a.state,
-        }
-        .into());
-    }
+    chan_end_on_a.verify_state_matches(&ChannelState::Init)?;
 
     // An OPEN IBC connection running on the local (host) chain should exist.
-
-    if chan_end_on_a.connection_hops().len() != 1 {
-        return Err(ChannelError::InvalidConnectionHopsLength {
-            expected: 1,
-            actual: chan_end_on_a.connection_hops().len(),
-        }
-        .into());
-    }
+    chan_end_on_a.verify_connection_hops_length(1)?;
 
     let conn_end_on_a = ctx_a.connection_end(&chan_end_on_a.connection_hops()[0])?;
 
-    if !conn_end_on_a.state_matches(&ConnectionState::Open) {
-        return Err(ChannelError::ConnectionNotOpen {
-            connection_id: chan_end_on_a.connection_hops()[0].clone(),
-        }
-        .into());
-    }
+    conn_end_on_a.verify_state_matches(&ConnectionState::Open)?;
 
     // Verify proofs
     {
@@ -63,14 +45,14 @@ where
         )?;
 
         let expected_chan_end_on_b = ChannelEnd::new(
-            State::TryOpen,
+            ChannelState::TryOpen,
             // Note: Both ends of a channel must have the same ordering, so it's
             // fine to use A's ordering here
             *chan_end_on_a.ordering(),
             Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
             vec![conn_id_on_b.clone()],
             msg.version_on_b.clone(),
-        );
+        )?;
         let chan_end_path_on_b = ChannelEndPath::new(port_id_on_b, &msg.chan_id_on_b);
 
         // Verify the proof for the channel state against the expected channel end.
@@ -148,7 +130,8 @@ mod tests {
             Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_b.clone())),
             vec![conn_id_on_a.clone()],
             msg.version_on_b.clone(),
-        );
+        )
+        .unwrap();
 
         Fixture {
             context,
@@ -202,7 +185,8 @@ mod tests {
             Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_b.clone())),
             vec![conn_id_on_a.clone()],
             msg.version_on_b.clone(),
-        );
+        )
+        .unwrap();
         let context = context
             .with_client(&client_id_on_a, Height::new(0, proof_height).unwrap())
             .with_connection(conn_id_on_a, conn_end_on_a)

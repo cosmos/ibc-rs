@@ -34,6 +34,14 @@ pub enum TimeoutHeight {
 }
 
 impl TimeoutHeight {
+    /// Returns if the timeout height is set.
+    pub fn is_set(&self) -> bool {
+        match self {
+            TimeoutHeight::At(_) => true,
+            TimeoutHeight::Never => false,
+        }
+    }
+
     pub fn no_timeout() -> Self {
         Self::Never
     }

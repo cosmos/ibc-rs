@@ -1,6 +1,6 @@
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
-use crate::core::ics04_channel::channel::{Counterparty, Order, State};
+use crate::core::ics04_channel::channel::{Counterparty, Order, State as ChannelState};
 use crate::core::ics04_channel::commitment::compute_packet_commitment;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::error::PacketError;
@@ -21,36 +21,19 @@ where
         ChannelEndPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
     let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
-    if !chan_end_on_b.state_matches(&State::Open) {
-        return Err(PacketError::InvalidChannelState {
-            channel_id: msg.packet.chan_id_on_a.clone(),
-            state: chan_end_on_b.state,
-        }
-        .into());
-    }
+    chan_end_on_b.verify_state_matches(&ChannelState::Open)?;
 
     let counterparty = Counterparty::new(
         msg.packet.port_id_on_a.clone(),
         Some(msg.packet.chan_id_on_a.clone()),
     );
 
-    if !chan_end_on_b.counterparty_matches(&counterparty) {
-        return Err(PacketError::InvalidPacketCounterparty {
-            port_id: msg.packet.port_id_on_a.clone(),
-            channel_id: msg.packet.chan_id_on_a.clone(),
-        }
-        .into());
-    }
+    chan_end_on_b.verify_counterparty_matches(&counterparty)?;
 
     let conn_id_on_b = &chan_end_on_b.connection_hops()[0];
     let conn_end_on_b = ctx_b.connection_end(conn_id_on_b)?;
 
-    if !conn_end_on_b.state_matches(&ConnectionState::Open) {
-        return Err(PacketError::ConnectionNotOpen {
-            connection_id: chan_end_on_b.connection_hops()[0].clone(),
-        }
-        .into());
-    }
+    conn_end_on_b.verify_state_matches(&ConnectionState::Open)?;
 
     let latest_height = ctx_b.host_height()?;
     if msg.packet.timeout_height_on_b.has_expired(latest_height) {
@@ -217,7 +200,8 @@ mod tests {
             Counterparty::new(packet.port_id_on_a, Some(packet.chan_id_on_a)),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
-        );
+        )
+        .unwrap();
 
         let conn_end_on_b = ConnectionEnd::new(
             ConnectionState::Open,

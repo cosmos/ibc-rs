@@ -1,3 +1,4 @@
+use super::channel::Counterparty;
 use super::packet::Sequence;
 use super::timeout::TimeoutHeight;
 use crate::core::ics02_client::error as client_error;
@@ -18,12 +19,14 @@ use displaydoc::Display;
 pub enum ChannelError {
     /// port error: `{0}`
     Port(port_error::PortError),
-    /// channel state unknown: `{state}`
-    UnknownState { state: i32 },
-    /// channel order type unknown: `{type_id}`
-    UnknownOrderType { type_id: String },
     /// invalid channel end: `{channel_end}`
     InvalidChannelEnd { channel_end: String },
+    /// invalid channel id: expected `{expected}`, actual `{actual}`
+    InvalidChannelId { expected: String, actual: String },
+    /// invalid channel state: expected `{expected}`, actual `{actual}`
+    InvalidState { expected: String, actual: String },
+    /// invalid channel order type: expected `{expected}`, actual `{actual}`
+    InvalidOrderType { expected: String, actual: String },
     /// invalid connection hops length: expected `{expected}`; actual `{actual}`
     InvalidConnectionHopsLength { expected: usize, actual: usize },
     /// invalid signer address error: `{0}`
@@ -34,11 +37,8 @@ pub enum ChannelError {
     NonUtf8PacketData,
     /// missing counterparty
     MissingCounterparty,
-    /// expected version `{expected_version}` , got `{got_version}`
-    VersionNotSupported {
-        expected_version: Version,
-        got_version: Version,
-    },
+    /// version not supported: expected `{expected}`, actual `{actual}`
+    VersionNotSupported { expected: Version, actual: Version },
     /// missing channel end
     MissingChannel,
     /// the channel end (`{port_id}`, `{channel_id}`) does not exist
@@ -58,8 +58,11 @@ pub enum ChannelError {
         value: String,
         error: core::num::ParseIntError,
     },
-    /// Invalid channel id in counterparty
-    InvalidCounterpartyChannelId,
+    /// invalid channel counterparty: expected `{expected}`, actual `{actual}`
+    InvalidCounterparty {
+        expected: Counterparty,
+        actual: Counterparty,
+    },
     /// Processed time for the client `{client_id}` at height `{height}` not found
     ProcessedTimeNotFound { client_id: ClientId, height: Height },
     /// Processed height for the client `{client_id}` at height `{height}` not found
@@ -70,18 +73,12 @@ pub enum ChannelError {
     AppModule { description: String },
     /// other error: `{description}`
     Other { description: String },
-    /// Channel `{channel_id}` is Closed
-    ChannelClosed { channel_id: ChannelId },
-    /// the associated connection `{connection_id}` is not OPEN
-    ConnectionNotOpen { connection_id: ConnectionId },
     /// Undefined counterparty connection for `{connection_id}`
     UndefinedConnectionCounterparty { connection_id: ConnectionId },
-    /// Channel `{channel_id}` should not be state `{state}`
-    InvalidChannelState { channel_id: ChannelId, state: State },
     /// invalid proof: empty proof
     InvalidProof,
     /// identifier error: `{0}`
-    Identifier(ValidationError),
+    InvalidIdentifier(ValidationError),
 }
 
 #[derive(Debug, Display)]
@@ -90,13 +87,6 @@ pub enum PacketError {
     Connection(connection_error::ConnectionError),
     /// channel error: `{0}`
     Channel(ChannelError),
-    /// Channel `{channel_id}` is Closed
-    ChannelClosed { channel_id: ChannelId },
-    /// packet destination port `{port_id}` and channel `{channel_id}` doesn't match the counterparty's port/channel
-    InvalidPacketCounterparty {
-        port_id: PortId,
-        channel_id: ChannelId,
-    },
     /// Receiving chain block height `{chain_height}` >= packet timeout height `{timeout_height}`
     LowPacketHeight {
         chain_height: Height,
@@ -148,14 +138,16 @@ pub enum PacketError {
     RouteNotFound,
     /// packet sequence cannot be 0
     ZeroPacketSequence,
-    /// invalid timeout height for the packet
-    InvalidTimeoutHeight,
     /// packet data bytes cannot be empty
     ZeroPacketData,
+    /// invalid timeout height for the packet
+    InvalidTimeoutHeight,
     /// Invalid packet timeout timestamp value error: `{0}`
     InvalidPacketTimestamp(crate::timestamp::ParseTimestampError),
-    /// identifier error: `{0}`
-    Identifier(ValidationError),
+    /// missing timeout
+    MissingTimeout,
+    /// invalid identifier error: `{0}`
+    InvalidIdentifier(ValidationError),
     /// Missing sequence number for sending packets on port `{port_id}` and channel `{channel_id}`
     MissingNextSendSeq {
         port_id: PortId,
@@ -182,6 +174,18 @@ pub enum PacketError {
     CannotEncodeSequence { sequence: Sequence },
 }
 
+impl From<ValidationError> for ChannelError {
+    fn from(err: ValidationError) -> Self {
+        Self::InvalidIdentifier(err)
+    }
+}
+
+impl From<ValidationError> for PacketError {
+    fn from(err: ValidationError) -> Self {
+        Self::InvalidIdentifier(err)
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for PacketError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
@@ -189,7 +193,7 @@ impl std::error::Error for PacketError {
             Self::Connection(e) => Some(e),
             Self::Channel(e) => Some(e),
             Self::Signer(e) => Some(e),
-            Self::Identifier(e) => Some(e),
+            Self::InvalidIdentifier(e) => Some(e),
             _ => None,
         }
     }
@@ -200,7 +204,7 @@ impl std::error::Error for ChannelError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::Port(e) => Some(e),
-            Self::Identifier(e) => Some(e),
+            Self::InvalidIdentifier(e) => Some(e),
             Self::Signer(e) => Some(e),
             Self::PacketVerificationFailed {
                 client_error: e, ..

@@ -75,7 +75,7 @@ pub enum ContextError {
     ClientError(ClientError),
     /// ICS03 Connection error: {0}
     ConnectionError(ConnectionError),
-    /// Ics04 Channel error: {0}
+    /// ICS04 Channel error: {0}
     ChannelError(ChannelError),
     /// ICS04 Packet error: {0}
     PacketError(PacketError),
