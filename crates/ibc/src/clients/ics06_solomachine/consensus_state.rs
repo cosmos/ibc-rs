@@ -7,7 +7,6 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::solomachine::v1::ConsensusState as RawSolConsensusState;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
-use tendermint_proto::crypto::public_key;
 
 pub const SOLOMACHINE_CONSENSUS_STATE_TYPE_URL: &str =
     "/ibc.lightclients.solomachine.v1.ConsensusState";

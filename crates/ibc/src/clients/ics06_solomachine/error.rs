@@ -15,6 +15,8 @@ pub enum Error {
     Decode(prost::DecodeError),
     /// consensus state PublicKey is None
     EmptyConsensusStatePublicKey,
+    /// invlid height
+    InvalidHeight(ClientError),
 }
 
 impl From<Error> for ClientError {

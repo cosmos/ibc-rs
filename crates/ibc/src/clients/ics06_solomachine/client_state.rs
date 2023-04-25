@@ -229,13 +229,40 @@ impl TryFrom<RawSolClientState> for ClientState {
     type Error = Error;
 
     fn try_from(raw: RawSolClientState) -> Result<Self, Self::Error> {
-        todo!()
+        let sequence = Height::new(0, raw.sequence).map_err(Error::InvalidHeight)?;
+        let frozen_sequence = if raw.frozen_sequence == 0 {
+            None
+        } else {
+            Some(Height::new(0, raw.frozen_sequence).map_err(Error::InvalidHeight)?)
+        };
+
+        let consensus_state: Option<SoloMachineConsensusState> =
+            raw.consensus_state.map(TryInto::try_into).transpose()?;
+
+        Ok(Self {
+            sequence,
+            frozen_sequence,
+            consensus_state,
+            allow_update_after_proposal: raw.allow_update_after_proposal,
+        })
     }
 }
 
 impl From<ClientState> for RawSolClientState {
     fn from(value: ClientState) -> Self {
-        todo!()
+        let sequence = value.sequence.revision_height();
+        let frozen_sequence = if let Some(seq) = value.frozen_sequence {
+            seq.revision_height()
+        } else {
+            0
+        };
+        let consensus_state = value.consensus_state.map(Into::into);
+        Self {
+            sequence,
+            frozen_sequence,
+            consensus_state,
+            allow_update_after_proposal: value.allow_update_after_proposal,
+        }
     }
 }
 
