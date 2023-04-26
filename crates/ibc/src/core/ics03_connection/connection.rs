@@ -16,7 +16,6 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::timestamp::ZERO_DURATION;
 
@@ -468,7 +467,12 @@ impl Counterparty {
         &self.prefix
     }
 
-    pub fn validate_basic(&self) -> Result<(), ValidationError> {
+    /// Called upon initiating a connection handshake on the host chain to verify
+    /// that the counterparty connection id has not been set.
+    pub(crate) fn verify_empty_connection_id(&self) -> Result<(), ConnectionError> {
+        if self.connection_id().is_some() {
+            return Err(ConnectionError::InvalidCounterparty);
+        }
         Ok(())
     }
 }

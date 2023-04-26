@@ -309,16 +309,6 @@ impl ChannelEnd {
         Ok(())
     }
 
-    pub(crate) fn verify_empty_counterparty_channel_id(&self) -> Result<(), ChannelError> {
-        if !self.counterparty().channel_id.eq(&None) {
-            return Err(ChannelError::InvalidChannelId {
-                expected: "Counterparty channel id must be empty".to_string(),
-                actual: format!("{:?}", self.counterparty().channel_id),
-            });
-        }
-        Ok(())
-    }
-
     pub fn version_matches(&self, other: &Version) -> bool {
         self.version().eq(other)
     }
@@ -366,6 +356,18 @@ impl Counterparty {
 
     pub fn channel_id(&self) -> Option<&ChannelId> {
         self.channel_id.as_ref()
+    }
+
+    /// Called upon initiating a channel handshake on the host chain to verify
+    /// that the counterparty channel id has not been set.
+    pub(crate) fn verify_empty_channel_id(&self) -> Result<(), ChannelError> {
+        if self.channel_id().is_some() {
+            return Err(ChannelError::InvalidChannelId {
+                expected: "Counterparty channel id must be empty".to_string(),
+                actual: format!("{:?}", self.channel_id),
+            });
+        }
+        Ok(())
     }
 }
 

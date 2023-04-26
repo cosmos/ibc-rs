@@ -186,8 +186,7 @@ impl LocalVars {
                 msg.counterparty.clone(),
                 vec![version_on_b],
                 msg.delay_period,
-            )
-            .unwrap(),
+            )?,
             client_id_on_a: msg.counterparty.client_id().clone(),
             conn_id_on_a: msg
                 .counterparty

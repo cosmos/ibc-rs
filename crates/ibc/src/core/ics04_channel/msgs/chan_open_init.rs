@@ -47,7 +47,7 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
             .ok_or(ChannelError::MissingChannel)?
             .try_into()?;
         chan_end_on_a.verify_state_matches(&State::Init)?;
-        chan_end_on_a.verify_empty_counterparty_channel_id()?;
+        chan_end_on_a.counterparty().verify_empty_channel_id()?;
 
         Ok(MsgChannelOpenInit {
             port_id_on_a: raw_msg.port_id.parse()?,

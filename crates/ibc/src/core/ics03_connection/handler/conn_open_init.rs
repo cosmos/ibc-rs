@@ -46,8 +46,7 @@ where
         ),
         versions,
         msg.delay_period,
-    )
-    .unwrap();
+    )?;
 
     // Construct the identifier for the new connection.
     let conn_id_on_a = ConnectionId::new(ctx_a.connection_counter()?);
