@@ -52,7 +52,7 @@ impl TryFrom<RawMsgConnectionOpenConfirm> for MsgConnectionOpenConfirm {
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
                 .ok_or(ConnectionError::MissingProofHeight)?,
-            signer: msg.signer.parse().map_err(ConnectionError::Signer)?,
+            signer: msg.signer.into(),
         })
     }
 }

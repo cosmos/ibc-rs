@@ -16,17 +16,20 @@ pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(
 where
     Ctx: ValidationContext,
 {
+    ctx.validate_signer(msg.signer())?;
+
     let client_id = msg.client_id().clone();
     let update_kind = match msg {
         MsgUpdateOrMisbehaviour::UpdateClient(_) => UpdateKind::UpdateClient,
         MsgUpdateOrMisbehaviour::Misbehaviour(_) => UpdateKind::SubmitMisbehaviour,
     };
-    let client_message = msg.client_message();
 
     // Read client state from the host chain store. The client should already exist.
     let client_state = ctx.client_state(&client_id)?;
 
     client_state.confirm_not_frozen()?;
+
+    let client_message = msg.client_message();
 
     client_state.verify_client_message(ctx, &client_id, client_message, &update_kind)?;
 

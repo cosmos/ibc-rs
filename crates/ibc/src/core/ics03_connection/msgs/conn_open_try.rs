@@ -112,7 +112,7 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
                 .and_then(|raw_height| raw_height.try_into().ok())
                 .ok_or(ConnectionError::MissingConsensusHeight)?,
             delay_period: Duration::from_nanos(msg.delay_period),
-            signer: msg.signer.parse().map_err(ConnectionError::Signer)?,
+            signer: msg.signer.into(),
         })
     }
 }

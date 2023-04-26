@@ -18,7 +18,11 @@ pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), Cont
 where
     Ctx: ValidationContext,
 {
-    let MsgUpgradeClient { client_id, .. } = msg;
+    let MsgUpgradeClient {
+        client_id, signer, ..
+    } = msg;
+
+    ctx.validate_signer(&signer)?;
 
     // Temporary has been disabled until we have a better understanding of some design implications
     if cfg!(not(feature = "upgrade_client")) {

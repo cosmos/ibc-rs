@@ -11,6 +11,8 @@ pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelCloseInit) -> Result<(), Conte
 where
     Ctx: ValidationContext,
 {
+    ctx_a.validate_signer(&msg.signer)?;
+
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 

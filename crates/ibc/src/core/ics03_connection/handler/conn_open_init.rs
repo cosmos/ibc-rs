@@ -14,6 +14,8 @@ pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(
 where
     Ctx: ValidationContext,
 {
+    ctx_a.validate_signer(&msg.signer)?;
+
     // An IBC client running on the local (host) chain should exist.
     let client_state_of_b_on_a = ctx_a.client_state(&msg.client_id_on_a)?;
     client_state_of_b_on_a.confirm_not_frozen()?;

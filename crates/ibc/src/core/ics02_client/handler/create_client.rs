@@ -26,8 +26,10 @@ where
     let MsgCreateClient {
         client_state,
         consensus_state: _,
-        signer: _,
+        signer,
     } = msg;
+
+    ctx.validate_signer(&signer)?;
 
     // Construct this client's identifier
     let id_counter = ctx.client_counter()?;

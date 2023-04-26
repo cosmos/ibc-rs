@@ -98,7 +98,7 @@ impl TryFrom<RawMsgAcknowledgement> for MsgAcknowledgement {
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
                 .ok_or(PacketError::MissingHeight)?,
-            signer: raw_msg.signer.parse().map_err(PacketError::Signer)?,
+            signer: raw_msg.signer.into(),
         })
     }
 }

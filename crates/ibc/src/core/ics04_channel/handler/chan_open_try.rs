@@ -13,6 +13,8 @@ pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), Context
 where
     Ctx: ValidationContext,
 {
+    ctx_b.validate_signer(&msg.signer)?;
+
     // An IBC connection running on the local (host) chain should exist.
     if msg.connection_hops_on_b.len() != 1 {
         return Err(ChannelError::InvalidConnectionHopsLength {
