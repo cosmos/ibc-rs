@@ -50,7 +50,6 @@ mod tests {
         msgs::transfer::test_util::get_dummy_msg_transfer, msgs::transfer::MsgTransfer,
         packet::PacketData, PrefixedCoin, MODULE_ID_STR,
     };
-    use crate::core::ics02_client::msgs::update_client::UpdateKind;
     use crate::core::ics02_client::msgs::{
         create_client::MsgCreateClient, update_client::MsgUpdateClient,
         upgrade_client::MsgUpgradeClient, ClientMsg,
@@ -94,7 +93,7 @@ mod tests {
     use crate::core::ics26_routing::error::RouterError;
     use crate::core::ics26_routing::msgs::MsgEnvelope;
     use crate::core::{dispatch, ValidationContext};
-    use crate::events::{IbcEvent, IbcEventType};
+    use crate::events::{IbcEvent, MessageEvent};
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
     use crate::mock::context::MockContext;
@@ -252,7 +251,7 @@ mod tests {
         // Figure out the ID of the client that was just created.
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::CreateClient)
+            IbcEvent::Message(MessageEvent::Client)
         ));
         let client_id_event = ctx.events.get(1);
         assert!(
@@ -270,10 +269,9 @@ mod tests {
                 name: "Client update successful".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    client_message: MockHeader::new(update_client_height)
+                    header: MockHeader::new(update_client_height)
                         .with_timestamp(Timestamp::now())
                         .into(),
-                    update_kind: UpdateKind::UpdateClient,
                     signer: default_signer.clone(),
                 }))
                 .into(),
@@ -284,8 +282,7 @@ mod tests {
                 name: "Client update fails due to stale header".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    client_message: MockHeader::new(update_client_height).into(),
-                    update_kind: UpdateKind::UpdateClient,
+                    header: MockHeader::new(update_client_height).into(),
                     signer: default_signer.clone(),
                 }))
                 .into(),
@@ -360,10 +357,9 @@ mod tests {
                 name: "Client update successful #2".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    client_message: MockHeader::new(update_client_height_after_send)
+                    header: MockHeader::new(update_client_height_after_send)
                         .with_timestamp(Timestamp::now())
                         .into(),
-                    update_kind: UpdateKind::UpdateClient,
                     signer: default_signer.clone(),
                 }))
                 .into(),
@@ -406,8 +402,7 @@ mod tests {
                 name: "Client update successful".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    client_message: MockHeader::new(update_client_height_after_second_send).into(),
-                    update_kind: UpdateKind::UpdateClient,
+                    header: MockHeader::new(update_client_height_after_second_send).into(),
                     signer: default_signer.clone(),
                 }))
                 .into(),
@@ -529,7 +524,8 @@ mod tests {
                     ),
                     vec![ConnVersion::default()],
                     Duration::MAX,
-                ),
+                )
+                .unwrap(),
             );
         let module = DummyTransferModule::new();
 
@@ -557,7 +553,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::OpenInitChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::OpenInitChannel(_)));
     }
@@ -578,7 +574,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::OpenTryChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::OpenTryChannel(_)));
     }
@@ -609,7 +605,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::OpenAckChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::OpenAckChannel(_)));
     }
@@ -640,7 +636,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::OpenConfirmChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::OpenConfirmChannel(_)));
     }
@@ -671,7 +667,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::CloseInitChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::CloseInitChannel(_)));
     }
@@ -702,7 +698,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::CloseConfirmChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::CloseConfirmChannel(_)));
     }

@@ -10,7 +10,7 @@ use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics26_routing::context::ModuleId;
 
-use crate::events::IbcEvent;
+use crate::events::{IbcEvent, MessageEvent};
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 pub(super) fn chan_open_init_validate<ValCtx>(
@@ -99,11 +99,11 @@ where
             conn_id_on_a,
             version,
         ));
-        ctx_a.emit_ibc_event(IbcEvent::Message(core_event.event_type()));
+        ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
         ctx_a.emit_ibc_event(core_event);
 
         for module_event in extras.events {
-            ctx_a.emit_ibc_event(IbcEvent::AppModule(module_event));
+            ctx_a.emit_ibc_event(IbcEvent::Module(module_event));
         }
 
         for log_message in extras.log {
@@ -131,7 +131,6 @@ mod tests {
             },
             ics04_channel::msgs::chan_open_init::test_util::get_dummy_raw_msg_chan_open_init,
         },
-        events::IbcEventType,
         mock::context::MockContext,
     };
 
@@ -163,7 +162,8 @@ mod tests {
             msg_conn_init.counterparty.clone(),
             get_compatible_versions(),
             msg_conn_init.delay_period,
-        );
+        )
+        .unwrap();
 
         Fixture {
             context,
@@ -191,7 +191,7 @@ mod tests {
         assert_eq!(context.events.len(), 2);
         assert!(matches!(
             context.events[0],
-            IbcEvent::Message(IbcEventType::OpenInitChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(context.events[1], IbcEvent::OpenInitChannel(_)));
     }

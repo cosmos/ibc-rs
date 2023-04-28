@@ -7,7 +7,7 @@ use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics26_routing::context::ModuleId;
 
-use crate::events::IbcEvent;
+use crate::events::{IbcEvent, MessageEvent};
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 
@@ -79,11 +79,11 @@ where
             chan_id_on_a,
             conn_id_on_b,
         ));
-        ctx_b.emit_ibc_event(IbcEvent::Message(core_event.event_type()));
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
         ctx_b.emit_ibc_event(core_event);
 
         for module_event in extras.events {
-            ctx_b.emit_ibc_event(IbcEvent::AppModule(module_event));
+            ctx_b.emit_ibc_event(IbcEvent::Module(module_event));
         }
 
         for log_message in extras.log {
@@ -96,10 +96,10 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::{
         core::{context::chan_open_confirm::chan_open_confirm_execute, ics04_channel::Version},
-        events::{IbcEvent, IbcEventType},
-        prelude::*,
+        events::IbcEvent,
         Height,
     };
     use rstest::*;
@@ -156,7 +156,8 @@ mod tests {
             ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
             get_compatible_versions(),
             ZERO_DURATION,
-        );
+        )
+        .unwrap();
 
         let msg =
             MsgChannelOpenConfirm::try_from(get_dummy_raw_msg_chan_open_confirm(proof_height))
@@ -212,7 +213,7 @@ mod tests {
         assert_eq!(context.events.len(), 2);
         assert!(matches!(
             context.events[0],
-            IbcEvent::Message(IbcEventType::OpenConfirmChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(context.events[1], IbcEvent::OpenConfirmChannel(_)));
     }

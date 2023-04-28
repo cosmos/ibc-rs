@@ -5,7 +5,6 @@ use ibc_proto::protobuf::Error as TendermintProtoError;
 use uint::FromDecStrErr;
 
 use crate::core::ics04_channel::channel::Order;
-use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::ContextError;
@@ -59,16 +58,6 @@ pub enum TokenTransferError {
     ChannelNotUnordered {
         expect_order: Order,
         got_order: Order,
-    },
-    /// expected version `{expect_version}` , got `{got_version}`
-    InvalidVersion {
-        expect_version: Version,
-        got_version: Version,
-    },
-    /// expected counterparty version `{expect_version}`, got `{got_version}`
-    InvalidCounterpartyVersion {
-        expect_version: Version,
-        got_version: Version,
     },
     /// channel cannot be closed
     CantCloseChannel,
@@ -130,5 +119,11 @@ impl std::error::Error for TokenTransferError {
 impl From<Infallible> for TokenTransferError {
     fn from(e: Infallible) -> Self {
         match e {}
+    }
+}
+
+impl From<ContextError> for TokenTransferError {
+    fn from(err: ContextError) -> TokenTransferError {
+        Self::ContextError(err)
     }
 }

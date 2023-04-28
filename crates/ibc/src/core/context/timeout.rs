@@ -2,6 +2,7 @@ use crate::core::ics04_channel::events::ChannelClosed;
 use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
 use crate::core::ics24_host::path::{ChannelEndPath, CommitmentPath};
+use crate::events::MessageEvent;
 use crate::prelude::*;
 
 use crate::{
@@ -68,7 +69,7 @@ where
 
     // In all cases, this event is emitted
     let event = IbcEvent::TimeoutPacket(TimeoutPacket::new(packet.clone(), chan_end_on_a.ordering));
-    ctx_a.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
     ctx_a.emit_ibc_event(event);
 
     let commitment_path_on_a =
@@ -126,12 +127,12 @@ where
                 conn_id_on_a,
                 chan_end_on_a.ordering,
             ));
-            ctx_a.emit_ibc_event(IbcEvent::Message(event.event_type()));
+            ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
             ctx_a.emit_ibc_event(event);
         }
 
         for module_event in extras.events {
-            ctx_a.emit_ibc_event(IbcEvent::AppModule(module_event));
+            ctx_a.emit_ibc_event(IbcEvent::Module(module_event));
         }
 
         for log_message in extras.log {
@@ -169,7 +170,6 @@ mod tests {
             },
             ics24_host::identifier::{ClientId, ConnectionId},
         },
-        events::IbcEventType,
         mock::context::MockContext,
     };
 
@@ -238,7 +238,8 @@ mod tests {
             ),
             get_compatible_versions(),
             ZERO_DURATION,
-        );
+        )
+        .unwrap();
 
         Fixture {
             ctx,
@@ -284,7 +285,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::Timeout)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::TimeoutPacket(_)));
     }
@@ -322,12 +323,12 @@ mod tests {
         assert_eq!(ctx.events.len(), 4);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::Timeout)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::TimeoutPacket(_)));
         assert!(matches!(
             ctx.events[2],
-            IbcEvent::Message(IbcEventType::ChannelClosed)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[3], IbcEvent::ChannelClosed(_)));
     }

@@ -19,7 +19,6 @@ use crate::prelude::*;
 use crate::Height;
 
 use super::consensus_state::ConsensusState;
-use super::msgs::update_client::UpdateKind;
 
 use crate::core::{ExecutionContext, ValidationContext};
 
@@ -97,14 +96,15 @@ pub trait ClientState:
     /// successful update, a list of consensus heights is returned. It assumes
     /// the client_message has already been verified.
     ///
+    /// Note that `header` is the field associated with `UpdateKind::UpdateClient`.
+    ///
     /// Post-condition: on success, the return value MUST contain at least one
     /// height.
     fn update_state(
         &self,
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
-        client_message: Any,
-        update_kind: &UpdateKind,
+        header: Any,
     ) -> Result<Vec<Height>, ClientError>;
 
     /// update_state_on_misbehaviour should perform appropriate state changes on
@@ -187,6 +187,19 @@ impl PartialEq<&Self> for Box<dyn ClientState> {
 
 pub fn downcast_client_state<CS: ClientState>(h: &dyn ClientState) -> Option<&CS> {
     h.as_any().downcast_ref::<CS>()
+}
+
+/// `UpdateKind` represents the 2 ways that a client can be updated
+/// in IBC: either through a `MsgUpdateClient`, or a `MsgSubmitMisbehaviour`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum UpdateKind {
+    /// this is the typical scenario where a new header is submitted to the client
+    /// to update the client. Note that light clients are free to define the type
+    /// of the object used to update them (e.g. could be a list of headers).
+    UpdateClient,
+    /// this is the scenario where misbehaviour is submitted to the client
+    /// (e.g 2 headers with the same height in Tendermint)
+    SubmitMisbehaviour,
 }
 
 pub struct UpdatedState {

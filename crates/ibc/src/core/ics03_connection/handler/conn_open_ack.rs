@@ -14,7 +14,7 @@ use crate::core::ics24_host::Path;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 
-use crate::events::IbcEvent;
+use crate::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
@@ -45,9 +45,10 @@ where
 
     ctx_a.validate_self_client(msg.client_state_of_a_on_b.clone())?;
 
-    if !(vars.conn_end_on_a.state_matches(&State::Init)
-        && vars.conn_end_on_a.versions().contains(&msg.version))
-    {
+    msg.version
+        .verify_is_supported(vars.conn_end_on_a.versions())?;
+
+    if !vars.conn_end_on_a.state_matches(&State::Init) {
         return Err(ConnectionError::ConnectionMismatch {
             connection_id: msg.conn_id_on_a.clone(),
         }
@@ -88,7 +89,7 @@ where
                 ),
                 vec![msg.version.clone()],
                 vars.conn_end_on_a.delay_period(),
-            );
+            )?;
 
             client_state_of_b_on_a
                 .verify_membership(
@@ -164,7 +165,7 @@ where
         msg.conn_id_on_b.clone(),
         vars.client_id_on_b().clone(),
     ));
-    ctx_a.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection));
     ctx_a.emit_ibc_event(event);
 
     ctx_a.log_message("success: conn_open_ack verification passed".to_string());
@@ -225,7 +226,7 @@ mod tests {
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ValidationContext;
 
-    use crate::events::{IbcEvent, IbcEventType};
+    use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::timestamp::ZERO_DURATION;
@@ -261,7 +262,8 @@ mod tests {
             ),
             vec![msg.version.clone()],
             ZERO_DURATION,
-        );
+        )
+        .unwrap();
 
         // A connection end with incorrect state `Open`; will be part of the context.
         let mut conn_end_open = default_conn_end.clone();
@@ -342,7 +344,7 @@ mod tests {
 
                 assert!(matches!(
                     fxt.ctx.events[0],
-                    IbcEvent::Message(IbcEventType::OpenAckConnection)
+                    IbcEvent::Message(MessageEvent::Connection)
                 ));
                 let event = &fxt.ctx.events[1];
                 assert!(matches!(event, &IbcEvent::OpenAckConnection(_)));

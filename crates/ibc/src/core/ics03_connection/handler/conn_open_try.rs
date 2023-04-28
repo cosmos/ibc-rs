@@ -17,7 +17,7 @@ use crate::core::ics24_host::Path;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 
-use crate::events::IbcEvent;
+use crate::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
@@ -81,7 +81,7 @@ where
                 Counterparty::new(msg.client_id_on_b.clone(), None, prefix_on_b),
                 msg.versions_on_a.clone(),
                 msg.delay_period,
-            );
+            )?;
 
             client_state_of_a_on_b
                 .verify_membership(
@@ -162,7 +162,7 @@ where
         conn_id_on_a.clone(),
         vars.client_id_on_a.clone(),
     ));
-    ctx_b.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection));
     ctx_b.emit_ibc_event(event);
     ctx_b.log_message("success: conn_open_try verification passed".to_string());
 
@@ -188,8 +188,7 @@ impl LocalVars {
     where
         Ctx: ValidationContext,
     {
-        let version_on_b =
-            ctx_b.pick_version(&ctx_b.get_compatible_versions(), &msg.versions_on_a)?;
+        let version_on_b = ctx_b.pick_version(&msg.versions_on_a)?;
 
         Ok(Self {
             conn_id_on_b: ConnectionId::new(ctx_b.connection_counter()?),
@@ -199,7 +198,8 @@ impl LocalVars {
                 msg.counterparty.clone(),
                 vec![version_on_b],
                 msg.delay_period,
-            ),
+            )
+            .unwrap(),
             client_id_on_a: msg.counterparty.client_id().clone(),
             conn_id_on_a: msg
                 .counterparty
@@ -221,7 +221,7 @@ mod tests {
     use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::ValidationContext;
-    use crate::events::{IbcEvent, IbcEventType};
+    use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::Height;
@@ -307,7 +307,7 @@ mod tests {
 
                 assert!(matches!(
                     fxt.ctx.events[0],
-                    IbcEvent::Message(IbcEventType::OpenTryConnection)
+                    IbcEvent::Message(MessageEvent::Connection)
                 ));
                 let event = &fxt.ctx.events[1];
                 assert!(matches!(event, &IbcEvent::OpenTryConnection(_)));

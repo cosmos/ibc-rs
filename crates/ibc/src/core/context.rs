@@ -22,6 +22,7 @@ use self::acknowledgement::{acknowledgement_packet_execute, acknowledgement_pack
 use self::recv_packet::{recv_packet_execute, recv_packet_validate};
 use self::timeout::{timeout_packet_execute, timeout_packet_validate, TimeoutMsgType};
 
+use super::ics02_client::msgs::MsgUpdateOrMisbehaviour;
 use super::{
     ics02_client::error::ClientError,
     ics03_connection::error::ConnectionError,
@@ -32,7 +33,6 @@ use core::time::Duration;
 use ibc_proto::google::protobuf::Any;
 
 use crate::core::ics02_client::client_state::ClientState;
-use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::version::{
@@ -48,8 +48,7 @@ use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ConnectionId, PortId};
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
-    ClientTypePath, CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath,
-    SeqSendPath,
+    CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use crate::core::ics26_routing::context::{Module, ModuleId};
 use crate::core::{
@@ -173,7 +172,12 @@ pub trait ValidationContext: Router {
         match msg {
             MsgEnvelope::Client(msg) => match msg {
                 ClientMsg::CreateClient(msg) => create_client::validate(self, msg),
-                ClientMsg::UpdateClient(msg) => update_client::validate(self, msg),
+                ClientMsg::UpdateClient(msg) => {
+                    update_client::validate(self, MsgUpdateOrMisbehaviour::UpdateClient(msg))
+                }
+                ClientMsg::Misbehaviour(msg) => {
+                    update_client::validate(self, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
+                }
                 ClientMsg::UpgradeClient(msg) => upgrade_client::validate(self, msg),
             }
             .map_err(RouterError::ContextError),
@@ -313,11 +317,13 @@ pub trait ValidationContext: Router {
     /// connection handshake protocol prefers.
     fn pick_version(
         &self,
-        supported_versions: &[ConnectionVersion],
         counterparty_candidate_versions: &[ConnectionVersion],
     ) -> Result<ConnectionVersion, ContextError> {
-        pick_version(supported_versions, counterparty_candidate_versions)
-            .map_err(ContextError::ConnectionError)
+        let version = pick_version(
+            &self.get_compatible_versions(),
+            counterparty_candidate_versions,
+        )?;
+        Ok(version)
     }
 
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
@@ -381,7 +387,12 @@ pub trait ExecutionContext: ValidationContext {
         match msg {
             MsgEnvelope::Client(msg) => match msg {
                 ClientMsg::CreateClient(msg) => create_client::execute(self, msg),
-                ClientMsg::UpdateClient(msg) => update_client::execute(self, msg),
+                ClientMsg::UpdateClient(msg) => {
+                    update_client::execute(self, MsgUpdateOrMisbehaviour::UpdateClient(msg))
+                }
+                ClientMsg::Misbehaviour(msg) => {
+                    update_client::execute(self, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
+                }
                 ClientMsg::UpgradeClient(msg) => upgrade_client::execute(self, msg),
             }
             .map_err(RouterError::ContextError),
@@ -438,13 +449,6 @@ pub trait ExecutionContext: ValidationContext {
             }
         }
     }
-
-    /// Called upon successful client creation
-    fn store_client_type(
-        &mut self,
-        client_type_path: ClientTypePath,
-        client_type: ClientType,
-    ) -> Result<(), ContextError>;
 
     /// Called upon successful client creation and update
     fn store_client_state(

@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## v0.38.0
+
+*April 24, 2023*
+
+This release involves splitting the newly defined `MsgUpdateClient` type in
+v0.37.0 into distinct IBC message structs: `MsgUpdateClient` and
+`MsgSubmitMisbehaviour`. Additionally, we made improvements to the `Version`
+validations in connection and channel handshakes, discarded now-unused
+`store_client_type` interface, and removed `IbcEventType` to enable each IBC
+event variant to define its own set of event types.
+
+There are consensus-breaking changes
+
+### BREAKING CHANGES
+
+- Remove `store_client_type` interface as it is not included in the IBC spec anymore.
+  ([#592](https://github.com/cosmos/ibc-rs/issues/592))
+- Code clean-up remained from v0.37.0 release
+- ([#622](https://github.com/cosmos/ibc-rs/issues/622))
+- Remove `IbcEventType` ([#623](https://github.com/cosmos/ibc-rs/issues/623))
+- Split `MsgUpdateClient` back into `MsgUpdateClient` and `MsgSubmitMisbehaviour`
+  ([#628](https://github.com/cosmos/ibc-rs/issues/628))
+- Refactor and fix version validation in connection and channel handshakes
+  ([#625](https://github.com/cosmos/ibc-rs/issues/625))
+
+### IMPROVEMENTS
+
+- Make token transfer events compatible with latest ibc-go
+  ([#495](https://github.com/cosmos/ibc-rs/pull/495))
+
 ## v0.37.0
 
 *April 13, 2023*

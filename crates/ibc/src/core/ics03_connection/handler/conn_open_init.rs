@@ -3,13 +3,12 @@ use crate::prelude::*;
 
 use crate::core::context::ContextError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
-use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{ClientConnectionPath, ConnectionPath};
 use crate::core::{ExecutionContext, ValidationContext};
-use crate::events::IbcEvent;
+use crate::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
@@ -20,9 +19,7 @@ where
     client_state_of_b_on_a.confirm_not_frozen()?;
 
     if let Some(version) = msg.version {
-        if !ctx_a.get_compatible_versions().contains(&version) {
-            return Err(ConnectionError::VersionNotSupported { version }.into());
-        }
+        version.verify_is_supported(&ctx_a.get_compatible_versions())?;
     }
 
     Ok(())
@@ -32,16 +29,12 @@ pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenInit) -> Resul
 where
     Ctx: ExecutionContext,
 {
-    let versions = match msg.version {
-        Some(version) => {
-            if ctx_a.get_compatible_versions().contains(&version) {
-                Ok(vec![version])
-            } else {
-                Err(ConnectionError::VersionNotSupported { version })
-            }
-        }
-        None => Ok(ctx_a.get_compatible_versions()),
-    }?;
+    let versions = if let Some(version) = msg.version {
+        version.verify_is_supported(&ctx_a.get_compatible_versions())?;
+        vec![version]
+    } else {
+        ctx_a.get_compatible_versions()
+    };
 
     let conn_end_on_a = ConnectionEnd::new(
         State::Init,
@@ -53,7 +46,8 @@ where
         ),
         versions,
         msg.delay_period,
-    );
+    )
+    .unwrap();
 
     // Construct the identifier for the new connection.
     let conn_id_on_a = ConnectionId::new(ctx_a.connection_counter()?);
@@ -70,7 +64,7 @@ where
             msg.client_id_on_a.clone(),
             client_id_on_b,
         ));
-        ctx_a.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection));
         ctx_a.emit_ibc_event(event);
     }
 
@@ -92,7 +86,7 @@ mod tests {
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::version::Version;
-    use crate::events::{IbcEvent, IbcEventType};
+    use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::Height;
     use test_log::test;
@@ -162,7 +156,7 @@ mod tests {
 
                 assert!(matches!(
                     fxt.ctx.events[0],
-                    IbcEvent::Message(IbcEventType::OpenInitConnection)
+                    IbcEvent::Message(MessageEvent::Connection)
                 ));
                 let event = &fxt.ctx.events[1];
                 assert!(matches!(event, &IbcEvent::OpenInitConnection(_)));
