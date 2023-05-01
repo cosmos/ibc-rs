@@ -9,6 +9,8 @@ pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenInit) -> Result<(), Contex
 where
     Ctx: ValidationContext,
 {
+    ctx_a.validate_message_signer(&msg.signer)?;
+
     // An IBC connection running on the local (host) chain should exist.
     let conn_end_on_a = ctx_a.connection_end(&msg.connection_hops_on_a[0])?;
 

@@ -2,7 +2,6 @@ use crate::core::ics02_client::error as client_error;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-use crate::signer::SignerError;
 use crate::timestamp::{Timestamp, TimestampOverflowError};
 use crate::Height;
 
@@ -49,8 +48,8 @@ pub enum ConnectionError {
     InvalidProof,
     /// verifying connection state error: `{0}`
     VerifyConnectionState(client_error::ClientError),
-    /// invalid signer error: `{0}`
-    Signer(SignerError),
+    /// invalid signer error: `{reason}`
+    InvalidSigner { reason: String },
     /// no connection was found for the previous connection id provided `{connection_id}`
     ConnectionNotFound { connection_id: ConnectionId },
     /// invalid counterparty
@@ -95,7 +94,6 @@ impl std::error::Error for ConnectionError {
             Self::Client(e) => Some(e),
             Self::InvalidIdentifier(e) => Some(e),
             Self::VerifyConnectionState(e) => Some(e),
-            Self::Signer(e) => Some(e),
             Self::ConsensusStateVerificationFailure {
                 client_error: e, ..
             } => Some(e),

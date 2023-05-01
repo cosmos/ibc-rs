@@ -677,7 +677,9 @@ impl RelayerContext for MockContext {
     }
 
     fn signer(&self) -> Signer {
-        "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C".parse().unwrap()
+        "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C"
+            .to_string()
+            .into()
     }
 }
 
@@ -1107,6 +1109,10 @@ impl ValidationContext for MockContext {
     fn max_expected_time_per_block(&self) -> Duration {
         self.block_time
     }
+
+    fn validate_message_signer(&self, _signer: &Signer) -> Result<(), ContextError> {
+        Ok(())
+    }
 }
 
 impl ExecutionContext for MockContext {
@@ -1388,7 +1394,7 @@ impl TokenTransferValidationContext for MockContext {
         channel_id: &ChannelId,
     ) -> Result<Self::AccountId, TokenTransferError> {
         let addr = cosmos_adr028_escrow_address(port_id, channel_id);
-        Ok(bech32::encode("cosmos", addr).parse().unwrap())
+        Ok(bech32::encode("cosmos", addr).into())
     }
 
     fn can_send_coins(&self) -> Result<(), TokenTransferError> {
@@ -1829,10 +1835,8 @@ mod tests {
         let mut on_recv_packet_result = |module_id: &'static str| {
             let module_id = ModuleId::from_str(module_id).unwrap();
             let m = ctx.get_route_mut(&module_id).unwrap();
-            let result = m.on_recv_packet_execute(
-                &Packet::default(),
-                &get_dummy_bech32_account().parse().unwrap(),
-            );
+            let result =
+                m.on_recv_packet_execute(&Packet::default(), &get_dummy_bech32_account().into());
             (module_id, result)
         };
 

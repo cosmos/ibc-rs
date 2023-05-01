@@ -29,6 +29,8 @@ fn validate_impl<Ctx>(
 where
     Ctx: ValidationContext,
 {
+    ctx_b.validate_message_signer(&msg.signer)?;
+
     let conn_end_on_b = vars.conn_end_on_b();
 
     conn_end_on_b.verify_state_matches(&State::TryOpen)?;

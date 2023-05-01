@@ -75,11 +75,8 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
                     .ok_or(TokenTransferError::InvalidToken)?
                     .try_into()
                     .map_err(|_| TokenTransferError::InvalidToken)?,
-                sender: raw_msg.sender.parse().map_err(TokenTransferError::Signer)?,
-                receiver: raw_msg
-                    .receiver
-                    .parse()
-                    .map_err(TokenTransferError::Signer)?,
+                sender: raw_msg.sender.into(),
+                receiver: raw_msg.receiver.into(),
             },
             timeout_height_on_b,
             timeout_timestamp_on_b,
@@ -143,7 +140,7 @@ pub mod test_util {
         timeout_height: TimeoutHeight,
         timeout_timestamp: Option<Timestamp>,
     ) -> MsgTransfer {
-        let address: Signer = get_dummy_bech32_account().as_str().parse().unwrap();
+        let address: Signer = get_dummy_bech32_account().into();
         MsgTransfer {
             port_id_on_a: PortId::default(),
             chan_id_on_a: ChannelId::default(),

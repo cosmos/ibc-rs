@@ -54,7 +54,7 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
             connection_hops_on_a: chan_end_on_a.connection_hops,
             port_id_on_b: chan_end_on_a.remote.port_id,
             ordering: chan_end_on_a.ordering,
-            signer: raw_msg.signer.parse().map_err(ChannelError::Signer)?,
+            signer: raw_msg.signer.into(),
             version_proposal: chan_end_on_a.version,
         })
     }

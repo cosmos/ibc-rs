@@ -13,6 +13,8 @@ pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), Context
 where
     Ctx: ValidationContext,
 {
+    ctx_b.validate_message_signer(&msg.signer)?;
+
     // Note: Verify that the provided message contains only one connection end
     // has been done during the conversion from the proto to the domain type.
 

@@ -11,6 +11,7 @@ use crate::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
 use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::signer::Signer;
 
 pub mod create_client;
 pub mod misbehaviour;
@@ -43,6 +44,13 @@ impl MsgUpdateOrMisbehaviour {
         match self {
             MsgUpdateOrMisbehaviour::UpdateClient(msg) => msg.header,
             MsgUpdateOrMisbehaviour::Misbehaviour(msg) => msg.misbehaviour,
+        }
+    }
+
+    pub(crate) fn signer(&self) -> &Signer {
+        match self {
+            MsgUpdateOrMisbehaviour::UpdateClient(msg) => &msg.signer,
+            MsgUpdateOrMisbehaviour::Misbehaviour(msg) => &msg.signer,
         }
     }
 }
