@@ -7,10 +7,11 @@ use ibc_proto::protobuf::Error as TendermintProtoError;
 use crate::core::ics23_commitment::error::CommitmentError;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::identifier::ClientType;
 use crate::signer::SignerError;
 use crate::timestamp::Timestamp;
 use crate::Height;
+
+use super::client_type::ClientType;
 
 #[derive(Debug, Display)]
 pub enum ClientError {

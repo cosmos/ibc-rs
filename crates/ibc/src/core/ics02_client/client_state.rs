@@ -10,13 +10,14 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
-use crate::core::ics24_host::identifier::{ChainId, ClientId, ClientType};
+use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::Path;
 use crate::dynamic_typing::AsAny;
 use crate::erased::ErasedSerialize;
 use crate::prelude::*;
 use crate::Height;
 
+use super::client_type::ClientType;
 use super::consensus_state::ConsensusState;
 
 use crate::core::{ExecutionContext, ValidationContext};

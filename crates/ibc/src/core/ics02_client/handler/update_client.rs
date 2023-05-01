@@ -106,12 +106,13 @@ mod tests {
     use crate::clients::ics07_tendermint::header::Header as TmHeader;
     use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
     use crate::core::ics02_client::client_state::ClientState;
+    use crate::core::ics02_client::client_type::ClientType;
     use crate::core::ics02_client::consensus_state::ConsensusState;
     use crate::core::ics02_client::handler::update_client::{execute, validate};
     use crate::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
     use crate::core::ics23_commitment::specs::ProofSpecs;
-    use crate::core::ics24_host::identifier::{ChainId, ClientId, ClientType};
+    use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ValidationContext;
     use crate::downcast;
     use crate::events::IbcEvent;

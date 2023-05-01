@@ -6,6 +6,7 @@ use crate::applications::transfer::context::{
 use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::PrefixedCoin;
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
+use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
@@ -38,9 +39,7 @@ use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCo
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-use crate::core::ics24_host::identifier::{
-    ChainId, ChannelId, ClientId, ClientType, ConnectionId, PortId,
-};
+use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{Module, ModuleId};
 use crate::core::ics26_routing::msgs::MsgEnvelope;
 use crate::core::{dispatch, ExecutionContext, ValidationContext};

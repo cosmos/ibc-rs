@@ -307,7 +307,7 @@ impl From<OpenConfirm> for abci::Event {
 mod tests {
 
     use super::*;
-    use crate::core::ics24_host::identifier::ClientType;
+    use crate::core::ics02_client::client_type::ClientType;
     use tendermint::abci::Event as AbciEvent;
 
     #[test]

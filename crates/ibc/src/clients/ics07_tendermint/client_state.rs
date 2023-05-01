@@ -1,6 +1,7 @@
 mod misbehaviour;
 mod update_client;
 
+use crate::core::ics02_client::client_type::ClientType;
 use crate::prelude::*;
 
 use core::cmp::max;
@@ -36,7 +37,7 @@ use crate::core::ics23_commitment::commitment::{
 };
 use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
-use crate::core::ics24_host::identifier::{ChainId, ClientId, ClientType};
+use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ClientUpgradePath};
 use crate::core::ics24_host::Path;
 use crate::timestamp::ZERO_DURATION;

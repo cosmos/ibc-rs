@@ -3,7 +3,7 @@
 
 use alloc::string::ToString;
 
-use crate::core::ics24_host::identifier::ClientType;
+use crate::core::ics02_client::client_type::ClientType;
 
 pub mod client_state;
 pub mod consensus_state;

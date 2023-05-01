@@ -8,7 +8,8 @@ use tendermint::abci;
 
 use crate::core::ics02_client::height::Height;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::identifier::ClientType;
+
+use super::client_type::ClientType;
 
 /// Client event types
 const CREATE_CLIENT_EVENT: &str = "create_client";
