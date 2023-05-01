@@ -9,7 +9,6 @@ use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::ContextError;
 use crate::prelude::*;
-use crate::signer::SignerError;
 
 #[derive(Display, Debug)]
 pub enum TokenTransferError {
@@ -52,8 +51,6 @@ pub enum TokenTransferError {
     InvalidAmount(FromDecStrErr),
     /// invalid token
     InvalidToken,
-    /// failed to parse signer error: `{0}`
-    Signer(SignerError),
     /// expected `{expect_order}` channel, got `{got_order}`
     ChannelNotUnordered {
         expect_order: Order,
@@ -108,7 +105,6 @@ impl std::error::Error for TokenTransferError {
                 ..
             } => Some(e),
             Self::InvalidAmount(e) => Some(e),
-            Self::Signer(e) => Some(e),
             Self::DecodeRawMsg(e) => Some(e),
             Self::Utf8Decode(e) => Some(e),
             _ => None,

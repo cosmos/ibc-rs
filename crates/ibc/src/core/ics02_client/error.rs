@@ -8,7 +8,6 @@ use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics23_commitment::error::CommitmentError;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::signer::SignerError;
 use crate::timestamp::Timestamp;
 use crate::Height;
 
@@ -104,8 +103,8 @@ pub enum ClientError {
     },
     /// the local consensus state could not be retrieved for height `{height}`
     MissingLocalConsensusState { height: Height },
-    /// failed to parse signer error: `{0}`
-    Signer(SignerError),
+    /// invalid signer error: `{reason}`
+    InvalidSigner { reason: String },
     /// ics23 verification failure error: `{0}`
     Ics23Verification(CommitmentError),
     /// misbehaviour handling failed with reason: `{reason}`
@@ -143,7 +142,6 @@ impl std::error::Error for ClientError {
             Self::InvalidUpgradeConsensusStateProof(e) => Some(e),
             Self::InvalidCommitmentProof(e) => Some(e),
             Self::InvalidPacketTimestamp(e) => Some(e),
-            Self::Signer(e) => Some(e),
             Self::Ics23Verification(e) => Some(e),
             _ => None,
         }

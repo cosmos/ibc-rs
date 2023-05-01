@@ -10,6 +10,7 @@ mod recv_packet;
 mod timeout;
 
 use crate::prelude::*;
+use crate::signer::Signer;
 
 use self::chan_close_confirm::{chan_close_confirm_execute, chan_close_confirm_validate};
 use self::chan_close_init::{chan_close_init_execute, chan_close_init_validate};
@@ -376,6 +377,10 @@ pub trait ValidationContext: Router {
     fn block_delay(&self, delay_period_time: &Duration) -> u64 {
         calculate_block_delay(delay_period_time, &self.max_expected_time_per_block())
     }
+
+    /// Validates the `signer` field of IBC messages, which represents the address
+    /// of the user/relayer that signed the given message.
+    fn validate_message_signer(&self, signer: &Signer) -> Result<(), ContextError>;
 }
 
 pub trait ExecutionContext: ValidationContext {

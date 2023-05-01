@@ -8,7 +8,6 @@ use crate::core::ics05_port::error as port_error;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
 use crate::prelude::*;
-use crate::signer::SignerError;
 use crate::timestamp::Timestamp;
 use crate::Height;
 
@@ -26,8 +25,8 @@ pub enum ChannelError {
     InvalidChannelEnd { channel_end: String },
     /// invalid connection hops length: expected `{expected}`; actual `{actual}`
     InvalidConnectionHopsLength { expected: usize, actual: usize },
-    /// invalid signer address error: `{0}`
-    Signer(SignerError),
+    /// invalid signer error: `{reason}`
+    InvalidSigner { reason: String },
     /// invalid proof: missing height
     MissingHeight,
     /// packet data bytes must be valid UTF-8 (this restriction will be lifted in the future)
@@ -140,8 +139,8 @@ pub enum PacketError {
     MissingHeight,
     /// there is no packet in this message
     MissingPacket,
-    /// invalid signer address error: `{0}`
-    Signer(SignerError),
+    /// invalid signer error: `{reason}`
+    InvalidSigner { reason: String },
     /// application module error: `{description}`
     AppModule { description: String },
     /// route not found
@@ -188,7 +187,6 @@ impl std::error::Error for PacketError {
         match &self {
             Self::Connection(e) => Some(e),
             Self::Channel(e) => Some(e),
-            Self::Signer(e) => Some(e),
             Self::Identifier(e) => Some(e),
             _ => None,
         }
@@ -201,7 +199,6 @@ impl std::error::Error for ChannelError {
         match &self {
             Self::Port(e) => Some(e),
             Self::Identifier(e) => Some(e),
-            Self::Signer(e) => Some(e),
             Self::PacketVerificationFailed {
                 client_error: e, ..
             } => Some(e),
