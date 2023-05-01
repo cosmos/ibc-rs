@@ -18,7 +18,7 @@ pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgAcknowledgement) -> Result<(), Contex
 where
     Ctx: ValidationContext,
 {
-    ctx_a.validate_signer(&msg.signer)?;
+    ctx_a.validate_message_signer(&msg.signer)?;
 
     let packet = &msg.packet;
     let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);

@@ -29,7 +29,7 @@ where
         signer,
     } = msg;
 
-    ctx.validate_signer(&signer)?;
+    ctx.validate_message_signer(&signer)?;
 
     // Construct this client's identifier
     let id_counter = ctx.client_counter()?;

@@ -32,7 +32,7 @@ fn validate_impl<Ctx>(
 where
     Ctx: ValidationContext,
 {
-    ctx_a.validate_signer(&msg.signer)?;
+    ctx_a.validate_message_signer(&msg.signer)?;
 
     let host_height = ctx_a.host_height().map_err(|_| ConnectionError::Other {
         description: "failed to get host height".to_string(),

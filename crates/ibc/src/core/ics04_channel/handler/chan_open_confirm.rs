@@ -13,7 +13,7 @@ pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenConfirm) -> Result<(), Con
 where
     Ctx: ValidationContext,
 {
-    ctx_b.validate_signer(&msg.signer)?;
+    ctx_b.validate_message_signer(&msg.signer)?;
 
     // Unwrap the old channel end and validate it against the message.
     let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);

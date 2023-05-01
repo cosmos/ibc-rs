@@ -10,7 +10,7 @@ pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenInit) -> Result<(), Contex
 where
     Ctx: ValidationContext,
 {
-    ctx_a.validate_signer(&msg.signer)?;
+    ctx_a.validate_message_signer(&msg.signer)?;
 
     if msg.connection_hops_on_a.len() != 1 {
         return Err(ChannelError::InvalidConnectionHopsLength {

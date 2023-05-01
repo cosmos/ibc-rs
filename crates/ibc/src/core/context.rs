@@ -378,9 +378,9 @@ pub trait ValidationContext: Router {
         calculate_block_delay(delay_period_time, &self.max_expected_time_per_block())
     }
 
-    /// Allows hosts to implement whatever validation they believe is necessary
-    /// for the given signer by an IBC message.
-    fn validate_signer(&self, signer: &Signer) -> Result<(), ContextError>;
+    /// Validates the `signer` field of IBC messages, which represents the address
+    /// of the user/relayer that signed the given message.
+    fn validate_message_signer(&self, signer: &Signer) -> Result<(), ContextError>;
 }
 
 pub trait ExecutionContext: ValidationContext {

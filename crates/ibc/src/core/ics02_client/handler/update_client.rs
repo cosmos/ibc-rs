@@ -16,7 +16,7 @@ pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(
 where
     Ctx: ValidationContext,
 {
-    ctx.validate_signer(msg.signer())?;
+    ctx.validate_message_signer(msg.signer())?;
 
     let client_id = msg.client_id().clone();
     let update_kind = match msg {

@@ -17,7 +17,7 @@ pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextErro
 where
     Ctx: ValidationContext,
 {
-    ctx_b.validate_signer(&msg.signer)?;
+    ctx_b.validate_message_signer(&msg.signer)?;
 
     let chan_end_path_on_b =
         ChannelEndPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);

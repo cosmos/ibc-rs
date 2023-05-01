@@ -35,7 +35,7 @@ fn validate_impl<Ctx>(
 where
     Ctx: ValidationContext,
 {
-    ctx_b.validate_signer(&msg.signer)?;
+    ctx_b.validate_message_signer(&msg.signer)?;
 
     ctx_b.validate_self_client(msg.client_state_of_b_on_a.clone())?;
 

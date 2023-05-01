@@ -1109,7 +1109,7 @@ impl ValidationContext for MockContext {
         self.block_time
     }
 
-    fn validate_signer(&self, _signer: &Signer) -> Result<(), ContextError> {
+    fn validate_message_signer(&self, _signer: &Signer) -> Result<(), ContextError> {
         Ok(())
     }
 }
