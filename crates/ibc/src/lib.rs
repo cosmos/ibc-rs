@@ -48,7 +48,6 @@ mod prelude;
 pub mod applications;
 pub mod clients;
 pub mod core;
-pub mod dynamic_typing;
 mod erased;
 pub mod events;
 pub mod hosts;

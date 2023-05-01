@@ -4,8 +4,8 @@ use dyn_clone::DynClone;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 
+use crate::clients::AsAny;
 use crate::core::ics02_client::error::ClientError;
-use crate::dynamic_typing::AsAny;
 use crate::erased::ErasedSerialize;
 use crate::timestamp::Timestamp;
 use crate::Height;

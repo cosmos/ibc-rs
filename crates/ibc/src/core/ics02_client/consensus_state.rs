@@ -1,3 +1,4 @@
+use crate::clients::AsAny;
 use crate::prelude::*;
 
 use core::marker::{Send, Sync};
@@ -8,7 +9,6 @@ use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
-use crate::dynamic_typing::AsAny;
 use crate::erased::ErasedSerialize;
 use crate::timestamp::Timestamp;
 
