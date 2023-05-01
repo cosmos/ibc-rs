@@ -12,7 +12,7 @@ const VALID_SPECIAL_CHARS: &str = "._+-#[]<>";
 /// max length as specified in the
 /// [`ICS-24`](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#paths-identifiers-separators)]
 /// spec.
-pub fn validate_default_identifier(id: &str, min: usize, max: usize) -> Result<(), Error> {
+pub fn validate_identifier(id: &str, min: usize, max: usize) -> Result<(), Error> {
     assert!(max >= min);
 
     // Check identifier is not empty
@@ -50,8 +50,8 @@ pub fn validate_default_identifier(id: &str, min: usize, max: usize) -> Result<(
     Ok(())
 }
 
-/// Checks if the prefix is valid and can form valid domain identifiers.
-pub fn validate_prefix_identifier(
+/// Checks if the prefix can form a valid identifier with the given min/max identifier's length.
+fn validate_prefix_epoch_format(
     prefix: &str,
     min_id_length: usize,
     max_id_length: usize,
@@ -61,23 +61,15 @@ pub fn validate_prefix_identifier(
         return Err(Error::Empty)?;
     }
 
-    // Checks of the prefix does not end with a dash
-    let re = safe_regex::regex!(br".*[^-]");
-    if !re.is_match(prefix.as_bytes()) {
-        return Err(Error::InvalidPrefix {
-            prefix: prefix.to_string(),
-        })?;
-    }
-
-    // Checks if the prefix forms a valid default identifier when used with `0`
-    validate_default_identifier(
+    // Checks if the prefix forms a valid identifier when used with `0`
+    validate_identifier(
         &format!("{prefix}-{}", u64::MIN),
         min_id_length,
         max_id_length,
     )?;
 
-    // Checks if the prefix forms a valid default identifier when used with `u64::MAX`
-    validate_default_identifier(
+    // Checks if the prefix forms a valid identifier when used with `u64::MAX`
+    validate_identifier(
         &format!("{prefix}-{}", u64::MAX),
         min_id_length,
         max_id_length,
@@ -86,25 +78,9 @@ pub fn validate_prefix_identifier(
     Ok(())
 }
 
-/// Checks if the identifier is of valid format and can be parsed into the
-/// correct domain identifier type.
-pub fn validate_identifier(id: &str, min: usize, max: usize) -> Result<(), Error> {
-    let split_id: Vec<_> = id.split('-').collect();
-    let last_index = split_id.len() - 1;
-    let prefix = split_id[..last_index].join("-");
-
-    validate_prefix_identifier(prefix.trim(), min, max)?;
-
-    split_id[last_index]
-        .parse::<u64>()
-        .map_err(|_| Error::InvalidCharacter { id: id.into() })?;
-
-    Ok(())
-}
-
 /// Default validator function for the Client types.
 pub fn validate_client_type(id: &str) -> Result<(), Error> {
-    validate_prefix_identifier(id, 9, 64)
+    validate_prefix_epoch_format(id, 9, 64)
 }
 
 /// Default validator function for Client identifiers.
@@ -120,7 +96,7 @@ pub fn validate_client_identifier(id: &str) -> Result<(), Error> {
 /// A valid connection identifier must be between 10-64 characters as specified
 /// in the ICS-24 spec.
 pub fn validate_connection_identifier(id: &str) -> Result<(), Error> {
-    validate_default_identifier(id, 10, 64)
+    validate_identifier(id, 10, 64)
 }
 
 /// Default validator function for Port identifiers.
@@ -128,7 +104,7 @@ pub fn validate_connection_identifier(id: &str) -> Result<(), Error> {
 /// A valid port identifier must be between 2-128 characters as specified in the
 /// ICS-24 spec.
 pub fn validate_port_identifier(id: &str) -> Result<(), Error> {
-    validate_default_identifier(id, 2, 128)
+    validate_identifier(id, 2, 128)
 }
 
 /// Default validator function for Channel identifiers.
@@ -136,14 +112,14 @@ pub fn validate_port_identifier(id: &str) -> Result<(), Error> {
 /// A valid channel identifier must be between 8-64 characters as specified in
 /// the ICS-24 spec.
 pub fn validate_channel_identifier(id: &str) -> Result<(), Error> {
-    validate_default_identifier(id, 8, 64)
+    validate_identifier(id, 8, 64)
 }
 
 #[cfg(test)]
 mod tests {
     use crate::core::ics24_host::validate::{
         validate_channel_identifier, validate_client_identifier, validate_client_type,
-        validate_connection_identifier, validate_default_identifier, validate_port_identifier,
+        validate_connection_identifier, validate_identifier, validate_port_identifier,
     };
     use test_log::test;
 
@@ -214,21 +190,21 @@ mod tests {
     #[test]
     fn parse_invalid_id_chars() {
         // invalid id chars
-        let id = validate_default_identifier("channel@01", 1, 10);
+        let id = validate_identifier("channel@01", 1, 10);
         assert!(id.is_err())
     }
 
     #[test]
     fn parse_invalid_id_empty() {
         // invalid id empty
-        let id = validate_default_identifier("", 1, 10);
+        let id = validate_identifier("", 1, 10);
         assert!(id.is_err())
     }
 
     #[test]
     fn parse_invalid_id_path_separator() {
         // invalid id with path separator
-        let id = validate_default_identifier("id/1", 1, 10);
+        let id = validate_identifier("id/1", 1, 10);
         assert!(id.is_err())
     }
 
@@ -236,12 +212,6 @@ mod tests {
     fn parse_healthy_client_type() {
         let id = validate_client_type("07-tendermint");
         assert!(id.is_ok())
-    }
-
-    #[test]
-    fn parse_faulty_client_type() {
-        let id = validate_client_type("07-tendermint-");
-        assert!(id.is_err())
     }
 
     #[test]

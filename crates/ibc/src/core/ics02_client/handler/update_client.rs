@@ -157,13 +157,13 @@ mod tests {
 
     #[test]
     fn test_update_nonexisting_client() {
-        let client_id = ClientId::from_str("mockclient-1").unwrap();
+        let client_id = ClientId::from_str("mockclient1").unwrap();
         let signer = get_dummy_account_id();
 
         let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
 
         let msg = MsgUpdateClient {
-            client_id: ClientId::from_str("nonexistingclient-0").unwrap(),
+            client_id: ClientId::from_str("nonexistingclient").unwrap(),
             header: MockHeader::new(Height::new(0, 46).unwrap()).into(),
             signer,
         };
@@ -510,10 +510,10 @@ mod tests {
     /// Tests misbehaviour handling failure for a non-existent client
     #[test]
     fn test_misbehaviour_nonexisting_client() {
-        let client_id = ClientId::from_str("mockclient-1").unwrap();
+        let client_id = ClientId::from_str("mockclient").unwrap();
         let height = Height::new(0, 46).unwrap();
         let msg = MsgSubmitMisbehaviour {
-            client_id: ClientId::from_str("nonexistingclient-0").unwrap(),
+            client_id: ClientId::from_str("nonexistingclient").unwrap(),
             misbehaviour: MockMisbehaviour {
                 client_id: client_id.clone(),
                 header1: MockHeader::new(height),

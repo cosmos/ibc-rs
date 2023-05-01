@@ -209,6 +209,7 @@ impl ClientId {
     /// ```
     pub fn new(client_type: ClientType, counter: u64) -> Result<Self, ValidationError> {
         let prefix = client_type.as_str().trim();
+        validate_client_type(prefix)?;
         let id = format!("{prefix}-{counter}");
         Self::from_str(id.as_str())
     }
