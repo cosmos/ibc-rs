@@ -215,13 +215,13 @@ mod tests {
     }
 
     #[test]
-    fn parse_short_client_type() {
+    fn parse_invalid_short_client_type() {
         let id = validate_client_type("<7Char");
         assert!(id.is_err())
     }
 
     #[test]
-    fn parse_lengthy_client_type() {
+    fn parse_invalid_lengthy_client_type() {
         let id = validate_client_type("InvalidClientTypeWithLengthOfClientId>65Char");
         assert!(id.is_err())
     }

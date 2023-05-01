@@ -1,7 +1,6 @@
 mod misbehaviour;
 mod update_client;
 
-use crate::core::ics02_client::client_type::ClientType;
 use crate::prelude::*;
 
 use core::cmp::max;
@@ -29,6 +28,7 @@ use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehavio
 use crate::core::ics02_client::client_state::{
     ClientState as Ics2ClientState, UpdateKind, UpdatedState,
 };
+use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::trust_threshold::TrustThreshold;

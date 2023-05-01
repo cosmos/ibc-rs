@@ -203,7 +203,7 @@ impl ClientId {
     /// ```
     /// # use ibc::core::ics24_host::identifier::ClientId;
     /// # use ibc::core::ics02_client::client_type::ClientType;
-    /// let tm_client_id = ClientId::new(ClientType::new("07-tendermint".to_string()).unwrap(), 0);
+    /// let tm_client_id = ClientId::new(ClientType::from("07-tendermint".to_string()), 0);
     /// assert!(tm_client_id.is_ok());
     /// tm_client_id.map(|id| { assert_eq!(&id, "07-tendermint-0") });
     /// ```
@@ -250,9 +250,9 @@ impl Default for ClientId {
 /// ```
 /// use core::str::FromStr;
 /// use ibc::core::ics24_host::identifier::ClientId;
-/// let client_id = ClientId::from_str("clientid-0");
+/// let client_id = ClientId::from_str("clientidtwo");
 /// assert!(client_id.is_ok());
-/// client_id.map(|id| {assert_eq!(&id, "clientid-0")});
+/// client_id.map(|id| {assert_eq!(&id, "clientidtwo")});
 /// ```
 impl PartialEq<str> for ClientId {
     fn eq(&self, other: &str) -> bool {

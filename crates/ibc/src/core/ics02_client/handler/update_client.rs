@@ -510,7 +510,7 @@ mod tests {
     /// Tests misbehaviour handling failure for a non-existent client
     #[test]
     fn test_misbehaviour_nonexisting_client() {
-        let client_id = ClientId::from_str("mockclient").unwrap();
+        let client_id = ClientId::from_str("mockclient1").unwrap();
         let height = Height::new(0, 46).unwrap();
         let msg = MsgSubmitMisbehaviour {
             client_id: ClientId::from_str("nonexistingclient").unwrap(),

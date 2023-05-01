@@ -6,10 +6,9 @@ use ibc_proto::google::protobuf::Any;
 use subtle_encoding::hex;
 use tendermint::abci;
 
+use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::height::Height;
 use crate::core::ics24_host::identifier::ClientId;
-
-use super::client_type::ClientType;
 
 /// Client event types
 const CREATE_CLIENT_EVENT: &str = "create_client";
