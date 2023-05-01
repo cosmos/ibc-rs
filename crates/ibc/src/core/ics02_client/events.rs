@@ -429,7 +429,7 @@ mod tests {
             expected_values: Vec<&'static str>,
         }
 
-        let client_type = ClientType::new_unchecked("07-tendermint".to_string());
+        let client_type = ClientType::from("07-tendermint".to_string());
         let client_id = ClientId::new(client_type.clone(), 0).unwrap();
         let consensus_height = Height::new(0, 5).unwrap();
         let consensus_heights = vec![Height::new(0, 5).unwrap(), Height::new(0, 7).unwrap()];

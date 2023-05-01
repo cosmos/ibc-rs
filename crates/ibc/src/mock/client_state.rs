@@ -31,7 +31,7 @@ pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
 pub const MOCK_CLIENT_TYPE: &str = "9999-mock";
 
 pub fn client_type() -> ClientType {
-    ClientType::new_unchecked(MOCK_CLIENT_TYPE.to_string())
+    ClientType::from(MOCK_CLIENT_TYPE.to_string())
 }
 
 /// A mock of an IBC client record as it is stored in a mock context.

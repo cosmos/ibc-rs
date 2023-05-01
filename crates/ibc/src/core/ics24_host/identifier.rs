@@ -196,11 +196,6 @@ impl From<String> for ChainId {
 pub struct ClientType(String);
 
 impl ClientType {
-    /// Constructs a new instance without performing any validation primarily for use in testing.
-    pub(crate) fn new_unchecked(s: String) -> Self {
-        Self(s)
-    }
-
     /// Constructs a new `ClientType` from the given `String` if it ends with a valid client identifier.
     pub fn new(s: String) -> Result<Self, ValidationError> {
         let s_trim = s.trim();
@@ -211,6 +206,13 @@ impl ClientType {
     /// Yields this identifier as a borrowed `&str`
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+
+impl From<String> for ClientType {
+    /// Constructs a new `ClientType` from the given `String` without performing any validation.
+    fn from(value: String) -> Self {
+        Self(value)
     }
 }
 
