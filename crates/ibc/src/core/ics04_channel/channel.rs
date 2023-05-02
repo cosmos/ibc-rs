@@ -272,15 +272,6 @@ impl ChannelEnd {
     pub fn version_matches(&self, other: &Version) -> bool {
         self.version().eq(other)
     }
-
-    pub(crate) fn proto_encode_vec(&self) -> Result<Vec<u8>, ChannelError> {
-        let value = self
-            .encode_vec()
-            .map_err(|_| ChannelError::InvalidChannelEnd {
-                channel_end: self.to_string(),
-            })?;
-        Ok(value)
-    }
 }
 
 #[cfg_attr(

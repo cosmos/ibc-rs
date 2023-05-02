@@ -52,7 +52,7 @@ mocks-no-std = ["cfg-if"]
 
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
-ibc-proto = { version = "0.26.0", default-features = false, features = ["parity-scale-codec", "borsh"] }
+ibc-proto = { version = "0.29.0", default-features = false, features = ["parity-scale-codec", "borsh"] }
 ics23 = { version = "0.9.0", default-features = false, features = ["host-functions"] }
 time = { version = ">=0.3.0, <0.3.21", default-features = false }
 serde_derive = { version = "1.0.104", default-features = false, optional = true }
@@ -80,20 +80,20 @@ parking_lot = { version = "0.12.1", default-features = false, optional = true }
 cfg-if = { version = "1.0.0", optional = true }
 
 [dependencies.tendermint]
-version = "0.29"
+version = "0.30"
 default-features = false
 
 [dependencies.tendermint-proto]
-version = "0.29"
+version = "0.30"
 default-features = false
 
 [dependencies.tendermint-light-client-verifier]
-version = "0.29"
+version = "0.30"
 default-features = false
 features = ["rust-crypto"]
 
 [dependencies.tendermint-testgen]
-version = "0.29"
+version = "0.30"
 optional = true
 default-features = false
 
@@ -102,7 +102,7 @@ env_logger = "0.10.0"
 rstest = "0.16.0"
 tracing-subscriber = { version = "0.3.14", features = ["fmt", "env-filter", "json"]}
 test-log = { version = "0.2.10", features = ["trace"] }
-tendermint-rpc = { version = "0.29", features = ["http-client", "websocket-client"] }
-tendermint-testgen = { version = "0.29" } # Needed for generating (synthetic) light blocks.
+tendermint-rpc = { version = "0.30", features = ["http-client", "websocket-client"] }
+tendermint-testgen = { version = "0.30" } # Needed for generating (synthetic) light blocks.
 parking_lot = { version = "0.12.1" }
 cfg-if = { version = "1.0.0" }

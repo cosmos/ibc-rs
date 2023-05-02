@@ -1,3 +1,4 @@
+use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
@@ -116,7 +117,7 @@ where
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 Path::ChannelEnd(chan_end_path_on_b),
-                expected_chan_end_on_b.proto_encode_vec()?,
+                expected_chan_end_on_b.encode_vec(),
             )
             .map_err(ChannelError::VerifyChannelFailed)
             .map_err(PacketError::Channel)?;

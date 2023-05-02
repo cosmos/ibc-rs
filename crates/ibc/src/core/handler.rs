@@ -223,6 +223,7 @@ mod tests {
                 },
                 sender: msg_transfer_two.packet_data.sender.clone(),
                 receiver: msg_transfer_two.packet_data.receiver.clone(),
+                memo: "".to_owned().into(),
             };
             serde_json::to_vec(&data).expect("PacketData's infallible Serialize impl failed")
         };

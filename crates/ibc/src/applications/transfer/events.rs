@@ -4,6 +4,8 @@ use crate::core::events::ModuleEvent;
 use crate::prelude::*;
 use crate::signer::Signer;
 
+use super::Memo;
+
 const EVENT_TYPE_PACKET: &str = "fungible_token_packet";
 const EVENT_TYPE_TIMEOUT: &str = "timeout";
 const EVENT_TYPE_DENOM_TRACE: &str = "denomination_trace";
@@ -23,6 +25,7 @@ pub struct RecvEvent {
     pub receiver: Signer,
     pub denom: PrefixedDenom,
     pub amount: Amount,
+    pub memo: Memo,
     pub success: bool,
 }
 
@@ -33,6 +36,7 @@ impl From<RecvEvent> for ModuleEvent {
             receiver,
             denom,
             amount,
+            memo,
             success,
         } = ev;
         Self {
@@ -43,6 +47,7 @@ impl From<RecvEvent> for ModuleEvent {
                 ("receiver", receiver).into(),
                 ("denom", denom).into(),
                 ("amount", amount).into(),
+                ("memo", memo).into(),
                 ("success", success).into(),
             ],
         }
@@ -54,6 +59,7 @@ pub struct AckEvent {
     pub receiver: Signer,
     pub denom: PrefixedDenom,
     pub amount: Amount,
+    pub memo: Memo,
     pub acknowledgement: TokenTransferAcknowledgement,
 }
 
@@ -64,6 +70,7 @@ impl From<AckEvent> for ModuleEvent {
             receiver,
             denom,
             amount,
+            memo,
             acknowledgement,
         } = ev;
         Self {
@@ -74,6 +81,7 @@ impl From<AckEvent> for ModuleEvent {
                 ("receiver", receiver).into(),
                 ("denom", denom).into(),
                 ("amount", amount).into(),
+                ("memo", memo).into(),
                 ("acknowledgement", acknowledgement).into(),
             ],
         }
@@ -103,6 +111,7 @@ pub struct TimeoutEvent {
     pub refund_receiver: Signer,
     pub refund_denom: PrefixedDenom,
     pub refund_amount: Amount,
+    pub memo: Memo,
 }
 
 impl From<TimeoutEvent> for ModuleEvent {
@@ -111,6 +120,7 @@ impl From<TimeoutEvent> for ModuleEvent {
             refund_receiver,
             refund_denom,
             refund_amount,
+            memo,
         } = ev;
         Self {
             kind: EVENT_TYPE_TIMEOUT.to_string(),
@@ -119,6 +129,7 @@ impl From<TimeoutEvent> for ModuleEvent {
                 ("refund_receiver", refund_receiver).into(),
                 ("refund_denom", refund_denom).into(),
                 ("refund_amount", refund_amount).into(),
+                ("memo", memo).into(),
             ],
         }
     }
@@ -148,6 +159,7 @@ pub struct TransferEvent {
     pub receiver: Signer,
     pub amount: Amount,
     pub denom: PrefixedDenom,
+    pub memo: Memo,
 }
 
 impl From<TransferEvent> for ModuleEvent {
@@ -157,6 +169,7 @@ impl From<TransferEvent> for ModuleEvent {
             receiver,
             amount,
             denom,
+            memo,
         } = ev;
 
         Self {
@@ -166,6 +179,7 @@ impl From<TransferEvent> for ModuleEvent {
                 ("receiver", receiver).into(),
                 ("amount", amount).into(),
                 ("denom", denom).into(),
+                ("memo", memo).into(),
             ],
         }
     }

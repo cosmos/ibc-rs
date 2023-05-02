@@ -168,7 +168,7 @@ pub trait Router {
 }
 
 /// Context to be implemented by the host that provides all "read-only" methods.
-/// 
+///
 /// Trait used for the top-level [`validate`](crate::core::validate)
 pub trait ValidationContext: Router {
     /// Validation entrypoint.
@@ -389,9 +389,8 @@ pub trait ValidationContext: Router {
     fn validate_message_signer(&self, signer: &Signer) -> Result<(), ContextError>;
 }
 
-
 /// Context to be implemented by the host that provides all "write-only" methods.
-/// 
+///
 /// Trait used for the top-level [`execute`](crate::core::execute) and [`dispatch`](crate::core::dispatch)
 pub trait ExecutionContext: ValidationContext {
     /// Execution entrypoint

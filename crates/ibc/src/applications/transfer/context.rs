@@ -287,6 +287,7 @@ pub fn on_recv_packet_execute(
         receiver: data.receiver,
         denom: data.token.denom,
         amount: data.token.amount,
+        memo: data.memo,
         success: ack.is_successful(),
     };
     extras.events.push(recv_event.into());
@@ -355,6 +356,7 @@ pub fn on_acknowledgement_packet_execute(
         receiver: data.receiver,
         denom: data.token.denom,
         amount: data.token.amount,
+        memo: data.memo,
         acknowledgement: acknowledgement.clone(),
     };
 
@@ -405,6 +407,7 @@ pub fn on_timeout_packet_execute(
         refund_receiver: data.sender,
         refund_denom: data.token.denom,
         refund_amount: data.token.amount,
+        memo: data.memo,
     };
 
     let extras = ModuleExtras {
