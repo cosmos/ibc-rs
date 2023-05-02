@@ -14,8 +14,7 @@ There are consensus-breaking changes.
 
 - Bump ibc-proto to v0.29.0, bump tendermint to v0.30.0, and add `memo` field to
   `PacketData` ([#559](https://github.com/cosmos/ibc-rs/issues/559))
-- Add missing `ClientType` and `ClientId` validation checks and move `ClientType` under the
-  ICS24 section
+- Add missing `ClientType` and `ClientId` validation checks
   ([#621](https://github.com/cosmos/ibc-rs/issues/621))
 
 ### FEATURES
