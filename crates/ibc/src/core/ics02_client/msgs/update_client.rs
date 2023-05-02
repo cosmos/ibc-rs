@@ -86,7 +86,7 @@ mod tests {
 
     #[test]
     fn msg_update_client_serialization() {
-        let client_id: ClientId = "tendermint-0".parse().unwrap();
+        let client_id: ClientId = "tendermint".parse().unwrap();
         let signer = get_dummy_account_id();
 
         let header = get_dummy_ics07_header();

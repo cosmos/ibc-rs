@@ -259,9 +259,9 @@ impl Default for ClientId {
 /// ```
 /// use core::str::FromStr;
 /// use ibc::core::ics24_host::identifier::ClientId;
-/// let client_id = ClientId::from_str("clientid-0");
+/// let client_id = ClientId::from_str("clientidtwo");
 /// assert!(client_id.is_ok());
-/// client_id.map(|id| {assert_eq!(&id, "clientid-0")});
+/// client_id.map(|id| {assert_eq!(&id, "clientidtwo")});
 /// ```
 impl PartialEq<str> for ClientId {
     fn eq(&self, other: &str) -> bool {

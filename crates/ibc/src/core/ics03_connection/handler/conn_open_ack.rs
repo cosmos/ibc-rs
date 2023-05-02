@@ -227,7 +227,7 @@ mod tests {
         let msg = MsgConnectionOpenAck::new_dummy(10, 10);
 
         // Client parameters -- identifier and correct height (matching the proof height)
-        let client_id = ClientId::from_str("mock_clientid-0").unwrap();
+        let client_id = ClientId::from_str("mock_clientid").unwrap();
         let proof_height = msg.proofs_height_on_b;
         let conn_id = msg.conn_id_on_a.clone();
 
