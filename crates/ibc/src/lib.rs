@@ -54,7 +54,8 @@ pub mod hosts;
 pub mod signer;
 pub mod timestamp;
 pub mod tx_msg;
-pub mod utils;
+
+mod utils;
 
 #[cfg(feature = "serde")]
 mod serializers;
