@@ -119,6 +119,8 @@ impl std::error::Error for ContextError {
     }
 }
 
+/// Top-level router based on the router defined in ICS-26, which primarily
+/// binds modules to ports.
 pub trait Router {
     /// Returns a reference to a `Module` registered against the specified `ModuleId`
     fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module>;
@@ -165,6 +167,9 @@ pub trait Router {
     }
 }
 
+/// Context to be implemented by the host that provides all "read-only" methods.
+/// 
+/// Trait used for the top-level [`validate`](crate::core::validate)
 pub trait ValidationContext: Router {
     /// Validation entrypoint.
     fn validate(&self, msg: MsgEnvelope) -> Result<(), RouterError>
@@ -384,6 +389,10 @@ pub trait ValidationContext: Router {
     fn validate_message_signer(&self, signer: &Signer) -> Result<(), ContextError>;
 }
 
+
+/// Context to be implemented by the host that provides all "write-only" methods.
+/// 
+/// Trait used for the top-level [`execute`](crate::core::execute) and [`dispatch`](crate::core::dispatch)
 pub trait ExecutionContext: ValidationContext {
     /// Execution entrypoint
     fn execute(&mut self, msg: MsgEnvelope) -> Result<(), RouterError>
