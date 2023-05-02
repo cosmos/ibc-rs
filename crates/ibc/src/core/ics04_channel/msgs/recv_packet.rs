@@ -7,8 +7,8 @@ use ibc_proto::ibc::core::channel::v1::MsgRecvPacket as RawMsgRecvPacket;
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
+use crate::core::tx_msg::Msg;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 use crate::Height;
 
 pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgRecvPacket";

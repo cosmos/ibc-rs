@@ -6,8 +6,8 @@ use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::core::tx_msg::Msg;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 
 pub const TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
 

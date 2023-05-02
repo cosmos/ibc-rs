@@ -1,7 +1,7 @@
 //! Definition of domain type message `MsgUpdateAnyClient`.
 
+use crate::core::tx_msg::Msg;
 use crate::prelude::*;
-use crate::tx_msg::Msg;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;

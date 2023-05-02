@@ -50,7 +50,6 @@ pub mod applications;
 pub mod clients;
 pub mod core;
 pub mod hosts;
-pub mod tx_msg;
 
 pub mod mock;
 #[cfg(any(test, feature = "mocks"))]

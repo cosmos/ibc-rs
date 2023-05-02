@@ -7,8 +7,8 @@ use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenConfirm as RawMsgConn
 
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics24_host::identifier::ConnectionId;
+use crate::core::tx_msg::Msg;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 
 pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenConfirm";
 

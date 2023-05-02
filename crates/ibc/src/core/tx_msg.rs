@@ -1,3 +1,5 @@
+//! Defines the Msg trait to be implemented by all IBC messages
+
 use crate::prelude::*;
 use ibc_proto::google::protobuf::Any;
 

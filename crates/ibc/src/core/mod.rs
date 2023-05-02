@@ -34,6 +34,7 @@ pub mod context;
 pub mod events;
 pub mod handler;
 pub mod timestamp;
+pub mod tx_msg;
 
 pub use handler::dispatch;
 
