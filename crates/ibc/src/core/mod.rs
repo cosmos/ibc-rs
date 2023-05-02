@@ -33,14 +33,13 @@ pub mod ics26_routing;
 
 pub mod context;
 pub mod events;
-pub mod handler;
 pub mod timestamp;
 pub mod tx_msg;
 
+mod handler;
+
 pub use handler::dispatch;
-
 pub use handler::execute;
-
 pub use handler::validate;
 
 pub use context::ExecutionContext;
