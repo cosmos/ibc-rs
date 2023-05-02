@@ -43,6 +43,7 @@ use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{Module, ModuleId};
 use crate::core::ics26_routing::msgs::MsgEnvelope;
+use crate::core::timestamp::Timestamp;
 use crate::core::{dispatch, ExecutionContext, ValidationContext};
 use crate::mock::client_state::{
     client_type as mock_client_type, MockClientRecord, MockClientState,
@@ -53,7 +54,6 @@ use crate::mock::host::{HostBlock, HostType};
 use crate::mock::ics18_relayer::context::RelayerContext;
 use crate::mock::ics18_relayer::error::RelayerError;
 use crate::signer::Signer;
-use crate::timestamp::Timestamp;
 use crate::Height;
 
 use super::client_state::MOCK_CLIENT_TYPE;

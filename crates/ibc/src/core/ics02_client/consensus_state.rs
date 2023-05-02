@@ -9,8 +9,8 @@ use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
+use crate::core::timestamp::Timestamp;
 use crate::erased::ErasedSerialize;
-use crate::timestamp::Timestamp;
 
 /// Abstract of consensus state information used by the validity predicate
 /// to verify new commits & state roots.

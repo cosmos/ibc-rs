@@ -8,8 +8,8 @@ use tendermint::abci;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
-use crate::timestamp::Timestamp;
 
 use self::channel_attributes::{
     ChannelIdAttribute, ConnectionIdAttribute, CounterpartyChannelIdAttribute,

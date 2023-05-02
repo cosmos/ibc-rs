@@ -16,7 +16,7 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ChainId;
-use crate::timestamp::Timestamp;
+use crate::core::timestamp::Timestamp;
 use crate::Height;
 
 use pretty::{PrettySignedHeader, PrettyValidatorSet};

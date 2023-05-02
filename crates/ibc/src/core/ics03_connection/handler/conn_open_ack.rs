@@ -229,9 +229,9 @@ mod tests {
     use crate::core::ValidationContext;
 
     use crate::core::events::IbcEvent;
+    use crate::core::timestamp::ZERO_DURATION;
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
-    use crate::timestamp::ZERO_DURATION;
 
     enum Ctx {
         New,

@@ -7,8 +7,8 @@ use ibc_proto::protobuf::Protobuf;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
+use crate::core::timestamp::Timestamp;
 use crate::mock::header::MockHeader;
-use crate::timestamp::Timestamp;
 
 pub const MOCK_CONSENSUS_STATE_TYPE_URL: &str = "/ibc.mock.ConsensusState";
 

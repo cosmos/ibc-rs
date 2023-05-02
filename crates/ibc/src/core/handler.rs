@@ -93,6 +93,7 @@ mod tests {
     use crate::core::ics26_routing::context::ModuleId;
     use crate::core::ics26_routing::error::RouterError;
     use crate::core::ics26_routing::msgs::MsgEnvelope;
+    use crate::core::timestamp::Timestamp;
     use crate::core::{dispatch, ValidationContext};
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
@@ -100,7 +101,6 @@ mod tests {
     use crate::mock::header::MockHeader;
     use crate::prelude::*;
     use crate::test_utils::{get_dummy_account_id, DummyTransferModule};
-    use crate::timestamp::Timestamp;
     use crate::Height;
 
     #[test]

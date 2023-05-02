@@ -127,6 +127,7 @@ mod tests {
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::PortId;
+    use crate::core::timestamp::ZERO_DURATION;
     use crate::{
         applications::transfer::MODULE_ID_STR,
         core::{
@@ -139,7 +140,6 @@ mod tests {
         },
         mock::context::MockContext,
         test_utils::DummyTransferModule,
-        timestamp::ZERO_DURATION,
         Height,
     };
 

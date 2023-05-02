@@ -154,9 +154,9 @@ where
 #[cfg(test)]
 mod tests {
     use crate::core::ics04_channel::commitment::compute_packet_commitment;
+    use crate::core::timestamp::Timestamp;
     use crate::core::ExecutionContext;
     use crate::prelude::*;
-    use crate::timestamp::Timestamp;
     use rstest::*;
 
     use crate::core::ics02_client::height::Height;
@@ -171,8 +171,8 @@ mod tests {
     use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
+    use crate::core::timestamp::ZERO_DURATION;
     use crate::mock::context::MockContext;
-    use crate::timestamp::ZERO_DURATION;
 
     pub struct Fixture {
         pub context: MockContext,

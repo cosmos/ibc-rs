@@ -117,6 +117,7 @@ mod tests {
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
+    use crate::core::timestamp::Timestamp;
     use crate::core::ValidationContext;
     use crate::downcast;
     use crate::mock::client_state::client_type as mock_client_type;
@@ -126,7 +127,6 @@ mod tests {
     use crate::mock::host::{HostBlock, HostType};
     use crate::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
     use crate::test_utils::get_dummy_account_id;
-    use crate::timestamp::Timestamp;
     use crate::Height;
     use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
 

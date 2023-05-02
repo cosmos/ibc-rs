@@ -1,7 +1,7 @@
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::timeout::TimeoutHeight;
+use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
-use crate::timestamp::Timestamp;
 
 /// Packet commitment
 #[cfg_attr(

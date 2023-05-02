@@ -12,9 +12,9 @@ use crate::core::ics24_host::path::ChannelEndPath;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::ics24_host::path::CommitmentPath;
 use crate::core::ics24_host::path::SeqSendPath;
+use crate::core::timestamp::Expiry;
 use crate::core::ContextError;
 use crate::prelude::*;
-use crate::timestamp::Expiry;
 
 /// Per our convention, this message is processed on chain A.
 pub fn send_packet(
@@ -154,9 +154,9 @@ mod tests {
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
+    use crate::core::timestamp::Timestamp;
+    use crate::core::timestamp::ZERO_DURATION;
     use crate::mock::context::MockContext;
-    use crate::timestamp::Timestamp;
-    use crate::timestamp::ZERO_DURATION;
 
     #[test]
     fn send_packet_processing() {

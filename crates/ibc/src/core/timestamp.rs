@@ -1,3 +1,5 @@
+//! Defines the representation of timestamps used in packet timeouts
+
 use crate::prelude::*;
 
 use core::fmt::{Display, Error as FmtError, Formatter};

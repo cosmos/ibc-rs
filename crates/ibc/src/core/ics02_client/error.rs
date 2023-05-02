@@ -8,7 +8,7 @@ use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics23_commitment::error::CommitmentError;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::timestamp::Timestamp;
+use crate::core::timestamp::Timestamp;
 use crate::Height;
 
 #[derive(Debug, Display)]
@@ -81,7 +81,7 @@ pub enum ClientError {
     /// invalid commitment proof bytes error: `{0}`
     InvalidCommitmentProof(CommitmentError),
     /// invalid packet timeout timestamp value error: `{0}`
-    InvalidPacketTimestamp(crate::timestamp::ParseTimestampError),
+    InvalidPacketTimestamp(crate::core::timestamp::ParseTimestampError),
     /// mismatch between client and arguments types
     ClientArgsTypeMismatch { client_type: ClientType },
     /// received header height (`{header_height}`) is lower than (or equal to) client latest height (`{latest_height}`)

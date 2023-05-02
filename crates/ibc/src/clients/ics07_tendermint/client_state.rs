@@ -40,7 +40,7 @@ use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ClientUpgradePath};
 use crate::core::ics24_host::Path;
-use crate::timestamp::ZERO_DURATION;
+use crate::core::timestamp::ZERO_DURATION;
 use crate::Height;
 
 use super::client_type as tm_client_type;
@@ -751,7 +751,7 @@ mod tests {
     use crate::core::ics02_client::trust_threshold::TrustThreshold;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ChainId;
-    use crate::timestamp::ZERO_DURATION;
+    use crate::core::timestamp::ZERO_DURATION;
 
     #[derive(Clone, Debug, PartialEq)]
     struct ClientStateParams {

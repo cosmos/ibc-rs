@@ -155,8 +155,8 @@ mod tests {
     use crate::core::ics04_channel::commitment::PacketCommitment;
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::PortId;
+    use crate::core::timestamp::ZERO_DURATION;
     use crate::test_utils::DummyTransferModule;
-    use crate::timestamp::ZERO_DURATION;
     use crate::Height;
     use crate::{
         core::{

@@ -53,6 +53,7 @@ use crate::core::ics24_host::path::{
     CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use crate::core::ics26_routing::context::{Module, ModuleId};
+use crate::core::timestamp::Timestamp;
 use crate::core::{
     ics02_client::{
         handler::{create_client, update_client, upgrade_client},
@@ -65,7 +66,6 @@ use crate::core::{
     ics24_host::identifier::ClientId,
     ics26_routing::{error::RouterError, msgs::MsgEnvelope},
 };
-use crate::timestamp::Timestamp;
 use crate::Height;
 
 use displaydoc::Display;

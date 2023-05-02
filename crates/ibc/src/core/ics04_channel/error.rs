@@ -7,8 +7,8 @@ use crate::core::ics04_channel::Version;
 use crate::core::ics05_port::error as port_error;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
+use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
-use crate::timestamp::Timestamp;
 use crate::Height;
 
 use displaydoc::Display;
@@ -152,7 +152,7 @@ pub enum PacketError {
     /// packet data bytes cannot be empty
     ZeroPacketData,
     /// Invalid packet timeout timestamp value error: `{0}`
-    InvalidPacketTimestamp(crate::timestamp::ParseTimestampError),
+    InvalidPacketTimestamp(crate::core::timestamp::ParseTimestampError),
     /// identifier error: `{0}`
     Identifier(ValidationError),
     /// Missing sequence number for sending packets on port `{port_id}` and channel `{channel_id}`

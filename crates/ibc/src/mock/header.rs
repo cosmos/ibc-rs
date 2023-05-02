@@ -7,7 +7,7 @@ use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
-use crate::timestamp::Timestamp;
+use crate::core::timestamp::Timestamp;
 use crate::Height;
 
 pub const MOCK_HEADER_TYPE_URL: &str = "/ibc.mock.Header";

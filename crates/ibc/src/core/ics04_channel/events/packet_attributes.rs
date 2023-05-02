@@ -1,13 +1,12 @@
-use crate::{
-    core::{
-        ics04_channel::{
-            channel::Order, error::ChannelError, msgs::acknowledgement::Acknowledgement,
-            packet::Sequence, timeout::TimeoutHeight,
-        },
-        ics24_host::identifier::{ChannelId, ConnectionId, PortId},
+use crate::core::timestamp::Timestamp;
+use crate::prelude::*;
+
+use crate::core::{
+    ics04_channel::{
+        channel::Order, error::ChannelError, msgs::acknowledgement::Acknowledgement,
+        packet::Sequence, timeout::TimeoutHeight,
     },
-    prelude::*,
-    timestamp::Timestamp,
+    ics24_host::identifier::{ChannelId, ConnectionId, PortId},
 };
 use derive_more::From;
 use subtle_encoding::hex;

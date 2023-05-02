@@ -135,9 +135,9 @@ mod tests {
     use crate::core::ics04_channel::handler::acknowledgement::validate;
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::PortId;
+    use crate::core::timestamp::Timestamp;
     use crate::core::ExecutionContext;
     use crate::prelude::*;
-    use crate::timestamp::Timestamp;
     use rstest::*;
     use test_log::test;
 
@@ -152,8 +152,8 @@ mod tests {
     use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::core::timestamp::ZERO_DURATION;
     use crate::mock::context::MockContext;
-    use crate::timestamp::ZERO_DURATION;
 
     pub struct Fixture {
         pub context: MockContext,

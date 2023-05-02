@@ -9,8 +9,8 @@ use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
+use crate::core::timestamp::Timestamp;
 use crate::core::{ics24_host::identifier::ClientId, ValidationContext};
-use crate::timestamp::Timestamp;
 
 use super::{check_header_trusted_next_validator_set, downcast_tm_consensus_state, ClientState};
 

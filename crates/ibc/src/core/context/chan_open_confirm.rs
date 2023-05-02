@@ -98,7 +98,10 @@ where
 mod tests {
     use super::*;
     use crate::{
-        core::{context::chan_open_confirm::chan_open_confirm_execute, ics04_channel::Version},
+        core::{
+            context::chan_open_confirm::chan_open_confirm_execute, ics04_channel::Version,
+            timestamp::ZERO_DURATION,
+        },
         Height,
     };
     use rstest::*;
@@ -121,7 +124,6 @@ mod tests {
         },
         mock::context::MockContext,
         test_utils::DummyTransferModule,
-        timestamp::ZERO_DURATION,
     };
 
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;

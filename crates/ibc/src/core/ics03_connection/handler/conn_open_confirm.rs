@@ -186,8 +186,8 @@ mod tests {
     use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::ClientId;
+    use crate::core::timestamp::ZERO_DURATION;
     use crate::mock::context::MockContext;
-    use crate::timestamp::ZERO_DURATION;
     use crate::Height;
 
     use crate::core::ValidationContext;

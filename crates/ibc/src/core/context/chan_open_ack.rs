@@ -94,7 +94,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{core::context::chan_open_ack::chan_open_ack_execute, Height};
+    use crate::{
+        core::{context::chan_open_ack::chan_open_ack_execute, timestamp::ZERO_DURATION},
+        Height,
+    };
     use rstest::*;
 
     use crate::{
@@ -115,7 +118,6 @@ mod tests {
         },
         mock::context::MockContext,
         test_utils::DummyTransferModule,
-        timestamp::ZERO_DURATION,
     };
 
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;

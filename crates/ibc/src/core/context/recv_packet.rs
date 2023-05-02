@@ -156,9 +156,9 @@ mod tests {
             ics03_connection::version::get_compatible_versions,
             ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId},
             ics26_routing::context::ModuleId,
+            timestamp::ZERO_DURATION,
         },
         test_utils::DummyTransferModule,
-        timestamp::ZERO_DURATION,
     };
     use rstest::*;
 

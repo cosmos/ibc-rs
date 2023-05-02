@@ -121,7 +121,10 @@ mod tests {
     use super::*;
     use crate::{
         applications::transfer::MODULE_ID_STR,
-        core::{context::chan_open_try::chan_open_try_execute, ics26_routing::context::ModuleId},
+        core::{
+            context::chan_open_try::chan_open_try_execute, ics26_routing::context::ModuleId,
+            timestamp::ZERO_DURATION,
+        },
         test_utils::DummyTransferModule,
         Height,
     };
@@ -139,7 +142,6 @@ mod tests {
             ics24_host::identifier::{ClientId, ConnectionId},
         },
         mock::context::MockContext,
-        timestamp::ZERO_DURATION,
     };
 
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;

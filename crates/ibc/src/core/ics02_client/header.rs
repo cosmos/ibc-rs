@@ -6,8 +6,8 @@ use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 
 use crate::clients::AsAny;
 use crate::core::ics02_client::error::ClientError;
+use crate::core::timestamp::Timestamp;
 use crate::erased::ErasedSerialize;
-use crate::timestamp::Timestamp;
 use crate::Height;
 
 /// Abstract of consensus state update information

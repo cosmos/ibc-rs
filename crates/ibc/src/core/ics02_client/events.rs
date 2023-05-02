@@ -415,8 +415,8 @@ impl From<UpgradeClient> for abci::Event {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::timestamp::Timestamp;
     use crate::mock::header::MockHeader;
-    use crate::timestamp::Timestamp;
     use ibc_proto::google::protobuf::Any;
     use tendermint::abci::Event as AbciEvent;
 

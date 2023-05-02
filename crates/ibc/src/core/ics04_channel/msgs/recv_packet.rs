@@ -80,9 +80,9 @@ pub mod test_util {
     use crate::core::ics04_channel::packet::test_utils::get_dummy_raw_packet;
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
+    use crate::core::timestamp::Timestamp;
     use crate::signer::Signer;
     use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
-    use crate::timestamp::Timestamp;
     use core::ops::Add;
     use core::time::Duration;
 

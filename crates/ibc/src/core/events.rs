@@ -13,7 +13,7 @@ use crate::core::ics03_connection::events as ConnectionEvents;
 use crate::core::ics04_channel::error as channel_error;
 use crate::core::ics04_channel::events as ChannelEvents;
 use crate::core::ics24_host::error::ValidationError;
-use crate::timestamp::ParseTimestampError;
+use crate::core::timestamp::ParseTimestampError;
 
 #[derive(Debug, Display)]
 pub enum Error {
