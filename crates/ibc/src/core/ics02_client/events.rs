@@ -6,9 +6,9 @@ use ibc_proto::google::protobuf::Any;
 use subtle_encoding::hex;
 use tendermint::abci;
 
+use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::height::Height;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::identifier::ClientType;
 
 /// Client event types
 const CREATE_CLIENT_EVENT: &str = "create_client";
@@ -429,7 +429,7 @@ mod tests {
             expected_values: Vec<&'static str>,
         }
 
-        let client_type = ClientType::new_unchecked("07-tendermint".to_string());
+        let client_type = ClientType::from("07-tendermint".to_string());
         let client_id = ClientId::new(client_type.clone(), 0).unwrap();
         let consensus_height = Height::new(0, 5).unwrap();
         let consensus_heights = vec![Height::new(0, 5).unwrap(), Height::new(0, 7).unwrap()];

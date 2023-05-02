@@ -28,6 +28,7 @@ use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState
 use crate::core::context::ContextError;
 use crate::core::context::Router;
 use crate::core::ics02_client::client_state::ClientState;
+use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
@@ -38,9 +39,7 @@ use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCo
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-use crate::core::ics24_host::identifier::{
-    ChainId, ChannelId, ClientId, ClientType, ConnectionId, PortId,
-};
+use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{Module, ModuleId};
 use crate::core::ics26_routing::msgs::MsgEnvelope;
 use crate::core::{dispatch, ExecutionContext, ValidationContext};

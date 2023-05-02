@@ -6,6 +6,7 @@ use derive_more::Into;
 
 use super::validate::*;
 use crate::clients::ics07_tendermint::client_type as tm_client_type;
+use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics24_host::validate::validate_client_identifier;
 
 use crate::core::ics24_host::error::ValidationError;
@@ -200,48 +201,6 @@ impl From<String> for ChainId {
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-/// Type of the client, depending on the specific consensus algorithm.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ClientType(String);
-
-impl ClientType {
-    /// Constructs a new instance without performing any validation primarily for use in testing.
-    pub(crate) fn new_unchecked(s: String) -> Self {
-        Self(s)
-    }
-
-    /// Constructs a new `ClientType` from the given `String` if it ends with a valid client identifier.
-    pub fn new(s: String) -> Result<Self, ValidationError> {
-        let s_trim = s.trim();
-        validate_client_type(s_trim)?;
-        Ok(Self(s_trim.to_string()))
-    }
-
-    /// Yields this identifier as a borrowed `&str`
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-impl Display for ClientType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "ClientType({})", self.0)
-    }
-}
-
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Into)]
 pub struct ClientId(String);
 
@@ -252,13 +211,14 @@ impl ClientId {
     ///
     /// ```
     /// # use ibc::core::ics24_host::identifier::ClientId;
-    /// # use ibc::core::ics24_host::identifier::ClientType;
-    /// let tm_client_id = ClientId::new(ClientType::new("07-tendermint".to_string()).unwrap(), 0);
+    /// # use ibc::core::ics02_client::client_type::ClientType;
+    /// let tm_client_id = ClientId::new(ClientType::from("07-tendermint".to_string()), 0);
     /// assert!(tm_client_id.is_ok());
     /// tm_client_id.map(|id| { assert_eq!(&id, "07-tendermint-0") });
     /// ```
     pub fn new(client_type: ClientType, counter: u64) -> Result<Self, ValidationError> {
         let prefix = client_type.as_str().trim();
+        validate_client_type(prefix)?;
         let id = format!("{prefix}-{counter}");
         Self::from_str(id.as_str())
     }
