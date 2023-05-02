@@ -39,34 +39,32 @@
 //! [ics-standards]: https://github.com/cosmos/ibc#interchain-standards
 
 extern crate alloc;
-
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
-mod prelude;
+/// Represents a block height
+pub use crate::core::ics02_client::height::Height;
+pub use signer::Signer;
 
 pub mod applications;
 pub mod clients;
 pub mod core;
-mod erased;
 pub mod events;
 pub mod hosts;
-pub mod signer;
 pub mod timestamp;
 pub mod tx_msg;
 
+pub mod mock;
+#[cfg(any(test, feature = "mocks"))]
+pub mod test_utils; // Context mock, the underlying host chain, and client types: for testing all handlers.
+
+mod erased;
+mod prelude;
+mod signer;
 mod utils;
 
 #[cfg(feature = "serde")]
 mod serializers;
 
-/// Re-export of ICS 002 Height domain type
-pub type Height = crate::core::ics02_client::height::Height;
-
 #[cfg(test)]
 mod test;
-
-#[cfg(any(test, feature = "mocks"))]
-pub mod test_utils;
-
-pub mod mock; // Context mock, the underlying host chain, and client types: for testing all handlers.
