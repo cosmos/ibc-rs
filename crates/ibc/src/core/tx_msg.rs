@@ -1,8 +1,8 @@
-//! Defines the Msg trait to be implemented by all IBC messages
 
 use crate::prelude::*;
 use ibc_proto::google::protobuf::Any;
 
+/// Trait to be implemented by all IBC messages
 pub trait Msg: Clone {
     type Raw: From<Self> + prost::Message;
 

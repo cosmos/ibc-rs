@@ -25,8 +25,6 @@ use ibc_proto::google::protobuf::Any;
 use tracing::debug;
 
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use crate::core::ContextError;
-use crate::core::Router;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
@@ -44,6 +42,8 @@ use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, Connecti
 use crate::core::ics26_routing::context::{Module, ModuleId};
 use crate::core::ics26_routing::msgs::MsgEnvelope;
 use crate::core::timestamp::Timestamp;
+use crate::core::ContextError;
+use crate::core::Router;
 use crate::core::{dispatch, ExecutionContext, ValidationContext};
 use crate::mock::client_state::{
     client_type as mock_client_type, MockClientRecord, MockClientState,

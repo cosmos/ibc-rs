@@ -1,6 +1,5 @@
 //! Implementation of the core IBC protocol.
 
-
 // Naming is hard in the IBC handlers, since we deal with a client on a
 // *counterparty* chain, which is itself a light client of *self* (the chain
 // the handler is currently running on). So depending on the frame of reference
@@ -33,13 +32,15 @@ pub mod ics26_routing;
 
 pub mod events;
 pub mod timestamp;
-pub mod tx_msg;
 
 mod context;
 mod handler;
+mod tx_msg;
 
 pub use handler::dispatch;
 pub use handler::execute;
 pub use handler::validate;
 
 pub use context::*;
+
+pub use tx_msg::Msg;
