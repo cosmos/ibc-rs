@@ -1,5 +1,6 @@
 use crate::{
     core::{
+        events::{IbcEvent, MessageEvent},
         ics04_channel::{
             channel::Order,
             commitment::compute_ack_commitment,
@@ -12,7 +13,6 @@ use crate::{
         ics24_host::path::{AckPath, ChannelEndPath, ReceiptPath, SeqRecvPath},
         ics26_routing::context::ModuleId,
     },
-    events::{IbcEvent, MessageEvent},
     prelude::*,
 };
 
@@ -152,11 +152,11 @@ mod tests {
         applications::transfer::MODULE_ID_STR,
         core::{
             context::recv_packet::recv_packet_execute,
+            events::IbcEvent,
             ics03_connection::version::get_compatible_versions,
             ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId},
             ics26_routing::context::ModuleId,
         },
-        events::IbcEvent,
         test_utils::DummyTransferModule,
         timestamp::ZERO_DURATION,
     };

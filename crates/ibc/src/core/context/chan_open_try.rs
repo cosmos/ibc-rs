@@ -8,7 +8,7 @@ use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics26_routing::context::ModuleId;
 
-use crate::events::{IbcEvent, MessageEvent};
+use crate::core::events::{IbcEvent, MessageEvent};
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 
@@ -122,7 +122,6 @@ mod tests {
     use crate::{
         applications::transfer::MODULE_ID_STR,
         core::{context::chan_open_try::chan_open_try_execute, ics26_routing::context::ModuleId},
-        events::IbcEvent,
         test_utils::DummyTransferModule,
         Height,
     };

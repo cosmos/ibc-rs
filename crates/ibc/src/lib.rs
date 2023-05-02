@@ -49,7 +49,6 @@ pub use signer::Signer;
 pub mod applications;
 pub mod clients;
 pub mod core;
-pub mod events;
 pub mod hosts;
 pub mod timestamp;
 pub mod tx_msg;

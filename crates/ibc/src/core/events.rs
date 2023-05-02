@@ -1,3 +1,5 @@
+//! Events emitted during message handling
+
 use crate::prelude::*;
 
 use core::convert::{TryFrom, TryInto};

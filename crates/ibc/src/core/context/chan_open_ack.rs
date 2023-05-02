@@ -8,7 +8,7 @@ use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics26_routing::context::ModuleId;
 
-use crate::events::{IbcEvent, MessageEvent};
+use crate::core::events::{IbcEvent, MessageEvent};
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 
@@ -94,7 +94,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{core::context::chan_open_ack::chan_open_ack_execute, events::IbcEvent, Height};
+    use crate::{core::context::chan_open_ack::chan_open_ack_execute, Height};
     use rstest::*;
 
     use crate::{

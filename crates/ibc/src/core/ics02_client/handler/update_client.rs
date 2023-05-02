@@ -5,8 +5,8 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::msgs::MsgUpdateOrMisbehaviour;
 use crate::prelude::*;
 
+use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
-use crate::events::{IbcEvent, MessageEvent};
 
 use crate::core::context::ContextError;
 
@@ -108,6 +108,7 @@ mod tests {
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::clients::ics07_tendermint::header::Header as TmHeader;
     use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
+    use crate::core::events::IbcEvent;
     use crate::core::ics02_client::client_state::ClientState;
     use crate::core::ics02_client::client_type::ClientType;
     use crate::core::ics02_client::consensus_state::ConsensusState;
@@ -118,7 +119,6 @@ mod tests {
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ValidationContext;
     use crate::downcast;
-    use crate::events::IbcEvent;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::client_state::MockClientState;
     use crate::mock::context::MockContext;

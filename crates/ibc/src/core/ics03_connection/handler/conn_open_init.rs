@@ -2,13 +2,13 @@
 use crate::prelude::*;
 
 use crate::core::context::ContextError;
+use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{ClientConnectionPath, ConnectionPath};
 use crate::core::{ExecutionContext, ValidationContext};
-use crate::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
@@ -84,11 +84,11 @@ where
 mod tests {
     use super::*;
 
+    use crate::core::events::IbcEvent;
     use crate::core::ics03_connection::connection::State;
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::version::Version;
-    use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::Height;
     use test_log::test;

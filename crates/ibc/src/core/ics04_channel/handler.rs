@@ -1,5 +1,5 @@
 //! This module implements the processing logic for ICS4 (channel) messages.
-use crate::events::ModuleEvent;
+use crate::core::events::ModuleEvent;
 use crate::prelude::*;
 
 pub mod acknowledgement;

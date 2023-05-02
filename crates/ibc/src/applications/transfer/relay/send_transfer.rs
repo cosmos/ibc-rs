@@ -5,10 +5,10 @@ use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::events::TransferEvent;
 use crate::applications::transfer::msgs::transfer::MsgTransfer;
 use crate::applications::transfer::{is_sender_chain_source, MODULE_ID_STR};
+use crate::core::events::{MessageEvent, ModuleEvent};
 use crate::core::ics04_channel::handler::send_packet::{send_packet_execute, send_packet_validate};
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::path::{ChannelEndPath, SeqSendPath};
-use crate::events::{MessageEvent, ModuleEvent};
 use crate::prelude::*;
 
 /// This function handles the transfer sending logic.

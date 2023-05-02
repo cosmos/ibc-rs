@@ -1,11 +1,11 @@
 //! ICS4 (channel) context.
 
+use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
-use crate::events::IbcEvent;
 use crate::prelude::*;
 use core::time::Duration;
 use num_traits::float::FloatCore;

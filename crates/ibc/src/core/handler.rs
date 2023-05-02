@@ -50,6 +50,7 @@ mod tests {
         msgs::transfer::test_util::get_dummy_msg_transfer, msgs::transfer::MsgTransfer,
         packet::PacketData, PrefixedCoin, MODULE_ID_STR,
     };
+    use crate::core::events::{IbcEvent, MessageEvent};
     use crate::core::ics02_client::msgs::{
         create_client::MsgCreateClient, update_client::MsgUpdateClient,
         upgrade_client::MsgUpgradeClient, ClientMsg,
@@ -93,7 +94,6 @@ mod tests {
     use crate::core::ics26_routing::error::RouterError;
     use crate::core::ics26_routing::msgs::MsgEnvelope;
     use crate::core::{dispatch, ValidationContext};
-    use crate::events::{IbcEvent, MessageEvent};
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
     use crate::mock::context::MockContext;

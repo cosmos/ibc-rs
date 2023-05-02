@@ -1,16 +1,14 @@
+use crate::core::events::MessageEvent;
 use crate::core::ics24_host::path::{ChannelEndPath, CommitmentPath, SeqAckPath};
-use crate::events::MessageEvent;
 use crate::prelude::*;
 
-use crate::{
-    core::{
-        ics04_channel::{
-            channel::Order, error::ChannelError, events::AcknowledgePacket,
-            handler::acknowledgement, msgs::acknowledgement::MsgAcknowledgement,
-        },
-        ics26_routing::context::ModuleId,
-    },
+use crate::core::{
     events::IbcEvent,
+    ics04_channel::{
+        channel::Order, error::ChannelError, events::AcknowledgePacket, handler::acknowledgement,
+        msgs::acknowledgement::MsgAcknowledgement,
+    },
+    ics26_routing::context::ModuleId,
 };
 
 use super::{ContextError, ExecutionContext, ValidationContext};

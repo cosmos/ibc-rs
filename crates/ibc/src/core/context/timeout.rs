@@ -1,21 +1,19 @@
+use crate::core::events::MessageEvent;
 use crate::core::ics04_channel::events::ChannelClosed;
 use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
 use crate::core::ics24_host::path::{ChannelEndPath, CommitmentPath};
-use crate::events::MessageEvent;
 use crate::prelude::*;
 
-use crate::{
-    core::{
-        ics04_channel::{
-            channel::{Order, State},
-            error::ChannelError,
-            events::TimeoutPacket,
-            handler::{timeout, timeout_on_close},
-        },
-        ics26_routing::context::ModuleId,
-    },
+use crate::core::{
     events::IbcEvent,
+    ics04_channel::{
+        channel::{Order, State},
+        error::ChannelError,
+        events::TimeoutPacket,
+        handler::{timeout, timeout_on_close},
+    },
+    ics26_routing::context::ModuleId,
 };
 
 use super::{ContextError, ExecutionContext, ValidationContext};

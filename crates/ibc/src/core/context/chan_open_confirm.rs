@@ -7,7 +7,7 @@ use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics26_routing::context::ModuleId;
 
-use crate::events::{IbcEvent, MessageEvent};
+use crate::core::events::{IbcEvent, MessageEvent};
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 
@@ -99,7 +99,6 @@ mod tests {
     use super::*;
     use crate::{
         core::{context::chan_open_confirm::chan_open_confirm_execute, ics04_channel::Version},
-        events::IbcEvent,
         Height,
     };
     use rstest::*;

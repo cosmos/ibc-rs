@@ -7,7 +7,7 @@ use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics26_routing::context::ModuleId;
 
-use crate::events::{IbcEvent, MessageEvent};
+use crate::core::events::{IbcEvent, MessageEvent};
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 pub(super) fn chan_close_init_validate<ValCtx>(
@@ -99,11 +99,11 @@ mod tests {
     use super::*;
 
     use crate::applications::transfer::MODULE_ID_STR;
+    use crate::core::events::IbcEvent;
     use crate::core::ics04_channel::msgs::chan_close_init::test_util::get_dummy_raw_msg_chan_close_init;
     use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
     use crate::core::ics26_routing::context::ModuleId;
     use crate::core::ValidationContext;
-    use crate::events::IbcEvent;
 
     use crate::core::ics03_connection::connection::ConnectionEnd;
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
