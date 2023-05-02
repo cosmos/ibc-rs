@@ -31,19 +31,15 @@ pub mod ics23_commitment;
 pub mod ics24_host;
 pub mod ics26_routing;
 
-pub mod context;
 pub mod events;
 pub mod timestamp;
 pub mod tx_msg;
 
+mod context;
 mod handler;
 
 pub use handler::dispatch;
 pub use handler::execute;
 pub use handler::validate;
 
-pub use context::ExecutionContext;
-
-pub use context::ValidationContext;
-
-pub use context::ContextError;
+pub use context::*;

@@ -25,8 +25,8 @@ use ibc_proto::google::protobuf::Any;
 use tracing::debug;
 
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use crate::core::context::ContextError;
-use crate::core::context::Router;
+use crate::core::ContextError;
+use crate::core::Router;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;

@@ -70,6 +70,7 @@ use crate::Height;
 
 use displaydoc::Display;
 
+/// Top-level error
 #[derive(Debug, Display)]
 pub enum ContextError {
     /// ICS02 Client error: {0}
