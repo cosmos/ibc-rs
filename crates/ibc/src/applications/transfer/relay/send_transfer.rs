@@ -168,6 +168,7 @@ where
             receiver: msg.packet_data.receiver,
             amount: msg.packet_data.token.amount,
             denom: msg.packet_data.token.denom,
+            memo: msg.packet_data.memo,
         };
         ctx_a.emit_ibc_event(ModuleEvent::from(transfer_event).into());
 

@@ -120,8 +120,7 @@ impl From<Misbehaviour> for Any {
     fn from(misbehaviour: Misbehaviour) -> Self {
         Any {
             type_url: TENDERMINT_MISBEHAVIOUR_TYPE_URL.to_string(),
-            value: Protobuf::<RawMisbehaviour>::encode_vec(&misbehaviour)
-                .expect("encoding to `Any` from `TmMisbehaviour`"),
+            value: Protobuf::<RawMisbehaviour>::encode_vec(&misbehaviour),
         }
     }
 }
