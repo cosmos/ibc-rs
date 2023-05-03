@@ -333,24 +333,30 @@ pub trait ValidationContext: Router {
         Ok(version)
     }
 
-    /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
+    /// Returns the `ChannelEnd` for the given `port_id` and `chan_id`.
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
 
+    /// Returns the sequence number for the next packet to be sent for the given store path
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
         -> Result<Sequence, ContextError>;
 
+    /// Returns the sequence number for the next packet to be received for the given store path
     fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath)
         -> Result<Sequence, ContextError>;
 
+    /// Returns the sequence number for the next packet to be acknowledged for the given store path
     fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, ContextError>;
 
+    /// Returns the packet commitment for the given store path
     fn get_packet_commitment(
         &self,
         commitment_path: &CommitmentPath,
     ) -> Result<PacketCommitment, ContextError>;
 
+    /// Returns the packet receipt for the given store path
     fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, ContextError>;
 
+    /// Returns the packet acknowledgement for the given store path
     fn get_packet_acknowledgement(
         &self,
         ack_path: &AckPath,
@@ -522,29 +528,34 @@ pub trait ExecutionContext: ValidationContext {
     /// Should never fail.
     fn increase_connection_counter(&mut self);
 
+    /// Stores the given packet commitment at the given store path
     fn store_packet_commitment(
         &mut self,
         commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
     ) -> Result<(), ContextError>;
 
+    /// Deletes the packet commitment at the given store path
     fn delete_packet_commitment(
         &mut self,
         commitment_path: &CommitmentPath,
     ) -> Result<(), ContextError>;
 
+    /// Stores the given packet receipt at the given store path
     fn store_packet_receipt(
         &mut self,
         receipt_path: &ReceiptPath,
         receipt: Receipt,
     ) -> Result<(), ContextError>;
 
+    /// Stores the given packet acknowledgement at the given store path
     fn store_packet_acknowledgement(
         &mut self,
         ack_path: &AckPath,
         ack_commitment: AcknowledgementCommitment,
     ) -> Result<(), ContextError>;
 
+    /// Deletes the packet acknowledgement at the given store path
     fn delete_packet_acknowledgement(&mut self, ack_path: &AckPath) -> Result<(), ContextError>;
 
     /// Stores the given channel_end at a path associated with the port_id and channel_id.
@@ -554,18 +565,21 @@ pub trait ExecutionContext: ValidationContext {
         channel_end: ChannelEnd,
     ) -> Result<(), ContextError>;
 
+    /// Stores the given `nextSequenceSend` number at the given store path
     fn store_next_sequence_send(
         &mut self,
         seq_send_path: &SeqSendPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
 
+    /// Stores the given `nextSequenceRecv` number at the given store path
     fn store_next_sequence_recv(
         &mut self,
         seq_recv_path: &SeqRecvPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
 
+    /// Stores the given `nextSequenceAck` number at the given store path
     fn store_next_sequence_ack(
         &mut self,
         seq_ack_path: &SeqAckPath,
@@ -577,9 +591,9 @@ pub trait ExecutionContext: ValidationContext {
     /// Should never fail.
     fn increase_channel_counter(&mut self);
 
-    /// Ibc events
+    /// Emit the given IBC event
     fn emit_ibc_event(&mut self, event: IbcEvent);
 
-    /// Logging facility
+    /// Log the given message.
     fn log_message(&mut self, message: String);
 }
