@@ -1,3 +1,5 @@
+//! Defines the misbehaviour type for the tendermint light client
+
 use crate::prelude::*;
 
 use bytes::Buf;

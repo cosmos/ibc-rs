@@ -18,6 +18,7 @@ pub mod misbehaviour;
 pub mod update_client;
 pub mod upgrade_client;
 
+/// Encodes all the different client messages
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum ClientMsg {

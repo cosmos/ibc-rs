@@ -1,3 +1,5 @@
+//! Defines the Tendermint light client's error type
+
 use crate::prelude::*;
 
 use crate::core::ics02_client::error::ClientError;

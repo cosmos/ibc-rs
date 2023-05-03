@@ -1,3 +1,5 @@
+//! Defines the client error type
+
 use crate::core::ContextError;
 use crate::prelude::*;
 

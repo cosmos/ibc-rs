@@ -1,3 +1,5 @@
+//! Defines the trait to be implemented by concrete header types
+
 use crate::prelude::*;
 
 use dyn_clone::DynClone;
@@ -47,10 +49,6 @@ dyn_clone::clone_trait_object!(Header);
 // Implements `serde::Serialize` for all types that have Header as supertrait
 #[cfg(feature = "serde")]
 erased_serde::serialize_trait_object!(Header);
-
-pub fn downcast_header<H: Header>(h: &dyn Header) -> Option<&H> {
-    h.as_any().downcast_ref::<H>()
-}
 
 impl PartialEq for dyn Header {
     fn eq(&self, other: &Self) -> bool {

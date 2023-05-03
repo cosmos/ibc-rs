@@ -1,3 +1,5 @@
+//! Defines the trait to be implemented by all concrete consensus state types
+
 use crate::clients::AsAny;
 use crate::prelude::*;
 

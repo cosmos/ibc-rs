@@ -1,3 +1,5 @@
+//! Defines the domain type for tendermint headers
+
 use crate::prelude::*;
 use alloc::string::ToString;
 use core::fmt::{Display, Error as FmtError, Formatter};

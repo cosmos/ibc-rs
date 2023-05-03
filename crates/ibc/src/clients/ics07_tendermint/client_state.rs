@@ -1,3 +1,6 @@
+//! Implements the core [`ClientState`](crate::core::ics02_client::client_state::ClientState) trait
+//! for the Tendermint light client.
+
 mod misbehaviour;
 mod update_client;
 
@@ -49,6 +52,7 @@ use crate::core::{ExecutionContext, ValidationContext};
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
+/// Contains the core implementation of the Tendermint light client
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClientState {

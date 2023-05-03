@@ -1,3 +1,5 @@
+//! Definition of domain type message `MsgSubmitMisbehaviour`.
+
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any as ProtoAny;

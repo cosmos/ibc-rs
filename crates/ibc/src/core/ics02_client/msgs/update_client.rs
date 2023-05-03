@@ -1,4 +1,4 @@
-//! Definition of domain type message `MsgUpdateAnyClient`.
+//! Definition of domain type message `MsgUpdateClient`.
 
 use crate::core::tx_msg::Msg;
 use crate::prelude::*;

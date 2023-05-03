@@ -18,22 +18,22 @@
 //!
 //! The layout of this crate mirrors the organization of the [IBC
 //! Standard][ibc-standard]:
-//! 
+//!
 //! + [Core](core) implements the transport, authentication, and ordering layers of the IBC protocol.
-//! 
+//!
 //! + [Clients](clients) consists of implementations of client verification algorithms (following the base
 //! client interface that is defined in `Core`) for specific consensus algorithms. A chain uses these
 //! verification algorithms to verify the state of remote chains.
 //!
-//! + [Applications](applications) consists of implementations of some IBC applications. This is the part of 
+//! + [Applications](applications) consists of implementations of some IBC applications. This is the part of
 //! the protocol that abstracts away the core protocol and focuses solely on business logic.
 //!
-//! When processing a given message `M`, if any method in this library returns an error, the runtime 
-//! is expected to rollback all state modifications made to the context 
+//! When processing a given message `M`, if any method in this library returns an error, the runtime
+//! is expected to rollback all state modifications made to the context
 //! (e.g. [`ExecutionContext`](core::ExecutionContext)) while processing `M`. If a transaction on your
 //! blockchain contains multiple messages, then typically the state modifications from all messages
 //! is expected to be rolled back as well.
-//! 
+//!
 //! [ibc-standard]: https://github.com/cosmos/ibc
 
 extern crate alloc;

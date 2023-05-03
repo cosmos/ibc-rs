@@ -1,4 +1,4 @@
-//! Definition of domain type msg `MsgUpgradeAnyClient`.
+//! Definition of domain type msg `MsgUpgradeClient`.
 
 use crate::prelude::*;
 

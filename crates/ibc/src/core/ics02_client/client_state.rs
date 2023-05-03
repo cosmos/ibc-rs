@@ -1,3 +1,5 @@
+//! Defines `ClientState`, the core type to be implemented by light clients
+
 use core::marker::{Send, Sync};
 use core::time::Duration;
 
@@ -22,6 +24,7 @@ use super::consensus_state::ConsensusState;
 
 use crate::core::{ExecutionContext, ValidationContext};
 
+/// The core light client type.
 pub trait ClientState:
     AsAny
     + sealed::ErasedPartialEqClientState

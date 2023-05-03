@@ -1,3 +1,5 @@
+//! Defines the core `Height` type used throughout the library
+
 use crate::prelude::*;
 use core::cmp::Ordering;
 
@@ -11,6 +13,9 @@ use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 
 use crate::core::ics02_client::error::ClientError;
 
+/// The core IBC height type, which represents the height of a chain,
+/// which typically is the number of blocks since genesis
+/// (or more generally, since the last revision/hard upgrade).
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -137,6 +142,7 @@ impl core::fmt::Display for Height {
     }
 }
 
+/// Encodes all errors related to chain heights
 #[derive(Debug, Display)]
 pub enum HeightError {
     /// cannot convert into a `Height` type from string `{height}`
