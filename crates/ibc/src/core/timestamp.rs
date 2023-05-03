@@ -176,7 +176,7 @@ impl Timestamp {
     /// Convert a `Timestamp` to `u64` value in nanoseconds. If no timestamp
     /// is set, the result is 0.
     /// ```
-    /// use ibc::timestamp::Timestamp;
+    /// use ibc::core::timestamp::Timestamp;
     ///
     /// let max = u64::MAX;
     /// let tx = Timestamp::from_nanoseconds(max).unwrap();
