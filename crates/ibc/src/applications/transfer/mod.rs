@@ -8,6 +8,7 @@ pub mod context;
 pub mod denom;
 pub mod error;
 pub mod events;
+pub mod memo;
 pub mod msgs;
 pub mod packet;
 pub mod relay;
@@ -15,6 +16,7 @@ pub mod relay;
 pub use amount::*;
 pub use coin::*;
 pub use denom::*;
+pub use memo::*;
 
 /// Module identifier for the ICS20 application.
 pub const MODULE_ID_STR: &str = "transfer";

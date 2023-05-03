@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## v0.39.0
+
+*May 2, 2023*
+
+This release primarily adds support for the `memo` field to the token transfer
+app (ICS 20). This required updating ibc-proto-rs and tendermint-rs dependencies
+as well.
+
+There are consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Bump ibc-proto to v0.29.0, bump tendermint to v0.30.0, and add `memo` field to
+  `PacketData` ([#559](https://github.com/cosmos/ibc-rs/issues/559))
+- Add missing `ClientType` and `ClientId` validation checks
+  ([#621](https://github.com/cosmos/ibc-rs/issues/621))
+
+### FEATURES
+
+- Define a new `ValidationContext::validate_message_signer` method to allow
+  validation of the `signer` field in messages across all handlers.
+  ([#619](https://github.com/cosmos/ibc-rs/issues/619))
+
 ## v0.38.0
 
 *April 24, 2023*

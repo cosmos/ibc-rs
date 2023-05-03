@@ -1,5 +1,7 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenConfirm`.
 
+use ibc_proto::protobuf::Protobuf;
+
 use crate::core::context::ContextError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
@@ -71,7 +73,7 @@ where
                 &msg.proof_conn_end_on_a,
                 consensus_state_of_a_on_b.root(),
                 Path::Connection(ConnectionPath::new(conn_id_on_a)),
-                expected_conn_end_on_a.proto_encode_vec()?,
+                expected_conn_end_on_a.encode_vec(),
             )
             .map_err(ConnectionError::VerifyConnectionState)?;
     }

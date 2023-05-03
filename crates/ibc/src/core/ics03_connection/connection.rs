@@ -363,13 +363,6 @@ impl ConnectionEnd {
     pub fn delay_period(&self) -> Duration {
         self.delay_period
     }
-
-    pub(crate) fn proto_encode_vec(&self) -> Result<Vec<u8>, ConnectionError> {
-        let value = self
-            .encode_vec()
-            .map_err(ConnectionError::InvalidConnectionEnd)?;
-        Ok(value)
-    }
 }
 
 #[cfg_attr(
