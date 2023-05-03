@@ -53,10 +53,6 @@ dyn_clone::clone_trait_object!(ConsensusState);
 #[cfg(feature = "serde")]
 erased_serde::serialize_trait_object!(ConsensusState);
 
-pub fn downcast_consensus_state<CS: ConsensusState>(h: &dyn ConsensusState) -> Option<&CS> {
-    h.as_any().downcast_ref::<CS>()
-}
-
 impl PartialEq for dyn ConsensusState {
     fn eq(&self, other: &Self) -> bool {
         self.eq_consensus_state(other)
