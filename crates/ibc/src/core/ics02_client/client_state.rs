@@ -188,10 +188,6 @@ impl PartialEq<&Self> for Box<dyn ClientState> {
     }
 }
 
-pub fn downcast_client_state<CS: ClientState>(h: &dyn ClientState) -> Option<&CS> {
-    h.as_any().downcast_ref::<CS>()
-}
-
 /// `UpdateKind` represents the 2 ways that a client can be updated
 /// in IBC: either through a `MsgUpdateClient`, or a `MsgSubmitMisbehaviour`.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -205,6 +201,7 @@ pub enum UpdateKind {
     SubmitMisbehaviour,
 }
 
+/// Represents the updated client and consensus states after a client upgrade
 pub struct UpdatedState {
     pub client_state: Box<dyn ClientState>,
     pub consensus_state: Box<dyn ConsensusState>,

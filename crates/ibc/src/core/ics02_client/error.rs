@@ -13,6 +13,7 @@ use crate::core::ics24_host::identifier::ClientId;
 use crate::core::timestamp::Timestamp;
 use crate::Height;
 
+/// Encodes all the possible client errors
 #[derive(Debug, Display)]
 pub enum ClientError {
     /// Client identifier constructor failed for type `{client_type}` with counter `{counter}`, validation error: `{validation_error}`

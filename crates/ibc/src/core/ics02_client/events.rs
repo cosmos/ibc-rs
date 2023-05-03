@@ -25,6 +25,7 @@ pub const CLIENT_TYPE_ATTRIBUTE_KEY: &str = "client_type";
 /// The content of the `key` field for the attribute containing the height.
 pub const CONSENSUS_HEIGHT_ATTRIBUTE_KEY: &str = "consensus_height";
 
+/// The content of the `key` field for the attribute containing the heights of consensus states that were processed.
 pub const CONSENSUS_HEIGHTS_ATTRIBUTE_KEY: &str = "consensus_heights";
 
 /// The content of the `key` field for the header in update client event.
