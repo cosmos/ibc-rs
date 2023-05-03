@@ -10,6 +10,7 @@ pub mod consensus_state;
 pub mod error;
 pub mod header;
 pub mod misbehaviour;
+pub mod trust_threshold;
 
 pub(crate) const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
 
