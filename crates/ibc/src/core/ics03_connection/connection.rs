@@ -1,3 +1,5 @@
+//! Defines the types that define a connection
+
 use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
 

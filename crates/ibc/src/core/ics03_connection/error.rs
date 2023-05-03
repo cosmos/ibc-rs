@@ -1,3 +1,5 @@
+//! Defines the connection error type
+
 use crate::core::ics02_client::error as client_error;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics24_host::error::ValidationError;
