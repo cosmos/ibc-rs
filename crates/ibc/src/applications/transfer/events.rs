@@ -1,3 +1,5 @@
+//! Defines all token transfer event types
+
 use crate::applications::transfer::acknowledgement::TokenTransferAcknowledgement;
 use crate::applications::transfer::{Amount, PrefixedDenom, MODULE_ID_STR};
 use crate::core::events::ModuleEvent;

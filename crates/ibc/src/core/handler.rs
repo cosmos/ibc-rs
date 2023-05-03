@@ -45,7 +45,7 @@ mod tests {
 
     use crate::applications::transfer::error::TokenTransferError;
     use crate::applications::transfer::msgs::transfer::test_util::get_dummy_transfer_packet;
-    use crate::applications::transfer::relay::send_transfer::send_transfer;
+    use crate::applications::transfer::send_transfer;
     use crate::applications::transfer::{
         msgs::transfer::test_util::get_dummy_msg_transfer, msgs::transfer::MsgTransfer,
         packet::PacketData, PrefixedCoin, MODULE_ID_STR,

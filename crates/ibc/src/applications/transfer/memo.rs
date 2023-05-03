@@ -1,3 +1,6 @@
+//! Defines the memo type, which represents the string that users can include
+//! with a token transfer
+
 use core::convert::Infallible;
 use core::fmt::{self, Display};
 use core::str::FromStr;

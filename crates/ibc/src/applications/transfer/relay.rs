@@ -1,4 +1,5 @@
-//! This module implements the processing logic for ICS20 (token transfer) message.
+//! Implements the processing logic for ICS20 (token transfer) message.
+
 use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::is_sender_chain_source;
 use crate::applications::transfer::packet::PacketData;

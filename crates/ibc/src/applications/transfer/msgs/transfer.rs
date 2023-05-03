@@ -1,4 +1,4 @@
-//! This is the definition of a transfer messages that an application submits to a chain.
+//! Defines the token transfer message type
 
 use crate::applications::transfer::packet::PacketData;
 use crate::prelude::*;

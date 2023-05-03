@@ -1,3 +1,5 @@
+//! Defines types used in token transfer acknowledgements
+
 use core::fmt::{Display, Error as FmtError, Formatter};
 
 use super::error::TokenTransferError;

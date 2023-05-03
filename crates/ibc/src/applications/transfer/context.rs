@@ -1,3 +1,5 @@
+//! Defines the main context traits and IBC module callbacks
+
 use crate::core::ContextError;
 use crate::prelude::*;
 

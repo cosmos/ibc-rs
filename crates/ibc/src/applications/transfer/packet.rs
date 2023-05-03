@@ -1,3 +1,5 @@
+//! Defines the structure of token transfers' packet bytes
+
 use alloc::string::ToString;
 use core::convert::TryFrom;
 use core::str::FromStr;

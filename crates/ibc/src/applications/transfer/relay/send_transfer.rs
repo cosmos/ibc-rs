@@ -11,9 +11,7 @@ use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::path::{ChannelEndPath, SeqSendPath};
 use crate::prelude::*;
 
-/// This function handles the transfer sending logic.
-/// If this method returns an error, the runtime is expected to rollback all state modifications to
-/// the `Ctx` caused by all messages from the transaction that this `msg` is a part of.
+/// Initiate a token transfer. Equivalent to calling [`send_transfer_validate`], followed by [`send_transfer_execute`].
 pub fn send_transfer<Ctx>(ctx_a: &mut Ctx, msg: MsgTransfer) -> Result<(), TokenTransferError>
 where
     Ctx: TokenTransferExecutionContext,
@@ -22,6 +20,7 @@ where
     send_transfer_execute(ctx_a, msg)
 }
 
+/// Validates the token tranfer. If this succeeds, then it is legal to initiate the transfer with [`send_transfer_execute`].
 pub fn send_transfer_validate<Ctx>(ctx_a: &Ctx, msg: MsgTransfer) -> Result<(), TokenTransferError>
 where
     Ctx: TokenTransferValidationContext,
@@ -89,6 +88,7 @@ where
     Ok(())
 }
 
+/// Executes the token transfer. A prior call to [`send_transfer_validate`] MUST have succeeded.
 pub fn send_transfer_execute<Ctx>(
     ctx_a: &mut Ctx,
     msg: MsgTransfer,
