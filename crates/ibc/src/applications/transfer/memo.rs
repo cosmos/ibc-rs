@@ -7,6 +7,7 @@ use core::str::FromStr;
 
 use crate::prelude::*;
 
+/// Represents the token transfer memo 
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

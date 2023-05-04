@@ -13,7 +13,10 @@ use crate::prelude::*;
 #[cfg(feature = "serde")]
 use crate::serializers::serde_string;
 
-/// Base denomination type
+/// The "base" of a denomination.
+/// 
+/// For example, given the token `my_port-1/my_channel-1/my_port-2/my_channel-2/base_denom`, 
+/// `base_denom` is the "base" of the denomination
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
 #[cfg_attr(
@@ -45,6 +48,11 @@ impl FromStr for BaseDenom {
     }
 }
 
+/// One hop in a token's trace, which consists of the port and channel IDs of the sender
+///
+/// For example, given the token `my_port-1/my_channel-1/my_port-2/my_channel-2/base_denom`, 
+/// `my_port-1/my_channel-1` is a trace prefix, and `my_port-2/my_channel-2` is another one.
+/// See [TracePath] which stitches trace prefixes together.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

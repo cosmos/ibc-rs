@@ -1,6 +1,4 @@
-//! Light client implementations to be used in [Core](core).
-//!
-//! [core]: https://github.com/cosmos/ibc-rs/tree/main/crates/ibc/src/core
+//! Light client implementations to be used in [core](crate::core).
 
 use core::any::Any;
 

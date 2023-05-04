@@ -25,6 +25,7 @@ use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::signer::Signer;
 
+/// Methods required in token transfer validation, to be implemented by the host
 pub trait TokenTransferValidationContext: SendPacketValidationContext {
     type AccountId: TryFrom<Signer>;
 
@@ -73,6 +74,7 @@ pub trait TokenTransferValidationContext: SendPacketValidationContext {
     }
 }
 
+/// Methods required in token transfer execution, to be implemented by the host
 pub trait TokenTransferExecutionContext:
     TokenTransferValidationContext + SendPacketExecutionContext
 {

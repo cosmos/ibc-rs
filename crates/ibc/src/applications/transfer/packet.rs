@@ -1,4 +1,4 @@
-//! Defines the structure of token transfers' packet bytes
+//! Contains the `PacketData` type that defines the structure of token transfers' packet bytes
 
 use alloc::string::ToString;
 use core::convert::TryFrom;
@@ -10,6 +10,7 @@ use super::error::TokenTransferError;
 use super::{Amount, Memo, PrefixedCoin, PrefixedDenom};
 use crate::signer::Signer;
 
+/// Defines the structure of token transfers' packet bytes
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(
     feature = "serde",
