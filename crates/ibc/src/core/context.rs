@@ -27,7 +27,7 @@ use super::ics02_client::msgs::MsgUpdateOrMisbehaviour;
 use super::{
     ics02_client::error::ClientError,
     ics03_connection::error::ConnectionError,
-    ics04_channel::error::{ChannelError, PacketError},
+    ics04_channel::error::{ChannelError, PacketError, PortError::UnknownPort},
 };
 use core::time::Duration;
 
@@ -45,7 +45,6 @@ use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCo
 use crate::core::ics04_channel::context::calculate_block_delay;
 use crate::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
-use crate::core::ics05_port::error::PortError::UnknownPort;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ConnectionId, PortId};
 use crate::core::ics24_host::path::{

@@ -112,7 +112,7 @@ impl core::fmt::Display for Sequence {
 }
 
 /// The packet type; this is what applications send to one another.
-/// 
+///
 /// Each application defines the structure of the `data` field.
 #[cfg_attr(
     feature = "parity-scale-codec",

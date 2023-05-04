@@ -12,7 +12,7 @@ use ibc_proto::protobuf::Protobuf;
 pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenAck";
 
 /// Message definition for the third step in the channel open handshake (`ChanOpenAck` datagram).
-/// 
+///
 /// Per our convention, this message is sent to chain A.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelOpenAck {

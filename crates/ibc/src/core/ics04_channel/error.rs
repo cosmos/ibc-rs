@@ -1,4 +1,4 @@
-//! Defines the main channel and packet error types
+//! Defines the main channel, port and packet error types
 
 use super::packet::Sequence;
 use super::timeout::TimeoutHeight;
@@ -6,7 +6,6 @@ use crate::core::ics02_client::error as client_error;
 use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::Version;
-use crate::core::ics05_port::error as port_error;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::timestamp::Timestamp;
@@ -16,9 +15,20 @@ use crate::Height;
 use displaydoc::Display;
 
 #[derive(Debug, Display)]
+pub enum PortError {
+    /// port `{port_id}` is unknown
+    UnknownPort { port_id: PortId },
+    /// implementation specific error
+    ImplementationSpecific,
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for PortError {}
+
+#[derive(Debug, Display)]
 pub enum ChannelError {
     /// port error: `{0}`
-    Port(port_error::PortError),
+    Port(PortError),
     /// channel state unknown: `{state}`
     UnknownState { state: i32 },
     /// channel order type unknown: `{type_id}`
