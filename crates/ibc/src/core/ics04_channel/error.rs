@@ -6,8 +6,9 @@ use crate::core::ics02_client::error as client_error;
 use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::Version;
-use crate::core::ics24_host::error::IdentifierError;
-use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
+use crate::core::ics24_host::identifier::{
+    ChannelId, ClientId, ConnectionId, IdentifierError, PortId,
+};
 use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
 use crate::Height;

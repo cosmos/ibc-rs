@@ -3,13 +3,13 @@ use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use derive_more::Into;
+use displaydoc::Display;
 
 use super::validate::*;
 use crate::clients::ics07_tendermint::client_type as tm_client_type;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics24_host::validate::validate_client_identifier;
 
-use crate::core::ics24_host::error::IdentifierError;
 use crate::prelude::*;
 
 /// This type is subject to future changes.
@@ -524,3 +524,26 @@ impl Display for PortChannelId {
         write!(f, "{}/{}", self.port_id, self.channel_id)
     }
 }
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Display)]
+pub enum IdentifierError {
+    /// identifier `{id}` cannot contain separator '/'
+    ContainSeparator { id: String },
+    /// identifier `{id}` has invalid length `{length}` must be between `{min}`-`{max}` characters
+    InvalidLength {
+        id: String,
+        length: usize,
+        min: usize,
+        max: usize,
+    },
+    /// identifier `{id}` must only contain alphanumeric characters or `.`, `_`, `+`, `-`, `#`, - `[`, `]`, `<`, `>`
+    InvalidCharacter { id: String },
+    /// identifier prefix `{prefix}` is invalid
+    InvalidPrefix { prefix: String },
+    /// identifier cannot be empty
+    Empty,
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for IdentifierError {}

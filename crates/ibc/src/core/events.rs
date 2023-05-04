@@ -12,8 +12,9 @@ use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics03_connection::events as ConnectionEvents;
 use crate::core::ics04_channel::error as channel_error;
 use crate::core::ics04_channel::events as ChannelEvents;
-use crate::core::ics24_host::error::IdentifierError;
 use crate::core::timestamp::ParseTimestampError;
+
+use super::ics24_host::identifier::IdentifierError;
 
 /// All error variants related to IBC events
 #[derive(Debug, Display)]

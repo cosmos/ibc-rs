@@ -2,8 +2,7 @@
 
 use crate::core::ics02_client::error as client_error;
 use crate::core::ics03_connection::version::Version;
-use crate::core::ics24_host::error::IdentifierError;
-use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+use crate::core::ics24_host::identifier::{ClientId, ConnectionId, IdentifierError};
 use crate::core::timestamp::{Timestamp, TimestampOverflowError};
 use crate::Height;
 

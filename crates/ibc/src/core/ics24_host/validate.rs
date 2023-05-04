@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-use super::error::IdentifierError as Error;
+use super::identifier::IdentifierError as Error;
 
 /// Path separator (ie. forward slash '/')
 const PATH_SEPARATOR: char = '/';

@@ -18,8 +18,7 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-use crate::core::ics24_host::error::IdentifierError;
-use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+use crate::core::ics24_host::identifier::{ClientId, ConnectionId, IdentifierError};
 use crate::core::timestamp::ZERO_DURATION;
 
 #[cfg_attr(

@@ -8,8 +8,7 @@ use ibc_proto::protobuf::Error as TendermintProtoError;
 
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics23_commitment::error::CommitmentError;
-use crate::core::ics24_host::error::IdentifierError;
-use crate::core::ics24_host::identifier::ClientId;
+use crate::core::ics24_host::identifier::{ClientId, IdentifierError};
 use crate::core::timestamp::Timestamp;
 use crate::Height;
 

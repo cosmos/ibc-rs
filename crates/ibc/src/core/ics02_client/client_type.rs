@@ -3,7 +3,7 @@
 use crate::prelude::*;
 use core::fmt::{Display, Error as FmtError, Formatter};
 
-use crate::core::ics24_host::{error::IdentifierError, validate::validate_client_type};
+use crate::core::ics24_host::{identifier::IdentifierError, validate::validate_client_type};
 
 #[cfg_attr(
     feature = "parity-scale-codec",

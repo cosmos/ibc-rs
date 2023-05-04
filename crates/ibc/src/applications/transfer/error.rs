@@ -7,8 +7,7 @@ use ibc_proto::protobuf::Error as TendermintProtoError;
 use uint::FromDecStrErr;
 
 use crate::core::ics04_channel::channel::Order;
-use crate::core::ics24_host::error::IdentifierError;
-use crate::core::ics24_host::identifier::{ChannelId, PortId};
+use crate::core::ics24_host::identifier::{ChannelId, IdentifierError, PortId};
 use crate::core::ContextError;
 use crate::prelude::*;
 
