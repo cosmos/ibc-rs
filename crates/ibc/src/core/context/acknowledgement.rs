@@ -6,7 +6,7 @@ use crate::core::{
     events::IbcEvent,
     ics04_channel::{
         channel::Order, error::ChannelError, events::AcknowledgePacket, handler::acknowledgement,
-        msgs::acknowledgement::MsgAcknowledgement,
+        msgs::MsgAcknowledgement,
     },
     ics26_routing::context::ModuleId,
 };
