@@ -52,7 +52,7 @@ impl From<Vec<u8>> for CommitmentRoot {
 
 /// Demonstrates membership or non-membership for an element or set of elements,
 /// verifiable in conjunction with a known commitment root.
-/// 
+///
 /// For example, in the case of a proof of membership in a Merkle tree,
 /// this encodes a Merkle proof.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
