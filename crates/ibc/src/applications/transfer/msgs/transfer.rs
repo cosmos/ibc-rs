@@ -13,7 +13,7 @@ use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::timestamp::Timestamp;
 use crate::core::Msg;
 
-pub const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
+pub(crate) const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 
 /// Message used to build an ICS20 token transfer packet.
 ///

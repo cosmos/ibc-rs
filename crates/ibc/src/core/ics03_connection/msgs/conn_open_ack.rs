@@ -12,7 +12,7 @@ use crate::core::tx_msg::Msg;
 use crate::signer::Signer;
 use crate::Height;
 
-pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenAck";
+pub(crate) const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenAck";
 
 /// Per our convention, this message is sent to chain A.
 /// The handler will check proofs of chain B.

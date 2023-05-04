@@ -12,7 +12,7 @@ use crate::core::ics24_host::identifier::ClientId;
 use crate::core::tx_msg::Msg;
 use crate::signer::Signer;
 
-pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenInit";
+pub(crate) const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenInit";
 
 /// Per our convention, this message is sent to chain A.
 /// The handler will check proofs of chain B.

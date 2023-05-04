@@ -8,7 +8,7 @@ use crate::{prelude::*, Height};
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenConfirm as RawMsgChannelOpenConfirm;
 use ibc_proto::protobuf::Protobuf;
 
-pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenConfirm";
+pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenConfirm";
 
 ///
 /// Message definition for the fourth step in the channel open handshake (`ChanOpenConfirm`

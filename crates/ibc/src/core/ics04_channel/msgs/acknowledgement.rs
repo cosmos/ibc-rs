@@ -11,7 +11,7 @@ use crate::core::tx_msg::Msg;
 use crate::signer::Signer;
 use crate::Height;
 
-pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgAcknowledgement";
+pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgAcknowledgement";
 
 /// A generic Acknowledgement type that modules may interpret as they like.
 /// An acknowledgement cannot be empty.

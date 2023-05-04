@@ -11,7 +11,7 @@ use crate::signer::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenInit as RawMsgChannelOpenInit;
 use ibc_proto::protobuf::Protobuf;
 
-pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenInit";
+pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenInit";
 
 ///
 /// Message definition for the first step in the channel open handshake (`ChanOpenInit` datagram).

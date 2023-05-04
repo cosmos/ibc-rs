@@ -11,7 +11,7 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::signer::Signer;
 
-pub const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
+pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
 
 /// Represents the message that triggers the update of an on-chain (IBC) client
 /// either with new headers, or evidence of misbehaviour.

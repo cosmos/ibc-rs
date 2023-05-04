@@ -11,7 +11,7 @@ use crate::core::ics24_host::identifier::ClientId;
 use crate::core::tx_msg::Msg;
 use crate::signer::Signer;
 
-pub const TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
+pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
 
 /// A type of message that submits client misbehaviour proof.
 #[derive(Clone, Debug, PartialEq, Eq)]

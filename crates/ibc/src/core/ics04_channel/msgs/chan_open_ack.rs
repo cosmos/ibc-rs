@@ -9,7 +9,7 @@ use crate::{prelude::*, Height};
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenAck as RawMsgChannelOpenAck;
 use ibc_proto::protobuf::Protobuf;
 
-pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenAck";
+pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenAck";
 
 ///
 /// Per our convention, this message is sent to chain A.

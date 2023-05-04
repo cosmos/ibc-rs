@@ -9,7 +9,7 @@ use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::tx_msg::Msg;
 use crate::signer::Signer;
 
-pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCloseInit";
+pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCloseInit";
 
 ///
 /// Message definition for the first step in the channel close handshake (`ChanCloseInit` datagram).

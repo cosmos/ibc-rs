@@ -10,7 +10,7 @@ use crate::core::tx_msg::Msg;
 use crate::signer::Signer;
 use crate::Height;
 
-pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgTimeoutOnClose";
+pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgTimeoutOnClose";
 
 ///
 /// Message definition for packet timeout domain type.

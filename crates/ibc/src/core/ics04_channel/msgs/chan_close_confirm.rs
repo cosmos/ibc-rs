@@ -10,7 +10,7 @@ use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::tx_msg::Msg;
 use crate::signer::Signer;
 
-pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCloseConfirm";
+pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCloseConfirm";
 
 ///
 /// Message definition for the second step in the channel close handshake (the `ChanCloseConfirm`

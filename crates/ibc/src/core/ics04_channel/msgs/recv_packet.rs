@@ -11,7 +11,7 @@ use crate::core::tx_msg::Msg;
 use crate::signer::Signer;
 use crate::Height;
 
-pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgRecvPacket";
+pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgRecvPacket";
 
 ///
 /// Message definition for the "packet receiving" datagram.
