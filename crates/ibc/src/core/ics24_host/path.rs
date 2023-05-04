@@ -1,3 +1,5 @@
+//! Defines all store paths used by IBC
+
 use crate::{prelude::*, Height};
 
 /// Path-space as listed in ICS-024

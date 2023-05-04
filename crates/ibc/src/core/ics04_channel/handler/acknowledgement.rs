@@ -6,10 +6,10 @@ use crate::core::ics04_channel::commitment::{compute_ack_commitment, compute_pac
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
+use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqAckPath,
 };
-use crate::core::ics24_host::path::Path;
 use crate::prelude::*;
 
 use crate::core::{ContextError, ValidationContext};

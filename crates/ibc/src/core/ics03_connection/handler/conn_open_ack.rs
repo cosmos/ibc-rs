@@ -9,8 +9,8 @@ use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenAck;
 use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath};
 use crate::core::ics24_host::path::Path;
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath};
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 

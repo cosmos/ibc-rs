@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-use super::identifier::IdentifierError as Error;
+use super::IdentifierError as Error;
 
 /// Path separator (ie. forward slash '/')
 const PATH_SEPARATOR: char = '/';
@@ -117,10 +117,8 @@ pub fn validate_channel_identifier(id: &str) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ics24_host::validate::{
-        validate_channel_identifier, validate_client_identifier, validate_client_type,
-        validate_connection_identifier, validate_identifier, validate_port_identifier,
-    };
+    use super::*;
+
     use test_log::test;
 
     #[test]

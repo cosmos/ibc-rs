@@ -10,10 +10,10 @@ use crate::core::ics03_connection::events::OpenTry;
 use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::identifier::ConnectionId;
+use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath,
 };
-use crate::core::ics24_host::path::Path;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 

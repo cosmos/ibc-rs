@@ -6,8 +6,8 @@ use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
-use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::core::ics24_host::path::Path;
+use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::core::{ContextError, ValidationContext};
 use crate::prelude::*;
 
