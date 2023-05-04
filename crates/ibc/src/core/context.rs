@@ -63,7 +63,7 @@ use crate::core::{
         msgs::ConnectionMsg,
     },
     ics24_host::identifier::ClientId,
-    ics26_routing::msgs::MsgEnvelope,
+    msgs::MsgEnvelope,
 };
 use crate::Height;
 

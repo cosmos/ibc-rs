@@ -40,9 +40,9 @@ use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::ics26_routing::context::{Module, ModuleId};
-use crate::core::ics26_routing::msgs::MsgEnvelope;
 use crate::core::timestamp::Timestamp;
 use crate::core::ContextError;
+use crate::core::MsgEnvelope;
 use crate::core::Router;
 use crate::core::{dispatch, ExecutionContext, ValidationContext};
 use crate::mock::client_state::{

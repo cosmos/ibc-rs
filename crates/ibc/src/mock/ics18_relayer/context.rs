@@ -35,7 +35,7 @@ mod tests {
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
     use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
-    use crate::core::ics26_routing::msgs::MsgEnvelope;
+    use crate::core::MsgEnvelope;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::mock::host::{HostBlock, HostType};
