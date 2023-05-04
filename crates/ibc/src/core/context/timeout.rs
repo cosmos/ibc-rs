@@ -13,7 +13,7 @@ use crate::core::{
         events::TimeoutPacket,
         handler::{timeout, timeout_on_close},
     },
-    ics26_routing::context::ModuleId,
+    router::ModuleId,
 };
 
 use super::{ContextError, ExecutionContext, ValidationContext};

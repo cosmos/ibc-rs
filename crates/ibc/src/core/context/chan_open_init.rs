@@ -8,7 +8,7 @@ use crate::core::ics24_host::identifier::ChannelId;
 
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::router::ModuleId;
 
 use crate::core::events::{IbcEvent, MessageEvent};
 

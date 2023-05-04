@@ -5,7 +5,7 @@ use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::events::CloseConfirm;
 use crate::core::ics04_channel::handler::chan_close_confirm;
 use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::router::ModuleId;
 
 use crate::core::events::{IbcEvent, MessageEvent};
 
@@ -103,7 +103,7 @@ mod tests {
     use crate::core::events::{IbcEvent, MessageEvent};
     use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
-    use crate::core::ics26_routing::context::ModuleId;
+    use crate::core::router::ModuleId;
     use crate::core::ValidationContext;
 
     use crate::core::ics03_connection::connection::ConnectionEnd;

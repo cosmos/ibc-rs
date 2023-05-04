@@ -89,8 +89,8 @@ mod tests {
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
     use crate::core::ics24_host::path::CommitmentPath;
-    use crate::core::ics26_routing::context::ModuleId;
     use crate::core::msgs::MsgEnvelope;
+    use crate::core::router::ModuleId;
     use crate::core::timestamp::Timestamp;
     use crate::core::{dispatch, ValidationContext};
     use crate::mock::client_state::MockClientState;

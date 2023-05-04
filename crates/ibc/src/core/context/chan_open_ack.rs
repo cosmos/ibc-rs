@@ -6,7 +6,7 @@ use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::router::ModuleId;
 
 use crate::core::events::{IbcEvent, MessageEvent};
 
@@ -114,7 +114,7 @@ mod tests {
                 },
             },
             ics24_host::identifier::{ClientId, ConnectionId},
-            ics26_routing::context::ModuleId,
+            router::ModuleId,
         },
         mock::context::MockContext,
         test_utils::DummyTransferModule,

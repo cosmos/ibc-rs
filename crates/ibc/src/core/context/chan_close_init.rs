@@ -5,7 +5,7 @@ use crate::{core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit, pre
 
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::router::ModuleId;
 
 use crate::core::events::{IbcEvent, MessageEvent};
 
@@ -102,7 +102,7 @@ mod tests {
     use crate::core::events::IbcEvent;
     use crate::core::ics04_channel::msgs::chan_close_init::test_util::get_dummy_raw_msg_chan_close_init;
     use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
-    use crate::core::ics26_routing::context::ModuleId;
+    use crate::core::router::ModuleId;
     use crate::core::ValidationContext;
 
     use crate::core::ics03_connection::connection::ConnectionEnd;

@@ -11,7 +11,7 @@ use crate::{
             packet::Receipt,
         },
         ics24_host::path::{AckPath, ChannelEndPath, ReceiptPath, SeqRecvPath},
-        ics26_routing::context::ModuleId,
+        router::ModuleId,
     },
     prelude::*,
 };
@@ -155,7 +155,7 @@ mod tests {
             events::IbcEvent,
             ics03_connection::version::get_compatible_versions,
             ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId},
-            ics26_routing::context::ModuleId,
+            router::ModuleId,
             timestamp::ZERO_DURATION,
         },
         test_utils::DummyTransferModule,

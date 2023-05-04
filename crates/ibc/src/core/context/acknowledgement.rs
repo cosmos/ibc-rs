@@ -8,7 +8,7 @@ use crate::core::{
         channel::Order, error::ChannelError, events::AcknowledgePacket, handler::acknowledgement,
         msgs::MsgAcknowledgement,
     },
-    ics26_routing::context::ModuleId,
+    router::ModuleId,
 };
 
 use super::{ContextError, ExecutionContext, ValidationContext};

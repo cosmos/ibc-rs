@@ -6,7 +6,7 @@ use crate::{core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry, prelude
 
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::router::ModuleId;
 
 use crate::core::events::{IbcEvent, MessageEvent};
 
@@ -122,7 +122,7 @@ mod tests {
     use crate::{
         applications::transfer::MODULE_ID_STR,
         core::{
-            context::chan_open_try::chan_open_try_execute, ics26_routing::context::ModuleId,
+            context::chan_open_try::chan_open_try_execute, router::ModuleId,
             timestamp::ZERO_DURATION,
         },
         test_utils::DummyTransferModule,

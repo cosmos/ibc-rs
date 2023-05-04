@@ -1,6 +1,6 @@
 //! Defines the main context traits and IBC module callbacks
 
-use crate::core::ics26_routing::context::ModuleExtras;
+use crate::core::router::ModuleExtras;
 use crate::core::ContextError;
 use crate::prelude::*;
 

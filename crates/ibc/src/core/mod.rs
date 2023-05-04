@@ -27,11 +27,11 @@ pub mod ics03_connection;
 pub mod ics04_channel;
 pub mod ics23_commitment;
 pub mod ics24_host;
-pub mod ics26_routing;
 
 pub mod events;
 pub mod timestamp;
 
+pub(crate) mod router;
 mod context;
 mod handler;
 mod msgs;
@@ -40,6 +40,7 @@ pub use handler::dispatch;
 pub use handler::execute;
 pub use handler::validate;
 
+pub use router::*;
 pub use context::*;
 
 pub use msgs::Msg;
