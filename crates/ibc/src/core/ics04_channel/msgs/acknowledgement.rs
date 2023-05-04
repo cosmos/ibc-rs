@@ -6,7 +6,7 @@ use ibc_proto::protobuf::Protobuf;
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::{Acknowledgement, Packet};
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
-use crate::core::tx_msg::Msg;
+use crate::core::Msg;
 use crate::signer::Signer;
 use crate::Height;
 

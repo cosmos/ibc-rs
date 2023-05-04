@@ -1,6 +1,6 @@
 //! Definition of domain type message `MsgUpdateClient`.
 
-use crate::core::tx_msg::Msg;
+use crate::core::Msg;
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;

@@ -34,9 +34,7 @@ pub mod timestamp;
 
 mod context;
 mod handler;
-// TODO: merge with msgs
 mod msgs;
-mod tx_msg;
 
 pub use handler::dispatch;
 pub use handler::execute;
@@ -44,8 +42,7 @@ pub use handler::validate;
 
 pub use context::*;
 
-pub use tx_msg::Msg;
-
+pub use msgs::Msg;
 pub use msgs::MsgEnvelope;
 
 pub use ics04_channel::handler::send_packet::{

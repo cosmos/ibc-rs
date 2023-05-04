@@ -4,7 +4,7 @@ use crate::core::ics04_channel::channel::{Order, State};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ConnectionId, PortId};
-use crate::core::tx_msg::Msg;
+use crate::core::Msg;
 use crate::prelude::*;
 use crate::signer::Signer;
 

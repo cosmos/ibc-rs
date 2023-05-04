@@ -7,7 +7,7 @@ use ibc_proto::ibc::core::channel::v1::MsgTimeout as RawMsgTimeout;
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
-use crate::core::tx_msg::Msg;
+use crate::core::Msg;
 use crate::signer::Signer;
 use crate::Height;
 

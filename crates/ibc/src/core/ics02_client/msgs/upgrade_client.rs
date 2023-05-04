@@ -13,7 +13,7 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics23_commitment::error::CommitmentError;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::tx_msg::Msg;
+use crate::core::Msg;
 use crate::signer::Signer;
 
 pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpgradeClient";
