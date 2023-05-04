@@ -1,3 +1,5 @@
+//! Implementation of IBC channels, as described in ICS 4.
+
 use crate::prelude::*;
 use crate::utils::pretty::PrettySlice;
 
@@ -14,6 +16,7 @@ use ibc_proto::ibc::core::channel::v1::{
 use crate::core::ics04_channel::{error::ChannelError, Version};
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 
+/// A [`ChannelEnd`] along with its ID and the port it is bound to
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -85,6 +88,7 @@ impl From<IdentifiedChannelEnd> for RawIdentifiedChannel {
     }
 }
 
+/// One end of a channel
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -274,6 +278,7 @@ impl ChannelEnd {
     }
 }
 
+/// The port and channel ID of the counterparty of a channel
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -369,6 +374,7 @@ impl From<Counterparty> for RawCounterparty {
     }
 }
 
+/// Represents the channel ordering
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -440,6 +446,7 @@ impl FromStr for Order {
     }
 }
 
+/// Represents the state of a [`ChannelEnd`]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

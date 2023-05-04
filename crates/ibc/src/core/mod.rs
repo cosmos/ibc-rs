@@ -44,3 +44,7 @@ pub use handler::validate;
 pub use context::*;
 
 pub use tx_msg::Msg;
+
+pub use ics04_channel::handler::send_packet::{
+    send_packet, send_packet_execute, send_packet_validate,
+};

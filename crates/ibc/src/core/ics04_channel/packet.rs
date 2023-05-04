@@ -1,3 +1,5 @@
+//! Defines the packet type
+
 use crate::prelude::*;
 
 use core::str::FromStr;

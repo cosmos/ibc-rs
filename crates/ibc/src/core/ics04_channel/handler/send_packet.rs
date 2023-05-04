@@ -16,7 +16,9 @@ use crate::core::timestamp::Expiry;
 use crate::core::ContextError;
 use crate::prelude::*;
 
-/// Per our convention, this message is processed on chain A.
+/// Send the given packet, including all necessary validation.
+/// 
+/// Equivalent to calling [`send_packet_validate`], followed by [`send_packet_execute`]
 pub fn send_packet(
     ctx_a: &mut impl SendPacketExecutionContext,
     packet: Packet,
@@ -25,7 +27,7 @@ pub fn send_packet(
     send_packet_execute(ctx_a, packet)
 }
 
-/// Per our convention, this message is processed on chain A.
+/// Validate that sending the given packet would succeed.
 pub fn send_packet_validate(
     ctx_a: &impl SendPacketValidationContext,
     packet: &Packet,
@@ -94,7 +96,9 @@ pub fn send_packet_validate(
     Ok(())
 }
 
-/// Per our convention, this message is processed on chain A.
+/// Send the packet without any validation.
+/// 
+/// A prior call to [`send_packet_validate`] MUST have succeeded.
 pub fn send_packet_execute(
     ctx_a: &mut impl SendPacketExecutionContext,
     packet: Packet,

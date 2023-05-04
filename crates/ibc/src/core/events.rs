@@ -15,6 +15,7 @@ use crate::core::ics04_channel::events as ChannelEvents;
 use crate::core::ics24_host::error::ValidationError;
 use crate::core::timestamp::ParseTimestampError;
 
+/// All error variants related to IBC events
 #[derive(Debug, Display)]
 pub enum Error {
     /// error parsing height
@@ -161,6 +162,7 @@ impl IbcEvent {
     }
 }
 
+/// The event type emitted by IBC applications
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -198,6 +200,7 @@ impl From<ModuleEvent> for IbcEvent {
     }
 }
 
+///  A single key/value pair in a [`ModuleEvent`]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -232,6 +235,11 @@ impl From<ModuleEventAttribute> for abci::EventAttribute {
     }
 }
 
+/// An event type that is emitted by the Cosmos SDK.
+/// 
+/// We need to emit it as well, as currently [hermes] relies on it.
+/// 
+/// [hermes]: https://github.com/informalsystems/hermes
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

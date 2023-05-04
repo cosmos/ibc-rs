@@ -1,3 +1,5 @@
+//! Defines the main channel and packet error types
+
 use super::packet::Sequence;
 use super::timeout::TimeoutHeight;
 use crate::core::ics02_client::error as client_error;

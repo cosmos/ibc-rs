@@ -1,3 +1,5 @@
+//! Types and utilities pertaining to packet timeouts.
+
 use core::fmt::{Display, Error as FmtError, Formatter};
 
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
