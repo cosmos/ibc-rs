@@ -23,7 +23,7 @@ use crate::Height;
 
 use pretty::{PrettySignedHeader, PrettyValidatorSet};
 
-pub const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
+pub(crate) const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// Tendermint consensus header
@@ -163,7 +163,7 @@ impl From<Header> for Any {
     }
 }
 
-pub fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
+fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
     RawHeader::decode(buf).map_err(Error::Decode)?.try_into()
 }
 

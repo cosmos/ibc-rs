@@ -13,8 +13,9 @@ use crate::clients::ics07_tendermint::header::Header;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 
-pub const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
+const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
 
+/// Tendermint light client's misbehaviour type
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Misbehaviour {
@@ -125,12 +126,6 @@ impl From<Misbehaviour> for Any {
             value: Protobuf::<RawMisbehaviour>::encode_vec(&misbehaviour),
         }
     }
-}
-
-pub fn decode_misbehaviour<B: Buf>(buf: B) -> Result<Misbehaviour, Error> {
-    RawMisbehaviour::decode(buf)
-        .map_err(Error::Decode)?
-        .try_into()
 }
 
 impl core::fmt::Display for Misbehaviour {
