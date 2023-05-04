@@ -1,10 +1,7 @@
 use crate::{core::events::ModuleEvent, prelude::*};
 
-use alloc::borrow::{Borrow, Cow};
-use core::{
-    fmt::{Debug, Display, Error as FmtError, Formatter},
-    str::FromStr,
-};
+use alloc::borrow::Borrow;
+use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
@@ -13,9 +10,11 @@ use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::signer::Signer;
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct InvalidModuleId;
-
+/// Module name, internal to the chain.
+///
+/// That is, the IBC protocol never exposes this name. Note that this is
+/// different from IBC host [identifiers][crate::core::ics24_host::identifier],
+/// which are exposed to other chains by the protocol.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -33,26 +32,14 @@ pub struct InvalidModuleId;
 pub struct ModuleId(String);
 
 impl ModuleId {
-    pub fn new(s: Cow<'_, str>) -> Result<Self, InvalidModuleId> {
-        if !s.trim().is_empty() && s.chars().all(char::is_alphanumeric) {
-            Ok(Self(s.into_owned()))
-        } else {
-            Err(InvalidModuleId)
-        }
+    pub fn new(s: String) -> Self {
+        Self(s)
     }
 }
 
 impl Display for ModuleId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         write!(f, "{}", self.0)
-    }
-}
-
-impl FromStr for ModuleId {
-    type Err = InvalidModuleId;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::new(Cow::Borrowed(s))
     }
 }
 

@@ -145,7 +145,7 @@ mod tests {
 
         let upgrade_client_height_second = Height::new(1, 1).unwrap();
 
-        let transfer_module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        let transfer_module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
 
         // We reuse this same context across all tests. Nothing in particular needs parametrizing.
         let mut ctx = {
@@ -508,7 +508,7 @@ mod tests {
     }
 
     fn get_channel_events_ctx() -> MockContext {
-        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let mut ctx = MockContext::default()
             .with_client(&ClientId::default(), Height::new(0, 1).unwrap())
             .with_connection(

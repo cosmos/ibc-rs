@@ -146,7 +146,7 @@ mod tests {
         let proof_height = 10;
         let mut context = MockContext::default();
         let module = DummyTransferModule::new();
-        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         context.add_route(module_id.clone(), module).unwrap();
 
         let client_id_on_b = ClientId::new(mock_client_type(), 45).unwrap();

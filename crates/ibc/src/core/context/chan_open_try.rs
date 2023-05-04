@@ -184,7 +184,7 @@ mod tests {
 
         let mut context = MockContext::default();
         let module = DummyTransferModule::new();
-        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         context.add_route(module_id.clone(), module).unwrap();
 
         Fixture {

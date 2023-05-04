@@ -155,7 +155,7 @@ mod tests {
             let client_consensus_state_height = default_context.host_height().unwrap();
 
             let module = DummyTransferModule::new();
-            let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+            let module_id = ModuleId::new(MODULE_ID_STR.to_string());
             default_context.add_route(module_id, module).unwrap();
 
             default_context
@@ -170,7 +170,7 @@ mod tests {
 
         let res = chan_close_init_execute(
             &mut context,
-            MODULE_ID_STR.parse().unwrap(),
+            ModuleId::new(MODULE_ID_STR.to_string()),
             msg_chan_close_init,
         );
         assert!(res.is_ok(), "Execution happy path");

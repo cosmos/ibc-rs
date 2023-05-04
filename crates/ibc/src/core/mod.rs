@@ -31,17 +31,17 @@ pub mod ics24_host;
 pub mod events;
 pub mod timestamp;
 
-pub(crate) mod router;
 mod context;
 mod handler;
 mod msgs;
+pub(crate) mod router;
 
 pub use handler::dispatch;
 pub use handler::execute;
 pub use handler::validate;
 
-pub use router::*;
 pub use context::*;
+pub use router::*;
 
 pub use msgs::Msg;
 pub use msgs::MsgEnvelope;

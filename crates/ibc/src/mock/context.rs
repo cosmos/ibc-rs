@@ -554,7 +554,7 @@ impl MockContext {
     }
 
     pub fn add_port(&mut self, port_id: PortId) {
-        let module_id = ModuleId::new(format!("module{port_id}").into()).unwrap();
+        let module_id = ModuleId::new(format!("module{port_id}"));
         self.ibc_store
             .lock()
             .port_to_module
@@ -1462,8 +1462,6 @@ mod tests {
     use super::*;
     use test_log::test;
 
-    use alloc::str::FromStr;
-
     use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::error::ChannelError;
     use crate::core::ics04_channel::packet::{Acknowledgement, Packet};
@@ -1824,13 +1822,13 @@ mod tests {
             1,
             Height::new(1, 1).unwrap(),
         );
-        ctx.add_route("foomodule".parse().unwrap(), FooModule::default())
+        ctx.add_route(ModuleId::new("foomodule".to_string()), FooModule::default())
             .unwrap();
-        ctx.add_route("barmodule".parse().unwrap(), BarModule::default())
+        ctx.add_route(ModuleId::new("barmodule".to_string()), BarModule::default())
             .unwrap();
 
         let mut on_recv_packet_result = |module_id: &'static str| {
-            let module_id = ModuleId::from_str(module_id).unwrap();
+            let module_id = ModuleId::new(module_id.to_string());
             let m = ctx.get_route_mut(&module_id).unwrap();
             let result =
                 m.on_recv_packet_execute(&Packet::default(), &get_dummy_bech32_account().into());
