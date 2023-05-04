@@ -24,10 +24,11 @@ use self::recv_packet::{recv_packet_execute, recv_packet_validate};
 use self::timeout::{timeout_packet_execute, timeout_packet_validate, TimeoutMsgType};
 
 use super::ics02_client::msgs::MsgUpdateOrMisbehaviour;
+use super::router::Router;
 use super::{
     ics02_client::error::ClientError,
     ics03_connection::error::ConnectionError,
-    ics04_channel::error::{ChannelError, PacketError, PortError::UnknownPort},
+    ics04_channel::error::{ChannelError, PacketError},
 };
 use core::time::Duration;
 
@@ -46,12 +47,11 @@ use crate::core::ics04_channel::context::calculate_block_delay;
 use crate::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-use crate::core::ics24_host::identifier::{ConnectionId, PortId};
+use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
-use crate::core::router::{Module, ModuleId};
 use crate::core::timestamp::Timestamp;
 use crate::core::{
     ics02_client::{
@@ -144,54 +144,6 @@ impl std::error::Error for RouterError {
             Self::UnknownMessageTypeUrl { .. } => None,
             Self::MalformedMessageBytes(e) => Some(e),
         }
-    }
-}
-
-/// Top-level router based on the router defined in ICS-26, which primarily
-/// binds modules to ports.
-pub trait Router {
-    /// Returns a reference to a `Module` registered against the specified `ModuleId`
-    fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module>;
-
-    /// Returns a mutable reference to a `Module` registered against the specified `ModuleId`
-    fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module>;
-
-    /// Returns true if the `Router` has a `Module` registered against the specified `ModuleId`
-    fn has_route(&self, module_id: &ModuleId) -> bool;
-
-    /// Return the module_id associated with a given port_id
-    fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId>;
-
-    fn lookup_module_channel(&self, msg: &ChannelMsg) -> Result<ModuleId, ChannelError> {
-        let port_id = match msg {
-            ChannelMsg::OpenInit(msg) => &msg.port_id_on_a,
-            ChannelMsg::OpenTry(msg) => &msg.port_id_on_b,
-            ChannelMsg::OpenAck(msg) => &msg.port_id_on_a,
-            ChannelMsg::OpenConfirm(msg) => &msg.port_id_on_b,
-            ChannelMsg::CloseInit(msg) => &msg.port_id_on_a,
-            ChannelMsg::CloseConfirm(msg) => &msg.port_id_on_b,
-        };
-        let module_id = self
-            .lookup_module_by_port(port_id)
-            .ok_or(ChannelError::Port(UnknownPort {
-                port_id: port_id.clone(),
-            }))?;
-        Ok(module_id)
-    }
-
-    fn lookup_module_packet(&self, msg: &PacketMsg) -> Result<ModuleId, ChannelError> {
-        let port_id = match msg {
-            PacketMsg::Recv(msg) => &msg.packet.port_id_on_b,
-            PacketMsg::Ack(msg) => &msg.packet.port_id_on_a,
-            PacketMsg::Timeout(msg) => &msg.packet.port_id_on_a,
-            PacketMsg::TimeoutOnClose(msg) => &msg.packet.port_id_on_a,
-        };
-        let module_id = self
-            .lookup_module_by_port(port_id)
-            .ok_or(ChannelError::Port(UnknownPort {
-                port_id: port_id.clone(),
-            }))?;
-        Ok(module_id)
     }
 }
 

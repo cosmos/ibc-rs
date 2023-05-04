@@ -43,7 +43,7 @@ use crate::core::router::{Module, ModuleId};
 use crate::core::timestamp::Timestamp;
 use crate::core::ContextError;
 use crate::core::MsgEnvelope;
-use crate::core::Router;
+use crate::core::router::Router;
 use crate::core::{dispatch, ExecutionContext, ValidationContext};
 use crate::mock::client_state::{
     client_type as mock_client_type, MockClientRecord, MockClientState,
