@@ -8,7 +8,7 @@ use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
-use crate::core::ics24_host::Path;
+use crate::core::ics24_host::path::Path;
 use crate::core::timestamp::Expiry;
 
 use crate::core::{ContextError, ValidationContext};

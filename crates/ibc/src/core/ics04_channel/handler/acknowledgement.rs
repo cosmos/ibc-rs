@@ -9,7 +9,7 @@ use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqAckPath,
 };
-use crate::core::ics24_host::Path;
+use crate::core::ics24_host::path::Path;
 use crate::prelude::*;
 
 use crate::core::{ContextError, ValidationContext};

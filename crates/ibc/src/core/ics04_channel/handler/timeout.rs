@@ -10,7 +10,7 @@ use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
-use crate::core::ics24_host::Path;
+use crate::core::ics24_host::path::Path;
 use crate::core::{ContextError, ValidationContext};
 use crate::prelude::*;
 

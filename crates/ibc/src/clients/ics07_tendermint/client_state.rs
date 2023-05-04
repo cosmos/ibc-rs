@@ -41,7 +41,7 @@ use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ClientUpgradePath};
-use crate::core::ics24_host::Path;
+use crate::core::ics24_host::path::Path;
 use crate::core::timestamp::ZERO_DURATION;
 use crate::Height;
 

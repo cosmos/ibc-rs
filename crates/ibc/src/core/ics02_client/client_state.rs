@@ -15,7 +15,7 @@ use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::core::ics24_host::Path;
+use crate::core::ics24_host::path::Path;
 use crate::erased::ErasedSerialize;
 use crate::prelude::*;
 use crate::Height;

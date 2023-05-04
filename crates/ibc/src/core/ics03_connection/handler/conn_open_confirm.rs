@@ -9,7 +9,7 @@ use crate::core::ics03_connection::events::OpenConfirm;
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ConnectionPath};
-use crate::core::ics24_host::Path;
+use crate::core::ics24_host::path::Path;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 

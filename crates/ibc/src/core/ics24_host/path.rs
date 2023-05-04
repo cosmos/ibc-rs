@@ -11,13 +11,6 @@ use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, Por
 
 use derive_more::{Display, From};
 
-/// ABCI Query path for the IBC sub-store
-pub const IBC_QUERY_PATH: &str = "store/ibc/key";
-
-/// ABCI Query path for the upgrade sub-store
-/// ## Note: This is SDK/Tendermint specific!
-pub const SDK_UPGRADE_QUERY_PATH: &str = "store/upgrade/key";
-
 /// ABCI client upgrade keys
 /// - The key identifying the upgraded IBC state within the upgrade sub-store
 const UPGRADED_IBC_STATE: &str = "upgradedIBCState";

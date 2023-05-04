@@ -13,7 +13,7 @@ use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{
     ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath,
 };
-use crate::core::ics24_host::Path;
+use crate::core::ics24_host::path::Path;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 
