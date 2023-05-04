@@ -3,7 +3,7 @@ use displaydoc::Display;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Display)]
-pub enum ValidationError {
+pub enum IdentifierError {
     /// identifier `{id}` cannot contain separator '/'
     ContainSeparator { id: String },
     /// identifier `{id}` has invalid length `{length}` must be between `{min}`-`{max}` characters
@@ -22,4 +22,4 @@ pub enum ValidationError {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for ValidationError {}
+impl std::error::Error for IdentifierError {}

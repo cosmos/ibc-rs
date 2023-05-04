@@ -9,7 +9,7 @@ use crate::clients::ics07_tendermint::client_type as tm_client_type;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics24_host::validate::validate_client_identifier;
 
-use crate::core::ics24_host::error::ValidationError;
+use crate::core::ics24_host::error::IdentifierError;
 use crate::prelude::*;
 
 /// This type is subject to future changes.
@@ -207,7 +207,7 @@ impl ClientId {
     /// assert!(tm_client_id.is_ok());
     /// tm_client_id.map(|id| { assert_eq!(&id, "07-tendermint-0") });
     /// ```
-    pub fn new(client_type: ClientType, counter: u64) -> Result<Self, ValidationError> {
+    pub fn new(client_type: ClientType, counter: u64) -> Result<Self, IdentifierError> {
         let prefix = client_type.as_str().trim();
         validate_client_type(prefix)?;
         let id = format!("{prefix}-{counter}");
@@ -233,7 +233,7 @@ impl Display for ClientId {
 }
 
 impl FromStr for ClientId {
-    type Err = ValidationError;
+    type Err = IdentifierError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         validate_client_identifier(s).map(|_| Self(s.to_string()))
@@ -316,7 +316,7 @@ impl Display for ConnectionId {
 }
 
 impl FromStr for ConnectionId {
-    type Err = ValidationError;
+    type Err = IdentifierError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         validate_connection_identifier(s).map(|_| Self(s.to_string()))
@@ -384,7 +384,7 @@ impl Display for PortId {
 }
 
 impl FromStr for PortId {
-    type Err = ValidationError;
+    type Err = IdentifierError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         validate_port_identifier(s).map(|_| Self(s.to_string()))
@@ -457,7 +457,7 @@ impl Display for ChannelId {
 }
 
 impl FromStr for ChannelId {
-    type Err = ValidationError;
+    type Err = IdentifierError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         validate_channel_identifier(s).map(|_| Self(s.to_string()))

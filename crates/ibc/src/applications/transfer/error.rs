@@ -7,7 +7,7 @@ use ibc_proto::protobuf::Error as TendermintProtoError;
 use uint::FromDecStrErr;
 
 use crate::core::ics04_channel::channel::Order;
-use crate::core::ics24_host::error::ValidationError;
+use crate::core::ics24_host::error::IdentifierError;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::ContextError;
 use crate::prelude::*;
@@ -24,12 +24,12 @@ pub enum TokenTransferError {
     /// invalid port identifier `{context}`, validation error: `{validation_error}`
     InvalidPortId {
         context: String,
-        validation_error: ValidationError,
+        validation_error: IdentifierError,
     },
     /// invalid channel identifier `{context}`, validation error: `{validation_error}`
     InvalidChannelId {
         context: String,
-        validation_error: ValidationError,
+        validation_error: IdentifierError,
     },
     /// invalid packet timeout height value `{context}`
     InvalidPacketTimeoutHeight { context: String },
@@ -40,12 +40,12 @@ pub enum TokenTransferError {
     /// invalid prot id n trace at position: `{pos}`, validation error: `{validation_error}`
     InvalidTracePortId {
         pos: usize,
-        validation_error: ValidationError,
+        validation_error: IdentifierError,
     },
     /// invalid channel id in trace at position: `{pos}`, validation error: `{validation_error}`
     InvalidTraceChannelId {
         pos: usize,
-        validation_error: ValidationError,
+        validation_error: IdentifierError,
     },
     /// trace length must be even but got: `{len}`
     InvalidTraceLength { len: usize },

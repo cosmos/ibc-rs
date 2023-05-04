@@ -12,7 +12,7 @@ use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics03_connection::events as ConnectionEvents;
 use crate::core::ics04_channel::error as channel_error;
 use crate::core::ics04_channel::events as ChannelEvents;
-use crate::core::ics24_host::error::ValidationError;
+use crate::core::ics24_host::error::IdentifierError;
 use crate::core::timestamp::ParseTimestampError;
 
 /// All error variants related to IBC events
@@ -21,7 +21,7 @@ pub enum Error {
     /// error parsing height
     Height,
     /// parse error: `{0}`
-    Parse(ValidationError),
+    Parse(IdentifierError),
     /// client error: `{0}`
     Client(client_error::ClientError),
     /// connection error: `{0}`

@@ -2,7 +2,7 @@
 
 use crate::core::ics02_client::error as client_error;
 use crate::core::ics03_connection::version::Version;
-use crate::core::ics24_host::error::ValidationError;
+use crate::core::ics24_host::error::IdentifierError;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::core::timestamp::{Timestamp, TimestampOverflowError};
 use crate::Height;
@@ -27,7 +27,7 @@ pub enum ConnectionError {
         current_height: Height,
     },
     /// identifier error: `{0}`
-    InvalidIdentifier(ValidationError),
+    InvalidIdentifier(IdentifierError),
     /// ConnectionEnd domain object could not be constructed out of empty proto object
     EmptyProtoConnectionEnd,
     /// empty supported versions

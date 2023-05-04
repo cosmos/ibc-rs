@@ -6,7 +6,7 @@ use crate::core::ics02_client::error as client_error;
 use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::Version;
-use crate::core::ics24_host::error::ValidationError;
+use crate::core::ics24_host::error::IdentifierError;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
@@ -90,7 +90,7 @@ pub enum ChannelError {
     /// invalid proof: empty proof
     InvalidProof,
     /// identifier error: `{0}`
-    Identifier(ValidationError),
+    Identifier(IdentifierError),
 }
 
 #[derive(Debug, Display)]
@@ -164,7 +164,7 @@ pub enum PacketError {
     /// Invalid packet timeout timestamp value error: `{0}`
     InvalidPacketTimestamp(crate::core::timestamp::ParseTimestampError),
     /// identifier error: `{0}`
-    Identifier(ValidationError),
+    Identifier(IdentifierError),
     /// Missing sequence number for sending packets on port `{port_id}` and channel `{channel_id}`
     MissingNextSendSeq {
         port_id: PortId,

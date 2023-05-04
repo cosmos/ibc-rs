@@ -8,7 +8,7 @@ use ibc_proto::protobuf::Error as TendermintProtoError;
 
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics23_commitment::error::CommitmentError;
-use crate::core::ics24_host::error::ValidationError;
+use crate::core::ics24_host::error::IdentifierError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::timestamp::Timestamp;
 use crate::Height;
@@ -20,7 +20,7 @@ pub enum ClientError {
     ClientIdentifierConstructor {
         client_type: ClientType,
         counter: u64,
-        validation_error: ValidationError,
+        validation_error: IdentifierError,
     },
     /// client is frozen with description: `{description}`
     ClientFrozen { description: String },
@@ -53,17 +53,17 @@ pub enum ClientError {
     /// missing raw client consensus state
     MissingRawConsensusState,
     /// invalid client id in the update client message: `{0}`
-    InvalidMsgUpdateClientId(ValidationError),
+    InvalidMsgUpdateClientId(IdentifierError),
     /// decode error: `{0}`
     Decode(prost::DecodeError),
     /// invalid client identifier error: `{0}`
-    InvalidClientIdentifier(ValidationError),
+    InvalidClientIdentifier(IdentifierError),
     /// invalid raw header error: `{0}`
     InvalidRawHeader(TendermintProtoError),
     /// missing raw header
     MissingRawHeader,
     /// invalid raw misbehaviour error: `{0}`
-    InvalidRawMisbehaviour(ValidationError),
+    InvalidRawMisbehaviour(IdentifierError),
     /// missing raw misbehaviour
     MissingRawMisbehaviour,
     /// revision height cannot be zero
