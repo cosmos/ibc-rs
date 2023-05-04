@@ -1,3 +1,5 @@
+//! Defines core commitment types
+
 use crate::core::ics23_commitment::error::CommitmentError;
 use crate::prelude::*;
 
@@ -7,6 +9,7 @@ use subtle_encoding::{Encoding, Hex};
 
 use super::merkle::MerkleProof;
 
+/// Encodes a commitment root; most often a Merkle tree root hash.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
 #[derive(Clone, PartialEq, Eq)]
@@ -47,9 +50,11 @@ impl From<Vec<u8>> for CommitmentRoot {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CommitmentPath;
-
+/// Demonstrates membership or non-membership for an element or set of elements,
+/// verifiable in conjunction with a known commitment root.
+/// 
+/// For example, in the case of a proof of membership in a Merkle tree,
+/// this encodes a Merkle proof.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
 #[derive(Clone, PartialEq, Eq)]
@@ -115,6 +120,9 @@ impl TryFrom<CommitmentProofBytes> for RawMerkleProof {
     }
 }
 
+/// Defines a store prefix of the commitment proof.
+///
+/// See [spec](https://github.com/cosmos/ibc/blob/main/spec/core/ics-023-vector-commitments/README.md#prefix).
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
