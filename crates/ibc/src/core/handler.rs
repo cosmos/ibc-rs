@@ -1,9 +1,6 @@
 use ibc_proto::google::protobuf::Any;
 
-use super::{
-    ics26_routing::{error::RouterError, msgs::MsgEnvelope},
-    ExecutionContext, ValidationContext,
-};
+use super::{ics26_routing::msgs::MsgEnvelope, ExecutionContext, RouterError, ValidationContext};
 
 /// Entrypoint which only performs message validation
 ///
@@ -38,6 +35,8 @@ pub fn dispatch(ctx: &mut impl ExecutionContext, msg: MsgEnvelope) -> Result<(),
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     use core::default::Default;
     use core::time::Duration;
 
@@ -91,7 +90,6 @@ mod tests {
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
     use crate::core::ics24_host::path::CommitmentPath;
     use crate::core::ics26_routing::context::ModuleId;
-    use crate::core::ics26_routing::error::RouterError;
     use crate::core::ics26_routing::msgs::MsgEnvelope;
     use crate::core::timestamp::Timestamp;
     use crate::core::{dispatch, ValidationContext};

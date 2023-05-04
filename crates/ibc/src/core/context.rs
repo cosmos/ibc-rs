@@ -63,7 +63,7 @@ use crate::core::{
         msgs::ConnectionMsg,
     },
     ics24_host::identifier::ClientId,
-    ics26_routing::{error::RouterError, msgs::MsgEnvelope},
+    ics26_routing::msgs::MsgEnvelope,
 };
 use crate::Height;
 
@@ -114,6 +114,35 @@ impl std::error::Error for ContextError {
             Self::ConnectionError(e) => Some(e),
             Self::ChannelError(e) => Some(e),
             Self::PacketError(e) => Some(e),
+        }
+    }
+}
+
+/// Error returned from entrypoint functions [`dispatch`][super::dispatch], [`validate`][super::validate] and
+/// [`execute`][super::execute].
+#[derive(Debug, Display)]
+pub enum RouterError {
+    /// context error: `{0}`
+    ContextError(ContextError),
+    /// unknown type URL `{url}`
+    UnknownMessageTypeUrl { url: String },
+    /// the message is malformed and cannot be decoded error: `{0}`
+    MalformedMessageBytes(ibc_proto::protobuf::Error),
+}
+
+impl From<ContextError> for RouterError {
+    fn from(error: ContextError) -> Self {
+        Self::ContextError(error)
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for RouterError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Self::ContextError(e) => Some(e),
+            Self::UnknownMessageTypeUrl { .. } => None,
+            Self::MalformedMessageBytes(e) => Some(e),
         }
     }
 }

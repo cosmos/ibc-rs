@@ -15,13 +15,14 @@ use crate::core::ics02_client::client_type::ClientType;
 
 use crate::prelude::*;
 
-/// This type is subject to future changes.
+/// Chain identifier type.
 ///
-/// TODO: ChainId validation is not standardized yet.
-///       `is_epoch_format` will most likely be replaced by validate_chain_id()-style function.
-///       See: <https://github.com/informalsystems/ibc-rs/pull/304#discussion_r503917283>.
+/// A `ChainId` is in "epoch format" if it is of the form `{chain name}-{epoch number}`,
+/// where the epoch number is the number of times the chain was upgraded. Chain IDs not
+/// in that format will be assumed to have epoch number 0.
 ///
-/// Also, contrast with tendermint-rs `ChainId` type.
+/// This is not standardized yet, although compatible with ibc-go.
+/// See: <https://github.com/informalsystems/ibc-rs/pull/304#discussion_r503917283>.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

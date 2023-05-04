@@ -1,3 +1,4 @@
+use crate::core::RouterError;
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
@@ -12,7 +13,6 @@ use crate::core::ics04_channel::msgs::{
     acknowledgement, chan_close_confirm, chan_close_init, chan_open_ack, chan_open_confirm,
     chan_open_init, chan_open_try, recv_packet, timeout, timeout_on_close, ChannelMsg, PacketMsg,
 };
-use crate::core::ics26_routing::error::RouterError;
 use ibc_proto::protobuf::Protobuf;
 
 /// Enumeration of all messages that the local ICS26 module is capable of routing.

@@ -2,5 +2,4 @@
 //! the appropriate module to relay to when a packet is received.
 
 pub mod context;
-pub mod error;
 pub mod msgs;
