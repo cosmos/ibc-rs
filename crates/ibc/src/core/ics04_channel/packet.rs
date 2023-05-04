@@ -4,6 +4,7 @@ use crate::prelude::*;
 
 use core::str::FromStr;
 
+use derive_more::Into;
 use ibc_proto::ibc::core::channel::v1::Packet as RawPacket;
 
 use super::timeout::TimeoutHeight;
@@ -283,6 +284,49 @@ impl From<Packet> for RawPacket {
             data: packet.data,
             timeout_height: packet.timeout_height_on_b.into(),
             timeout_timestamp: packet.timeout_timestamp_on_b.nanoseconds(),
+        }
+    }
+}
+
+/// A generic Acknowledgement type that modules may interpret as they like.
+/// An acknowledgement cannot be empty.
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, Into)]
+pub struct Acknowledgement(Vec<u8>);
+
+impl Acknowledgement {
+    // Returns the data as a slice of bytes.
+    pub fn as_bytes(&self) -> &[u8] {
+        self.0.as_slice()
+    }
+}
+
+impl AsRef<[u8]> for Acknowledgement {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_slice()
+    }
+}
+
+impl TryFrom<Vec<u8>> for Acknowledgement {
+    type Error = PacketError;
+
+    fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
+        if bytes.is_empty() {
+            Err(PacketError::InvalidAcknowledgement)
+        } else {
+            Ok(Self(bytes))
         }
     }
 }

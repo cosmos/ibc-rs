@@ -3,8 +3,10 @@ use crate::prelude::*;
 
 use crate::core::{
     ics04_channel::{
-        channel::Order, error::ChannelError, msgs::acknowledgement::Acknowledgement,
-        packet::Sequence, timeout::TimeoutHeight,
+        channel::Order,
+        error::ChannelError,
+        packet::{Acknowledgement, Sequence},
+        timeout::TimeoutHeight,
     },
     ics24_host::identifier::{ChannelId, ConnectionId, PortId},
 };

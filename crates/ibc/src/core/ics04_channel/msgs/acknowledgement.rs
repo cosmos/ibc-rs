@@ -1,60 +1,16 @@
 use crate::prelude::*;
 
-use derive_more::Into;
 use ibc_proto::ibc::core::channel::v1::MsgAcknowledgement as RawMsgAcknowledgement;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics04_channel::error::PacketError;
-use crate::core::ics04_channel::packet::Packet;
+use crate::core::ics04_channel::packet::{Acknowledgement, Packet};
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::tx_msg::Msg;
 use crate::signer::Signer;
 use crate::Height;
 
 pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgAcknowledgement";
-
-/// A generic Acknowledgement type that modules may interpret as they like.
-/// An acknowledgement cannot be empty.
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq, Into)]
-pub struct Acknowledgement(Vec<u8>);
-
-impl Acknowledgement {
-    // Returns the data as a slice of bytes.
-    pub fn as_bytes(&self) -> &[u8] {
-        self.0.as_slice()
-    }
-}
-
-impl AsRef<[u8]> for Acknowledgement {
-    fn as_ref(&self) -> &[u8] {
-        self.0.as_slice()
-    }
-}
-
-impl TryFrom<Vec<u8>> for Acknowledgement {
-    type Error = PacketError;
-
-    fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
-        if bytes.is_empty() {
-            Err(PacketError::InvalidAcknowledgement)
-        } else {
-            Ok(Self(bytes))
-        }
-    }
-}
 
 ///
 /// Message definition for packet acknowledgements.

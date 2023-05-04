@@ -3,8 +3,7 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 
 use super::error::TokenTransferError;
-use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
-use crate::prelude::*;
+use crate::{core::ics04_channel::packet::Acknowledgement, prelude::*};
 
 /// A string constant included in error acknowledgements.
 /// NOTE: Changing this const is state machine breaking as acknowledgements are written into state

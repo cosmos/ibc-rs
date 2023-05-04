@@ -23,8 +23,7 @@ use self::packet_attributes::{
 };
 
 use super::channel::Order;
-use super::msgs::acknowledgement::Acknowledgement;
-use super::packet::Sequence;
+use super::packet::{Acknowledgement, Sequence};
 use super::timeout::TimeoutHeight;
 use super::Version;
 
