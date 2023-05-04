@@ -1,5 +1,6 @@
 //! Defines the main context traits and IBC module callbacks
 
+use crate::core::ics26_routing::context::ModuleExtras;
 use crate::core::ContextError;
 use crate::prelude::*;
 
@@ -18,7 +19,6 @@ use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::context::{
     SendPacketExecutionContext, SendPacketValidationContext,
 };
-use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;

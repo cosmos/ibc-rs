@@ -236,9 +236,9 @@ impl From<ModuleEventAttribute> for abci::EventAttribute {
 }
 
 /// An event type that is emitted by the Cosmos SDK.
-/// 
+///
 /// We need to emit it as well, as currently [hermes] relies on it.
-/// 
+///
 /// [hermes]: https://github.com/informalsystems/hermes
 #[cfg_attr(
     feature = "parity-scale-codec",

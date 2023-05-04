@@ -1,5 +1,4 @@
-use crate::core::ics04_channel::handler::ModuleExtras;
-use crate::prelude::*;
+use crate::{core::events::ModuleEvent, prelude::*};
 
 use alloc::borrow::{Borrow, Cow};
 use core::{
@@ -64,6 +63,34 @@ impl Borrow<str> for ModuleId {
     }
 }
 
+/// Logs and events produced during module callbacks
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
+pub struct ModuleExtras {
+    pub events: Vec<ModuleEvent>,
+    pub log: Vec<String>,
+}
+
+impl ModuleExtras {
+    pub fn empty() -> Self {
+        ModuleExtras {
+            events: Vec::new(),
+            log: Vec::new(),
+        }
+    }
+}
 pub trait Module: Debug {
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init_validate(

@@ -17,7 +17,7 @@ use crate::core::ContextError;
 use crate::prelude::*;
 
 /// Send the given packet, including all necessary validation.
-/// 
+///
 /// Equivalent to calling [`send_packet_validate`], followed by [`send_packet_execute`]
 pub fn send_packet(
     ctx_a: &mut impl SendPacketExecutionContext,
@@ -97,7 +97,7 @@ pub fn send_packet_validate(
 }
 
 /// Send the packet without any validation.
-/// 
+///
 /// A prior call to [`send_packet_validate`] MUST have succeeded.
 pub fn send_packet_execute(
     ctx_a: &mut impl SendPacketExecutionContext,

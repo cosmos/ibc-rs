@@ -1466,13 +1466,12 @@ mod tests {
 
     use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::error::ChannelError;
-    use crate::core::ics04_channel::handler::ModuleExtras;
     use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-    use crate::core::ics26_routing::context::{Module, ModuleId};
+    use crate::core::ics26_routing::context::{Module, ModuleExtras, ModuleId};
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::signer::Signer;
