@@ -25,7 +25,7 @@ impl ClientState {
 
         // The tendermint-light-client crate though works on heights that are assumed
         // to have the same revision number. We ensure this here.
-        header.verify_chain_id_matches(&self.chain_id())?;
+        header.verify_chain_id_version_matches_height(&self.chain_id())?;
 
         // Delegate to tendermint-light-client, which contains the required checks
         // of the new header against the trusted consensus state.

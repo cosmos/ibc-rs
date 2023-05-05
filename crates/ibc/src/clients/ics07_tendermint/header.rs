@@ -80,7 +80,7 @@ impl Header {
         })
     }
 
-    pub fn verify_chain_id_matches(&self, chain_id: &ChainId) -> Result<(), Error> {
+    pub fn verify_chain_id_version_matches_height(&self, chain_id: &ChainId) -> Result<(), Error> {
         if self.height().revision_number() != chain_id.version() {
             return Err(Error::MismatchHeaderChainId {
                 given: self.signed_header.header.chain_id.to_string(),

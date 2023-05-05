@@ -168,7 +168,7 @@ impl ChannelEnd {
     /// NOTE: This method is meant for the proto message conversion from the domain
     /// `MsgChannelOpenInit` and `MsgChannelOpenTry` types to satisfy their `Protobuf`
     /// trait bounds.
-    pub(super) fn new_unchecked(
+    pub(super) fn new_without_validation(
         state: State,
         ordering: Order,
         remote: Counterparty,
@@ -192,7 +192,7 @@ impl ChannelEnd {
         connection_hops: Vec<ConnectionId>,
         version: Version,
     ) -> Result<Self, ChannelError> {
-        let channel_end = Self::new_unchecked(state, ordering, remote, connection_hops, version);
+        let channel_end = Self::new_without_validation(state, ordering, remote, connection_hops, version);
         channel_end.validate_basic()?;
         Ok(channel_end)
     }

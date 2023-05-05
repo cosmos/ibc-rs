@@ -97,7 +97,7 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
 
 impl From<MsgChannelOpenTry> for RawMsgChannelOpenTry {
     fn from(domain_msg: MsgChannelOpenTry) -> Self {
-        let chan_end_on_b = ChannelEnd::new_unchecked(
+        let chan_end_on_b = ChannelEnd::new_without_validation(
             State::TryOpen,
             domain_msg.ordering,
             Counterparty::new(domain_msg.port_id_on_a, Some(domain_msg.chan_id_on_a)),
