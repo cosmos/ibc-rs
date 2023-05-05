@@ -1,6 +1,6 @@
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
-use crate::core::ics04_channel::channel::{Counterparty, Order};
+use crate::core::ics04_channel::channel::{Counterparty, Order, State as ChannelState};
 use crate::core::ics04_channel::commitment::{compute_ack_commitment, compute_packet_commitment};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::error::PacketError;
@@ -23,9 +23,7 @@ where
     let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
-    // Checks the channel end not be `Closed`.
-    // This allows for optimistic packet processing before a channel opens
-    chan_end_on_a.verify_not_closed()?;
+    chan_end_on_a.verify_state_matches(&ChannelState::Open)?;
 
     let counterparty = Counterparty::new(
         packet.port_id_on_b.clone(),
