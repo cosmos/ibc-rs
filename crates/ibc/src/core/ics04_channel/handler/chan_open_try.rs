@@ -17,9 +17,6 @@ where
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 
-    // Note: Verify that the provided message contains only one connection end
-    // has been done during the conversion from the proto to the domain type.
-
     let conn_end_on_b = ctx_b.connection_end(&msg.connection_hops_on_b[0])?;
 
     conn_end_on_b.verify_state_matches(&ConnectionState::Open)?;
