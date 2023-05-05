@@ -11,6 +11,7 @@ where
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 
+    msg.verify_connection_hops_length()?;
     // An IBC connection running on the local (host) chain should exist.
     let conn_end_on_a = ctx_a.connection_end(&msg.connection_hops_on_a[0])?;
 

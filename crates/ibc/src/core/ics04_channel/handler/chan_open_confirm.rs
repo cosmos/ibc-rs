@@ -25,7 +25,7 @@ where
     chan_end_on_b.verify_state_matches(&ChannelState::TryOpen)?;
 
     // An OPEN IBC connection running on the local (host) chain should exist.
-    chan_end_on_b.verify_connection_hops_length(1)?;
+    chan_end_on_b.verify_connection_hops_length()?;
 
     let conn_end_on_b = ctx_b.connection_end(&chan_end_on_b.connection_hops()[0])?;
 

@@ -251,20 +251,6 @@ impl ChannelEnd {
             });
         }
 
-        // Current IBC version only supports one connection hop.
-        self.verify_connection_hops_length(1)?;
-
-        Ok(())
-    }
-
-    /// Checks if the `connection_hops` has a length of `expected`.
-    pub fn verify_connection_hops_length(&self, expected: usize) -> Result<(), ChannelError> {
-        if self.connection_hops.len() != expected {
-            return Err(ChannelError::InvalidConnectionHopsLength {
-                expected,
-                actual: self.connection_hops.len(),
-            });
-        }
         Ok(())
     }
 
@@ -310,9 +296,30 @@ impl ChannelEnd {
         Ok(())
     }
 
+    /// Checks if the `connection_hops` has a length of `expected`.
+    ///
+    /// Note: Current IBC version only supports one connection hop.
+    pub fn verify_connection_hops_length(&self) -> Result<(), ChannelError> {
+        verify_connection_hops_length(&self.connection_hops, 1)
+    }
+
     pub fn version_matches(&self, other: &Version) -> bool {
         self.version().eq(other)
     }
+}
+
+/// Checks if the `connection_hops` has a length of `expected`.
+pub(crate) fn verify_connection_hops_length(
+    connection_hops: &Vec<ConnectionId>,
+    expected: usize,
+) -> Result<(), ChannelError> {
+    if connection_hops.len() != expected {
+        return Err(ChannelError::InvalidConnectionHopsLength {
+            expected,
+            actual: connection_hops.len(),
+        });
+    }
+    Ok(())
 }
 
 #[cfg_attr(
@@ -664,7 +671,7 @@ mod tests {
                         .collect(),
                     ..raw_channel_end.clone()
                 },
-                want_pass: false,
+                want_pass: true,
             },
             Test {
                 name: "Raw channel end with correct params".to_string(),

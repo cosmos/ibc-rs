@@ -18,7 +18,7 @@ where
     chan_end_on_a.verify_not_closed()?;
 
     // An OPEN IBC connection running on the local (host) chain should exist.
-    chan_end_on_a.verify_connection_hops_length(1)?;
+    chan_end_on_a.verify_connection_hops_length()?;
 
     let conn_end_on_a = ctx_a.connection_end(&chan_end_on_a.connection_hops()[0])?;
 

@@ -1,3 +1,4 @@
+use crate::core::ics04_channel::channel::verify_connection_hops_length;
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::channel::Counterparty;
 use crate::core::ics04_channel::channel::{Order, State};
@@ -33,6 +34,15 @@ pub struct MsgChannelOpenTry {
     #[deprecated(since = "0.22.0")]
     /// Only kept here for proper conversion to/from the raw type
     pub version_proposal: Version,
+}
+
+impl MsgChannelOpenTry {
+    /// Checks if the `connection_hops` has a length of `expected`.
+    ///
+    /// Note: Current IBC version only supports one connection hop.
+    pub(crate) fn verify_connection_hops_length(&self) -> Result<(), ChannelError> {
+        verify_connection_hops_length(&self.connection_hops_on_b, 1)
+    }
 }
 
 impl Msg for MsgChannelOpenTry {
