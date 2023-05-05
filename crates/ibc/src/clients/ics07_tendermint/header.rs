@@ -83,6 +83,52 @@ impl Header {
             next_validators_hash: consensus_state.next_validators_hash,
         })
     }
+
+    pub fn verify_chain_id_version_matches_height(&self, chain_id: &ChainId) -> Result<(), Error> {
+        if self.height().revision_number() != chain_id.version() {
+            return Err(Error::MismatchHeaderChainId {
+                given: self.signed_header.header.chain_id.to_string(),
+                expected: chain_id.to_string(),
+            });
+        }
+        Ok(())
+    }
+
+    /// Checks if the fields of a given header are consistent with the trusted fields of this header.
+    pub fn validate_basic(&self) -> Result<(), Error> {
+        if self.height().revision_number() != self.trusted_height.revision_number() {
+            return Err(Error::MismatchHeightRevisions {
+                trusted_revision: self.trusted_height.revision_number(),
+                header_revision: self.height().revision_number(),
+            });
+        }
+
+        // We need to ensure that the trusted height (representing the
+        // height of the header already on chain for which this client update is
+        // based on) must be smaller than height of the new header that we're
+        // installing.
+        if self.trusted_height >= self.height() {
+            return Err(Error::InvalidHeaderHeight {
+                height: self.height().revision_height(),
+            });
+        }
+
+        if self.validator_set.hash() != self.signed_header.header.validators_hash {
+            return Err(Error::MismatchValidatorsHashes {
+                signed_header_validators_hash: self.signed_header.header.validators_hash,
+                validators_hash: self.validator_set.hash(),
+            });
+        }
+
+        if self.trusted_next_validator_set.hash() != self.signed_header.header.next_validators_hash
+        {
+            return Err(Error::MismatchValidatorsHashes {
+                signed_header_validators_hash: self.signed_header.header.next_validators_hash,
+                validators_hash: self.trusted_next_validator_set.hash(),
+            });
+        }
+        Ok(())
+    }
 }
 
 impl crate::core::ics02_client::header::Header for Header {
@@ -125,13 +171,6 @@ impl TryFrom<RawHeader> for Header {
                 .try_into()
                 .map_err(Error::InvalidRawHeader)?,
         };
-
-        if header.height().revision_number() != header.trusted_height.revision_number() {
-            return Err(Error::MismatchedRevisions {
-                current_revision: header.trusted_height.revision_number(),
-                update_revision: header.height().revision_number(),
-            });
-        }
 
         Ok(header)
     }

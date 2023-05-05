@@ -1,6 +1,5 @@
 //! Defines the token transfer message type
 
-use crate::applications::transfer::packet::PacketData;
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
@@ -8,10 +7,12 @@ use ibc_proto::ibc::applications::transfer::v1::MsgTransfer as RawMsgTransfer;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::applications::transfer::error::TokenTransferError;
+use crate::applications::transfer::packet::PacketData;
+use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::timeout::TimeoutHeight;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::timestamp::Timestamp;
-use crate::core::Msg;
+use crate::core::{ContextError, Msg};
 
 pub(crate) const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 
@@ -51,30 +52,22 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
 
     fn try_from(raw_msg: RawMsgTransfer) -> Result<Self, Self::Error> {
         let timeout_timestamp_on_b = Timestamp::from_nanoseconds(raw_msg.timeout_timestamp)
-            .map_err(|_| TokenTransferError::InvalidPacketTimeoutTimestamp {
-                timestamp: raw_msg.timeout_timestamp,
-            })?;
+            .map_err(PacketError::InvalidPacketTimestamp)
+            .map_err(ContextError::from)?;
 
-        let timeout_height_on_b: TimeoutHeight =
-            raw_msg.timeout_height.try_into().map_err(|e| {
-                TokenTransferError::InvalidPacketTimeoutHeight {
-                    context: format!("invalid timeout height {e}"),
-                }
-            })?;
+        let timeout_height_on_b: TimeoutHeight = raw_msg
+            .timeout_height
+            .try_into()
+            .map_err(ContextError::from)?;
+
+        // Packet timeout height and packet timeout timestamp cannot both be unset.
+        if !timeout_height_on_b.is_set() && !timeout_timestamp_on_b.is_set() {
+            return Err(PacketError::MissingTimeout).map_err(ContextError::from)?;
+        }
 
         Ok(MsgTransfer {
-            port_id_on_a: raw_msg.source_port.parse().map_err(|e| {
-                TokenTransferError::InvalidPortId {
-                    context: raw_msg.source_port.clone(),
-                    validation_error: e,
-                }
-            })?,
-            chan_id_on_a: raw_msg.source_channel.parse().map_err(|e| {
-                TokenTransferError::InvalidChannelId {
-                    context: raw_msg.source_channel.clone(),
-                    validation_error: e,
-                }
-            })?,
+            port_id_on_a: raw_msg.source_port.parse()?,
+            chan_id_on_a: raw_msg.source_channel.parse()?,
             packet_data: PacketData {
                 token: raw_msg
                     .token

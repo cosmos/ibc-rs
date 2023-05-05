@@ -41,11 +41,8 @@ impl TryFrom<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {
 
     fn try_from(raw_msg: RawMsgChannelCloseConfirm) -> Result<Self, Self::Error> {
         Ok(MsgChannelCloseConfirm {
-            port_id_on_b: raw_msg.port_id.parse().map_err(ChannelError::Identifier)?,
-            chan_id_on_b: raw_msg
-                .channel_id
-                .parse()
-                .map_err(ChannelError::Identifier)?,
+            port_id_on_b: raw_msg.port_id.parse()?,
+            chan_id_on_b: raw_msg.channel_id.parse()?,
             proof_chan_end_on_a: raw_msg
                 .proof_init
                 .try_into()

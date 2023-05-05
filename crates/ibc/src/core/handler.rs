@@ -589,7 +589,8 @@ mod tests {
                 ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
                 vec![ConnectionId::new(0)],
                 ChannelVersion::default(),
-            ),
+            )
+            .unwrap(),
         );
 
         let msg_chan_open_ack =
@@ -620,7 +621,8 @@ mod tests {
                 ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
                 vec![ConnectionId::new(0)],
                 ChannelVersion::default(),
-            ),
+            )
+            .unwrap(),
         );
 
         let msg_chan_open_confirm =
@@ -651,7 +653,8 @@ mod tests {
                 ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
                 vec![ConnectionId::new(0)],
                 ChannelVersion::default(),
-            ),
+            )
+            .unwrap(),
         );
 
         let msg_chan_close_init =
@@ -682,7 +685,8 @@ mod tests {
                 ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
                 vec![ConnectionId::new(0)],
                 ChannelVersion::default(),
-            ),
+            )
+            .unwrap(),
         );
 
         let msg_chan_close_confirm =

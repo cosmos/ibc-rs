@@ -1,7 +1,6 @@
 use crate::core::events::IbcEvent;
 use crate::core::events::MessageEvent;
 use crate::core::ics04_channel::channel::Counterparty;
-use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::commitment::compute_packet_commitment;
 use crate::core::ics04_channel::context::SendPacketExecutionContext;
 use crate::core::ics04_channel::events::SendPacket;
@@ -35,26 +34,19 @@ pub fn send_packet_validate(
     let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
-    if chan_end_on_a.state_matches(&State::Closed) {
-        return Err(PacketError::ChannelClosed {
-            channel_id: packet.chan_id_on_a.clone(),
-        }
-        .into());
-    }
+    // Checks the channel end not be `Closed`.
+    // This allows for optimistic packet processing before a channel opens
+    chan_end_on_a.verify_not_closed()?;
 
     let counterparty = Counterparty::new(
         packet.port_id_on_b.clone(),
         Some(packet.chan_id_on_b.clone()),
     );
 
-    if !chan_end_on_a.counterparty_matches(&counterparty) {
-        return Err(PacketError::InvalidPacketCounterparty {
-            port_id: packet.port_id_on_b.clone(),
-            channel_id: packet.chan_id_on_b.clone(),
-        }
-        .into());
-    }
+    chan_end_on_a.verify_counterparty_matches(&counterparty)?;
+
     let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
+
     let conn_end_on_a = ctx_a.connection_end(conn_id_on_a)?;
 
     let client_id_on_a = conn_end_on_a.client_id();
@@ -174,12 +166,13 @@ mod tests {
         let context = MockContext::default();
 
         let chan_end_on_a = ChannelEnd::new(
-            State::TryOpen,
+            State::Open,
             Order::default(),
             Counterparty::new(PortId::default(), Some(ChannelId::default())),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
-        );
+        )
+        .unwrap();
 
         let conn_end_on_a = ConnectionEnd::new(
             ConnectionState::Open,

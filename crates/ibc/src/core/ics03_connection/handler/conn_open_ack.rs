@@ -50,32 +50,18 @@ where
     msg.version
         .verify_is_supported(vars.conn_end_on_a.versions())?;
 
-    if !vars.conn_end_on_a.state_matches(&State::Init) {
-        return Err(ConnectionError::ConnectionMismatch {
-            connection_id: msg.conn_id_on_a.clone(),
-        }
-        .into());
-    }
+    vars.conn_end_on_a.verify_state_matches(&State::Init)?;
 
     // Proof verification.
     {
-        let client_state_of_b_on_a =
-            ctx_a
-                .client_state(vars.client_id_on_a())
-                .map_err(|_| ConnectionError::Other {
-                    description: "failed to fetch client state".to_string(),
-                })?;
+        let client_state_of_b_on_a = ctx_a.client_state(vars.client_id_on_a())?;
 
         client_state_of_b_on_a.confirm_not_frozen()?;
         client_state_of_b_on_a.validate_proof_height(msg.proofs_height_on_b)?;
 
         let client_cons_state_path_on_a =
             ClientConsensusStatePath::new(vars.client_id_on_a(), &msg.proofs_height_on_b);
-        let consensus_state_of_b_on_a = ctx_a
-            .consensus_state(&client_cons_state_path_on_a)
-            .map_err(|_| ConnectionError::Other {
-                description: "failed to fetch client consensus state".to_string(),
-            })?;
+        let consensus_state_of_b_on_a = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
 
         let prefix_on_a = ctx_a.commitment_prefix();
         let prefix_on_b = vars.conn_end_on_a.counterparty().prefix();
@@ -117,11 +103,8 @@ where
                 client_error: e,
             })?;
 
-        let expected_consensus_state_of_a_on_b = ctx_a
-            .host_consensus_state(&msg.consensus_height_of_a_on_b)
-            .map_err(|_| ConnectionError::Other {
-                description: "failed to fetch host consensus state".to_string(),
-            })?;
+        let expected_consensus_state_of_a_on_b =
+            ctx_a.host_consensus_state(&msg.consensus_height_of_a_on_b)?;
 
         let client_cons_state_path_on_b =
             ClientConsensusStatePath::new(vars.client_id_on_b(), &msg.consensus_height_of_a_on_b);
@@ -322,11 +305,10 @@ mod tests {
             }) => {
                 assert_eq!(cons_state_height, target_height);
             }
-            ContextError::ConnectionError(ConnectionError::ConnectionMismatch {
-                connection_id,
-            }) => {
-                assert_eq!(connection_id, right_connection_id)
-            }
+            ContextError::ConnectionError(ConnectionError::InvalidState {
+                expected: _,
+                actual: _,
+            }) => {}
             _ => unreachable!(),
         }
     }
@@ -392,8 +374,9 @@ mod tests {
     #[test]
     fn conn_open_ack_connection_mismatch() {
         let fxt = conn_open_ack_fixture(Ctx::NewWithConnectionEndOpen);
-        let expected_err = ContextError::ConnectionError(ConnectionError::ConnectionMismatch {
-            connection_id: fxt.msg.conn_id_on_a.clone(),
+        let expected_err = ContextError::ConnectionError(ConnectionError::InvalidState {
+            expected: State::Init.to_string(),
+            actual: State::Open.to_string(),
         });
         conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err)));
     }

@@ -11,7 +11,7 @@ use prost::Message;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics24_host::identifier::{ChainId, ClientId};
+use crate::core::ics24_host::identifier::ClientId;
 
 const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
 
@@ -45,13 +45,28 @@ impl Misbehaviour {
         &self.header2
     }
 
-    pub fn chain_id_matches(&self, chain_id: &ChainId) -> bool {
-        assert_eq!(
-            self.header1.signed_header.header.chain_id, self.header2.signed_header.header.chain_id,
-            "this is enforced by the ctor"
-        );
+    pub fn validate_basic(&self) -> Result<(), Error> {
+        self.header1.validate_basic()?;
+        self.header2.validate_basic()?;
 
-        self.header1.signed_header.header.chain_id.as_str() == chain_id.as_str()
+        if self.header1.signed_header.header.chain_id != self.header2.signed_header.header.chain_id
+        {
+            return Err(Error::InvalidRawMisbehaviour {
+                reason: "headers must have identical chain_ids".to_owned(),
+            });
+        }
+
+        if self.header1.height() < self.header2.height() {
+            return Err(Error::InvalidRawMisbehaviour {
+                reason: format!(
+                    "header1 height is less than header2 height ({} < {})",
+                    self.header1.height(),
+                    self.header2.height()
+                ),
+            });
+        }
+
+        Ok(())
     }
 }
 

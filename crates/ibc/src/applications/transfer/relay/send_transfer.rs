@@ -28,9 +28,7 @@ where
     ctx_a.can_send_coins()?;
 
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
-    let chan_end_on_a = ctx_a
-        .channel_end(&chan_end_path_on_a)
-        .map_err(TokenTransferError::ContextError)?;
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     let port_id_on_b = chan_end_on_a.counterparty().port_id().clone();
     let chan_id_on_b = chan_end_on_a
@@ -43,9 +41,7 @@ where
         .clone();
 
     let seq_send_path_on_a = SeqSendPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
-    let sequence = ctx_a
-        .get_next_sequence_send(&seq_send_path_on_a)
-        .map_err(TokenTransferError::ContextError)?;
+    let sequence = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
     let token = &msg.packet_data.token;
 
@@ -83,7 +79,7 @@ where
         }
     };
 
-    send_packet_validate(ctx_a, &packet).map_err(TokenTransferError::ContextError)?;
+    send_packet_validate(ctx_a, &packet)?;
 
     Ok(())
 }
@@ -97,9 +93,7 @@ where
     Ctx: TokenTransferExecutionContext,
 {
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
-    let chan_end_on_a = ctx_a
-        .channel_end(&chan_end_path_on_a)
-        .map_err(TokenTransferError::ContextError)?;
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     let port_on_b = chan_end_on_a.counterparty().port_id().clone();
     let chan_on_b = chan_end_on_a
@@ -113,9 +107,7 @@ where
 
     // get the next sequence
     let seq_send_path_on_a = SeqSendPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
-    let sequence = ctx_a
-        .get_next_sequence_send(&seq_send_path_on_a)
-        .map_err(TokenTransferError::ContextError)?;
+    let sequence = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
     let token = &msg.packet_data.token;
 
@@ -155,7 +147,7 @@ where
         }
     };
 
-    send_packet_execute(ctx_a, packet).map_err(TokenTransferError::ContextError)?;
+    send_packet_execute(ctx_a, packet)?;
 
     {
         ctx_a.log_message(format!(

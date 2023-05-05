@@ -37,11 +37,8 @@ impl TryFrom<RawMsgChannelCloseInit> for MsgChannelCloseInit {
 
     fn try_from(raw_msg: RawMsgChannelCloseInit) -> Result<Self, Self::Error> {
         Ok(MsgChannelCloseInit {
-            port_id_on_a: raw_msg.port_id.parse().map_err(ChannelError::Identifier)?,
-            chan_id_on_a: raw_msg
-                .channel_id
-                .parse()
-                .map_err(ChannelError::Identifier)?,
+            port_id_on_a: raw_msg.port_id.parse()?,
+            chan_id_on_a: raw_msg.channel_id.parse()?,
             signer: raw_msg.signer.into(),
         })
     }

@@ -29,13 +29,7 @@ where
         Some(packet.chan_id_on_b.clone()),
     );
 
-    if !chan_end_on_a.counterparty_matches(&counterparty) {
-        return Err(PacketError::InvalidPacketCounterparty {
-            port_id: packet.port_id_on_b.clone(),
-            channel_id: packet.chan_id_on_b.clone(),
-        }
-        .into());
-    }
+    chan_end_on_a.verify_counterparty_matches(&counterparty)?;
 
     let commitment_path_on_a = CommitmentPath::new(
         &msg.packet.port_id_on_a,
@@ -82,13 +76,10 @@ where
         let consensus_state_of_b_on_a = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
         let prefix_on_b = conn_end_on_a.counterparty().prefix();
         let port_id_on_b = chan_end_on_a.counterparty().port_id.clone();
-        let chan_id_on_b =
-            chan_end_on_a
-                .counterparty()
-                .channel_id()
-                .ok_or(PacketError::Channel(
-                    ChannelError::InvalidCounterpartyChannelId,
-                ))?;
+        let chan_id_on_b = chan_end_on_a
+            .counterparty()
+            .channel_id()
+            .ok_or(PacketError::Channel(ChannelError::MissingCounterparty))?;
         let conn_id_on_b = conn_end_on_a.counterparty().connection_id().ok_or(
             PacketError::UndefinedConnectionCounterparty {
                 connection_id: chan_end_on_a.connection_hops()[0].clone(),
@@ -105,7 +96,7 @@ where
             expected_counterparty,
             expected_conn_hops_on_b,
             chan_end_on_a.version().clone(),
-        );
+        )?;
 
         let chan_end_path_on_b = ChannelEndPath(port_id_on_b, chan_id_on_b.clone());
 
@@ -232,7 +223,8 @@ mod tests {
             Counterparty::new(packet.port_id_on_b.clone(), Some(packet.chan_id_on_b)),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
-        );
+        )
+        .unwrap();
 
         let conn_end_on_a = ConnectionEnd::new(
             ConnectionState::Open,

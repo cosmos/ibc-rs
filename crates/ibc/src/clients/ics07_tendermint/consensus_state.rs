@@ -51,6 +51,18 @@ impl TryFrom<RawConsensusState> for ConsensusState {
     type Error = Error;
 
     fn try_from(raw: RawConsensusState) -> Result<Self, Self::Error> {
+        let proto_root = raw
+            .root
+            .ok_or(Error::InvalidRawClientState {
+                reason: "missing commitment root".into(),
+            })?
+            .hash;
+        if proto_root.is_empty() {
+            return Err(Error::InvalidRawClientState {
+                reason: "empty commitment root".into(),
+            });
+        };
+
         let ibc_proto::google::protobuf::Timestamp { seconds, nanos } =
             raw.timestamp.ok_or(Error::InvalidRawClientState {
                 reason: "missing timestamp".into(),
@@ -64,19 +76,15 @@ impl TryFrom<RawConsensusState> for ConsensusState {
                 reason: format!("invalid timestamp: {e}"),
             })?;
 
+        let next_validators_hash = Hash::from_bytes(Algorithm::Sha256, &raw.next_validators_hash)
+            .map_err(|e| Error::InvalidRawClientState {
+            reason: e.to_string(),
+        })?;
+
         Ok(Self {
-            root: raw
-                .root
-                .ok_or(Error::InvalidRawClientState {
-                    reason: "missing commitment root".into(),
-                })?
-                .hash
-                .into(),
+            root: proto_root.into(),
             timestamp,
-            next_validators_hash: Hash::from_bytes(Algorithm::Sha256, &raw.next_validators_hash)
-                .map_err(|e| Error::InvalidRawClientState {
-                    reason: e.to_string(),
-                })?,
+            next_validators_hash,
         })
     }
 }

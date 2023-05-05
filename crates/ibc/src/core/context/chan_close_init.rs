@@ -148,7 +148,8 @@ mod tests {
             ),
             vec![conn_id.clone()],
             Version::default(),
-        );
+        )
+        .unwrap();
 
         let mut context = {
             let mut default_context = MockContext::default();

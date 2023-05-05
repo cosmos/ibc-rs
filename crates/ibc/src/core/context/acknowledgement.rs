@@ -184,7 +184,8 @@ mod tests {
             ),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
-        );
+        )
+        .unwrap();
 
         let chan_end_on_a_ordered = ChannelEnd::new(
             State::Open,
@@ -192,7 +193,8 @@ mod tests {
             Counterparty::new(packet.port_id_on_b.clone(), Some(packet.chan_id_on_b)),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
-        );
+        )
+        .unwrap();
 
         let conn_end_on_a = ConnectionEnd::new(
             ConnectionState::Open,

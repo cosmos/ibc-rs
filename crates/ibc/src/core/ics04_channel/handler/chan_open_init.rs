@@ -1,6 +1,5 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenInit`.
 
-use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
 use crate::prelude::*;
 
@@ -12,16 +11,11 @@ where
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 
-    if msg.connection_hops_on_a.len() != 1 {
-        return Err(ChannelError::InvalidConnectionHopsLength {
-            expected: 1,
-            actual: msg.connection_hops_on_a.len(),
-        }
-        .into());
-    }
-
+    msg.verify_connection_hops_length()?;
     // An IBC connection running on the local (host) chain should exist.
     let conn_end_on_a = ctx_a.connection_end(&msg.connection_hops_on_a[0])?;
+
+    // Note: Not needed check if the connection end is OPEN. Optimistic channel handshake is allowed.
 
     let client_id_on_a = conn_end_on_a.client_id();
     let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
@@ -110,7 +104,7 @@ mod tests {
     fn chan_open_init_success_counterparty_chan_id_set(fixture: Fixture) {
         let Fixture { context, .. } = fixture;
 
-        let msg = MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(Some(0))).unwrap();
+        let msg = MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
 
         let res = validate(&context, &msg);
 

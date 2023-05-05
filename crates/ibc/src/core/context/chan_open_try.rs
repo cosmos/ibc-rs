@@ -70,7 +70,7 @@ where
             Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
             msg.connection_hops_on_b.clone(),
             version.clone(),
-        );
+        )?;
 
         let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &chan_id_on_b);
         ctx_b.store_channel(&chan_end_path_on_b, chan_end_on_b)?;

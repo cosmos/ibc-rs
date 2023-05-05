@@ -170,7 +170,8 @@ mod tests {
             Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::default())),
             vec![conn_id_on_b.clone()],
             Version::default(),
-        );
+        )
+        .unwrap();
 
         Fixture {
             context,
