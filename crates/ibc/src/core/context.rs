@@ -1,29 +1,6 @@
-mod chan_close_confirm;
-mod chan_close_init;
-mod chan_open_ack;
-mod chan_open_confirm;
-mod chan_open_init;
-mod chan_open_try;
-
-mod acknowledgement;
-mod recv_packet;
-mod timeout;
-
 use crate::prelude::*;
 use crate::signer::Signer;
 
-use self::chan_close_confirm::{chan_close_confirm_execute, chan_close_confirm_validate};
-use self::chan_close_init::{chan_close_init_execute, chan_close_init_validate};
-use self::chan_open_ack::{chan_open_ack_execute, chan_open_ack_validate};
-use self::chan_open_confirm::{chan_open_confirm_execute, chan_open_confirm_validate};
-use self::chan_open_init::{chan_open_init_execute, chan_open_init_validate};
-use self::chan_open_try::{chan_open_try_execute, chan_open_try_validate};
-
-use self::acknowledgement::{acknowledgement_packet_execute, acknowledgement_packet_validate};
-use self::recv_packet::{recv_packet_execute, recv_packet_validate};
-use self::timeout::{timeout_packet_execute, timeout_packet_validate, TimeoutMsgType};
-
-use super::ics02_client::msgs::MsgUpdateOrMisbehaviour;
 use super::router::Router;
 use super::{
     ics02_client::error::ClientError,
@@ -44,27 +21,15 @@ use crate::core::ics03_connection::version::{
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::context::calculate_block_delay;
-use crate::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
+use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use crate::core::timestamp::Timestamp;
-use crate::core::{
-    ics02_client::{
-        handler::{create_client, update_client, upgrade_client},
-        msgs::ClientMsg,
-    },
-    ics03_connection::{
-        handler::{conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try},
-        msgs::ConnectionMsg,
-    },
-    ics24_host::identifier::ClientId,
-    msgs::MsgEnvelope,
-};
 use crate::Height;
 
 use displaydoc::Display;
@@ -151,81 +116,6 @@ impl std::error::Error for RouterError {
 ///
 /// Trait used for the top-level [`validate`](crate::core::validate)
 pub trait ValidationContext: Router {
-    /// Validation entrypoint.
-    fn validate(&self, msg: MsgEnvelope) -> Result<(), RouterError>
-    where
-        Self: Sized,
-    {
-        match msg {
-            MsgEnvelope::Client(msg) => match msg {
-                ClientMsg::CreateClient(msg) => create_client::validate(self, msg),
-                ClientMsg::UpdateClient(msg) => {
-                    update_client::validate(self, MsgUpdateOrMisbehaviour::UpdateClient(msg))
-                }
-                ClientMsg::Misbehaviour(msg) => {
-                    update_client::validate(self, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
-                }
-                ClientMsg::UpgradeClient(msg) => upgrade_client::validate(self, msg),
-            }
-            .map_err(RouterError::ContextError),
-            MsgEnvelope::Connection(msg) => match msg {
-                ConnectionMsg::OpenInit(msg) => conn_open_init::validate(self, msg),
-                ConnectionMsg::OpenTry(msg) => conn_open_try::validate(self, msg),
-                ConnectionMsg::OpenAck(msg) => conn_open_ack::validate(self, msg),
-                ConnectionMsg::OpenConfirm(ref msg) => conn_open_confirm::validate(self, msg),
-            }
-            .map_err(RouterError::ContextError),
-            MsgEnvelope::Channel(msg) => {
-                let module_id = self
-                    .lookup_module_channel(&msg)
-                    .map_err(ContextError::from)?;
-                if !self.has_route(&module_id) {
-                    return Err(ChannelError::RouteNotFound)
-                        .map_err(ContextError::ChannelError)
-                        .map_err(RouterError::ContextError);
-                }
-
-                match msg {
-                    ChannelMsg::OpenInit(msg) => chan_open_init_validate(self, module_id, msg),
-                    ChannelMsg::OpenTry(msg) => chan_open_try_validate(self, module_id, msg),
-                    ChannelMsg::OpenAck(msg) => chan_open_ack_validate(self, module_id, msg),
-                    ChannelMsg::OpenConfirm(msg) => {
-                        chan_open_confirm_validate(self, module_id, msg)
-                    }
-                    ChannelMsg::CloseInit(msg) => chan_close_init_validate(self, module_id, msg),
-                    ChannelMsg::CloseConfirm(msg) => {
-                        chan_close_confirm_validate(self, module_id, msg)
-                    }
-                }
-                .map_err(RouterError::ContextError)
-            }
-            MsgEnvelope::Packet(msg) => {
-                let module_id = self
-                    .lookup_module_packet(&msg)
-                    .map_err(ContextError::from)?;
-                if !self.has_route(&module_id) {
-                    return Err(ChannelError::RouteNotFound)
-                        .map_err(ContextError::ChannelError)
-                        .map_err(RouterError::ContextError);
-                }
-
-                match msg {
-                    PacketMsg::Recv(msg) => recv_packet_validate(self, msg),
-                    PacketMsg::Ack(msg) => acknowledgement_packet_validate(self, module_id, msg),
-                    PacketMsg::Timeout(msg) => {
-                        timeout_packet_validate(self, module_id, TimeoutMsgType::Timeout(msg))
-                    }
-                    PacketMsg::TimeoutOnClose(msg) => timeout_packet_validate(
-                        self,
-                        module_id,
-                        TimeoutMsgType::TimeoutOnClose(msg),
-                    ),
-                }
-                .map_err(RouterError::ContextError)
-            }
-        }
-    }
-
     /// Returns the ClientState for the given identifier `client_id`.
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError>;
 
@@ -379,77 +269,6 @@ pub trait ValidationContext: Router {
 ///
 /// Trait used for the top-level [`execute`](crate::core::execute) and [`dispatch`](crate::core::dispatch)
 pub trait ExecutionContext: ValidationContext {
-    /// Execution entrypoint
-    fn execute(&mut self, msg: MsgEnvelope) -> Result<(), RouterError>
-    where
-        Self: Sized,
-    {
-        match msg {
-            MsgEnvelope::Client(msg) => match msg {
-                ClientMsg::CreateClient(msg) => create_client::execute(self, msg),
-                ClientMsg::UpdateClient(msg) => {
-                    update_client::execute(self, MsgUpdateOrMisbehaviour::UpdateClient(msg))
-                }
-                ClientMsg::Misbehaviour(msg) => {
-                    update_client::execute(self, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
-                }
-                ClientMsg::UpgradeClient(msg) => upgrade_client::execute(self, msg),
-            }
-            .map_err(RouterError::ContextError),
-            MsgEnvelope::Connection(msg) => match msg {
-                ConnectionMsg::OpenInit(msg) => conn_open_init::execute(self, msg),
-                ConnectionMsg::OpenTry(msg) => conn_open_try::execute(self, msg),
-                ConnectionMsg::OpenAck(msg) => conn_open_ack::execute(self, msg),
-                ConnectionMsg::OpenConfirm(ref msg) => conn_open_confirm::execute(self, msg),
-            }
-            .map_err(RouterError::ContextError),
-            MsgEnvelope::Channel(msg) => {
-                let module_id = self
-                    .lookup_module_channel(&msg)
-                    .map_err(ContextError::from)?;
-                if !self.has_route(&module_id) {
-                    return Err(ChannelError::RouteNotFound)
-                        .map_err(ContextError::ChannelError)
-                        .map_err(RouterError::ContextError);
-                }
-
-                match msg {
-                    ChannelMsg::OpenInit(msg) => chan_open_init_execute(self, module_id, msg),
-                    ChannelMsg::OpenTry(msg) => chan_open_try_execute(self, module_id, msg),
-                    ChannelMsg::OpenAck(msg) => chan_open_ack_execute(self, module_id, msg),
-                    ChannelMsg::OpenConfirm(msg) => chan_open_confirm_execute(self, module_id, msg),
-                    ChannelMsg::CloseInit(msg) => chan_close_init_execute(self, module_id, msg),
-                    ChannelMsg::CloseConfirm(msg) => {
-                        chan_close_confirm_execute(self, module_id, msg)
-                    }
-                }
-                .map_err(RouterError::ContextError)
-            }
-            MsgEnvelope::Packet(msg) => {
-                let module_id = self
-                    .lookup_module_packet(&msg)
-                    .map_err(ContextError::from)?;
-                if !self.has_route(&module_id) {
-                    return Err(ChannelError::RouteNotFound)
-                        .map_err(ContextError::ChannelError)
-                        .map_err(RouterError::ContextError);
-                }
-
-                match msg {
-                    PacketMsg::Recv(msg) => recv_packet_execute(self, module_id, msg),
-                    PacketMsg::Ack(msg) => acknowledgement_packet_execute(self, module_id, msg),
-                    PacketMsg::Timeout(msg) => {
-                        timeout_packet_execute(self, module_id, TimeoutMsgType::Timeout(msg))
-                    }
-                    PacketMsg::TimeoutOnClose(msg) => {
-                        timeout_packet_execute(self, module_id, TimeoutMsgType::TimeoutOnClose(msg))
-                    }
-                }
-                .map_err(RouterError::ContextError)
-            }
-        }
-    }
-
     /// Called upon successful client creation and update
     fn store_client_state(
         &mut self,

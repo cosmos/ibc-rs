@@ -50,6 +50,9 @@ upgrade_client = []
 mocks = ["tendermint-testgen", "tendermint/clock", "cfg-if", "parking_lot"]
 mocks-no-std = ["cfg-if"]
 
+# This feature grants access to the additional `validate` and `execute` entrypoints.
+val-exec-entry = []
+
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
 ibc-proto = { version = "0.29.0", default-features = false, features = ["parity-scale-codec", "borsh"] }

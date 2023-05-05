@@ -1,17 +1,148 @@
+use crate::prelude::*;
+
+use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
 use crate::core::ics04_channel::channel::{Counterparty, Order, State as ChannelState};
-use crate::core::ics04_channel::commitment::compute_packet_commitment;
+use crate::core::ics04_channel::commitment::{compute_ack_commitment, compute_packet_commitment};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::error::PacketError;
+use crate::core::ics04_channel::events::{ReceivePacket, WriteAcknowledgement};
 use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
+use crate::core::ics04_channel::packet::Receipt;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
+use crate::core::router::ModuleId;
 use crate::core::timestamp::Expiry;
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
-use crate::core::{ContextError, ValidationContext};
+pub(crate) fn recv_packet_validate<ValCtx>(
+    ctx_b: &ValCtx,
+    msg: MsgRecvPacket,
+) -> Result<(), ContextError>
+where
+    ValCtx: ValidationContext,
+{
+    // Note: this contains the validation for `write_acknowledgement` as well.
+    validate(ctx_b, &msg)
+
+    // nothing to validate with the module, since `onRecvPacket` cannot fail.
+    // If any error occurs, then an "error acknowledgement" must be returned.
+}
+
+pub(crate) fn recv_packet_execute<ExecCtx>(
+    ctx_b: &mut ExecCtx,
+    module_id: ModuleId,
+    msg: MsgRecvPacket,
+) -> Result<(), ContextError>
+where
+    ExecCtx: ExecutionContext,
+{
+    let chan_end_path_on_b =
+        ChannelEndPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
+    let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
+
+    // Check if another relayer already relayed the packet.
+    // We don't want to fail the transaction in this case.
+    {
+        let packet_already_received = match chan_end_on_b.ordering {
+            // Note: ibc-go doesn't make the check for `Order::None` channels
+            Order::None => false,
+            Order::Unordered => {
+                let packet = msg.packet.clone();
+                let receipt_path_on_b =
+                    ReceiptPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
+                ctx_b.get_packet_receipt(&receipt_path_on_b).is_ok()
+            }
+            Order::Ordered => {
+                let seq_recv_path_on_b =
+                    SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
+                let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
+
+                // the sequence number has already been incremented, so
+                // another relayer already relayed the packet
+                msg.packet.seq_on_a < next_seq_recv
+            }
+        };
+
+        if packet_already_received {
+            return Ok(());
+        }
+    }
+
+    let module = ctx_b
+        .get_route_mut(&module_id)
+        .ok_or(ChannelError::RouteNotFound)?;
+
+    let (extras, acknowledgement) = module.on_recv_packet_execute(&msg.packet, &msg.signer);
+
+    // state changes
+    {
+        // `recvPacket` core handler state changes
+        match chan_end_on_b.ordering {
+            Order::Unordered => {
+                let receipt_path_on_b = ReceiptPath {
+                    port_id: msg.packet.port_id_on_b.clone(),
+                    channel_id: msg.packet.chan_id_on_b.clone(),
+                    sequence: msg.packet.seq_on_a,
+                };
+
+                ctx_b.store_packet_receipt(&receipt_path_on_b, Receipt::Ok)?;
+            }
+            Order::Ordered => {
+                let seq_recv_path_on_b =
+                    SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
+                let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
+                ctx_b.store_next_sequence_recv(&seq_recv_path_on_b, next_seq_recv.increment())?;
+            }
+            _ => {}
+        }
+        let ack_path_on_b = AckPath::new(
+            &msg.packet.port_id_on_b,
+            &msg.packet.chan_id_on_b,
+            msg.packet.seq_on_a,
+        );
+        // `writeAcknowledgement` handler state changes
+        ctx_b.store_packet_acknowledgement(
+            &ack_path_on_b,
+            compute_ack_commitment(&acknowledgement),
+        )?;
+    }
+
+    // emit events and logs
+    {
+        ctx_b.log_message("success: packet receive".to_string());
+        ctx_b.log_message("success: packet write acknowledgement".to_string());
+
+        let conn_id_on_b = &chan_end_on_b.connection_hops()[0];
+        let event = IbcEvent::ReceivePacket(ReceivePacket::new(
+            msg.packet.clone(),
+            chan_end_on_b.ordering,
+            conn_id_on_b.clone(),
+        ));
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
+        ctx_b.emit_ibc_event(event);
+        let event = IbcEvent::WriteAcknowledgement(WriteAcknowledgement::new(
+            msg.packet,
+            acknowledgement,
+            conn_id_on_b.clone(),
+        ));
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
+        ctx_b.emit_ibc_event(event);
+
+        for module_event in extras.events {
+            ctx_b.emit_ibc_event(IbcEvent::Module(module_event));
+        }
+
+        for log_message in extras.log {
+            ctx_b.log_message(log_message);
+        }
+    }
+
+    Ok(())
+}
 
 pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextError>
 where
@@ -148,12 +279,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ics04_channel::handler::recv_packet::validate;
-    use crate::core::ExecutionContext;
-    use crate::prelude::*;
-    use crate::Height;
+    use super::*;
     use rstest::*;
-
     use test_log::test;
 
     use crate::core::ics03_connection::connection::ConnectionEnd;
@@ -168,12 +295,16 @@ mod tests {
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
     use crate::core::timestamp::Timestamp;
     use crate::core::timestamp::ZERO_DURATION;
+    use crate::Height;
+
     use crate::mock::context::MockContext;
     use crate::mock::ics18_relayer::context::RelayerContext;
     use crate::test_utils::get_dummy_account_id;
+    use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
 
     pub struct Fixture {
         pub context: MockContext,
+        pub module_id: ModuleId,
         pub client_height: Height,
         pub host_height: Height,
         pub msg: MsgRecvPacket,
@@ -183,7 +314,11 @@ mod tests {
 
     #[fixture]
     fn fixture() -> Fixture {
-        let context = MockContext::default();
+        let mut context = MockContext::default();
+
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
+        let module = DummyTransferModule::new();
+        context.add_route(module_id.clone(), module).unwrap();
 
         let host_height = context.query_latest_height().unwrap().increment();
 
@@ -220,6 +355,7 @@ mod tests {
 
         Fixture {
             context,
+            module_id,
             client_height,
             host_height,
             msg,
@@ -339,5 +475,38 @@ mod tests {
             res.is_err(),
             "recv_packet validation should fail when the packet has timed out"
         )
+    }
+
+    #[rstest]
+    fn recv_packet_execute_test(fixture: Fixture) {
+        let Fixture {
+            context,
+            module_id,
+            msg,
+            conn_end_on_b,
+            chan_end_on_b,
+            client_height,
+            ..
+        } = fixture;
+        let mut ctx = context
+            .with_client(&ClientId::default(), client_height)
+            .with_connection(ConnectionId::default(), conn_end_on_b)
+            .with_channel(PortId::default(), ChannelId::default(), chan_end_on_b);
+
+        let res = recv_packet_execute(&mut ctx, module_id, msg);
+
+        assert!(res.is_ok());
+
+        assert_eq!(ctx.events.len(), 4);
+        assert!(matches!(
+            &ctx.events[0],
+            &IbcEvent::Message(MessageEvent::Channel)
+        ));
+        assert!(matches!(&ctx.events[1], &IbcEvent::ReceivePacket(_)));
+        assert!(matches!(
+            &ctx.events[2],
+            &IbcEvent::Message(MessageEvent::Channel)
+        ));
+        assert!(matches!(&ctx.events[3], &IbcEvent::WriteAcknowledgement(_)));
     }
 }
