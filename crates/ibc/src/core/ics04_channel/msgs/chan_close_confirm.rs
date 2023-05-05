@@ -54,7 +54,7 @@ impl TryFrom<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
                 .ok_or(ChannelError::MissingHeight)?,
-            signer: raw_msg.signer.parse().map_err(ChannelError::Signer)?,
+            signer: raw_msg.signer.into(),
         })
     }
 }

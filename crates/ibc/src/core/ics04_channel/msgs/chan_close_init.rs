@@ -42,7 +42,7 @@ impl TryFrom<RawMsgChannelCloseInit> for MsgChannelCloseInit {
                 .channel_id
                 .parse()
                 .map_err(ChannelError::Identifier)?,
-            signer: raw_msg.signer.parse().map_err(ChannelError::Signer)?,
+            signer: raw_msg.signer.into(),
         })
     }
 }

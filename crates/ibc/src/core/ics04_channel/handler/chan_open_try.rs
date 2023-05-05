@@ -1,5 +1,7 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenTry`.
 
+use ibc_proto::protobuf::Protobuf;
+
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
@@ -13,6 +15,8 @@ pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), Context
 where
     Ctx: ValidationContext,
 {
+    ctx_b.validate_message_signer(&msg.signer)?;
+
     // An IBC connection running on the local (host) chain should exist.
     if msg.connection_hops_on_b.len() != 1 {
         return Err(ChannelError::InvalidConnectionHopsLength {
@@ -71,7 +75,7 @@ where
                 &msg.proof_chan_end_on_a,
                 consensus_state_of_a_on_b.root(),
                 Path::ChannelEnd(chan_end_path_on_a),
-                expected_chan_end_on_a.proto_encode_vec()?,
+                expected_chan_end_on_a.encode_vec(),
             )
             .map_err(ChannelError::VerifyChannelFailed)?;
     }

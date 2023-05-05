@@ -14,5 +14,5 @@ pub mod misbehaviour;
 pub(crate) const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
 
 pub fn client_type() -> ClientType {
-    ClientType::new(TENDERMINT_CLIENT_TYPE.to_string())
+    ClientType::from(TENDERMINT_CLIENT_TYPE.to_string())
 }

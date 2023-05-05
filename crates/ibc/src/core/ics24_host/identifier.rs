@@ -7,6 +7,8 @@ use derive_more::Into;
 use super::validate::*;
 use crate::clients::ics07_tendermint::client_type as tm_client_type;
 use crate::core::ics02_client::client_type::ClientType;
+use crate::core::ics24_host::validate::validate_client_identifier;
+
 use crate::core::ics24_host::error::ValidationError;
 use crate::prelude::*;
 
@@ -201,12 +203,13 @@ impl ClientId {
     /// ```
     /// # use ibc::core::ics24_host::identifier::ClientId;
     /// # use ibc::core::ics02_client::client_type::ClientType;
-    /// let tm_client_id = ClientId::new(ClientType::new("07-tendermint".to_string()), 0);
+    /// let tm_client_id = ClientId::new(ClientType::from("07-tendermint".to_string()), 0);
     /// assert!(tm_client_id.is_ok());
     /// tm_client_id.map(|id| { assert_eq!(&id, "07-tendermint-0") });
     /// ```
     pub fn new(client_type: ClientType, counter: u64) -> Result<Self, ValidationError> {
-        let prefix = client_type.as_str();
+        let prefix = client_type.as_str().trim();
+        validate_client_type(prefix)?;
         let id = format!("{prefix}-{counter}");
         Self::from_str(id.as_str())
     }

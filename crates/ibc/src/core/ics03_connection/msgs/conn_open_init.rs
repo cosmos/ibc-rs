@@ -51,7 +51,7 @@ impl TryFrom<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {
                 .try_into()?,
             version: msg.version.map(|version| version.try_into()).transpose()?,
             delay_period: Duration::from_nanos(msg.delay_period),
-            signer: msg.signer.parse().map_err(ConnectionError::Signer)?,
+            signer: msg.signer.into(),
         })
     }
 }

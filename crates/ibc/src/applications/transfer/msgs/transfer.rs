@@ -81,11 +81,9 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
                     .ok_or(TokenTransferError::InvalidToken)?
                     .try_into()
                     .map_err(|_| TokenTransferError::InvalidToken)?,
-                sender: raw_msg.sender.parse().map_err(TokenTransferError::Signer)?,
-                receiver: raw_msg
-                    .receiver
-                    .parse()
-                    .map_err(TokenTransferError::Signer)?,
+                sender: raw_msg.sender.into(),
+                receiver: raw_msg.receiver.into(),
+                memo: raw_msg.memo.into(),
             },
             timeout_height_on_b,
             timeout_timestamp_on_b,
@@ -103,6 +101,7 @@ impl From<MsgTransfer> for RawMsgTransfer {
             receiver: domain_msg.packet_data.receiver.to_string(),
             timeout_height: domain_msg.timeout_height_on_b.into(),
             timeout_timestamp: domain_msg.timeout_timestamp_on_b.nanoseconds(),
+            memo: domain_msg.packet_data.memo.to_string(),
         }
     }
 }
@@ -126,6 +125,7 @@ impl TryFrom<Any> for MsgTransfer {
 
 #[cfg(test)]
 pub mod test_util {
+    use alloc::borrow::ToOwned;
     use core::ops::Add;
     use core::time::Duration;
     use primitive_types::U256;
@@ -149,7 +149,7 @@ pub mod test_util {
         timeout_height: TimeoutHeight,
         timeout_timestamp: Option<Timestamp>,
     ) -> MsgTransfer {
-        let address: Signer = get_dummy_bech32_account().as_str().parse().unwrap();
+        let address: Signer = get_dummy_bech32_account().into();
         MsgTransfer {
             port_id_on_a: PortId::default(),
             chan_id_on_a: ChannelId::default(),
@@ -161,6 +161,7 @@ pub mod test_util {
                 .into(),
                 sender: address.clone(),
                 receiver: address,
+                memo: "".to_owned().into(),
             },
             timeout_timestamp_on_b: timeout_timestamp
                 .unwrap_or_else(|| Timestamp::now().add(Duration::from_secs(10)).unwrap()),
@@ -179,6 +180,7 @@ pub mod test_util {
                 token: coin,
                 sender: msg.packet_data.sender.clone(),
                 receiver: msg.packet_data.receiver.clone(),
+                memo: msg.packet_data.memo.clone(),
             };
             serde_json::to_vec(&data).expect("PacketData's infallible Serialize impl failed")
         };

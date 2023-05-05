@@ -1,4 +1,7 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenAck`.
+
+use ibc_proto::protobuf::Protobuf;
+
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
@@ -12,6 +15,8 @@ pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenAck) -> Result<(), Context
 where
     Ctx: ValidationContext,
 {
+    ctx_a.validate_message_signer(&msg.signer)?;
+
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
@@ -81,7 +86,7 @@ where
                 &msg.proof_chan_end_on_b,
                 consensus_state_of_b_on_a.root(),
                 Path::ChannelEnd(chan_end_path_on_b),
-                expected_chan_end_on_b.proto_encode_vec()?,
+                expected_chan_end_on_b.encode_vec(),
             )
             .map_err(ChannelError::VerifyChannelFailed)?;
     }
