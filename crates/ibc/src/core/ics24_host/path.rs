@@ -53,29 +53,6 @@ pub enum Path {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "clients/{_0}/clientType")]
-pub struct ClientTypePath(pub ClientId);
-
-impl ClientTypePath {
-    pub fn new(client_id: &ClientId) -> ClientTypePath {
-        ClientTypePath(client_id.clone())
-    }
-}
-
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "clients/{_0}/clientState")]
 pub struct ClientStatePath(pub ClientId);
 
