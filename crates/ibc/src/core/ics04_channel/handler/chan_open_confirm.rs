@@ -6,8 +6,8 @@ use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State as ChannelState};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
+use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
-use crate::core::ics24_host::Path;
 use crate::core::{ContextError, ValidationContext};
 use crate::prelude::*;
 
@@ -97,9 +97,9 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::core::timestamp::ZERO_DURATION;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
-    use crate::timestamp::ZERO_DURATION;
     use crate::Height;
 
     pub struct Fixture {

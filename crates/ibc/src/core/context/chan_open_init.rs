@@ -8,9 +8,9 @@ use crate::core::ics24_host::identifier::ChannelId;
 
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::router::ModuleId;
 
-use crate::events::{IbcEvent, MessageEvent};
+use crate::core::events::{IbcEvent, MessageEvent};
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 pub(super) fn chan_open_init_validate<ValCtx>(
@@ -149,7 +149,7 @@ mod tests {
         let msg = MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
 
         let mut context = MockContext::default();
-        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let module = DummyTransferModule::new();
         context.add_route(module_id.clone(), module).unwrap();
 

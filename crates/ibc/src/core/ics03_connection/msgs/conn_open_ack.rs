@@ -8,11 +8,11 @@ use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics24_host::identifier::ConnectionId;
+use crate::core::Msg;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 use crate::Height;
 
-pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenAck";
+pub(crate) const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenAck";
 
 /// Per our convention, this message is sent to chain A.
 /// The handler will check proofs of chain B.

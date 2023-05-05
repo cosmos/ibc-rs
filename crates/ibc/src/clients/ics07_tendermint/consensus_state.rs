@@ -1,3 +1,5 @@
+//! Defines Tendermint's `ConsensusState` type
+
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
@@ -10,11 +12,11 @@ use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
-use crate::timestamp::Timestamp;
+use crate::core::timestamp::Timestamp;
 
-pub const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str =
-    "/ibc.lightclients.tendermint.v1.ConsensusState";
+const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ConsensusState";
 
+/// Defines the Tendermint light client's consensus state
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConsensusState {

@@ -7,10 +7,10 @@ use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenConfirm as RawMsgConn
 
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics24_host::identifier::ConnectionId;
+use crate::core::Msg;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 
-pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenConfirm";
+pub(crate) const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenConfirm";
 
 /// Per our convention, this message is sent to chain B.
 /// The handler will check proofs of chain A.

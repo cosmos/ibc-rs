@@ -6,11 +6,11 @@ use ibc_proto::protobuf::Protobuf;
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
+use crate::core::Msg;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 use crate::Height;
 
-pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgTimeoutOnClose";
+pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgTimeoutOnClose";
 
 ///
 /// Message definition for packet timeout domain type.

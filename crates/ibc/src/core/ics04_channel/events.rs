@@ -8,8 +8,8 @@ use tendermint::abci;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
-use crate::timestamp::Timestamp;
 
 use self::channel_attributes::{
     ChannelIdAttribute, ConnectionIdAttribute, CounterpartyChannelIdAttribute,
@@ -23,8 +23,7 @@ use self::packet_attributes::{
 };
 
 use super::channel::Order;
-use super::msgs::acknowledgement::Acknowledgement;
-use super::packet::Sequence;
+use super::packet::{Acknowledgement, Sequence};
 use super::timeout::TimeoutHeight;
 use super::Version;
 

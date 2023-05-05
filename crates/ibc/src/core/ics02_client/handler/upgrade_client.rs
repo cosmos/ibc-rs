@@ -2,11 +2,11 @@
 //!
 use crate::prelude::*;
 
+use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics02_client::client_state::UpdatedState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
-use crate::events::{IbcEvent, MessageEvent};
 
 use crate::core::context::ContextError;
 
@@ -112,11 +112,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::events::IbcEvent;
     use crate::core::ics02_client::handler::upgrade_client::execute;
     use crate::core::ics24_host::path::ClientConsensusStatePath;
     use crate::core::ValidationContext;
     use crate::downcast;
-    use crate::events::IbcEvent;
     use rstest::*;
 
     use core::str::FromStr;

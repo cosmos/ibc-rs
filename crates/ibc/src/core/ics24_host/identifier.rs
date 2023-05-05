@@ -1,15 +1,18 @@
+//! Defines identifier types
+
+pub(crate) mod validate;
+use validate::*;
+
 use core::convert::{From, Infallible};
 use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use derive_more::Into;
+use displaydoc::Display;
 
-use super::validate::*;
 use crate::clients::ics07_tendermint::client_type as tm_client_type;
 use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics24_host::validate::validate_client_identifier;
 
-use crate::core::ics24_host::error::ValidationError;
 use crate::prelude::*;
 
 const CONNECTION_ID_PREFIX: &str = "connection";
@@ -19,13 +22,12 @@ const DEFAULT_CHAIN_ID: &str = "defaultChainId";
 const DEFAULT_PORT_ID: &str = "defaultPort";
 const TRANSFER_PORT_ID: &str = "transfer";
 
-/// This type is subject to future changes.
+/// A `ChainId` is in "epoch format" if it is of the form `{chain name}-{epoch number}`,
+/// where the epoch number is the number of times the chain was upgraded. Chain IDs not
+/// in that format will be assumed to have epoch number 0.
 ///
-/// TODO: ChainId validation is not standardized yet.
-///       `is_epoch_format` will most likely be replaced by validate_chain_id()-style function.
-///       See: <https://github.com/informalsystems/ibc-rs/pull/304#discussion_r503917283>.
-///
-/// Also, contrast with tendermint-rs `ChainId` type.
+/// This is not standardized yet, although compatible with ibc-go.
+/// See: <https://github.com/informalsystems/ibc-rs/pull/304#discussion_r503917283>.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -216,7 +218,7 @@ impl ClientId {
     /// assert!(tm_client_id.is_ok());
     /// tm_client_id.map(|id| { assert_eq!(&id, "07-tendermint-0") });
     /// ```
-    pub fn new(client_type: ClientType, counter: u64) -> Result<Self, ValidationError> {
+    pub fn new(client_type: ClientType, counter: u64) -> Result<Self, IdentifierError> {
         let prefix = client_type.as_str().trim();
         validate_client_type(prefix)?;
         let id = format!("{prefix}-{counter}");
@@ -242,7 +244,7 @@ impl Display for ClientId {
 }
 
 impl FromStr for ClientId {
-    type Err = ValidationError;
+    type Err = IdentifierError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         validate_client_identifier(s).map(|_| Self(s.to_string()))
@@ -325,7 +327,7 @@ impl Display for ConnectionId {
 }
 
 impl FromStr for ConnectionId {
-    type Err = ValidationError;
+    type Err = IdentifierError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         validate_connection_identifier(s).map(|_| Self(s.to_string()))
@@ -369,7 +371,7 @@ impl PartialEq<str> for ConnectionId {
 pub struct PortId(String);
 
 impl PortId {
-    pub fn new(id: String) -> Result<Self, ValidationError> {
+    pub fn new(id: String) -> Result<Self, IdentifierError> {
         Self::from_str(&id)
     }
 
@@ -388,7 +390,7 @@ impl PortId {
         self.0.as_bytes()
     }
 
-    pub fn validate(&self) -> Result<(), ValidationError> {
+    pub fn validate(&self) -> Result<(), IdentifierError> {
         validate_port_identifier(self.as_str())
     }
 }
@@ -401,7 +403,7 @@ impl Display for PortId {
 }
 
 impl FromStr for PortId {
-    type Err = ValidationError;
+    type Err = IdentifierError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         validate_port_identifier(s).map(|_| Self(s.to_string()))
@@ -477,7 +479,7 @@ impl Display for ChannelId {
 }
 
 impl FromStr for ChannelId {
-    type Err = ValidationError;
+    type Err = IdentifierError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         validate_channel_identifier(s).map(|_| Self(s.to_string()))
@@ -509,3 +511,26 @@ impl PartialEq<str> for ChannelId {
         self.as_str().eq(other)
     }
 }
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Display)]
+pub enum IdentifierError {
+    /// identifier `{id}` cannot contain separator '/'
+    ContainSeparator { id: String },
+    /// identifier `{id}` has invalid length `{length}` must be between `{min}`-`{max}` characters
+    InvalidLength {
+        id: String,
+        length: usize,
+        min: usize,
+        max: usize,
+    },
+    /// identifier `{id}` must only contain alphanumeric characters or `.`, `_`, `+`, `-`, `#`, - `[`, `]`, `<`, `>`
+    InvalidCharacter { id: String },
+    /// identifier prefix `{prefix}` is invalid
+    InvalidPrefix { prefix: String },
+    /// identifier cannot be empty
+    Empty,
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for IdentifierError {}

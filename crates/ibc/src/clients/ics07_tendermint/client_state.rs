@@ -1,3 +1,6 @@
+//! Implements the core [`ClientState`](crate::core::ics02_client::client_state::ClientState) trait
+//! for the Tendermint light client.
+
 mod misbehaviour;
 mod update_client;
 
@@ -31,24 +34,25 @@ use crate::core::ics02_client::client_state::{
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics02_client::trust_threshold::TrustThreshold;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
+use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ClientUpgradePath};
-use crate::core::ics24_host::Path;
-use crate::timestamp::ZERO_DURATION;
+use crate::core::timestamp::ZERO_DURATION;
 use crate::Height;
 
 use super::client_type as tm_client_type;
+use super::trust_threshold::TrustThreshold;
 
 use crate::core::{ExecutionContext, ValidationContext};
 
-pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
+const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
+/// Contains the core implementation of the Tendermint light client
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClientState {
@@ -730,8 +734,9 @@ impl From<ClientState> for Any {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
-    use crate::prelude::*;
     use crate::Height;
     use core::time::Duration;
     use test_log::test;
@@ -745,10 +750,9 @@ mod tests {
     };
     use crate::clients::ics07_tendermint::error::Error;
     use crate::core::ics02_client::client_state::ClientState;
-    use crate::core::ics02_client::trust_threshold::TrustThreshold;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ChainId;
-    use crate::timestamp::ZERO_DURATION;
+    use crate::core::timestamp::ZERO_DURATION;
 
     #[derive(Clone, Debug, PartialEq)]
     struct ClientStateParams {

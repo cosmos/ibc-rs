@@ -24,6 +24,7 @@ use self::recv_packet::{recv_packet_execute, recv_packet_validate};
 use self::timeout::{timeout_packet_execute, timeout_packet_validate, TimeoutMsgType};
 
 use super::ics02_client::msgs::MsgUpdateOrMisbehaviour;
+use super::router::Router;
 use super::{
     ics02_client::error::ClientError,
     ics03_connection::error::ConnectionError,
@@ -33,6 +34,7 @@ use core::time::Duration;
 
 use ibc_proto::google::protobuf::Any;
 
+use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::ConnectionEnd;
@@ -44,14 +46,13 @@ use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCo
 use crate::core::ics04_channel::context::calculate_block_delay;
 use crate::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
-use crate::core::ics05_port::error::PortError::UnknownPort;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-use crate::core::ics24_host::identifier::{ConnectionId, PortId};
+use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
-use crate::core::ics26_routing::context::{Module, ModuleId};
+use crate::core::timestamp::Timestamp;
 use crate::core::{
     ics02_client::{
         handler::{create_client, update_client, upgrade_client},
@@ -62,14 +63,13 @@ use crate::core::{
         msgs::ConnectionMsg,
     },
     ics24_host::identifier::ClientId,
-    ics26_routing::{error::RouterError, msgs::MsgEnvelope},
+    msgs::MsgEnvelope,
 };
-use crate::events::IbcEvent;
-use crate::timestamp::Timestamp;
 use crate::Height;
 
 use displaydoc::Display;
 
+/// Top-level error
 #[derive(Debug, Display)]
 pub enum ContextError {
     /// ICS02 Client error: {0}
@@ -118,52 +118,38 @@ impl std::error::Error for ContextError {
     }
 }
 
-pub trait Router {
-    /// Returns a reference to a `Module` registered against the specified `ModuleId`
-    fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module>;
+/// Error returned from entrypoint functions [`dispatch`][super::dispatch], [`validate`][super::validate] and
+/// [`execute`][super::execute].
+#[derive(Debug, Display)]
+pub enum RouterError {
+    /// context error: `{0}`
+    ContextError(ContextError),
+    /// unknown type URL `{url}`
+    UnknownMessageTypeUrl { url: String },
+    /// the message is malformed and cannot be decoded error: `{0}`
+    MalformedMessageBytes(ibc_proto::protobuf::Error),
+}
 
-    /// Returns a mutable reference to a `Module` registered against the specified `ModuleId`
-    fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module>;
-
-    /// Returns true if the `Router` has a `Module` registered against the specified `ModuleId`
-    fn has_route(&self, module_id: &ModuleId) -> bool;
-
-    /// Return the module_id associated with a given port_id
-    fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId>;
-
-    fn lookup_module_channel(&self, msg: &ChannelMsg) -> Result<ModuleId, ChannelError> {
-        let port_id = match msg {
-            ChannelMsg::OpenInit(msg) => &msg.port_id_on_a,
-            ChannelMsg::OpenTry(msg) => &msg.port_id_on_b,
-            ChannelMsg::OpenAck(msg) => &msg.port_id_on_a,
-            ChannelMsg::OpenConfirm(msg) => &msg.port_id_on_b,
-            ChannelMsg::CloseInit(msg) => &msg.port_id_on_a,
-            ChannelMsg::CloseConfirm(msg) => &msg.port_id_on_b,
-        };
-        let module_id = self
-            .lookup_module_by_port(port_id)
-            .ok_or(ChannelError::Port(UnknownPort {
-                port_id: port_id.clone(),
-            }))?;
-        Ok(module_id)
-    }
-
-    fn lookup_module_packet(&self, msg: &PacketMsg) -> Result<ModuleId, ChannelError> {
-        let port_id = match msg {
-            PacketMsg::Recv(msg) => &msg.packet.port_id_on_b,
-            PacketMsg::Ack(msg) => &msg.packet.port_id_on_a,
-            PacketMsg::Timeout(msg) => &msg.packet.port_id_on_a,
-            PacketMsg::TimeoutOnClose(msg) => &msg.packet.port_id_on_a,
-        };
-        let module_id = self
-            .lookup_module_by_port(port_id)
-            .ok_or(ChannelError::Port(UnknownPort {
-                port_id: port_id.clone(),
-            }))?;
-        Ok(module_id)
+impl From<ContextError> for RouterError {
+    fn from(error: ContextError) -> Self {
+        Self::ContextError(error)
     }
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for RouterError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Self::ContextError(e) => Some(e),
+            Self::UnknownMessageTypeUrl { .. } => None,
+            Self::MalformedMessageBytes(e) => Some(e),
+        }
+    }
+}
+
+/// Context to be implemented by the host that provides all "read-only" methods.
+///
+/// Trait used for the top-level [`validate`](crate::core::validate)
 pub trait ValidationContext: Router {
     /// Validation entrypoint.
     fn validate(&self, msg: MsgEnvelope) -> Result<(), RouterError>
@@ -327,24 +313,30 @@ pub trait ValidationContext: Router {
         Ok(version)
     }
 
-    /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
+    /// Returns the `ChannelEnd` for the given `port_id` and `chan_id`.
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
 
+    /// Returns the sequence number for the next packet to be sent for the given store path
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
         -> Result<Sequence, ContextError>;
 
+    /// Returns the sequence number for the next packet to be received for the given store path
     fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath)
         -> Result<Sequence, ContextError>;
 
+    /// Returns the sequence number for the next packet to be acknowledged for the given store path
     fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, ContextError>;
 
+    /// Returns the packet commitment for the given store path
     fn get_packet_commitment(
         &self,
         commitment_path: &CommitmentPath,
     ) -> Result<PacketCommitment, ContextError>;
 
+    /// Returns the packet receipt for the given store path
     fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, ContextError>;
 
+    /// Returns the packet acknowledgement for the given store path
     fn get_packet_acknowledgement(
         &self,
         ack_path: &AckPath,
@@ -383,6 +375,9 @@ pub trait ValidationContext: Router {
     fn validate_message_signer(&self, signer: &Signer) -> Result<(), ContextError>;
 }
 
+/// Context to be implemented by the host that provides all "write-only" methods.
+///
+/// Trait used for the top-level [`execute`](crate::core::execute) and [`dispatch`](crate::core::dispatch)
 pub trait ExecutionContext: ValidationContext {
     /// Execution entrypoint
     fn execute(&mut self, msg: MsgEnvelope) -> Result<(), RouterError>
@@ -513,29 +508,34 @@ pub trait ExecutionContext: ValidationContext {
     /// Should never fail.
     fn increase_connection_counter(&mut self);
 
+    /// Stores the given packet commitment at the given store path
     fn store_packet_commitment(
         &mut self,
         commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
     ) -> Result<(), ContextError>;
 
+    /// Deletes the packet commitment at the given store path
     fn delete_packet_commitment(
         &mut self,
         commitment_path: &CommitmentPath,
     ) -> Result<(), ContextError>;
 
+    /// Stores the given packet receipt at the given store path
     fn store_packet_receipt(
         &mut self,
         receipt_path: &ReceiptPath,
         receipt: Receipt,
     ) -> Result<(), ContextError>;
 
+    /// Stores the given packet acknowledgement at the given store path
     fn store_packet_acknowledgement(
         &mut self,
         ack_path: &AckPath,
         ack_commitment: AcknowledgementCommitment,
     ) -> Result<(), ContextError>;
 
+    /// Deletes the packet acknowledgement at the given store path
     fn delete_packet_acknowledgement(&mut self, ack_path: &AckPath) -> Result<(), ContextError>;
 
     /// Stores the given channel_end at a path associated with the port_id and channel_id.
@@ -545,18 +545,21 @@ pub trait ExecutionContext: ValidationContext {
         channel_end: ChannelEnd,
     ) -> Result<(), ContextError>;
 
+    /// Stores the given `nextSequenceSend` number at the given store path
     fn store_next_sequence_send(
         &mut self,
         seq_send_path: &SeqSendPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
 
+    /// Stores the given `nextSequenceRecv` number at the given store path
     fn store_next_sequence_recv(
         &mut self,
         seq_recv_path: &SeqRecvPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
 
+    /// Stores the given `nextSequenceAck` number at the given store path
     fn store_next_sequence_ack(
         &mut self,
         seq_ack_path: &SeqAckPath,
@@ -568,9 +571,9 @@ pub trait ExecutionContext: ValidationContext {
     /// Should never fail.
     fn increase_channel_counter(&mut self);
 
-    /// Ibc events
+    /// Emit the given IBC event
     fn emit_ibc_event(&mut self, event: IbcEvent);
 
-    /// Logging facility
+    /// Log the given message.
     fn log_message(&mut self, message: String);
 }

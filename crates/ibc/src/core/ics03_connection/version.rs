@@ -1,3 +1,5 @@
+//! Defines connection versioning type and functions
+
 use core::fmt::Display;
 
 use crate::prelude::*;

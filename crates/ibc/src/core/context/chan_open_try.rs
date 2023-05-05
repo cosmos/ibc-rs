@@ -6,9 +6,9 @@ use crate::{core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry, prelude
 
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::router::ModuleId;
 
-use crate::events::{IbcEvent, MessageEvent};
+use crate::core::events::{IbcEvent, MessageEvent};
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 
@@ -121,8 +121,10 @@ mod tests {
     use super::*;
     use crate::{
         applications::transfer::MODULE_ID_STR,
-        core::{context::chan_open_try::chan_open_try_execute, ics26_routing::context::ModuleId},
-        events::IbcEvent,
+        core::{
+            context::chan_open_try::chan_open_try_execute, router::ModuleId,
+            timestamp::ZERO_DURATION,
+        },
         test_utils::DummyTransferModule,
         Height,
     };
@@ -140,7 +142,6 @@ mod tests {
             ics24_host::identifier::{ClientId, ConnectionId},
         },
         mock::context::MockContext,
-        timestamp::ZERO_DURATION,
     };
 
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
@@ -183,7 +184,7 @@ mod tests {
 
         let mut context = MockContext::default();
         let module = DummyTransferModule::new();
-        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         context.add_route(module_id.clone(), module).unwrap();
 
         Fixture {

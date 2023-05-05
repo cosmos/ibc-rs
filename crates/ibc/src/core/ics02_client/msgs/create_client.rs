@@ -7,10 +7,10 @@ use ibc_proto::ibc::core::client::v1::MsgCreateClient as RawMsgCreateClient;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::error::ClientError;
+use crate::core::Msg;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 
-pub const TYPE_URL: &str = "/ibc.core.client.v1.MsgCreateClient";
+pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgCreateClient";
 
 /// A type of message that triggers the creation of a new on-chain (IBC) client.
 #[derive(Clone, Debug, PartialEq, Eq)]

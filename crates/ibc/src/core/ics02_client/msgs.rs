@@ -1,8 +1,4 @@
-//! These are definitions of messages that a relayer submits to a chain. Specific implementations of
-//! these messages can be found, for instance, in ICS 07 for Tendermint-specific chains. A chain
-//! handles these messages in two layers: first with the general ICS 02 client handler, which
-//! subsequently calls into the chain-specific (e.g., ICS 07) client handler. See:
-//! <https://github.com/cosmos/ibc/tree/master/spec/core/ics-002-client-semantics#create>.
+//! Defines the client message types that are sent to the chain by the relayer.
 
 use ibc_proto::google::protobuf::Any;
 
@@ -18,6 +14,7 @@ pub mod misbehaviour;
 pub mod update_client;
 pub mod upgrade_client;
 
+/// Encodes all the different client messages
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum ClientMsg {

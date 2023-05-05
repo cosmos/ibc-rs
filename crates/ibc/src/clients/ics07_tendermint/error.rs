@@ -1,3 +1,5 @@
+//! Defines the Tendermint light client's error type
+
 use crate::prelude::*;
 
 use crate::core::ics02_client::error::ClientError;
@@ -7,12 +9,12 @@ use crate::Height;
 use core::time::Duration;
 
 use displaydoc::Display;
-use tendermint::account::Id;
 use tendermint::{Error as TendermintError, Hash};
 use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
 use tendermint_light_client_verifier::operations::VotingPowerTally;
 use tendermint_light_client_verifier::Verdict;
 
+/// The main error type
 #[derive(Debug, Display)]
 pub enum Error {
     /// chain-id is (`{chain_id}`) is too long, got: `{len}`, max allowed: `{max_len}`
@@ -112,19 +114,6 @@ impl std::error::Error for Error {
             _ => None,
         }
     }
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for VerificationError {}
-
-#[derive(Debug, Display)]
-pub enum VerificationError {
-    /// couldn't verify validator signature
-    InvalidSignature,
-    /// duplicate validator in commit signatures with address `{id}`
-    DuplicateValidator { id: Id },
-    /// insufficient signers overlap between `{q1}` and `{q2}`
-    InsufficientOverlap { q1: u64, q2: u64 },
 }
 
 impl From<Error> for ClientError {

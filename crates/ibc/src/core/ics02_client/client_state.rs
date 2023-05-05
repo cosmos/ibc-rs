@@ -1,3 +1,5 @@
+//! Defines `ClientState`, the core type to be implemented by light clients
+
 use core::marker::{Send, Sync};
 use core::time::Duration;
 
@@ -6,14 +8,14 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 
+use crate::clients::AsAny;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::core::ics24_host::Path;
-use crate::dynamic_typing::AsAny;
+use crate::core::ics24_host::path::Path;
 use crate::erased::ErasedSerialize;
 use crate::prelude::*;
 use crate::Height;
@@ -22,6 +24,7 @@ use super::consensus_state::ConsensusState;
 
 use crate::core::{ExecutionContext, ValidationContext};
 
+/// The core light client type.
 pub trait ClientState:
     AsAny
     + sealed::ErasedPartialEqClientState
@@ -185,10 +188,6 @@ impl PartialEq<&Self> for Box<dyn ClientState> {
     }
 }
 
-pub fn downcast_client_state<CS: ClientState>(h: &dyn ClientState) -> Option<&CS> {
-    h.as_any().downcast_ref::<CS>()
-}
-
 /// `UpdateKind` represents the 2 ways that a client can be updated
 /// in IBC: either through a `MsgUpdateClient`, or a `MsgSubmitMisbehaviour`.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -202,6 +201,7 @@ pub enum UpdateKind {
     SubmitMisbehaviour,
 }
 
+/// Represents the updated client and consensus states after a client upgrade
 pub struct UpdatedState {
     pub client_state: Box<dyn ClientState>,
     pub consensus_state: Box<dyn ConsensusState>,

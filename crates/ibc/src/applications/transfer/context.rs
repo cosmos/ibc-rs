@@ -1,3 +1,6 @@
+//! Defines the main context traits and IBC module callbacks
+
+use crate::core::router::ModuleExtras;
 use crate::core::ContextError;
 use crate::prelude::*;
 
@@ -16,13 +19,12 @@ use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::context::{
     SendPacketExecutionContext, SendPacketValidationContext,
 };
-use crate::core::ics04_channel::handler::ModuleExtras;
-use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
-use crate::core::ics04_channel::packet::Packet;
+use crate::core::ics04_channel::packet::{Acknowledgement, Packet};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::signer::Signer;
 
+/// Methods required in token transfer validation, to be implemented by the host
 pub trait TokenTransferValidationContext: SendPacketValidationContext {
     type AccountId: TryFrom<Signer>;
 
@@ -71,6 +73,7 @@ pub trait TokenTransferValidationContext: SendPacketValidationContext {
     }
 }
 
+/// Methods required in token transfer execution, to be implemented by the host
 pub trait TokenTransferExecutionContext:
     TokenTransferValidationContext + SendPacketExecutionContext
 {

@@ -1,3 +1,5 @@
+//! Defines all store paths used by IBC
+
 use crate::{prelude::*, Height};
 
 /// Path-space as listed in ICS-024
@@ -10,13 +12,6 @@ use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
 
 use derive_more::{Display, From};
-
-/// ABCI Query path for the IBC sub-store
-pub const IBC_QUERY_PATH: &str = "store/ibc/key";
-
-/// ABCI Query path for the upgrade sub-store
-/// ## Note: This is SDK/Tendermint specific!
-pub const SDK_UPGRADE_QUERY_PATH: &str = "store/upgrade/key";
 
 /// ABCI client upgrade keys
 /// - The key identifying the upgraded IBC state within the upgrade sub-store
@@ -42,29 +37,6 @@ pub enum Path {
     Ack(AckPath),
     Receipt(ReceiptPath),
     Upgrade(ClientUpgradePath),
-}
-
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "clients/{_0}/clientType")]
-pub struct ClientTypePath(pub ClientId);
-
-impl ClientTypePath {
-    pub fn new(client_id: &ClientId) -> ClientTypePath {
-        ClientTypePath(client_id.clone())
-    }
 }
 
 #[cfg_attr(

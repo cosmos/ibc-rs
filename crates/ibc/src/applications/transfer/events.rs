@@ -1,14 +1,19 @@
+//! Defines all token transfer event types
+
 use crate::applications::transfer::acknowledgement::TokenTransferAcknowledgement;
-use crate::applications::transfer::{Amount, Memo, PrefixedDenom, MODULE_ID_STR};
-use crate::events::ModuleEvent;
+use crate::applications::transfer::{Amount, PrefixedDenom, MODULE_ID_STR};
+use crate::core::events::ModuleEvent;
 use crate::prelude::*;
 use crate::signer::Signer;
+
+use super::Memo;
 
 const EVENT_TYPE_PACKET: &str = "fungible_token_packet";
 const EVENT_TYPE_TIMEOUT: &str = "timeout";
 const EVENT_TYPE_DENOM_TRACE: &str = "denomination_trace";
 const EVENT_TYPE_TRANSFER: &str = "ibc_transfer";
 
+/// Contains all events variants that can be emitted from the token transfer application
 pub enum Event {
     Recv(RecvEvent),
     Ack(AckEvent),
@@ -18,6 +23,8 @@ pub enum Event {
     Transfer(TransferEvent),
 }
 
+/// Event emitted in the [`onRecvPacket`][super::context::on_recv_packet_execute]
+/// module callback to indicate the that the `RecvPacket` message was processed
 pub struct RecvEvent {
     pub sender: Signer,
     pub receiver: Signer,
@@ -52,6 +59,8 @@ impl From<RecvEvent> for ModuleEvent {
     }
 }
 
+/// Event emitted in the [`onAcknowledgePacket`][super::context::on_acknowledgement_packet_execute]
+/// module callback
 pub struct AckEvent {
     pub sender: Signer,
     pub receiver: Signer,
@@ -86,6 +95,8 @@ impl From<AckEvent> for ModuleEvent {
     }
 }
 
+/// Event emitted in the [`onAcknowledgePacket`][super::context::on_acknowledgement_packet_execute]
+/// module callback to indicate whether the acknowledgement is a success or a failure
 pub struct AckStatusEvent {
     pub acknowledgement: TokenTransferAcknowledgement,
 }
@@ -105,6 +116,8 @@ impl From<AckStatusEvent> for ModuleEvent {
     }
 }
 
+/// Event emitted in the [`onTimeoutPacket`][super::context::on_timeout_packet_execute]
+/// module callback
 pub struct TimeoutEvent {
     pub refund_receiver: Signer,
     pub refund_denom: PrefixedDenom,
@@ -133,6 +146,8 @@ impl From<TimeoutEvent> for ModuleEvent {
     }
 }
 
+/// Event emitted in the [`onRecvPacket`][super::context::on_recv_packet_execute]
+/// module callback when new tokens are minted
 pub struct DenomTraceEvent {
     pub trace_hash: Option<String>,
     pub denom: PrefixedDenom,
@@ -152,6 +167,8 @@ impl From<DenomTraceEvent> for ModuleEvent {
     }
 }
 
+/// Event emitted in [`sendTransfer`][super::send_transfer] after a successful
+/// transfer
 pub struct TransferEvent {
     pub sender: Signer,
     pub receiver: Signer,

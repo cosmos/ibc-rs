@@ -1,21 +1,19 @@
+use crate::core::events::MessageEvent;
 use crate::core::ics04_channel::events::ChannelClosed;
 use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
 use crate::core::ics24_host::path::{ChannelEndPath, CommitmentPath};
-use crate::events::MessageEvent;
 use crate::prelude::*;
 
-use crate::{
-    core::{
-        ics04_channel::{
-            channel::{Order, State},
-            error::ChannelError,
-            events::TimeoutPacket,
-            handler::{timeout, timeout_on_close},
-        },
-        ics26_routing::context::ModuleId,
-    },
+use crate::core::{
     events::IbcEvent,
+    ics04_channel::{
+        channel::{Order, State},
+        error::ChannelError,
+        events::TimeoutPacket,
+        handler::{timeout, timeout_on_close},
+    },
+    router::ModuleId,
 };
 
 use super::{ContextError, ExecutionContext, ValidationContext};
@@ -157,8 +155,8 @@ mod tests {
     use crate::core::ics04_channel::commitment::PacketCommitment;
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::PortId;
+    use crate::core::timestamp::ZERO_DURATION;
     use crate::test_utils::DummyTransferModule;
-    use crate::timestamp::ZERO_DURATION;
     use crate::Height;
     use crate::{
         core::{
@@ -188,7 +186,7 @@ mod tests {
         let client_height = Height::new(0, 2).unwrap();
         let mut ctx = MockContext::default().with_client(&ClientId::default(), client_height);
 
-        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let module = DummyTransferModule::new();
         ctx.add_route(module_id.clone(), module).unwrap();
 

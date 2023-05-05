@@ -10,14 +10,14 @@ use crate::core::ics03_connection::events::OpenTry;
 use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::identifier::ConnectionId;
+use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath,
 };
-use crate::core::ics24_host::Path;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 
-use crate::events::{IbcEvent, MessageEvent};
+use crate::core::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
@@ -203,12 +203,12 @@ mod tests {
 
     use test_log::test;
 
+    use crate::core::events::IbcEvent;
     use crate::core::ics03_connection::connection::State;
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::ValidationContext;
-    use crate::events::IbcEvent;
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::Height;

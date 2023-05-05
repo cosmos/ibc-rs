@@ -1,7 +1,7 @@
-//! Definition of domain type message `MsgUpdateAnyClient`.
+//! Definition of domain type message `MsgUpdateClient`.
 
+use crate::core::Msg;
 use crate::prelude::*;
-use crate::tx_msg::Msg;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;
@@ -11,7 +11,7 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::signer::Signer;
 
-pub const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
+pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
 
 /// Represents the message that triggers the update of an on-chain (IBC) client
 /// either with new headers, or evidence of misbehaviour.

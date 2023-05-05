@@ -1,3 +1,6 @@
+//! Defines the domain type for tendermint headers
+
+use crate::prelude::*;
 use alloc::string::ToString;
 use core::fmt::{Display, Error as FmtError, Formatter};
 
@@ -15,11 +18,12 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ChainId;
-use crate::timestamp::Timestamp;
-use crate::utils::pretty::{PrettySignedHeader, PrettyValidatorSet};
+use crate::core::timestamp::Timestamp;
 use crate::Height;
 
-pub const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
+use pretty::{PrettySignedHeader, PrettyValidatorSet};
+
+pub(crate) const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// Tendermint consensus header
@@ -198,7 +202,7 @@ impl From<Header> for Any {
     }
 }
 
-pub fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
+fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
     RawHeader::decode(buf).map_err(Error::Decode)?.try_into()
 }
 
@@ -209,6 +213,49 @@ impl From<Header> for RawHeader {
             validator_set: Some(value.validator_set.into()),
             trusted_height: Some(value.trusted_height.into()),
             trusted_validators: Some(value.trusted_next_validator_set.into()),
+        }
+    }
+}
+
+mod pretty {
+    pub use super::*;
+    use crate::utils::pretty::PrettySlice;
+
+    pub struct PrettySignedHeader<'a>(pub &'a SignedHeader);
+
+    impl Display for PrettySignedHeader<'_> {
+        fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+            write!(
+            f,
+            "SignedHeader {{ header: {{ chain_id: {}, height: {} }}, commit: {{ height: {} }} }}",
+            self.0.header.chain_id, self.0.header.height, self.0.commit.height
+        )
+        }
+    }
+
+    pub struct PrettyValidatorSet<'a>(pub &'a ValidatorSet);
+
+    impl Display for PrettyValidatorSet<'_> {
+        fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+            let validator_addresses: Vec<_> = self
+                .0
+                .validators()
+                .iter()
+                .map(|validator| validator.address)
+                .collect();
+            if let Some(proposer) = self.0.proposer() {
+                match &proposer.name {
+                Some(name) => write!(f, "PrettyValidatorSet {{ validators: {}, proposer: {}, total_voting_power: {} }}", PrettySlice(&validator_addresses), name, self.0.total_voting_power()),
+                None =>  write!(f, "PrettyValidatorSet {{ validators: {}, proposer: None, total_voting_power: {} }}", PrettySlice(&validator_addresses), self.0.total_voting_power()),
+            }
+            } else {
+                write!(
+                f,
+                "PrettyValidatorSet {{ validators: {}, proposer: None, total_voting_power: {} }}",
+                PrettySlice(&validator_addresses),
+                self.0.total_voting_power()
+            )
+            }
         }
     }
 }

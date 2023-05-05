@@ -1,3 +1,5 @@
+//! Defines proof specs, which encode the structure of proofs
+
 use crate::prelude::*;
 use ibc_proto::ics23::{InnerSpec as IbcInnerSpec, LeafOp as IbcLeafOp, ProofSpec as IbcProofSpec};
 use ics23::{InnerSpec as Ics23InnerSpec, LeafOp as Ics23LeafOp, ProofSpec as Ics23ProofSpec};

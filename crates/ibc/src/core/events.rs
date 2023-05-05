@@ -1,3 +1,5 @@
+//! Events emitted during message handling
+
 use crate::prelude::*;
 
 use core::convert::{TryFrom, TryInto};
@@ -10,15 +12,17 @@ use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics03_connection::events as ConnectionEvents;
 use crate::core::ics04_channel::error as channel_error;
 use crate::core::ics04_channel::events as ChannelEvents;
-use crate::core::ics24_host::error::ValidationError;
-use crate::timestamp::ParseTimestampError;
+use crate::core::timestamp::ParseTimestampError;
 
+use super::ics24_host::identifier::IdentifierError;
+
+/// All error variants related to IBC events
 #[derive(Debug, Display)]
 pub enum Error {
     /// error parsing height
     Height,
     /// parse error: `{0}`
-    Parse(ValidationError),
+    Parse(IdentifierError),
     /// client error: `{0}`
     Client(client_error::ClientError),
     /// connection error: `{0}`
@@ -46,28 +50,6 @@ impl std::error::Error for Error {
             Self::Timestamp(e) => Some(e),
             Self::Decode(e) => Some(e),
             _ => None,
-        }
-    }
-}
-
-/// Events whose data is not included in the app state and must be extracted using tendermint RPCs
-/// (i.e. /tx_search or /block_search)
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, Clone)]
-pub enum WithBlockDataType {
-    CreateClient,
-    UpdateClient,
-    SendPacket,
-    WriteAck,
-}
-
-impl WithBlockDataType {
-    pub fn as_str(&self) -> &'static str {
-        match *self {
-            WithBlockDataType::CreateClient => "create_client",
-            WithBlockDataType::UpdateClient => "update_client",
-            WithBlockDataType::SendPacket => "send_packet",
-            WithBlockDataType::WriteAck => "write_acknowledgement",
         }
     }
 }
@@ -181,6 +163,7 @@ impl IbcEvent {
     }
 }
 
+/// The event type emitted by IBC applications
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -218,6 +201,7 @@ impl From<ModuleEvent> for IbcEvent {
     }
 }
 
+///  A single key/value pair in a [`ModuleEvent`]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -252,6 +236,11 @@ impl From<ModuleEventAttribute> for abci::EventAttribute {
     }
 }
 
+/// An event type that is emitted by the Cosmos SDK.
+///
+/// We need to emit it as well, as currently [hermes] relies on it.
+///
+/// [hermes]: https://github.com/informalsystems/hermes
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

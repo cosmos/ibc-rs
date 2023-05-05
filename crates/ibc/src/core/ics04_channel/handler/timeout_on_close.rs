@@ -7,10 +7,10 @@ use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order};
 use crate::core::ics04_channel::commitment::compute_packet_commitment;
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
+use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
-use crate::core::ics24_host::Path;
 use crate::core::{ContextError, ValidationContext};
 use crate::prelude::*;
 
@@ -169,10 +169,10 @@ mod tests {
     use crate::core::ics04_channel::commitment::compute_packet_commitment;
     use crate::core::ics04_channel::commitment::PacketCommitment;
     use crate::core::ics04_channel::handler::timeout_on_close::validate;
+    use crate::core::timestamp::Timestamp;
     use crate::core::ExecutionContext;
     use crate::mock::context::MockContext;
     use crate::prelude::*;
-    use crate::timestamp::Timestamp;
     use crate::Height;
     use rstest::*;
 
@@ -185,7 +185,7 @@ mod tests {
     use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::timestamp::ZERO_DURATION;
+    use crate::core::timestamp::ZERO_DURATION;
 
     pub struct Fixture {
         pub context: MockContext,

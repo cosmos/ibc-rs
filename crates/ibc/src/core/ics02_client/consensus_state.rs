@@ -1,3 +1,6 @@
+//! Defines the trait to be implemented by all concrete consensus state types
+
+use crate::clients::AsAny;
 use crate::prelude::*;
 
 use core::marker::{Send, Sync};
@@ -8,9 +11,8 @@ use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
-use crate::dynamic_typing::AsAny;
+use crate::core::timestamp::Timestamp;
 use crate::erased::ErasedSerialize;
-use crate::timestamp::Timestamp;
 
 /// Abstract of consensus state information used by the validity predicate
 /// to verify new commits & state roots.
@@ -50,10 +52,6 @@ dyn_clone::clone_trait_object!(ConsensusState);
 // Implements `serde::Serialize` for all types that have ConsensusState as supertrait
 #[cfg(feature = "serde")]
 erased_serde::serialize_trait_object!(ConsensusState);
-
-pub fn downcast_consensus_state<CS: ConsensusState>(h: &dyn ConsensusState) -> Option<&CS> {
-    h.as_any().downcast_ref::<CS>()
-}
 
 impl PartialEq for dyn ConsensusState {
     fn eq(&self, other: &Self) -> bool {

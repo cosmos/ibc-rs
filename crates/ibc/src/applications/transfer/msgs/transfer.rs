@@ -1,4 +1,4 @@
-//! This is the definition of a transfer messages that an application submits to a chain.
+//! Defines the token transfer message type
 
 use crate::prelude::*;
 
@@ -11,11 +11,10 @@ use crate::applications::transfer::packet::PacketData;
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::timeout::TimeoutHeight;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
-use crate::core::ContextError;
-use crate::timestamp::Timestamp;
-use crate::tx_msg::Msg;
+use crate::core::timestamp::Timestamp;
+use crate::core::{ContextError, Msg};
 
-pub const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
+pub(crate) const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 
 /// Message used to build an ICS20 token transfer packet.
 ///
@@ -119,7 +118,8 @@ impl TryFrom<Any> for MsgTransfer {
 
 #[cfg(test)]
 pub mod test_util {
-    use alloc::borrow::ToOwned;
+    use super::*;
+
     use core::ops::Add;
     use core::time::Duration;
     use primitive_types::U256;
@@ -134,7 +134,6 @@ pub mod test_util {
         applications::transfer::BaseCoin,
         core::ics24_host::identifier::{ChannelId, PortId},
         test_utils::get_dummy_bech32_account,
-        timestamp::Timestamp,
     };
 
     // Returns a dummy ICS20 `MsgTransfer`. If no `timeout_timestamp` is

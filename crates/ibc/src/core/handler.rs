@@ -1,9 +1,6 @@
 use ibc_proto::google::protobuf::Any;
 
-use super::{
-    ics26_routing::{error::RouterError, msgs::MsgEnvelope},
-    ExecutionContext, ValidationContext,
-};
+use super::{msgs::MsgEnvelope, ExecutionContext, RouterError, ValidationContext};
 
 /// Entrypoint which only performs message validation
 ///
@@ -38,6 +35,8 @@ pub fn dispatch(ctx: &mut impl ExecutionContext, msg: MsgEnvelope) -> Result<(),
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     use core::default::Default;
     use core::time::Duration;
 
@@ -45,11 +44,12 @@ mod tests {
 
     use crate::applications::transfer::error::TokenTransferError;
     use crate::applications::transfer::msgs::transfer::test_util::get_dummy_transfer_packet;
-    use crate::applications::transfer::relay::send_transfer::send_transfer;
+    use crate::applications::transfer::send_transfer;
     use crate::applications::transfer::{
         msgs::transfer::test_util::get_dummy_msg_transfer, msgs::transfer::MsgTransfer,
         packet::PacketData, PrefixedCoin, MODULE_ID_STR,
     };
+    use crate::core::events::{IbcEvent, MessageEvent};
     use crate::core::ics02_client::msgs::{
         create_client::MsgCreateClient, update_client::MsgUpdateClient,
         upgrade_client::MsgUpgradeClient, ClientMsg,
@@ -89,18 +89,16 @@ mod tests {
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
     use crate::core::ics24_host::path::CommitmentPath;
-    use crate::core::ics26_routing::context::ModuleId;
-    use crate::core::ics26_routing::error::RouterError;
-    use crate::core::ics26_routing::msgs::MsgEnvelope;
+    use crate::core::msgs::MsgEnvelope;
+    use crate::core::router::ModuleId;
+    use crate::core::timestamp::Timestamp;
     use crate::core::{dispatch, ValidationContext};
-    use crate::events::{IbcEvent, MessageEvent};
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
     use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
     use crate::prelude::*;
     use crate::test_utils::{get_dummy_account_id, DummyTransferModule};
-    use crate::timestamp::Timestamp;
     use crate::Height;
 
     #[test]
@@ -147,7 +145,7 @@ mod tests {
 
         let upgrade_client_height_second = Height::new(1, 1).unwrap();
 
-        let transfer_module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        let transfer_module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
 
         // We reuse this same context across all tests. Nothing in particular needs parametrizing.
         let mut ctx = {
@@ -510,7 +508,7 @@ mod tests {
     }
 
     fn get_channel_events_ctx() -> MockContext {
-        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let mut ctx = MockContext::default()
             .with_client(&ClientId::default(), Height::new(0, 1).unwrap())
             .with_connection(

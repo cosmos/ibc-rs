@@ -1,3 +1,5 @@
+use crate::core::events::IbcEvent;
+use crate::core::events::MessageEvent;
 use crate::core::ics04_channel::channel::Counterparty;
 use crate::core::ics04_channel::commitment::compute_packet_commitment;
 use crate::core::ics04_channel::context::SendPacketExecutionContext;
@@ -9,13 +11,13 @@ use crate::core::ics24_host::path::ChannelEndPath;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::ics24_host::path::CommitmentPath;
 use crate::core::ics24_host::path::SeqSendPath;
+use crate::core::timestamp::Expiry;
 use crate::core::ContextError;
-use crate::events::IbcEvent;
-use crate::events::MessageEvent;
 use crate::prelude::*;
-use crate::timestamp::Expiry;
 
-/// Per our convention, this message is processed on chain A.
+/// Send the given packet, including all necessary validation.
+///
+/// Equivalent to calling [`send_packet_validate`], followed by [`send_packet_execute`]
 pub fn send_packet(
     ctx_a: &mut impl SendPacketExecutionContext,
     packet: Packet,
@@ -24,7 +26,7 @@ pub fn send_packet(
     send_packet_execute(ctx_a, packet)
 }
 
-/// Per our convention, this message is processed on chain A.
+/// Validate that sending the given packet would succeed.
 pub fn send_packet_validate(
     ctx_a: &impl SendPacketValidationContext,
     packet: &Packet,
@@ -86,7 +88,9 @@ pub fn send_packet_validate(
     Ok(())
 }
 
-/// Per our convention, this message is processed on chain A.
+/// Send the packet without any validation.
+///
+/// A prior call to [`send_packet_validate`] MUST have succeeded.
 pub fn send_packet_execute(
     ctx_a: &mut impl SendPacketExecutionContext,
     packet: Packet,
@@ -134,6 +138,7 @@ mod tests {
 
     use test_log::test;
 
+    use crate::core::events::IbcEvent;
     use crate::core::ics02_client::height::Height;
     use crate::core::ics03_connection::connection::ConnectionEnd;
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
@@ -145,10 +150,9 @@ mod tests {
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::events::IbcEvent;
+    use crate::core::timestamp::Timestamp;
+    use crate::core::timestamp::ZERO_DURATION;
     use crate::mock::context::MockContext;
-    use crate::timestamp::Timestamp;
-    use crate::timestamp::ZERO_DURATION;
 
     #[test]
     fn send_packet_processing() {

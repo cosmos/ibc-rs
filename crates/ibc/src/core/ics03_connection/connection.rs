@@ -1,3 +1,5 @@
+//! Defines the types that define a connection
+
 use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
 
@@ -17,7 +19,7 @@ use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-use crate::timestamp::ZERO_DURATION;
+use crate::core::timestamp::ZERO_DURATION;
 
 #[cfg_attr(
     feature = "parity-scale-codec",

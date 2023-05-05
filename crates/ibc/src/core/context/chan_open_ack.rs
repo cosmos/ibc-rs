@@ -6,9 +6,9 @@ use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics26_routing::context::ModuleId;
+use crate::core::router::ModuleId;
 
-use crate::events::{IbcEvent, MessageEvent};
+use crate::core::events::{IbcEvent, MessageEvent};
 
 use super::{ContextError, ExecutionContext, ValidationContext};
 
@@ -94,7 +94,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{core::context::chan_open_ack::chan_open_ack_execute, events::IbcEvent, Height};
+    use crate::{
+        core::{context::chan_open_ack::chan_open_ack_execute, timestamp::ZERO_DURATION},
+        Height,
+    };
     use rstest::*;
 
     use crate::{
@@ -111,11 +114,10 @@ mod tests {
                 },
             },
             ics24_host::identifier::{ClientId, ConnectionId},
-            ics26_routing::context::ModuleId,
+            router::ModuleId,
         },
         mock::context::MockContext,
         test_utils::DummyTransferModule,
-        timestamp::ZERO_DURATION,
     };
 
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
@@ -138,7 +140,7 @@ mod tests {
         let proof_height = 10;
         let mut context = MockContext::default();
         let module = DummyTransferModule::new();
-        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         context.add_route(module_id.clone(), module).unwrap();
 
         let client_id_on_a = ClientId::new(mock_client_type(), 45).unwrap();

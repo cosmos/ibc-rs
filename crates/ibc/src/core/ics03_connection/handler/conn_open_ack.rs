@@ -9,12 +9,12 @@ use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenAck;
 use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath};
-use crate::core::ics24_host::Path;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 
-use crate::events::{IbcEvent, MessageEvent};
+use crate::core::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
@@ -209,10 +209,10 @@ mod tests {
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ValidationContext;
 
-    use crate::events::IbcEvent;
+    use crate::core::events::IbcEvent;
+    use crate::core::timestamp::ZERO_DURATION;
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
-    use crate::timestamp::ZERO_DURATION;
 
     enum Ctx {
         New,

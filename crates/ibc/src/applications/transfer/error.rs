@@ -1,3 +1,5 @@
+//! Defines the token transfer error type
+
 use core::convert::Infallible;
 use core::str::Utf8Error;
 use displaydoc::Display;
@@ -5,8 +7,7 @@ use ibc_proto::protobuf::Error as TendermintProtoError;
 use uint::FromDecStrErr;
 
 use crate::core::ics04_channel::channel::Order;
-use crate::core::ics24_host::error::ValidationError;
-use crate::core::ics24_host::identifier::{ChannelId, PortId};
+use crate::core::ics24_host::identifier::{ChannelId, IdentifierError, PortId};
 use crate::core::ContextError;
 use crate::prelude::*;
 
@@ -15,7 +16,7 @@ pub enum TokenTransferError {
     /// context error: `{0}`
     ContextError(ContextError),
     /// invalid identifier: `{0}`
-    InvalidIdentifier(ValidationError),
+    InvalidIdentifier(IdentifierError),
     /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
     DestinationChannelNotFound {
         port_id: PortId,
@@ -26,12 +27,12 @@ pub enum TokenTransferError {
     /// invalid prot id n trace at position: `{pos}`, validation error: `{validation_error}`
     InvalidTracePortId {
         pos: usize,
-        validation_error: ValidationError,
+        validation_error: IdentifierError,
     },
     /// invalid channel id in trace at position: `{pos}`, validation error: `{validation_error}`
     InvalidTraceChannelId {
         pos: usize,
-        validation_error: ValidationError,
+        validation_error: IdentifierError,
     },
     /// trace length must be even but got: `{len}`
     InvalidTraceLength { len: usize },
@@ -105,8 +106,8 @@ impl From<ContextError> for TokenTransferError {
     }
 }
 
-impl From<ValidationError> for TokenTransferError {
-    fn from(err: ValidationError) -> TokenTransferError {
+impl From<IdentifierError> for TokenTransferError {
+    fn from(err: IdentifierError) -> TokenTransferError {
         Self::InvalidIdentifier(err)
     }
 }

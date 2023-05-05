@@ -9,10 +9,10 @@ use crate::core::ics03_connection::connection::Counterparty;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::core::Msg;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 
-pub const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenInit";
+pub(crate) const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenInit";
 
 /// Per our convention, this message is sent to chain A.
 /// The handler will check proofs of chain B.

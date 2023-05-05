@@ -1,3 +1,5 @@
+//! Defines the main channel, port and packet error types
+
 use super::channel::Counterparty;
 use super::packet::Sequence;
 use super::timeout::TimeoutHeight;
@@ -5,19 +7,30 @@ use crate::core::ics02_client::error as client_error;
 use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::Version;
-use crate::core::ics05_port::error as port_error;
-use crate::core::ics24_host::error::ValidationError;
-use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
+use crate::core::ics24_host::identifier::{
+    ChannelId, ClientId, ConnectionId, IdentifierError, PortId,
+};
+use crate::core::timestamp::{ParseTimestampError, Timestamp};
 use crate::prelude::*;
-use crate::timestamp::Timestamp;
 use crate::Height;
 
 use displaydoc::Display;
 
 #[derive(Debug, Display)]
+pub enum PortError {
+    /// port `{port_id}` is unknown
+    UnknownPort { port_id: PortId },
+    /// implementation specific error
+    ImplementationSpecific,
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for PortError {}
+
+#[derive(Debug, Display)]
 pub enum ChannelError {
     /// port error: `{0}`
-    Port(port_error::PortError),
+    Port(PortError),
     /// invalid channel end: `{channel_end}`
     InvalidChannelEnd { channel_end: String },
     /// invalid channel id: expected `{expected}`, actual `{actual}`
@@ -77,7 +90,7 @@ pub enum ChannelError {
     /// invalid proof: empty proof
     InvalidProof,
     /// identifier error: `{0}`
-    InvalidIdentifier(ValidationError),
+    InvalidIdentifier(IdentifierError),
 }
 
 #[derive(Debug, Display)]
@@ -142,11 +155,11 @@ pub enum PacketError {
     /// invalid timeout height for the packet
     InvalidTimeoutHeight,
     /// Invalid packet timeout timestamp value error: `{0}`
-    InvalidPacketTimestamp(crate::timestamp::ParseTimestampError),
+    InvalidPacketTimestamp(ParseTimestampError),
     /// missing timeout
     MissingTimeout,
     /// invalid identifier error: `{0}`
-    InvalidIdentifier(ValidationError),
+    InvalidIdentifier(IdentifierError),
     /// Missing sequence number for sending packets on port `{port_id}` and channel `{channel_id}`
     MissingNextSendSeq {
         port_id: PortId,
@@ -173,14 +186,14 @@ pub enum PacketError {
     CannotEncodeSequence { sequence: Sequence },
 }
 
-impl From<ValidationError> for ChannelError {
-    fn from(err: ValidationError) -> Self {
+impl From<IdentifierError> for ChannelError {
+    fn from(err: IdentifierError) -> Self {
         Self::InvalidIdentifier(err)
     }
 }
 
-impl From<ValidationError> for PacketError {
-    fn from(err: ValidationError) -> Self {
+impl From<IdentifierError> for PacketError {
+    fn from(err: IdentifierError) -> Self {
         Self::InvalidIdentifier(err)
     }
 }

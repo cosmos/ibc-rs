@@ -1,9 +1,13 @@
+//! Defines the memo type, which represents the string that users can include
+//! with a token transfer
+
 use core::convert::Infallible;
 use core::fmt::{self, Display};
 use core::str::FromStr;
 
 use crate::prelude::*;
 
+/// Represents the token transfer memo
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

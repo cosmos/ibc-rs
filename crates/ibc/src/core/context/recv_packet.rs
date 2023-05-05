@@ -1,5 +1,6 @@
 use crate::{
     core::{
+        events::{IbcEvent, MessageEvent},
         ics04_channel::{
             channel::Order,
             commitment::compute_ack_commitment,
@@ -10,9 +11,8 @@ use crate::{
             packet::Receipt,
         },
         ics24_host::path::{AckPath, ChannelEndPath, ReceiptPath, SeqRecvPath},
-        ics26_routing::context::ModuleId,
+        router::ModuleId,
     },
-    events::{IbcEvent, MessageEvent},
     prelude::*,
 };
 
@@ -152,13 +152,13 @@ mod tests {
         applications::transfer::MODULE_ID_STR,
         core::{
             context::recv_packet::recv_packet_execute,
+            events::IbcEvent,
             ics03_connection::version::get_compatible_versions,
             ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId},
-            ics26_routing::context::ModuleId,
+            router::ModuleId,
+            timestamp::ZERO_DURATION,
         },
-        events::IbcEvent,
         test_utils::DummyTransferModule,
-        timestamp::ZERO_DURATION,
     };
     use rstest::*;
 
@@ -191,7 +191,7 @@ mod tests {
     fn fixture() -> Fixture {
         let mut context = MockContext::default();
 
-        let module_id: ModuleId = MODULE_ID_STR.parse().unwrap();
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let module = DummyTransferModule::new();
         context.add_route(module_id.clone(), module).unwrap();
 

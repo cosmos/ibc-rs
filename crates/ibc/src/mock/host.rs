@@ -14,10 +14,10 @@ use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
 use crate::core::ics24_host::identifier::ChainId;
+use crate::core::timestamp::Timestamp;
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::prelude::*;
-use crate::timestamp::Timestamp;
 use crate::Height;
 
 /// Defines the different types of host chains that a mock context can emulate.

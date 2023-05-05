@@ -1,3 +1,5 @@
+//! Contains the `Amount` type, which represents amounts of tokens transferred.
+
 use core::str::FromStr;
 use derive_more::{Display, From, Into};
 

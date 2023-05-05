@@ -25,6 +25,7 @@ pub const CLIENT_TYPE_ATTRIBUTE_KEY: &str = "client_type";
 /// The content of the `key` field for the attribute containing the height.
 pub const CONSENSUS_HEIGHT_ATTRIBUTE_KEY: &str = "consensus_height";
 
+/// The content of the `key` field for the attribute containing the heights of consensus states that were processed.
 pub const CONSENSUS_HEIGHTS_ATTRIBUTE_KEY: &str = "consensus_heights";
 
 /// The content of the `key` field for the header in update client event.
@@ -415,8 +416,8 @@ impl From<UpgradeClient> for abci::Event {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::timestamp::Timestamp;
     use crate::mock::header::MockHeader;
-    use crate::timestamp::Timestamp;
     use ibc_proto::google::protobuf::Any;
     use tendermint::abci::Event as AbciEvent;
 
