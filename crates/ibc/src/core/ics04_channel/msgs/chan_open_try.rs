@@ -32,9 +32,6 @@ pub struct MsgChannelOpenTry {
 
     #[deprecated(since = "0.22.0")]
     /// Only kept here for proper conversion to/from the raw type
-    pub previous_channel_id: String,
-    #[deprecated(since = "0.22.0")]
-    /// Only kept here for proper conversion to/from the raw type
     pub version_proposal: Version,
 }
 
@@ -71,7 +68,6 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
         let msg = MsgChannelOpenTry {
             port_id_on_b: raw_msg.port_id.parse()?,
             ordering: chan_end_on_b.ordering,
-            previous_channel_id: raw_msg.previous_channel_id,
             connection_hops_on_b: chan_end_on_b.connection_hops,
             port_id_on_a: chan_end_on_b.remote.port_id,
             chan_id_on_a: chan_end_on_b
@@ -107,7 +103,7 @@ impl From<MsgChannelOpenTry> for RawMsgChannelOpenTry {
         #[allow(deprecated)]
         RawMsgChannelOpenTry {
             port_id: domain_msg.port_id_on_b.to_string(),
-            previous_channel_id: domain_msg.previous_channel_id,
+            previous_channel_id: "".to_string(), // Excessive field to satisfy the type conversion",
             channel: Some(chan_end_on_b.into()),
             counterparty_version: domain_msg.version_supported_on_a.to_string(),
             proof_init: domain_msg.proof_chan_end_on_a.clone().into(),
