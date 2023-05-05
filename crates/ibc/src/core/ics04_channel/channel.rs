@@ -192,7 +192,8 @@ impl ChannelEnd {
         connection_hops: Vec<ConnectionId>,
         version: Version,
     ) -> Result<Self, ChannelError> {
-        let channel_end = Self::new_without_validation(state, ordering, remote, connection_hops, version);
+        let channel_end =
+            Self::new_without_validation(state, ordering, remote, connection_hops, version);
         channel_end.validate_basic()?;
         Ok(channel_end)
     }
