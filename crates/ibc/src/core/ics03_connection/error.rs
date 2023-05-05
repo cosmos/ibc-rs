@@ -13,10 +13,8 @@ use ibc_proto::protobuf::Error as ProtoError;
 pub enum ConnectionError {
     /// client error: `{0}`
     Client(client_error::ClientError),
-    /// connection state is unknown: `{state}`
-    InvalidState { state: i32 },
-    /// connection end for identifier `{connection_id}` was never initialized
-    ConnectionMismatch { connection_id: ConnectionId },
+    /// invalid connection state: expected `{expected}`, actual `{actual}`
+    InvalidState { expected: String, actual: String },
     /// invalid connection end error: `{0}`
     InvalidConnectionEnd(ProtoError),
     /// consensus height claimed by the client on the other party is too advanced: `{target_height}` (host chain current height: `{current_height}`)

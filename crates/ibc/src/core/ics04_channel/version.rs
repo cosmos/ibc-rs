@@ -48,11 +48,11 @@ impl Version {
         &self.0
     }
 
-    pub fn verify_is_expected(&self, expected_version: Version) -> Result<(), ChannelError> {
-        if self != &expected_version {
+    pub fn verify_is_expected(&self, expected: Version) -> Result<(), ChannelError> {
+        if self != &expected {
             return Err(ChannelError::VersionNotSupported {
-                expected_version,
-                got_version: self.clone(),
+                expected,
+                actual: self.clone(),
             });
         }
         Ok(())

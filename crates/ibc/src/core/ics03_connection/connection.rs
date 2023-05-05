@@ -16,7 +16,6 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-use crate::core::ics24_host::error::ValidationError;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::timestamp::ZERO_DURATION;
 
@@ -220,11 +219,17 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
     type Error = ConnectionError;
     fn try_from(value: RawConnectionEnd) -> Result<Self, Self::Error> {
         let state = value.state.try_into()?;
+
         if state == State::Uninitialized {
             return Ok(ConnectionEnd::default());
         }
+
         if value.client_id.is_empty() {
             return Err(ConnectionError::EmptyProtoConnectionEnd);
+        }
+
+        if value.versions.is_empty() {
+            return Err(ConnectionError::EmptyVersions);
         }
 
         Self::new(
@@ -319,17 +324,23 @@ impl ConnectionEnd {
 
     /// Helper function to determine whether the connection is open.
     pub fn is_open(&self) -> bool {
-        self.state_matches(&State::Open)
+        self.state == State::Open
     }
 
     /// Helper function to determine whether the connection is uninitialized.
     pub fn is_uninitialized(&self) -> bool {
-        self.state_matches(&State::Uninitialized)
+        self.state == State::Uninitialized
     }
 
-    /// Helper function to compare the state of this end with another state.
-    pub fn state_matches(&self, other: &State) -> bool {
-        self.state.eq(other)
+    /// Checks if the state of this connection end matches with an expected state.
+    pub fn verify_state_matches(&self, expected: &State) -> Result<(), ConnectionError> {
+        if !self.state.eq(expected) {
+            return Err(ConnectionError::InvalidState {
+                expected: expected.to_string(),
+                actual: self.state.to_string(),
+            });
+        }
+        Ok(())
     }
 
     /// Getter for the client id on the local party of this connection end.
@@ -351,11 +362,6 @@ impl ConnectionEnd {
     /// to delay the sending of a packet after the client update for that packet has been submitted.
     pub fn delay_period(&self) -> Duration {
         self.delay_period
-    }
-
-    /// TODO: Clean this up, probably not necessary.
-    pub fn validate_basic(&self) -> Result<(), ValidationError> {
-        self.counterparty.validate_basic()
     }
 }
 
@@ -454,7 +460,12 @@ impl Counterparty {
         &self.prefix
     }
 
-    pub fn validate_basic(&self) -> Result<(), ValidationError> {
+    /// Called upon initiating a connection handshake on the host chain to verify
+    /// that the counterparty connection id has not been set.
+    pub(crate) fn verify_empty_connection_id(&self) -> Result<(), ConnectionError> {
+        if self.connection_id().is_some() {
+            return Err(ConnectionError::InvalidCounterparty);
+        }
         Ok(())
     }
 }
@@ -498,7 +509,10 @@ impl State {
             1 => Ok(Self::Init),
             2 => Ok(Self::TryOpen),
             3 => Ok(Self::Open),
-            _ => Err(ConnectionError::InvalidState { state: s }),
+            _ => Err(ConnectionError::InvalidState {
+                expected: "Must be one of: 0, 1, 2, 3".to_string(),
+                actual: s.to_string(),
+            }),
         }
     }
 
@@ -535,7 +549,10 @@ impl TryFrom<i32> for State {
             1 => Ok(Self::Init),
             2 => Ok(Self::TryOpen),
             3 => Ok(Self::Open),
-            _ => Err(ConnectionError::InvalidState { state: value }),
+            _ => Err(ConnectionError::InvalidState {
+                expected: "Must be one of: 0, 1, 2, 3".to_string(),
+                actual: value.to_string(),
+            }),
         }
     }
 }

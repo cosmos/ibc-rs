@@ -1,7 +1,6 @@
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
-use crate::core::ics04_channel::channel::State;
-use crate::core::ics04_channel::channel::{Counterparty, Order};
+use crate::core::ics04_channel::channel::{Counterparty, Order, State as ChannelState};
 use crate::core::ics04_channel::commitment::{compute_ack_commitment, compute_packet_commitment};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::error::PacketError;
@@ -24,35 +23,19 @@ where
     let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
-    if !chan_end_on_a.state_matches(&State::Open) {
-        return Err(PacketError::ChannelClosed {
-            channel_id: packet.chan_id_on_a.clone(),
-        }
-        .into());
-    }
+    chan_end_on_a.verify_state_matches(&ChannelState::Open)?;
 
     let counterparty = Counterparty::new(
         packet.port_id_on_b.clone(),
         Some(packet.chan_id_on_b.clone()),
     );
 
-    if !chan_end_on_a.counterparty_matches(&counterparty) {
-        return Err(PacketError::InvalidPacketCounterparty {
-            port_id: packet.port_id_on_b.clone(),
-            channel_id: packet.chan_id_on_b.clone(),
-        }
-        .into());
-    }
+    chan_end_on_a.verify_counterparty_matches(&counterparty)?;
 
     let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
     let conn_end_on_a = ctx_a.connection_end(conn_id_on_a)?;
 
-    if !conn_end_on_a.state_matches(&ConnectionState::Open) {
-        return Err(PacketError::ConnectionNotOpen {
-            connection_id: chan_end_on_a.connection_hops()[0].clone(),
-        }
-        .into());
-    }
+    conn_end_on_a.verify_state_matches(&ConnectionState::Open)?;
 
     let commitment_path_on_a =
         CommitmentPath::new(&packet.port_id_on_a, &packet.chan_id_on_a, packet.seq_on_a);
@@ -186,7 +169,8 @@ mod tests {
             Counterparty::new(packet.port_id_on_b.clone(), Some(packet.chan_id_on_b)),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
-        );
+        )
+        .unwrap();
 
         let conn_end_on_a = ConnectionEnd::new(
             ConnectionState::Open,

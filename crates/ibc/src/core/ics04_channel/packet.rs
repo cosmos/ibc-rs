@@ -193,7 +193,7 @@ impl Packet {
     pub fn timed_out(&self, dst_chain_ts: &Timestamp, dst_chain_height: Height) -> bool {
         let height_timed_out = self.timeout_height_on_b.has_expired(dst_chain_height);
 
-        let timestamp_timed_out = self.timeout_timestamp_on_b != Timestamp::none()
+        let timestamp_timed_out = self.timeout_timestamp_on_b.is_set()
             && dst_chain_ts.check_expiry(&self.timeout_timestamp_on_b) == Expired;
 
         height_timed_out || timestamp_timed_out
@@ -225,6 +225,10 @@ impl TryFrom<RawPacket> for Packet {
             return Err(PacketError::ZeroPacketSequence);
         }
 
+        if raw_pkt.data.is_empty() {
+            return Err(PacketError::ZeroPacketData);
+        }
+
         // Note: ibc-go currently (July 2022) incorrectly treats the timeout
         // heights `{revision_number : >0, revision_height: 0}` as valid
         // timeouts. However, heights with `revision_height == 0` are invalid in
@@ -238,31 +242,20 @@ impl TryFrom<RawPacket> for Packet {
             .try_into()
             .map_err(|_| PacketError::InvalidTimeoutHeight)?;
 
-        if raw_pkt.data.is_empty() {
-            return Err(PacketError::ZeroPacketData);
-        }
-
         let timeout_timestamp_on_b = Timestamp::from_nanoseconds(raw_pkt.timeout_timestamp)
             .map_err(PacketError::InvalidPacketTimestamp)?;
 
+        // Packet timeout height and packet timeout timestamp cannot both be unset.
+        if !packet_timeout_height.is_set() && !timeout_timestamp_on_b.is_set() {
+            return Err(PacketError::MissingTimeout);
+        }
+
         Ok(Packet {
             seq_on_a: Sequence::from(raw_pkt.sequence),
-            port_id_on_a: raw_pkt
-                .source_port
-                .parse()
-                .map_err(PacketError::Identifier)?,
-            chan_id_on_a: raw_pkt
-                .source_channel
-                .parse()
-                .map_err(PacketError::Identifier)?,
-            port_id_on_b: raw_pkt
-                .destination_port
-                .parse()
-                .map_err(PacketError::Identifier)?,
-            chan_id_on_b: raw_pkt
-                .destination_channel
-                .parse()
-                .map_err(PacketError::Identifier)?,
+            port_id_on_a: raw_pkt.source_port.parse()?,
+            chan_id_on_a: raw_pkt.source_channel.parse()?,
+            port_id_on_b: raw_pkt.destination_port.parse()?,
+            chan_id_on_b: raw_pkt.destination_channel.parse()?,
             data: raw_pkt.data,
             timeout_height_on_b: packet_timeout_height,
             timeout_timestamp_on_b,
@@ -332,10 +325,10 @@ mod tests {
         }
 
         let proof_height = 10;
-        let default_raw_packet = get_dummy_raw_packet(proof_height, 0);
-        let raw_packet_no_timeout_or_timestamp = get_dummy_raw_packet(0, 0);
+        let default_raw_packet = get_dummy_raw_packet(proof_height, 1000);
+        let raw_packet_no_timeout_or_timestamp = get_dummy_raw_packet(10, 0);
 
-        let mut raw_packet_invalid_timeout_height = get_dummy_raw_packet(0, 0);
+        let mut raw_packet_invalid_timeout_height = get_dummy_raw_packet(0, 10);
         raw_packet_invalid_timeout_height.timeout_height = Some(RawHeight {
             revision_number: 1,
             revision_height: 0,
@@ -351,7 +344,7 @@ mod tests {
                 // Note: ibc-go currently (July 2022) incorrectly rejects this
                 // case, even though it is allowed in ICS-4.
                 name: "Packet with no timeout of timestamp".to_string(),
-                raw: raw_packet_no_timeout_or_timestamp,
+                raw: raw_packet_no_timeout_or_timestamp.clone(),
                 want_pass: true,
             },
             Test {
@@ -470,6 +463,14 @@ mod tests {
                 },
                 want_pass: true,
             },
+            Test {
+                name: "Missing both timeout height and timestamp".to_string(),
+                raw: RawPacket {
+                    timeout_height: None,
+                    ..raw_packet_no_timeout_or_timestamp
+                },
+                want_pass: false,
+            }
         ];
 
         for test in tests {

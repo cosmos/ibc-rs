@@ -14,25 +14,13 @@ use crate::prelude::*;
 pub enum TokenTransferError {
     /// context error: `{0}`
     ContextError(ContextError),
+    /// invalid identifier: `{0}`
+    InvalidIdentifier(ValidationError),
     /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
     DestinationChannelNotFound {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// invalid port identifier `{context}`, validation error: `{validation_error}`
-    InvalidPortId {
-        context: String,
-        validation_error: ValidationError,
-    },
-    /// invalid channel identifier `{context}`, validation error: `{validation_error}`
-    InvalidChannelId {
-        context: String,
-        validation_error: ValidationError,
-    },
-    /// invalid packet timeout height value `{context}`
-    InvalidPacketTimeoutHeight { context: String },
-    /// invalid packet timeout timestamp value `{timestamp}`
-    InvalidPacketTimeoutTimestamp { timestamp: u64 },
     /// base denomination is empty
     EmptyBaseDenom,
     /// invalid prot id n trace at position: `{pos}`, validation error: `{validation_error}`
@@ -88,14 +76,7 @@ impl std::error::Error for TokenTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::ContextError(e) => Some(e),
-            Self::InvalidPortId {
-                validation_error: e,
-                ..
-            } => Some(e),
-            Self::InvalidChannelId {
-                validation_error: e,
-                ..
-            } => Some(e),
+            Self::InvalidIdentifier(e) => Some(e),
             Self::InvalidTracePortId {
                 validation_error: e,
                 ..
@@ -121,5 +102,11 @@ impl From<Infallible> for TokenTransferError {
 impl From<ContextError> for TokenTransferError {
     fn from(err: ContextError) -> TokenTransferError {
         Self::ContextError(err)
+    }
+}
+
+impl From<ValidationError> for TokenTransferError {
+    fn from(err: ValidationError) -> TokenTransferError {
+        Self::InvalidIdentifier(err)
     }
 }

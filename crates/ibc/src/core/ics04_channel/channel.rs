@@ -59,8 +59,8 @@ impl TryFrom<RawIdentifiedChannel> for IdentifiedChannelEnd {
         };
 
         Ok(IdentifiedChannelEnd {
-            port_id: value.port_id.parse().map_err(ChannelError::Identifier)?,
-            channel_id: value.channel_id.parse().map_err(ChannelError::Identifier)?,
+            port_id: value.port_id.parse()?,
+            channel_id: value.channel_id.parse()?,
             channel_end: raw_channel_end.try_into()?,
         })
     }
@@ -117,18 +117,6 @@ impl Display for ChannelEnd {
     }
 }
 
-impl Default for ChannelEnd {
-    fn default() -> Self {
-        ChannelEnd {
-            state: State::Uninitialized,
-            ordering: Default::default(),
-            remote: Counterparty::default(),
-            connection_hops: Vec::new(),
-            version: Version::default(),
-        }
-    }
-}
-
 impl Protobuf<RawChannel> for ChannelEnd {}
 
 impl TryFrom<RawChannel> for ChannelEnd {
@@ -136,10 +124,6 @@ impl TryFrom<RawChannel> for ChannelEnd {
 
     fn try_from(value: RawChannel) -> Result<Self, Self::Error> {
         let chan_state: State = State::from_i32(value.state)?;
-
-        if chan_state == State::Uninitialized {
-            return Ok(ChannelEnd::default());
-        }
 
         let chan_ordering = Order::from_i32(value.ordering)?;
 
@@ -154,18 +138,11 @@ impl TryFrom<RawChannel> for ChannelEnd {
             .connection_hops
             .into_iter()
             .map(|conn_id| ConnectionId::from_str(conn_id.as_str()))
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(ChannelError::Identifier)?;
+            .collect::<Result<Vec<_>, _>>()?;
 
         let version = value.version.into();
 
-        Ok(ChannelEnd::new(
-            chan_state,
-            chan_ordering,
-            remote,
-            connection_hops,
-            version,
-        ))
+        ChannelEnd::new(chan_state, chan_ordering, remote, connection_hops, version)
     }
 }
 
@@ -186,8 +163,12 @@ impl From<ChannelEnd> for RawChannel {
 }
 
 impl ChannelEnd {
-    /// Creates a new ChannelEnd in state Uninitialized and other fields parametrized.
-    pub fn new(
+    /// Creates a new `ChannelEnd` without performing basic validation on its arguments.
+    ///
+    /// NOTE: This method is meant for the proto message conversion from the domain
+    /// `MsgChannelOpenInit` and `MsgChannelOpenTry` types to satisfy their `Protobuf`
+    /// trait bounds.
+    pub(super) fn new_without_validation(
         state: State,
         ordering: Order,
         remote: Counterparty,
@@ -201,6 +182,20 @@ impl ChannelEnd {
             connection_hops,
             version,
         }
+    }
+
+    /// Creates a new `ChannelEnd` with performing basic validation on its arguments.
+    pub fn new(
+        state: State,
+        ordering: Order,
+        remote: Counterparty,
+        connection_hops: Vec<ConnectionId>,
+        version: Version,
+    ) -> Result<Self, ChannelError> {
+        let channel_end =
+            Self::new_without_validation(state, ordering, remote, connection_hops, version);
+        channel_end.validate_basic()?;
+        Ok(channel_end)
     }
 
     /// Updates the ChannelEnd to assume a new State 's'.
@@ -218,7 +213,7 @@ impl ChannelEnd {
 
     /// Returns `true` if this `ChannelEnd` is in state [`State::Open`].
     pub fn is_open(&self) -> bool {
-        self.state_matches(&State::Open)
+        self.state == State::Open
     }
 
     pub fn state(&self) -> &State {
@@ -242,18 +237,43 @@ impl ChannelEnd {
     }
 
     pub fn validate_basic(&self) -> Result<(), ChannelError> {
-        if self.connection_hops.len() != 1 {
-            return Err(ChannelError::InvalidConnectionHopsLength {
-                expected: 1,
-                actual: self.connection_hops.len(),
+        if self.state == State::Uninitialized {
+            return Err(ChannelError::InvalidState {
+                expected: "Channel state cannot be Uninitialized".to_string(),
+                actual: self.state.to_string(),
             });
         }
-        self.counterparty().validate_basic()
+
+        if self.ordering == Order::None {
+            return Err(ChannelError::InvalidOrderType {
+                expected: "Channel ordering cannot be None".to_string(),
+                actual: self.ordering.to_string(),
+            });
+        }
+
+        Ok(())
     }
 
-    /// Helper function to compare the state of this end with another state.
-    pub fn state_matches(&self, other: &State) -> bool {
-        self.state.eq(other)
+    /// Checks if the state of this channel end matches the expected state.
+    pub fn verify_state_matches(&self, expected: &State) -> Result<(), ChannelError> {
+        if !self.state.eq(expected) {
+            return Err(ChannelError::InvalidState {
+                expected: expected.to_string(),
+                actual: self.state.to_string(),
+            });
+        }
+        Ok(())
+    }
+
+    /// Checks if the state of this channel end is not closed.
+    pub fn verify_not_closed(&self) -> Result<(), ChannelError> {
+        if self.state.eq(&State::Closed) {
+            return Err(ChannelError::InvalidState {
+                expected: "Channel state cannot be Closed".to_string(),
+                actual: self.state.to_string(),
+            });
+        }
+        Ok(())
     }
 
     /// Helper function to compare the order of this end with another order.
@@ -265,13 +285,41 @@ impl ChannelEnd {
         self.connection_hops.eq(other)
     }
 
-    pub fn counterparty_matches(&self, other: &Counterparty) -> bool {
-        self.counterparty().eq(other)
+    /// Checks if the counterparty of this channel end matches with an expected counterparty.
+    pub fn verify_counterparty_matches(&self, expected: &Counterparty) -> Result<(), ChannelError> {
+        if !self.counterparty().eq(expected) {
+            return Err(ChannelError::InvalidCounterparty {
+                expected: expected.clone(),
+                actual: self.counterparty().clone(),
+            });
+        }
+        Ok(())
+    }
+
+    /// Checks if the `connection_hops` has a length of `expected`.
+    ///
+    /// Note: Current IBC version only supports one connection hop.
+    pub fn verify_connection_hops_length(&self) -> Result<(), ChannelError> {
+        verify_connection_hops_length(&self.connection_hops, 1)
     }
 
     pub fn version_matches(&self, other: &Version) -> bool {
         self.version().eq(other)
     }
+}
+
+/// Checks if the `connection_hops` has a length of `expected`.
+pub(crate) fn verify_connection_hops_length(
+    connection_hops: &Vec<ConnectionId>,
+    expected: usize,
+) -> Result<(), ChannelError> {
+    if connection_hops.len() != expected {
+        return Err(ChannelError::InvalidConnectionHopsLength {
+            expected,
+            actual: connection_hops.len(),
+        });
+    }
+    Ok(())
 }
 
 #[cfg_attr(
@@ -309,7 +357,15 @@ impl Counterparty {
         self.channel_id.as_ref()
     }
 
-    pub fn validate_basic(&self) -> Result<(), ChannelError> {
+    /// Called upon initiating a channel handshake on the host chain to verify
+    /// that the counterparty channel id has not been set.
+    pub(crate) fn verify_empty_channel_id(&self) -> Result<(), ChannelError> {
+        if self.channel_id().is_some() {
+            return Err(ChannelError::InvalidChannelId {
+                expected: "Counterparty channel id must be empty".to_string(),
+                actual: format!("{:?}", self.channel_id),
+            });
+        }
         Ok(())
     }
 }
@@ -340,19 +396,11 @@ impl TryFrom<RawCounterparty> for Counterparty {
         let channel_id: Option<ChannelId> = if raw_counterparty.channel_id.is_empty() {
             None
         } else {
-            Some(
-                raw_counterparty
-                    .channel_id
-                    .parse()
-                    .map_err(ChannelError::Identifier)?,
-            )
+            Some(raw_counterparty.channel_id.parse()?)
         };
 
         Ok(Counterparty::new(
-            raw_counterparty
-                .port_id
-                .parse()
-                .map_err(ChannelError::Identifier)?,
+            raw_counterparty.port_id.parse()?,
             channel_id,
         ))
     }
@@ -418,8 +466,9 @@ impl Order {
             0 => Ok(Self::None),
             1 => Ok(Self::Unordered),
             2 => Ok(Self::Ordered),
-            _ => Err(ChannelError::UnknownOrderType {
-                type_id: nr.to_string(),
+            _ => Err(ChannelError::InvalidOrderType {
+                expected: "Must be one of 0, 1, 2".to_string(),
+                actual: nr.to_string(),
             }),
         }
     }
@@ -433,8 +482,9 @@ impl FromStr for Order {
             "uninitialized" => Ok(Self::None),
             "unordered" => Ok(Self::Unordered),
             "ordered" => Ok(Self::Ordered),
-            _ => Err(ChannelError::UnknownOrderType {
-                type_id: s.to_string(),
+            _ => Err(ChannelError::InvalidOrderType {
+                expected: "Must be one of 'uninitialized', 'unordered', 'ordered'".to_string(),
+                actual: s.to_string(),
             }),
         }
     }
@@ -482,7 +532,10 @@ impl State {
             2 => Ok(Self::TryOpen),
             3 => Ok(Self::Open),
             4 => Ok(Self::Closed),
-            _ => Err(ChannelError::UnknownState { state: s }),
+            _ => Err(ChannelError::InvalidState {
+                expected: "Must be one of: 0, 1, 2, 3, 4".to_string(),
+                actual: s.to_string(),
+            }),
         }
     }
 
@@ -529,13 +582,13 @@ pub mod test_util {
     }
 
     /// Returns a dummy `RawChannel`, for testing only!
-    pub fn get_dummy_raw_channel_end(channel_id: Option<u64>) -> RawChannel {
+    pub fn get_dummy_raw_channel_end(state: i32, channel_id: Option<u64>) -> RawChannel {
         let channel_id = match channel_id {
             Some(id) => ChannelId::new(id).to_string(),
             None => "".to_string(),
         };
         RawChannel {
-            state: 1,
+            state,
             ordering: 2,
             counterparty: Some(get_dummy_raw_counterparty(channel_id)),
             connection_hops: vec![ConnectionId::default().to_string()],
@@ -558,7 +611,7 @@ mod tests {
 
     #[test]
     fn channel_end_try_from_raw() {
-        let raw_channel_end = get_dummy_raw_channel_end(Some(0));
+        let raw_channel_end = get_dummy_raw_channel_end(2, Some(0));
 
         let empty_raw_channel_end = RawChannel {
             counterparty: None,
@@ -613,7 +666,7 @@ mod tests {
                 name: "Raw channel end with two correct connection ids in connection hops"
                     .to_string(),
                 params: RawChannel {
-                    connection_hops: vec!["connection1".to_string(), "connection2".to_string()]
+                    connection_hops: vec!["connection-1".to_string(), "connection-2".to_string()]
                         .into_iter()
                         .collect(),
                     ..raw_channel_end.clone()

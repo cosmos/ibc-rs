@@ -221,6 +221,11 @@ impl Timestamp {
             _ => Expiry::InvalidTimestamp,
         }
     }
+
+    /// Checks whether the timestamp is set.
+    pub fn is_set(&self) -> bool {
+        self.time.is_some()
+    }
 }
 
 impl Display for Timestamp {

@@ -25,7 +25,7 @@ where
 {
     let MsgCreateClient {
         client_state,
-        consensus_state: _,
+        consensus_state,
         signer,
     } = msg;
 
@@ -35,6 +35,8 @@ where
     let id_counter = ctx.client_counter()?;
 
     let client_state = ctx.decode_client_state(client_state)?;
+
+    client_state.initialise(consensus_state)?;
 
     let client_type = client_state.client_type();
 

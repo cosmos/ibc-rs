@@ -152,7 +152,8 @@ mod tests {
             ),
             vec![conn_id.clone()],
             Version::default(),
-        );
+        )
+        .unwrap();
 
         let mut context = default_context
             .with_client(&client_id, client_consensus_state_height)

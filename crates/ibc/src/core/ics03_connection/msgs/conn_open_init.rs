@@ -40,15 +40,19 @@ impl TryFrom<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {
     type Error = ConnectionError;
 
     fn try_from(msg: RawMsgConnectionOpenInit) -> Result<Self, Self::Error> {
+        let counterparty: Counterparty = msg
+            .counterparty
+            .ok_or(ConnectionError::MissingCounterparty)?
+            .try_into()?;
+
+        counterparty.verify_empty_connection_id()?;
+
         Ok(Self {
             client_id_on_a: msg
                 .client_id
                 .parse()
                 .map_err(ConnectionError::InvalidIdentifier)?,
-            counterparty: msg
-                .counterparty
-                .ok_or(ConnectionError::MissingCounterparty)?
-                .try_into()?,
+            counterparty,
             version: msg.version.map(|version| version.try_into()).transpose()?,
             delay_period: Duration::from_nanos(msg.delay_period),
             signer: msg.signer.into(),

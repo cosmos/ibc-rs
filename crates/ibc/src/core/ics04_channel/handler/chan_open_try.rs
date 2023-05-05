@@ -3,7 +3,7 @@
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics03_connection::connection::State as ConnectionState;
-use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
+use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State as ChannelState};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
@@ -17,22 +17,11 @@ where
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 
-    // An IBC connection running on the local (host) chain should exist.
-    if msg.connection_hops_on_b.len() != 1 {
-        return Err(ChannelError::InvalidConnectionHopsLength {
-            expected: 1,
-            actual: msg.connection_hops_on_b.len(),
-        })
-        .map_err(ContextError::ChannelError);
-    }
+    msg.verify_connection_hops_length()?;
 
     let conn_end_on_b = ctx_b.connection_end(&msg.connection_hops_on_b[0])?;
-    if !conn_end_on_b.state_matches(&ConnectionState::Open) {
-        return Err(ChannelError::ConnectionNotOpen {
-            connection_id: msg.connection_hops_on_b[0].clone(),
-        })
-        .map_err(ContextError::ChannelError);
-    }
+
+    conn_end_on_b.verify_state_matches(&ConnectionState::Open)?;
 
     let conn_version = conn_end_on_b.versions();
 
@@ -59,12 +48,12 @@ where
         )?;
 
         let expected_chan_end_on_a = ChannelEnd::new(
-            State::Init,
+            ChannelState::Init,
             msg.ordering,
             Counterparty::new(msg.port_id_on_b.clone(), None),
             vec![conn_id_on_a.clone()],
             msg.version_supported_on_a.clone(),
-        );
+        )?;
         let chan_end_path_on_a = ChannelEndPath::new(&port_id_on_a, &chan_id_on_a);
 
         // Verify the proof for the channel state against the expected channel end.
