@@ -14,6 +14,9 @@ use crate::Height;
 
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 
+/// ABCI query path for the IBC sub-store
+pub const ABCI_QUERY_PATH_FOR_IBC: &str = "store/ibc/key";
+
 /// Provides an implementation of `ValidationContext::validate_self_client` for
 /// Tendermint-based hosts.
 pub trait ValidateSelfClientContext {
