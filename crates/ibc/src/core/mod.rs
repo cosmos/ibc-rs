@@ -33,17 +33,12 @@ pub mod events;
 pub mod timestamp;
 
 mod context;
-mod entrypoint;
 mod handler;
 mod msgs;
 
-pub use entrypoint::dispatch;
-
-#[cfg(feature = "val-exec-entry")]
-pub use entrypoint::execute;
-
-#[cfg(feature = "val-exec-entry")]
-pub use entrypoint::validate;
+pub use handler::dispatch;
+pub use handler::execute;
+pub use handler::validate;
 
 pub use context::*;
 

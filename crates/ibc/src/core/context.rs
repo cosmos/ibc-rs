@@ -79,11 +79,8 @@ impl std::error::Error for ContextError {
     }
 }
 
-/// Error returned from entrypoint functions [`dispatch`][super::dispatch],
-#[cfg_attr(
-    feature = "val-exec-entry",
-    doc = "[`validate`][crate::core::validate] and [`execute`](crate::core::execute)"
-)]
+/// Error returned from entrypoint functions [`dispatch`][super::dispatch], [`validate`][super::validate] and
+/// [`execute`][super::execute].
 #[derive(Debug, Display)]
 pub enum RouterError {
     /// context error: `{0}`
@@ -113,10 +110,7 @@ impl std::error::Error for RouterError {
 
 /// Context to be implemented by the host that provides all "read-only" methods.
 ///
-#[cfg_attr(
-    feature = "val-exec-entry",
-    doc = "Trait used for the top-level [`validate`](crate::core::validate)"
-)]
+/// Trait used for the top-level [`validate`](crate::core::validate)
 pub trait ValidationContext: Router {
     /// Returns the ClientState for the given identifier `client_id`.
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError>;
@@ -269,11 +263,7 @@ pub trait ValidationContext: Router {
 
 /// Context to be implemented by the host that provides all "write-only" methods.
 ///
-/// Trait used for the top-level [`dispatch`](crate::core::dispatch)
-#[cfg_attr(
-    feature = "val-exec-entry",
-    doc = "and [`execute`](crate::core::execute)"
-)]
+/// Trait used for the top-level [`execute`](crate::core::execute) and [`dispatch`](crate::core::dispatch)
 pub trait ExecutionContext: ValidationContext {
     /// Called upon successful client creation and update
     fn store_client_state(

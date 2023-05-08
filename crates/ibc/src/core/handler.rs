@@ -30,8 +30,21 @@ use super::ics04_channel::msgs::{ChannelMsg, PacketMsg};
 use super::ContextError;
 use super::{msgs::MsgEnvelope, ExecutionContext, RouterError, ValidationContext};
 
-/// Validation handler that dispatches messages to the correct core ICS handler.
-pub(crate) fn validation_handler<Ctx>(ctx: &Ctx, msg: MsgEnvelope) -> Result<(), RouterError>
+/// Entrypoint which performs both validation and message execution
+pub fn dispatch(ctx: &mut impl ExecutionContext, msg: MsgEnvelope) -> Result<(), RouterError> {
+    validate(ctx, msg.clone())?;
+    execute(ctx, msg)
+}
+
+/// Entrypoint which only performs message validation
+///
+/// If a transaction contains `n` messages `m_1` ... `m_n`, then
+/// they MUST be processed as follows:
+///     validate(m_1), execute(m_1), ..., validate(m_n), execute(m_n)
+/// That is, the state transition of message `i` must be applied before
+/// message `i+1` is validated. This is equivalent to calling
+/// `dispatch()` on each successively.
+pub fn validate<Ctx>(ctx: &Ctx, msg: MsgEnvelope) -> Result<(), RouterError>
 where
     Ctx: ValidationContext,
 {
@@ -93,8 +106,8 @@ where
     }
 }
 
-/// Execution handler that dispatches messages to the correct core ICS handler.
-pub(crate) fn execution_handler<Ctx>(ctx: &mut Ctx, msg: MsgEnvelope) -> Result<(), RouterError>
+/// Entrypoint which only performs message execution
+pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgEnvelope) -> Result<(), RouterError>
 where
     Ctx: ExecutionContext,
 {
