@@ -59,9 +59,7 @@ where
                 .lookup_module_channel(&msg)
                 .map_err(ContextError::from)?;
             if !ctx.has_route(&module_id) {
-                return Err(ChannelError::RouteNotFound)
-                    .map_err(ContextError::ChannelError)
-                    .map_err(RouterError::ContextError);
+                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
             }
 
             match msg {
@@ -77,9 +75,7 @@ where
         MsgEnvelope::Packet(msg) => {
             let module_id = ctx.lookup_module_packet(&msg).map_err(ContextError::from)?;
             if !ctx.has_route(&module_id) {
-                return Err(ChannelError::RouteNotFound)
-                    .map_err(ContextError::ChannelError)
-                    .map_err(RouterError::ContextError);
+                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
             }
 
             match msg {
@@ -126,9 +122,7 @@ where
                 .lookup_module_channel(&msg)
                 .map_err(ContextError::from)?;
             if !ctx.has_route(&module_id) {
-                return Err(ChannelError::RouteNotFound)
-                    .map_err(ContextError::ChannelError)
-                    .map_err(RouterError::ContextError);
+                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
             }
 
             match msg {
@@ -144,9 +138,7 @@ where
         MsgEnvelope::Packet(msg) => {
             let module_id = ctx.lookup_module_packet(&msg).map_err(ContextError::from)?;
             if !ctx.has_route(&module_id) {
-                return Err(ChannelError::RouteNotFound)
-                    .map_err(ContextError::ChannelError)
-                    .map_err(RouterError::ContextError);
+                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
             }
 
             match msg {

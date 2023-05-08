@@ -141,7 +141,6 @@ mod tests {
     use super::*;
     use rstest::*;
 
-    use crate::applications::transfer::MODULE_ID_STR;
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::core::ics02_client::height::Height;
     use crate::core::ics03_connection::connection::ConnectionEnd;
@@ -154,6 +153,7 @@ mod tests {
     use crate::core::ics24_host::identifier::ClientId;
     use crate::core::ics24_host::identifier::ConnectionId;
 
+    use crate::applications::transfer::MODULE_ID_STR;
     use crate::mock::context::MockContext;
     use crate::test_utils::DummyTransferModule;
     use test_log::test;
@@ -211,7 +211,7 @@ mod tests {
     }
 
     #[rstest]
-    fn chan_open_init_success_happy_path(fixture: Fixture) {
+    fn chan_open_init_validate_happy_path(fixture: Fixture) {
         let Fixture { ctx, msg, .. } = fixture;
 
         let res = validate(&ctx, &msg);
@@ -220,7 +220,7 @@ mod tests {
     }
 
     #[rstest]
-    fn chan_open_init_success_counterparty_chan_id_set(fixture: Fixture) {
+    fn chan_open_init_validate_counterparty_chan_id_set(fixture: Fixture) {
         let Fixture { ctx, .. } = fixture;
 
         let msg = MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
@@ -234,7 +234,7 @@ mod tests {
     }
 
     #[rstest]
-    fn chan_open_init_execute_events(fixture: Fixture) {
+    fn chan_open_init_execute_happy_path(fixture: Fixture) {
         let Fixture {
             mut ctx,
             module_id,

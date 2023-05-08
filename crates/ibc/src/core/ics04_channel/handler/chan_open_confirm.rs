@@ -188,10 +188,7 @@ mod tests {
 
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
-    use crate::{
-        applications::transfer::MODULE_ID_STR, core::router::ModuleId,
-        test_utils::DummyTransferModule,
-    };
+    use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
 
     pub struct Fixture {
         pub context: MockContext,
@@ -309,7 +306,7 @@ mod tests {
     }
 
     #[rstest]
-    fn chan_open_confirm_happy_path(fixture: Fixture) {
+    fn chan_open_confirm_validate_happy_path(fixture: Fixture) {
         let Fixture {
             context,
             msg,

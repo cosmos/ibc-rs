@@ -116,7 +116,7 @@ where
     Ok(())
 }
 
-pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgAcknowledgement) -> Result<(), ContextError>
+fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgAcknowledgement) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
@@ -242,6 +242,7 @@ mod tests {
 
     struct Fixture {
         ctx: MockContext,
+        client_height: Height,
         module_id: ModuleId,
         msg: MsgAcknowledgement,
         packet_commitment: PacketCommitment,
@@ -267,31 +268,22 @@ mod tests {
         let packet = msg.packet.clone();
 
         let packet_commitment = compute_packet_commitment(
-            &msg.packet.data,
-            &msg.packet.timeout_height_on_b,
-            &msg.packet.timeout_timestamp_on_b,
+            &packet.data,
+            &packet.timeout_height_on_b,
+            &packet.timeout_timestamp_on_b,
         );
 
         let chan_end_on_a_unordered = ChannelEnd::new(
             State::Open,
             Order::Unordered,
-            Counterparty::new(
-                packet.port_id_on_b.clone(),
-                Some(packet.chan_id_on_b.clone()),
-            ),
+            Counterparty::new(packet.port_id_on_b, Some(packet.chan_id_on_b)),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
         )
         .unwrap();
 
-        let chan_end_on_a_ordered = ChannelEnd::new(
-            State::Open,
-            Order::Ordered,
-            Counterparty::new(packet.port_id_on_b.clone(), Some(packet.chan_id_on_b)),
-            vec![ConnectionId::default()],
-            Version::new("ics20-1".to_string()),
-        )
-        .unwrap();
+        let mut chan_end_on_a_ordered = chan_end_on_a_unordered.clone();
+        chan_end_on_a_ordered.ordering = Order::Ordered;
 
         let conn_end_on_a = ConnectionEnd::new(
             ConnectionState::Open,
@@ -308,6 +300,7 @@ mod tests {
 
         Fixture {
             ctx,
+            client_height,
             module_id,
             msg,
             packet_commitment,
@@ -337,9 +330,9 @@ mod tests {
             msg,
             conn_end_on_a,
             chan_end_on_a_unordered,
+            client_height,
             ..
         } = fixture;
-        let client_height = Height::new(0, 2).unwrap();
         let ctx = ctx
             .with_client(&ClientId::default(), client_height)
             .with_channel(
@@ -365,10 +358,10 @@ mod tests {
             packet_commitment,
             conn_end_on_a,
             chan_end_on_a_unordered,
+            client_height,
             ..
         } = fixture;
-        let client_height = Height::new(0, 2).unwrap();
-        let mut ctx = ctx
+        let mut ctx: MockContext = ctx
             .with_client(&ClientId::default(), client_height)
             .with_channel(
                 PortId::default(),

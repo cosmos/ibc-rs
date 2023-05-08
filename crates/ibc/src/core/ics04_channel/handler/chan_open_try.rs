@@ -189,7 +189,6 @@ mod tests {
     use rstest::*;
     use test_log::test;
 
-    use crate::applications::transfer::MODULE_ID_STR;
     use crate::core::ics03_connection::connection::ConnectionEnd;
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
     use crate::core::ics03_connection::connection::State as ConnectionState;
@@ -201,6 +200,7 @@ mod tests {
     use crate::core::timestamp::ZERO_DURATION;
     use crate::Height;
 
+    use crate::applications::transfer::MODULE_ID_STR;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::test_utils::DummyTransferModule;
@@ -287,7 +287,7 @@ mod tests {
     }
 
     #[rstest]
-    fn chan_open_try_happy_path(fixture: Fixture) {
+    fn chan_open_try_validate_happy_path(fixture: Fixture) {
         let Fixture {
             ctx,
             msg,
@@ -308,7 +308,7 @@ mod tests {
     }
 
     #[rstest]
-    fn chan_open_try_execute_events(fixture: Fixture) {
+    fn chan_open_try_execute_happy_path(fixture: Fixture) {
         let Fixture {
             ctx,
             module_id,

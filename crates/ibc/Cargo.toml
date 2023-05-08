@@ -50,7 +50,7 @@ upgrade_client = []
 mocks = ["tendermint-testgen", "tendermint/clock", "cfg-if", "parking_lot"]
 mocks-no-std = ["cfg-if"]
 
-# This feature grants access to the additional `validate` and `execute` entrypoints.
+# This feature grants access to additional `validate` and `execute` entrypoints.
 val-exec-entry = []
 
 [dependencies]

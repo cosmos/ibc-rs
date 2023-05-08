@@ -144,7 +144,7 @@ where
     Ok(())
 }
 
-pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextError>
+fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
@@ -377,7 +377,7 @@ mod tests {
     }
 
     #[rstest]
-    fn recv_packet_happy_path(fixture: Fixture) {
+    fn recv_packet_validate_happy_path(fixture: Fixture) {
         let Fixture {
             context,
             msg,
@@ -478,7 +478,7 @@ mod tests {
     }
 
     #[rstest]
-    fn recv_packet_execute_test(fixture: Fixture) {
+    fn recv_packet_execute_happy_path(fixture: Fixture) {
         let Fixture {
             context,
             module_id,

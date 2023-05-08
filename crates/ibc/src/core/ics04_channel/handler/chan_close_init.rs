@@ -95,7 +95,7 @@ where
     Ok(())
 }
 
-pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelCloseInit) -> Result<(), ContextError>
+fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelCloseInit) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
@@ -193,7 +193,6 @@ mod tests {
         );
     }
 
-    use super::chan_close_init_execute;
     #[test]
     fn test_chan_close_init_execute() {
         let client_id = ClientId::new(mock_client_type(), 24).unwrap();
