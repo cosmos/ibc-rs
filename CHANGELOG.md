@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## v0.40.0
+
+*May 8, 2023*
+
+This release primarily consolidated the modules in the ibc-rs crate, removed many legacy items, and documented every item in the crate. This represents a big step towards v1.0. Very few items changed name; most were just moved to elsewhere in the module tree. Perhaps a good heuristic to fix the breaking changes is the remove the faulty `use` statements, and have your editor re-import the item.
+
+There were also a few minor validation checks missing, which we added. These were pretty much the last remaining known ones.
+
+There are breaking changes.
+
+### BREAKING CHANGES
+
+- Add missing validation checks for all the IBC message types
+  ([#233](https://github.com/cosmos/ibc-rs/issues/233))
+- Reduce and consolidate the amount of public modules exposed
+  ([#235](https://github.com/cosmos/ibc-rs/issues/235))
+- Separate validation/execution handlers from context API
+  ([#539](https://github.com/cosmos/ibc-rs/issues/539))
+- Make `TYPE_URL`s private ([#597](https://github.com/cosmos/ibc-rs/issues/597))
+
+### FEATURES
+
+- Add parity-scale-codec, borsh, serde feature for *Path
+  ([#652](https://github.com/cosmos/ibc-rs/issues/652))
+
+### IMPROVEMENTS
+
+- Document every method of `ValidationContext` and `ExecutionContext`
+  ([#376](https://github.com/cosmos/ibc-rs/issues/376))
+
 ## v0.39.0
 
 *May 2, 2023*
