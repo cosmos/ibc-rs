@@ -1,3 +1,4 @@
+use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
@@ -12,7 +13,6 @@ use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
 use crate::core::{ContextError, ValidationContext};
-use crate::prelude::*;
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), ContextError>
 where

@@ -1,3 +1,5 @@
+use crate::prelude::*;
+
 use crate::core::events::IbcEvent;
 use crate::core::events::MessageEvent;
 use crate::core::ics04_channel::channel::Counterparty;
@@ -13,7 +15,6 @@ use crate::core::ics24_host::path::CommitmentPath;
 use crate::core::ics24_host::path::SeqSendPath;
 use crate::core::timestamp::Expiry;
 use crate::core::ContextError;
-use crate::prelude::*;
 
 /// Send the given packet, including all necessary validation.
 ///
