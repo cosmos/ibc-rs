@@ -1,23 +1,72 @@
-use crate::core::ics04_channel::handler::ModuleExtras;
-use crate::prelude::*;
+//! Defines the `Router`, which binds modules to ports
 
-use alloc::borrow::{Borrow, Cow};
-use core::{
-    fmt::{Debug, Display, Error as FmtError, Formatter},
-    str::FromStr,
-};
+use crate::{core::events::ModuleEvent, prelude::*};
+
+use alloc::borrow::Borrow;
+use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 
 use crate::core::ics04_channel::channel::{Counterparty, Order};
-use crate::core::ics04_channel::error::{ChannelError, PacketError};
-use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
-use crate::core::ics04_channel::packet::Packet;
+use crate::core::ics04_channel::error::{ChannelError, PacketError, PortError::UnknownPort};
+use crate::core::ics04_channel::msgs::ChannelMsg;
+use crate::core::ics04_channel::packet::{Acknowledgement, Packet};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::signer::Signer;
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct InvalidModuleId;
+use super::ics04_channel::msgs::PacketMsg;
 
+/// Router as defined in ICS-26, which binds modules to ports.
+pub trait Router {
+    /// Returns a reference to a `Module` registered against the specified `ModuleId`
+    fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module>;
+
+    /// Returns a mutable reference to a `Module` registered against the specified `ModuleId`
+    fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module>;
+
+    /// Returns true if the `Router` has a `Module` registered against the specified `ModuleId`
+    fn has_route(&self, module_id: &ModuleId) -> bool;
+
+    /// Return the module_id associated with a given port_id
+    fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId>;
+
+    fn lookup_module_channel(&self, msg: &ChannelMsg) -> Result<ModuleId, ChannelError> {
+        let port_id = match msg {
+            ChannelMsg::OpenInit(msg) => &msg.port_id_on_a,
+            ChannelMsg::OpenTry(msg) => &msg.port_id_on_b,
+            ChannelMsg::OpenAck(msg) => &msg.port_id_on_a,
+            ChannelMsg::OpenConfirm(msg) => &msg.port_id_on_b,
+            ChannelMsg::CloseInit(msg) => &msg.port_id_on_a,
+            ChannelMsg::CloseConfirm(msg) => &msg.port_id_on_b,
+        };
+        let module_id = self
+            .lookup_module_by_port(port_id)
+            .ok_or(ChannelError::Port(UnknownPort {
+                port_id: port_id.clone(),
+            }))?;
+        Ok(module_id)
+    }
+
+    fn lookup_module_packet(&self, msg: &PacketMsg) -> Result<ModuleId, ChannelError> {
+        let port_id = match msg {
+            PacketMsg::Recv(msg) => &msg.packet.port_id_on_b,
+            PacketMsg::Ack(msg) => &msg.packet.port_id_on_a,
+            PacketMsg::Timeout(msg) => &msg.packet.port_id_on_a,
+            PacketMsg::TimeoutOnClose(msg) => &msg.packet.port_id_on_a,
+        };
+        let module_id = self
+            .lookup_module_by_port(port_id)
+            .ok_or(ChannelError::Port(UnknownPort {
+                port_id: port_id.clone(),
+            }))?;
+        Ok(module_id)
+    }
+}
+
+/// Module name, internal to the chain.
+///
+/// That is, the IBC protocol never exposes this name. Note that this is
+/// different from IBC host [identifiers][crate::core::ics24_host::identifier],
+/// which are exposed to other chains by the protocol.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -35,12 +84,8 @@ pub struct InvalidModuleId;
 pub struct ModuleId(String);
 
 impl ModuleId {
-    pub fn new(s: Cow<'_, str>) -> Result<Self, InvalidModuleId> {
-        if !s.trim().is_empty() && s.chars().all(char::is_alphanumeric) {
-            Ok(Self(s.into_owned()))
-        } else {
-            Err(InvalidModuleId)
-        }
+    pub fn new(s: String) -> Self {
+        Self(s)
     }
 }
 
@@ -50,20 +95,42 @@ impl Display for ModuleId {
     }
 }
 
-impl FromStr for ModuleId {
-    type Err = InvalidModuleId;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::new(Cow::Borrowed(s))
-    }
-}
-
 impl Borrow<str> for ModuleId {
     fn borrow(&self) -> &str {
         self.0.as_str()
     }
 }
 
+/// Logs and events produced during module callbacks
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug)]
+pub struct ModuleExtras {
+    pub events: Vec<ModuleEvent>,
+    pub log: Vec<String>,
+}
+
+impl ModuleExtras {
+    pub fn empty() -> Self {
+        ModuleExtras {
+            events: Vec::new(),
+            log: Vec::new(),
+        }
+    }
+}
+
+/// The trait that defines an IBC application
 pub trait Module: Debug {
     #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init_validate(

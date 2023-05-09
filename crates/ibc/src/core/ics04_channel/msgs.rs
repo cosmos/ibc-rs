@@ -1,34 +1,34 @@
 //! Message definitions for all ICS4 domain types: channel open & close handshake datagrams, as well
 //! as packets.
 
-use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
-use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
-use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
-use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
-use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
-use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
-use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
-use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
-use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
-use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
+pub(crate) mod acknowledgement;
+pub(crate) mod chan_close_confirm;
+pub(crate) mod chan_close_init;
+pub(crate) mod chan_open_ack;
+pub(crate) mod chan_open_confirm;
+pub(crate) mod chan_open_init;
+pub(crate) mod chan_open_try;
+pub(crate) mod recv_packet;
+pub(crate) mod timeout;
+pub(crate) mod timeout_on_close;
 
 // Opening handshake messages.
-pub mod chan_open_ack;
-pub mod chan_open_confirm;
-pub mod chan_open_init;
-pub mod chan_open_try;
+pub use chan_open_ack::MsgChannelOpenAck;
+pub use chan_open_confirm::MsgChannelOpenConfirm;
+pub use chan_open_init::MsgChannelOpenInit;
+pub use chan_open_try::MsgChannelOpenTry;
 
 // Closing handshake messages.
-pub mod chan_close_confirm;
-pub mod chan_close_init;
+pub use chan_close_confirm::MsgChannelCloseConfirm;
+pub use chan_close_init::MsgChannelCloseInit;
 
 // Packet specific messages.
-pub mod acknowledgement;
-pub mod recv_packet;
-pub mod timeout;
-pub mod timeout_on_close;
+pub use acknowledgement::MsgAcknowledgement;
+pub use recv_packet::MsgRecvPacket;
+pub use timeout::MsgTimeout;
+pub use timeout_on_close::MsgTimeoutOnClose;
 
-/// Enumeration of all possible messages that the ICS4 protocol processes.
+/// All channel messages
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChannelMsg {
     OpenInit(MsgChannelOpenInit),
@@ -39,6 +39,7 @@ pub enum ChannelMsg {
     CloseConfirm(MsgChannelCloseConfirm),
 }
 
+/// All packet messages
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PacketMsg {
     Recv(MsgRecvPacket),

@@ -7,10 +7,10 @@ use ibc_proto::ibc::core::channel::v1::MsgChannelCloseConfirm as RawMsgChannelCl
 
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
+use crate::core::Msg;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 
-pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCloseConfirm";
+pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCloseConfirm";
 
 ///
 /// Message definition for the second step in the channel close handshake (the `ChanCloseConfirm`
@@ -41,11 +41,8 @@ impl TryFrom<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {
 
     fn try_from(raw_msg: RawMsgChannelCloseConfirm) -> Result<Self, Self::Error> {
         Ok(MsgChannelCloseConfirm {
-            port_id_on_b: raw_msg.port_id.parse().map_err(ChannelError::Identifier)?,
-            chan_id_on_b: raw_msg
-                .channel_id
-                .parse()
-                .map_err(ChannelError::Identifier)?,
+            port_id_on_b: raw_msg.port_id.parse()?,
+            chan_id_on_b: raw_msg.channel_id.parse()?,
             proof_chan_end_on_a: raw_msg
                 .proof_init
                 .try_into()
@@ -54,7 +51,7 @@ impl TryFrom<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
                 .ok_or(ChannelError::MissingHeight)?,
-            signer: raw_msg.signer.parse().map_err(ChannelError::Signer)?,
+            signer: raw_msg.signer.into(),
         })
     }
 }

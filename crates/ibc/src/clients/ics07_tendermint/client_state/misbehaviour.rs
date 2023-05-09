@@ -9,8 +9,8 @@ use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
+use crate::core::timestamp::Timestamp;
 use crate::core::{ics24_host::identifier::ClientId, ValidationContext};
-use crate::timestamp::Timestamp;
 
 use super::{check_header_trusted_next_validator_set, downcast_tm_consensus_state, ClientState};
 
@@ -23,6 +23,8 @@ impl ClientState {
         client_id: &ClientId,
         misbehaviour: TmMisbehaviour,
     ) -> Result<(), ClientError> {
+        misbehaviour.validate_basic()?;
+
         let header_1 = misbehaviour.header1();
         let trusted_consensus_state_1 = {
             let consensus_state_path =
@@ -41,37 +43,9 @@ impl ClientState {
             downcast_tm_consensus_state(consensus_state.as_ref())
         }?;
 
-        self.check_misbehaviour_headers_consistency(header_1, header_2)?;
-
         let current_timestamp = ctx.host_timestamp()?;
         self.verify_misbehaviour_header(header_1, &trusted_consensus_state_1, current_timestamp)?;
         self.verify_misbehaviour_header(header_2, &trusted_consensus_state_2, current_timestamp)
-    }
-
-    pub fn check_misbehaviour_headers_consistency(
-        &self,
-        header_1: &TmHeader,
-        header_2: &TmHeader,
-    ) -> Result<(), ClientError> {
-        if header_1.signed_header.header.chain_id != header_2.signed_header.header.chain_id {
-            return Err(Error::InvalidRawMisbehaviour {
-                reason: "headers must have identical chain_ids".to_owned(),
-            }
-            .into());
-        }
-
-        if header_1.height() < header_2.height() {
-            return Err(Error::InvalidRawMisbehaviour {
-                reason: format!(
-                    "headers1 height is less than header2 height ({} < {})",
-                    header_1.height(),
-                    header_2.height()
-                ),
-            }
-            .into());
-        }
-
-        Ok(())
     }
 
     pub fn verify_misbehaviour_header(

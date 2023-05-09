@@ -1,3 +1,5 @@
+//! Defines the Tendermint light client's error type
+
 use crate::prelude::*;
 
 use crate::core::ics02_client::error::ClientError;
@@ -7,13 +9,12 @@ use crate::Height;
 use core::time::Duration;
 
 use displaydoc::Display;
-use tendermint::account::Id;
 use tendermint::{Error as TendermintError, Hash};
 use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
 use tendermint_light_client_verifier::operations::VotingPowerTally;
-use tendermint_light_client_verifier::types::Validator;
 use tendermint_light_client_verifier::Verdict;
 
+/// The main error type
 #[derive(Debug, Display)]
 pub enum Error {
     /// chain-id is (`{chain_id}`) is too long, got: `{len}`, max allowed: `{max_len}`
@@ -69,11 +70,13 @@ pub enum Error {
     InvalidHeaderHeight { height: u64 },
     /// Disallowed to create a new client with a frozen height
     FrozenHeightNotAllowed,
-    /// the header's current/trusted revision number (`{current_revision}`) and the update's revision number (`{update_revision}`) should be the same
-    MismatchedRevisions {
-        current_revision: u64,
-        update_revision: u64,
+    /// the header's trusted revision number (`{trusted_revision}`) and the update's revision number (`{header_revision}`) should be the same
+    MismatchHeightRevisions {
+        trusted_revision: u64,
+        header_revision: u64,
     },
+    /// the given chain-id (`{given}`) does not match the chain-id of the client (`{expected}`)
+    MismatchHeaderChainId { given: String, expected: String },
     /// not enough trust because insufficient validators overlap: `{reason}`
     NotEnoughTrustedValsSigned { reason: VotingPowerTally },
     /// verification failed: `{detail}`
@@ -82,11 +85,10 @@ pub enum Error {
     ProcessedTimeNotFound { client_id: ClientId, height: Height },
     /// Processed height for the client `{client_id}` at height `{height}` not found
     ProcessedHeightNotFound { client_id: ClientId, height: Height },
-    /// trusted validators `{trusted_validator_set:?}`, does not hash to latest trusted validators. Expected: `{next_validators_hash}`, got: `{trusted_val_hash}`
-    MisbehaviourTrustedValidatorHashMismatch {
-        trusted_validator_set: Vec<Validator>,
-        next_validators_hash: Hash,
-        trusted_val_hash: Hash,
+    /// The given hash of the validators does not matches the given hash in the signed header. Expected: `{signed_header_validators_hash}`, got: `{validators_hash}`
+    MismatchValidatorsHashes {
+        validators_hash: Hash,
+        signed_header_validators_hash: Hash,
     },
     /// current timestamp minus the latest consensus state timestamp is greater than or equal to the trusting period (`{duration_since_consensus_state:?}` >= `{trusting_period:?}`)
     ConsensusStateTimestampGteTrustingPeriod {
@@ -97,11 +99,6 @@ pub enum Error {
     MisbehaviourHeadersBlockHashesEqual,
     /// headers are not at same height and are monotonically increasing
     MisbehaviourHeadersNotAtSameHeight,
-    /// header chain-id `{header_chain_id}` does not match the light client's chain-id `{chain_id}`)
-    MisbehaviourHeadersChainIdMismatch {
-        header_chain_id: String,
-        chain_id: String,
-    },
     /// invalid raw client id: `{client_id}`
     InvalidRawClientId { client_id: String },
 }
@@ -117,19 +114,6 @@ impl std::error::Error for Error {
             _ => None,
         }
     }
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for VerificationError {}
-
-#[derive(Debug, Display)]
-pub enum VerificationError {
-    /// couldn't verify validator signature
-    InvalidSignature,
-    /// duplicate validator in commit signatures with address `{id}`
-    DuplicateValidator { id: Id },
-    /// insufficient signers overlap between `{q1}` and `{q2}`
-    InsufficientOverlap { q1: u64, q2: u64 },
 }
 
 impl From<Error> for ClientError {

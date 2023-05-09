@@ -1,47 +1,51 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpdateAnyClient`.
 
+use crate::core::ics02_client::client_state::UpdateKind;
 use crate::core::ics02_client::error::ClientError;
+use crate::core::ics02_client::msgs::MsgUpdateOrMisbehaviour;
 use crate::prelude::*;
 
+use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
-use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
-use crate::events::IbcEvent;
 
 use crate::core::context::ContextError;
 
 use crate::core::{ExecutionContext, ValidationContext};
 
-pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
+pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
-    let MsgUpdateClient {
-        client_id,
-        client_message,
-        update_kind,
-        signer: _,
-    } = msg;
+    ctx.validate_message_signer(msg.signer())?;
+
+    let client_id = msg.client_id().clone();
+    let update_kind = match msg {
+        MsgUpdateOrMisbehaviour::UpdateClient(_) => UpdateKind::UpdateClient,
+        MsgUpdateOrMisbehaviour::Misbehaviour(_) => UpdateKind::SubmitMisbehaviour,
+    };
 
     // Read client state from the host chain store. The client should already exist.
     let client_state = ctx.client_state(&client_id)?;
 
     client_state.confirm_not_frozen()?;
 
+    let client_message = msg.client_message();
+
     client_state.verify_client_message(ctx, &client_id, client_message, &update_kind)?;
 
     Ok(())
 }
 
-pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
+pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
 {
-    let MsgUpdateClient {
-        client_id,
-        client_message,
-        update_kind,
-        signer: _,
-    } = msg;
+    let client_id = msg.client_id().clone();
+    let update_kind = match msg {
+        MsgUpdateOrMisbehaviour::UpdateClient(_) => UpdateKind::UpdateClient,
+        MsgUpdateOrMisbehaviour::Misbehaviour(_) => UpdateKind::SubmitMisbehaviour,
+    };
+    let client_message = msg.client_message();
 
     let client_state = ctx.client_state(&client_id)?;
 
@@ -59,24 +63,32 @@ where
             client_id.clone(),
             client_state.client_type(),
         ));
-        ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
         ctx.emit_ibc_event(event);
     } else {
-        let consensus_heights =
-            client_state.update_state(ctx, &client_id, client_message.clone(), &update_kind)?;
+        if !matches!(update_kind, UpdateKind::UpdateClient) {
+            return Err(ClientError::MisbehaviourHandlingFailure {
+                reason: "misbehaviour submitted, but none found".to_string(),
+            }
+            .into());
+        }
+
+        let header = client_message;
+
+        let consensus_heights = client_state.update_state(ctx, &client_id, header.clone())?;
 
         let consensus_height = consensus_heights.get(0).ok_or(ClientError::Other {
             description: "client update state returned no updated height".to_string(),
         })?;
 
         let event = IbcEvent::UpdateClient(UpdateClient::new(
-            client_id,
+            client_id.clone(),
             client_state.client_type(),
             *consensus_height,
             consensus_heights,
-            client_message,
+            header,
         ));
-        ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
         ctx.emit_ibc_event(event);
     }
 
@@ -85,6 +97,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     use core::str::FromStr;
     use core::time::Duration;
     use ibc_proto::google::protobuf::Any;
@@ -94,15 +108,18 @@ mod tests {
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::clients::ics07_tendermint::header::Header as TmHeader;
     use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
+    use crate::core::events::IbcEvent;
     use crate::core::ics02_client::client_state::ClientState;
     use crate::core::ics02_client::client_type::ClientType;
     use crate::core::ics02_client::consensus_state::ConsensusState;
     use crate::core::ics02_client::handler::update_client::{execute, validate};
-    use crate::core::ics02_client::msgs::update_client::{MsgUpdateClient, UpdateKind};
+    use crate::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
+    use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
+    use crate::core::timestamp::Timestamp;
     use crate::core::ValidationContext;
-    use crate::events::{IbcEvent, IbcEventType};
+    use crate::downcast;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::client_state::MockClientState;
     use crate::mock::context::MockContext;
@@ -110,9 +127,7 @@ mod tests {
     use crate::mock::host::{HostBlock, HostType};
     use crate::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
     use crate::test_utils::get_dummy_account_id;
-    use crate::timestamp::Timestamp;
     use crate::Height;
-    use crate::{downcast, prelude::*};
     use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
 
     #[test]
@@ -126,16 +141,15 @@ mod tests {
         let height = Height::new(0, 46).unwrap();
         let msg = MsgUpdateClient {
             client_id,
-            client_message: MockHeader::new(height).with_timestamp(timestamp).into(),
-            update_kind: UpdateKind::UpdateClient,
+            header: MockHeader::new(height).with_timestamp(timestamp).into(),
             signer,
         };
 
-        let res = validate(&ctx, msg.clone());
+        let res = validate(&ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
 
         assert!(res.is_ok(), "validation happy path");
 
-        let res = execute(&mut ctx, msg.clone());
+        let res = execute(&mut ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
         assert!(res.is_ok(), "execution happy path");
 
         assert_eq!(
@@ -153,12 +167,11 @@ mod tests {
 
         let msg = MsgUpdateClient {
             client_id: ClientId::from_str("nonexistingclient").unwrap(),
-            client_message: MockHeader::new(Height::new(0, 46).unwrap()).into(),
-            update_kind: UpdateKind::UpdateClient,
+            header: MockHeader::new(Height::new(0, 46).unwrap()).into(),
             signer,
         };
 
-        let res = validate(&ctx, msg);
+        let res = validate(&ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg));
 
         assert!(res.is_err());
     }
@@ -194,15 +207,14 @@ mod tests {
         let latest_header_height = block.height();
         let msg = MsgUpdateClient {
             client_id,
-            client_message: block.into(),
-            update_kind: UpdateKind::UpdateClient,
+            header: block.into(),
             signer,
         };
 
-        let res = validate(&ctx, msg.clone());
+        let res = validate(&ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
         assert!(res.is_ok());
 
-        let res = execute(&mut ctx, msg.clone());
+        let res = execute(&mut ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
@@ -242,15 +254,14 @@ mod tests {
         let latest_header_height = block.height();
         let msg = MsgUpdateClient {
             client_id,
-            client_message: block.into(),
-            update_kind: UpdateKind::UpdateClient,
+            header: block.into(),
             signer,
         };
 
-        let res = validate(&ctx, msg.clone());
+        let res = validate(&ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
         assert!(res.is_ok());
 
-        let res = execute(&mut ctx, msg.clone());
+        let res = execute(&mut ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
@@ -359,15 +370,17 @@ mod tests {
         let latest_header_height = block.height();
         let msg = MsgUpdateClient {
             client_id,
-            client_message: block.into(),
-            update_kind: UpdateKind::UpdateClient,
+            header: block.into(),
             signer,
         };
 
-        let res = validate(&ctx_a, msg.clone());
+        let res = validate(&ctx_a, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
         assert!(res.is_ok(), "result: {res:?}");
 
-        let res = execute(&mut ctx_a, msg.clone());
+        let res = execute(
+            &mut ctx_a,
+            MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()),
+        );
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx_a.client_state(&msg.client_id).unwrap();
@@ -411,12 +424,11 @@ mod tests {
 
         let msg = MsgUpdateClient {
             client_id,
-            client_message: block_ref.clone().into(),
-            update_kind: UpdateKind::UpdateClient,
+            header: block_ref.clone().into(),
             signer,
         };
 
-        let res = validate(&ctx, msg);
+        let res = validate(&ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg));
         assert!(res.is_err());
     }
 
@@ -432,17 +444,16 @@ mod tests {
         let header: Any = MockHeader::new(height).with_timestamp(timestamp).into();
         let msg = MsgUpdateClient {
             client_id: client_id.clone(),
-            client_message: header.clone(),
-            update_kind: UpdateKind::UpdateClient,
+            header: header.clone(),
             signer,
         };
 
-        let res = execute(&mut ctx, msg);
+        let res = execute(&mut ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg));
         assert!(res.is_ok());
 
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::UpdateClient)
+            IbcEvent::Message(MessageEvent::Client)
         ));
         let update_client_event = downcast!(&ctx.events[1] => IbcEvent::UpdateClient).unwrap();
 
@@ -462,7 +473,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::ClientMisbehaviour),
+            IbcEvent::Message(MessageEvent::Client),
         ));
         let misbehaviour_client_event =
             downcast!(&ctx.events[1] => IbcEvent::ClientMisbehaviour).unwrap();
@@ -478,23 +489,22 @@ mod tests {
         let client_id = ClientId::default();
         let timestamp = Timestamp::now();
         let height = Height::new(0, 46).unwrap();
-        let msg = MsgUpdateClient {
+        let msg = MsgSubmitMisbehaviour {
             client_id: client_id.clone(),
-            client_message: MockMisbehaviour {
+            misbehaviour: MockMisbehaviour {
                 client_id: client_id.clone(),
                 header1: MockHeader::new(height).with_timestamp(timestamp),
                 header2: MockHeader::new(height).with_timestamp(timestamp),
             }
             .into(),
-            update_kind: UpdateKind::SubmitMisbehaviour,
             signer: get_dummy_account_id(),
         };
 
         let mut ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
 
-        let res = validate(&ctx, msg.clone());
+        let res = validate(&ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg.clone()));
         assert!(res.is_ok());
-        let res = execute(&mut ctx, msg);
+        let res = execute(&mut ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg));
         assert!(res.is_ok());
 
         ensure_misbehaviour(&ctx, &client_id, &mock_client_type());
@@ -505,20 +515,19 @@ mod tests {
     fn test_misbehaviour_nonexisting_client() {
         let client_id = ClientId::from_str("mockclient1").unwrap();
         let height = Height::new(0, 46).unwrap();
-        let msg = MsgUpdateClient {
+        let msg = MsgSubmitMisbehaviour {
             client_id: ClientId::from_str("nonexistingclient").unwrap(),
-            client_message: MockMisbehaviour {
+            misbehaviour: MockMisbehaviour {
                 client_id: client_id.clone(),
                 header1: MockHeader::new(height),
                 header2: MockHeader::new(height),
             }
             .into(),
-            update_kind: UpdateKind::SubmitMisbehaviour,
             signer: get_dummy_account_id(),
         };
 
         let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
-        let res = validate(&ctx, msg);
+        let res = validate(&ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg));
         assert!(res.is_err());
     }
 
@@ -572,16 +581,15 @@ mod tests {
             tm_block.into()
         };
 
-        let msg = MsgUpdateClient {
+        let msg = MsgSubmitMisbehaviour {
             client_id: client_id.clone(),
-            client_message: TmMisbehaviour::new(client_id.clone(), header1, header2).into(),
-            update_kind: UpdateKind::SubmitMisbehaviour,
+            misbehaviour: TmMisbehaviour::new(client_id.clone(), header1, header2).into(),
             signer: get_dummy_account_id(),
         };
 
-        let res = validate(&ctx_a, msg.clone());
+        let res = validate(&ctx_a, MsgUpdateOrMisbehaviour::Misbehaviour(msg.clone()));
         assert!(res.is_ok());
-        let res = execute(&mut ctx_a, msg);
+        let res = execute(&mut ctx_a, MsgUpdateOrMisbehaviour::Misbehaviour(msg));
         assert!(res.is_ok());
         ensure_misbehaviour(&ctx_a, &client_id, &tm_client_type());
     }
@@ -634,17 +642,16 @@ mod tests {
             tm_block
         };
 
-        let msg = MsgUpdateClient {
+        let msg = MsgSubmitMisbehaviour {
             client_id: client_id.clone(),
-            client_message: TmMisbehaviour::new(client_id.clone(), header1.into(), header2.into())
+            misbehaviour: TmMisbehaviour::new(client_id.clone(), header1.into(), header2.into())
                 .into(),
-            update_kind: UpdateKind::SubmitMisbehaviour,
             signer: get_dummy_account_id(),
         };
 
-        let res = validate(&ctx_a, msg.clone());
+        let res = validate(&ctx_a, MsgUpdateOrMisbehaviour::Misbehaviour(msg.clone()));
         assert!(res.is_ok());
-        let res = execute(&mut ctx_a, msg);
+        let res = execute(&mut ctx_a, MsgUpdateOrMisbehaviour::Misbehaviour(msg));
         assert!(res.is_ok());
         ensure_misbehaviour(&ctx_a, &client_id, &tm_client_type());
     }

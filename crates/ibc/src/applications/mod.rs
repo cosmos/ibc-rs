@@ -1,4 +1,4 @@
-//! Various packet encoding semantics which underpin the various types of transactions.
+//! Implementation of IBC applications
 
 #[cfg(feature = "serde")]
 pub mod transfer;

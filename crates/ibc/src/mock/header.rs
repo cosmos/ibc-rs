@@ -7,7 +7,7 @@ use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
-use crate::timestamp::Timestamp;
+use crate::core::timestamp::Timestamp;
 use crate::Height;
 
 pub const MOCK_HEADER_TYPE_URL: &str = "/ibc.mock.Header";
@@ -121,8 +121,7 @@ impl From<MockHeader> for Any {
     fn from(header: MockHeader) -> Self {
         Any {
             type_url: MOCK_HEADER_TYPE_URL.to_string(),
-            value: Protobuf::<RawMockHeader>::encode_vec(&header)
-                .expect("encoding to `Any` from `TmHeader`"),
+            value: Protobuf::<RawMockHeader>::encode_vec(&header),
         }
     }
 }
@@ -135,7 +134,7 @@ mod tests {
     #[test]
     fn encode_any() {
         let header = MockHeader::new(Height::new(1, 10).unwrap()).with_timestamp(Timestamp::none());
-        let bytes = <MockHeader as Protobuf<Any>>::encode_vec(&header).unwrap();
+        let bytes = <MockHeader as Protobuf<Any>>::encode_vec(&header);
 
         assert_eq!(
             &bytes,

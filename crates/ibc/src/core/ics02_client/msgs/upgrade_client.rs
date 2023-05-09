@@ -1,4 +1,4 @@
-//! Definition of domain type msg `MsgUpgradeAnyClient`.
+//! Definition of domain type msg `MsgUpgradeClient`.
 
 use crate::prelude::*;
 
@@ -13,8 +13,8 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics23_commitment::error::CommitmentError;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::core::Msg;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 
 pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpgradeClient";
 
@@ -94,7 +94,7 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
                 .map_err(ClientError::InvalidUpgradeClientProof)?,
             proof_upgrade_consensus_state: RawMerkleProof::try_from(cs_bytes)
                 .map_err(ClientError::InvalidUpgradeConsensusStateProof)?,
-            signer: proto_msg.signer.parse().map_err(ClientError::Signer)?,
+            signer: proto_msg.signer.into(),
         })
     }
 }

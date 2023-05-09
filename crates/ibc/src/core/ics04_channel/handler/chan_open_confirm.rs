@@ -1,48 +1,122 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenConfirm`.
 
-use crate::core::ics03_connection::connection::State as ConnectionState;
-use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
-use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
-use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
-use crate::core::ics24_host::Path;
-use crate::core::{ContextError, ValidationContext};
 use crate::prelude::*;
+use ibc_proto::protobuf::Protobuf;
 
-pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenConfirm) -> Result<(), ContextError>
+use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics03_connection::connection::State as ConnectionState;
+use crate::core::ics04_channel::channel::State;
+use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State as ChannelState};
+use crate::core::ics04_channel::error::ChannelError;
+use crate::core::ics04_channel::events::OpenConfirm;
+use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
+use crate::core::ics24_host::path::Path;
+use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
+use crate::core::router::ModuleId;
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
+
+pub(crate) fn chan_open_confirm_validate<ValCtx>(
+    ctx_b: &ValCtx,
+    module_id: ModuleId,
+    msg: MsgChannelOpenConfirm,
+) -> Result<(), ContextError>
+where
+    ValCtx: ValidationContext,
+{
+    validate(ctx_b, &msg)?;
+
+    let module = ctx_b
+        .get_route(&module_id)
+        .ok_or(ChannelError::RouteNotFound)?;
+    module.on_chan_open_confirm_validate(&msg.port_id_on_b, &msg.chan_id_on_b)?;
+
+    Ok(())
+}
+
+pub(crate) fn chan_open_confirm_execute<ExecCtx>(
+    ctx_b: &mut ExecCtx,
+    module_id: ModuleId,
+    msg: MsgChannelOpenConfirm,
+) -> Result<(), ContextError>
+where
+    ExecCtx: ExecutionContext,
+{
+    let module = ctx_b
+        .get_route_mut(&module_id)
+        .ok_or(ChannelError::RouteNotFound)?;
+
+    let extras = module.on_chan_open_confirm_execute(&msg.port_id_on_b, &msg.chan_id_on_b)?;
+    let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);
+    let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
+
+    // state changes
+    {
+        let chan_end_on_b = {
+            let mut chan_end_on_b = chan_end_on_b.clone();
+            chan_end_on_b.set_state(State::Open);
+
+            chan_end_on_b
+        };
+        ctx_b.store_channel(&chan_end_path_on_b, chan_end_on_b)?;
+    }
+
+    // emit events and logs
+    {
+        ctx_b.log_message("success: channel open confirm".to_string());
+
+        let conn_id_on_b = chan_end_on_b.connection_hops[0].clone();
+        let port_id_on_a = chan_end_on_b.counterparty().port_id.clone();
+        let chan_id_on_a = chan_end_on_b
+            .counterparty()
+            .channel_id
+            .clone()
+            .ok_or(ContextError::ChannelError(ChannelError::Other {
+            description:
+                "internal error: ChannelEnd doesn't have a counterparty channel id in OpenConfirm"
+                    .to_string(),
+        }))?;
+
+        let core_event = IbcEvent::OpenConfirmChannel(OpenConfirm::new(
+            msg.port_id_on_b.clone(),
+            msg.chan_id_on_b.clone(),
+            port_id_on_a,
+            chan_id_on_a,
+            conn_id_on_b,
+        ));
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
+        ctx_b.emit_ibc_event(core_event);
+
+        for module_event in extras.events {
+            ctx_b.emit_ibc_event(IbcEvent::Module(module_event));
+        }
+
+        for log_message in extras.log {
+            ctx_b.log_message(log_message);
+        }
+    }
+
+    Ok(())
+}
+
+fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenConfirm) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
+    ctx_b.validate_message_signer(&msg.signer)?;
+
     // Unwrap the old channel end and validate it against the message.
     let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);
     let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     // Validate that the channel end is in a state where it can be confirmed.
-    if !chan_end_on_b.state_matches(&State::TryOpen) {
-        return Err(ChannelError::InvalidChannelState {
-            channel_id: msg.chan_id_on_b.clone(),
-            state: chan_end_on_b.state,
-        }
-        .into());
-    }
+    chan_end_on_b.verify_state_matches(&ChannelState::TryOpen)?;
 
     // An OPEN IBC connection running on the local (host) chain should exist.
-    if chan_end_on_b.connection_hops().len() != 1 {
-        return Err(ChannelError::InvalidConnectionHopsLength {
-            expected: 1,
-            actual: chan_end_on_b.connection_hops().len(),
-        }
-        .into());
-    }
+    chan_end_on_b.verify_connection_hops_length()?;
 
     let conn_end_on_b = ctx_b.connection_end(&chan_end_on_b.connection_hops()[0])?;
 
-    if !conn_end_on_b.state_matches(&ConnectionState::Open) {
-        return Err(ChannelError::ConnectionNotOpen {
-            connection_id: chan_end_on_b.connection_hops()[0].clone(),
-        }
-        .into());
-    }
+    conn_end_on_b.verify_state_matches(&ConnectionState::Open)?;
 
     // Verify proofs
     {
@@ -60,7 +134,7 @@ where
         let chan_id_on_a = chan_end_on_b
             .counterparty()
             .channel_id()
-            .ok_or(ChannelError::InvalidCounterpartyChannelId)?;
+            .ok_or(ChannelError::MissingCounterparty)?;
         let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
             ChannelError::UndefinedConnectionCounterparty {
                 connection_id: chan_end_on_b.connection_hops()[0].clone(),
@@ -68,12 +142,12 @@ where
         )?;
 
         let expected_chan_end_on_a = ChannelEnd::new(
-            State::Open,
+            ChannelState::Open,
             *chan_end_on_b.ordering(),
             Counterparty::new(msg.port_id_on_b.clone(), Some(msg.chan_id_on_b.clone())),
             vec![conn_id_on_a.clone()],
             chan_end_on_b.version.clone(),
-        );
+        )?;
         let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, chan_id_on_a);
 
         // Verify the proof for the channel state against the expected channel end.
@@ -84,7 +158,7 @@ where
                 &msg.proof_chan_end_on_a,
                 consensus_state_of_a_on_b.root(),
                 Path::ChannelEnd(chan_end_path_on_a),
-                expected_chan_end_on_a.proto_encode_vec()?,
+                expected_chan_end_on_a.encode_vec(),
             )
             .map_err(ChannelError::VerifyChannelFailed)?;
     }
@@ -94,9 +168,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ics04_channel::handler::chan_open_confirm::validate;
-    use crate::core::ics24_host::identifier::ChannelId;
-    use crate::prelude::*;
+    use super::*;
     use rstest::*;
     use test_log::test;
 
@@ -109,14 +181,18 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_open_confirm::test_util::get_dummy_raw_msg_chan_open_confirm;
     use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
     use crate::core::ics04_channel::Version;
+    use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::core::timestamp::ZERO_DURATION;
+    use crate::Height;
+
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
-    use crate::timestamp::ZERO_DURATION;
-    use crate::Height;
+    use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
 
     pub struct Fixture {
         pub context: MockContext,
+        pub module_id: ModuleId,
         pub msg: MsgChannelOpenConfirm,
         pub client_id_on_b: ClientId,
         pub conn_id_on_b: ConnectionId,
@@ -128,7 +204,10 @@ mod tests {
     #[fixture]
     fn fixture() -> Fixture {
         let proof_height = 10;
-        let context = MockContext::default();
+        let mut context = MockContext::default();
+        let module = DummyTransferModule::new();
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
+        context.add_route(module_id.clone(), module).unwrap();
 
         let client_id_on_b = ClientId::new(mock_client_type(), 45).unwrap();
         let conn_id_on_b = ConnectionId::new(2);
@@ -138,7 +217,8 @@ mod tests {
             ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
             get_compatible_versions(),
             ZERO_DURATION,
-        );
+        )
+        .unwrap();
 
         let msg =
             MsgChannelOpenConfirm::try_from(get_dummy_raw_msg_chan_open_confirm(proof_height))
@@ -150,10 +230,12 @@ mod tests {
             Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::default())),
             vec![conn_id_on_b.clone()],
             Version::default(),
-        );
+        )
+        .unwrap();
 
         Fixture {
             context,
+            module_id,
             msg,
             client_id_on_b,
             conn_id_on_b,
@@ -204,7 +286,8 @@ mod tests {
             Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::default())),
             vec![conn_id_on_b.clone()],
             Version::default(),
-        );
+        )
+        .unwrap();
         let context = context
             .with_client(&client_id_on_b, Height::new(0, proof_height).unwrap())
             .with_connection(conn_id_on_b, conn_end_on_b)
@@ -223,7 +306,7 @@ mod tests {
     }
 
     #[rstest]
-    fn chan_open_confirm_happy_path(fixture: Fixture) {
+    fn chan_open_confirm_validate_happy_path(fixture: Fixture) {
         let Fixture {
             context,
             msg,
@@ -247,5 +330,40 @@ mod tests {
         let res = validate(&context, &msg);
 
         assert!(res.is_ok(), "Validation happy path")
+    }
+
+    #[rstest]
+    fn chan_open_confirm_execute_happy_path(fixture: Fixture) {
+        let Fixture {
+            context,
+            module_id,
+            msg,
+            client_id_on_b,
+            conn_id_on_b,
+            conn_end_on_b,
+            chan_end_on_b,
+            proof_height,
+            ..
+        } = fixture;
+
+        let mut context = context
+            .with_client(&client_id_on_b, Height::new(0, proof_height).unwrap())
+            .with_connection(conn_id_on_b, conn_end_on_b)
+            .with_channel(
+                msg.port_id_on_b.clone(),
+                ChannelId::default(),
+                chan_end_on_b,
+            );
+
+        let res = chan_open_confirm_execute(&mut context, module_id, msg);
+
+        assert!(res.is_ok(), "Execution happy path");
+
+        assert_eq!(context.events.len(), 2);
+        assert!(matches!(
+            context.events[0],
+            IbcEvent::Message(MessageEvent::Channel)
+        ));
+        assert!(matches!(context.events[1], IbcEvent::OpenConfirmChannel(_)));
     }
 }

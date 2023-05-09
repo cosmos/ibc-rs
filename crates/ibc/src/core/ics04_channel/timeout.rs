@@ -1,3 +1,5 @@
+//! Types and utilities pertaining to packet timeouts.
+
 use core::fmt::{Display, Error as FmtError, Formatter};
 
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
@@ -34,6 +36,14 @@ pub enum TimeoutHeight {
 }
 
 impl TimeoutHeight {
+    /// Returns if the timeout height is set.
+    pub fn is_set(&self) -> bool {
+        match self {
+            TimeoutHeight::At(_) => true,
+            TimeoutHeight::Never => false,
+        }
+    }
+
     pub fn no_timeout() -> Self {
         Self::Never
     }

@@ -1,3 +1,7 @@
+//! Defines the main context traits and IBC module callbacks
+
+use crate::core::router::ModuleExtras;
+use crate::core::ContextError;
 use crate::prelude::*;
 
 use sha2::{Digest, Sha256};
@@ -15,13 +19,12 @@ use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::context::{
     SendPacketExecutionContext, SendPacketValidationContext,
 };
-use crate::core::ics04_channel::handler::ModuleExtras;
-use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
-use crate::core::ics04_channel::packet::Packet;
+use crate::core::ics04_channel::packet::{Acknowledgement, Packet};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::signer::Signer;
 
+/// Methods required in token transfer validation, to be implemented by the host
 pub trait TokenTransferValidationContext: SendPacketValidationContext {
     type AccountId: TryFrom<Signer>;
 
@@ -70,6 +73,7 @@ pub trait TokenTransferValidationContext: SendPacketValidationContext {
     }
 }
 
+/// Methods required in token transfer execution, to be implemented by the host
 pub trait TokenTransferExecutionContext:
     TokenTransferValidationContext + SendPacketExecutionContext
 {
@@ -134,11 +138,10 @@ pub fn on_chan_open_init_validate(
         });
     }
 
-    if !version.is_empty() && version != &Version::new(VERSION.to_string()) {
-        return Err(TokenTransferError::InvalidVersion {
-            expect_version: Version::new(VERSION.to_string()),
-            got_version: version.clone(),
-        });
+    if !version.is_empty() {
+        version
+            .verify_is_expected(Version::new(VERSION.to_string()))
+            .map_err(ContextError::from)?;
     }
 
     Ok(())
@@ -173,12 +176,10 @@ pub fn on_chan_open_try_validate(
             got_order: order,
         });
     }
-    if counterparty_version != &Version::new(VERSION.to_string()) {
-        return Err(TokenTransferError::InvalidCounterpartyVersion {
-            expect_version: Version::new(VERSION.to_string()),
-            got_version: counterparty_version.clone(),
-        });
-    }
+
+    counterparty_version
+        .verify_is_expected(Version::new(VERSION.to_string()))
+        .map_err(ContextError::from)?;
 
     Ok(())
 }
@@ -202,12 +203,9 @@ pub fn on_chan_open_ack_validate(
     _channel_id: &ChannelId,
     counterparty_version: &Version,
 ) -> Result<(), TokenTransferError> {
-    if counterparty_version != &Version::new(VERSION.to_string()) {
-        return Err(TokenTransferError::InvalidCounterpartyVersion {
-            expect_version: Version::new(VERSION.to_string()),
-            got_version: counterparty_version.clone(),
-        });
-    }
+    counterparty_version
+        .verify_is_expected(Version::new(VERSION.to_string()))
+        .map_err(ContextError::from)?;
 
     Ok(())
 }
@@ -288,9 +286,11 @@ pub fn on_recv_packet_execute(
     };
 
     let recv_event = RecvEvent {
+        sender: data.sender,
         receiver: data.receiver,
         denom: data.token.denom,
         amount: data.token.amount,
+        memo: data.memo,
         success: ack.is_successful(),
     };
     extras.events.push(recv_event.into());
@@ -355,9 +355,11 @@ pub fn on_acknowledgement_packet_execute(
     }
 
     let ack_event = AckEvent {
+        sender: data.sender,
         receiver: data.receiver,
         denom: data.token.denom,
         amount: data.token.amount,
+        memo: data.memo,
         acknowledgement: acknowledgement.clone(),
     };
 
@@ -408,6 +410,7 @@ pub fn on_timeout_packet_execute(
         refund_receiver: data.sender,
         refund_denom: data.token.denom,
         refund_amount: data.token.amount,
+        memo: data.memo,
     };
 
     let extras = ModuleExtras {

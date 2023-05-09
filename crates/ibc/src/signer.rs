@@ -1,18 +1,8 @@
-use core::str::FromStr;
-
 use crate::prelude::*;
 
 use derive_more::Display;
 
-#[derive(Debug, displaydoc::Display)]
-pub enum SignerError {
-    /// signer cannot be empty
-    EmptySigner,
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for SignerError {}
-
+/// Represents the address of the signer of the current transaction
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -29,15 +19,9 @@ impl std::error::Error for SignerError {}
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 pub struct Signer(String);
 
-impl FromStr for Signer {
-    type Err = SignerError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let s = s.to_string();
-        if s.trim().is_empty() {
-            return Err(SignerError::EmptySigner);
-        }
-        Ok(Self(s))
+impl From<String> for Signer {
+    fn from(s: String) -> Self {
+        Self(s)
     }
 }
 

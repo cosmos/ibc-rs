@@ -1,11 +1,11 @@
 //! ICS4 (channel) context.
 
+use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
-use crate::events::IbcEvent;
 use crate::prelude::*;
 use core::time::Duration;
 use num_traits::float::FloatCore;
@@ -18,6 +18,7 @@ use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 
 use super::packet::Sequence;
 
+/// Methods required in send packet validation, to be implemented by the host
 pub trait SendPacketValidationContext {
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
@@ -69,6 +70,7 @@ where
     }
 }
 
+/// Methods required in send packet execution, to be implemented by the host
 pub trait SendPacketExecutionContext: SendPacketValidationContext {
     fn store_next_sequence_send(
         &mut self,
@@ -118,7 +120,7 @@ where
     }
 }
 
-pub fn calculate_block_delay(
+pub(crate) fn calculate_block_delay(
     delay_period_time: &Duration,
     max_expected_time_per_block: &Duration,
 ) -> u64 {

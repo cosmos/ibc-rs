@@ -8,8 +8,7 @@ use crate::applications::transfer::PrefixedCoin;
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
-    ClientTypePath, CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath,
-    SeqSendPath,
+    CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use crate::prelude::*;
 
@@ -26,8 +25,7 @@ use ibc_proto::google::protobuf::Any;
 use tracing::debug;
 
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use crate::core::context::ContextError;
-use crate::core::context::Router;
+use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
@@ -41,10 +39,12 @@ use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ics26_routing::context::{Module, ModuleId};
-use crate::core::ics26_routing::msgs::MsgEnvelope;
+use crate::core::router::Router;
+use crate::core::router::{Module, ModuleId};
+use crate::core::timestamp::Timestamp;
+use crate::core::ContextError;
+use crate::core::MsgEnvelope;
 use crate::core::{dispatch, ExecutionContext, ValidationContext};
-use crate::events::IbcEvent;
 use crate::mock::client_state::{
     client_type as mock_client_type, MockClientRecord, MockClientState,
 };
@@ -54,7 +54,6 @@ use crate::mock::host::{HostBlock, HostType};
 use crate::mock::ics18_relayer::context::RelayerContext;
 use crate::mock::ics18_relayer::error::RelayerError;
 use crate::signer::Signer;
-use crate::timestamp::Timestamp;
 use crate::Height;
 
 use super::client_state::MOCK_CLIENT_TYPE;
@@ -262,7 +261,6 @@ impl MockContext {
         debug!("consensus states: {:?}", consensus_states);
 
         let client_record = MockClientRecord {
-            client_type,
             client_state,
             consensus_states,
         };
@@ -347,7 +345,6 @@ impl MockContext {
         debug!("consensus states: {:?}", consensus_states);
 
         let client_record = MockClientRecord {
-            client_type,
             client_state,
             consensus_states,
         };
@@ -557,7 +554,7 @@ impl MockContext {
     }
 
     pub fn add_port(&mut self, port_id: PortId) {
-        let module_id = ModuleId::new(format!("module{port_id}").into()).unwrap();
+        let module_id = ModuleId::new(format!("module{port_id}"));
         self.ibc_store
             .lock()
             .port_to_module
@@ -679,7 +676,9 @@ impl RelayerContext for MockContext {
     }
 
     fn signer(&self) -> Signer {
-        "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C".parse().unwrap()
+        "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C"
+            .to_string()
+            .into()
     }
 }
 
@@ -1109,31 +1108,13 @@ impl ValidationContext for MockContext {
     fn max_expected_time_per_block(&self) -> Duration {
         self.block_time
     }
+
+    fn validate_message_signer(&self, _signer: &Signer) -> Result<(), ContextError> {
+        Ok(())
+    }
 }
 
 impl ExecutionContext for MockContext {
-    fn store_client_type(
-        &mut self,
-        client_type_path: ClientTypePath,
-        client_type: ClientType,
-    ) -> Result<(), ContextError> {
-        let mut ibc_store = self.ibc_store.lock();
-
-        let client_id = client_type_path.0;
-        let client_record = ibc_store
-            .clients
-            .entry(client_id)
-            .or_insert(MockClientRecord {
-                client_type: client_type.clone(),
-                consensus_states: Default::default(),
-                client_state: Default::default(),
-            });
-
-        client_record.client_type = client_type;
-
-        Ok(())
-    }
-
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
@@ -1146,7 +1127,6 @@ impl ExecutionContext for MockContext {
             .clients
             .entry(client_id)
             .or_insert(MockClientRecord {
-                client_type: client_state.client_type(),
                 consensus_states: Default::default(),
                 client_state: Default::default(),
             });
@@ -1167,7 +1147,6 @@ impl ExecutionContext for MockContext {
             .clients
             .entry(consensus_state_path.client_id)
             .or_insert(MockClientRecord {
-                client_type: mock_client_type(),
                 consensus_states: Default::default(),
                 client_state: Default::default(),
             });
@@ -1414,7 +1393,7 @@ impl TokenTransferValidationContext for MockContext {
         channel_id: &ChannelId,
     ) -> Result<Self::AccountId, TokenTransferError> {
         let addr = cosmos_adr028_escrow_address(port_id, channel_id);
-        Ok(bech32::encode("cosmos", addr).parse().unwrap())
+        Ok(bech32::encode("cosmos", addr).into())
     }
 
     fn can_send_coins(&self) -> Result<(), TokenTransferError> {
@@ -1483,17 +1462,13 @@ mod tests {
     use super::*;
     use test_log::test;
 
-    use alloc::str::FromStr;
-
     use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::error::ChannelError;
-    use crate::core::ics04_channel::handler::ModuleExtras;
-    use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
-    use crate::core::ics04_channel::packet::Packet;
+    use crate::core::ics04_channel::packet::{Acknowledgement, Packet};
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-    use crate::core::ics26_routing::context::{Module, ModuleId};
+    use crate::core::router::{Module, ModuleExtras, ModuleId};
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::signer::Signer;
@@ -1847,18 +1822,16 @@ mod tests {
             1,
             Height::new(1, 1).unwrap(),
         );
-        ctx.add_route("foomodule".parse().unwrap(), FooModule::default())
+        ctx.add_route(ModuleId::new("foomodule".to_string()), FooModule::default())
             .unwrap();
-        ctx.add_route("barmodule".parse().unwrap(), BarModule::default())
+        ctx.add_route(ModuleId::new("barmodule".to_string()), BarModule::default())
             .unwrap();
 
         let mut on_recv_packet_result = |module_id: &'static str| {
-            let module_id = ModuleId::from_str(module_id).unwrap();
+            let module_id = ModuleId::new(module_id.to_string());
             let m = ctx.get_route_mut(&module_id).unwrap();
-            let result = m.on_recv_packet_execute(
-                &Packet::default(),
-                &get_dummy_bech32_account().parse().unwrap(),
-            );
+            let result =
+                m.on_recv_packet_execute(&Packet::default(), &get_dummy_bech32_account().into());
             (module_id, result)
         };
 

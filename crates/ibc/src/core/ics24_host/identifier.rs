@@ -1,22 +1,33 @@
+//! Defines identifier types
+
+pub(crate) mod validate;
+use validate::*;
+
 use core::convert::{From, Infallible};
 use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use derive_more::Into;
+use displaydoc::Display;
 
-use super::validate::*;
 use crate::clients::ics07_tendermint::client_type as tm_client_type;
 use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics24_host::error::ValidationError;
+
 use crate::prelude::*;
 
-/// This type is subject to future changes.
+const CONNECTION_ID_PREFIX: &str = "connection";
+const CHANNEL_ID_PREFIX: &str = "channel";
+
+const DEFAULT_CHAIN_ID: &str = "defaultChainId";
+const DEFAULT_PORT_ID: &str = "defaultPort";
+const TRANSFER_PORT_ID: &str = "transfer";
+
+/// A `ChainId` is in "epoch format" if it is of the form `{chain name}-{epoch number}`,
+/// where the epoch number is the number of times the chain was upgraded. Chain IDs not
+/// in that format will be assumed to have epoch number 0.
 ///
-/// TODO: ChainId validation is not standardized yet.
-///       `is_epoch_format` will most likely be replaced by validate_chain_id()-style function.
-///       See: <https://github.com/informalsystems/ibc-rs/pull/304#discussion_r503917283>.
-///
-/// Also, contrast with tendermint-rs `ChainId` type.
+/// This is not standardized yet, although compatible with ibc-go.
+/// See: <https://github.com/informalsystems/ibc-rs/pull/304#discussion_r503917283>.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -130,7 +141,9 @@ impl ChainId {
             self.id = {
                 let mut split: Vec<&str> = self.id.split('-').collect();
                 let version = version.to_string();
-                *split.last_mut().unwrap() = &version;
+                if let Some(last_elem) = split.last_mut() {
+                    *last_elem = &version;
+                }
                 split.join("-")
             };
             self.version = version;
@@ -161,13 +174,13 @@ impl From<ChainId> for tendermint::chain::Id {
 
 impl From<tendermint::chain::Id> for ChainId {
     fn from(id: tendermint::chain::Id) -> Self {
-        ChainId::from_str(id.as_str()).unwrap()
+        ChainId::from(id.to_string())
     }
 }
 
 impl Default for ChainId {
     fn default() -> Self {
-        "defaultChainId".to_string().parse().unwrap()
+        Self::from_string(DEFAULT_CHAIN_ID)
     }
 }
 
@@ -201,12 +214,13 @@ impl ClientId {
     /// ```
     /// # use ibc::core::ics24_host::identifier::ClientId;
     /// # use ibc::core::ics02_client::client_type::ClientType;
-    /// let tm_client_id = ClientId::new(ClientType::new("07-tendermint".to_string()), 0);
+    /// let tm_client_id = ClientId::new(ClientType::from("07-tendermint".to_string()), 0);
     /// assert!(tm_client_id.is_ok());
     /// tm_client_id.map(|id| { assert_eq!(&id, "07-tendermint-0") });
     /// ```
-    pub fn new(client_type: ClientType, counter: u64) -> Result<Self, ValidationError> {
-        let prefix = client_type.as_str();
+    pub fn new(client_type: ClientType, counter: u64) -> Result<Self, IdentifierError> {
+        let prefix = client_type.as_str().trim();
+        validate_client_type(prefix)?;
         let id = format!("{prefix}-{counter}");
         Self::from_str(id.as_str())
     }
@@ -230,7 +244,7 @@ impl Display for ClientId {
 }
 
 impl FromStr for ClientId {
-    type Err = ValidationError;
+    type Err = IdentifierError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         validate_client_identifier(s).map(|_| Self(s.to_string()))
@@ -286,12 +300,12 @@ impl ConnectionId {
     /// ```
     pub fn new(identifier: u64) -> Self {
         let id = format!("{}-{}", Self::prefix(), identifier);
-        Self::from_str(id.as_str()).unwrap()
+        Self(id)
     }
 
     /// Returns the static prefix to be used across all connection identifiers.
     pub fn prefix() -> &'static str {
-        "connection"
+        CONNECTION_ID_PREFIX
     }
 
     /// Get this identifier as a borrowed `&str`
@@ -313,7 +327,7 @@ impl Display for ConnectionId {
 }
 
 impl FromStr for ConnectionId {
-    type Err = ValidationError;
+    type Err = IdentifierError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         validate_connection_identifier(s).map(|_| Self(s.to_string()))
@@ -357,9 +371,13 @@ impl PartialEq<str> for ConnectionId {
 pub struct PortId(String);
 
 impl PortId {
+    pub fn new(id: String) -> Result<Self, IdentifierError> {
+        Self::from_str(&id)
+    }
+
     /// Infallible creation of the well-known transfer port
     pub fn transfer() -> Self {
-        Self("transfer".to_string())
+        Self(TRANSFER_PORT_ID.to_string())
     }
 
     /// Get this identifier as a borrowed `&str`
@@ -371,6 +389,10 @@ impl PortId {
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_bytes()
     }
+
+    pub fn validate(&self) -> Result<(), IdentifierError> {
+        validate_port_identifier(self.as_str())
+    }
 }
 
 /// This implementation provides a `to_string` method.
@@ -381,7 +403,7 @@ impl Display for PortId {
 }
 
 impl FromStr for PortId {
-    type Err = ValidationError;
+    type Err = IdentifierError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         validate_port_identifier(s).map(|_| Self(s.to_string()))
@@ -396,7 +418,7 @@ impl AsRef<str> for PortId {
 
 impl Default for PortId {
     fn default() -> Self {
-        "defaultPort".to_string().parse().unwrap()
+        Self(DEFAULT_PORT_ID.to_string())
     }
 }
 
@@ -417,8 +439,6 @@ impl Default for PortId {
 pub struct ChannelId(String);
 
 impl ChannelId {
-    const PREFIX: &'static str = "channel-";
-
     /// Builds a new channel identifier. Like client and connection identifiers, channel ids are
     /// deterministically formed from two elements: a prefix `prefix`, and a monotonically
     /// increasing `counter`, separated by a dash "-".
@@ -431,8 +451,13 @@ impl ChannelId {
     /// assert_eq!(chan_id.to_string(), "channel-27");
     /// ```
     pub fn new(identifier: u64) -> Self {
-        let id = format!("{}{}", Self::PREFIX, identifier);
+        let id = format!("{}-{}", Self::prefix(), identifier);
         Self(id)
+    }
+
+    /// Returns the static prefix to be used across all channel identifiers.
+    pub fn prefix() -> &'static str {
+        CHANNEL_ID_PREFIX
     }
 
     /// Get this identifier as a borrowed `&str`
@@ -454,7 +479,7 @@ impl Display for ChannelId {
 }
 
 impl FromStr for ChannelId {
-    type Err = ValidationError;
+    type Err = IdentifierError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         validate_channel_identifier(s).map(|_| Self(s.to_string()))
@@ -487,37 +512,25 @@ impl PartialEq<str> for ChannelId {
     }
 }
 
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-/// A pair of [`PortId`] and [`ChannelId`] are used together for sending IBC packets.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct PortChannelId {
-    pub channel_id: ChannelId,
-    pub port_id: PortId,
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Display)]
+pub enum IdentifierError {
+    /// identifier `{id}` cannot contain separator '/'
+    ContainSeparator { id: String },
+    /// identifier `{id}` has invalid length `{length}` must be between `{min}`-`{max}` characters
+    InvalidLength {
+        id: String,
+        length: usize,
+        min: usize,
+        max: usize,
+    },
+    /// identifier `{id}` must only contain alphanumeric characters or `.`, `_`, `+`, `-`, `#`, - `[`, `]`, `<`, `>`
+    InvalidCharacter { id: String },
+    /// identifier prefix `{prefix}` is invalid
+    InvalidPrefix { prefix: String },
+    /// identifier cannot be empty
+    Empty,
 }
 
-impl PortChannelId {
-    pub fn new(channel_id: ChannelId, port_id: PortId) -> Self {
-        Self {
-            channel_id,
-            port_id,
-        }
-    }
-}
-
-impl Display for PortChannelId {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "{}/{}", self.port_id, self.channel_id)
-    }
-}
+#[cfg(feature = "std")]
+impl std::error::Error for IdentifierError {}

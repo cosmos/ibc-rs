@@ -8,9 +8,8 @@ use tendermint::abci;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use crate::events::IbcEventType;
+use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
-use crate::timestamp::Timestamp;
 
 use self::channel_attributes::{
     ChannelIdAttribute, ConnectionIdAttribute, CounterpartyChannelIdAttribute,
@@ -24,10 +23,24 @@ use self::packet_attributes::{
 };
 
 use super::channel::Order;
-use super::msgs::acknowledgement::Acknowledgement;
-use super::packet::Sequence;
+use super::packet::{Acknowledgement, Sequence};
 use super::timeout::TimeoutHeight;
 use super::Version;
+
+/// Channel event types
+const CHANNEL_OPEN_INIT_EVENT: &str = "channel_open_init";
+const CHANNEL_OPEN_TRY_EVENT: &str = "channel_open_try";
+const CHANNEL_OPEN_ACK_EVENT: &str = "channel_open_ack";
+const CHANNEL_OPEN_CONFIRM_EVENT: &str = "channel_open_confirm";
+const CHANNEL_CLOSE_INIT_EVENT: &str = "channel_close_init";
+const CHANNEL_CLOSE_CONFIRM_EVENT: &str = "channel_close_confirm";
+/// Packet event types
+const SEND_PACKET_EVENT: &str = "send_packet";
+const RECEIVE_PACKET_EVENT: &str = "receive_packet";
+const WRITE_ACK_EVENT: &str = "write_acknowledgement";
+const ACK_PACKET_EVENT: &str = "acknowledge_packet";
+const TIMEOUT_EVENT: &str = "timeout_packet";
+const CHANNEL_CLOSED_EVENT: &str = "channel_close";
 
 #[cfg_attr(
     feature = "parity-scale-codec",
@@ -82,12 +95,16 @@ impl OpenInit {
     pub fn version(&self) -> &Version {
         &self.version.version
     }
+
+    pub fn event_type(&self) -> &str {
+        CHANNEL_OPEN_INIT_EVENT
+    }
 }
 
 impl From<OpenInit> for abci::Event {
     fn from(o: OpenInit) -> Self {
         abci::Event {
-            kind: IbcEventType::OpenInitChannel.as_str().to_owned(),
+            kind: CHANNEL_OPEN_INIT_EVENT.to_string(),
             attributes: vec![
                 o.port_id.into(),
                 o.channel_id.into(),
@@ -159,12 +176,16 @@ impl OpenTry {
     pub fn version(&self) -> &Version {
         &self.version.version
     }
+
+    pub fn event_type(&self) -> &str {
+        CHANNEL_OPEN_TRY_EVENT
+    }
 }
 
 impl From<OpenTry> for abci::Event {
     fn from(o: OpenTry) -> Self {
         abci::Event {
-            kind: IbcEventType::OpenTryChannel.as_str().to_owned(),
+            kind: CHANNEL_OPEN_TRY_EVENT.to_string(),
             attributes: vec![
                 o.port_id.into(),
                 o.channel_id.into(),
@@ -230,12 +251,16 @@ impl OpenAck {
     pub fn connection_id(&self) -> &ConnectionId {
         &self.connection_id.connection_id
     }
+
+    pub fn event_type(&self) -> &str {
+        CHANNEL_OPEN_ACK_EVENT
+    }
 }
 
 impl From<OpenAck> for abci::Event {
     fn from(o: OpenAck) -> Self {
         abci::Event {
-            kind: IbcEventType::OpenAckChannel.as_str().to_owned(),
+            kind: CHANNEL_OPEN_ACK_EVENT.to_string(),
             attributes: vec![
                 o.port_id.into(),
                 o.channel_id.into(),
@@ -300,12 +325,16 @@ impl OpenConfirm {
     pub fn connection_id(&self) -> &ConnectionId {
         &self.connection_id.connection_id
     }
+
+    pub fn event_type(&self) -> &str {
+        CHANNEL_OPEN_CONFIRM_EVENT
+    }
 }
 
 impl From<OpenConfirm> for abci::Event {
     fn from(o: OpenConfirm) -> Self {
         abci::Event {
-            kind: IbcEventType::OpenConfirmChannel.as_str().to_owned(),
+            kind: CHANNEL_OPEN_CONFIRM_EVENT.to_string(),
             attributes: vec![
                 o.port_id.into(),
                 o.channel_id.into(),
@@ -370,12 +399,16 @@ impl CloseInit {
     pub fn connection_id(&self) -> &ConnectionId {
         &self.connection_id.connection_id
     }
+
+    pub fn event_type(&self) -> &str {
+        CHANNEL_CLOSE_INIT_EVENT
+    }
 }
 
 impl From<CloseInit> for abci::Event {
     fn from(o: CloseInit) -> Self {
         abci::Event {
-            kind: IbcEventType::CloseInitChannel.as_str().to_owned(),
+            kind: CHANNEL_CLOSE_INIT_EVENT.to_string(),
             attributes: vec![
                 o.port_id.into(),
                 o.channel_id.into(),
@@ -440,12 +473,16 @@ impl CloseConfirm {
     pub fn connection_id(&self) -> &ConnectionId {
         &self.connection_id.connection_id
     }
+
+    pub fn event_type(&self) -> &str {
+        CHANNEL_CLOSE_CONFIRM_EVENT
+    }
 }
 
 impl From<CloseConfirm> for abci::Event {
     fn from(o: CloseConfirm) -> Self {
         abci::Event {
-            kind: IbcEventType::CloseConfirmChannel.as_str().to_owned(),
+            kind: CHANNEL_CLOSE_CONFIRM_EVENT.to_string(),
             attributes: vec![
                 o.port_id.into(),
                 o.channel_id.into(),
@@ -522,12 +559,16 @@ impl ChannelClosed {
     pub fn channel_ordering(&self) -> &Order {
         &self.channel_ordering.order
     }
+
+    pub fn event_type(&self) -> &str {
+        CHANNEL_CLOSED_EVENT
+    }
 }
 
 impl From<ChannelClosed> for abci::Event {
     fn from(ev: ChannelClosed) -> Self {
         abci::Event {
-            kind: IbcEventType::ChannelClosed.as_str().to_owned(),
+            kind: CHANNEL_CLOSED_EVENT.to_string(),
             attributes: vec![
                 ev.port_id.into(),
                 ev.channel_id.into(),
@@ -625,6 +666,10 @@ impl SendPacket {
     pub fn src_connection_id(&self) -> &ConnectionId {
         &self.src_connection_id.connection_id
     }
+
+    pub fn event_type(&self) -> &str {
+        SEND_PACKET_EVENT
+    }
 }
 
 impl TryFrom<SendPacket> for abci::Event {
@@ -644,7 +689,7 @@ impl TryFrom<SendPacket> for abci::Event {
         attributes.push(v.src_connection_id.into());
 
         Ok(abci::Event {
-            kind: IbcEventType::SendPacket.as_str().to_owned(),
+            kind: SEND_PACKET_EVENT.to_string(),
             attributes,
         })
     }
@@ -732,6 +777,10 @@ impl ReceivePacket {
     pub fn dst_connection_id(&self) -> &ConnectionId {
         &self.dst_connection_id.connection_id
     }
+
+    pub fn event_type(&self) -> &str {
+        RECEIVE_PACKET_EVENT
+    }
 }
 
 impl TryFrom<ReceivePacket> for abci::Event {
@@ -751,7 +800,7 @@ impl TryFrom<ReceivePacket> for abci::Event {
         attributes.push(v.dst_connection_id.into());
 
         Ok(abci::Event {
-            kind: IbcEventType::ReceivePacket.as_str().to_owned(),
+            kind: RECEIVE_PACKET_EVENT.to_string(),
             attributes,
         })
     }
@@ -843,6 +892,10 @@ impl WriteAcknowledgement {
     pub fn dst_connection_id(&self) -> &ConnectionId {
         &self.dst_connection_id.connection_id
     }
+
+    pub fn event_type(&self) -> &str {
+        WRITE_ACK_EVENT
+    }
 }
 
 impl TryFrom<WriteAcknowledgement> for abci::Event {
@@ -862,7 +915,7 @@ impl TryFrom<WriteAcknowledgement> for abci::Event {
         attributes.push(v.dst_connection_id.into());
 
         Ok(abci::Event {
-            kind: IbcEventType::WriteAck.as_str().to_owned(),
+            kind: WRITE_ACK_EVENT.to_string(),
             attributes,
         })
     }
@@ -944,6 +997,10 @@ impl AcknowledgePacket {
     pub fn src_connection_id(&self) -> &ConnectionId {
         &self.src_connection_id.connection_id
     }
+
+    pub fn event_type(&self) -> &str {
+        ACK_PACKET_EVENT
+    }
 }
 
 impl TryFrom<AcknowledgePacket> for abci::Event {
@@ -951,7 +1008,7 @@ impl TryFrom<AcknowledgePacket> for abci::Event {
 
     fn try_from(v: AcknowledgePacket) -> Result<Self, Self::Error> {
         Ok(abci::Event {
-            kind: IbcEventType::AckPacket.as_str().to_owned(),
+            kind: ACK_PACKET_EVENT.to_string(),
             attributes: vec![
                 v.timeout_height.into(),
                 v.timeout_timestamp.into(),
@@ -1037,6 +1094,10 @@ impl TimeoutPacket {
     pub fn channel_ordering(&self) -> &Order {
         &self.channel_ordering.order
     }
+
+    pub fn event_type(&self) -> &str {
+        TIMEOUT_EVENT
+    }
 }
 
 impl TryFrom<TimeoutPacket> for abci::Event {
@@ -1044,7 +1105,7 @@ impl TryFrom<TimeoutPacket> for abci::Event {
 
     fn try_from(v: TimeoutPacket) -> Result<Self, Self::Error> {
         Ok(abci::Event {
-            kind: IbcEventType::Timeout.as_str().to_owned(),
+            kind: TIMEOUT_EVENT.to_string(),
             attributes: vec![
                 v.timeout_height.into(),
                 v.timeout_timestamp.into(),
@@ -1067,7 +1128,7 @@ mod tests {
     #[test]
     fn ibc_to_abci_channel_events() {
         struct Test {
-            kind: IbcEventType,
+            kind: &'static str,
             event: AbciEvent,
             expected_keys: Vec<&'static str>,
             expected_values: Vec<&'static str>,
@@ -1098,7 +1159,7 @@ mod tests {
 
         let tests: Vec<Test> = vec![
             Test {
-                kind: IbcEventType::OpenInitChannel,
+                kind: CHANNEL_OPEN_INIT_EVENT,
                 event: OpenInit::new(
                     port_id.clone(),
                     channel_id.clone(),
@@ -1115,7 +1176,7 @@ mod tests {
                     .collect(),
             },
             Test {
-                kind: IbcEventType::OpenTryChannel,
+                kind: CHANNEL_OPEN_TRY_EVENT,
                 event: OpenTry::new(
                     port_id.clone(),
                     channel_id.clone(),
@@ -1129,7 +1190,7 @@ mod tests {
                 expected_values: expected_values.clone(),
             },
             Test {
-                kind: IbcEventType::OpenAckChannel,
+                kind: CHANNEL_OPEN_ACK_EVENT,
                 event: OpenAck::new(
                     port_id.clone(),
                     channel_id.clone(),
@@ -1142,7 +1203,7 @@ mod tests {
                 expected_values: expected_values[0..5].to_vec(),
             },
             Test {
-                kind: IbcEventType::OpenConfirmChannel,
+                kind: CHANNEL_OPEN_CONFIRM_EVENT,
                 event: OpenConfirm::new(
                     port_id.clone(),
                     channel_id.clone(),
@@ -1155,7 +1216,7 @@ mod tests {
                 expected_values: expected_values[0..5].to_vec(),
             },
             Test {
-                kind: IbcEventType::CloseInitChannel,
+                kind: CHANNEL_CLOSE_INIT_EVENT,
                 event: CloseInit::new(
                     port_id.clone(),
                     channel_id.clone(),
@@ -1168,7 +1229,7 @@ mod tests {
                 expected_values: expected_values[0..5].to_vec(),
             },
             Test {
-                kind: IbcEventType::CloseConfirmChannel,
+                kind: CHANNEL_CLOSE_CONFIRM_EVENT,
                 event: CloseConfirm::new(
                     port_id,
                     channel_id,
@@ -1183,23 +1244,17 @@ mod tests {
         ];
 
         for t in tests {
-            assert_eq!(t.kind.as_str(), t.event.kind);
+            assert_eq!(t.kind, t.event.kind);
             assert_eq!(t.expected_keys.len(), t.event.attributes.len());
             for (i, e) in t.event.attributes.iter().enumerate() {
-                assert_eq!(
-                    e.key,
-                    t.expected_keys[i],
-                    "key mismatch for {:?}",
-                    t.kind.as_str()
-                );
+                assert_eq!(e.key, t.expected_keys[i], "key mismatch for {:?}", t.kind);
             }
             assert_eq!(t.expected_values.len(), t.event.attributes.len());
             for (i, e) in t.event.attributes.iter().enumerate() {
                 assert_eq!(
-                    e.value,
-                    t.expected_values[i],
+                    e.value, t.expected_values[i],
                     "value mismatch for {:?}",
-                    t.kind.as_str()
+                    t.kind
                 );
             }
         }

@@ -1,20 +1,20 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenAck`.
 
+use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
 use crate::core::context::ContextError;
-use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenAck;
 use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath};
-use crate::core::ics24_host::Path;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 
-use crate::events::IbcEvent;
+use crate::core::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
@@ -32,6 +32,8 @@ fn validate_impl<Ctx>(
 where
     Ctx: ValidationContext,
 {
+    ctx_a.validate_message_signer(&msg.signer)?;
+
     let host_height = ctx_a.host_height().map_err(|_| ConnectionError::Other {
         description: "failed to get host height".to_string(),
     })?;
@@ -45,34 +47,21 @@ where
 
     ctx_a.validate_self_client(msg.client_state_of_a_on_b.clone())?;
 
-    if !(vars.conn_end_on_a.state_matches(&State::Init)
-        && vars.conn_end_on_a.versions().contains(&msg.version))
-    {
-        return Err(ConnectionError::ConnectionMismatch {
-            connection_id: msg.conn_id_on_a.clone(),
-        }
-        .into());
-    }
+    msg.version
+        .verify_is_supported(vars.conn_end_on_a.versions())?;
+
+    vars.conn_end_on_a.verify_state_matches(&State::Init)?;
 
     // Proof verification.
     {
-        let client_state_of_b_on_a =
-            ctx_a
-                .client_state(vars.client_id_on_a())
-                .map_err(|_| ConnectionError::Other {
-                    description: "failed to fetch client state".to_string(),
-                })?;
+        let client_state_of_b_on_a = ctx_a.client_state(vars.client_id_on_a())?;
 
         client_state_of_b_on_a.confirm_not_frozen()?;
         client_state_of_b_on_a.validate_proof_height(msg.proofs_height_on_b)?;
 
         let client_cons_state_path_on_a =
             ClientConsensusStatePath::new(vars.client_id_on_a(), &msg.proofs_height_on_b);
-        let consensus_state_of_b_on_a = ctx_a
-            .consensus_state(&client_cons_state_path_on_a)
-            .map_err(|_| ConnectionError::Other {
-                description: "failed to fetch client consensus state".to_string(),
-            })?;
+        let consensus_state_of_b_on_a = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
 
         let prefix_on_a = ctx_a.commitment_prefix();
         let prefix_on_b = vars.conn_end_on_a.counterparty().prefix();
@@ -88,7 +77,7 @@ where
                 ),
                 vec![msg.version.clone()],
                 vars.conn_end_on_a.delay_period(),
-            );
+            )?;
 
             client_state_of_b_on_a
                 .verify_membership(
@@ -96,7 +85,7 @@ where
                     &msg.proof_conn_end_on_b,
                     consensus_state_of_b_on_a.root(),
                     Path::Connection(ConnectionPath::new(&msg.conn_id_on_b)),
-                    expected_conn_end_on_b.proto_encode_vec()?,
+                    expected_conn_end_on_b.encode_vec(),
                 )
                 .map_err(ConnectionError::VerifyConnectionState)?;
         }
@@ -114,11 +103,8 @@ where
                 client_error: e,
             })?;
 
-        let expected_consensus_state_of_a_on_b = ctx_a
-            .host_consensus_state(&msg.consensus_height_of_a_on_b)
-            .map_err(|_| ConnectionError::Other {
-                description: "failed to fetch host consensus state".to_string(),
-            })?;
+        let expected_consensus_state_of_a_on_b =
+            ctx_a.host_consensus_state(&msg.consensus_height_of_a_on_b)?;
 
         let client_cons_state_path_on_b =
             ClientConsensusStatePath::new(vars.client_id_on_b(), &msg.consensus_height_of_a_on_b);
@@ -129,9 +115,7 @@ where
                 &msg.proof_consensus_state_of_a_on_b,
                 consensus_state_of_b_on_a.root(),
                 Path::ClientConsensusState(client_cons_state_path_on_b),
-                expected_consensus_state_of_a_on_b
-                    .encode_vec()
-                    .map_err(ClientError::Encode)?,
+                expected_consensus_state_of_a_on_b.encode_vec(),
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
                 height: msg.proofs_height_on_b,
@@ -164,7 +148,7 @@ where
         msg.conn_id_on_b.clone(),
         vars.client_id_on_b().clone(),
     ));
-    ctx_a.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection));
     ctx_a.emit_ibc_event(event);
 
     ctx_a.log_message("success: conn_open_ack verification passed".to_string());
@@ -225,10 +209,10 @@ mod tests {
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::ValidationContext;
 
-    use crate::events::{IbcEvent, IbcEventType};
+    use crate::core::events::IbcEvent;
+    use crate::core::timestamp::ZERO_DURATION;
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
-    use crate::timestamp::ZERO_DURATION;
 
     enum Ctx {
         New,
@@ -261,7 +245,8 @@ mod tests {
             ),
             vec![msg.version.clone()],
             ZERO_DURATION,
-        );
+        )
+        .unwrap();
 
         // A connection end with incorrect state `Open`; will be part of the context.
         let mut conn_end_open = default_conn_end.clone();
@@ -320,11 +305,10 @@ mod tests {
             }) => {
                 assert_eq!(cons_state_height, target_height);
             }
-            ContextError::ConnectionError(ConnectionError::ConnectionMismatch {
-                connection_id,
-            }) => {
-                assert_eq!(connection_id, right_connection_id)
-            }
+            ContextError::ConnectionError(ConnectionError::InvalidState {
+                expected: _,
+                actual: _,
+            }) => {}
             _ => unreachable!(),
         }
     }
@@ -342,7 +326,7 @@ mod tests {
 
                 assert!(matches!(
                     fxt.ctx.events[0],
-                    IbcEvent::Message(IbcEventType::OpenAckConnection)
+                    IbcEvent::Message(MessageEvent::Connection)
                 ));
                 let event = &fxt.ctx.events[1];
                 assert!(matches!(event, &IbcEvent::OpenAckConnection(_)));
@@ -390,8 +374,9 @@ mod tests {
     #[test]
     fn conn_open_ack_connection_mismatch() {
         let fxt = conn_open_ack_fixture(Ctx::NewWithConnectionEndOpen);
-        let expected_err = ContextError::ConnectionError(ConnectionError::ConnectionMismatch {
-            connection_id: fxt.msg.conn_id_on_a.clone(),
+        let expected_err = ContextError::ConnectionError(ConnectionError::InvalidState {
+            expected: State::Init.to_string(),
+            actual: State::Open.to_string(),
         });
         conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err)));
     }

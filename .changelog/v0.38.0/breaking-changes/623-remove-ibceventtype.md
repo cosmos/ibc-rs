@@ -1,0 +1,1 @@
+- Remove `IbcEventType` ([#623](https://github.com/cosmos/ibc-rs/issues/623))

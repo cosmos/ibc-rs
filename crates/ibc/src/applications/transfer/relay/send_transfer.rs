@@ -3,17 +3,15 @@ use crate::applications::transfer::context::{
 };
 use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::events::TransferEvent;
-use crate::applications::transfer::is_sender_chain_source;
 use crate::applications::transfer::msgs::transfer::MsgTransfer;
+use crate::applications::transfer::{is_sender_chain_source, MODULE_ID_STR};
+use crate::core::events::{MessageEvent, ModuleEvent};
 use crate::core::ics04_channel::handler::send_packet::{send_packet_execute, send_packet_validate};
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics24_host::path::{ChannelEndPath, SeqSendPath};
-use crate::events::ModuleEvent;
 use crate::prelude::*;
 
-/// This function handles the transfer sending logic.
-/// If this method returns an error, the runtime is expected to rollback all state modifications to
-/// the `Ctx` caused by all messages from the transaction that this `msg` is a part of.
+/// Initiate a token transfer. Equivalent to calling [`send_transfer_validate`], followed by [`send_transfer_execute`].
 pub fn send_transfer<Ctx>(ctx_a: &mut Ctx, msg: MsgTransfer) -> Result<(), TokenTransferError>
 where
     Ctx: TokenTransferExecutionContext,
@@ -22,6 +20,7 @@ where
     send_transfer_execute(ctx_a, msg)
 }
 
+/// Validates the token tranfer. If this succeeds, then it is legal to initiate the transfer with [`send_transfer_execute`].
 pub fn send_transfer_validate<Ctx>(ctx_a: &Ctx, msg: MsgTransfer) -> Result<(), TokenTransferError>
 where
     Ctx: TokenTransferValidationContext,
@@ -29,9 +28,7 @@ where
     ctx_a.can_send_coins()?;
 
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
-    let chan_end_on_a = ctx_a
-        .channel_end(&chan_end_path_on_a)
-        .map_err(TokenTransferError::ContextError)?;
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     let port_id_on_b = chan_end_on_a.counterparty().port_id().clone();
     let chan_id_on_b = chan_end_on_a
@@ -44,9 +41,7 @@ where
         .clone();
 
     let seq_send_path_on_a = SeqSendPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
-    let sequence = ctx_a
-        .get_next_sequence_send(&seq_send_path_on_a)
-        .map_err(TokenTransferError::ContextError)?;
+    let sequence = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
     let token = &msg.packet_data.token;
 
@@ -84,11 +79,12 @@ where
         }
     };
 
-    send_packet_validate(ctx_a, &packet).map_err(TokenTransferError::ContextError)?;
+    send_packet_validate(ctx_a, &packet)?;
 
     Ok(())
 }
 
+/// Executes the token transfer. A prior call to [`send_transfer_validate`] MUST have succeeded.
 pub fn send_transfer_execute<Ctx>(
     ctx_a: &mut Ctx,
     msg: MsgTransfer,
@@ -97,9 +93,7 @@ where
     Ctx: TokenTransferExecutionContext,
 {
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
-    let chan_end_on_a = ctx_a
-        .channel_end(&chan_end_path_on_a)
-        .map_err(TokenTransferError::ContextError)?;
+    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     let port_on_b = chan_end_on_a.counterparty().port_id().clone();
     let chan_on_b = chan_end_on_a
@@ -113,9 +107,7 @@ where
 
     // get the next sequence
     let seq_send_path_on_a = SeqSendPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
-    let sequence = ctx_a
-        .get_next_sequence_send(&seq_send_path_on_a)
-        .map_err(TokenTransferError::ContextError)?;
+    let sequence = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
     let token = &msg.packet_data.token;
 
@@ -155,7 +147,7 @@ where
         }
     };
 
-    send_packet_execute(ctx_a, packet).map_err(TokenTransferError::ContextError)?;
+    send_packet_execute(ctx_a, packet)?;
 
     {
         ctx_a.log_message(format!(
@@ -166,8 +158,13 @@ where
         let transfer_event = TransferEvent {
             sender: msg.packet_data.sender,
             receiver: msg.packet_data.receiver,
+            amount: msg.packet_data.token.amount,
+            denom: msg.packet_data.token.denom,
+            memo: msg.packet_data.memo,
         };
         ctx_a.emit_ibc_event(ModuleEvent::from(transfer_event).into());
+
+        ctx_a.emit_ibc_event(MessageEvent::Module(MODULE_ID_STR.to_string()).into());
     }
 
     Ok(())

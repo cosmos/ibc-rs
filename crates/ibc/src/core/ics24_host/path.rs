@@ -1,3 +1,5 @@
+//! Defines all store paths used by IBC
+
 use crate::{prelude::*, Height};
 
 /// Path-space as listed in ICS-024
@@ -11,13 +13,6 @@ use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, Por
 
 use derive_more::{Display, From};
 
-/// ABCI Query path for the IBC sub-store
-pub const IBC_QUERY_PATH: &str = "store/ibc/key";
-
-/// ABCI Query path for the upgrade sub-store
-/// ## Note: This is SDK/Tendermint specific!
-pub const SDK_UPGRADE_QUERY_PATH: &str = "store/upgrade/key";
-
 /// ABCI client upgrade keys
 /// - The key identifying the upgraded IBC state within the upgrade sub-store
 const UPGRADED_IBC_STATE: &str = "upgradedIBCState";
@@ -29,7 +24,6 @@ const UPGRADED_CLIENT_CONSENSUS_STATE: &str = "upgradedConsState";
 /// The Path enum abstracts out the different sub-paths.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, From, Display)]
 pub enum Path {
-    ClientType(ClientTypePath),
     ClientState(ClientStatePath),
     ClientConsensusState(ClientConsensusStatePath),
     ClientConnection(ClientConnectionPath),
@@ -45,16 +39,19 @@ pub enum Path {
     Upgrade(ClientUpgradePath),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "clients/{_0}/clientType")]
-pub struct ClientTypePath(pub ClientId);
-
-impl ClientTypePath {
-    pub fn new(client_id: &ClientId) -> ClientTypePath {
-        ClientTypePath(client_id.clone())
-    }
-}
-
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "clients/{_0}/clientState")]
 pub struct ClientStatePath(pub ClientId);
@@ -65,6 +62,19 @@ impl ClientStatePath {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "clients/{client_id}/consensusStates/{epoch}-{height}")]
 pub struct ClientConsensusStatePath {
@@ -83,6 +93,19 @@ impl ClientConsensusStatePath {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "clients/{_0}/connections")]
 pub struct ClientConnectionPath(pub ClientId);
@@ -93,6 +116,19 @@ impl ClientConnectionPath {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "connections/{_0}")]
 pub struct ConnectionPath(pub ConnectionId);
@@ -103,10 +139,36 @@ impl ConnectionPath {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "ports/{_0}")]
 pub struct PortPath(pub PortId);
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "channelEnds/ports/{_0}/channels/{_1}")]
 pub struct ChannelEndPath(pub PortId, pub ChannelId);
@@ -117,6 +179,19 @@ impl ChannelEndPath {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "nextSequenceSend/ports/{_0}/channels/{_1}")]
 pub struct SeqSendPath(pub PortId, pub ChannelId);
@@ -127,6 +202,19 @@ impl SeqSendPath {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "nextSequenceRecv/ports/{_0}/channels/{_1}")]
 pub struct SeqRecvPath(pub PortId, pub ChannelId);
@@ -137,6 +225,19 @@ impl SeqRecvPath {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "nextSequenceAck/ports/{_0}/channels/{_1}")]
 pub struct SeqAckPath(pub PortId, pub ChannelId);
@@ -147,6 +248,19 @@ impl SeqAckPath {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "commitments/ports/{port_id}/channels/{channel_id}/sequences/{sequence}")]
 pub struct CommitmentPath {
@@ -165,6 +279,19 @@ impl CommitmentPath {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "acks/ports/{port_id}/channels/{channel_id}/sequences/{sequence}")]
 pub struct AckPath {
@@ -183,6 +310,19 @@ impl AckPath {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "receipts/ports/{port_id}/channels/{channel_id}/sequences/{sequence}")]
 pub struct ReceiptPath {
@@ -201,6 +341,19 @@ impl ReceiptPath {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// Paths that are specific for client upgrades.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 pub enum ClientUpgradePath {
@@ -210,6 +363,19 @@ pub enum ClientUpgradePath {
     UpgradedClientConsensusState(u64),
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// Sub-paths which are not part of the specification, but are still
 /// useful to represent for parsing purposes.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -278,7 +444,6 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
 
     if components.len() == 3 {
         match components[2] {
-            "clientType" => Some(ClientTypePath(client_id).into()),
             "clientState" => Some(ClientStatePath(client_id).into()),
             "connections" => Some(ClientConnectionPath(client_id).into()),
             _ => None,
@@ -681,14 +846,6 @@ mod tests {
 
     #[test]
     fn test_parse_client_paths_fn() {
-        let path = "clients/07-tendermint-0/clientType";
-        let components: Vec<&str> = path.split('/').collect();
-
-        assert_eq!(
-            parse_client_paths(&components),
-            Some(Path::ClientType(ClientTypePath(ClientId::default())))
-        );
-
         let path = "clients/07-tendermint-0/clientState";
         let components: Vec<&str> = path.split('/').collect();
 
@@ -707,18 +864,6 @@ mod tests {
                 epoch: 15,
                 height: 31,
             }))
-        );
-    }
-
-    #[test]
-    fn client_type_path_parses() {
-        let path = "clients/07-tendermint-0/clientType";
-        let path = Path::from_str(path);
-
-        assert!(path.is_ok());
-        assert_eq!(
-            path.unwrap(),
-            Path::ClientType(ClientTypePath(ClientId::default()))
         );
     }
 

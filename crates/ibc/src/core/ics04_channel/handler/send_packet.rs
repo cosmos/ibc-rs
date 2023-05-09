@@ -1,5 +1,8 @@
+use crate::prelude::*;
+
+use crate::core::events::IbcEvent;
+use crate::core::events::MessageEvent;
 use crate::core::ics04_channel::channel::Counterparty;
-use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::commitment::compute_packet_commitment;
 use crate::core::ics04_channel::context::SendPacketExecutionContext;
 use crate::core::ics04_channel::events::SendPacket;
@@ -10,12 +13,12 @@ use crate::core::ics24_host::path::ChannelEndPath;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::ics24_host::path::CommitmentPath;
 use crate::core::ics24_host::path::SeqSendPath;
+use crate::core::timestamp::Expiry;
 use crate::core::ContextError;
-use crate::events::IbcEvent;
-use crate::prelude::*;
-use crate::timestamp::Expiry;
 
-/// Per our convention, this message is processed on chain A.
+/// Send the given packet, including all necessary validation.
+///
+/// Equivalent to calling [`send_packet_validate`], followed by [`send_packet_execute`]
 pub fn send_packet(
     ctx_a: &mut impl SendPacketExecutionContext,
     packet: Packet,
@@ -24,7 +27,7 @@ pub fn send_packet(
     send_packet_execute(ctx_a, packet)
 }
 
-/// Per our convention, this message is processed on chain A.
+/// Validate that sending the given packet would succeed.
 pub fn send_packet_validate(
     ctx_a: &impl SendPacketValidationContext,
     packet: &Packet,
@@ -32,26 +35,19 @@ pub fn send_packet_validate(
     let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
-    if chan_end_on_a.state_matches(&State::Closed) {
-        return Err(PacketError::ChannelClosed {
-            channel_id: packet.chan_id_on_a.clone(),
-        }
-        .into());
-    }
+    // Checks the channel end not be `Closed`.
+    // This allows for optimistic packet processing before a channel opens
+    chan_end_on_a.verify_not_closed()?;
 
     let counterparty = Counterparty::new(
         packet.port_id_on_b.clone(),
         Some(packet.chan_id_on_b.clone()),
     );
 
-    if !chan_end_on_a.counterparty_matches(&counterparty) {
-        return Err(PacketError::InvalidPacketCounterparty {
-            port_id: packet.port_id_on_b.clone(),
-            channel_id: packet.chan_id_on_b.clone(),
-        }
-        .into());
-    }
+    chan_end_on_a.verify_counterparty_matches(&counterparty)?;
+
     let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
+
     let conn_end_on_a = ctx_a.connection_end(conn_id_on_a)?;
 
     let client_id_on_a = conn_end_on_a.client_id();
@@ -93,7 +89,9 @@ pub fn send_packet_validate(
     Ok(())
 }
 
-/// Per our convention, this message is processed on chain A.
+/// Send the packet without any validation.
+///
+/// A prior call to [`send_packet_validate`] MUST have succeeded.
 pub fn send_packet_execute(
     ctx_a: &mut impl SendPacketExecutionContext,
     packet: Packet,
@@ -126,7 +124,7 @@ pub fn send_packet_execute(
             chan_end_on_a.ordering,
             conn_id_on_a.clone(),
         ));
-        ctx_a.emit_ibc_event(IbcEvent::Message(event.event_type()));
+        ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
         ctx_a.emit_ibc_event(event);
     }
 
@@ -135,11 +133,13 @@ pub fn send_packet_execute(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use core::ops::Add;
     use core::time::Duration;
 
     use test_log::test;
 
+    use crate::core::events::IbcEvent;
     use crate::core::ics02_client::height::Height;
     use crate::core::ics03_connection::connection::ConnectionEnd;
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
@@ -151,11 +151,9 @@ mod tests {
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::events::{IbcEvent, IbcEventType};
+    use crate::core::timestamp::Timestamp;
+    use crate::core::timestamp::ZERO_DURATION;
     use crate::mock::context::MockContext;
-    use crate::prelude::*;
-    use crate::timestamp::Timestamp;
-    use crate::timestamp::ZERO_DURATION;
 
     #[test]
     fn send_packet_processing() {
@@ -169,12 +167,13 @@ mod tests {
         let context = MockContext::default();
 
         let chan_end_on_a = ChannelEnd::new(
-            State::TryOpen,
+            State::Open,
             Order::default(),
             Counterparty::new(PortId::default(), Some(ChannelId::default())),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
-        );
+        )
+        .unwrap();
 
         let conn_end_on_a = ConnectionEnd::new(
             ConnectionState::Open,
@@ -186,7 +185,8 @@ mod tests {
             ),
             get_compatible_versions(),
             ZERO_DURATION,
-        );
+        )
+        .unwrap();
 
         let timestamp_future = Timestamp::now().add(Duration::from_secs(10)).unwrap();
         let timestamp_ns_past = 1;
@@ -303,7 +303,7 @@ mod tests {
                     assert_eq!(test.ctx.events.len(), 2);
                     assert!(matches!(
                         &test.ctx.events[0],
-                        &IbcEvent::Message(IbcEventType::SendPacket)
+                        &IbcEvent::Message(MessageEvent::Channel)
                     ));
                     // TODO: The object in the output is a PacketResult what can we check on it?
                     assert!(matches!(&test.ctx.events[1], &IbcEvent::SendPacket(_)));

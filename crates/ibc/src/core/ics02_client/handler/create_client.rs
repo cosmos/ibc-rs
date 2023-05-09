@@ -1,5 +1,6 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
+use crate::core::events::MessageEvent;
 use crate::prelude::*;
 
 use crate::core::context::ContextError;
@@ -8,17 +9,15 @@ use crate::core::ics24_host::path::ClientConsensusStatePath;
 
 use crate::core::ics24_host::path::ClientStatePath;
 
-use crate::core::ics24_host::path::ClientTypePath;
-
 use crate::core::ExecutionContext;
 
 use crate::core::ValidationContext;
 
+use crate::core::events::IbcEvent;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::CreateClient;
 use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::events::IbcEvent;
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
@@ -26,14 +25,18 @@ where
 {
     let MsgCreateClient {
         client_state,
-        consensus_state: _,
-        signer: _,
+        consensus_state,
+        signer,
     } = msg;
+
+    ctx.validate_message_signer(&signer)?;
 
     // Construct this client's identifier
     let id_counter = ctx.client_counter()?;
 
     let client_state = ctx.decode_client_state(client_state)?;
+
+    client_state.initialise(consensus_state)?;
 
     let client_type = client_state.client_type();
 
@@ -78,7 +81,6 @@ where
     })?;
     let consensus_state = client_state.initialise(consensus_state)?;
 
-    ctx.store_client_type(ClientTypePath::new(&client_id), client_type.clone())?;
     ctx.store_client_state(ClientStatePath::new(&client_id), client_state.clone())?;
     ctx.store_consensus_state(
         ClientConsensusStatePath::new(&client_id, &client_state.latest_height()),
@@ -101,7 +103,7 @@ where
         client_type,
         client_state.latest_height(),
     ));
-    ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
     ctx.emit_ibc_event(event);
 
     ctx.log_message(format!(
@@ -113,7 +115,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use super::*;
 
     use test_log::test;
 

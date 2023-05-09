@@ -1,4 +1,3 @@
-use crate::core::ics02_client::msgs::update_client::UpdateKind;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 use crate::prelude::*;
 
@@ -10,7 +9,7 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::mock::ClientState as RawMockClientState;
 use ibc_proto::protobuf::Protobuf;
 
-use crate::core::ics02_client::client_state::{ClientState, UpdatedState};
+use crate::core::ics02_client::client_state::{ClientState, UpdateKind, UpdatedState};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
@@ -18,7 +17,7 @@ use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::core::ics24_host::Path;
+use crate::core::ics24_host::path::Path;
 use crate::mock::client_state::client_type as mock_client_type;
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
@@ -33,16 +32,13 @@ pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
 pub const MOCK_CLIENT_TYPE: &str = "9999-mock";
 
 pub fn client_type() -> ClientType {
-    ClientType::new(MOCK_CLIENT_TYPE.to_string())
+    ClientType::from(MOCK_CLIENT_TYPE.to_string())
 }
 
 /// A mock of an IBC client record as it is stored in a mock context.
 /// For testing ICS02 handlers mostly, cf. `MockClientContext`.
 #[derive(Clone, Debug)]
 pub struct MockClientRecord {
-    /// The type of this client.
-    pub client_type: ClientType,
-
     /// The client state (representing only the latest height at the moment).
     pub client_state: Option<Box<dyn ClientState>>,
 
@@ -136,8 +132,7 @@ impl From<MockClientState> for Any {
     fn from(client_state: MockClientState) -> Self {
         Any {
             type_url: MOCK_CLIENT_STATE_TYPE_URL.to_string(),
-            value: Protobuf::<RawMockClientState>::encode_vec(&client_state)
-                .expect("encoding to `Any` from `MockClientState`"),
+            value: Protobuf::<RawMockClientState>::encode_vec(&client_state),
         }
     }
 }
@@ -294,10 +289,9 @@ impl ClientState for MockClientState {
         &self,
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
-        client_message: Any,
-        _update_kind: &UpdateKind,
+        header: Any,
     ) -> Result<Vec<Height>, ClientError> {
-        let header = MockHeader::try_from(client_message)?;
+        let header = MockHeader::try_from(header)?;
         let header_height = header.height;
 
         let new_client_state = MockClientState::new(header).into_box();

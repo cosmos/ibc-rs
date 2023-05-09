@@ -1,6 +1,5 @@
-//! This is the definition of a transfer messages that an application submits to a chain.
+//! Defines the token transfer message type
 
-use crate::applications::transfer::packet::PacketData;
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
@@ -8,12 +7,14 @@ use ibc_proto::ibc::applications::transfer::v1::MsgTransfer as RawMsgTransfer;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::applications::transfer::error::TokenTransferError;
+use crate::applications::transfer::packet::PacketData;
+use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::timeout::TimeoutHeight;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
-use crate::timestamp::Timestamp;
-use crate::tx_msg::Msg;
+use crate::core::timestamp::Timestamp;
+use crate::core::{ContextError, Msg};
 
-pub const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
+pub(crate) const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 
 /// Message used to build an ICS20 token transfer packet.
 ///
@@ -51,41 +52,31 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
 
     fn try_from(raw_msg: RawMsgTransfer) -> Result<Self, Self::Error> {
         let timeout_timestamp_on_b = Timestamp::from_nanoseconds(raw_msg.timeout_timestamp)
-            .map_err(|_| TokenTransferError::InvalidPacketTimeoutTimestamp {
-                timestamp: raw_msg.timeout_timestamp,
-            })?;
+            .map_err(PacketError::InvalidPacketTimestamp)
+            .map_err(ContextError::from)?;
 
-        let timeout_height_on_b: TimeoutHeight =
-            raw_msg.timeout_height.try_into().map_err(|e| {
-                TokenTransferError::InvalidPacketTimeoutHeight {
-                    context: format!("invalid timeout height {e}"),
-                }
-            })?;
+        let timeout_height_on_b: TimeoutHeight = raw_msg
+            .timeout_height
+            .try_into()
+            .map_err(ContextError::from)?;
+
+        // Packet timeout height and packet timeout timestamp cannot both be unset.
+        if !timeout_height_on_b.is_set() && !timeout_timestamp_on_b.is_set() {
+            return Err(PacketError::MissingTimeout).map_err(ContextError::from)?;
+        }
 
         Ok(MsgTransfer {
-            port_id_on_a: raw_msg.source_port.parse().map_err(|e| {
-                TokenTransferError::InvalidPortId {
-                    context: raw_msg.source_port.clone(),
-                    validation_error: e,
-                }
-            })?,
-            chan_id_on_a: raw_msg.source_channel.parse().map_err(|e| {
-                TokenTransferError::InvalidChannelId {
-                    context: raw_msg.source_channel.clone(),
-                    validation_error: e,
-                }
-            })?,
+            port_id_on_a: raw_msg.source_port.parse()?,
+            chan_id_on_a: raw_msg.source_channel.parse()?,
             packet_data: PacketData {
                 token: raw_msg
                     .token
                     .ok_or(TokenTransferError::InvalidToken)?
                     .try_into()
                     .map_err(|_| TokenTransferError::InvalidToken)?,
-                sender: raw_msg.sender.parse().map_err(TokenTransferError::Signer)?,
-                receiver: raw_msg
-                    .receiver
-                    .parse()
-                    .map_err(TokenTransferError::Signer)?,
+                sender: raw_msg.sender.into(),
+                receiver: raw_msg.receiver.into(),
+                memo: raw_msg.memo.into(),
             },
             timeout_height_on_b,
             timeout_timestamp_on_b,
@@ -103,6 +94,7 @@ impl From<MsgTransfer> for RawMsgTransfer {
             receiver: domain_msg.packet_data.receiver.to_string(),
             timeout_height: domain_msg.timeout_height_on_b.into(),
             timeout_timestamp: domain_msg.timeout_timestamp_on_b.nanoseconds(),
+            memo: domain_msg.packet_data.memo.to_string(),
         }
     }
 }
@@ -126,6 +118,8 @@ impl TryFrom<Any> for MsgTransfer {
 
 #[cfg(test)]
 pub mod test_util {
+    use super::*;
+
     use core::ops::Add;
     use core::time::Duration;
     use primitive_types::U256;
@@ -140,7 +134,6 @@ pub mod test_util {
         applications::transfer::BaseCoin,
         core::ics24_host::identifier::{ChannelId, PortId},
         test_utils::get_dummy_bech32_account,
-        timestamp::Timestamp,
     };
 
     // Returns a dummy ICS20 `MsgTransfer`. If no `timeout_timestamp` is
@@ -149,7 +142,7 @@ pub mod test_util {
         timeout_height: TimeoutHeight,
         timeout_timestamp: Option<Timestamp>,
     ) -> MsgTransfer {
-        let address: Signer = get_dummy_bech32_account().as_str().parse().unwrap();
+        let address: Signer = get_dummy_bech32_account().into();
         MsgTransfer {
             port_id_on_a: PortId::default(),
             chan_id_on_a: ChannelId::default(),
@@ -161,6 +154,7 @@ pub mod test_util {
                 .into(),
                 sender: address.clone(),
                 receiver: address,
+                memo: "".to_owned().into(),
             },
             timeout_timestamp_on_b: timeout_timestamp
                 .unwrap_or_else(|| Timestamp::now().add(Duration::from_secs(10)).unwrap()),
@@ -179,6 +173,7 @@ pub mod test_util {
                 token: coin,
                 sender: msg.packet_data.sender.clone(),
                 receiver: msg.packet_data.receiver.clone(),
+                memo: msg.packet_data.memo.clone(),
             };
             serde_json::to_vec(&data).expect("PacketData's infallible Serialize impl failed")
         };

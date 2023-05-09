@@ -6,11 +6,11 @@ use ibc_proto::protobuf::Protobuf;
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
+use crate::core::Msg;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 use crate::Height;
 
-pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgTimeoutOnClose";
+pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgTimeoutOnClose";
 
 ///
 /// Message definition for packet timeout domain type.
@@ -39,7 +39,10 @@ impl TryFrom<RawMsgTimeoutOnClose> for MsgTimeoutOnClose {
     type Error = PacketError;
 
     fn try_from(raw_msg: RawMsgTimeoutOnClose) -> Result<Self, Self::Error> {
-        // TODO: Domain type verification for the next sequence: this should probably be > 0.
+        if raw_msg.next_sequence_recv == 0 {
+            return Err(PacketError::ZeroPacketSequence);
+        }
+
         Ok(MsgTimeoutOnClose {
             packet: raw_msg
                 .packet
@@ -58,7 +61,7 @@ impl TryFrom<RawMsgTimeoutOnClose> for MsgTimeoutOnClose {
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
                 .ok_or(PacketError::MissingHeight)?,
-            signer: raw_msg.signer.parse().map_err(PacketError::Signer)?,
+            signer: raw_msg.signer.into(),
         })
     }
 }

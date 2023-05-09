@@ -2,12 +2,10 @@ use tendermint::{block, consensus, evidence, public_key::Algorithm};
 
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
-use crate::core::ics04_channel::handler::ModuleExtras;
-use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
-use crate::core::ics04_channel::packet::Packet;
+use crate::core::ics04_channel::packet::{Acknowledgement, Packet};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use crate::core::ics26_routing::context::Module;
+use crate::core::router::{Module, ModuleExtras};
 use crate::prelude::*;
 use crate::signer::Signer;
 
@@ -38,7 +36,9 @@ pub fn get_dummy_proof() -> Vec<u8> {
 }
 
 pub fn get_dummy_account_id() -> Signer {
-    "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C".parse().unwrap()
+    "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C"
+        .to_string()
+        .into()
 }
 
 pub fn get_dummy_bech32_account() -> String {

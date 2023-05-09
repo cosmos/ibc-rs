@@ -1,7 +1,9 @@
+//! Implements the core [`ClientState`](crate::core::ics02_client::client_state::ClientState) trait
+//! for the Tendermint light client.
+
 mod misbehaviour;
 mod update_client;
 
-use crate::core::ics02_client::msgs::update_client::UpdateKind;
 use crate::prelude::*;
 
 use core::cmp::max;
@@ -26,28 +28,31 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConse
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
-use crate::core::ics02_client::client_state::{ClientState as Ics2ClientState, UpdatedState};
+use crate::core::ics02_client::client_state::{
+    ClientState as Ics2ClientState, UpdateKind, UpdatedState,
+};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics02_client::trust_threshold::TrustThreshold;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
+use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ClientUpgradePath};
-use crate::core::ics24_host::Path;
-use crate::timestamp::ZERO_DURATION;
+use crate::core::timestamp::ZERO_DURATION;
 use crate::Height;
 
 use super::client_type as tm_client_type;
+use super::trust_threshold::TrustThreshold;
 
 use crate::core::{ExecutionContext, ValidationContext};
 
-pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
+const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
+/// Contains the core implementation of the Tendermint light client
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClientState {
@@ -306,13 +311,9 @@ impl Ics2ClientState for ClientState {
         &self,
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
-        client_message: Any,
-        _update_kind: &UpdateKind,
+        header: Any,
     ) -> Result<Vec<Height>, ClientError> {
-        // we only expect headers to make it here; if a TmMisbehaviour makes it to here,
-        // then it is not a valid misbehaviour (check_for_misbehaviour returned false),
-        // and so transaction should fail.
-        let header = TmHeader::try_from(client_message)?;
+        let header = TmHeader::try_from(header)?;
         let header_height = header.height();
 
         let maybe_existing_consensus_state = {
@@ -425,8 +426,7 @@ impl Ics2ClientState for ClientState {
 
         upgraded_tm_client_state.zero_custom_fields();
         let client_state_value =
-            Protobuf::<RawTmClientState>::encode_vec(&upgraded_tm_client_state)
-                .map_err(ClientError::Encode)?;
+            Protobuf::<RawTmClientState>::encode_vec(&upgraded_tm_client_state);
 
         // Verify the proof of the upgraded client state
         merkle_proof_upgrade_client
@@ -447,8 +447,7 @@ impl Ics2ClientState for ClientState {
             key_path: cons_upgrade_path,
         };
 
-        let cons_state_value = Protobuf::<RawTmConsensusState>::encode_vec(&upgraded_tm_cons_state)
-            .map_err(ClientError::Encode)?;
+        let cons_state_value = Protobuf::<RawTmConsensusState>::encode_vec(&upgraded_tm_cons_state);
 
         // Verify the proof of the upgraded consensus state
         merkle_proof_upgrade_cons_state
@@ -728,16 +727,16 @@ impl From<ClientState> for Any {
     fn from(client_state: ClientState) -> Self {
         Any {
             type_url: TENDERMINT_CLIENT_STATE_TYPE_URL.to_string(),
-            value: Protobuf::<RawTmClientState>::encode_vec(&client_state)
-                .expect("encoding to `Any` from `TmClientState`"),
+            value: Protobuf::<RawTmClientState>::encode_vec(&client_state),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
-    use crate::prelude::*;
     use crate::Height;
     use core::time::Duration;
     use test_log::test;
@@ -751,10 +750,9 @@ mod tests {
     };
     use crate::clients::ics07_tendermint::error::Error;
     use crate::core::ics02_client::client_state::ClientState;
-    use crate::core::ics02_client::trust_threshold::TrustThreshold;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ChainId;
-    use crate::timestamp::ZERO_DURATION;
+    use crate::core::timestamp::ZERO_DURATION;
 
     #[derive(Clone, Debug, PartialEq)]
     struct ClientStateParams {

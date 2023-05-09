@@ -1,5 +1,11 @@
+//! Defines the `ClientType` format, typically used in chain IDs.
+
 use crate::prelude::*;
 use core::fmt::{Display, Error as FmtError, Formatter};
+
+use crate::core::ics24_host::{
+    identifier::validate::validate_client_type, identifier::IdentifierError,
+};
 
 #[cfg_attr(
     feature = "parity-scale-codec",
@@ -19,13 +25,23 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 pub struct ClientType(String);
 
 impl ClientType {
-    pub fn new(s: String) -> Self {
-        Self(s)
+    /// Constructs a new `ClientType` from the given `String` if it ends with a valid client identifier.
+    pub fn new(s: String) -> Result<Self, IdentifierError> {
+        let s_trim = s.trim();
+        validate_client_type(s_trim)?;
+        Ok(Self(s_trim.to_string()))
     }
 
     /// Yields this identifier as a borrowed `&str`
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+
+impl From<String> for ClientType {
+    /// Constructs a new `ClientType` from the given `String` without performing any validation.
+    fn from(value: String) -> Self {
+        Self(value)
     }
 }
 

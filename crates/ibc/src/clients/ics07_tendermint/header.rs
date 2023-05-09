@@ -1,3 +1,6 @@
+//! Defines the domain type for tendermint headers
+
+use crate::prelude::*;
 use alloc::string::ToString;
 use core::fmt::{Display, Error as FmtError, Formatter};
 
@@ -15,11 +18,12 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ChainId;
-use crate::timestamp::Timestamp;
-use crate::utils::pretty::{PrettySignedHeader, PrettyValidatorSet};
+use crate::core::timestamp::Timestamp;
 use crate::Height;
 
-pub const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
+use pretty::{PrettySignedHeader, PrettyValidatorSet};
+
+pub(crate) const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// Tendermint consensus header
@@ -79,6 +83,52 @@ impl Header {
             next_validators_hash: consensus_state.next_validators_hash,
         })
     }
+
+    pub fn verify_chain_id_version_matches_height(&self, chain_id: &ChainId) -> Result<(), Error> {
+        if self.height().revision_number() != chain_id.version() {
+            return Err(Error::MismatchHeaderChainId {
+                given: self.signed_header.header.chain_id.to_string(),
+                expected: chain_id.to_string(),
+            });
+        }
+        Ok(())
+    }
+
+    /// Checks if the fields of a given header are consistent with the trusted fields of this header.
+    pub fn validate_basic(&self) -> Result<(), Error> {
+        if self.height().revision_number() != self.trusted_height.revision_number() {
+            return Err(Error::MismatchHeightRevisions {
+                trusted_revision: self.trusted_height.revision_number(),
+                header_revision: self.height().revision_number(),
+            });
+        }
+
+        // We need to ensure that the trusted height (representing the
+        // height of the header already on chain for which this client update is
+        // based on) must be smaller than height of the new header that we're
+        // installing.
+        if self.trusted_height >= self.height() {
+            return Err(Error::InvalidHeaderHeight {
+                height: self.height().revision_height(),
+            });
+        }
+
+        if self.validator_set.hash() != self.signed_header.header.validators_hash {
+            return Err(Error::MismatchValidatorsHashes {
+                signed_header_validators_hash: self.signed_header.header.validators_hash,
+                validators_hash: self.validator_set.hash(),
+            });
+        }
+
+        if self.trusted_next_validator_set.hash() != self.signed_header.header.next_validators_hash
+        {
+            return Err(Error::MismatchValidatorsHashes {
+                signed_header_validators_hash: self.signed_header.header.next_validators_hash,
+                validators_hash: self.trusted_next_validator_set.hash(),
+            });
+        }
+        Ok(())
+    }
 }
 
 impl crate::core::ics02_client::header::Header for Header {
@@ -122,13 +172,6 @@ impl TryFrom<RawHeader> for Header {
                 .map_err(Error::InvalidRawHeader)?,
         };
 
-        if header.height().revision_number() != header.trusted_height.revision_number() {
-            return Err(Error::MismatchedRevisions {
-                current_revision: header.trusted_height.revision_number(),
-                update_revision: header.height().revision_number(),
-            });
-        }
-
         Ok(header)
     }
 }
@@ -154,13 +197,12 @@ impl From<Header> for Any {
     fn from(header: Header) -> Self {
         Any {
             type_url: TENDERMINT_HEADER_TYPE_URL.to_string(),
-            value: Protobuf::<RawHeader>::encode_vec(&header)
-                .expect("encoding to `Any` from `TmHeader`"),
+            value: Protobuf::<RawHeader>::encode_vec(&header),
         }
     }
 }
 
-pub fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
+fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
     RawHeader::decode(buf).map_err(Error::Decode)?.try_into()
 }
 
@@ -171,6 +213,49 @@ impl From<Header> for RawHeader {
             validator_set: Some(value.validator_set.into()),
             trusted_height: Some(value.trusted_height.into()),
             trusted_validators: Some(value.trusted_next_validator_set.into()),
+        }
+    }
+}
+
+mod pretty {
+    pub use super::*;
+    use crate::utils::pretty::PrettySlice;
+
+    pub struct PrettySignedHeader<'a>(pub &'a SignedHeader);
+
+    impl Display for PrettySignedHeader<'_> {
+        fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+            write!(
+            f,
+            "SignedHeader {{ header: {{ chain_id: {}, height: {} }}, commit: {{ height: {} }} }}",
+            self.0.header.chain_id, self.0.header.height, self.0.commit.height
+        )
+        }
+    }
+
+    pub struct PrettyValidatorSet<'a>(pub &'a ValidatorSet);
+
+    impl Display for PrettyValidatorSet<'_> {
+        fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+            let validator_addresses: Vec<_> = self
+                .0
+                .validators()
+                .iter()
+                .map(|validator| validator.address)
+                .collect();
+            if let Some(proposer) = self.0.proposer() {
+                match &proposer.name {
+                Some(name) => write!(f, "PrettyValidatorSet {{ validators: {}, proposer: {}, total_voting_power: {} }}", PrettySlice(&validator_addresses), name, self.0.total_voting_power()),
+                None =>  write!(f, "PrettyValidatorSet {{ validators: {}, proposer: None, total_voting_power: {} }}", PrettySlice(&validator_addresses), self.0.total_voting_power()),
+            }
+            } else {
+                write!(
+                f,
+                "PrettyValidatorSet {{ validators: {}, proposer: None, total_voting_power: {} }}",
+                PrettySlice(&validator_addresses),
+                self.0.total_voting_power()
+            )
+            }
         }
     }
 }

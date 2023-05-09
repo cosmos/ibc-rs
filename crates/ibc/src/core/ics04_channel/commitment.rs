@@ -1,7 +1,10 @@
-use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
+//! Types and utilities related to packet commitments.
+
 use crate::core::ics04_channel::timeout::TimeoutHeight;
+use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
-use crate::timestamp::Timestamp;
+
+use super::packet::Acknowledgement;
 
 /// Packet commitment
 #[cfg_attr(

@@ -1,3 +1,5 @@
+//! Defines the token transfer error type
+
 use core::convert::Infallible;
 use core::str::Utf8Error;
 use displaydoc::Display;
@@ -5,47 +7,32 @@ use ibc_proto::protobuf::Error as TendermintProtoError;
 use uint::FromDecStrErr;
 
 use crate::core::ics04_channel::channel::Order;
-use crate::core::ics04_channel::Version;
-use crate::core::ics24_host::error::ValidationError;
-use crate::core::ics24_host::identifier::{ChannelId, PortId};
+use crate::core::ics24_host::identifier::{ChannelId, IdentifierError, PortId};
 use crate::core::ContextError;
 use crate::prelude::*;
-use crate::signer::SignerError;
 
 #[derive(Display, Debug)]
 pub enum TokenTransferError {
     /// context error: `{0}`
     ContextError(ContextError),
+    /// invalid identifier: `{0}`
+    InvalidIdentifier(IdentifierError),
     /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
     DestinationChannelNotFound {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// invalid port identifier `{context}`, validation error: `{validation_error}`
-    InvalidPortId {
-        context: String,
-        validation_error: ValidationError,
-    },
-    /// invalid channel identifier `{context}`, validation error: `{validation_error}`
-    InvalidChannelId {
-        context: String,
-        validation_error: ValidationError,
-    },
-    /// invalid packet timeout height value `{context}`
-    InvalidPacketTimeoutHeight { context: String },
-    /// invalid packet timeout timestamp value `{timestamp}`
-    InvalidPacketTimeoutTimestamp { timestamp: u64 },
     /// base denomination is empty
     EmptyBaseDenom,
     /// invalid prot id n trace at position: `{pos}`, validation error: `{validation_error}`
     InvalidTracePortId {
         pos: usize,
-        validation_error: ValidationError,
+        validation_error: IdentifierError,
     },
     /// invalid channel id in trace at position: `{pos}`, validation error: `{validation_error}`
     InvalidTraceChannelId {
         pos: usize,
-        validation_error: ValidationError,
+        validation_error: IdentifierError,
     },
     /// trace length must be even but got: `{len}`
     InvalidTraceLength { len: usize },
@@ -53,22 +40,10 @@ pub enum TokenTransferError {
     InvalidAmount(FromDecStrErr),
     /// invalid token
     InvalidToken,
-    /// failed to parse signer error: `{0}`
-    Signer(SignerError),
     /// expected `{expect_order}` channel, got `{got_order}`
     ChannelNotUnordered {
         expect_order: Order,
         got_order: Order,
-    },
-    /// expected version `{expect_version}` , got `{got_version}`
-    InvalidVersion {
-        expect_version: Version,
-        got_version: Version,
-    },
-    /// expected counterparty version `{expect_version}`, got `{got_version}`
-    InvalidCounterpartyVersion {
-        expect_version: Version,
-        got_version: Version,
     },
     /// channel cannot be closed
     CantCloseChannel,
@@ -102,14 +77,7 @@ impl std::error::Error for TokenTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::ContextError(e) => Some(e),
-            Self::InvalidPortId {
-                validation_error: e,
-                ..
-            } => Some(e),
-            Self::InvalidChannelId {
-                validation_error: e,
-                ..
-            } => Some(e),
+            Self::InvalidIdentifier(e) => Some(e),
             Self::InvalidTracePortId {
                 validation_error: e,
                 ..
@@ -119,7 +87,6 @@ impl std::error::Error for TokenTransferError {
                 ..
             } => Some(e),
             Self::InvalidAmount(e) => Some(e),
-            Self::Signer(e) => Some(e),
             Self::DecodeRawMsg(e) => Some(e),
             Self::Utf8Decode(e) => Some(e),
             _ => None,
@@ -130,5 +97,17 @@ impl std::error::Error for TokenTransferError {
 impl From<Infallible> for TokenTransferError {
     fn from(e: Infallible) -> Self {
         match e {}
+    }
+}
+
+impl From<ContextError> for TokenTransferError {
+    fn from(err: ContextError) -> TokenTransferError {
+        Self::ContextError(err)
+    }
+}
+
+impl From<IdentifierError> for TokenTransferError {
+    fn from(err: IdentifierError) -> TokenTransferError {
+        Self::InvalidIdentifier(err)
     }
 }

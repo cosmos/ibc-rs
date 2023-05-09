@@ -1,13 +1,16 @@
+//! Defines the packet type
+
 use crate::prelude::*;
 
 use core::str::FromStr;
 
+use derive_more::Into;
 use ibc_proto::ibc::core::channel::v1::Packet as RawPacket;
 
 use super::timeout::TimeoutHeight;
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
-use crate::timestamp::{Expiry::Expired, Timestamp};
+use crate::core::timestamp::{Expiry::Expired, Timestamp};
 use crate::Height;
 
 /// Enumeration of proof carrying ICS4 message, helper for relayer.
@@ -20,6 +23,7 @@ pub enum PacketMsgType {
     TimeoutOnClose,
 }
 
+/// Packet receipt, used over unordered channels.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -107,6 +111,9 @@ impl core::fmt::Display for Sequence {
     }
 }
 
+/// The packet type; this is what applications send to one another.
+///
+/// Each application defines the structure of the `data` field.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -193,7 +200,7 @@ impl Packet {
     pub fn timed_out(&self, dst_chain_ts: &Timestamp, dst_chain_height: Height) -> bool {
         let height_timed_out = self.timeout_height_on_b.has_expired(dst_chain_height);
 
-        let timestamp_timed_out = self.timeout_timestamp_on_b != Timestamp::none()
+        let timestamp_timed_out = self.timeout_timestamp_on_b.is_set()
             && dst_chain_ts.check_expiry(&self.timeout_timestamp_on_b) == Expired;
 
         height_timed_out || timestamp_timed_out
@@ -225,6 +232,10 @@ impl TryFrom<RawPacket> for Packet {
             return Err(PacketError::ZeroPacketSequence);
         }
 
+        if raw_pkt.data.is_empty() {
+            return Err(PacketError::ZeroPacketData);
+        }
+
         // Note: ibc-go currently (July 2022) incorrectly treats the timeout
         // heights `{revision_number : >0, revision_height: 0}` as valid
         // timeouts. However, heights with `revision_height == 0` are invalid in
@@ -238,31 +249,20 @@ impl TryFrom<RawPacket> for Packet {
             .try_into()
             .map_err(|_| PacketError::InvalidTimeoutHeight)?;
 
-        if raw_pkt.data.is_empty() {
-            return Err(PacketError::ZeroPacketData);
-        }
-
         let timeout_timestamp_on_b = Timestamp::from_nanoseconds(raw_pkt.timeout_timestamp)
             .map_err(PacketError::InvalidPacketTimestamp)?;
 
+        // Packet timeout height and packet timeout timestamp cannot both be unset.
+        if !packet_timeout_height.is_set() && !timeout_timestamp_on_b.is_set() {
+            return Err(PacketError::MissingTimeout);
+        }
+
         Ok(Packet {
             seq_on_a: Sequence::from(raw_pkt.sequence),
-            port_id_on_a: raw_pkt
-                .source_port
-                .parse()
-                .map_err(PacketError::Identifier)?,
-            chan_id_on_a: raw_pkt
-                .source_channel
-                .parse()
-                .map_err(PacketError::Identifier)?,
-            port_id_on_b: raw_pkt
-                .destination_port
-                .parse()
-                .map_err(PacketError::Identifier)?,
-            chan_id_on_b: raw_pkt
-                .destination_channel
-                .parse()
-                .map_err(PacketError::Identifier)?,
+            port_id_on_a: raw_pkt.source_port.parse()?,
+            chan_id_on_a: raw_pkt.source_channel.parse()?,
+            port_id_on_b: raw_pkt.destination_port.parse()?,
+            chan_id_on_b: raw_pkt.destination_channel.parse()?,
             data: raw_pkt.data,
             timeout_height_on_b: packet_timeout_height,
             timeout_timestamp_on_b,
@@ -281,6 +281,49 @@ impl From<Packet> for RawPacket {
             data: packet.data,
             timeout_height: packet.timeout_height_on_b.into(),
             timeout_timestamp: packet.timeout_timestamp_on_b.nanoseconds(),
+        }
+    }
+}
+
+/// A generic Acknowledgement type that modules may interpret as they like.
+/// An acknowledgement cannot be empty.
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, Into)]
+pub struct Acknowledgement(Vec<u8>);
+
+impl Acknowledgement {
+    // Returns the data as a slice of bytes.
+    pub fn as_bytes(&self) -> &[u8] {
+        self.0.as_slice()
+    }
+}
+
+impl AsRef<[u8]> for Acknowledgement {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_slice()
+    }
+}
+
+impl TryFrom<Vec<u8>> for Acknowledgement {
+    type Error = PacketError;
+
+    fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
+        if bytes.is_empty() {
+            Err(PacketError::InvalidAcknowledgement)
+        } else {
+            Ok(Self(bytes))
         }
     }
 }
@@ -332,10 +375,10 @@ mod tests {
         }
 
         let proof_height = 10;
-        let default_raw_packet = get_dummy_raw_packet(proof_height, 0);
-        let raw_packet_no_timeout_or_timestamp = get_dummy_raw_packet(0, 0);
+        let default_raw_packet = get_dummy_raw_packet(proof_height, 1000);
+        let raw_packet_no_timeout_or_timestamp = get_dummy_raw_packet(10, 0);
 
-        let mut raw_packet_invalid_timeout_height = get_dummy_raw_packet(0, 0);
+        let mut raw_packet_invalid_timeout_height = get_dummy_raw_packet(0, 10);
         raw_packet_invalid_timeout_height.timeout_height = Some(RawHeight {
             revision_number: 1,
             revision_height: 0,
@@ -351,7 +394,7 @@ mod tests {
                 // Note: ibc-go currently (July 2022) incorrectly rejects this
                 // case, even though it is allowed in ICS-4.
                 name: "Packet with no timeout of timestamp".to_string(),
-                raw: raw_packet_no_timeout_or_timestamp,
+                raw: raw_packet_no_timeout_or_timestamp.clone(),
                 want_pass: true,
             },
             Test {
@@ -470,6 +513,14 @@ mod tests {
                 },
                 want_pass: true,
             },
+            Test {
+                name: "Missing both timeout height and timestamp".to_string(),
+                raw: RawPacket {
+                    timeout_height: None,
+                    ..raw_packet_no_timeout_or_timestamp
+                },
+                want_pass: false,
+            }
         ];
 
         for test in tests {
