@@ -12,5 +12,5 @@ pub mod types;
 pub(crate) const SOLOMACHINE_CLIENT_TYPE: &str = "07-solomachine";
 
 pub fn client_type() -> ClientType {
-    ClientType::new(SOLOMACHINE_CLIENT_TYPE.to_string())
+    ClientType::from(SOLOMACHINE_CLIENT_TYPE.to_string())
 }

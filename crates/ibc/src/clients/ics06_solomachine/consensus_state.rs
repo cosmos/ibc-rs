@@ -1,8 +1,8 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
+use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
-use crate::timestamp::Timestamp;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::solomachine::v1::ConsensusState as RawSolConsensusState;
 use ibc_proto::protobuf::Protobuf;
@@ -114,8 +114,7 @@ impl From<ConsensusState> for Any {
     fn from(consensus_state: ConsensusState) -> Self {
         Any {
             type_url: SOLOMACHINE_CONSENSUS_STATE_TYPE_URL.to_string(),
-            value: Protobuf::<RawSolConsensusState>::encode_vec(&consensus_state)
-                .expect("encoding to `Any` from `RawSolConsensusState`"),
+            value: Protobuf::<RawSolConsensusState>::encode_vec(&consensus_state),
         }
     }
 }

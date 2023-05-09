@@ -94,8 +94,7 @@ impl From<Misbehaviour> for Any {
     fn from(misbehaviour: Misbehaviour) -> Self {
         Any {
             type_url: SOLOMACHINE_MISBEHAVIOUR_TYPE_URL.to_string(),
-            value: Protobuf::<RawSolMisbehaviour>::encode_vec(&misbehaviour)
-                .expect("encoding to `Any` from `RawSolMisbehaviour`"),
+            value: Protobuf::<RawSolMisbehaviour>::encode_vec(&misbehaviour),
         }
     }
 }

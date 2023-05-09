@@ -1,15 +1,15 @@
 use crate::clients::ics06_solomachine::consensus_state::ConsensusState as SoloMachineConsensusState;
 use crate::clients::ics06_solomachine::error::Error;
+use crate::core::ics02_client::client_state::UpdateKind;
 use crate::core::ics02_client::client_state::{ClientState as Ics2ClientState, UpdatedState};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics02_client::msgs::update_client::UpdateKind;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::core::ics24_host::Path;
+use crate::core::ics24_host::path::Path;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 use crate::Height;
@@ -149,8 +149,7 @@ impl Ics2ClientState for ClientState {
         &self,
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
-        client_message: Any,
-        update_kind: &UpdateKind,
+        header: Any,
     ) -> Result<Vec<Height>, ClientError> {
         todo!()
     }
@@ -296,8 +295,7 @@ impl From<ClientState> for Any {
     fn from(client_state: ClientState) -> Self {
         Any {
             type_url: SOLOMACHINE_CLIENT_STATE_TYPE_URL.to_string(),
-            value: Protobuf::<RawSolClientState>::encode_vec(&client_state)
-                .expect("encoding to `Any` from `RawSolClientState`"),
+            value: Protobuf::<RawSolClientState>::encode_vec(&client_state),
         }
     }
 }

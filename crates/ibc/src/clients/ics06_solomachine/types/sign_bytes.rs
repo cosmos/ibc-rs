@@ -1,6 +1,6 @@
 use crate::clients::ics06_solomachine::error::Error;
+use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
-use crate::timestamp::Timestamp;
 use ibc_proto::ibc::lightclients::solomachine::v1::SignBytes as RawSignBytes;
 
 use super::DataType;

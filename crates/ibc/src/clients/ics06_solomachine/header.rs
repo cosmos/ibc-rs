@@ -1,7 +1,7 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::core::ics02_client::error::ClientError;
+use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
-use crate::timestamp::Timestamp;
 use crate::Height;
 use bytes::Buf;
 use core::fmt::{Display, Error as FmtError, Formatter};
@@ -82,8 +82,7 @@ impl From<Header> for Any {
     fn from(header: Header) -> Self {
         Any {
             type_url: SOLOMACHINE_HEADER_TYPE_URL.to_string(),
-            value: Protobuf::<RawSolHeader>::encode_vec(&header)
-                .expect("encoding to `Any` from `TmHeader`"),
+            value: Protobuf::<RawSolHeader>::encode_vec(&header),
         }
     }
 }

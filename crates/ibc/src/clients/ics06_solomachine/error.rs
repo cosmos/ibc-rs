@@ -2,7 +2,7 @@ use crate::core::ics04_channel::error::ChannelError;
 use crate::prelude::*;
 
 use crate::core::ics02_client::error::ClientError;
-use crate::timestamp::ParseTimestampError;
+use crate::core::timestamp::ParseTimestampError;
 use displaydoc::Display;
 
 #[derive(Debug, Display)]
