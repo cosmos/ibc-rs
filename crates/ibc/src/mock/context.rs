@@ -590,8 +590,7 @@ impl MockContext {
         )
     }
 
-    #[inline]
-    fn latest_height(&self) -> Height {
+    pub fn latest_height(&self) -> Height {
         self.history
             .last()
             .expect("history cannot be empty")
@@ -731,6 +730,7 @@ impl ValidationContext for MockContext {
 
     fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ContextError> {
         if let Ok(client_state) = TmClientState::try_from(client_state.clone()) {
+            client_state.validate().map_err(ClientError::from)?;
             Ok(client_state.into_box())
         } else if let Ok(client_state) = MockClientState::try_from(client_state.clone()) {
             Ok(client_state.into_box())

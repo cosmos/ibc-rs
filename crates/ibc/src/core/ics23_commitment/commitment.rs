@@ -42,6 +42,10 @@ impl CommitmentRoot {
     pub fn into_vec(self) -> Vec<u8> {
         self.bytes
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.bytes.is_empty()
+    }
 }
 
 impl From<Vec<u8>> for CommitmentRoot {

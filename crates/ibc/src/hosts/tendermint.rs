@@ -6,6 +6,7 @@ use ibc_proto::google::protobuf::Any;
 
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 use crate::core::ics02_client::client_state::ClientState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::ChainId;
@@ -29,6 +30,8 @@ pub trait ValidateSelfClientContext {
                 reason: "client must be a tendermint client".to_string(),
             })
             .map_err(ContextError::ConnectionError)?;
+
+        tm_client_state.validate().map_err(ClientError::from)?;
 
         tm_client_state.confirm_not_frozen()?;
 
