@@ -36,7 +36,7 @@ pub enum Path {
     Commitment(CommitmentPath),
     Ack(AckPath),
     Receipt(ReceiptPath),
-    Upgrade(ClientUpgradePath),
+    UpgradeClient(UpgradeClientPath),
 }
 
 #[cfg_attr(
@@ -356,7 +356,7 @@ impl ReceiptPath {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// Paths that are specific for client upgrades.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-pub enum ClientUpgradePath {
+pub enum UpgradeClientPath {
     #[display(fmt = "{UPGRADED_IBC_STATE}/{_0}/{UPGRADED_CLIENT_STATE}")]
     UpgradedClientState(u64),
     #[display(fmt = "{UPGRADED_IBC_STATE}/{_0}/{UPGRADED_CLIENT_CONSENSUS_STATE}")]
@@ -824,9 +824,9 @@ fn parse_upgrades(components: &[&str]) -> Option<Path> {
     };
 
     match last {
-        UPGRADED_CLIENT_STATE => Some(ClientUpgradePath::UpgradedClientState(height).into()),
+        UPGRADED_CLIENT_STATE => Some(UpgradeClientPath::UpgradedClientState(height).into()),
         UPGRADED_CLIENT_CONSENSUS_STATE => {
-            Some(ClientUpgradePath::UpgradedClientConsensusState(height).into())
+            Some(UpgradeClientPath::UpgradedClientConsensusState(height).into())
         }
         _ => None,
     }
@@ -1186,7 +1186,9 @@ mod tests {
 
         assert_eq!(
             parse_upgrades(&components),
-            Some(Path::Upgrade(ClientUpgradePath::UpgradedClientState(0))),
+            Some(Path::UpgradeClient(UpgradeClientPath::UpgradedClientState(
+                0
+            ))),
         );
 
         let path = "upgradedIBCState/0/upgradedConsState";
@@ -1194,8 +1196,8 @@ mod tests {
 
         assert_eq!(
             parse_upgrades(&components),
-            Some(Path::Upgrade(
-                ClientUpgradePath::UpgradedClientConsensusState(0)
+            Some(Path::UpgradeClient(
+                UpgradeClientPath::UpgradedClientConsensusState(0)
             )),
         )
     }
@@ -1208,7 +1210,7 @@ mod tests {
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
-            Path::Upgrade(ClientUpgradePath::UpgradedClientState(0)),
+            Path::UpgradeClient(UpgradeClientPath::UpgradedClientState(0)),
         );
     }
 
@@ -1220,7 +1222,7 @@ mod tests {
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
-            Path::Upgrade(ClientUpgradePath::UpgradedClientConsensusState(0)),
+            Path::UpgradeClient(UpgradeClientPath::UpgradedClientConsensusState(0)),
         );
     }
 }

@@ -40,7 +40,7 @@ use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::Path;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ClientUpgradePath};
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, UpgradeClientPath};
 use crate::core::timestamp::ZERO_DURATION;
 use crate::Height;
 
@@ -455,7 +455,7 @@ impl Ics2ClientState for ClientState {
 
         // Construct the merkle path for the client state
         let mut client_upgrade_path = upgrade_path.clone();
-        client_upgrade_path.push(ClientUpgradePath::UpgradedClientState(last_height).to_string());
+        client_upgrade_path.push(UpgradeClientPath::UpgradedClientState(last_height).to_string());
 
         let client_upgrade_merkle_path = MerklePath {
             key_path: client_upgrade_path,
@@ -482,7 +482,7 @@ impl Ics2ClientState for ClientState {
         // Construct the merkle path for the consensus state
         let mut cons_upgrade_path = upgrade_path;
         cons_upgrade_path
-            .push(ClientUpgradePath::UpgradedClientConsensusState(last_height).to_string());
+            .push(UpgradeClientPath::UpgradedClientConsensusState(last_height).to_string());
         let cons_upgrade_merkle_path = MerklePath {
             key_path: cons_upgrade_path,
         };
