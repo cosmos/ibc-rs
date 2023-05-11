@@ -185,6 +185,7 @@ mod tests {
         msgs::transfer::test_util::get_dummy_msg_transfer, msgs::transfer::MsgTransfer,
         packet::PacketData, PrefixedCoin, MODULE_ID_STR,
     };
+    use crate::core::dispatch;
     use crate::core::events::{IbcEvent, MessageEvent};
     use crate::core::ics02_client::msgs::{
         create_client::MsgCreateClient, update_client::MsgUpdateClient,
@@ -221,14 +222,12 @@ mod tests {
     };
     use crate::core::ics04_channel::timeout::TimeoutHeight;
     use crate::core::ics04_channel::Version as ChannelVersion;
-    use crate::core::ics23_commitment::commitment::test_util::get_dummy_merkle_proof;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
     use crate::core::ics24_host::path::CommitmentPath;
     use crate::core::msgs::MsgEnvelope;
     use crate::core::router::ModuleId;
     use crate::core::timestamp::Timestamp;
-    use crate::core::{dispatch, ValidationContext};
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
     use crate::mock::context::MockContext;
@@ -538,7 +537,7 @@ mod tests {
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
                     header: MockHeader::new(update_client_height_after_second_send).into(),
-                    signer: default_signer.clone(),
+                    signer: default_signer,
                 }))
                 .into(),
                 want_pass: true,
@@ -579,30 +578,20 @@ mod tests {
             },
             Test {
                 name: "Client upgrade successful".to_string(),
-                msg: MsgEnvelope::Client(ClientMsg::UpgradeClient(MsgUpgradeClient::new(
-                    client_id.clone(),
-                    MockClientState::new(MockHeader::new(upgrade_client_height)).into(),
-                    MockConsensusState::new(MockHeader::new(upgrade_client_height)).into(),
-                    get_dummy_merkle_proof(),
-                    get_dummy_merkle_proof(),
-                    default_signer.clone(),
-                )))
+                msg: MsgEnvelope::Client(ClientMsg::UpgradeClient(
+                    MsgUpgradeClient::new_dummy(upgrade_client_height)
+                        .with_client_id(client_id.clone()),
+                ))
                 .into(),
-                // Temporarily set to false due to the fact that the client
-                // upgrade is not yet implemented
-                want_pass: cfg!(feature = "upgrade_client"),
+                want_pass: true,
                 state_check: None,
             },
             Test {
                 name: "Client upgrade un-successful".to_string(),
-                msg: MsgEnvelope::Client(ClientMsg::UpgradeClient(MsgUpgradeClient::new(
-                    client_id,
-                    MockClientState::new(MockHeader::new(upgrade_client_height_second)).into(),
-                    MockConsensusState::new(MockHeader::new(upgrade_client_height_second)).into(),
-                    get_dummy_merkle_proof(),
-                    get_dummy_merkle_proof(),
-                    default_signer,
-                )))
+                msg: MsgEnvelope::Client(ClientMsg::UpgradeClient(
+                    MsgUpgradeClient::new_dummy(upgrade_client_height_second)
+                        .with_client_id(client_id),
+                ))
                 .into(),
                 want_pass: false,
                 state_check: None,
