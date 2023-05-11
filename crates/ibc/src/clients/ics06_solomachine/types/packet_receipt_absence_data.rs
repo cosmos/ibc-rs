@@ -1,6 +1,6 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::prelude::*;
-use ibc_proto::ibc::lightclients::solomachine::v1::PacketReceiptAbsenceData as RawPacketReceiptAbsenceData;
+use ibc_proto::ibc::lightclients::solomachine::v2::PacketReceiptAbsenceData as RawPacketReceiptAbsenceData;
 use ibc_proto::protobuf::Protobuf;
 
 /// PacketReceiptAbsenceData returns the SignBytes data for

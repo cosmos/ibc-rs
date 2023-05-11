@@ -1,6 +1,6 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::prelude::*;
-use ibc_proto::ibc::lightclients::solomachine::v1::PacketCommitmentData as RawPacketCommitmentData;
+use ibc_proto::ibc::lightclients::solomachine::v2::PacketCommitmentData as RawPacketCommitmentData;
 use ibc_proto::protobuf::Protobuf;
 
 /// PacketCommitmentData returns the SignBytes data for packet commitment

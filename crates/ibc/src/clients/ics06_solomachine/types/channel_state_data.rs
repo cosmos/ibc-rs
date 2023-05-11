@@ -1,7 +1,7 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::prelude::*;
-use ibc_proto::ibc::lightclients::solomachine::v1::ChannelStateData as RawChannelStateData;
+use ibc_proto::ibc::lightclients::solomachine::v2::ChannelStateData as RawChannelStateData;
 use ibc_proto::protobuf::Protobuf;
 
 /// ChannelStateData returns the SignBytes data for channel state

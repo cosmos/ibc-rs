@@ -1,7 +1,7 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
-use ibc_proto::ibc::lightclients::solomachine::v1::TimestampedSignatureData as RawTimestampedSignatureData;
+use ibc_proto::ibc::lightclients::solomachine::v2::TimestampedSignatureData as RawTimestampedSignatureData;
 use ibc_proto::protobuf::Protobuf;
 
 /// TimestampedSignatureData contains the signature data and the timestamp of the

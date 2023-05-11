@@ -1,6 +1,6 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::prelude::*;
-use ibc_proto::ibc::lightclients::solomachine::v1::PacketAcknowledgementData as RawPacketAcknowledgementData;
+use ibc_proto::ibc::lightclients::solomachine::v2::PacketAcknowledgementData as RawPacketAcknowledgementData;
 use ibc_proto::protobuf::Protobuf;
 
 /// PacketAcknowledgementData returns the SignBytes data for acknowledgement

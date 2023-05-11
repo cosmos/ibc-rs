@@ -1,6 +1,6 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::prelude::*;
-use ibc_proto::ibc::lightclients::solomachine::v1::NextSequenceRecvData as RawNextSequenceRecvData;
+use ibc_proto::ibc::lightclients::solomachine::v2::NextSequenceRecvData as RawNextSequenceRecvData;
 use ibc_proto::protobuf::Protobuf;
 
 /// NextSequenceRecvData returns the SignBytes data for verification of the next

@@ -1,7 +1,7 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::prelude::*;
 use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::lightclients::solomachine::v1::HeaderData as RawHeaderData;
+use ibc_proto::ibc::lightclients::solomachine::v2::HeaderData as RawHeaderData;
 use ibc_proto::protobuf::Protobuf;
 
 /// HeaderData returns the SignBytes data for update verification.

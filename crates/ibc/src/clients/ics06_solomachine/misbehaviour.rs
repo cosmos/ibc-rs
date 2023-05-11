@@ -4,7 +4,7 @@ use crate::core::ics24_host::identifier::ClientId;
 use crate::{prelude::*, Height};
 use bytes::Buf;
 use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::lightclients::solomachine::v1::Misbehaviour as RawSolMisbehaviour;
+use ibc_proto::ibc::lightclients::solomachine::v2::Misbehaviour as RawSolMisbehaviour;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 

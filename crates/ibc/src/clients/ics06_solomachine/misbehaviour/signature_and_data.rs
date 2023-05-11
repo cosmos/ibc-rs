@@ -2,7 +2,7 @@ use crate::clients::ics06_solomachine::error::Error;
 use crate::clients::ics06_solomachine::types::DataType;
 use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
-use ibc_proto::ibc::lightclients::solomachine::v1::SignatureAndData as RawSignatureAndData;
+use ibc_proto::ibc::lightclients::solomachine::v2::SignatureAndData as RawSignatureAndData;
 use ibc_proto::protobuf::Protobuf;
 
 /// SignatureAndData contains a signature and the data signed over to create that

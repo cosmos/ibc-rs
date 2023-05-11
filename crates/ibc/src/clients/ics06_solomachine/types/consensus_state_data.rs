@@ -1,7 +1,7 @@
 use crate::clients::ics06_solomachine::consensus_state::ConsensusState;
 use crate::clients::ics06_solomachine::error::Error;
 use crate::prelude::*;
-use ibc_proto::ibc::lightclients::solomachine::v1::ConsensusStateData as RawConsensusStateData;
+use ibc_proto::ibc::lightclients::solomachine::v2::ConsensusStateData as RawConsensusStateData;
 use ibc_proto::protobuf::Protobuf;
 
 /// ConsensusStateData returns the SignBytes data for consensus state

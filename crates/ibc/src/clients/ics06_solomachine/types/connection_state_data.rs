@@ -1,7 +1,7 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::prelude::*;
-use ibc_proto::ibc::lightclients::solomachine::v1::ConnectionStateData as RawConnectionStateData;
+use ibc_proto::ibc::lightclients::solomachine::v2::ConnectionStateData as RawConnectionStateData;
 use ibc_proto::protobuf::Protobuf;
 
 /// ConnectionStateData returns the SignBytes data for connection state

@@ -16,7 +16,7 @@ use crate::Height;
 use core::time::Duration;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
-use ibc_proto::ibc::lightclients::solomachine::v1::ClientState as RawSolClientState;
+use ibc_proto::ibc::lightclients::solomachine::v2::ClientState as RawSolClientState;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
@@ -30,7 +30,7 @@ pub struct ClientState {
     /// latest sequence of the client state
     pub sequence: Height,
     /// frozen sequence of the solo machine
-    pub frozen_sequence: Option<Height>,
+    pub is_frozen: bool,
     pub consensus_state: Option<SoloMachineConsensusState>,
     /// when set to true, will allow governance to update a solo machine client.
     /// The client will be unfrozen if it is frozen.
@@ -41,13 +41,13 @@ impl ClientState {
     /// Create a new ClientState Instance.
     pub fn new(
         sequence: Height,
-        frozen_sequence: Option<Height>,
+        is_frozen: bool,
         consensus_state: Option<SoloMachineConsensusState>,
         allow_update_after_proposal: bool,
     ) -> Self {
         Self {
             sequence,
-            frozen_sequence,
+            is_frozen,
             consensus_state,
             allow_update_after_proposal,
         }
@@ -84,9 +84,9 @@ impl Ics2ClientState for ClientState {
 
     /// Assert that the client is not frozen
     fn confirm_not_frozen(&self) -> Result<(), ClientError> {
-        if let Some(frozen_height) = self.frozen_sequence {
+        if self.is_frozen {
             return Err(ClientError::ClientFrozen {
-                description: format!("the client is frozen at height {frozen_height}"),
+                description: format!("the client is frozen"),
             });
         }
         Ok(())
@@ -229,18 +229,13 @@ impl TryFrom<RawSolClientState> for ClientState {
 
     fn try_from(raw: RawSolClientState) -> Result<Self, Self::Error> {
         let sequence = Height::new(0, raw.sequence).map_err(Error::InvalidHeight)?;
-        let frozen_sequence = if raw.frozen_sequence == 0 {
-            None
-        } else {
-            Some(Height::new(0, raw.frozen_sequence).map_err(Error::InvalidHeight)?)
-        };
 
         let consensus_state: Option<SoloMachineConsensusState> =
             raw.consensus_state.map(TryInto::try_into).transpose()?;
 
         Ok(Self {
             sequence,
-            frozen_sequence,
+            is_frozen: raw.is_frozen,
             consensus_state,
             allow_update_after_proposal: raw.allow_update_after_proposal,
         })
@@ -250,15 +245,11 @@ impl TryFrom<RawSolClientState> for ClientState {
 impl From<ClientState> for RawSolClientState {
     fn from(value: ClientState) -> Self {
         let sequence = value.sequence.revision_height();
-        let frozen_sequence = if let Some(seq) = value.frozen_sequence {
-            seq.revision_height()
-        } else {
-            0
-        };
+
         let consensus_state = value.consensus_state.map(Into::into);
         Self {
             sequence,
-            frozen_sequence,
+            is_frozen: value.is_frozen,
             consensus_state,
             allow_update_after_proposal: value.allow_update_after_proposal,
         }

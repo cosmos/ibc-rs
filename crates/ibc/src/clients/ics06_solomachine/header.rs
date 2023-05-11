@@ -6,7 +6,7 @@ use crate::Height;
 use bytes::Buf;
 use core::fmt::{Display, Error as FmtError, Formatter};
 use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::lightclients::solomachine::v1::Header as RawSolHeader;
+use ibc_proto::ibc::lightclients::solomachine::v2::Header as RawSolHeader;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 pub const SOLOMACHINE_HEADER_TYPE_URL: &str = "/ibc.lightclients.solomachine.v1.Header";
