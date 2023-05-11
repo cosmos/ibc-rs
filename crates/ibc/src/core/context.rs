@@ -25,7 +25,6 @@ use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
-    UpgradeClientPath,
 };
 use crate::core::router::Router;
 use crate::core::timestamp::Timestamp;
@@ -116,12 +115,6 @@ pub trait ValidationContext: Router {
     /// Returns the ClientState for the given identifier `client_id`.
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError>;
 
-    /// Returns the upgraded `ClientState` for the height that upgrade is planned.
-    fn upgraded_client_state(
-        &self,
-        client_upgrade_path: &UpgradeClientPath,
-    ) -> Result<Box<dyn ClientState>, ContextError>;
-
     /// Tries to decode the given `client_state` into a concrete light client state.
     fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ContextError>;
 
@@ -147,12 +140,6 @@ pub trait ValidationContext: Router {
         client_id: &ClientId,
         height: &Height,
     ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
-
-    /// Returns the upgraded `ConsensusState` for the height that upgrade is planned.
-    fn upgraded_consensus_state(
-        &self,
-        upgraded_cons_state_path: &UpgradeClientPath,
-    ) -> Result<Box<dyn ConsensusState>, ContextError>;
 
     /// Returns the current height of the local chain.
     fn host_height(&self) -> Result<Height, ContextError>;
@@ -285,25 +272,11 @@ pub trait ExecutionContext: ValidationContext {
         client_state: Box<dyn ClientState>,
     ) -> Result<(), ContextError>;
 
-    /// Sets the upgraded `ClientState` in the upgrade path
-    fn store_upgraded_client_state(
-        &mut self,
-        upgraded_client_state_path: UpgradeClientPath,
-        upgraded_client_state: Box<dyn ClientState>,
-    ) -> Result<(), ContextError>;
-
     /// Called upon successful client creation and update
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
         consensus_state: Box<dyn ConsensusState>,
-    ) -> Result<(), ContextError>;
-
-    /// Sets the upgraded `ConsensusState` in the upgrade path
-    fn store_upgraded_consensus_state(
-        &mut self,
-        upgraded_cons_state_path: UpgradeClientPath,
-        upgraded_consensus_state: Box<dyn ConsensusState>,
     ) -> Result<(), ContextError>;
 
     /// Called upon client creation.

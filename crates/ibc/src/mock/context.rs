@@ -9,7 +9,6 @@ use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
-    UpgradeClientPath,
 };
 use crate::prelude::*;
 
@@ -729,13 +728,6 @@ impl ValidationContext for MockContext {
         .map_err(ContextError::ClientError)
     }
 
-    fn upgraded_client_state(
-        &self,
-        _upgraded_client_state_path: &UpgradeClientPath,
-    ) -> Result<Box<dyn ClientState>, ContextError> {
-        unimplemented!()
-    }
-
     fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ContextError> {
         if let Ok(client_state) = TmClientState::try_from(client_state.clone()) {
             client_state.validate().map_err(ClientError::from)?;
@@ -830,13 +822,6 @@ impl ValidationContext for MockContext {
             }
         }
         Ok(None)
-    }
-
-    fn upgraded_consensus_state(
-        &self,
-        _upgraded_cons_state_path: &UpgradeClientPath,
-    ) -> Result<Box<dyn ConsensusState>, ContextError> {
-        unimplemented!()
     }
 
     fn host_height(&self) -> Result<Height, ContextError> {
@@ -1151,14 +1136,6 @@ impl ExecutionContext for MockContext {
         Ok(())
     }
 
-    fn store_upgraded_client_state(
-        &mut self,
-        _upgraded_client_state_path: UpgradeClientPath,
-        _upgraded_client_state: Box<dyn ClientState>,
-    ) -> Result<(), ContextError> {
-        unimplemented!()
-    }
-
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
@@ -1179,14 +1156,6 @@ impl ExecutionContext for MockContext {
             .consensus_states
             .insert(height, consensus_state);
         Ok(())
-    }
-
-    fn store_upgraded_consensus_state(
-        &mut self,
-        _upgraded_cons_state_path: UpgradeClientPath,
-        _upgraded_consensus_state: Box<dyn ConsensusState>,
-    ) -> Result<(), ContextError> {
-        unimplemented!()
     }
 
     fn increase_client_counter(&mut self) {
