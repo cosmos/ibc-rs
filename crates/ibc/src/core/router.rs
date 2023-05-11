@@ -132,7 +132,6 @@ impl ModuleExtras {
 
 /// The trait that defines an IBC application
 pub trait Module: Debug {
-    #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init_validate(
         &self,
         order: Order,
@@ -143,7 +142,6 @@ pub trait Module: Debug {
         version: &Version,
     ) -> Result<Version, ChannelError>;
 
-    #[allow(clippy::too_many_arguments)]
     fn on_chan_open_init_execute(
         &mut self,
         order: Order,
@@ -154,7 +152,6 @@ pub trait Module: Debug {
         version: &Version,
     ) -> Result<(ModuleExtras, Version), ChannelError>;
 
-    #[allow(clippy::too_many_arguments)]
     fn on_chan_open_try_validate(
         &self,
         order: Order,
@@ -165,7 +162,6 @@ pub trait Module: Debug {
         counterparty_version: &Version,
     ) -> Result<Version, ChannelError>;
 
-    #[allow(clippy::too_many_arguments)]
     fn on_chan_open_try_execute(
         &mut self,
         order: Order,
