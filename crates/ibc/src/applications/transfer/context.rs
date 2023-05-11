@@ -114,7 +114,6 @@ pub fn cosmos_adr028_escrow_address(port_id: &PortId, channel_id: &ChannelId) ->
     hash
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_init_validate(
     ctx: &impl TokenTransferValidationContext,
     order: Order,
@@ -147,7 +146,6 @@ pub fn on_chan_open_init_validate(
     Ok(())
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_init_execute(
     _ctx: &mut impl TokenTransferExecutionContext,
     _order: Order,
@@ -160,7 +158,6 @@ pub fn on_chan_open_init_execute(
     Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_try_validate(
     _ctx: &impl TokenTransferValidationContext,
     order: Order,
@@ -184,7 +181,6 @@ pub fn on_chan_open_try_validate(
     Ok(())
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn on_chan_open_try_execute(
     _ctx: &mut impl TokenTransferExecutionContext,
     _order: Order,
@@ -242,6 +238,7 @@ pub fn on_chan_close_init_validate(
 ) -> Result<(), TokenTransferError> {
     Err(TokenTransferError::CantCloseChannel)
 }
+
 pub fn on_chan_close_init_execute(
     _ctx: &mut impl TokenTransferExecutionContext,
     _port_id: &PortId,
