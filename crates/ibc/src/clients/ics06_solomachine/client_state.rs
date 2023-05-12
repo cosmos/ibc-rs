@@ -10,7 +10,7 @@ use crate::core::ics23_commitment::commitment::{
 };
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::Path;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ClientUpgradePath};
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 use crate::core::timestamp::Timestamp;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
