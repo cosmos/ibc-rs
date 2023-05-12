@@ -3,33 +3,35 @@
 ## Changelog
 
 * 2023-01-25 Initial Proposal
+* 2023-01-30 [Accepted](https://github.com/cosmos/ibc-rs/pull/383)
+* 2023-05-10 Finalize Implementation
 
 ## Context
 
-The ability to upgrade is a crucial feature for IBC-connected chains, as it
+The ability to upgrade is a crucial feature for IBC-connected chains, which
 enables them to evolve and improve without limitations. The IBC module may not
-be affected by some upgrades, but some may require it to be upgraded as well to
-maintain high-value connections to other chains secure. For having this
-capability, chains that implement `IBC-rs` may bring various concerns and
-characteristics than Tendermint chains leading to different ways for upgrading
-their clients. However there are general rules that apply to all and can serve
-as a framework for any `IBC-rs` implementation. On this basis, this record aims
-to justify the chain-wide logic behind upgrading light clients, list requisites
-for validation and execution steps, determine the boundary between basic and
+be affected by some upgrades, but some may require the relevant client be
+upgraded as well to keep high-value connections to other chains secure. For
+having this capability, chains that implement `IBC-rs` may bring various
+concerns and characteristics than Tendermint-based chains leading to different
+ways for upgrading their clients. However there are general rules that apply to
+all and can serve as a framework for any implementation. This record aims to
+justify the chain-wide logic behind upgrading light clients, list requisites for
+validation and execution steps, determine the boundary between basic and
 upgrade-specific validations by an IBC handler, and explain Tendermint's upgrade
 client implementation within the
 [ics07_tendermint](../../crates/ibc/src/clients/ics07_tendermint).
 
 ## Decision
 
-In this section, after presenting rules that mainly derived from the IBC
-protocol and the review of the `IBC-Go` implementation, the upgrade client
-process for Tendermint chains is outlined in detail. Then, the design and
-implementation of this rationale in `IBC-rs` is explained.
+In this section, we first introduce the rules that are mainly derived from the
+IBC protocol, and the review of IBC-go implementation. Next, we will provide a
+detailed outline of the upgrade client process for Tendermint chains. Finally,
+we will explain how we have implemented this rationale in IBC-rs.
 
 ### Chain-wide Upgrade Rules
 
-#### Chain supports IBC upgrades?
+#### Chain supports IBC client upgrades?
 
 * IBC currently **ONLY** supports planned upgrades that are committed to in
   advance by the upgrading chain, in order for counterparty clients to maintain
@@ -74,7 +76,7 @@ and illustrate an example of client-specific upgrade.
 
 ### Upgrade Tendermint Clients
 
-This section is based on the `IBC-Go` procedure for client upgrades with a few
+This section is based on the `IBC-go` procedure for client upgrades with a few
 modifications to comply with the `IBC-rs` design patterns.
 
 #### Acceptable Client State Upgrades
@@ -318,9 +320,11 @@ previous section as mentioned:
    };
 
    upgraded_tm_client_state.zero_custom_fields();
-   let client_state_value =
-      Protobuf::<RawTmClientState>::encode_vec(&upgraded_tm_client_state)
-         .map_err(ClientError::Encode)?;
+
+   let mut client_state_value = Vec::new();
+   upgraded_client_state
+      .encode(&mut client_state_value)
+      .map_err(ClientError::Encode)?;
 
    // Verify the proof of the upgraded client state
    merkle_proof_upgrade_client
@@ -345,7 +349,9 @@ previous section as mentioned:
       key_path: cons_upgrade_path,
    };
 
-   let cons_state_value = Protobuf::<RawTmConsensusState>::encode_vec(&upgraded_tm_cons_state)
+   let mut cons_state_value = Vec::new();
+   upgraded_consensus_state
+      .encode(&mut cons_state_value)
       .map_err(ClientError::Encode)?;
 
    // Verify the proof of the upgraded consensus state
@@ -390,14 +396,14 @@ previous section as mentioned:
 
 ## Status
 
-Proposed
+Accepted
 
 ## Consequences
 
 ### Positive
 
 * Resolve the issue of unimplemented upgrade client message in `IBC-rs`
-* Keep tendermint upgrade client implementation close to the `IBC-Go`
+* Keep tendermint upgrade client implementation close to the `IBC-go`
 
 ### Negative
 

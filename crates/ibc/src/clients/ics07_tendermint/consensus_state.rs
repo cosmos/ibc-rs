@@ -57,11 +57,6 @@ impl TryFrom<RawConsensusState> for ConsensusState {
                 reason: "missing commitment root".into(),
             })?
             .hash;
-        if proto_root.is_empty() {
-            return Err(Error::InvalidRawClientState {
-                reason: "empty commitment root".into(),
-            });
-        };
 
         let ibc_proto::google::protobuf::Timestamp { seconds, nanos } =
             raw.timestamp.ok_or(Error::InvalidRawClientState {

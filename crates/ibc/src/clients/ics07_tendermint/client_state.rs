@@ -13,11 +13,10 @@ use core::time::Duration;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use ibc_proto::ibc::core::commitment::v1::{MerklePath, MerkleProof as RawMerkleProof};
-use ibc_proto::ibc::lightclients::tendermint::v1::{
-    ClientState as RawTmClientState, ConsensusState as RawTmConsensusState,
-};
+use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
+
 use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
@@ -41,13 +40,12 @@ use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::Path;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ClientUpgradePath};
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, UpgradeClientPath};
 use crate::core::timestamp::ZERO_DURATION;
 use crate::Height;
 
 use super::client_type as tm_client_type;
 use super::trust_threshold::TrustThreshold;
-
 use crate::core::{ExecutionContext, ValidationContext};
 
 const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
@@ -79,7 +77,7 @@ pub struct AllowUpdate {
 
 impl ClientState {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(
+    fn new_without_validation(
         chain_id: ChainId,
         trust_level: TrustThreshold,
         trusting_period: Duration,
@@ -89,86 +87,8 @@ impl ClientState {
         proof_specs: ProofSpecs,
         upgrade_path: Vec<String>,
         allow_update: AllowUpdate,
-    ) -> Result<ClientState, Error> {
-        if chain_id.as_str().len() > MaxChainIdLen {
-            return Err(Error::ChainIdTooLong {
-                chain_id: chain_id.clone(),
-                len: chain_id.as_str().len(),
-                max_len: MaxChainIdLen,
-            });
-        }
-
-        // `TrustThreshold` is guaranteed to be in the range `[0, 1)`, but a `TrustThreshold::ZERO`
-        // value is invalid in this context
-        if trust_level == TrustThreshold::ZERO {
-            return Err(Error::InvalidTrustThreshold {
-                reason: "ClientState trust-level cannot be zero".to_string(),
-            });
-        }
-
-        let _ = TendermintTrustThresholdFraction::new(
-            trust_level.numerator(),
-            trust_level.denominator(),
-        )
-        .map_err(Error::InvalidTendermintTrustThreshold)?;
-
-        // Basic validation of trusting period and unbonding period: each should be non-zero.
-        if trusting_period <= Duration::new(0, 0) {
-            return Err(Error::InvalidTrustThreshold {
-                reason: format!(
-                    "ClientState trusting period ({trusting_period:?}) must be greater than zero"
-                ),
-            });
-        }
-
-        if unbonding_period <= Duration::new(0, 0) {
-            return Err(Error::InvalidTrustThreshold {
-                reason: format!(
-                    "ClientState unbonding period ({unbonding_period:?}) must be greater than zero"
-                ),
-            });
-        }
-
-        if trusting_period >= unbonding_period {
-            return Err(Error::InvalidTrustThreshold {
-                reason: format!(
-                "ClientState trusting period ({trusting_period:?}) must be smaller than unbonding period ({unbonding_period:?})"
-            ),
-            });
-        }
-
-        if max_clock_drift <= Duration::new(0, 0) {
-            return Err(Error::InvalidMaxClockDrift {
-                reason: "ClientState max-clock-drift must be greater than zero".to_string(),
-            });
-        }
-
-        if latest_height.revision_number() != chain_id.version() {
-            return Err(Error::InvalidLatestHeight {
-                reason: "ClientState latest-height revision number must match chain-id version"
-                    .to_string(),
-            });
-        }
-
-        // Disallow empty proof-specs
-        if proof_specs.is_empty() {
-            return Err(Error::Validation {
-                reason: "ClientState proof-specs cannot be empty".to_string(),
-            });
-        }
-
-        // `upgrade_path` itself may be empty, but if not then each key must be non-empty
-        for (idx, key) in upgrade_path.iter().enumerate() {
-            if key.trim().is_empty() {
-                return Err(Error::Validation {
-                    reason: format!(
-                        "ClientState upgrade-path key at index {idx:?} cannot be empty"
-                    ),
-                });
-            }
-        }
-
-        Ok(Self {
+    ) -> ClientState {
+        Self {
             chain_id,
             trust_level,
             trusting_period,
@@ -180,7 +100,34 @@ impl ClientState {
             allow_update,
             frozen_height: None,
             verifier: ProdVerifier::default(),
-        })
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        chain_id: ChainId,
+        trust_level: TrustThreshold,
+        trusting_period: Duration,
+        unbonding_period: Duration,
+        max_clock_drift: Duration,
+        latest_height: Height,
+        proof_specs: ProofSpecs,
+        upgrade_path: Vec<String>,
+        allow_update: AllowUpdate,
+    ) -> Result<ClientState, Error> {
+        let client_state = Self::new_without_validation(
+            chain_id,
+            trust_level,
+            trusting_period,
+            unbonding_period,
+            max_clock_drift,
+            latest_height,
+            proof_specs,
+            upgrade_path,
+            allow_update,
+        );
+        client_state.validate()?;
+        Ok(client_state)
     }
 
     pub fn with_header(self, header: TmHeader) -> Result<Self, Error> {
@@ -195,6 +142,90 @@ impl ClientState {
             frozen_height: Some(h),
             ..self
         }
+    }
+
+    pub fn validate(&self) -> Result<(), Error> {
+        if self.chain_id.as_str().len() > MaxChainIdLen {
+            return Err(Error::ChainIdTooLong {
+                chain_id: self.chain_id.clone(),
+                len: self.chain_id.as_str().len(),
+                max_len: MaxChainIdLen,
+            });
+        }
+
+        // `TrustThreshold` is guaranteed to be in the range `[0, 1)`, but a `TrustThreshold::ZERO`
+        // value is invalid in this context
+        if self.trust_level == TrustThreshold::ZERO {
+            return Err(Error::InvalidTrustThreshold {
+                reason: "ClientState trust-level cannot be zero".to_string(),
+            });
+        }
+
+        TendermintTrustThresholdFraction::new(
+            self.trust_level.numerator(),
+            self.trust_level.denominator(),
+        )
+        .map_err(Error::InvalidTendermintTrustThreshold)?;
+
+        // Basic validation of trusting period and unbonding period: each should be non-zero.
+        if self.trusting_period <= Duration::new(0, 0) {
+            return Err(Error::InvalidTrustThreshold {
+                reason: format!(
+                    "ClientState trusting period ({:?}) must be greater than zero",
+                    self.trusting_period
+                ),
+            });
+        }
+
+        if self.unbonding_period <= Duration::new(0, 0) {
+            return Err(Error::InvalidTrustThreshold {
+                reason: format!(
+                    "ClientState unbonding period ({:?}) must be greater than zero",
+                    self.unbonding_period
+                ),
+            });
+        }
+
+        if self.trusting_period >= self.unbonding_period {
+            return Err(Error::InvalidTrustThreshold {
+                reason: format!(
+                "ClientState trusting period ({:?}) must be smaller than unbonding period ({:?})", self.trusting_period, self.unbonding_period
+            ),
+            });
+        }
+
+        if self.max_clock_drift <= Duration::new(0, 0) {
+            return Err(Error::InvalidMaxClockDrift {
+                reason: "ClientState max-clock-drift must be greater than zero".to_string(),
+            });
+        }
+
+        if self.latest_height.revision_number() != self.chain_id.version() {
+            return Err(Error::InvalidLatestHeight {
+                reason: "ClientState latest-height revision number must match chain-id version"
+                    .to_string(),
+            });
+        }
+
+        // Disallow empty proof-specs
+        if self.proof_specs.is_empty() {
+            return Err(Error::Validation {
+                reason: "ClientState proof-specs cannot be empty".to_string(),
+            });
+        }
+
+        // `upgrade_path` itself may be empty, but if not then each key must be non-empty
+        for (idx, key) in self.upgrade_path.iter().enumerate() {
+            if key.trim().is_empty() {
+                return Err(Error::Validation {
+                    reason: format!(
+                        "ClientState upgrade-path key at index {idx:?} cannot be empty"
+                    ),
+                });
+            }
+        }
+
+        Ok(())
     }
 
     /// Get the refresh time to ensure the state does not expire
@@ -249,8 +280,8 @@ impl Ics2ClientState for ClientState {
         Ok(())
     }
 
+    // Resets custom fields to zero values (used in `update_client`)
     fn zero_custom_fields(&mut self) {
-        // Reset custom fields to zero values
         self.trusting_period = ZERO_DURATION;
         self.trust_level = TrustThreshold::ZERO;
         self.allow_update.after_expiry = false;
@@ -264,7 +295,13 @@ impl Ics2ClientState for ClientState {
     }
 
     fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError> {
-        TmConsensusState::try_from(consensus_state).map(TmConsensusState::into_box)
+        let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
+        if tm_consensus_state.root().is_empty() {
+            return Err(ClientError::Other {
+                description: "empty commitment root".into(),
+            });
+        };
+        Ok(Box::new(tm_consensus_state))
     }
 
     fn verify_client_message(
@@ -386,10 +423,10 @@ impl Ics2ClientState for ClientState {
         root: &CommitmentRoot,
     ) -> Result<(), ClientError> {
         // Make sure that the client type is of Tendermint type `ClientState`
-        let mut upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
+        let mut upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state.clone())?;
 
         // Make sure that the consensus type is of Tendermint type `ConsensusState`
-        let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
+        TmConsensusState::try_from(upgraded_consensus_state.clone())?;
 
         // Note: verification of proofs that unmarshalled correctly has been done
         // while decoding the proto message into a `MsgEnvelope` domain type
@@ -418,15 +455,18 @@ impl Ics2ClientState for ClientState {
 
         // Construct the merkle path for the client state
         let mut client_upgrade_path = upgrade_path.clone();
-        client_upgrade_path.push(ClientUpgradePath::UpgradedClientState(last_height).to_string());
+        client_upgrade_path.push(UpgradeClientPath::UpgradedClientState(last_height).to_string());
 
         let client_upgrade_merkle_path = MerklePath {
             key_path: client_upgrade_path,
         };
 
         upgraded_tm_client_state.zero_custom_fields();
-        let client_state_value =
-            Protobuf::<RawTmClientState>::encode_vec(&upgraded_tm_client_state);
+
+        let mut client_state_value = Vec::new();
+        upgraded_client_state
+            .encode(&mut client_state_value)
+            .map_err(ClientError::Encode)?;
 
         // Verify the proof of the upgraded client state
         merkle_proof_upgrade_client
@@ -442,12 +482,15 @@ impl Ics2ClientState for ClientState {
         // Construct the merkle path for the consensus state
         let mut cons_upgrade_path = upgrade_path;
         cons_upgrade_path
-            .push(ClientUpgradePath::UpgradedClientConsensusState(last_height).to_string());
+            .push(UpgradeClientPath::UpgradedClientConsensusState(last_height).to_string());
         let cons_upgrade_merkle_path = MerklePath {
             key_path: cons_upgrade_path,
         };
 
-        let cons_state_value = Protobuf::<RawTmConsensusState>::encode_vec(&upgraded_tm_cons_state);
+        let mut cons_state_value = Vec::new();
+        upgraded_consensus_state
+            .encode(&mut cons_state_value)
+            .map_err(ClientError::Encode)?;
 
         // Verify the proof of the upgraded consensus state
         merkle_proof_upgrade_cons_state
@@ -657,7 +700,7 @@ impl TryFrom<RawTmClientState> for ClientState {
             after_misbehaviour: raw.allow_update_after_misbehaviour,
         };
 
-        let client_state = ClientState::new(
+        let client_state = ClientState::new_without_validation(
             chain_id,
             trust_level,
             trusting_period,
@@ -667,7 +710,7 @@ impl TryFrom<RawTmClientState> for ClientState {
             raw.proof_specs.into(),
             raw.upgrade_path,
             allow_update,
-        )?;
+        );
 
         Ok(client_state)
     }
