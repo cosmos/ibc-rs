@@ -93,7 +93,13 @@ impl Ics2ClientState for ClientState {
 
     /// Check if the given proof has a valid height for the client
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
-        todo!()
+        if self.latest_height() < proof_height {
+            return Err(ClientError::InvalidProofHeight {
+                latest_height: self.latest_height(),
+                proof_height,
+            });
+        }
+        Ok(())
     }
 
     /// Assert that the client is not frozen
@@ -108,8 +114,9 @@ impl Ics2ClientState for ClientState {
 
     /// Check if the state is expired when `elapsed` time has passed since the latest consensus
     /// state timestamp
-    fn expired(&self, elapsed: Duration) -> bool {
-        todo!()
+    fn expired(&self, _elapsed: Duration) -> bool {
+        // todo(davirian)
+        false
     }
 
     /// Helper function to verify the upgrade client procedure.
@@ -195,8 +202,8 @@ impl Ics2ClientState for ClientState {
         &self,
         ctx: &mut dyn ExecutionContext,
         client_id: &ClientId,
-        client_message: Any,
-        update_kind: &UpdateKind,
+        _client_message: Any,
+        _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
         let frozen_client_state = self.clone().with_frozen().into_box();
 
