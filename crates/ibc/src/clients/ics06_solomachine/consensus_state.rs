@@ -36,6 +36,7 @@ impl ConsensusState {
         }
     }
 
+    // ValidateBasic defines basic validation for the solo machine consensus state.
     pub fn valida_basic(&self) -> Result<(), Error> {
         if self.timestamp.into_tm_time().is_none() {
             return Err(Error::TimeStampIsEmpty);

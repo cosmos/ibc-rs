@@ -31,6 +31,8 @@ pub enum Error {
     PublicKeyParseFailed(eyre::ErrReport),
     /// public key is empty
     PublicKeyIsEmpty,
+    /// consensus state is empty
+    ConsensusStateIsEmpty,
 }
 
 impl From<Error> for ClientError {

@@ -10,6 +10,7 @@ use crate::core::ics23_commitment::commitment::{
 };
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::Path;
+use crate::core::timestamp::Timestamp;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 use crate::Height;
@@ -31,7 +32,7 @@ pub struct ClientState {
     pub sequence: Height,
     /// frozen sequence of the solo machine
     pub is_frozen: bool,
-    pub consensus_state: Option<SoloMachineConsensusState>,
+    pub consensus_state: SoloMachineConsensusState,
     /// when set to true, will allow governance to update a solo machine client.
     /// The client will be unfrozen if it is frozen.
     pub allow_update_after_proposal: bool,
@@ -42,7 +43,7 @@ impl ClientState {
     pub fn new(
         sequence: Height,
         is_frozen: bool,
-        consensus_state: Option<SoloMachineConsensusState>,
+        consensus_state: SoloMachineConsensusState,
         allow_update_after_proposal: bool,
     ) -> Self {
         Self {
@@ -57,6 +58,11 @@ impl ClientState {
     /// Revision number is always 0 for a solo-machine.
     pub fn latest_height(&self) -> Height {
         self.sequence
+    }
+
+    // GetTimestampAtHeight returns the timestamp in nanoseconds of the consensus state at the given height.
+    pub fn time_stamp(&self) -> Timestamp {
+        self.consensus_state.timestamp
     }
 }
 
@@ -86,7 +92,7 @@ impl Ics2ClientState for ClientState {
     fn confirm_not_frozen(&self) -> Result<(), ClientError> {
         if self.is_frozen {
             return Err(ClientError::ClientFrozen {
-                description: format!("the client is frozen"),
+                description: "the client is frozen".into(),
             });
         }
         Ok(())
@@ -230,8 +236,10 @@ impl TryFrom<RawSolClientState> for ClientState {
     fn try_from(raw: RawSolClientState) -> Result<Self, Self::Error> {
         let sequence = Height::new(0, raw.sequence).map_err(Error::InvalidHeight)?;
 
-        let consensus_state: Option<SoloMachineConsensusState> =
-            raw.consensus_state.map(TryInto::try_into).transpose()?;
+        let consensus_state: SoloMachineConsensusState = raw
+            .consensus_state
+            .ok_or(Error::ConsensusStateIsEmpty)?
+            .try_into()?;
 
         Ok(Self {
             sequence,
@@ -246,11 +254,10 @@ impl From<ClientState> for RawSolClientState {
     fn from(value: ClientState) -> Self {
         let sequence = value.sequence.revision_height();
 
-        let consensus_state = value.consensus_state.map(Into::into);
         Self {
             sequence,
             is_frozen: value.is_frozen,
-            consensus_state,
+            consensus_state: Some(value.consensus_state.into()),
             allow_update_after_proposal: value.allow_update_after_proposal,
         }
     }
