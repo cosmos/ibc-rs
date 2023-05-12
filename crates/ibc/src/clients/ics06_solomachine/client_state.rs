@@ -217,22 +217,25 @@ impl Ics2ClientState for ClientState {
     /// cancelled or modified before the last planned height.
     fn verify_upgrade_client(
         &self,
-        upgraded_client_state: Any,
-        upgraded_consensus_state: Any,
-        proof_upgrade_client: RawMerkleProof,
-        proof_upgrade_consensus_state: RawMerkleProof,
-        root: &CommitmentRoot,
+        _upgraded_client_state: Any,
+        _upgraded_consensus_state: Any,
+        _proof_upgrade_client: RawMerkleProof,
+        _proof_upgrade_consensus_state: RawMerkleProof,
+        _root: &CommitmentRoot,
     ) -> Result<(), ClientError> {
-        todo!()
+        Ok(())
     }
 
     // Update the client state and consensus state in the store with the upgraded ones.
     fn update_state_with_upgrade_client(
         &self,
-        upgraded_client_state: Any,
-        upgraded_consensus_state: Any,
+        _upgraded_client_state: Any,
+        _upgraded_consensus_state: Any,
     ) -> Result<UpdatedState, ClientError> {
-        todo!()
+        // ref: https://github.com/cosmos/ibc-go/blob/f32b1052e1357949e6a67685d355c7bcc6242b84/modules/light-clients/06-solomachine/client_state.go#L99
+        Err(ClientError::Other {
+            description: "cannot upgrade solomachine client".into(),
+        })
     }
 
     // Verify_membership is a generic proof verification method which verifies a
