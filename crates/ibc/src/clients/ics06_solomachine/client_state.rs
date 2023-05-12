@@ -10,6 +10,7 @@ use crate::core::ics23_commitment::commitment::{
 };
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::Path;
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ClientUpgradePath};
 use crate::core::timestamp::Timestamp;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
@@ -51,6 +52,13 @@ impl ClientState {
             is_frozen,
             consensus_state,
             allow_update_after_proposal,
+        }
+    }
+
+    pub fn with_frozen(self) -> Self {
+        Self {
+            is_frozen: true,
+            ..self
         }
     }
 
@@ -107,13 +115,14 @@ impl Ics2ClientState for ClientState {
     /// Helper function to verify the upgrade client procedure.
     /// Resets all fields except the blockchain-specific ones,
     /// and updates the given fields.
-    // ref: https://github.com/cosmos/ibc-go/blob/fa9418f5ba39de38d995ec83d9abd289dfab5f9f/modules/light-clients/06-solomachine/client_state.go#L75
     fn zero_custom_fields(&mut self) {
-        // zero_custom_fields is not implemented for solo machine
+        // ref: https://github.com/cosmos/ibc-go/blob/f32b1052e1357949e6a67685d355c7bcc6242b84/modules/light-clients/06-solomachine/client_state.go#L76
+        panic!("ZeroCustomFields is not implemented as the solo machine implementation does not support upgrades.")
     }
 
     fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError> {
-        todo!()
+        SoloMachineConsensusState::try_from(consensus_state)
+            .map(SoloMachineConsensusState::into_box)
     }
 
     /// verify_client_message must verify a client_message. A client_message
@@ -129,7 +138,17 @@ impl Ics2ClientState for ClientState {
         client_message: Any,
         update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
-        todo!()
+        match update_kind {
+            UpdateKind::UpdateClient => {
+                // let header = TmHeader::try_from(client_message)?;
+                // self.verify_header(ctx, client_id, header)
+            }
+            UpdateKind::SubmitMisbehaviour => {
+                // let misbehaviour = TmMisbehaviour::try_from(client_message)?;
+                // self.verify_misbehaviour(ctx, client_id, misbehaviour)
+            }
+        }
+        Ok(())
     }
 
     /// Checks for evidence of a misbehaviour in Header or Misbehaviour type. It
@@ -141,7 +160,17 @@ impl Ics2ClientState for ClientState {
         client_message: Any,
         update_kind: &UpdateKind,
     ) -> Result<bool, ClientError> {
-        todo!()
+        match update_kind {
+            UpdateKind::UpdateClient => {
+                // let header = TmHeader::try_from(client_message)?;
+                // self.check_for_misbehaviour_update_client(ctx, client_id, header)
+            }
+            UpdateKind::SubmitMisbehaviour => {
+                // let misbehaviour = TmMisbehaviour::try_from(client_message)?;
+                // self.check_for_misbehaviour_misbehavior(&misbehaviour)
+            }
+        }
+        Ok(true)
     }
 
     /// Updates and stores as necessary any associated information for an IBC
@@ -169,7 +198,11 @@ impl Ics2ClientState for ClientState {
         client_message: Any,
         update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
-        todo!()
+        let frozen_client_state = self.clone().with_frozen().into_box();
+
+        ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state)?;
+
+        Ok(())
     }
 
     /// Verify the upgraded client and consensus states and validate proofs
