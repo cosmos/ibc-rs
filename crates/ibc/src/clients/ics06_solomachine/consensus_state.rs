@@ -3,6 +3,7 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
+use cosmrs::crypto::PublicKey;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::solomachine::v2::ConsensusState as RawSolConsensusState;
 use ibc_proto::protobuf::Protobuf;
@@ -18,7 +19,7 @@ pub const SOLOMACHINE_CONSENSUS_STATE_TYPE_URL: &str =
 #[derive(Clone, PartialEq, Debug)]
 pub struct ConsensusState {
     /// public key of the solo machine
-    pub public_key: Option<Any>,
+    pub public_key: PublicKey,
     /// diversifier allows the same public key to be re-used across different solo
     /// machine clients (potentially on different chains) without being considered
     /// misbehaviour.
@@ -27,7 +28,7 @@ pub struct ConsensusState {
 }
 
 impl ConsensusState {
-    pub fn new(public_key: Option<Any>, diversifier: String, timestamp: Timestamp) -> Self {
+    pub fn new(public_key: PublicKey, diversifier: String, timestamp: Timestamp) -> Self {
         Self {
             public_key,
             diversifier,
@@ -36,25 +37,24 @@ impl ConsensusState {
     }
 
     pub fn valida_basic(&self) -> Result<(), Error> {
-        todo!()
+        if self.timestamp.into_tm_time().is_none() {
+            return Err(Error::TimeStampIsEmpty);
+        }
+
+        if !self.diversifier.is_empty() && self.diversifier.trim().is_empty() {
+            return Err(Error::DriversifierContainOnlySpaces);
+        }
+
+        let _ = self.public_key();
+
+        Ok(())
     }
 
     // GetPubKey unmarshals the public key into a cryptotypes.PubKey type.
     // An error is returned if the public key is nil or the cached value
     // is not a PubKey.
-
-    // publicKey, ok := cs.PublicKey.GetCachedValue().(cryptotypes.PubKey)
-    // if !ok {
-    // 	return nil, errorsmod.Wrap(clienttypes.ErrInvalidConsensus, "consensus state PublicKey is not cryptotypes.PubKey")
-    // }
-
-    // return publicKey, nil
-    //    }
-    pub fn public_key(&self) -> Result<(), Error> {
-        if self.public_key.is_none() {
-            return Err(Error::EmptyConsensusStatePublicKey);
-        }
-        todo!()
+    pub fn public_key(&self) -> PublicKey {
+        self.public_key
     }
 }
 
@@ -74,13 +74,30 @@ impl TryFrom<RawSolConsensusState> for ConsensusState {
     type Error = Error;
 
     fn try_from(raw: RawSolConsensusState) -> Result<Self, Self::Error> {
-        todo!()
+        let public_key = PublicKey::try_from(raw.public_key.ok_or(Error::PublicKeyIsEmpty)?)
+            .map_err(Error::PublicKeyParseFailed)?;
+        let timestamp =
+            Timestamp::from_nanoseconds(raw.timestamp).map_err(Error::ParseTimeError)?;
+        Ok(Self {
+            public_key,
+            diversifier: raw.diversifier,
+            timestamp,
+        })
     }
 }
 
 impl From<ConsensusState> for RawSolConsensusState {
     fn from(value: ConsensusState) -> Self {
-        todo!()
+        let public_key = value
+            .public_key
+            .to_any()
+            .expect("conver public key to any enver failed");
+        let timestamp = value.timestamp.nanoseconds();
+        Self {
+            public_key: Some(public_key),
+            diversifier: value.diversifier,
+            timestamp,
+        }
     }
 }
 

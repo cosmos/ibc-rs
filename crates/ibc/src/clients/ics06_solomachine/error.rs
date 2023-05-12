@@ -23,6 +23,14 @@ pub enum Error {
     ParseTimeError(ParseTimestampError),
     /// Channel error: `{0}`
     ChannelError(ChannelError),
+    /// timestamp cannot be 0
+    TimeStampIsEmpty,
+    /// diversifier cannot contain only spaces
+    DriversifierContainOnlySpaces,
+    /// public key parsed failed: `{0}`
+    PublicKeyParseFailed(eyre::ErrReport),
+    /// public key is empty
+    PublicKeyIsEmpty,
 }
 
 impl From<Error> for ClientError {
