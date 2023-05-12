@@ -19,13 +19,13 @@ impl Protobuf<RawHeaderData> for HeaderData {}
 impl TryFrom<RawHeaderData> for HeaderData {
     type Error = Error;
 
-    fn try_from(raw: RawHeaderData) -> Result<Self, Self::Error> {
+    fn try_from(_raw: RawHeaderData) -> Result<Self, Self::Error> {
         todo!()
     }
 }
 
 impl From<HeaderData> for RawHeaderData {
-    fn from(value: HeaderData) -> Self {
+    fn from(_value: HeaderData) -> Self {
         todo!()
     }
 }

@@ -106,7 +106,7 @@ pub fn decode_misbehaviour<B: Buf>(buf: B) -> Result<Misbehaviour, Error> {
 }
 
 impl core::fmt::Display for Misbehaviour {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
+    fn fmt(&self, _f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
         todo!()
     }
 }

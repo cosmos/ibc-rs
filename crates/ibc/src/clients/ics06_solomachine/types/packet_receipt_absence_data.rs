@@ -15,13 +15,13 @@ impl Protobuf<RawPacketReceiptAbsenceData> for PacketReceiptAbsenceData {}
 impl TryFrom<RawPacketReceiptAbsenceData> for PacketReceiptAbsenceData {
     type Error = Error;
 
-    fn try_from(raw: RawPacketReceiptAbsenceData) -> Result<Self, Self::Error> {
+    fn try_from(_raw: RawPacketReceiptAbsenceData) -> Result<Self, Self::Error> {
         todo!()
     }
 }
 
 impl From<PacketReceiptAbsenceData> for RawPacketReceiptAbsenceData {
-    fn from(value: PacketReceiptAbsenceData) -> Self {
+    fn from(_value: PacketReceiptAbsenceData) -> Self {
         todo!()
     }
 }

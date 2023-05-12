@@ -18,13 +18,13 @@ impl Protobuf<RawConnectionStateData> for ConnectionStateData {}
 impl TryFrom<RawConnectionStateData> for ConnectionStateData {
     type Error = Error;
 
-    fn try_from(raw: RawConnectionStateData) -> Result<Self, Self::Error> {
+    fn try_from(_raw: RawConnectionStateData) -> Result<Self, Self::Error> {
         todo!()
     }
 }
 
 impl From<ConnectionStateData> for RawConnectionStateData {
-    fn from(value: ConnectionStateData) -> Self {
+    fn from(_value: ConnectionStateData) -> Self {
         todo!()
     }
 }

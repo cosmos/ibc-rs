@@ -9,8 +9,8 @@ use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
+use crate::core::ics24_host::path::ClientStatePath;
 use crate::core::ics24_host::path::Path;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 use crate::core::timestamp::Timestamp;
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
@@ -140,9 +140,9 @@ impl Ics2ClientState for ClientState {
     /// error should be returned if the client_message fails to verify.
     fn verify_client_message(
         &self,
-        ctx: &dyn ValidationContext,
-        client_id: &ClientId,
-        client_message: Any,
+        _ctx: &dyn ValidationContext,
+        _client_id: &ClientId,
+        _client_message: Any,
         update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
         match update_kind {
@@ -162,9 +162,9 @@ impl Ics2ClientState for ClientState {
     /// assumes the client_message has already been verified.
     fn check_for_misbehaviour(
         &self,
-        ctx: &dyn ValidationContext,
-        client_id: &ClientId,
-        client_message: Any,
+        _ctx: &dyn ValidationContext,
+        _client_id: &ClientId,
+        _client_message: Any,
         update_kind: &UpdateKind,
     ) -> Result<bool, ClientError> {
         match update_kind {
@@ -189,9 +189,9 @@ impl Ics2ClientState for ClientState {
     /// height.
     fn update_state(
         &self,
-        ctx: &mut dyn ExecutionContext,
-        client_id: &ClientId,
-        header: Any,
+        _ctx: &mut dyn ExecutionContext,
+        _client_id: &ClientId,
+        _header: Any,
     ) -> Result<Vec<Height>, ClientError> {
         todo!()
     }
@@ -249,11 +249,11 @@ impl Ics2ClientState for ClientState {
     // proof of the existence of a value at a given Path.
     fn verify_membership(
         &self,
-        prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        path: Path,
-        value: Vec<u8>,
+        _prefix: &CommitmentPrefix,
+        _proof: &CommitmentProofBytes,
+        _root: &CommitmentRoot,
+        _path: Path,
+        _value: Vec<u8>,
     ) -> Result<(), ClientError> {
         todo!()
     }
@@ -262,10 +262,10 @@ impl Ics2ClientState for ClientState {
     // verifies the absence of a given commitment.
     fn verify_non_membership(
         &self,
-        prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        path: Path,
+        _prefix: &CommitmentPrefix,
+        _proof: &CommitmentProofBytes,
+        _root: &CommitmentRoot,
+        _path: Path,
     ) -> Result<(), ClientError> {
         todo!()
     }

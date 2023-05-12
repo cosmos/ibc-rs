@@ -24,13 +24,13 @@ pub struct Header {
 }
 
 impl core::fmt::Debug for Header {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+    fn fmt(&self, _f: &mut Formatter<'_>) -> Result<(), FmtError> {
         todo!()
     }
 }
 
 impl Display for Header {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+    fn fmt(&self, _f: &mut Formatter<'_>) -> Result<(), FmtError> {
         todo!()
     }
 }
@@ -50,13 +50,13 @@ impl Protobuf<RawSolHeader> for Header {}
 impl TryFrom<RawSolHeader> for Header {
     type Error = Error;
 
-    fn try_from(raw: RawSolHeader) -> Result<Self, Self::Error> {
+    fn try_from(_raw: RawSolHeader) -> Result<Self, Self::Error> {
         todo!()
     }
 }
 
 impl From<Header> for RawSolHeader {
-    fn from(value: Header) -> Self {
+    fn from(_value: Header) -> Self {
         todo!()
     }
 }

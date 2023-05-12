@@ -19,13 +19,13 @@ impl Protobuf<RawConsensusStateData> for ConsensusStateData {}
 impl TryFrom<RawConsensusStateData> for ConsensusStateData {
     type Error = Error;
 
-    fn try_from(raw: RawConsensusStateData) -> Result<Self, Self::Error> {
+    fn try_from(_raw: RawConsensusStateData) -> Result<Self, Self::Error> {
         todo!()
     }
 }
 
 impl From<ConsensusStateData> for RawConsensusStateData {
-    fn from(value: ConsensusStateData) -> Self {
+    fn from(_value: ConsensusStateData) -> Self {
         todo!()
     }
 }

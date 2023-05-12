@@ -17,13 +17,13 @@ impl Protobuf<RawClientStateData> for ClientStateData {}
 impl TryFrom<RawClientStateData> for ClientStateData {
     type Error = Error;
 
-    fn try_from(raw: RawClientStateData) -> Result<Self, Self::Error> {
+    fn try_from(_raw: RawClientStateData) -> Result<Self, Self::Error> {
         todo!()
     }
 }
 
 impl From<ClientStateData> for RawClientStateData {
-    fn from(value: ClientStateData) -> Self {
+    fn from(_value: ClientStateData) -> Self {
         todo!()
     }
 }
