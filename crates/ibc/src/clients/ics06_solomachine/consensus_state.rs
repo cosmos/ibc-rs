@@ -5,7 +5,7 @@ use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
 use cosmrs::crypto::PublicKey;
 use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::lightclients::solomachine::v2::ConsensusState as RawSolConsensusState;
+use ibc_proto::ibc::lightclients::solomachine::v2::ConsensusState as RawSmConsensusState;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
@@ -69,12 +69,12 @@ impl crate::core::ics02_client::consensus_state::ConsensusState for ConsensusSta
     }
 }
 
-impl Protobuf<RawSolConsensusState> for ConsensusState {}
+impl Protobuf<RawSmConsensusState> for ConsensusState {}
 
-impl TryFrom<RawSolConsensusState> for ConsensusState {
+impl TryFrom<RawSmConsensusState> for ConsensusState {
     type Error = Error;
 
-    fn try_from(raw: RawSolConsensusState) -> Result<Self, Self::Error> {
+    fn try_from(raw: RawSmConsensusState) -> Result<Self, Self::Error> {
         let public_key = PublicKey::try_from(raw.public_key.ok_or(Error::PublicKeyIsEmpty)?)
             .map_err(Error::PublicKeyParseFailed)?;
         let timestamp =
@@ -87,7 +87,7 @@ impl TryFrom<RawSolConsensusState> for ConsensusState {
     }
 }
 
-impl From<ConsensusState> for RawSolConsensusState {
+impl From<ConsensusState> for RawSmConsensusState {
     fn from(value: ConsensusState) -> Self {
         let public_key = value
             .public_key
@@ -112,7 +112,7 @@ impl TryFrom<Any> for ConsensusState {
         use core::ops::Deref;
 
         fn decode_consensus_state<B: Buf>(buf: B) -> Result<ConsensusState, Error> {
-            RawSolConsensusState::decode(buf)
+            RawSmConsensusState::decode(buf)
                 .map_err(Error::Decode)?
                 .try_into()
         }
@@ -132,7 +132,7 @@ impl From<ConsensusState> for Any {
     fn from(consensus_state: ConsensusState) -> Self {
         Any {
             type_url: SOLOMACHINE_CONSENSUS_STATE_TYPE_URL.to_string(),
-            value: Protobuf::<RawSolConsensusState>::encode_vec(&consensus_state),
+            value: Protobuf::<RawSmConsensusState>::encode_vec(&consensus_state),
         }
     }
 }

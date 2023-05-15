@@ -4,7 +4,7 @@ use crate::core::ics24_host::identifier::ClientId;
 use crate::{prelude::*, Height};
 use bytes::Buf;
 use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::lightclients::solomachine::v2::Misbehaviour as RawSolMisbehaviour;
+use ibc_proto::ibc::lightclients::solomachine::v2::Misbehaviour as RawSmMisbehaviour;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
@@ -25,12 +25,12 @@ pub struct Misbehaviour {
     pub signature_two: Option<SignatureAndData>,
 }
 
-impl Protobuf<RawSolMisbehaviour> for Misbehaviour {}
+impl Protobuf<RawSmMisbehaviour> for Misbehaviour {}
 
-impl TryFrom<RawSolMisbehaviour> for Misbehaviour {
+impl TryFrom<RawSmMisbehaviour> for Misbehaviour {
     type Error = Error;
 
-    fn try_from(raw: RawSolMisbehaviour) -> Result<Self, Self::Error> {
+    fn try_from(raw: RawSmMisbehaviour) -> Result<Self, Self::Error> {
         let client_id: ClientId = raw
             .client_id
             .parse()
@@ -51,7 +51,7 @@ impl TryFrom<RawSolMisbehaviour> for Misbehaviour {
     }
 }
 
-impl From<Misbehaviour> for RawSolMisbehaviour {
+impl From<Misbehaviour> for RawSmMisbehaviour {
     fn from(value: Misbehaviour) -> Self {
         let client_id = value.client_id.to_string();
         let sequence = value.sequence.revision_height();
@@ -74,7 +74,7 @@ impl TryFrom<Any> for Misbehaviour {
         use core::ops::Deref;
 
         fn decode_misbehaviour<B: Buf>(buf: B) -> Result<Misbehaviour, Error> {
-            RawSolMisbehaviour::decode(buf)
+            RawSmMisbehaviour::decode(buf)
                 .map_err(Error::Decode)?
                 .try_into()
         }
@@ -94,13 +94,13 @@ impl From<Misbehaviour> for Any {
     fn from(misbehaviour: Misbehaviour) -> Self {
         Any {
             type_url: SOLOMACHINE_MISBEHAVIOUR_TYPE_URL.to_string(),
-            value: Protobuf::<RawSolMisbehaviour>::encode_vec(&misbehaviour),
+            value: Protobuf::<RawSmMisbehaviour>::encode_vec(&misbehaviour),
         }
     }
 }
 
 pub fn decode_misbehaviour<B: Buf>(buf: B) -> Result<Misbehaviour, Error> {
-    RawSolMisbehaviour::decode(buf)
+    RawSmMisbehaviour::decode(buf)
         .map_err(Error::Decode)?
         .try_into()
 }

@@ -20,7 +20,7 @@ use crate::Height;
 use core::time::Duration;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
-use ibc_proto::ibc::lightclients::solomachine::v2::ClientState as RawSolClientState;
+use ibc_proto::ibc::lightclients::solomachine::v2::ClientState as RawSmClientState;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
@@ -279,12 +279,12 @@ impl Ics2ClientState for ClientState {
     }
 }
 
-impl Protobuf<RawSolClientState> for ClientState {}
+impl Protobuf<RawSmClientState> for ClientState {}
 
-impl TryFrom<RawSolClientState> for ClientState {
+impl TryFrom<RawSmClientState> for ClientState {
     type Error = Error;
 
-    fn try_from(raw: RawSolClientState) -> Result<Self, Self::Error> {
+    fn try_from(raw: RawSmClientState) -> Result<Self, Self::Error> {
         let sequence = Height::new(0, raw.sequence).map_err(Error::InvalidHeight)?;
 
         let consensus_state: SmConsensusState = raw
@@ -301,7 +301,7 @@ impl TryFrom<RawSolClientState> for ClientState {
     }
 }
 
-impl From<ClientState> for RawSolClientState {
+impl From<ClientState> for RawSmClientState {
     fn from(value: ClientState) -> Self {
         let sequence = value.sequence.revision_height();
 
@@ -324,7 +324,7 @@ impl TryFrom<Any> for ClientState {
         use core::ops::Deref;
 
         fn decode_client_state<B: Buf>(buf: B) -> Result<ClientState, Error> {
-            RawSolClientState::decode(buf)
+            RawSmClientState::decode(buf)
                 .map_err(Error::Decode)?
                 .try_into()
         }
@@ -344,7 +344,7 @@ impl From<ClientState> for Any {
     fn from(client_state: ClientState) -> Self {
         Any {
             type_url: SOLOMACHINE_CLIENT_STATE_TYPE_URL.to_string(),
-            value: Protobuf::<RawSolClientState>::encode_vec(&client_state),
+            value: Protobuf::<RawSmClientState>::encode_vec(&client_state),
         }
     }
 }
