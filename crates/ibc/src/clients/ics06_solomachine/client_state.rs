@@ -1,5 +1,7 @@
-use crate::clients::ics06_solomachine::consensus_state::ConsensusState as SoloMachineConsensusState;
+use crate::clients::ics06_solomachine::consensus_state::ConsensusState as SmConsensusState;
 use crate::clients::ics06_solomachine::error::Error;
+use crate::clients::ics06_solomachine::header::Header as SmHeader;
+use crate::clients::ics06_solomachine::misbehaviour::Misbehaviour as SmMisbehaviour;
 use crate::core::ics02_client::client_state::UpdateKind;
 use crate::core::ics02_client::client_state::{ClientState as Ics2ClientState, UpdatedState};
 use crate::core::ics02_client::client_type::ClientType;
@@ -22,6 +24,9 @@ use ibc_proto::ibc::lightclients::solomachine::v2::ClientState as RawSolClientSt
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
+pub mod misbehaviour;
+pub mod update_client;
+
 pub const SOLOMACHINE_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.solomachine.v1.ClientState";
 
 /// ClientState defines a solo machine client that tracks the current consensus
@@ -33,7 +38,7 @@ pub struct ClientState {
     pub sequence: Height,
     /// frozen sequence of the solo machine
     pub is_frozen: bool,
-    pub consensus_state: SoloMachineConsensusState,
+    pub consensus_state: SmConsensusState,
     /// when set to true, will allow governance to update a solo machine client.
     /// The client will be unfrozen if it is frozen.
     pub allow_update_after_proposal: bool,
@@ -44,7 +49,7 @@ impl ClientState {
     pub fn new(
         sequence: Height,
         is_frozen: bool,
-        consensus_state: SoloMachineConsensusState,
+        consensus_state: SmConsensusState,
         allow_update_after_proposal: bool,
     ) -> Self {
         Self {
@@ -128,8 +133,7 @@ impl Ics2ClientState for ClientState {
     }
 
     fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError> {
-        SoloMachineConsensusState::try_from(consensus_state)
-            .map(SoloMachineConsensusState::into_box)
+        SmConsensusState::try_from(consensus_state).map(SmConsensusState::into_box)
     }
 
     /// verify_client_message must verify a client_message. A client_message
@@ -138,46 +142,50 @@ impl Ics2ClientState for ClientState {
     /// update_state, and update_state_on_misbehaviour will assume that the
     /// content of the client_message has been verified and can be trusted. An
     /// error should be returned if the client_message fails to verify.
+    ///
+    /// VerifyClientMessage introspects the provided ClientMessage and checks its validity
+    /// A Solomachine Header is considered valid if the currently registered public key has signed over
+    /// the new public key with the correct sequence.
+    /// A Solomachine Misbehaviour is considered valid if duplicate signatures of the current public key
+    /// are found on two different messages at a given sequence.
     fn verify_client_message(
         &self,
-        _ctx: &dyn ValidationContext,
-        _client_id: &ClientId,
-        _client_message: Any,
+        ctx: &dyn ValidationContext,
+        client_id: &ClientId,
+        client_message: Any,
         update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
         match update_kind {
             UpdateKind::UpdateClient => {
-                // let header = TmHeader::try_from(client_message)?;
-                // self.verify_header(ctx, client_id, header)
+                let header = SmHeader::try_from(client_message)?;
+                self.verify_header(ctx, client_id, header)
             }
             UpdateKind::SubmitMisbehaviour => {
-                // let misbehaviour = TmMisbehaviour::try_from(client_message)?;
-                // self.verify_misbehaviour(ctx, client_id, misbehaviour)
+                let misbehaviour = SmMisbehaviour::try_from(client_message)?;
+                self.verify_misbehaviour(ctx, client_id, misbehaviour)
             }
         }
-        Ok(())
     }
 
     /// Checks for evidence of a misbehaviour in Header or Misbehaviour type. It
     /// assumes the client_message has already been verified.
     fn check_for_misbehaviour(
         &self,
-        _ctx: &dyn ValidationContext,
-        _client_id: &ClientId,
-        _client_message: Any,
+        ctx: &dyn ValidationContext,
+        client_id: &ClientId,
+        client_message: Any,
         update_kind: &UpdateKind,
     ) -> Result<bool, ClientError> {
         match update_kind {
             UpdateKind::UpdateClient => {
-                // let header = TmHeader::try_from(client_message)?;
-                // self.check_for_misbehaviour_update_client(ctx, client_id, header)
+                let header = SmHeader::try_from(client_message)?;
+                self.check_for_misbehaviour_update_client(ctx, client_id, header)
             }
             UpdateKind::SubmitMisbehaviour => {
-                // let misbehaviour = TmMisbehaviour::try_from(client_message)?;
-                // self.check_for_misbehaviour_misbehavior(&misbehaviour)
+                let misbehaviour = SmMisbehaviour::try_from(client_message)?;
+                self.check_for_misbehaviour_misbehavior(&misbehaviour)
             }
         }
-        Ok(true)
     }
 
     /// Updates and stores as necessary any associated information for an IBC
@@ -279,7 +287,7 @@ impl TryFrom<RawSolClientState> for ClientState {
     fn try_from(raw: RawSolClientState) -> Result<Self, Self::Error> {
         let sequence = Height::new(0, raw.sequence).map_err(Error::InvalidHeight)?;
 
-        let consensus_state: SoloMachineConsensusState = raw
+        let consensus_state: SmConsensusState = raw
             .consensus_state
             .ok_or(Error::ConsensusStateIsEmpty)?
             .try_into()?;
