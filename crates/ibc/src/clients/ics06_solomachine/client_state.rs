@@ -249,13 +249,29 @@ impl Ics2ClientState for ClientState {
     ///
     /// Post-condition: on success, the return value MUST contain at least one
     /// height.
+    // ref: https://github.com/cosmos/ibc-go/blob/388283012124fd3cd66c9541000541d9c6767117/modules/light-clients/06-solomachine/update.go#L80
     fn update_state(
         &self,
-        _ctx: &mut dyn ExecutionContext,
-        _client_id: &ClientId,
-        _header: Any,
+        ctx: &mut dyn ExecutionContext,
+        client_id: &ClientId,
+        header: Any,
     ) -> Result<Vec<Height>, ClientError> {
-        todo!()
+        let sm_header = SmHeader::try_from(header).map_err(|e| ClientError::Other {
+            description: format!("decode SmHeader Error({})", e),
+        })?;
+
+        let consensus_state = SmConsensusState {
+            public_key: sm_header.new_public_key,
+            diversifier: sm_header.new_diversifier,
+            timestamp: sm_header.timestamp,
+        };
+        let mut new_client_state = self.clone();
+        new_client_state.sequence.increment();
+        new_client_state.consensus_state = consensus_state;
+
+        ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into_box())?;
+
+        Ok(vec![sm_header.sequence])
     }
 
     /// update_state_on_misbehaviour should perform appropriate state changes on
