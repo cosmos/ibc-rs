@@ -1,6 +1,6 @@
 use crate::clients::ics06_solomachine::error::Error;
 use crate::prelude::*;
-use ibc_proto::google::protobuf::Any;
+use cosmrs::crypto::PublicKey;
 use ibc_proto::ibc::lightclients::solomachine::v2::HeaderData as RawHeaderData;
 use ibc_proto::protobuf::Protobuf;
 
@@ -9,7 +9,7 @@ use ibc_proto::protobuf::Protobuf;
 #[derive(Clone, PartialEq)]
 pub struct HeaderData {
     /// header public key
-    pub new_pub_key: Option<Any>,
+    pub new_pub_key: PublicKey,
     /// header diversifier
     pub new_diversifier: String,
 }
