@@ -9,7 +9,7 @@ use ibc_proto::protobuf::Protobuf;
 pub struct ClientStateData {
     pub path: Vec<u8>,
     // Ics06 solomachine client state
-    pub client_state: Option<ClientState>,
+    pub client_state: ClientState,
 }
 
 impl Protobuf<RawClientStateData> for ClientStateData {}
@@ -17,13 +17,23 @@ impl Protobuf<RawClientStateData> for ClientStateData {}
 impl TryFrom<RawClientStateData> for ClientStateData {
     type Error = Error;
 
-    fn try_from(_raw: RawClientStateData) -> Result<Self, Self::Error> {
-        todo!()
+    fn try_from(raw: RawClientStateData) -> Result<Self, Self::Error> {
+        Ok(Self {
+            path: raw.path,
+            client_state: raw
+                .client_state
+                .ok_or(Error::ClientStateIsEmpty)?
+                .try_into()
+                .map_err(Error::ClientError)?,
+        })
     }
 }
 
 impl From<ClientStateData> for RawClientStateData {
-    fn from(_value: ClientStateData) -> Self {
-        todo!()
+    fn from(value: ClientStateData) -> Self {
+        Self {
+            path: value.path,
+            client_state: Some(value.client_state.into()),
+        }
     }
 }

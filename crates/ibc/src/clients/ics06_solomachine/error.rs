@@ -1,3 +1,4 @@
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::prelude::*;
 
@@ -23,6 +24,10 @@ pub enum Error {
     ParseTimeError(ParseTimestampError),
     /// Channel error: `{0}`
     ChannelError(ChannelError),
+    /// Client error: `{0}`
+    ClientError(ClientError),
+    /// Connection error: `{0}`
+    ConnectionError(ConnectionError),
     /// timestamp cannot be 0
     TimeStampIsEmpty,
     /// diversifier cannot contain only spaces
@@ -39,6 +44,12 @@ pub enum Error {
     SequenceCannotZero,
     /// Proof cannot be empty
     ProofCannotEmpty,
+    /// ChannelEnd is empty
+    ChannelEndIsEmpty,
+    /// ClientState is empty
+    ClientStateIsEmpty,
+    /// ConnectionEnd is empty
+    ConnectionEndIsEmpty,
     /// Other : `{0}`
     Other(String),
 }

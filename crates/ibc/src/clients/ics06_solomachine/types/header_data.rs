@@ -19,13 +19,21 @@ impl Protobuf<RawHeaderData> for HeaderData {}
 impl TryFrom<RawHeaderData> for HeaderData {
     type Error = Error;
 
-    fn try_from(_raw: RawHeaderData) -> Result<Self, Self::Error> {
-        todo!()
+    fn try_from(raw: RawHeaderData) -> Result<Self, Self::Error> {
+        let new_pub_key = PublicKey::try_from(raw.new_pub_key.ok_or(Error::PublicKeyIsEmpty)?)
+            .map_err(Error::PublicKeyParseFailed)?;
+        Ok(Self {
+            new_pub_key,
+            new_diversifier: raw.new_diversifier,
+        })
     }
 }
 
 impl From<HeaderData> for RawHeaderData {
-    fn from(_value: HeaderData) -> Self {
-        todo!()
+    fn from(value: HeaderData) -> Self {
+        Self {
+            new_pub_key: Some(value.new_pub_key.to_any().expect("never failed")),
+            new_diversifier: value.new_diversifier,
+        }
     }
 }

@@ -9,7 +9,7 @@ use ibc_proto::protobuf::Protobuf;
 #[derive(Clone, PartialEq)]
 pub struct ChannelStateData {
     pub path: Vec<u8>,
-    pub channel: Option<ChannelEnd>,
+    pub channel: ChannelEnd,
 }
 impl Protobuf<RawChannelStateData> for ChannelStateData {}
 
@@ -21,8 +21,8 @@ impl TryFrom<RawChannelStateData> for ChannelStateData {
             path: raw.path,
             channel: raw
                 .channel
-                .map(TryInto::try_into)
-                .transpose()
+                .ok_or(Error::ChannelEndIsEmpty)?
+                .try_into()
                 .map_err(Error::ChannelError)?,
         })
     }
@@ -32,7 +32,7 @@ impl From<ChannelStateData> for RawChannelStateData {
     fn from(value: ChannelStateData) -> Self {
         Self {
             path: value.path,
-            channel: value.channel.map(Into::into),
+            channel: Some(value.channel.into()),
         }
     }
 }
