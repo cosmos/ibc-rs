@@ -33,6 +33,8 @@ pub enum Error {
     PublicKeyIsEmpty,
     /// consensus state is empty
     ConsensusStateIsEmpty,
+    /// SignatureAndData empty
+    SignatureAndDataIsEmpty,
 }
 
 impl From<Error> for ClientError {

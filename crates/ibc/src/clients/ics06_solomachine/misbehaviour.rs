@@ -21,8 +21,8 @@ pub const SOLOMACHINE_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.solomachi
 pub struct Misbehaviour {
     pub client_id: ClientId,
     pub sequence: Height,
-    pub signature_one: Option<SignatureAndData>,
-    pub signature_two: Option<SignatureAndData>,
+    pub signature_one: SignatureAndData,
+    pub signature_two: SignatureAndData,
 }
 
 impl Protobuf<RawSmMisbehaviour> for Misbehaviour {}
@@ -38,10 +38,14 @@ impl TryFrom<RawSmMisbehaviour> for Misbehaviour {
                 client_id: raw.client_id.clone(),
             })?;
         let sequence = Height::new(0, raw.sequence).map_err(Error::InvalidHeight)?;
-        let signature_one: Option<SignatureAndData> =
-            raw.signature_one.map(TryInto::try_into).transpose()?;
-        let signature_two: Option<SignatureAndData> =
-            raw.signature_two.map(TryInto::try_into).transpose()?;
+        let signature_one: SignatureAndData = raw
+            .signature_one
+            .ok_or(Error::SignatureAndDataIsEmpty)?
+            .try_into()?;
+        let signature_two: SignatureAndData = raw
+            .signature_two
+            .ok_or(Error::SignatureAndDataIsEmpty)?
+            .try_into()?;
         Ok(Self {
             client_id,
             sequence,
@@ -59,8 +63,8 @@ impl From<Misbehaviour> for RawSmMisbehaviour {
         Self {
             client_id,
             sequence,
-            signature_one: value.signature_one.map(Into::into),
-            signature_two: value.signature_two.map(Into::into),
+            signature_one: Some(value.signature_one.into()),
+            signature_two: Some(value.signature_two.into()),
         }
     }
 }
