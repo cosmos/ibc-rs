@@ -46,6 +46,7 @@ impl TryFrom<RawSmMisbehaviour> for Misbehaviour {
             .signature_two
             .ok_or(Error::SignatureAndDataIsEmpty)?
             .try_into()?;
+
         Ok(Self {
             client_id,
             sequence,
@@ -110,7 +111,11 @@ pub fn decode_misbehaviour<B: Buf>(buf: B) -> Result<Misbehaviour, Error> {
 }
 
 impl core::fmt::Display for Misbehaviour {
-    fn fmt(&self, _f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
-        todo!()
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
+        write!(
+            f,
+            "ClientId({}), Sequence({}), SignatureOne({}), SignatureTwo({})",
+            self.client_id, self.sequence, self.signature_two, self.signature_two
+        )
     }
 }

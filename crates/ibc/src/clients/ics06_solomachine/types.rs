@@ -1,3 +1,5 @@
+use core::fmt::write;
+
 use crate::clients::ics06_solomachine::error::Error;
 use crate::prelude::*;
 use ibc_proto::ibc::lightclients::solomachine::v2::DataType as RawDataType;
@@ -39,6 +41,23 @@ pub enum DataType {
     NextSequenceRecv,
     /// Data type for header verification
     Header,
+}
+
+impl core::fmt::Display for DataType {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
+        match self {
+            DataType::UninitializedUnspecified => write!(f, "uninitialized unspecified"),
+            DataType::ClientState => write!(f, "client state"),
+            DataType::ConsensusState => write!(f, "consensus state"),
+            DataType::ConnectionState => write!(f, "connection state"),
+            DataType::ChannelState => write!(f, "channel state"),
+            DataType::PacketCommitment => write!(f, "packet commitment"),
+            DataType::PacketAcknowledgement => write!(f, "packet acknowledgement"),
+            DataType::PacketReceiptAbsence => write!(f, "packet receipt absence"),
+            DataType::NextSequenceRecv => write!(f, "next sequence recv"),
+            DataType::Header => write!(f, "header"),
+        }
+    }
 }
 
 impl From<RawDataType> for DataType {

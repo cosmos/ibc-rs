@@ -15,6 +15,15 @@ pub struct SignatureAndData {
     pub data: Vec<u8>,
     pub timestamp: Timestamp,
 }
+impl core::fmt::Display for SignatureAndData {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
+        write!(
+            f,
+            "signature: {:?}, data_type: {}, data: {:?}, timestamp: {}",
+            self.signature, self.data_type, self.data, self.timestamp
+        )
+    }
+}
 
 impl Protobuf<RawSignatureAndData> for SignatureAndData {}
 

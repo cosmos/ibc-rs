@@ -26,14 +26,22 @@ pub struct Header {
 }
 
 impl core::fmt::Debug for Header {
-    fn fmt(&self, _f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        todo!()
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+        write!(f, " Header {{...}}")
     }
 }
 
 impl Display for Header {
-    fn fmt(&self, _f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        todo!()
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+        write!(
+            f,
+            "Header {{ sequence: {}, timestamp: {}, signature: {:?}, new_public_key: {:?}, new_diversifier: {} }}",
+            self.sequence,
+            self.timestamp,
+            self.signature,
+            self.new_public_key,
+            self.new_diversifier
+        )
     }
 }
 
