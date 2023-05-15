@@ -38,6 +38,7 @@ impl ClientState {
             sequence: self.sequence.revision_height(),
             timestamp: header.timestamp,
             diversifier: self.consensus_state.diversifier.clone(),
+            // todo(davirain): https://github.com/cosmos/ibc-go/blob/388283012124fd3cd66c9541000541d9c6767117/modules/light-clients/06-solomachine/update.go#LL52C36-L52C36
             data_type: crate::clients::ics06_solomachine::types::DataType::Header,
             data: data_bz,
         };
