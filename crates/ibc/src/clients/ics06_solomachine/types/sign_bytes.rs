@@ -4,7 +4,7 @@ use crate::prelude::*;
 use ibc_proto::ibc::lightclients::solomachine::v2::SignBytes as RawSignBytes;
 
 use super::DataType;
-// use ibc_proto::protobuf::Protobuf;
+use ibc_proto::protobuf::Protobuf;
 
 /// SignBytes defines the signed bytes used for signature verification.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -19,7 +19,7 @@ pub struct SignBytes {
     pub data: Vec<u8>,
 }
 
-// impl Protobuf<RawSignBytes> for SignBytes {}
+impl Protobuf<RawSignBytes> for SignBytes {}
 
 impl TryFrom<RawSignBytes> for SignBytes {
     type Error = Error;

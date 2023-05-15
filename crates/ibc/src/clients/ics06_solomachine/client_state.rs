@@ -1,7 +1,12 @@
+use super::misbehaviour::signature_and_data::SignatureAndData;
 use crate::clients::ics06_solomachine::consensus_state::ConsensusState as SmConsensusState;
 use crate::clients::ics06_solomachine::error::Error;
 use crate::clients::ics06_solomachine::header::Header as SmHeader;
 use crate::clients::ics06_solomachine::misbehaviour::Misbehaviour as SmMisbehaviour;
+use crate::clients::ics06_solomachine::proof::verify_signature;
+use crate::clients::ics06_solomachine::types::sign_bytes::SignBytes;
+use crate::clients::ics06_solomachine::types::timestamped_signature_data::TimestampedSignatureData;
+use crate::clients::ics06_solomachine::types::DataType;
 use crate::core::ics02_client::client_state::UpdateKind;
 use crate::core::ics02_client::client_state::{ClientState as Ics2ClientState, UpdatedState};
 use crate::core::ics02_client::client_type::ClientType;
@@ -18,6 +23,7 @@ use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 use crate::Height;
 use core::time::Duration;
+use cosmrs::crypto::PublicKey;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
 use ibc_proto::ibc::lightclients::solomachine::v2::ClientState as RawSmClientState;
@@ -77,13 +83,61 @@ impl ClientState {
     pub fn time_stamp(&self) -> Timestamp {
         self.consensus_state.timestamp
     }
+
+    // Validate performs basic validation of the client state fields.
+    pub fn valida_basic(&self) -> Result<(), Error> {
+        if self.sequence.revision_height() == 0 {
+            return Err(Error::SequenceCannotZero);
+        }
+        self.consensus_state.valida_basic()
+    }
+
+    // produceVerificationArgs perfoms the basic checks on the arguments that are
+    // shared between the verification functions and returns the public key of the
+    // consensus state, the unmarshalled proof representing the signature and timestamp.
+    pub fn produce_verification_args(
+        &self,
+        proof: &CommitmentProofBytes,
+    ) -> Result<(PublicKey, SignatureAndData, Timestamp, Height), Error> {
+        let proof = Vec::<u8>::from(proof.clone());
+        if proof.is_empty() {
+            return Err(Error::ProofCannotEmpty);
+        }
+        let timestamped_sig_data = TimestampedSignatureData::decode_vec(&proof).map_err(|e| {
+            Error::Other(format!(
+                "failed to decode proof into type TimestampedSignatureData: {}",
+                e
+            ))
+        })?;
+
+        let timestamp = timestamped_sig_data.timestamp;
+
+        if timestamped_sig_data.signature_data.is_empty() {
+            return Err(Error::Other("signature data cannot be empty".into()));
+        }
+
+        let signature_and_data = SignatureAndData::decode_vec(&timestamped_sig_data.signature_data)
+            .map_err(|_| Error::Other("failed to decode SignatureData".into()))?;
+
+        if self.consensus_state.timestamp > timestamp {
+            return Err(Error::Other(format!(
+                "the consensus state timestamp is greater than the signature timestamp ({} >= {})",
+                self.consensus_state.timestamp, timestamp
+            )));
+        }
+
+        let sequence = self.latest_height();
+        let public_key = self.consensus_state.public_key();
+        Ok((public_key, signature_and_data, timestamp, sequence))
+    }
 }
 
 impl Ics2ClientState for ClientState {
     /// Return the chain identifier which this client is serving (i.e., the client is verifying
     /// consensus states from this chain).
     fn chain_id(&self) -> ChainId {
-        todo!()
+        // todo(davirian)
+        ChainId::default()
     }
 
     /// ClientType is Solo Machine.
@@ -258,24 +312,83 @@ impl Ics2ClientState for ClientState {
     fn verify_membership(
         &self,
         _prefix: &CommitmentPrefix,
-        _proof: &CommitmentProofBytes,
+        proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _path: Path,
-        _value: Vec<u8>,
+        path: Path,
+        value: Vec<u8>,
     ) -> Result<(), ClientError> {
-        todo!()
+        let (public_key, sig_data, timestamp, sequence) = self.produce_verification_args(proof)?;
+        let data_type = match path {
+            Path::ClientState(_) => DataType::ClientState,
+            Path::ClientConsensusState(_) => DataType::ConsensusState,
+            Path::ClientConnection(_) => DataType::ConnectionState,
+            Path::Connection(_) => DataType::ConnectionState,
+            Path::Ports(_) => DataType::Header,
+            Path::ChannelEnd(_) => DataType::ChannelState,
+            Path::SeqSend(_) => DataType::Header,
+            Path::SeqRecv(_) => DataType::NextSequenceRecv,
+            Path::SeqAck(_) => DataType::Header,
+            Path::Commitment(_) => DataType::PacketCommitment,
+            Path::Ack(_) => DataType::PacketAcknowledgement,
+            Path::Receipt(_) => DataType::Header,
+            Path::UpgradeClient(_) => DataType::Header,
+        };
+        let sign_bytes = SignBytes {
+            sequence: sequence.revision_height(),
+            timestamp,
+            diversifier: self.consensus_state.diversifier.clone(),
+            data_type,
+            data: value,
+        };
+        let sign_bz = sign_bytes.encode_vec();
+
+        verify_signature(public_key, sign_bz, sig_data).map_err(|e| ClientError::Other {
+            description: e.to_string(),
+        })
     }
 
     // Verify_non_membership is a generic proof verification method which
     // verifies the absence of a given commitment.
+    //
+    // VerifyNonMembership is a generic proof verification method which verifies the absence
+    // of a given CommitmentPath at the latest sequence.
+    // The caller is expected to construct the full CommitmentPath from a CommitmentPrefix
+    // and a standardized path (as defined in ICS 24).
     fn verify_non_membership(
         &self,
         _prefix: &CommitmentPrefix,
-        _proof: &CommitmentProofBytes,
+        proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _path: Path,
+        path: Path,
     ) -> Result<(), ClientError> {
-        todo!()
+        let (public_key, sig_data, timestamp, sequence) = self.produce_verification_args(proof)?;
+        let data_type = match path {
+            Path::ClientState(_) => DataType::ClientState,
+            Path::ClientConsensusState(_) => DataType::ConsensusState,
+            Path::ClientConnection(_) => DataType::ConnectionState,
+            Path::Connection(_) => DataType::ConnectionState,
+            Path::Ports(_) => DataType::Header,
+            Path::ChannelEnd(_) => DataType::ChannelState,
+            Path::SeqSend(_) => DataType::Header,
+            Path::SeqRecv(_) => DataType::NextSequenceRecv,
+            Path::SeqAck(_) => DataType::Header,
+            Path::Commitment(_) => DataType::PacketCommitment,
+            Path::Ack(_) => DataType::PacketAcknowledgement,
+            Path::Receipt(_) => DataType::Header,
+            Path::UpgradeClient(_) => DataType::Header,
+        };
+        let sign_bytes = SignBytes {
+            sequence: sequence.revision_height(),
+            timestamp,
+            diversifier: self.consensus_state.diversifier.clone(),
+            data_type,
+            data: vec![],
+        };
+        let sign_bz = sign_bytes.encode_vec();
+
+        verify_signature(public_key, sign_bz, sig_data).map_err(|e| ClientError::Other {
+            description: e.to_string(),
+        })
     }
 }
 

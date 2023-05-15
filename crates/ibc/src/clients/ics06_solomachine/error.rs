@@ -35,6 +35,12 @@ pub enum Error {
     ConsensusStateIsEmpty,
     /// SignatureAndData empty
     SignatureAndDataIsEmpty,
+    /// Sequence cannot be zero
+    SequenceCannotZero,
+    /// Proof cannot be empty
+    ProofCannotEmpty,
+    /// Other : `{0}`
+    Other(String),
 }
 
 impl From<Error> for ClientError {

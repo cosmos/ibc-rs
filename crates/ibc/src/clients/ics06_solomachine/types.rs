@@ -1,5 +1,3 @@
-use core::fmt::write;
-
 use crate::clients::ics06_solomachine::error::Error;
 use crate::prelude::*;
 use ibc_proto::ibc::lightclients::solomachine::v2::DataType as RawDataType;
