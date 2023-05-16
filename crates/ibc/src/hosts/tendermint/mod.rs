@@ -1,8 +1,6 @@
 //! Provides convenience implementations for Tendermint-based hosts
 
-mod upgrade_proposal;
-pub use upgrade_proposal::handler::upgrade_proposal_handler;
-pub use upgrade_proposal::helper::{begin_blocker, schedule_upgrade};
+pub mod upgrade_proposal;
 
 mod validate_self_client;
 pub use validate_self_client::ValidateSelfClientContext;

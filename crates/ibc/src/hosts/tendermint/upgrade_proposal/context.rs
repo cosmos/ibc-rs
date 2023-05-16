@@ -33,7 +33,7 @@ pub trait UpgradeExecutionContext: ExecutionContext + UpgradeValidationContext {
     /// Schedules an upgrade based on the specified plan. If there is another Plan it should be overwritten.
     fn schedule_upgrade(&mut self, plan: Plan) -> Result<(), ContextError>;
 
-    /// Clears the upgrade plan.
+    /// Clears the upgrade plan at the specified height.
     fn clear_upgrade_plan(&mut self, plan_height: Height) -> Result<(), ContextError>;
 
     /// Stores the upgraded client state at the specified upgrade path.

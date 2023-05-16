@@ -14,7 +14,6 @@ use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, Por
 use derive_more::{Display, From};
 
 /// ABCI client upgrade keys
-
 /// - The key identifying the upgraded IBC state within the upgrade sub-store
 const UPGRADED_IBC_STATE: &str = "upgradedIBCState";
 ///- The key identifying the upgraded client state
