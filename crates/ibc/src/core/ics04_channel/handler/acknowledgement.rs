@@ -12,7 +12,8 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqAckPath,
 };
-use crate::core::{events::IbcEvent, ics04_channel::events::AcknowledgePacket, router::ModuleId};
+use crate::core::ics26_router::ModuleId;
+use crate::core::{events::IbcEvent, ics04_channel::events::AcknowledgePacket};
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn acknowledgement_packet_validate<ValCtx>(

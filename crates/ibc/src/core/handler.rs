@@ -27,8 +27,9 @@ use super::ics04_channel::handler::timeout::{
     timeout_packet_execute, timeout_packet_validate, TimeoutMsgType,
 };
 use super::ics04_channel::msgs::{ChannelMsg, PacketMsg};
+use super::ics26_router::RouterError;
 use super::ContextError;
-use super::{msgs::MsgEnvelope, ExecutionContext, RouterError, ValidationContext};
+use super::{msgs::MsgEnvelope, ExecutionContext, ValidationContext};
 
 /// Entrypoint which performs both validation and message execution
 pub fn dispatch(ctx: &mut impl ExecutionContext, msg: MsgEnvelope) -> Result<(), RouterError> {
@@ -225,8 +226,8 @@ mod tests {
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
     use crate::core::ics24_host::path::CommitmentPath;
+    use crate::core::ics26_router::ModuleId;
     use crate::core::msgs::MsgEnvelope;
-    use crate::core::router::ModuleId;
     use crate::core::timestamp::Timestamp;
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;

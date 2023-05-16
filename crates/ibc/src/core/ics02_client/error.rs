@@ -1,6 +1,5 @@
 //! Defines the client error type
 
-use crate::core::ContextError;
 use crate::prelude::*;
 
 use displaydoc::Display;
@@ -10,6 +9,7 @@ use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics23_commitment::error::CommitmentError;
 use crate::core::ics24_host::identifier::{ClientId, IdentifierError};
 use crate::core::timestamp::Timestamp;
+use crate::core::ContextError;
 use crate::Height;
 
 /// Encodes all the possible client errors
@@ -111,6 +111,8 @@ pub enum ClientError {
     Ics23Verification(CommitmentError),
     /// misbehaviour handling failed with reason: `{reason}`
     MisbehaviourHandlingFailure { reason: String },
+    /// invalid upgrade proposal: `{reason}`
+    InvalidUpgradeProposal { reason: String },
     /// client specific error: `{description}`
     ClientSpecific { description: String },
     /// other error: `{description}`

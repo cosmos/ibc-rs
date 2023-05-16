@@ -8,7 +8,7 @@ use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::events::CloseInit;
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
 use crate::core::ics24_host::path::ChannelEndPath;
-use crate::core::router::ModuleId;
+use crate::core::ics26_router::ModuleId;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_close_init_validate<ValCtx>(

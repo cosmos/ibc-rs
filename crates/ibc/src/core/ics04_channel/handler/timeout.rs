@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use prost::Message;
 
+use crate::core::events::IbcEvent;
 use crate::core::events::MessageEvent;
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
 use crate::core::ics04_channel::channel::State;
@@ -11,15 +12,12 @@ use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::events::ChannelClosed;
 use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
+use crate::core::ics04_channel::{events::TimeoutPacket, handler::timeout_on_close};
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
-use crate::core::{
-    events::IbcEvent,
-    ics04_channel::{events::TimeoutPacket, handler::timeout_on_close},
-    router::ModuleId,
-};
+use crate::core::ics26_router::ModuleId;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) enum TimeoutMsgType {

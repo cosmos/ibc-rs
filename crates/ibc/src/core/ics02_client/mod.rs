@@ -9,3 +9,4 @@ pub mod handler;
 pub mod header;
 pub mod height;
 pub mod msgs;
+pub mod proposal;

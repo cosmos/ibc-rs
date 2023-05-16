@@ -27,7 +27,7 @@ pub mod ics03_connection;
 pub mod ics04_channel;
 pub mod ics23_commitment;
 pub mod ics24_host;
-pub mod router;
+pub mod ics26_router;
 
 pub mod events;
 pub mod timestamp;
