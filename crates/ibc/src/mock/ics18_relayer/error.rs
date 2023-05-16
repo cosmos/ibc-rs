@@ -1,6 +1,6 @@
 use crate::core::ics03_connection;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics26_router::RouterError;
+use crate::core::RouterError;
 use crate::Height;
 use displaydoc::Display;
 

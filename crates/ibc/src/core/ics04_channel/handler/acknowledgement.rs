@@ -12,7 +12,7 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqAckPath,
 };
-use crate::core::ics26_router::ModuleId;
+use crate::core::router::ModuleId;
 use crate::core::{events::IbcEvent, ics04_channel::events::AcknowledgePacket};
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 

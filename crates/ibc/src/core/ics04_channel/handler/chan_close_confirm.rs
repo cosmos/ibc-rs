@@ -12,7 +12,7 @@ use crate::core::ics04_channel::events::CloseConfirm;
 use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
-use crate::core::ics26_router::ModuleId;
+use crate::core::router::ModuleId;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_close_confirm_validate<ValCtx>(
@@ -178,7 +178,7 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-    use crate::core::ics26_router::ModuleId;
+    use crate::core::router::ModuleId;
     use crate::core::timestamp::ZERO_DURATION;
 
     use crate::mock::client_state::client_type as mock_client_type;

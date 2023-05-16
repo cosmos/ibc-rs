@@ -17,7 +17,7 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
-use crate::core::ics26_router::ModuleId;
+use crate::core::router::ModuleId;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) enum TimeoutMsgType {

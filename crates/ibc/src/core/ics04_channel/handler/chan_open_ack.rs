@@ -12,7 +12,7 @@ use crate::core::ics04_channel::events::OpenAck;
 use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
-use crate::core::ics26_router::ModuleId;
+use crate::core::router::ModuleId;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_open_ack_validate<ValCtx>(

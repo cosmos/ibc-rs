@@ -1,12 +1,12 @@
 use alloc::boxed::Box;
 
+use super::context::UpgradeExecutionContext;
+use super::proposal::UpgradeProposal;
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::events::UpgradeClientProposal;
-use crate::core::ics02_client::proposal::UpgradeProposal;
 use crate::core::ics24_host::path::UpgradeClientPath;
-use crate::core::upgrade_client::UpgradeExecutionContext;
 use crate::core::ContextError;
 use crate::Height;
 

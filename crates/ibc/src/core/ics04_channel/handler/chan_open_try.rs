@@ -14,7 +14,7 @@ use crate::core::ics24_host::identifier::ChannelId;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::core::ics24_host::path::{SeqAckPath, SeqRecvPath, SeqSendPath};
-use crate::core::ics26_router::ModuleId;
+use crate::core::router::ModuleId;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_open_try_validate<ValCtx>(

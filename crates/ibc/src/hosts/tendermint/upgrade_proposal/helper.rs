@@ -1,11 +1,11 @@
 use alloc::string::ToString;
 
+use super::context::UpgradeExecutionContext;
+use super::proposal::Plan;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeChain;
-use crate::core::ics02_client::proposal::Plan;
 use crate::core::ics24_host::path::UpgradeClientPath;
-use crate::core::upgrade_client::UpgradeExecutionContext;
 use crate::core::ContextError;
 use crate::hosts::tendermint::UPGRADE_STORE_KEY;
 use crate::Height;

@@ -1,19 +1,25 @@
-use core::time::Duration;
-use ibc_proto::google::protobuf::Any;
-
 use crate::prelude::*;
+
 use crate::signer::Signer;
+use alloc::string::String;
+use core::time::Duration;
+use displaydoc::Display;
+use ibc_proto::google::protobuf::Any;
 
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::ConnectionEnd;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::version::{
     get_compatible_versions, pick_version, Version as ConnectionVersion,
 };
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::context::calculate_block_delay;
+use crate::core::ics04_channel::error::ChannelError;
+use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::ClientId;
@@ -22,11 +28,87 @@ use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
-use crate::core::ics26_router::Router;
+use crate::core::router::Router;
 use crate::core::timestamp::Timestamp;
 use crate::Height;
 
-use super::error::ContextError;
+/// Top-level error
+#[derive(Debug, Display)]
+pub enum ContextError {
+    /// ICS02 Client error: {0}
+    ClientError(ClientError),
+    /// ICS03 Connection error: {0}
+    ConnectionError(ConnectionError),
+    /// ICS04 Channel error: {0}
+    ChannelError(ChannelError),
+    /// ICS04 Packet error: {0}
+    PacketError(PacketError),
+}
+
+impl From<ClientError> for ContextError {
+    fn from(err: ClientError) -> ContextError {
+        Self::ClientError(err)
+    }
+}
+
+impl From<ConnectionError> for ContextError {
+    fn from(err: ConnectionError) -> ContextError {
+        Self::ConnectionError(err)
+    }
+}
+
+impl From<ChannelError> for ContextError {
+    fn from(err: ChannelError) -> ContextError {
+        Self::ChannelError(err)
+    }
+}
+
+impl From<PacketError> for ContextError {
+    fn from(err: PacketError) -> ContextError {
+        Self::PacketError(err)
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for ContextError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Self::ClientError(e) => Some(e),
+            Self::ConnectionError(e) => Some(e),
+            Self::ChannelError(e) => Some(e),
+            Self::PacketError(e) => Some(e),
+        }
+    }
+}
+
+/// Error returned from entrypoint functions [`dispatch`][super::dispatch], [`validate`][super::validate] and
+/// [`execute`][super::execute].
+#[derive(Debug, Display)]
+pub enum RouterError {
+    /// context error: `{0}`
+    ContextError(ContextError),
+    /// unknown type URL `{url}`
+    UnknownMessageTypeUrl { url: String },
+    /// the message is malformed and cannot be decoded error: `{0}`
+    MalformedMessageBytes(ibc_proto::protobuf::Error),
+}
+
+impl From<ContextError> for RouterError {
+    fn from(error: ContextError) -> Self {
+        Self::ContextError(error)
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for RouterError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Self::ContextError(e) => Some(e),
+            Self::UnknownMessageTypeUrl { .. } => None,
+            Self::MalformedMessageBytes(e) => Some(e),
+        }
+    }
+}
 
 /// Context to be implemented by the host that provides all "read-only" methods.
 ///
