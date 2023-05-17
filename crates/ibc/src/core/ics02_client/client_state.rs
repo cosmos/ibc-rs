@@ -41,7 +41,7 @@ pub trait ClientState:
     /// Latest height the client was updated to
     fn latest_height(&self) -> Height;
 
-    /// Check if the given proof has a valid height for the client
+    /// Validate that the height of the proof is supported by the client
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError>;
 
     /// Assert that the client is not frozen
@@ -50,11 +50,6 @@ pub trait ClientState:
     /// Check if the state is expired when `elapsed` time has passed since the latest consensus
     /// state timestamp
     fn expired(&self, elapsed: Duration) -> bool;
-
-    /// Helper function to verify the upgrade client procedure.
-    /// Resets all fields except the blockchain-specific ones,
-    /// and updates the given fields.
-    fn zero_custom_fields(&mut self);
 
     /// Convert into a boxed trait object
     fn into_box(self) -> Box<dyn ClientState>

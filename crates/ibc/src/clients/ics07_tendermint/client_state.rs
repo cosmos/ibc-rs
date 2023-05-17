@@ -249,6 +249,16 @@ impl ClientState {
     fn chain_id(&self) -> ChainId {
         self.chain_id.clone()
     }
+
+    // Resets custom fields to zero values (used in `update_client`)
+    fn zero_custom_fields(&mut self) {
+        self.trusting_period = ZERO_DURATION;
+        self.trust_level = TrustThreshold::ZERO;
+        self.allow_update.after_expiry = false;
+        self.allow_update.after_misbehaviour = false;
+        self.frozen_height = None;
+        self.max_clock_drift = ZERO_DURATION;
+    }
 }
 
 impl Ics2ClientState for ClientState {
@@ -277,16 +287,6 @@ impl Ics2ClientState for ClientState {
             });
         }
         Ok(())
-    }
-
-    // Resets custom fields to zero values (used in `update_client`)
-    fn zero_custom_fields(&mut self) {
-        self.trusting_period = ZERO_DURATION;
-        self.trust_level = TrustThreshold::ZERO;
-        self.allow_update.after_expiry = false;
-        self.allow_update.after_misbehaviour = false;
-        self.frozen_height = None;
-        self.max_clock_drift = ZERO_DURATION;
     }
 
     fn expired(&self, elapsed: Duration) -> bool {

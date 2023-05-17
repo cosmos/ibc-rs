@@ -165,10 +165,6 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
-    fn zero_custom_fields(&mut self) {
-        unimplemented!()
-    }
-
     fn expired(&self, _elapsed: Duration) -> bool {
         false
     }
