@@ -819,7 +819,7 @@ pub struct StaticTmClientState {
     pub trusting_period: Duration,
     pub unbonding_period: Duration,
     max_clock_drift: Duration,
-    latest_height: Height,
+    pub latest_height: Height,
     pub proof_specs: ProofSpecs,
     pub upgrade_path: Vec<String>,
     allow_update: AllowUpdate,
@@ -1282,12 +1282,21 @@ where
 
     fn check_for_misbehaviour(
         &self,
-        _ctx: &ClientValidationContext,
-        _client_id: &ClientId,
-        _client_message: Any,
-        _update_kind: &UpdateKind,
+        ctx: &ClientValidationContext,
+        client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
     ) -> Result<bool, ClientError> {
-        todo!()
+        match update_kind {
+            UpdateKind::UpdateClient => {
+                let header = TmHeader::try_from(client_message)?;
+                self.check_for_misbehaviour_update_client(ctx, client_id, header)
+            }
+            UpdateKind::SubmitMisbehaviour => {
+                let misbehaviour = TmMisbehaviour::try_from(client_message)?;
+                self.check_for_misbehaviour_misbehavior(&misbehaviour)
+            }
+        }
     }
 }
 
