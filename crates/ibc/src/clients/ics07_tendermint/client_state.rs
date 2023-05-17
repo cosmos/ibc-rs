@@ -775,6 +775,203 @@ impl From<ClientState> for Any {
     }
 }
 
+///////////////////////////////////////////////////////
+// Static versions
+///////////////////////////////////////////////////////
+
+/// Contains the core implementation of the Tendermint light client
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StaticTmClientState {
+    pub chain_id: ChainId,
+    pub trust_level: TrustThreshold,
+    pub trusting_period: Duration,
+    pub unbonding_period: Duration,
+    max_clock_drift: Duration,
+    latest_height: Height,
+    pub proof_specs: ProofSpecs,
+    pub upgrade_path: Vec<String>,
+    allow_update: AllowUpdate,
+    frozen_height: Option<Height>,
+    #[cfg_attr(feature = "serde", serde(skip))]
+    verifier: ProdVerifier,
+}
+
+impl StaticTmClientState {
+    #[allow(clippy::too_many_arguments)]
+    fn new_without_validation(
+        chain_id: ChainId,
+        trust_level: TrustThreshold,
+        trusting_period: Duration,
+        unbonding_period: Duration,
+        max_clock_drift: Duration,
+        latest_height: Height,
+        proof_specs: ProofSpecs,
+        upgrade_path: Vec<String>,
+        allow_update: AllowUpdate,
+    ) -> Self {
+        Self {
+            chain_id,
+            trust_level,
+            trusting_period,
+            unbonding_period,
+            max_clock_drift,
+            latest_height,
+            proof_specs,
+            upgrade_path,
+            allow_update,
+            frozen_height: None,
+            verifier: ProdVerifier::default(),
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        chain_id: ChainId,
+        trust_level: TrustThreshold,
+        trusting_period: Duration,
+        unbonding_period: Duration,
+        max_clock_drift: Duration,
+        latest_height: Height,
+        proof_specs: ProofSpecs,
+        upgrade_path: Vec<String>,
+        allow_update: AllowUpdate,
+    ) -> Result<Self, Error> {
+        let client_state = Self::new_without_validation(
+            chain_id,
+            trust_level,
+            trusting_period,
+            unbonding_period,
+            max_clock_drift,
+            latest_height,
+            proof_specs,
+            upgrade_path,
+            allow_update,
+        );
+        client_state.validate()?;
+        Ok(client_state)
+    }
+
+    pub fn with_header(self, header: TmHeader) -> Result<Self, Error> {
+        Ok(Self {
+            latest_height: max(header.height(), self.latest_height),
+            ..self
+        })
+    }
+
+    pub fn with_frozen_height(self, h: Height) -> Self {
+        Self {
+            frozen_height: Some(h),
+            ..self
+        }
+    }
+
+    pub fn validate(&self) -> Result<(), Error> {
+        if self.chain_id.as_str().len() > MaxChainIdLen {
+            return Err(Error::ChainIdTooLong {
+                chain_id: self.chain_id.clone(),
+                len: self.chain_id.as_str().len(),
+                max_len: MaxChainIdLen,
+            });
+        }
+
+        // `TrustThreshold` is guaranteed to be in the range `[0, 1)`, but a `TrustThreshold::ZERO`
+        // value is invalid in this context
+        if self.trust_level == TrustThreshold::ZERO {
+            return Err(Error::InvalidTrustThreshold {
+                reason: "ClientState trust-level cannot be zero".to_string(),
+            });
+        }
+
+        TendermintTrustThresholdFraction::new(
+            self.trust_level.numerator(),
+            self.trust_level.denominator(),
+        )
+        .map_err(Error::InvalidTendermintTrustThreshold)?;
+
+        // Basic validation of trusting period and unbonding period: each should be non-zero.
+        if self.trusting_period <= Duration::new(0, 0) {
+            return Err(Error::InvalidTrustThreshold {
+                reason: format!(
+                    "ClientState trusting period ({:?}) must be greater than zero",
+                    self.trusting_period
+                ),
+            });
+        }
+
+        if self.unbonding_period <= Duration::new(0, 0) {
+            return Err(Error::InvalidTrustThreshold {
+                reason: format!(
+                    "ClientState unbonding period ({:?}) must be greater than zero",
+                    self.unbonding_period
+                ),
+            });
+        }
+
+        if self.trusting_period >= self.unbonding_period {
+            return Err(Error::InvalidTrustThreshold {
+                reason: format!(
+                "ClientState trusting period ({:?}) must be smaller than unbonding period ({:?})", self.trusting_period, self.unbonding_period
+            ),
+            });
+        }
+
+        if self.max_clock_drift <= Duration::new(0, 0) {
+            return Err(Error::InvalidMaxClockDrift {
+                reason: "ClientState max-clock-drift must be greater than zero".to_string(),
+            });
+        }
+
+        if self.latest_height.revision_number() != self.chain_id.version() {
+            return Err(Error::InvalidLatestHeight {
+                reason: "ClientState latest-height revision number must match chain-id version"
+                    .to_string(),
+            });
+        }
+
+        // Disallow empty proof-specs
+        if self.proof_specs.is_empty() {
+            return Err(Error::Validation {
+                reason: "ClientState proof-specs cannot be empty".to_string(),
+            });
+        }
+
+        // `upgrade_path` itself may be empty, but if not then each key must be non-empty
+        for (idx, key) in self.upgrade_path.iter().enumerate() {
+            if key.trim().is_empty() {
+                return Err(Error::Validation {
+                    reason: format!(
+                        "ClientState upgrade-path key at index {idx:?} cannot be empty"
+                    ),
+                });
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Get the refresh time to ensure the state does not expire
+    pub fn refresh_time(&self) -> Option<Duration> {
+        Some(2 * self.trusting_period / 3)
+    }
+
+    /// Helper method to produce a [`Options`] struct for use in
+    /// Tendermint-specific light client verification.
+    pub fn as_light_client_options(&self) -> Result<Options, Error> {
+        Ok(Options {
+            trust_threshold: self.trust_level.try_into().map_err(|e: ClientError| {
+                Error::InvalidTrustThreshold {
+                    reason: e.to_string(),
+                }
+            })?,
+            trusting_period: self.trusting_period,
+            clock_drift: self.max_clock_drift,
+        })
+    }
+}
+
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
