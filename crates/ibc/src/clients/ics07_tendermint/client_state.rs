@@ -246,13 +246,12 @@ impl ClientState {
             clock_drift: self.max_clock_drift,
         })
     }
-}
-
-impl Ics2ClientState for ClientState {
     fn chain_id(&self) -> ChainId {
         self.chain_id.clone()
     }
+}
 
+impl Ics2ClientState for ClientState {
     fn client_type(&self) -> ClientType {
         tm_client_type()
     }

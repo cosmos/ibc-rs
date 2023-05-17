@@ -14,7 +14,7 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
-use crate::core::ics24_host::identifier::{ChainId, ClientId};
+use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::Path;
 use crate::erased::ErasedSerialize;
 use crate::prelude::*;
@@ -35,10 +35,6 @@ pub trait ClientState:
     + Send
     + Sync
 {
-    /// Return the chain identifier which this client is serving (i.e., the client is verifying
-    /// consensus states from this chain).
-    fn chain_id(&self) -> ChainId;
-
     /// Type of client associated with this state (eg. Tendermint)
     fn client_type(&self) -> ClientType;
 
