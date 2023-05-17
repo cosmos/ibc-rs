@@ -1,5 +1,6 @@
 //! Defines `ClientState`, the core type to be implemented by light clients
 
+use core::fmt::Debug;
 use core::marker::{Send, Sync};
 use core::time::Duration;
 
@@ -7,6 +8,7 @@ use dyn_clone::DynClone;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
+use serde::Serialize;
 
 use crate::clients::AsAny;
 use crate::core::ics02_client::client_type::ClientType;
@@ -31,7 +33,7 @@ pub trait ClientState:
     + DynClone
     + ErasedSerialize
     + ErasedProtobuf<Any, Error = ClientError>
-    + core::fmt::Debug
+    + Debug
     + Send
     + Sync
 {
@@ -225,4 +227,140 @@ mod sealed {
                 .map_or(false, |h| self == h)
         }
     }
+}
+
+/////////////////////////////////////////////////////////
+// Static versions
+/////////////////////////////////////////////////////////
+
+pub trait StaticClientState<SupportedConsensusStates, ClientContext>:
+    PartialEq + Clone + Serialize + Debug + Send + Sync
+{
+    /// Return the chain identifier which this client is serving (i.e., the client is verifying
+    /// consensus states from this chain).
+    fn chain_id(&self) -> ChainId;
+
+    /// Type of client associated with this state (eg. Tendermint)
+    fn client_type(&self) -> ClientType;
+
+    /// Latest height the client was updated to
+    fn latest_height(&self) -> Height;
+
+    /// Check if the given proof has a valid height for the client
+    fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError>;
+
+    /// Assert that the client is not frozen
+    fn confirm_not_frozen(&self) -> Result<(), ClientError>;
+
+    /// Check if the state is expired when `elapsed` time has passed since the latest consensus
+    /// state timestamp
+    fn expired(&self, elapsed: Duration) -> bool;
+
+    /// Helper function to verify the upgrade client procedure.
+    /// Resets all fields except the blockchain-specific ones,
+    /// and updates the given fields.
+    fn zero_custom_fields(&mut self);
+
+    fn initialise(&self, consensus_state: Any) -> Result<SupportedConsensusStates, ClientError>;
+
+    /// verify_client_message must verify a client_message. A client_message
+    /// could be a Header, Misbehaviour. It must handle each type of
+    /// client_message appropriately. Calls to check_for_misbehaviour,
+    /// update_state, and update_state_on_misbehaviour will assume that the
+    /// content of the client_message has been verified and can be trusted. An
+    /// error should be returned if the client_message fails to verify.
+    fn verify_client_message(
+        &self,
+        ctx: &dyn ValidationContext,
+        client_ctx: &ClientContext,
+        client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<(), ClientError>;
+
+    /// Checks for evidence of a misbehaviour in Header or Misbehaviour type. It
+    /// assumes the client_message has already been verified.
+    fn check_for_misbehaviour(
+        &self,
+        ctx: &dyn ValidationContext,
+        client_ctx: &ClientContext,
+        client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<bool, ClientError>;
+
+    /// Updates and stores as necessary any associated information for an IBC
+    /// client, such as the ClientState and corresponding ConsensusState. Upon
+    /// successful update, a list of consensus heights is returned. It assumes
+    /// the client_message has already been verified.
+    ///
+    /// Note that `header` is the field associated with `UpdateKind::UpdateClient`.
+    ///
+    /// Post-condition: on success, the return value MUST contain at least one
+    /// height.
+    fn update_state(
+        &self,
+        ctx: &mut dyn ExecutionContext,
+        client_ctx: &ClientContext,
+        client_id: &ClientId,
+        header: Any,
+    ) -> Result<Vec<Height>, ClientError>;
+
+    /// update_state_on_misbehaviour should perform appropriate state changes on
+    /// a client state given that misbehaviour has been detected and verified
+    fn update_state_on_misbehaviour(
+        &self,
+        ctx: &mut dyn ExecutionContext,
+        client_ctx: &ClientContext,
+        client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<(), ClientError>;
+
+    /// Verify the upgraded client and consensus states and validate proofs
+    /// against the given root.
+    ///
+    /// NOTE: proof heights are not included as upgrade to a new revision is
+    /// expected to pass only on the last height committed by the current
+    /// revision. Clients are responsible for ensuring that the planned last
+    /// height of the current revision is somehow encoded in the proof
+    /// verification process. This is to ensure that no premature upgrades
+    /// occur, since upgrade plans committed to by the counterparty may be
+    /// cancelled or modified before the last planned height.
+    fn verify_upgrade_client(
+        &self,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+        proof_upgrade_client: MerkleProof,
+        proof_upgrade_consensus_state: MerkleProof,
+        root: &CommitmentRoot,
+    ) -> Result<(), ClientError>;
+
+    // Update the client state and consensus state in the store with the upgraded ones.
+    fn update_state_with_upgrade_client(
+        &self,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+    ) -> Result<UpdatedState, ClientError>;
+
+    // Verify_membership is a generic proof verification method which verifies a
+    // proof of the existence of a value at a given Path.
+    fn verify_membership(
+        &self,
+        prefix: &CommitmentPrefix,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        path: Path,
+        value: Vec<u8>,
+    ) -> Result<(), ClientError>;
+
+    // Verify_non_membership is a generic proof verification method which
+    // verifies the absence of a given commitment.
+    fn verify_non_membership(
+        &self,
+        prefix: &CommitmentPrefix,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        path: Path,
+    ) -> Result<(), ClientError>;
 }
