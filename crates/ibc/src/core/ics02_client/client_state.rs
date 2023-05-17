@@ -224,17 +224,13 @@ mod sealed {
 /////////////////////////////////////////////////////////
 
 pub trait StaticClientStateBase: PartialEq + Clone + Debug + Send + Sync {
-    /// Return the chain identifier which this client is serving (i.e., the client is verifying
-    /// consensus states from this chain).
-    fn chain_id(&self) -> ChainId;
-
     /// Type of client associated with this state (eg. Tendermint)
     fn client_type(&self) -> ClientType;
 
     /// Latest height the client was updated to
     fn latest_height(&self) -> Height;
 
-    /// Check if the given proof has a valid height for the client
+    /// Validate that the client is at a sufficient height
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError>;
 
     /// Assert that the client is not frozen
@@ -243,11 +239,6 @@ pub trait StaticClientStateBase: PartialEq + Clone + Debug + Send + Sync {
     /// Check if the state is expired when `elapsed` time has passed since the latest consensus
     /// state timestamp
     fn expired(&self, elapsed: Duration) -> bool;
-
-    /// Helper function to verify the upgrade client procedure.
-    /// Resets all fields except the blockchain-specific ones,
-    /// and updates the given fields.
-    fn zero_custom_fields(&mut self);
 
     /// Verify the upgraded client and consensus states and validate proofs
     /// against the given root.
