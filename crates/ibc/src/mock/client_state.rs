@@ -16,7 +16,7 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
-use crate::core::ics24_host::identifier::{ChainId, ClientId};
+use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::Path;
 use crate::mock::client_state::client_type as mock_client_type;
 use crate::mock::consensus_state::MockConsensusState;
@@ -138,10 +138,6 @@ impl From<MockClientState> for Any {
 }
 
 impl ClientState for MockClientState {
-    fn chain_id(&self) -> ChainId {
-        unimplemented!()
-    }
-
     fn client_type(&self) -> ClientType {
         mock_client_type()
     }
@@ -167,10 +163,6 @@ impl ClientState for MockClientState {
             });
         }
         Ok(())
-    }
-
-    fn zero_custom_fields(&mut self) {
-        unimplemented!()
     }
 
     fn expired(&self, _elapsed: Duration) -> bool {
