@@ -399,15 +399,26 @@ pub trait ExecutionContext: ValidationContext {
 // Static versions
 //////////////////////////////////////////////
 pub trait StaticValidationContext: Router {
-    type ClientContext;
+    type ClientValidationContext;
+    type ClientExecutionContext;
     type SupportedConsensusStates;
-    type SupportedClientStates: StaticClientState<Self::SupportedConsensusStates, Self::ClientContext>;
+    type SupportedClientStates: StaticClientState<
+        Self::SupportedConsensusStates,
+        Self::ClientValidationContext,
+        Self::ClientExecutionContext,
+    >;
 
     /// Returns the ClientState for the given identifier `client_id`.
-    fn client_state(&self, client_id: &ClientId) -> Result<Self::SupportedClientStates, ContextError>;
+    fn client_state(
+        &self,
+        client_id: &ClientId,
+    ) -> Result<Self::SupportedClientStates, ContextError>;
 
     /// Tries to decode the given `client_state` into a concrete light client state.
-    fn decode_client_state(&self, client_state: Any) -> Result<Self::SupportedClientStates, ContextError>;
+    fn decode_client_state(
+        &self,
+        client_state: Any,
+    ) -> Result<Self::SupportedClientStates, ContextError>;
 
     /// Retrieve the consensus state for the given client ID at the specified
     /// height.

@@ -8,7 +8,6 @@ use dyn_clone::DynClone;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
-use serde::Serialize;
 
 use crate::clients::AsAny;
 use crate::core::ics02_client::client_type::ClientType;
@@ -233,8 +232,11 @@ mod sealed {
 // Static versions
 /////////////////////////////////////////////////////////
 
-pub trait StaticClientState<SupportedConsensusStates, ClientContext>:
-    PartialEq + Clone + Serialize + Debug + Send + Sync
+pub trait StaticClientState<
+    SupportedConsensusStates,
+    ClientValidationContext,
+    ClientExecutionContext,
+>: PartialEq + Clone + Debug + Send + Sync
 {
     /// Return the chain identifier which this client is serving (i.e., the client is verifying
     /// consensus states from this chain).
@@ -271,8 +273,7 @@ pub trait StaticClientState<SupportedConsensusStates, ClientContext>:
     /// error should be returned if the client_message fails to verify.
     fn verify_client_message(
         &self,
-        ctx: &dyn ValidationContext,
-        client_ctx: &ClientContext,
+        ctx: &ClientValidationContext,
         client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -282,8 +283,7 @@ pub trait StaticClientState<SupportedConsensusStates, ClientContext>:
     /// assumes the client_message has already been verified.
     fn check_for_misbehaviour(
         &self,
-        ctx: &dyn ValidationContext,
-        client_ctx: &ClientContext,
+        ctx: &ClientValidationContext,
         client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -300,8 +300,7 @@ pub trait StaticClientState<SupportedConsensusStates, ClientContext>:
     /// height.
     fn update_state(
         &self,
-        ctx: &mut dyn ExecutionContext,
-        client_ctx: &ClientContext,
+        ctx: &mut ClientExecutionContext,
         client_id: &ClientId,
         header: Any,
     ) -> Result<Vec<Height>, ClientError>;
@@ -310,8 +309,7 @@ pub trait StaticClientState<SupportedConsensusStates, ClientContext>:
     /// a client state given that misbehaviour has been detected and verified
     fn update_state_on_misbehaviour(
         &self,
-        ctx: &mut dyn ExecutionContext,
-        client_ctx: &ClientContext,
+        ctx: &mut ClientExecutionContext,
         client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
