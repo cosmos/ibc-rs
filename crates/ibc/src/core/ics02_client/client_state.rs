@@ -232,12 +232,7 @@ mod sealed {
 // Static versions
 /////////////////////////////////////////////////////////
 
-pub trait StaticClientState<
-    SupportedConsensusStates,
-    ClientValidationContext,
-    ClientExecutionContext,
->: PartialEq + Clone + Debug + Send + Sync
-{
+pub trait StaticClientStateBase: PartialEq + Clone + Debug + Send + Sync {
     /// Return the chain identifier which this client is serving (i.e., the client is verifying
     /// consensus states from this chain).
     fn chain_id(&self) -> ChainId;
@@ -262,58 +257,6 @@ pub trait StaticClientState<
     /// Resets all fields except the blockchain-specific ones,
     /// and updates the given fields.
     fn zero_custom_fields(&mut self);
-
-    fn initialise(&self, consensus_state: Any) -> Result<SupportedConsensusStates, ClientError>;
-
-    /// verify_client_message must verify a client_message. A client_message
-    /// could be a Header, Misbehaviour. It must handle each type of
-    /// client_message appropriately. Calls to check_for_misbehaviour,
-    /// update_state, and update_state_on_misbehaviour will assume that the
-    /// content of the client_message has been verified and can be trusted. An
-    /// error should be returned if the client_message fails to verify.
-    fn verify_client_message(
-        &self,
-        ctx: &ClientValidationContext,
-        client_id: &ClientId,
-        client_message: Any,
-        update_kind: &UpdateKind,
-    ) -> Result<(), ClientError>;
-
-    /// Checks for evidence of a misbehaviour in Header or Misbehaviour type. It
-    /// assumes the client_message has already been verified.
-    fn check_for_misbehaviour(
-        &self,
-        ctx: &ClientValidationContext,
-        client_id: &ClientId,
-        client_message: Any,
-        update_kind: &UpdateKind,
-    ) -> Result<bool, ClientError>;
-
-    /// Updates and stores as necessary any associated information for an IBC
-    /// client, such as the ClientState and corresponding ConsensusState. Upon
-    /// successful update, a list of consensus heights is returned. It assumes
-    /// the client_message has already been verified.
-    ///
-    /// Note that `header` is the field associated with `UpdateKind::UpdateClient`.
-    ///
-    /// Post-condition: on success, the return value MUST contain at least one
-    /// height.
-    fn update_state(
-        &self,
-        ctx: &mut ClientExecutionContext,
-        client_id: &ClientId,
-        header: Any,
-    ) -> Result<Vec<Height>, ClientError>;
-
-    /// update_state_on_misbehaviour should perform appropriate state changes on
-    /// a client state given that misbehaviour has been detected and verified
-    fn update_state_on_misbehaviour(
-        &self,
-        ctx: &mut ClientExecutionContext,
-        client_id: &ClientId,
-        client_message: Any,
-        update_kind: &UpdateKind,
-    ) -> Result<(), ClientError>;
 
     /// Verify the upgraded client and consensus states and validate proofs
     /// against the given root.
@@ -361,4 +304,90 @@ pub trait StaticClientState<
         root: &CommitmentRoot,
         path: Path,
     ) -> Result<(), ClientError>;
+}
+
+pub trait StaticClientStateInitializer<SupportedConsensusStates> {
+    fn initialise(&self, consensus_state: Any) -> Result<SupportedConsensusStates, ClientError>;
+}
+
+pub trait StaticClientStateValidation<ClientValidationContext> {
+    /// verify_client_message must verify a client_message. A client_message
+    /// could be a Header, Misbehaviour. It must handle each type of
+    /// client_message appropriately. Calls to check_for_misbehaviour,
+    /// update_state, and update_state_on_misbehaviour will assume that the
+    /// content of the client_message has been verified and can be trusted. An
+    /// error should be returned if the client_message fails to verify.
+    fn verify_client_message(
+        &self,
+        ctx: &ClientValidationContext,
+        client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<(), ClientError>;
+
+    /// Checks for evidence of a misbehaviour in Header or Misbehaviour type. It
+    /// assumes the client_message has already been verified.
+    fn check_for_misbehaviour(
+        &self,
+        ctx: &ClientValidationContext,
+        client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<bool, ClientError>;
+}
+
+pub trait StaticClientStateExecution<ClientExecutionContext> {
+    /// Updates and stores as necessary any associated information for an IBC
+    /// client, such as the ClientState and corresponding ConsensusState. Upon
+    /// successful update, a list of consensus heights is returned. It assumes
+    /// the client_message has already been verified.
+    ///
+    /// Note that `header` is the field associated with `UpdateKind::UpdateClient`.
+    ///
+    /// Post-condition: on success, the return value MUST contain at least one
+    /// height.
+    fn update_state(
+        &self,
+        ctx: &mut ClientExecutionContext,
+        client_id: &ClientId,
+        header: Any,
+    ) -> Result<Vec<Height>, ClientError>;
+
+    /// update_state_on_misbehaviour should perform appropriate state changes on
+    /// a client state given that misbehaviour has been detected and verified
+    fn update_state_on_misbehaviour(
+        &self,
+        ctx: &mut ClientExecutionContext,
+        client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<(), ClientError>;
+}
+
+pub trait StaticClientState<
+    SupportedConsensusStates,
+    ClientValidationContext,
+    ClientExecutionContext,
+>:
+    PartialEq
+    + Clone
+    + Debug
+    + Send
+    + Sync
+    + StaticClientStateBase
+    + StaticClientStateInitializer<SupportedConsensusStates>
+    + StaticClientStateValidation<ClientValidationContext>
+    + StaticClientStateExecution<ClientExecutionContext>
+{
+}
+
+impl<SupportedConsensusStates, ClientValidationContext, ClientExecutionContext, T>
+    StaticClientState<SupportedConsensusStates, ClientValidationContext, ClientExecutionContext>
+    for T
+where
+    T: StaticClientStateBase
+        + StaticClientStateInitializer<SupportedConsensusStates>
+        + StaticClientStateValidation<ClientValidationContext>
+        + StaticClientStateExecution<ClientExecutionContext>,
+{
 }
