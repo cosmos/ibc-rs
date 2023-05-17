@@ -41,7 +41,7 @@ pub trait ClientState:
     /// Latest height the client was updated to
     fn latest_height(&self) -> Height;
 
-    /// Validate that the height of the proof is supported by the client
+    /// Validate that the client is at a sufficient height
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError>;
 
     /// Assert that the client is not frozen
