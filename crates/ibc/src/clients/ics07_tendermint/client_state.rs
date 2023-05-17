@@ -28,7 +28,8 @@ use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::core::ics02_client::client_state::{
-    ClientState as Ics2ClientState, UpdateKind, UpdatedState,
+    ClientState as Ics2ClientState, StaticClientStateBase, StaticClientStateInitializer,
+    StaticClientStateValidation, UpdateKind, UpdatedState,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
@@ -41,12 +42,12 @@ use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, UpgradeClientPath};
-use crate::core::timestamp::ZERO_DURATION;
+use crate::core::timestamp::{Timestamp, ZERO_DURATION};
 use crate::Height;
 
 use super::client_type as tm_client_type;
 use super::trust_threshold::TrustThreshold;
-use crate::core::{ExecutionContext, ValidationContext};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
@@ -246,6 +247,7 @@ impl ClientState {
             clock_drift: self.max_clock_drift,
         })
     }
+
     fn chain_id(&self) -> ChainId {
         self.chain_id.clone()
     }
@@ -778,6 +780,36 @@ impl From<ClientState> for Any {
 // Static versions
 ///////////////////////////////////////////////////////
 
+pub trait TmClientValidationContext {
+    type SupportedConsensusStates: Into<TmConsensusState>;
+
+    /// Returns the current timestamp of the local chain.
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
+
+    /// Retrieve the consensus state for the given client ID at the specified
+    /// height.
+    ///
+    /// Returns an error if no such state exists.
+    fn consensus_state(
+        &self,
+        client_cons_state_path: &ClientConsensusStatePath,
+    ) -> Result<Self::SupportedConsensusStates, ContextError>;
+
+    /// Search for the lowest consensus state higher than `height`.
+    fn next_consensus_state(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Option<Self::SupportedConsensusStates>, ContextError>;
+
+    /// Search for the highest consensus state lower than `height`.
+    fn prev_consensus_state(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Option<Self::SupportedConsensusStates>, ContextError>;
+}
+
 /// Contains the core implementation of the Tendermint light client
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -967,9 +999,297 @@ impl StaticTmClientState {
             clock_drift: self.max_clock_drift,
         })
     }
+
+    fn chain_id(&self) -> ChainId {
+        self.chain_id.clone()
+    }
+
+    // Resets custom fields to zero values (used in `update_client`)
+    fn _zero_custom_fields(&mut self) {
+        self.trusting_period = ZERO_DURATION;
+        self.trust_level = TrustThreshold::ZERO;
+        self.allow_update.after_expiry = false;
+        self.allow_update.after_misbehaviour = false;
+        self.frozen_height = None;
+        self.max_clock_drift = ZERO_DURATION;
+    }
 }
 
+impl StaticClientStateBase for StaticTmClientState {
+    fn client_type(&self) -> ClientType {
+        tm_client_type()
+    }
 
+    fn latest_height(&self) -> Height {
+        self.latest_height
+    }
+
+    fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
+        if self.latest_height() < proof_height {
+            return Err(ClientError::InvalidProofHeight {
+                latest_height: self.latest_height(),
+                proof_height,
+            });
+        }
+        Ok(())
+    }
+
+    fn confirm_not_frozen(&self) -> Result<(), ClientError> {
+        if let Some(frozen_height) = self.frozen_height {
+            return Err(ClientError::ClientFrozen {
+                description: format!("the client is frozen at height {frozen_height}"),
+            });
+        }
+        Ok(())
+    }
+
+    fn expired(&self, elapsed: Duration) -> bool {
+        elapsed > self.trusting_period
+    }
+
+    /// Perform client-specific verifications and check all data in the new
+    /// client state to be the same across all valid Tendermint clients for the
+    /// new chain.
+    ///
+    /// You can learn more about how to upgrade IBC-connected SDK chains in
+    /// [this](https://ibc.cosmos.network/main/ibc/upgrades/quick-guide.html)
+    /// guide
+    fn verify_upgrade_client(
+        &self,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+        proof_upgrade_client: RawMerkleProof,
+        proof_upgrade_consensus_state: RawMerkleProof,
+        root: &CommitmentRoot,
+    ) -> Result<(), ClientError> {
+        // Make sure that the client type is of Tendermint type `ClientState`
+        let mut upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state.clone())?;
+
+        // Make sure that the consensus type is of Tendermint type `ConsensusState`
+        TmConsensusState::try_from(upgraded_consensus_state.clone())?;
+
+        // Note: verification of proofs that unmarshalled correctly has been done
+        // while decoding the proto message into a `MsgEnvelope` domain type
+        let merkle_proof_upgrade_client = MerkleProof::from(proof_upgrade_client);
+        let merkle_proof_upgrade_cons_state = MerkleProof::from(proof_upgrade_consensus_state);
+
+        // Make sure the latest height of the current client is not greater then
+        // the upgrade height This condition checks both the revision number and
+        // the height
+        if self.latest_height() >= upgraded_tm_client_state.latest_height() {
+            return Err(ClientError::LowUpgradeHeight {
+                upgraded_height: self.latest_height(),
+                client_height: upgraded_tm_client_state.latest_height(),
+            });
+        }
+
+        // Check to see if the upgrade path is set
+        let mut upgrade_path = self.upgrade_path.clone();
+        if upgrade_path.pop().is_none() {
+            return Err(ClientError::ClientSpecific {
+                description: "cannot upgrade client as no upgrade path has been set".to_string(),
+            });
+        };
+
+        let last_height = self.latest_height().revision_height();
+
+        // Construct the merkle path for the client state
+        let mut client_upgrade_path = upgrade_path.clone();
+        client_upgrade_path.push(UpgradeClientPath::UpgradedClientState(last_height).to_string());
+
+        let client_upgrade_merkle_path = MerklePath {
+            key_path: client_upgrade_path,
+        };
+
+        upgraded_tm_client_state.zero_custom_fields();
+
+        let mut client_state_value = Vec::new();
+        upgraded_client_state
+            .encode(&mut client_state_value)
+            .map_err(ClientError::Encode)?;
+
+        // Verify the proof of the upgraded client state
+        merkle_proof_upgrade_client
+            .verify_membership(
+                &self.proof_specs,
+                root.clone().into(),
+                client_upgrade_merkle_path,
+                client_state_value,
+                0,
+            )
+            .map_err(ClientError::Ics23Verification)?;
+
+        // Construct the merkle path for the consensus state
+        let mut cons_upgrade_path = upgrade_path;
+        cons_upgrade_path
+            .push(UpgradeClientPath::UpgradedClientConsensusState(last_height).to_string());
+        let cons_upgrade_merkle_path = MerklePath {
+            key_path: cons_upgrade_path,
+        };
+
+        let mut cons_state_value = Vec::new();
+        upgraded_consensus_state
+            .encode(&mut cons_state_value)
+            .map_err(ClientError::Encode)?;
+
+        // Verify the proof of the upgraded consensus state
+        merkle_proof_upgrade_cons_state
+            .verify_membership(
+                &self.proof_specs,
+                root.clone().into(),
+                cons_upgrade_merkle_path,
+                cons_state_value,
+                0,
+            )
+            .map_err(ClientError::Ics23Verification)?;
+
+        Ok(())
+    }
+
+    // Commit the new client state and consensus state to the store
+    fn update_state_with_upgrade_client(
+        &self,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+    ) -> Result<UpdatedState, ClientError> {
+        let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
+        let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
+
+        // Construct new client state and consensus state relayer chosen client
+        // parameters are ignored. All chain-chosen parameters come from
+        // committed client, all client-chosen parameters come from current
+        // client.
+        let new_client_state = TmClientState::new(
+            upgraded_tm_client_state.chain_id,
+            self.trust_level,
+            self.trusting_period,
+            upgraded_tm_client_state.unbonding_period,
+            self.max_clock_drift,
+            upgraded_tm_client_state.latest_height,
+            upgraded_tm_client_state.proof_specs,
+            upgraded_tm_client_state.upgrade_path,
+            self.allow_update,
+        )?;
+
+        // The new consensus state is merely used as a trusted kernel against
+        // which headers on the new chain can be verified. The root is just a
+        // stand-in sentinel value as it cannot be known in advance, thus no
+        // proof verification will pass. The timestamp and the
+        // NextValidatorsHash of the consensus state is the blocktime and
+        // NextValidatorsHash of the last block committed by the old chain. This
+        // will allow the first block of the new chain to be verified against
+        // the last validators of the old chain so long as it is submitted
+        // within the TrustingPeriod of this client.
+        // NOTE: We do not set processed time for this consensus state since
+        // this consensus state should not be used for packet verification as
+        // the root is empty. The next consensus state submitted using update
+        // will be usable for packet-verification.
+        let sentinel_root = "sentinel_root".as_bytes().to_vec();
+        let new_consensus_state = TmConsensusState::new(
+            sentinel_root.into(),
+            upgraded_tm_cons_state.timestamp,
+            upgraded_tm_cons_state.next_validators_hash,
+        );
+
+        Ok(UpdatedState {
+            client_state: new_client_state.into_box(),
+            consensus_state: new_consensus_state.into_box(),
+        })
+    }
+
+    fn verify_membership(
+        &self,
+        prefix: &CommitmentPrefix,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        path: Path,
+        value: Vec<u8>,
+    ) -> Result<(), ClientError> {
+        let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
+        let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
+            .map_err(ClientError::InvalidCommitmentProof)?
+            .into();
+
+        merkle_proof
+            .verify_membership(
+                &self.proof_specs,
+                root.clone().into(),
+                merkle_path,
+                value,
+                0,
+            )
+            .map_err(ClientError::Ics23Verification)
+    }
+
+    fn verify_non_membership(
+        &self,
+        prefix: &CommitmentPrefix,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        path: Path,
+    ) -> Result<(), ClientError> {
+        let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
+        let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
+            .map_err(ClientError::InvalidCommitmentProof)?
+            .into();
+
+        merkle_proof
+            .verify_non_membership(&self.proof_specs, root.clone().into(), merkle_path)
+            .map_err(ClientError::Ics23Verification)
+    }
+}
+
+impl<SupportedConsensusStates> StaticClientStateInitializer<SupportedConsensusStates>
+    for StaticTmClientState
+where
+    SupportedConsensusStates: From<TmConsensusState>,
+{
+    fn initialise(&self, consensus_state: Any) -> Result<SupportedConsensusStates, ClientError> {
+        let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
+        if tm_consensus_state.root().is_empty() {
+            return Err(ClientError::Other {
+                description: "empty commitment root".into(),
+            });
+        };
+
+        Ok(tm_consensus_state.into())
+    }
+}
+
+impl<ClientValidationContext> StaticClientStateValidation<ClientValidationContext>
+    for StaticTmClientState
+where
+    ClientValidationContext: TmClientValidationContext,
+{
+    fn verify_client_message(
+        &self,
+        ctx: &ClientValidationContext,
+        client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<(), ClientError> {
+        match update_kind {
+            UpdateKind::UpdateClient => {
+                let header = TmHeader::try_from(client_message)?;
+                self.verify_header(ctx, client_id, header)
+            }
+            UpdateKind::SubmitMisbehaviour => {
+                let misbehaviour = TmMisbehaviour::try_from(client_message)?;
+                self.verify_misbehaviour(ctx, client_id, misbehaviour)
+            }
+        }
+    }
+
+    fn check_for_misbehaviour(
+        &self,
+        _ctx: &ClientValidationContext,
+        _client_id: &ClientId,
+        _client_message: Any,
+        _update_kind: &UpdateKind,
+    ) -> Result<bool, ClientError> {
+        todo!()
+    }
+}
 
 #[cfg(test)]
 mod tests {
