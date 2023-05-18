@@ -74,10 +74,8 @@ const MESSAGE_EVENT: &str = "message";
 pub enum IbcEvent {
     CreateClient(ClientEvents::CreateClient),
     UpdateClient(ClientEvents::UpdateClient),
-    ClientMisbehaviour(ClientEvents::ClientMisbehaviour),
     UpgradeClient(ClientEvents::UpgradeClient),
-    UpgradeChain(ClientEvents::UpgradeChain),
-    UpgradeClientProposal(ClientEvents::UpgradeClientProposal),
+    ClientMisbehaviour(ClientEvents::ClientMisbehaviour),
 
     OpenInitConnection(ConnectionEvents::OpenInit),
     OpenTryConnection(ConnectionEvents::OpenTry),
@@ -109,10 +107,8 @@ impl TryFrom<IbcEvent> for abci::Event {
         Ok(match event {
             IbcEvent::CreateClient(event) => event.into(),
             IbcEvent::UpdateClient(event) => event.into(),
-            IbcEvent::ClientMisbehaviour(event) => event.into(),
             IbcEvent::UpgradeClient(event) => event.into(),
-            IbcEvent::UpgradeChain(event) => event.into(),
-            IbcEvent::UpgradeClientProposal(event) => event.into(),
+            IbcEvent::ClientMisbehaviour(event) => event.into(),
             IbcEvent::OpenInitConnection(event) => event.into(),
             IbcEvent::OpenTryConnection(event) => event.into(),
             IbcEvent::OpenAckConnection(event) => event.into(),
@@ -145,8 +141,6 @@ impl IbcEvent {
             IbcEvent::UpdateClient(event) => event.event_type(),
             IbcEvent::ClientMisbehaviour(event) => event.event_type(),
             IbcEvent::UpgradeClient(event) => event.event_type(),
-            IbcEvent::UpgradeChain(event) => event.event_type(),
-            IbcEvent::UpgradeClientProposal(event) => event.event_type(),
             IbcEvent::OpenInitConnection(event) => event.event_type(),
             IbcEvent::OpenTryConnection(event) => event.event_type(),
             IbcEvent::OpenAckConnection(event) => event.event_type(),

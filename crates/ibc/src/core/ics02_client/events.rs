@@ -210,12 +210,16 @@ impl From<UpgradeStoreAttribute> for abci::EventAttribute {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, From, PartialEq, Eq)]
 struct UpgradePlanHeightAttribute {
-    height: Height,
+    plan_height: u64,
 }
 
 impl From<UpgradePlanHeightAttribute> for abci::EventAttribute {
     fn from(attr: UpgradePlanHeightAttribute) -> Self {
-        (UPGRADE_PLAN_HEIGHT_ATTRIBUTE_KEY, attr.height).into()
+        (
+            UPGRADE_PLAN_HEIGHT_ATTRIBUTE_KEY,
+            attr.plan_height.to_string(),
+        )
+            .into()
     }
 }
 
@@ -516,7 +520,7 @@ pub struct UpgradeChain {
 }
 
 impl UpgradeChain {
-    pub fn new(plan_height: Height, upgrade_store: String) -> Self {
+    pub fn new(plan_height: u64, upgrade_store: String) -> Self {
         Self {
             plan_height: UpgradePlanHeightAttribute::from(plan_height),
             upgrade_store: UpgradeStoreAttribute::from(upgrade_store),
@@ -556,7 +560,7 @@ pub struct UpgradeClientProposal {
 }
 
 impl UpgradeClientProposal {
-    pub fn new(plan_title: String, plan_height: Height) -> Self {
+    pub fn new(plan_title: String, plan_height: u64) -> Self {
         Self {
             plan_title: UpgradePlanTitleAttribute::from(plan_title),
             plan_height: UpgradePlanHeightAttribute::from(plan_height),
