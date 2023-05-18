@@ -15,6 +15,8 @@ use crate::Height;
 /// Encodes all the possible client errors
 #[derive(Debug, Display)]
 pub enum ClientError {
+    /// upgrade client error: `{0}`
+    Upgrade(UpgradeClientError),
     /// Client identifier constructor failed for type `{client_type}` with counter `{counter}`, validation error: `{validation_error}`
     ClientIdentifierConstructor {
         client_type: ClientType,
@@ -76,10 +78,6 @@ pub enum ClientError {
         latest_height: Height,
         proof_height: Height,
     },
-    /// invalid proof for the upgraded client state error: `{0}`
-    InvalidUpgradeClientProof(CommitmentError),
-    /// invalid proof for the upgraded consensus state error: `{0}`
-    InvalidUpgradeConsensusStateProof(CommitmentError),
     /// invalid commitment proof bytes error: `{0}`
     InvalidCommitmentProof(CommitmentError),
     /// invalid packet timeout timestamp value error: `{0}`
@@ -90,11 +88,6 @@ pub enum ClientError {
     LowHeaderHeight {
         header_height: Height,
         latest_height: Height,
-    },
-    /// upgraded client height `{upgraded_height}` must be at greater than current client height `{client_height}`
-    LowUpgradeHeight {
-        upgraded_height: Height,
-        client_height: Height,
     },
     /// timestamp is invalid or missing, timestamp=`{time1}`,  now=`{time2}`
     InvalidConsensusStateTimestamp { time1: Timestamp, time2: Timestamp },
@@ -111,8 +104,6 @@ pub enum ClientError {
     Ics23Verification(CommitmentError),
     /// misbehaviour handling failed with reason: `{reason}`
     MisbehaviourHandlingFailure { reason: String },
-    /// invalid upgrade proposal: `{reason}`
-    InvalidUpgradeProposal { reason: String },
     /// client specific error: `{description}`
     ClientSpecific { description: String },
     /// other error: `{description}`
@@ -142,12 +133,46 @@ impl std::error::Error for ClientError {
             Self::InvalidClientIdentifier(e) => Some(e),
             Self::InvalidRawHeader(e) => Some(e),
             Self::InvalidRawMisbehaviour(e) => Some(e),
-            Self::InvalidUpgradeClientProof(e) => Some(e),
-            Self::InvalidUpgradeConsensusStateProof(e) => Some(e),
             Self::InvalidCommitmentProof(e) => Some(e),
             Self::InvalidPacketTimestamp(e) => Some(e),
             Self::Ics23Verification(e) => Some(e),
             _ => None,
         }
+    }
+}
+
+/// Encodes all the possible upgrade client errors
+#[derive(Debug, Display)]
+pub enum UpgradeClientError {
+    /// invalid proof for the upgraded client state error: `{0}`
+    InvalidUpgradeClientProof(CommitmentError),
+    /// invalid proof for the upgraded consensus state error: `{0}`
+    InvalidUpgradeConsensusStateProof(CommitmentError),
+    /// upgraded client height `{upgraded_height}` must be at greater than current client height `{client_height}`
+    LowUpgradeHeight {
+        upgraded_height: Height,
+        client_height: Height,
+    },
+    /// invalid upgrade proposal: `{reason}`
+    InvalidUpgradeProposal { reason: String },
+    /// invalid upgrade plan: `{reason}`
+    InvalidUpgradePlan { reason: String },
+    /// other upgrade client error: `{reason}`
+    Other { reason: String },
+}
+
+impl std::error::Error for UpgradeClientError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Self::InvalidUpgradeClientProof(e) => Some(e),
+            Self::InvalidUpgradeConsensusStateProof(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+impl From<UpgradeClientError> for ClientError {
+    fn from(e: UpgradeClientError) -> Self {
+        ClientError::Upgrade(e)
     }
 }

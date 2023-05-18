@@ -32,7 +32,7 @@ use crate::core::ics02_client::client_state::{
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::error::ClientError;
+use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -437,10 +437,10 @@ impl Ics2ClientState for ClientState {
         // the upgrade height This condition checks both the revision number and
         // the height
         if self.latest_height() >= upgraded_tm_client_state.latest_height() {
-            return Err(ClientError::LowUpgradeHeight {
+            return Err(UpgradeClientError::LowUpgradeHeight {
                 upgraded_height: self.latest_height(),
                 client_height: upgraded_tm_client_state.latest_height(),
-            });
+            })?;
         }
 
         // Check to see if the upgrade path is set
