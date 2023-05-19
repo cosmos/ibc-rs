@@ -161,6 +161,13 @@ pub enum UpgradeClientError {
     Other { reason: String },
 }
 
+impl From<UpgradeClientError> for ClientError {
+    fn from(e: UpgradeClientError) -> Self {
+        ClientError::Upgrade(e)
+    }
+}
+
+#[cfg(feature = "std")]
 impl std::error::Error for UpgradeClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
@@ -168,11 +175,5 @@ impl std::error::Error for UpgradeClientError {
             Self::InvalidUpgradeConsensusStateProof(e) => Some(e),
             _ => None,
         }
-    }
-}
-
-impl From<UpgradeClientError> for ClientError {
-    fn from(e: UpgradeClientError) -> Self {
-        ClientError::Upgrade(e)
     }
 }
