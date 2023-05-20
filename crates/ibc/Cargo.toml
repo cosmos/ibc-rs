@@ -18,7 +18,7 @@ all-features = true
 
 [features]
 default = ["std"]
-std = [ 
+std = [
     "ibc-proto/std",
     "ics23/std",
     "serde/std",

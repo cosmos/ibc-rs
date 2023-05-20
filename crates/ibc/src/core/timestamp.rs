@@ -34,12 +34,7 @@ impl borsh::BorshSerialize for Timestamp {
         &self,
         writer: &mut W,
     ) -> borsh::maybestd::io::Result<()> {
-        let timestamp = if let Some(time) = self.time {
-            time.unix_timestamp_nanos()
-        } else {
-            // When the value in `Time` is `None` we give the timestamp a default value of 0
-            0
-        };
+        let timestamp = self.nanoseconds();
         borsh::BorshSerialize::serialize(&timestamp, writer)
     }
 }
@@ -388,5 +383,14 @@ mod tests {
 
         let inner = res.unwrap();
         assert!(inner > sleep_duration);
+    }
+
+    #[test]
+    #[cfg(feature = "borsh")]
+    fn test_timestamp_borsh_ser_der() {
+        use borsh::{BorshDeserialize, BorshSerialize};
+        let timestamp = Timestamp::now();
+        let encode_timestamp = timestamp.try_to_vec().unwrap();
+        let _ = Timestamp::try_from_slice(&encode_timestamp).unwrap();
     }
 }
