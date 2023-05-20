@@ -53,13 +53,7 @@ impl borsh::BorshDeserialize for Timestamp {
 #[cfg(feature = "parity-scale-codec")]
 impl parity_scale_codec::Encode for Timestamp {
     fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, writer: &mut T) {
-        let timestamp = if let Some(time) = self.time {
-            time.unix_timestamp_nanos()
-        } else {
-            // When the value in `Time` is `None` we give the timestamp a default value of 0
-            0
-        };
-
+        let timestamp = self.nanoseconds();
         timestamp.encode_to(writer);
     }
 }
