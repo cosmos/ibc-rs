@@ -387,4 +387,13 @@ mod tests {
         let encode_timestamp = timestamp.try_to_vec().unwrap();
         let _ = Timestamp::try_from_slice(&encode_timestamp).unwrap();
     }
+
+    #[test]
+    #[cfg(feature = "parity-scale-codec")]
+    fn test_timestamp_parity_scale_codec_ser_der() {
+        use parity_scale_codec::{Decode, Encode};
+        let timestamp = Timestamp::now();
+        let encode_timestamp = timestamp.encode();
+        let _ = Timestamp::decode(&mut encode_timestamp.as_slice()).unwrap();
+    }
 }
