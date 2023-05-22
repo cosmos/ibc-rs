@@ -3,6 +3,7 @@
 use crate::clients::AsAny;
 use crate::prelude::*;
 
+use core::fmt::{Debug, Display};
 use core::marker::{Send, Sync};
 
 use dyn_clone::DynClone;
@@ -27,7 +28,7 @@ pub trait ConsensusState:
     + DynClone
     + ErasedSerialize
     + ErasedProtobuf<Any, Error = ClientError>
-    + core::fmt::Debug
+    + Debug
     + Send
     + Sync
 {
@@ -84,4 +85,22 @@ mod sealed {
                 .map_or(false, |h| self == h)
         }
     }
+}
+
+pub trait StaticConsensusState: Clone + Debug + Display + Send + Sync {
+    type EncodeError;
+
+    /// Commitment root of the consensus state, which is used for key-value pair verification.
+    fn root(&self) -> &CommitmentRoot;
+
+    /// The timestamp of the consensus state
+    fn timestamp(&self) -> Timestamp;
+
+    /// Serializes the `ConsensusState`. This is expected to be implemented as
+    /// first converting to the raw type (i.e. the protobuf definition), and then
+    /// serializing that.
+    ///
+    /// Note that the `Protobuf` trait in `tendermint-proto` provides convenience methods
+    /// to do this automatically.
+    fn encode_vec(&self) -> Result<Vec<u8>, Self::EncodeError>;
 }

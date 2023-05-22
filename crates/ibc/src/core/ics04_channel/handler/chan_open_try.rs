@@ -1,5 +1,7 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenTry`.
 
+use crate::core::ics02_client::client_state::StaticClientStateBase;
+use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
 
@@ -15,7 +17,7 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::core::ics24_host::path::{SeqAckPath, SeqRecvPath, SeqSendPath};
 use crate::core::router::ModuleId;
-use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::core::{ContextError, StaticExecutionContext, StaticValidationContext};
 
 pub(crate) fn chan_open_try_validate<ValCtx>(
     ctx_b: &ValCtx,
@@ -23,7 +25,7 @@ pub(crate) fn chan_open_try_validate<ValCtx>(
     msg: MsgChannelOpenTry,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: StaticValidationContext,
 {
     validate(ctx_b, &msg)?;
 
@@ -50,7 +52,7 @@ pub(crate) fn chan_open_try_execute<ExecCtx>(
     msg: MsgChannelOpenTry,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: StaticExecutionContext,
 {
     let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
     let module = ctx_b
@@ -124,7 +126,7 @@ where
 
 fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 

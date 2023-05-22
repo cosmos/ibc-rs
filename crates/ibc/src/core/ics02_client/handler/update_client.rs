@@ -1,6 +1,8 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpdateAnyClient`.
 
-use crate::core::ics02_client::client_state::UpdateKind;
+use crate::core::ics02_client::client_state::{
+    StaticClientStateBase, StaticClientStateExecution, StaticClientStateValidation, UpdateKind,
+};
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::msgs::MsgUpdateOrMisbehaviour;
 use crate::prelude::*;
@@ -10,11 +12,11 @@ use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
 
 use crate::core::context::ContextError;
 
-use crate::core::{ExecutionContext, ValidationContext};
+use crate::core::{StaticExecutionContext, StaticValidationContext};
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     ctx.validate_message_signer(msg.signer())?;
 
@@ -31,14 +33,19 @@ where
 
     let client_message = msg.client_message();
 
-    client_state.verify_client_message(ctx, &client_id, client_message, &update_kind)?;
+    client_state.verify_client_message(
+        ctx.get_client_validation_context(),
+        &client_id,
+        client_message,
+        &update_kind,
+    )?;
 
     Ok(())
 }
 
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    Ctx: StaticExecutionContext,
 {
     let client_id = msg.client_id().clone();
     let update_kind = match msg {
@@ -50,14 +57,19 @@ where
     let client_state = ctx.client_state(&client_id)?;
 
     let found_misbehaviour = client_state.check_for_misbehaviour(
-        ctx,
+        ctx.get_client_validation_context(),
         &client_id,
         client_message.clone(),
         &update_kind,
     )?;
 
     if found_misbehaviour {
-        client_state.update_state_on_misbehaviour(ctx, &client_id, client_message, &update_kind)?;
+        client_state.update_state_on_misbehaviour(
+            ctx.get_client_execution_context(),
+            &client_id,
+            client_message,
+            &update_kind,
+        )?;
 
         let event = IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(
             client_id.clone(),
@@ -75,7 +87,11 @@ where
 
         let header = client_message;
 
-        let consensus_heights = client_state.update_state(ctx, &client_id, header.clone())?;
+        let consensus_heights = client_state.update_state(
+            ctx.get_client_execution_context(),
+            &client_id,
+            header.clone(),
+        )?;
 
         let consensus_height = consensus_heights.get(0).ok_or(ClientError::Other {
             description: "client update state returned no updated height".to_string(),

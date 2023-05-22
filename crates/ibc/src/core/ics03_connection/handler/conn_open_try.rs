@@ -4,6 +4,8 @@ use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
 use crate::core::context::ContextError;
+use crate::core::ics02_client::client_state::StaticClientStateBase;
+use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenTry;
@@ -14,14 +16,14 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath,
 };
-use crate::core::{ExecutionContext, ValidationContext};
+use crate::core::{StaticExecutionContext, StaticValidationContext};
 use crate::prelude::*;
 
 use crate::core::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     let vars = LocalVars::new(ctx_b, &msg)?;
     validate_impl(ctx_b, &msg, &vars)
@@ -33,7 +35,7 @@ fn validate_impl<Ctx>(
     vars: &LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 
@@ -112,7 +114,7 @@ where
                 &msg.proof_consensus_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
                 Path::ClientConsensusState(client_cons_state_path_on_a),
-                expected_consensus_state_of_b_on_a.encode_vec(),
+                expected_consensus_state_of_b_on_a.encode_vec()?,
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
                 height: msg.proofs_height_on_a,
@@ -125,7 +127,7 @@ where
 
 pub(crate) fn execute<Ctx>(ctx_b: &mut Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    Ctx: StaticExecutionContext,
 {
     let vars = LocalVars::new(ctx_b, &msg)?;
     execute_impl(ctx_b, msg, vars)
@@ -137,7 +139,7 @@ fn execute_impl<Ctx>(
     vars: LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    Ctx: StaticExecutionContext,
 {
     let conn_id_on_a = vars
         .conn_end_on_b
@@ -174,7 +176,7 @@ struct LocalVars {
 impl LocalVars {
     fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenTry) -> Result<Self, ContextError>
     where
-        Ctx: ValidationContext,
+        Ctx: StaticValidationContext,
     {
         let version_on_b = ctx_b.pick_version(&msg.versions_on_a)?;
 

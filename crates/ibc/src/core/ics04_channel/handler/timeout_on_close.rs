@@ -1,3 +1,5 @@
+use crate::core::ics02_client::client_state::StaticClientStateBase;
+use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
@@ -12,11 +14,11 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
-use crate::core::{ContextError, ValidationContext};
+use crate::core::{ContextError, StaticValidationContext};
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 

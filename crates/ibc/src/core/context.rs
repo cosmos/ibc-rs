@@ -31,6 +31,7 @@ use crate::core::timestamp::Timestamp;
 use crate::Height;
 
 use super::ics02_client::client_state::StaticClientState;
+use super::ics02_client::consensus_state::StaticConsensusState;
 
 /// Top-level error
 #[derive(Debug, Display)]
@@ -401,12 +402,15 @@ pub trait ExecutionContext: ValidationContext {
 pub trait StaticValidationContext: Router {
     type ClientValidationContext;
     type ClientExecutionContext;
-    type SupportedConsensusStates;
+    type SupportedConsensusStates: StaticConsensusState<EncodeError = ContextError>;
     type SupportedClientStates: StaticClientState<
         Self::SupportedConsensusStates,
         Self::ClientValidationContext,
         Self::ClientExecutionContext,
     >;
+
+    fn get_client_validation_context(&self) -> &Self::ClientValidationContext;
+    fn get_client_execution_context(&mut self) -> &mut Self::ClientExecutionContext;
 
     /// Returns the ClientState for the given identifier `client_id`.
     fn client_state(

@@ -259,13 +259,6 @@ pub trait StaticClientStateBase: PartialEq + Clone + Debug + Send + Sync {
         root: &CommitmentRoot,
     ) -> Result<(), ClientError>;
 
-    // Update the client state and consensus state in the store with the upgraded ones.
-    fn update_state_with_upgrade_client(
-        &self,
-        upgraded_client_state: Any,
-        upgraded_consensus_state: Any,
-    ) -> Result<UpdatedState, ClientError>;
-
     // Verify_membership is a generic proof verification method which verifies a
     // proof of the existence of a value at a given Path.
     fn verify_membership(
@@ -344,6 +337,15 @@ pub trait StaticClientStateExecution<ClientExecutionContext> {
         client_message: Any,
         update_kind: &UpdateKind,
     ) -> Result<(), ClientError>;
+
+    // Update the client state and consensus state in the store with the upgraded ones.
+    fn update_state_with_upgrade_client(
+        &self,
+        ctx: &mut ClientExecutionContext,
+        client_id: &ClientId,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+    ) -> Result<Height, ClientError>;
 }
 
 pub trait StaticClientState<

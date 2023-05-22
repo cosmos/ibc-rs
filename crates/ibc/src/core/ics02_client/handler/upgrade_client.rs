@@ -1,19 +1,20 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpgradeAnyClient`.
 //!
+use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::prelude::*;
 
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::client_state::UpdatedState;
+use crate::core::ics02_client::client_state::{StaticClientStateBase, StaticClientStateExecution};
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
-use crate::core::{ExecutionContext, ValidationContext};
+use crate::core::ics24_host::path::ClientConsensusStatePath;
+use crate::core::{StaticExecutionContext, StaticValidationContext};
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     let MsgUpgradeClient {
         client_id, signer, ..
@@ -69,28 +70,23 @@ where
 
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    Ctx: StaticExecutionContext,
 {
     let MsgUpgradeClient { client_id, .. } = msg;
 
     let old_client_state = ctx.client_state(&client_id)?;
 
-    let UpdatedState {
-        client_state,
-        consensus_state,
-    } = old_client_state
-        .update_state_with_upgrade_client(msg.client_state.clone(), msg.consensus_state)?;
-
-    ctx.store_client_state(ClientStatePath::new(&client_id), client_state.clone())?;
-    ctx.store_consensus_state(
-        ClientConsensusStatePath::new(&client_id, &client_state.latest_height()),
-        consensus_state,
+    let latest_height = old_client_state.update_state_with_upgrade_client(
+        ctx.get_client_execution_context(),
+        &client_id,
+        msg.client_state.clone(),
+        msg.consensus_state,
     )?;
 
     let event = IbcEvent::UpgradeClient(UpgradeClient::new(
         client_id,
-        client_state.client_type(),
-        client_state.latest_height(),
+        old_client_state.client_type(),
+        latest_height,
     ));
     ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
     ctx.emit_ibc_event(event);

@@ -1,4 +1,5 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelCloseInit`.
+use crate::core::ics02_client::client_state::StaticClientStateBase;
 use crate::prelude::*;
 
 use crate::core::events::{IbcEvent, MessageEvent};
@@ -9,7 +10,7 @@ use crate::core::ics04_channel::events::CloseInit;
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
 use crate::core::ics24_host::path::ChannelEndPath;
 use crate::core::router::ModuleId;
-use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::core::{ContextError, StaticExecutionContext, StaticValidationContext};
 
 pub(crate) fn chan_close_init_validate<ValCtx>(
     ctx_a: &ValCtx,
@@ -17,7 +18,7 @@ pub(crate) fn chan_close_init_validate<ValCtx>(
     msg: MsgChannelCloseInit,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: StaticValidationContext,
 {
     validate(ctx_a, &msg)?;
 
@@ -35,7 +36,7 @@ pub(crate) fn chan_close_init_execute<ExecCtx>(
     msg: MsgChannelCloseInit,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: StaticExecutionContext,
 {
     let module = ctx_a
         .get_route_mut(&module_id)
@@ -97,7 +98,7 @@ where
 
 fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelCloseInit) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 

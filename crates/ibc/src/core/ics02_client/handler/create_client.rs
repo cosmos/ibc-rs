@@ -1,6 +1,10 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
 use crate::core::events::MessageEvent;
+use crate::core::ics02_client::client_state::StaticClientStateBase;
+use crate::core::ics02_client::client_state::StaticClientStateInitializer;
+use crate::core::StaticExecutionContext;
+use crate::core::StaticValidationContext;
 use crate::prelude::*;
 
 use crate::core::context::ContextError;
@@ -8,10 +12,6 @@ use crate::core::context::ContextError;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 
 use crate::core::ics24_host::path::ClientStatePath;
-
-use crate::core::ExecutionContext;
-
-use crate::core::ValidationContext;
 
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::error::ClientError;
@@ -21,7 +21,7 @@ use crate::core::ics24_host::identifier::ClientId;
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     let MsgCreateClient {
         client_state,
@@ -57,7 +57,7 @@ where
 
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    Ctx: StaticExecutionContext,
 {
     let MsgCreateClient {
         client_state,

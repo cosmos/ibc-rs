@@ -1,3 +1,5 @@
+use crate::core::ics02_client::client_state::StaticClientStateBase;
+use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::prelude::*;
 
 use crate::core::events::{IbcEvent, MessageEvent};
@@ -16,14 +18,14 @@ use crate::core::ics24_host::path::{
 };
 use crate::core::router::ModuleId;
 use crate::core::timestamp::Expiry;
-use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::core::{ContextError, StaticExecutionContext, StaticValidationContext};
 
 pub(crate) fn recv_packet_validate<ValCtx>(
     ctx_b: &ValCtx,
     msg: MsgRecvPacket,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: StaticValidationContext,
 {
     // Note: this contains the validation for `write_acknowledgement` as well.
     validate(ctx_b, &msg)
@@ -38,7 +40,7 @@ pub(crate) fn recv_packet_execute<ExecCtx>(
     msg: MsgRecvPacket,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: StaticExecutionContext,
 {
     let chan_end_path_on_b =
         ChannelEndPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
@@ -146,7 +148,7 @@ where
 
 fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 
@@ -263,7 +265,7 @@ where
 
 fn validate_write_acknowledgement<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     let packet = msg.packet.clone();
     let ack_path_on_b = AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);

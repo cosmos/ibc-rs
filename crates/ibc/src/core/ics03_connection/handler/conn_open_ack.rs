@@ -4,6 +4,8 @@ use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
 use crate::core::context::ContextError;
+use crate::core::ics02_client::client_state::StaticClientStateBase;
+use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenAck;
@@ -11,14 +13,14 @@ use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath};
-use crate::core::{ExecutionContext, ValidationContext};
+use crate::core::{StaticExecutionContext, StaticValidationContext};
 use crate::prelude::*;
 
 use crate::core::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     let vars = LocalVars::new(ctx_a, &msg)?;
     validate_impl(ctx_a, &msg, &vars)
@@ -30,7 +32,7 @@ fn validate_impl<Ctx>(
     vars: &LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 
@@ -115,7 +117,7 @@ where
                 &msg.proof_consensus_state_of_a_on_b,
                 consensus_state_of_b_on_a.root(),
                 Path::ClientConsensusState(client_cons_state_path_on_b),
-                expected_consensus_state_of_a_on_b.encode_vec(),
+                expected_consensus_state_of_a_on_b.encode_vec()?,
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
                 height: msg.proofs_height_on_b,
@@ -128,7 +130,7 @@ where
 
 pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    Ctx: StaticExecutionContext,
 {
     let vars = LocalVars::new(ctx_a, &msg)?;
     execute_impl(ctx_a, msg, vars)
@@ -140,7 +142,7 @@ fn execute_impl<Ctx>(
     vars: LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: ExecutionContext,
+    Ctx: StaticExecutionContext,
 {
     let event = IbcEvent::OpenAckConnection(OpenAck::new(
         msg.conn_id_on_a.clone(),
@@ -178,7 +180,7 @@ struct LocalVars {
 impl LocalVars {
     fn new<Ctx>(ctx_a: &Ctx, msg: &MsgConnectionOpenAck) -> Result<Self, ContextError>
     where
-        Ctx: ValidationContext,
+        Ctx: StaticValidationContext,
     {
         Ok(LocalVars {
             conn_end_on_a: ctx_a.connection_end(&msg.conn_id_on_a)?,

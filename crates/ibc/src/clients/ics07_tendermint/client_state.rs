@@ -1177,57 +1177,6 @@ impl StaticClientStateBase for StaticTmClientState {
         Ok(())
     }
 
-    // Commit the new client state and consensus state to the store
-    fn update_state_with_upgrade_client(
-        &self,
-        upgraded_client_state: Any,
-        upgraded_consensus_state: Any,
-    ) -> Result<UpdatedState, ClientError> {
-        let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
-        let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
-
-        // Construct new client state and consensus state relayer chosen client
-        // parameters are ignored. All chain-chosen parameters come from
-        // committed client, all client-chosen parameters come from current
-        // client.
-        let new_client_state = TmClientState::new(
-            upgraded_tm_client_state.chain_id,
-            self.trust_level,
-            self.trusting_period,
-            upgraded_tm_client_state.unbonding_period,
-            self.max_clock_drift,
-            upgraded_tm_client_state.latest_height,
-            upgraded_tm_client_state.proof_specs,
-            upgraded_tm_client_state.upgrade_path,
-            self.allow_update,
-        )?;
-
-        // The new consensus state is merely used as a trusted kernel against
-        // which headers on the new chain can be verified. The root is just a
-        // stand-in sentinel value as it cannot be known in advance, thus no
-        // proof verification will pass. The timestamp and the
-        // NextValidatorsHash of the consensus state is the blocktime and
-        // NextValidatorsHash of the last block committed by the old chain. This
-        // will allow the first block of the new chain to be verified against
-        // the last validators of the old chain so long as it is submitted
-        // within the TrustingPeriod of this client.
-        // NOTE: We do not set processed time for this consensus state since
-        // this consensus state should not be used for packet verification as
-        // the root is empty. The next consensus state submitted using update
-        // will be usable for packet-verification.
-        let sentinel_root = "sentinel_root".as_bytes().to_vec();
-        let new_consensus_state = TmConsensusState::new(
-            sentinel_root.into(),
-            upgraded_tm_cons_state.timestamp,
-            upgraded_tm_cons_state.next_validators_hash,
-        );
-
-        Ok(UpdatedState {
-            client_state: new_client_state.into_box(),
-            consensus_state: new_consensus_state.into_box(),
-        })
-    }
-
     fn verify_membership(
         &self,
         prefix: &CommitmentPrefix,
@@ -1394,6 +1343,64 @@ where
         ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state)?;
 
         Ok(())
+    }
+
+    // Commit the new client state and consensus state to the store
+    fn update_state_with_upgrade_client(
+        &self,
+        ctx: &mut ClientExecutionContext,
+        client_id: &ClientId,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+    ) -> Result<Height, ClientError> {
+        let upgraded_tm_client_state = TmClientState::try_from(upgraded_client_state)?;
+        let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
+
+        // Construct new client state and consensus state relayer chosen client
+        // parameters are ignored. All chain-chosen parameters come from
+        // committed client, all client-chosen parameters come from current
+        // client.
+        let new_client_state = StaticTmClientState::new(
+            upgraded_tm_client_state.chain_id,
+            self.trust_level,
+            self.trusting_period,
+            upgraded_tm_client_state.unbonding_period,
+            self.max_clock_drift,
+            upgraded_tm_client_state.latest_height,
+            upgraded_tm_client_state.proof_specs,
+            upgraded_tm_client_state.upgrade_path,
+            self.allow_update,
+        )?;
+
+        // The new consensus state is merely used as a trusted kernel against
+        // which headers on the new chain can be verified. The root is just a
+        // stand-in sentinel value as it cannot be known in advance, thus no
+        // proof verification will pass. The timestamp and the
+        // NextValidatorsHash of the consensus state is the blocktime and
+        // NextValidatorsHash of the last block committed by the old chain. This
+        // will allow the first block of the new chain to be verified against
+        // the last validators of the old chain so long as it is submitted
+        // within the TrustingPeriod of this client.
+        // NOTE: We do not set processed time for this consensus state since
+        // this consensus state should not be used for packet verification as
+        // the root is empty. The next consensus state submitted using update
+        // will be usable for packet-verification.
+        let sentinel_root = "sentinel_root".as_bytes().to_vec();
+        let new_consensus_state = TmConsensusState::new(
+            sentinel_root.into(),
+            upgraded_tm_cons_state.timestamp,
+            upgraded_tm_cons_state.next_validators_hash,
+        );
+
+        let latest_height = new_client_state.latest_height.clone();
+
+        ctx.store_client_state(ClientStatePath::new(client_id), new_client_state)?;
+        ctx.store_consensus_state(
+            ClientConsensusStatePath::new(client_id, &latest_height),
+            new_consensus_state,
+        )?;
+
+        Ok(latest_height)
     }
 }
 

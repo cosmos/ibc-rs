@@ -1,5 +1,7 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenAck`.
 
+use crate::core::ics02_client::client_state::StaticClientStateBase;
+use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
 
@@ -13,7 +15,7 @@ use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::core::router::ModuleId;
-use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::core::{ContextError, StaticExecutionContext, StaticValidationContext};
 
 pub(crate) fn chan_open_ack_validate<ValCtx>(
     ctx_a: &ValCtx,
@@ -21,7 +23,7 @@ pub(crate) fn chan_open_ack_validate<ValCtx>(
     msg: MsgChannelOpenAck,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: StaticValidationContext,
 {
     validate(ctx_a, &msg)?;
 
@@ -39,7 +41,7 @@ pub(crate) fn chan_open_ack_execute<ExecCtx>(
     msg: MsgChannelOpenAck,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: StaticExecutionContext,
 {
     let module = ctx_a
         .get_route_mut(&module_id)
@@ -96,7 +98,7 @@ where
 
 fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenAck) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 

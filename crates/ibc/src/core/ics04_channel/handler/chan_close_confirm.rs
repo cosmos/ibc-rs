@@ -1,5 +1,7 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelCloseConfirm`.
 
+use crate::core::ics02_client::client_state::StaticClientStateBase;
+use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
 
@@ -13,7 +15,7 @@ use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::core::router::ModuleId;
-use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::core::{ContextError, StaticExecutionContext, StaticValidationContext};
 
 pub(crate) fn chan_close_confirm_validate<ValCtx>(
     ctx_b: &ValCtx,
@@ -21,7 +23,7 @@ pub(crate) fn chan_close_confirm_validate<ValCtx>(
     msg: MsgChannelCloseConfirm,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: StaticValidationContext,
 {
     validate(ctx_b, &msg)?;
 
@@ -39,7 +41,7 @@ pub(crate) fn chan_close_confirm_execute<ExecCtx>(
     msg: MsgChannelCloseConfirm,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: StaticExecutionContext,
 {
     let module = ctx_b
         .get_route_mut(&module_id)
@@ -100,7 +102,7 @@ where
 
 fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelCloseConfirm) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 

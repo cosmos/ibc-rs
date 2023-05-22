@@ -1,3 +1,5 @@
+use crate::core::ics02_client::client_state::StaticClientStateBase;
+use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::prelude::*;
 use prost::Message;
 
@@ -20,7 +22,7 @@ use crate::core::{
     ics04_channel::{events::TimeoutPacket, handler::timeout_on_close},
     router::ModuleId,
 };
-use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::core::{ContextError, StaticExecutionContext, StaticValidationContext};
 
 pub(crate) enum TimeoutMsgType {
     Timeout(MsgTimeout),
@@ -33,7 +35,7 @@ pub(crate) fn timeout_packet_validate<ValCtx>(
     timeout_msg_type: TimeoutMsgType,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: StaticValidationContext,
 {
     match &timeout_msg_type {
         TimeoutMsgType::Timeout(msg) => validate(ctx_a, msg),
@@ -60,7 +62,7 @@ pub(crate) fn timeout_packet_execute<ExecCtx>(
     timeout_msg_type: TimeoutMsgType,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: StaticExecutionContext,
 {
     let (packet, signer) = match timeout_msg_type {
         TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),
@@ -147,7 +149,7 @@ where
 
 fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeout) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 

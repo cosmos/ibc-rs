@@ -1,3 +1,5 @@
+use crate::core::ics02_client::client_state::StaticClientStateBase;
+use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::prelude::*;
 
 use crate::core::events::MessageEvent;
@@ -13,7 +15,7 @@ use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqAckPath,
 };
 use crate::core::{events::IbcEvent, ics04_channel::events::AcknowledgePacket, router::ModuleId};
-use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::core::{ContextError, StaticExecutionContext, StaticValidationContext};
 
 pub(crate) fn acknowledgement_packet_validate<ValCtx>(
     ctx_a: &ValCtx,
@@ -21,7 +23,7 @@ pub(crate) fn acknowledgement_packet_validate<ValCtx>(
     msg: MsgAcknowledgement,
 ) -> Result<(), ContextError>
 where
-    ValCtx: ValidationContext,
+    ValCtx: StaticValidationContext,
 {
     validate(ctx_a, &msg)?;
 
@@ -40,7 +42,7 @@ pub(crate) fn acknowledgement_packet_execute<ExecCtx>(
     msg: MsgAcknowledgement,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: ExecutionContext,
+    ExecCtx: StaticExecutionContext,
 {
     let chan_end_path_on_a =
         ChannelEndPath::new(&msg.packet.port_id_on_a, &msg.packet.chan_id_on_a);
@@ -118,7 +120,7 @@ where
 
 fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgAcknowledgement) -> Result<(), ContextError>
 where
-    Ctx: ValidationContext,
+    Ctx: StaticValidationContext,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 
