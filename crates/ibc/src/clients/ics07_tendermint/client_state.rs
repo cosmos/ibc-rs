@@ -28,8 +28,8 @@ use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::core::ics02_client::client_state::{
-    ClientState as Ics2ClientState, StaticClientStateBase, StaticClientStateInitializer,
-    StaticClientStateValidation, UpdateKind, UpdatedState,
+    ClientState as Ics2ClientState, StaticClientStateBase, StaticClientStateExecution,
+    StaticClientStateInitializer, StaticClientStateValidation, UpdateKind, UpdatedState,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
@@ -783,6 +783,9 @@ impl From<ClientState> for Any {
 pub trait TmClientValidationContext {
     type SupportedConsensusStates: Into<TmConsensusState>;
 
+    /// Returns the current height of the local chain.
+    fn host_height(&self) -> Result<Height, ContextError>;
+
     /// Returns the current timestamp of the local chain.
     fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
 
@@ -808,6 +811,34 @@ pub trait TmClientValidationContext {
         client_id: &ClientId,
         height: &Height,
     ) -> Result<Option<Self::SupportedConsensusStates>, ContextError>;
+}
+
+pub trait TmClientExecutionContext: TmClientValidationContext {
+    fn store_update_time(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        timestamp: Timestamp,
+    ) -> Result<(), ContextError>;
+
+    fn store_update_height(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        host_height: Height,
+    ) -> Result<(), ContextError>;
+
+    fn store_client_state(
+        &mut self,
+        client_state_path: ClientStatePath,
+        client_state: StaticTmClientState,
+    ) -> Result<(), ContextError>;
+
+    fn store_consensus_state(
+        &mut self,
+        consensus_state_path: ClientConsensusStatePath,
+        consensus_state: TmConsensusState,
+    ) -> Result<(), ContextError>;
 }
 
 /// Contains the core implementation of the Tendermint light client
@@ -1297,6 +1328,72 @@ where
                 self.check_for_misbehaviour_misbehavior(&misbehaviour)
             }
         }
+    }
+}
+
+impl<ClientExecutionContext> StaticClientStateExecution<ClientExecutionContext>
+    for StaticTmClientState
+where
+    ClientExecutionContext: TmClientExecutionContext,
+{
+    fn update_state(
+        &self,
+        ctx: &mut ClientExecutionContext,
+        client_id: &ClientId,
+        header: Any,
+    ) -> Result<Vec<Height>, ClientError> {
+        let header = TmHeader::try_from(header)?;
+        let header_height = header.height();
+
+        let maybe_existing_consensus_state = {
+            let path_at_header_height = ClientConsensusStatePath::new(client_id, &header_height);
+
+            ctx.consensus_state(&path_at_header_height).ok()
+        };
+
+        if maybe_existing_consensus_state.is_some() {
+            // if we already had the header installed by a previous relayer
+            // then this is a no-op.
+            //
+            // Do nothing.
+        } else {
+            let new_consensus_state = TmConsensusState::from(header.clone());
+            let new_client_state = self.clone().with_header(header)?;
+
+            ctx.store_update_time(
+                client_id.clone(),
+                new_client_state.latest_height(),
+                ctx.host_timestamp()?,
+            )?;
+            ctx.store_update_height(
+                client_id.clone(),
+                new_client_state.latest_height(),
+                ctx.host_height()?,
+            )?;
+
+            ctx.store_consensus_state(
+                ClientConsensusStatePath::new(client_id, &new_client_state.latest_height()),
+                new_consensus_state,
+            )?;
+            ctx.store_client_state(ClientStatePath::new(client_id), new_client_state)?;
+        }
+
+        let updated_heights = vec![header_height];
+        Ok(updated_heights)
+    }
+
+    fn update_state_on_misbehaviour(
+        &self,
+        ctx: &mut ClientExecutionContext,
+        client_id: &ClientId,
+        _client_message: Any,
+        _update_kind: &UpdateKind,
+    ) -> Result<(), ClientError> {
+        let frozen_client_state = self.clone().with_frozen_height(Height::new(0, 1).unwrap());
+
+        ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state)?;
+
+        Ok(())
     }
 }
 
