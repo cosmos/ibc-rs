@@ -21,6 +21,12 @@ impl Amount {
     }
 }
 
+impl AsRef<U256> for Amount {
+    fn as_ref(&self) -> &U256 {
+        &self.0
+    }
+}
+
 impl FromStr for Amount {
     type Err = TokenTransferError;
 
