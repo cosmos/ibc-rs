@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## v0.41.0
+
+*May 23, 2023*
+
+This release bumps ibc-proto to v0.30.0 and tendermint to v0.31, and provides utilities for chain upgrades (Tendermint only).
+
+There are consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Support for upgrade client proposal by featuring helper contexts and domain types 
+  ([#420](https://github.com/cosmos/ibc-rs/issues/420))
+- Remove unused `ClientState` methods
+  ([#681](https://github.com/cosmos/ibc-rs/issues/681))
+- Bump ibc-proto to v0.30.0 and tendermint to v0.31
+  ([#689](https://github.com/cosmos/ibc-rs/issues/689))
+
+### BUG FIXES
+
+- Encode upgraded client/consensus states for upgrade_client validation using `prost::Message`
+  from pros ([#672](https://github.com/cosmos/ibc-rs/issues/672))
+
+### FEATURES
+
+- Timestamp ser and der failed on borsh feature
+  ([#687](https://github.com/cosmos/ibc-rs/issues/687))
+
+### IMPROVEMENTS
+
+- Clarify usage of `upgrade_path` for handling upgrade proposals
+  ([#141](https://github.com/cosmos/ibc-rs/issues/141))
+- Refactor tests for upgrade_client implementation
+  ([#385](https://github.com/cosmos/ibc-rs/issues/385))
+- Exclude `ClientState::new()` checks from proto ClientState conversion
+  ([#671](https://github.com/cosmos/ibc-rs/issues/671))
+- Remove redundant #[allow(clippy::too_many_arguments)]
+ ([#674](https://github.com/cosmos/ibc-rs/issues/674))
+- Token transfer: Make `Amount` type less restrictive
+  ([#684](https://github.com/cosmos/ibc-rs/issues/684))
+
 ## v0.40.0
 
 *May 8, 2023*
@@ -8,7 +48,7 @@ This release primarily consolidated the modules in the ibc-rs crate, removed man
 
 There were also a few minor validation checks missing, which we added. These were pretty much the last remaining known ones.
 
-There are breaking changes.
+There are consensus-breaking changes.
 
 ### BREAKING CHANGES
 
