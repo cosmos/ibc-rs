@@ -1,3 +1,5 @@
+//! Provides utilities related to chain upgrades.
+
 mod context;
 mod events;
 mod handler;
