@@ -251,7 +251,7 @@ impl ClientState {
     }
 
     // Resets custom fields to zero values (used in `update_client`)
-    fn zero_custom_fields(&mut self) {
+    pub fn zero_custom_fields(&mut self) {
         self.trusting_period = ZERO_DURATION;
         self.trust_level = TrustThreshold::ZERO;
         self.allow_update.after_expiry = false;
