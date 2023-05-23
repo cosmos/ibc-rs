@@ -2,8 +2,6 @@ use core::convert::Infallible;
 
 use alloc::boxed::Box;
 use alloc::string::ToString;
-use alloc::vec;
-use alloc::vec::Vec;
 use tendermint::abci::Event as TmEvent;
 use tendermint_proto::abci::Event as ProtoEvent;
 
@@ -22,7 +20,7 @@ use crate::hosts::tendermint::upgrade_proposal::UpgradeProposal;
 pub fn upgrade_client_proposal_handler<Ctx>(
     ctx: &mut Ctx,
     proposal: UpgradeProposal,
-) -> Result<Vec<ProtoEvent>, UpgradeClientError>
+) -> Result<ProtoEvent, UpgradeClientError>
 where
     Ctx: UpgradeExecutionContext,
 {
@@ -53,5 +51,5 @@ where
             reason: e.to_string(),
         })?;
 
-    Ok(vec![event])
+    Ok(event)
 }
