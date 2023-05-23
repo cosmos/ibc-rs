@@ -3,7 +3,7 @@
 use crate::clients::AsAny;
 use crate::prelude::*;
 
-use core::fmt::{Debug, Display};
+use core::fmt::Debug;
 use core::marker::{Send, Sync};
 
 use dyn_clone::DynClone;
@@ -87,7 +87,7 @@ mod sealed {
     }
 }
 
-pub trait StaticConsensusState: Clone + Debug + Display + Send + Sync {
+pub trait StaticConsensusState: Clone + Debug + Send + Sync {
     type EncodeError;
 
     /// Commitment root of the consensus state, which is used for key-value pair verification.

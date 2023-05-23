@@ -1,12 +1,15 @@
 //! Defines Tendermint's `ConsensusState` type
 
+use crate::core::ics02_client::consensus_state::StaticConsensusState;
+use crate::core::ContextError;
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::ConsensusState as RawConsensusState;
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::protobuf::Protobuf as DynProtobuf;
 use tendermint::{hash::Algorithm, time::Time, Hash};
 use tendermint_proto::google::protobuf as tpb;
+use tendermint_proto::Protobuf as TmProtobuf;
 
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
@@ -45,7 +48,7 @@ impl crate::core::ics02_client::consensus_state::ConsensusState for ConsensusSta
     }
 }
 
-impl Protobuf<RawConsensusState> for ConsensusState {}
+impl DynProtobuf<RawConsensusState> for ConsensusState {}
 
 impl TryFrom<RawConsensusState> for ConsensusState {
     type Error = Error;
@@ -101,7 +104,7 @@ impl From<ConsensusState> for RawConsensusState {
     }
 }
 
-impl Protobuf<Any> for ConsensusState {}
+impl DynProtobuf<Any> for ConsensusState {}
 
 impl TryFrom<Any> for ConsensusState {
     type Error = ClientError;
@@ -132,7 +135,7 @@ impl From<ConsensusState> for Any {
     fn from(consensus_state: ConsensusState) -> Self {
         Any {
             type_url: TENDERMINT_CONSENSUS_STATE_TYPE_URL.to_string(),
-            value: Protobuf::<RawConsensusState>::encode_vec(&consensus_state),
+            value: DynProtobuf::<RawConsensusState>::encode_vec(&consensus_state),
         }
     }
 }
@@ -150,6 +153,28 @@ impl From<tendermint::block::Header> for ConsensusState {
 impl From<Header> for ConsensusState {
     fn from(header: Header) -> Self {
         Self::from(header.signed_header.header)
+    }
+}
+
+impl TmProtobuf<Any> for ConsensusState {}
+
+impl StaticConsensusState for ConsensusState {
+    type EncodeError = ContextError;
+
+    fn root(&self) -> &CommitmentRoot {
+        &self.root
+    }
+
+    fn timestamp(&self) -> Timestamp {
+        self.timestamp.into()
+    }
+
+    fn encode_vec(&self) -> Result<Vec<u8>, Self::EncodeError> {
+        <Self as TmProtobuf<Any>>::encode_vec(self).map_err(|err| {
+            ContextError::ClientError(ClientError::ClientSpecific {
+                description: format!("{err}"),
+            })
+        })
     }
 }
 
