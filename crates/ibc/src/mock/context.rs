@@ -18,13 +18,15 @@ use core::cmp::min;
 use core::fmt::Debug;
 use core::ops::{Add, Sub};
 use core::time::Duration;
+use derive_more::From;
 use parking_lot::Mutex;
 use subtle_encoding::bech32;
 
 use ibc_proto::google::protobuf::Any;
 use tracing::debug;
 
-use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
+use crate::clients::ics07_tendermint::client_state::{ClientState as TmClientState, TmClientValidationContext};
+use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
@@ -42,7 +44,7 @@ use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, Connecti
 use crate::core::router::Router;
 use crate::core::router::{Module, ModuleId};
 use crate::core::timestamp::Timestamp;
-use crate::core::ContextError;
+use crate::core::{ContextError, StaticValidationContext};
 use crate::core::MsgEnvelope;
 use crate::core::{dispatch, ExecutionContext, ValidationContext};
 use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
@@ -235,8 +237,8 @@ impl MockContext {
         let client_type = client_type.unwrap_or_else(mock_client_type);
         let (client_state, consensus_state) = if client_type.as_str() == MOCK_CLIENT_TYPE {
             (
-                Some(MockClientState::new(MockHeader::new(client_state_height)).into_box()),
-                MockConsensusState::new(MockHeader::new(cs_height)).into_box(),
+                Some(MockClientState::new(MockHeader::new(client_state_height)).into()),
+                MockConsensusState::new(MockHeader::new(cs_height)).into(),
             )
         } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
             let light_block = HostBlock::generate_tm_block(
@@ -246,7 +248,7 @@ impl MockContext {
             );
 
             let client_state =
-                TmClientState::new_dummy_from_header(light_block.header().clone()).into_box();
+                TmClientState::new_dummy_from_header(light_block.header().clone()).into();
 
             // Return the tuple.
             (Some(client_state), light_block.into())
@@ -300,28 +302,29 @@ impl MockContext {
         let client_type = client_type.unwrap_or_else(mock_client_type);
         let now = Timestamp::now();
 
-        let (client_state, consensus_state) = if client_type.as_str() == MOCK_CLIENT_TYPE {
-            // If it's a mock client, create the corresponding mock states.
-            (
-                Some(MockClientState::new(MockHeader::new(client_state_height)).into_box()),
-                MockConsensusState::new(MockHeader::new(cs_height)).into_box(),
-            )
-        } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
-            // If it's a Tendermint client, we need TM states.
-            let light_block =
-                HostBlock::generate_tm_block(client_chain_id, cs_height.revision_height(), now);
+        let (client_state, consensus_state): (Option<HostClientState>, HostConsensusState) =
+            if client_type.as_str() == MOCK_CLIENT_TYPE {
+                // If it's a mock client, create the corresponding mock states.
+                (
+                    Some(MockClientState::new(MockHeader::new(client_state_height)).into()),
+                    MockConsensusState::new(MockHeader::new(cs_height)).into(),
+                )
+            } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
+                // If it's a Tendermint client, we need TM states.
+                let light_block =
+                    HostBlock::generate_tm_block(client_chain_id, cs_height.revision_height(), now);
 
-            let client_state =
-                TmClientState::new_dummy_from_header(light_block.header().clone()).into_box();
+                let client_state =
+                    TmClientState::new_dummy_from_header(light_block.header().clone()).into();
 
-            // Return the tuple.
-            (Some(client_state), light_block.into())
-        } else {
-            panic!("Unknown client type")
-        };
+                // Return the tuple.
+                (Some(client_state), light_block.into())
+            } else {
+                panic!("Unknown client type")
+            };
 
         let prev_consensus_state = if client_type.as_str() == MOCK_CLIENT_TYPE {
-            MockConsensusState::new(MockHeader::new(prev_cs_height)).into_box()
+            MockConsensusState::new(MockHeader::new(prev_cs_height)).into()
         } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
             let light_block = HostBlock::generate_tm_block(
                 self.host_chain_id.clone(),
@@ -566,7 +569,7 @@ impl MockContext {
             .insert(port_id, module_id);
     }
 
-    pub fn latest_client_states(&self, client_id: &ClientId) -> Box<dyn ClientState> {
+    pub fn latest_client_states(&self, client_id: &ClientId) -> HostClientState {
         self.ibc_store.lock().clients[client_id]
             .client_state
             .as_ref()
@@ -578,14 +581,12 @@ impl MockContext {
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Box<dyn ConsensusState> {
-        dyn_clone::clone_box(
-            self.ibc_store.lock().clients[client_id]
-                .consensus_states
-                .get(height)
-                .unwrap()
-                .as_ref(),
-        )
+    ) -> HostConsensusState {
+        self.ibc_store.lock().clients[client_id]
+            .consensus_states
+            .get(height)
+            .unwrap()
+            .clone()
     }
 
     pub fn latest_height(&self) -> Height {
@@ -602,15 +603,27 @@ impl MockContext {
 
 type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
 
+#[derive(Debug, Clone, From)]
+pub enum HostClientState {
+    Tendermint(TmClientState),
+    Mock(MockClientState),
+}
+
+#[derive(Debug, Clone, From)]
+pub enum HostConsensusState {
+    Tendermint(TmConsensusState),
+    Mock(MockConsensusState),
+}
+
 /// A mock of an IBC client record as it is stored in a mock context.
 /// For testing ICS02 handlers mostly, cf. `MockClientContext`.
 #[derive(Clone, Debug)]
 pub struct MockClientRecord {
     /// The client state (representing only the latest height at the moment).
-    pub client_state: Option<Box<dyn ClientState>>,
+    pub client_state: Option<HostClientState>,
 
     /// Mapping of heights to consensus states for this client.
-    pub consensus_states: BTreeMap<Height, Box<dyn ConsensusState>>,
+    pub consensus_states: BTreeMap<Height, HostConsensusState>,
 }
 
 /// An object that stores all IBC related data.
@@ -719,7 +732,7 @@ impl Router for MockContext {
     }
 }
 
-impl ValidationContext for MockContext {
+impl StaticValidationContext for MockContext {
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
         match self.ibc_store.lock().clients.get(client_id) {
             Some(client_record) => {
