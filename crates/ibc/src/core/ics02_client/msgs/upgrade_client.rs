@@ -9,7 +9,7 @@ use ibc_proto::ibc::core::client::v1::MsgUpgradeClient as RawMsgUpgradeClient;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
 use ibc_proto::protobuf::Protobuf;
 
-use crate::core::ics02_client::error::ClientError;
+use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics23_commitment::error::CommitmentError;
 use crate::core::ics24_host::identifier::ClientId;
@@ -78,11 +78,13 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
 
         let c_bytes =
             CommitmentProofBytes::try_from(proto_msg.proof_upgrade_client).map_err(|_| {
-                ClientError::InvalidUpgradeClientProof(CommitmentError::EmptyMerkleProof)
+                UpgradeClientError::InvalidUpgradeClientProof(CommitmentError::EmptyMerkleProof)
             })?;
         let cs_bytes = CommitmentProofBytes::try_from(proto_msg.proof_upgrade_consensus_state)
             .map_err(|_| {
-                ClientError::InvalidUpgradeConsensusStateProof(CommitmentError::EmptyMerkleProof)
+                UpgradeClientError::InvalidUpgradeConsensusStateProof(
+                    CommitmentError::EmptyMerkleProof,
+                )
             })?;
 
         Ok(MsgUpgradeClient {
@@ -91,9 +93,9 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
             client_state: raw_client_state,
             consensus_state: raw_consensus_state,
             proof_upgrade_client: RawMerkleProof::try_from(c_bytes)
-                .map_err(ClientError::InvalidUpgradeClientProof)?,
+                .map_err(UpgradeClientError::InvalidUpgradeClientProof)?,
             proof_upgrade_consensus_state: RawMerkleProof::try_from(cs_bytes)
-                .map_err(ClientError::InvalidUpgradeConsensusStateProof)?,
+                .map_err(UpgradeClientError::InvalidUpgradeConsensusStateProof)?,
             signer: proto_msg.signer.into(),
         })
     }
