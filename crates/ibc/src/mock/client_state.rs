@@ -1,7 +1,6 @@
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 use crate::prelude::*;
 
-use alloc::collections::btree_map::BTreeMap as HashMap;
 use core::time::Duration;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof;
 
@@ -33,17 +32,6 @@ pub const MOCK_CLIENT_TYPE: &str = "9999-mock";
 
 pub fn client_type() -> ClientType {
     ClientType::from(MOCK_CLIENT_TYPE.to_string())
-}
-
-/// A mock of an IBC client record as it is stored in a mock context.
-/// For testing ICS02 handlers mostly, cf. `MockClientContext`.
-#[derive(Clone, Debug)]
-pub struct MockClientRecord {
-    /// The client state (representing only the latest height at the moment).
-    pub client_state: Option<Box<dyn ClientState>>,
-
-    /// Mapping of heights to consensus states for this client.
-    pub consensus_states: HashMap<Height, Box<dyn ConsensusState>>,
 }
 
 /// A mock of a client state. For an example of a real structure that this mocks, you can see

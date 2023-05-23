@@ -45,9 +45,7 @@ use crate::core::timestamp::Timestamp;
 use crate::core::ContextError;
 use crate::core::MsgEnvelope;
 use crate::core::{dispatch, ExecutionContext, ValidationContext};
-use crate::mock::client_state::{
-    client_type as mock_client_type, MockClientRecord, MockClientState,
-};
+use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::mock::host::{HostBlock, HostType};
@@ -603,6 +601,17 @@ impl MockContext {
 }
 
 type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
+
+/// A mock of an IBC client record as it is stored in a mock context.
+/// For testing ICS02 handlers mostly, cf. `MockClientContext`.
+#[derive(Clone, Debug)]
+pub struct MockClientRecord {
+    /// The client state (representing only the latest height at the moment).
+    pub client_state: Option<Box<dyn ClientState>>,
+
+    /// Mapping of heights to consensus states for this client.
+    pub consensus_states: BTreeMap<Height, Box<dyn ConsensusState>>,
+}
 
 /// An object that stores all IBC related data.
 #[derive(Clone, Debug, Default)]
