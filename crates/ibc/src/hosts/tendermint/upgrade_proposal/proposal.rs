@@ -8,11 +8,18 @@ use ibc_proto::protobuf::Protobuf;
 use super::Plan;
 use crate::core::ics02_client::error::UpgradeClientError;
 
+/// Defines a governance proposal of type `Content` that enables the initiation
+/// of an IBC breaking upgrade and specifies the new client state that should be
+/// utilized following the upgrade.
 #[derive(Clone, Debug)]
 pub struct UpgradeProposal {
+    // Title of the proposal
     pub title: String,
+    // Description of the proposal
     pub description: String,
+    // The upgrade plan
     pub plan: Plan,
+    // The upgraded client state
     pub upgraded_client_state: Any,
 }
 

@@ -10,10 +10,20 @@ use crate::core::ics02_client::error::UpgradeClientError;
 
 pub(crate) const TYPE_URL: &str = "/cosmos.upgrade.v1beta1.Plan";
 
+/// Specifies information about a planned upgrade and at which height it should
+/// be performed.
+///
+/// Note: Time based upgrade logic has been removed from the SDK, so the `time`
+/// field of the proto is deprecated and should be empty.
 #[derive(Clone, Debug)]
 pub struct Plan {
+    // Sets the name for the upgrade. This name might be used by the upgraded
+    // version of a host chain to apply any special "on-upgrade" commands during
+    // the first block generation after the upgrade is applied.
     pub name: String,
+    // The height at which the upgrade must be performed.
     pub height: u64,
+    // Any application specific upgrade info to be included on-chain
     pub info: String,
 }
 

@@ -13,8 +13,8 @@ use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::UpgradeClientError;
 use crate::core::ics24_host::path::UpgradeClientPath;
 
-/// Helper context for validating upgrades, providing methods to retrieve
-/// upgrade plans and upgraded client and consensus states.
+/// Helper context to validate client upgrades, providing methods to retrieve
+/// an upgrade plan and related upgraded client and consensus states.
 pub trait UpgradeValidationContext {
     /// Returns the upgrade plan that is scheduled and not have been executed yet.
     fn upgrade_plan(&self) -> Result<Plan, UpgradeClientError>;
@@ -32,8 +32,8 @@ pub trait UpgradeValidationContext {
     ) -> Result<Box<dyn ConsensusState>, UpgradeClientError>;
 }
 
-/// Helper context for executing upgrades, providing methods to schedule
-/// upgrades and store upgraded client and consensus states.
+/// Helper context to execute client upgrades, providing methods to schedule
+/// an upgrade and store related upgraded client and consensus states.
 pub trait UpgradeExecutionContext: UpgradeValidationContext {
     /// Schedules an upgrade based on the specified plan. If there is another `Plan` it should be overwritten.
     fn schedule_upgrade(&mut self, plan: Plan) -> Result<(), UpgradeClientError>;

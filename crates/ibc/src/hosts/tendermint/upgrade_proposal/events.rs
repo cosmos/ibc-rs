@@ -89,6 +89,7 @@ impl From<UpgradePlanTitleAttribute> for abci::EventAttribute {
     }
 }
 
+/// Event type emitted by the host chain when an upgrade plan is executed.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -104,7 +105,9 @@ impl From<UpgradePlanTitleAttribute> for abci::EventAttribute {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpgradeChain {
+    // The height at which the upgrade performed.
     plan_height: UpgradePlanHeightAttribute,
+    // The key of the store where the upgrade plan is stored.
     upgrade_store: UpgradeStoreAttribute,
 }
 
@@ -129,6 +132,7 @@ impl From<UpgradeChain> for abci::Event {
     }
 }
 
+/// Event type emitted by the host chain when an upgrade plan is proposed.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -144,7 +148,9 @@ impl From<UpgradeChain> for abci::Event {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpgradeClientProposal {
+    // The title of the upgrade plan
     plan_title: UpgradePlanTitleAttribute,
+    // The height at which the upgrade must be performed.
     plan_height: UpgradePlanHeightAttribute,
 }
 
