@@ -9,7 +9,7 @@ use primitive_types::U256;
 /// A type for representing token transfer amounts.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Display, From, Into)]
-pub struct Amount(pub U256);
+pub struct Amount(U256);
 
 impl Amount {
     pub fn checked_add(self, rhs: Self) -> Option<Self> {
@@ -18,6 +18,12 @@ impl Amount {
 
     pub fn checked_sub(self, rhs: Self) -> Option<Self> {
         self.0.checked_sub(rhs.0).map(Self)
+    }
+}
+
+impl AsRef<U256> for Amount {
+    fn as_ref(&self) -> &U256 {
+        &self.0
     }
 }
 
