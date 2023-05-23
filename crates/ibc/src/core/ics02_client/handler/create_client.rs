@@ -119,14 +119,13 @@ mod tests {
 
     use test_log::test;
 
-    use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
+    use crate::clients::ics07_tendermint::client_state::StaticTmClientState;
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
     use crate::core::ics02_client::handler::create_client::{execute, validate};
     use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
     use crate::core::ics24_host::identifier::ClientId;
-    use crate::core::ValidationContext;
     use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
     use crate::mock::consensus_state::MockConsensusState;
     use crate::mock::context::MockContext;
@@ -174,7 +173,7 @@ mod tests {
 
         let tm_header = get_dummy_tendermint_header();
 
-        let tm_client_state = TmClientState::new_dummy_from_header(tm_header.clone()).into();
+        let tm_client_state = StaticTmClientState::new_dummy_from_header(tm_header.clone()).into();
 
         let client_type = tm_client_type();
 

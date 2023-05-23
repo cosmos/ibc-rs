@@ -1,4 +1,5 @@
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
+use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
 
 use core::time::Duration;
@@ -8,9 +9,11 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::mock::ClientState as RawMockClientState;
 use ibc_proto::protobuf::Protobuf;
 
-use crate::core::ics02_client::client_state::{ClientState, UpdateKind, UpdatedState};
+use crate::core::ics02_client::client_state::{
+    StaticClientStateBase, StaticClientStateExecution, StaticClientStateInitializer,
+    StaticClientStateValidation, UpdateKind,
+};
 use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
@@ -24,7 +27,7 @@ use crate::mock::misbehaviour::Misbehaviour;
 
 use crate::Height;
 
-use crate::core::{ExecutionContext, ValidationContext};
+use crate::core::ContextError;
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
 
@@ -125,7 +128,7 @@ impl From<MockClientState> for Any {
     }
 }
 
-impl ClientState for MockClientState {
+impl StaticClientStateBase for MockClientState {
     fn client_type(&self) -> ClientType {
         mock_client_type()
     }
@@ -157,10 +160,6 @@ impl ClientState for MockClientState {
         false
     }
 
-    fn initialise(&self, consensus_state: Any) -> Result<Box<dyn ConsensusState>, ClientError> {
-        MockConsensusState::try_from(consensus_state).map(MockConsensusState::into_box)
-    }
-
     fn verify_upgrade_client(
         &self,
         upgraded_client_state: Any,
@@ -180,44 +179,35 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
-    fn update_state_with_upgrade_client(
-        &self,
-        upgraded_client_state: Any,
-        upgraded_consensus_state: Any,
-    ) -> Result<UpdatedState, ClientError> {
-        let mock_client_state = MockClientState::try_from(upgraded_client_state)?;
-        let mock_consensus_state = MockConsensusState::try_from(upgraded_consensus_state)?;
-        Ok(UpdatedState {
-            client_state: mock_client_state.into_box(),
-            consensus_state: mock_consensus_state.into_box(),
-        })
-    }
-
     fn verify_membership(
         &self,
-        _prefix: &CommitmentPrefix,
-        _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
-        _path: Path,
-        _value: Vec<u8>,
+        prefix: &CommitmentPrefix,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        path: Path,
+        value: Vec<u8>,
     ) -> Result<(), ClientError> {
         Ok(())
     }
 
     fn verify_non_membership(
         &self,
-        _prefix: &CommitmentPrefix,
-        _proof: &CommitmentProofBytes,
-        _root: &CommitmentRoot,
-        _path: Path,
+        prefix: &CommitmentPrefix,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        path: Path,
     ) -> Result<(), ClientError> {
         Ok(())
     }
+}
 
+impl<ClientValidationContext> StaticClientStateValidation<ClientValidationContext>
+    for MockClientState
+{
     fn verify_client_message(
         &self,
-        _ctx: &dyn ValidationContext,
-        _client_id: &ClientId,
+        ctx: &ClientValidationContext,
+        client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
@@ -240,13 +230,10 @@ impl ClientState for MockClientState {
         Ok(())
     }
 
-    /// We consider the following to be misbehaviour:
-    /// + UpdateHeader: no misbehaviour possible
-    /// + Misbehaviour: headers are at same height and are in the future
     fn check_for_misbehaviour(
         &self,
-        _ctx: &dyn ValidationContext,
-        _client_id: &ClientId,
+        ctx: &ClientValidationContext,
+        client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
     ) -> Result<bool, ClientError> {
@@ -264,18 +251,57 @@ impl ClientState for MockClientState {
             }
         }
     }
+}
 
+pub trait MockClientExecutionContext {
+    /// Returns the current height of the local chain.
+    fn host_height(&self) -> Result<Height, ContextError>;
+
+    /// Returns the current timestamp of the local chain.
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
+
+    fn store_update_time(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        timestamp: Timestamp,
+    ) -> Result<(), ContextError>;
+
+    fn store_update_height(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        host_height: Height,
+    ) -> Result<(), ContextError>;
+
+    fn store_client_state(
+        &mut self,
+        client_state_path: ClientStatePath,
+        client_state: MockClientState,
+    ) -> Result<(), ContextError>;
+
+    fn store_consensus_state(
+        &mut self,
+        consensus_state_path: ClientConsensusStatePath,
+        consensus_state: MockConsensusState,
+    ) -> Result<(), ContextError>;
+}
+
+impl<ClientExecutionContext> StaticClientStateExecution<ClientExecutionContext> for MockClientState
+where
+    ClientExecutionContext: MockClientExecutionContext,
+{
     fn update_state(
         &self,
-        ctx: &mut dyn ExecutionContext,
+        ctx: &mut ClientExecutionContext,
         client_id: &ClientId,
         header: Any,
     ) -> Result<Vec<Height>, ClientError> {
         let header = MockHeader::try_from(header)?;
         let header_height = header.height;
 
-        let new_client_state = MockClientState::new(header).into_box();
-        let new_consensus_state = MockConsensusState::new(header).into_box();
+        let new_client_state = MockClientState::new(header);
+        let new_consensus_state = MockConsensusState::new(header);
 
         ctx.store_update_time(
             client_id.clone(),
@@ -298,18 +324,34 @@ impl ClientState for MockClientState {
 
     fn update_state_on_misbehaviour(
         &self,
-        ctx: &mut dyn ExecutionContext,
+        ctx: &mut ClientExecutionContext,
         client_id: &ClientId,
-        _client_message: Any,
-        _update_kind: &UpdateKind,
+        client_message: Any,
+        update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
-        let frozen_client_state = self
-            .with_frozen_height(Height::new(0, 1).unwrap())
-            .into_box();
+        todo!()
+    }
 
-        ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state)?;
+    fn update_state_with_upgrade_client(
+        &self,
+        ctx: &mut ClientExecutionContext,
+        client_id: &ClientId,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+    ) -> Result<Height, ClientError> {
+        todo!()
+    }
+}
 
-        Ok(())
+impl<SupportedConsensusStates> StaticClientStateInitializer<SupportedConsensusStates>
+    for MockClientState
+where
+    SupportedConsensusStates: From<MockConsensusState>,
+{
+    fn initialise(&self, consensus_state: Any) -> Result<SupportedConsensusStates, ClientError> {
+        let consensus_state = MockConsensusState::try_from(consensus_state)?;
+
+        Ok(consensus_state.into())
     }
 }
 

@@ -125,7 +125,6 @@ mod tests {
     use crate::clients::ics07_tendermint::header::Header as TmHeader;
     use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
     use crate::core::events::IbcEvent;
-    use crate::core::ics02_client::client_state::ClientState;
     use crate::core::ics02_client::client_type::ClientType;
     use crate::core::ics02_client::consensus_state::ConsensusState;
     use crate::core::ics02_client::handler::update_client::{execute, validate};
@@ -134,7 +133,6 @@ mod tests {
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::timestamp::Timestamp;
-    use crate::core::ValidationContext;
     use crate::downcast;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::client_state::MockClientState;

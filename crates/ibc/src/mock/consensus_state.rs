@@ -1,10 +1,13 @@
+use crate::core::ContextError;
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::mock::ConsensusState as RawMockConsensusState;
 use ibc_proto::protobuf::Protobuf;
 
-use crate::core::ics02_client::consensus_state::ConsensusState;
+use tendermint_proto::Protobuf as TmProtobuf;
+
+use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::core::timestamp::Timestamp;
@@ -94,12 +97,24 @@ impl From<MockConsensusState> for Any {
     }
 }
 
-impl ConsensusState for MockConsensusState {
+impl TmProtobuf<Any> for MockConsensusState {}
+
+impl StaticConsensusState for MockConsensusState {
+    type EncodeError = ContextError;
+
     fn root(&self) -> &CommitmentRoot {
         &self.root
     }
 
     fn timestamp(&self) -> Timestamp {
         self.header.timestamp
+    }
+
+    fn encode_vec(&self) -> Result<Vec<u8>, Self::EncodeError> {
+        <Self as TmProtobuf<Any>>::encode_vec(self).map_err(|err| {
+            ContextError::ClientError(ClientError::ClientSpecific {
+                description: format!("{err}"),
+            })
+        })
     }
 }

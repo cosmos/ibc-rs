@@ -25,12 +25,18 @@ use subtle_encoding::bech32;
 use ibc_proto::google::protobuf::Any;
 use tracing::debug;
 
-use crate::clients::ics07_tendermint::client_state::{ClientState as TmClientState, TmClientValidationContext};
+use crate::clients::ics07_tendermint::client_state::{
+    StaticTmClientState, TmClientExecutionContext, TmClientValidationContext,
+};
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
+use crate::core::dispatch;
 use crate::core::events::IbcEvent;
-use crate::core::ics02_client::client_state::ClientState;
+use crate::core::ics02_client::client_state::{
+    StaticClientStateBase, StaticClientStateExecution, StaticClientStateInitializer,
+    StaticClientStateValidation, UpdateKind,
+};
 use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
 use crate::core::ics03_connection::connection::ConnectionEnd;
@@ -39,14 +45,13 @@ use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
-use crate::core::ics23_commitment::commitment::CommitmentPrefix;
+use crate::core::ics23_commitment::commitment::{CommitmentPrefix, CommitmentRoot};
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::router::Router;
 use crate::core::router::{Module, ModuleId};
 use crate::core::timestamp::Timestamp;
 use crate::core::{ContextError, StaticValidationContext};
-use crate::core::MsgEnvelope;
-use crate::core::{dispatch, ExecutionContext, ValidationContext};
+use crate::core::{MsgEnvelope, StaticExecutionContext};
 use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
@@ -56,7 +61,7 @@ use crate::mock::ics18_relayer::error::RelayerError;
 use crate::signer::Signer;
 use crate::Height;
 
-use super::client_state::MOCK_CLIENT_TYPE;
+use super::client_state::{MockClientExecutionContext, MOCK_CLIENT_TYPE};
 
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
@@ -248,7 +253,7 @@ impl MockContext {
             );
 
             let client_state =
-                TmClientState::new_dummy_from_header(light_block.header().clone()).into();
+                StaticTmClientState::new_dummy_from_header(light_block.header().clone()).into();
 
             // Return the tuple.
             (Some(client_state), light_block.into())
@@ -315,7 +320,7 @@ impl MockContext {
                     HostBlock::generate_tm_block(client_chain_id, cs_height.revision_height(), now);
 
                 let client_state =
-                    TmClientState::new_dummy_from_header(light_block.header().clone()).into();
+                    StaticTmClientState::new_dummy_from_header(light_block.header().clone()).into();
 
                 // Return the tuple.
                 (Some(client_state), light_block.into())
@@ -603,16 +608,238 @@ impl MockContext {
 
 type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
 
-#[derive(Debug, Clone, From)]
+#[derive(Debug, Clone, From, PartialEq)]
 pub enum HostClientState {
-    Tendermint(TmClientState),
+    Tendermint(StaticTmClientState),
     Mock(MockClientState),
+}
+
+impl StaticClientStateBase for HostClientState {
+    fn client_type(&self) -> ClientType {
+        match self {
+            HostClientState::Tendermint(cs) => cs.client_type(),
+            HostClientState::Mock(cs) => cs.client_type(),
+        }
+    }
+
+    fn latest_height(&self) -> Height {
+        match self {
+            HostClientState::Tendermint(cs) => cs.latest_height(),
+            HostClientState::Mock(cs) => cs.latest_height(),
+        }
+    }
+
+    fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
+        match self {
+            HostClientState::Tendermint(cs) => cs.validate_proof_height(proof_height),
+            HostClientState::Mock(cs) => cs.validate_proof_height(proof_height),
+        }
+    }
+
+    fn confirm_not_frozen(&self) -> Result<(), ClientError> {
+        match self {
+            HostClientState::Tendermint(cs) => cs.confirm_not_frozen(),
+            HostClientState::Mock(cs) => cs.confirm_not_frozen(),
+        }
+    }
+
+    fn expired(&self, elapsed: Duration) -> bool {
+        match self {
+            HostClientState::Tendermint(cs) => cs.expired(elapsed),
+            HostClientState::Mock(cs) => cs.expired(elapsed),
+        }
+    }
+
+    fn verify_upgrade_client(
+        &self,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+        proof_upgrade_client: ibc_proto::ibc::core::commitment::v1::MerkleProof,
+        proof_upgrade_consensus_state: ibc_proto::ibc::core::commitment::v1::MerkleProof,
+        root: &CommitmentRoot,
+    ) -> Result<(), ClientError> {
+        match self {
+            HostClientState::Tendermint(cs) => cs.verify_upgrade_client(
+                upgraded_client_state,
+                upgraded_consensus_state,
+                proof_upgrade_client,
+                proof_upgrade_consensus_state,
+                root,
+            ),
+            HostClientState::Mock(cs) => cs.verify_upgrade_client(
+                upgraded_client_state,
+                upgraded_consensus_state,
+                proof_upgrade_client,
+                proof_upgrade_consensus_state,
+                root,
+            ),
+        }
+    }
+
+    fn verify_membership(
+        &self,
+        prefix: &CommitmentPrefix,
+        proof: &crate::core::ics23_commitment::commitment::CommitmentProofBytes,
+        root: &CommitmentRoot,
+        path: crate::core::ics24_host::path::Path,
+        value: Vec<u8>,
+    ) -> Result<(), ClientError> {
+        match self {
+            HostClientState::Tendermint(cs) => {
+                cs.verify_membership(prefix, proof, root, path, value)
+            }
+            HostClientState::Mock(cs) => cs.verify_membership(prefix, proof, root, path, value),
+        }
+    }
+
+    fn verify_non_membership(
+        &self,
+        prefix: &CommitmentPrefix,
+        proof: &crate::core::ics23_commitment::commitment::CommitmentProofBytes,
+        root: &CommitmentRoot,
+        path: crate::core::ics24_host::path::Path,
+    ) -> Result<(), ClientError> {
+        match self {
+            HostClientState::Tendermint(cs) => cs.verify_non_membership(prefix, proof, root, path),
+            HostClientState::Mock(cs) => cs.verify_non_membership(prefix, proof, root, path),
+        }
+    }
+}
+
+impl StaticClientStateValidation<MockContext> for HostClientState {
+    fn verify_client_message(
+        &self,
+        ctx: &MockContext,
+        client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<(), ClientError> {
+        match self {
+            HostClientState::Tendermint(cs) => {
+                cs.verify_client_message(ctx, client_id, client_message, update_kind)
+            }
+            HostClientState::Mock(cs) => {
+                cs.verify_client_message(ctx, client_id, client_message, update_kind)
+            }
+        }
+    }
+
+    fn check_for_misbehaviour(
+        &self,
+        ctx: &MockContext,
+        client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<bool, ClientError> {
+        match self {
+            HostClientState::Tendermint(cs) => {
+                cs.check_for_misbehaviour(ctx, client_id, client_message, update_kind)
+            }
+            HostClientState::Mock(cs) => {
+                cs.check_for_misbehaviour(ctx, client_id, client_message, update_kind)
+            }
+        }
+    }
+}
+
+impl StaticClientStateExecution<MockContext> for HostClientState {
+    fn update_state(
+        &self,
+        ctx: &mut MockContext,
+        client_id: &ClientId,
+        header: Any,
+    ) -> Result<Vec<Height>, ClientError> {
+        match self {
+            HostClientState::Tendermint(cs) => cs.update_state(ctx, client_id, header),
+            HostClientState::Mock(cs) => cs.update_state(ctx, client_id, header),
+        }
+    }
+
+    fn update_state_on_misbehaviour(
+        &self,
+        ctx: &mut MockContext,
+        client_id: &ClientId,
+        client_message: Any,
+        update_kind: &UpdateKind,
+    ) -> Result<(), ClientError> {
+        match self {
+            HostClientState::Tendermint(cs) => {
+                cs.update_state_on_misbehaviour(ctx, client_id, client_message, update_kind)
+            }
+            HostClientState::Mock(cs) => {
+                cs.update_state_on_misbehaviour(ctx, client_id, client_message, update_kind)
+            }
+        }
+    }
+
+    fn update_state_with_upgrade_client(
+        &self,
+        ctx: &mut MockContext,
+        client_id: &ClientId,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+    ) -> Result<Height, ClientError> {
+        match self {
+            HostClientState::Tendermint(cs) => {
+                StaticClientStateExecution::<MockContext>::update_state_with_upgrade_client(
+                    cs,
+                    ctx,
+                    client_id,
+                    upgraded_client_state,
+                    upgraded_consensus_state,
+                )
+            }
+            HostClientState::Mock(cs) => {
+                StaticClientStateExecution::<MockContext>::update_state_with_upgrade_client(
+                    cs,
+                    ctx,
+                    client_id,
+                    upgraded_client_state,
+                    upgraded_consensus_state,
+                )
+            }
+        }
+    }
+}
+
+impl StaticClientStateInitializer<HostConsensusState> for HostClientState {
+    fn initialise(&self, consensus_state: Any) -> Result<HostConsensusState, ClientError> {
+        match self {
+            HostClientState::Tendermint(cs) => cs.initialise(consensus_state),
+            HostClientState::Mock(cs) => cs.initialise(consensus_state),
+        }
+    }
 }
 
 #[derive(Debug, Clone, From)]
 pub enum HostConsensusState {
     Tendermint(TmConsensusState),
     Mock(MockConsensusState),
+}
+
+impl StaticConsensusState for HostConsensusState {
+    type EncodeError = ContextError;
+
+    fn root(&self) -> &CommitmentRoot {
+        match self {
+            HostConsensusState::Tendermint(cs) => cs.root(),
+            HostConsensusState::Mock(cs) => cs.root(),
+        }
+    }
+
+    fn timestamp(&self) -> Timestamp {
+        match self {
+            HostConsensusState::Tendermint(cs) => cs.timestamp(),
+            HostConsensusState::Mock(cs) => cs.timestamp(),
+        }
+    }
+
+    fn encode_vec(&self) -> Result<Vec<u8>, Self::EncodeError> {
+        match self {
+            HostConsensusState::Tendermint(cs) => cs.encode_vec(),
+            HostConsensusState::Mock(cs) => cs.encode_vec(),
+        }
+    }
 }
 
 /// A mock of an IBC client record as it is stored in a mock context.
@@ -683,16 +910,16 @@ pub struct MockIbcStore {
 
 impl RelayerContext for MockContext {
     fn query_latest_height(&self) -> Result<Height, ContextError> {
-        self.host_height()
+        StaticValidationContext::host_height(self)
     }
 
-    fn query_client_full_state(&self, client_id: &ClientId) -> Option<Box<dyn ClientState>> {
+    fn query_client_full_state(&self, client_id: &ClientId) -> Option<HostClientState> {
         // Forward call to Ics2.
-        ValidationContext::client_state(self, client_id).ok()
+        self.client_state(client_id).ok()
     }
 
     fn query_latest_header(&self) -> Option<Box<dyn Header>> {
-        let block_ref = self.host_block(&self.host_height().unwrap());
+        let block_ref = self.host_block(&StaticValidationContext::host_height(self).unwrap());
         block_ref.cloned().map(Header::into_box)
     }
 
@@ -732,65 +959,29 @@ impl Router for MockContext {
     }
 }
 
-impl StaticValidationContext for MockContext {
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
-        match self.ibc_store.lock().clients.get(client_id) {
-            Some(client_record) => {
-                client_record
-                    .client_state
-                    .clone()
-                    .ok_or_else(|| ClientError::ClientStateNotFound {
-                        client_id: client_id.clone(),
-                    })
-            }
-            None => Err(ClientError::ClientStateNotFound {
-                client_id: client_id.clone(),
-            }),
-        }
-        .map_err(ContextError::ClientError)
+impl TmClientValidationContext for MockContext {
+    type SupportedConsensusStates = HostConsensusState;
+
+    fn host_height(&self) -> Result<Height, ContextError> {
+        StaticValidationContext::host_height(self)
     }
 
-    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ContextError> {
-        if let Ok(client_state) = TmClientState::try_from(client_state.clone()) {
-            client_state.validate().map_err(ClientError::from)?;
-            Ok(client_state.into_box())
-        } else if let Ok(client_state) = MockClientState::try_from(client_state.clone()) {
-            Ok(client_state.into_box())
-        } else {
-            Err(ClientError::UnknownClientStateType {
-                client_state_type: client_state.type_url,
-            })
-        }
-        .map_err(ContextError::ClientError)
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
+        StaticValidationContext::host_timestamp(self)
     }
 
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Box<dyn ConsensusState>, ContextError> {
-        let client_id = &client_cons_state_path.client_id;
-        let height = Height::new(client_cons_state_path.epoch, client_cons_state_path.height)?;
-        match self.ibc_store.lock().clients.get(client_id) {
-            Some(client_record) => match client_record.consensus_states.get(&height) {
-                Some(consensus_state) => Ok(consensus_state.clone()),
-                None => Err(ClientError::ConsensusStateNotFound {
-                    client_id: client_id.clone(),
-                    height,
-                }),
-            },
-            None => Err(ClientError::ConsensusStateNotFound {
-                client_id: client_id.clone(),
-                height,
-            }),
-        }
-        .map_err(ContextError::ClientError)
+    ) -> Result<Self::SupportedConsensusStates, ContextError> {
+        StaticValidationContext::consensus_state(self, client_cons_state_path)
     }
 
     fn next_consensus_state(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
+    ) -> Result<Option<Self::SupportedConsensusStates>, ContextError> {
         let ibc_store = self.ibc_store.lock();
         let client_record =
             ibc_store
@@ -820,7 +1011,7 @@ impl StaticValidationContext for MockContext {
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Box<dyn ConsensusState>>, ContextError> {
+    ) -> Result<Option<Self::SupportedConsensusStates>, ContextError> {
         let ibc_store = self.ibc_store.lock();
         let client_record =
             ibc_store
@@ -845,6 +1036,164 @@ impl StaticValidationContext for MockContext {
         }
         Ok(None)
     }
+}
+
+impl MockClientExecutionContext for MockContext {
+    fn host_height(&self) -> Result<Height, ContextError> {
+        StaticValidationContext::host_height(self)
+    }
+
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
+        StaticValidationContext::host_timestamp(self)
+    }
+
+    fn store_update_time(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        timestamp: Timestamp,
+    ) -> Result<(), ContextError> {
+        StaticExecutionContext::store_update_time(self, client_id, height, timestamp)
+    }
+
+    fn store_update_height(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        host_height: Height,
+    ) -> Result<(), ContextError> {
+        StaticExecutionContext::store_update_height(self, client_id, height, host_height)
+    }
+
+    fn store_client_state(
+        &mut self,
+        client_state_path: ClientStatePath,
+        client_state: MockClientState,
+    ) -> Result<(), ContextError> {
+        StaticExecutionContext::store_client_state(self, client_state_path, client_state.into())
+    }
+
+    fn store_consensus_state(
+        &mut self,
+        consensus_state_path: ClientConsensusStatePath,
+        consensus_state: MockConsensusState,
+    ) -> Result<(), ContextError> {
+        StaticExecutionContext::store_consensus_state(
+            self,
+            consensus_state_path,
+            consensus_state.into(),
+        )
+    }
+}
+
+impl TmClientExecutionContext for MockContext {
+    fn store_update_time(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        timestamp: Timestamp,
+    ) -> Result<(), ContextError> {
+        <Self as StaticExecutionContext>::store_update_time(self, client_id, height, timestamp)
+    }
+
+    fn store_update_height(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        host_height: Height,
+    ) -> Result<(), ContextError> {
+        <Self as StaticExecutionContext>::store_update_height(self, client_id, height, host_height)
+    }
+
+    fn store_client_state(
+        &mut self,
+        client_state_path: ClientStatePath,
+        client_state: StaticTmClientState,
+    ) -> Result<(), ContextError> {
+        <Self as StaticExecutionContext>::store_client_state(
+            self,
+            client_state_path,
+            client_state.into(),
+        )
+    }
+
+    fn store_consensus_state(
+        &mut self,
+        consensus_state_path: ClientConsensusStatePath,
+        consensus_state: TmConsensusState,
+    ) -> Result<(), ContextError> {
+        <Self as StaticExecutionContext>::store_consensus_state(
+            self,
+            consensus_state_path,
+            consensus_state.into(),
+        )
+    }
+}
+
+impl StaticValidationContext for MockContext {
+    type ClientValidationContext = Self;
+    type ClientExecutionContext = Self;
+    type SupportedConsensusStates = HostConsensusState;
+    type SupportedClientStates = HostClientState;
+
+    fn client_state(
+        &self,
+        client_id: &ClientId,
+    ) -> Result<Self::SupportedClientStates, ContextError> {
+        match self.ibc_store.lock().clients.get(client_id) {
+            Some(client_record) => {
+                client_record
+                    .client_state
+                    .clone()
+                    .ok_or_else(|| ClientError::ClientStateNotFound {
+                        client_id: client_id.clone(),
+                    })
+            }
+            None => Err(ClientError::ClientStateNotFound {
+                client_id: client_id.clone(),
+            }),
+        }
+        .map_err(ContextError::ClientError)
+    }
+
+    fn decode_client_state(
+        &self,
+        client_state: Any,
+    ) -> Result<Self::SupportedClientStates, ContextError> {
+        if let Ok(client_state) = StaticTmClientState::try_from(client_state.clone()) {
+            client_state.validate().map_err(ClientError::from)?;
+            Ok(client_state.into())
+        } else if let Ok(client_state) = MockClientState::try_from(client_state.clone()) {
+            Ok(client_state.into())
+        } else {
+            Err(ClientError::UnknownClientStateType {
+                client_state_type: client_state.type_url,
+            })
+        }
+        .map_err(ContextError::ClientError)
+    }
+
+    fn consensus_state(
+        &self,
+        client_cons_state_path: &ClientConsensusStatePath,
+    ) -> Result<HostConsensusState, ContextError> {
+        let client_id = &client_cons_state_path.client_id;
+        let height = Height::new(client_cons_state_path.epoch, client_cons_state_path.height)?;
+        match self.ibc_store.lock().clients.get(client_id) {
+            Some(client_record) => match client_record.consensus_states.get(&height) {
+                Some(consensus_state) => Ok(consensus_state.clone()),
+                None => Err(ClientError::ConsensusStateNotFound {
+                    client_id: client_id.clone(),
+                    height,
+                }),
+            },
+            None => Err(ClientError::ConsensusStateNotFound {
+                client_id: client_id.clone(),
+                height,
+            }),
+        }
+        .map_err(ContextError::ClientError)
+    }
 
     fn host_height(&self) -> Result<Height, ContextError> {
         Ok(self.latest_height())
@@ -860,10 +1209,7 @@ impl StaticValidationContext for MockContext {
             .unwrap())
     }
 
-    fn host_consensus_state(
-        &self,
-        height: &Height,
-    ) -> Result<Box<dyn ConsensusState>, ContextError> {
+    fn host_consensus_state(&self, height: &Height) -> Result<HostConsensusState, ContextError> {
         match self.host_block(height) {
             Some(block_ref) => Ok(block_ref.clone().into()),
             None => Err(ClientError::MissingLocalConsensusState { height: *height }),
@@ -1134,13 +1480,21 @@ impl StaticValidationContext for MockContext {
     fn validate_message_signer(&self, _signer: &Signer) -> Result<(), ContextError> {
         Ok(())
     }
+
+    fn get_client_validation_context(&self) -> &Self::ClientValidationContext {
+        self
+    }
+
+    fn get_client_execution_context(&mut self) -> &mut Self::ClientExecutionContext {
+        self
+    }
 }
 
-impl ExecutionContext for MockContext {
+impl StaticExecutionContext for MockContext {
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
-        client_state: Box<dyn ClientState>,
+        client_state: Self::SupportedClientStates,
     ) -> Result<(), ContextError> {
         let mut ibc_store = self.ibc_store.lock();
 
@@ -1161,7 +1515,7 @@ impl ExecutionContext for MockContext {
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
-        consensus_state: Box<dyn ConsensusState>,
+        consensus_state: Self::SupportedConsensusStates,
     ) -> Result<(), ContextError> {
         let mut ibc_store = self.ibc_store.lock();
 

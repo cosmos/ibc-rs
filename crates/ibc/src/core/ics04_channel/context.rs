@@ -1,16 +1,16 @@
 //! ICS4 (channel) context.
 
 use crate::core::events::IbcEvent;
-use crate::core::ics02_client::client_state::ClientState;
+use crate::core::ics02_client::client_state::StaticClientState;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
-use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::core::{ContextError, StaticExecutionContext, StaticValidationContext};
 use crate::prelude::*;
 use core::time::Duration;
 use num_traits::float::FloatCore;
 
-use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::PacketCommitment;
@@ -20,6 +20,15 @@ use super::packet::Sequence;
 
 /// Methods required in send packet validation, to be implemented by the host
 pub trait SendPacketValidationContext {
+    type ClientValidationContext;
+    type ClientExecutionContext;
+    type SupportedConsensusStates: StaticConsensusState<EncodeError = ContextError>;
+    type SupportedClientStates: StaticClientState<
+        Self::SupportedConsensusStates,
+        Self::ClientValidationContext,
+        Self::ClientExecutionContext,
+    >;
+
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
 
@@ -28,12 +37,15 @@ pub trait SendPacketValidationContext {
 
     /// Returns the ClientState for the given identifier `client_id`. Necessary dependency towards
     /// proof verification.
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError>;
+    fn client_state(
+        &self,
+        client_id: &ClientId,
+    ) -> Result<Self::SupportedClientStates, ContextError>;
 
     fn client_consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Box<dyn ConsensusState>, ContextError>;
+    ) -> Result<Self::SupportedConsensusStates, ContextError>;
 
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
         -> Result<Sequence, ContextError>;
@@ -41,8 +53,13 @@ pub trait SendPacketValidationContext {
 
 impl<T> SendPacketValidationContext for T
 where
-    T: ValidationContext,
+    T: StaticValidationContext,
 {
+    type ClientValidationContext = T::ClientValidationContext;
+    type ClientExecutionContext = T::ClientExecutionContext;
+    type SupportedConsensusStates = T::SupportedConsensusStates;
+    type SupportedClientStates = T::SupportedClientStates;
+
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
         self.channel_end(channel_end_path)
     }
@@ -51,14 +68,14 @@ where
         self.connection_end(connection_id)
     }
 
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
+    fn client_state(&self, client_id: &ClientId) -> Result<T::SupportedClientStates, ContextError> {
         self.client_state(client_id)
     }
 
     fn client_consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Box<dyn ConsensusState>, ContextError> {
+    ) -> Result<T::SupportedConsensusStates, ContextError> {
         self.consensus_state(client_cons_state_path)
     }
 
@@ -93,7 +110,7 @@ pub trait SendPacketExecutionContext: SendPacketValidationContext {
 
 impl<T> SendPacketExecutionContext for T
 where
-    T: ExecutionContext,
+    T: StaticExecutionContext,
 {
     fn store_next_sequence_send(
         &mut self,
