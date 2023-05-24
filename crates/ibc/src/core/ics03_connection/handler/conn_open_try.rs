@@ -210,7 +210,6 @@ mod tests {
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
     use crate::core::ics24_host::identifier::ChainId;
-    use crate::core::ValidationContext;
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::Height;
@@ -305,7 +304,7 @@ mod tests {
                     IbcEvent::OpenTryConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = <MockContext as ValidationContext>::connection_end(
+                let conn_end = StaticValidationContext::connection_end(
                     &fxt.ctx,
                     conn_open_try_event.connection_id(),
                 )

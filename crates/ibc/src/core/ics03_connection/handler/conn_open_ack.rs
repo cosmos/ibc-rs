@@ -209,7 +209,6 @@ mod tests {
     use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
-    use crate::core::ValidationContext;
 
     use crate::core::events::IbcEvent;
     use crate::core::timestamp::ZERO_DURATION;
@@ -337,7 +336,7 @@ mod tests {
                     IbcEvent::OpenAckConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = <MockContext as ValidationContext>::connection_end(
+                let conn_end = <MockContext as StaticValidationContext>::connection_end(
                     &fxt.ctx,
                     conn_open_try_event.connection_id(),
                 )

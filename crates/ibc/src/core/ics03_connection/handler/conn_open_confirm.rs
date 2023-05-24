@@ -181,8 +181,6 @@ mod tests {
     use crate::mock::context::MockContext;
     use crate::Height;
 
-    use crate::core::ValidationContext;
-
     enum Ctx {
         Default,
         CorrectConnection,
@@ -204,7 +202,7 @@ mod tests {
             State::Init,
             client_id.clone(),
             counterparty,
-            ValidationContext::get_compatible_versions(&ctx_default),
+            StaticValidationContext::get_compatible_versions(&ctx_default),
             ZERO_DURATION,
         )
         .unwrap();
@@ -260,7 +258,7 @@ mod tests {
                     IbcEvent::OpenConfirmConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = <MockContext as ValidationContext>::connection_end(
+                let conn_end = StaticValidationContext::connection_end(
                     &fxt.ctx,
                     conn_open_try_event.connection_id(),
                 )

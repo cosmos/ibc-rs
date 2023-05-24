@@ -22,7 +22,6 @@ use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresh
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::ProdVerifier;
 
-use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
@@ -51,216 +50,11 @@ use crate::core::ContextError;
 
 const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
-/// Contains the core implementation of the Tendermint light client
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ClientState {
-    pub chain_id: ChainId,
-    pub trust_level: TrustThreshold,
-    pub trusting_period: Duration,
-    pub unbonding_period: Duration,
-    max_clock_drift: Duration,
-    latest_height: Height,
-    pub proof_specs: ProofSpecs,
-    pub upgrade_path: Vec<String>,
-    allow_update: AllowUpdate,
-    frozen_height: Option<Height>,
-    #[cfg_attr(feature = "serde", serde(skip))]
-    verifier: ProdVerifier,
-}
-
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct AllowUpdate {
     pub after_expiry: bool,
     pub after_misbehaviour: bool,
-}
-
-impl ClientState {
-    #[allow(clippy::too_many_arguments)]
-    fn new_without_validation(
-        chain_id: ChainId,
-        trust_level: TrustThreshold,
-        trusting_period: Duration,
-        unbonding_period: Duration,
-        max_clock_drift: Duration,
-        latest_height: Height,
-        proof_specs: ProofSpecs,
-        upgrade_path: Vec<String>,
-        allow_update: AllowUpdate,
-    ) -> ClientState {
-        Self {
-            chain_id,
-            trust_level,
-            trusting_period,
-            unbonding_period,
-            max_clock_drift,
-            latest_height,
-            proof_specs,
-            upgrade_path,
-            allow_update,
-            frozen_height: None,
-            verifier: ProdVerifier::default(),
-        }
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        chain_id: ChainId,
-        trust_level: TrustThreshold,
-        trusting_period: Duration,
-        unbonding_period: Duration,
-        max_clock_drift: Duration,
-        latest_height: Height,
-        proof_specs: ProofSpecs,
-        upgrade_path: Vec<String>,
-        allow_update: AllowUpdate,
-    ) -> Result<ClientState, Error> {
-        let client_state = Self::new_without_validation(
-            chain_id,
-            trust_level,
-            trusting_period,
-            unbonding_period,
-            max_clock_drift,
-            latest_height,
-            proof_specs,
-            upgrade_path,
-            allow_update,
-        );
-        client_state.validate()?;
-        Ok(client_state)
-    }
-
-    pub fn with_header(self, header: TmHeader) -> Result<Self, Error> {
-        Ok(ClientState {
-            latest_height: max(header.height(), self.latest_height),
-            ..self
-        })
-    }
-
-    pub fn with_frozen_height(self, h: Height) -> Self {
-        Self {
-            frozen_height: Some(h),
-            ..self
-        }
-    }
-
-    pub fn validate(&self) -> Result<(), Error> {
-        if self.chain_id.as_str().len() > MaxChainIdLen {
-            return Err(Error::ChainIdTooLong {
-                chain_id: self.chain_id.clone(),
-                len: self.chain_id.as_str().len(),
-                max_len: MaxChainIdLen,
-            });
-        }
-
-        // `TrustThreshold` is guaranteed to be in the range `[0, 1)`, but a `TrustThreshold::ZERO`
-        // value is invalid in this context
-        if self.trust_level == TrustThreshold::ZERO {
-            return Err(Error::InvalidTrustThreshold {
-                reason: "ClientState trust-level cannot be zero".to_string(),
-            });
-        }
-
-        TendermintTrustThresholdFraction::new(
-            self.trust_level.numerator(),
-            self.trust_level.denominator(),
-        )
-        .map_err(Error::InvalidTendermintTrustThreshold)?;
-
-        // Basic validation of trusting period and unbonding period: each should be non-zero.
-        if self.trusting_period <= Duration::new(0, 0) {
-            return Err(Error::InvalidTrustThreshold {
-                reason: format!(
-                    "ClientState trusting period ({:?}) must be greater than zero",
-                    self.trusting_period
-                ),
-            });
-        }
-
-        if self.unbonding_period <= Duration::new(0, 0) {
-            return Err(Error::InvalidTrustThreshold {
-                reason: format!(
-                    "ClientState unbonding period ({:?}) must be greater than zero",
-                    self.unbonding_period
-                ),
-            });
-        }
-
-        if self.trusting_period >= self.unbonding_period {
-            return Err(Error::InvalidTrustThreshold {
-                reason: format!(
-                "ClientState trusting period ({:?}) must be smaller than unbonding period ({:?})", self.trusting_period, self.unbonding_period
-            ),
-            });
-        }
-
-        if self.max_clock_drift <= Duration::new(0, 0) {
-            return Err(Error::InvalidMaxClockDrift {
-                reason: "ClientState max-clock-drift must be greater than zero".to_string(),
-            });
-        }
-
-        if self.latest_height.revision_number() != self.chain_id.version() {
-            return Err(Error::InvalidLatestHeight {
-                reason: "ClientState latest-height revision number must match chain-id version"
-                    .to_string(),
-            });
-        }
-
-        // Disallow empty proof-specs
-        if self.proof_specs.is_empty() {
-            return Err(Error::Validation {
-                reason: "ClientState proof-specs cannot be empty".to_string(),
-            });
-        }
-
-        // `upgrade_path` itself may be empty, but if not then each key must be non-empty
-        for (idx, key) in self.upgrade_path.iter().enumerate() {
-            if key.trim().is_empty() {
-                return Err(Error::Validation {
-                    reason: format!(
-                        "ClientState upgrade-path key at index {idx:?} cannot be empty"
-                    ),
-                });
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Get the refresh time to ensure the state does not expire
-    pub fn refresh_time(&self) -> Option<Duration> {
-        Some(2 * self.trusting_period / 3)
-    }
-
-    /// Helper method to produce a [`Options`] struct for use in
-    /// Tendermint-specific light client verification.
-    pub fn as_light_client_options(&self) -> Result<Options, Error> {
-        Ok(Options {
-            trust_threshold: self.trust_level.try_into().map_err(|e: ClientError| {
-                Error::InvalidTrustThreshold {
-                    reason: e.to_string(),
-                }
-            })?,
-            trusting_period: self.trusting_period,
-            clock_drift: self.max_clock_drift,
-        })
-    }
-
-    fn chain_id(&self) -> ChainId {
-        self.chain_id.clone()
-    }
-
-    // Resets custom fields to zero values (used in `update_client`)
-    fn zero_custom_fields(&mut self) {
-        self.trusting_period = ZERO_DURATION;
-        self.trust_level = TrustThreshold::ZERO;
-        self.allow_update.after_expiry = false;
-        self.allow_update.after_misbehaviour = false;
-        self.frozen_height = None;
-        self.max_clock_drift = ZERO_DURATION;
-    }
 }
 
 // `header.trusted_validator_set` was given to us by the relayer. Thus, we
@@ -422,6 +216,7 @@ impl From<StaticTmClientState> for Any {
 // Static versions
 ///////////////////////////////////////////////////////
 
+// TODOP: consensus_state functions should return `TmConsensusState`, right?
 pub trait TmClientValidationContext {
     type SupportedConsensusStates;
 
@@ -1059,9 +854,7 @@ mod tests {
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use ibc_proto::ics23::ProofSpec as Ics23ProofSpec;
 
-    use crate::clients::ics07_tendermint::client_state::{
-        AllowUpdate, ClientState as TmClientState,
-    };
+    use crate::clients::ics07_tendermint::client_state::AllowUpdate;
     use crate::clients::ics07_tendermint::error::Error;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ChainId;
@@ -1223,7 +1016,7 @@ mod tests {
         for test in tests {
             let p = test.params.clone();
 
-            let cs_result = TmClientState::new(
+            let cs_result = StaticTmClientState::new(
                 p.id,
                 p.trust_level,
                 p.trusting_period,
@@ -1267,7 +1060,7 @@ mod tests {
         struct Test {
             name: String,
             height: Height,
-            setup: Option<Box<dyn FnOnce(TmClientState) -> TmClientState>>,
+            setup: Option<Box<dyn FnOnce(StaticTmClientState) -> StaticTmClientState>>,
             want_pass: bool,
         }
 
@@ -1288,7 +1081,7 @@ mod tests {
 
         for test in tests {
             let p = default_params.clone();
-            let client_state = TmClientState::new(
+            let client_state = StaticTmClientState::new(
                 p.id,
                 p.trust_level,
                 p.trusting_period,
@@ -1320,7 +1113,7 @@ mod tests {
     #[test]
     fn tm_client_state_conversions_healthy() {
         // check client state creation path from a proto type
-        let tm_client_state_from_raw = TmClientState::new_dummy_from_raw(RawHeight {
+        let tm_client_state_from_raw = StaticTmClientState::new_dummy_from_raw(RawHeight {
             revision_number: 0,
             revision_height: 0,
         });
@@ -1328,7 +1121,7 @@ mod tests {
 
         let any_from_tm_client_state =
             Any::from(tm_client_state_from_raw.as_ref().unwrap().clone());
-        let tm_client_state_from_any = TmClientState::try_from(any_from_tm_client_state);
+        let tm_client_state_from_any = StaticTmClientState::try_from(any_from_tm_client_state);
         assert!(tm_client_state_from_any.is_ok());
         assert_eq!(
             tm_client_state_from_raw.unwrap(),
@@ -1337,9 +1130,9 @@ mod tests {
 
         // check client state creation path from a tendermint header
         let tm_header = get_dummy_tendermint_header();
-        let tm_client_state_from_header = TmClientState::new_dummy_from_header(tm_header);
+        let tm_client_state_from_header = StaticTmClientState::new_dummy_from_header(tm_header);
         let any_from_header = Any::from(tm_client_state_from_header.clone());
-        let tm_client_state_from_any = TmClientState::try_from(any_from_header);
+        let tm_client_state_from_any = StaticTmClientState::try_from(any_from_header);
         assert!(tm_client_state_from_any.is_ok());
         assert_eq!(
             tm_client_state_from_header,
@@ -1349,7 +1142,7 @@ mod tests {
 
     #[test]
     fn tm_client_state_malformed_with_frozen_height() {
-        let tm_client_state_from_raw = TmClientState::new_dummy_from_raw(RawHeight {
+        let tm_client_state_from_raw = StaticTmClientState::new_dummy_from_raw(RawHeight {
             revision_number: 0,
             revision_height: 10,
         });

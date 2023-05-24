@@ -4,8 +4,8 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use ibc_proto::google::protobuf::Any;
 
-use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use crate::core::ics02_client::client_state::ClientState;
+use crate::clients::ics07_tendermint::client_state::StaticTmClientState;
+use crate::core::ics02_client::client_state::StaticClientStateBase;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics23_commitment::specs::ProofSpecs;
@@ -25,7 +25,7 @@ pub trait ValidateSelfClientContext {
         &self,
         client_state_of_host_on_counterparty: Any,
     ) -> Result<(), ContextError> {
-        let tm_client_state = TmClientState::try_from(client_state_of_host_on_counterparty)
+        let tm_client_state = StaticTmClientState::try_from(client_state_of_host_on_counterparty)
             .map_err(|_| ConnectionError::InvalidClientState {
                 reason: "client must be a tendermint client".to_string(),
             })

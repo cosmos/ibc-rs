@@ -120,13 +120,12 @@ mod tests {
     use ibc_proto::google::protobuf::Any;
     use test_log::test;
 
-    use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
+    use crate::clients::ics07_tendermint::client_state::StaticTmClientState;
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::clients::ics07_tendermint::header::Header as TmHeader;
     use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
     use crate::core::events::IbcEvent;
     use crate::core::ics02_client::client_type::ClientType;
-    use crate::core::ics02_client::consensus_state::ConsensusState;
     use crate::core::ics02_client::handler::update_client::{execute, validate};
     use crate::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
@@ -136,7 +135,7 @@ mod tests {
     use crate::downcast;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::client_state::MockClientState;
-    use crate::mock::context::MockContext;
+    use crate::mock::context::{MockContext, HostConsensusState};
     use crate::mock::header::MockHeader;
     use crate::mock::host::{HostBlock, HostType};
     use crate::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
@@ -168,7 +167,7 @@ mod tests {
 
         assert_eq!(
             ctx.client_state(&msg.client_id).unwrap(),
-            MockClientState::new(MockHeader::new(height).with_timestamp(timestamp)).into_box()
+            MockClientState::new(MockHeader::new(height).with_timestamp(timestamp)).into()
         );
     }
 
@@ -336,7 +335,7 @@ mod tests {
         {
             // FIXME: idea: we need to update the light client with the latest block from
             // chain B
-            let consensus_state: Box<dyn ConsensusState> = block.clone().into();
+            let consensus_state: HostConsensusState = block.clone().into();
 
             let tm_block = downcast!(block.clone() => HostBlock::SyntheticTendermint).unwrap();
 
@@ -366,9 +365,9 @@ mod tests {
                     allow_update_after_misbehaviour: false,
                 };
 
-                let client_state = TmClientState::try_from(raw_client_state).unwrap();
+                let client_state = StaticTmClientState::try_from(raw_client_state).unwrap();
 
-                client_state.into_box()
+                client_state.into()
             };
 
             let mut ibc_store = ctx_a.ibc_store.lock();

@@ -89,7 +89,6 @@ mod tests {
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::version::Version;
-    use crate::core::ValidationContext;
     use crate::mock::context::MockContext;
     use crate::Height;
     use test_log::test;
@@ -168,7 +167,7 @@ mod tests {
                     IbcEvent::OpenInitConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = <MockContext as ValidationContext>::connection_end(
+                let conn_end = StaticValidationContext::connection_end(
                     &fxt.ctx,
                     conn_open_init_event.connection_id(),
                 )
@@ -197,7 +196,7 @@ mod tests {
     fn conn_open_init_no_version() {
         let mut fxt = conn_open_init_fixture(Ctx::WithClient, Msg::NoVersion);
         conn_open_init_validate(&fxt, Expect::Success);
-        let expected_version = ValidationContext::get_compatible_versions(&fxt.ctx.clone());
+        let expected_version = StaticValidationContext::get_compatible_versions(&fxt.ctx.clone());
         conn_open_init_execute(&mut fxt, Expect::Success, expected_version);
     }
     #[test]

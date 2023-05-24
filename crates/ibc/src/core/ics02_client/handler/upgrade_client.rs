@@ -98,7 +98,7 @@ where
 mod tests {
     use super::*;
 
-    use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
+    use crate::clients::ics07_tendermint::client_state::StaticTmClientState;
     use crate::clients::ics07_tendermint::client_type;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
 
@@ -140,7 +140,7 @@ mod tests {
         let msg_with_low_upgrade_height = MsgUpgradeClient::new_dummy(low_upgrade_height);
 
         let msg_with_unknown_upgraded_cs = MsgUpgradeClient {
-            client_state: TmClientState::new_dummy_from_header(get_dummy_tendermint_header())
+            client_state: StaticTmClientState::new_dummy_from_header(get_dummy_tendermint_header())
                 .into(),
             ..msg_default.clone()
         };
@@ -195,7 +195,7 @@ mod tests {
                 assert_eq!(upgrade_client_event.consensus_height(), &plan_height);
 
                 let client_state = fxt.ctx.client_state(&fxt.msg.client_id).unwrap();
-                assert_eq!(client_state.as_ref().clone_into(), fxt.msg.client_state);
+                assert_eq!(client_state, fxt.msg.client_state);
                 let consensus_state = fxt
                     .ctx
                     .consensus_state(&ClientConsensusStatePath::new(
@@ -204,7 +204,7 @@ mod tests {
                     ))
                     .unwrap();
                 assert_eq!(
-                    consensus_state.as_ref().clone_into(),
+                    consensus_state.into(),
                     fxt.msg.consensus_state
                 );
             }
