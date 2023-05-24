@@ -1,4 +1,4 @@
-//! Implements the core [`ClientState`](crate::core::ics02_client::client_state::StaticClientState) trait
+//! Implements the core [`ClientState`](crate::core::ics02_client::client_state::ClientState) trait
 //! for the Tendermint light client.
 
 mod misbehaviour;
