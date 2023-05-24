@@ -36,8 +36,8 @@ use crate::clients::ics07_tendermint::consensus_state::{
 use crate::core::dispatch;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::{
-    StaticClientStateBase, StaticClientStateExecution, StaticClientStateInitializer,
-    StaticClientStateValidation, UpdateKind,
+    ClientStateBase, ClientStateExecution, ClientStateInitializer, ClientStateValidation,
+    UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::StaticConsensusState;
@@ -621,7 +621,7 @@ pub enum HostClientState {
     Mock(MockClientState),
 }
 
-impl StaticClientStateBase for HostClientState {
+impl ClientStateBase for HostClientState {
     fn client_type(&self) -> ClientType {
         match self {
             HostClientState::Tendermint(cs) => cs.client_type(),
@@ -713,7 +713,7 @@ impl StaticClientStateBase for HostClientState {
     }
 }
 
-impl StaticClientStateValidation<MockContext> for HostClientState {
+impl ClientStateValidation<MockContext> for HostClientState {
     fn verify_client_message(
         &self,
         ctx: &MockContext,
@@ -749,7 +749,7 @@ impl StaticClientStateValidation<MockContext> for HostClientState {
     }
 }
 
-impl StaticClientStateExecution<MockContext> for HostClientState {
+impl ClientStateExecution<MockContext> for HostClientState {
     fn update_state(
         &self,
         ctx: &mut MockContext,
@@ -788,7 +788,7 @@ impl StaticClientStateExecution<MockContext> for HostClientState {
     ) -> Result<Height, ClientError> {
         match self {
             HostClientState::Tendermint(cs) => {
-                StaticClientStateExecution::<MockContext>::update_state_with_upgrade_client(
+                ClientStateExecution::<MockContext>::update_state_with_upgrade_client(
                     cs,
                     ctx,
                     client_id,
@@ -797,7 +797,7 @@ impl StaticClientStateExecution<MockContext> for HostClientState {
                 )
             }
             HostClientState::Mock(cs) => {
-                StaticClientStateExecution::<MockContext>::update_state_with_upgrade_client(
+                ClientStateExecution::<MockContext>::update_state_with_upgrade_client(
                     cs,
                     ctx,
                     client_id,
@@ -809,7 +809,7 @@ impl StaticClientStateExecution<MockContext> for HostClientState {
     }
 }
 
-impl StaticClientStateInitializer<HostConsensusState> for HostClientState {
+impl ClientStateInitializer<HostConsensusState> for HostClientState {
     fn initialise(&self, consensus_state: Any) -> Result<HostConsensusState, ClientError> {
         match self {
             HostClientState::Tendermint(cs) => cs.initialise(consensus_state),

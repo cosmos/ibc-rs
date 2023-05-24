@@ -28,8 +28,8 @@ use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::core::ics02_client::client_state::{
-    StaticClientStateBase, StaticClientStateExecution, StaticClientStateInitializer,
-    StaticClientStateValidation, UpdateKind,
+    ClientStateBase, ClientStateExecution, ClientStateInitializer, ClientStateValidation,
+    UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
@@ -461,7 +461,7 @@ pub trait TmClientExecutionContext: TmClientValidationContext {
     ) -> Result<(), ContextError>;
 }
 
-impl StaticClientStateBase for ClientState {
+impl ClientStateBase for ClientState {
     fn client_type(&self) -> ClientType {
         tm_client_type()
     }
@@ -634,8 +634,7 @@ impl StaticClientStateBase for ClientState {
     }
 }
 
-impl<SupportedConsensusStates> StaticClientStateInitializer<SupportedConsensusStates>
-    for ClientState
+impl<SupportedConsensusStates> ClientStateInitializer<SupportedConsensusStates> for ClientState
 where
     SupportedConsensusStates: From<TmConsensusState>,
 {
@@ -651,7 +650,7 @@ where
     }
 }
 
-impl<ClientValidationContext> StaticClientStateValidation<ClientValidationContext> for ClientState
+impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for ClientState
 where
     ClientValidationContext: TmClientValidationContext,
 {
@@ -694,7 +693,7 @@ where
     }
 }
 
-impl<ClientExecutionContext> StaticClientStateExecution<ClientExecutionContext> for ClientState
+impl<ClientExecutionContext> ClientStateExecution<ClientExecutionContext> for ClientState
 where
     ClientExecutionContext: TmClientExecutionContext,
 {

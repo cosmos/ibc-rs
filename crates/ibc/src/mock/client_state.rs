@@ -10,8 +10,8 @@ use ibc_proto::ibc::mock::ClientState as RawMockClientState;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::client_state::{
-    StaticClientStateBase, StaticClientStateExecution, StaticClientStateInitializer,
-    StaticClientStateValidation, UpdateKind,
+    ClientStateBase, ClientStateExecution, ClientStateInitializer, ClientStateValidation,
+    UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
@@ -128,7 +128,7 @@ impl From<MockClientState> for Any {
     }
 }
 
-impl StaticClientStateBase for MockClientState {
+impl ClientStateBase for MockClientState {
     fn client_type(&self) -> ClientType {
         mock_client_type()
     }
@@ -201,9 +201,7 @@ impl StaticClientStateBase for MockClientState {
     }
 }
 
-impl<ClientValidationContext> StaticClientStateValidation<ClientValidationContext>
-    for MockClientState
-{
+impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for MockClientState {
     fn verify_client_message(
         &self,
         _ctx: &ClientValidationContext,
@@ -287,7 +285,7 @@ pub trait MockClientExecutionContext {
     ) -> Result<(), ContextError>;
 }
 
-impl<ClientExecutionContext> StaticClientStateExecution<ClientExecutionContext> for MockClientState
+impl<ClientExecutionContext> ClientStateExecution<ClientExecutionContext> for MockClientState
 where
     ClientExecutionContext: MockClientExecutionContext,
 {
@@ -358,8 +356,7 @@ where
     }
 }
 
-impl<SupportedConsensusStates> StaticClientStateInitializer<SupportedConsensusStates>
-    for MockClientState
+impl<SupportedConsensusStates> ClientStateInitializer<SupportedConsensusStates> for MockClientState
 where
     SupportedConsensusStates: From<MockConsensusState>,
 {

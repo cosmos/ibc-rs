@@ -30,7 +30,7 @@ pub enum UpdateKind {
     SubmitMisbehaviour,
 }
 
-pub trait StaticClientStateBase: PartialEq + Clone + Debug + Send + Sync {
+pub trait ClientStateBase: PartialEq + Clone + Debug + Send + Sync {
     /// Type of client associated with this state (eg. Tendermint)
     fn client_type(&self) -> ClientType;
 
@@ -88,11 +88,11 @@ pub trait StaticClientStateBase: PartialEq + Clone + Debug + Send + Sync {
     ) -> Result<(), ClientError>;
 }
 
-pub trait StaticClientStateInitializer<SupportedConsensusStates> {
+pub trait ClientStateInitializer<SupportedConsensusStates> {
     fn initialise(&self, consensus_state: Any) -> Result<SupportedConsensusStates, ClientError>;
 }
 
-pub trait StaticClientStateValidation<ClientValidationContext> {
+pub trait ClientStateValidation<ClientValidationContext> {
     /// verify_client_message must verify a client_message. A client_message
     /// could be a Header, Misbehaviour. It must handle each type of
     /// client_message appropriately. Calls to check_for_misbehaviour,
@@ -118,7 +118,7 @@ pub trait StaticClientStateValidation<ClientValidationContext> {
     ) -> Result<bool, ClientError>;
 }
 
-pub trait StaticClientStateExecution<ClientExecutionContext> {
+pub trait ClientStateExecution<ClientExecutionContext> {
     /// Updates and stores as necessary any associated information for an IBC
     /// client, such as the ClientState and corresponding ConsensusState. Upon
     /// successful update, a list of consensus heights is returned. It assumes
@@ -155,30 +155,25 @@ pub trait StaticClientStateExecution<ClientExecutionContext> {
     ) -> Result<Height, ClientError>;
 }
 
-pub trait StaticClientState<
-    SupportedConsensusStates,
-    ClientValidationContext,
-    ClientExecutionContext,
->:
+pub trait ClientState<SupportedConsensusStates, ClientValidationContext, ClientExecutionContext>:
     PartialEq
     + Clone
     + Debug
     + Send
     + Sync
-    + StaticClientStateBase
-    + StaticClientStateInitializer<SupportedConsensusStates>
-    + StaticClientStateValidation<ClientValidationContext>
-    + StaticClientStateExecution<ClientExecutionContext>
+    + ClientStateBase
+    + ClientStateInitializer<SupportedConsensusStates>
+    + ClientStateValidation<ClientValidationContext>
+    + ClientStateExecution<ClientExecutionContext>
 {
 }
 
 impl<SupportedConsensusStates, ClientValidationContext, ClientExecutionContext, T>
-    StaticClientState<SupportedConsensusStates, ClientValidationContext, ClientExecutionContext>
-    for T
+    ClientState<SupportedConsensusStates, ClientValidationContext, ClientExecutionContext> for T
 where
-    T: StaticClientStateBase
-        + StaticClientStateInitializer<SupportedConsensusStates>
-        + StaticClientStateValidation<ClientValidationContext>
-        + StaticClientStateExecution<ClientExecutionContext>,
+    T: ClientStateBase
+        + ClientStateInitializer<SupportedConsensusStates>
+        + ClientStateValidation<ClientValidationContext>
+        + ClientStateExecution<ClientExecutionContext>,
 {
 }

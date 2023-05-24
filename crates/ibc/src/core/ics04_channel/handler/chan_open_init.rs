@@ -1,6 +1,6 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenInit`.
 
-use crate::core::ics02_client::client_state::StaticClientStateBase;
+use crate::core::ics02_client::client_state::ClientStateBase;
 use crate::prelude::*;
 
 use crate::core::events::{IbcEvent, MessageEvent};

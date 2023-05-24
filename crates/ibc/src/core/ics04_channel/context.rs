@@ -1,7 +1,7 @@
 //! ICS4 (channel) context.
 
 use crate::core::events::IbcEvent;
-use crate::core::ics02_client::client_state::StaticClientState;
+use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
@@ -23,7 +23,7 @@ pub trait SendPacketValidationContext {
     type ClientValidationContext;
     type ClientExecutionContext;
     type SupportedConsensusStates: StaticConsensusState<EncodeError = ContextError>;
-    type SupportedClientStates: StaticClientState<
+    type SupportedClientStates: ClientState<
         Self::SupportedConsensusStates,
         Self::ClientValidationContext,
         Self::ClientExecutionContext,

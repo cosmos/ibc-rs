@@ -1,4 +1,4 @@
-use crate::core::ics02_client::client_state::StaticClientStateBase;
+use crate::core::ics02_client::client_state::ClientStateBase;
 use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::prelude::*;
 

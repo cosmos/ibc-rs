@@ -1,6 +1,6 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenConfirm`.
 
-use crate::core::ics02_client::client_state::StaticClientStateBase;
+use crate::core::ics02_client::client_state::ClientStateBase;
 use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
