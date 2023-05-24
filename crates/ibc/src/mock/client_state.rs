@@ -324,22 +324,37 @@ where
 
     fn update_state_on_misbehaviour(
         &self,
-        _ctx: &mut ClientExecutionContext,
-        _client_id: &ClientId,
+        ctx: &mut ClientExecutionContext,
+        client_id: &ClientId,
         _client_message: Any,
         _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
-        unimplemented!()
+        let frozen_client_state = self.with_frozen_height(Height::new(0, 1).unwrap());
+
+        ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state)?;
+
+        Ok(())
     }
 
     fn update_state_with_upgrade_client(
         &self,
-        _ctx: &mut ClientExecutionContext,
-        _client_id: &ClientId,
-        _upgraded_client_state: Any,
-        _upgraded_consensus_state: Any,
+        ctx: &mut ClientExecutionContext,
+        client_id: &ClientId,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
     ) -> Result<Height, ClientError> {
-        unimplemented!()
+        let new_client_state = MockClientState::try_from(upgraded_client_state)?;
+        let new_consensus_state = MockConsensusState::try_from(upgraded_consensus_state)?;
+
+        let latest_height = new_client_state.latest_height();
+
+        ctx.store_consensus_state(
+            ClientConsensusStatePath::new(client_id, &latest_height),
+            new_consensus_state,
+        )?;
+        ctx.store_client_state(ClientStatePath::new(client_id), new_client_state)?;
+
+        Ok(latest_height)
     }
 }
 
