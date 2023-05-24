@@ -1,6 +1,6 @@
 use tendermint_light_client_verifier::Verifier;
 
-use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::consensus_state::StaticConsensusState;
 use crate::prelude::*;
 
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;

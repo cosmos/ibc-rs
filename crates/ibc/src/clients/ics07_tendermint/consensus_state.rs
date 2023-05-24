@@ -6,10 +6,9 @@ use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::ConsensusState as RawConsensusState;
-use ibc_proto::protobuf::Protobuf as DynProtobuf;
 use tendermint::{hash::Algorithm, time::Time, Hash};
 use tendermint_proto::google::protobuf as tpb;
-use tendermint_proto::Protobuf as TmProtobuf;
+use tendermint_proto::Protobuf;
 
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
@@ -39,17 +38,7 @@ impl ConsensusState {
     }
 }
 
-impl crate::core::ics02_client::consensus_state::ConsensusState for ConsensusState {
-    fn root(&self) -> &CommitmentRoot {
-        &self.root
-    }
-
-    fn timestamp(&self) -> Timestamp {
-        self.timestamp.into()
-    }
-}
-
-impl DynProtobuf<RawConsensusState> for ConsensusState {}
+impl Protobuf<RawConsensusState> for ConsensusState {}
 
 impl TryFrom<RawConsensusState> for ConsensusState {
     type Error = Error;
@@ -105,7 +94,7 @@ impl From<ConsensusState> for RawConsensusState {
     }
 }
 
-impl DynProtobuf<Any> for ConsensusState {}
+impl Protobuf<Any> for ConsensusState {}
 
 impl TryFrom<Any> for ConsensusState {
     type Error = ClientError;
@@ -136,7 +125,8 @@ impl From<ConsensusState> for Any {
     fn from(consensus_state: ConsensusState) -> Self {
         Any {
             type_url: TENDERMINT_CONSENSUS_STATE_TYPE_URL.to_string(),
-            value: DynProtobuf::<RawConsensusState>::encode_vec(&consensus_state),
+            // TODO: How to properly do this?
+            value: Protobuf::<RawConsensusState>::encode_vec(&consensus_state).unwrap(),
         }
     }
 }
@@ -157,8 +147,6 @@ impl From<Header> for ConsensusState {
     }
 }
 
-impl TmProtobuf<Any> for ConsensusState {}
-
 impl StaticConsensusState for ConsensusState {
     type EncodeError = ContextError;
 
@@ -171,7 +159,7 @@ impl StaticConsensusState for ConsensusState {
     }
 
     fn encode_vec(&self) -> Result<Vec<u8>, Self::EncodeError> {
-        <Self as TmProtobuf<Any>>::encode_vec(self).map_err(|err| {
+        <Self as Protobuf<Any>>::encode_vec(self).map_err(|err| {
             ContextError::ClientError(ClientError::ClientSpecific {
                 description: format!("{err}"),
             })
