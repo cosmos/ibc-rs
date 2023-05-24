@@ -6,7 +6,7 @@
 //! If it proves to be generic enough, we may move it to the ICS02 section.
 
 use super::Plan;
-use crate::clients::ics07_tendermint::client_state::StaticTmClientState;
+use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::UpgradeClientError;
 use crate::core::ics24_host::path::UpgradeClientPath;
@@ -21,13 +21,13 @@ pub trait UpgradeValidationContext {
     fn upgraded_client_state(
         &self,
         upgrade_path: &UpgradeClientPath,
-    ) -> Result<StaticTmClientState, UpgradeClientError>;
+    ) -> Result<TmClientState, UpgradeClientError>;
 
     /// Returns the upgraded consensus state at the specified upgrade path.
     fn upgraded_consensus_state(
         &self,
         upgrade_path: &UpgradeClientPath,
-    ) -> Result<StaticTmClientState, UpgradeClientError>;
+    ) -> Result<TmClientState, UpgradeClientError>;
 }
 
 /// Helper context to execute client upgrades, providing methods to schedule
@@ -43,7 +43,7 @@ pub trait UpgradeExecutionContext: UpgradeValidationContext {
     fn store_upgraded_client_state(
         &mut self,
         upgrade_path: UpgradeClientPath,
-        client_state: StaticTmClientState,
+        client_state: TmClientState,
     ) -> Result<(), UpgradeClientError>;
 
     /// Stores the upgraded consensus state at the specified upgrade path.

@@ -4,7 +4,7 @@ use alloc::string::ToString;
 use tendermint::abci::Event as TmEvent;
 use tendermint_proto::abci::Event as ProtoEvent;
 
-use crate::clients::ics07_tendermint::client_state::StaticTmClientState;
+use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 use crate::core::ics02_client::error::UpgradeClientError;
 use crate::core::ics24_host::path::UpgradeClientPath;
 use crate::hosts::tendermint::upgrade_proposal::UpgradeClientProposal;
@@ -30,7 +30,7 @@ where
     }
 
     let mut client_state =
-        StaticTmClientState::try_from(proposal.upgraded_client_state).map_err(|e| {
+        TmClientState::try_from(proposal.upgraded_client_state).map_err(|e| {
             UpgradeClientError::InvalidUpgradeProposal {
                 reason: e.to_string(),
             }

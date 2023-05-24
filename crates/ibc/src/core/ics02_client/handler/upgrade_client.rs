@@ -98,7 +98,7 @@ where
 mod tests {
     use super::*;
 
-    use crate::clients::ics07_tendermint::client_state::StaticTmClientState;
+    use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
     use crate::clients::ics07_tendermint::client_type;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
 
@@ -141,7 +141,7 @@ mod tests {
         let msg_with_low_upgrade_height = MsgUpgradeClient::new_dummy(low_upgrade_height);
 
         let msg_with_unknown_upgraded_cs = MsgUpgradeClient {
-            client_state: StaticTmClientState::new_dummy_from_header(get_dummy_tendermint_header())
+            client_state: TmClientState::new_dummy_from_header(get_dummy_tendermint_header())
                 .into(),
             ..msg_default.clone()
         };

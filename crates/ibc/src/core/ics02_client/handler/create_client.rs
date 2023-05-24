@@ -119,7 +119,7 @@ mod tests {
 
     use test_log::test;
 
-    use crate::clients::ics07_tendermint::client_state::StaticTmClientState;
+    use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
@@ -173,7 +173,7 @@ mod tests {
 
         let tm_header = get_dummy_tendermint_header();
 
-        let tm_client_state = StaticTmClientState::new_dummy_from_header(tm_header.clone()).into();
+        let tm_client_state = TmClientState::new_dummy_from_header(tm_header.clone()).into();
 
         let client_type = tm_client_type();
 

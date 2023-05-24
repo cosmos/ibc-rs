@@ -12,11 +12,9 @@ use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::timestamp::Timestamp;
 
-use super::{
-    check_header_trusted_next_validator_set, StaticTmClientState, TmClientValidationContext,
-};
+use super::{check_header_trusted_next_validator_set, ClientState, TmClientValidationContext};
 
-impl StaticTmClientState {
+impl ClientState {
     // verify_misbehaviour determines whether or not two conflicting headers at
     // the same height would have convinced the light client.
     pub fn verify_misbehaviour<ClientValidationContext>(

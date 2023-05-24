@@ -10,11 +10,9 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 
-use super::{
-    check_header_trusted_next_validator_set, StaticTmClientState, TmClientValidationContext,
-};
+use super::{check_header_trusted_next_validator_set, ClientState, TmClientValidationContext};
 
-impl StaticTmClientState {
+impl ClientState {
     pub fn verify_header<ClientValidationContext>(
         &self,
         ctx: &ClientValidationContext,

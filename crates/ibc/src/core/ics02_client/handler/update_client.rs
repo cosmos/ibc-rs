@@ -120,7 +120,7 @@ mod tests {
     use ibc_proto::google::protobuf::Any;
     use test_log::test;
 
-    use crate::clients::ics07_tendermint::client_state::StaticTmClientState;
+    use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::clients::ics07_tendermint::header::Header as TmHeader;
     use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
@@ -365,7 +365,7 @@ mod tests {
                     allow_update_after_misbehaviour: false,
                 };
 
-                let client_state = StaticTmClientState::try_from(raw_client_state).unwrap();
+                let client_state = TmClientState::try_from(raw_client_state).unwrap();
 
                 client_state.into()
             };

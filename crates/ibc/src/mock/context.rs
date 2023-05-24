@@ -27,7 +27,7 @@ use ibc_proto::google::protobuf::Any;
 use tracing::debug;
 
 use crate::clients::ics07_tendermint::client_state::{
-    StaticTmClientState, TmClientExecutionContext, TmClientValidationContext,
+    ClientState as TmClientState, TmClientExecutionContext, TmClientValidationContext,
     TENDERMINT_CLIENT_STATE_TYPE_URL,
 };
 use crate::clients::ics07_tendermint::consensus_state::{
@@ -260,7 +260,7 @@ impl MockContext {
             );
 
             let client_state =
-                StaticTmClientState::new_dummy_from_header(light_block.header().clone()).into();
+                TmClientState::new_dummy_from_header(light_block.header().clone()).into();
 
             // Return the tuple.
             (Some(client_state), light_block.into())
@@ -327,7 +327,7 @@ impl MockContext {
                     HostBlock::generate_tm_block(client_chain_id, cs_height.revision_height(), now);
 
                 let client_state =
-                    StaticTmClientState::new_dummy_from_header(light_block.header().clone()).into();
+                    TmClientState::new_dummy_from_header(light_block.header().clone()).into();
 
                 // Return the tuple.
                 (Some(client_state), light_block.into())
@@ -617,7 +617,7 @@ type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
 
 #[derive(Debug, Clone, From, PartialEq)]
 pub enum HostClientState {
-    Tendermint(StaticTmClientState),
+    Tendermint(TmClientState),
     Mock(MockClientState),
 }
 
@@ -825,7 +825,7 @@ impl TryFrom<Any> for HostClientState {
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         if raw.type_url == TENDERMINT_CLIENT_STATE_TYPE_URL {
-            StaticTmClientState::try_from(raw).map(Into::into)
+            TmClientState::try_from(raw).map(Into::into)
         } else if raw.type_url == MOCK_CLIENT_STATE_TYPE_URL {
             MockClientState::try_from(raw).map(Into::into)
         } else {
@@ -1179,7 +1179,7 @@ impl TmClientExecutionContext for MockContext {
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
-        client_state: StaticTmClientState,
+        client_state: TmClientState,
     ) -> Result<(), ContextError> {
         <Self as StaticExecutionContext>::store_client_state(
             self,
@@ -1231,7 +1231,7 @@ impl StaticValidationContext for MockContext {
         &self,
         client_state: Any,
     ) -> Result<Self::SupportedClientStates, ContextError> {
-        if let Ok(client_state) = StaticTmClientState::try_from(client_state.clone()) {
+        if let Ok(client_state) = TmClientState::try_from(client_state.clone()) {
             client_state.validate().map_err(ClientError::from)?;
             Ok(client_state.into())
         } else if let Ok(client_state) = MockClientState::try_from(client_state.clone()) {

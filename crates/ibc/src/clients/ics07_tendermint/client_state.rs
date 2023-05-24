@@ -53,7 +53,7 @@ pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint
 /// Contains the core implementation of the Tendermint light client
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StaticTmClientState {
+pub struct ClientState {
     pub chain_id: ChainId,
     pub trust_level: TrustThreshold,
     pub trusting_period: Duration,
@@ -68,7 +68,7 @@ pub struct StaticTmClientState {
     verifier: ProdVerifier,
 }
 
-impl StaticTmClientState {
+impl ClientState {
     #[allow(clippy::too_many_arguments)]
     fn new_without_validation(
         chain_id: ChainId,
@@ -262,9 +262,9 @@ pub struct AllowUpdate {
     pub after_misbehaviour: bool,
 }
 
-impl Protobuf<RawTmClientState> for StaticTmClientState {}
+impl Protobuf<RawTmClientState> for ClientState {}
 
-impl TryFrom<RawTmClientState> for StaticTmClientState {
+impl TryFrom<RawTmClientState> for ClientState {
     type Error = Error;
 
     fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
@@ -341,8 +341,8 @@ impl TryFrom<RawTmClientState> for StaticTmClientState {
     }
 }
 
-impl From<StaticTmClientState> for RawTmClientState {
-    fn from(value: StaticTmClientState) -> Self {
+impl From<ClientState> for RawTmClientState {
+    fn from(value: ClientState) -> Self {
         #[allow(deprecated)]
         Self {
             chain_id: value.chain_id.to_string(),
@@ -365,16 +365,16 @@ impl From<StaticTmClientState> for RawTmClientState {
     }
 }
 
-impl Protobuf<Any> for StaticTmClientState {}
+impl Protobuf<Any> for ClientState {}
 
-impl TryFrom<Any> for StaticTmClientState {
+impl TryFrom<Any> for ClientState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         use bytes::Buf;
         use core::ops::Deref;
 
-        fn decode_client_state<B: Buf>(buf: B) -> Result<StaticTmClientState, Error> {
+        fn decode_client_state<B: Buf>(buf: B) -> Result<ClientState, Error> {
             RawTmClientState::decode(buf)
                 .map_err(Error::Decode)?
                 .try_into()
@@ -391,8 +391,8 @@ impl TryFrom<Any> for StaticTmClientState {
     }
 }
 
-impl From<StaticTmClientState> for Any {
-    fn from(client_state: StaticTmClientState) -> Self {
+impl From<ClientState> for Any {
+    fn from(client_state: ClientState) -> Self {
         Any {
             type_url: TENDERMINT_CLIENT_STATE_TYPE_URL.to_string(),
             value: Protobuf::<RawTmClientState>::encode_vec(&client_state),
@@ -451,7 +451,7 @@ pub trait TmClientExecutionContext: TmClientValidationContext {
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
-        client_state: StaticTmClientState,
+        client_state: ClientState,
     ) -> Result<(), ContextError>;
 
     fn store_consensus_state(
@@ -461,8 +461,7 @@ pub trait TmClientExecutionContext: TmClientValidationContext {
     ) -> Result<(), ContextError>;
 }
 
-
-impl StaticClientStateBase for StaticTmClientState {
+impl StaticClientStateBase for ClientState {
     fn client_type(&self) -> ClientType {
         tm_client_type()
     }
@@ -636,7 +635,7 @@ impl StaticClientStateBase for StaticTmClientState {
 }
 
 impl<SupportedConsensusStates> StaticClientStateInitializer<SupportedConsensusStates>
-    for StaticTmClientState
+    for ClientState
 where
     SupportedConsensusStates: From<TmConsensusState>,
 {
@@ -652,8 +651,7 @@ where
     }
 }
 
-impl<ClientValidationContext> StaticClientStateValidation<ClientValidationContext>
-    for StaticTmClientState
+impl<ClientValidationContext> StaticClientStateValidation<ClientValidationContext> for ClientState
 where
     ClientValidationContext: TmClientValidationContext,
 {
@@ -696,8 +694,7 @@ where
     }
 }
 
-impl<ClientExecutionContext> StaticClientStateExecution<ClientExecutionContext>
-    for StaticTmClientState
+impl<ClientExecutionContext> StaticClientStateExecution<ClientExecutionContext> for ClientState
 where
     ClientExecutionContext: TmClientExecutionContext,
 {
@@ -776,7 +773,7 @@ where
         // parameters are ignored. All chain-chosen parameters come from
         // committed client, all client-chosen parameters come from current
         // client.
-        let new_client_state = StaticTmClientState::new(
+        let new_client_state = ClientState::new(
             upgraded_tm_client_state.chain_id,
             self.trust_level,
             self.trusting_period,
@@ -836,7 +833,6 @@ fn check_header_trusted_next_validator_set(
         })
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -1013,7 +1009,7 @@ mod tests {
         for test in tests {
             let p = test.params.clone();
 
-            let cs_result = StaticTmClientState::new(
+            let cs_result = ClientState::new(
                 p.id,
                 p.trust_level,
                 p.trusting_period,
@@ -1057,7 +1053,7 @@ mod tests {
         struct Test {
             name: String,
             height: Height,
-            setup: Option<Box<dyn FnOnce(StaticTmClientState) -> StaticTmClientState>>,
+            setup: Option<Box<dyn FnOnce(ClientState) -> ClientState>>,
             want_pass: bool,
         }
 
@@ -1078,7 +1074,7 @@ mod tests {
 
         for test in tests {
             let p = default_params.clone();
-            let client_state = StaticTmClientState::new(
+            let client_state = ClientState::new(
                 p.id,
                 p.trust_level,
                 p.trusting_period,
@@ -1110,7 +1106,7 @@ mod tests {
     #[test]
     fn tm_client_state_conversions_healthy() {
         // check client state creation path from a proto type
-        let tm_client_state_from_raw = StaticTmClientState::new_dummy_from_raw(RawHeight {
+        let tm_client_state_from_raw = ClientState::new_dummy_from_raw(RawHeight {
             revision_number: 0,
             revision_height: 0,
         });
@@ -1118,7 +1114,7 @@ mod tests {
 
         let any_from_tm_client_state =
             Any::from(tm_client_state_from_raw.as_ref().unwrap().clone());
-        let tm_client_state_from_any = StaticTmClientState::try_from(any_from_tm_client_state);
+        let tm_client_state_from_any = ClientState::try_from(any_from_tm_client_state);
         assert!(tm_client_state_from_any.is_ok());
         assert_eq!(
             tm_client_state_from_raw.unwrap(),
@@ -1127,9 +1123,9 @@ mod tests {
 
         // check client state creation path from a tendermint header
         let tm_header = get_dummy_tendermint_header();
-        let tm_client_state_from_header = StaticTmClientState::new_dummy_from_header(tm_header);
+        let tm_client_state_from_header = ClientState::new_dummy_from_header(tm_header);
         let any_from_header = Any::from(tm_client_state_from_header.clone());
-        let tm_client_state_from_any = StaticTmClientState::try_from(any_from_header);
+        let tm_client_state_from_any = ClientState::try_from(any_from_header);
         assert!(tm_client_state_from_any.is_ok());
         assert_eq!(
             tm_client_state_from_header,
@@ -1139,7 +1135,7 @@ mod tests {
 
     #[test]
     fn tm_client_state_malformed_with_frozen_height() {
-        let tm_client_state_from_raw = StaticTmClientState::new_dummy_from_raw(RawHeight {
+        let tm_client_state_from_raw = ClientState::new_dummy_from_raw(RawHeight {
             revision_number: 0,
             revision_height: 10,
         });
@@ -1178,7 +1174,7 @@ pub mod test_util {
 
     use tendermint::block::Header;
 
-    use crate::clients::ics07_tendermint::client_state::{AllowUpdate, StaticTmClientState};
+    use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState};
     use crate::clients::ics07_tendermint::error::Error;
     use crate::core::ics02_client::height::Height;
     use crate::core::ics23_commitment::specs::ProofSpecs;
@@ -1186,7 +1182,7 @@ pub mod test_util {
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
 
-    impl StaticTmClientState {
+    impl ClientState {
         pub fn new_dummy_from_raw(frozen_height: RawHeight) -> Result<Self, Error> {
             Self::try_from(get_dummy_raw_tm_client_state(frozen_height))
         }
