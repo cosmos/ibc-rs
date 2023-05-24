@@ -45,7 +45,7 @@ we will explain how we have implemented this rationale in IBC-rs.
   or
   [ConsensusState](../../crates/ibc/src/core/ics02_client/consensus_state.rs#ConsensusState)
   implementations
-* It is **UP TO** the chain's architecture how updated client and consensus
+* It is **UP TO** the chain's architecture how upgraded client and consensus
   states are committed, either through decentralized approaches, like governance
   or centralized methods, like a multisig account, etc.
 * Upon commitment, chain's store **MUST** contain upgraded client and consensus

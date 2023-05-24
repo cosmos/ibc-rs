@@ -102,6 +102,7 @@ mod tests {
     use crate::clients::ics07_tendermint::client_type;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
 
+    use crate::core::ics02_client::error::UpgradeClientError;
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics24_host::identifier::ClientId;
     use crate::downcast;
@@ -231,12 +232,14 @@ mod tests {
 
     #[test]
     fn upgrade_client_fail_low_upgrade_height() {
-        let fxt = msg_upgrade_client_fixture(Ctx::WithClient, Msg::LowUpgradeHeight);
-        let expected_err = ContextError::ClientError(ClientError::LowUpgradeHeight {
+        let fxt: Fixture<MsgUpgradeClient> =
+            msg_upgrade_client_fixture(Ctx::WithClient, Msg::LowUpgradeHeight);
+        let expected_err: ClientError = UpgradeClientError::LowUpgradeHeight {
             upgraded_height: Height::new(0, 26).unwrap(),
             client_height: fxt.ctx.latest_height(),
-        });
-        upgrade_client_validate(&fxt, Expect::Failure(Some(expected_err)));
+        }
+        .into();
+        upgrade_client_validate(&fxt, Expect::Failure(Some(expected_err.into())));
     }
 
     #[test]

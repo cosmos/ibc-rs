@@ -1,10 +1,11 @@
+use crate::prelude::*;
+
+use crate::signer::Signer;
+use alloc::string::String;
 use core::time::Duration;
 use derive_more::From;
 use displaydoc::Display;
 use ibc_proto::google::protobuf::Any;
-
-use crate::prelude::*;
-use crate::signer::Signer;
 
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::error::ClientError;
@@ -16,7 +17,8 @@ use crate::core::ics03_connection::version::{
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::context::calculate_block_delay;
-use crate::core::ics04_channel::error::{ChannelError, PacketError};
+use crate::core::ics04_channel::error::ChannelError;
+use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::ClientId;

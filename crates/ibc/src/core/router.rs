@@ -1,19 +1,20 @@
 //! Defines the `Router`, which binds modules to ports
 
-use crate::{core::events::ModuleEvent, prelude::*};
-
+use crate::prelude::*;
 use alloc::borrow::Borrow;
 use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 
+use crate::core::events::ModuleEvent;
 use crate::core::ics04_channel::channel::{Counterparty, Order};
-use crate::core::ics04_channel::error::{ChannelError, PacketError, PortError::UnknownPort};
+use crate::core::ics04_channel::error::PortError::UnknownPort;
+use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::msgs::ChannelMsg;
+use crate::core::ics04_channel::msgs::PacketMsg;
 use crate::core::ics04_channel::packet::{Acknowledgement, Packet};
 use crate::core::ics04_channel::Version;
-use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+use crate::core::ics24_host::identifier::PortId;
+use crate::core::ics24_host::identifier::{ChannelId, ConnectionId};
 use crate::signer::Signer;
-
-use super::ics04_channel::msgs::PacketMsg;
 
 /// Router as defined in ICS-26, which binds modules to ports.
 pub trait Router {

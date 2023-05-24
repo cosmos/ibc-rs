@@ -32,7 +32,7 @@ use crate::core::ics02_client::client_state::{
     StaticClientStateValidation, UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::error::ClientError;
+use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -472,7 +472,7 @@ impl StaticTmClientState {
     }
 
     // Resets custom fields to zero values (used in `update_client`)
-    fn zero_custom_fields(&mut self) {
+    pub fn zero_custom_fields(&mut self) {
         self.trusting_period = ZERO_DURATION;
         self.trust_level = TrustThreshold::ZERO;
         self.allow_update.after_expiry = false;
@@ -544,10 +544,10 @@ impl StaticClientStateBase for StaticTmClientState {
         // the upgrade height This condition checks both the revision number and
         // the height
         if self.latest_height() >= upgraded_tm_client_state.latest_height {
-            return Err(ClientError::LowUpgradeHeight {
+            return Err(UpgradeClientError::LowUpgradeHeight {
                 upgraded_height: self.latest_height(),
                 client_height: upgraded_tm_client_state.latest_height,
-            });
+            })?;
         }
 
         // Check to see if the upgrade path is set

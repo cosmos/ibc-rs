@@ -1,3 +1,4 @@
+use super::context::RouterError;
 use super::ics02_client::handler::{create_client, update_client, upgrade_client};
 use super::ics02_client::msgs::{ClientMsg, MsgUpdateOrMisbehaviour};
 use super::ics03_connection::handler::{
@@ -27,7 +28,7 @@ use super::ics04_channel::handler::timeout::{
     timeout_packet_execute, timeout_packet_validate, TimeoutMsgType,
 };
 use super::ics04_channel::msgs::{ChannelMsg, PacketMsg};
-use super::{msgs::MsgEnvelope, RouterError};
+use super::msgs::MsgEnvelope;
 use super::{ContextError, StaticExecutionContext, StaticValidationContext};
 
 /// Entrypoint which performs both validation and message execution

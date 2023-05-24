@@ -1,8 +1,8 @@
-use crate::core::RouterError;
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
 
+use crate::core::context::RouterError;
 use crate::core::ics02_client::msgs::{
     create_client, misbehaviour, update_client, upgrade_client, ClientMsg,
 };

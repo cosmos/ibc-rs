@@ -14,7 +14,7 @@ use crate::core::ics02_client::client_state::{
     StaticClientStateValidation, UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::error::ClientError;
+use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -171,10 +171,10 @@ impl StaticClientStateBase for MockClientState {
         let upgraded_mock_client_state = MockClientState::try_from(upgraded_client_state)?;
         MockConsensusState::try_from(upgraded_consensus_state)?;
         if self.latest_height() >= upgraded_mock_client_state.latest_height() {
-            return Err(ClientError::LowUpgradeHeight {
+            return Err(UpgradeClientError::LowUpgradeHeight {
                 upgraded_height: self.latest_height(),
                 client_height: upgraded_mock_client_state.latest_height(),
-            });
+            })?;
         }
         Ok(())
     }

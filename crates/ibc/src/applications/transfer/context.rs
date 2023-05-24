@@ -1,7 +1,4 @@
 //! Defines the main context traits and IBC module callbacks
-
-use crate::core::router::ModuleExtras;
-use crate::core::ContextError;
 use crate::prelude::*;
 
 use sha2::{Digest, Sha256};
@@ -22,6 +19,8 @@ use crate::core::ics04_channel::context::{
 use crate::core::ics04_channel::packet::{Acknowledgement, Packet};
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+use crate::core::router::ModuleExtras;
+use crate::core::ContextError;
 use crate::signer::Signer;
 
 /// Methods required in token transfer validation, to be implemented by the host
