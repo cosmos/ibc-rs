@@ -15,7 +15,7 @@ use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::core::router::ModuleId;
-use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_close_confirm_validate<ValCtx>(
     ctx_b: &ValCtx,
@@ -41,7 +41,7 @@ pub(crate) fn chan_close_confirm_execute<ExecCtx>(
     msg: MsgChannelCloseConfirm,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: StaticExecutionContext,
+    ExecCtx: ExecutionContext,
 {
     let module = ctx_b
         .get_route_mut(&module_id)

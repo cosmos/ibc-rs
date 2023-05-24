@@ -15,7 +15,7 @@ use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::core::router::ModuleId;
-use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_open_ack_validate<ValCtx>(
     ctx_a: &ValCtx,
@@ -41,7 +41,7 @@ pub(crate) fn chan_open_ack_execute<ExecCtx>(
     msg: MsgChannelOpenAck,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: StaticExecutionContext,
+    ExecCtx: ExecutionContext,
 {
     let module = ctx_a
         .get_route_mut(&module_id)

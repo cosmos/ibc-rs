@@ -16,7 +16,7 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath,
 };
-use crate::core::{StaticExecutionContext, ValidationContext};
+use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 
 use crate::core::events::{IbcEvent, MessageEvent};
@@ -127,7 +127,7 @@ where
 
 pub(crate) fn execute<Ctx>(ctx_b: &mut Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
-    Ctx: StaticExecutionContext,
+    Ctx: ExecutionContext,
 {
     let vars = LocalVars::new(ctx_b, &msg)?;
     execute_impl(ctx_b, msg, vars)
@@ -139,7 +139,7 @@ fn execute_impl<Ctx>(
     vars: LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: StaticExecutionContext,
+    Ctx: ExecutionContext,
 {
     let conn_id_on_a = vars
         .conn_end_on_b

@@ -29,13 +29,10 @@ use super::ics04_channel::handler::timeout::{
 };
 use super::ics04_channel::msgs::{ChannelMsg, PacketMsg};
 use super::msgs::MsgEnvelope;
-use super::{ContextError, StaticExecutionContext, ValidationContext};
+use super::{ContextError, ExecutionContext, ValidationContext};
 
 /// Entrypoint which performs both validation and message execution
-pub fn dispatch(
-    ctx: &mut impl StaticExecutionContext,
-    msg: MsgEnvelope,
-) -> Result<(), RouterError> {
+pub fn dispatch(ctx: &mut impl ExecutionContext, msg: MsgEnvelope) -> Result<(), RouterError> {
     validate(ctx, msg.clone())?;
     execute(ctx, msg)
 }
@@ -113,7 +110,7 @@ where
 /// Entrypoint which only performs message execution
 pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgEnvelope) -> Result<(), RouterError>
 where
-    Ctx: StaticExecutionContext,
+    Ctx: ExecutionContext,
 {
     match msg {
         MsgEnvelope::Client(msg) => match msg {

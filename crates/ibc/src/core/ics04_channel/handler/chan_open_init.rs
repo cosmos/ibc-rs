@@ -11,7 +11,7 @@ use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
 use crate::core::ics24_host::identifier::ChannelId;
 use crate::core::ics24_host::path::{ChannelEndPath, SeqAckPath, SeqRecvPath, SeqSendPath};
 use crate::core::router::ModuleId;
-use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_open_init_validate<ValCtx>(
     ctx_a: &ValCtx,
@@ -45,7 +45,7 @@ pub(crate) fn chan_open_init_execute<ExecCtx>(
     msg: MsgChannelOpenInit,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: StaticExecutionContext,
+    ExecCtx: ExecutionContext,
 {
     let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
     let module = ctx_a

@@ -12,7 +12,7 @@ use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenCon
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ConnectionPath};
-use crate::core::{StaticExecutionContext, ValidationContext};
+use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 
 use crate::core::events::{IbcEvent, MessageEvent};
@@ -88,7 +88,7 @@ pub(crate) fn execute<Ctx>(
     msg: &MsgConnectionOpenConfirm,
 ) -> Result<(), ContextError>
 where
-    Ctx: StaticExecutionContext,
+    Ctx: ExecutionContext,
 {
     let vars = LocalVars::new(ctx_b, msg)?;
     execute_impl(ctx_b, msg, vars)
@@ -100,7 +100,7 @@ fn execute_impl<Ctx>(
     vars: LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: StaticExecutionContext,
+    Ctx: ExecutionContext,
 {
     let client_id_on_a = vars.client_id_on_a();
     let client_id_on_b = vars.client_id_on_b();

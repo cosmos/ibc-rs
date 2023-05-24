@@ -5,7 +5,7 @@ use crate::core::ics02_client::client_state::StaticClientState;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
-use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 use crate::prelude::*;
 use core::time::Duration;
 use num_traits::float::FloatCore;
@@ -110,7 +110,7 @@ pub trait SendPacketExecutionContext: SendPacketValidationContext {
 
 impl<T> SendPacketExecutionContext for T
 where
-    T: StaticExecutionContext,
+    T: ExecutionContext,
 {
     fn store_next_sequence_send(
         &mut self,

@@ -17,7 +17,7 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::core::ics24_host::path::{SeqAckPath, SeqRecvPath, SeqSendPath};
 use crate::core::router::ModuleId;
-use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_open_try_validate<ValCtx>(
     ctx_b: &ValCtx,
@@ -52,7 +52,7 @@ pub(crate) fn chan_open_try_execute<ExecCtx>(
     msg: MsgChannelOpenTry,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: StaticExecutionContext,
+    ExecCtx: ExecutionContext,
 {
     let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
     let module = ctx_b

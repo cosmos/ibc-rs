@@ -13,7 +13,7 @@ use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath};
-use crate::core::{StaticExecutionContext, ValidationContext};
+use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
 
 use crate::core::events::{IbcEvent, MessageEvent};
@@ -130,7 +130,7 @@ where
 
 pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
-    Ctx: StaticExecutionContext,
+    Ctx: ExecutionContext,
 {
     let vars = LocalVars::new(ctx_a, &msg)?;
     execute_impl(ctx_a, msg, vars)
@@ -142,7 +142,7 @@ fn execute_impl<Ctx>(
     vars: LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: StaticExecutionContext,
+    Ctx: ExecutionContext,
 {
     let event = IbcEvent::OpenAckConnection(OpenAck::new(
         msg.conn_id_on_a.clone(),

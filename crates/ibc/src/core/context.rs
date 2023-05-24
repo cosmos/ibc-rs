@@ -242,7 +242,7 @@ pub trait ValidationContext: Router {
     fn validate_message_signer(&self, signer: &Signer) -> Result<(), ContextError>;
 }
 
-pub trait StaticExecutionContext: ValidationContext {
+pub trait ExecutionContext: ValidationContext {
     /// Called upon successful client creation and update
     fn store_client_state(
         &mut self,

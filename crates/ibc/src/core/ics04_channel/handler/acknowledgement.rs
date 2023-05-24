@@ -15,7 +15,7 @@ use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqAckPath,
 };
 use crate::core::{events::IbcEvent, ics04_channel::events::AcknowledgePacket, router::ModuleId};
-use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn acknowledgement_packet_validate<ValCtx>(
     ctx_a: &ValCtx,
@@ -42,7 +42,7 @@ pub(crate) fn acknowledgement_packet_execute<ExecCtx>(
     msg: MsgAcknowledgement,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: StaticExecutionContext,
+    ExecCtx: ExecutionContext,
 {
     let chan_end_path_on_a =
         ChannelEndPath::new(&msg.packet.port_id_on_a, &msg.packet.chan_id_on_a);

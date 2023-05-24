@@ -20,7 +20,7 @@ use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
 use crate::core::router::ModuleId;
-use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) enum TimeoutMsgType {
     Timeout(MsgTimeout),
@@ -60,7 +60,7 @@ pub(crate) fn timeout_packet_execute<ExecCtx>(
     timeout_msg_type: TimeoutMsgType,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: StaticExecutionContext,
+    ExecCtx: ExecutionContext,
 {
     let (packet, signer) = match timeout_msg_type {
         TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),

@@ -10,7 +10,7 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
-use crate::core::{StaticExecutionContext, ValidationContext};
+use crate::core::{ExecutionContext, ValidationContext};
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
@@ -70,7 +70,7 @@ where
 
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
-    Ctx: StaticExecutionContext,
+    Ctx: ExecutionContext,
 {
     let MsgUpgradeClient { client_id, .. } = msg;
 

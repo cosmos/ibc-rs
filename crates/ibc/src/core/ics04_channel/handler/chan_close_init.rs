@@ -10,7 +10,7 @@ use crate::core::ics04_channel::events::CloseInit;
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
 use crate::core::ics24_host::path::ChannelEndPath;
 use crate::core::router::ModuleId;
-use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_close_init_validate<ValCtx>(
     ctx_a: &ValCtx,
@@ -36,7 +36,7 @@ pub(crate) fn chan_close_init_execute<ExecCtx>(
     msg: MsgChannelCloseInit,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: StaticExecutionContext,
+    ExecCtx: ExecutionContext,
 {
     let module = ctx_a
         .get_route_mut(&module_id)

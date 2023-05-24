@@ -9,7 +9,7 @@ use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{ClientConnectionPath, ConnectionPath};
-use crate::core::{StaticExecutionContext, ValidationContext};
+use crate::core::{ExecutionContext, ValidationContext};
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
@@ -30,7 +30,7 @@ where
 
 pub(crate) fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
-    Ctx: StaticExecutionContext,
+    Ctx: ExecutionContext,
 {
     let versions = if let Some(version) = msg.version {
         version.verify_is_supported(&ctx_a.get_compatible_versions())?;

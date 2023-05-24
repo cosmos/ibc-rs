@@ -12,7 +12,7 @@ use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
 
 use crate::core::context::ContextError;
 
-use crate::core::{StaticExecutionContext, ValidationContext};
+use crate::core::{ExecutionContext, ValidationContext};
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>
 where
@@ -45,7 +45,7 @@ where
 
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>
 where
-    Ctx: StaticExecutionContext,
+    Ctx: ExecutionContext,
 {
     let client_id = msg.client_id().clone();
     let update_kind = match msg {

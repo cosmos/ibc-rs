@@ -3,7 +3,7 @@
 use crate::core::events::MessageEvent;
 use crate::core::ics02_client::client_state::StaticClientStateBase;
 use crate::core::ics02_client::client_state::StaticClientStateInitializer;
-use crate::core::StaticExecutionContext;
+use crate::core::ExecutionContext;
 use crate::core::ValidationContext;
 use crate::prelude::*;
 
@@ -57,7 +57,7 @@ where
 
 pub(crate) fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
-    Ctx: StaticExecutionContext,
+    Ctx: ExecutionContext,
 {
     let MsgCreateClient {
         client_state,

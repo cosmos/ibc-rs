@@ -18,7 +18,7 @@ use crate::core::ics24_host::path::{
 };
 use crate::core::router::ModuleId;
 use crate::core::timestamp::Expiry;
-use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn recv_packet_validate<ValCtx>(
     ctx_b: &ValCtx,
@@ -40,7 +40,7 @@ pub(crate) fn recv_packet_execute<ExecCtx>(
     msg: MsgRecvPacket,
 ) -> Result<(), ContextError>
 where
-    ExecCtx: StaticExecutionContext,
+    ExecCtx: ExecutionContext,
 {
     let chan_end_path_on_b =
         ChannelEndPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);

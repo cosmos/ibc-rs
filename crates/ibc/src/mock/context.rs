@@ -55,7 +55,7 @@ use crate::core::router::Router;
 use crate::core::router::{Module, ModuleId};
 use crate::core::timestamp::Timestamp;
 use crate::core::{ContextError, ValidationContext};
-use crate::core::{MsgEnvelope, StaticExecutionContext};
+use crate::core::{ExecutionContext, MsgEnvelope};
 use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
@@ -1124,7 +1124,7 @@ impl MockClientExecutionContext for MockContext {
         height: Height,
         timestamp: Timestamp,
     ) -> Result<(), ContextError> {
-        StaticExecutionContext::store_update_time(self, client_id, height, timestamp)
+        ExecutionContext::store_update_time(self, client_id, height, timestamp)
     }
 
     fn store_update_height(
@@ -1133,7 +1133,7 @@ impl MockClientExecutionContext for MockContext {
         height: Height,
         host_height: Height,
     ) -> Result<(), ContextError> {
-        StaticExecutionContext::store_update_height(self, client_id, height, host_height)
+        ExecutionContext::store_update_height(self, client_id, height, host_height)
     }
 
     fn store_client_state(
@@ -1141,7 +1141,7 @@ impl MockClientExecutionContext for MockContext {
         client_state_path: ClientStatePath,
         client_state: MockClientState,
     ) -> Result<(), ContextError> {
-        StaticExecutionContext::store_client_state(self, client_state_path, client_state.into())
+        ExecutionContext::store_client_state(self, client_state_path, client_state.into())
     }
 
     fn store_consensus_state(
@@ -1149,11 +1149,7 @@ impl MockClientExecutionContext for MockContext {
         consensus_state_path: ClientConsensusStatePath,
         consensus_state: MockConsensusState,
     ) -> Result<(), ContextError> {
-        StaticExecutionContext::store_consensus_state(
-            self,
-            consensus_state_path,
-            consensus_state.into(),
-        )
+        ExecutionContext::store_consensus_state(self, consensus_state_path, consensus_state.into())
     }
 }
 
@@ -1164,7 +1160,7 @@ impl TmClientExecutionContext for MockContext {
         height: Height,
         timestamp: Timestamp,
     ) -> Result<(), ContextError> {
-        <Self as StaticExecutionContext>::store_update_time(self, client_id, height, timestamp)
+        <Self as ExecutionContext>::store_update_time(self, client_id, height, timestamp)
     }
 
     fn store_update_height(
@@ -1173,7 +1169,7 @@ impl TmClientExecutionContext for MockContext {
         height: Height,
         host_height: Height,
     ) -> Result<(), ContextError> {
-        <Self as StaticExecutionContext>::store_update_height(self, client_id, height, host_height)
+        <Self as ExecutionContext>::store_update_height(self, client_id, height, host_height)
     }
 
     fn store_client_state(
@@ -1181,11 +1177,7 @@ impl TmClientExecutionContext for MockContext {
         client_state_path: ClientStatePath,
         client_state: TmClientState,
     ) -> Result<(), ContextError> {
-        <Self as StaticExecutionContext>::store_client_state(
-            self,
-            client_state_path,
-            client_state.into(),
-        )
+        <Self as ExecutionContext>::store_client_state(self, client_state_path, client_state.into())
     }
 
     fn store_consensus_state(
@@ -1193,7 +1185,7 @@ impl TmClientExecutionContext for MockContext {
         consensus_state_path: ClientConsensusStatePath,
         consensus_state: TmConsensusState,
     ) -> Result<(), ContextError> {
-        <Self as StaticExecutionContext>::store_consensus_state(
+        <Self as ExecutionContext>::store_consensus_state(
             self,
             consensus_state_path,
             consensus_state.into(),
@@ -1561,7 +1553,7 @@ impl ValidationContext for MockContext {
     }
 }
 
-impl StaticExecutionContext for MockContext {
+impl ExecutionContext for MockContext {
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
