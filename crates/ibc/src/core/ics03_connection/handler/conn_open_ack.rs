@@ -5,7 +5,7 @@ use prost::Message;
 
 use crate::core::context::ContextError;
 use crate::core::ics02_client::client_state::ClientStateBase;
-use crate::core::ics02_client::consensus_state::StaticConsensusState;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenAck;

@@ -7,7 +7,7 @@
 
 use super::Plan;
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use crate::clients::ics07_tendermint::consensus_state::ConsensusState;
+use crate::clients::ics07_tendermint::consensus_state::TmConsensusState;
 use crate::core::ics02_client::error::UpgradeClientError;
 use crate::core::ics24_host::path::UpgradeClientPath;
 
@@ -50,6 +50,6 @@ pub trait UpgradeExecutionContext: UpgradeValidationContext {
     fn store_upgraded_consensus_state(
         &mut self,
         upgrade_path: UpgradeClientPath,
-        consensus_state: ConsensusState,
+        consensus_state: TmConsensusState,
     ) -> Result<(), UpgradeClientError>;
 }

@@ -1,6 +1,6 @@
 //! Defines Tendermint's `ConsensusState` type
 
-use crate::core::ics02_client::consensus_state::StaticConsensusState;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ContextError;
 use crate::prelude::*;
 
@@ -22,13 +22,13 @@ pub const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str =
 /// Defines the Tendermint light client's consensus state
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ConsensusState {
+pub struct TmConsensusState {
     pub timestamp: Time,
     pub root: CommitmentRoot,
     pub next_validators_hash: Hash,
 }
 
-impl ConsensusState {
+impl TmConsensusState {
     pub fn new(root: CommitmentRoot, timestamp: Time, next_validators_hash: Hash) -> Self {
         Self {
             timestamp,
@@ -38,9 +38,9 @@ impl ConsensusState {
     }
 }
 
-impl Protobuf<RawConsensusState> for ConsensusState {}
+impl Protobuf<RawConsensusState> for TmConsensusState {}
 
-impl TryFrom<RawConsensusState> for ConsensusState {
+impl TryFrom<RawConsensusState> for TmConsensusState {
     type Error = Error;
 
     fn try_from(raw: RawConsensusState) -> Result<Self, Self::Error> {
@@ -77,8 +77,8 @@ impl TryFrom<RawConsensusState> for ConsensusState {
     }
 }
 
-impl From<ConsensusState> for RawConsensusState {
-    fn from(value: ConsensusState) -> Self {
+impl From<TmConsensusState> for RawConsensusState {
+    fn from(value: TmConsensusState) -> Self {
         // FIXME: shunts like this are necessary due to
         // https://github.com/informalsystems/tendermint-rs/issues/1053
         let tpb::Timestamp { seconds, nanos } = value.timestamp.into();
@@ -94,9 +94,9 @@ impl From<ConsensusState> for RawConsensusState {
     }
 }
 
-impl Protobuf<Any> for ConsensusState {}
+impl Protobuf<Any> for TmConsensusState {}
 
-impl TryFrom<Any> for ConsensusState {
+impl TryFrom<Any> for TmConsensusState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
@@ -104,7 +104,7 @@ impl TryFrom<Any> for ConsensusState {
         use core::ops::Deref;
         use prost::Message;
 
-        fn decode_consensus_state<B: Buf>(buf: B) -> Result<ConsensusState, Error> {
+        fn decode_consensus_state<B: Buf>(buf: B) -> Result<TmConsensusState, Error> {
             RawConsensusState::decode(buf)
                 .map_err(Error::Decode)?
                 .try_into()
@@ -121,8 +121,8 @@ impl TryFrom<Any> for ConsensusState {
     }
 }
 
-impl From<ConsensusState> for Any {
-    fn from(consensus_state: ConsensusState) -> Self {
+impl From<TmConsensusState> for Any {
+    fn from(consensus_state: TmConsensusState) -> Self {
         Any {
             type_url: TENDERMINT_CONSENSUS_STATE_TYPE_URL.to_string(),
             // TODO: How to properly do this?
@@ -131,7 +131,7 @@ impl From<ConsensusState> for Any {
     }
 }
 
-impl From<tendermint::block::Header> for ConsensusState {
+impl From<tendermint::block::Header> for TmConsensusState {
     fn from(header: tendermint::block::Header) -> Self {
         Self {
             root: CommitmentRoot::from_bytes(header.app_hash.as_ref()),
@@ -141,13 +141,13 @@ impl From<tendermint::block::Header> for ConsensusState {
     }
 }
 
-impl From<Header> for ConsensusState {
+impl From<Header> for TmConsensusState {
     fn from(header: Header) -> Self {
         Self::from(header.signed_header.header)
     }
 }
 
-impl StaticConsensusState for ConsensusState {
+impl ConsensusState for TmConsensusState {
     type EncodeError = ContextError;
 
     fn root(&self) -> &CommitmentRoot {

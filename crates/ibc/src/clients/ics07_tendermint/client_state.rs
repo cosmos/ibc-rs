@@ -4,7 +4,7 @@
 mod misbehaviour;
 mod update_client;
 
-use crate::core::ics02_client::consensus_state::StaticConsensusState;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::prelude::*;
 
 use core::cmp::max;
@@ -23,7 +23,7 @@ use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresh
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::ProdVerifier;
 
-use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
+use crate::clients::ics07_tendermint::consensus_state::TmConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;

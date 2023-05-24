@@ -31,7 +31,7 @@ use crate::clients::ics07_tendermint::client_state::{
     TENDERMINT_CLIENT_STATE_TYPE_URL,
 };
 use crate::clients::ics07_tendermint::consensus_state::{
-    ConsensusState as TmConsensusState, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
+    TmConsensusState, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
 };
 use crate::core::dispatch;
 use crate::core::events::IbcEvent;
@@ -40,7 +40,7 @@ use crate::core::ics02_client::client_state::{
     UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::consensus_state::StaticConsensusState;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
 use crate::core::ics03_connection::connection::ConnectionEnd;
@@ -851,7 +851,7 @@ pub enum HostConsensusState {
     Mock(MockConsensusState),
 }
 
-impl StaticConsensusState for HostConsensusState {
+impl ConsensusState for HostConsensusState {
     type EncodeError = ContextError;
 
     fn root(&self) -> &CommitmentRoot {

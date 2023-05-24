@@ -7,7 +7,7 @@ use ibc_proto::protobuf::Protobuf;
 
 use tendermint_proto::Protobuf as TmProtobuf;
 
-use crate::core::ics02_client::consensus_state::StaticConsensusState;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::core::timestamp::Timestamp;
@@ -99,7 +99,7 @@ impl From<MockConsensusState> for Any {
 
 impl TmProtobuf<Any> for MockConsensusState {}
 
-impl StaticConsensusState for MockConsensusState {
+impl ConsensusState for MockConsensusState {
     type EncodeError = ContextError;
 
     fn root(&self) -> &CommitmentRoot {

@@ -10,7 +10,7 @@ use crate::prelude::*;
 use core::time::Duration;
 use num_traits::float::FloatCore;
 
-use crate::core::ics02_client::consensus_state::StaticConsensusState;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::PacketCommitment;
@@ -22,7 +22,7 @@ use super::packet::Sequence;
 pub trait SendPacketValidationContext {
     type ClientValidationContext;
     type ClientExecutionContext;
-    type SupportedConsensusStates: StaticConsensusState<EncodeError = ContextError>;
+    type SupportedConsensusStates: ConsensusState<EncodeError = ContextError>;
     type SupportedClientStates: ClientState<
         Self::SupportedConsensusStates,
         Self::ClientValidationContext,

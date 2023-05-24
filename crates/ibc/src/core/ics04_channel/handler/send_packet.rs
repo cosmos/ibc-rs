@@ -1,5 +1,5 @@
 use crate::core::ics02_client::client_state::ClientStateBase;
-use crate::core::ics02_client::consensus_state::StaticConsensusState;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::prelude::*;
 
 use crate::core::events::IbcEvent;

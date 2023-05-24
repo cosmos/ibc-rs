@@ -8,7 +8,7 @@ use tendermint::block::Header as TmHeader;
 use tendermint_testgen::light_block::TmLightBlock;
 use tendermint_testgen::{Generator, LightBlock as TestgenLightBlock};
 
-use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TMConsensusState;
+use crate::clients::ics07_tendermint::consensus_state::TmConsensusState as TMConsensusState;
 use crate::clients::ics07_tendermint::header::TENDERMINT_HEADER_TYPE_URL;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;

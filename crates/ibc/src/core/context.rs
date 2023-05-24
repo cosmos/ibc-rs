@@ -32,7 +32,7 @@ use crate::core::timestamp::Timestamp;
 use crate::Height;
 
 use super::ics02_client::client_state::ClientState;
-use super::ics02_client::consensus_state::StaticConsensusState;
+use super::ics02_client::consensus_state::ConsensusState;
 
 /// Top-level error
 #[derive(Debug, Display, From)]
@@ -91,7 +91,7 @@ impl std::error::Error for RouterError {
 pub trait ValidationContext: Router {
     type ClientValidationContext;
     type ClientExecutionContext;
-    type SupportedConsensusStates: StaticConsensusState<EncodeError = ContextError>;
+    type SupportedConsensusStates: ConsensusState<EncodeError = ContextError>;
     type SupportedClientStates: ClientState<
         Self::SupportedConsensusStates,
         Self::ClientValidationContext,
