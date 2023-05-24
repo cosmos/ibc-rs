@@ -72,7 +72,7 @@ where
         )?;
 
         let event = IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(
-            client_id.clone(),
+            client_id,
             client_state.client_type(),
         ));
         ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
@@ -98,7 +98,7 @@ where
         })?;
 
         let event = IbcEvent::UpdateClient(UpdateClient::new(
-            client_id.clone(),
+            client_id,
             client_state.client_type(),
             *consensus_height,
             consensus_heights,
@@ -135,7 +135,7 @@ mod tests {
     use crate::downcast;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::client_state::MockClientState;
-    use crate::mock::context::{MockContext, HostConsensusState};
+    use crate::mock::context::{HostConsensusState, MockContext};
     use crate::mock::header::MockHeader;
     use crate::mock::host::{HostBlock, HostType};
     use crate::mock::misbehaviour::Misbehaviour as MockMisbehaviour;

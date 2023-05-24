@@ -21,14 +21,18 @@ use core::time::Duration;
 use derive_more::{From, TryInto};
 use parking_lot::Mutex;
 use subtle_encoding::bech32;
+use tendermint_proto::Protobuf;
 
 use ibc_proto::google::protobuf::Any;
 use tracing::debug;
 
 use crate::clients::ics07_tendermint::client_state::{
     StaticTmClientState, TmClientExecutionContext, TmClientValidationContext,
+    TENDERMINT_CLIENT_STATE_TYPE_URL,
 };
-use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
+use crate::clients::ics07_tendermint::consensus_state::{
+    ConsensusState as TmConsensusState, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
+};
 use crate::core::dispatch;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::{
@@ -61,7 +65,10 @@ use crate::mock::ics18_relayer::error::RelayerError;
 use crate::signer::Signer;
 use crate::Height;
 
-use super::client_state::{MockClientExecutionContext, MOCK_CLIENT_TYPE};
+use super::client_state::{
+    MockClientExecutionContext, MOCK_CLIENT_STATE_TYPE_URL, MOCK_CLIENT_TYPE,
+};
+use super::consensus_state::MOCK_CONSENSUS_STATE_TYPE_URL;
 
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
@@ -811,7 +818,34 @@ impl StaticClientStateInitializer<HostConsensusState> for HostClientState {
     }
 }
 
-#[derive(Debug, Clone, From, TryInto)]
+impl Protobuf<Any> for HostClientState {}
+
+impl TryFrom<Any> for HostClientState {
+    type Error = ClientError;
+
+    fn try_from(raw: Any) -> Result<Self, Self::Error> {
+        if raw.type_url == TENDERMINT_CLIENT_STATE_TYPE_URL {
+            StaticTmClientState::try_from(raw).map(Into::into)
+        } else if raw.type_url == MOCK_CLIENT_STATE_TYPE_URL {
+            MockClientState::try_from(raw).map(Into::into)
+        } else {
+            Err(ClientError::Other {
+                description: "failed to deserialize message".to_string(),
+            })
+        }
+    }
+}
+
+impl From<HostClientState> for Any {
+    fn from(host_client_state: HostClientState) -> Self {
+        match host_client_state {
+            HostClientState::Tendermint(cs) => cs.into(),
+            HostClientState::Mock(cs) => cs.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, From, TryInto, PartialEq)]
 pub enum HostConsensusState {
     Tendermint(TmConsensusState),
     Mock(MockConsensusState),
@@ -836,8 +870,45 @@ impl StaticConsensusState for HostConsensusState {
 
     fn encode_vec(&self) -> Result<Vec<u8>, Self::EncodeError> {
         match self {
-            HostConsensusState::Tendermint(cs) => cs.encode_vec(),
-            HostConsensusState::Mock(cs) => cs.encode_vec(),
+            HostConsensusState::Tendermint(cs) => Protobuf::<Any>::encode_vec(cs).map_err(|err| {
+                ClientError::Other {
+                    description: format!("{err}"),
+                }
+                .into()
+            }),
+            HostConsensusState::Mock(cs) => Protobuf::<Any>::encode_vec(cs).map_err(|err| {
+                ClientError::Other {
+                    description: format!("{err}"),
+                }
+                .into()
+            }),
+        }
+    }
+}
+
+impl Protobuf<Any> for HostConsensusState {}
+
+impl TryFrom<Any> for HostConsensusState {
+    type Error = ClientError;
+
+    fn try_from(raw: Any) -> Result<Self, Self::Error> {
+        if raw.type_url == TENDERMINT_CONSENSUS_STATE_TYPE_URL {
+            TmConsensusState::try_from(raw).map(Into::into)
+        } else if raw.type_url == MOCK_CONSENSUS_STATE_TYPE_URL {
+            MockConsensusState::try_from(raw).map(Into::into)
+        } else {
+            Err(ClientError::Other {
+                description: "failed to deserialize message".to_string(),
+            })
+        }
+    }
+}
+
+impl From<HostConsensusState> for Any {
+    fn from(host_consensus_state: HostConsensusState) -> Self {
+        match host_consensus_state {
+            HostConsensusState::Tendermint(cs) => cs.into(),
+            HostConsensusState::Mock(cs) => cs.into(),
         }
     }
 }

@@ -48,7 +48,7 @@ use super::client_type as tm_client_type;
 use super::trust_threshold::TrustThreshold;
 use crate::core::ContextError;
 
-const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
+pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -828,7 +828,7 @@ where
             upgraded_tm_cons_state.next_validators_hash,
         );
 
-        let latest_height = new_client_state.latest_height.clone();
+        let latest_height = new_client_state.latest_height;
 
         ctx.store_client_state(ClientStatePath::new(client_id), new_client_state)?;
         ctx.store_consensus_state(

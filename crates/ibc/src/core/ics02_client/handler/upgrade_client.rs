@@ -108,7 +108,7 @@ mod tests {
     use crate::Height;
 
     use crate::mock::client_state::client_type as mock_client_type;
-    use crate::mock::context::MockContext;
+    use crate::mock::context::{HostClientState, HostConsensusState, MockContext};
 
     enum Ctx {
         Default,
@@ -195,7 +195,10 @@ mod tests {
                 assert_eq!(upgrade_client_event.consensus_height(), &plan_height);
 
                 let client_state = fxt.ctx.client_state(&fxt.msg.client_id).unwrap();
-                assert_eq!(client_state, fxt.msg.client_state);
+                let msg_client_state: HostClientState =
+                    fxt.msg.client_state.clone().try_into().unwrap();
+                assert_eq!(client_state, msg_client_state);
+
                 let consensus_state = fxt
                     .ctx
                     .consensus_state(&ClientConsensusStatePath::new(
@@ -203,10 +206,9 @@ mod tests {
                         &plan_height,
                     ))
                     .unwrap();
-                assert_eq!(
-                    consensus_state.into(),
-                    fxt.msg.consensus_state
-                );
+                let msg_consensus_state: HostConsensusState =
+                    fxt.msg.consensus_state.clone().try_into().unwrap();
+                assert_eq!(consensus_state, msg_consensus_state);
             }
         };
     }

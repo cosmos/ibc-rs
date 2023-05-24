@@ -36,7 +36,8 @@ impl StaticTmClientState {
                 ClientConsensusStatePath::new(client_id, &header_1.trusted_height);
             let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
-            consensus_state.try_into()
+            consensus_state
+                .try_into()
                 .map_err(|err| ClientError::Other {
                     description: err.to_string(),
                 })?

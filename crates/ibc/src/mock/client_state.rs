@@ -181,21 +181,21 @@ impl StaticClientStateBase for MockClientState {
 
     fn verify_membership(
         &self,
-        prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        path: Path,
-        value: Vec<u8>,
+        _prefix: &CommitmentPrefix,
+        _proof: &CommitmentProofBytes,
+        _root: &CommitmentRoot,
+        _path: Path,
+        _value: Vec<u8>,
     ) -> Result<(), ClientError> {
         Ok(())
     }
 
     fn verify_non_membership(
         &self,
-        prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        path: Path,
+        _prefix: &CommitmentPrefix,
+        _proof: &CommitmentProofBytes,
+        _root: &CommitmentRoot,
+        _path: Path,
     ) -> Result<(), ClientError> {
         Ok(())
     }
@@ -206,8 +206,8 @@ impl<ClientValidationContext> StaticClientStateValidation<ClientValidationContex
 {
     fn verify_client_message(
         &self,
-        ctx: &ClientValidationContext,
-        client_id: &ClientId,
+        _ctx: &ClientValidationContext,
+        _client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
@@ -232,8 +232,8 @@ impl<ClientValidationContext> StaticClientStateValidation<ClientValidationContex
 
     fn check_for_misbehaviour(
         &self,
-        ctx: &ClientValidationContext,
-        client_id: &ClientId,
+        _ctx: &ClientValidationContext,
+        _client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
     ) -> Result<bool, ClientError> {
@@ -324,22 +324,22 @@ where
 
     fn update_state_on_misbehaviour(
         &self,
-        ctx: &mut ClientExecutionContext,
-        client_id: &ClientId,
-        client_message: Any,
-        update_kind: &UpdateKind,
+        _ctx: &mut ClientExecutionContext,
+        _client_id: &ClientId,
+        _client_message: Any,
+        _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
-        todo!()
+        unimplemented!()
     }
 
     fn update_state_with_upgrade_client(
         &self,
-        ctx: &mut ClientExecutionContext,
-        client_id: &ClientId,
-        upgraded_client_state: Any,
-        upgraded_consensus_state: Any,
+        _ctx: &mut ClientExecutionContext,
+        _client_id: &ClientId,
+        _upgraded_client_state: Any,
+        _upgraded_consensus_state: Any,
     ) -> Result<Height, ClientError> {
-        todo!()
+        unimplemented!()
     }
 }
 

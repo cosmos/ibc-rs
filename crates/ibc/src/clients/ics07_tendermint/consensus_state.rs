@@ -17,7 +17,8 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::core::timestamp::Timestamp;
 
-const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ConsensusState";
+pub const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str =
+    "/ibc.lightclients.tendermint.v1.ConsensusState";
 
 /// Defines the Tendermint light client's consensus state
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

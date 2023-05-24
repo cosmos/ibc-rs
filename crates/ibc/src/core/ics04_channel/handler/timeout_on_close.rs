@@ -168,11 +168,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::core::StaticExecutionContext;
     use crate::core::ics04_channel::commitment::compute_packet_commitment;
     use crate::core::ics04_channel::commitment::PacketCommitment;
     use crate::core::ics04_channel::handler::timeout_on_close::validate;
     use crate::core::timestamp::Timestamp;
+    use crate::core::StaticExecutionContext;
     use crate::mock::context::MockContext;
     use crate::prelude::*;
     use crate::Height;
