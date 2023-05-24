@@ -7,12 +7,11 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConse
 use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::core::ics24_host::path::ClientConsensusStatePath;
 
 use super::{
-    check_header_trusted_next_validator_set,
-    StaticTmClientState, TmClientValidationContext,
+    check_header_trusted_next_validator_set, StaticTmClientState, TmClientValidationContext,
 };
 
 impl StaticTmClientState {
@@ -39,8 +38,12 @@ impl StaticTmClientState {
                 {
                     let trusted_client_cons_state_path =
                         ClientConsensusStatePath::new(client_id, &header.trusted_height);
-                    let trusted_consensus_state =
-                        ctx.consensus_state(&trusted_client_cons_state_path)?.into();
+                    let trusted_consensus_state: TmConsensusState = ctx
+                        .consensus_state(&trusted_client_cons_state_path)?
+                        .try_into()
+                        .map_err(|err| ClientError::Other {
+                            description: err.to_string(),
+                        })?;
 
                     check_header_trusted_next_validator_set(&header, &trusted_consensus_state)?;
 
@@ -100,7 +103,11 @@ impl StaticTmClientState {
 
         match maybe_existing_consensus_state {
             Some(existing_consensus_state) => {
-                let existing_consensus_state = existing_consensus_state.into();
+                let existing_consensus_state: TmConsensusState = existing_consensus_state
+                    .try_into()
+                    .map_err(|err| ClientError::Other {
+                        description: err.to_string(),
+                    })?;
 
                 // There is evidence of misbehaviour if the stored consensus state
                 // is different from the new one we received.
@@ -117,7 +124,10 @@ impl StaticTmClientState {
                     if let Some(prev_cs) = maybe_prev_cs {
                         // New header timestamp cannot occur *before* the
                         // previous consensus state's height
-                        let prev_cs = prev_cs.into();
+                        let prev_cs: TmConsensusState =
+                            prev_cs.try_into().map_err(|err| ClientError::Other {
+                                description: err.to_string(),
+                            })?;
 
                         if header.signed_header.header().time <= prev_cs.timestamp {
                             return Ok(true);
@@ -133,7 +143,10 @@ impl StaticTmClientState {
                     if let Some(next_cs) = maybe_next_cs {
                         // New (untrusted) header timestamp cannot occur *after* next
                         // consensus state's height
-                        let next_cs: TmConsensusState = next_cs.into();
+                        let next_cs: TmConsensusState =
+                            next_cs.try_into().map_err(|err| ClientError::Other {
+                                description: err.to_string(),
+                            })?;
 
                         if header.signed_header.header().time >= next_cs.timestamp {
                             return Ok(true);

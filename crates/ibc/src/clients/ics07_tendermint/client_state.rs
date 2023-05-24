@@ -216,9 +216,8 @@ impl From<StaticTmClientState> for Any {
 // Static versions
 ///////////////////////////////////////////////////////
 
-// TODOP: consensus_state functions should return `TmConsensusState`, right?
 pub trait TmClientValidationContext {
-    type SupportedConsensusStates;
+    type SupportedConsensusStates: TryInto<TmConsensusState, Error = &'static str>;
 
     /// Returns the current height of the local chain.
     fn host_height(&self) -> Result<Height, ContextError>;

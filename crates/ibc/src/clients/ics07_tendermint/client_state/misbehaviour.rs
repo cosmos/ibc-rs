@@ -8,13 +8,12 @@ use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::core::ics02_client::error::ClientError;
+use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::timestamp::Timestamp;
-use crate::core::ics24_host::identifier::ClientId;
 
 use super::{
-    check_header_trusted_next_validator_set,
-    StaticTmClientState, TmClientValidationContext,
+    check_header_trusted_next_validator_set, StaticTmClientState, TmClientValidationContext,
 };
 
 impl StaticTmClientState {
@@ -37,7 +36,10 @@ impl StaticTmClientState {
                 ClientConsensusStatePath::new(client_id, &header_1.trusted_height);
             let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
-            consensus_state.into()
+            consensus_state.try_into()
+                .map_err(|err| ClientError::Other {
+                    description: err.to_string(),
+                })?
         };
 
         let header_2 = misbehaviour.header2();
@@ -46,7 +48,11 @@ impl StaticTmClientState {
                 ClientConsensusStatePath::new(client_id, &header_2.trusted_height);
             let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
-            consensus_state.into()
+            consensus_state
+                .try_into()
+                .map_err(|err| ClientError::Other {
+                    description: err.to_string(),
+                })?
         };
 
         let current_timestamp = ctx.host_timestamp()?;

@@ -18,7 +18,7 @@ use core::cmp::min;
 use core::fmt::Debug;
 use core::ops::{Add, Sub};
 use core::time::Duration;
-use derive_more::From;
+use derive_more::{From, TryInto};
 use parking_lot::Mutex;
 use subtle_encoding::bech32;
 
@@ -811,7 +811,7 @@ impl StaticClientStateInitializer<HostConsensusState> for HostClientState {
     }
 }
 
-#[derive(Debug, Clone, From)]
+#[derive(Debug, Clone, From, TryInto)]
 pub enum HostConsensusState {
     Tendermint(TmConsensusState),
     Mock(MockConsensusState),
