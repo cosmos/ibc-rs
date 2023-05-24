@@ -1,4 +1,5 @@
 use core::time::Duration;
+use derive_more::From;
 use displaydoc::Display;
 use ibc_proto::google::protobuf::Any;
 
@@ -34,7 +35,7 @@ use super::ics02_client::client_state::StaticClientState;
 use super::ics02_client::consensus_state::StaticConsensusState;
 
 /// Top-level error
-#[derive(Debug, Display)]
+#[derive(Debug, Display, From)]
 pub enum ContextError {
     /// ICS02 Client error: {0}
     ClientError(ClientError),
@@ -44,30 +45,6 @@ pub enum ContextError {
     ChannelError(ChannelError),
     /// ICS04 Packet error: {0}
     PacketError(PacketError),
-}
-
-impl From<ClientError> for ContextError {
-    fn from(err: ClientError) -> ContextError {
-        Self::ClientError(err)
-    }
-}
-
-impl From<ConnectionError> for ContextError {
-    fn from(err: ConnectionError) -> ContextError {
-        Self::ConnectionError(err)
-    }
-}
-
-impl From<ChannelError> for ContextError {
-    fn from(err: ChannelError) -> ContextError {
-        Self::ChannelError(err)
-    }
-}
-
-impl From<PacketError> for ContextError {
-    fn from(err: PacketError) -> ContextError {
-        Self::PacketError(err)
-    }
 }
 
 #[cfg(feature = "std")]
