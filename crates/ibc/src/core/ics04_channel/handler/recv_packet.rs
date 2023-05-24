@@ -18,14 +18,14 @@ use crate::core::ics24_host::path::{
 };
 use crate::core::router::ModuleId;
 use crate::core::timestamp::Expiry;
-use crate::core::{ContextError, StaticExecutionContext, StaticValidationContext};
+use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
 
 pub(crate) fn recv_packet_validate<ValCtx>(
     ctx_b: &ValCtx,
     msg: MsgRecvPacket,
 ) -> Result<(), ContextError>
 where
-    ValCtx: StaticValidationContext,
+    ValCtx: ValidationContext,
 {
     // Note: this contains the validation for `write_acknowledgement` as well.
     validate(ctx_b, &msg)
@@ -148,7 +148,7 @@ where
 
 fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 
@@ -265,7 +265,7 @@ where
 
 fn validate_write_acknowledgement<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     let packet = msg.packet.clone();
     let ack_path_on_b = AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);

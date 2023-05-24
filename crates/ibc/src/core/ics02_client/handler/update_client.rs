@@ -12,11 +12,11 @@ use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
 
 use crate::core::context::ContextError;
 
-use crate::core::{StaticExecutionContext, StaticValidationContext};
+use crate::core::{StaticExecutionContext, ValidationContext};
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     ctx.validate_message_signer(msg.signer())?;
 

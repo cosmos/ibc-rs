@@ -20,7 +20,7 @@ use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
 use crate::core::router::ModuleId;
-use crate::core::{ContextError, StaticExecutionContext, StaticValidationContext};
+use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
 
 pub(crate) enum TimeoutMsgType {
     Timeout(MsgTimeout),
@@ -33,7 +33,7 @@ pub(crate) fn timeout_packet_validate<ValCtx>(
     timeout_msg_type: TimeoutMsgType,
 ) -> Result<(), ContextError>
 where
-    ValCtx: StaticValidationContext,
+    ValCtx: ValidationContext,
 {
     match &timeout_msg_type {
         TimeoutMsgType::Timeout(msg) => validate(ctx_a, msg),
@@ -147,7 +147,7 @@ where
 
 fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeout) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 

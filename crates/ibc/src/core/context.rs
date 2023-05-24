@@ -88,7 +88,7 @@ impl std::error::Error for RouterError {
     }
 }
 
-pub trait StaticValidationContext: Router {
+pub trait ValidationContext: Router {
     type ClientValidationContext;
     type ClientExecutionContext;
     type SupportedConsensusStates: StaticConsensusState<EncodeError = ContextError>;
@@ -242,7 +242,7 @@ pub trait StaticValidationContext: Router {
     fn validate_message_signer(&self, signer: &Signer) -> Result<(), ContextError>;
 }
 
-pub trait StaticExecutionContext: StaticValidationContext {
+pub trait StaticExecutionContext: ValidationContext {
     /// Called upon successful client creation and update
     fn store_client_state(
         &mut self,

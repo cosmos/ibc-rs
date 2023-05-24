@@ -16,14 +16,14 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath,
 };
-use crate::core::{StaticExecutionContext, StaticValidationContext};
+use crate::core::{StaticExecutionContext, ValidationContext};
 use crate::prelude::*;
 
 use crate::core::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     let vars = LocalVars::new(ctx_b, &msg)?;
     validate_impl(ctx_b, &msg, &vars)
@@ -35,7 +35,7 @@ fn validate_impl<Ctx>(
     vars: &LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 
@@ -176,7 +176,7 @@ struct LocalVars {
 impl LocalVars {
     fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenTry) -> Result<Self, ContextError>
     where
-        Ctx: StaticValidationContext,
+        Ctx: ValidationContext,
     {
         let version_on_b = ctx_b.pick_version(&msg.versions_on_a)?;
 
@@ -304,7 +304,7 @@ mod tests {
                     IbcEvent::OpenTryConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = StaticValidationContext::connection_end(
+                let conn_end = ValidationContext::connection_end(
                     &fxt.ctx,
                     conn_open_try_event.connection_id(),
                 )

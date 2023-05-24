@@ -4,7 +4,7 @@ use crate::core::events::MessageEvent;
 use crate::core::ics02_client::client_state::StaticClientStateBase;
 use crate::core::ics02_client::client_state::StaticClientStateInitializer;
 use crate::core::StaticExecutionContext;
-use crate::core::StaticValidationContext;
+use crate::core::ValidationContext;
 use crate::prelude::*;
 
 use crate::core::context::ContextError;
@@ -21,7 +21,7 @@ use crate::core::ics24_host::identifier::ClientId;
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     let MsgCreateClient {
         client_state,

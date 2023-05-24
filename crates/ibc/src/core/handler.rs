@@ -29,7 +29,7 @@ use super::ics04_channel::handler::timeout::{
 };
 use super::ics04_channel::msgs::{ChannelMsg, PacketMsg};
 use super::msgs::MsgEnvelope;
-use super::{ContextError, StaticExecutionContext, StaticValidationContext};
+use super::{ContextError, StaticExecutionContext, ValidationContext};
 
 /// Entrypoint which performs both validation and message execution
 pub fn dispatch(
@@ -50,7 +50,7 @@ pub fn dispatch(
 /// `dispatch()` on each successively.
 pub fn validate<Ctx>(ctx: &Ctx, msg: MsgEnvelope) -> Result<(), RouterError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     match msg {
         MsgEnvelope::Client(msg) => match msg {

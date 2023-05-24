@@ -13,14 +13,14 @@ use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath};
-use crate::core::{StaticExecutionContext, StaticValidationContext};
+use crate::core::{StaticExecutionContext, ValidationContext};
 use crate::prelude::*;
 
 use crate::core::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     let vars = LocalVars::new(ctx_a, &msg)?;
     validate_impl(ctx_a, &msg, &vars)
@@ -32,7 +32,7 @@ fn validate_impl<Ctx>(
     vars: &LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 
@@ -180,7 +180,7 @@ struct LocalVars {
 impl LocalVars {
     fn new<Ctx>(ctx_a: &Ctx, msg: &MsgConnectionOpenAck) -> Result<Self, ContextError>
     where
-        Ctx: StaticValidationContext,
+        Ctx: ValidationContext,
     {
         Ok(LocalVars {
             conn_end_on_a: ctx_a.connection_end(&msg.conn_id_on_a)?,
@@ -336,7 +336,7 @@ mod tests {
                     IbcEvent::OpenAckConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = <MockContext as StaticValidationContext>::connection_end(
+                let conn_end = <MockContext as ValidationContext>::connection_end(
                     &fxt.ctx,
                     conn_open_try_event.connection_id(),
                 )

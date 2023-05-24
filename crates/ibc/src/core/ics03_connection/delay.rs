@@ -1,4 +1,4 @@
-use crate::core::{ics02_client::height::Height, ContextError, StaticValidationContext};
+use crate::core::{ics02_client::height::Height, ContextError, ValidationContext};
 
 use super::{connection::ConnectionEnd, error::ConnectionError};
 
@@ -8,7 +8,7 @@ pub fn verify_conn_delay_passed<Ctx>(
     connection_end: &ConnectionEnd,
 ) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     // Fetch the current host chain time and height.
     let current_host_time = ctx.host_timestamp()?;

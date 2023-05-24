@@ -14,11 +14,11 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
-use crate::core::{ContextError, StaticValidationContext};
+use crate::core::{ContextError, ValidationContext};
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 

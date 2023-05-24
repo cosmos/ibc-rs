@@ -54,7 +54,7 @@ use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, Connecti
 use crate::core::router::Router;
 use crate::core::router::{Module, ModuleId};
 use crate::core::timestamp::Timestamp;
-use crate::core::{ContextError, StaticValidationContext};
+use crate::core::{ContextError, ValidationContext};
 use crate::core::{MsgEnvelope, StaticExecutionContext};
 use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
 use crate::mock::consensus_state::MockConsensusState;
@@ -981,7 +981,7 @@ pub struct MockIbcStore {
 
 impl RelayerContext for MockContext {
     fn query_latest_height(&self) -> Result<Height, ContextError> {
-        StaticValidationContext::host_height(self)
+        ValidationContext::host_height(self)
     }
 
     fn query_client_full_state(&self, client_id: &ClientId) -> Option<HostClientState> {
@@ -990,7 +990,7 @@ impl RelayerContext for MockContext {
     }
 
     fn query_latest_header(&self) -> Option<Box<dyn Header>> {
-        let block_ref = self.host_block(&StaticValidationContext::host_height(self).unwrap());
+        let block_ref = self.host_block(&ValidationContext::host_height(self).unwrap());
         block_ref.cloned().map(Header::into_box)
     }
 
@@ -1034,18 +1034,18 @@ impl TmClientValidationContext for MockContext {
     type SupportedConsensusStates = HostConsensusState;
 
     fn host_height(&self) -> Result<Height, ContextError> {
-        StaticValidationContext::host_height(self)
+        ValidationContext::host_height(self)
     }
 
     fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
-        StaticValidationContext::host_timestamp(self)
+        ValidationContext::host_timestamp(self)
     }
 
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Self::SupportedConsensusStates, ContextError> {
-        StaticValidationContext::consensus_state(self, client_cons_state_path)
+        ValidationContext::consensus_state(self, client_cons_state_path)
     }
 
     fn next_consensus_state(
@@ -1111,11 +1111,11 @@ impl TmClientValidationContext for MockContext {
 
 impl MockClientExecutionContext for MockContext {
     fn host_height(&self) -> Result<Height, ContextError> {
-        StaticValidationContext::host_height(self)
+        ValidationContext::host_height(self)
     }
 
     fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
-        StaticValidationContext::host_timestamp(self)
+        ValidationContext::host_timestamp(self)
     }
 
     fn store_update_time(
@@ -1201,7 +1201,7 @@ impl TmClientExecutionContext for MockContext {
     }
 }
 
-impl StaticValidationContext for MockContext {
+impl ValidationContext for MockContext {
     type ClientValidationContext = Self;
     type ClientExecutionContext = Self;
     type SupportedConsensusStates = HostConsensusState;

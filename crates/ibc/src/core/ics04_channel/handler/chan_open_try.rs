@@ -17,7 +17,7 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::core::ics24_host::path::{SeqAckPath, SeqRecvPath, SeqSendPath};
 use crate::core::router::ModuleId;
-use crate::core::{ContextError, StaticExecutionContext, StaticValidationContext};
+use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
 
 pub(crate) fn chan_open_try_validate<ValCtx>(
     ctx_b: &ValCtx,
@@ -25,7 +25,7 @@ pub(crate) fn chan_open_try_validate<ValCtx>(
     msg: MsgChannelOpenTry,
 ) -> Result<(), ContextError>
 where
-    ValCtx: StaticValidationContext,
+    ValCtx: ValidationContext,
 {
     validate(ctx_b, &msg)?;
 
@@ -126,7 +126,7 @@ where
 
 fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 

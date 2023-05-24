@@ -15,7 +15,7 @@ use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::core::router::ModuleId;
-use crate::core::{ContextError, StaticExecutionContext, StaticValidationContext};
+use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
 
 pub(crate) fn chan_open_ack_validate<ValCtx>(
     ctx_a: &ValCtx,
@@ -23,7 +23,7 @@ pub(crate) fn chan_open_ack_validate<ValCtx>(
     msg: MsgChannelOpenAck,
 ) -> Result<(), ContextError>
 where
-    ValCtx: StaticValidationContext,
+    ValCtx: ValidationContext,
 {
     validate(ctx_a, &msg)?;
 
@@ -98,7 +98,7 @@ where
 
 fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenAck) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 

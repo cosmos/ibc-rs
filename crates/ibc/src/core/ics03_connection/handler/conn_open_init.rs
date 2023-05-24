@@ -9,11 +9,11 @@ use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{ClientConnectionPath, ConnectionPath};
-use crate::core::{StaticExecutionContext, StaticValidationContext};
+use crate::core::{StaticExecutionContext, ValidationContext};
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 
@@ -167,7 +167,7 @@ mod tests {
                     IbcEvent::OpenInitConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = StaticValidationContext::connection_end(
+                let conn_end = ValidationContext::connection_end(
                     &fxt.ctx,
                     conn_open_init_event.connection_id(),
                 )
@@ -196,7 +196,7 @@ mod tests {
     fn conn_open_init_no_version() {
         let mut fxt = conn_open_init_fixture(Ctx::WithClient, Msg::NoVersion);
         conn_open_init_validate(&fxt, Expect::Success);
-        let expected_version = StaticValidationContext::get_compatible_versions(&fxt.ctx.clone());
+        let expected_version = ValidationContext::get_compatible_versions(&fxt.ctx.clone());
         conn_open_init_execute(&mut fxt, Expect::Success, expected_version);
     }
     #[test]

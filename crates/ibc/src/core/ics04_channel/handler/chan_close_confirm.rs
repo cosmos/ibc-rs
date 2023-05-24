@@ -15,7 +15,7 @@ use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::core::router::ModuleId;
-use crate::core::{ContextError, StaticExecutionContext, StaticValidationContext};
+use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
 
 pub(crate) fn chan_close_confirm_validate<ValCtx>(
     ctx_b: &ValCtx,
@@ -23,7 +23,7 @@ pub(crate) fn chan_close_confirm_validate<ValCtx>(
     msg: MsgChannelCloseConfirm,
 ) -> Result<(), ContextError>
 where
-    ValCtx: StaticValidationContext,
+    ValCtx: ValidationContext,
 {
     validate(ctx_b, &msg)?;
 
@@ -102,7 +102,7 @@ where
 
 fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelCloseConfirm) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 

@@ -12,14 +12,14 @@ use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenCon
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ConnectionPath};
-use crate::core::{StaticExecutionContext, StaticValidationContext};
+use crate::core::{StaticExecutionContext, ValidationContext};
 use crate::prelude::*;
 
 use crate::core::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     let vars = LocalVars::new(ctx_b, msg)?;
     validate_impl(ctx_b, msg, &vars)
@@ -31,7 +31,7 @@ fn validate_impl<Ctx>(
     vars: &LocalVars,
 ) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 
@@ -137,7 +137,7 @@ struct LocalVars {
 impl LocalVars {
     fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<Self, ContextError>
     where
-        Ctx: StaticValidationContext,
+        Ctx: ValidationContext,
     {
         Ok(Self {
             conn_end_on_b: ctx_b.connection_end(&msg.conn_id_on_b)?,
@@ -202,7 +202,7 @@ mod tests {
             State::Init,
             client_id.clone(),
             counterparty,
-            StaticValidationContext::get_compatible_versions(&ctx_default),
+            ValidationContext::get_compatible_versions(&ctx_default),
             ZERO_DURATION,
         )
         .unwrap();
@@ -258,7 +258,7 @@ mod tests {
                     IbcEvent::OpenConfirmConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = StaticValidationContext::connection_end(
+                let conn_end = ValidationContext::connection_end(
                     &fxt.ctx,
                     conn_open_try_event.connection_id(),
                 )

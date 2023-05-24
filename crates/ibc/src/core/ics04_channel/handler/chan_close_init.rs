@@ -10,7 +10,7 @@ use crate::core::ics04_channel::events::CloseInit;
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
 use crate::core::ics24_host::path::ChannelEndPath;
 use crate::core::router::ModuleId;
-use crate::core::{ContextError, StaticExecutionContext, StaticValidationContext};
+use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
 
 pub(crate) fn chan_close_init_validate<ValCtx>(
     ctx_a: &ValCtx,
@@ -18,7 +18,7 @@ pub(crate) fn chan_close_init_validate<ValCtx>(
     msg: MsgChannelCloseInit,
 ) -> Result<(), ContextError>
 where
-    ValCtx: StaticValidationContext,
+    ValCtx: ValidationContext,
 {
     validate(ctx_a, &msg)?;
 
@@ -98,7 +98,7 @@ where
 
 fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelCloseInit) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 

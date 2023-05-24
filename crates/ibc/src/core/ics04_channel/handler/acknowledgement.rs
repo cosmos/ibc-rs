@@ -15,7 +15,7 @@ use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqAckPath,
 };
 use crate::core::{events::IbcEvent, ics04_channel::events::AcknowledgePacket, router::ModuleId};
-use crate::core::{ContextError, StaticExecutionContext, StaticValidationContext};
+use crate::core::{ContextError, StaticExecutionContext, ValidationContext};
 
 pub(crate) fn acknowledgement_packet_validate<ValCtx>(
     ctx_a: &ValCtx,
@@ -23,7 +23,7 @@ pub(crate) fn acknowledgement_packet_validate<ValCtx>(
     msg: MsgAcknowledgement,
 ) -> Result<(), ContextError>
 where
-    ValCtx: StaticValidationContext,
+    ValCtx: ValidationContext,
 {
     validate(ctx_a, &msg)?;
 
@@ -120,7 +120,7 @@ where
 
 fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgAcknowledgement) -> Result<(), ContextError>
 where
-    Ctx: StaticValidationContext,
+    Ctx: ValidationContext,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 
