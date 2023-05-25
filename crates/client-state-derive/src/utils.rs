@@ -29,7 +29,9 @@ pub fn get_enum_variant_type_path(enum_variant: &Variant) -> &Path {
 
     let type_path = match &unnamed_field.ty {
         syn::Type::Path(path) => &path.path,
-        _ => panic!("Invalid enum variant {variant_name} field. Please use an explicit, named type."),
+        _ => {
+            panic!("Invalid enum variant {variant_name} field. Please use an explicit, named type.")
+        }
     };
 
     type_path

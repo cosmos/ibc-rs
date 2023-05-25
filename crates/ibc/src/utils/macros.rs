@@ -47,4 +47,3 @@ macro_rules! downcast {
         None
     }
 }
-

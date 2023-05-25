@@ -48,4 +48,3 @@ pub use msgs::MsgEnvelope;
 pub use ics04_channel::handler::send_packet::{
     send_packet, send_packet_execute, send_packet_validate,
 };
-
