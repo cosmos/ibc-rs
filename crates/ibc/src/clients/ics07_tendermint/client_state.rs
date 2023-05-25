@@ -417,8 +417,8 @@ impl Ics2ClientState for ClientState {
         &self,
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
-        proof_upgrade_client: RawMerkleProof,
-        proof_upgrade_consensus_state: RawMerkleProof,
+        proof_upgrade_client: MerkleProof,
+        proof_upgrade_consensus_state: MerkleProof,
         root: &CommitmentRoot,
     ) -> Result<(), ClientError> {
         // Make sure that the client type is of Tendermint type `ClientState`
@@ -426,11 +426,6 @@ impl Ics2ClientState for ClientState {
 
         // Make sure that the consensus type is of Tendermint type `ConsensusState`
         TmConsensusState::try_from(upgraded_consensus_state.clone())?;
-
-        // Note: verification of proofs that unmarshalled correctly has been done
-        // while decoding the proto message into a `MsgEnvelope` domain type
-        let merkle_proof_upgrade_client = MerkleProof::from(proof_upgrade_client);
-        let merkle_proof_upgrade_cons_state = MerkleProof::from(proof_upgrade_consensus_state);
 
         // Make sure the latest height of the current client is not greater then
         // the upgrade height This condition checks both the revision number and
@@ -468,7 +463,7 @@ impl Ics2ClientState for ClientState {
             .map_err(ClientError::Encode)?;
 
         // Verify the proof of the upgraded client state
-        merkle_proof_upgrade_client
+        proof_upgrade_client
             .verify_membership(
                 &self.proof_specs,
                 root.clone().into(),
@@ -492,7 +487,7 @@ impl Ics2ClientState for ClientState {
             .map_err(ClientError::Encode)?;
 
         // Verify the proof of the upgraded consensus state
-        merkle_proof_upgrade_cons_state
+        proof_upgrade_consensus_state
             .verify_membership(
                 &self.proof_specs,
                 root.clone().into(),
