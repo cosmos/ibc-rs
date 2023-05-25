@@ -48,4 +48,3 @@ macro_rules! downcast {
     }
 }
 
-pub use client_state_derive::ClientState;

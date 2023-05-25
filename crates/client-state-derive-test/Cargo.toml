@@ -1,0 +1,9 @@
+[package]
+name = "client-state-derive-test"
+version = "0.1.0"
+edition = "2021"
+
+
+[dev-dependencies]
+ibc = { path = "../ibc"}
+ibc-proto = {version = "0.30.0", default-features = false }

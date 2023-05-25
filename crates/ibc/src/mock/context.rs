@@ -624,8 +624,9 @@ pub enum HostClientState {
 impl ClientStateBase for HostClientState {
     fn client_type(&self) -> ClientType {
         match self {
-            HostClientState::Tendermint(cs) => cs.client_type(),
-            HostClientState::Mock(cs) => cs.client_type(),
+            // Note: `TmClientState` can't be generic (or else I need special logic to generate the <..>)
+            HostClientState::Tendermint(cs) => <TmClientState as ClientStateBase>::client_type(cs),
+            HostClientState::Mock(cs) => <MockClientState as ClientStateBase>::client_type(cs),
         }
     }
 
