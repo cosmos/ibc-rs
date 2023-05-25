@@ -47,3 +47,5 @@ macro_rules! downcast {
         None
     }
 }
+
+pub use client_state_derive::ClientState;
