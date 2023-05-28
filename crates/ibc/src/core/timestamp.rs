@@ -77,7 +77,7 @@ impl scale_info::TypeInfo for Timestamp {
             .path(scale_info::Path::new("Timestamp", module_path!()))
             .composite(
                 scale_info::build::Fields::named()
-                    .field(|f| f.ty::<u6>().name("time").type_name("u64")),
+                    .field(|f| f.ty::<u64>().name("time").type_name("u64")),
             )
     }
 }
