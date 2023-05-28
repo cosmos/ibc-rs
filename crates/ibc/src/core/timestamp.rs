@@ -75,12 +75,10 @@ impl scale_info::TypeInfo for Timestamp {
     fn type_info() -> scale_info::Type {
         scale_info::Type::builder()
             .path(scale_info::Path::new("Timestamp", module_path!()))
-            // i128 is chosen before we represent the timestamp is nanoseconds, which is represented as a i128 by Time
-            .composite(scale_info::build::Fields::named().field(|f| {
-                f.ty::<Option<i128>>()
-                    .name("time")
-                    .type_name("Option<i128>")
-            }))
+            .composite(
+                scale_info::build::Fields::named()
+                    .field(|f| f.ty::<u6>().name("time").type_name("u64")),
+            )
     }
 }
 
