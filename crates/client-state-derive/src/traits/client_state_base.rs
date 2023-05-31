@@ -15,15 +15,11 @@ pub fn impl_ClientStateBase(
     let client_type_impl = client_type(enum_name, enum_variants.iter());
     let validate_proof_height_impl = validate_proof_height(&enum_name, enum_variants.iter());
 
-    // FIXME: what if the user renames the `ibc` package?
-    // We also can't currently use in ibc crate's test, since we need to import as `crate::...`
     let ClientStateBase = Imports::ClientStateBase();
     let ClientType = Imports::ClientType();
     let ClientError = Imports::ClientError();
     let Height = Imports::Height();
 
-    // TODO: Make this in a function ClientStateBaseTokens -> TokenStream,
-    // which implements that trait
     quote! {
         impl #ClientStateBase for #enum_name {
             fn client_type(&self) -> #ClientType {
