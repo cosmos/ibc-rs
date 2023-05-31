@@ -168,7 +168,7 @@ mod sealed {
     #[cfg(feature = "borsh")]
     impl borsh::BorshDeserialize for ConnectionEnd {
         fn deserialize(reader: &mut &[u8]) -> borsh::maybestd::io::Result<Self> {
-            let inner_conn_end = InnerConnectionEnd::deserialize_reader(reader)?;
+            let inner_conn_end = InnerConnectionEnd::deserialize(reader)?;
             Ok(ConnectionEnd::from(inner_conn_end))
         }
     }
