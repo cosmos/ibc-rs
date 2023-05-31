@@ -12,14 +12,38 @@ pub fn impl_ClientStateBase(
     enum_name: &Ident,
     enum_variants: &Punctuated<Variant, Comma>,
 ) -> TokenStream {
-    let client_type_impl = client_type(enum_name, enum_variants.iter());
-    let latest_height_impl = latest_height(enum_name, enum_variants.iter());
-    let validate_proof_height_impl = validate_proof_height(&enum_name, enum_variants.iter());
+    let client_type_impl =
+        delegate_call_in_match(enum_name, enum_variants.iter(), quote! {client_type(cs)});
+    let latest_height_impl =
+        delegate_call_in_match(enum_name, enum_variants.iter(), quote! {latest_height(cs)});
+    let validate_proof_height_impl = delegate_call_in_match(
+        &enum_name,
+        enum_variants.iter(),
+        quote! {validate_proof_height(cs, proof_height)},
+    );
+    let confirm_not_frozen_impl = delegate_call_in_match(
+        enum_name,
+        enum_variants.iter(),
+        quote! {confirm_not_frozen(cs)},
+    );
+    let expired_impl = delegate_call_in_match(
+        enum_name,
+        enum_variants.iter(),
+        quote! {expired(cs, elapsed)},
+    );
+    let verify_upgrade_client_impl = delegate_call_in_match(
+        enum_name,
+        enum_variants.iter(),
+        quote! {verify_upgrade_client(cs, upgraded_client_state, upgraded_consensus_state, proof_upgrade_client, proof_upgrade_consensus_state, root)},
+    );
 
+    let Any = Imports::Any();
+    let CommitmentRoot = Imports::CommitmentRoot();
     let ClientStateBase = Imports::ClientStateBase();
     let ClientType = Imports::ClientType();
     let ClientError = Imports::ClientError();
     let Height = Imports::Height();
+    let MerkleProof = Imports::MerkleProof();
 
     quote! {
         impl #ClientStateBase for #enum_name {
@@ -38,48 +62,75 @@ pub fn impl_ClientStateBase(
                     #(#validate_proof_height_impl),*
                 }
             }
+            fn confirm_not_frozen(&self) -> Result<(), #ClientError> {
+                match self {
+                    #(#confirm_not_frozen_impl),*
+                }
+            }
+            fn expired(&self, elapsed: core::time::Duration) -> bool {
+                match self {
+                    #(#expired_impl),*
+                }
+            }
+            fn verify_upgrade_client(
+                &self,
+                upgraded_client_state: #Any,
+                upgraded_consensus_state: #Any,
+                proof_upgrade_client: #MerkleProof,
+                proof_upgrade_consensus_state: #MerkleProof,
+                root: &#CommitmentRoot,
+            ) -> Result<(), #ClientError> {
+                match self {
+                    #(#verify_upgrade_client_impl),*
+                }
+            }
         }
 
     }
 }
 
-fn client_type(enum_name: &Ident, enum_variants: Iter<Variant>) -> Vec<TokenStream> {
+/**
+* Generates the per-enum variant function call delegation token streams.
+*
+* enum_name:     The user's enum identifier (e.g. `HostClientState`)
+* enum_variants: An iterator of all enum variants (e.g. `[HostClientState::Tendermint, HostClientState::Mock]`)
+* fn_call:       The tokens for the function call. Fully-qualified syntax is assumed, where the name for `self`
+*                  is `cs` (e.g. `client_type(cs)`).
+*
+*
+* For example,
+*
+* ```rust
+* impl ClientStateBase for HostClientState {
+*   fn client_type(&self) -> ClientType {
+*     match self {
+*       /*  BEGIN code generated */
+
+*       // 1st TokenStream returned
+*       HostClientState::Tendermint(cs) => <TmClientState as ClientStateBase>::client_type(cs),
+*       // 2nd TokenStream returned
+*       HostClientState::Mock(cs) => <MockClientState as ClientStateBase>::client_type(cs),
+*
+*       /*  END code generated */
+*     }
+*   }
+* }
+* ```
+*/
+fn delegate_call_in_match(
+    enum_name: &Ident,
+    enum_variants: Iter<Variant>,
+    fn_call: TokenStream,
+) -> Vec<TokenStream> {
     let ClientStateBase = Imports::ClientStateBase();
 
     enum_variants
         .map(|variant| {
             let variant_name = &variant.ident;
             let variant_type_name = get_enum_variant_type_path(variant);
+
             quote! {
-                #enum_name::#variant_name(cs) => <#variant_type_name as #ClientStateBase>::client_type(cs)
-            }
-        })
-        .collect()
-}
-
-fn latest_height(enum_name: &Ident, enum_variants: Iter<Variant>) -> Vec<TokenStream> {
-    let ClientStateBase = Imports::ClientStateBase();
-
-    enum_variants
-        .map(|variant| {
-            let variant_name = &variant.ident;
-            let variant_type_name = get_enum_variant_type_path(variant);
-            quote! {
-                #enum_name::#variant_name(cs) => <#variant_type_name as #ClientStateBase>::latest_height(cs)
-            }
-        })
-        .collect()
-}
-
-fn validate_proof_height(enum_name: &Ident, enum_variants: Iter<Variant>) -> Vec<TokenStream> {
-    let ClientStateBase = Imports::ClientStateBase();
-
-    enum_variants
-        .map(|variant| {
-            let variant_name = &variant.ident;
-            let variant_type_name = get_enum_variant_type_path(variant);
-            quote! {
-                #enum_name::#variant_name(cs) => <#variant_type_name as #ClientStateBase>::validate_proof_height(cs, proof_height)
+                #enum_name::#variant_name(cs) => <#variant_type_name as #ClientStateBase>::#fn_call
             }
         })
         .collect()

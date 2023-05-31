@@ -32,7 +32,7 @@ mod test {
             todo!()
         }
 
-        fn expired(&self, elapsed: std::time::Duration) -> bool {
+        fn expired(&self, elapsed: core::time::Duration) -> bool {
             todo!()
         }
 
