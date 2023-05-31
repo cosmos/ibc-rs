@@ -1,4 +1,27 @@
+use proc_macro2::TokenStream;
+use quote::quote;
 use syn::{Path, Variant};
+
+/// Encodes the ibc-rs types that will be used in the macro
+pub struct Imports;
+
+impl Imports {
+    pub fn ClientStateBase() -> TokenStream {
+        quote! {::ibc::core::ics02_client::client_state::ClientStateBase}
+    }
+
+    pub fn ClientType() -> TokenStream {
+        quote! {::ibc::core::ics02_client::client_type::ClientType}
+    }
+
+    pub fn ClientError() -> TokenStream {
+        quote! {::ibc::core::ics02_client::error::ClientError}
+    }
+
+    pub fn Height() -> TokenStream {
+        quote! {::ibc::Height}
+    }
+}
 
 /// Retrieves the field of a given enum variant. Outputs an error message if the enum variant
 /// is in the wrong format (i.e. isn't an unnamed enum, or contains more than one field).

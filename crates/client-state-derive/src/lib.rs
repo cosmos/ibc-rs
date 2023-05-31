@@ -6,6 +6,7 @@ use proc_macro::TokenStream as RawTokenStream;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::{parse_macro_input, punctuated::Iter, DeriveInput, Variant};
+use utils::Imports;
 
 use crate::utils::get_enum_variant_type_path;
 
@@ -32,10 +33,10 @@ fn derive_impl(ast: DeriveInput) -> TokenStream {
 
     // FIXME: what if the user renames the `ibc` package?
     // We also can't currently use in ibc crate's test, since we need to import as `crate::...`
-    let ClientStateBase = quote! {::ibc::core::ics02_client::client_state::ClientStateBase};
-    let ClientType = quote! {::ibc::core::ics02_client::client_type::ClientType};
-    let ClientError = quote! {::ibc::core::ics02_client::error::ClientError};
-    let Height = quote! {::ibc::Height};
+    let ClientStateBase = Imports::ClientStateBase();
+    let ClientType = Imports::ClientType();
+    let ClientError = Imports::ClientError();
+    let Height = Imports::Height();
 
     // TODO: Make this in a function ClientStateBaseTokens -> TokenStream,
     // which implements that trait
@@ -57,7 +58,7 @@ fn derive_impl(ast: DeriveInput) -> TokenStream {
 }
 
 fn client_type(enum_name: &Ident, enum_variants: Iter<Variant>) -> Vec<TokenStream> {
-    let ClientStateBase = quote! {::ibc::core::ics02_client::client_state::ClientStateBase};
+    let ClientStateBase = Imports::ClientStateBase();
 
     enum_variants
         .map(|variant| {
@@ -71,7 +72,7 @@ fn client_type(enum_name: &Ident, enum_variants: Iter<Variant>) -> Vec<TokenStre
 }
 
 fn validate_proof_height(enum_name: &Ident, enum_variants: Iter<Variant>) -> Vec<TokenStream> {
-    let ClientStateBase = quote! {::ibc::core::ics02_client::client_state::ClientStateBase};
+    let ClientStateBase = Imports::ClientStateBase();
 
     enum_variants
         .map(|variant| {
