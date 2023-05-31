@@ -17,7 +17,7 @@ pub fn impl_ClientStateBase(
     let latest_height_impl =
         delegate_call_in_match(enum_name, enum_variants.iter(), quote! {latest_height(cs)});
     let validate_proof_height_impl = delegate_call_in_match(
-        &enum_name,
+        enum_name,
         enum_variants.iter(),
         quote! {validate_proof_height(cs, proof_height)},
     );
@@ -36,14 +36,27 @@ pub fn impl_ClientStateBase(
         enum_variants.iter(),
         quote! {verify_upgrade_client(cs, upgraded_client_state, upgraded_consensus_state, proof_upgrade_client, proof_upgrade_consensus_state, root)},
     );
+    let verify_membership_impl = delegate_call_in_match(
+        enum_name,
+        enum_variants.iter(),
+        quote! {verify_membership(cs, prefix, proof, root, path, value)},
+    );
+    let verify_non_membership_impl = delegate_call_in_match(
+        enum_name,
+        enum_variants.iter(),
+        quote! {verify_non_membership(cs, prefix, proof, root, path)},
+    );
 
     let Any = Imports::Any();
     let CommitmentRoot = Imports::CommitmentRoot();
+    let CommitmentPrefix = Imports::CommitmentPrefix();
+    let CommitmentProofBytes = Imports::CommitmentProofBytes();
     let ClientStateBase = Imports::ClientStateBase();
     let ClientType = Imports::ClientType();
     let ClientError = Imports::ClientError();
     let Height = Imports::Height();
     let MerkleProof = Imports::MerkleProof();
+    let Path = Imports::Path();
 
     quote! {
         impl #ClientStateBase for #enum_name {
@@ -52,26 +65,31 @@ pub fn impl_ClientStateBase(
                     #(#client_type_impl),*
                 }
             }
+
             fn latest_height(&self) -> #Height {
                 match self {
                     #(#latest_height_impl),*
                 }
             }
+
             fn validate_proof_height(&self, proof_height: #Height) -> Result<(), #ClientError> {
                 match self {
                     #(#validate_proof_height_impl),*
                 }
             }
+
             fn confirm_not_frozen(&self) -> Result<(), #ClientError> {
                 match self {
                     #(#confirm_not_frozen_impl),*
                 }
             }
+
             fn expired(&self, elapsed: core::time::Duration) -> bool {
                 match self {
                     #(#expired_impl),*
                 }
             }
+
             fn verify_upgrade_client(
                 &self,
                 upgraded_client_state: #Any,
@@ -82,6 +100,31 @@ pub fn impl_ClientStateBase(
             ) -> Result<(), #ClientError> {
                 match self {
                     #(#verify_upgrade_client_impl),*
+                }
+            }
+
+            fn verify_membership(
+                &self,
+                prefix: &#CommitmentPrefix,
+                proof: &#CommitmentProofBytes,
+                root: &#CommitmentRoot,
+                path: #Path,
+                value: Vec<u8>,
+            ) -> Result<(), #ClientError> {
+                match self {
+                    #(#verify_membership_impl),*
+                }
+            }
+
+            fn verify_non_membership(
+                &self,
+                prefix: &#CommitmentPrefix,
+                proof: &#CommitmentProofBytes,
+                root: &#CommitmentRoot,
+                path: #Path,
+            ) -> Result<(), #ClientError> {
+                match self {
+                    #(#verify_non_membership_impl),*
                 }
             }
         }
@@ -119,7 +162,7 @@ pub fn impl_ClientStateBase(
 */
 fn delegate_call_in_match(
     enum_name: &Ident,
-    enum_variants: Iter<Variant>,
+    enum_variants: Iter<'_, Variant>,
     fn_call: TokenStream,
 ) -> Vec<TokenStream> {
     let ClientStateBase = Imports::ClientStateBase();

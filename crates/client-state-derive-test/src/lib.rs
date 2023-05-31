@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 #[cfg(test)]
 mod test {
     use ibc::core::ics02_client::ClientState;
@@ -23,7 +25,7 @@ mod test {
 
         fn validate_proof_height(
             &self,
-            proof_height: ibc::Height,
+            _proof_height: ibc::Height,
         ) -> Result<(), ibc::core::ics02_client::error::ClientError> {
             todo!()
         }
@@ -32,38 +34,38 @@ mod test {
             todo!()
         }
 
-        fn expired(&self, elapsed: core::time::Duration) -> bool {
+        fn expired(&self, _elapsed: core::time::Duration) -> bool {
             todo!()
         }
 
         fn verify_upgrade_client(
             &self,
-            upgraded_client_state: Any,
-            upgraded_consensus_state: Any,
-            proof_upgrade_client: MerkleProof,
-            proof_upgrade_consensus_state: MerkleProof,
-            root: &ibc::core::ics23_commitment::commitment::CommitmentRoot,
+            _upgraded_client_state: Any,
+            _upgraded_consensus_state: Any,
+            _proof_upgrade_client: MerkleProof,
+            _proof_upgrade_consensus_state: MerkleProof,
+            _root: &ibc::core::ics23_commitment::commitment::CommitmentRoot,
         ) -> Result<(), ibc::core::ics02_client::error::ClientError> {
             todo!()
         }
 
         fn verify_membership(
             &self,
-            prefix: &ibc::core::ics23_commitment::commitment::CommitmentPrefix,
-            proof: &ibc::core::ics23_commitment::commitment::CommitmentProofBytes,
-            root: &ibc::core::ics23_commitment::commitment::CommitmentRoot,
-            path: ibc::core::ics24_host::path::Path,
-            value: Vec<u8>,
+            _prefix: &ibc::core::ics23_commitment::commitment::CommitmentPrefix,
+            _proof: &ibc::core::ics23_commitment::commitment::CommitmentProofBytes,
+            _root: &ibc::core::ics23_commitment::commitment::CommitmentRoot,
+            _path: ibc::core::ics24_host::path::Path,
+            _value: Vec<u8>,
         ) -> Result<(), ibc::core::ics02_client::error::ClientError> {
             todo!()
         }
 
         fn verify_non_membership(
             &self,
-            prefix: &ibc::core::ics23_commitment::commitment::CommitmentPrefix,
-            proof: &ibc::core::ics23_commitment::commitment::CommitmentProofBytes,
-            root: &ibc::core::ics23_commitment::commitment::CommitmentRoot,
-            path: ibc::core::ics24_host::path::Path,
+            _prefix: &ibc::core::ics23_commitment::commitment::CommitmentPrefix,
+            _proof: &ibc::core::ics23_commitment::commitment::CommitmentProofBytes,
+            _root: &ibc::core::ics23_commitment::commitment::CommitmentRoot,
+            _path: ibc::core::ics24_host::path::Path,
         ) -> Result<(), ibc::core::ics02_client::error::ClientError> {
             todo!()
         }

@@ -3,7 +3,7 @@ use quote::quote;
 use syn::{Path, Variant};
 
 /// Encodes the ibc-rs types that will be used in the macro
-/// 
+///
 /// Note: we use `_ibc` as our top-level crate, due to the
 /// `extern crate ibc as _ibc;` statement we inject.
 pub struct Imports;
@@ -12,7 +12,19 @@ impl Imports {
     pub fn CommitmentRoot() -> TokenStream {
         quote! {_ibc::core::ics23_commitment::commitment::CommitmentRoot}
     }
-    
+
+    pub fn CommitmentPrefix() -> TokenStream {
+        quote! {_ibc::core::ics23_commitment::commitment::CommitmentPrefix}
+    }
+
+    pub fn CommitmentProofBytes() -> TokenStream {
+        quote! {_ibc::core::ics23_commitment::commitment::CommitmentProofBytes}
+    }
+
+    pub fn Path() -> TokenStream {
+        quote! {_ibc::core::ics24_host::path::Path}
+    }
+
     pub fn ClientStateBase() -> TokenStream {
         quote! {_ibc::core::ics02_client::client_state::ClientStateBase}
     }
@@ -30,7 +42,7 @@ impl Imports {
     }
 
     pub fn Any() -> TokenStream {
-        quote!{ibc_proto::google::protobuf::Any}
+        quote! {ibc_proto::google::protobuf::Any}
     }
 
     pub fn MerkleProof() -> TokenStream {
