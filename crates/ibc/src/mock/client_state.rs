@@ -19,11 +19,11 @@ use crate::core::ics23_commitment::merkle::MerkleProof;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
+use crate::core::timestamp::Timestamp;
 use crate::mock::client_state::client_type as mock_client_type;
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::mock::misbehaviour::Misbehaviour;
-use crate::core::timestamp::Timestamp;
 
 use crate::Height;
 
