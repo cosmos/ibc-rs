@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 mod utils;
 
 use proc_macro::TokenStream as RawTokenStream;
@@ -54,7 +56,6 @@ fn derive_impl(ast: DeriveInput) -> TokenStream {
     }
 }
 
-#[allow(non_snake_case)]
 fn client_type(enum_name: &Ident, enum_variants: Iter<Variant>) -> Vec<TokenStream> {
     let ClientStateBase = quote! {::ibc::core::ics02_client::client_state::ClientStateBase};
 
@@ -69,7 +70,6 @@ fn client_type(enum_name: &Ident, enum_variants: Iter<Variant>) -> Vec<TokenStre
         .collect()
 }
 
-#[allow(non_snake_case)]
 fn validate_proof_height(enum_name: &Ident, enum_variants: Iter<Variant>) -> Vec<TokenStream> {
     let ClientStateBase = quote! {::ibc::core::ics02_client::client_state::ClientStateBase};
 
