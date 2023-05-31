@@ -9,3 +9,6 @@ members = [
 exclude = [
     "ci/no-std-check",
 ]
+
+[patch.crates-io]
+ibc-proto = { git = "https://github.com/DaviRain-Su/ibc-proto-rs.git", branch = "borsh-v0.9"}
