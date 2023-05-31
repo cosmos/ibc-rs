@@ -5,13 +5,13 @@ use core::marker::{Send, Sync};
 use core::time::Duration;
 
 use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::core::commitment::v1::MerkleProof;
 
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
+use crate::core::ics23_commitment::merkle::MerkleProof;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::Path;
 use crate::prelude::*;

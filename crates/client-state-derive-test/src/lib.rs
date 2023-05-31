@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod test {
     use ibc::core::ics02_client::ClientState;
+    use ibc::core::ics23_commitment::merkle::MerkleProof;
     use ibc::{core::ics02_client::client_state::ClientStateBase, Any};
-    use ibc_proto::ibc::core::commitment::v1::MerkleProof;
 
     #[derive(Debug, PartialEq, Clone, ClientState)]
     enum HostClientState {

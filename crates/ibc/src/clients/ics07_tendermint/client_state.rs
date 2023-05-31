@@ -504,8 +504,8 @@ impl ClientStateBase for ClientState {
         &self,
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
-        proof_upgrade_client: RawMerkleProof,
-        proof_upgrade_consensus_state: RawMerkleProof,
+        proof_upgrade_client: MerkleProof,
+        proof_upgrade_consensus_state: MerkleProof,
         root: &CommitmentRoot,
     ) -> Result<(), ClientError> {
         // Make sure that the client type is of Tendermint type `ClientState`

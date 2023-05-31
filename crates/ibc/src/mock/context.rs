@@ -6,6 +6,7 @@ use crate::applications::transfer::context::{
 use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::PrefixedCoin;
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
+use crate::core::ics23_commitment::merkle::MerkleProof;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
@@ -662,8 +663,8 @@ impl ClientStateBase for HostClientState {
         &self,
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
-        proof_upgrade_client: ibc_proto::ibc::core::commitment::v1::MerkleProof,
-        proof_upgrade_consensus_state: ibc_proto::ibc::core::commitment::v1::MerkleProof,
+        proof_upgrade_client: MerkleProof,
+        proof_upgrade_consensus_state: MerkleProof,
         root: &CommitmentRoot,
     ) -> Result<(), ClientError> {
         match self {
