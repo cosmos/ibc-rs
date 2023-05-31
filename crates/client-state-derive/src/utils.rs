@@ -7,19 +7,19 @@ pub struct Imports;
 
 impl Imports {
     pub fn ClientStateBase() -> TokenStream {
-        quote! {::ibc::core::ics02_client::client_state::ClientStateBase}
+        quote! {_ibc::core::ics02_client::client_state::ClientStateBase}
     }
 
     pub fn ClientType() -> TokenStream {
-        quote! {::ibc::core::ics02_client::client_type::ClientType}
+        quote! {_ibc::core::ics02_client::client_type::ClientType}
     }
 
     pub fn ClientError() -> TokenStream {
-        quote! {::ibc::core::ics02_client::error::ClientError}
+        quote! {_ibc::core::ics02_client::error::ClientError}
     }
 
     pub fn Height() -> TokenStream {
-        quote! {::ibc::Height}
+        quote! {_ibc::Height}
     }
 }
 

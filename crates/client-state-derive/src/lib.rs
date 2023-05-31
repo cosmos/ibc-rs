@@ -29,6 +29,13 @@ fn derive_impl(ast: DeriveInput) -> TokenStream {
     let ClientStateBase_impl_block = impl_ClientStateBase(&enum_name, &enum_variants);
 
     quote! {
-        #ClientStateBase_impl_block
+        #[doc(hidden)]
+        #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
+        const _: () = {
+            #[allow(unused_extern_crates, clippy::useless_attribute)]
+            extern crate ibc as _ibc;
+
+            #ClientStateBase_impl_block
+        };
     }
 }
