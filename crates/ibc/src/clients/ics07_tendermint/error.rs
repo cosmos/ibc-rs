@@ -17,7 +17,7 @@ use tendermint_light_client_verifier::Verdict;
 /// The main error type
 #[derive(Debug, Display)]
 pub enum Error {
-    /// chain-id is (`{chain_id}`) is too long, got: `{len}`, max allowed: `{max_len}`
+    /// chain-id (`{chain_id}`) is too long, got: `{len}`, max allowed: `{max_len}`
     ChainIdTooLong {
         chain_id: ChainId,
         len: usize,
@@ -101,6 +101,8 @@ pub enum Error {
     MisbehaviourHeadersNotAtSameHeight,
     /// invalid raw client id: `{client_id}`
     InvalidRawClientId { client_id: String },
+    /// chain-id (`{chain_id}`) has no epoch version
+    InvalidRawChainId { chain_id: String },
 }
 
 #[cfg(feature = "std")]

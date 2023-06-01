@@ -3,8 +3,8 @@
 pub(crate) mod validate;
 use validate::*;
 
-use core::convert::{From, Infallible};
-use core::fmt::{Debug, Display, Error as FmtError, Formatter};
+use core::convert::From;
+use core::fmt::{Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use derive_more::Into;
@@ -59,25 +59,12 @@ impl ChainId {
     /// use ibc::core::ics24_host::identifier::ChainId;
     ///
     /// let epoch_number = 10;
-    /// let id = ChainId::new("chainA".to_string(), epoch_number);
+    /// let id = ChainId::new("chainA", epoch_number);
     /// assert_eq!(id.version(), epoch_number);
     /// ```
-    pub fn new(name: String, version: u64) -> Self {
+    pub fn new(name: &str, version: u64) -> Self {
         Self {
             id: format!("{name}-{version}"),
-            version,
-        }
-    }
-
-    pub fn from_string(id: &str) -> Self {
-        let version = if Self::is_epoch_format(id) {
-            Self::chain_version(id)
-        } else {
-            0
-        };
-
-        Self {
-            id: id.to_string(),
             version,
         }
     }
@@ -103,16 +90,7 @@ impl ChainId {
     /// assert_eq!(ChainId::chain_version("testnet-helloworld-2"), 2);
     /// ```
     pub fn chain_version(chain_id: &str) -> u64 {
-        if !ChainId::is_epoch_format(chain_id) {
-            return 0;
-        }
-
-        let split: Vec<_> = chain_id.split('-').collect();
-        split
-            .last()
-            .expect("get revision number from chain_id")
-            .parse()
-            .unwrap_or(0)
+        Self::split_chain_id(chain_id).1.unwrap_or(0)
     }
 
     /// is_epoch_format() checks if a chain_id is in the format required for parsing epochs
@@ -123,46 +101,125 @@ impl ChainId {
     /// assert_eq!(ChainId::is_epoch_format("chainA"), false);
     /// assert_eq!(ChainId::is_epoch_format("chainA-1"), true);
     /// assert_eq!(ChainId::is_epoch_format("c-1"), true);
+    /// assert_eq!(ChainId::is_epoch_format("-1"), false);
     /// ```
     pub fn is_epoch_format(chain_id: &str) -> bool {
-        let re = safe_regex::regex!(br".*[^-]-[1-9][0-9]*");
-        re.is_match(chain_id.as_bytes())
+        Self::split_chain_id(chain_id).1.is_some()
     }
 
-    /// with_version() checks if a chain_id is in the format required for parsing epochs, and if so
-    /// replaces it's version with the specified version
+    /// If the chain id is in epoch format, replaces its version with the one
+    /// given.
+    ///
+    /// On success returns modified chain id as `Ok` value.  If the chain id is
+    /// not in epoch format or it’s in invalid format returns `Err` value.
+    ///
+    ///
     /// ```
-    /// use ibc::core::ics24_host::identifier::ChainId;
-    /// assert_eq!(ChainId::new("chainA".to_string(), 1).with_version(2), ChainId::new("chainA".to_string(), 2));
-    /// assert_eq!("chain1".parse::<ChainId>().unwrap().with_version(2), "chain1".parse::<ChainId>().unwrap());
+    /// # use ibc::core::ics24_host::identifier::ChainId;
+    /// use tendermint::chain::Id;
+    ///
+    /// // Hack to be able to create ids in non-epoch format.
+    /// // For demonstration purposes only.
+    /// fn raw_id(id: &str) -> ChainId { Id::try_from(id).unwrap().into() }
+    ///
+    /// assert_eq!(ChainId::new("chainA", 1).with_version(2),
+    ///            Ok(ChainId::new("chainA", 2)));
+    /// assert_eq!(raw_id("chain1").with_version(2),
+    ///            Err(raw_id("chain1")));
+    /// assert_eq!(raw_id("chain-0").with_version(2),
+    ///            Err(raw_id("chain-0")));
     /// ```
-    pub fn with_version(mut self, version: u64) -> Self {
-        if Self::is_epoch_format(&self.id) {
-            self.id = {
-                let mut split: Vec<&str> = self.id.split('-').collect();
-                let version = version.to_string();
-                if let Some(last_elem) = split.last_mut() {
-                    *last_elem = &version;
-                }
-                split.join("-")
-            };
-            self.version = version;
+    pub fn with_version(mut self, version: u64) -> Result<Self, Self> {
+        if self.version != 0 {
+            if let (name, Some(_)) = Self::split_chain_id(&self.id) {
+                self.id = format!("{name}-{version}");
+                self.version = version;
+                return Ok(self);
+            }
         }
-        self
+        Err(self)
+    }
+
+    /// Splits chain_id into name and version if the id includes epoch number.
+    ///
+    /// Chain id with epoch number has format `{name}-{version}` where version
+    /// is a non-zero unsigned 64-bit number starting with non-zero digit.  If
+    /// `chain_id` is in that format, returns `(name, Some(version))`; otherwise
+    /// returns `(chain_id, None)`.
+    fn split_chain_id(chain_id: &str) -> (&str, Option<u64>) {
+        fn split(chain_id: &str) -> Option<(&str, u64)> {
+            let (name, version) = chain_id.rsplit_once('-')?;
+            let first_digit = *version.as_bytes().first()?;
+            if !name.is_empty() && matches!(first_digit, b'1'..=b'9') {
+                u64::from_str(version).ok().map(|version| (name, version))
+            } else {
+                None
+            }
+        }
+        match split(chain_id) {
+            Some((name, version)) => (name, Some(version)),
+            None => (chain_id, None),
+        }
+    }
+}
+
+impl Default for ChainId {
+    fn default() -> Self {
+        Self {
+            id: String::from(DEFAULT_CHAIN_ID),
+            version: 0,
+        }
+    }
+}
+
+impl TryFrom<&'_ str> for ChainId {
+    type Error = ();
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let version = Self::chain_version(value);
+        if version != 0 {
+            Ok(Self {
+                id: String::from(value),
+                version,
+            })
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl TryFrom<String> for ChainId {
+    type Error = ();
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let version = Self::chain_version(&value);
+        if version != 0 {
+            Ok(Self { id: value, version })
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl TryFrom<&'_ String> for ChainId {
+    type Error = ();
+
+    fn try_from(value: &String) -> Result<Self, Self::Error> {
+        Self::try_from(value.as_str())
     }
 }
 
 impl FromStr for ChainId {
-    type Err = Infallible;
+    type Err = ();
 
     fn from_str(id: &str) -> Result<Self, Self::Err> {
-        Ok(Self::from_string(id))
+        Self::try_from(id)
     }
 }
 
-impl Display for ChainId {
+impl core::fmt::Display for ChainId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "{}", self.id)
+        self.id.fmt(f)
     }
 }
 
@@ -174,19 +231,9 @@ impl From<ChainId> for tendermint::chain::Id {
 
 impl From<tendermint::chain::Id> for ChainId {
     fn from(id: tendermint::chain::Id) -> Self {
-        ChainId::from(id.to_string())
-    }
-}
-
-impl Default for ChainId {
-    fn default() -> Self {
-        Self::from_string(DEFAULT_CHAIN_ID)
-    }
-}
-
-impl From<String> for ChainId {
-    fn from(value: String) -> Self {
-        Self::from_string(&value)
+        let id = String::from(id);
+        let version = Self::chain_version(&id);
+        Self { id, version }
     }
 }
 
@@ -237,7 +284,7 @@ impl ClientId {
 }
 
 /// This implementation provides a `to_string` method.
-impl Display for ClientId {
+impl core::fmt::Display for ClientId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         write!(f, "{}", self.0)
     }
@@ -320,7 +367,7 @@ impl ConnectionId {
 }
 
 /// This implementation provides a `to_string` method.
-impl Display for ConnectionId {
+impl core::fmt::Display for ConnectionId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         write!(f, "{}", self.0)
     }
@@ -396,7 +443,7 @@ impl PortId {
 }
 
 /// This implementation provides a `to_string` method.
-impl Display for PortId {
+impl core::fmt::Display for PortId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         write!(f, "{}", self.0)
     }
@@ -472,7 +519,7 @@ impl ChannelId {
 }
 
 /// This implementation provides a `to_string` method.
-impl Display for ChannelId {
+impl core::fmt::Display for ChannelId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         write!(f, "{}", self.0)
     }

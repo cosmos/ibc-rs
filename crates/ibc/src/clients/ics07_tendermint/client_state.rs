@@ -637,7 +637,9 @@ impl TryFrom<RawTmClientState> for ClientState {
     type Error = Error;
 
     fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
-        let chain_id = ChainId::from_string(raw.chain_id.as_str());
+        let chain_id = ChainId::try_from(&raw.chain_id).map_err(|_| Error::InvalidRawChainId {
+            chain_id: raw.chain_id,
+        })?;
 
         let trust_level = {
             let trust_level = raw
@@ -853,7 +855,7 @@ mod tests {
             Test {
                 name: "Valid long (50 chars) chain-id".to_string(),
                 params: ClientStateParams {
-                    id: ChainId::new("a".repeat(48), 0),
+                    id: ChainId::new(&"a".repeat(48), 0),
                     ..default_params.clone()
                 },
                 want_pass: true,
@@ -861,7 +863,7 @@ mod tests {
             Test {
                 name: "Invalid too-long (51 chars) chain-id".to_string(),
                 params: ClientStateParams {
-                    id: ChainId::new("a".repeat(49), 0),
+                    id: ChainId::new(&"a".repeat(49), 0),
                     ..default_params.clone()
                 },
                 want_pass: false,
@@ -964,7 +966,7 @@ mod tests {
                 cs_result.is_ok(),
                 "ClientState::new() failed for test {}, \nmsg{:?} with error {:?}",
                 test.name,
-                test.params.clone(),
+                &test.params,
                 cs_result.err(),
             );
         }
@@ -974,7 +976,7 @@ mod tests {
     fn client_state_verify_height() {
         // Define a "default" set of parameters to reuse throughout these tests.
         let default_params: ClientStateParams = ClientStateParams {
-            id: ChainId::new("ibc".to_string(), 1),
+            id: ChainId::new("ibc", 1),
             trust_level: TrustThreshold::ONE_THIRD,
             trusting_period: Duration::new(64000, 0),
             unbonding_period: Duration::new(128000, 0),
@@ -1127,7 +1129,7 @@ pub mod test_util {
 
         pub fn new_dummy_from_header(tm_header: Header) -> ClientState {
             ClientState::new(
-                tm_header.chain_id.clone().into(),
+                tm_header.chain_id.clone().try_into().unwrap(),
                 Default::default(),
                 Duration::from_secs(64000),
                 Duration::from_secs(128000),
@@ -1151,7 +1153,7 @@ pub mod test_util {
     pub fn get_dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
         #[allow(deprecated)]
         RawTmClientState {
-            chain_id: ChainId::new("ibc".to_string(), 0).to_string(),
+            chain_id: ChainId::new("ibc", 1).to_string(),
             trust_level: Some(Fraction {
                 numerator: 1,
                 denominator: 3,

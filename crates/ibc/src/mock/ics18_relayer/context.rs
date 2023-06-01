@@ -109,8 +109,8 @@ mod tests {
         let client_on_a_for_b = ClientId::new(tm_client_type(), 0).unwrap();
         let client_on_b_for_a = ClientId::new(mock_client_type(), 0).unwrap();
 
-        let chain_id_a = ChainId::new("mockgaiaA".to_string(), 1);
-        let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
+        let chain_id_a = ChainId::new("mockgaiaA", 1);
+        let chain_id_b = ChainId::new("mockgaiaB", 1);
 
         // Create two mock contexts, one for each chain.
         let mut ctx_a =
