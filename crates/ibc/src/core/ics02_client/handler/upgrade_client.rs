@@ -8,6 +8,7 @@ use crate::core::ics02_client::client_state::UpdatedState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
+use crate::core::ics23_commitment::merkle::MerkleProof;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 use crate::core::{ExecutionContext, ValidationContext};
 
@@ -55,12 +56,17 @@ where
         ));
     };
 
+    // Note: verification of proofs that unmarshalled correctly has been done
+    // while decoding the proto message into a `MsgEnvelope` domain type
+    let merkle_proof_upgrade_client = MerkleProof::from(msg.proof_upgrade_client.clone());
+    let merkle_proof_upgrade_cons_state = MerkleProof::from(msg.proof_upgrade_consensus_state);
+
     // Validate the upgraded client state and consensus state and verify proofs against the root
     old_client_state.verify_upgrade_client(
         msg.client_state.clone(),
-        msg.consensus_state.clone(),
-        msg.proof_upgrade_client.clone(),
-        msg.proof_upgrade_consensus_state,
+        msg.consensus_state,
+        merkle_proof_upgrade_client,
+        merkle_proof_upgrade_cons_state,
         old_consensus_state.root(),
     )?;
 
