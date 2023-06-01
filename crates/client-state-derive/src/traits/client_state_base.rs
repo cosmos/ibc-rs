@@ -8,7 +8,7 @@ use syn::{
 
 use crate::utils::{get_enum_variant_type_path, Imports};
 
-pub fn impl_ClientStateBase(
+pub(crate) fn impl_ClientStateBase(
     enum_name: &Ident,
     enum_variants: &Punctuated<Variant, Comma>,
 ) -> TokenStream {

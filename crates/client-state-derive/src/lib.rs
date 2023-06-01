@@ -11,23 +11,36 @@
 mod traits;
 mod utils;
 
+use darling::FromDeriveInput;
 use proc_macro::TokenStream as RawTokenStream;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{parse_macro_input, DeriveInput, TypePath};
 
 use crate::traits::client_state_base::impl_ClientStateBase;
+
+#[derive(FromDeriveInput)]
+#[darling(attributes(host))]
+pub(crate) struct Opts {
+    client_state: TypePath,
+    consensus_state: TypePath,
+}
 
 #[proc_macro_derive(ClientState)]
 pub fn client_state_macro_derive(input: RawTokenStream) -> RawTokenStream {
     let ast: DeriveInput = parse_macro_input!(input);
 
-    let output = derive_impl(ast);
+    let opts = match Opts::from_derive_input(&ast) {
+        Ok(opts) => opts,
+        Err(_) => panic!("{} must be annotated with #[host(client_state = <your ClientState enum>, consensus_state = <your ConsensusState enum>)]", ast.ident),
+    };
+
+    let output = derive_impl(ast, opts);
 
     RawTokenStream::from(output)
 }
 
-fn derive_impl(ast: DeriveInput) -> TokenStream {
+fn derive_impl(ast: DeriveInput, opts: Opts) -> TokenStream {
     let enum_name = ast.ident;
     let enum_variants = match ast.data {
         syn::Data::Enum(enum_data) => enum_data.variants,
