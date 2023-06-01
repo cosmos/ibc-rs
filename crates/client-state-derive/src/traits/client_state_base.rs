@@ -9,43 +9,51 @@ use syn::{
 use crate::utils::{get_enum_variant_type_path, Imports};
 
 pub(crate) fn impl_ClientStateBase(
-    enum_name: &Ident,
+    client_state_enum_name: &Ident,
     enum_variants: &Punctuated<Variant, Comma>,
 ) -> TokenStream {
-    let client_type_impl =
-        delegate_call_in_match(enum_name, enum_variants.iter(), quote! {client_type(cs)});
-    let latest_height_impl =
-        delegate_call_in_match(enum_name, enum_variants.iter(), quote! {latest_height(cs)});
+    let client_type_impl = delegate_call_in_match(
+        client_state_enum_name,
+        enum_variants.iter(),
+        quote! {client_type(cs)},
+    );
+    let latest_height_impl = delegate_call_in_match(
+        client_state_enum_name,
+        enum_variants.iter(),
+        quote! {latest_height(cs)},
+    );
     let validate_proof_height_impl = delegate_call_in_match(
-        enum_name,
+        client_state_enum_name,
         enum_variants.iter(),
         quote! {validate_proof_height(cs, proof_height)},
     );
     let confirm_not_frozen_impl = delegate_call_in_match(
-        enum_name,
+        client_state_enum_name,
         enum_variants.iter(),
         quote! {confirm_not_frozen(cs)},
     );
     let expired_impl = delegate_call_in_match(
-        enum_name,
+        client_state_enum_name,
         enum_variants.iter(),
         quote! {expired(cs, elapsed)},
     );
     let verify_upgrade_client_impl = delegate_call_in_match(
-        enum_name,
+        client_state_enum_name,
         enum_variants.iter(),
         quote! {verify_upgrade_client(cs, upgraded_client_state, upgraded_consensus_state, proof_upgrade_client, proof_upgrade_consensus_state, root)},
     );
     let verify_membership_impl = delegate_call_in_match(
-        enum_name,
+        client_state_enum_name,
         enum_variants.iter(),
         quote! {verify_membership(cs, prefix, proof, root, path, value)},
     );
     let verify_non_membership_impl = delegate_call_in_match(
-        enum_name,
+        client_state_enum_name,
         enum_variants.iter(),
         quote! {verify_non_membership(cs, prefix, proof, root, path)},
     );
+
+    let HostClientState = client_state_enum_name;
 
     let Any = Imports::Any();
     let CommitmentRoot = Imports::CommitmentRoot();
@@ -59,7 +67,7 @@ pub(crate) fn impl_ClientStateBase(
     let Path = Imports::Path();
 
     quote! {
-        impl #ClientStateBase for #enum_name {
+        impl #ClientStateBase for #HostClientState {
             fn client_type(&self) -> #ClientType {
                 match self {
                     #(#client_type_impl),*

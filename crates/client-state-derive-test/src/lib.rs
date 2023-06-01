@@ -7,6 +7,7 @@ mod test {
     use ibc::{core::ics02_client::client_state::ClientStateBase, Any};
 
     #[derive(Debug, PartialEq, Clone, ClientState)]
+    #[host(consensus_state = HostConsensusState)]
     enum HostClientState {
         First(FirstClientState),
     }

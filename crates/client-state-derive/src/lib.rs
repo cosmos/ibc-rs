@@ -17,12 +17,13 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput, TypePath};
 
-use crate::traits::client_state_base::impl_ClientStateBase;
+use crate::traits::{
+    client_state_base::impl_ClientStateBase, client_state_initializer::impl_ClientStateInitializer,
+};
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(host))]
 pub(crate) struct Opts {
-    client_state: TypePath,
     consensus_state: TypePath,
 }
 
@@ -32,7 +33,7 @@ pub fn client_state_macro_derive(input: RawTokenStream) -> RawTokenStream {
 
     let opts = match Opts::from_derive_input(&ast) {
         Ok(opts) => opts,
-        Err(_) => panic!("{} must be annotated with #[host(client_state = <your ClientState enum>, consensus_state = <your ConsensusState enum>)]", ast.ident),
+        Err(_) => panic!("{} must be annotated with #[host(consensus_state = <your ConsensusState enum>)]", ast.ident),
     };
 
     let output = derive_impl(ast, opts);
@@ -48,6 +49,8 @@ fn derive_impl(ast: DeriveInput, opts: Opts) -> TokenStream {
     };
 
     let ClientStateBase_impl_block = impl_ClientStateBase(&enum_name, &enum_variants);
+    let ClientStateInitializer_impl_block =
+        impl_ClientStateInitializer(&enum_name, &enum_variants, &opts);
 
     quote! {
         #[doc(hidden)]
@@ -57,6 +60,7 @@ fn derive_impl(ast: DeriveInput, opts: Opts) -> TokenStream {
             extern crate ibc as _ibc;
 
             #ClientStateBase_impl_block
+            #ClientStateInitializer_impl_block
         };
     }
 }
