@@ -54,7 +54,8 @@ impl Imports {
 /// is in the wrong format (i.e. isn't an unnamed enum, or contains more than one field).
 ///
 /// For example, given
-/// ```rust
+/// ```ignore
+/// 
 /// #[derive(ClientState)]
 /// enum HostClientState {
 ///     Tendermint(TmClientState),

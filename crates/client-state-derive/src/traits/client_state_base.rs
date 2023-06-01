@@ -132,34 +132,34 @@ pub fn impl_ClientStateBase(
     }
 }
 
-/**
-* Generates the per-enum variant function call delegation token streams.
-*
-* enum_name:     The user's enum identifier (e.g. `HostClientState`)
-* enum_variants: An iterator of all enum variants (e.g. `[HostClientState::Tendermint, HostClientState::Mock]`)
-* fn_call:       The tokens for the function call. Fully-qualified syntax is assumed, where the name for `self`
-*                  is `cs` (e.g. `client_type(cs)`).
-*
-*
-* For example,
-*
-* ```rust
-* impl ClientStateBase for HostClientState {
-*   fn client_type(&self) -> ClientType {
-*     match self {
-*       /*  BEGIN code generated */
-
-*       // 1st TokenStream returned
-*       HostClientState::Tendermint(cs) => <TmClientState as ClientStateBase>::client_type(cs),
-*       // 2nd TokenStream returned
-*       HostClientState::Mock(cs) => <MockClientState as ClientStateBase>::client_type(cs),
-*
-*       /*  END code generated */
-*     }
-*   }
-* }
-* ```
-*/
+///
+/// Generates the per-enum variant function call delegation token streams.
+///
+/// enum_name:     The user's enum identifier (e.g. `HostClientState`)
+/// enum_variants: An iterator of all enum variants (e.g. `[HostClientState::Tendermint, HostClientState::Mock]`)
+/// fn_call:       The tokens for the function call. Fully-qualified syntax is assumed, where the name for `self`
+///                  is `cs` (e.g. `client_type(cs)`).
+///
+///
+/// For example,
+///
+/// ```ignore
+/// impl ClientStateBase for HostClientState {
+///   fn client_type(&self) -> ClientType {
+///     match self {
+///       //  BEGIN code generated
+///
+///       // 1st TokenStream returned
+///       HostClientState::Tendermint(cs) => <TmClientState as ClientStateBase>::client_type(cs),
+///       // 2nd TokenStream returned
+///       HostClientState::Mock(cs) => <MockClientState as ClientStateBase>::client_type(cs),
+///
+///       //  END code generated
+///     }
+///   }
+/// }
+/// ```
+///
 fn delegate_call_in_match(
     enum_name: &Ident,
     enum_variants: Iter<'_, Variant>,
