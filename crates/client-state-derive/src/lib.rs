@@ -27,7 +27,7 @@ pub(crate) struct Opts {
     consensus_state: syn::ExprPath,
 }
 
-#[proc_macro_derive(ClientState, attributes(host))]
+#[proc_macro_derive(ClientState, attributes(host, mock))]
 pub fn client_state_macro_derive(input: RawTokenStream) -> RawTokenStream {
     let ast: DeriveInput = parse_macro_input!(input);
 
@@ -45,9 +45,9 @@ pub fn client_state_macro_derive(input: RawTokenStream) -> RawTokenStream {
 }
 
 fn derive_impl(ast: DeriveInput, opts: Opts) -> TokenStream {
-    let enum_name = ast.ident;
+    let enum_name = &ast.ident;
     let enum_variants = match ast.data {
-        syn::Data::Enum(enum_data) => enum_data.variants,
+        syn::Data::Enum(ref enum_data) => &enum_data.variants,
         _ => panic!("ClientState only supports enums"),
     };
 
@@ -55,15 +55,42 @@ fn derive_impl(ast: DeriveInput, opts: Opts) -> TokenStream {
     let ClientStateInitializer_impl_block =
         impl_ClientStateInitializer(&enum_name, &enum_variants, &opts);
 
+    // Note: we must use the statement `extern crate self as _ibc` when in "mock mode"
+    // (i.e. in ibc-rs itself) because we don't have `ibc` as a dependency
+    let crate_name = if is_mock(&ast) {
+        quote! {self}
+    } else {
+        quote! {ibc}
+    };
+
     quote! {
         #[doc(hidden)]
         #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
         const _: () = {
             #[allow(unused_extern_crates, clippy::useless_attribute)]
-            extern crate ibc as _ibc;
+            extern crate #crate_name as _ibc;
 
             #ClientStateBase_impl_block
             #ClientStateInitializer_impl_block
         };
     }
+}
+
+/// We are in "mock mode" (i.e. within ibc-rs crate itself) if the user added
+/// a #[mock] attribute
+fn is_mock(ast: &DeriveInput) -> bool {
+    for attr in &ast.attrs {
+        let path = match attr.meta {
+            syn::Meta::Path(ref path) => path,
+            _ => continue,
+        };
+
+        for path_segment in path.segments.iter() {
+            if path_segment.ident.to_string() == "mock".to_string() {
+                return true;
+            }
+        }
+    }
+
+    false
 }
