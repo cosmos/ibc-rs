@@ -39,7 +39,6 @@ pub fn client_state_macro_derive(input: RawTokenStream) -> RawTokenStream {
         ),
     };
 
-
     let output = derive_impl(ast, opts);
 
     RawTokenStream::from(output)

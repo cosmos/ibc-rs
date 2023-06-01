@@ -59,7 +59,7 @@ impl Imports {
 ///
 /// For example, given
 /// ```ignore
-/// 
+///
 /// #[derive(ClientState)]
 /// enum HostClientState {
 ///     Tendermint(TmClientState),
