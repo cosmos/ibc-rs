@@ -140,7 +140,6 @@ pub fn impl_ClientStateBase(
 /// fn_call:       The tokens for the function call. Fully-qualified syntax is assumed, where the name for `self`
 ///                  is `cs` (e.g. `client_type(cs)`).
 ///
-///
 /// For example,
 ///
 /// ```ignore
