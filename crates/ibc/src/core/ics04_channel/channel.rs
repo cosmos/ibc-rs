@@ -282,7 +282,12 @@ impl ChannelEnd {
 
     /// Helper function to compare the order of this end with another order.
     pub fn order_matches(&self, other: &Order) -> bool {
-        self.ordering.eq(other)
+        match (self.ordering, other) {
+            (Order::None, Order::None) => true,
+            (Order::Unordered, Order::Unordered) => true,
+            (Order::Ordered, Order::Ordered) => true,
+            _ => false,
+        }
     }
 
     pub fn connection_hops_matches(&self, other: &Vec<ConnectionId>) -> bool {
