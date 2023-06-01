@@ -6,7 +6,6 @@ use crate::applications::transfer::context::{
 use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::PrefixedCoin;
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
-use crate::core::ics23_commitment::merkle::MerkleProof;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
@@ -37,13 +36,13 @@ use crate::clients::ics07_tendermint::consensus_state::{
 use crate::core::dispatch;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::{
-    ClientStateBase, ClientStateExecution, ClientStateInitializer, ClientStateValidation,
-    UpdateKind,
+    ClientStateBase, ClientStateExecution, ClientStateValidation, UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
+use crate::core::ics02_client::ClientState;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::channel::ChannelEnd;
@@ -616,103 +615,12 @@ impl MockContext {
 
 type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
 
-#[derive(Debug, Clone, From, PartialEq)]
+#[derive(Debug, Clone, From, PartialEq, ClientState)]
+#[host(consensus_state = HostConsensusState)]
+#[mock]
 pub enum HostClientState {
     Tendermint(TmClientState),
     Mock(MockClientState),
-}
-
-impl ClientStateBase for HostClientState {
-    fn client_type(&self) -> ClientType {
-        match self {
-            // Note: `TmClientState` can't be generic (or else I need special logic to generate the <..>)
-            HostClientState::Tendermint(cs) => <TmClientState as ClientStateBase>::client_type(cs),
-            HostClientState::Mock(cs) => <MockClientState as ClientStateBase>::client_type(cs),
-        }
-    }
-
-    fn latest_height(&self) -> Height {
-        match self {
-            HostClientState::Tendermint(cs) => cs.latest_height(),
-            HostClientState::Mock(cs) => cs.latest_height(),
-        }
-    }
-
-    fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
-        match self {
-            HostClientState::Tendermint(cs) => cs.validate_proof_height(proof_height),
-            HostClientState::Mock(cs) => cs.validate_proof_height(proof_height),
-        }
-    }
-
-    fn confirm_not_frozen(&self) -> Result<(), ClientError> {
-        match self {
-            HostClientState::Tendermint(cs) => cs.confirm_not_frozen(),
-            HostClientState::Mock(cs) => cs.confirm_not_frozen(),
-        }
-    }
-
-    fn expired(&self, elapsed: Duration) -> bool {
-        match self {
-            HostClientState::Tendermint(cs) => cs.expired(elapsed),
-            HostClientState::Mock(cs) => cs.expired(elapsed),
-        }
-    }
-
-    fn verify_upgrade_client(
-        &self,
-        upgraded_client_state: Any,
-        upgraded_consensus_state: Any,
-        proof_upgrade_client: MerkleProof,
-        proof_upgrade_consensus_state: MerkleProof,
-        root: &CommitmentRoot,
-    ) -> Result<(), ClientError> {
-        match self {
-            HostClientState::Tendermint(cs) => cs.verify_upgrade_client(
-                upgraded_client_state,
-                upgraded_consensus_state,
-                proof_upgrade_client,
-                proof_upgrade_consensus_state,
-                root,
-            ),
-            HostClientState::Mock(cs) => cs.verify_upgrade_client(
-                upgraded_client_state,
-                upgraded_consensus_state,
-                proof_upgrade_client,
-                proof_upgrade_consensus_state,
-                root,
-            ),
-        }
-    }
-
-    fn verify_membership(
-        &self,
-        prefix: &CommitmentPrefix,
-        proof: &crate::core::ics23_commitment::commitment::CommitmentProofBytes,
-        root: &CommitmentRoot,
-        path: crate::core::ics24_host::path::Path,
-        value: Vec<u8>,
-    ) -> Result<(), ClientError> {
-        match self {
-            HostClientState::Tendermint(cs) => {
-                cs.verify_membership(prefix, proof, root, path, value)
-            }
-            HostClientState::Mock(cs) => cs.verify_membership(prefix, proof, root, path, value),
-        }
-    }
-
-    fn verify_non_membership(
-        &self,
-        prefix: &CommitmentPrefix,
-        proof: &crate::core::ics23_commitment::commitment::CommitmentProofBytes,
-        root: &CommitmentRoot,
-        path: crate::core::ics24_host::path::Path,
-    ) -> Result<(), ClientError> {
-        match self {
-            HostClientState::Tendermint(cs) => cs.verify_non_membership(prefix, proof, root, path),
-            HostClientState::Mock(cs) => cs.verify_non_membership(prefix, proof, root, path),
-        }
-    }
 }
 
 impl ClientStateValidation<MockContext> for HostClientState {
@@ -807,15 +715,6 @@ impl ClientStateExecution<MockContext> for HostClientState {
                     upgraded_consensus_state,
                 )
             }
-        }
-    }
-}
-
-impl ClientStateInitializer<HostConsensusState> for HostClientState {
-    fn initialise(&self, consensus_state: Any) -> Result<HostConsensusState, ClientError> {
-        match self {
-            HostClientState::Tendermint(cs) => cs.initialise(consensus_state),
-            HostClientState::Mock(cs) => cs.initialise(consensus_state),
         }
     }
 }

@@ -51,9 +51,9 @@ fn derive_impl(ast: DeriveInput, opts: Opts) -> TokenStream {
         _ => panic!("ClientState only supports enums"),
     };
 
-    let ClientStateBase_impl_block = impl_ClientStateBase(&enum_name, &enum_variants);
+    let ClientStateBase_impl_block = impl_ClientStateBase(enum_name, enum_variants);
     let ClientStateInitializer_impl_block =
-        impl_ClientStateInitializer(&enum_name, &enum_variants, &opts);
+        impl_ClientStateInitializer(enum_name, enum_variants, &opts);
 
     // Note: we must use the statement `extern crate self as _ibc` when in "mock mode"
     // (i.e. in ibc-rs itself) because we don't have `ibc` as a dependency
@@ -86,7 +86,7 @@ fn is_mock(ast: &DeriveInput) -> bool {
         };
 
         for path_segment in path.segments.iter() {
-            if path_segment.ident.to_string() == "mock".to_string() {
+            if path_segment.ident == "mock" {
                 return true;
             }
         }
