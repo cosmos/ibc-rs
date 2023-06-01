@@ -27,7 +27,7 @@ pub(crate) struct Opts {
     consensus_state: TypePath,
 }
 
-#[proc_macro_derive(ClientState)]
+#[proc_macro_derive(ClientState, attributes(host))]
 pub fn client_state_macro_derive(input: RawTokenStream) -> RawTokenStream {
     let ast: DeriveInput = parse_macro_input!(input);
 
