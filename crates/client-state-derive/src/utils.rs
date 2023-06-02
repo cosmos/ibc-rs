@@ -33,6 +33,14 @@ impl Imports {
         quote! {ibc::core::ics02_client::client_state::ClientStateInitializer}
     }
 
+    pub fn ClientStateValidation() -> TokenStream {
+        quote! {ibc::core::ics02_client::client_state::ClientStateValidation}
+    }
+
+    pub fn ClientId() -> TokenStream {
+        quote! {ibc::core::ics24_host::identifier::ClientId}
+    }
+
     pub fn ClientType() -> TokenStream {
         quote! {ibc::core::ics02_client::client_type::ClientType}
     }
@@ -51,6 +59,10 @@ impl Imports {
 
     pub fn MerkleProof() -> TokenStream {
         quote! {ibc::core::ics23_commitment::merkle::MerkleProof}
+    }
+
+    pub fn UpdateKind() -> TokenStream {
+        quote! {ibc::core::ics02_client::client_state::UpdateKind}
     }
 }
 

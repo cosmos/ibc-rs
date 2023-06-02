@@ -35,9 +35,7 @@ use crate::clients::ics07_tendermint::consensus_state::{
 };
 use crate::core::dispatch;
 use crate::core::events::IbcEvent;
-use crate::core::ics02_client::client_state::{
-    ClientStateBase, ClientStateExecution, ClientStateValidation, UpdateKind,
-};
+use crate::core::ics02_client::client_state::{ClientStateBase, ClientStateExecution, UpdateKind};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
@@ -616,47 +614,11 @@ impl MockContext {
 type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
 
 #[derive(Debug, Clone, From, PartialEq, ClientState)]
-#[host(consensus_state = HostConsensusState)]
+#[host(consensus_state = HostConsensusState, client_validation_context = MockContext)]
 #[mock]
 pub enum HostClientState {
     Tendermint(TmClientState),
     Mock(MockClientState),
-}
-
-impl ClientStateValidation<MockContext> for HostClientState {
-    fn verify_client_message(
-        &self,
-        ctx: &MockContext,
-        client_id: &ClientId,
-        client_message: Any,
-        update_kind: &UpdateKind,
-    ) -> Result<(), ClientError> {
-        match self {
-            HostClientState::Tendermint(cs) => {
-                cs.verify_client_message(ctx, client_id, client_message, update_kind)
-            }
-            HostClientState::Mock(cs) => {
-                cs.verify_client_message(ctx, client_id, client_message, update_kind)
-            }
-        }
-    }
-
-    fn check_for_misbehaviour(
-        &self,
-        ctx: &MockContext,
-        client_id: &ClientId,
-        client_message: Any,
-        update_kind: &UpdateKind,
-    ) -> Result<bool, ClientError> {
-        match self {
-            HostClientState::Tendermint(cs) => {
-                cs.check_for_misbehaviour(ctx, client_id, client_message, update_kind)
-            }
-            HostClientState::Mock(cs) => {
-                cs.check_for_misbehaviour(ctx, client_id, client_message, update_kind)
-            }
-        }
-    }
 }
 
 impl ClientStateExecution<MockContext> for HostClientState {

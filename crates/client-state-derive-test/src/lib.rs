@@ -4,7 +4,9 @@
 mod test {
     use core::time::Duration;
 
-    use ibc::core::ics02_client::client_state::ClientStateInitializer;
+    use ibc::core::ics02_client::client_state::{
+        ClientStateInitializer, ClientStateValidation, UpdateKind,
+    };
     use ibc::core::ics02_client::client_type::ClientType;
     use ibc::core::ics02_client::error::ClientError;
     use ibc::core::ics02_client::ClientState;
@@ -12,16 +14,21 @@ mod test {
         CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
     };
     use ibc::core::ics23_commitment::merkle::MerkleProof;
+    use ibc::core::ics24_host::identifier::ClientId;
     use ibc::core::ics24_host::path::Path;
     use ibc::Height;
     use ibc::{core::ics02_client::client_state::ClientStateBase, Any};
+
+    enum ClientValidationContext {
+        First(FirstClientValidationContext),
+    }
 
     enum HostConsensusState {
         First(FirstConsensusState),
     }
 
     #[derive(Debug, PartialEq, Clone, ClientState)]
-    #[host(consensus_state = HostConsensusState)]
+    #[host(consensus_state = HostConsensusState, client_validation_context = ClientValidationContext)]
     enum HostClientState {
         First(FirstClientState),
     }
@@ -29,6 +36,7 @@ mod test {
     #[derive(Debug, Clone, PartialEq)]
     struct FirstClientState;
     struct FirstConsensusState;
+    struct FirstClientValidationContext;
 
     impl ClientStateBase for FirstClientState {
         fn client_type(&self) -> ClientType {
@@ -86,6 +94,28 @@ mod test {
 
     impl ClientStateInitializer<HostConsensusState> for FirstClientState {
         fn initialise(&self, _consensus_state: Any) -> Result<HostConsensusState, ClientError> {
+            todo!()
+        }
+    }
+
+    impl ClientStateValidation<ClientValidationContext> for FirstClientState {
+        fn verify_client_message(
+            &self,
+            _ctx: &ClientValidationContext,
+            _client_id: &ClientId,
+            _client_message: Any,
+            _update_kind: &UpdateKind,
+        ) -> Result<(), ClientError> {
+            todo!()
+        }
+
+        fn check_for_misbehaviour(
+            &self,
+            _ctx: &ClientValidationContext,
+            _client_id: &ClientId,
+            _client_message: Any,
+            _update_kind: &UpdateKind,
+        ) -> Result<bool, ClientError> {
             todo!()
         }
     }
