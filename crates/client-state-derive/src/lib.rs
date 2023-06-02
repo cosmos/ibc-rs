@@ -18,7 +18,8 @@ use quote::quote;
 use syn::{parse_macro_input, DeriveInput};
 
 use crate::traits::{
-    client_state_base::impl_ClientStateBase, client_state_initializer::impl_ClientStateInitializer,
+    client_state_base::impl_ClientStateBase, client_state_execution::impl_ClientStateExecution,
+    client_state_initializer::impl_ClientStateInitializer,
     client_state_validation::impl_ClientStateValidation,
 };
 
@@ -27,6 +28,7 @@ use crate::traits::{
 pub(crate) struct Opts {
     consensus_state: syn::ExprPath,
     client_validation_context: syn::ExprPath,
+    client_execution_context: syn::ExprPath,
 }
 
 #[proc_macro_derive(ClientState, attributes(host, mock))]
@@ -36,7 +38,7 @@ pub fn client_state_macro_derive(input: RawTokenStream) -> RawTokenStream {
     let opts = match Opts::from_derive_input(&ast) {
         Ok(opts) => opts,
         Err(e) => panic!(
-            "{} must be annotated with #[host(consensus_state = <your ConsensusState enum>, client_validation_context = <your ClientValidationContext>)]: {e}",
+            "{} must be annotated with #[host(consensus_state = <your ConsensusState enum>, client_validation_context = <your ClientValidationContext>, client_execution_context: <your ClientExecutionContext>)]: {e}",
             ast.ident
         ),
     };
@@ -58,6 +60,8 @@ fn derive_impl(ast: DeriveInput, opts: Opts) -> TokenStream {
         impl_ClientStateInitializer(enum_name, enum_variants, &opts);
     let ClientStateValidation_impl_block =
         impl_ClientStateValidation(enum_name, enum_variants, &opts);
+    let ClientStateExecution_impl_block =
+        impl_ClientStateExecution(enum_name, enum_variants, &opts);
 
     let maybe_extern_crate_stmt = if is_mock(&ast) {
         // Note: we must add this statement when in "mock mode"
@@ -74,6 +78,7 @@ fn derive_impl(ast: DeriveInput, opts: Opts) -> TokenStream {
         #ClientStateBase_impl_block
         #ClientStateInitializer_impl_block
         #ClientStateValidation_impl_block
+        #ClientStateExecution_impl_block
     }
 }
 

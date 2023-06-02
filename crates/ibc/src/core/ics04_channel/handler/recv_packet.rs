@@ -226,15 +226,9 @@ where
     }
 
     match chan_end_on_b.ordering {
-        Order::Ordered => {
-            /* if branch */
-        },
-        Order::Unordered => {
-            /* else branch */
-        }
-        Order::None => {
-            /* do nothing */
-        }
+        Order::Ordered => { /* if branch */ }
+        Order::Unordered => { /* else branch */ }
+        Order::None => { /* do nothing */ }
     }
 
     if chan_end_on_b.order_matches(&Order::Ordered) {

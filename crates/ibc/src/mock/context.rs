@@ -35,7 +35,7 @@ use crate::clients::ics07_tendermint::consensus_state::{
 };
 use crate::core::dispatch;
 use crate::core::events::IbcEvent;
-use crate::core::ics02_client::client_state::{ClientStateBase, ClientStateExecution, UpdateKind};
+use crate::core::ics02_client::client_state::ClientStateBase;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
@@ -614,71 +614,14 @@ impl MockContext {
 type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
 
 #[derive(Debug, Clone, From, PartialEq, ClientState)]
-#[host(consensus_state = HostConsensusState, client_validation_context = MockContext)]
+#[host(consensus_state = HostConsensusState,
+       client_validation_context = MockContext,
+       client_execution_context = MockContext)
+]
 #[mock]
 pub enum HostClientState {
     Tendermint(TmClientState),
     Mock(MockClientState),
-}
-
-impl ClientStateExecution<MockContext> for HostClientState {
-    fn update_state(
-        &self,
-        ctx: &mut MockContext,
-        client_id: &ClientId,
-        header: Any,
-    ) -> Result<Vec<Height>, ClientError> {
-        match self {
-            HostClientState::Tendermint(cs) => cs.update_state(ctx, client_id, header),
-            HostClientState::Mock(cs) => cs.update_state(ctx, client_id, header),
-        }
-    }
-
-    fn update_state_on_misbehaviour(
-        &self,
-        ctx: &mut MockContext,
-        client_id: &ClientId,
-        client_message: Any,
-        update_kind: &UpdateKind,
-    ) -> Result<(), ClientError> {
-        match self {
-            HostClientState::Tendermint(cs) => {
-                cs.update_state_on_misbehaviour(ctx, client_id, client_message, update_kind)
-            }
-            HostClientState::Mock(cs) => {
-                cs.update_state_on_misbehaviour(ctx, client_id, client_message, update_kind)
-            }
-        }
-    }
-
-    fn update_state_with_upgrade_client(
-        &self,
-        ctx: &mut MockContext,
-        client_id: &ClientId,
-        upgraded_client_state: Any,
-        upgraded_consensus_state: Any,
-    ) -> Result<Height, ClientError> {
-        match self {
-            HostClientState::Tendermint(cs) => {
-                ClientStateExecution::<MockContext>::update_state_with_upgrade_client(
-                    cs,
-                    ctx,
-                    client_id,
-                    upgraded_client_state,
-                    upgraded_consensus_state,
-                )
-            }
-            HostClientState::Mock(cs) => {
-                ClientStateExecution::<MockContext>::update_state_with_upgrade_client(
-                    cs,
-                    ctx,
-                    client_id,
-                    upgraded_client_state,
-                    upgraded_consensus_state,
-                )
-            }
-        }
-    }
 }
 
 impl Protobuf<Any> for HostClientState {}

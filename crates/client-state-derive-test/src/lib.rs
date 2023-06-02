@@ -5,7 +5,7 @@ mod test {
     use core::time::Duration;
 
     use ibc::core::ics02_client::client_state::{
-        ClientStateInitializer, ClientStateValidation, UpdateKind,
+        ClientStateExecution, ClientStateInitializer, ClientStateValidation, UpdateKind,
     };
     use ibc::core::ics02_client::client_type::ClientType;
     use ibc::core::ics02_client::error::ClientError;
@@ -23,12 +23,18 @@ mod test {
         First(FirstClientValidationContext),
     }
 
+    enum ClientExecutionContext {
+        First(FirstClientExecutionContext),
+    }
+
     enum HostConsensusState {
         First(FirstConsensusState),
     }
 
     #[derive(Debug, PartialEq, Clone, ClientState)]
-    #[host(consensus_state = HostConsensusState, client_validation_context = ClientValidationContext)]
+    #[host(consensus_state = HostConsensusState,
+           client_validation_context = ClientValidationContext,
+           client_execution_context = ClientExecutionContext)]
     enum HostClientState {
         First(FirstClientState),
     }
@@ -37,6 +43,7 @@ mod test {
     struct FirstClientState;
     struct FirstConsensusState;
     struct FirstClientValidationContext;
+    struct FirstClientExecutionContext;
 
     impl ClientStateBase for FirstClientState {
         fn client_type(&self) -> ClientType {
@@ -116,6 +123,37 @@ mod test {
             _client_message: Any,
             _update_kind: &UpdateKind,
         ) -> Result<bool, ClientError> {
+            todo!()
+        }
+    }
+
+    impl ClientStateExecution<ClientExecutionContext> for FirstClientState {
+        fn update_state(
+            &self,
+            _ctx: &mut ClientExecutionContext,
+            _client_id: &ClientId,
+            _header: Any,
+        ) -> Result<Vec<Height>, ClientError> {
+            todo!()
+        }
+
+        fn update_state_on_misbehaviour(
+            &self,
+            _ctx: &mut ClientExecutionContext,
+            _client_id: &ClientId,
+            _client_message: Any,
+            _update_kind: &UpdateKind,
+        ) -> Result<(), ClientError> {
+            todo!()
+        }
+
+        fn update_state_with_upgrade_client(
+            &self,
+            _ctx: &mut ClientExecutionContext,
+            _client_id: &ClientId,
+            _upgraded_client_state: Any,
+            _upgraded_consensus_state: Any,
+        ) -> Result<Height, ClientError> {
             todo!()
         }
     }

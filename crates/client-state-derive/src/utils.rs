@@ -37,6 +37,10 @@ impl Imports {
         quote! {ibc::core::ics02_client::client_state::ClientStateValidation}
     }
 
+    pub fn ClientStateExecution() -> TokenStream {
+        quote! {ibc::core::ics02_client::client_state::ClientStateExecution}
+    }
+
     pub fn ClientId() -> TokenStream {
         quote! {ibc::core::ics24_host::identifier::ClientId}
     }
