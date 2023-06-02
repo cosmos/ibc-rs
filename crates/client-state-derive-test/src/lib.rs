@@ -4,14 +4,16 @@
 mod test {
     use core::time::Duration;
 
-    use ibc::Height;
     use ibc::core::ics02_client::client_state::ClientStateInitializer;
     use ibc::core::ics02_client::client_type::ClientType;
     use ibc::core::ics02_client::error::ClientError;
     use ibc::core::ics02_client::ClientState;
-    use ibc::core::ics23_commitment::commitment::{CommitmentRoot, CommitmentPrefix, CommitmentProofBytes};
+    use ibc::core::ics23_commitment::commitment::{
+        CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
+    };
     use ibc::core::ics23_commitment::merkle::MerkleProof;
     use ibc::core::ics24_host::path::Path;
+    use ibc::Height;
     use ibc::{core::ics02_client::client_state::ClientStateBase, Any};
 
     enum HostConsensusState {

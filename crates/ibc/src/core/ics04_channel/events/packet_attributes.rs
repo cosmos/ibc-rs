@@ -1,3 +1,5 @@
+//! This module holds all the abci event attributes for IBC events emitted
+//! during packet-related datagrams.
 use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
 
@@ -15,9 +17,6 @@ use subtle_encoding::hex;
 use tendermint::abci;
 
 use core::str;
-
-///! This module holds all the abci event attributes for IBC events emitted
-///! during packet-related datagrams.
 
 const PKT_SEQ_ATTRIBUTE_KEY: &str = "packet_sequence";
 const PKT_DATA_ATTRIBUTE_KEY: &str = "packet_data";
