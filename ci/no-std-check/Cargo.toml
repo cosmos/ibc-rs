@@ -9,13 +9,13 @@ ibc = { path = "../../crates/ibc", default-features = false, features = [
   "serde",
   "mocks-no-std",
 ] }
-ibc-proto = { version = "0.26.0", default-features = false, features = [
+ibc-proto = { version = "0.31.0", default-features = false, features = [
   "parity-scale-codec",
   "borsh",
 ] }
-tendermint = { version = "0.29.0", default-features = false }
-tendermint-proto = { version = "0.29.0", default-features = false }
-tendermint-light-client-verifier = { version = "0.29.0", default-features = false, features = ["rust-crypto"] }
+tendermint = { version = "0.32.0", default-features = false }
+tendermint-proto = { version = "0.32.0", default-features = false }
+tendermint-light-client-verifier = { version = "0.32.0", default-features = false, features = ["rust-crypto"] }
 
 sp-core = { version = "20.0.0", default-features = false, optional = true }
 sp-io = { version = "22.0.0", default-features = false, optional = true }
