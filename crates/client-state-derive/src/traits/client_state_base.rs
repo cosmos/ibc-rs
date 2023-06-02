@@ -80,13 +80,13 @@ pub(crate) fn impl_ClientStateBase(
                 }
             }
 
-            fn validate_proof_height(&self, proof_height: #Height) -> Result<(), #ClientError> {
+            fn validate_proof_height(&self, proof_height: #Height) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#validate_proof_height_impl),*
                 }
             }
 
-            fn confirm_not_frozen(&self) -> Result<(), #ClientError> {
+            fn confirm_not_frozen(&self) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#confirm_not_frozen_impl),*
                 }
@@ -105,7 +105,7 @@ pub(crate) fn impl_ClientStateBase(
                 proof_upgrade_client: #MerkleProof,
                 proof_upgrade_consensus_state: #MerkleProof,
                 root: &#CommitmentRoot,
-            ) -> Result<(), #ClientError> {
+            ) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#verify_upgrade_client_impl),*
                 }
@@ -118,7 +118,7 @@ pub(crate) fn impl_ClientStateBase(
                 root: &#CommitmentRoot,
                 path: #Path,
                 value: Vec<u8>,
-            ) -> Result<(), #ClientError> {
+            ) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#verify_membership_impl),*
                 }
@@ -130,7 +130,7 @@ pub(crate) fn impl_ClientStateBase(
                 proof: &#CommitmentProofBytes,
                 root: &#CommitmentRoot,
                 path: #Path,
-            ) -> Result<(), #ClientError> {
+            ) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#verify_non_membership_impl),*
                 }

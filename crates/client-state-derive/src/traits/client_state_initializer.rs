@@ -29,7 +29,7 @@ pub(crate) fn impl_ClientStateInitializer(
     quote! {
         impl #ClientStateInitializer<#HostConsensusState> for #HostClientState {
 
-            fn initialise(&self, consensus_state: #Any) -> Result<#HostConsensusState, #ClientError> {
+            fn initialise(&self, consensus_state: #Any) -> core::result::Result<#HostConsensusState, #ClientError> {
                 match self {
                     #(#initialise_impl),*
                 }

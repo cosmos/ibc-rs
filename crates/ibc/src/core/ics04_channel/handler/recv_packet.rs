@@ -225,6 +225,18 @@ where
             .map_err(PacketError::Channel)?;
     }
 
+    match chan_end_on_b.ordering {
+        Order::Ordered => {
+            /* if branch */
+        },
+        Order::Unordered => {
+            /* else branch */
+        }
+        Order::None => {
+            /* do nothing */
+        }
+    }
+
     if chan_end_on_b.order_matches(&Order::Ordered) {
         let seq_recv_path_on_b =
             SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
