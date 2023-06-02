@@ -388,7 +388,7 @@ mod tests {
             ..
         } = fixture;
 
-        let packet = msg.packet.clone();
+        let packet = &msg.packet;
         let mut context = context
             .with_client(&ClientId::default(), client_height)
             .with_connection(ConnectionId::default(), conn_end_on_b)
