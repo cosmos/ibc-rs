@@ -4,45 +4,45 @@ use syn::{Path, Variant};
 
 /// Encodes the ibc-rs types that will be used in the macro
 ///
-/// Note: we use `_ibc` as our top-level crate, due to the
-/// `extern crate ibc as _ibc;` statement we inject.
+/// Note: we use `ibc` as our top-level crate, due to the
+/// `extern crate ibc as ibc;` statement we inject.
 pub struct Imports;
 
 impl Imports {
     pub fn CommitmentRoot() -> TokenStream {
-        quote! {_ibc::core::ics23_commitment::commitment::CommitmentRoot}
+        quote! {ibc::core::ics23_commitment::commitment::CommitmentRoot}
     }
 
     pub fn CommitmentPrefix() -> TokenStream {
-        quote! {_ibc::core::ics23_commitment::commitment::CommitmentPrefix}
+        quote! {ibc::core::ics23_commitment::commitment::CommitmentPrefix}
     }
 
     pub fn CommitmentProofBytes() -> TokenStream {
-        quote! {_ibc::core::ics23_commitment::commitment::CommitmentProofBytes}
+        quote! {ibc::core::ics23_commitment::commitment::CommitmentProofBytes}
     }
 
     pub fn Path() -> TokenStream {
-        quote! {_ibc::core::ics24_host::path::Path}
+        quote! {ibc::core::ics24_host::path::Path}
     }
 
     pub fn ClientStateBase() -> TokenStream {
-        quote! {_ibc::core::ics02_client::client_state::ClientStateBase}
+        quote! {ibc::core::ics02_client::client_state::ClientStateBase}
     }
 
     pub fn ClientStateInitializer() -> TokenStream {
-        quote! {_ibc::core::ics02_client::client_state::ClientStateInitializer}
+        quote! {ibc::core::ics02_client::client_state::ClientStateInitializer}
     }
 
     pub fn ClientType() -> TokenStream {
-        quote! {_ibc::core::ics02_client::client_type::ClientType}
+        quote! {ibc::core::ics02_client::client_type::ClientType}
     }
 
     pub fn ClientError() -> TokenStream {
-        quote! {_ibc::core::ics02_client::error::ClientError}
+        quote! {ibc::core::ics02_client::error::ClientError}
     }
 
     pub fn Height() -> TokenStream {
-        quote! {_ibc::Height}
+        quote! {ibc::Height}
     }
 
     pub fn Any() -> TokenStream {
@@ -50,7 +50,7 @@ impl Imports {
     }
 
     pub fn MerkleProof() -> TokenStream {
-        quote! {_ibc::core::ics23_commitment::merkle::MerkleProof}
+        quote! {ibc::core::ics23_commitment::merkle::MerkleProof}
     }
 }
 

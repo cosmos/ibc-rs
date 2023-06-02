@@ -57,22 +57,17 @@ fn derive_impl(ast: DeriveInput, opts: Opts) -> TokenStream {
 
     // Note: we must use the statement `extern crate self as _ibc` when in "mock mode"
     // (i.e. in ibc-rs itself) because we don't have `ibc` as a dependency
-    let crate_name = if is_mock(&ast) {
-        quote! {self}
+    let maybe_extern_crate_stmt = if is_mock(&ast) {
+        quote! {extern crate self as ibc;}
     } else {
-        quote! {ibc}
+        quote! {}
     };
 
     quote! {
-        #[doc(hidden)]
-        #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
-        const _: () = {
-            #[allow(unused_extern_crates, clippy::useless_attribute)]
-            extern crate #crate_name as _ibc;
+        #maybe_extern_crate_stmt
 
-            #ClientStateBase_impl_block
-            #ClientStateInitializer_impl_block
-        };
+        #ClientStateBase_impl_block
+        #ClientStateInitializer_impl_block
     }
 }
 
