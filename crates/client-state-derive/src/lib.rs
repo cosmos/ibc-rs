@@ -55,9 +55,10 @@ fn derive_impl(ast: DeriveInput, opts: Opts) -> TokenStream {
     let ClientStateInitializer_impl_block =
         impl_ClientStateInitializer(enum_name, enum_variants, &opts);
 
-    // Note: we must use the statement `extern crate self as _ibc` when in "mock mode"
-    // (i.e. in ibc-rs itself) because we don't have `ibc` as a dependency
     let maybe_extern_crate_stmt = if is_mock(&ast) {
+        // Note: we must add this statement when in "mock mode"
+        // (i.e. in ibc-rs itself) because we don't have `ibc` as a dependency,
+        // so we need to define the `ibc` symbol to mean "the `self` crate".
         quote! {extern crate self as ibc;}
     } else {
         quote! {}
