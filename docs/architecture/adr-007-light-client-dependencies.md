@@ -25,24 +25,6 @@ This ADR is all about fixing this issue; namely, to enable light clients to impo
 
 The primary change is that we will no longer use dynamic dispatch. Namely, we will remove all occurances of `dyn ValidationContext`, `Box<dyn ConsensusState>`, etc. This is because our solution will be centered around generics, and our traits will no longer be trait object safe.
 
-Thus, we now require the host to store all known `ConsensusState`s and `ClientState`s objects in an enum, such as
-
-```rust
-enum AnyConsensusState {
-    Tendermint(TmConsensusState),
-    Near(NearConsensusState),
-    // ...
-}
-
-enum AnyClientState {
-    Tendermint(TmClientState),
-    Near(NearClientState),
-    // ...
-}
-```
-
-These will be passed to `ibc-rs` through methods such as `ValidationContext::client_state()` and `ValidationContext::consensus_state()`.
-
 ### Changes to `ClientState`
 
 The `ClientState` functionality is split into 4 traits: 
@@ -112,9 +94,79 @@ pub trait ValidationContext: Router {
         Self::ClientExecutionContext,
     >;
 
-    ...
+    // ...
 }
 ```
+
+`AnyConsensusState` and `AnyClientState` are expected to be enums that hold the consensus states and client states of all supported light clients. For example,
+
+```rust
+enum AnyConsensusState {
+    Tendermint(TmConsensusState),
+    Near(NearConsensusState),
+    // ...
+}
+
+enum AnyClientState {
+    Tendermint(TmClientState),
+    Near(NearClientState),
+    // ...
+}
+```
+
+`ClientValidationContext` and `ClientExecutionContext` correspond to the same types described in the previous section. The host must ensure that these 2 types implement the Tendermint and Near "dependency traits" (as discussed in the previous section). For example,
+
+```rust
+struct MyClientValidationContext;
+
+impl TmClientValidationContext for MyClientValidationContext {
+    // ...
+}
+
+impl NearClientValidationContext for MyClientValidationContext {
+    // ...
+}
+```
+
+### `ClientState` and `ConsensusState` convience derive macros
+Notice that `ValidationContext::AnyClientState` needs to implement `ClientState`, and `ValidationContext::AnyConsensusState` needs to implement `ConsensusState`. Given that `AnyClientState` and `AnyConsensusState` are enums that wrap types that implement `ClientState` or `ConsensusState` (respectively), implementing these traits is gruesome boilerplate:
+
+```rust
+impl ClientStateBase for AnyClientState {
+    fn client_type(&self) -> ClientType {
+        match self {
+            Tendermint(cs) => cs.client_type(),
+            Near(cs) => cs.client_type()
+        }
+    }
+
+    // ...
+}
+```
+
+To relieve users of such torture, we provide derive macros that do just that:
+
+```rust
+#[derive(ConsensusState)]
+enum AnyConsensusState {
+    Tendermint(TmConsensusState),
+    Near(NearConsensusState),
+    // ...
+}
+
+#[derive(ClientState)]
+#[generics(consensus_state = AnyConsensusState,
+           client_validation_context = MyClientValidationContext,
+           client_execution_context = MyClientExecutionContext)
+]
+enum AnyClientState {
+    Tendermint(TmClientState),
+    Near(NearClientState),
+    // ...
+}
+```
+
+## FAQs
 
 ### Why there are 4 `ClientState` traits
 
@@ -132,7 +184,8 @@ This arises from the fact that no method uses all 3 generic parameters. [This pl
 
 ### Why have `ClientValidationContext` and `ClientExecutionContext` as opposed to just one `ClientContext`
 
-
+### Alternatives to writing our own `ClientState` and `ConsensusState` derive macros
++ `enum_derive` and `enum_delegate`
 
 ## Consequences
 
