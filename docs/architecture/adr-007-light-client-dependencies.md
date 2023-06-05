@@ -25,9 +25,47 @@ This ADR is all about fixing this issue; namely, to enable light clients to impo
 
 The primary change is that we will no longer use dynamic dispatch. Namely, we will remove all occurances of `dyn ValidationContext`, `Box<dyn ConsensusState>`, etc. This is because our solution will be centered around generics, and our traits will no longer be trait object safe.
 
-The `ClientState` trait is split into 4 traits: `ClientStateBase`, `ClientStateInitializer<SupportedConsensusStates>`
+Thus, we now require the host to store all known `ConsensusState`s and `ClientState`s objects in an enum, such as
 
-+ What `SupportedConsensusStates` is
+```rust
+enum AnyConsensusState {
+    Tendermint(TmConsensusState),
+    Near(NearConsensusState),
+    // ...
+}
+
+enum AnyClientState {
+    Tendermint(TmClientState),
+    Near(NearClientState),
+    // ...
+}
+```
+
+These will be given to `ibc-rs` through methods such as `ValidationContext::client_state()` and `ValidationContext::consensus_state()`.
+
+The `ClientState` trait is split into 4 traits: 
++ `ClientStateBase`, 
++ `ClientStateInitializer<AnyConsensusState>`, 
++ `ClientStateValidation<ClientValidationContext>`, and 
++ `ClientStateExecution<ClientExecutionContext>`
+
+A blanket implementation implements `ClientState` when these 4 traits are implemented on a type. For details as to why `ClientState` was split into 4 traits, see the section "Why there are 4 `ClientState` traits".
+
+### Why there are 4 `ClientState` traits
+
+The `ClientState` trait is defined as
+
+```rust
+trait ClientState<AnyConsensusState, ClientValidationContext, ClientExecutionContext>
+```
+
+The problem with defining all methods directly under `ClientState` is that it would force users to use fully qualified notation to call any method.
+
+This arises from the fact that no method uses all 3 generic parameters. [This playground] provides an explanatory example. Hence, our solution is to have all methods in a trait use every generic parameter of the trait to avoid this problem.
+
+[This playground]: https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=da65c22f1532cecc9f92a2b7cb2d1360
+
+### Why have `ClientValidationContext` and `ClientExecutionContext` as opposed to just one `ClientContext`
 
 ### Light client implementation
 
