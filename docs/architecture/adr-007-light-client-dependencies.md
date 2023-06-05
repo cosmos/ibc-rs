@@ -2,7 +2,7 @@
 
 ## Context
 
-This ADR is meant to address the main limitation of our current light client API, first introduced in [ADR 4] and [later improved] to adopt some of the ideas present in ibc-go's [ADR 6]. Implementing some `ClientState` methods require additional information from the host. For example, the Tendermint client's implementation of `ClientState::verify_client_message` needs [access to the host timestamp] to properly perform a message's verification. We solved this problem by [giving a reference] to a `ValidationContext` and `ExecutionContext`, since most methods are already made available by these traits. However, this solution has some limitations:
+This ADR is meant to address the main limitation of our current light client API, first introduced in [ADR 4] and [later improved] to adopt some of the ideas present in ibc-go's [ADR 6]. Implementing some `ClientState` methods require additional information from the host. For example, the Tendermint client's implementation of `ClientState::verify_client_message` needs [access to the host timestamp] to properly perform a message's verification. Previously, we solved this problem by [giving a reference] to a `ValidationContext` and `ExecutionContext`, since most methods are already made available by these traits. However, this solution has some limitations:
 
 1. Not all methods needed by every future light client is present in `ValidationContext` or `ExecutionContext`. For example, if a light client X finds that it would need access to some resource X, currently the only way to solve this is to submit a PR on the ibc-rs repository that adds a method `get_resource_Y()` to `ValidationContext`.
     + This means that every host will need to implement `get_resource_Y()`, even if they don't use light client X.
@@ -13,7 +13,7 @@ This ADR is meant to address the main limitation of our current light client API
     + By giving the light clients access to `ValidationContext` and `ExecutionContext`, we're effectively giving them the same capabilities as the core handlers.
     + Although our current model is that all code is trusted (including light clients we didn't write), restraining the capabilities we give to light clients at the very least eliminates a class of bugs (e.g. calling the wrong method), and serves as documentation for exactly what the light client will need.
 
-This ADR is all about fixing this issue; namely, to enable light clients to impose a `Context` trait for the host to implement.
+This ADR is all about fixing this issue; namely, to enable light clients to impose a `Context` trait for the host to implement. We loosely say that the light client "specifies dependencies on the host".
 
 [ADR 4]: ../architecture/adr-004-light-client-crates-extraction.md
 [later improved]: https://github.com/cosmos/ibc-rs/pull/584
@@ -45,16 +45,57 @@ These will be passed to `ibc-rs` through methods such as `ValidationContext::cli
 
 ### Changes to `ClientState`
 
-The `ClientState` trait is split into 4 traits: 
+The `ClientState` functionality is split into 4 traits: 
 + `ClientStateBase`, 
 + `ClientStateInitializer<AnyConsensusState>`, 
 + `ClientStateValidation<ClientValidationContext>`, and 
 + `ClientStateExecution<ClientExecutionContext>`
 
+Then, `ClientState` is defined as
+
+```rust
+pub trait ClientState<AnyConsensusState, ClientValidationContext, ClientExecutionContext>:
+    ClientStateBase
+    + ClientStateInitializer<AnyConsensusState>
+    + ClientStateValidation<ClientValidationContext>
+    + ClientStateExecution<ClientExecutionContext>
+    // + ...
+{
+}
+```
+
 A blanket implementation implements `ClientState` when these 4 traits are implemented on a type. For details as to why `ClientState` was split into 4 traits, see the section "Why there are 4 `ClientState` traits".
 
-TODO: Pattern of how light clients work
-+ Introduces the `ClientValidation/ExecutionContext`
+The `ClientStateValidation` and `ClientStateExecution` are the most important ones, as they are the ones that enable light clients to specify dependencies on the host. Below, we discuss `ClientStateValidation`; `ClientStateExecution` works analogously.
+
+ Say a light client needs a `get_resource_Y()` method from the host in `ClientState::verify_client_message()`. Then, they would first define a trait for the host to implement.
+
+```rust
+trait MyClientValidationContext {
+    fn get_resource_Y(&self) -> Y;
+}
+```
+
+Then, they would implement the `ClientStateValidation<ClientValidationContext>` trait *conditioned on* `ClientValidationContext` implementing `MyClientValidationContext`.
+
+```rust
+impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for MyClientState
+where
+    ClientValidationContext: MyClientValidationContext,
+{
+    fn verify_client_message(
+        &self,
+        ctx: &ClientValidationContext,
+        // ...
+    ) -> Result<(), ClientError> { 
+        // `get_resource_Y()` accessible through `ctx`
+    }
+
+    // ...
+}
+```
+
+This is the core idea of this ADR. Everything else is a consequence of wanting to make this work.
 
 ### Changes to `ValidationContext` and `ExecutionContext`
 
@@ -102,6 +143,9 @@ This arises from the fact that no method uses all 3 generic parameters. [This pl
 ### Negative
 + If 2 light clients need the same (or very similar) methods, then the host will need to reimplement the same method multiple times
     + Although mitigatable by implementing once in a function and delegating all trait methods to that implementation, it is at the very least additional boilerplate
++ Increased complexity.
++ Harder to document. 
+    + Specifically, we do not write any trait bounds on the `Client{Validation, Execution}Context` generic parameters. The effective trait bounds are spread across all light client implementations that a given host uses.
 
 
 ### Neutral
