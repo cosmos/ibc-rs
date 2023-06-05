@@ -41,7 +41,9 @@ enum AnyClientState {
 }
 ```
 
-These will be given to `ibc-rs` through methods such as `ValidationContext::client_state()` and `ValidationContext::consensus_state()`.
+These will be passed to `ibc-rs` through methods such as `ValidationContext::client_state()` and `ValidationContext::consensus_state()`.
+
+### Changes to `ClientState`
 
 The `ClientState` trait is split into 4 traits: 
 + `ClientStateBase`, 
@@ -50,6 +52,28 @@ The `ClientState` trait is split into 4 traits:
 + `ClientStateExecution<ClientExecutionContext>`
 
 A blanket implementation implements `ClientState` when these 4 traits are implemented on a type. For details as to why `ClientState` was split into 4 traits, see the section "Why there are 4 `ClientState` traits".
+
+TODO: Pattern of how light clients work
++ Introduces the `ClientValidation/ExecutionContext`
+
+### Changes to `ValidationContext` and `ExecutionContext`
+
+`ValidationContext` is now defined as:
+
+```rust
+pub trait ValidationContext: Router {
+    type ClientValidationContext;
+    type ClientExecutionContext;
+    type AnyConsensusState: ConsensusState<EncodeError = ContextError>;
+    type AnyClientState: ClientState<
+        Self::AnyConsensusState,
+        Self::ClientValidationContext,
+        Self::ClientExecutionContext,
+    >;
+
+    ...
+}
+```
 
 ### Why there are 4 `ClientState` traits
 
@@ -67,9 +91,6 @@ This arises from the fact that no method uses all 3 generic parameters. [This pl
 
 ### Why have `ClientValidationContext` and `ClientExecutionContext` as opposed to just one `ClientContext`
 
-### Light client implementation
-
-In this section, we will discuss the general pattern that light clients will use.
 
 
 ## Consequences
