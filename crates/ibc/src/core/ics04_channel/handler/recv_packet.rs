@@ -51,7 +51,7 @@ where
             // Note: ibc-go doesn't make the check for `Order::None` channels
             Order::None => false,
             Order::Unordered => {
-                let packet = msg.packet.clone();
+                let packet = &msg.packet;
                 let receipt_path_on_b =
                     ReceiptPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
                 ctx_b.get_packet_receipt(&receipt_path_on_b).is_ok()
@@ -388,7 +388,7 @@ mod tests {
             ..
         } = fixture;
 
-        let packet = msg.packet.clone();
+        let packet = &msg.packet;
         let mut context = context
             .with_client(&ClientId::default(), client_height)
             .with_connection(ConnectionId::default(), conn_end_on_b)
