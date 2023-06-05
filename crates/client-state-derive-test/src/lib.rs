@@ -32,7 +32,7 @@ mod test {
     }
 
     #[derive(Debug, PartialEq, Clone, ClientState)]
-    #[host(consensus_state = HostConsensusState,
+    #[generics(consensus_state = HostConsensusState,
            client_validation_context = ClientValidationContext,
            client_execution_context = ClientExecutionContext)]
     enum HostClientState {
