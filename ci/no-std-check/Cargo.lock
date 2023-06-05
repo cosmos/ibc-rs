@@ -709,15 +709,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e48c92028aaa870e83d51c64e5d4e0b6981b360c522198c23959f219a4e1b15b"
 
 [[package]]
-name = "erased-serde"
-version = "0.3.25"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f2b0c2380453a92ea8b6c8e5f64ecaafccddde8ceab55ff7a8ac1029f894569"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "errno"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1056,20 +1047,15 @@ name = "ibc"
 version = "0.41.0"
 dependencies = [
  "bytes",
- "cfg-if",
  "derive_more",
  "displaydoc",
  "dyn-clone",
- "erased-serde",
  "ibc-proto",
  "ics23",
  "num-traits",
  "primitive-types",
  "prost",
  "safe-regex",
- "serde",
- "serde_derive",
- "serde_json",
  "sha2 0.10.6",
  "subtle-encoding",
  "tendermint",

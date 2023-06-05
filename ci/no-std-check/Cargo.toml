@@ -5,10 +5,7 @@ edition = "2021"
 resolver = "2"
 
 [dependencies]
-ibc = { path = "../../crates/ibc", default-features = false, features = [
-  "serde",
-  "mocks-no-std",
-] }
+ibc = { path = "../../crates/ibc", default-features = false }
 ibc-proto = { version = "0.31.0", default-features = false, features = [
   "parity-scale-codec",
   "borsh",

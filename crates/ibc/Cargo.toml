@@ -40,12 +40,11 @@ parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info"]
 borsh = ["dep:borsh"]
 
 # This feature is required for token transfer (ICS-20)
-serde = ["dep:serde", "dep:serde_derive", "serde_json", "erased-serde"]
+serde = ["dep:serde", "dep:serde_derive", "serde_json", "erased-serde", "ics23/serde"]
 
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
 # Depends on the `testgen` suite for generating Tendermint light blocks.
-mocks = ["tendermint-testgen", "tendermint/clock", "cfg-if", "parking_lot"]
-mocks-no-std = ["cfg-if"]
+mocks = ["tendermint-testgen", "tendermint/clock", "parking_lot"]
 
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
@@ -102,4 +101,3 @@ test-log = { version = "0.2.10", features = ["trace"] }
 tendermint-rpc = { version = "0.32", features = ["http-client", "websocket-client"] }
 tendermint-testgen = { version = "0.32" } # Needed for generating (synthetic) light blocks.
 parking_lot = { version = "0.12.1" }
-cfg-if = { version = "1.0.0" }
