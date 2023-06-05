@@ -50,12 +50,12 @@ fn delegate_call_in_match(
             let HostClientState = enum_name;
             let Tendermint = &variant.ident;
             let TmClientState = get_enum_variant_type_path(variant);
-            let SupportedConsensusStates = &opts.consensus_state;
+            let AnyConsensusState = &opts.consensus_state;
 
             // Note: We use `HostClientState` and `Tendermint`, etc as *variable names*. They're
             // only meant to improve readability of the `quote`; it's not literally what's generated!
             quote! {
-                #HostClientState::#Tendermint(cs) => <#TmClientState as #ClientStateInitializer<#SupportedConsensusStates>>::initialise(cs, consensus_state)
+                #HostClientState::#Tendermint(cs) => <#TmClientState as #ClientStateInitializer<#AnyConsensusState>>::initialise(cs, consensus_state)
             }
         })
         .collect()

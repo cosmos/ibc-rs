@@ -837,7 +837,7 @@ impl Router for MockContext {
 }
 
 impl TmClientValidationContext for MockContext {
-    type SupportedConsensusStates = HostConsensusState;
+    type AnyConsensusState = HostConsensusState;
 
     fn host_height(&self) -> Result<Height, ContextError> {
         ValidationContext::host_height(self)
@@ -850,7 +850,7 @@ impl TmClientValidationContext for MockContext {
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::SupportedConsensusStates, ContextError> {
+    ) -> Result<Self::AnyConsensusState, ContextError> {
         ValidationContext::consensus_state(self, client_cons_state_path)
     }
 
@@ -858,7 +858,7 @@ impl TmClientValidationContext for MockContext {
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::SupportedConsensusStates>, ContextError> {
+    ) -> Result<Option<Self::AnyConsensusState>, ContextError> {
         let ibc_store = self.ibc_store.lock();
         let client_record =
             ibc_store
@@ -888,7 +888,7 @@ impl TmClientValidationContext for MockContext {
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::SupportedConsensusStates>, ContextError> {
+    ) -> Result<Option<Self::AnyConsensusState>, ContextError> {
         let ibc_store = self.ibc_store.lock();
         let client_record =
             ibc_store
@@ -1002,13 +1002,10 @@ impl TmClientExecutionContext for MockContext {
 impl ValidationContext for MockContext {
     type ClientValidationContext = Self;
     type ClientExecutionContext = Self;
-    type SupportedConsensusStates = HostConsensusState;
-    type SupportedClientStates = HostClientState;
+    type AnyConsensusState = HostConsensusState;
+    type AnyClientState = HostClientState;
 
-    fn client_state(
-        &self,
-        client_id: &ClientId,
-    ) -> Result<Self::SupportedClientStates, ContextError> {
+    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError> {
         match self.ibc_store.lock().clients.get(client_id) {
             Some(client_record) => {
                 client_record
@@ -1025,10 +1022,7 @@ impl ValidationContext for MockContext {
         .map_err(ContextError::ClientError)
     }
 
-    fn decode_client_state(
-        &self,
-        client_state: Any,
-    ) -> Result<Self::SupportedClientStates, ContextError> {
+    fn decode_client_state(&self, client_state: Any) -> Result<Self::AnyClientState, ContextError> {
         if let Ok(client_state) = TmClientState::try_from(client_state.clone()) {
             client_state.validate().map_err(ClientError::from)?;
             Ok(client_state.into())
@@ -1363,7 +1357,7 @@ impl ExecutionContext for MockContext {
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
-        client_state: Self::SupportedClientStates,
+        client_state: Self::AnyClientState,
     ) -> Result<(), ContextError> {
         let mut ibc_store = self.ibc_store.lock();
 
@@ -1384,7 +1378,7 @@ impl ExecutionContext for MockContext {
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
-        consensus_state: Self::SupportedConsensusStates,
+        consensus_state: Self::AnyConsensusState,
     ) -> Result<(), ContextError> {
         let mut ibc_store = self.ibc_store.lock();
 

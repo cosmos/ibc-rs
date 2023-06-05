@@ -88,8 +88,8 @@ pub trait ClientStateBase: PartialEq + Clone + Debug + Send + Sync {
     ) -> Result<(), ClientError>;
 }
 
-pub trait ClientStateInitializer<SupportedConsensusStates> {
-    fn initialise(&self, consensus_state: Any) -> Result<SupportedConsensusStates, ClientError>;
+pub trait ClientStateInitializer<AnyConsensusState> {
+    fn initialise(&self, consensus_state: Any) -> Result<AnyConsensusState, ClientError>;
 }
 
 pub trait ClientStateValidation<ClientValidationContext> {
@@ -155,24 +155,24 @@ pub trait ClientStateExecution<ClientExecutionContext> {
     ) -> Result<Height, ClientError>;
 }
 
-pub trait ClientState<SupportedConsensusStates, ClientValidationContext, ClientExecutionContext>:
+pub trait ClientState<AnyConsensusState, ClientValidationContext, ClientExecutionContext>:
     PartialEq
     + Clone
     + Debug
     + Send
     + Sync
     + ClientStateBase
-    + ClientStateInitializer<SupportedConsensusStates>
+    + ClientStateInitializer<AnyConsensusState>
     + ClientStateValidation<ClientValidationContext>
     + ClientStateExecution<ClientExecutionContext>
 {
 }
 
-impl<SupportedConsensusStates, ClientValidationContext, ClientExecutionContext, T>
-    ClientState<SupportedConsensusStates, ClientValidationContext, ClientExecutionContext> for T
+impl<AnyConsensusState, ClientValidationContext, ClientExecutionContext, T>
+    ClientState<AnyConsensusState, ClientValidationContext, ClientExecutionContext> for T
 where
     T: ClientStateBase
-        + ClientStateInitializer<SupportedConsensusStates>
+        + ClientStateInitializer<AnyConsensusState>
         + ClientStateValidation<ClientValidationContext>
         + ClientStateExecution<ClientExecutionContext>,
 {

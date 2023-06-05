@@ -401,7 +401,7 @@ impl From<ClientState> for Any {
 }
 
 pub trait TmClientValidationContext {
-    type SupportedConsensusStates: TryInto<TmConsensusState, Error = &'static str>;
+    type AnyConsensusState: TryInto<TmConsensusState, Error = &'static str>;
 
     /// Returns the current height of the local chain.
     fn host_height(&self) -> Result<Height, ContextError>;
@@ -416,21 +416,21 @@ pub trait TmClientValidationContext {
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::SupportedConsensusStates, ContextError>;
+    ) -> Result<Self::AnyConsensusState, ContextError>;
 
     /// Search for the lowest consensus state higher than `height`.
     fn next_consensus_state(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::SupportedConsensusStates>, ContextError>;
+    ) -> Result<Option<Self::AnyConsensusState>, ContextError>;
 
     /// Search for the highest consensus state lower than `height`.
     fn prev_consensus_state(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::SupportedConsensusStates>, ContextError>;
+    ) -> Result<Option<Self::AnyConsensusState>, ContextError>;
 }
 
 pub trait TmClientExecutionContext: TmClientValidationContext {
@@ -629,11 +629,11 @@ impl ClientStateBase for ClientState {
     }
 }
 
-impl<SupportedConsensusStates> ClientStateInitializer<SupportedConsensusStates> for ClientState
+impl<AnyConsensusState> ClientStateInitializer<AnyConsensusState> for ClientState
 where
-    SupportedConsensusStates: From<TmConsensusState>,
+    AnyConsensusState: From<TmConsensusState>,
 {
-    fn initialise(&self, consensus_state: Any) -> Result<SupportedConsensusStates, ClientError> {
+    fn initialise(&self, consensus_state: Any) -> Result<AnyConsensusState, ClientError> {
         let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
         if tm_consensus_state.root().is_empty() {
             return Err(ClientError::Other {

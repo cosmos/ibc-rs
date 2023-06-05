@@ -22,9 +22,9 @@ use super::packet::Sequence;
 pub trait SendPacketValidationContext {
     type ClientValidationContext;
     type ClientExecutionContext;
-    type SupportedConsensusStates: ConsensusState<EncodeError = ContextError>;
-    type SupportedClientStates: ClientState<
-        Self::SupportedConsensusStates,
+    type AnyConsensusState: ConsensusState<EncodeError = ContextError>;
+    type AnyClientState: ClientState<
+        Self::AnyConsensusState,
         Self::ClientValidationContext,
         Self::ClientExecutionContext,
     >;
@@ -37,15 +37,12 @@ pub trait SendPacketValidationContext {
 
     /// Returns the ClientState for the given identifier `client_id`. Necessary dependency towards
     /// proof verification.
-    fn client_state(
-        &self,
-        client_id: &ClientId,
-    ) -> Result<Self::SupportedClientStates, ContextError>;
+    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError>;
 
     fn client_consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::SupportedConsensusStates, ContextError>;
+    ) -> Result<Self::AnyConsensusState, ContextError>;
 
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
         -> Result<Sequence, ContextError>;
@@ -57,8 +54,8 @@ where
 {
     type ClientValidationContext = T::ClientValidationContext;
     type ClientExecutionContext = T::ClientExecutionContext;
-    type SupportedConsensusStates = T::SupportedConsensusStates;
-    type SupportedClientStates = T::SupportedClientStates;
+    type AnyConsensusState = T::AnyConsensusState;
+    type AnyClientState = T::AnyClientState;
 
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
         self.channel_end(channel_end_path)
@@ -68,14 +65,14 @@ where
         self.connection_end(connection_id)
     }
 
-    fn client_state(&self, client_id: &ClientId) -> Result<T::SupportedClientStates, ContextError> {
+    fn client_state(&self, client_id: &ClientId) -> Result<T::AnyClientState, ContextError> {
         self.client_state(client_id)
     }
 
     fn client_consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<T::SupportedConsensusStates, ContextError> {
+    ) -> Result<T::AnyConsensusState, ContextError> {
         self.consensus_state(client_cons_state_path)
     }
 

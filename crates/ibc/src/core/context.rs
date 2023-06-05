@@ -91,9 +91,9 @@ impl std::error::Error for RouterError {
 pub trait ValidationContext: Router {
     type ClientValidationContext;
     type ClientExecutionContext;
-    type SupportedConsensusStates: ConsensusState<EncodeError = ContextError>;
-    type SupportedClientStates: ClientState<
-        Self::SupportedConsensusStates,
+    type AnyConsensusState: ConsensusState<EncodeError = ContextError>;
+    type AnyClientState: ClientState<
+        Self::AnyConsensusState,
         Self::ClientValidationContext,
         Self::ClientExecutionContext,
     >;
@@ -102,16 +102,10 @@ pub trait ValidationContext: Router {
     fn get_client_execution_context(&mut self) -> &mut Self::ClientExecutionContext;
 
     /// Returns the ClientState for the given identifier `client_id`.
-    fn client_state(
-        &self,
-        client_id: &ClientId,
-    ) -> Result<Self::SupportedClientStates, ContextError>;
+    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError>;
 
     /// Tries to decode the given `client_state` into a concrete light client state.
-    fn decode_client_state(
-        &self,
-        client_state: Any,
-    ) -> Result<Self::SupportedClientStates, ContextError>;
+    fn decode_client_state(&self, client_state: Any) -> Result<Self::AnyClientState, ContextError>;
 
     /// Retrieve the consensus state for the given client ID at the specified
     /// height.
@@ -120,7 +114,7 @@ pub trait ValidationContext: Router {
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::SupportedConsensusStates, ContextError>;
+    ) -> Result<Self::AnyConsensusState, ContextError>;
 
     /// Returns the current height of the local chain.
     fn host_height(&self) -> Result<Height, ContextError>;
@@ -132,7 +126,7 @@ pub trait ValidationContext: Router {
     fn host_consensus_state(
         &self,
         height: &Height,
-    ) -> Result<Self::SupportedConsensusStates, ContextError>;
+    ) -> Result<Self::AnyConsensusState, ContextError>;
 
     /// Returns a natural number, counting how many clients have been created
     /// thus far. The value of this counter should increase only via method
@@ -247,14 +241,14 @@ pub trait ExecutionContext: ValidationContext {
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
-        client_state: Self::SupportedClientStates,
+        client_state: Self::AnyClientState,
     ) -> Result<(), ContextError>;
 
     /// Called upon successful client creation and update
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
-        consensus_state: Self::SupportedConsensusStates,
+        consensus_state: Self::AnyConsensusState,
     ) -> Result<(), ContextError>;
 
     /// Called upon client creation.

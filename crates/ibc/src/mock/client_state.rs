@@ -356,11 +356,11 @@ where
     }
 }
 
-impl<SupportedConsensusStates> ClientStateInitializer<SupportedConsensusStates> for MockClientState
+impl<AnyConsensusState> ClientStateInitializer<AnyConsensusState> for MockClientState
 where
-    SupportedConsensusStates: From<MockConsensusState>,
+    AnyConsensusState: From<MockConsensusState>,
 {
-    fn initialise(&self, consensus_state: Any) -> Result<SupportedConsensusStates, ClientError> {
+    fn initialise(&self, consensus_state: Any) -> Result<AnyConsensusState, ClientError> {
         let consensus_state = MockConsensusState::try_from(consensus_state)?;
 
         Ok(consensus_state.into())
