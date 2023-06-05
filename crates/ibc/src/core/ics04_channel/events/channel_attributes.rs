@@ -1,5 +1,5 @@
-///! This module holds all the abci event attributes for IBC events emitted
-///! during the channel handshake.
+//! This module holds all the abci event attributes for IBC events emitted
+//! during the channel handshake.
 use derive_more::From;
 use tendermint::abci;
 
