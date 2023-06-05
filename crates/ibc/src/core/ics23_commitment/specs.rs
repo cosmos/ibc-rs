@@ -8,9 +8,6 @@ use ibc_proto::ics23::{
 ///
 /// This type encapsulates different types of proof specifications, mostly predefined, e.g., for
 /// Cosmos-SDK.
-/// Additionally, this type also aids in the conversion from `ProofSpec` types from crate `ics23`
-/// into proof specifications as represented in the `ibc_proto` type; see the
-/// `From` trait(s) below.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProofSpecs(Vec<ProofSpec>);
