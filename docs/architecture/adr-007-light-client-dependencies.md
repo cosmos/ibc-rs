@@ -23,7 +23,6 @@ This ADR is all about fixing this issue; namely, to enable light clients to impo
 
 ## Decision
 
-The primary change is that we will no longer use dynamic dispatch. Namely, we will remove all occurances of `dyn ValidationContext`, `Box<dyn ConsensusState>`, etc. This is because our solution will be centered around generics, and our traits will no longer be trait object safe.
 
 ### Changes to `ClientState`
 
@@ -48,9 +47,9 @@ pub trait ClientState<AnyConsensusState, ClientValidationContext, ClientExecutio
 
 A blanket implementation implements `ClientState` when these 4 traits are implemented on a type. For details as to why `ClientState` was split into 4 traits, see the section "Why there are 4 `ClientState` traits".
 
-The `ClientStateValidation` and `ClientStateExecution` are the most important ones, as they are the ones that enable light clients to specify dependencies on the host. Below, we discuss `ClientStateValidation`; `ClientStateExecution` works analogously.
+The `ClientStateValidation` and `ClientStateExecution` traits are the most important ones, as they are the ones that enable light clients to specify dependencies on the host. Below, we discuss `ClientStateValidation`; `ClientStateExecution` works analogously.
 
- Say a light client needs a `get_resource_Y()` method from the host in `ClientState::verify_client_message()`. Then, they would first define a trait for the host to implement.
+Say the implementation of a light client needs a `get_resource_Y()` method from the host in `ClientState::verify_client_message()`. The implementor would first define a trait for the host to implement.
 
 ```rust
 trait MyClientValidationContext {
@@ -58,7 +57,7 @@ trait MyClientValidationContext {
 }
 ```
 
-Then, they would implement the `ClientStateValidation<ClientValidationContext>` trait *conditioned on* `ClientValidationContext` implementing `MyClientValidationContext`.
+Then, they would implement the `ClientStateValidation<ClientValidationContext>` trait *conditioned on* `ClientValidationContext` having `MyClientValidationContext` as supertrait.
 
 ```rust
 impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for MyClientState
@@ -81,13 +80,17 @@ This is the core idea of this ADR. Everything else is a consequence of wanting t
 
 ### Changes to `ValidationContext` and `ExecutionContext`
 
+The `ClientState` changes described above induce some changes on `ValidationContext` and `ExecutionContext`.
+
 `ValidationContext` is now defined as:
 
 ```rust
 pub trait ValidationContext: Router {
     type ClientValidationContext;
     type ClientExecutionContext;
+    /// Enum that can contain a `ConsensusState` object of any supported light client
     type AnyConsensusState: ConsensusState<EncodeError = ContextError>;
+    /// Enum that can contain a `ClientState` object of any supported light client
     type AnyClientState: ClientState<
         Self::AnyConsensusState,
         Self::ClientValidationContext,
@@ -119,6 +122,8 @@ enum AnyClientState {
 ```rust
 struct MyClientValidationContext;
 
+// Here, `TmClientValidationContext` is a Tendermint "dependency trait", meaning that it contains all the methods
+// that the Tendermint client requires from the host in order to perform message validation.
 impl TmClientValidationContext for MyClientValidationContext {
     // ...
 }
@@ -128,8 +133,8 @@ impl NearClientValidationContext for MyClientValidationContext {
 }
 ```
 
-### `ClientState` and `ConsensusState` convience derive macros
-Notice that `ValidationContext::AnyClientState` needs to implement `ClientState`, and `ValidationContext::AnyConsensusState` needs to implement `ConsensusState`. Given that `AnyClientState` and `AnyConsensusState` are enums that wrap types that implement `ClientState` or `ConsensusState` (respectively), implementing these traits is gruesome boilerplate:
+### `ClientState` and `ConsensusState` convenience derive macros
+Notice that `ValidationContext::AnyClientState` needs to implement `ClientState`, and `ValidationContext::AnyConsensusState` needs to implement `ConsensusState`. Given that `AnyClientState` and `AnyConsensusState` are enums that wrap types that *must* implement `ClientState` or `ConsensusState` (respectively), implementing these traits is gruesome boilerplate:
 
 ```rust
 impl ClientStateBase for AnyClientState {
