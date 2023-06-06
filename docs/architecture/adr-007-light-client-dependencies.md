@@ -4,7 +4,7 @@
 
 This ADR is meant to address the main limitation of our current light client API, first introduced in [ADR 4] and [later improved] to adopt some of the ideas present in ibc-go's [ADR 6]. Implementing some `ClientState` methods require additional information from the host. For example, the Tendermint client's implementation of `ClientState::verify_client_message` needs [access to the host timestamp] to properly perform a message's verification. Previously, we solved this problem by [giving a reference] to a `ValidationContext` and `ExecutionContext`, since most methods are already made available by these traits. However, this solution has some limitations:
 
-1. Not all methods needed by every future light client is present in `ValidationContext` or `ExecutionContext`. For example, if a light client X finds that it would need access to some resource X, currently the only way to solve this is to submit a PR on the ibc-rs repository that adds a method `get_resource_Y()` to `ValidationContext`.
+1. Not all methods needed by every future light client is present in `ValidationContext` or `ExecutionContext`. For example, if a light client X finds that it would need access to some resource Y, currently the only way to solve this is to submit a PR on the ibc-rs repository that adds a method `get_resource_Y()` to `ValidationContext`.
     + This means that every host will need to implement `get_resource_Y()`, even if they don't use light client X.
     + It clutters up `ValidationContext` and `ExecutionContext`.
 2. We found that some methods only needed by the Tendermint light client made their way into `ValidationContext`.
@@ -45,7 +45,7 @@ pub trait ClientState<AnyConsensusState, ClientValidationContext, ClientExecutio
 }
 ```
 
-A blanket implementation implements `ClientState` when these 4 traits are implemented on a type. For details as to why `ClientState` was split into 4 traits, see the section "Why there are 4 `ClientState` traits".
+A blanket implementation implements `ClientState` when these 4 traits are implemented on a type. For details as to why `ClientState` was split into 4 traits, see the section "Why are there 4 `ClientState` traits?".
 
 The `ClientStateValidation` and `ClientStateExecution` traits are the most important ones, as they are the ones that enable light clients to specify dependencies on the host. Below, we discuss `ClientStateValidation`; `ClientStateExecution` works analogously.
 
@@ -174,7 +174,7 @@ enum AnyClientState {
 
 ## FAQs
 
-### Why there are 4 `ClientState` traits
+### Why are there 4 `ClientState` traits?
 
 The `ClientState` trait is defined as
 
@@ -188,17 +188,20 @@ This arises from the fact that no method uses all 3 generic parameters. [This pl
 
 [This playground]: https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=da65c22f1532cecc9f92a2b7cb2d1360
 
-### Alternatives to writing our own `ClientState` and `ConsensusState` derive macros
+### Why did you write custom `ClientState` and `ConsensusState` derive macros? Why not use `enum_dispatch` or `enum_delegate`?
 We ended up having to write our own custom derive macros because existing crates that offer similar functionality had shortcomings that prevented us from using them:
 
 + `enum_dispatch`: the trait `ClientState` and the enum that implements `ClientState` need to be defined in the same crate
-+ `enum_delegate v0.2`: was designed to remove the above restriction. However, generic traits are not supported.
-    + we investigated [turning the generic types into associated types] of `ClientState`; however we were hit by the other limitation of `enum_delegate`: `ClientState` cannot have any supertrait.
++ `enum_delegate` (v0.2.*): was designed to remove the above restriction. However, generic traits are not supported.
+    + we investigated [turning the generic types] of `ClientState` into associated types. However we were hit by the other limitation of `enum_delegate`: `ClientState` cannot have any supertrait.
 
-[turning the generic types into associated types]: https://github.com/cosmos/ibc-rs/issues/296#issuecomment-1540630517
+[turning the generic types]: https://github.com/cosmos/ibc-rs/issues/296#issuecomment-1540630517
 ## Consequences
 
 ### Positive
++ All light clients can now be implemented in their crates without ever needing to modify ibc-rs
++ Removes trait object downcasting in light client implementations
+    + downcasting fails at runtime; these errors are now compile-time
 
 ### Negative
 + If 2 light clients need the same (or very similar) methods, then the host will need to reimplement the same method multiple times
@@ -211,8 +214,10 @@ We ended up having to write our own custom derive macros because existing crates
 ### Neutral
 + Our light client traits are no longer trait-object safe. Hence, for example, all uses of `Box<dyn ConsensusState>` are replaced by the analogous `ValidationContext::AnyConsensusState`.
 
-## References
+## Future work
 
-> Are there any relevant PR comments, issues that led up to this, or articles referenced for why we made the given design choice? If so link them here!
+In the methods `ClientState::{verify_client_message, check_for_misbehaviour, update_state, update_state_on_misbehaviour}`, the `client_message` argument is still of type `ibc_proto::google::protobuf::Any` (i.e. still serialized). Ideally, we would have it be well-typed and unserialized. Since there are many ways to do this, and this was slightly tangential to this work, we left it as future work.
+
+## References
 
 * [Main issue](https://github.com/cosmos/ibc-rs/issues/296)
