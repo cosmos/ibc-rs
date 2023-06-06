@@ -188,14 +188,15 @@ This arises from the fact that no method uses all 3 generic parameters. [This pl
 
 [This playground]: https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=da65c22f1532cecc9f92a2b7cb2d1360
 
-### Why have `ClientValidationContext` and `ClientExecutionContext` as opposed to just one `ClientContext`
-
 ### Alternatives to writing our own `ClientState` and `ConsensusState` derive macros
-+ `enum_derive` and `enum_delegate`
+We ended up having to write our own custom derive macros because existing crates that offer similar functionality had shortcomings that prevented us from using them:
 
++ `enum_dispatch`: the trait `ClientState` and the enum that implements `ClientState` need to be defined in the same crate
++ `enum_delegate v0.2`: was designed to remove the above restriction. However, generic traits are not supported.
+    + we investigated [turning the generic types into associated types] of `ClientState`; however we were hit by the other limitation of `enum_delegate`: `ClientState` cannot have any supertrait.
+
+[turning the generic types into associated types]: https://github.com/cosmos/ibc-rs/issues/296#issuecomment-1540630517
 ## Consequences
-
-> This section describes the consequences, after applying the decision. All consequences should be summarized here, not just the "positive" ones.
 
 ### Positive
 
@@ -208,6 +209,7 @@ This arises from the fact that no method uses all 3 generic parameters. [This pl
 
 
 ### Neutral
++ Our light client traits are no longer trait-object safe. Hence, for example, all uses of `Box<dyn ConsensusState>` are replaced by the analogous `ValidationContext::AnyConsensusState`.
 
 ## References
 
