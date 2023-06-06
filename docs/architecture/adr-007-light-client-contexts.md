@@ -1,4 +1,4 @@
-# ADR 007: LIGHT CLIENT DEPENDENCIES
+# ADR 007: LIGHT CLIENT CONTEXTS
 
 ## Context
 
@@ -13,7 +13,7 @@ This ADR is meant to address the main limitation of our current light client API
     + By giving the light clients access to `ValidationContext` and `ExecutionContext`, we're effectively giving them the same capabilities as the core handlers.
     + Although our current model is that all code is trusted (including light clients we didn't write), restraining the capabilities we give to light clients at the very least eliminates a class of bugs (e.g. calling the wrong method), and serves as documentation for exactly what the light client will need.
 
-This ADR is all about fixing this issue; namely, to enable light clients to impose a `Context` trait for the host to implement. We loosely say that the light client "specifies dependencies on the host".
+This ADR is all about fixing this issue; namely, to enable light clients to define a `Context` trait for the host to implement. One way to see this is that this new architecture allows light clients to define their own `ValidationContext` and `ExecutionContext`.
 
 [ADR 4]: ../architecture/adr-004-light-client-crates-extraction.md
 [later improved]: https://github.com/cosmos/ibc-rs/pull/584
@@ -47,7 +47,7 @@ pub trait ClientState<AnyConsensusState, ClientValidationContext, ClientExecutio
 
 A blanket implementation implements `ClientState` when these 4 traits are implemented on a type. For details as to why `ClientState` was split into 4 traits, see the section "Why are there 4 `ClientState` traits?".
 
-The `ClientStateValidation` and `ClientStateExecution` traits are the most important ones, as they are the ones that enable light clients to specify dependencies on the host. Below, we discuss `ClientStateValidation`; `ClientStateExecution` works analogously.
+The `ClientStateValidation` and `ClientStateExecution` traits are the most important ones, as they are the ones that enable light clients to define `Context` traits for the host to implement. Below, we discuss `ClientStateValidation`; `ClientStateExecution` works analogously.
 
 Say the implementation of a light client needs a `get_resource_Y()` method from the host in `ClientState::verify_client_message()`. The implementor would first define a trait for the host to implement.
 
@@ -117,12 +117,12 @@ enum AnyClientState {
 }
 ```
 
-`ClientValidationContext` and `ClientExecutionContext` correspond to the same types described in the previous section. The host must ensure that these 2 types implement the Tendermint and Near "dependency traits" (as discussed in the previous section). For example,
+`ClientValidationContext` and `ClientExecutionContext` correspond to the same types described in the previous section. The host must ensure that these 2 types implement the Tendermint and Near "`ValidationContext` and `ExecutionContext` traits" (as discussed in the previous section). For example,
 
 ```rust
 struct MyClientValidationContext;
 
-// Here, `TmClientValidationContext` is a Tendermint "dependency trait", meaning that it contains all the methods
+// Here, `TmClientValidationContext` is a Tendermint's `ValidationContext`, meaning that it contains all the methods
 // that the Tendermint client requires from the host in order to perform message validation.
 impl TmClientValidationContext for MyClientValidationContext {
     // ...
@@ -131,6 +131,8 @@ impl TmClientValidationContext for MyClientValidationContext {
 impl NearClientValidationContext for MyClientValidationContext {
     // ...
 }
+
+// Code for `ClientExecutionContext` is analogous
 ```
 
 ### `ClientState` and `ConsensusState` convenience derive macros
