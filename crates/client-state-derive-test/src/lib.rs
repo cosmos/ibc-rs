@@ -32,9 +32,9 @@ mod test {
     }
 
     #[derive(Debug, PartialEq, Clone, ClientState)]
-    #[generics(consensus_state = HostConsensusState,
-           client_validation_context = ClientValidationContext,
-           client_execution_context = ClientExecutionContext)]
+    #[generics(AnyConsensusState = HostConsensusState,
+               ClientValidationContext = ClientValidationContext,
+               ClientExecutionContext = ClientExecutionContext)]
     enum HostClientState {
         First(FirstClientState),
     }

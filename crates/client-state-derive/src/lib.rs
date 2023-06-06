@@ -26,8 +26,11 @@ use crate::traits::{
 #[derive(FromDeriveInput)]
 #[darling(attributes(generics))]
 pub(crate) struct Opts {
-    consensus_state: syn::ExprPath,
+    #[darling(rename = "AnyConsensusState")]
+    any_consensus_state: syn::ExprPath,
+    #[darling(rename = "ClientValidationContext")]
     client_validation_context: syn::ExprPath,
+    #[darling(rename = "ClientExecutionContext")]
     client_execution_context: syn::ExprPath,
 }
 
@@ -38,7 +41,7 @@ pub fn client_state_macro_derive(input: RawTokenStream) -> RawTokenStream {
     let opts = match Opts::from_derive_input(&ast) {
         Ok(opts) => opts,
         Err(e) => panic!(
-            "{} must be annotated with #[generics(consensus_state = <your ConsensusState enum>, client_validation_context = <your ClientValidationContext>, client_execution_context: <your ClientExecutionContext>)]: {e}",
+            "{} must be annotated with #[generics(AnyConsensusState = <your ConsensusState enum>, ClientValidationContext = <your ClientValidationContext>, ClientExecutionContext: <your ClientExecutionContext>)]: {e}",
             ast.ident
         ),
     };

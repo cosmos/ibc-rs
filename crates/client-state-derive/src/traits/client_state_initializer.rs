@@ -20,7 +20,7 @@ pub(crate) fn impl_ClientStateInitializer(
         delegate_call_in_match(client_state_enum_name, enum_variants.iter(), opts);
 
     let HostClientState = client_state_enum_name;
-    let HostConsensusState = &opts.consensus_state;
+    let HostConsensusState = &opts.any_consensus_state;
 
     let Any = Imports::Any();
     let ClientError = Imports::ClientError();
@@ -50,7 +50,7 @@ fn delegate_call_in_match(
             let HostClientState = enum_name;
             let Tendermint = &variant.ident;
             let TmClientState = get_enum_variant_type_path(variant);
-            let AnyConsensusState = &opts.consensus_state;
+            let AnyConsensusState = &opts.any_consensus_state;
 
             // Note: We use `HostClientState` and `Tendermint`, etc as *variable names*. They're
             // only meant to improve readability of the `quote`; it's not literally what's generated!
