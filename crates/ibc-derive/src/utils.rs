@@ -25,6 +25,10 @@ impl Imports {
         quote! {ibc::core::ics24_host::path::Path}
     }
 
+    pub fn ConsensusState() -> TokenStream {
+        quote! {ibc::core::ics02_client::consensus_state::ConsensusState}
+    }
+
     pub fn ClientStateBase() -> TokenStream {
         quote! {ibc::core::ics02_client::client_state::ClientStateBase}
     }
@@ -63,6 +67,10 @@ impl Imports {
 
     pub fn MerkleProof() -> TokenStream {
         quote! {ibc::core::ics23_commitment::merkle::MerkleProof}
+    }
+
+    pub fn Timestamp() -> TokenStream {
+        quote! {ibc::core::timestamp::Timestamp}
     }
 
     pub fn UpdateKind() -> TokenStream {
