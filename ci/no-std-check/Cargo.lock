@@ -1450,7 +1450,7 @@ dependencies = [
  "sp-core 21.0.0",
  "sp-io",
  "sp-runtime",
- "sp-std 7.0.0",
+ "sp-std 8.0.0",
  "syn 2.0.18",
  "tendermint 0.29.1",
  "tendermint-light-client-verifier 0.29.1",
