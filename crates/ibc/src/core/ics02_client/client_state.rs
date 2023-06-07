@@ -30,7 +30,7 @@ pub enum UpdateKind {
     SubmitMisbehaviour,
 }
 
-pub trait ClientStateBase: Clone + Send + Sync {
+pub trait ClientStateBase: Send + Sync {
     /// Type of client associated with this state (eg. Tendermint)
     fn client_type(&self) -> ClientType;
 
@@ -156,8 +156,7 @@ pub trait ClientStateExecution<ClientExecutionContext> {
 }
 
 pub trait ClientState<AnyConsensusState, ClientValidationContext, ClientExecutionContext>:
-    Clone
-    + Send
+    Send
     + Sync
     + ClientStateBase
     + ClientStateInitializer<AnyConsensusState>

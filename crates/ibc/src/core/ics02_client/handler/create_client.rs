@@ -81,27 +81,21 @@ where
     })?;
     let consensus_state = client_state.initialise(consensus_state)?;
 
-    ctx.store_client_state(ClientStatePath::new(&client_id), client_state.clone())?;
+    let latest_height = client_state.latest_height();
+
+    ctx.store_client_state(ClientStatePath::new(&client_id), client_state)?;
     ctx.store_consensus_state(
-        ClientConsensusStatePath::new(&client_id, &client_state.latest_height()),
+        ClientConsensusStatePath::new(&client_id, &latest_height),
         consensus_state,
     )?;
     ctx.increase_client_counter();
-    ctx.store_update_time(
-        client_id.clone(),
-        client_state.latest_height(),
-        ctx.host_timestamp()?,
-    )?;
-    ctx.store_update_height(
-        client_id.clone(),
-        client_state.latest_height(),
-        ctx.host_height()?,
-    )?;
+    ctx.store_update_time(client_id.clone(), latest_height, ctx.host_timestamp()?)?;
+    ctx.store_update_height(client_id.clone(), latest_height, ctx.host_height()?)?;
 
     let event = IbcEvent::CreateClient(CreateClient::new(
         client_id.clone(),
         client_type,
-        client_state.latest_height(),
+        latest_height,
     ));
     ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
     ctx.emit_ibc_event(event);
