@@ -35,12 +35,12 @@ use crate::clients::ics07_tendermint::consensus_state::{
 };
 use crate::core::dispatch;
 use crate::core::events::IbcEvent;
+use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_state::ClientStateBase;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
-use crate::core::ics02_client::ClientState;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::channel::ChannelEnd;

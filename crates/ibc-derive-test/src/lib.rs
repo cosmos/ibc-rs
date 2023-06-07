@@ -4,12 +4,12 @@
 mod test {
     use core::time::Duration;
 
+    use ibc::core::ics02_client::client_state::ClientState;
     use ibc::core::ics02_client::client_state::{
         ClientStateExecution, ClientStateInitializer, ClientStateValidation, UpdateKind,
     };
     use ibc::core::ics02_client::client_type::ClientType;
     use ibc::core::ics02_client::error::ClientError;
-    use ibc::core::ics02_client::ClientState;
     use ibc::core::ics23_commitment::commitment::{
         CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
     };

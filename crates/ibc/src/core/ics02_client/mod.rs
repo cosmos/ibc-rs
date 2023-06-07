@@ -9,5 +9,3 @@ pub mod handler;
 pub mod header;
 pub mod height;
 pub mod msgs;
-
-pub use ibc_derive::ClientState;

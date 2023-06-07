@@ -155,6 +155,10 @@ pub trait ClientStateExecution<ClientExecutionContext> {
     ) -> Result<Height, ClientError>;
 }
 
+/// Derive macro that implements `ClientState` for enums containing
+/// variants that implement `ClientState`
+pub use ibc_derive::ClientState;
+
 pub trait ClientState<AnyConsensusState, ClientValidationContext, ClientExecutionContext>:
     Send
     + Sync
