@@ -7,8 +7,8 @@ use syn::{
 };
 
 use crate::{
+    client_state::Opts,
     utils::{get_enum_variant_type_path, Imports},
-    Opts,
 };
 
 pub(crate) fn impl_ClientStateValidation(
