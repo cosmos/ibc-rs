@@ -2,13 +2,12 @@
 
 use crate::prelude::*;
 
-use core::fmt::Debug;
 use core::marker::{Send, Sync};
 
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::core::timestamp::Timestamp;
 
-pub trait ConsensusState: Clone + Debug + Send + Sync {
+pub trait ConsensusState: Send + Sync {
     type EncodeError;
 
     /// Commitment root of the consensus state, which is used for key-value pair verification.
