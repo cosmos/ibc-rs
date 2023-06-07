@@ -21,7 +21,7 @@ use core::time::Duration;
 use derive_more::{From, TryInto};
 use parking_lot::Mutex;
 use subtle_encoding::bech32;
-use tendermint_proto::{Error, Protobuf};
+use tendermint_proto::Protobuf;
 
 use ibc_proto::google::protobuf::Any;
 use tracing::debug;
@@ -47,7 +47,7 @@ use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
-use crate::core::ics23_commitment::commitment::{CommitmentPrefix, CommitmentRoot};
+use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::router::Router;
 use crate::core::router::{Module, ModuleId};
@@ -651,33 +651,10 @@ impl From<HostClientState> for Any {
     }
 }
 
-#[derive(Debug, Clone, From, TryInto, PartialEq)]
+#[derive(Debug, Clone, From, TryInto, PartialEq, ConsensusState)]
 pub enum HostConsensusState {
     Tendermint(TmConsensusState),
     Mock(MockConsensusState),
-}
-
-impl ConsensusState for HostConsensusState {
-    fn root(&self) -> &CommitmentRoot {
-        match self {
-            HostConsensusState::Tendermint(cs) => cs.root(),
-            HostConsensusState::Mock(cs) => cs.root(),
-        }
-    }
-
-    fn timestamp(&self) -> Timestamp {
-        match self {
-            HostConsensusState::Tendermint(cs) => cs.timestamp(),
-            HostConsensusState::Mock(cs) => cs.timestamp(),
-        }
-    }
-
-    fn encode_vec(&self) -> Result<Vec<u8>, Error> {
-        match self {
-            HostConsensusState::Tendermint(cs) => Protobuf::<Any>::encode_vec(cs),
-            HostConsensusState::Mock(cs) => Protobuf::<Any>::encode_vec(cs),
-        }
-    }
 }
 
 impl Protobuf<Any> for HostConsensusState {}

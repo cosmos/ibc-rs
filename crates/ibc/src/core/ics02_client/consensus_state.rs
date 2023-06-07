@@ -7,6 +7,10 @@ use core::marker::{Send, Sync};
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::core::timestamp::Timestamp;
 
+/// Derive macro that implements `ConsensusState` for enums containing
+/// variants that implement `ConsensusState`
+pub use ibc_derive::ConsensusState;
+
 pub trait ConsensusState: Send + Sync {
     /// Commitment root of the consensus state, which is used for key-value pair verification.
     fn root(&self) -> &CommitmentRoot;

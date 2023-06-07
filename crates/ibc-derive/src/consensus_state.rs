@@ -49,7 +49,7 @@ fn delegate_call_in_match(
     enum_variants: Iter<'_, Variant>,
     fn_call: TokenStream,
 ) -> Vec<TokenStream> {
-    let ClientStateBase = Imports::ClientStateBase();
+    let ConsensusState = Imports::ConsensusState();
 
     enum_variants
         .map(|variant| {
@@ -57,7 +57,7 @@ fn delegate_call_in_match(
             let variant_type_name = get_enum_variant_type_path(variant);
 
             quote! {
-                #enum_name::#variant_name(cs) => <#variant_type_name as #ClientStateBase>::#fn_call
+                #enum_name::#variant_name(cs) => <#variant_type_name as #ConsensusState>::#fn_call
             }
         })
         .collect()
