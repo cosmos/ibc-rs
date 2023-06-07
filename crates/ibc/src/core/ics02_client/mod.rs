@@ -10,4 +10,4 @@ pub mod header;
 pub mod height;
 pub mod msgs;
 
-pub use client_state_derive::ClientState;
+pub use ibc_derive::ClientState;

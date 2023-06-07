@@ -4,8 +4,8 @@ resolver = "2"
 
 members = [
     "crates/ibc",
-    "crates/client-state-derive",
-    "crates/client-state-derive-test",
+    "crates/ibc-derive",
+    "crates/ibc-derive-test",
 ]
 
 exclude = [

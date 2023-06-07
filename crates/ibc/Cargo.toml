@@ -76,7 +76,7 @@ borsh = {version = "0.10.0", default-features = false, optional = true }
 parking_lot = { version = "0.12.1", default-features = false, optional = true }
 cfg-if = { version = "1.0.0", optional = true }
 
-client-state-derive = { path = "../client-state-derive"}
+ibc-derive = { path = "../ibc-derive"}
 
 [dependencies.tendermint]
 version = "0.31"
