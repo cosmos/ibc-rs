@@ -7,3 +7,4 @@ edition = "2021"
 [dev-dependencies]
 ibc = { path = "../ibc"}
 ibc-proto = {version = "0.30.0", default-features = false }
+tendermint-proto = {version = "0.31.0", default-features = false }

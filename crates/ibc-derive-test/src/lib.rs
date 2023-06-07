@@ -9,6 +9,7 @@ mod test {
         ClientStateExecution, ClientStateInitializer, ClientStateValidation, UpdateKind,
     };
     use ibc::core::ics02_client::client_type::ClientType;
+    use ibc::core::ics02_client::consensus_state::ConsensusState;
     use ibc::core::ics02_client::error::ClientError;
     use ibc::core::ics23_commitment::commitment::{
         CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
@@ -27,8 +28,24 @@ mod test {
         First(FirstClientExecutionContext),
     }
 
+    #[derive(ConsensusState)]
     enum HostConsensusState {
         First(FirstConsensusState),
+    }
+    struct FirstConsensusState;
+
+    impl ConsensusState for FirstConsensusState {
+        fn root(&self) -> &CommitmentRoot {
+            todo!()
+        }
+
+        fn timestamp(&self) -> ibc::core::timestamp::Timestamp {
+            todo!()
+        }
+
+        fn encode_vec(&self) -> Result<Vec<u8>, tendermint_proto::Error> {
+            todo!()
+        }
     }
 
     #[derive(Debug, PartialEq, Clone, ClientState)]
@@ -41,7 +58,6 @@ mod test {
 
     #[derive(Debug, Clone, PartialEq)]
     struct FirstClientState;
-    struct FirstConsensusState;
     struct FirstClientValidationContext;
     struct FirstClientExecutionContext;
 
