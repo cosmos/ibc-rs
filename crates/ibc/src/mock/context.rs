@@ -21,7 +21,7 @@ use core::time::Duration;
 use derive_more::{From, TryInto};
 use parking_lot::Mutex;
 use subtle_encoding::bech32;
-use tendermint_proto::Protobuf;
+use tendermint_proto::{Error, Protobuf};
 
 use ibc_proto::google::protobuf::Any;
 use tracing::debug;
@@ -658,8 +658,6 @@ pub enum HostConsensusState {
 }
 
 impl ConsensusState for HostConsensusState {
-    type EncodeError = ContextError;
-
     fn root(&self) -> &CommitmentRoot {
         match self {
             HostConsensusState::Tendermint(cs) => cs.root(),
@@ -674,20 +672,10 @@ impl ConsensusState for HostConsensusState {
         }
     }
 
-    fn encode_vec(&self) -> Result<Vec<u8>, Self::EncodeError> {
+    fn encode_vec(&self) -> Result<Vec<u8>, Error> {
         match self {
-            HostConsensusState::Tendermint(cs) => Protobuf::<Any>::encode_vec(cs).map_err(|err| {
-                ClientError::Other {
-                    description: format!("{err}"),
-                }
-                .into()
-            }),
-            HostConsensusState::Mock(cs) => Protobuf::<Any>::encode_vec(cs).map_err(|err| {
-                ClientError::Other {
-                    description: format!("{err}"),
-                }
-                .into()
-            }),
+            HostConsensusState::Tendermint(cs) => Protobuf::<Any>::encode_vec(cs),
+            HostConsensusState::Mock(cs) => Protobuf::<Any>::encode_vec(cs),
         }
     }
 }

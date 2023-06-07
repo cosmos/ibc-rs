@@ -8,8 +8,6 @@ use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::core::timestamp::Timestamp;
 
 pub trait ConsensusState: Send + Sync {
-    type EncodeError;
-
     /// Commitment root of the consensus state, which is used for key-value pair verification.
     fn root(&self) -> &CommitmentRoot;
 
@@ -22,5 +20,5 @@ pub trait ConsensusState: Send + Sync {
     ///
     /// Note that the `Protobuf` trait in `tendermint-proto` provides convenience methods
     /// to do this automatically.
-    fn encode_vec(&self) -> Result<Vec<u8>, Self::EncodeError>;
+    fn encode_vec(&self) -> Result<Vec<u8>, tendermint_proto::Error>;
 }

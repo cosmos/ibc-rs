@@ -1,13 +1,13 @@
 //! Defines Tendermint's `ConsensusState` type
 
 use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ContextError;
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::ConsensusState as RawConsensusState;
 use tendermint::{hash::Algorithm, time::Time, Hash};
 use tendermint_proto::google::protobuf as tpb;
+use tendermint_proto::Error as TmProtoError;
 use tendermint_proto::Protobuf;
 
 use crate::clients::ics07_tendermint::error::Error;
@@ -148,8 +148,6 @@ impl From<Header> for TmConsensusState {
 }
 
 impl ConsensusState for TmConsensusState {
-    type EncodeError = ContextError;
-
     fn root(&self) -> &CommitmentRoot {
         &self.root
     }
@@ -158,12 +156,8 @@ impl ConsensusState for TmConsensusState {
         self.timestamp.into()
     }
 
-    fn encode_vec(&self) -> Result<Vec<u8>, Self::EncodeError> {
-        <Self as Protobuf<Any>>::encode_vec(self).map_err(|err| {
-            ContextError::ClientError(ClientError::ClientSpecific {
-                description: format!("{err}"),
-            })
-        })
+    fn encode_vec(&self) -> Result<Vec<u8>, TmProtoError> {
+        <Self as Protobuf<Any>>::encode_vec(self)
     }
 }
 

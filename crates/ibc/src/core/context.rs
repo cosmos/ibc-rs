@@ -91,7 +91,7 @@ impl std::error::Error for RouterError {
 pub trait ValidationContext: Router {
     type ClientValidationContext;
     type ClientExecutionContext;
-    type AnyConsensusState: ConsensusState<EncodeError = ContextError>;
+    type AnyConsensusState: ConsensusState;
     type AnyClientState: ClientState<
         Self::AnyConsensusState,
         Self::ClientValidationContext,

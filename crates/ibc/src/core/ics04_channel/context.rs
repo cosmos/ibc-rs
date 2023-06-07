@@ -22,7 +22,7 @@ use super::packet::Sequence;
 pub trait SendPacketValidationContext {
     type ClientValidationContext;
     type ClientExecutionContext;
-    type AnyConsensusState: ConsensusState<EncodeError = ContextError>;
+    type AnyConsensusState: ConsensusState;
     type AnyClientState: ClientState<
         Self::AnyConsensusState,
         Self::ClientValidationContext,
