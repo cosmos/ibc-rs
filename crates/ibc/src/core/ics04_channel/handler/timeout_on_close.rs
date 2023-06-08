@@ -172,7 +172,6 @@ mod tests {
     use crate::core::ics04_channel::commitment::PacketCommitment;
     use crate::core::ics04_channel::handler::timeout_on_close::validate;
     use crate::core::timestamp::Timestamp;
-    use crate::core::ExecutionContext;
     use crate::mock::context::MockContext;
     use crate::prelude::*;
     use crate::Height;
