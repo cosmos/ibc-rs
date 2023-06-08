@@ -2,16 +2,13 @@
 
 use crate::core::events::MessageEvent;
 use crate::core::ics02_client::client_state::ClientStateBase;
-use crate::core::ics02_client::client_state::ClientStateInitializer;
+use crate::core::ics02_client::client_state::ClientStateExecution;
+use crate::core::ics02_client::client_state::ClientStateValidation;
 use crate::core::ExecutionContext;
 use crate::core::ValidationContext;
 use crate::prelude::*;
 
 use crate::core::context::ContextError;
-
-use crate::core::ics24_host::path::ClientConsensusStatePath;
-
-use crate::core::ics24_host::path::ClientStatePath;
 
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::error::ClientError;
@@ -36,7 +33,7 @@ where
 
     let client_state = ctx.decode_client_state(client_state)?;
 
-    client_state.initialise(consensus_state)?;
+    client_state.verify_consensus_state(consensus_state)?;
 
     let client_type = client_state.client_type();
 
@@ -79,18 +76,16 @@ where
             validation_error: e,
         })
     })?;
-    let consensus_state = client_state.initialise(consensus_state)?;
+
+    client_state.initialise(
+        ctx.get_client_execution_context(),
+        &client_id,
+        consensus_state,
+    )?;
 
     let latest_height = client_state.latest_height();
 
-    ctx.store_client_state(ClientStatePath::new(&client_id), client_state)?;
-    ctx.store_consensus_state(
-        ClientConsensusStatePath::new(&client_id, &latest_height),
-        consensus_state,
-    )?;
     ctx.increase_client_counter();
-    ctx.store_update_time(client_id.clone(), latest_height, ctx.host_timestamp()?)?;
-    ctx.store_update_height(client_id.clone(), latest_height, ctx.host_height()?)?;
 
     let event = IbcEvent::CreateClient(CreateClient::new(
         client_id.clone(),

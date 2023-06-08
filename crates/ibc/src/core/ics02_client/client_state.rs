@@ -88,11 +88,9 @@ pub trait ClientStateBase {
     ) -> Result<(), ClientError>;
 }
 
-pub trait ClientStateInitializer<AnyConsensusState> {
-    fn initialise(&self, consensus_state: Any) -> Result<AnyConsensusState, ClientError>;
-}
-
 pub trait ClientStateValidation<ClientValidationContext> {
+    fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError>;
+
     /// verify_client_message must verify a client_message. A client_message
     /// could be a Header, Misbehaviour. It must handle each type of
     /// client_message appropriately. Calls to check_for_misbehaviour,
@@ -119,6 +117,13 @@ pub trait ClientStateValidation<ClientValidationContext> {
 }
 
 pub trait ClientStateExecution<ClientExecutionContext> {
+    fn initialise(
+        &self,
+        ctx: &mut ClientExecutionContext,
+        client_id: &ClientId,
+        consensus_state: Any,
+    ) -> Result<(), ClientError>;
+
     /// Updates and stores as necessary any associated information for an IBC
     /// client, such as the ClientState and corresponding ConsensusState. Upon
     /// successful update, a list of consensus heights is returned. It assumes
@@ -159,23 +164,21 @@ pub trait ClientStateExecution<ClientExecutionContext> {
 /// variants that implement `ClientState`
 pub use ibc_derive::ClientState;
 
-pub trait ClientState<AnyConsensusState, ClientValidationContext, ClientExecutionContext>:
+pub trait ClientState<ClientValidationContext, ClientExecutionContext>:
     Send
     + Sync
     + ClientStateBase
-    + ClientStateInitializer<AnyConsensusState>
     + ClientStateValidation<ClientValidationContext>
     + ClientStateExecution<ClientExecutionContext>
 {
 }
 
-impl<AnyConsensusState, ClientValidationContext, ClientExecutionContext, T>
-    ClientState<AnyConsensusState, ClientValidationContext, ClientExecutionContext> for T
+impl<ClientValidationContext, ClientExecutionContext, T>
+    ClientState<ClientValidationContext, ClientExecutionContext> for T
 where
     T: Send
         + Sync
         + ClientStateBase
-        + ClientStateInitializer<AnyConsensusState>
         + ClientStateValidation<ClientValidationContext>
         + ClientStateExecution<ClientExecutionContext>,
 {

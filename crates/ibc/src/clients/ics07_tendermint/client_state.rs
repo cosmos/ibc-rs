@@ -28,8 +28,7 @@ use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::core::ics02_client::client_state::{
-    ClientStateBase, ClientStateExecution, ClientStateInitializer, ClientStateValidation,
-    UpdateKind,
+    ClientStateBase, ClientStateExecution, ClientStateValidation, UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
@@ -629,11 +628,11 @@ impl ClientStateBase for ClientState {
     }
 }
 
-impl<AnyConsensusState> ClientStateInitializer<AnyConsensusState> for ClientState
+impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for ClientState
 where
-    AnyConsensusState: From<TmConsensusState>,
+    ClientValidationContext: TmClientValidationContext,
 {
-    fn initialise(&self, consensus_state: Any) -> Result<AnyConsensusState, ClientError> {
+    fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
         let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
         if tm_consensus_state.root().is_empty() {
             return Err(ClientError::Other {
@@ -641,14 +640,9 @@ where
             });
         };
 
-        Ok(tm_consensus_state.into())
+        Ok(())
     }
-}
 
-impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for ClientState
-where
-    ClientValidationContext: TmClientValidationContext,
-{
     fn verify_client_message(
         &self,
         ctx: &ClientValidationContext,
@@ -692,6 +686,33 @@ impl<ClientExecutionContext> ClientStateExecution<ClientExecutionContext> for Cl
 where
     ClientExecutionContext: TmClientExecutionContext,
 {
+    fn initialise(
+        &self,
+        ctx: &mut ClientExecutionContext,
+        client_id: &ClientId,
+        consensus_state: Any,
+    ) -> Result<(), ClientError> {
+        let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
+
+        ctx.store_update_time(
+            client_id.clone(),
+            self.latest_height.clone(),
+            ctx.host_timestamp()?,
+        )?;
+        ctx.store_update_height(
+            client_id.clone(),
+            self.latest_height.clone(),
+            ctx.host_height()?,
+        )?;
+        ctx.store_client_state(ClientStatePath::new(client_id), self.clone())?;
+        ctx.store_consensus_state(
+            ClientConsensusStatePath::new(client_id, &self.latest_height),
+            tm_consensus_state,
+        )?;
+
+        Ok(())
+    }
+
     fn update_state(
         &self,
         ctx: &mut ClientExecutionContext,
@@ -728,7 +749,7 @@ where
             )?;
 
             ctx.store_consensus_state(
-                ClientConsensusStatePath::new(client_id, &new_client_state.latest_height()),
+                ClientConsensusStatePath::new(client_id, &new_client_state.latest_height),
                 new_consensus_state,
             )?;
             ctx.store_client_state(ClientStatePath::new(client_id), new_client_state)?;

@@ -24,7 +24,6 @@ pub trait SendPacketValidationContext {
     type ClientExecutionContext;
     type AnyConsensusState: ConsensusState;
     type AnyClientState: ClientState<
-        Self::AnyConsensusState,
         Self::ClientValidationContext,
         Self::ClientExecutionContext,
     >;
