@@ -26,18 +26,16 @@ This ADR is all about fixing this issue; namely, to enable light clients to defi
 
 ### Changes to `ClientState`
 
-The `ClientState` functionality is split into 4 traits: 
+The `ClientState` functionality is split into 3 traits: 
 + `ClientStateBase`, 
-+ `ClientStateInitializer<AnyConsensusState>`, 
 + `ClientStateValidation<ClientValidationContext>`, and 
 + `ClientStateExecution<ClientExecutionContext>`
 
 Then, `ClientState` is defined as
 
 ```rust
-pub trait ClientState<AnyConsensusState, ClientValidationContext, ClientExecutionContext>:
+pub trait ClientState<ClientValidationContext, ClientExecutionContext>:
     ClientStateBase
-    + ClientStateInitializer<AnyConsensusState>
     + ClientStateValidation<ClientValidationContext>
     + ClientStateExecution<ClientExecutionContext>
     // + ...
@@ -45,7 +43,7 @@ pub trait ClientState<AnyConsensusState, ClientValidationContext, ClientExecutio
 }
 ```
 
-A blanket implementation implements `ClientState` when these 4 traits are implemented on a type. For details as to why `ClientState` was split into 4 traits, see the section "Why are there 4 `ClientState` traits?".
+A blanket implementation implements `ClientState` when these 3 traits are implemented on a type. For details as to why `ClientState` was split into 3 traits, see the section "Why are there 3 `ClientState` traits?".
 
 The `ClientStateValidation` and `ClientStateExecution` traits are the most important ones, as they are the ones that enable light clients to define `Context` traits for the host to implement. Below, we discuss `ClientStateValidation`; `ClientStateExecution` works analogously.
 
@@ -163,7 +161,6 @@ enum AnyConsensusState {
 
 #[derive(ClientState)]
 #[generics(
-    AnyConsensusState       = AnyConsensusState,
     ClientValidationContext = MyClientValidationContext,
     ClientExecutionContext  = MyClientExecutionContext
 )]
@@ -176,17 +173,17 @@ enum AnyClientState {
 
 ## FAQs
 
-### Why are there 4 `ClientState` traits?
+### Why are there 3 `ClientState` traits?
 
 The `ClientState` trait is defined as
 
 ```rust
-trait ClientState<AnyConsensusState, ClientValidationContext, ClientExecutionContext>
+trait ClientState<ClientValidationContext, ClientExecutionContext>
 ```
 
 The problem with defining all methods directly under `ClientState` is that it would force users to use fully qualified notation to call any method.
 
-This arises from the fact that no method uses all 3 generic parameters. [This playground] provides an explanatory example. Hence, our solution is to have all methods in a trait use every generic parameter of the trait to avoid this problem.
+This arises from the fact that no method uses both generic parameters. [This playground] provides an explanatory example. Hence, our solution is to have all methods in a trait use every generic parameter of the trait to avoid this problem.
 
 [This playground]: https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=da65c22f1532cecc9f92a2b7cb2d1360
 
