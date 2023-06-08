@@ -1,5 +1,7 @@
+//! Defines the domain type for tendermint headers
+
+use crate::prelude::*;
 use alloc::string::ToString;
-use core::cmp::Ordering;
 use core::fmt::{Display, Error as FmtError, Formatter};
 
 use bytes::Buf;
@@ -16,11 +18,12 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ChainId;
-use crate::timestamp::Timestamp;
-use crate::utils::pretty::{PrettySignedHeader, PrettyValidatorSet};
+use crate::core::timestamp::Timestamp;
 use crate::Height;
 
-pub const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
+use pretty::{PrettySignedHeader, PrettyValidatorSet};
+
+pub(crate) const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// Tendermint consensus header
@@ -29,8 +32,7 @@ pub struct Header {
     pub signed_header: SignedHeader, // contains the commitment root
     pub validator_set: ValidatorSet, // the validator set that signed Header
     pub trusted_height: Height, // the height of a trusted header seen by client less than or equal to Header
-    // TODO(thane): Rename this to trusted_next_validator_set?
-    pub trusted_validator_set: ValidatorSet, // the last trusted validator set at trusted height
+    pub trusted_next_validator_set: ValidatorSet, // the last trusted validator set at trusted height
 }
 
 impl core::fmt::Debug for Header {
@@ -41,7 +43,7 @@ impl core::fmt::Debug for Header {
 
 impl Display for Header {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "Header {{ signed_header: {}, validator_set: {}, trusted_height: {}, trusted_validator_set: {} }}", PrettySignedHeader(&self.signed_header), PrettyValidatorSet(&self.validator_set), self.trusted_height, PrettyValidatorSet(&self.trusted_validator_set))
+        write!(f, "Header {{ signed_header: {}, validator_set: {}, trusted_height: {}, trusted_validator_set: {} }}", PrettySignedHeader(&self.signed_header), PrettyValidatorSet(&self.validator_set), self.trusted_height, PrettyValidatorSet(&self.trusted_next_validator_set))
     }
 }
 
@@ -52,10 +54,6 @@ impl Header {
             u64::from(self.signed_header.header.height),
         )
         .expect("malformed tendermint header domain type has an illegal height of 0")
-    }
-
-    pub fn compatible_with(&self, other_header: &Header) -> bool {
-        headers_compatible(&self.signed_header, &other_header.signed_header)
     }
 
     pub(crate) fn as_untrusted_block_state(&self) -> UntrustedBlockState<'_> {
@@ -81,29 +79,55 @@ impl Header {
                 .map_err(|_| Error::InvalidHeaderHeight {
                     height: self.trusted_height.revision_height(),
                 })?,
-            next_validators: &self.trusted_validator_set,
+            next_validators: &self.trusted_next_validator_set,
             next_validators_hash: consensus_state.next_validators_hash,
         })
     }
-}
 
-pub fn headers_compatible(header: &SignedHeader, other: &SignedHeader) -> bool {
-    let ibc_client_height = other.header.height;
-    let self_header_height = header.header.height;
+    pub fn verify_chain_id_version_matches_height(&self, chain_id: &ChainId) -> Result<(), Error> {
+        if self.height().revision_number() != chain_id.version() {
+            return Err(Error::MismatchHeaderChainId {
+                given: self.signed_header.header.chain_id.to_string(),
+                expected: chain_id.to_string(),
+            });
+        }
+        Ok(())
+    }
 
-    match self_header_height.cmp(&ibc_client_height) {
-        Ordering::Equal => {
-            // 1 - fork
-            header.commit.block_id == other.commit.block_id
+    /// Checks if the fields of a given header are consistent with the trusted fields of this header.
+    pub fn validate_basic(&self) -> Result<(), Error> {
+        if self.height().revision_number() != self.trusted_height.revision_number() {
+            return Err(Error::MismatchHeightRevisions {
+                trusted_revision: self.trusted_height.revision_number(),
+                header_revision: self.height().revision_number(),
+            });
         }
-        Ordering::Greater => {
-            // 2 - BFT time violation
-            header.header.time > other.header.time
+
+        // We need to ensure that the trusted height (representing the
+        // height of the header already on chain for which this client update is
+        // based on) must be smaller than height of the new header that we're
+        // installing.
+        if self.trusted_height >= self.height() {
+            return Err(Error::InvalidHeaderHeight {
+                height: self.height().revision_height(),
+            });
         }
-        Ordering::Less => {
-            // 3 - BFT time violation
-            header.header.time < other.header.time
+
+        if self.validator_set.hash() != self.signed_header.header.validators_hash {
+            return Err(Error::MismatchValidatorsHashes {
+                signed_header_validators_hash: self.signed_header.header.validators_hash,
+                validators_hash: self.validator_set.hash(),
+            });
         }
+
+        if self.trusted_next_validator_set.hash() != self.signed_header.header.next_validators_hash
+        {
+            return Err(Error::MismatchValidatorsHashes {
+                signed_header_validators_hash: self.signed_header.header.next_validators_hash,
+                validators_hash: self.trusted_next_validator_set.hash(),
+            });
+        }
+        Ok(())
     }
 }
 
@@ -141,19 +165,12 @@ impl TryFrom<RawHeader> for Header {
                 .trusted_height
                 .and_then(|raw_height| raw_height.try_into().ok())
                 .ok_or(Error::MissingTrustedHeight)?,
-            trusted_validator_set: raw
+            trusted_next_validator_set: raw
                 .trusted_validators
-                .ok_or(Error::MissingTrustedValidatorSet)?
+                .ok_or(Error::MissingTrustedNextValidatorSet)?
                 .try_into()
                 .map_err(Error::InvalidRawHeader)?,
         };
-
-        if header.height().revision_number() != header.trusted_height.revision_number() {
-            return Err(Error::MismatchedRevisions {
-                current_revision: header.trusted_height.revision_number(),
-                update_revision: header.height().revision_number(),
-            });
-        }
 
         Ok(header)
     }
@@ -180,13 +197,12 @@ impl From<Header> for Any {
     fn from(header: Header) -> Self {
         Any {
             type_url: TENDERMINT_HEADER_TYPE_URL.to_string(),
-            value: Protobuf::<RawHeader>::encode_vec(&header)
-                .expect("encoding to `Any` from `TmHeader`"),
+            value: Protobuf::<RawHeader>::encode_vec(&header),
         }
     }
 }
 
-pub fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
+fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
     RawHeader::decode(buf).map_err(Error::Decode)?.try_into()
 }
 
@@ -196,7 +212,50 @@ impl From<Header> for RawHeader {
             signed_header: Some(value.signed_header.into()),
             validator_set: Some(value.validator_set.into()),
             trusted_height: Some(value.trusted_height.into()),
-            trusted_validators: Some(value.trusted_validator_set.into()),
+            trusted_validators: Some(value.trusted_next_validator_set.into()),
+        }
+    }
+}
+
+mod pretty {
+    pub use super::*;
+    use crate::utils::pretty::PrettySlice;
+
+    pub struct PrettySignedHeader<'a>(pub &'a SignedHeader);
+
+    impl Display for PrettySignedHeader<'_> {
+        fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+            write!(
+            f,
+            "SignedHeader {{ header: {{ chain_id: {}, height: {} }}, commit: {{ height: {} }} }}",
+            self.0.header.chain_id, self.0.header.height, self.0.commit.height
+        )
+        }
+    }
+
+    pub struct PrettyValidatorSet<'a>(pub &'a ValidatorSet);
+
+    impl Display for PrettyValidatorSet<'_> {
+        fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+            let validator_addresses: Vec<_> = self
+                .0
+                .validators()
+                .iter()
+                .map(|validator| validator.address)
+                .collect();
+            if let Some(proposer) = self.0.proposer() {
+                match &proposer.name {
+                Some(name) => write!(f, "PrettyValidatorSet {{ validators: {}, proposer: {}, total_voting_power: {} }}", PrettySlice(&validator_addresses), name, self.0.total_voting_power()),
+                None =>  write!(f, "PrettyValidatorSet {{ validators: {}, proposer: None, total_voting_power: {} }}", PrettySlice(&validator_addresses), self.0.total_voting_power()),
+            }
+            } else {
+                write!(
+                f,
+                "PrettyValidatorSet {{ validators: {}, proposer: None, total_voting_power: {} }}",
+                PrettySlice(&validator_addresses),
+                self.0.total_voting_power()
+            )
+            }
         }
     }
 }
@@ -263,7 +322,7 @@ pub mod test_util {
             signed_header: shdr,
             validator_set: vs.clone(),
             trusted_height: Height::new(0, 1).unwrap(),
-            trusted_validator_set: vs,
+            trusted_next_validator_set: vs,
         }
     }
 
@@ -277,7 +336,7 @@ pub mod test_util {
                 signed_header: light_block.signed_header,
                 validator_set: light_block.validators,
                 trusted_height,
-                trusted_validator_set: light_block.next_validators,
+                trusted_next_validator_set: light_block.next_validators,
             }
         }
     }

@@ -1,17 +1,18 @@
+use crate::core::ics04_channel::channel::verify_connection_hops_length;
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::channel::Counterparty;
 use crate::core::ics04_channel::channel::{Order, State};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ConnectionId, PortId};
+use crate::core::Msg;
 use crate::prelude::*;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenInit as RawMsgChannelOpenInit;
 use ibc_proto::protobuf::Protobuf;
 
-pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenInit";
+pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenInit";
 
 ///
 /// Message definition for the first step in the channel open handshake (`ChanOpenInit` datagram).
@@ -26,6 +27,15 @@ pub struct MsgChannelOpenInit {
     pub signer: Signer,
     /// Allow a relayer to specify a particular version by providing a non-empty version string
     pub version_proposal: Version,
+}
+
+impl MsgChannelOpenInit {
+    /// Checks if the `connection_hops` has a length of `expected`.
+    ///
+    /// Note: Current IBC version only supports one connection hop.
+    pub(crate) fn verify_connection_hops_length(&self) -> Result<(), ChannelError> {
+        verify_connection_hops_length(&self.connection_hops_on_a, 1)
+    }
 }
 
 impl Msg for MsgChannelOpenInit {
@@ -46,19 +56,23 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
             .channel
             .ok_or(ChannelError::MissingChannel)?
             .try_into()?;
+        chan_end_on_a.verify_state_matches(&State::Init)?;
+        chan_end_on_a.counterparty().verify_empty_channel_id()?;
+
         Ok(MsgChannelOpenInit {
-            port_id_on_a: raw_msg.port_id.parse().map_err(ChannelError::Identifier)?,
+            port_id_on_a: raw_msg.port_id.parse()?,
             connection_hops_on_a: chan_end_on_a.connection_hops,
             port_id_on_b: chan_end_on_a.remote.port_id,
             ordering: chan_end_on_a.ordering,
-            signer: raw_msg.signer.parse().map_err(ChannelError::Signer)?,
+            signer: raw_msg.signer.into(),
             version_proposal: chan_end_on_a.version,
         })
     }
 }
+
 impl From<MsgChannelOpenInit> for RawMsgChannelOpenInit {
     fn from(domain_msg: MsgChannelOpenInit) -> Self {
-        let chan_end_on_a = ChannelEnd::new(
+        let chan_end_on_a = ChannelEnd::new_without_validation(
             State::Init,
             domain_msg.ordering,
             Counterparty::new(domain_msg.port_id_on_b, None),
@@ -88,7 +102,7 @@ pub mod test_util {
     ) -> RawMsgChannelOpenInit {
         RawMsgChannelOpenInit {
             port_id: PortId::default().to_string(),
-            channel: Some(get_dummy_raw_channel_end(counterparty_channel_id)),
+            channel: Some(get_dummy_raw_channel_end(1, counterparty_channel_id)),
             signer: get_dummy_bech32_account(),
         }
     }

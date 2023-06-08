@@ -1,13 +1,5 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
-use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
-use crate::core::context::HostContext;
-use crate::core::ics05_port::error::PortError;
-use crate::core::ics24_host::path::{
-    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
-    ClientTypePath, CommitmentPath, ConnectionPath, PortPath, ReceiptPath, SeqAckPath, SeqRecvPath,
-    SeqSendPath,
-};
 use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap;
@@ -21,8 +13,9 @@ use parking_lot::Mutex;
 use ibc_proto::google::protobuf::Any;
 use tracing::debug;
 
-use crate::clients::ics07_tendermint::client_state::test_util::get_dummy_tendermint_client_state;
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
+use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
+use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
@@ -32,15 +25,20 @@ use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
-use crate::core::ics04_channel::error::{ChannelError, PacketError};
+use crate::core::ics04_channel::error::{ChannelError, PacketError, PortError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
-use crate::core::ics26_routing::module::{Module, ModuleId};
-use crate::core::ics26_routing::msgs::MsgEnvelope;
-use crate::core::ics26_routing::router::{RouterMut, RouterRef};
-use crate::core::{dispatch, ContextError, ExecutionContext, ValidationContext};
-use crate::events::IbcEvent;
+use crate::core::ics24_host::path::{
+    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
+    CommitmentPath, ConnectionPath, PortPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
+};
+use crate::core::module::{Module, ModuleId};
+use crate::core::router::{RouterMut, RouterRef};
+use crate::core::timestamp::Timestamp;
+use crate::core::{
+    dispatch, ContextError, ExecutionContext, HostContext, MsgEnvelope, ValidationContext,
+};
 use crate::mock::client_state::{
     client_type as mock_client_type, MockClientRecord, MockClientState,
 };
@@ -50,7 +48,6 @@ use crate::mock::host::{HostBlock, HostType};
 use crate::mock::ics18_relayer::context::RelayerContext;
 use crate::mock::ics18_relayer::error::RelayerError;
 use crate::signer::Signer;
-use crate::timestamp::Timestamp;
 use crate::Height;
 
 use super::client_state::MOCK_CLIENT_TYPE;
@@ -207,7 +204,12 @@ impl MockContext {
         client_type: Option<ClientType>,
         consensus_state_height: Option<Height>,
     ) -> Self {
+        // NOTE: this is wrong; the client chain ID is supposed to represent
+        // the chain ID of the counterparty chain. But at this point this is
+        // too ingrained in our tests; `with_client()` is called everywhere,
+        // which delegates to this.
         let client_chain_id = self.host_chain_id.clone();
+
         self.with_client_parametrized_with_chain_id(
             client_chain_id,
             client_id,
@@ -241,7 +243,7 @@ impl MockContext {
             );
 
             let client_state =
-                get_dummy_tendermint_client_state(light_block.header().clone()).into_box();
+                TmClientState::new_dummy_from_header(light_block.header().clone()).into_box();
 
             // Return the tuple.
             (Some(client_state), light_block.into())
@@ -254,7 +256,6 @@ impl MockContext {
         debug!("consensus states: {:?}", consensus_states);
 
         let client_record = MockClientRecord {
-            client_type,
             client_state,
             consensus_states,
         };
@@ -308,7 +309,7 @@ impl MockContext {
                 HostBlock::generate_tm_block(client_chain_id, cs_height.revision_height(), now);
 
             let client_state =
-                get_dummy_tendermint_client_state(light_block.header().clone()).into_box();
+                TmClientState::new_dummy_from_header(light_block.header().clone()).into_box();
 
             // Return the tuple.
             (Some(client_state), light_block.into())
@@ -339,7 +340,6 @@ impl MockContext {
         debug!("consensus states: {:?}", consensus_states);
 
         let client_record = MockClientRecord {
-            client_type,
             client_state,
             consensus_states,
         };
@@ -559,8 +559,7 @@ impl MockContext {
         )
     }
 
-    #[inline]
-    fn latest_height(&self) -> Height {
+    pub fn latest_height(&self) -> Height {
         self.history
             .last()
             .expect("history cannot be empty")
@@ -645,7 +644,9 @@ impl RelayerContext for MockContext {
     }
 
     fn signer(&self) -> Signer {
-        "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C".parse().unwrap()
+        "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C"
+            .to_string()
+            .into()
     }
 }
 
@@ -734,11 +735,11 @@ impl ValidationContext for MockContext {
                 client_record
                     .client_state
                     .clone()
-                    .ok_or_else(|| ClientError::ClientNotFound {
+                    .ok_or_else(|| ClientError::ClientStateNotFound {
                         client_id: client_id.clone(),
                     })
             }
-            None => Err(ClientError::ClientNotFound {
+            None => Err(ClientError::ClientStateNotFound {
                 client_id: client_id.clone(),
             }),
         }
@@ -747,6 +748,7 @@ impl ValidationContext for MockContext {
 
     fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ContextError> {
         if let Ok(client_state) = TmClientState::try_from(client_state.clone()) {
+            client_state.validate().map_err(ClientError::from)?;
             Ok(client_state.into_box())
         } else if let Ok(client_state) = MockClientState::try_from(client_state.clone()) {
             Ok(client_state.into_box())
@@ -790,7 +792,7 @@ impl ValidationContext for MockContext {
             ibc_store
                 .clients
                 .get(client_id)
-                .ok_or_else(|| ClientError::ClientNotFound {
+                .ok_or_else(|| ClientError::ClientStateNotFound {
                     client_id: client_id.clone(),
                 })?;
 
@@ -820,7 +822,7 @@ impl ValidationContext for MockContext {
             ibc_store
                 .clients
                 .get(client_id)
-                .ok_or_else(|| ClientError::ClientNotFound {
+                .ok_or_else(|| ClientError::ClientStateNotFound {
                     client_id: client_id.clone(),
                 })?;
 
@@ -1124,31 +1126,13 @@ impl ValidationContext for MockContext {
     fn max_expected_time_per_block(&self) -> Duration {
         self.block_time
     }
+
+    fn validate_message_signer(&self, _signer: &Signer) -> Result<(), ContextError> {
+        Ok(())
+    }
 }
 
 impl ExecutionContext for MockContext {
-    fn store_client_type(
-        &mut self,
-        client_type_path: ClientTypePath,
-        client_type: ClientType,
-    ) -> Result<(), ContextError> {
-        let mut ibc_store = self.ibc_store.lock();
-
-        let client_id = client_type_path.0;
-        let client_record = ibc_store
-            .clients
-            .entry(client_id)
-            .or_insert(MockClientRecord {
-                client_type: client_type.clone(),
-                consensus_states: Default::default(),
-                client_state: Default::default(),
-            });
-
-        client_record.client_type = client_type;
-
-        Ok(())
-    }
-
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
@@ -1161,7 +1145,6 @@ impl ExecutionContext for MockContext {
             .clients
             .entry(client_id)
             .or_insert(MockClientRecord {
-                client_type: client_state.client_type(),
                 consensus_states: Default::default(),
                 client_state: Default::default(),
             });
@@ -1182,7 +1165,6 @@ impl ExecutionContext for MockContext {
             .clients
             .entry(consensus_state_path.client_id)
             .or_insert(MockClientRecord {
-                client_type: mock_client_type(),
                 consensus_states: Default::default(),
                 client_state: Default::default(),
             });
@@ -1419,21 +1401,16 @@ impl ExecutionContext for MockContext {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloc::borrow::Cow;
     use test_log::test;
-
-    use alloc::str::FromStr;
 
     use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::error::ChannelError;
-    use crate::core::ics04_channel::handler::ModuleExtras;
-    use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
-    use crate::core::ics04_channel::packet::Packet;
+    use crate::core::ics04_channel::packet::{Acknowledgement, Packet};
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-    use crate::core::ics26_routing::module::{
-        ExecutionModule, ModuleContext, ModuleId, ValidationModule,
+    use crate::core::module::{
+        ExecutionModule, ModuleContext, ModuleExtras, ModuleId, ValidationModule,
     };
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
@@ -1593,7 +1570,7 @@ mod tests {
             fn new() -> Self {
                 Self {
                     counter: 0,
-                    module_id: ModuleId::new(Cow::Borrowed("foomodule")).unwrap(),
+                    module_id: ModuleId::new("foomodule"),
                     owned_ports: vec![PortId::default()],
                 }
             }
@@ -1741,7 +1718,7 @@ mod tests {
         impl BarModule {
             fn new() -> Self {
                 Self {
-                    module_id: ModuleId::new(Cow::Borrowed("barmodule")).unwrap(),
+                    module_id: ModuleId::new("barmodule"),
                     owned_ports: vec![PortId::default()],
                 }
             }
@@ -1890,12 +1867,10 @@ mod tests {
             .unwrap();
 
         let mut on_recv_packet_result = |module_id: &'static str| {
-            let module_id = ModuleId::from_str(module_id).unwrap();
+            let module_id = ModuleId::new(module_id.to_string());
             let m = ctx.get_route_mut(&module_id).unwrap();
-            let result = m.on_recv_packet_execute(
-                &Packet::default(),
-                &get_dummy_bech32_account().parse().unwrap(),
-            );
+            let result =
+                m.on_recv_packet_execute(&Packet::default(), &get_dummy_bech32_account().into());
             (module_id, result)
         };
 

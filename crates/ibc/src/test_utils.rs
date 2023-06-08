@@ -8,6 +8,7 @@ use crate::applications::transfer::context::{
 };
 use crate::applications::transfer::MODULE_ID_STR;
 use crate::applications::transfer::{error::TokenTransferError, PrefixedCoin};
+use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
@@ -19,21 +20,17 @@ use crate::core::ics04_channel::commitment::PacketCommitment;
 use crate::core::ics04_channel::context::{
     SendPacketExecutionContext, SendPacketValidationContext,
 };
-use crate::core::ics04_channel::error::{ChannelError, PacketError};
-use crate::core::ics04_channel::handler::ModuleExtras;
-use crate::core::ics04_channel::msgs::acknowledgement::Acknowledgement;
-use crate::core::ics04_channel::packet::{Packet, Sequence};
+use crate::core::ics04_channel::error::{ChannelError, PacketError, PortError};
+use crate::core::ics04_channel::packet::{Acknowledgement, Packet, Sequence};
 use crate::core::ics04_channel::Version;
-use crate::core::ics05_port::error::PortError;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, PortPath, SeqSendPath,
 };
-use crate::core::ics26_routing::module::{
-    ExecutionModule, ModuleContext, ModuleId, ValidationModule,
+use crate::core::module::{
+    ExecutionModule, ModuleContext, ModuleExtras, ModuleId, ValidationModule,
 };
 use crate::core::ContextError;
-use crate::events::IbcEvent;
 use crate::mock::context::MockIbcStore;
 use crate::prelude::*;
 use crate::signer::Signer;
@@ -65,7 +62,9 @@ pub fn get_dummy_proof() -> Vec<u8> {
 }
 
 pub fn get_dummy_account_id() -> Signer {
-    "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C".parse().unwrap()
+    "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C"
+        .to_string()
+        .into()
 }
 
 pub fn get_dummy_bech32_account() -> String {
@@ -331,11 +330,11 @@ impl SendPacketValidationContext for DummyTransferModule {
                 client_record
                     .client_state
                     .clone()
-                    .ok_or_else(|| ClientError::ClientNotFound {
+                    .ok_or_else(|| ClientError::ClientStateNotFound {
                         client_id: client_id.clone(),
                     })
             }
-            None => Err(ClientError::ClientNotFound {
+            None => Err(ClientError::ClientStateNotFound {
                 client_id: client_id.clone(),
             }),
         }

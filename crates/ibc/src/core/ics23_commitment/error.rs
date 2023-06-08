@@ -1,3 +1,5 @@
+//! Defines the commitment error type
+
 use displaydoc::Display;
 use prost::DecodeError;
 

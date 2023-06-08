@@ -1,48 +1,143 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenTry`.
 
-use crate::core::ics03_connection::connection::State as ConnectionState;
-use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
-use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
-use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
-use crate::core::ics24_host::Path;
-use crate::core::{ContextError, ValidationContext};
 use crate::prelude::*;
+use ibc_proto::protobuf::Protobuf;
 
-pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), ContextError>
+use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics03_connection::connection::State as ConnectionState;
+use crate::core::ics04_channel::channel::State;
+use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State as ChannelState};
+use crate::core::ics04_channel::error::ChannelError;
+use crate::core::ics04_channel::events::OpenTry;
+use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
+use crate::core::ics24_host::identifier::ChannelId;
+use crate::core::ics24_host::path::Path;
+use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
+use crate::core::ics24_host::path::{SeqAckPath, SeqRecvPath, SeqSendPath};
+use crate::core::module::ModuleId;
+use crate::core::router::{RouterMut, RouterRef};
+use crate::core::{ContextError, ExecutionContext, ValidationContext};
+
+pub(crate) fn chan_open_try_validate<ValCtx>(
+    ctx_b: &ValCtx,
+    module_id: ModuleId,
+    msg: MsgChannelOpenTry,
+) -> Result<(), ContextError>
+where
+    ValCtx: ValidationContext,
+{
+    validate(ctx_b, &msg)?;
+
+    let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
+
+    let module = ctx_b
+        .get_route(&module_id)
+        .ok_or(ChannelError::RouteNotFound)?;
+    module.on_chan_open_try_validate(
+        msg.ordering,
+        &msg.connection_hops_on_b,
+        &msg.port_id_on_b,
+        &chan_id_on_b,
+        &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+        &msg.version_supported_on_a,
+    )?;
+
+    Ok(())
+}
+
+pub(crate) fn chan_open_try_execute<ExecCtx>(
+    ctx_b: &mut ExecCtx,
+    module_id: ModuleId,
+    msg: MsgChannelOpenTry,
+) -> Result<(), ContextError>
+where
+    ExecCtx: ExecutionContext,
+{
+    let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
+    let module = ctx_b
+        .get_route_mut(&module_id)
+        .ok_or(ChannelError::RouteNotFound)?;
+
+    let (extras, version) = module.on_chan_open_try_execute(
+        msg.ordering,
+        &msg.connection_hops_on_b,
+        &msg.port_id_on_b,
+        &chan_id_on_b,
+        &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+        &msg.version_supported_on_a,
+    )?;
+
+    let conn_id_on_b = msg.connection_hops_on_b[0].clone();
+
+    // state changes
+    {
+        let chan_end_on_b = ChannelEnd::new(
+            State::TryOpen,
+            msg.ordering,
+            Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
+            msg.connection_hops_on_b.clone(),
+            version.clone(),
+        )?;
+
+        let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &chan_id_on_b);
+        ctx_b.store_channel(&chan_end_path_on_b, chan_end_on_b)?;
+        ctx_b.increase_channel_counter();
+
+        // Initialize send, recv, and ack sequence numbers.
+        let seq_send_path = SeqSendPath::new(&msg.port_id_on_b, &chan_id_on_b);
+        ctx_b.store_next_sequence_send(&seq_send_path, 1.into())?;
+
+        let seq_recv_path = SeqRecvPath::new(&msg.port_id_on_b, &chan_id_on_b);
+        ctx_b.store_next_sequence_recv(&seq_recv_path, 1.into())?;
+
+        let seq_ack_path = SeqAckPath::new(&msg.port_id_on_b, &chan_id_on_b);
+        ctx_b.store_next_sequence_ack(&seq_ack_path, 1.into())?;
+    }
+
+    // emit events and logs
+    {
+        ctx_b.log_message(format!(
+            "success: channel open try with channel identifier: {chan_id_on_b}"
+        ));
+
+        let core_event = IbcEvent::OpenTryChannel(OpenTry::new(
+            msg.port_id_on_b.clone(),
+            chan_id_on_b.clone(),
+            msg.port_id_on_a.clone(),
+            msg.chan_id_on_a.clone(),
+            conn_id_on_b,
+            version,
+        ));
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
+        ctx_b.emit_ibc_event(core_event);
+
+        for module_event in extras.events {
+            ctx_b.emit_ibc_event(IbcEvent::Module(module_event));
+        }
+
+        for log_message in extras.log {
+            ctx_b.log_message(log_message);
+        }
+    }
+
+    Ok(())
+}
+
+fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
-    // An IBC connection running on the local (host) chain should exist.
-    if msg.connection_hops_on_b.len() != 1 {
-        return Err(ChannelError::InvalidConnectionHopsLength {
-            expected: 1,
-            actual: msg.connection_hops_on_b.len(),
-        })
-        .map_err(ContextError::ChannelError);
-    }
+    ctx_b.validate_message_signer(&msg.signer)?;
+
+    msg.verify_connection_hops_length()?;
 
     let conn_end_on_b = ctx_b.connection_end(&msg.connection_hops_on_b[0])?;
-    if !conn_end_on_b.state_matches(&ConnectionState::Open) {
-        return Err(ChannelError::ConnectionNotOpen {
-            connection_id: msg.connection_hops_on_b[0].clone(),
-        })
-        .map_err(ContextError::ChannelError);
-    }
 
-    let conn_version = match conn_end_on_b.versions() {
-        [version] => version,
-        _ => {
-            return Err(ChannelError::InvalidVersionLengthConnection)
-                .map_err(ContextError::ChannelError)
-        }
-    };
+    conn_end_on_b.verify_state_matches(&ConnectionState::Open)?;
 
-    let channel_feature = msg.ordering.to_string();
-    if !conn_version.is_supported_feature(channel_feature) {
-        return Err(ChannelError::ChannelFeatureNotSupportedByConnection)
-            .map_err(ContextError::ChannelError);
-    }
+    let conn_version = conn_end_on_b.versions();
+
+    conn_version[0].verify_feature_supported(msg.ordering.to_string())?;
 
     // Verify proofs
     {
@@ -65,12 +160,12 @@ where
         )?;
 
         let expected_chan_end_on_a = ChannelEnd::new(
-            State::Init,
+            ChannelState::Init,
             msg.ordering,
             Counterparty::new(msg.port_id_on_b.clone(), None),
             vec![conn_id_on_a.clone()],
             msg.version_supported_on_a.clone(),
-        );
+        )?;
         let chan_end_path_on_a = ChannelEndPath::new(&port_id_on_a, &chan_id_on_a);
 
         // Verify the proof for the channel state against the expected channel end.
@@ -81,7 +176,7 @@ where
                 &msg.proof_chan_end_on_a,
                 consensus_state_of_a_on_b.root(),
                 Path::ChannelEnd(chan_end_path_on_a),
-                expected_chan_end_on_a.proto_encode_vec()?,
+                expected_chan_end_on_a.encode_vec(),
             )
             .map_err(ChannelError::VerifyChannelFailed)?;
     }
@@ -91,11 +186,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use super::*;
     use rstest::*;
     use test_log::test;
-
-    use crate::core::ics04_channel::handler::chan_open_try;
 
     use crate::core::ics03_connection::connection::ConnectionEnd;
     use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
@@ -105,13 +198,17 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_open_try::test_util::get_dummy_raw_msg_chan_open_try;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-    use crate::mock::client_state::client_type as mock_client_type;
-    use crate::mock::context::MockContext;
-    use crate::timestamp::ZERO_DURATION;
+    use crate::core::timestamp::ZERO_DURATION;
     use crate::Height;
 
+    use crate::applications::transfer::MODULE_ID_STR;
+    use crate::mock::client_state::client_type as mock_client_type;
+    use crate::mock::context::MockContext;
+    use crate::test_utils::DummyTransferModule;
+
     pub struct Fixture {
-        pub context: MockContext,
+        pub ctx: MockContext,
+        pub module_id: ModuleId,
         pub msg: MsgChannelOpenTry,
         pub client_id_on_b: ClientId,
         pub conn_id_on_b: ConnectionId,
@@ -132,7 +229,8 @@ mod tests {
             ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
             get_compatible_versions(),
             ZERO_DURATION,
-        );
+        )
+        .unwrap();
 
         // We're going to test message processing against this message.
         // Note: we make the counterparty's channel_id `None`.
@@ -142,10 +240,14 @@ mod tests {
         let hops = vec![conn_id_on_b.clone()];
         msg.connection_hops_on_b = hops;
 
-        let context = MockContext::default();
+        let mut ctx = MockContext::default();
+        let module = DummyTransferModule::new();
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
+        ctx.add_route(module_id.clone(), module).unwrap();
 
         Fixture {
-            context,
+            ctx,
+            module_id,
             msg,
             client_id_on_b,
             conn_id_on_b,
@@ -156,9 +258,9 @@ mod tests {
 
     #[rstest]
     fn chan_open_try_fail_no_connection(fixture: Fixture) {
-        let Fixture { context, msg, .. } = fixture;
+        let Fixture { ctx, msg, .. } = fixture;
 
-        let res = chan_open_try::validate(&context, &msg);
+        let res = validate(&ctx, &msg);
 
         assert!(
             res.is_err(),
@@ -169,15 +271,15 @@ mod tests {
     #[rstest]
     fn chan_open_try_fail_no_client_state(fixture: Fixture) {
         let Fixture {
-            context,
+            ctx,
             msg,
             conn_id_on_b,
             conn_end_on_b,
             ..
         } = fixture;
-        let context = context.with_connection(conn_id_on_b, conn_end_on_b);
+        let ctx = ctx.with_connection(conn_id_on_b, conn_end_on_b);
 
-        let res = chan_open_try::validate(&context, &msg);
+        let res = validate(&ctx, &msg);
 
         assert!(
             res.is_err(),
@@ -186,9 +288,9 @@ mod tests {
     }
 
     #[rstest]
-    fn chan_open_try_happy_path(fixture: Fixture) {
+    fn chan_open_try_validate_happy_path(fixture: Fixture) {
         let Fixture {
-            context,
+            ctx,
             msg,
             client_id_on_b,
             conn_id_on_b,
@@ -197,12 +299,41 @@ mod tests {
             ..
         } = fixture;
 
-        let context = context
+        let ctx = ctx
             .with_client(&client_id_on_b, Height::new(0, proof_height).unwrap())
             .with_connection(conn_id_on_b, conn_end_on_b);
 
-        let res = chan_open_try::validate(&context, &msg);
+        let res = validate(&ctx, &msg);
 
         assert!(res.is_ok(), "Validation success: happy path")
+    }
+
+    #[rstest]
+    fn chan_open_try_execute_happy_path(fixture: Fixture) {
+        let Fixture {
+            ctx,
+            module_id,
+            msg,
+            client_id_on_b,
+            conn_id_on_b,
+            conn_end_on_b,
+            proof_height,
+            ..
+        } = fixture;
+
+        let mut ctx = ctx
+            .with_client(&client_id_on_b, Height::new(0, proof_height).unwrap())
+            .with_connection(conn_id_on_b, conn_end_on_b);
+
+        let res = chan_open_try_execute(&mut ctx, module_id, msg);
+
+        assert!(res.is_ok(), "Execution success: happy path");
+
+        assert_eq!(ctx.events.len(), 2);
+        assert!(matches!(
+            ctx.events[0],
+            IbcEvent::Message(MessageEvent::Channel)
+        ));
+        assert!(matches!(ctx.events[1], IbcEvent::OpenTryChannel(_)));
     }
 }

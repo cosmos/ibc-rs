@@ -2,19 +2,18 @@ use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::Version;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
+use crate::core::Msg;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 use crate::{prelude::*, Height};
 
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenAck as RawMsgChannelOpenAck;
 use ibc_proto::protobuf::Protobuf;
 
-pub const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenAck";
+pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenAck";
 
-///
-/// Per our convention, this message is sent to chain A.
 /// Message definition for the third step in the channel open handshake (`ChanOpenAck` datagram).
 ///
+/// Per our convention, this message is sent to chain A.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelOpenAck {
     pub port_id_on_a: PortId,
@@ -41,15 +40,9 @@ impl TryFrom<RawMsgChannelOpenAck> for MsgChannelOpenAck {
 
     fn try_from(raw_msg: RawMsgChannelOpenAck) -> Result<Self, Self::Error> {
         Ok(MsgChannelOpenAck {
-            port_id_on_a: raw_msg.port_id.parse().map_err(ChannelError::Identifier)?,
-            chan_id_on_a: raw_msg
-                .channel_id
-                .parse()
-                .map_err(ChannelError::Identifier)?,
-            chan_id_on_b: raw_msg
-                .counterparty_channel_id
-                .parse()
-                .map_err(ChannelError::Identifier)?,
+            port_id_on_a: raw_msg.port_id.parse()?,
+            chan_id_on_a: raw_msg.channel_id.parse()?,
+            chan_id_on_b: raw_msg.counterparty_channel_id.parse()?,
             version_on_b: raw_msg.counterparty_version.into(),
             proof_chan_end_on_b: raw_msg
                 .proof_try
@@ -59,7 +52,7 @@ impl TryFrom<RawMsgChannelOpenAck> for MsgChannelOpenAck {
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
                 .ok_or(ChannelError::MissingHeight)?,
-            signer: raw_msg.signer.parse().map_err(ChannelError::Signer)?,
+            signer: raw_msg.signer.into(),
         })
     }
 }

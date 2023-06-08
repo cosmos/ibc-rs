@@ -8,7 +8,6 @@ use ibc_proto::protobuf::Protobuf;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::mock::header::MockHeader;
-use crate::Height;
 
 pub const MOCK_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.mock.Misbehavior";
 
@@ -18,16 +17,6 @@ pub struct Misbehaviour {
     pub client_id: ClientId,
     pub header1: MockHeader,
     pub header2: MockHeader,
-}
-
-impl crate::core::ics02_client::misbehaviour::Misbehaviour for Misbehaviour {
-    fn client_id(&self) -> &ClientId {
-        &self.client_id
-    }
-
-    fn height(&self) -> Height {
-        self.header1.height()
-    }
 }
 
 impl Protobuf<RawMisbehaviour> for Misbehaviour {}
@@ -91,8 +80,7 @@ impl From<Misbehaviour> for Any {
     fn from(misbehaviour: Misbehaviour) -> Self {
         Any {
             type_url: MOCK_MISBEHAVIOUR_TYPE_URL.to_string(),
-            value: Protobuf::<RawMisbehaviour>::encode_vec(&misbehaviour)
-                .expect("encoding to `Any` from `TmMisbehaviour`"),
+            value: Protobuf::<RawMisbehaviour>::encode_vec(&misbehaviour),
         }
     }
 }

@@ -31,11 +31,11 @@ pub trait RelayerContext {
 #[cfg(test)]
 mod tests {
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
-    use crate::core::ics02_client::header::{downcast_header, Header};
+    use crate::core::ics02_client::header::Header;
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
     use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
-    use crate::core::ics26_routing::msgs::MsgEnvelope;
+    use crate::core::MsgEnvelope;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::mock::host::{HostBlock, HostType};
@@ -46,6 +46,10 @@ mod tests {
 
     use test_log::test;
     use tracing::debug;
+
+    fn downcast_header<H: Header>(h: &dyn Header) -> Option<&H> {
+        h.as_any().downcast_ref::<H>()
+    }
 
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
     /// context, assuming that the latest header on the source context is `src_header`.

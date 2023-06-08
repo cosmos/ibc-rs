@@ -1,3 +1,5 @@
+//! Definition of domain type message `MsgSubmitMisbehaviour`.
+
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any as ProtoAny;
@@ -6,10 +8,10 @@ use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::core::Msg;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 
-pub const TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
+pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
 
 /// A type of message that submits client misbehaviour proof.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -46,7 +48,7 @@ impl TryFrom<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {
                 .parse()
                 .map_err(ClientError::InvalidRawMisbehaviour)?,
             misbehaviour: raw_misbehaviour,
-            signer: raw.signer.parse().map_err(ClientError::Signer)?,
+            signer: raw.signer.into(),
         })
     }
 }

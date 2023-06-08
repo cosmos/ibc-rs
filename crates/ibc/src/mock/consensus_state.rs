@@ -7,8 +7,8 @@ use ibc_proto::protobuf::Protobuf;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
+use crate::core::timestamp::Timestamp;
 use crate::mock::header::MockHeader;
-use crate::timestamp::Timestamp;
 
 pub const MOCK_CONSENSUS_STATE_TYPE_URL: &str = "/ibc.mock.ConsensusState";
 
@@ -89,8 +89,7 @@ impl From<MockConsensusState> for Any {
     fn from(consensus_state: MockConsensusState) -> Self {
         Any {
             type_url: MOCK_CONSENSUS_STATE_TYPE_URL.to_string(),
-            value: Protobuf::<RawMockConsensusState>::encode_vec(&consensus_state)
-                .expect("encoding to `Any` from `MockConsensusState`"),
+            value: Protobuf::<RawMockConsensusState>::encode_vec(&consensus_state),
         }
     }
 }

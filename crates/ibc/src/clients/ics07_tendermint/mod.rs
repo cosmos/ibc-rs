@@ -10,9 +10,11 @@ pub mod consensus_state;
 pub mod error;
 pub mod header;
 pub mod misbehaviour;
+pub mod trust_threshold;
 
 pub(crate) const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
 
+/// Returns the tendermint `ClientType`
 pub fn client_type() -> ClientType {
-    ClientType::new(TENDERMINT_CLIENT_TYPE.to_string())
+    ClientType::from(TENDERMINT_CLIENT_TYPE.to_string())
 }

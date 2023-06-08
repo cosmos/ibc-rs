@@ -1,36 +1,178 @@
-use ibc_proto::google::protobuf::Any;
-
-use super::{
-    ics26_routing::{error::RouterError, msgs::MsgEnvelope},
-    ExecutionContext, ValidationContext,
+use super::ics02_client::handler::{create_client, update_client, upgrade_client};
+use super::ics02_client::msgs::{ClientMsg, MsgUpdateOrMisbehaviour};
+use super::ics03_connection::handler::{
+    conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try,
 };
-
-/// Entrypoint which only performs message validation
-pub fn validate<Ctx>(ctx: &Ctx, message: Any) -> Result<(), RouterError>
-where
-    Ctx: ValidationContext,
-{
-    let envelope: MsgEnvelope = message.try_into()?;
-    ctx.validate(envelope)
-}
-
-/// Entrypoint which only performs message execution
-pub fn execute<Ctx>(ctx: &mut Ctx, message: Any) -> Result<(), RouterError>
-where
-    Ctx: ExecutionContext,
-{
-    let envelope: MsgEnvelope = message.try_into()?;
-    ctx.execute(envelope)
-}
+use super::ics03_connection::msgs::ConnectionMsg;
+use super::ics04_channel::error::ChannelError;
+use super::ics04_channel::handler::acknowledgement::{
+    acknowledgement_packet_execute, acknowledgement_packet_validate,
+};
+use super::ics04_channel::handler::chan_close_confirm::{
+    chan_close_confirm_execute, chan_close_confirm_validate,
+};
+use super::ics04_channel::handler::chan_close_init::{
+    chan_close_init_execute, chan_close_init_validate,
+};
+use super::ics04_channel::handler::chan_open_ack::{chan_open_ack_execute, chan_open_ack_validate};
+use super::ics04_channel::handler::chan_open_confirm::{
+    chan_open_confirm_execute, chan_open_confirm_validate,
+};
+use super::ics04_channel::handler::chan_open_init::{
+    chan_open_init_execute, chan_open_init_validate,
+};
+use super::ics04_channel::handler::chan_open_try::{chan_open_try_execute, chan_open_try_validate};
+use super::ics04_channel::handler::recv_packet::{recv_packet_execute, recv_packet_validate};
+use super::ics04_channel::handler::timeout::{
+    timeout_packet_execute, timeout_packet_validate, TimeoutMsgType,
+};
+use super::ics04_channel::msgs::{ChannelMsg, PacketMsg};
+use super::{msgs::MsgEnvelope, ExecutionContext, ValidationContext};
+use super::{ContextError, RouterError};
 
 /// Entrypoint which performs both validation and message execution
 pub fn dispatch(ctx: &mut impl ExecutionContext, msg: MsgEnvelope) -> Result<(), RouterError> {
-    ctx.validate(msg.clone())?;
-    ctx.execute(msg)
+    validate(ctx, msg.clone())?;
+    execute(ctx, msg)
+}
+
+/// Entrypoint which only performs message validation
+///
+/// If a transaction contains `n` messages `m_1` ... `m_n`, then
+/// they MUST be processed as follows:
+///     validate(m_1), execute(m_1), ..., validate(m_n), execute(m_n)
+/// That is, the state transition of message `i` must be applied before
+/// message `i+1` is validated. This is equivalent to calling
+/// `dispatch()` on each successively.
+pub fn validate<Ctx>(ctx: &Ctx, msg: MsgEnvelope) -> Result<(), RouterError>
+where
+    Ctx: ValidationContext,
+{
+    match msg {
+        MsgEnvelope::Client(msg) => match msg {
+            ClientMsg::CreateClient(msg) => create_client::validate(ctx, msg),
+            ClientMsg::UpdateClient(msg) => {
+                update_client::validate(ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg))
+            }
+            ClientMsg::Misbehaviour(msg) => {
+                update_client::validate(ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
+            }
+            ClientMsg::UpgradeClient(msg) => upgrade_client::validate(ctx, msg),
+        }
+        .map_err(RouterError::ContextError),
+        MsgEnvelope::Connection(msg) => match msg {
+            ConnectionMsg::OpenInit(msg) => conn_open_init::validate(ctx, msg),
+            ConnectionMsg::OpenTry(msg) => conn_open_try::validate(ctx, msg),
+            ConnectionMsg::OpenAck(msg) => conn_open_ack::validate(ctx, msg),
+            ConnectionMsg::OpenConfirm(ref msg) => conn_open_confirm::validate(ctx, msg),
+        }
+        .map_err(RouterError::ContextError),
+        MsgEnvelope::Channel(msg) => {
+            let module_id = ctx
+                .lookup_module_channel(&msg)
+                .map_err(ContextError::from)?;
+            if !ctx.has_route(&module_id) {
+                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
+            }
+
+            match msg {
+                ChannelMsg::OpenInit(msg) => chan_open_init_validate(ctx, module_id, msg),
+                ChannelMsg::OpenTry(msg) => chan_open_try_validate(ctx, module_id, msg),
+                ChannelMsg::OpenAck(msg) => chan_open_ack_validate(ctx, module_id, msg),
+                ChannelMsg::OpenConfirm(msg) => chan_open_confirm_validate(ctx, module_id, msg),
+                ChannelMsg::CloseInit(msg) => chan_close_init_validate(ctx, module_id, msg),
+                ChannelMsg::CloseConfirm(msg) => chan_close_confirm_validate(ctx, module_id, msg),
+            }
+            .map_err(RouterError::ContextError)
+        }
+        MsgEnvelope::Packet(msg) => {
+            let module_id = ctx.lookup_module_packet(&msg).map_err(ContextError::from)?;
+            if !ctx.has_route(&module_id) {
+                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
+            }
+
+            match msg {
+                PacketMsg::Recv(msg) => recv_packet_validate(ctx, msg),
+                PacketMsg::Ack(msg) => acknowledgement_packet_validate(ctx, module_id, msg),
+                PacketMsg::Timeout(msg) => {
+                    timeout_packet_validate(ctx, module_id, TimeoutMsgType::Timeout(msg))
+                }
+                PacketMsg::TimeoutOnClose(msg) => {
+                    timeout_packet_validate(ctx, module_id, TimeoutMsgType::TimeoutOnClose(msg))
+                }
+            }
+            .map_err(RouterError::ContextError)
+        }
+    }
+}
+
+/// Entrypoint which only performs message execution
+pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgEnvelope) -> Result<(), RouterError>
+where
+    Ctx: ExecutionContext,
+{
+    match msg {
+        MsgEnvelope::Client(msg) => match msg {
+            ClientMsg::CreateClient(msg) => create_client::execute(ctx, msg),
+            ClientMsg::UpdateClient(msg) => {
+                update_client::execute(ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg))
+            }
+            ClientMsg::Misbehaviour(msg) => {
+                update_client::execute(ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
+            }
+            ClientMsg::UpgradeClient(msg) => upgrade_client::execute(ctx, msg),
+        }
+        .map_err(RouterError::ContextError),
+        MsgEnvelope::Connection(msg) => match msg {
+            ConnectionMsg::OpenInit(msg) => conn_open_init::execute(ctx, msg),
+            ConnectionMsg::OpenTry(msg) => conn_open_try::execute(ctx, msg),
+            ConnectionMsg::OpenAck(msg) => conn_open_ack::execute(ctx, msg),
+            ConnectionMsg::OpenConfirm(ref msg) => conn_open_confirm::execute(ctx, msg),
+        }
+        .map_err(RouterError::ContextError),
+        MsgEnvelope::Channel(msg) => {
+            let module_id = ctx
+                .lookup_module_channel(&msg)
+                .map_err(ContextError::from)?;
+            if !ctx.has_route(&module_id) {
+                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
+            }
+
+            match msg {
+                ChannelMsg::OpenInit(msg) => chan_open_init_execute(ctx, module_id, msg),
+                ChannelMsg::OpenTry(msg) => chan_open_try_execute(ctx, module_id, msg),
+                ChannelMsg::OpenAck(msg) => chan_open_ack_execute(ctx, module_id, msg),
+                ChannelMsg::OpenConfirm(msg) => chan_open_confirm_execute(ctx, module_id, msg),
+                ChannelMsg::CloseInit(msg) => chan_close_init_execute(ctx, module_id, msg),
+                ChannelMsg::CloseConfirm(msg) => chan_close_confirm_execute(ctx, module_id, msg),
+            }
+            .map_err(RouterError::ContextError)
+        }
+        MsgEnvelope::Packet(msg) => {
+            let module_id = ctx.lookup_module_packet(&msg).map_err(ContextError::from)?;
+            if !ctx.has_route(&module_id) {
+                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
+            }
+
+            match msg {
+                PacketMsg::Recv(msg) => recv_packet_execute(ctx, module_id, msg),
+                PacketMsg::Ack(msg) => acknowledgement_packet_execute(ctx, module_id, msg),
+                PacketMsg::Timeout(msg) => {
+                    timeout_packet_execute(ctx, module_id, TimeoutMsgType::Timeout(msg))
+                }
+                PacketMsg::TimeoutOnClose(msg) => {
+                    timeout_packet_execute(ctx, module_id, TimeoutMsgType::TimeoutOnClose(msg))
+                }
+            }
+            .map_err(RouterError::ContextError)
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     use core::default::Default;
     use core::time::Duration;
 
@@ -38,11 +180,13 @@ mod tests {
 
     use crate::applications::transfer::error::TokenTransferError;
     use crate::applications::transfer::msgs::transfer::test_util::get_dummy_transfer_packet;
-    use crate::applications::transfer::relay::send_transfer::send_transfer;
     use crate::applications::transfer::{
         msgs::transfer::test_util::get_dummy_msg_transfer, msgs::transfer::MsgTransfer,
         packet::PacketData, PrefixedCoin,
     };
+    use crate::applications::transfer::{send_transfer, MODULE_ID_STR};
+    use crate::core::dispatch;
+    use crate::core::events::{IbcEvent, MessageEvent};
     use crate::core::ics02_client::msgs::{
         create_client::MsgCreateClient, update_client::MsgUpdateClient,
         upgrade_client::MsgUpgradeClient, ClientMsg,
@@ -78,23 +222,18 @@ mod tests {
     };
     use crate::core::ics04_channel::timeout::TimeoutHeight;
     use crate::core::ics04_channel::Version as ChannelVersion;
-    use crate::core::ics23_commitment::commitment::test_util::get_dummy_merkle_proof;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
     use crate::core::ics24_host::path::{CommitmentPath, PortPath};
-    use crate::core::ics26_routing::error::RouterError;
-    use crate::core::ics26_routing::module::ModuleContext;
-    use crate::core::ics26_routing::msgs::MsgEnvelope;
-    use crate::core::ics26_routing::router::RouterMut;
-    use crate::core::{dispatch, ValidationContext};
-    use crate::events::{IbcEvent, IbcEventType};
+    use crate::core::module::ModuleId;
+    use crate::core::msgs::MsgEnvelope;
+    use crate::core::timestamp::Timestamp;
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
     use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
     use crate::prelude::*;
     use crate::test_utils::{get_dummy_account_id, DummyTransferModule};
-    use crate::timestamp::Timestamp;
     use crate::Height;
 
     #[test]
@@ -105,7 +244,7 @@ mod tests {
         #[derive(Clone, Debug)]
         enum TestMsg {
             Ics26(MsgEnvelope),
-            Ics20(MsgTransfer<PrefixedCoin>),
+            Ics20(MsgTransfer),
         }
 
         impl From<MsgEnvelope> for TestMsg {
@@ -114,8 +253,8 @@ mod tests {
             }
         }
 
-        impl From<MsgTransfer<PrefixedCoin>> for TestMsg {
-            fn from(msg: MsgTransfer<PrefixedCoin>) -> Self {
+        impl From<MsgTransfer> for TestMsg {
+            fn from(msg: MsgTransfer) -> Self {
                 Self::Ics20(msg)
             }
         }
@@ -140,6 +279,8 @@ mod tests {
         let upgrade_client_height = Height::new(1, 2).unwrap();
 
         let upgrade_client_height_second = Height::new(1, 1).unwrap();
+
+        let transfer_module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
 
         // We reuse this same context across all tests. Nothing in particular needs parametrizing.
         let mut ctx = MockContext::default();
@@ -204,15 +345,16 @@ mod tests {
         msg_to_on_close.packet.timeout_height_on_b = msg_transfer_two.timeout_height_on_b;
         msg_to_on_close.packet.timeout_timestamp_on_b = msg_transfer_two.timeout_timestamp_on_b;
 
-        let denom = msg_transfer_two.token.denom.clone();
+        let denom = msg_transfer_two.packet_data.token.denom.clone();
         let packet_data = {
             let data = PacketData {
                 token: PrefixedCoin {
                     denom,
-                    amount: msg_transfer_two.token.amount,
+                    amount: msg_transfer_two.packet_data.token.amount,
                 },
-                sender: msg_transfer_two.sender.clone(),
-                receiver: msg_transfer_two.receiver.clone(),
+                sender: msg_transfer_two.packet_data.sender.clone(),
+                receiver: msg_transfer_two.packet_data.receiver.clone(),
+                memo: "".to_owned().into(),
             };
             serde_json::to_vec(&data).expect("PacketData's infallible Serialize impl failed")
         };
@@ -243,7 +385,7 @@ mod tests {
         // Figure out the ID of the client that was just created.
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::CreateClient)
+            IbcEvent::Message(MessageEvent::Client)
         ));
         let client_id_event = ctx.events.get(1);
         assert!(
@@ -395,7 +537,7 @@ mod tests {
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
                     header: MockHeader::new(update_client_height_after_second_send).into(),
-                    signer: default_signer.clone(),
+                    signer: default_signer,
                 }))
                 .into(),
                 want_pass: true,
@@ -436,30 +578,20 @@ mod tests {
             },
             Test {
                 name: "Client upgrade successful".to_string(),
-                msg: MsgEnvelope::Client(ClientMsg::UpgradeClient(MsgUpgradeClient::new(
-                    client_id.clone(),
-                    MockClientState::new(MockHeader::new(upgrade_client_height)).into(),
-                    MockConsensusState::new(MockHeader::new(upgrade_client_height)).into(),
-                    get_dummy_merkle_proof(),
-                    get_dummy_merkle_proof(),
-                    default_signer.clone(),
-                )))
+                msg: MsgEnvelope::Client(ClientMsg::UpgradeClient(
+                    MsgUpgradeClient::new_dummy(upgrade_client_height)
+                        .with_client_id(client_id.clone()),
+                ))
                 .into(),
-                // Temporarily set to false due to the fact that the client
-                // upgrade is not yet implemented
-                want_pass: cfg!(feature = "upgrade_client"),
+                want_pass: true,
                 state_check: None,
             },
             Test {
                 name: "Client upgrade un-successful".to_string(),
-                msg: MsgEnvelope::Client(ClientMsg::UpgradeClient(MsgUpgradeClient::new(
-                    client_id,
-                    MockClientState::new(MockHeader::new(upgrade_client_height_second)).into(),
-                    MockConsensusState::new(MockHeader::new(upgrade_client_height_second)).into(),
-                    get_dummy_merkle_proof(),
-                    get_dummy_merkle_proof(),
-                    default_signer,
-                )))
+                msg: MsgEnvelope::Client(ClientMsg::UpgradeClient(
+                    MsgUpgradeClient::new_dummy(upgrade_client_height_second)
+                        .with_client_id(client_id),
+                ))
                 .into(),
                 want_pass: false,
                 state_check: None,
@@ -503,6 +635,7 @@ mod tests {
     }
 
     fn get_channel_events_ctx() -> MockContext {
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let mut ctx = MockContext::default()
             .with_client(&ClientId::default(), Height::new(0, 1).unwrap())
             .with_connection(
@@ -517,7 +650,8 @@ mod tests {
                     ),
                     vec![ConnVersion::default()],
                     Duration::MAX,
-                ),
+                )
+                .unwrap(),
             );
         let mut module = DummyTransferModule::new(ctx.ibc_store.clone());
         let module_id = module.module_id();
@@ -545,7 +679,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::OpenInitChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::OpenInitChannel(_)));
     }
@@ -566,7 +700,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::OpenTryChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::OpenTryChannel(_)));
     }
@@ -582,7 +716,8 @@ mod tests {
                 ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
                 vec![ConnectionId::new(0)],
                 ChannelVersion::default(),
-            ),
+            )
+            .unwrap(),
         );
 
         let msg_chan_open_ack =
@@ -597,7 +732,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::OpenAckChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::OpenAckChannel(_)));
     }
@@ -613,7 +748,8 @@ mod tests {
                 ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
                 vec![ConnectionId::new(0)],
                 ChannelVersion::default(),
-            ),
+            )
+            .unwrap(),
         );
 
         let msg_chan_open_confirm =
@@ -628,7 +764,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::OpenConfirmChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::OpenConfirmChannel(_)));
     }
@@ -644,7 +780,8 @@ mod tests {
                 ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
                 vec![ConnectionId::new(0)],
                 ChannelVersion::default(),
-            ),
+            )
+            .unwrap(),
         );
 
         let msg_chan_close_init =
@@ -659,7 +796,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::CloseInitChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::CloseInitChannel(_)));
     }
@@ -675,7 +812,8 @@ mod tests {
                 ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
                 vec![ConnectionId::new(0)],
                 ChannelVersion::default(),
-            ),
+            )
+            .unwrap(),
         );
 
         let msg_chan_close_confirm =
@@ -690,7 +828,7 @@ mod tests {
         assert_eq!(ctx.events.len(), 2);
         assert!(matches!(
             ctx.events[0],
-            IbcEvent::Message(IbcEventType::CloseConfirmChannel)
+            IbcEvent::Message(MessageEvent::Channel)
         ));
         assert!(matches!(ctx.events[1], IbcEvent::CloseConfirmChannel(_)));
     }

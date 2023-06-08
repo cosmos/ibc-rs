@@ -1,13 +1,15 @@
+//! Defines the trait to be implemented by concrete header types
+
 use crate::prelude::*;
 
 use dyn_clone::DynClone;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 
+use crate::clients::AsAny;
 use crate::core::ics02_client::error::ClientError;
-use crate::dynamic_typing::AsAny;
+use crate::core::timestamp::Timestamp;
 use crate::erased::ErasedSerialize;
-use crate::timestamp::Timestamp;
 use crate::Height;
 
 /// Abstract of consensus state update information
@@ -47,10 +49,6 @@ dyn_clone::clone_trait_object!(Header);
 // Implements `serde::Serialize` for all types that have Header as supertrait
 #[cfg(feature = "serde")]
 erased_serde::serialize_trait_object!(Header);
-
-pub fn downcast_header<H: Header>(h: &dyn Header) -> Option<&H> {
-    h.as_any().downcast_ref::<H>()
-}
 
 impl PartialEq for dyn Header {
     fn eq(&self, other: &Self) -> bool {

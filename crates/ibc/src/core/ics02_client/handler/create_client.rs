@@ -1,5 +1,6 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
+use crate::core::events::MessageEvent;
 use crate::prelude::*;
 
 use crate::core::context::ContextError;
@@ -8,17 +9,15 @@ use crate::core::ics24_host::path::ClientConsensusStatePath;
 
 use crate::core::ics24_host::path::ClientStatePath;
 
-use crate::core::ics24_host::path::ClientTypePath;
-
 use crate::core::ExecutionContext;
 
 use crate::core::ValidationContext;
 
+use crate::core::events::IbcEvent;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::CreateClient;
 use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::events::IbcEvent;
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
@@ -26,24 +25,32 @@ where
 {
     let MsgCreateClient {
         client_state,
-        consensus_state: _,
-        signer: _,
+        consensus_state,
+        signer,
     } = msg;
+
+    ctx.validate_message_signer(&signer)?;
 
     // Construct this client's identifier
     let id_counter = ctx.client_counter()?;
 
     let client_state = ctx.decode_client_state(client_state)?;
 
+    client_state.initialise(consensus_state)?;
+
     let client_type = client_state.client_type();
 
-    let _client_id = ClientId::new(client_type, id_counter).map_err(|e| {
+    let client_id = ClientId::new(client_type, id_counter).map_err(|e| {
         ClientError::ClientIdentifierConstructor {
             client_type: client_state.client_type(),
             counter: id_counter,
             validation_error: e,
         }
     })?;
+
+    if ctx.client_state(&client_id).is_ok() {
+        return Err(ClientError::ClientStateAlreadyExists { client_id }.into());
+    };
 
     Ok(())
 }
@@ -74,7 +81,6 @@ where
     })?;
     let consensus_state = client_state.initialise(consensus_state)?;
 
-    ctx.store_client_type(ClientTypePath::new(&client_id), client_type.clone())?;
     ctx.store_client_state(ClientStatePath::new(&client_id), client_state.clone())?;
     ctx.store_consensus_state(
         ClientConsensusStatePath::new(&client_id, &client_state.latest_height()),
@@ -97,7 +103,7 @@ where
         client_type,
         client_state.latest_height(),
     ));
-    ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
     ctx.emit_ibc_event(event);
 
     ctx.log_message(format!(
@@ -109,22 +115,16 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::clients::ics07_tendermint::client_type as tm_client_type;
-    use crate::core::ics02_client::handler::create_client::{execute, validate};
-    use crate::core::ValidationContext;
-    use crate::prelude::*;
+    use super::*;
 
-    use core::time::Duration;
     use test_log::test;
 
-    use crate::clients::ics07_tendermint::client_state::{
-        AllowUpdate, ClientState as TmClientState,
-    };
+    use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
+    use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
+    use crate::core::ics02_client::handler::create_client::{execute, validate};
     use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
-    use crate::core::ics02_client::trust_threshold::TrustThreshold;
-    use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ClientId;
     use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
     use crate::mock::consensus_state::MockConsensusState;
@@ -173,23 +173,7 @@ mod tests {
 
         let tm_header = get_dummy_tendermint_header();
 
-        let tm_client_state = TmClientState::new(
-            tm_header.chain_id.clone().into(),
-            TrustThreshold::ONE_THIRD,
-            Duration::from_secs(64000),
-            Duration::from_secs(128000),
-            Duration::from_millis(3000),
-            Height::new(0, u64::from(tm_header.height)).unwrap(),
-            ProofSpecs::default(),
-            vec![],
-            AllowUpdate {
-                after_expiry: false,
-                after_misbehaviour: false,
-            },
-            None,
-        )
-        .unwrap()
-        .into();
+        let tm_client_state = TmClientState::new_dummy_from_header(tm_header.clone()).into();
 
         let client_type = tm_client_type();
 

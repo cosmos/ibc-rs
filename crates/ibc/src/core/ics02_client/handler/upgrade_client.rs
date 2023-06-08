@@ -2,30 +2,25 @@
 //!
 use crate::prelude::*;
 
+use crate::core::context::ContextError;
+use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics02_client::client_state::UpdatedState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
-use crate::events::IbcEvent;
-
-use crate::core::context::ContextError;
-
+use crate::core::ics23_commitment::merkle::MerkleProof;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
-
 use crate::core::{ExecutionContext, ValidationContext};
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
-    let MsgUpgradeClient { client_id, .. } = msg;
+    let MsgUpgradeClient {
+        client_id, signer, ..
+    } = msg;
 
-    // Temporary has been disabled until we have a better understanding of some design implications
-    if cfg!(not(feature = "upgrade_client")) {
-        return Err(ContextError::ClientError(ClientError::Other {
-            description: "upgrade_client feature is not supported".to_string(),
-        }));
-    }
+    ctx.validate_message_signer(&signer)?;
 
     // Read the current latest client state from the host chain store.
     let old_client_state = ctx.client_state(&client_id)?;
@@ -61,12 +56,17 @@ where
         ));
     };
 
+    // Note: verification of proofs that unmarshalled correctly has been done
+    // while decoding the proto message into a `MsgEnvelope` domain type
+    let merkle_proof_upgrade_client = MerkleProof::from(msg.proof_upgrade_client.clone());
+    let merkle_proof_upgrade_cons_state = MerkleProof::from(msg.proof_upgrade_consensus_state);
+
     // Validate the upgraded client state and consensus state and verify proofs against the root
     old_client_state.verify_upgrade_client(
         msg.client_state.clone(),
-        msg.consensus_state.clone(),
-        msg.proof_upgrade_client.clone(),
-        msg.proof_upgrade_consensus_state,
+        msg.consensus_state,
+        merkle_proof_upgrade_client,
+        merkle_proof_upgrade_cons_state,
         old_consensus_state.root(),
     )?;
 
@@ -98,120 +98,164 @@ where
         client_state.client_type(),
         client_state.latest_height(),
     ));
-    ctx.emit_ibc_event(IbcEvent::Message(event.event_type()));
+    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
     ctx.emit_ibc_event(event);
 
     Ok(())
 }
 
-#[cfg(feature = "upgrade_client")]
 #[cfg(test)]
 mod tests {
-    use crate::core::ics02_client::handler::upgrade_client::execute;
-    use crate::core::ics24_host::path::ClientConsensusStatePath;
-    use crate::core::ValidationContext;
-    use crate::events::{IbcEvent, IbcEventType};
-    use crate::{downcast, prelude::*};
-    use rstest::*;
+    use super::*;
 
-    use core::str::FromStr;
+    use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
+    use crate::clients::ics07_tendermint::client_type;
+    use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
 
-    use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
+    use crate::core::ics02_client::error::UpgradeClientError;
+    use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics24_host::identifier::ClientId;
-    use crate::mock::client_state::client_type as mock_client_type;
-    use crate::mock::client_state::MockClientState;
-    use crate::mock::consensus_state::MockConsensusState;
-    use crate::mock::context::MockContext;
-    use crate::mock::header::MockHeader;
-    use crate::test_utils::get_dummy_account_id;
+    use crate::downcast;
     use crate::Height;
 
-    use super::validate;
+    use crate::mock::client_state::client_type as mock_client_type;
+    use crate::mock::context::MockContext;
 
-    pub struct Fixture {
-        pub ctx: MockContext,
-        pub msg: MsgUpgradeClient,
+    enum Ctx {
+        Default,
+        WithClient,
     }
 
-    #[fixture]
-    fn fixture() -> Fixture {
-        let ctx =
-            MockContext::default().with_client(&ClientId::default(), Height::new(0, 42).unwrap());
+    enum Msg {
+        Default,
+        LowUpgradeHeight,
+        UnknownUpgradedClientStateType,
+    }
 
-        let msg = MsgUpgradeClient {
-            client_id: ClientId::default(),
-            client_state: MockClientState::new(MockHeader::new(Height::new(1, 26).unwrap())).into(),
-            consensus_state: MockConsensusState::new(MockHeader::new(Height::new(1, 26).unwrap()))
+    fn msg_upgrade_client_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgUpgradeClient> {
+        let client_id = ClientId::new(mock_client_type(), 0).unwrap();
+
+        let ctx_default = MockContext::default();
+        let ctx_with_client = ctx_default
+            .clone()
+            .with_client(&client_id, Height::new(0, 42).unwrap());
+        let ctx = match ctx_variant {
+            Ctx::Default => ctx_default,
+            Ctx::WithClient => ctx_with_client,
+        };
+
+        let upgrade_height = Height::new(1, 26).unwrap();
+        let msg_default = MsgUpgradeClient::new_dummy(upgrade_height);
+
+        let low_upgrade_height = Height::new(0, 26).unwrap();
+        let msg_with_low_upgrade_height = MsgUpgradeClient::new_dummy(low_upgrade_height);
+
+        let msg_with_unknown_upgraded_cs = MsgUpgradeClient {
+            client_state: TmClientState::new_dummy_from_header(get_dummy_tendermint_header())
                 .into(),
-            proof_upgrade_client: Default::default(),
-            proof_upgrade_consensus_state: Default::default(),
-            signer: get_dummy_account_id(),
+            ..msg_default.clone()
+        };
+
+        let msg = match msg_variant {
+            Msg::Default => msg_default,
+            Msg::LowUpgradeHeight => msg_with_low_upgrade_height,
+            Msg::UnknownUpgradedClientStateType => msg_with_unknown_upgraded_cs,
         };
 
         Fixture { ctx, msg }
     }
 
-    #[rstest]
-    fn upgrade_client_ok(fixture: Fixture) {
-        let Fixture { mut ctx, msg } = fixture;
+    fn upgrade_client_validate(fxt: &Fixture<MsgUpgradeClient>, expect: Expect) {
+        let Fixture { ctx, msg } = fxt;
+        let res = validate(ctx, msg.clone());
+        let err_msg = fxt.generate_error_msg(&expect, "validation", &res);
 
-        let res = validate(&ctx, msg.clone());
-        assert!(res.is_ok(), "validation happy path");
-
-        let res = execute(&mut ctx, msg.clone());
-        assert!(res.is_ok(), "execution happy path");
-
-        assert!(matches!(
-            ctx.events[0],
-            IbcEvent::Message(IbcEventType::UpgradeClient)
-        ));
-        let upgrade_client_event = downcast!(&ctx.events[1] => IbcEvent::UpgradeClient).unwrap();
-        assert_eq!(upgrade_client_event.client_id(), &msg.client_id);
-        assert_eq!(upgrade_client_event.client_type(), &mock_client_type());
-        assert_eq!(
-            upgrade_client_event.consensus_height(),
-            &Height::new(1, 26).unwrap()
-        );
-
-        let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert_eq!(client_state.as_ref().clone_into(), msg.client_state);
-
-        let consensus_state = ctx
-            .consensus_state(&ClientConsensusStatePath {
-                client_id: msg.client_id,
-                epoch: 1,
-                height: 26,
-            })
-            .unwrap();
-        assert_eq!(consensus_state.as_ref().clone_into(), msg.consensus_state);
+        match expect {
+            Expect::Failure(_) => {
+                assert!(res.is_err(), "{err_msg}");
+            }
+            Expect::Success => {
+                assert!(res.is_ok(), "{err_msg}");
+            }
+        };
     }
 
-    #[rstest]
-    fn upgrade_client_fail_nonexisting_client(fixture: Fixture) {
-        let Fixture { ctx, mut msg } = fixture;
+    fn upgrade_client_execute(fxt: &mut Fixture<MsgUpgradeClient>, expect: Expect) {
+        let res = execute(&mut fxt.ctx, fxt.msg.clone());
+        let err_msg = fxt.generate_error_msg(&expect, "execution", &res);
+        match expect {
+            Expect::Failure(err) => {
+                assert!(res.is_err(), "{err_msg}");
+                assert_eq!(
+                    core::mem::discriminant(res.as_ref().unwrap_err()),
+                    core::mem::discriminant(&err.unwrap())
+                );
+            }
+            Expect::Success => {
+                assert!(res.is_ok(), "{err_msg}");
+                assert!(matches!(
+                    fxt.ctx.events[0],
+                    IbcEvent::Message(MessageEvent::Client)
+                ));
+                let upgrade_client_event =
+                    downcast!(&fxt.ctx.events[1] => IbcEvent::UpgradeClient).unwrap();
+                let plan_height = Height::new(1, 26).unwrap();
 
-        msg.client_id = ClientId::from_str("nonexistingclient").unwrap();
+                assert_eq!(upgrade_client_event.client_id(), &fxt.msg.client_id);
+                assert_eq!(upgrade_client_event.client_type(), &mock_client_type());
+                assert_eq!(upgrade_client_event.consensus_height(), &plan_height);
 
-        let res = validate(&ctx, msg);
-        assert!(
-            res.is_err(),
-            "validation fails because the client is non-existing"
-        );
+                let client_state = fxt.ctx.client_state(&fxt.msg.client_id).unwrap();
+                assert_eq!(client_state.as_ref().clone_into(), fxt.msg.client_state);
+                let consensus_state = fxt
+                    .ctx
+                    .consensus_state(&ClientConsensusStatePath::new(
+                        &fxt.msg.client_id,
+                        &plan_height,
+                    ))
+                    .unwrap();
+                assert_eq!(
+                    consensus_state.as_ref().clone_into(),
+                    fxt.msg.consensus_state
+                );
+            }
+        };
     }
 
-    #[rstest]
-    fn upgrade_client_fail_low_upgrade_height(fixture: Fixture) {
-        let Fixture { ctx, mut msg } = fixture;
+    #[test]
+    fn msg_upgrade_client_healthy() {
+        let mut fxt = msg_upgrade_client_fixture(Ctx::WithClient, Msg::Default);
+        upgrade_client_validate(&fxt, Expect::Success);
+        upgrade_client_execute(&mut fxt, Expect::Success);
+    }
 
-        msg.client_state =
-            MockClientState::new(MockHeader::new(Height::new(0, 26).unwrap())).into();
-        msg.consensus_state =
-            MockConsensusState::new(MockHeader::new(Height::new(0, 26).unwrap())).into();
+    #[test]
+    fn upgrade_client_fail_nonexisting_client() {
+        let fxt = msg_upgrade_client_fixture(Ctx::Default, Msg::Default);
+        let expected_err = ContextError::ClientError(ClientError::ClientStateNotFound {
+            client_id: fxt.msg.client_id.clone(),
+        });
+        upgrade_client_validate(&fxt, Expect::Failure(Some(expected_err)));
+    }
 
-        let res = validate(&ctx, msg);
-        assert!(
-            res.is_err(),
-            "validation fails because the upgrade height is too low"
-        );
+    #[test]
+    fn upgrade_client_fail_low_upgrade_height() {
+        let fxt: Fixture<MsgUpgradeClient> =
+            msg_upgrade_client_fixture(Ctx::WithClient, Msg::LowUpgradeHeight);
+        let expected_err: ClientError = UpgradeClientError::LowUpgradeHeight {
+            upgraded_height: Height::new(0, 26).unwrap(),
+            client_height: fxt.ctx.latest_height(),
+        }
+        .into();
+        upgrade_client_validate(&fxt, Expect::Failure(Some(expected_err.into())));
+    }
+
+    #[test]
+    fn upgrade_client_fail_unknown_upgraded_client_state() {
+        let fxt = msg_upgrade_client_fixture(Ctx::WithClient, Msg::UnknownUpgradedClientStateType);
+        let expected_err = ContextError::ClientError(ClientError::UnknownClientStateType {
+            client_state_type: client_type().to_string(),
+        });
+        upgrade_client_validate(&fxt, Expect::Failure(Some(expected_err)));
     }
 }

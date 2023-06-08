@@ -1,5 +1,6 @@
-//! Definition of domain type message `MsgUpdateAnyClient`.
+//! Definition of domain type message `MsgUpdateClient`.
 
+use crate::core::Msg;
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
@@ -9,11 +10,13 @@ use ibc_proto::protobuf::Protobuf;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::signer::Signer;
-use crate::tx_msg::Msg;
 
-pub const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
+pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
 
-/// A type of message that triggers the update of an on-chain (IBC) client with new headers.
+/// Represents the message that triggers the update of an on-chain (IBC) client
+/// either with new headers, or evidence of misbehaviour.
+/// Note that some types of misbehaviour can be detected when a headers
+/// are updated (`UpdateKind::UpdateClient`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgUpdateClient {
     pub client_id: ClientId,
@@ -41,7 +44,7 @@ impl TryFrom<RawMsgUpdateClient> for MsgUpdateClient {
                 .parse()
                 .map_err(ClientError::InvalidMsgUpdateClientId)?,
             header: raw.header.ok_or(ClientError::MissingRawHeader)?,
-            signer: raw.signer.parse().map_err(ClientError::Signer)?,
+            signer: raw.signer.into(),
         })
     }
 }
@@ -58,6 +61,7 @@ impl From<MsgUpdateClient> for RawMsgUpdateClient {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
 
     use test_log::test;
 

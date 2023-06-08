@@ -1,3 +1,5 @@
+//! Defines the misbehaviour type for the tendermint light client
+
 use crate::prelude::*;
 
 use bytes::Buf;
@@ -5,16 +7,15 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Misbehaviour as RawMisbehaviour;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
-use tendermint_light_client_verifier::ProdVerifier;
 
-use crate::clients::ics07_tendermint::error::{Error, IntoResult};
+use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::Height;
+use crate::core::ics24_host::identifier::ClientId;
 
-pub const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
+const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
 
+/// Tendermint light client's misbehaviour type
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Misbehaviour {
@@ -24,43 +25,12 @@ pub struct Misbehaviour {
 }
 
 impl Misbehaviour {
-    pub fn new(client_id: ClientId, header1: Header, header2: Header) -> Result<Self, Error> {
-        if header1.signed_header.header.chain_id != header2.signed_header.header.chain_id {
-            return Err(Error::InvalidRawMisbehaviour {
-                reason: "headers must have identical chain_ids".to_owned(),
-            });
-        }
-
-        if header1.height() < header2.height() {
-            return Err(Error::InvalidRawMisbehaviour {
-                reason: format!(
-                    "headers1 height is less than header2 height ({} < {})",
-                    header1.height(),
-                    header2.height()
-                ),
-            });
-        }
-
-        let untrusted_state_1 = header1.as_untrusted_block_state();
-        let untrusted_state_2 = header2.as_untrusted_block_state();
-
-        let verifier = ProdVerifier::default();
-
-        verifier
-            .verify_validator_sets(&untrusted_state_1)
-            .into_result()?;
-        verifier
-            .verify_validator_sets(&untrusted_state_2)
-            .into_result()?;
-
-        verifier.verify_commit(&untrusted_state_1).into_result()?;
-        verifier.verify_commit(&untrusted_state_2).into_result()?;
-
-        Ok(Self {
+    pub fn new(client_id: ClientId, header1: Header, header2: Header) -> Self {
+        Self {
             client_id,
             header1,
             header2,
-        })
+        }
     }
 
     pub fn client_id(&self) -> &ClientId {
@@ -75,23 +45,28 @@ impl Misbehaviour {
         &self.header2
     }
 
-    pub fn chain_id_matches(&self, chain_id: &ChainId) -> bool {
-        assert_eq!(
-            self.header1.signed_header.header.chain_id, self.header2.signed_header.header.chain_id,
-            "this is enforced by the ctor"
-        );
+    pub fn validate_basic(&self) -> Result<(), Error> {
+        self.header1.validate_basic()?;
+        self.header2.validate_basic()?;
 
-        self.header1.signed_header.header.chain_id.as_str() == chain_id.as_str()
-    }
-}
+        if self.header1.signed_header.header.chain_id != self.header2.signed_header.header.chain_id
+        {
+            return Err(Error::InvalidRawMisbehaviour {
+                reason: "headers must have identical chain_ids".to_owned(),
+            });
+        }
 
-impl crate::core::ics02_client::misbehaviour::Misbehaviour for Misbehaviour {
-    fn client_id(&self) -> &ClientId {
-        &self.client_id
-    }
+        if self.header1.height() < self.header2.height() {
+            return Err(Error::InvalidRawMisbehaviour {
+                reason: format!(
+                    "header1 height is less than header2 height ({} < {})",
+                    self.header1.height(),
+                    self.header2.height()
+                ),
+            });
+        }
 
-    fn height(&self) -> Height {
-        self.header1.height()
+        Ok(())
     }
 }
 
@@ -120,7 +95,7 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
             })?
             .try_into()?;
 
-        Self::new(client_id, header1, header2)
+        Ok(Self::new(client_id, header1, header2))
     }
 }
 
@@ -163,16 +138,9 @@ impl From<Misbehaviour> for Any {
     fn from(misbehaviour: Misbehaviour) -> Self {
         Any {
             type_url: TENDERMINT_MISBEHAVIOUR_TYPE_URL.to_string(),
-            value: Protobuf::<RawMisbehaviour>::encode_vec(&misbehaviour)
-                .expect("encoding to `Any` from `TmMisbehaviour`"),
+            value: Protobuf::<RawMisbehaviour>::encode_vec(&misbehaviour),
         }
     }
-}
-
-pub fn decode_misbehaviour<B: Buf>(buf: B) -> Result<Misbehaviour, Error> {
-    RawMisbehaviour::decode(buf)
-        .map_err(Error::Decode)?
-        .try_into()
 }
 
 impl core::fmt::Display for Misbehaviour {

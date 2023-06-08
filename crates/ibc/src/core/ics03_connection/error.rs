@@ -1,9 +1,9 @@
+//! Defines the connection error type
+
 use crate::core::ics02_client::error as client_error;
 use crate::core::ics03_connection::version::Version;
-use crate::core::ics24_host::error::ValidationError;
-use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-use crate::signer::SignerError;
-use crate::timestamp::{Timestamp, TimestampOverflowError};
+use crate::core::ics24_host::identifier::{ClientId, ConnectionId, IdentifierError};
+use crate::core::timestamp::{Timestamp, TimestampOverflowError};
 use crate::Height;
 
 use alloc::string::String;
@@ -14,10 +14,8 @@ use ibc_proto::protobuf::Error as ProtoError;
 pub enum ConnectionError {
     /// client error: `{0}`
     Client(client_error::ClientError),
-    /// connection state is unknown: `{state}`
-    InvalidState { state: i32 },
-    /// connection end for identifier `{connection_id}` was never initialized
-    ConnectionMismatch { connection_id: ConnectionId },
+    /// invalid connection state: expected `{expected}`, actual `{actual}`
+    InvalidState { expected: String, actual: String },
     /// invalid connection end error: `{0}`
     InvalidConnectionEnd(ProtoError),
     /// consensus height claimed by the client on the other party is too advanced: `{target_height}` (host chain current height: `{current_height}`)
@@ -26,17 +24,23 @@ pub enum ConnectionError {
         current_height: Height,
     },
     /// identifier error: `{0}`
-    InvalidIdentifier(ValidationError),
+    InvalidIdentifier(IdentifierError),
     /// ConnectionEnd domain object could not be constructed out of empty proto object
     EmptyProtoConnectionEnd,
     /// empty supported versions
     EmptyVersions,
-    /// empty supported features
-    EmptyFeatures,
-    /// no common version
-    NoCommonVersion,
+    /// single version must be negotiated on connection before opening channel
+    InvalidVersionLength,
     /// version \"`{version}`\" not supported
     VersionNotSupported { version: Version },
+    /// no common version
+    NoCommonVersion,
+    /// empty supported features
+    EmptyFeatures,
+    /// feature \"`{feature}`\" not supported
+    FeatureNotSupported { feature: String },
+    /// no common features
+    NoCommonFeatures,
     /// missing proof height
     MissingProofHeight,
     /// missing consensus height
@@ -45,8 +49,8 @@ pub enum ConnectionError {
     InvalidProof,
     /// verifying connection state error: `{0}`
     VerifyConnectionState(client_error::ClientError),
-    /// invalid signer error: `{0}`
-    Signer(SignerError),
+    /// invalid signer error: `{reason}`
+    InvalidSigner { reason: String },
     /// no connection was found for the previous connection id provided `{connection_id}`
     ConnectionNotFound { connection_id: ConnectionId },
     /// invalid counterparty
@@ -91,7 +95,6 @@ impl std::error::Error for ConnectionError {
             Self::Client(e) => Some(e),
             Self::InvalidIdentifier(e) => Some(e),
             Self::VerifyConnectionState(e) => Some(e),
-            Self::Signer(e) => Some(e),
             Self::ConsensusStateVerificationFailure {
                 client_error: e, ..
             } => Some(e),

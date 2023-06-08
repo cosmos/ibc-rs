@@ -1,5 +1,180 @@
 # CHANGELOG
 
+## v0.41.0
+
+*May 23, 2023*
+
+This release bumps ibc-proto to v0.30.0 and tendermint to v0.31, and provides utilities for chain upgrades (Tendermint only).
+
+There are consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Support for upgrade client proposal by featuring helper contexts and domain types 
+  ([#420](https://github.com/cosmos/ibc-rs/issues/420))
+- Remove unused `ClientState` methods
+  ([#681](https://github.com/cosmos/ibc-rs/issues/681))
+- Bump ibc-proto to v0.30.0 and tendermint to v0.31
+  ([#689](https://github.com/cosmos/ibc-rs/issues/689))
+
+### BUG FIXES
+
+- Encode upgraded client/consensus states for upgrade_client validation using `prost::Message`
+  from pros ([#672](https://github.com/cosmos/ibc-rs/issues/672))
+
+### FEATURES
+
+- Timestamp ser and der failed on borsh feature
+  ([#687](https://github.com/cosmos/ibc-rs/issues/687))
+
+### IMPROVEMENTS
+
+- Clarify usage of `upgrade_path` for handling upgrade proposals
+  ([#141](https://github.com/cosmos/ibc-rs/issues/141))
+- Refactor tests for upgrade_client implementation
+  ([#385](https://github.com/cosmos/ibc-rs/issues/385))
+- Exclude `ClientState::new()` checks from proto ClientState conversion
+  ([#671](https://github.com/cosmos/ibc-rs/issues/671))
+- Remove redundant #[allow(clippy::too_many_arguments)]
+ ([#674](https://github.com/cosmos/ibc-rs/issues/674))
+- Token transfer: Make `Amount` type less restrictive
+  ([#684](https://github.com/cosmos/ibc-rs/issues/684))
+
+## v0.40.0
+
+*May 8, 2023*
+
+This release primarily consolidated the modules in the ibc-rs crate, removed many legacy items, and documented every item in the crate. This represents a big step towards v1.0. Very few items changed name; most were just moved to elsewhere in the module tree. Perhaps a good heuristic to fix the breaking changes is the remove the faulty `use` statements, and have your editor re-import the item.
+
+There were also a few minor validation checks missing, which we added. These were pretty much the last remaining known ones.
+
+There are consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Add missing validation checks for all the IBC message types
+  ([#233](https://github.com/cosmos/ibc-rs/issues/233))
+- Reduce and consolidate the amount of public modules exposed
+  ([#235](https://github.com/cosmos/ibc-rs/issues/235))
+- Separate validation/execution handlers from context API
+  ([#539](https://github.com/cosmos/ibc-rs/issues/539))
+- Make `TYPE_URL`s private ([#597](https://github.com/cosmos/ibc-rs/issues/597))
+
+### FEATURES
+
+- Add parity-scale-codec, borsh, serde feature for *Path
+  ([#652](https://github.com/cosmos/ibc-rs/issues/652))
+
+### IMPROVEMENTS
+
+- Document every method of `ValidationContext` and `ExecutionContext`
+  ([#376](https://github.com/cosmos/ibc-rs/issues/376))
+
+## v0.39.0
+
+*May 2, 2023*
+
+This release primarily adds support for the `memo` field to the token transfer
+app (ICS 20). This required updating ibc-proto-rs and tendermint-rs dependencies
+as well.
+
+There are consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Bump ibc-proto to v0.29.0, bump tendermint to v0.30.0, and add `memo` field to
+  `PacketData` ([#559](https://github.com/cosmos/ibc-rs/issues/559))
+- Add missing `ClientType` and `ClientId` validation checks
+  ([#621](https://github.com/cosmos/ibc-rs/issues/621))
+
+### FEATURES
+
+- Define a new `ValidationContext::validate_message_signer` method to allow
+  validation of the `signer` field in messages across all handlers.
+  ([#619](https://github.com/cosmos/ibc-rs/issues/619))
+
+## v0.38.0
+
+*April 24, 2023*
+
+This release involves splitting the newly defined `MsgUpdateClient` type in
+v0.37.0 into distinct IBC message structs: `MsgUpdateClient` and
+`MsgSubmitMisbehaviour`. Additionally, we made improvements to the `Version`
+validations in connection and channel handshakes, discarded now-unused
+`store_client_type` interface, and removed `IbcEventType` to enable each IBC
+event variant to define its own set of event types.
+
+There are consensus-breaking changes
+
+### BREAKING CHANGES
+
+- Remove `store_client_type` interface as it is not included in the IBC spec anymore.
+  ([#592](https://github.com/cosmos/ibc-rs/issues/592))
+- Code clean-up remained from v0.37.0 release
+- ([#622](https://github.com/cosmos/ibc-rs/issues/622))
+- Remove `IbcEventType` ([#623](https://github.com/cosmos/ibc-rs/issues/623))
+- Split `MsgUpdateClient` back into `MsgUpdateClient` and `MsgSubmitMisbehaviour`
+  ([#628](https://github.com/cosmos/ibc-rs/issues/628))
+- Refactor and fix version validation in connection and channel handshakes
+  ([#625](https://github.com/cosmos/ibc-rs/issues/625))
+
+### IMPROVEMENTS
+
+- Make token transfer events compatible with latest ibc-go
+  ([#495](https://github.com/cosmos/ibc-rs/pull/495))
+
+## v0.37.0
+
+*April 13, 2023*
+
+This release primarily updates `ClientState` to adopt a better API for client updates and misbehaviour detection, borrowed from ibc-go's ADR 6. In the process of updating the API, a few bugs were found in the tendermint light client and fixed.
+
+There are consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- `ClientState`: Split `check_misbehaviour_and_update_state` 
+  and `check_header_and_update_state`
+  ([#535](https://github.com/cosmos/ibc-rs/issues/535))
+- Improve MsgTransfer struct
+  ([#567](https://github.com/cosmos/ibc-rs/issues/567))
+- Remove `ics05_port::context::PortReader` ([#580](https://github.com/cosmos/ibc-rs/issues/580))
+- Check if `ClientStatePath` is empty during client creation process
+  ([#604](https://github.com/cosmos/ibc-rs/issues/604))
+
+### BUG FIXES
+
+- Disallow creation of new Tendermint client state instance with a frozen height
+ ([#178](https://github.com/cosmos/ibc-rs/issues/178))
+- Emit a message event for SendPacket ([#574](https://github.com/cosmos/ibc-rs/issues/574))
+- Properly convert from `Any` to `MsgEnvelope` 
+  ([#578](https://github.com/cosmos/ibc-rs/issues/578))
+- Tendermint light client: fix missing trusted_validator_set 
+  hash check
+  ([#583](https://github.com/cosmos/ibc-rs/issues/583))
+- Tendermint light client: fix missing `Header.height()` 
+  vs `Header.trusted_height` check
+  ([#585](https://github.com/cosmos/ibc-rs/issues/585))
+- Tendermint light client: ensure that we use the correct
+  chain ID in commit verification
+  ([#589](https://github.com/cosmos/ibc-rs/issues/589))
+- tx_msg: Remove panic in `Msg::get_sign_bytes`
+  ([#593](https://github.com/cosmos/ibc-rs/issues/593))
+- Tendermint light client: add check that ensure that
+  the consensus state timestamps are monotonic, otherwise
+  freeze the client
+  ([#598](https://github.com/cosmos/ibc-rs/issues/598))
+- Tendermint light client: fix how the client's latest
+  height is updated
+  ([#601](https://github.com/cosmos/ibc-rs/issues/601))
+
+### FEATURES
+
+- Prefixed denom parity scale codec enabled
+  ([#577](https://github.com/cosmos/ibc-rs/pull/577))
+- Add (de)serialization for `ics04_channel::handler::ModuleExtras`
+  ([#581](https://github.com/cosmos/ibc-rs/issues/581))
+
 ## v0.36.0
 
 *March 27, 2023*

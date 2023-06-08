@@ -1,3 +1,5 @@
+//! Contains the `Amount` type, which represents amounts of tokens transferred.
+
 use core::str::FromStr;
 use derive_more::{Display, From, Into};
 
@@ -16,6 +18,12 @@ impl Amount {
 
     pub fn checked_sub(self, rhs: Self) -> Option<Self> {
         self.0.checked_sub(rhs.0).map(Self)
+    }
+}
+
+impl AsRef<U256> for Amount {
+    fn as_ref(&self) -> &U256 {
+        &self.0
     }
 }
 

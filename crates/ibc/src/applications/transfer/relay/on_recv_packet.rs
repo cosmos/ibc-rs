@@ -3,8 +3,8 @@ use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::events::DenomTraceEvent;
 use crate::applications::transfer::packet::PacketData;
 use crate::applications::transfer::{is_receiver_chain_source, TracePrefix};
-use crate::core::ics04_channel::handler::ModuleExtras;
 use crate::core::ics04_channel::packet::Packet;
+use crate::core::module::ModuleExtras;
 use crate::prelude::*;
 
 /// This function handles the transfer receiving logic.

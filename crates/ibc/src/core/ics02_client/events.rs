@@ -1,4 +1,5 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the client module.
+use crate::prelude::*;
 
 use derive_more::From;
 use ibc_proto::google::protobuf::Any;
@@ -8,8 +9,12 @@ use tendermint::abci;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::height::Height;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::events::IbcEventType;
-use crate::prelude::*;
+
+/// Client event types
+const CREATE_CLIENT_EVENT: &str = "create_client";
+const UPDATE_CLIENT_EVENT: &str = "update_client";
+const CLIENT_MISBEHAVIOUR_EVENT: &str = "client_misbehaviour";
+const UPGRADE_CLIENT_EVENT: &str = "upgrade_client";
 
 /// The content of the `key` field for the attribute containing the client identifier.
 pub const CLIENT_ID_ATTRIBUTE_KEY: &str = "client_id";
@@ -20,6 +25,7 @@ pub const CLIENT_TYPE_ATTRIBUTE_KEY: &str = "client_type";
 /// The content of the `key` field for the attribute containing the height.
 pub const CONSENSUS_HEIGHT_ATTRIBUTE_KEY: &str = "consensus_height";
 
+/// The content of the `key` field for the attribute containing the heights of consensus states that were processed.
 pub const CONSENSUS_HEIGHTS_ATTRIBUTE_KEY: &str = "consensus_heights";
 
 /// The content of the `key` field for the header in update client event.
@@ -195,12 +201,16 @@ impl CreateClient {
     pub fn consensus_height(&self) -> &Height {
         &self.consensus_height.consensus_height
     }
+
+    pub fn event_type(&self) -> &str {
+        CREATE_CLIENT_EVENT
+    }
 }
 
 impl From<CreateClient> for abci::Event {
     fn from(c: CreateClient) -> Self {
         Self {
-            kind: IbcEventType::CreateClient.as_str().to_owned(),
+            kind: CREATE_CLIENT_EVENT.to_owned(),
             attributes: vec![
                 c.client_id.into(),
                 c.client_type.into(),
@@ -271,12 +281,16 @@ impl UpdateClient {
     pub fn header(&self) -> &Any {
         &self.header.header
     }
+
+    pub fn event_type(&self) -> &str {
+        UPDATE_CLIENT_EVENT
+    }
 }
 
 impl From<UpdateClient> for abci::Event {
     fn from(u: UpdateClient) -> Self {
         Self {
-            kind: IbcEventType::UpdateClient.as_str().to_owned(),
+            kind: UPDATE_CLIENT_EVENT.to_owned(),
             attributes: vec![
                 u.client_id.into(),
                 u.client_type.into(),
@@ -324,12 +338,16 @@ impl ClientMisbehaviour {
     pub fn client_type(&self) -> &ClientType {
         &self.client_type.client_type
     }
+
+    pub fn event_type(&self) -> &str {
+        CLIENT_MISBEHAVIOUR_EVENT
+    }
 }
 
 impl From<ClientMisbehaviour> for abci::Event {
     fn from(c: ClientMisbehaviour) -> Self {
         Self {
-            kind: IbcEventType::ClientMisbehaviour.as_str().to_owned(),
+            kind: CLIENT_MISBEHAVIOUR_EVENT.to_owned(),
             attributes: vec![c.client_id.into(), c.client_type.into()],
         }
     }
@@ -376,12 +394,16 @@ impl UpgradeClient {
     pub fn consensus_height(&self) -> &Height {
         &self.consensus_height.consensus_height
     }
+
+    pub fn event_type(&self) -> &str {
+        UPGRADE_CLIENT_EVENT
+    }
 }
 
 impl From<UpgradeClient> for abci::Event {
     fn from(u: UpgradeClient) -> Self {
         Self {
-            kind: IbcEventType::UpgradeClient.as_str().to_owned(),
+            kind: UPGRADE_CLIENT_EVENT.to_owned(),
             attributes: vec![
                 u.client_id.into(),
                 u.client_type.into(),
@@ -394,21 +416,21 @@ impl From<UpgradeClient> for abci::Event {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::timestamp::Timestamp;
     use crate::mock::header::MockHeader;
-    use crate::timestamp::Timestamp;
     use ibc_proto::google::protobuf::Any;
     use tendermint::abci::Event as AbciEvent;
 
     #[test]
     fn ibc_to_abci_client_events() {
         struct Test {
-            kind: IbcEventType,
+            event_kind: &'static str,
             event: AbciEvent,
             expected_keys: Vec<&'static str>,
             expected_values: Vec<&'static str>,
         }
 
-        let client_type = ClientType::new("07-tendermint".to_string());
+        let client_type = ClientType::from("07-tendermint".to_string());
         let client_id = ClientId::new(client_type.clone(), 0).unwrap();
         let consensus_height = Height::new(0, 5).unwrap();
         let consensus_heights = vec![Height::new(0, 5).unwrap(), Height::new(0, 7).unwrap()];
@@ -433,14 +455,14 @@ mod tests {
 
         let tests: Vec<Test> = vec![
             Test {
-                kind: IbcEventType::CreateClient,
+                event_kind: CREATE_CLIENT_EVENT,
                 event: CreateClient::new(client_id.clone(), client_type.clone(), consensus_height)
                     .into(),
                 expected_keys: expected_keys[0..3].to_vec(),
                 expected_values: expected_values[0..3].to_vec(),
             },
             Test {
-                kind: IbcEventType::UpdateClient,
+                event_kind: UPDATE_CLIENT_EVENT,
                 event: UpdateClient::new(
                     client_id.clone(),
                     client_type.clone(),
@@ -453,14 +475,14 @@ mod tests {
                 expected_values: expected_values.clone(),
             },
             Test {
-                kind: IbcEventType::UpgradeClient,
+                event_kind: UPGRADE_CLIENT_EVENT,
                 event: UpgradeClient::new(client_id.clone(), client_type.clone(), consensus_height)
                     .into(),
                 expected_keys: expected_keys[0..3].to_vec(),
                 expected_values: expected_values[0..3].to_vec(),
             },
             Test {
-                kind: IbcEventType::ClientMisbehaviour,
+                event_kind: CLIENT_MISBEHAVIOUR_EVENT,
                 event: ClientMisbehaviour::new(client_id, client_type).into(),
                 expected_keys: expected_keys[0..2].to_vec(),
                 expected_values: expected_values[0..2].to_vec(),
@@ -468,16 +490,20 @@ mod tests {
         ];
 
         for t in tests {
-            assert_eq!(t.event.kind, t.kind.as_str());
+            assert_eq!(t.event.kind, t.event_kind);
             assert_eq!(t.expected_keys.len(), t.event.attributes.len());
             for (i, e) in t.event.attributes.iter().enumerate() {
-                assert_eq!(e.key, t.expected_keys[i], "key mismatch for {:?}", t.kind);
+                assert_eq!(
+                    e.key, t.expected_keys[i],
+                    "key mismatch for {:?}",
+                    t.event_kind
+                );
             }
             for (i, e) in t.event.attributes.iter().enumerate() {
                 assert_eq!(
                     e.value, t.expected_values[i],
                     "value mismatch for {:?}",
-                    t.kind
+                    t.event_kind
                 );
             }
         }

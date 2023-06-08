@@ -1,83 +1,46 @@
-mod chan_close_confirm;
-mod chan_close_init;
-mod chan_open_ack;
-mod chan_open_confirm;
-mod chan_open_init;
-mod chan_open_try;
-
-mod acknowledgement;
-mod recv_packet;
-mod timeout;
-
 use crate::prelude::*;
 
-use self::chan_close_confirm::{chan_close_confirm_execute, chan_close_confirm_validate};
-use self::chan_close_init::{chan_close_init_execute, chan_close_init_validate};
-use self::chan_open_ack::{chan_open_ack_execute, chan_open_ack_validate};
-use self::chan_open_confirm::{chan_open_confirm_execute, chan_open_confirm_validate};
-use self::chan_open_init::{chan_open_init_execute, chan_open_init_validate};
-use self::chan_open_try::{chan_open_try_execute, chan_open_try_validate};
-
-use self::acknowledgement::{acknowledgement_packet_execute, acknowledgement_packet_validate};
-use self::recv_packet::{recv_packet_execute, recv_packet_validate};
-use self::timeout::{timeout_packet_execute, timeout_packet_validate, TimeoutMsgType};
-
-use super::ics04_channel::msgs::{channel_msg_to_port_id, packet_msg_to_port_id};
-use super::ics24_host::path::PortPath;
-use super::ics26_routing::router::{RouterMut, RouterRef};
-use super::{
-    ics02_client::error::ClientError,
-    ics03_connection::error::ConnectionError,
-    ics04_channel::error::{ChannelError, PacketError},
-};
+use crate::signer::Signer;
+use alloc::string::String;
 use core::time::Duration;
-
+use displaydoc::Display;
 use ibc_proto::google::protobuf::Any;
 
+use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
-use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::ConnectionEnd;
+use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::version::{
     get_compatible_versions, pick_version, Version as ConnectionVersion,
 };
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::context::calculate_block_delay;
-use crate::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
+use crate::core::ics04_channel::error::ChannelError;
+use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
+use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
-    ClientTypePath, CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath,
-    SeqSendPath,
+    CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
-use crate::core::{
-    ics02_client::{
-        handler::{create_client, misbehaviour, update_client, upgrade_client},
-        msgs::ClientMsg,
-    },
-    ics03_connection::{
-        handler::{conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try},
-        msgs::ConnectionMsg,
-    },
-    ics24_host::identifier::ClientId,
-    ics26_routing::{error::RouterError, msgs::MsgEnvelope},
-};
-use crate::events::IbcEvent;
-use crate::timestamp::Timestamp;
+use crate::core::timestamp::Timestamp;
 use crate::Height;
 
-use displaydoc::Display;
+use super::router::{RouterMut, RouterRef};
 
+/// Top-level error
 #[derive(Debug, Display)]
 pub enum ContextError {
     /// ICS02 Client error: {0}
     ClientError(ClientError),
     /// ICS03 Connection error: {0}
     ConnectionError(ConnectionError),
-    /// Ics04 Channel error: {0}
+    /// ICS04 Channel error: {0}
     ChannelError(ChannelError),
     /// ICS04 Packet error: {0}
     PacketError(PacketError),
@@ -119,6 +82,35 @@ impl std::error::Error for ContextError {
     }
 }
 
+/// Error returned from entrypoint functions [`dispatch`][super::dispatch], [`validate`][super::validate] and
+/// [`execute`][super::execute].
+#[derive(Debug, Display)]
+pub enum RouterError {
+    /// context error: `{0}`
+    ContextError(ContextError),
+    /// unknown type URL `{url}`
+    UnknownMessageTypeUrl { url: String },
+    /// the message is malformed and cannot be decoded error: `{0}`
+    MalformedMessageBytes(ibc_proto::protobuf::Error),
+}
+
+impl From<ContextError> for RouterError {
+    fn from(error: ContextError) -> Self {
+        Self::ContextError(error)
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for RouterError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            Self::ContextError(e) => Some(e),
+            Self::UnknownMessageTypeUrl { .. } => None,
+            Self::MalformedMessageBytes(e) => Some(e),
+        }
+    }
+}
+
 pub trait HostContext {
     fn router(&self) -> &dyn RouterRef;
     fn router_mut(&mut self) -> &mut dyn RouterMut;
@@ -130,76 +122,10 @@ pub trait HostContext {
     // fn event_emitter_mut(&mut self) -> &mut dyn EventEmitterMut;
 }
 
+/// Context to be implemented by the host that provides all "read-only" methods.
+///
+/// Trait used for the top-level [`validate`](crate::core::validate)
 pub trait ValidationContext: HostContext {
-    /// Validation entrypoint.
-    fn validate(&self, msg: MsgEnvelope) -> Result<(), RouterError>
-    where
-        Self: Sized,
-    {
-        match msg {
-            MsgEnvelope::Client(msg) => match msg {
-                ClientMsg::CreateClient(msg) => create_client::validate(self, msg),
-                ClientMsg::UpdateClient(msg) => update_client::validate(self, msg),
-                ClientMsg::Misbehaviour(msg) => misbehaviour::validate(self, msg),
-                ClientMsg::UpgradeClient(msg) => upgrade_client::validate(self, msg),
-            }
-            .map_err(RouterError::ContextError),
-            MsgEnvelope::Connection(msg) => match msg {
-                ConnectionMsg::OpenInit(msg) => conn_open_init::validate(self, msg),
-                ConnectionMsg::OpenTry(msg) => conn_open_try::validate(self, msg),
-                ConnectionMsg::OpenAck(msg) => conn_open_ack::validate(self, msg),
-                ConnectionMsg::OpenConfirm(ref msg) => conn_open_confirm::validate(self, msg),
-            }
-            .map_err(RouterError::ContextError),
-            MsgEnvelope::Channel(msg) => {
-                let port_id = channel_msg_to_port_id(&msg);
-                let module_id = self.lookup_module(&PortPath(port_id))?;
-                if self.get_route(&module_id).is_none() {
-                    return Err(ChannelError::RouteNotFound)
-                        .map_err(ContextError::ChannelError)
-                        .map_err(RouterError::ContextError);
-                }
-
-                match msg {
-                    ChannelMsg::OpenInit(msg) => chan_open_init_validate(self, module_id, msg),
-                    ChannelMsg::OpenTry(msg) => chan_open_try_validate(self, module_id, msg),
-                    ChannelMsg::OpenAck(msg) => chan_open_ack_validate(self, module_id, msg),
-                    ChannelMsg::OpenConfirm(msg) => {
-                        chan_open_confirm_validate(self, module_id, msg)
-                    }
-                    ChannelMsg::CloseInit(msg) => chan_close_init_validate(self, module_id, msg),
-                    ChannelMsg::CloseConfirm(msg) => {
-                        chan_close_confirm_validate(self, module_id, msg)
-                    }
-                }
-                .map_err(RouterError::ContextError)
-            }
-            MsgEnvelope::Packet(msg) => {
-                let port_id = packet_msg_to_port_id(&msg);
-                let module_id = self.lookup_module(&PortPath(port_id))?;
-                if self.get_route(&module_id).is_none() {
-                    return Err(ChannelError::RouteNotFound)
-                        .map_err(ContextError::ChannelError)
-                        .map_err(RouterError::ContextError);
-                }
-
-                match msg {
-                    PacketMsg::Recv(msg) => recv_packet_validate(self, msg),
-                    PacketMsg::Ack(msg) => acknowledgement_packet_validate(self, module_id, msg),
-                    PacketMsg::Timeout(msg) => {
-                        timeout_packet_validate(self, module_id, TimeoutMsgType::Timeout(msg))
-                    }
-                    PacketMsg::TimeoutOnClose(msg) => timeout_packet_validate(
-                        self,
-                        module_id,
-                        TimeoutMsgType::TimeoutOnClose(msg),
-                    ),
-                }
-                .map_err(RouterError::ContextError)
-            }
-        }
-    }
-
     /// Returns the ClientState for the given identifier `client_id`.
     fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError>;
 
@@ -278,31 +204,39 @@ pub trait ValidationContext: HostContext {
     /// connection handshake protocol prefers.
     fn pick_version(
         &self,
-        supported_versions: &[ConnectionVersion],
         counterparty_candidate_versions: &[ConnectionVersion],
     ) -> Result<ConnectionVersion, ContextError> {
-        pick_version(supported_versions, counterparty_candidate_versions)
-            .map_err(ContextError::ConnectionError)
+        let version = pick_version(
+            &self.get_compatible_versions(),
+            counterparty_candidate_versions,
+        )?;
+        Ok(version)
     }
 
-    /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
+    /// Returns the `ChannelEnd` for the given `port_id` and `chan_id`.
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
 
+    /// Returns the sequence number for the next packet to be sent for the given store path
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
         -> Result<Sequence, ContextError>;
 
+    /// Returns the sequence number for the next packet to be received for the given store path
     fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath)
         -> Result<Sequence, ContextError>;
 
+    /// Returns the sequence number for the next packet to be acknowledged for the given store path
     fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, ContextError>;
 
+    /// Returns the packet commitment for the given store path
     fn get_packet_commitment(
         &self,
         commitment_path: &CommitmentPath,
     ) -> Result<PacketCommitment, ContextError>;
 
+    /// Returns the packet receipt for the given store path
     fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, ContextError>;
 
+    /// Returns the packet acknowledgement for the given store path
     fn get_packet_acknowledgement(
         &self,
         ack_path: &AckPath,
@@ -335,81 +269,13 @@ pub trait ValidationContext: HostContext {
     fn block_delay(&self, delay_period_time: &Duration) -> u64 {
         calculate_block_delay(delay_period_time, &self.max_expected_time_per_block())
     }
+
+    /// Validates the `signer` field of IBC messages, which represents the address
+    /// of the user/relayer that signed the given message.
+    fn validate_message_signer(&self, signer: &Signer) -> Result<(), ContextError>;
 }
 
 pub trait ExecutionContext: ValidationContext + HostContext {
-    /// Execution entrypoint
-    fn execute(&mut self, msg: MsgEnvelope) -> Result<(), RouterError>
-    where
-        Self: Sized,
-    {
-        match msg {
-            MsgEnvelope::Client(msg) => match msg {
-                ClientMsg::CreateClient(msg) => create_client::execute(self, msg),
-                ClientMsg::UpdateClient(msg) => update_client::execute(self, msg),
-                ClientMsg::Misbehaviour(msg) => misbehaviour::execute(self, msg),
-                ClientMsg::UpgradeClient(msg) => upgrade_client::execute(self, msg),
-            }
-            .map_err(RouterError::ContextError),
-            MsgEnvelope::Connection(msg) => match msg {
-                ConnectionMsg::OpenInit(msg) => conn_open_init::execute(self, msg),
-                ConnectionMsg::OpenTry(msg) => conn_open_try::execute(self, msg),
-                ConnectionMsg::OpenAck(msg) => conn_open_ack::execute(self, msg),
-                ConnectionMsg::OpenConfirm(ref msg) => conn_open_confirm::execute(self, msg),
-            }
-            .map_err(RouterError::ContextError),
-            MsgEnvelope::Channel(msg) => {
-                let port_id = channel_msg_to_port_id(&msg);
-                let module_id = self.lookup_module(&PortPath(port_id))?;
-                if self.get_route(&module_id).is_none() {
-                    return Err(ChannelError::RouteNotFound)
-                        .map_err(ContextError::ChannelError)
-                        .map_err(RouterError::ContextError);
-                }
-
-                match msg {
-                    ChannelMsg::OpenInit(msg) => chan_open_init_execute(self, module_id, msg),
-                    ChannelMsg::OpenTry(msg) => chan_open_try_execute(self, module_id, msg),
-                    ChannelMsg::OpenAck(msg) => chan_open_ack_execute(self, module_id, msg),
-                    ChannelMsg::OpenConfirm(msg) => chan_open_confirm_execute(self, module_id, msg),
-                    ChannelMsg::CloseInit(msg) => chan_close_init_execute(self, module_id, msg),
-                    ChannelMsg::CloseConfirm(msg) => {
-                        chan_close_confirm_execute(self, module_id, msg)
-                    }
-                }
-                .map_err(RouterError::ContextError)
-            }
-            MsgEnvelope::Packet(msg) => {
-                let port_id = packet_msg_to_port_id(&msg);
-                let module_id = self.lookup_module(&PortPath(port_id))?;
-                if self.get_route(&module_id).is_none() {
-                    return Err(ChannelError::RouteNotFound)
-                        .map_err(ContextError::ChannelError)
-                        .map_err(RouterError::ContextError);
-                }
-
-                match msg {
-                    PacketMsg::Recv(msg) => recv_packet_execute(self, module_id, msg),
-                    PacketMsg::Ack(msg) => acknowledgement_packet_execute(self, module_id, msg),
-                    PacketMsg::Timeout(msg) => {
-                        timeout_packet_execute(self, module_id, TimeoutMsgType::Timeout(msg))
-                    }
-                    PacketMsg::TimeoutOnClose(msg) => {
-                        timeout_packet_execute(self, module_id, TimeoutMsgType::TimeoutOnClose(msg))
-                    }
-                }
-                .map_err(RouterError::ContextError)
-            }
-        }
-    }
-
-    /// Called upon successful client creation
-    fn store_client_type(
-        &mut self,
-        client_type_path: ClientTypePath,
-        client_type: ClientType,
-    ) -> Result<(), ContextError>;
-
     /// Called upon successful client creation and update
     fn store_client_state(
         &mut self,
@@ -468,29 +334,34 @@ pub trait ExecutionContext: ValidationContext + HostContext {
     /// Should never fail.
     fn increase_connection_counter(&mut self);
 
+    /// Stores the given packet commitment at the given store path
     fn store_packet_commitment(
         &mut self,
         commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
     ) -> Result<(), ContextError>;
 
+    /// Deletes the packet commitment at the given store path
     fn delete_packet_commitment(
         &mut self,
         commitment_path: &CommitmentPath,
     ) -> Result<(), ContextError>;
 
+    /// Stores the given packet receipt at the given store path
     fn store_packet_receipt(
         &mut self,
         receipt_path: &ReceiptPath,
         receipt: Receipt,
     ) -> Result<(), ContextError>;
 
+    /// Stores the given packet acknowledgement at the given store path
     fn store_packet_acknowledgement(
         &mut self,
         ack_path: &AckPath,
         ack_commitment: AcknowledgementCommitment,
     ) -> Result<(), ContextError>;
 
+    /// Deletes the packet acknowledgement at the given store path
     fn delete_packet_acknowledgement(&mut self, ack_path: &AckPath) -> Result<(), ContextError>;
 
     /// Stores the given channel_end at a path associated with the port_id and channel_id.
@@ -500,18 +371,21 @@ pub trait ExecutionContext: ValidationContext + HostContext {
         channel_end: ChannelEnd,
     ) -> Result<(), ContextError>;
 
+    /// Stores the given `nextSequenceSend` number at the given store path
     fn store_next_sequence_send(
         &mut self,
         seq_send_path: &SeqSendPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
 
+    /// Stores the given `nextSequenceRecv` number at the given store path
     fn store_next_sequence_recv(
         &mut self,
         seq_recv_path: &SeqRecvPath,
         seq: Sequence,
     ) -> Result<(), ContextError>;
 
+    /// Stores the given `nextSequenceAck` number at the given store path
     fn store_next_sequence_ack(
         &mut self,
         seq_ack_path: &SeqAckPath,
@@ -523,9 +397,9 @@ pub trait ExecutionContext: ValidationContext + HostContext {
     /// Should never fail.
     fn increase_channel_counter(&mut self);
 
-    /// Ibc events
+    /// Emit the given IBC event
     fn emit_ibc_event(&mut self, event: IbcEvent);
 
-    /// Logging facility
+    /// Log the given message.
     fn log_message(&mut self, message: String);
 }
