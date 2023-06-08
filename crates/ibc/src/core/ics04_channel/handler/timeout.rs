@@ -314,8 +314,8 @@ mod tests {
         let client_height = Height::new(0, 2).unwrap();
 
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        let module = DummyTransferModule::new();
-        ctx.add_route(module_id.clone(), module).unwrap();
+        let module = DummyTransferModule::default();
+        ctx.add_route(module_id.clone(), Box::new(module)).unwrap();
 
         let msg_proof_height = 2;
         let msg_timeout_height = 5;

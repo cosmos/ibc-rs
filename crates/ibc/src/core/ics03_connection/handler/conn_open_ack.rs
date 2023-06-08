@@ -1,7 +1,6 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenAck`.
+use crate::prelude::*;
 
-use alloc::string::ToString;
-use alloc::vec;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 

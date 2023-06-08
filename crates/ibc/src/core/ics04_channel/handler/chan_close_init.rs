@@ -227,9 +227,11 @@ mod tests {
             let mut default_context = MockContext::default();
             let client_consensus_state_height = default_context.host_height().unwrap();
 
-            let module = DummyTransferModule::new();
+            let module = DummyTransferModule::default();
             let module_id = ModuleId::new(MODULE_ID_STR.to_string());
-            default_context.add_route(module_id, module).unwrap();
+            default_context
+                .add_route(module_id, Box::new(module))
+                .unwrap();
 
             default_context
                 .with_client(&client_id, client_consensus_state_height)

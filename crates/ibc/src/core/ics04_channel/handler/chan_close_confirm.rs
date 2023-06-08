@@ -179,7 +179,6 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-    use crate::core::router::ModuleId;
     use crate::core::timestamp::ZERO_DURATION;
 
     use crate::mock::client_state::client_type as mock_client_type;
@@ -279,9 +278,11 @@ mod tests {
                 chan_end,
             );
 
-        let module = DummyTransferModule::new();
+        let module = DummyTransferModule::default();
         let module_id = ModuleId::new(MODULE_ID_STR.to_string());
-        context.add_route(module_id.clone(), module).unwrap();
+        context
+            .add_route(module_id.clone(), Box::new(module))
+            .unwrap();
 
         let res = chan_close_confirm_execute(&mut context, module_id, msg_chan_close_confirm);
         assert!(res.is_ok(), "Execution success: happy path");

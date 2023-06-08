@@ -318,8 +318,10 @@ mod tests {
         let mut context = MockContext::default();
 
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        let module = DummyTransferModule::new();
-        context.add_route(module_id.clone(), module).unwrap();
+        let module = DummyTransferModule::default();
+        context
+            .add_route(module_id.clone(), Box::new(module))
+            .unwrap();
 
         let host_height = context.query_latest_height().unwrap().increment();
 

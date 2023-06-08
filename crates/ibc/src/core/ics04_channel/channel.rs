@@ -166,14 +166,6 @@ impl From<ChannelEnd> for RawChannel {
     }
 }
 
-impl TryFrom<ChannelEnd> for Vec<u8> {
-    type Error = ChannelError;
-
-    fn try_from(value: ChannelEnd) -> Result<Self, Self::Error> {
-        Ok(value.encode_vec())
-    }
-}
-
 impl ChannelEnd {
     /// Creates a new `ChannelEnd` without performing basic validation on its arguments.
     ///

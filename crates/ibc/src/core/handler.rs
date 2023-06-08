@@ -4,7 +4,6 @@ use super::ics03_connection::handler::{
     conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try,
 };
 use super::ics03_connection::msgs::ConnectionMsg;
-use super::ics04_channel::error::ChannelError;
 use super::ics04_channel::handler::acknowledgement::{
     acknowledgement_packet_execute, acknowledgement_packet_validate,
 };
@@ -26,9 +25,13 @@ use super::ics04_channel::handler::recv_packet::{recv_packet_execute, recv_packe
 use super::ics04_channel::handler::timeout::{
     timeout_packet_execute, timeout_packet_validate, TimeoutMsgType,
 };
-use super::ics04_channel::msgs::{ChannelMsg, PacketMsg};
+use super::ics04_channel::msgs::{
+    channel_msg_to_port_id, packet_msg_to_port_id, ChannelMsg, PacketMsg,
+};
+use super::ics24_host::path::PortPath;
+use super::router::RouterRef;
+use super::RouterError;
 use super::{msgs::MsgEnvelope, ExecutionContext, ValidationContext};
-use super::{ContextError, RouterError};
 
 /// Entrypoint which performs both validation and message execution
 pub fn dispatch(ctx: &mut impl ExecutionContext, msg: MsgEnvelope) -> Result<(), RouterError> {
@@ -68,12 +71,8 @@ where
         }
         .map_err(RouterError::ContextError),
         MsgEnvelope::Channel(msg) => {
-            let module_id = ctx
-                .lookup_module_channel(&msg)
-                .map_err(ContextError::from)?;
-            if !ctx.has_route(&module_id) {
-                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
-            }
+            let port_id = channel_msg_to_port_id(&msg);
+            let module_id = ctx.lookup_module(&PortPath(port_id))?;
 
             match msg {
                 ChannelMsg::OpenInit(msg) => chan_open_init_validate(ctx, module_id, msg),
@@ -86,10 +85,8 @@ where
             .map_err(RouterError::ContextError)
         }
         MsgEnvelope::Packet(msg) => {
-            let module_id = ctx.lookup_module_packet(&msg).map_err(ContextError::from)?;
-            if !ctx.has_route(&module_id) {
-                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
-            }
+            let port_id = packet_msg_to_port_id(&msg);
+            let module_id = ctx.lookup_module(&PortPath(port_id))?;
 
             match msg {
                 PacketMsg::Recv(msg) => recv_packet_validate(ctx, msg),
@@ -131,12 +128,8 @@ where
         }
         .map_err(RouterError::ContextError),
         MsgEnvelope::Channel(msg) => {
-            let module_id = ctx
-                .lookup_module_channel(&msg)
-                .map_err(ContextError::from)?;
-            if !ctx.has_route(&module_id) {
-                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
-            }
+            let port_id = channel_msg_to_port_id(&msg);
+            let module_id = ctx.lookup_module(&PortPath(port_id))?;
 
             match msg {
                 ChannelMsg::OpenInit(msg) => chan_open_init_execute(ctx, module_id, msg),
@@ -149,10 +142,8 @@ where
             .map_err(RouterError::ContextError)
         }
         MsgEnvelope::Packet(msg) => {
-            let module_id = ctx.lookup_module_packet(&msg).map_err(ContextError::from)?;
-            if !ctx.has_route(&module_id) {
-                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
-            }
+            let port_id = packet_msg_to_port_id(&msg);
+            let module_id = ctx.lookup_module(&PortPath(port_id))?;
 
             match msg {
                 PacketMsg::Recv(msg) => recv_packet_execute(ctx, module_id, msg),
@@ -180,11 +171,11 @@ mod tests {
 
     use crate::applications::transfer::error::TokenTransferError;
     use crate::applications::transfer::msgs::transfer::test_util::get_dummy_transfer_packet;
+    use crate::applications::transfer::send_transfer;
     use crate::applications::transfer::{
         msgs::transfer::test_util::get_dummy_msg_transfer, msgs::transfer::MsgTransfer,
         packet::PacketData, PrefixedCoin,
     };
-    use crate::applications::transfer::{send_transfer, MODULE_ID_STR};
     use crate::core::dispatch;
     use crate::core::events::{IbcEvent, MessageEvent};
     use crate::core::ics02_client::msgs::{
@@ -225,8 +216,9 @@ mod tests {
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
     use crate::core::ics24_host::path::{CommitmentPath, PortPath};
-    use crate::core::module::ModuleId;
+    use crate::core::module::ModuleContext;
     use crate::core::msgs::MsgEnvelope;
+    use crate::core::router::RouterMut;
     use crate::core::timestamp::Timestamp;
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
@@ -279,8 +271,6 @@ mod tests {
         let upgrade_client_height = Height::new(1, 2).unwrap();
 
         let upgrade_client_height_second = Height::new(1, 1).unwrap();
-
-        let transfer_module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
 
         // We reuse this same context across all tests. Nothing in particular needs parametrizing.
         let mut ctx = MockContext::default();
@@ -635,7 +625,6 @@ mod tests {
     }
 
     fn get_channel_events_ctx() -> MockContext {
-        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let mut ctx = MockContext::default()
             .with_client(&ClientId::default(), Height::new(0, 1).unwrap())
             .with_connection(

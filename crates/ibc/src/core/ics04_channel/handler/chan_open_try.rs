@@ -241,9 +241,9 @@ mod tests {
         msg.connection_hops_on_b = hops;
 
         let mut ctx = MockContext::default();
-        let module = DummyTransferModule::new();
+        let module = DummyTransferModule::default();
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        ctx.add_route(module_id.clone(), module).unwrap();
+        ctx.add_route(module_id.clone(), Box::new(module)).unwrap();
 
         Fixture {
             ctx,

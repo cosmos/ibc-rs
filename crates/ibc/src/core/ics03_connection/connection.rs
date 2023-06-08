@@ -113,17 +113,6 @@ pub struct ConnectionEnd {
     delay_period: Duration,
 }
 
-impl TryFrom<ConnectionEnd> for Vec<u8> {
-    type Error = ConnectionError;
-
-    fn try_from(value: ConnectionEnd) -> Result<Self, Self::Error> {
-        let value = value
-            .encode_vec()
-            .map_err(ConnectionError::InvalidConnectionEnd)?;
-        Ok(value)
-    }
-}
-
 mod sealed {
     use super::*;
 

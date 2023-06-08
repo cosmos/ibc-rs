@@ -171,8 +171,10 @@ mod tests {
 
         let mut default_ctx = MockContext::default();
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        let module = DummyTransferModule::new();
-        default_ctx.add_route(module_id.clone(), module).unwrap();
+        let module = DummyTransferModule::default();
+        default_ctx
+            .add_route(module_id.clone(), Box::new(module))
+            .unwrap();
 
         let msg_conn_init = MsgConnectionOpenInit::new_dummy();
 
