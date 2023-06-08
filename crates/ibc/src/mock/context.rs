@@ -614,8 +614,7 @@ impl MockContext {
 type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
 
 #[derive(Debug, Clone, From, PartialEq, ClientState)]
-#[generics(AnyConsensusState = HostConsensusState,
-           ClientValidationContext = MockContext,
+#[generics(ClientValidationContext = MockContext,
            ClientExecutionContext = MockContext)
 ]
 #[mock]

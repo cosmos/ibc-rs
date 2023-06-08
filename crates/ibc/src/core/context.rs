@@ -92,10 +92,7 @@ pub trait ValidationContext: Router {
     type ClientValidationContext;
     type ClientExecutionContext;
     type AnyConsensusState: ConsensusState;
-    type AnyClientState: ClientState<
-        Self::ClientValidationContext,
-        Self::ClientExecutionContext,
-    >;
+    type AnyClientState: ClientState<Self::ClientValidationContext, Self::ClientExecutionContext>;
 
     fn get_client_validation_context(&self) -> &Self::ClientValidationContext;
     fn get_client_execution_context(&mut self) -> &mut Self::ClientExecutionContext;

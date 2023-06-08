@@ -7,15 +7,12 @@ use syn::DeriveInput;
 
 use traits::{
     client_state_base::impl_ClientStateBase, client_state_execution::impl_ClientStateExecution,
-    client_state_initializer::impl_ClientStateInitializer,
     client_state_validation::impl_ClientStateValidation,
 };
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(generics))]
 pub(crate) struct Opts {
-    #[darling(rename = "AnyConsensusState")]
-    any_consensus_state: syn::ExprPath,
     #[darling(rename = "ClientValidationContext")]
     client_validation_context: syn::ExprPath,
     #[darling(rename = "ClientExecutionContext")]
@@ -26,7 +23,7 @@ pub fn client_state_derive_impl(ast: DeriveInput) -> TokenStream {
     let opts = match Opts::from_derive_input(&ast) {
         Ok(opts) => opts,
         Err(e) => panic!(
-            "{} must be annotated with #[generics(AnyConsensusState = <your ConsensusState enum>, ClientValidationContext = <your ClientValidationContext>, ClientExecutionContext: <your ClientExecutionContext>)]: {e}",
+            "{} must be annotated with #[generics(ClientValidationContext = <your ClientValidationContext>, ClientExecutionContext: <your ClientExecutionContext>)]: {e}",
             ast.ident
         ),
     };
@@ -38,8 +35,6 @@ pub fn client_state_derive_impl(ast: DeriveInput) -> TokenStream {
     };
 
     let ClientStateBase_impl_block = impl_ClientStateBase(enum_name, enum_variants);
-    let ClientStateInitializer_impl_block =
-        impl_ClientStateInitializer(enum_name, enum_variants, &opts);
     let ClientStateValidation_impl_block =
         impl_ClientStateValidation(enum_name, enum_variants, &opts);
     let ClientStateExecution_impl_block =
@@ -58,7 +53,6 @@ pub fn client_state_derive_impl(ast: DeriveInput) -> TokenStream {
         #maybe_extern_crate_stmt
 
         #ClientStateBase_impl_block
-        #ClientStateInitializer_impl_block
         #ClientStateValidation_impl_block
         #ClientStateExecution_impl_block
     }

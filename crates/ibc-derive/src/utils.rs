@@ -33,10 +33,6 @@ impl Imports {
         quote! {ibc::core::ics02_client::client_state::ClientStateBase}
     }
 
-    pub fn ClientStateInitializer() -> TokenStream {
-        quote! {ibc::core::ics02_client::client_state::ClientStateInitializer}
-    }
-
     pub fn ClientStateValidation() -> TokenStream {
         quote! {ibc::core::ics02_client::client_state::ClientStateValidation}
     }

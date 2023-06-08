@@ -7,8 +7,7 @@ use ibc_proto::ibc::mock::ClientState as RawMockClientState;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::client_state::{
-    ClientStateBase, ClientStateExecution, ClientStateInitializer, ClientStateValidation,
-    UpdateKind,
+    ClientStateBase, ClientStateExecution, ClientStateValidation, UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
@@ -202,6 +201,12 @@ impl ClientStateBase for MockClientState {
 }
 
 impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for MockClientState {
+    fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
+        let _mock_consensus_state = MockConsensusState::try_from(consensus_state)?;
+
+        Ok(())
+    }
+
     fn verify_client_message(
         &self,
         _ctx: &ClientValidationContext,
@@ -289,6 +294,29 @@ impl<ClientExecutionContext> ClientStateExecution<ClientExecutionContext> for Mo
 where
     ClientExecutionContext: MockClientExecutionContext,
 {
+    fn initialise(
+        &self,
+        ctx: &mut ClientExecutionContext,
+        client_id: &ClientId,
+        consensus_state: Any,
+    ) -> Result<(), ClientError> {
+        let mock_consensus_state = MockConsensusState::try_from(consensus_state)?;
+
+        ctx.store_update_time(
+            client_id.clone(),
+            self.latest_height(),
+            ctx.host_timestamp()?,
+        )?;
+        ctx.store_update_height(client_id.clone(), self.latest_height(), ctx.host_height()?)?;
+        ctx.store_client_state(ClientStatePath::new(client_id), *self)?;
+        ctx.store_consensus_state(
+            ClientConsensusStatePath::new(client_id, &self.latest_height()),
+            mock_consensus_state,
+        )?;
+
+        Ok(())
+    }
+
     fn update_state(
         &self,
         ctx: &mut ClientExecutionContext,
@@ -353,17 +381,6 @@ where
         ctx.store_client_state(ClientStatePath::new(client_id), new_client_state)?;
 
         Ok(latest_height)
-    }
-}
-
-impl<AnyConsensusState> ClientStateInitializer<AnyConsensusState> for MockClientState
-where
-    AnyConsensusState: From<MockConsensusState>,
-{
-    fn initialise(&self, consensus_state: Any) -> Result<AnyConsensusState, ClientError> {
-        let consensus_state = MockConsensusState::try_from(consensus_state)?;
-
-        Ok(consensus_state.into())
     }
 }
 

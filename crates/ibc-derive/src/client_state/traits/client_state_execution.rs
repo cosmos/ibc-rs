@@ -16,6 +16,12 @@ pub(crate) fn impl_ClientStateExecution(
     enum_variants: &Punctuated<Variant, Comma>,
     opts: &Opts,
 ) -> TokenStream {
+    let initialise_impl = delegate_call_in_match(
+        client_state_enum_name,
+        enum_variants.iter(),
+        opts,
+        quote! { initialise(cs, ctx, client_id, consensus_state) },
+    );
     let update_state_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
@@ -48,6 +54,17 @@ pub(crate) fn impl_ClientStateExecution(
 
     quote! {
         impl #ClientStateExecution<#ClientExecutionContext> for #HostClientState {
+            fn initialise(
+                &self,
+                ctx: &mut #ClientExecutionContext,
+                client_id: &#ClientId,
+                consensus_state: #Any,
+            ) -> Result<(), #ClientError> {
+                match self {
+                    #(#initialise_impl),*
+                }
+            }
+
             fn update_state(
                 &self,
                 ctx: &mut #ClientExecutionContext,

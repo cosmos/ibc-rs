@@ -23,10 +23,7 @@ pub trait SendPacketValidationContext {
     type ClientValidationContext;
     type ClientExecutionContext;
     type AnyConsensusState: ConsensusState;
-    type AnyClientState: ClientState<
-        Self::ClientValidationContext,
-        Self::ClientExecutionContext,
-    >;
+    type AnyClientState: ClientState<Self::ClientValidationContext, Self::ClientExecutionContext>;
 
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;

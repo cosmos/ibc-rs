@@ -2,5 +2,4 @@
 
 pub mod client_state_base;
 pub mod client_state_execution;
-pub mod client_state_initializer;
 pub mod client_state_validation;
