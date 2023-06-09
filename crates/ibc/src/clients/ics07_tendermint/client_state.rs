@@ -702,8 +702,6 @@ where
     ) -> Result<(), ClientError> {
         let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
 
-        ctx.store_update_time(client_id.clone(), self.latest_height, ctx.host_timestamp()?)?;
-        ctx.store_update_height(client_id.clone(), self.latest_height, ctx.host_height()?)?;
         ctx.store_client_state(ClientStatePath::new(client_id), self.clone())?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(client_id, &self.latest_height),
