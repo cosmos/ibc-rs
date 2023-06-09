@@ -606,6 +606,49 @@ impl MockContext {
             .height()
     }
 
+    fn store_client_state(
+        &mut self,
+        client_state_path: ClientStatePath,
+        client_state: <MockContext as ValidationContext>::AnyClientState,
+    ) -> Result<(), ContextError> {
+        let mut ibc_store = self.ibc_store.lock();
+
+        let client_id = client_state_path.0;
+        let client_record = ibc_store
+            .clients
+            .entry(client_id)
+            .or_insert(MockClientRecord {
+                consensus_states: Default::default(),
+                client_state: Default::default(),
+            });
+
+        client_record.client_state = Some(client_state);
+
+        Ok(())
+    }
+
+    fn store_consensus_state(
+        &mut self,
+        consensus_state_path: ClientConsensusStatePath,
+        consensus_state: <MockContext as ValidationContext>::AnyConsensusState,
+    ) -> Result<(), ContextError> {
+        let mut ibc_store = self.ibc_store.lock();
+
+        let client_record = ibc_store
+            .clients
+            .entry(consensus_state_path.client_id)
+            .or_insert(MockClientRecord {
+                consensus_states: Default::default(),
+                client_state: Default::default(),
+            });
+
+        let height = Height::new(consensus_state_path.epoch, consensus_state_path.height).unwrap();
+        client_record
+            .consensus_states
+            .insert(height, consensus_state);
+        Ok(())
+    }
+
     pub fn ibc_store_share(&self) -> Arc<Mutex<MockIbcStore>> {
         self.ibc_store.clone()
     }
@@ -911,7 +954,7 @@ impl MockClientExecutionContext for MockContext {
         client_state_path: ClientStatePath,
         client_state: MockClientState,
     ) -> Result<(), ContextError> {
-        ExecutionContext::store_client_state(self, client_state_path, client_state.into())
+        self.store_client_state(client_state_path, client_state.into())
     }
 
     fn store_consensus_state(
@@ -919,7 +962,7 @@ impl MockClientExecutionContext for MockContext {
         consensus_state_path: ClientConsensusStatePath,
         consensus_state: MockConsensusState,
     ) -> Result<(), ContextError> {
-        ExecutionContext::store_consensus_state(self, consensus_state_path, consensus_state.into())
+        self.store_consensus_state(consensus_state_path, consensus_state.into())
     }
 }
 
@@ -929,7 +972,7 @@ impl TmClientExecutionContext for MockContext {
         client_state_path: ClientStatePath,
         client_state: TmClientState,
     ) -> Result<(), ContextError> {
-        <Self as ExecutionContext>::store_client_state(self, client_state_path, client_state.into())
+        self.store_client_state(client_state_path, client_state.into())
     }
 
     fn store_consensus_state(
@@ -937,11 +980,7 @@ impl TmClientExecutionContext for MockContext {
         consensus_state_path: ClientConsensusStatePath,
         consensus_state: TmConsensusState,
     ) -> Result<(), ContextError> {
-        <Self as ExecutionContext>::store_consensus_state(
-            self,
-            consensus_state_path,
-            consensus_state.into(),
-        )
+        self.store_consensus_state(consensus_state_path, consensus_state.into())
     }
 }
 
@@ -1300,49 +1339,6 @@ impl ValidationContext for MockContext {
 }
 
 impl ExecutionContext for MockContext {
-    fn store_client_state(
-        &mut self,
-        client_state_path: ClientStatePath,
-        client_state: Self::AnyClientState,
-    ) -> Result<(), ContextError> {
-        let mut ibc_store = self.ibc_store.lock();
-
-        let client_id = client_state_path.0;
-        let client_record = ibc_store
-            .clients
-            .entry(client_id)
-            .or_insert(MockClientRecord {
-                consensus_states: Default::default(),
-                client_state: Default::default(),
-            });
-
-        client_record.client_state = Some(client_state);
-
-        Ok(())
-    }
-
-    fn store_consensus_state(
-        &mut self,
-        consensus_state_path: ClientConsensusStatePath,
-        consensus_state: Self::AnyConsensusState,
-    ) -> Result<(), ContextError> {
-        let mut ibc_store = self.ibc_store.lock();
-
-        let client_record = ibc_store
-            .clients
-            .entry(consensus_state_path.client_id)
-            .or_insert(MockClientRecord {
-                consensus_states: Default::default(),
-                client_state: Default::default(),
-            });
-
-        let height = Height::new(consensus_state_path.epoch, consensus_state_path.height).unwrap();
-        client_record
-            .consensus_states
-            .insert(height, consensus_state);
-        Ok(())
-    }
-
     fn increase_client_counter(&mut self) {
         self.ibc_store.lock().client_ids_counter += 1
     }

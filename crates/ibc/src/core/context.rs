@@ -24,8 +24,8 @@ use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{
-    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
-    CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
+    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
+    ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use crate::core::router::Router;
 use crate::core::timestamp::Timestamp;
@@ -233,20 +233,6 @@ pub trait ValidationContext: Router {
 }
 
 pub trait ExecutionContext: ValidationContext {
-    /// Called upon successful client creation and update
-    fn store_client_state(
-        &mut self,
-        client_state_path: ClientStatePath,
-        client_state: Self::AnyClientState,
-    ) -> Result<(), ContextError>;
-
-    /// Called upon successful client creation and update
-    fn store_consensus_state(
-        &mut self,
-        consensus_state_path: ClientConsensusStatePath,
-        consensus_state: Self::AnyConsensusState,
-    ) -> Result<(), ContextError>;
-
     /// Called upon client creation.
     /// Increases the counter which keeps track of how many clients have been created.
     /// Should never fail.
