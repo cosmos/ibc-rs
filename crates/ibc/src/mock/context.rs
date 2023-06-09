@@ -609,34 +609,6 @@ impl MockContext {
     pub fn ibc_store_share(&self) -> Arc<Mutex<MockIbcStore>> {
         self.ibc_store.clone()
     }
-
-    pub fn store_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .insert((client_id, height), timestamp);
-        Ok(())
-    }
-
-    pub fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_height: Height,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .insert((client_id, height), host_height);
-        Ok(())
-    }
 }
 
 type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
@@ -922,7 +894,7 @@ impl MockClientExecutionContext for MockContext {
         height: Height,
         timestamp: Timestamp,
     ) -> Result<(), ContextError> {
-        self.store_update_time(client_id, height, timestamp)
+        ExecutionContext::store_update_time(self, client_id, height, timestamp)
     }
 
     fn store_update_height(
@@ -931,7 +903,7 @@ impl MockClientExecutionContext for MockContext {
         height: Height,
         host_height: Height,
     ) -> Result<(), ContextError> {
-        self.store_update_height(client_id, height, host_height)
+        ExecutionContext::store_update_height(self, client_id, height, host_height)
     }
 
     fn store_client_state(
@@ -958,7 +930,7 @@ impl TmClientExecutionContext for MockContext {
         height: Height,
         timestamp: Timestamp,
     ) -> Result<(), ContextError> {
-        self.store_update_time(client_id, height, timestamp)
+        <Self as ExecutionContext>::store_update_time(self, client_id, height, timestamp)
     }
 
     fn store_update_height(
@@ -967,7 +939,7 @@ impl TmClientExecutionContext for MockContext {
         height: Height,
         host_height: Height,
     ) -> Result<(), ContextError> {
-        self.store_update_height(client_id, height, host_height)
+        <Self as ExecutionContext>::store_update_height(self, client_id, height, host_height)
     }
 
     fn store_client_state(
@@ -1391,6 +1363,34 @@ impl ExecutionContext for MockContext {
 
     fn increase_client_counter(&mut self) {
         self.ibc_store.lock().client_ids_counter += 1
+    }
+
+    fn store_update_time(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        timestamp: Timestamp,
+    ) -> Result<(), ContextError> {
+        let _ = self
+            .ibc_store
+            .lock()
+            .client_processed_times
+            .insert((client_id, height), timestamp);
+        Ok(())
+    }
+
+    fn store_update_height(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        host_height: Height,
+    ) -> Result<(), ContextError> {
+        let _ = self
+            .ibc_store
+            .lock()
+            .client_processed_heights
+            .insert((client_id, height), host_height);
+        Ok(())
     }
 
     fn store_connection(
