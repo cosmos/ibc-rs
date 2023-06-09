@@ -76,7 +76,7 @@ mod tests {
     use ibc_proto::ibc::core::client::v1::MsgCreateClient as RawMsgCreateClient;
 
     use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-    use crate::clients::ics07_tendermint::consensus_state::TmConsensusState;
+    use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
     use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
     use crate::test_utils::get_dummy_account_id;

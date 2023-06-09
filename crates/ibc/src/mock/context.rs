@@ -33,7 +33,7 @@ use crate::clients::ics07_tendermint::client_state::{
     ClientState as TmClientState, TENDERMINT_CLIENT_STATE_TYPE_URL,
 };
 use crate::clients::ics07_tendermint::consensus_state::{
-    TmConsensusState, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
+    ConsensusState as TmConsensusState, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
 };
 use crate::core::dispatch;
 use crate::core::events::IbcEvent;

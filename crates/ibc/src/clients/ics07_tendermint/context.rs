@@ -10,7 +10,9 @@ use crate::{
     Height,
 };
 
-use super::{client_state::ClientState as TmClientState, consensus_state::TmConsensusState};
+use super::{
+    client_state::ClientState as TmClientState, consensus_state::ConsensusState as TmConsensusState,
+};
 
 pub trait ValidationContext {
     type AnyConsensusState: TryInto<TmConsensusState, Error = &'static str>;

@@ -14,7 +14,7 @@ use tendermint::chain::Id as TmChainId;
 use tendermint::validator::Set as ValidatorSet;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 
-use crate::clients::ics07_tendermint::consensus_state::TmConsensusState;
+use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ChainId;

@@ -4,7 +4,7 @@ use crate::clients::ics07_tendermint::ValidationContext as TmValidationContext;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::prelude::*;
 
-use crate::clients::ics07_tendermint::consensus_state::TmConsensusState;
+use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;

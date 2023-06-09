@@ -7,7 +7,7 @@
 
 use super::Plan;
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use crate::clients::ics07_tendermint::consensus_state::TmConsensusState;
+use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::core::ics02_client::error::UpgradeClientError;
 use crate::core::ics24_host::path::UpgradeClientPath;
 

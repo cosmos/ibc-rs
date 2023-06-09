@@ -8,7 +8,7 @@ use tendermint::block::Header as TmHeader;
 use tendermint_testgen::light_block::TmLightBlock;
 use tendermint_testgen::{Generator, LightBlock as TestgenLightBlock};
 
-use crate::clients::ics07_tendermint::consensus_state::TmConsensusState as TMConsensusState;
+use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::header::TENDERMINT_HEADER_TYPE_URL;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::header::Header;
@@ -128,7 +128,7 @@ impl HostBlock {
 
 impl From<SyntheticTmBlock> for HostConsensusState {
     fn from(light_block: SyntheticTmBlock) -> Self {
-        let cs = TMConsensusState::from(light_block.header().clone());
+        let cs = TmConsensusState::from(light_block.header().clone());
         cs.into()
     }
 }
@@ -138,7 +138,7 @@ impl From<HostBlock> for HostConsensusState {
         match any_block {
             HostBlock::Mock(mock_header) => MockConsensusState::new(*mock_header).into(),
             HostBlock::SyntheticTendermint(light_block) => {
-                TMConsensusState::from(light_block.header().clone()).into()
+                TmConsensusState::from(light_block.header().clone()).into()
             }
         }
     }
