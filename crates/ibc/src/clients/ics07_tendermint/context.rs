@@ -12,7 +12,7 @@ use crate::{
 
 use super::{client_state::ClientState as TmClientState, consensus_state::TmConsensusState};
 
-pub trait TmClientValidationContext {
+pub trait ValidationContext {
     type AnyConsensusState: TryInto<TmConsensusState, Error = &'static str>;
 
     /// Returns the current height of the local chain.
@@ -45,7 +45,7 @@ pub trait TmClientValidationContext {
     ) -> Result<Option<Self::AnyConsensusState>, ContextError>;
 }
 
-pub trait TmClientExecutionContext: TmClientValidationContext {
+pub trait ExecutionContext: ValidationContext {
     /// Called upon successful client creation and update
     fn store_client_state(
         &mut self,

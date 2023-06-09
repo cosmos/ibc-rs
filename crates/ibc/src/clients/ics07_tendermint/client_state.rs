@@ -44,7 +44,10 @@ use crate::core::timestamp::ZERO_DURATION;
 use crate::Height;
 
 use super::trust_threshold::TrustThreshold;
-use super::{client_type as tm_client_type, TmClientExecutionContext, TmClientValidationContext};
+use super::{
+    client_type as tm_client_type, ExecutionContext as TmExecutionContext,
+    ValidationContext as TmValidationContext,
+};
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
@@ -430,7 +433,7 @@ impl ClientStateBase for ClientState {
 
 impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for ClientState
 where
-    ClientValidationContext: TmClientValidationContext,
+    ClientValidationContext: TmValidationContext,
 {
     fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
         let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
@@ -484,7 +487,7 @@ where
 
 impl<ClientExecutionContext> ClientStateExecution<ClientExecutionContext> for ClientState
 where
-    ClientExecutionContext: TmClientExecutionContext,
+    ClientExecutionContext: TmExecutionContext,
 {
     fn initialise(
         &self,

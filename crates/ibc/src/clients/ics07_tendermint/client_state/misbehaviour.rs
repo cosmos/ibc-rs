@@ -1,5 +1,6 @@
 use tendermint_light_client_verifier::Verifier;
 
+use crate::clients::ics07_tendermint::ValidationContext as TmValidationContext;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::prelude::*;
 
@@ -12,7 +13,7 @@ use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::timestamp::Timestamp;
 
-use super::{check_header_trusted_next_validator_set, ClientState, TmClientValidationContext};
+use super::{check_header_trusted_next_validator_set, ClientState};
 
 impl ClientState {
     // verify_misbehaviour determines whether or not two conflicting headers at
@@ -24,7 +25,7 @@ impl ClientState {
         misbehaviour: TmMisbehaviour,
     ) -> Result<(), ClientError>
     where
-        ClientValidationContext: TmClientValidationContext,
+        ClientValidationContext: TmValidationContext,
     {
         misbehaviour.validate_basic()?;
 

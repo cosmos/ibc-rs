@@ -6,7 +6,8 @@ use crate::applications::transfer::context::{
 use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::PrefixedCoin;
 use crate::clients::ics07_tendermint::{
-    TmClientExecutionContext, TmClientValidationContext, TENDERMINT_CLIENT_TYPE,
+    ExecutionContext as TmExecutionContext, ValidationContext as TmValidationContext,
+    TENDERMINT_CLIENT_TYPE,
 };
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
@@ -844,7 +845,7 @@ impl Router for MockContext {
     }
 }
 
-impl TmClientValidationContext for MockContext {
+impl TmValidationContext for MockContext {
     type AnyConsensusState = HostConsensusState;
 
     fn host_height(&self) -> Result<Height, ContextError> {
@@ -967,7 +968,7 @@ impl MockClientExecutionContext for MockContext {
     }
 }
 
-impl TmClientExecutionContext for MockContext {
+impl TmExecutionContext for MockContext {
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,

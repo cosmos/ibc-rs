@@ -1,3 +1,4 @@
+use crate::clients::ics07_tendermint::ValidationContext as TmValidationContext;
 use crate::prelude::*;
 
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
@@ -10,7 +11,7 @@ use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 
-use super::{check_header_trusted_next_validator_set, ClientState, TmClientValidationContext};
+use super::{check_header_trusted_next_validator_set, ClientState};
 
 impl ClientState {
     pub fn verify_header<ClientValidationContext>(
@@ -20,7 +21,7 @@ impl ClientState {
         header: TmHeader,
     ) -> Result<(), ClientError>
     where
-        ClientValidationContext: TmClientValidationContext,
+        ClientValidationContext: TmValidationContext,
     {
         // Checks that the header fields are valid.
         header.validate_basic()?;
@@ -89,7 +90,7 @@ impl ClientState {
         header: TmHeader,
     ) -> Result<bool, ClientError>
     where
-        ClientValidationContext: TmClientValidationContext,
+        ClientValidationContext: TmValidationContext,
     {
         let header_consensus_state = TmConsensusState::from(header.clone());
 
