@@ -737,17 +737,6 @@ where
             let new_consensus_state = TmConsensusState::from(header.clone());
             let new_client_state = self.clone().with_header(header)?;
 
-            ctx.store_update_time(
-                client_id.clone(),
-                new_client_state.latest_height(),
-                ctx.host_timestamp()?,
-            )?;
-            ctx.store_update_height(
-                client_id.clone(),
-                new_client_state.latest_height(),
-                ctx.host_height()?,
-            )?;
-
             ctx.store_consensus_state(
                 ClientConsensusStatePath::new(client_id, &new_client_state.latest_height),
                 new_consensus_state,
