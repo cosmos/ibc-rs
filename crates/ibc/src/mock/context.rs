@@ -924,24 +924,6 @@ impl MockClientExecutionContext for MockContext {
 }
 
 impl TmClientExecutionContext for MockContext {
-    fn store_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), ContextError> {
-        <Self as ExecutionContext>::store_update_time(self, client_id, height, timestamp)
-    }
-
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_height: Height,
-    ) -> Result<(), ContextError> {
-        <Self as ExecutionContext>::store_update_height(self, client_id, height, host_height)
-    }
-
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,

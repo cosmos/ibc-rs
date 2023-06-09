@@ -433,26 +433,6 @@ pub trait TmClientValidationContext {
 }
 
 pub trait TmClientExecutionContext: TmClientValidationContext {
-    /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified time as the time at which
-    /// this update (or header) was processed.
-    fn store_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), ContextError>;
-
-    /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified height as the height at
-    /// at which this update (or header) was processed.
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_height: Height,
-    ) -> Result<(), ContextError>;
-
     /// Called upon successful client creation and update
     fn store_client_state(
         &mut self,
