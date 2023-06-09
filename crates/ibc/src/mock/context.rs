@@ -5,7 +5,9 @@ use crate::applications::transfer::context::{
 };
 use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::PrefixedCoin;
-use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
+use crate::clients::ics07_tendermint::{
+    TmClientExecutionContext, TmClientValidationContext, TENDERMINT_CLIENT_TYPE,
+};
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
@@ -27,8 +29,7 @@ use ibc_proto::google::protobuf::Any;
 use tracing::debug;
 
 use crate::clients::ics07_tendermint::client_state::{
-    ClientState as TmClientState, TmClientExecutionContext, TmClientValidationContext,
-    TENDERMINT_CLIENT_STATE_TYPE_URL,
+    ClientState as TmClientState, TENDERMINT_CLIENT_STATE_TYPE_URL,
 };
 use crate::clients::ics07_tendermint::consensus_state::{
     TmConsensusState, TENDERMINT_CONSENSUS_STATE_TYPE_URL,

@@ -12,6 +12,9 @@ pub mod header;
 pub mod misbehaviour;
 pub mod trust_threshold;
 
+mod context;
+pub use context::*;
+
 pub(crate) const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
 
 /// Returns the tendermint `ClientType`

@@ -40,14 +40,20 @@ use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, UpgradeClientPath};
-use crate::core::timestamp::{Timestamp, ZERO_DURATION};
+use crate::core::timestamp::ZERO_DURATION;
 use crate::Height;
 
-use super::client_type as tm_client_type;
 use super::trust_threshold::TrustThreshold;
-use crate::core::ContextError;
+use super::{client_type as tm_client_type, TmClientExecutionContext, TmClientValidationContext};
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
+
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct AllowUpdate {
+    pub after_expiry: bool,
+    pub after_misbehaviour: bool,
+}
 
 /// Contains the core implementation of the Tendermint light client
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -252,200 +258,6 @@ impl ClientState {
         self.frozen_height = None;
         self.max_clock_drift = ZERO_DURATION;
     }
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct AllowUpdate {
-    pub after_expiry: bool,
-    pub after_misbehaviour: bool,
-}
-
-impl Protobuf<RawTmClientState> for ClientState {}
-
-impl TryFrom<RawTmClientState> for ClientState {
-    type Error = Error;
-
-    fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
-        let chain_id = ChainId::from_string(raw.chain_id.as_str());
-
-        let trust_level = {
-            let trust_level = raw
-                .trust_level
-                .clone()
-                .ok_or(Error::MissingTrustingPeriod)?;
-            trust_level
-                .try_into()
-                .map_err(|e| Error::InvalidTrustThreshold {
-                    reason: format!("{e}"),
-                })?
-        };
-
-        let trusting_period = raw
-            .trusting_period
-            .ok_or(Error::MissingTrustingPeriod)?
-            .try_into()
-            .map_err(|_| Error::MissingTrustingPeriod)?;
-
-        let unbonding_period = raw
-            .unbonding_period
-            .ok_or(Error::MissingUnbondingPeriod)?
-            .try_into()
-            .map_err(|_| Error::MissingUnbondingPeriod)?;
-
-        let max_clock_drift = raw
-            .max_clock_drift
-            .ok_or(Error::NegativeMaxClockDrift)?
-            .try_into()
-            .map_err(|_| Error::NegativeMaxClockDrift)?;
-
-        let latest_height = raw
-            .latest_height
-            .ok_or(Error::MissingLatestHeight)?
-            .try_into()
-            .map_err(|_| Error::MissingLatestHeight)?;
-
-        // In `RawClientState`, a `frozen_height` of `0` means "not frozen".
-        // See:
-        // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
-        if raw
-            .frozen_height
-            .and_then(|h| Height::try_from(h).ok())
-            .is_some()
-        {
-            return Err(Error::FrozenHeightNotAllowed);
-        }
-
-        // We use set this deprecated field just so that we can properly convert
-        // it back in its raw form
-        #[allow(deprecated)]
-        let allow_update = AllowUpdate {
-            after_expiry: raw.allow_update_after_expiry,
-            after_misbehaviour: raw.allow_update_after_misbehaviour,
-        };
-
-        let client_state = Self::new_without_validation(
-            chain_id,
-            trust_level,
-            trusting_period,
-            unbonding_period,
-            max_clock_drift,
-            latest_height,
-            raw.proof_specs.into(),
-            raw.upgrade_path,
-            allow_update,
-        );
-
-        Ok(client_state)
-    }
-}
-
-impl From<ClientState> for RawTmClientState {
-    fn from(value: ClientState) -> Self {
-        #[allow(deprecated)]
-        Self {
-            chain_id: value.chain_id.to_string(),
-            trust_level: Some(value.trust_level.into()),
-            trusting_period: Some(value.trusting_period.into()),
-            unbonding_period: Some(value.unbonding_period.into()),
-            max_clock_drift: Some(value.max_clock_drift.into()),
-            frozen_height: Some(value.frozen_height.map(|height| height.into()).unwrap_or(
-                RawHeight {
-                    revision_number: 0,
-                    revision_height: 0,
-                },
-            )),
-            latest_height: Some(value.latest_height.into()),
-            proof_specs: value.proof_specs.into(),
-            upgrade_path: value.upgrade_path,
-            allow_update_after_expiry: value.allow_update.after_expiry,
-            allow_update_after_misbehaviour: value.allow_update.after_misbehaviour,
-        }
-    }
-}
-
-impl Protobuf<Any> for ClientState {}
-
-impl TryFrom<Any> for ClientState {
-    type Error = ClientError;
-
-    fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        use bytes::Buf;
-        use core::ops::Deref;
-
-        fn decode_client_state<B: Buf>(buf: B) -> Result<ClientState, Error> {
-            RawTmClientState::decode(buf)
-                .map_err(Error::Decode)?
-                .try_into()
-        }
-
-        match raw.type_url.as_str() {
-            TENDERMINT_CLIENT_STATE_TYPE_URL => {
-                decode_client_state(raw.value.deref()).map_err(Into::into)
-            }
-            _ => Err(ClientError::UnknownClientStateType {
-                client_state_type: raw.type_url,
-            }),
-        }
-    }
-}
-
-impl From<ClientState> for Any {
-    fn from(client_state: ClientState) -> Self {
-        Any {
-            type_url: TENDERMINT_CLIENT_STATE_TYPE_URL.to_string(),
-            value: Protobuf::<RawTmClientState>::encode_vec(&client_state),
-        }
-    }
-}
-
-pub trait TmClientValidationContext {
-    type AnyConsensusState: TryInto<TmConsensusState, Error = &'static str>;
-
-    /// Returns the current height of the local chain.
-    fn host_height(&self) -> Result<Height, ContextError>;
-
-    /// Returns the current timestamp of the local chain.
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
-
-    /// Retrieve the consensus state for the given client ID at the specified
-    /// height.
-    ///
-    /// Returns an error if no such state exists.
-    fn consensus_state(
-        &self,
-        client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::AnyConsensusState, ContextError>;
-
-    /// Search for the lowest consensus state higher than `height`.
-    fn next_consensus_state(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Option<Self::AnyConsensusState>, ContextError>;
-
-    /// Search for the highest consensus state lower than `height`.
-    fn prev_consensus_state(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Option<Self::AnyConsensusState>, ContextError>;
-}
-
-pub trait TmClientExecutionContext: TmClientValidationContext {
-    /// Called upon successful client creation and update
-    fn store_client_state(
-        &mut self,
-        client_state_path: ClientStatePath,
-        client_state: ClientState,
-    ) -> Result<(), ContextError>;
-
-    /// Called upon successful client creation and update
-    fn store_consensus_state(
-        &mut self,
-        consensus_state_path: ClientConsensusStatePath,
-        consensus_state: TmConsensusState,
-    ) -> Result<(), ContextError>;
 }
 
 impl ClientStateBase for ClientState {
@@ -796,6 +608,144 @@ where
         )?;
 
         Ok(latest_height)
+    }
+}
+
+impl Protobuf<RawTmClientState> for ClientState {}
+
+impl TryFrom<RawTmClientState> for ClientState {
+    type Error = Error;
+
+    fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
+        let chain_id = ChainId::from_string(raw.chain_id.as_str());
+
+        let trust_level = {
+            let trust_level = raw
+                .trust_level
+                .clone()
+                .ok_or(Error::MissingTrustingPeriod)?;
+            trust_level
+                .try_into()
+                .map_err(|e| Error::InvalidTrustThreshold {
+                    reason: format!("{e}"),
+                })?
+        };
+
+        let trusting_period = raw
+            .trusting_period
+            .ok_or(Error::MissingTrustingPeriod)?
+            .try_into()
+            .map_err(|_| Error::MissingTrustingPeriod)?;
+
+        let unbonding_period = raw
+            .unbonding_period
+            .ok_or(Error::MissingUnbondingPeriod)?
+            .try_into()
+            .map_err(|_| Error::MissingUnbondingPeriod)?;
+
+        let max_clock_drift = raw
+            .max_clock_drift
+            .ok_or(Error::NegativeMaxClockDrift)?
+            .try_into()
+            .map_err(|_| Error::NegativeMaxClockDrift)?;
+
+        let latest_height = raw
+            .latest_height
+            .ok_or(Error::MissingLatestHeight)?
+            .try_into()
+            .map_err(|_| Error::MissingLatestHeight)?;
+
+        // In `RawClientState`, a `frozen_height` of `0` means "not frozen".
+        // See:
+        // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
+        if raw
+            .frozen_height
+            .and_then(|h| Height::try_from(h).ok())
+            .is_some()
+        {
+            return Err(Error::FrozenHeightNotAllowed);
+        }
+
+        // We use set this deprecated field just so that we can properly convert
+        // it back in its raw form
+        #[allow(deprecated)]
+        let allow_update = AllowUpdate {
+            after_expiry: raw.allow_update_after_expiry,
+            after_misbehaviour: raw.allow_update_after_misbehaviour,
+        };
+
+        let client_state = Self::new_without_validation(
+            chain_id,
+            trust_level,
+            trusting_period,
+            unbonding_period,
+            max_clock_drift,
+            latest_height,
+            raw.proof_specs.into(),
+            raw.upgrade_path,
+            allow_update,
+        );
+
+        Ok(client_state)
+    }
+}
+
+impl From<ClientState> for RawTmClientState {
+    fn from(value: ClientState) -> Self {
+        #[allow(deprecated)]
+        Self {
+            chain_id: value.chain_id.to_string(),
+            trust_level: Some(value.trust_level.into()),
+            trusting_period: Some(value.trusting_period.into()),
+            unbonding_period: Some(value.unbonding_period.into()),
+            max_clock_drift: Some(value.max_clock_drift.into()),
+            frozen_height: Some(value.frozen_height.map(|height| height.into()).unwrap_or(
+                RawHeight {
+                    revision_number: 0,
+                    revision_height: 0,
+                },
+            )),
+            latest_height: Some(value.latest_height.into()),
+            proof_specs: value.proof_specs.into(),
+            upgrade_path: value.upgrade_path,
+            allow_update_after_expiry: value.allow_update.after_expiry,
+            allow_update_after_misbehaviour: value.allow_update.after_misbehaviour,
+        }
+    }
+}
+
+impl Protobuf<Any> for ClientState {}
+
+impl TryFrom<Any> for ClientState {
+    type Error = ClientError;
+
+    fn try_from(raw: Any) -> Result<Self, Self::Error> {
+        use bytes::Buf;
+        use core::ops::Deref;
+
+        fn decode_client_state<B: Buf>(buf: B) -> Result<ClientState, Error> {
+            RawTmClientState::decode(buf)
+                .map_err(Error::Decode)?
+                .try_into()
+        }
+
+        match raw.type_url.as_str() {
+            TENDERMINT_CLIENT_STATE_TYPE_URL => {
+                decode_client_state(raw.value.deref()).map_err(Into::into)
+            }
+            _ => Err(ClientError::UnknownClientStateType {
+                client_state_type: raw.type_url,
+            }),
+        }
+    }
+}
+
+impl From<ClientState> for Any {
+    fn from(client_state: ClientState) -> Self {
+        Any {
+            type_url: TENDERMINT_CLIENT_STATE_TYPE_URL.to_string(),
+            value: Protobuf::<RawTmClientState>::encode_vec(&client_state),
+        }
     }
 }
 
