@@ -98,6 +98,8 @@ pub trait ValidationContext: Router {
     fn get_client_execution_context(&mut self) -> &mut Self::ClientExecutionContext;
 
     /// Returns the ClientState for the given identifier `client_id`.
+    ///
+    /// Note: Clients have the responsibility to store client states on client creation and update.
     fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError>;
 
     /// Tries to decode the given `client_state` into a concrete light client state.
@@ -107,10 +109,26 @@ pub trait ValidationContext: Router {
     /// height.
     ///
     /// Returns an error if no such state exists.
+    ///
+    /// Note: Clients have the responsibility to store consensus states on client creation and update.
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Self::AnyConsensusState, ContextError>;
+
+    /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
+    fn client_update_time(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Timestamp, ContextError>;
+
+    /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
+    fn client_update_height(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Height, ContextError>;
 
     /// Returns the current height of the local chain.
     fn host_height(&self) -> Result<Height, ContextError>;
@@ -198,20 +216,6 @@ pub trait ValidationContext: Router {
         &self,
         ack_path: &AckPath,
     ) -> Result<AcknowledgementCommitment, ContextError>;
-
-    /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_time(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Timestamp, ContextError>;
-
-    /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_height(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ContextError>;
 
     /// Returns a counter on the number of channel ids have been created thus far.
     /// The value of this counter should increase only via method
