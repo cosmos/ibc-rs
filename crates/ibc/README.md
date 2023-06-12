@@ -13,9 +13,9 @@ Implementation of the Inter-Blockchain Communication Protocol ([IBC]) in Rust.
 
 See documentation on [docs.rs][docs-link].
 
-## Third-party apps
+## Third-party clients
 
-Here, we list IBC third-party apps that are compatible with ibc-rs. You should always audit the implementation of any third-party crate. If you have an app that you'd like to be added to this list, please open a PR!
+Here, we list IBC third-party clients that are compatible with ibc-rs. You should always audit the implementation of any third-party crate. If you have a client that you'd like to be added to this list, please open a PR!
 
 + [ICS 6: Solomachine](https://github.com/octopus-network/ics06-solomachine) by Octopus Network
 
