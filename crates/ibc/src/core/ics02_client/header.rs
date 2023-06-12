@@ -17,12 +17,7 @@ use crate::Height;
 /// after which our blanket implementation will implement
 /// `ErasedPartialEqHeader` for their type.
 pub trait Header:
-    AsAny
-    + sealed::ErasedPartialEqHeader
-    + ErasedProtobuf<Any, Error = ClientError>
-    + core::fmt::Debug
-    + Send
-    + Sync
+    AsAny + ErasedProtobuf<Any, Error = ClientError> + core::fmt::Debug + Send + Sync
 {
     /// The height of the consensus state
     fn height(&self) -> Height;
@@ -36,31 +31,5 @@ pub trait Header:
         Self: Sized,
     {
         Box::new(self)
-    }
-}
-
-impl PartialEq for dyn Header {
-    fn eq(&self, other: &Self) -> bool {
-        self.eq_header(other)
-    }
-}
-
-mod sealed {
-    use super::*;
-
-    pub trait ErasedPartialEqHeader {
-        fn eq_header(&self, other: &dyn Header) -> bool;
-    }
-
-    impl<H> ErasedPartialEqHeader for H
-    where
-        H: Header + PartialEq,
-    {
-        fn eq_header(&self, other: &dyn Header) -> bool {
-            other
-                .as_any()
-                .downcast_ref::<H>()
-                .map_or(false, |h| self == h)
-        }
     }
 }
