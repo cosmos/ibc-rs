@@ -27,7 +27,7 @@ This ADR is all about fixing this issue; namely, to enable light clients to defi
 ### Changes to `ClientState`
 
 The `ClientState` functionality is split into 3 traits: 
-+ `ClientStateBase`, 
++ `ClientStateCommon`, 
 + `ClientStateValidation<ClientValidationContext>`, and 
 + `ClientStateExecution<ClientExecutionContext>`
 
@@ -35,7 +35,7 @@ Then, `ClientState` is defined as
 
 ```rust
 pub trait ClientState<ClientValidationContext, ClientExecutionContext>:
-    ClientStateBase
+    ClientStateCommon
     + ClientStateValidation<ClientValidationContext>
     + ClientStateExecution<ClientExecutionContext>
     // + ...
@@ -137,7 +137,7 @@ impl NearClientValidationContext for MyClientValidationContext {
 Notice that `ValidationContext::AnyClientState` needs to implement `ClientState`, and `ValidationContext::AnyConsensusState` needs to implement `ConsensusState`. Given that `AnyClientState` and `AnyConsensusState` are enums that wrap types that *must* implement `ClientState` or `ConsensusState` (respectively), implementing these traits is gruesome boilerplate:
 
 ```rust
-impl ClientStateBase for AnyClientState {
+impl ClientStateCommon for AnyClientState {
     fn client_type(&self) -> ClientType {
         match self {
             Tendermint(cs) => cs.client_type(),
