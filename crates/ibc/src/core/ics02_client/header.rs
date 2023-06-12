@@ -2,7 +2,6 @@
 
 use crate::prelude::*;
 
-use dyn_clone::DynClone;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 
@@ -21,7 +20,6 @@ use crate::Height;
 pub trait Header:
     AsAny
     + sealed::ErasedPartialEqHeader
-    + DynClone
     + ErasedSerialize
     + ErasedProtobuf<Any, Error = ClientError>
     + core::fmt::Debug
@@ -42,9 +40,6 @@ pub trait Header:
         Box::new(self)
     }
 }
-
-// Implements `Clone` for `Box<dyn Header>`
-dyn_clone::clone_trait_object!(Header);
 
 // Implements `serde::Serialize` for all types that have Header as supertrait
 #[cfg(feature = "serde")]
