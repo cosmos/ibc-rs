@@ -8,7 +8,6 @@ use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 use crate::clients::AsAny;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::timestamp::Timestamp;
-use crate::erased::ErasedSerialize;
 use crate::Height;
 
 /// Abstract of consensus state update information
@@ -20,7 +19,6 @@ use crate::Height;
 pub trait Header:
     AsAny
     + sealed::ErasedPartialEqHeader
-    + ErasedSerialize
     + ErasedProtobuf<Any, Error = ClientError>
     + core::fmt::Debug
     + Send
@@ -40,10 +38,6 @@ pub trait Header:
         Box::new(self)
     }
 }
-
-// Implements `serde::Serialize` for all types that have Header as supertrait
-#[cfg(feature = "serde")]
-erased_serde::serialize_trait_object!(Header);
 
 impl PartialEq for dyn Header {
     fn eq(&self, other: &Self) -> bool {

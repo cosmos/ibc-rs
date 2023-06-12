@@ -54,7 +54,6 @@ pub mod mock;
 #[cfg(any(test, feature = "mocks"))]
 pub mod test_utils; // Context mock, the underlying host chain, and client types: for testing all handlers.
 
-mod erased;
 mod prelude;
 mod signer;
 mod utils;
