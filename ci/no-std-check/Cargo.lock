@@ -1044,6 +1044,7 @@ dependencies = [
  "ics23",
  "parity-scale-codec",
  "prost",
+ "scale-info",
  "serde",
  "subtle-encoding",
  "tendermint-proto",
