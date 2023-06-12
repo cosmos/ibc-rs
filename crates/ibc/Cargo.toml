@@ -36,8 +36,8 @@ std = [
     "tendermint/clock",
     "tendermint/std",
 ]
-parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info"]
-borsh = ["dep:borsh"]
+parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-proto/parity-scale-codec"]
+borsh = ["dep:borsh", "ibc-proto/borsh"]
 
 # This feature is required for token transfer (ICS-20)
 serde = ["dep:serde", "dep:serde_derive", "serde_json", "erased-serde", "ics23/serde"]
