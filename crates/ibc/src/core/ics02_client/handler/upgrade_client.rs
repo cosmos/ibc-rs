@@ -5,7 +5,7 @@ use crate::prelude::*;
 
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::client_state::{ClientStateBase, ClientStateExecution};
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateExecution};
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;

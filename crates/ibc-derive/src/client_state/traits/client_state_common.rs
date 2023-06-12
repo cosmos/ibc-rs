@@ -8,7 +8,7 @@ use syn::{
 
 use crate::utils::{get_enum_variant_type_path, Imports};
 
-pub(crate) fn impl_ClientStateBase(
+pub(crate) fn impl_ClientStateCommon(
     client_state_enum_name: &Ident,
     enum_variants: &Punctuated<Variant, Comma>,
 ) -> TokenStream {
@@ -59,7 +59,7 @@ pub(crate) fn impl_ClientStateBase(
     let CommitmentRoot = Imports::CommitmentRoot();
     let CommitmentPrefix = Imports::CommitmentPrefix();
     let CommitmentProofBytes = Imports::CommitmentProofBytes();
-    let ClientStateBase = Imports::ClientStateBase();
+    let ClientStateCommon = Imports::ClientStateCommon();
     let ClientType = Imports::ClientType();
     let ClientError = Imports::ClientError();
     let Height = Imports::Height();
@@ -67,7 +67,7 @@ pub(crate) fn impl_ClientStateBase(
     let Path = Imports::Path();
 
     quote! {
-        impl #ClientStateBase for #HostClientState {
+        impl #ClientStateCommon for #HostClientState {
             fn client_type(&self) -> #ClientType {
                 match self {
                     #(#client_type_impl),*
@@ -151,15 +151,15 @@ pub(crate) fn impl_ClientStateBase(
 /// For example,
 ///
 /// ```ignore
-/// impl ClientStateBase for HostClientState {
+/// impl ClientStateCommon for HostClientState {
 ///   fn client_type(&self) -> ClientType {
 ///     match self {
 ///       //  BEGIN code generated
 ///
 ///       // 1st TokenStream returned
-///       HostClientState::Tendermint(cs) => <TmClientState as ClientStateBase>::client_type(cs),
+///       HostClientState::Tendermint(cs) => <TmClientState as ClientStateCommon>::client_type(cs),
 ///       // 2nd TokenStream returned
-///       HostClientState::Mock(cs) => <MockClientState as ClientStateBase>::client_type(cs),
+///       HostClientState::Mock(cs) => <MockClientState as ClientStateCommon>::client_type(cs),
 ///
 ///       //  END code generated
 ///     }
@@ -172,7 +172,7 @@ fn delegate_call_in_match(
     enum_variants: Iter<'_, Variant>,
     fn_call: TokenStream,
 ) -> Vec<TokenStream> {
-    let ClientStateBase = Imports::ClientStateBase();
+    let ClientStateCommon = Imports::ClientStateCommon();
 
     enum_variants
         .map(|variant| {
@@ -180,7 +180,7 @@ fn delegate_call_in_match(
             let variant_type_name = get_enum_variant_type_path(variant);
 
             quote! {
-                #enum_name::#variant_name(cs) => <#variant_type_name as #ClientStateBase>::#fn_call
+                #enum_name::#variant_name(cs) => <#variant_type_name as #ClientStateCommon>::#fn_call
             }
         })
         .collect()

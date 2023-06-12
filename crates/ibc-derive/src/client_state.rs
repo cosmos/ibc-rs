@@ -6,7 +6,7 @@ use quote::quote;
 use syn::DeriveInput;
 
 use traits::{
-    client_state_base::impl_ClientStateBase, client_state_execution::impl_ClientStateExecution,
+    client_state_common::impl_ClientStateCommon, client_state_execution::impl_ClientStateExecution,
     client_state_validation::impl_ClientStateValidation,
 };
 
@@ -34,7 +34,7 @@ pub fn client_state_derive_impl(ast: DeriveInput) -> TokenStream {
         _ => panic!("ClientState only supports enums"),
     };
 
-    let ClientStateBase_impl_block = impl_ClientStateBase(enum_name, enum_variants);
+    let ClientStateCommon_impl_block = impl_ClientStateCommon(enum_name, enum_variants);
     let ClientStateValidation_impl_block =
         impl_ClientStateValidation(enum_name, enum_variants, &opts);
     let ClientStateExecution_impl_block =
@@ -52,7 +52,7 @@ pub fn client_state_derive_impl(ast: DeriveInput) -> TokenStream {
     quote! {
         #maybe_extern_crate_stmt
 
-        #ClientStateBase_impl_block
+        #ClientStateCommon_impl_block
         #ClientStateValidation_impl_block
         #ClientStateExecution_impl_block
     }

@@ -7,7 +7,7 @@ use ibc_proto::ibc::mock::ClientState as RawMockClientState;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::client_state::{
-    ClientStateBase, ClientStateExecution, ClientStateValidation, UpdateKind,
+    ClientStateCommon, ClientStateExecution, ClientStateValidation, UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
@@ -127,7 +127,7 @@ impl From<MockClientState> for Any {
     }
 }
 
-impl ClientStateBase for MockClientState {
+impl ClientStateCommon for MockClientState {
     fn client_type(&self) -> ClientType {
         mock_client_type()
     }

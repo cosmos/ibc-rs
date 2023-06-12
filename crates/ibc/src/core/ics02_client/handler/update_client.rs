@@ -1,7 +1,7 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpdateAnyClient`.
 
 use crate::core::ics02_client::client_state::{
-    ClientStateBase, ClientStateExecution, ClientStateValidation, UpdateKind,
+    ClientStateCommon, ClientStateExecution, ClientStateValidation, UpdateKind,
 };
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::msgs::MsgUpdateOrMisbehaviour;

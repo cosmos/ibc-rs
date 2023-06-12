@@ -1,7 +1,7 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
 use crate::core::events::MessageEvent;
-use crate::core::ics02_client::client_state::ClientStateBase;
+use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics02_client::client_state::ClientStateExecution;
 use crate::core::ics02_client::client_state::ClientStateValidation;
 use crate::core::ExecutionContext;

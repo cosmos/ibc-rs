@@ -29,8 +29,8 @@ impl Imports {
         quote! {ibc::core::ics02_client::consensus_state::ConsensusState}
     }
 
-    pub fn ClientStateBase() -> TokenStream {
-        quote! {ibc::core::ics02_client::client_state::ClientStateBase}
+    pub fn ClientStateCommon() -> TokenStream {
+        quote! {ibc::core::ics02_client::client_state::ClientStateCommon}
     }
 
     pub fn ClientStateValidation() -> TokenStream {

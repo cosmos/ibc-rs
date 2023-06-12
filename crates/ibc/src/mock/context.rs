@@ -38,7 +38,7 @@ use crate::clients::ics07_tendermint::consensus_state::{
 use crate::core::dispatch;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
-use crate::core::ics02_client::client_state::ClientStateBase;
+use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;

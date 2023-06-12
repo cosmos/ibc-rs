@@ -28,7 +28,7 @@ use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::core::ics02_client::client_state::{
-    ClientStateBase, ClientStateExecution, ClientStateValidation, UpdateKind,
+    ClientStateCommon, ClientStateExecution, ClientStateValidation, UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
@@ -263,7 +263,7 @@ impl ClientState {
     }
 }
 
-impl ClientStateBase for ClientState {
+impl ClientStateCommon for ClientState {
     fn client_type(&self) -> ClientType {
         tm_client_type()
     }

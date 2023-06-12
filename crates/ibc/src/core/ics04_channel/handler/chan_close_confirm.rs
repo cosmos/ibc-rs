@@ -1,6 +1,6 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelCloseConfirm`.
 
-use crate::core::ics02_client::client_state::ClientStateBase;
+use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;

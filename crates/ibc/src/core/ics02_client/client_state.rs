@@ -30,7 +30,7 @@ pub enum UpdateKind {
     SubmitMisbehaviour,
 }
 
-pub trait ClientStateBase {
+pub trait ClientStateCommon {
     /// Type of client associated with this state (eg. Tendermint)
     fn client_type(&self) -> ClientType;
 
@@ -167,7 +167,7 @@ pub use ibc_derive::ClientState;
 pub trait ClientState<ClientValidationContext, ClientExecutionContext>:
     Send
     + Sync
-    + ClientStateBase
+    + ClientStateCommon
     + ClientStateValidation<ClientValidationContext>
     + ClientStateExecution<ClientExecutionContext>
 {
@@ -178,7 +178,7 @@ impl<ClientValidationContext, ClientExecutionContext, T>
 where
     T: Send
         + Sync
-        + ClientStateBase
+        + ClientStateCommon
         + ClientStateValidation<ClientValidationContext>
         + ClientStateExecution<ClientExecutionContext>,
 {
