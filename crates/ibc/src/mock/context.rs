@@ -37,8 +37,8 @@ use crate::clients::ics07_tendermint::consensus_state::{
 };
 use crate::core::dispatch;
 use crate::core::events::IbcEvent;
-use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::client_state::{ClientExecutionContext, ClientState};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
@@ -612,7 +612,7 @@ impl MockContext {
         &mut self,
         client_state_path: ClientStatePath,
         client_state: <MockContext as ValidationContext>::AnyClientState,
-    ) -> Result<(), ContextError> {
+    ) {
         let mut ibc_store = self.ibc_store.lock();
 
         let client_id = client_state_path.0;
@@ -625,8 +625,6 @@ impl MockContext {
             });
 
         client_record.client_state = Some(client_state);
-
-        Ok(())
     }
 
     fn store_consensus_state(
@@ -951,14 +949,6 @@ impl MockClientExecutionContext for MockContext {
         ExecutionContext::store_update_height(self, client_id, height, host_height)
     }
 
-    fn store_client_state(
-        &mut self,
-        client_state_path: ClientStatePath,
-        client_state: MockClientState,
-    ) -> Result<(), ContextError> {
-        self.store_client_state(client_state_path, client_state.into())
-    }
-
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
@@ -968,15 +958,22 @@ impl MockClientExecutionContext for MockContext {
     }
 }
 
-impl TmExecutionContext for MockContext {
+impl ClientExecutionContext for MockContext {
+    type ClientValidationContext = Self;
+    type AnyClientState = HostClientState;
+
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
-        client_state: TmClientState,
-    ) -> Result<(), ContextError> {
-        self.store_client_state(client_state_path, client_state.into())
-    }
+        client_state: Self::AnyClientState,
+    ) -> Result<(), ClientError> {
+        self.store_client_state(client_state_path, client_state);
 
+        Ok(())
+    }
+}
+
+impl TmExecutionContext for MockContext {
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
@@ -988,7 +985,7 @@ impl TmExecutionContext for MockContext {
 
 impl ValidationContext for MockContext {
     type ClientValidationContext = Self;
-    type ClientExecutionContext = Self;
+    type E = Self;
     type AnyConsensusState = HostConsensusState;
     type AnyClientState = HostClientState;
 
@@ -1335,7 +1332,7 @@ impl ValidationContext for MockContext {
         self
     }
 
-    fn get_client_execution_context(&mut self) -> &mut Self::ClientExecutionContext {
+    fn get_client_execution_context(&mut self) -> &mut Self::E {
         self
     }
 }

@@ -31,7 +31,7 @@ use crate::core::router::Router;
 use crate::core::timestamp::Timestamp;
 use crate::Height;
 
-use super::ics02_client::client_state::ClientState;
+use super::ics02_client::client_state::{ClientExecutionContext, ClientState};
 use super::ics02_client::consensus_state::ConsensusState;
 
 /// Top-level error
@@ -90,12 +90,12 @@ impl std::error::Error for RouterError {
 
 pub trait ValidationContext: Router {
     type ClientValidationContext;
-    type ClientExecutionContext;
+    type E: ClientExecutionContext;
     type AnyConsensusState: ConsensusState;
-    type AnyClientState: ClientState<Self::ClientValidationContext, Self::ClientExecutionContext>;
+    type AnyClientState: ClientState<Self::ClientValidationContext, Self::E>;
 
     fn get_client_validation_context(&self) -> &Self::ClientValidationContext;
-    fn get_client_execution_context(&mut self) -> &mut Self::ClientExecutionContext;
+    fn get_client_execution_context(&mut self) -> &mut Self::E;
 
     /// Returns the ClientState for the given identifier `client_id`.
     ///

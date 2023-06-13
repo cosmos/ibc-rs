@@ -1,18 +1,14 @@
 use crate::{
     core::{
-        ics24_host::{
-            identifier::ClientId,
-            path::{ClientConsensusStatePath, ClientStatePath},
-        },
+        ics02_client::client_state::ClientExecutionContext,
+        ics24_host::{identifier::ClientId, path::ClientConsensusStatePath},
         timestamp::Timestamp,
         ContextError,
     },
     Height,
 };
 
-use super::{
-    client_state::ClientState as TmClientState, consensus_state::ConsensusState as TmConsensusState,
-};
+use super::consensus_state::ConsensusState as TmConsensusState;
 
 pub trait ValidationContext {
     type AnyConsensusState: TryInto<TmConsensusState, Error = &'static str>;
@@ -47,14 +43,7 @@ pub trait ValidationContext {
     ) -> Result<Option<Self::AnyConsensusState>, ContextError>;
 }
 
-pub trait ExecutionContext: ValidationContext {
-    /// Called upon successful client creation and update
-    fn store_client_state(
-        &mut self,
-        client_state_path: ClientStatePath,
-        client_state: TmClientState,
-    ) -> Result<(), ContextError>;
-
+pub trait ExecutionContext: ValidationContext + ClientExecutionContext {
     /// Called upon successful client creation and update
     fn store_consensus_state(
         &mut self,

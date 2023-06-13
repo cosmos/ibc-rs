@@ -1,7 +1,7 @@
 //! ICS4 (channel) context.
 
 use crate::core::events::IbcEvent;
-use crate::core::ics02_client::client_state::ClientState;
+use crate::core::ics02_client::client_state::{ClientExecutionContext, ClientState};
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
@@ -21,9 +21,9 @@ use super::packet::Sequence;
 /// Methods required in send packet validation, to be implemented by the host
 pub trait SendPacketValidationContext {
     type ClientValidationContext;
-    type ClientExecutionContext;
+    type E: ClientExecutionContext;
     type AnyConsensusState: ConsensusState;
-    type AnyClientState: ClientState<Self::ClientValidationContext, Self::ClientExecutionContext>;
+    type AnyClientState: ClientState<Self::ClientValidationContext, Self::E>;
 
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
@@ -49,7 +49,7 @@ where
     T: ValidationContext,
 {
     type ClientValidationContext = T::ClientValidationContext;
-    type ClientExecutionContext = T::ClientExecutionContext;
+    type E = T::E;
     type AnyConsensusState = T::AnyConsensusState;
     type AnyClientState = T::AnyClientState;
 

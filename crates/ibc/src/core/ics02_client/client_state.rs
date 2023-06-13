@@ -13,7 +13,7 @@ use crate::core::ics23_commitment::commitment::{
 };
 use crate::core::ics23_commitment::merkle::MerkleProof;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::path::Path;
+use crate::core::ics24_host::path::{ClientStatePath, Path};
 use crate::prelude::*;
 use crate::Height;
 
@@ -116,10 +116,25 @@ pub trait ClientStateValidation<ClientValidationContext> {
     ) -> Result<bool, ClientError>;
 }
 
-pub trait ClientStateExecution<ClientExecutionContext> {
+pub trait ClientExecutionContext: Sized {
+    type ClientValidationContext;
+    type AnyClientState: ClientState<Self::ClientValidationContext, Self>;
+
+    /// Called upon successful client creation and update
+    fn store_client_state(
+        &mut self,
+        client_state_path: ClientStatePath,
+        client_state: Self::AnyClientState,
+    ) -> Result<(), ClientError>;
+}
+
+pub trait ClientStateExecution<E>
+where
+    E: ClientExecutionContext,
+{
     fn initialise(
         &self,
-        ctx: &mut ClientExecutionContext,
+        ctx: &mut E,
         client_id: &ClientId,
         consensus_state: Any,
     ) -> Result<(), ClientError>;
@@ -135,7 +150,7 @@ pub trait ClientStateExecution<ClientExecutionContext> {
     /// height.
     fn update_state(
         &self,
-        ctx: &mut ClientExecutionContext,
+        ctx: &mut E,
         client_id: &ClientId,
         header: Any,
     ) -> Result<Vec<Height>, ClientError>;
@@ -144,7 +159,7 @@ pub trait ClientStateExecution<ClientExecutionContext> {
     /// a client state given that misbehaviour has been detected and verified
     fn update_state_on_misbehaviour(
         &self,
-        ctx: &mut ClientExecutionContext,
+        ctx: &mut E,
         client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -153,7 +168,7 @@ pub trait ClientStateExecution<ClientExecutionContext> {
     // Update the client state and consensus state in the store with the upgraded ones.
     fn update_state_with_upgrade_client(
         &self,
-        ctx: &mut ClientExecutionContext,
+        ctx: &mut E,
         client_id: &ClientId,
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
@@ -164,22 +179,22 @@ pub trait ClientStateExecution<ClientExecutionContext> {
 /// variants that implement `ClientState`
 pub use ibc_derive::ClientState;
 
-pub trait ClientState<ClientValidationContext, ClientExecutionContext>:
+pub trait ClientState<ClientValidationContext, E: ClientExecutionContext>:
     Send
     + Sync
     + ClientStateCommon
     + ClientStateValidation<ClientValidationContext>
-    + ClientStateExecution<ClientExecutionContext>
+    + ClientStateExecution<E>
 {
 }
 
-impl<ClientValidationContext, ClientExecutionContext, T>
-    ClientState<ClientValidationContext, ClientExecutionContext> for T
+impl<ClientValidationContext, E: ClientExecutionContext, T> ClientState<ClientValidationContext, E>
+    for T
 where
     T: Send
         + Sync
         + ClientStateCommon
         + ClientStateValidation<ClientValidationContext>
-        + ClientStateExecution<ClientExecutionContext>,
+        + ClientStateExecution<E>,
 {
 }

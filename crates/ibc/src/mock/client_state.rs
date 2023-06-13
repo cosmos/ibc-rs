@@ -7,7 +7,8 @@ use ibc_proto::ibc::mock::ClientState as RawMockClientState;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::client_state::{
-    ClientStateCommon, ClientStateExecution, ClientStateValidation, UpdateKind,
+    ClientExecutionContext, ClientStateCommon, ClientStateExecution, ClientStateValidation,
+    UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
@@ -256,7 +257,7 @@ impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for
     }
 }
 
-pub trait MockClientExecutionContext {
+pub trait MockClientExecutionContext: ClientExecutionContext {
     /// Returns the current height of the local chain.
     fn host_height(&self) -> Result<Height, ContextError>;
 
@@ -277,12 +278,6 @@ pub trait MockClientExecutionContext {
         host_height: Height,
     ) -> Result<(), ContextError>;
 
-    fn store_client_state(
-        &mut self,
-        client_state_path: ClientStatePath,
-        client_state: MockClientState,
-    ) -> Result<(), ContextError>;
-
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
@@ -290,13 +285,14 @@ pub trait MockClientExecutionContext {
     ) -> Result<(), ContextError>;
 }
 
-impl<ClientExecutionContext> ClientStateExecution<ClientExecutionContext> for MockClientState
+impl<E> ClientStateExecution<E> for MockClientState
 where
-    ClientExecutionContext: MockClientExecutionContext,
+    E: MockClientExecutionContext,
+    <E as ClientExecutionContext>::AnyClientState: From<MockClientState>,
 {
     fn initialise(
         &self,
-        ctx: &mut ClientExecutionContext,
+        ctx: &mut E,
         client_id: &ClientId,
         consensus_state: Any,
     ) -> Result<(), ClientError> {
@@ -308,7 +304,7 @@ where
             ctx.host_timestamp()?,
         )?;
         ctx.store_update_height(client_id.clone(), self.latest_height(), ctx.host_height()?)?;
-        ctx.store_client_state(ClientStatePath::new(client_id), *self)?;
+        ctx.store_client_state(ClientStatePath::new(client_id), (*self).into())?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(client_id, &self.latest_height()),
             mock_consensus_state,
@@ -319,7 +315,7 @@ where
 
     fn update_state(
         &self,
-        ctx: &mut ClientExecutionContext,
+        ctx: &mut E,
         client_id: &ClientId,
         header: Any,
     ) -> Result<Vec<Height>, ClientError> {
@@ -343,28 +339,28 @@ where
             ClientConsensusStatePath::new(client_id, &new_client_state.latest_height()),
             new_consensus_state,
         )?;
-        ctx.store_client_state(ClientStatePath::new(client_id), new_client_state)?;
+        ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
 
         Ok(vec![header_height])
     }
 
     fn update_state_on_misbehaviour(
         &self,
-        ctx: &mut ClientExecutionContext,
+        ctx: &mut E,
         client_id: &ClientId,
         _client_message: Any,
         _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
         let frozen_client_state = self.with_frozen_height(Height::new(0, 1).unwrap());
 
-        ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state)?;
+        ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state.into())?;
 
         Ok(())
     }
 
     fn update_state_with_upgrade_client(
         &self,
-        ctx: &mut ClientExecutionContext,
+        ctx: &mut E,
         client_id: &ClientId,
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
@@ -378,7 +374,7 @@ where
             ClientConsensusStatePath::new(client_id, &latest_height),
             new_consensus_state,
         )?;
-        ctx.store_client_state(ClientStatePath::new(client_id), new_client_state)?;
+        ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
 
         Ok(latest_height)
     }

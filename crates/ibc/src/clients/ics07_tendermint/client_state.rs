@@ -28,7 +28,8 @@ use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::core::ics02_client::client_state::{
-    ClientStateCommon, ClientStateExecution, ClientStateValidation, UpdateKind,
+    ClientExecutionContext, ClientStateCommon, ClientStateExecution, ClientStateValidation,
+    UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
@@ -485,19 +486,20 @@ where
     }
 }
 
-impl<ClientExecutionContext> ClientStateExecution<ClientExecutionContext> for ClientState
+impl<E> ClientStateExecution<E> for ClientState
 where
-    ClientExecutionContext: TmExecutionContext,
+    E: TmExecutionContext,
+    <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
 {
     fn initialise(
         &self,
-        ctx: &mut ClientExecutionContext,
+        ctx: &mut E,
         client_id: &ClientId,
         consensus_state: Any,
     ) -> Result<(), ClientError> {
         let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
 
-        ctx.store_client_state(ClientStatePath::new(client_id), self.clone())?;
+        ctx.store_client_state(ClientStatePath::new(client_id), self.clone().into())?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(client_id, &self.latest_height),
             tm_consensus_state,
@@ -508,7 +510,7 @@ where
 
     fn update_state(
         &self,
-        ctx: &mut ClientExecutionContext,
+        ctx: &mut E,
         client_id: &ClientId,
         header: Any,
     ) -> Result<Vec<Height>, ClientError> {
@@ -534,7 +536,7 @@ where
                 ClientConsensusStatePath::new(client_id, &new_client_state.latest_height),
                 new_consensus_state,
             )?;
-            ctx.store_client_state(ClientStatePath::new(client_id), new_client_state)?;
+            ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
         }
 
         let updated_heights = vec![header_height];
@@ -543,14 +545,14 @@ where
 
     fn update_state_on_misbehaviour(
         &self,
-        ctx: &mut ClientExecutionContext,
+        ctx: &mut E,
         client_id: &ClientId,
         _client_message: Any,
         _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
         let frozen_client_state = self.clone().with_frozen_height(Height::new(0, 1).unwrap());
 
-        ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state)?;
+        ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state.into())?;
 
         Ok(())
     }
@@ -558,7 +560,7 @@ where
     // Commit the new client state and consensus state to the store
     fn update_state_with_upgrade_client(
         &self,
-        ctx: &mut ClientExecutionContext,
+        ctx: &mut E,
         client_id: &ClientId,
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
@@ -604,7 +606,7 @@ where
 
         let latest_height = new_client_state.latest_height;
 
-        ctx.store_client_state(ClientStatePath::new(client_id), new_client_state)?;
+        ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(client_id, &latest_height),
             new_consensus_state,
