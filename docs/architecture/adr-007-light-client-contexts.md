@@ -11,9 +11,9 @@ This ADR is meant to address the main limitation of our current light client API
     + `next_consensus_state()` and `prev_consensus_state()` are not used in the core handlers; they're only there because of the Tendermint light client.
 3. It gives more power to light clients than they really need
     + By giving the light clients access to `ValidationContext` and `ExecutionContext`, we're effectively giving them the same capabilities as the core handlers.
-    + Although our current model is that all code is trusted (including light clients we didn't write), restraining the capabilities we give to light clients at the very least eliminates a class of bugs (e.g. calling the wrong method), and serves as documentation for exactly what the light client will need.
+    + Although our current model is that all code is trusted (including light clients we didn't write), restraining the capabilities we give to light clients at the very least eliminates a class of bugs (e.g. calling the wrong method), and serves as documentation for exactly which methods the light client needs.
 
-This ADR is all about fixing this issue; namely, to enable light clients to define a `Context` trait for the host to implement. One way to see this is that this new architecture allows light clients to define their own `ValidationContext` and `ExecutionContext`.
+This ADR is all about fixing this issue; namely, to enable light clients to define their own `ValidationContext` and `ExecutionContext` traits for the host to implement. 
 
 [ADR 4]: ../architecture/adr-004-light-client-crates-extraction.md
 [later improved]: https://github.com/cosmos/ibc-rs/pull/584
@@ -43,7 +43,7 @@ pub trait ClientState<ClientValidationContext, ClientExecutionContext>:
 }
 ```
 
-A blanket implementation implements `ClientState` when these 3 traits are implemented on a type. For details as to why `ClientState` was split into 3 traits, see the section "Why are there 3 `ClientState` traits?".
+A blanket implementation implements `ClientState` when these 3 traits are implemented on a given type. For details as to why `ClientState` was split into 3 traits, see the section "Why are there 3 `ClientState` traits?".
 
 The `ClientStateValidation` and `ClientStateExecution` traits are the most important ones, as they are the ones that enable light clients to define `Context` traits for the host to implement. Below, we discuss `ClientStateValidation`; `ClientStateExecution` works analogously.
 
