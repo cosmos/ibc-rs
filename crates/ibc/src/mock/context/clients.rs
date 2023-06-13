@@ -14,23 +14,26 @@ use crate::{
 };
 
 use crate::clients::ics07_tendermint::{
-    ExecutionContext as TmExecutionContext, ValidationContext as TmValidationContext,
+    CommonContext as TmCommonContext, ExecutionContext as TmExecutionContext,
+    ValidationContext as TmValidationContext,
 };
 
 use super::{AnyClientState, AnyConsensusState, MockClientRecord, MockContext};
 
-impl TmValidationContext for MockContext {
+impl TmCommonContext for MockContext {
     type AnyConsensusState = AnyConsensusState;
-
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
-        ValidationContext::host_timestamp(self)
-    }
 
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Self::AnyConsensusState, ContextError> {
         ValidationContext::consensus_state(self, client_cons_state_path)
+    }
+}
+
+impl TmValidationContext for MockContext {
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
+        ValidationContext::host_timestamp(self)
     }
 
     fn next_consensus_state(
