@@ -608,47 +608,6 @@ impl MockContext {
             .height()
     }
 
-    fn store_client_state(
-        &mut self,
-        client_state_path: ClientStatePath,
-        client_state: <MockContext as ValidationContext>::AnyClientState,
-    ) {
-        let mut ibc_store = self.ibc_store.lock();
-
-        let client_id = client_state_path.0;
-        let client_record = ibc_store
-            .clients
-            .entry(client_id)
-            .or_insert(MockClientRecord {
-                consensus_states: Default::default(),
-                client_state: Default::default(),
-            });
-
-        client_record.client_state = Some(client_state);
-    }
-
-    fn store_consensus_state(
-        &mut self,
-        consensus_state_path: ClientConsensusStatePath,
-        consensus_state: <MockContext as ValidationContext>::AnyConsensusState,
-    ) -> Result<(), ContextError> {
-        let mut ibc_store = self.ibc_store.lock();
-
-        let client_record = ibc_store
-            .clients
-            .entry(consensus_state_path.client_id)
-            .or_insert(MockClientRecord {
-                consensus_states: Default::default(),
-                client_state: Default::default(),
-            });
-
-        let height = Height::new(consensus_state_path.epoch, consensus_state_path.height).unwrap();
-        client_record
-            .consensus_states
-            .insert(height, consensus_state);
-        Ok(())
-    }
-
     pub fn ibc_store_share(&self) -> Arc<Mutex<MockIbcStore>> {
         self.ibc_store.clone()
     }
@@ -948,40 +907,59 @@ impl MockClientExecutionContext for MockContext {
     ) -> Result<(), ContextError> {
         ExecutionContext::store_update_height(self, client_id, height, host_height)
     }
-
-    fn store_consensus_state(
-        &mut self,
-        consensus_state_path: ClientConsensusStatePath,
-        consensus_state: MockConsensusState,
-    ) -> Result<(), ContextError> {
-        self.store_consensus_state(consensus_state_path, consensus_state.into())
-    }
 }
 
 impl ClientExecutionContext for MockContext {
     type ClientValidationContext = Self;
     type AnyClientState = HostClientState;
+    type AnyConsensusState = HostConsensusState;
 
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
         client_state: Self::AnyClientState,
     ) -> Result<(), ClientError> {
-        self.store_client_state(client_state_path, client_state);
+        let mut ibc_store = self.ibc_store.lock();
+
+        let client_id = client_state_path.0;
+        let client_record = ibc_store
+            .clients
+            .entry(client_id)
+            .or_insert(MockClientRecord {
+                consensus_states: Default::default(),
+                client_state: Default::default(),
+            });
+
+        client_record.client_state = Some(client_state);
+
+        Ok(())
+    }
+
+    fn store_consensus_state(
+        &mut self,
+        consensus_state_path: ClientConsensusStatePath,
+        consensus_state: Self::AnyConsensusState,
+    ) -> Result<(), ClientError> {
+        let mut ibc_store = self.ibc_store.lock();
+
+        let client_record = ibc_store
+            .clients
+            .entry(consensus_state_path.client_id)
+            .or_insert(MockClientRecord {
+                consensus_states: Default::default(),
+                client_state: Default::default(),
+            });
+
+        let height = Height::new(consensus_state_path.epoch, consensus_state_path.height).unwrap();
+        client_record
+            .consensus_states
+            .insert(height, consensus_state);
 
         Ok(())
     }
 }
 
-impl TmExecutionContext for MockContext {
-    fn store_consensus_state(
-        &mut self,
-        consensus_state_path: ClientConsensusStatePath,
-        consensus_state: TmConsensusState,
-    ) -> Result<(), ContextError> {
-        self.store_consensus_state(consensus_state_path, consensus_state.into())
-    }
-}
+impl TmExecutionContext for MockContext {}
 
 impl ValidationContext for MockContext {
     type ClientValidationContext = Self;

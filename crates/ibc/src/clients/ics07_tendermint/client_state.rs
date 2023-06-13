@@ -490,6 +490,7 @@ impl<E> ClientStateExecution<E> for ClientState
 where
     E: TmExecutionContext,
     <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
+    <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
 {
     fn initialise(
         &self,
@@ -502,7 +503,7 @@ where
         ctx.store_client_state(ClientStatePath::new(client_id), self.clone().into())?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(client_id, &self.latest_height),
-            tm_consensus_state,
+            tm_consensus_state.into(),
         )?;
 
         Ok(())
@@ -534,7 +535,7 @@ where
 
             ctx.store_consensus_state(
                 ClientConsensusStatePath::new(client_id, &new_client_state.latest_height),
-                new_consensus_state,
+                new_consensus_state.into(),
             )?;
             ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
         }
@@ -609,7 +610,7 @@ where
         ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(client_id, &latest_height),
-            new_consensus_state,
+            new_consensus_state.into(),
         )?;
 
         Ok(latest_height)

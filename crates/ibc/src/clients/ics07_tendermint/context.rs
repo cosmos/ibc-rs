@@ -43,11 +43,4 @@ pub trait ValidationContext {
     ) -> Result<Option<Self::AnyConsensusState>, ContextError>;
 }
 
-pub trait ExecutionContext: ValidationContext + ClientExecutionContext {
-    /// Called upon successful client creation and update
-    fn store_consensus_state(
-        &mut self,
-        consensus_state_path: ClientConsensusStatePath,
-        consensus_state: TmConsensusState,
-    ) -> Result<(), ContextError>;
-}
+pub trait ExecutionContext: ValidationContext + ClientExecutionContext {}

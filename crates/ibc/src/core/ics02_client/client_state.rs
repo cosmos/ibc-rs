@@ -13,7 +13,7 @@ use crate::core::ics23_commitment::commitment::{
 };
 use crate::core::ics23_commitment::merkle::MerkleProof;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::path::{ClientStatePath, Path};
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, Path};
 use crate::prelude::*;
 use crate::Height;
 
@@ -119,12 +119,20 @@ pub trait ClientStateValidation<ClientValidationContext> {
 pub trait ClientExecutionContext: Sized {
     type ClientValidationContext;
     type AnyClientState: ClientState<Self::ClientValidationContext, Self>;
+    type AnyConsensusState: ConsensusState;
 
     /// Called upon successful client creation and update
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
         client_state: Self::AnyClientState,
+    ) -> Result<(), ClientError>;
+
+    /// Called upon successful client creation and update
+    fn store_consensus_state(
+        &mut self,
+        consensus_state_path: ClientConsensusStatePath,
+        consensus_state: Self::AnyConsensusState,
     ) -> Result<(), ClientError>;
 }
 
@@ -178,6 +186,8 @@ where
 /// Derive macro that implements `ClientState` for enums containing
 /// variants that implement `ClientState`
 pub use ibc_derive::ClientState;
+
+use super::consensus_state::ConsensusState;
 
 pub trait ClientState<ClientValidationContext, E: ClientExecutionContext>:
     Send
