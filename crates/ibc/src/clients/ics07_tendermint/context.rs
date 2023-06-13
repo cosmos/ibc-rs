@@ -1,6 +1,6 @@
 use crate::{
     core::{
-        ics02_client::client_state::ClientExecutionContext,
+        ics02_client::ClientExecutionContext,
         ics24_host::{identifier::ClientId, path::ClientConsensusStatePath},
         timestamp::Timestamp,
         ContextError,

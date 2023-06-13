@@ -1,7 +1,8 @@
 //! ICS4 (channel) context.
 
 use crate::core::events::IbcEvent;
-use crate::core::ics02_client::client_state::{ClientExecutionContext, ClientState};
+use crate::core::ics02_client::client_state::ClientState;
+use crate::core::ics02_client::ClientExecutionContext;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };

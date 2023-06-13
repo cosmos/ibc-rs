@@ -9,6 +9,7 @@ use crate::clients::ics07_tendermint::{
     ExecutionContext as TmExecutionContext, ValidationContext as TmValidationContext,
     TENDERMINT_CLIENT_TYPE,
 };
+use crate::core::ics02_client::ClientExecutionContext;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
@@ -37,8 +38,8 @@ use crate::clients::ics07_tendermint::consensus_state::{
 };
 use crate::core::dispatch;
 use crate::core::events::IbcEvent;
+use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::client_state::ClientStateCommon;
-use crate::core::ics02_client::client_state::{ClientExecutionContext, ClientState};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;

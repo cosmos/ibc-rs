@@ -5,6 +5,7 @@ mod misbehaviour;
 mod update_client;
 
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::ClientExecutionContext;
 use crate::prelude::*;
 
 use core::cmp::max;
@@ -28,8 +29,7 @@ use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::core::ics02_client::client_state::{
-    ClientExecutionContext, ClientStateCommon, ClientStateExecution, ClientStateValidation,
-    UpdateKind,
+    ClientStateCommon, ClientStateExecution, ClientStateValidation, UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};

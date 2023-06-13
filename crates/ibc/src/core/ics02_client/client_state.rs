@@ -8,12 +8,13 @@ use ibc_proto::google::protobuf::Any;
 
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::ClientError;
+use crate::core::ics02_client::ClientExecutionContext;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use crate::core::ics23_commitment::merkle::MerkleProof;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, Path};
+use crate::core::ics24_host::path::Path;
 use crate::prelude::*;
 use crate::Height;
 
@@ -116,26 +117,6 @@ pub trait ClientStateValidation<ClientValidationContext> {
     ) -> Result<bool, ClientError>;
 }
 
-pub trait ClientExecutionContext: Sized {
-    type ClientValidationContext;
-    type AnyClientState: ClientState<Self::ClientValidationContext, Self>;
-    type AnyConsensusState: ConsensusState;
-
-    /// Called upon successful client creation and update
-    fn store_client_state(
-        &mut self,
-        client_state_path: ClientStatePath,
-        client_state: Self::AnyClientState,
-    ) -> Result<(), ClientError>;
-
-    /// Called upon successful client creation and update
-    fn store_consensus_state(
-        &mut self,
-        consensus_state_path: ClientConsensusStatePath,
-        consensus_state: Self::AnyConsensusState,
-    ) -> Result<(), ClientError>;
-}
-
 pub trait ClientStateExecution<E>
 where
     E: ClientExecutionContext,
@@ -186,8 +167,6 @@ where
 /// Derive macro that implements `ClientState` for enums containing
 /// variants that implement `ClientState`
 pub use ibc_derive::ClientState;
-
-use super::consensus_state::ConsensusState;
 
 pub trait ClientState<ClientValidationContext, E: ClientExecutionContext>:
     Send

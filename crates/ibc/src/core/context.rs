@@ -31,8 +31,9 @@ use crate::core::router::Router;
 use crate::core::timestamp::Timestamp;
 use crate::Height;
 
-use super::ics02_client::client_state::{ClientExecutionContext, ClientState};
+use super::ics02_client::client_state::ClientState;
 use super::ics02_client::consensus_state::ConsensusState;
+use super::ics02_client::ClientExecutionContext;
 
 /// Top-level error
 #[derive(Debug, Display, From)]

@@ -1,3 +1,4 @@
+use crate::core::ics02_client::ClientExecutionContext;
 use crate::prelude::*;
 
 use core::time::Duration;
@@ -7,8 +8,7 @@ use ibc_proto::ibc::mock::ClientState as RawMockClientState;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::client_state::{
-    ClientExecutionContext, ClientStateCommon, ClientStateExecution, ClientStateValidation,
-    UpdateKind,
+    ClientStateCommon, ClientStateExecution, ClientStateValidation, UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
