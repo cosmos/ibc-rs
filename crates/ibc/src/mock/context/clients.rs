@@ -1,4 +1,5 @@
-//! Implement client contexts for `MockContext`
+//! Client context implementations for `MockContext`
+
 use crate::core::ics02_client::ClientExecutionContext;
 use crate::core::ics24_host::path::ClientStatePath;
 use crate::prelude::*;
