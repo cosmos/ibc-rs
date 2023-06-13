@@ -36,8 +36,8 @@ std = [
     "tendermint/clock",
     "tendermint/std",
 ]
-parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info"]
-borsh = ["dep:borsh"]
+parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-proto/parity-scale-codec"]
+borsh = ["dep:borsh", "ibc-proto/borsh"]
 
 # This feature is required for token transfer (ICS-20)
 serde = ["dep:serde", "dep:serde_derive", "serde_json", "erased-serde"]
@@ -49,9 +49,9 @@ mocks-no-std = ["cfg-if"]
 
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
-ibc-proto = { version = "0.30.0", default-features = false, features = ["parity-scale-codec", "borsh"] }
+ibc-proto = { version = "0.30.0", default-features = false }
 ics23 = { version = "0.9.0", default-features = false, features = ["host-functions"] }
-time = { version = ">=0.3.0, <0.3.22", default-features = false }
+time = { version = ">=0.3.0, <0.3.23", default-features = false }
 serde_derive = { version = "1.0.104", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
 serde_json = { version = "1", default-features = false, optional = true }
