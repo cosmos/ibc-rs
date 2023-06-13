@@ -7,10 +7,14 @@ use core::marker::{Send, Sync};
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::core::timestamp::Timestamp;
 
-/// Derive macro that implements `ConsensusState` for enums containing
-/// variants that implement `ConsensusState`
+/// Derive macro that implements [`ConsensusState`] for enums containing
+/// variants that implement [`ConsensusState`]
 pub use ibc_derive::ConsensusState;
 
+/// Defines methods that all `ConsensusState`s should provide.
+/// 
+/// One can think of a "consensus state" as a pruned header, to be stored on chain. In other words,
+/// a consensus state only contains the header's information needed by IBC message handlers.
 pub trait ConsensusState: Send + Sync {
     /// Commitment root of the consensus state, which is used for key-value pair verification.
     fn root(&self) -> &CommitmentRoot;
