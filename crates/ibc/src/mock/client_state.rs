@@ -19,7 +19,6 @@ use crate::core::ics23_commitment::merkle::MerkleProof;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
-use crate::core::timestamp::Timestamp;
 use crate::mock::client_state::client_type as mock_client_type;
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
@@ -27,10 +26,7 @@ use crate::mock::misbehaviour::Misbehaviour;
 
 use crate::Height;
 
-use crate::core::ContextError;
-
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
-
 pub const MOCK_CLIENT_TYPE: &str = "9999-mock";
 
 pub fn client_type() -> ClientType {
@@ -257,31 +253,9 @@ impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for
     }
 }
 
-pub trait MockClientExecutionContext: ClientExecutionContext {
-    /// Returns the current height of the local chain.
-    fn host_height(&self) -> Result<Height, ContextError>;
-
-    /// Returns the current timestamp of the local chain.
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
-
-    fn store_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), ContextError>;
-
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_height: Height,
-    ) -> Result<(), ContextError>;
-}
-
 impl<E> ClientStateExecution<E> for MockClientState
 where
-    E: MockClientExecutionContext,
+    E: ClientExecutionContext,
     <E as ClientExecutionContext>::AnyClientState: From<MockClientState>,
     <E as ClientExecutionContext>::AnyConsensusState: From<MockConsensusState>,
 {
@@ -293,12 +267,6 @@ where
     ) -> Result<(), ClientError> {
         let mock_consensus_state = MockConsensusState::try_from(consensus_state)?;
 
-        ctx.store_update_time(
-            client_id.clone(),
-            self.latest_height(),
-            ctx.host_timestamp()?,
-        )?;
-        ctx.store_update_height(client_id.clone(), self.latest_height(), ctx.host_height()?)?;
         ctx.store_client_state(ClientStatePath::new(client_id), (*self).into())?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(client_id, &self.latest_height()),
@@ -320,16 +288,6 @@ where
         let new_client_state = MockClientState::new(header);
         let new_consensus_state = MockConsensusState::new(header);
 
-        ctx.store_update_time(
-            client_id.clone(),
-            new_client_state.latest_height(),
-            ctx.host_timestamp()?,
-        )?;
-        ctx.store_update_height(
-            client_id.clone(),
-            new_client_state.latest_height(),
-            ctx.host_height()?,
-        )?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(client_id, &new_client_state.latest_height()),
             new_consensus_state.into(),

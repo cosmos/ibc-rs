@@ -66,9 +66,7 @@ use crate::mock::ics18_relayer::error::RelayerError;
 use crate::signer::Signer;
 use crate::Height;
 
-use super::client_state::{
-    MockClientExecutionContext, MOCK_CLIENT_STATE_TYPE_URL, MOCK_CLIENT_TYPE,
-};
+use super::client_state::{MOCK_CLIENT_STATE_TYPE_URL, MOCK_CLIENT_TYPE};
 use super::consensus_state::MOCK_CONSENSUS_STATE_TYPE_URL;
 
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
@@ -879,34 +877,6 @@ impl TmValidationContext for MockContext {
             }
         }
         Ok(None)
-    }
-}
-
-impl MockClientExecutionContext for MockContext {
-    fn host_height(&self) -> Result<Height, ContextError> {
-        ValidationContext::host_height(self)
-    }
-
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
-        ValidationContext::host_timestamp(self)
-    }
-
-    fn store_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), ContextError> {
-        ExecutionContext::store_update_time(self, client_id, height, timestamp)
-    }
-
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_height: Height,
-    ) -> Result<(), ContextError> {
-        ExecutionContext::store_update_height(self, client_id, height, host_height)
     }
 }
 
