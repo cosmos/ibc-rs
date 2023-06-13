@@ -32,7 +32,7 @@ pub enum UpdateKind {
 }
 
 /// `ClientState` methods needed in both validation and execution.
-/// 
+///
 /// They do not require access to a client `ValidationContext` nor
 /// `ExecutionContext`.
 pub trait ClientStateCommon {
@@ -95,10 +95,10 @@ pub trait ClientStateCommon {
 
 /// `ClientState` methods which require access to the client's
 /// `ValidationContext`.
-/// 
+///
 /// The `ClientValidationContext` enables the light client implementation to
 /// define its own `ValidationContext` trait and use it in its implementation.
-/// 
+///
 /// ```ignore
 /// impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for MyClientState
 /// where
@@ -106,14 +106,14 @@ pub trait ClientStateCommon {
 /// {
 ///   // `MyValidationContext` methods available
 /// }
-/// 
+///
 /// trait MyValidationContext {
-///   // My Context methods 
+///   // My Context methods
 /// }
 /// ```
 pub trait ClientStateValidation<ClientValidationContext> {
-    /// Performs basic validation on the `consensus_state`. 
-    /// 
+    /// Performs basic validation on the `consensus_state`.
+    ///
     /// Notably, an implementation should verify that it can properly
     /// deserialize the object into the expected format.
     fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError>;
@@ -145,7 +145,7 @@ pub trait ClientStateValidation<ClientValidationContext> {
 
 /// `ClientState` methods which require access to the client's
 /// `ExecutionContext`.
-/// 
+///
 /// A client can define its own `ExecutionContext` in a manner analogous to how
 /// it can define a `ValidationContext` in [`ClientStateValidation`]. The one
 /// difference is every client's `ExecutionContext` must have
@@ -156,7 +156,7 @@ where
     E: ClientExecutionContext,
 {
     /// Initialises the client with the initial client and consensus states.
-    /// 
+    ///
     /// Most clients will want to call `E::store_client_state` and
     /// `E::store_consensus_state`.
     fn initialise(
@@ -204,7 +204,7 @@ where
 
 /// Derive macro that implements [`ClientState`] for enums containing variants
 /// that implement [`ClientState`].
-/// 
+///
 /// The macro expects the attribute `#[generics(ClientValidationContext = <...>,
 /// ClientExecutionContext = <...>)]` which specifies [`ClientState`]'s generic
 /// arguments to be defined.
@@ -217,7 +217,7 @@ pub use ibc_derive::ClientState;
 /// One only needs to implement [`ClientStateCommon`], [`ClientStateValidation`]
 /// and [`ClientStateExecution`]; a blanket implementation will automatically
 /// implement `ClientState`.
-/// 
+///
 /// Refer to [`ClientStateValidation`] and [`ClientStateExecution`] to learn
 /// more about what both generic parameters represent.
 pub trait ClientState<ClientValidationContext, E: ClientExecutionContext>:

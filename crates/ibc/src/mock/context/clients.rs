@@ -22,10 +22,6 @@ use super::{AnyClientState, AnyConsensusState, MockClientRecord, MockContext};
 impl TmValidationContext for MockContext {
     type AnyConsensusState = AnyConsensusState;
 
-    fn host_height(&self) -> Result<Height, ContextError> {
-        ValidationContext::host_height(self)
-    }
-
     fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
         ValidationContext::host_timestamp(self)
     }

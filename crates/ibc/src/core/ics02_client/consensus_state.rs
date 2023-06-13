@@ -12,7 +12,7 @@ use crate::core::timestamp::Timestamp;
 pub use ibc_derive::ConsensusState;
 
 /// Defines methods that all `ConsensusState`s should provide.
-/// 
+///
 /// One can think of a "consensus state" as a pruned header, to be stored on chain. In other words,
 /// a consensus state only contains the header's information needed by IBC message handlers.
 pub trait ConsensusState: Send + Sync {

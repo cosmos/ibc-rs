@@ -13,9 +13,6 @@ use super::consensus_state::ConsensusState as TmConsensusState;
 pub trait ValidationContext {
     type AnyConsensusState: TryInto<TmConsensusState, Error = &'static str>;
 
-    /// Returns the current height of the local chain.
-    fn host_height(&self) -> Result<Height, ContextError>;
-
     /// Returns the current timestamp of the local chain.
     fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
 
