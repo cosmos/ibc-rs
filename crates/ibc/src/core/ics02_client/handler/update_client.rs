@@ -150,7 +150,7 @@ mod tests {
     use crate::downcast;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::client_state::MockClientState;
-    use crate::mock::context::{HostConsensusState, MockContext};
+    use crate::mock::context::{AnyConsensusState, MockContext};
     use crate::mock::header::MockHeader;
     use crate::mock::host::{HostBlock, HostType};
     use crate::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
@@ -350,7 +350,7 @@ mod tests {
         {
             // FIXME: idea: we need to update the light client with the latest block from
             // chain B
-            let consensus_state: HostConsensusState = block.clone().into();
+            let consensus_state: AnyConsensusState = block.clone().into();
 
             let tm_block = downcast!(block.clone() => HostBlock::SyntheticTendermint).unwrap();
 

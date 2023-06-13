@@ -19,7 +19,7 @@ use crate::mock::header::MockHeader;
 use crate::prelude::*;
 use crate::Height;
 
-use super::context::HostConsensusState;
+use super::context::AnyConsensusState;
 
 /// Defines the different types of host chains that a mock context can emulate.
 /// The variants are as follows:
@@ -126,14 +126,14 @@ impl HostBlock {
     }
 }
 
-impl From<SyntheticTmBlock> for HostConsensusState {
+impl From<SyntheticTmBlock> for AnyConsensusState {
     fn from(light_block: SyntheticTmBlock) -> Self {
         let cs = TmConsensusState::from(light_block.header().clone());
         cs.into()
     }
 }
 
-impl From<HostBlock> for HostConsensusState {
+impl From<HostBlock> for AnyConsensusState {
     fn from(any_block: HostBlock) -> Self {
         match any_block {
             HostBlock::Mock(mock_header) => MockConsensusState::new(*mock_header).into(),

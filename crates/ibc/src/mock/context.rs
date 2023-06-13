@@ -314,7 +314,7 @@ impl MockContext {
         let client_type = client_type.unwrap_or_else(mock_client_type);
         let now = Timestamp::now();
 
-        let (client_state, consensus_state): (Option<HostClientState>, HostConsensusState) =
+        let (client_state, consensus_state): (Option<AnyClientState>, AnyConsensusState) =
             if client_type.as_str() == MOCK_CLIENT_TYPE {
                 // If it's a mock client, create the corresponding mock states.
                 (
@@ -581,7 +581,7 @@ impl MockContext {
             .insert(port_id, module_id);
     }
 
-    pub fn latest_client_states(&self, client_id: &ClientId) -> HostClientState {
+    pub fn latest_client_states(&self, client_id: &ClientId) -> AnyClientState {
         self.ibc_store.lock().clients[client_id]
             .client_state
             .as_ref()
@@ -593,7 +593,7 @@ impl MockContext {
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> HostConsensusState {
+    ) -> AnyConsensusState {
         self.ibc_store.lock().clients[client_id]
             .consensus_states
             .get(height)
@@ -620,14 +620,14 @@ type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
            ClientExecutionContext = MockContext)
 ]
 #[mock]
-pub enum HostClientState {
+pub enum AnyClientState {
     Tendermint(TmClientState),
     Mock(MockClientState),
 }
 
-impl Protobuf<Any> for HostClientState {}
+impl Protobuf<Any> for AnyClientState {}
 
-impl TryFrom<Any> for HostClientState {
+impl TryFrom<Any> for AnyClientState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
@@ -643,24 +643,24 @@ impl TryFrom<Any> for HostClientState {
     }
 }
 
-impl From<HostClientState> for Any {
-    fn from(host_client_state: HostClientState) -> Self {
+impl From<AnyClientState> for Any {
+    fn from(host_client_state: AnyClientState) -> Self {
         match host_client_state {
-            HostClientState::Tendermint(cs) => cs.into(),
-            HostClientState::Mock(cs) => cs.into(),
+            AnyClientState::Tendermint(cs) => cs.into(),
+            AnyClientState::Mock(cs) => cs.into(),
         }
     }
 }
 
 #[derive(Debug, Clone, From, TryInto, PartialEq, ConsensusState)]
-pub enum HostConsensusState {
+pub enum AnyConsensusState {
     Tendermint(TmConsensusState),
     Mock(MockConsensusState),
 }
 
-impl Protobuf<Any> for HostConsensusState {}
+impl Protobuf<Any> for AnyConsensusState {}
 
-impl TryFrom<Any> for HostConsensusState {
+impl TryFrom<Any> for AnyConsensusState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
@@ -676,11 +676,11 @@ impl TryFrom<Any> for HostConsensusState {
     }
 }
 
-impl From<HostConsensusState> for Any {
-    fn from(host_consensus_state: HostConsensusState) -> Self {
+impl From<AnyConsensusState> for Any {
+    fn from(host_consensus_state: AnyConsensusState) -> Self {
         match host_consensus_state {
-            HostConsensusState::Tendermint(cs) => cs.into(),
-            HostConsensusState::Mock(cs) => cs.into(),
+            AnyConsensusState::Tendermint(cs) => cs.into(),
+            AnyConsensusState::Mock(cs) => cs.into(),
         }
     }
 }
@@ -690,10 +690,10 @@ impl From<HostConsensusState> for Any {
 #[derive(Clone, Debug)]
 pub struct MockClientRecord {
     /// The client state (representing only the latest height at the moment).
-    pub client_state: Option<HostClientState>,
+    pub client_state: Option<AnyClientState>,
 
     /// Mapping of heights to consensus states for this client.
-    pub consensus_states: BTreeMap<Height, HostConsensusState>,
+    pub consensus_states: BTreeMap<Height, AnyConsensusState>,
 }
 
 /// An object that stores all IBC related data.
@@ -756,7 +756,7 @@ impl RelayerContext for MockContext {
         ValidationContext::host_height(self)
     }
 
-    fn query_client_full_state(&self, client_id: &ClientId) -> Option<HostClientState> {
+    fn query_client_full_state(&self, client_id: &ClientId) -> Option<AnyClientState> {
         // Forward call to Ics2.
         self.client_state(client_id).ok()
     }
@@ -803,7 +803,7 @@ impl Router for MockContext {
 }
 
 impl TmValidationContext for MockContext {
-    type AnyConsensusState = HostConsensusState;
+    type AnyConsensusState = AnyConsensusState;
 
     fn host_height(&self) -> Result<Height, ContextError> {
         ValidationContext::host_height(self)
@@ -911,8 +911,8 @@ impl MockClientExecutionContext for MockContext {
 
 impl ClientExecutionContext for MockContext {
     type ClientValidationContext = Self;
-    type AnyClientState = HostClientState;
-    type AnyConsensusState = HostConsensusState;
+    type AnyClientState = AnyClientState;
+    type AnyConsensusState = AnyConsensusState;
 
     fn store_client_state(
         &mut self,
@@ -964,8 +964,8 @@ impl TmExecutionContext for MockContext {}
 impl ValidationContext for MockContext {
     type ClientValidationContext = Self;
     type E = Self;
-    type AnyConsensusState = HostConsensusState;
-    type AnyClientState = HostClientState;
+    type AnyConsensusState = AnyConsensusState;
+    type AnyClientState = AnyClientState;
 
     fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError> {
         match self.ibc_store.lock().clients.get(client_id) {
@@ -1001,7 +1001,7 @@ impl ValidationContext for MockContext {
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<HostConsensusState, ContextError> {
+    ) -> Result<AnyConsensusState, ContextError> {
         let client_id = &client_cons_state_path.client_id;
         let height = Height::new(client_cons_state_path.epoch, client_cons_state_path.height)?;
         match self.ibc_store.lock().clients.get(client_id) {
@@ -1034,7 +1034,7 @@ impl ValidationContext for MockContext {
             .unwrap())
     }
 
-    fn host_consensus_state(&self, height: &Height) -> Result<HostConsensusState, ContextError> {
+    fn host_consensus_state(&self, height: &Height) -> Result<AnyConsensusState, ContextError> {
         match self.host_block(height) {
             Some(block_ref) => Ok(block_ref.clone().into()),
             None => Err(ClientError::MissingLocalConsensusState { height: *height }),

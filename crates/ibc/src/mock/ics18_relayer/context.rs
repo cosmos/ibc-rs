@@ -1,4 +1,4 @@
-use crate::mock::context::HostClientState;
+use crate::mock::context::AnyClientState;
 use crate::prelude::*;
 
 use crate::core::ics02_client::header::Header;
@@ -19,7 +19,7 @@ pub trait RelayerContext {
 
     /// Returns this client state for the given `client_id` on this chain.
     /// Wrapper over the `/abci_query?path=..` endpoint.
-    fn query_client_full_state(&self, client_id: &ClientId) -> Option<HostClientState>;
+    fn query_client_full_state(&self, client_id: &ClientId) -> Option<AnyClientState>;
 
     /// Returns the most advanced header of this chain.
     fn query_latest_header(&self) -> Option<Box<dyn Header>>;
