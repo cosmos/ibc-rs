@@ -1,6 +1,9 @@
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
+use crate::core::{
+    ics24_host::path::{ClientConsensusStatePath, ClientStatePath},
+    ContextError,
+};
 
-use super::{client_state::ClientState, consensus_state::ConsensusState, error::ClientError};
+use super::{client_state::ClientState, consensus_state::ConsensusState};
 
 pub trait ClientExecutionContext: Sized {
     type ClientValidationContext;
@@ -12,12 +15,12 @@ pub trait ClientExecutionContext: Sized {
         &mut self,
         client_state_path: ClientStatePath,
         client_state: Self::AnyClientState,
-    ) -> Result<(), ClientError>;
+    ) -> Result<(), ContextError>;
 
     /// Called upon successful client creation and update
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
         consensus_state: Self::AnyConsensusState,
-    ) -> Result<(), ClientError>;
+    ) -> Result<(), ContextError>;
 }

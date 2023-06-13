@@ -919,7 +919,7 @@ impl ClientExecutionContext for MockContext {
         &mut self,
         client_state_path: ClientStatePath,
         client_state: Self::AnyClientState,
-    ) -> Result<(), ClientError> {
+    ) -> Result<(), ContextError> {
         let mut ibc_store = self.ibc_store.lock();
 
         let client_id = client_state_path.0;
@@ -940,7 +940,7 @@ impl ClientExecutionContext for MockContext {
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
         consensus_state: Self::AnyConsensusState,
-    ) -> Result<(), ClientError> {
+    ) -> Result<(), ContextError> {
         let mut ibc_store = self.ibc_store.lock();
 
         let client_record = ibc_store
