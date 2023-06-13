@@ -10,6 +10,7 @@ use crate::{
 
 use super::consensus_state::ConsensusState as TmConsensusState;
 
+/// Client's context required during validation
 pub trait ValidationContext {
     type AnyConsensusState: TryInto<TmConsensusState, Error = &'static str>;
 
@@ -40,4 +41,5 @@ pub trait ValidationContext {
     ) -> Result<Option<Self::AnyConsensusState>, ContextError>;
 }
 
+/// Client's context required during execution.
 pub trait ExecutionContext: ValidationContext + ClientExecutionContext {}
