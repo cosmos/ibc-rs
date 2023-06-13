@@ -31,6 +31,10 @@ pub enum UpdateKind {
     SubmitMisbehaviour,
 }
 
+/// `ClientState` methods needed in both validation and execution.
+/// 
+/// They do not require access to a client `ValidationContext` nor
+/// `ExecutionContext`.
 pub trait ClientStateCommon {
     /// Type of client associated with this state (eg. Tendermint)
     fn client_type(&self) -> ClientType;
@@ -89,7 +93,29 @@ pub trait ClientStateCommon {
     ) -> Result<(), ClientError>;
 }
 
+/// `ClientState` methods which require access to the client's
+/// `ValidationContext`.
+/// 
+/// The `ClientValidationContext` enables the light client implementation to
+/// define its own `ValidationContext` trait and use it in its implementation.
+/// 
+/// ```ignore
+/// impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for MyClientState
+/// where
+///     ClientValidationContext: MyValidationContext,
+/// {
+///   // `MyValidationContext` methods available
+/// }
+/// 
+/// trait MyValidationContext {
+///   // My Context methods 
+/// }
+/// ```
 pub trait ClientStateValidation<ClientValidationContext> {
+    /// Performs basic validation on the `consensus_state`. 
+    /// 
+    /// Notably, an implementation should verify that it can properly
+    /// deserialize the object into the expected format.
     fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError>;
 
     /// verify_client_message must verify a client_message. A client_message
@@ -117,10 +143,22 @@ pub trait ClientStateValidation<ClientValidationContext> {
     ) -> Result<bool, ClientError>;
 }
 
+/// `ClientState` methods which require access to the client's
+/// `ExecutionContext`.
+/// 
+/// A client can define its own `ExecutionContext` in a manner analogous to how
+/// it can define a `ValidationContext` in [`ClientStateValidation`]. The one
+/// difference is every client's `ExecutionContext` must have
+/// [`ClientExecutionContext`] as a supertrait, which provides a set of common
+/// methods to store a client state and consensus state.
 pub trait ClientStateExecution<E>
 where
     E: ClientExecutionContext,
 {
+    /// Initialises the client with the initial client and consensus states.
+    /// 
+    /// Most clients will want to call `E::store_client_state` and
+    /// `E::store_consensus_state`.
     fn initialise(
         &self,
         ctx: &mut E,
