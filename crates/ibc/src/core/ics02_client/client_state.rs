@@ -164,13 +164,24 @@ where
     ) -> Result<Height, ClientError>;
 }
 
-/// Derive macro that implements [`ClientState`] for enums containing
-/// variants that implement [`ClientState`].
+/// Derive macro that implements [`ClientState`] for enums containing variants
+/// that implement [`ClientState`].
 /// 
-/// The macro expects the attribute `#[generics(ClientValidationContext = <...>, ClientExecutionContext = <...>)]`
-/// which specifies [`ClientState`]'s generic arguments to be defined.
+/// The macro expects the attribute `#[generics(ClientValidationContext = <...>,
+/// ClientExecutionContext = <...>)]` which specifies [`ClientState`]'s generic
+/// arguments to be defined.
 pub use ibc_derive::ClientState;
 
+/// Primary client trait. Defines all the methods that clients must implement.
+///
+/// `ClientState` is broken up in 3 separate traits to avoid needing to use
+/// fully qualified syntax for every method call (see ADR 7 for more details).
+/// One only needs to implement [`ClientStateCommon`], [`ClientStateValidation`]
+/// and [`ClientStateExecution`]; a blanket implementation will automatically
+/// implement `ClientState`.
+/// 
+/// Refer to [`ClientStateValidation`] and [`ClientStateExecution`] to learn
+/// more about what both generic parameters represent.
 pub trait ClientState<ClientValidationContext, E: ClientExecutionContext>:
     Send
     + Sync
