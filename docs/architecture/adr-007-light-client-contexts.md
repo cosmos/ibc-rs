@@ -34,10 +34,10 @@ The `ClientState` functionality is split into 3 traits:
 Then, `ClientState` is defined as
 
 ```rust
-pub trait ClientState<ClientValidationContext, ClientExecutionContext>:
+pub trait ClientState<ClientValidationContext, E: ClientExecutionContext>:
     ClientStateCommon
     + ClientStateValidation<ClientValidationContext>
-    + ClientStateExecution<ClientExecutionContext>
+    + ClientStateExecution<E>
     // + ...
 {
 }
@@ -45,7 +45,9 @@ pub trait ClientState<ClientValidationContext, ClientExecutionContext>:
 
 A blanket implementation implements `ClientState` when these 3 traits are implemented on a given type. For details as to why `ClientState` was split into 3 traits, see the section "Why are there 3 `ClientState` traits?".
 
-The `ClientStateValidation` and `ClientStateExecution` traits are the most important ones, as they are the ones that enable light clients to define `Context` traits for the host to implement. Below, we discuss `ClientStateValidation`; `ClientStateExecution` works analogously.
+The `ClientStateValidation` and `ClientStateExecution` traits are the most important ones, as they are the ones that enable light clients to define `Context` traits for the host to implement.
+
+#### `ClientStateValidation`
 
 Say the implementation of a light client needs a `get_resource_Y()` method from the host in `ClientState::verify_client_message()`. The implementor would first define a trait for the host to implement.
 
@@ -75,6 +77,37 @@ where
 ```
 
 This is the core idea of this ADR. Everything else is a consequence of wanting to make this work.
+
+#### `ClientStateExecution`
+
+`ClientStateExecution` is defined a little differently from `ClientStateValidation`.
+
+```rust
+pub trait ClientStateExecution<E>
+where
+    E: ClientExecutionContext,
+{ ... }
+```
+
+where `ClientExecutionContext` is defined as (simplified)
+
+```rust
+pub trait ClientExecutionContext: Sized {
+    // ... a few associated types 
+
+    /// Called upon successful client creation and update
+    fn store_client_state(
+        ...
+    ) -> Result<(), ContextError>;
+
+    /// Called upon successful client creation and update
+    fn store_consensus_state(
+        ...
+    ) -> Result<(), ContextError>;
+}
+```
+
+Under our current architecture (inspired from ibc-go's [ADR 6]), clients have the responsibility to store the `ClientState` and `ConsensusState`. Hence, `ClientExecutionContext` defines a uniform interface that clients can use to store their `ClientState` and `ConsensusState`. It also means that the host only needs to implement these methods once, as opposed to once per client.
 
 ### Changes to `ValidationContext` and `ExecutionContext`
 
@@ -203,8 +236,6 @@ We ended up having to write our own custom derive macros because existing crates
     + downcasting fails at runtime; these errors are now compile-time
 
 ### Negative
-+ If 2 light clients need the same (or very similar) methods, then the host will need to reimplement the same method multiple times
-    + Although mitigatable by implementing once in a function and delegating all trait methods to that implementation, it is at the very least additional boilerplate
 + Increased complexity.
 + Harder to document. 
     + Specifically, we do not write any trait bounds on the `Client{Validation, Execution}Context` generic parameters. The effective trait bounds are spread across all light client implementations that a given host uses.
