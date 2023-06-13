@@ -5,6 +5,14 @@ use crate::core::{
 
 use super::{client_state::ClientState, consensus_state::ConsensusState};
 
+/// Defines the methods that all client `ExecutionContext`s (precisely the
+/// generic parameter of
+/// [`crate::core::ics02_client::client_state::ClientStateExecution`] ) must
+/// implement.
+/// 
+/// Specifically, clients have the responsibility to store their client state
+/// and consensus states. This trait defines a uniform interface to do that for
+/// all clients.
 pub trait ClientExecutionContext: Sized {
     type ClientValidationContext;
     type AnyClientState: ClientState<Self::ClientValidationContext, Self>;
