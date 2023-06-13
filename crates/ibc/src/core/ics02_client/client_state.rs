@@ -164,8 +164,11 @@ where
     ) -> Result<Height, ClientError>;
 }
 
-/// Derive macro that implements `ClientState` for enums containing
-/// variants that implement `ClientState`
+/// Derive macro that implements [`ClientState`] for enums containing
+/// variants that implement [`ClientState`].
+/// 
+/// The macro expects the attribute `#[generics(ClientValidationContext = <...>, ClientExecutionContext = <...>)]`
+/// which specifies [`ClientState`]'s generic arguments to be defined.
 pub use ibc_derive::ClientState;
 
 pub trait ClientState<ClientValidationContext, E: ClientExecutionContext>:
