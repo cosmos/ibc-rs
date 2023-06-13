@@ -107,7 +107,7 @@ pub trait ClientExecutionContext: Sized {
 }
 ```
 
-Under our current architecture (inspired from ibc-go's [ADR 6]), clients have the responsibility to store the `ClientState` and `ConsensusState`. Hence, `ClientExecutionContext` defines a uniform interface that clients can use to store their `ClientState` and `ConsensusState`. It also means that the host only needs to implement these methods once, as opposed to once per client.
+Under our current architecture (inspired from ibc-go's [ADR 6]), clients have the responsibility to store the `ClientState` and `ConsensusState`. Hence, `ClientExecutionContext` defines a uniform interface that clients can use to store their `ClientState` and `ConsensusState`. It also means that the host only needs to implement these methods once, as opposed to once per client. Note that clients who don't store consensus states (e.g. solomachine) can simply leave the implementation of `store_consensus_state()` empty (or return an error, whichever is most appropriate).
 
 ### Changes to `ValidationContext` and `ExecutionContext`
 
