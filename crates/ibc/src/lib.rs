@@ -33,10 +33,10 @@
 //! (e.g. [`ExecutionContext`](core::ExecutionContext)) while processing `M`. If a transaction on your
 //! blockchain contains multiple messages, then typically the state modifications from all messages
 //! is expected to be rolled back as well.
-//! 
+//!
 //! # Note
-//! 
-//! Currently, the `serde` feature (required by the token transfer app) does not work in `no_std` environments. 
+//!
+//! Currently, the `serde` feature (required by the token transfer app) does not work in `no_std` environments.
 //! See context [here](https://github.com/cosmos/ibc-proto-rs/pull/92). If this is a blocker for you, please
 //! open a Github issue.
 //!
