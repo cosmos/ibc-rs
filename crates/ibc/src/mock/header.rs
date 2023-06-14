@@ -71,17 +71,15 @@ impl MockHeader {
     }
 
     pub fn new(height: Height) -> Self {
-        cfg_if::cfg_if! {
-            if #[cfg(any(test, feature = "std"))]  {
-                Self {
-                    height,
-                    timestamp: Timestamp::now(),
-                }
-            } else {
-                Self {
-                    height,
-                    timestamp: Timestamp::none(),
-                }
+        if cfg!(any(test, feature = "std")) {
+            Self {
+                height,
+                timestamp: Timestamp::now(),
+            }
+        } else {
+            Self {
+                height,
+                timestamp: Timestamp::none(),
             }
         }
     }

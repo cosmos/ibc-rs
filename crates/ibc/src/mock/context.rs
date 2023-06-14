@@ -1824,7 +1824,7 @@ mod tests {
         );
         ctx.add_route(ModuleId::new("foomodule".to_string()), FooModule::default())
             .unwrap();
-        ctx.add_route(ModuleId::new("barmodule".to_string()), BarModule::default())
+        ctx.add_route(ModuleId::new("barmodule".to_string()), BarModule)
             .unwrap();
 
         let mut on_recv_packet_result = |module_id: &'static str| {
