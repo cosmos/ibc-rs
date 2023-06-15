@@ -1,6 +1,7 @@
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
+use ibc_proto::protobuf::Protobuf;
 
 use crate::core::context::RouterError;
 use crate::core::ics02_client::msgs::{
@@ -13,7 +14,7 @@ use crate::core::ics04_channel::msgs::{
     acknowledgement, chan_close_confirm, chan_close_init, chan_open_ack, chan_open_confirm,
     chan_open_init, chan_open_try, recv_packet, timeout, timeout_on_close, ChannelMsg, PacketMsg,
 };
-use ibc_proto::protobuf::Protobuf;
+use crate::Signer;
 
 /// Trait to be implemented by all IBC messages
 pub trait Msg: Clone {
@@ -21,6 +22,10 @@ pub trait Msg: Clone {
 
     /// Unique type identifier for this message, to support encoding to/from `prost_types::Any`.
     fn type_url(&self) -> String;
+
+    fn signer(&self) -> Signer {
+        Signer::new_empty()
+    }
 
     fn get_sign_bytes(self) -> Vec<u8> {
         let raw_msg: Self::Raw = self.into();
@@ -42,6 +47,70 @@ pub enum MsgEnvelope {
     Connection(ConnectionMsg),
     Channel(ChannelMsg),
     Packet(PacketMsg),
+}
+
+impl MsgEnvelope {
+    pub fn signer(&self) -> Signer {
+        match self {
+            MsgEnvelope::Client(msg) => match msg {
+                ClientMsg::CreateClient(msg) => msg.signer(),
+                ClientMsg::UpdateClient(msg) => msg.signer(),
+                ClientMsg::UpgradeClient(msg) => msg.signer(),
+                ClientMsg::Misbehaviour(msg) => msg.signer(),
+            },
+            MsgEnvelope::Connection(msg) => match msg {
+                ConnectionMsg::OpenInit(msg) => msg.signer(),
+                ConnectionMsg::OpenTry(msg) => msg.signer(),
+                ConnectionMsg::OpenAck(msg) => msg.signer(),
+                ConnectionMsg::OpenConfirm(msg) => msg.signer(),
+            },
+            MsgEnvelope::Channel(msg) => match msg {
+                ChannelMsg::OpenInit(msg) => msg.signer(),
+                ChannelMsg::OpenTry(msg) => msg.signer(),
+                ChannelMsg::OpenAck(msg) => msg.signer(),
+                ChannelMsg::OpenConfirm(msg) => msg.signer(),
+                ChannelMsg::CloseInit(msg) => msg.signer(),
+                ChannelMsg::CloseConfirm(msg) => msg.signer(),
+            },
+            MsgEnvelope::Packet(msg) => match msg {
+                PacketMsg::Recv(msg) => msg.signer(),
+                PacketMsg::Ack(msg) => msg.signer(),
+                PacketMsg::Timeout(msg) => msg.signer(),
+                PacketMsg::TimeoutOnClose(msg) => msg.signer(),
+            },
+        }
+    }
+
+    pub fn type_url(&self) -> String {
+        match self {
+            MsgEnvelope::Client(msg) => match msg {
+                ClientMsg::CreateClient(msg) => msg.type_url(),
+                ClientMsg::UpdateClient(msg) => msg.type_url(),
+                ClientMsg::UpgradeClient(msg) => msg.type_url(),
+                ClientMsg::Misbehaviour(msg) => msg.type_url(),
+            },
+            MsgEnvelope::Connection(msg) => match msg {
+                ConnectionMsg::OpenInit(msg) => msg.type_url(),
+                ConnectionMsg::OpenTry(msg) => msg.type_url(),
+                ConnectionMsg::OpenAck(msg) => msg.type_url(),
+                ConnectionMsg::OpenConfirm(msg) => msg.type_url(),
+            },
+            MsgEnvelope::Channel(msg) => match msg {
+                ChannelMsg::OpenInit(msg) => msg.type_url(),
+                ChannelMsg::OpenTry(msg) => msg.type_url(),
+                ChannelMsg::OpenAck(msg) => msg.type_url(),
+                ChannelMsg::OpenConfirm(msg) => msg.type_url(),
+                ChannelMsg::CloseInit(msg) => msg.type_url(),
+                ChannelMsg::CloseConfirm(msg) => msg.type_url(),
+            },
+            MsgEnvelope::Packet(msg) => match msg {
+                PacketMsg::Recv(msg) => msg.type_url(),
+                PacketMsg::Ack(msg) => msg.type_url(),
+                PacketMsg::Timeout(msg) => msg.type_url(),
+                PacketMsg::TimeoutOnClose(msg) => msg.type_url(),
+            },
+        }
+    }
 }
 
 impl TryFrom<Any> for MsgEnvelope {

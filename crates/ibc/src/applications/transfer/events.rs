@@ -1,8 +1,8 @@
 //! Defines all token transfer event types
 
-use crate::applications::transfer::acknowledgement::TokenTransferAcknowledgement;
 use crate::applications::transfer::{Amount, PrefixedDenom, MODULE_ID_STR};
 use crate::core::events::ModuleEvent;
+use crate::core::ics04_channel::acknowledgement::AcknowledgementResult;
 use crate::prelude::*;
 use crate::signer::Signer;
 
@@ -67,7 +67,7 @@ pub struct AckEvent {
     pub denom: PrefixedDenom,
     pub amount: Amount,
     pub memo: Memo,
-    pub acknowledgement: TokenTransferAcknowledgement,
+    pub acknowledgement: AcknowledgementResult,
 }
 
 impl From<AckEvent> for ModuleEvent {
@@ -98,15 +98,15 @@ impl From<AckEvent> for ModuleEvent {
 /// Event emitted in the [`onAcknowledgePacket`][super::context::on_acknowledgement_packet_execute]
 /// module callback to indicate whether the acknowledgement is a success or a failure
 pub struct AckStatusEvent {
-    pub acknowledgement: TokenTransferAcknowledgement,
+    pub acknowledgement: AcknowledgementResult,
 }
 
 impl From<AckStatusEvent> for ModuleEvent {
     fn from(ev: AckStatusEvent) -> Self {
         let AckStatusEvent { acknowledgement } = ev;
         let attr_label = match acknowledgement {
-            TokenTransferAcknowledgement::Success(_) => "success",
-            TokenTransferAcknowledgement::Error(_) => "error",
+            AcknowledgementResult::Success(_) => "success",
+            AcknowledgementResult::Error(_) => "error",
         };
 
         Self {

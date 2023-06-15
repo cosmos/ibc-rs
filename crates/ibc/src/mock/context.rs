@@ -1462,9 +1462,10 @@ mod tests {
     use super::*;
     use test_log::test;
 
+    use crate::core::ics04_channel::acknowledgement::Acknowledgement;
     use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::error::ChannelError;
-    use crate::core::ics04_channel::packet::{Acknowledgement, Packet};
+    use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};

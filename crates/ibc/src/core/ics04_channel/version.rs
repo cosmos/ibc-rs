@@ -41,7 +41,7 @@ impl Version {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
+        self.0.trim().is_empty()
     }
 
     pub fn as_str(&self) -> &str {

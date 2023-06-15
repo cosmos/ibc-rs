@@ -6,6 +6,7 @@ pub mod context;
 pub mod error;
 pub mod events;
 
+pub mod acknowledgement;
 pub(crate) mod handler;
 pub mod msgs;
 pub mod packet;

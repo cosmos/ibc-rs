@@ -46,9 +46,13 @@ serde = ["dep:serde", "dep:serde_derive", "serde_json", "erased-serde", "ics23/s
 # Depends on the `testgen` suite for generating Tendermint light blocks.
 mocks = ["tendermint-testgen", "tendermint/clock", "parking_lot"]
 
+# This feature guards the unfinished implementation of the interchain accounts (ICS27) application.
+interchain-accounts = []
+
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
 ibc-proto = { version = "0.32.0", default-features = false }
+cosmrs = "0.14.0"
 ics23 = { version = "0.10.1", default-features = false, features = ["host-functions"] }
 time = { version = ">=0.3.0, <0.3.23", default-features = false }
 serde_derive = { version = "1.0.104", default-features = false, optional = true }

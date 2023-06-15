@@ -20,7 +20,7 @@ where
     send_transfer_execute(ctx_a, msg)
 }
 
-/// Validates the token tranfer. If this succeeds, then it is legal to initiate the transfer with [`send_transfer_execute`].
+/// Validates the token transfer. If this succeeds, then it is legal to initiate the transfer with [`send_transfer_execute`].
 pub fn send_transfer_validate<Ctx>(ctx_a: &Ctx, msg: MsgTransfer) -> Result<(), TokenTransferError>
 where
     Ctx: TokenTransferValidationContext,
