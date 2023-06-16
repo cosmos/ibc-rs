@@ -6,7 +6,7 @@ use crate::core::ics24_host::path::ClientStatePath;
 use crate::core::ContextError;
 
 /// Defines the types that all clients must implement.
-pub trait ClientTypes {
+pub trait ClientTypes: Sized {
     type V: ClientValidationContext;
     type E: ClientExecutionContext;
     type AnyClientState: ClientState<Self::V, Self::E>;
@@ -17,7 +17,7 @@ pub trait ClientTypes {
 /// generic parameter of
 /// [`crate::core::ics02_client::client_state::ClientStateValidation`] ) must
 /// implement.
-pub trait ClientValidationContext: ClientTypes + Sized {
+pub trait ClientValidationContext: ClientTypes {
     /// Returns the ClientState for the given identifier `client_id`.
     fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError>;
 
@@ -37,7 +37,7 @@ pub trait ClientValidationContext: ClientTypes + Sized {
 /// Specifically, clients have the responsibility to store their client state
 /// and consensus states. This trait defines a uniform interface to do that for
 /// all clients.
-pub trait ClientExecutionContext: ClientValidationContext + Sized {
+pub trait ClientExecutionContext: ClientValidationContext {
     /// Called upon successful client creation and update
     fn store_client_state(
         &mut self,
