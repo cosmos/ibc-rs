@@ -1,31 +1,13 @@
 use crate::{
     core::{
-        ics02_client::ClientExecutionContext,
-        ics24_host::{identifier::ClientId, path::ClientConsensusStatePath},
-        timestamp::Timestamp,
+        ics02_client::ClientTypes, ics24_host::identifier::ClientId, timestamp::Timestamp,
         ContextError,
     },
     Height,
 };
 
-use super::consensus_state::ConsensusState as TmConsensusState;
-
-/// Client's context required during both validation and execution
-pub trait CommonContext {
-    type AnyConsensusState: TryInto<TmConsensusState, Error = &'static str>;
-
-    /// Retrieve the consensus state for the given client ID at the specified
-    /// height.
-    ///
-    /// Returns an error if no such state exists.
-    fn consensus_state(
-        &self,
-        client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::AnyConsensusState, ContextError>;
-}
-
 /// Client's context required during validation
-pub trait ValidationContext: CommonContext {
+pub trait ValidationContext: ClientTypes {
     /// Returns the current timestamp of the local chain.
     fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
 
@@ -43,6 +25,3 @@ pub trait ValidationContext: CommonContext {
         height: &Height,
     ) -> Result<Option<Self::AnyConsensusState>, ContextError>;
 }
-
-/// Client's context required during execution.
-pub trait ExecutionContext: CommonContext + ClientExecutionContext {}

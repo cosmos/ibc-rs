@@ -9,6 +9,8 @@ use ibc_proto::google::protobuf::Any;
 
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::error::ClientError;
+use crate::core::ics02_client::ClientExecutionContext;
+use crate::core::ics02_client::ClientValidationContext;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::version::{
@@ -24,16 +26,12 @@ use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{
-    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
-    ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
+    AckPath, ChannelEndPath, ClientConnectionPath, CommitmentPath, ConnectionPath, ReceiptPath,
+    SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use crate::core::router::Router;
 use crate::core::timestamp::Timestamp;
 use crate::Height;
-
-use super::ics02_client::client_state::ClientState;
-use super::ics02_client::consensus_state::ConsensusState;
-use super::ics02_client::ClientExecutionContext;
 
 /// Top-level error
 #[derive(Debug, Display, From)]
@@ -92,33 +90,11 @@ impl std::error::Error for RouterError {
 /// Context to be implemented by the host that provides all "read-only" methods.
 ///
 /// Trait used for the top-level [`validate`](crate::core::validate)
-pub trait ValidationContext: Router {
-    type ClientValidationContext;
-    type E: ClientExecutionContext;
-    type AnyConsensusState: ConsensusState;
-    type AnyClientState: ClientState<Self::ClientValidationContext, Self::E>;
-
-    fn get_client_validation_context(&self) -> &Self::ClientValidationContext;
-    fn get_client_execution_context(&mut self) -> &mut Self::E;
-
-    /// Returns the ClientState for the given identifier `client_id`.
-    ///
-    /// Note: Clients have the responsibility to store client states on client creation and update.
-    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError>;
+pub trait ValidationContext: Router + ClientValidationContext {
+    fn get_client_validation_context(&self) -> &Self::V;
 
     /// Tries to decode the given `client_state` into a concrete light client state.
     fn decode_client_state(&self, client_state: Any) -> Result<Self::AnyClientState, ContextError>;
-
-    /// Retrieve the consensus state for the given client ID at the specified
-    /// height.
-    ///
-    /// Returns an error if no such state exists.
-    ///
-    /// Note: Clients have the responsibility to store consensus states on client creation and update.
-    fn consensus_state(
-        &self,
-        client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::AnyConsensusState, ContextError>;
 
     /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
     fn client_update_time(
@@ -243,7 +219,9 @@ pub trait ValidationContext: Router {
 /// Context to be implemented by the host that provides all "write-only" methods.
 ///
 /// Trait used for the top-level [`execute`](crate::core::execute) and [`dispatch`](crate::core::dispatch)
-pub trait ExecutionContext: ValidationContext {
+pub trait ExecutionContext: ValidationContext + ClientExecutionContext {
+    fn get_client_execution_context(&mut self) -> &mut Self::E;
+
     /// Called upon client creation.
     /// Increases the counter which keeps track of how many clients have been created.
     /// Should never fail.

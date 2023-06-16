@@ -1,14 +1,14 @@
-use tendermint_light_client_verifier::Verifier;
-
-use crate::clients::ics07_tendermint::ValidationContext as TmValidationContext;
-use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::prelude::*;
+use tendermint_light_client_verifier::Verifier;
 
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
+use crate::clients::ics07_tendermint::ValidationContext as TmValidationContext;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
+use crate::core::ics02_client::ClientValidationContext;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::timestamp::Timestamp;
@@ -18,14 +18,15 @@ use super::{check_header_trusted_next_validator_set, ClientState};
 impl ClientState {
     // verify_misbehaviour determines whether or not two conflicting headers at
     // the same height would have convinced the light client.
-    pub fn verify_misbehaviour<ClientValidationContext>(
+    pub fn verify_misbehaviour<V>(
         &self,
-        ctx: &ClientValidationContext,
+        ctx: &V,
         client_id: &ClientId,
         misbehaviour: TmMisbehaviour,
     ) -> Result<(), ClientError>
     where
-        ClientValidationContext: TmValidationContext,
+        V: TmValidationContext + ClientValidationContext,
+        V::AnyConsensusState: TryInto<TmConsensusState, Error = &'static str>,
     {
         misbehaviour.validate_basic()?;
 

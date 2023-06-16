@@ -109,6 +109,7 @@ mod tests {
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
 
     use crate::core::ics02_client::error::UpgradeClientError;
+    use crate::core::ics02_client::ClientValidationContext;
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics24_host::identifier::ClientId;
     use crate::downcast;

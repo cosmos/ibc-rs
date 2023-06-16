@@ -1,4 +1,3 @@
-use crate::core::ics02_client::ClientExecutionContext;
 use crate::prelude::*;
 
 use core::time::Duration;
@@ -12,6 +11,7 @@ use crate::core::ics02_client::client_state::{
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
+use crate::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -197,7 +197,7 @@ impl ClientStateCommon for MockClientState {
     }
 }
 
-impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for MockClientState {
+impl<V: ClientValidationContext> ClientStateValidation<V> for MockClientState {
     fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
         let _mock_consensus_state = MockConsensusState::try_from(consensus_state)?;
 
@@ -206,7 +206,7 @@ impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for
 
     fn verify_client_message(
         &self,
-        _ctx: &ClientValidationContext,
+        _ctx: &V,
         _client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -232,7 +232,7 @@ impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for
 
     fn check_for_misbehaviour(
         &self,
-        _ctx: &ClientValidationContext,
+        _ctx: &V,
         _client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -256,8 +256,8 @@ impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for
 impl<E> ClientStateExecution<E> for MockClientState
 where
     E: ClientExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<MockClientState>,
-    <E as ClientExecutionContext>::AnyConsensusState: From<MockConsensusState>,
+    E::AnyClientState: From<MockClientState>,
+    E::AnyConsensusState: From<MockConsensusState>,
 {
     fn initialise(
         &self,

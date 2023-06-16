@@ -4,8 +4,6 @@
 mod misbehaviour;
 mod update_client;
 
-use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::ClientExecutionContext;
 use crate::prelude::*;
 
 use core::cmp::max;
@@ -32,7 +30,9 @@ use crate::core::ics02_client::client_state::{
     ClientStateCommon, ClientStateExecution, ClientStateValidation, UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
+use crate::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -45,10 +45,7 @@ use crate::core::timestamp::ZERO_DURATION;
 use crate::Height;
 
 use super::trust_threshold::TrustThreshold;
-use super::{
-    client_type as tm_client_type, ExecutionContext as TmExecutionContext,
-    ValidationContext as TmValidationContext,
-};
+use super::{client_type as tm_client_type, ValidationContext as TmValidationContext};
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
@@ -432,9 +429,10 @@ impl ClientStateCommon for ClientState {
     }
 }
 
-impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for ClientState
+impl<V> ClientStateValidation<V> for ClientState
 where
-    ClientValidationContext: TmValidationContext,
+    V: TmValidationContext + ClientValidationContext,
+    V::AnyConsensusState: TryInto<TmConsensusState, Error = &'static str>,
 {
     fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
         let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
@@ -449,7 +447,7 @@ where
 
     fn verify_client_message(
         &self,
-        ctx: &ClientValidationContext,
+        ctx: &V,
         client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -468,7 +466,7 @@ where
 
     fn check_for_misbehaviour(
         &self,
-        ctx: &ClientValidationContext,
+        ctx: &V,
         client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -488,9 +486,9 @@ where
 
 impl<E> ClientStateExecution<E> for ClientState
 where
-    E: TmExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
-    <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
+    E: ClientExecutionContext,
+    E::AnyClientState: From<ClientState>,
+    E::AnyConsensusState: From<TmConsensusState>,
 {
     fn initialise(
         &self,

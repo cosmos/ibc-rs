@@ -4,6 +4,7 @@ mod applications;
 mod clients;
 
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
+use crate::core::ics02_client::{ClientTypes, ClientValidationContext};
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
     ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
@@ -794,12 +795,14 @@ impl Router for MockContext {
     }
 }
 
-impl ValidationContext for MockContext {
-    type ClientValidationContext = Self;
+impl ClientTypes for MockContext {
+    type V = Self;
     type E = Self;
     type AnyConsensusState = AnyConsensusState;
     type AnyClientState = AnyClientState;
+}
 
+impl ClientValidationContext for MockContext {
     fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError> {
         match self.ibc_store.lock().clients.get(client_id) {
             Some(client_record) => {
@@ -813,20 +816,6 @@ impl ValidationContext for MockContext {
             None => Err(ClientError::ClientStateNotFound {
                 client_id: client_id.clone(),
             }),
-        }
-        .map_err(ContextError::ClientError)
-    }
-
-    fn decode_client_state(&self, client_state: Any) -> Result<Self::AnyClientState, ContextError> {
-        if let Ok(client_state) = TmClientState::try_from(client_state.clone()) {
-            client_state.validate().map_err(ClientError::from)?;
-            Ok(client_state.into())
-        } else if let Ok(client_state) = MockClientState::try_from(client_state.clone()) {
-            Ok(client_state.into())
-        } else {
-            Err(ClientError::UnknownClientStateType {
-                client_state_type: client_state.type_url,
-            })
         }
         .map_err(ContextError::ClientError)
     }
@@ -852,6 +841,22 @@ impl ValidationContext for MockContext {
         }
         .map_err(ContextError::ClientError)
     }
+}
+
+impl ValidationContext for MockContext {
+    fn decode_client_state(&self, client_state: Any) -> Result<Self::AnyClientState, ContextError> {
+        if let Ok(client_state) = TmClientState::try_from(client_state.clone()) {
+            client_state.validate().map_err(ClientError::from)?;
+            Ok(client_state.into())
+        } else if let Ok(client_state) = MockClientState::try_from(client_state.clone()) {
+            Ok(client_state.into())
+        } else {
+            Err(ClientError::UnknownClientStateType {
+                client_state_type: client_state.type_url,
+            })
+        }
+        .map_err(ContextError::ClientError)
+    }
 
     fn host_height(&self) -> Result<Height, ContextError> {
         Ok(self.latest_height())
@@ -874,6 +879,46 @@ impl ValidationContext for MockContext {
         }
         .map_err(ConnectionError::Client)
         .map_err(ContextError::ConnectionError)
+    }
+
+    fn client_update_time(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Timestamp, ContextError> {
+        match self
+            .ibc_store
+            .lock()
+            .client_processed_times
+            .get(&(client_id.clone(), *height))
+        {
+            Some(time) => Ok(*time),
+            None => Err(ChannelError::ProcessedTimeNotFound {
+                client_id: client_id.clone(),
+                height: *height,
+            }),
+        }
+        .map_err(ContextError::ChannelError)
+    }
+
+    fn client_update_height(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Height, ContextError> {
+        match self
+            .ibc_store
+            .lock()
+            .client_processed_heights
+            .get(&(client_id.clone(), *height))
+        {
+            Some(height) => Ok(*height),
+            None => Err(ChannelError::ProcessedHeightNotFound {
+                client_id: client_id.clone(),
+                height: *height,
+            }),
+        }
+        .map_err(ContextError::ChannelError)
     }
 
     fn client_counter(&self) -> Result<u64, ContextError> {
@@ -1087,46 +1132,6 @@ impl ValidationContext for MockContext {
         .map_err(ContextError::PacketError)
     }
 
-    fn client_update_time(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Timestamp, ContextError> {
-        match self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .get(&(client_id.clone(), *height))
-        {
-            Some(time) => Ok(*time),
-            None => Err(ChannelError::ProcessedTimeNotFound {
-                client_id: client_id.clone(),
-                height: *height,
-            }),
-        }
-        .map_err(ContextError::ChannelError)
-    }
-
-    fn client_update_height(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ContextError> {
-        match self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .get(&(client_id.clone(), *height))
-        {
-            Some(height) => Ok(*height),
-            None => Err(ChannelError::ProcessedHeightNotFound {
-                client_id: client_id.clone(),
-                height: *height,
-            }),
-        }
-        .map_err(ContextError::ChannelError)
-    }
-
     fn channel_counter(&self) -> Result<u64, ContextError> {
         Ok(self.ibc_store.lock().channel_ids_counter)
     }
@@ -1139,16 +1144,16 @@ impl ValidationContext for MockContext {
         Ok(())
     }
 
-    fn get_client_validation_context(&self) -> &Self::ClientValidationContext {
-        self
-    }
-
-    fn get_client_execution_context(&mut self) -> &mut Self::E {
+    fn get_client_validation_context(&self) -> &Self::V {
         self
     }
 }
 
 impl ExecutionContext for MockContext {
+    fn get_client_execution_context(&mut self) -> &mut Self::E {
+        self
+    }
+
     fn increase_client_counter(&mut self) {
         self.ibc_store.lock().client_ids_counter += 1
     }

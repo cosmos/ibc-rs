@@ -1,4 +1,3 @@
-use crate::clients::ics07_tendermint::ValidationContext as TmValidationContext;
 use crate::prelude::*;
 
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
@@ -7,21 +6,24 @@ use tendermint_light_client_verifier::Verifier;
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
+use crate::clients::ics07_tendermint::ValidationContext as TmValidationContext;
 use crate::core::ics02_client::error::ClientError;
+use crate::core::ics02_client::ClientValidationContext;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 
 use super::{check_header_trusted_next_validator_set, ClientState};
 
 impl ClientState {
-    pub fn verify_header<ClientValidationContext>(
+    pub fn verify_header<V>(
         &self,
-        ctx: &ClientValidationContext,
+        ctx: &V,
         client_id: &ClientId,
         header: TmHeader,
     ) -> Result<(), ClientError>
     where
-        ClientValidationContext: TmValidationContext,
+        V: TmValidationContext + ClientValidationContext,
+        V::AnyConsensusState: TryInto<TmConsensusState, Error = &'static str>,
     {
         // Checks that the header fields are valid.
         header.validate_basic()?;
@@ -83,14 +85,15 @@ impl ClientState {
         Ok(())
     }
 
-    pub fn check_for_misbehaviour_update_client<ClientValidationContext>(
+    pub fn check_for_misbehaviour_update_client<V>(
         &self,
-        ctx: &ClientValidationContext,
+        ctx: &V,
         client_id: &ClientId,
         header: TmHeader,
     ) -> Result<bool, ClientError>
     where
-        ClientValidationContext: TmValidationContext,
+        V: TmValidationContext + ClientValidationContext,
+        V::AnyConsensusState: TryInto<TmConsensusState, Error = &'static str>,
     {
         let header_consensus_state = TmConsensusState::from(header.clone());
 

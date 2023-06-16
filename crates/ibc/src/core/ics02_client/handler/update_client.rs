@@ -141,6 +141,7 @@ mod tests {
     use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
     use crate::core::events::IbcEvent;
     use crate::core::ics02_client::client_type::ClientType;
+    use crate::core::ics02_client::context::ClientValidationContext;
     use crate::core::ics02_client::handler::update_client::{execute, validate};
     use crate::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;

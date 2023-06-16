@@ -70,7 +70,7 @@ pub fn send_packet_validate(
 
     let client_cons_state_path_on_a =
         ClientConsensusStatePath::new(client_id_on_a, &latest_height_on_a);
-    let consensus_state_of_b_on_a = ctx_a.client_consensus_state(&client_cons_state_path_on_a)?;
+    let consensus_state_of_b_on_a = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
     let latest_timestamp = consensus_state_of_b_on_a.timestamp();
     let packet_timestamp = packet.timeout_timestamp_on_b;
     if let Expiry::Expired = latest_timestamp.check_expiry(&packet_timestamp) {

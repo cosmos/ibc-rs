@@ -9,6 +9,7 @@ use ibc_proto::google::protobuf::Any;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::ClientExecutionContext;
+use crate::core::ics02_client::ClientValidationContext;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -111,7 +112,10 @@ pub trait ClientStateCommon {
 ///   // My Context methods
 /// }
 /// ```
-pub trait ClientStateValidation<ClientValidationContext> {
+pub trait ClientStateValidation<V>
+where
+    V: ClientValidationContext,
+{
     /// Performs basic validation on the `consensus_state`.
     ///
     /// Notably, an implementation should verify that it can properly
@@ -126,7 +130,7 @@ pub trait ClientStateValidation<ClientValidationContext> {
     /// error should be returned if the client_message fails to verify.
     fn verify_client_message(
         &self,
-        ctx: &ClientValidationContext,
+        ctx: &V,
         client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -136,7 +140,7 @@ pub trait ClientStateValidation<ClientValidationContext> {
     /// assumes the client_message has already been verified.
     fn check_for_misbehaviour(
         &self,
-        ctx: &ClientValidationContext,
+        ctx: &V,
         client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -220,22 +224,12 @@ pub use ibc_derive::ClientState;
 ///
 /// Refer to [`ClientStateValidation`] and [`ClientStateExecution`] to learn
 /// more about what both generic parameters represent.
-pub trait ClientState<ClientValidationContext, E: ClientExecutionContext>:
-    Send
-    + Sync
-    + ClientStateCommon
-    + ClientStateValidation<ClientValidationContext>
-    + ClientStateExecution<E>
+pub trait ClientState<V: ClientValidationContext, E: ClientExecutionContext>:
+    Send + Sync + ClientStateCommon + ClientStateValidation<V> + ClientStateExecution<E>
 {
 }
 
-impl<ClientValidationContext, E: ClientExecutionContext, T> ClientState<ClientValidationContext, E>
-    for T
-where
-    T: Send
-        + Sync
-        + ClientStateCommon
-        + ClientStateValidation<ClientValidationContext>
-        + ClientStateExecution<E>,
+impl<V: ClientValidationContext, E: ClientExecutionContext, T> ClientState<V, E> for T where
+    T: Send + Sync + ClientStateCommon + ClientStateValidation<V> + ClientStateExecution<E>
 {
 }

@@ -2,34 +2,21 @@
 
 use crate::core::ics02_client::ClientExecutionContext;
 use crate::core::ics24_host::path::ClientStatePath;
+use crate::core::timestamp::Timestamp;
+use crate::core::ValidationContext;
 use crate::prelude::*;
 use crate::{
     core::{
         ics02_client::error::ClientError,
         ics24_host::{identifier::ClientId, path::ClientConsensusStatePath},
-        timestamp::Timestamp,
-        ContextError, ValidationContext,
+        ContextError,
     },
     Height,
 };
 
-use crate::clients::ics07_tendermint::{
-    CommonContext as TmCommonContext, ExecutionContext as TmExecutionContext,
-    ValidationContext as TmValidationContext,
-};
+use crate::clients::ics07_tendermint::ValidationContext as TmValidationContext;
 
-use super::{AnyClientState, AnyConsensusState, MockClientRecord, MockContext};
-
-impl TmCommonContext for MockContext {
-    type AnyConsensusState = AnyConsensusState;
-
-    fn consensus_state(
-        &self,
-        client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::AnyConsensusState, ContextError> {
-        ValidationContext::consensus_state(self, client_cons_state_path)
-    }
-}
+use super::{MockClientRecord, MockContext};
 
 impl TmValidationContext for MockContext {
     fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
@@ -98,10 +85,6 @@ impl TmValidationContext for MockContext {
 }
 
 impl ClientExecutionContext for MockContext {
-    type ClientValidationContext = Self;
-    type AnyClientState = AnyClientState;
-    type AnyConsensusState = AnyConsensusState;
-
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
@@ -146,5 +129,3 @@ impl ClientExecutionContext for MockContext {
         Ok(())
     }
 }
-
-impl TmExecutionContext for MockContext {}
