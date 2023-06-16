@@ -5,6 +5,7 @@ use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::ics24_host::path::ClientStatePath;
 use crate::core::ContextError;
 
+/// Defines the types that all clients must implement.
 pub trait ClientTypes {
     type V: ClientValidationContext;
     type E: ClientExecutionContext;
@@ -12,15 +13,16 @@ pub trait ClientTypes {
     type AnyConsensusState: ConsensusState;
 }
 
-/// Client's context required during both validation and execution
+/// Defines the methods that all client `ValidationContext`s (precisely the
+/// generic parameter of
+/// [`crate::core::ics02_client::client_state::ClientStateValidation`] ) must
+/// implement.
 pub trait ClientValidationContext: ClientTypes + Sized {
     /// Returns the ClientState for the given identifier `client_id`.
     fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError>;
 
-    /// Retrieve the consensus state for the given client ID at the specified
+    /// Returns the consensus state for the given client ID at the specified
     /// height.
-    ///
-    /// Returns an error if no such state exists.
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
