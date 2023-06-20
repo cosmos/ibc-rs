@@ -98,8 +98,8 @@ pub trait ValidationContext: Router {
     type AnyConsensusState: ConsensusState;
     type AnyClientState: ClientState<Self::ClientValidationContext, Self::E>;
 
+    /// Retrieve the context that implements all clients' `ValidationContext`.
     fn get_client_validation_context(&self) -> &Self::ClientValidationContext;
-    fn get_client_execution_context(&mut self) -> &mut Self::E;
 
     /// Returns the ClientState for the given identifier `client_id`.
     ///
@@ -244,6 +244,9 @@ pub trait ValidationContext: Router {
 ///
 /// Trait used for the top-level [`execute`](crate::core::execute) and [`dispatch`](crate::core::dispatch)
 pub trait ExecutionContext: ValidationContext {
+    /// Retrieve the context that implements all clients' `ExecutionContext`.
+    fn get_client_execution_context(&mut self) -> &mut Self::E;
+
     /// Called upon client creation.
     /// Increases the counter which keeps track of how many clients have been created.
     /// Should never fail.

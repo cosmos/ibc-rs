@@ -1142,13 +1142,13 @@ impl ValidationContext for MockContext {
     fn get_client_validation_context(&self) -> &Self::ClientValidationContext {
         self
     }
-
-    fn get_client_execution_context(&mut self) -> &mut Self::E {
-        self
-    }
 }
 
 impl ExecutionContext for MockContext {
+    fn get_client_execution_context(&mut self) -> &mut Self::E {
+        self
+    }
+
     fn increase_client_counter(&mut self) {
         self.ibc_store.lock().client_ids_counter += 1
     }
