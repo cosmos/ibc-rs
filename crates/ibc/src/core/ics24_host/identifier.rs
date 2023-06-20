@@ -65,16 +65,9 @@ impl ChainId {
     }
 
     pub fn from_string(id: &str) -> Self {
-        let version = if Self::is_epoch_format(id) {
-            Self::chain_version(id)
-        } else {
-            0
-        };
-
-        Self {
-            id: id.to_string(),
-            version,
-        }
+        let version = Self::chain_version(id);
+        let id = String::from(id);
+        Self { id, version }
     }
 
     /// Get a reference to the underlying string.
@@ -98,15 +91,8 @@ impl ChainId {
     /// assert_eq!(ChainId::chain_version("testnet-helloworld-2"), 2);
     /// ```
     pub fn chain_version(chain_id: &str) -> u64 {
-        if !ChainId::is_epoch_format(chain_id) {
-            return 0;
-        }
-
-        let split: Vec<_> = chain_id.split('-').collect();
-        split
-            .last()
-            .expect("get revision number from chain_id")
-            .parse()
+        split_chain_id(chain_id)
+            .and_then(|(_, version)| u64::from_str(version).ok())
             .unwrap_or(0)
     }
 
@@ -120,8 +106,7 @@ impl ChainId {
     /// assert_eq!(ChainId::is_epoch_format("c-1"), true);
     /// ```
     pub fn is_epoch_format(chain_id: &str) -> bool {
-        let re = safe_regex::regex!(br".*[^-]-[1-9][0-9]*");
-        re.is_match(chain_id.as_bytes())
+        split_chain_id(chain_id).is_some()
     }
 
     /// with_version() checks if a chain_id is in the format required for parsing epochs, and if so
@@ -131,19 +116,33 @@ impl ChainId {
     /// assert_eq!(ChainId::new("chainA", 1).with_version(2), ChainId::new("chainA", 2));
     /// assert_eq!("chain1".parse::<ChainId>().unwrap().with_version(2), "chain1".parse::<ChainId>().unwrap());
     /// ```
-    pub fn with_version(mut self, version: u64) -> Self {
-        if Self::is_epoch_format(&self.id) {
-            self.id = {
-                let mut split: Vec<&str> = self.id.split('-').collect();
-                let version = version.to_string();
-                if let Some(last_elem) = split.last_mut() {
-                    *last_elem = &version;
-                }
-                split.join("-")
-            };
-            self.version = version;
+    pub fn with_version(self, version: u64) -> Self {
+        if self.version == 0 {
+            return self;
         }
-        self
+        // self.version ≠ 0 ⇒ self.id is in epoch format ⇒ split_chain_id can’t fail.
+        let (name, _) = split_chain_id(&self.id).expect("Never fails");
+        Self::new(name, version)
+    }
+}
+
+/// Splits chain_id into name and version if the id includes epoch number.
+///
+/// Chain id with epoch number has format `{name}-{version}` where name is
+/// non-empty and version is a positive integer starting with a non-zero digit.
+/// If `chain_id` is in that format, returns `(name, version)`; otherwise
+/// returns an `None`.
+fn split_chain_id(chain_id: &str) -> Option<(&str, &str)> {
+    let (name, version) = chain_id.rsplit_once('-')?;
+    // `-123` and `foo--123` are not in epoch format.
+    if name.is_empty() || name.as_bytes().last() == Some(&b'-') {
+        return None;
+    }
+    let (car, cdr) = version.as_bytes().split_first()?;
+    if matches!(*car, b'1'..=b'9') && cdr.iter().all(u8::is_ascii_digit) {
+        Some((name, version))
+    } else {
+        None
     }
 }
 
