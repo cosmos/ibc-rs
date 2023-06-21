@@ -99,7 +99,7 @@ impl ClientState {
         })?;
 
         self.verifier
-            .verify(untrusted_state, trusted_state, &options, current_timestamp)
+            .verify_misbehaviour_header(untrusted_state, trusted_state, &options, current_timestamp)
             .into_result()?;
 
         Ok(())

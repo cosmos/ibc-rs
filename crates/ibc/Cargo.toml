@@ -39,18 +39,17 @@ parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-proto/par
 borsh = ["dep:borsh", "ibc-proto/borsh"]
 
 # This feature is required for token transfer (ICS-20)
-serde = ["dep:serde", "dep:serde_derive", "serde_json"]
+serde = ["dep:serde", "dep:serde_derive", "serde_json", "ics23/serde"]
 
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
 # Depends on the `testgen` suite for generating Tendermint light blocks.
-mocks = ["tendermint-testgen", "tendermint/clock", "cfg-if", "parking_lot"]
-mocks-no-std = ["cfg-if"]
+mocks = ["tendermint-testgen", "tendermint/clock", "parking_lot"]
 
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
-ibc-proto = { version = "0.30.0", default-features = false }
-ics23 = { version = "0.9.0", default-features = false, features = ["host-functions"] }
-time = { version = ">=0.3.0, <0.3.22", default-features = false }
+ibc-proto = { version = "0.32.0", default-features = false }
+ics23 = { version = "0.10.1", default-features = false, features = ["host-functions"] }
+time = { version = ">=0.3.0, <0.3.23", default-features = false }
 serde_derive = { version = "1.0.104", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
 serde_json = { version = "1", default-features = false, optional = true }
@@ -70,27 +69,26 @@ primitive-types = { version = "0.12.0", default-features = false, features = ["s
 parity-scale-codec = { version = "3.0.0", default-features = false, features = ["full"], optional = true }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"], optional = true }
 ## for borsh encode or decode
-borsh = {version = "0.10.0", default-features = false, optional = true }
+borsh = {version = "0.9.0", default-features = false, optional = true }
 parking_lot = { version = "0.12.1", default-features = false, optional = true }
-cfg-if = { version = "1.0.0", optional = true }
 
 ibc-derive = { path = "../ibc-derive"}
 
 [dependencies.tendermint]
-version = "0.31"
+version = "0.32"
 default-features = false
 
 [dependencies.tendermint-proto]
-version = "0.31"
+version = "0.32"
 default-features = false
 
 [dependencies.tendermint-light-client-verifier]
-version = "0.31"
+version = "0.32"
 default-features = false
 features = ["rust-crypto"]
 
 [dependencies.tendermint-testgen]
-version = "0.31"
+version = "0.32"
 optional = true
 default-features = false
 
@@ -99,7 +97,6 @@ env_logger = "0.10.0"
 rstest = "0.16.0"
 tracing-subscriber = { version = "0.3.14", features = ["fmt", "env-filter", "json"]}
 test-log = { version = "0.2.10", features = ["trace"] }
-tendermint-rpc = { version = "0.31", features = ["http-client", "websocket-client"] }
-tendermint-testgen = { version = "0.31" } # Needed for generating (synthetic) light blocks.
+tendermint-rpc = { version = "0.32", features = ["http-client", "websocket-client"] }
+tendermint-testgen = { version = "0.32" } # Needed for generating (synthetic) light blocks.
 parking_lot = { version = "0.12.1" }
-cfg-if = { version = "1.0.0" }

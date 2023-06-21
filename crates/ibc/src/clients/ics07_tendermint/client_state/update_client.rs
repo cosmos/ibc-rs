@@ -76,7 +76,7 @@ impl ClientState {
 
             // main header verification, delegated to the tendermint-light-client crate.
             self.verifier
-                .verify(untrusted_state, trusted_state, &options, now)
+                .verify_update_header(untrusted_state, trusted_state, &options, now)
                 .into_result()?;
         }
 

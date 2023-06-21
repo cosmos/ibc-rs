@@ -1,18 +1,13 @@
 //! Defines proof specs, which encode the structure of proofs
 
 use crate::prelude::*;
-use ibc_proto::ics23::{InnerSpec as IbcInnerSpec, LeafOp as IbcLeafOp, ProofSpec as IbcProofSpec};
-use ics23::{InnerSpec as Ics23InnerSpec, LeafOp as Ics23LeafOp, ProofSpec as Ics23ProofSpec};
-
+use ibc_proto::ics23::{InnerSpec as RawInnerSpec, LeafOp as RawLeafOp, ProofSpec as RawProofSpec};
 /// An array of proof specifications.
 ///
 /// This type encapsulates different types of proof specifications, mostly predefined, e.g., for
 /// Cosmos-SDK.
-/// Additionally, this type also aids in the conversion from `ProofSpec` types from crate `ics23`
-/// into proof specifications as represented in the `ibc_proto` type; see the
-/// `From` trait(s) below.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ProofSpecs(Vec<ProofSpec>);
 
 impl ProofSpecs {
@@ -36,14 +31,8 @@ impl Default for ProofSpecs {
     }
 }
 
-impl From<Vec<IbcProofSpec>> for ProofSpecs {
-    fn from(ibc_specs: Vec<IbcProofSpec>) -> Self {
-        Self(ibc_specs.into_iter().map(ProofSpec).collect())
-    }
-}
-
-impl From<Vec<Ics23ProofSpec>> for ProofSpecs {
-    fn from(ics23_specs: Vec<Ics23ProofSpec>) -> Self {
+impl From<Vec<RawProofSpec>> for ProofSpecs {
+    fn from(ics23_specs: Vec<RawProofSpec>) -> Self {
         Self(
             ics23_specs
                 .into_iter()
@@ -53,52 +42,48 @@ impl From<Vec<Ics23ProofSpec>> for ProofSpecs {
     }
 }
 
-impl From<ProofSpecs> for Vec<Ics23ProofSpec> {
+impl From<ProofSpecs> for Vec<RawProofSpec> {
     fn from(specs: ProofSpecs) -> Self {
         specs.0.into_iter().map(|spec| spec.into()).collect()
     }
 }
 
-impl From<ProofSpecs> for Vec<IbcProofSpec> {
-    fn from(specs: ProofSpecs) -> Self {
-        specs.0.into_iter().map(|spec| spec.0).collect()
-    }
-}
-
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct ProofSpec(IbcProofSpec);
+#[derive(Clone, Debug, PartialEq)]
+struct ProofSpec(RawProofSpec);
 
-impl From<Ics23ProofSpec> for ProofSpec {
-    fn from(spec: Ics23ProofSpec) -> Self {
-        Self(IbcProofSpec {
+impl From<RawProofSpec> for ProofSpec {
+    fn from(spec: RawProofSpec) -> Self {
+        Self(RawProofSpec {
             leaf_spec: spec.leaf_spec.map(|lop| LeafOp::from(lop).0),
             inner_spec: spec.inner_spec.map(|ispec| InnerSpec::from(ispec).0),
             max_depth: spec.max_depth,
             min_depth: spec.min_depth,
+            prehash_key_before_comparison: spec.prehash_key_before_comparison,
         })
     }
 }
 
-impl From<ProofSpec> for Ics23ProofSpec {
+impl From<ProofSpec> for RawProofSpec {
     fn from(spec: ProofSpec) -> Self {
         let spec = spec.0;
-        Ics23ProofSpec {
+        RawProofSpec {
             leaf_spec: spec.leaf_spec.map(|lop| LeafOp(lop).into()),
             inner_spec: spec.inner_spec.map(|ispec| InnerSpec(ispec).into()),
             max_depth: spec.max_depth,
             min_depth: spec.min_depth,
+            prehash_key_before_comparison: spec.prehash_key_before_comparison,
         }
     }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct LeafOp(IbcLeafOp);
+#[derive(Clone, Debug, PartialEq)]
+struct LeafOp(RawLeafOp);
 
-impl From<Ics23LeafOp> for LeafOp {
-    fn from(leaf_op: Ics23LeafOp) -> Self {
-        Self(IbcLeafOp {
+impl From<RawLeafOp> for LeafOp {
+    fn from(leaf_op: RawLeafOp) -> Self {
+        Self(RawLeafOp {
             hash: leaf_op.hash,
             prehash_key: leaf_op.prehash_key,
             prehash_value: leaf_op.prehash_value,
@@ -108,10 +93,10 @@ impl From<Ics23LeafOp> for LeafOp {
     }
 }
 
-impl From<LeafOp> for Ics23LeafOp {
+impl From<LeafOp> for RawLeafOp {
     fn from(leaf_op: LeafOp) -> Self {
         let leaf_op = leaf_op.0;
-        Ics23LeafOp {
+        RawLeafOp {
             hash: leaf_op.hash,
             prehash_key: leaf_op.prehash_key,
             prehash_value: leaf_op.prehash_value,
@@ -122,12 +107,12 @@ impl From<LeafOp> for Ics23LeafOp {
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct InnerSpec(IbcInnerSpec);
+#[derive(Clone, Debug, PartialEq)]
+struct InnerSpec(RawInnerSpec);
 
-impl From<Ics23InnerSpec> for InnerSpec {
-    fn from(inner_spec: Ics23InnerSpec) -> Self {
-        Self(IbcInnerSpec {
+impl From<RawInnerSpec> for InnerSpec {
+    fn from(inner_spec: RawInnerSpec) -> Self {
+        Self(RawInnerSpec {
             child_order: inner_spec.child_order,
             child_size: inner_spec.child_size,
             min_prefix_length: inner_spec.min_prefix_length,
@@ -138,10 +123,10 @@ impl From<Ics23InnerSpec> for InnerSpec {
     }
 }
 
-impl From<InnerSpec> for Ics23InnerSpec {
+impl From<InnerSpec> for RawInnerSpec {
     fn from(inner_spec: InnerSpec) -> Self {
         let inner_spec = inner_spec.0;
-        Ics23InnerSpec {
+        RawInnerSpec {
             child_order: inner_spec.child_order,
             child_size: inner_spec.child_size,
             min_prefix_length: inner_spec.min_prefix_length,
