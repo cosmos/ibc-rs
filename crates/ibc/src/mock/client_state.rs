@@ -125,6 +125,12 @@ impl From<MockClientState> for Any {
 }
 
 impl ClientStateCommon for MockClientState {
+    fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
+        let _mock_consensus_state = MockConsensusState::try_from(consensus_state)?;
+
+        Ok(())
+    }
+
     fn client_type(&self) -> ClientType {
         mock_client_type()
     }
@@ -198,12 +204,6 @@ impl ClientStateCommon for MockClientState {
 }
 
 impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for MockClientState {
-    fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
-        let _mock_consensus_state = MockConsensusState::try_from(consensus_state)?;
-
-        Ok(())
-    }
-
     fn verify_client_message(
         &self,
         _ctx: &ClientValidationContext,

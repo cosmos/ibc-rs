@@ -12,6 +12,11 @@ pub(crate) fn impl_ClientStateCommon(
     client_state_enum_name: &Ident,
     enum_variants: &Punctuated<Variant, Comma>,
 ) -> TokenStream {
+    let verify_consensus_state_impl = delegate_call_in_match(
+        client_state_enum_name,
+        enum_variants.iter(),
+        quote! { verify_consensus_state(cs, consensus_state) },
+    );
     let client_type_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
@@ -68,6 +73,11 @@ pub(crate) fn impl_ClientStateCommon(
 
     quote! {
         impl #ClientStateCommon for #HostClientState {
+            fn verify_consensus_state(&self, consensus_state: #Any) -> Result<(), #ClientError> {
+                match self {
+                    #(#verify_consensus_state_impl),*
+                }
+            }
             fn client_type(&self) -> #ClientType {
                 match self {
                     #(#client_type_impl),*

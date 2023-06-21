@@ -265,6 +265,17 @@ impl ClientState {
 }
 
 impl ClientStateCommon for ClientState {
+    fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
+        let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
+        if tm_consensus_state.root().is_empty() {
+            return Err(ClientError::Other {
+                description: "empty commitment root".into(),
+            });
+        };
+
+        Ok(())
+    }
+
     fn client_type(&self) -> ClientType {
         tm_client_type()
     }
@@ -436,17 +447,6 @@ impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for
 where
     ClientValidationContext: TmValidationContext,
 {
-    fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
-        let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
-        if tm_consensus_state.root().is_empty() {
-            return Err(ClientError::Other {
-                description: "empty commitment root".into(),
-            });
-        };
-
-        Ok(())
-    }
-
     fn verify_client_message(
         &self,
         ctx: &ClientValidationContext,

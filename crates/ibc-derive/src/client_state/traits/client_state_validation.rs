@@ -16,12 +16,6 @@ pub(crate) fn impl_ClientStateValidation(
     enum_variants: &Punctuated<Variant, Comma>,
     opts: &Opts,
 ) -> TokenStream {
-    let verify_consensus_state_impl = delegate_call_in_match(
-        client_state_enum_name,
-        enum_variants.iter(),
-        opts,
-        quote! { verify_consensus_state(cs, consensus_state) },
-    );
     let verify_client_message_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
@@ -47,11 +41,6 @@ pub(crate) fn impl_ClientStateValidation(
 
     quote! {
         impl #ClientStateValidation<#ClientValidationContext> for #HostClientState {
-            fn verify_consensus_state(&self, consensus_state: #Any) -> Result<(), #ClientError> {
-                match self {
-                    #(#verify_consensus_state_impl),*
-                }
-            }
             fn verify_client_message(
                 &self,
                 ctx: &#ClientValidationContext,

@@ -36,6 +36,12 @@ pub enum UpdateKind {
 /// They do not require access to a client `ValidationContext` nor
 /// `ExecutionContext`.
 pub trait ClientStateCommon {
+    /// Performs basic validation on the `consensus_state`.
+    ///
+    /// Notably, an implementation should verify that it can properly
+    /// deserialize the object into the expected format.
+    fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError>;
+
     /// Type of client associated with this state (eg. Tendermint)
     fn client_type(&self) -> ClientType;
 
@@ -112,12 +118,6 @@ pub trait ClientStateCommon {
 /// }
 /// ```
 pub trait ClientStateValidation<ClientValidationContext> {
-    /// Performs basic validation on the `consensus_state`.
-    ///
-    /// Notably, an implementation should verify that it can properly
-    /// deserialize the object into the expected format.
-    fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError>;
-
     /// verify_client_message must verify a client_message. A client_message
     /// could be a Header, Misbehaviour. It must handle each type of
     /// client_message appropriately. Calls to check_for_misbehaviour,
