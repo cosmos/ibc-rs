@@ -44,8 +44,10 @@ impl From<RawMerkleProof> for MerkleProof {
             .into_iter()
             .map(|p| {
                 let mut encoded = Vec::new();
-                prost::Message::encode(&p, &mut encoded).unwrap();
-                prost::Message::decode(&*encoded).unwrap()
+                prost::Message::encode(&p, &mut encoded)
+                    .expect("Never fails to encode because of the same type");
+                prost::Message::decode(&*encoded)
+                    .expect("Never fails to decode because of the same type")
             })
             .collect();
         Self { proofs }
@@ -60,8 +62,10 @@ impl From<MerkleProof> for RawMerkleProof {
                 .into_iter()
                 .map(|p| {
                     let mut encoded = Vec::new();
-                    prost::Message::encode(&p, &mut encoded).unwrap();
-                    prost::Message::decode(&*encoded).unwrap()
+                    prost::Message::encode(&p, &mut encoded)
+                        .expect("Never fails to encode because of the same type");
+                    prost::Message::decode(&*encoded)
+                        .expect("Never fails to decode because of the same type")
                 })
                 .collect(),
         }

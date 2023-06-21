@@ -167,7 +167,8 @@ impl Display for ChainId {
 
 impl From<ChainId> for tendermint::chain::Id {
     fn from(id: ChainId) -> Self {
-        tendermint::chain::Id::from_str(id.as_str()).unwrap()
+        tendermint::chain::Id::from_str(id.as_str())
+            .expect("Never fails because we already have a valid chain id")
     }
 }
 
@@ -252,7 +253,7 @@ impl FromStr for ClientId {
 
 impl Default for ClientId {
     fn default() -> Self {
-        Self::new(tm_client_type(), 0).unwrap()
+        Self::new(tm_client_type(), 0).expect("Never fails because we use a valid client type")
     }
 }
 

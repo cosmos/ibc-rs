@@ -398,7 +398,7 @@ impl Ics2ClientState for ClientState {
     ) -> Result<(), ClientError> {
         let frozen_client_state = self
             .clone()
-            .with_frozen_height(Height::new(0, 1).unwrap())
+            .with_frozen_height(Height::new(0, 1).expect("Never fails because height is valid"))
             .into_box();
 
         ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state)?;
