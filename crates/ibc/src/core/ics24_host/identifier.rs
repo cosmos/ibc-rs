@@ -55,18 +55,17 @@ impl ChainId {
     /// Creates a new `ChainId` given a chain name and an epoch number.
     ///
     /// The returned `ChainId` will have the format: `{chain name}-{epoch number}`.
+    ///
     /// ```
     /// use ibc::core::ics24_host::identifier::ChainId;
     ///
     /// let epoch_number = 10;
-    /// let id = ChainId::new("chainA".to_string(), epoch_number);
+    /// let id = ChainId::new("chainA", epoch_number);
     /// assert_eq!(id.version(), epoch_number);
     /// ```
-    pub fn new(name: String, version: u64) -> Self {
-        Self {
-            id: format!("{name}-{version}"),
-            version,
-        }
+    pub fn new(name: &str, version: u64) -> Self {
+        let id = format!("{name}-{version}");
+        Self { id, version }
     }
 
     pub fn from_string(id: &str) -> Self {
@@ -133,7 +132,7 @@ impl ChainId {
     /// replaces it's version with the specified version
     /// ```
     /// use ibc::core::ics24_host::identifier::ChainId;
-    /// assert_eq!(ChainId::new("chainA".to_string(), 1).with_version(2), ChainId::new("chainA".to_string(), 2));
+    /// assert_eq!(ChainId::new("chainA", 1).with_version(2), ChainId::new("chainA", 2));
     /// assert_eq!("chain1".parse::<ChainId>().unwrap().with_version(2), "chain1".parse::<ChainId>().unwrap());
     /// ```
     pub fn with_version(mut self, version: u64) -> Self {

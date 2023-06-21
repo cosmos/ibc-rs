@@ -253,7 +253,7 @@ mod tests {
         };
 
         let ctx_new = MockContext::new(
-            ChainId::new("mockgaia".to_string(), 0),
+            ChainId::new("mockgaia", 0),
             HostType::Mock,
             max_history_size,
             host_chain_height,
