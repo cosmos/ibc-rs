@@ -27,7 +27,6 @@ pub trait RelayerContext {
 #[cfg(test)]
 mod tests {
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
-    // use crate::core::ics02_client::header::Header;
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
     use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};

@@ -673,11 +673,6 @@ impl RelayerContext for MockContext {
         ValidationContext::client_state(self, client_id).ok()
     }
 
-    // fn query_latest_header(&self) -> Option<Box<dyn Header>> {
-    //     let block_ref = self.host_block(&self.host_height().unwrap());
-    //     block_ref.cloned().map(Header::into_box)
-    // }
-
     fn signer(&self) -> Signer {
         "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C"
             .to_string()
