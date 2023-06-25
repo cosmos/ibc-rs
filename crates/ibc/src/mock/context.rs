@@ -99,7 +99,7 @@ impl Default for MockContext {
             ChainId::new("mockgaia", 0),
             HostType::Mock,
             5,
-            Height::new(0, 5).unwrap(),
+            Height::new(0, 5).expect("Never fails"),
         )
     }
 }
@@ -161,7 +161,7 @@ impl MockContext {
         );
 
         let block_time = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS);
-        let next_block_timestamp = Timestamp::now().add(block_time).unwrap();
+        let next_block_timestamp = Timestamp::now().add(block_time).expect("Never fails");
         MockContext {
             host_chain_type: host_type,
             host_chain_id: host_id.clone(),
@@ -174,10 +174,10 @@ impl MockContext {
                     HostBlock::generate_block(
                         host_id.clone(),
                         host_type,
-                        latest_height.sub(i).unwrap().revision_height(),
+                        latest_height.sub(i).expect("Never fails").revision_height(),
                         next_block_timestamp
                             .sub(Duration::from_secs(DEFAULT_BLOCK_TIME_SECS * (i + 1)))
-                            .unwrap(),
+                            .expect("Never fails"),
                     )
                 })
                 .collect(),
@@ -328,7 +328,7 @@ impl MockContext {
             let light_block = HostBlock::generate_tm_block(
                 self.host_chain_id.clone(),
                 prev_cs_height.revision_height(),
-                now.sub(self.block_time).unwrap(),
+                now.sub(self.block_time).expect("Never fails"),
             );
             light_block.into()
         } else {
@@ -501,7 +501,10 @@ impl MockContext {
             self.host_chain_id.clone(),
             self.host_chain_type,
             latest_block.height().increment().revision_height(),
-            latest_block.timestamp().add(self.block_time).unwrap(),
+            latest_block
+                .timestamp()
+                .add(self.block_time)
+                .expect("Never fails"),
         );
 
         // Append the new header at the tip of the history.
@@ -572,7 +575,7 @@ impl MockContext {
         self.ibc_store.lock().clients[client_id]
             .client_state
             .as_ref()
-            .unwrap()
+            .expect("Never fails")
             .clone()
     }
 
@@ -585,7 +588,7 @@ impl MockContext {
             self.ibc_store.lock().clients[client_id]
                 .consensus_states
                 .get(height)
-                .unwrap()
+                .expect("Never fails")
                 .as_ref(),
         )
     }
@@ -670,7 +673,7 @@ impl RelayerContext for MockContext {
     }
 
     fn query_latest_header(&self) -> Option<Box<dyn Header>> {
-        let block_ref = self.host_block(&self.host_height().unwrap());
+        let block_ref = self.host_block(&self.host_height().expect("Never fails"));
         block_ref.cloned().map(Header::into_box)
     }
 
@@ -787,7 +790,11 @@ impl ValidationContext for MockContext {
             if h > *height {
                 // unwrap should never happen, as the consensus state for h must exist
                 return Ok(Some(
-                    client_record.consensus_states.get(&h).unwrap().clone(),
+                    client_record
+                        .consensus_states
+                        .get(&h)
+                        .expect("Never fails")
+                        .clone(),
                 ));
             }
         }
@@ -817,7 +824,11 @@ impl ValidationContext for MockContext {
             if h < *height {
                 // unwrap should never happen, as the consensus state for h must exist
                 return Ok(Some(
-                    client_record.consensus_states.get(&h).unwrap().clone(),
+                    client_record
+                        .consensus_states
+                        .get(&h)
+                        .expect("Never fails")
+                        .clone(),
                 ));
             }
         }
@@ -835,7 +846,7 @@ impl ValidationContext for MockContext {
             .expect("history cannot be empty")
             .timestamp()
             .add(self.block_time)
-            .unwrap())
+            .expect("Never fails"))
     }
 
     fn host_consensus_state(
@@ -905,7 +916,7 @@ impl ValidationContext for MockContext {
     }
 
     fn commitment_prefix(&self) -> CommitmentPrefix {
-        CommitmentPrefix::try_from(b"mock".to_vec()).unwrap()
+        CommitmentPrefix::try_from(b"mock".to_vec()).expect("Never fails")
     }
 
     fn connection_counter(&self) -> Result<u64, ContextError> {
@@ -1151,7 +1162,8 @@ impl ExecutionContext for MockContext {
                 client_state: Default::default(),
             });
 
-        let height = Height::new(consensus_state_path.epoch, consensus_state_path.height).unwrap();
+        let height = Height::new(consensus_state_path.epoch, consensus_state_path.height)
+            .expect("Never fails");
         client_record
             .consensus_states
             .insert(height, consensus_state);
@@ -1490,7 +1502,7 @@ mod tests {
                     ChainId::new("mockgaia", cv),
                     HostType::Mock,
                     2,
-                    Height::new(cv, 1).unwrap(),
+                    Height::new(cv, 1).expect("Never fails"),
                 ),
             },
             Test {
@@ -1499,7 +1511,7 @@ mod tests {
                     ChainId::new("mocksgaia", cv),
                     HostType::SyntheticTendermint,
                     2,
-                    Height::new(cv, 1).unwrap(),
+                    Height::new(cv, 1).expect("Never fails"),
                 ),
             },
             Test {
@@ -1508,7 +1520,7 @@ mod tests {
                     ChainId::new("mockgaia", cv),
                     HostType::Mock,
                     30,
-                    Height::new(cv, 2).unwrap(),
+                    Height::new(cv, 2).expect("Never fails"),
                 ),
             },
             Test {
@@ -1517,7 +1529,7 @@ mod tests {
                     ChainId::new("mocksgaia", cv),
                     HostType::SyntheticTendermint,
                     30,
-                    Height::new(cv, 2).unwrap(),
+                    Height::new(cv, 2).expect("Never fails"),
                 ),
             },
             Test {
@@ -1526,7 +1538,7 @@ mod tests {
                     ChainId::new("mockgaia", cv),
                     HostType::Mock,
                     3,
-                    Height::new(cv, 30).unwrap(),
+                    Height::new(cv, 30).expect("Never fails"),
                 ),
             },
             Test {
@@ -1535,7 +1547,7 @@ mod tests {
                     ChainId::new("mockgaia", cv),
                     HostType::SyntheticTendermint,
                     3,
-                    Height::new(cv, 30).unwrap(),
+                    Height::new(cv, 30).expect("Never fails"),
                 ),
             },
             Test {
@@ -1544,7 +1556,7 @@ mod tests {
                     ChainId::new("mockgaia", cv),
                     HostType::Mock,
                     3,
-                    Height::new(cv, 2).unwrap(),
+                    Height::new(cv, 2).expect("Never fails"),
                 ),
             },
             Test {
@@ -1553,7 +1565,7 @@ mod tests {
                     ChainId::new("mockgaia", cv),
                     HostType::SyntheticTendermint,
                     3,
-                    Height::new(cv, 2).unwrap(),
+                    Height::new(cv, 2).expect("Never fails"),
                 ),
             },
             Test {
@@ -1562,7 +1574,7 @@ mod tests {
                     ChainId::new("mockgaia", cv),
                     HostType::Mock,
                     50,
-                    Height::new(cv, 2000).unwrap(),
+                    Height::new(cv, 2000).expect("Never fails"),
                 ),
             },
             Test {
@@ -1571,7 +1583,7 @@ mod tests {
                     ChainId::new("mockgaia", cv),
                     HostType::SyntheticTendermint,
                     50,
-                    Height::new(cv, 2000).unwrap(),
+                    Height::new(cv, 2000).expect("Never fails"),
                 ),
             },
         ];
@@ -1605,7 +1617,10 @@ mod tests {
             );
 
             assert_eq!(
-                test.ctx.host_block(&current_height).unwrap().height(),
+                test.ctx
+                    .host_block(&current_height)
+                    .expect("Never fails")
+                    .height(),
                 current_height,
                 "failed while fetching height {:?} of context {:?}",
                 current_height,
@@ -1679,7 +1694,7 @@ mod tests {
 
                 (
                     ModuleExtras::empty(),
-                    Acknowledgement::try_from(vec![1u8]).unwrap(),
+                    Acknowledgement::try_from(vec![1u8]).expect("Never fails"),
                 )
             }
 
@@ -1777,7 +1792,7 @@ mod tests {
             ) -> (ModuleExtras, Acknowledgement) {
                 (
                     ModuleExtras::empty(),
-                    Acknowledgement::try_from(vec![1u8]).unwrap(),
+                    Acknowledgement::try_from(vec![1u8]).expect("Never fails"),
                 )
             }
 
@@ -1820,16 +1835,16 @@ mod tests {
             ChainId::new("mockgaia", 1),
             HostType::Mock,
             1,
-            Height::new(1, 1).unwrap(),
+            Height::new(1, 1).expect("Never fails"),
         );
         ctx.add_route(ModuleId::new("foomodule".to_string()), FooModule::default())
-            .unwrap();
+            .expect("Never fails");
         ctx.add_route(ModuleId::new("barmodule".to_string()), BarModule)
-            .unwrap();
+            .expect("Never fails");
 
         let mut on_recv_packet_result = |module_id: &'static str| {
             let module_id = ModuleId::new(module_id.to_string());
-            let m = ctx.get_route_mut(&module_id).unwrap();
+            let m = ctx.get_route_mut(&module_id).expect("Never fails");
             let result =
                 m.on_recv_packet_execute(&Packet::default(), &get_dummy_bech32_account().into());
             (module_id, result)
