@@ -39,35 +39,16 @@ pub struct MerkleProof {
 /// Ref. <https://github.com/informalsystems/ibc-rs/issues/853>
 impl From<RawMerkleProof> for MerkleProof {
     fn from(proof: RawMerkleProof) -> Self {
-        let proofs: Vec<CommitmentProof> = proof
-            .proofs
-            .into_iter()
-            .map(|p| {
-                let mut encoded = Vec::new();
-                prost::Message::encode(&p, &mut encoded)
-                    .expect("Never fails to encode because of the same type");
-                prost::Message::decode(&*encoded)
-                    .expect("Never fails to decode because of the same type")
-            })
-            .collect();
-        Self { proofs }
+        Self {
+            proofs: proof.proofs,
+        }
     }
 }
 
 impl From<MerkleProof> for RawMerkleProof {
     fn from(proof: MerkleProof) -> Self {
         Self {
-            proofs: proof
-                .proofs
-                .into_iter()
-                .map(|p| {
-                    let mut encoded = Vec::new();
-                    prost::Message::encode(&p, &mut encoded)
-                        .expect("Never fails to encode because of the same type");
-                    prost::Message::decode(&*encoded)
-                        .expect("Never fails to decode because of the same type")
-                })
-                .collect(),
+            proofs: proof.proofs,
         }
     }
 }
