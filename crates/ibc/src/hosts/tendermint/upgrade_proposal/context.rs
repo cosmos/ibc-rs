@@ -27,7 +27,7 @@ pub trait UpgradeValidationContext {
     fn upgraded_consensus_state(
         &self,
         upgrade_path: &UpgradeClientPath,
-    ) -> Result<TmClientState, UpgradeClientError>;
+    ) -> Result<TmConsensusState, UpgradeClientError>;
 }
 
 /// Helper context to execute client upgrades, providing methods to schedule
