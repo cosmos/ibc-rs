@@ -12,7 +12,6 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TMConse
 use crate::clients::ics07_tendermint::header::TENDERMINT_HEADER_TYPE_URL;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics02_client::header::Header;
 use crate::core::ics24_host::identifier::ChainId;
 use crate::core::timestamp::Timestamp;
 use crate::mock::consensus_state::MockConsensusState;
@@ -179,15 +178,5 @@ impl From<HostBlock> for Any {
                 value: encode_light_block(*light_block),
             },
         }
-    }
-}
-
-impl Header for HostBlock {
-    fn height(&self) -> Height {
-        HostBlock::height(self)
-    }
-
-    fn timestamp(&self) -> Timestamp {
-        HostBlock::timestamp(self)
     }
 }
