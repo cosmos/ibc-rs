@@ -6,7 +6,6 @@ use ibc_proto::ibc::mock::Header as RawMockHeader;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics02_client::header::Header;
 use crate::core::timestamp::Timestamp;
 use crate::Height;
 
@@ -86,16 +85,6 @@ impl MockHeader {
 
     pub fn with_timestamp(self, timestamp: Timestamp) -> Self {
         Self { timestamp, ..self }
-    }
-}
-
-impl Header for MockHeader {
-    fn height(&self) -> Height {
-        self.height
-    }
-
-    fn timestamp(&self) -> Timestamp {
-        self.timestamp
     }
 }
 

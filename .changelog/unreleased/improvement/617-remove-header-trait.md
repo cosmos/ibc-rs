@@ -1,0 +1,1 @@
+- Remove Header trait ([#617](https://github.com/cosmos/ibc-rs/issues/617))

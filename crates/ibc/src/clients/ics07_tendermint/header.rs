@@ -48,6 +48,10 @@ impl Display for Header {
 }
 
 impl Header {
+    pub fn timestamp(&self) -> Timestamp {
+        self.signed_header.header.time.into()
+    }
+
     pub fn height(&self) -> Height {
         Height::new(
             ChainId::chain_version(self.signed_header.header.chain_id.as_str()),
@@ -128,16 +132,6 @@ impl Header {
             });
         }
         Ok(())
-    }
-}
-
-impl crate::core::ics02_client::header::Header for Header {
-    fn height(&self) -> Height {
-        self.height()
-    }
-
-    fn timestamp(&self) -> Timestamp {
-        self.signed_header.header.time.into()
     }
 }
 
