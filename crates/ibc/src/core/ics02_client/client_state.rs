@@ -208,7 +208,7 @@ where
 /// The macro expects the attribute `#[generics(ClientValidationContext = <...>,
 /// ClientExecutionContext = <...>)]` which specifies [`ClientState`]'s generic
 /// arguments to be defined.
-/// 
+///
 /// The macro does not support generic types for `ClientValidationContext` and
 /// `ClientExecutionContext` (e.g. `MyType<T>` would not be supported).
 pub use ibc_derive::ClientState;

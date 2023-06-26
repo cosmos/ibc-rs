@@ -22,6 +22,7 @@ pub fn upgrade_client_proposal_handler<Ctx>(
 ) -> Result<ProtoEvent, UpgradeClientError>
 where
     Ctx: UpgradeExecutionContext,
+    Ctx::AnyClientState: From<TmClientState>,
 {
     let plan = proposal.plan;
 
@@ -42,7 +43,7 @@ where
 
     let upgraded_client_state_path = UpgradeClientPath::UpgradedClientState(plan.height);
 
-    ctx.store_upgraded_client_state(upgraded_client_state_path, client_state)?;
+    ctx.store_upgraded_client_state(upgraded_client_state_path, client_state.into())?;
 
     let event = TmEvent::from(UpgradeClientProposal::new(proposal.title, plan.height))
         .try_into()

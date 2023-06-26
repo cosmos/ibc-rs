@@ -6,10 +6,10 @@
 //! If it proves to be generic enough, we may move it to the ICS02 section.
 
 use super::Plan;
-use crate::core::ics02_client::ClientExecutionContext;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::UpgradeClientError;
+use crate::core::ics02_client::ClientExecutionContext;
 use crate::core::ics24_host::path::UpgradeClientPath;
 
 /// Helper context to validate client upgrades, providing methods to retrieve
@@ -19,7 +19,7 @@ pub trait UpgradeValidationContext {
     type E: ClientExecutionContext;
     type AnyConsensusState: ConsensusState;
     type AnyClientState: ClientState<Self::ClientValidationContext, Self::E>;
-    
+
     /// Returns the upgrade plan that is scheduled and not have been executed yet.
     fn upgrade_plan(&self) -> Result<Plan, UpgradeClientError>;
 
