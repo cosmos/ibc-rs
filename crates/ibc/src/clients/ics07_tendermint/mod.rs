@@ -2,7 +2,7 @@
 //! the Tendermint consensus algorithm.
 
 use crate::core::ics02_client::client_type::ClientType;
-use std::str::FromStr;
+use core::str::FromStr;
 
 pub mod client_state;
 pub mod consensus_state;
