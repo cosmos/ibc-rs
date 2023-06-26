@@ -1,6 +1,7 @@
 use crate::core::ics02_client::ClientExecutionContext;
 use crate::prelude::*;
 
+use core::str::FromStr;
 use core::time::Duration;
 
 use ibc_proto::google::protobuf::Any;
@@ -30,7 +31,7 @@ pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
 pub const MOCK_CLIENT_TYPE: &str = "9999-mock";
 
 pub fn client_type() -> ClientType {
-    ClientType::from(MOCK_CLIENT_TYPE.to_string())
+    ClientType::from_str(MOCK_CLIENT_TYPE).expect("never fails because it's valid client type")
 }
 
 /// A mock of a client state. For an example of a real structure that this mocks, you can see
