@@ -14,8 +14,7 @@ use crate::{
 };
 
 use crate::clients::ics07_tendermint::{
-    CommonContext as TmCommonContext, ExecutionContext as TmExecutionContext,
-    ValidationContext as TmValidationContext,
+    CommonContext as TmCommonContext, ValidationContext as TmValidationContext,
 };
 
 use super::{AnyClientState, AnyConsensusState, MockClientRecord, MockContext};
@@ -146,5 +145,3 @@ impl ClientExecutionContext for MockContext {
         Ok(())
     }
 }
-
-impl TmExecutionContext for MockContext {}
