@@ -38,10 +38,11 @@ impl ClientType {
     }
 }
 
-impl From<String> for ClientType {
-    /// Constructs a new `ClientType` from the given `String` without performing any validation.
-    fn from(value: String) -> Self {
-        Self(value)
+impl TryFrom<String> for ClientType {
+    type Error = IdentifierError;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        Self::new(s)
     }
 }
 

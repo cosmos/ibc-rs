@@ -16,5 +16,6 @@ pub(crate) const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
 
 /// Returns the tendermint `ClientType`
 pub fn client_type() -> ClientType {
-    ClientType::from(TENDERMINT_CLIENT_TYPE.to_string())
+    ClientType::try_from(TENDERMINT_CLIENT_TYPE.to_string())
+        .expect("Never fails because it's valid")
 }

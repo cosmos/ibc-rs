@@ -430,7 +430,8 @@ mod tests {
             expected_values: Vec<&'static str>,
         }
 
-        let client_type = ClientType::from("07-tendermint".to_string());
+        let client_type = ClientType::try_from("07-tendermint".to_string())
+            .expect("never fails because it's a valid client type");
         let client_id = ClientId::new(client_type.clone(), 0).unwrap();
         let consensus_height = Height::new(0, 5).unwrap();
         let consensus_heights = vec![Height::new(0, 5).unwrap(), Height::new(0, 7).unwrap()];

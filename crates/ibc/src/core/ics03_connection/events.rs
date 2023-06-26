@@ -319,7 +319,8 @@ mod tests {
             expected_values: Vec<&'static str>,
         }
 
-        let client_type = ClientType::from("07-tendermint".to_string());
+        let client_type = ClientType::try_from("07-tendermint".to_string())
+            .expect("never fails because it's a valid client type");
         let conn_id_on_a = ConnectionId::default();
         let client_id_on_a = ClientId::new(client_type.clone(), 0).unwrap();
         let conn_id_on_b = ConnectionId::new(1);
