@@ -36,7 +36,6 @@ use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics02_client::header::Header;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::channel::ChannelEnd;
@@ -739,6 +738,11 @@ impl MockContext {
     pub fn ibc_store_share(&self) -> Arc<Mutex<MockIbcStore>> {
         self.ibc_store.clone()
     }
+
+    pub fn query_latest_header(&self) -> Option<HostBlock> {
+        let block_ref = self.host_block(&self.host_height().unwrap());
+        block_ref.cloned()
+    }
 }
 
 type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
@@ -751,11 +755,6 @@ impl RelayerContext for MockContext {
     fn query_client_full_state(&self, client_id: &ClientId) -> Option<AnyClientState> {
         // Forward call to Ics2.
         self.client_state(client_id).ok()
-    }
-
-    fn query_latest_header(&self) -> Option<Box<dyn Header>> {
-        let block_ref = self.host_block(&ValidationContext::host_height(self).unwrap());
-        block_ref.cloned().map(Header::into_box)
     }
 
     fn signer(&self) -> Signer {

@@ -1,8 +1,6 @@
 use crate::mock::context::AnyClientState;
 use crate::prelude::*;
 
-use crate::core::ics02_client::header::Header;
-
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ContextError;
 use crate::signer::Signer;
@@ -21,9 +19,6 @@ pub trait RelayerContext {
     /// Wrapper over the `/abci_query?path=..` endpoint.
     fn query_client_full_state(&self, client_id: &ClientId) -> Option<AnyClientState>;
 
-    /// Returns the most advanced header of this chain.
-    fn query_latest_header(&self) -> Option<Box<dyn Header>>;
-
     /// Temporary solution. Similar to `CosmosSDKChain::key_and_signer()` but simpler.
     fn signer(&self) -> Signer;
 }
@@ -32,7 +27,6 @@ pub trait RelayerContext {
 mod tests {
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::core::ics02_client::client_state::ClientStateCommon;
-    use crate::core::ics02_client::header::Header;
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
     use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
@@ -48,16 +42,12 @@ mod tests {
     use test_log::test;
     use tracing::debug;
 
-    fn downcast_header<H: Header>(h: &dyn Header) -> Option<&H> {
-        h.as_any().downcast_ref::<H>()
-    }
-
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
     /// context, assuming that the latest header on the source context is `src_header`.
     pub(crate) fn build_client_update_datagram<Ctx>(
         dest: &Ctx,
         client_id: &ClientId,
-        src_header: &dyn Header,
+        src_header: &HostBlock,
     ) -> Result<ClientMsg, RelayerError>
     where
         Ctx: RelayerContext,
@@ -91,7 +81,7 @@ mod tests {
         // Client on destination chain can be updated.
         Ok(ClientMsg::UpdateClient(MsgUpdateClient {
             client_id: client_id.clone(),
-            header: src_header.clone_into(),
+            header: (*src_header).clone().into(),
             signer: dest.signer(),
         }))
     }
@@ -142,7 +132,7 @@ mod tests {
             // - create the client update message with the latest header from A
             let a_latest_header = ctx_a.query_latest_header().unwrap();
             let client_msg_b_res =
-                build_client_update_datagram(&ctx_b, &client_on_b_for_a, a_latest_header.as_ref());
+                build_client_update_datagram(&ctx_b, &client_on_b_for_a, &a_latest_header);
 
             assert!(
                 client_msg_b_res.is_ok(),
@@ -174,18 +164,13 @@ mod tests {
             // Update client on chain A to latest height of B.
             // - create the client update message with the latest header from B
             // The test uses LightClientBlock that does not store the trusted height
-            let b_latest_header = ctx_b.query_latest_header().unwrap();
-            let b_latest_header: &HostBlock = downcast_header(b_latest_header.as_ref()).unwrap();
-            let mut b_latest_header = b_latest_header.clone();
+            let mut b_latest_header = ctx_b.query_latest_header().unwrap();
 
             let th = b_latest_header.height();
             b_latest_header.set_trusted_height(th.decrement().unwrap());
 
-            let client_msg_a_res = build_client_update_datagram(
-                &ctx_a,
-                &client_on_a_for_b,
-                b_latest_header.into_box().as_ref(),
-            );
+            let client_msg_a_res =
+                build_client_update_datagram(&ctx_a, &client_on_a_for_b, &b_latest_header);
 
             assert!(
                 client_msg_a_res.is_ok(),
