@@ -1,7 +1,10 @@
 //! Defines the `ClientType` format, typically used in chain IDs.
 
 use crate::prelude::*;
-use core::fmt::{Display, Error as FmtError, Formatter};
+use core::{
+    fmt::{Display, Error as FmtError, Formatter},
+    str::FromStr,
+};
 
 use crate::core::ics24_host::{
     identifier::validate::validate_client_type, identifier::IdentifierError,
@@ -26,7 +29,7 @@ pub struct ClientType(String);
 
 impl ClientType {
     /// Constructs a new `ClientType` from the given `String` if it ends with a valid client identifier.
-    pub fn new(s: String) -> Result<Self, IdentifierError> {
+    pub fn new(s: &str) -> Result<Self, IdentifierError> {
         let s_trim = s.trim();
         validate_client_type(s_trim)?;
         Ok(Self(s_trim.to_string()))
@@ -38,10 +41,10 @@ impl ClientType {
     }
 }
 
-impl TryFrom<String> for ClientType {
-    type Error = IdentifierError;
+impl FromStr for ClientType {
+    type Err = IdentifierError;
 
-    fn try_from(s: String) -> Result<Self, Self::Error> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::new(s)
     }
 }

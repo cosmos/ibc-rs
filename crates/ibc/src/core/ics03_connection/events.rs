@@ -308,6 +308,7 @@ mod tests {
 
     use super::*;
     use crate::core::ics02_client::client_type::ClientType;
+    use std::str::FromStr;
     use tendermint::abci::Event as AbciEvent;
 
     #[test]
@@ -319,7 +320,7 @@ mod tests {
             expected_values: Vec<&'static str>,
         }
 
-        let client_type = ClientType::try_from("07-tendermint".to_string())
+        let client_type = ClientType::from_str("07-tendermint")
             .expect("never fails because it's a valid client type");
         let conn_id_on_a = ConnectionId::default();
         let client_id_on_a = ClientId::new(client_type.clone(), 0).unwrap();

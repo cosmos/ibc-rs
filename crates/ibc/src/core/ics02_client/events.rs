@@ -419,6 +419,7 @@ mod tests {
     use crate::core::timestamp::Timestamp;
     use crate::mock::header::MockHeader;
     use ibc_proto::google::protobuf::Any;
+    use std::str::FromStr;
     use tendermint::abci::Event as AbciEvent;
 
     #[test]
@@ -430,7 +431,7 @@ mod tests {
             expected_values: Vec<&'static str>,
         }
 
-        let client_type = ClientType::try_from("07-tendermint".to_string())
+        let client_type = ClientType::from_str("07-tendermint")
             .expect("never fails because it's a valid client type");
         let client_id = ClientId::new(client_type.clone(), 0).unwrap();
         let consensus_height = Height::new(0, 5).unwrap();

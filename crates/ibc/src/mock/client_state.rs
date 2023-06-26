@@ -1,6 +1,7 @@
 use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap as HashMap;
+use core::str::FromStr;
 use core::time::Duration;
 
 use ibc_proto::google::protobuf::Any;
@@ -32,8 +33,7 @@ pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
 pub const MOCK_CLIENT_TYPE: &str = "9999-mock";
 
 pub fn client_type() -> ClientType {
-    ClientType::try_from(MOCK_CLIENT_TYPE.to_string())
-        .expect("never fails because it's valid client type")
+    ClientType::from_str(MOCK_CLIENT_TYPE).expect("never fails because it's valid client type")
 }
 
 /// A mock of an IBC client record as it is stored in a mock context.
