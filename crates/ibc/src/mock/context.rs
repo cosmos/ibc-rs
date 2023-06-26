@@ -604,7 +604,7 @@ impl MockContext {
     }
 
     pub fn query_latest_header(&self) -> Option<HostBlock> {
-        let block_ref = self.host_block(&self.host_height().unwrap());
+        let block_ref = self.host_block(&self.host_height().expect("Never fails"));
         block_ref.cloned()
     }
 }
