@@ -6,6 +6,5 @@ pub mod consensus_state;
 pub mod error;
 pub mod events;
 pub mod handler;
-pub mod header;
 pub mod height;
 pub mod msgs;
