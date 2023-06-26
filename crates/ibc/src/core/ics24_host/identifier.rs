@@ -41,10 +41,6 @@ const TRANSFER_PORT_ID: &str = "transfer";
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(from = "tendermint::chain::Id", into = "tendermint::chain::Id")
-)]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ChainId {
     id: String,
@@ -165,15 +161,9 @@ impl Display for ChainId {
     }
 }
 
-impl From<ChainId> for tendermint::chain::Id {
+impl From<ChainId> for String {
     fn from(id: ChainId) -> Self {
-        tendermint::chain::Id::from_str(id.as_str()).unwrap()
-    }
-}
-
-impl From<tendermint::chain::Id> for ChainId {
-    fn from(id: tendermint::chain::Id) -> Self {
-        ChainId::from(id.to_string())
+        id.to_string()
     }
 }
 

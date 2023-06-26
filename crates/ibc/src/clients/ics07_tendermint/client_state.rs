@@ -1127,7 +1127,7 @@ pub mod test_util {
 
         pub fn new_dummy_from_header(tm_header: Header) -> ClientState {
             ClientState::new(
-                tm_header.chain_id.clone().into(),
+                tm_header.chain_id.to_string().try_into().unwrap(),
                 Default::default(),
                 Duration::from_secs(64000),
                 Duration::from_secs(128000),
