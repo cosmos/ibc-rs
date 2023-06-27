@@ -6,7 +6,7 @@ use derive_more::Into;
 use super::error::PacketError;
 use crate::prelude::*;
 
-/// The default string constant included in error acknowledgements.
+/// The string constant included in error acknowledgements.
 /// NOTE: Changing this const is state machine breaking as acknowledgements are written into state
 pub const ACK_ERR_STR: &str = "error handling packet on destination chain: see events for details";
 
@@ -112,7 +112,7 @@ impl AcknowledgementResult {
         let success_res = if success_str.is_empty() {
             EMPTY_SUCCESS_ACK_RES.to_string()
         } else {
-            res.to_string()
+            success_str
         };
 
         Self::Success(SuccessAckStr(success_res))
@@ -131,7 +131,15 @@ impl AcknowledgementResult {
             err_str
         };
 
-        Self::Error(ErrorAckStr(format!("{ACK_ERR_STR}: {err_res}")))
+        Self::Error(ErrorAckStr(err_res))
+    }
+
+    /// Creates an error acknowledgement result with the given error and
+    /// includes the default
+    /// [ACK_ERR_STR](crate::core::ics04_channel::acknowledgement::ACK_ERR_STR)
+    /// string constant in the error message.
+    pub fn default_error(err: impl ToString) -> Self {
+        Self::Error(ErrorAckStr(format!("{ACK_ERR_STR}: {}", err.to_string())))
     }
 
     /// Returns true if the acknowledgement is successful.
