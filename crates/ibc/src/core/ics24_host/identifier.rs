@@ -41,10 +41,6 @@ const TRANSFER_PORT_ID: &str = "transfer";
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(from = "tendermint::chain::Id", into = "tendermint::chain::Id")
-)]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ChainId {
     id: String,
@@ -162,19 +158,6 @@ impl FromStr for ChainId {
 impl Display for ChainId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         write!(f, "{}", self.id)
-    }
-}
-
-impl From<ChainId> for tendermint::chain::Id {
-    fn from(id: ChainId) -> Self {
-        tendermint::chain::Id::from_str(id.as_str())
-            .expect("Never fails because we already have a valid chain id")
-    }
-}
-
-impl From<tendermint::chain::Id> for ChainId {
-    fn from(id: tendermint::chain::Id) -> Self {
-        ChainId::from(id.to_string())
     }
 }
 

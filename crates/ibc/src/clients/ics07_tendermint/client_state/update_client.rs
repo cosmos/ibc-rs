@@ -42,7 +42,11 @@ impl ClientState {
                     check_header_trusted_next_validator_set(&header, &trusted_consensus_state)?;
 
                     TrustedBlockState {
-                        chain_id: &self.chain_id.clone().into(),
+                        chain_id: &self.chain_id.to_string().try_into().map_err(|e| {
+                            ClientError::Other {
+                                description: format!("failed to parse chain id: {}", e),
+                            }
+                        })?,
                         header_time: trusted_consensus_state.timestamp,
                         height: header.trusted_height.revision_height().try_into().map_err(
                             |_| ClientError::ClientSpecific {
