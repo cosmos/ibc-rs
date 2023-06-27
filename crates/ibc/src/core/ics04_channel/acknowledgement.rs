@@ -116,13 +116,22 @@ impl Display for AcknowledgementResult {
     }
 }
 
+/// Converts an acknowledgement result into a vector of bytes.
+///
+/// NOTE: in case of an empty acknowledgement result, the default success/error string is used.
 impl From<AcknowledgementResult> for Vec<u8> {
     fn from(ack: AcknowledgementResult) -> Self {
         // WARNING: Make sure all branches always return a non-empty vector.
         // Otherwise, the conversion to `Acknowledgement` will panic.
         match ack {
-            AcknowledgementResult::Success(s) => alloc::format!(r#"{{"result":"{s}"}}"#).into(),
-            AcknowledgementResult::Error(s) => alloc::format!(r#"{{"error":"{s}"}}"#).into(),
+            AcknowledgementResult::Success(s) => {
+                let res = if s.is_empty() { EMPTY_ACK_SUCCESS } else { &s };
+                alloc::format!(r#"{{"result":"{res}"}}"#).into()
+            }
+            AcknowledgementResult::Error(s) => {
+                let err = if s.is_empty() { EMPTY_ACK_ERR } else { &s };
+                alloc::format!(r#"{{"error":"{err}"}}"#).into()
+            }
         }
     }
 }
