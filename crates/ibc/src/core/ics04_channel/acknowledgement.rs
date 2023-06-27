@@ -77,8 +77,7 @@ impl AcknowledgementResult {
     ///
     /// NOTE: To avoid dealing with the Result signature in the case of an empty
     /// result being passed, the acknowledgement result will be created using
-    /// the default success string:
-    /// [EMPTY_ACK_SUCCESS](crate::core::ics04_channel::acknowledgement::EMPTY_ACK_SUCCESS).
+    /// the default success string: "empty success result"
     pub fn success(res: impl ToString) -> Self {
         if res.to_string().is_empty() {
             return Self::Success(EMPTY_ACK_SUCCESS.to_string());
@@ -91,8 +90,7 @@ impl AcknowledgementResult {
     ///
     /// NOTE: To avoid dealing with the Result signature in the case of an empty
     /// error being passed, the acknowledgement result will be created using
-    /// the default error string:
-    /// [EMPTY_ACK_ERR](crate::core::ics04_channel::acknowledgement::EMPTY_ACK_ERR).
+    /// the default error string: "empty error result"
     pub fn from_error(err: impl ToString) -> Self {
         if err.to_string().is_empty() {
             return Self::Error(format!("{ACK_ERR_STR}: {}", EMPTY_ACK_ERR));
