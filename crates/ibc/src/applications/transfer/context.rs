@@ -271,16 +271,14 @@ pub fn on_recv_packet_execute(
     let data = match serde_json::from_slice::<PacketData>(&packet.data) {
         Ok(data) => data,
         Err(_) => {
-            let ack = AcknowledgementResult::Error(
-                TokenTransferError::PacketDataDeserialization.to_string(),
-            );
+            let ack = AcknowledgementResult::error(TokenTransferError::PacketDataDeserialization);
             return (ModuleExtras::empty(), ack.into());
         }
     };
 
     let (mut extras, ack) = match process_recv_packet_execute(ctx_b, packet, data.clone()) {
         Ok(extras) => (extras, AcknowledgementResult::success(ACK_SUCCESS_B64)),
-        Err((extras, error)) => (extras, AcknowledgementResult::from_error(error)),
+        Err((extras, error)) => (extras, AcknowledgementResult::error(error)),
     };
 
     let recv_event = RecvEvent {

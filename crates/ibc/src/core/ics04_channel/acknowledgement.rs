@@ -10,14 +10,15 @@ use crate::prelude::*;
 /// NOTE: Changing this const is state machine breaking as acknowledgements are written into state
 pub const ACK_ERR_STR: &str = "error handling packet on destination chain: see events for details";
 
-/// The default string constant used when creating a successful acknowledgement with an empty value
-const EMPTY_ACK_SUCCESS: &str = "empty succuss result";
+/// The string constant used when a successful acknowledgement result is created with an empty value
+const EMPTY_SUCCESS_ACK_RES: &str = "empty succuss result";
 
-/// The default string constant used when creating an error acknowledgement with an empty value
-const EMPTY_ACK_ERR: &str = "empty error result";
+/// The string constant used when an error acknowledgement result is created with an empty value
+const EMPTY_ERR_ACK_RES: &str = "empty error result";
 
 /// A generic Acknowledgement type that modules may interpret as they like.
-/// An acknowledgement cannot be empty.
+///
+/// NOTE: An acknowledgement cannot be empty.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -59,44 +60,78 @@ impl TryFrom<Vec<u8>> for Acknowledgement {
     }
 }
 
+/// Defines a generic type for acknowledgement results used by IBC applications
+/// to interpret the success or failure of a packet.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AcknowledgementResult {
     /// Successful Acknowledgement
     /// e.g. `{"result":"AQ=="}`
     #[cfg_attr(feature = "serde", serde(rename = "result"))]
-    Success(String),
+    Success(SuccessAckStr),
     /// Error Acknowledgement
     /// e.g. `{"error":"cannot unmarshal ICS-20 transfer packet data"}`
     #[cfg_attr(feature = "serde", serde(rename = "error"))]
-    Error(String),
+    Error(ErrorAckStr),
+}
+
+/// Guards the `Success` variant of
+/// [`AcknowledgementResult`](crate::core::ics04_channel::acknowledgement::AcknowledgementResult)
+/// against being created with an empty success string.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SuccessAckStr(String);
+
+impl Display for SuccessAckStr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+        write!(f, "{success_str}", success_str = self.0)
+    }
+}
+
+/// Guards the `Error` variant of
+/// [`AcknowledgementResult`](crate::core::ics04_channel::acknowledgement::AcknowledgementResult)
+/// against being created with an empty error string.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ErrorAckStr(String);
+
+impl Display for ErrorAckStr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
+        write!(f, "{err_str}", err_str = self.0)
+    }
 }
 
 impl AcknowledgementResult {
     /// Creates a successful acknowledgement with the given result.
     ///
-    /// NOTE: To avoid dealing with the Result signature in the case of an empty
-    /// result being passed, the acknowledgement result will be created using
-    /// the default success string: "empty success result"
+    /// NOTE: in the case of passing an empty value, the acknowledgement result
+    /// will be created using the default success string: "empty success result"
     pub fn success(res: impl ToString) -> Self {
-        if res.to_string().is_empty() {
-            return Self::Success(EMPTY_ACK_SUCCESS.to_string());
+        let success_str = res.to_string();
+
+        let success_res = if success_str.is_empty() {
+            EMPTY_SUCCESS_ACK_RES.to_string()
+        } else {
+            res.to_string()
         };
 
-        Self::Success(res.to_string())
+        Self::Success(SuccessAckStr(success_res))
     }
 
     /// Creates an error acknowledgement with the given error.
     ///
-    /// NOTE: To avoid dealing with the Result signature in the case of an empty
-    /// error being passed, the acknowledgement result will be created using
-    /// the default error string: "empty error result"
-    pub fn from_error(err: impl ToString) -> Self {
-        if err.to_string().is_empty() {
-            return Self::Error(format!("{ACK_ERR_STR}: {}", EMPTY_ACK_ERR));
+    /// NOTE: in the case of passing an empty value, the acknowledgement result
+    /// will be created using the default error string: "empty error result"
+    pub fn error(err: impl ToString) -> Self {
+        let err_str = err.to_string();
+
+        let err_res = if err_str.is_empty() {
+            EMPTY_ERR_ACK_RES.to_string()
+        } else {
+            err_str
         };
 
-        Self::Error(format!("{ACK_ERR_STR}: {}", err.to_string()))
+        Self::Error(ErrorAckStr(format!("{ACK_ERR_STR}: {err_res}")))
     }
 
     /// Returns true if the acknowledgement is successful.
@@ -116,18 +151,29 @@ impl Display for AcknowledgementResult {
 
 /// Converts an acknowledgement result into a vector of bytes.
 ///
-/// NOTE: in case of an empty acknowledgement result, the default success/error string is used.
+/// NOTE: in case of passing an empty acknowledgement result, the default
+/// success/error string is used for the conversion.
 impl From<AcknowledgementResult> for Vec<u8> {
     fn from(ack: AcknowledgementResult) -> Self {
         // WARNING: Make sure all branches always return a non-empty vector.
         // Otherwise, the conversion to `Acknowledgement` will panic.
         match ack {
             AcknowledgementResult::Success(s) => {
-                let res = if s.is_empty() { EMPTY_ACK_SUCCESS } else { &s };
+                let res = if s.0.is_empty() {
+                    EMPTY_SUCCESS_ACK_RES
+                } else {
+                    &s.0
+                };
+
                 alloc::format!(r#"{{"result":"{res}"}}"#).into()
             }
             AcknowledgementResult::Error(s) => {
-                let err = if s.is_empty() { EMPTY_ACK_ERR } else { &s };
+                let err = if s.0.is_empty() {
+                    EMPTY_ERR_ACK_RES
+                } else {
+                    &s.0
+                };
+
                 alloc::format!(r#"{{"error":"{err}"}}"#).into()
             }
         }
@@ -160,7 +206,7 @@ mod test {
             r#"{"result":"AQ=="}"#,
         );
         ser_json_assert_eq(
-            AcknowledgementResult::Error("cannot unmarshal ICS-20 transfer packet data".to_owned()),
+            AcknowledgementResult::error("cannot unmarshal ICS-20 transfer packet data"),
             r#"{"error":"cannot unmarshal ICS-20 transfer packet data"}"#,
         );
     }
@@ -177,10 +223,8 @@ mod test {
 
     #[test]
     fn test_ack_error_to_vec() {
-        let ack_error: Vec<u8> = AcknowledgementResult::Error(
-            "cannot unmarshal ICS-20 transfer packet data".to_string(),
-        )
-        .into();
+        let ack_error: Vec<u8> =
+            AcknowledgementResult::error("cannot unmarshal ICS-20 transfer packet data").into();
 
         // Check that it's the same output as ibc-go
         // Note: this also implicitly checks that the ack bytes are non-empty,
@@ -206,7 +250,7 @@ mod test {
         );
         de_json_assert_eq(
             r#"{"error":"cannot unmarshal ICS-20 transfer packet data"}"#,
-            AcknowledgementResult::Error("cannot unmarshal ICS-20 transfer packet data".to_owned()),
+            AcknowledgementResult::error("cannot unmarshal ICS-20 transfer packet data"),
         );
 
         assert!(serde_json::from_str::<AcknowledgementResult>(r#"{"success":"AQ=="}"#).is_err());
