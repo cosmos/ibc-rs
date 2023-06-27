@@ -90,8 +90,8 @@ impl AcknowledgementResult {
     /// Creates an error acknowledgement with the given error.
     ///
     /// NOTE: To avoid dealing with the Result signature in the case of an empty
-    /// result being passed, the acknowledgement result will be created using
-    /// the default success string:
+    /// error being passed, the acknowledgement result will be created using
+    /// the default error string:
     /// [EMPTY_ACK_ERR](crate::core::ics04_channel::acknowledgement::EMPTY_ACK_ERR).
     pub fn from_error(err: impl ToString) -> Self {
         if err.to_string().is_empty() {
