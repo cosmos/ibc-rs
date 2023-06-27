@@ -10,6 +10,12 @@ use crate::prelude::*;
 /// NOTE: Changing this const is state machine breaking as acknowledgements are written into state
 pub const ACK_ERR_STR: &str = "error handling packet on destination chain: see events for details";
 
+/// The default string constant used when creating a successful acknowledgement with an empty value
+const EMPTY_ACK_SUCCESS: &str = "empty succuss result";
+
+/// The default string constant used when creating an error acknowledgement with an empty value
+const EMPTY_ACK_ERR: &str = "empty error result";
+
 /// A generic Acknowledgement type that modules may interpret as they like.
 /// An acknowledgement cannot be empty.
 #[cfg_attr(
@@ -68,12 +74,30 @@ pub enum AcknowledgementResult {
 
 impl AcknowledgementResult {
     /// Creates a successful acknowledgement with the given result.
+    ///
+    /// NOTE: To avoid dealing with the Result signature in the case of an empty
+    /// result being passed, the acknowledgement result will be created using
+    /// the default success string:
+    /// [EMPTY_ACK_SUCCESS](crate::core::ics04_channel::acknowledgement::EMPTY_ACK_SUCCESS).
     pub fn success(res: impl ToString) -> Self {
+        if res.to_string().is_empty() {
+            return Self::Success(EMPTY_ACK_SUCCESS.to_string());
+        };
+
         Self::Success(res.to_string())
     }
 
     /// Creates an error acknowledgement with the given error.
+    ///
+    /// NOTE: To avoid dealing with the Result signature in the case of an empty
+    /// result being passed, the acknowledgement result will be created using
+    /// the default success string:
+    /// [EMPTY_ACK_ERR](crate::core::ics04_channel::acknowledgement::EMPTY_ACK_ERR).
     pub fn from_error(err: impl ToString) -> Self {
+        if err.to_string().is_empty() {
+            return Self::Error(format!("{ACK_ERR_STR}: {}", EMPTY_ACK_ERR));
+        };
+
         Self::Error(format!("{ACK_ERR_STR}: {}", err.to_string()))
     }
 
