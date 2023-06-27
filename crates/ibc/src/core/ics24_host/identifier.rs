@@ -161,12 +161,6 @@ impl Display for ChainId {
     }
 }
 
-impl From<ChainId> for String {
-    fn from(id: ChainId) -> Self {
-        id.to_string()
-    }
-}
-
 impl Default for ChainId {
     fn default() -> Self {
         Self::from_string(DEFAULT_CHAIN_ID)
