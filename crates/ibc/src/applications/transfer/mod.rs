@@ -1,6 +1,5 @@
 //! Implementation of the [fungible token transfer module](https://github.com/cosmos/ibc/blob/main/spec/app/ics-020-fungible-token-transfer/README.md) (ICS-20)
 
-pub mod acknowledgement;
 pub mod amount;
 pub mod coin;
 pub mod context;
@@ -25,6 +24,9 @@ pub const PORT_ID_STR: &str = "transfer";
 
 /// ICS20 application current version.
 pub const VERSION: &str = "ics20-1";
+
+/// A successful token transfer acknowledgement, equivalent to `base64::encode(0x01)`.
+pub const ACK_SUCCESS_B64: &str = "AQ==";
 
 mod relay;
 

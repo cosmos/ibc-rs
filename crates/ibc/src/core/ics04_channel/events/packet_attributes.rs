@@ -1,23 +1,20 @@
 //! This module holds all the abci event attributes for IBC events emitted
 //! during packet-related datagrams.
 //!
-use crate::core::timestamp::Timestamp;
-use crate::prelude::*;
-
-use crate::core::{
-    ics04_channel::{
-        channel::Order,
-        error::ChannelError,
-        packet::{Acknowledgement, Sequence},
-        timeout::TimeoutHeight,
-    },
-    ics24_host::identifier::{ChannelId, ConnectionId, PortId},
-};
+use core::str;
 use derive_more::From;
 use subtle_encoding::hex;
 use tendermint::abci;
 
-use core::str;
+use crate::prelude::*;
+
+use crate::core::ics04_channel::acknowledgement::Acknowledgement;
+use crate::core::ics04_channel::channel::Order;
+use crate::core::ics04_channel::error::ChannelError;
+use crate::core::ics04_channel::packet::Sequence;
+use crate::core::ics04_channel::timeout::TimeoutHeight;
+use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+use crate::core::timestamp::Timestamp;
 
 const PKT_SEQ_ATTRIBUTE_KEY: &str = "packet_sequence";
 const PKT_DATA_ATTRIBUTE_KEY: &str = "packet_data";

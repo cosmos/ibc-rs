@@ -5,12 +5,13 @@ use alloc::borrow::Borrow;
 use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 
 use crate::core::events::ModuleEvent;
+use crate::core::ics04_channel::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::error::PortError::UnknownPort;
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::msgs::ChannelMsg;
 use crate::core::ics04_channel::msgs::PacketMsg;
-use crate::core::ics04_channel::packet::{Acknowledgement, Packet};
+use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::PortId;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId};
