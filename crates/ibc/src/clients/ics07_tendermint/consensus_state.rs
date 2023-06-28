@@ -1,6 +1,5 @@
 //! Defines Tendermint's `ConsensusState` type
 
-use crate::core::ics02_client::consensus_state::ConsensusState as ConsensusStateTrait;
 use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
@@ -12,6 +11,7 @@ use tendermint_proto::Protobuf;
 
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
+use crate::core::ics02_client::consensus_state::ConsensusState as ConsensusStateTrait;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::core::timestamp::Timestamp;

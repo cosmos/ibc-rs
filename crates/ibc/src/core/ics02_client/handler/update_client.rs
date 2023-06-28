@@ -1,17 +1,16 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpdateAnyClient`.
 
-use crate::core::ics02_client::client_state::{
-    ClientStateCommon, ClientStateExecution, ClientStateValidation, UpdateKind,
-};
-use crate::core::ics02_client::error::ClientError;
-use crate::core::ics02_client::msgs::MsgUpdateOrMisbehaviour;
 use crate::prelude::*;
 
-use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
-
 use crate::core::context::ContextError;
-
+use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::client_state::ClientStateExecution;
+use crate::core::ics02_client::client_state::ClientStateValidation;
+use crate::core::ics02_client::client_state::UpdateKind;
+use crate::core::ics02_client::error::ClientError;
+use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
+use crate::core::ics02_client::msgs::MsgUpdateOrMisbehaviour;
 use crate::core::{ExecutionContext, ValidationContext};
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>

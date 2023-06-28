@@ -1,23 +1,19 @@
 //! Client context implementations for `MockContext`
 
-use crate::core::ics02_client::ClientExecutionContext;
-use crate::core::ics24_host::path::ClientStatePath;
 use crate::prelude::*;
-use crate::{
-    core::{
-        ics02_client::error::ClientError,
-        ics24_host::{identifier::ClientId, path::ClientConsensusStatePath},
-        timestamp::Timestamp,
-        ContextError, ValidationContext,
-    },
-    Height,
-};
-
-use crate::clients::ics07_tendermint::{
-    CommonContext as TmCommonContext, ValidationContext as TmValidationContext,
-};
 
 use super::{AnyClientState, AnyConsensusState, MockClientRecord, MockContext};
+use crate::clients::ics07_tendermint::CommonContext as TmCommonContext;
+use crate::clients::ics07_tendermint::ValidationContext as TmValidationContext;
+use crate::core::ics02_client::error::ClientError;
+use crate::core::ics02_client::ClientExecutionContext;
+use crate::core::ics24_host::identifier::ClientId;
+use crate::core::ics24_host::path::ClientConsensusStatePath;
+use crate::core::ics24_host::path::ClientStatePath;
+use crate::core::timestamp::Timestamp;
+use crate::core::ContextError;
+use crate::core::ValidationContext;
+use crate::Height;
 
 impl TmCommonContext for MockContext {
     type AnyConsensusState = AnyConsensusState;

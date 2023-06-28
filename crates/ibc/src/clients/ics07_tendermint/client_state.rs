@@ -4,8 +4,6 @@
 mod misbehaviour;
 mod update_client;
 
-use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::ClientExecutionContext;
 use crate::prelude::*;
 
 use core::cmp::max;
@@ -32,7 +30,9 @@ use crate::core::ics02_client::client_state::{
     ClientStateCommon, ClientStateExecution, ClientStateValidation, UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
+use crate::core::ics02_client::ClientExecutionContext;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };

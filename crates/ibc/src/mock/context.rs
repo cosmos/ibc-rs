@@ -23,12 +23,11 @@ use tendermint_proto::Protobuf;
 use ibc_proto::google::protobuf::Any;
 use tracing::debug;
 
-use crate::clients::ics07_tendermint::client_state::{
-    ClientState as TmClientState, TENDERMINT_CLIENT_STATE_TYPE_URL,
-};
-use crate::clients::ics07_tendermint::consensus_state::{
-    ConsensusState as TmConsensusState, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
-};
+use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
+use crate::clients::ics07_tendermint::client_state::TENDERMINT_CLIENT_STATE_TYPE_URL;
+use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
+use crate::clients::ics07_tendermint::consensus_state::TENDERMINT_CONSENSUS_STATE_TYPE_URL;
+
 use crate::core::dispatch;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;

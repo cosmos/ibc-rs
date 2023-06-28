@@ -1,9 +1,9 @@
-use crate::core::ics02_client::client_state::ClientStateCommon;
-use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::prelude::*;
 
 use crate::core::events::IbcEvent;
 use crate::core::events::MessageEvent;
+use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics04_channel::channel::Counterparty;
 use crate::core::ics04_channel::commitment::compute_packet_commitment;
 use crate::core::ics04_channel::context::SendPacketExecutionContext;

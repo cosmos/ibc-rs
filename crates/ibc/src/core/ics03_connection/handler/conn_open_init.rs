@@ -1,9 +1,9 @@
 //! Protocol logic specific to ICS3 messages of type `MsgConnectionOpenInit`.
-use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::prelude::*;
 
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
