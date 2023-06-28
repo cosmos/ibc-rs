@@ -357,7 +357,7 @@ mod tests {
             let client_state = {
                 #[allow(deprecated)]
                 let raw_client_state = RawTmClientState {
-                    chain_id: ChainId::from(tm_block.header().chain_id.clone()).to_string(),
+                    chain_id: ChainId::from(tm_block.header().chain_id.to_string()).to_string(),
                     trust_level: Some(Fraction {
                         numerator: 1,
                         denominator: 3,

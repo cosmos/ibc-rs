@@ -90,7 +90,13 @@ impl ClientState {
         // main header verification, delegated to the tendermint-light-client crate.
         let untrusted_state = header.as_untrusted_block_state();
 
-        let chain_id = self.chain_id.clone().into();
+        let chain_id = self
+            .chain_id
+            .to_string()
+            .try_into()
+            .map_err(|e| ClientError::Other {
+                description: format!("failed to parse chain id: {}", e),
+            })?;
         let trusted_state = header.as_trusted_block_state(trusted_consensus_state, &chain_id)?;
 
         let options = self.as_light_client_options()?;
