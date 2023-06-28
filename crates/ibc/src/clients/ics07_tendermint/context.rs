@@ -1,3 +1,5 @@
+use alloc::string::ToString;
+
 use crate::{
     core::{
         ics02_client::ClientExecutionContext,
@@ -12,7 +14,8 @@ use super::consensus_state::ConsensusState as TmConsensusState;
 
 /// Client's context required during both validation and execution
 pub trait CommonContext {
-    type AnyConsensusState: TryInto<TmConsensusState, Error = &'static str>;
+    type ConversionError: ToString;
+    type AnyConsensusState: TryInto<TmConsensusState, Error = Self::ConversionError>;
 
     /// Retrieve the consensus state for the given client ID at the specified
     /// height.

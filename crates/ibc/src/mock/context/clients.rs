@@ -16,6 +16,7 @@ use crate::core::ValidationContext;
 use crate::Height;
 
 impl TmCommonContext for MockContext {
+    type ConversionError = &'static str;
     type AnyConsensusState = AnyConsensusState;
 
     fn consensus_state(
