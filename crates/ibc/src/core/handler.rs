@@ -5,7 +5,6 @@ use super::ics03_connection::handler::{
     conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try,
 };
 use super::ics03_connection::msgs::ConnectionMsg;
-use super::ics04_channel::error::ChannelError;
 use super::ics04_channel::handler::acknowledgement::{
     acknowledgement_packet_execute, acknowledgement_packet_validate,
 };
@@ -72,9 +71,6 @@ where
             let module_id = ctx
                 .lookup_module_channel(&msg)
                 .map_err(ContextError::from)?;
-            if !ctx.has_route(&module_id) {
-                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
-            }
 
             match msg {
                 ChannelMsg::OpenInit(msg) => chan_open_init_validate(ctx, module_id, msg),
@@ -88,9 +84,6 @@ where
         }
         MsgEnvelope::Packet(msg) => {
             let module_id = ctx.lookup_module_packet(&msg).map_err(ContextError::from)?;
-            if !ctx.has_route(&module_id) {
-                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
-            }
 
             match msg {
                 PacketMsg::Recv(msg) => recv_packet_validate(ctx, msg),
@@ -135,9 +128,6 @@ where
             let module_id = ctx
                 .lookup_module_channel(&msg)
                 .map_err(ContextError::from)?;
-            if !ctx.has_route(&module_id) {
-                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
-            }
 
             match msg {
                 ChannelMsg::OpenInit(msg) => chan_open_init_execute(ctx, module_id, msg),
@@ -151,9 +141,6 @@ where
         }
         MsgEnvelope::Packet(msg) => {
             let module_id = ctx.lookup_module_packet(&msg).map_err(ContextError::from)?;
-            if !ctx.has_route(&module_id) {
-                return Err(ChannelError::RouteNotFound).map_err(ContextError::from)?;
-            }
 
             match msg {
                 PacketMsg::Recv(msg) => recv_packet_execute(ctx, module_id, msg),

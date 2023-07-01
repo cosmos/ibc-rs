@@ -24,9 +24,6 @@ pub trait Router {
     /// Returns a mutable reference to a `Module` registered against the specified `ModuleId`
     fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module>;
 
-    /// Returns true if the `Router` has a `Module` registered against the specified `ModuleId`
-    fn has_route(&self, module_id: &ModuleId) -> bool;
-
     /// Return the module_id associated with a given port_id
     fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId>;
 
