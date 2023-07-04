@@ -24,6 +24,11 @@ pub(crate) const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 /// have to specify the information related to the transfer of the token, and
 /// let the library figure out how to build the packet properly.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(parity_scale_codec::Encode, parity_scale_codec::Decode,)
+)]
 pub struct MsgTransfer {
     /// the port on which the packet will be sent
     pub port_id_on_a: PortId,
