@@ -17,7 +17,6 @@ use crate::core::ics02_client::ClientExecutionContext;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
-use crate::core::ics23_commitment::merkle::MerkleProof;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
@@ -168,8 +167,8 @@ impl ClientStateCommon for MockClientState {
         &self,
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
-        _proof_upgrade_client: MerkleProof,
-        _proof_upgrade_consensus_state: MerkleProof,
+        _proof_upgrade_client: CommitmentProofBytes,
+        _proof_upgrade_consensus_state: CommitmentProofBytes,
         _root: &CommitmentRoot,
     ) -> Result<(), ClientError> {
         let upgraded_mock_client_state = MockClientState::try_from(upgraded_client_state)?;
@@ -313,7 +312,7 @@ where
         Ok(())
     }
 
-    fn update_state_with_upgrade_client(
+    fn update_state_on_upgrade(
         &self,
         ctx: &mut E,
         client_id: &ClientId,

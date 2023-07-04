@@ -68,7 +68,6 @@ pub(crate) fn impl_ClientStateCommon(
     let ClientType = Imports::ClientType();
     let ClientError = Imports::ClientError();
     let Height = Imports::Height();
-    let MerkleProof = Imports::MerkleProof();
     let Path = Imports::Path();
 
     quote! {
@@ -112,8 +111,8 @@ pub(crate) fn impl_ClientStateCommon(
                 &self,
                 upgraded_client_state: #Any,
                 upgraded_consensus_state: #Any,
-                proof_upgrade_client: #MerkleProof,
-                proof_upgrade_consensus_state: #MerkleProof,
+                proof_upgrade_client: #CommitmentProofBytes,
+                proof_upgrade_consensus_state: #CommitmentProofBytes,
                 root: &#CommitmentRoot,
             ) -> core::result::Result<(), #ClientError> {
                 match self {

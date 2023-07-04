@@ -10,7 +10,6 @@ use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
-use crate::core::ics23_commitment::merkle::MerkleProof;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::{ExecutionContext, ValidationContext};
 
@@ -58,17 +57,12 @@ where
         ));
     };
 
-    // Note: verification of proofs that unmarshalled correctly has been done
-    // while decoding the proto message into a `MsgEnvelope` domain type
-    let merkle_proof_upgrade_client = MerkleProof::from(msg.proof_upgrade_client.clone());
-    let merkle_proof_upgrade_cons_state = MerkleProof::from(msg.proof_upgrade_consensus_state);
-
     // Validate the upgraded client state and consensus state and verify proofs against the root
     old_client_state.verify_upgrade_client(
-        msg.client_state.clone(),
-        msg.consensus_state,
-        merkle_proof_upgrade_client,
-        merkle_proof_upgrade_cons_state,
+        msg.upgraded_client_state.clone(),
+        msg.upgraded_consensus_state,
+        msg.proof_upgrade_client,
+        msg.proof_upgrade_consensus_state,
         old_consensus_state.root(),
     )?;
 
@@ -83,11 +77,11 @@ where
 
     let old_client_state = ctx.client_state(&client_id)?;
 
-    let latest_height = old_client_state.update_state_with_upgrade_client(
+    let latest_height = old_client_state.update_state_on_upgrade(
         ctx.get_client_execution_context(),
         &client_id,
-        msg.client_state.clone(),
-        msg.consensus_state,
+        msg.upgraded_client_state.clone(),
+        msg.upgraded_consensus_state,
     )?;
 
     let event = IbcEvent::UpgradeClient(UpgradeClient::new(
@@ -148,8 +142,10 @@ mod tests {
         let msg_with_low_upgrade_height = MsgUpgradeClient::new_dummy(low_upgrade_height);
 
         let msg_with_unknown_upgraded_cs = MsgUpgradeClient {
-            client_state: TmClientState::new_dummy_from_header(get_dummy_tendermint_header())
-                .into(),
+            upgraded_client_state: TmClientState::new_dummy_from_header(
+                get_dummy_tendermint_header(),
+            )
+            .into(),
             ..msg_default.clone()
         };
 
@@ -204,7 +200,7 @@ mod tests {
 
                 let client_state = fxt.ctx.client_state(&fxt.msg.client_id).unwrap();
                 let msg_client_state: AnyClientState =
-                    fxt.msg.client_state.clone().try_into().unwrap();
+                    fxt.msg.upgraded_client_state.clone().try_into().unwrap();
                 assert_eq!(client_state, msg_client_state);
 
                 let consensus_state = fxt
@@ -215,7 +211,7 @@ mod tests {
                     ))
                     .unwrap();
                 let msg_consensus_state: AnyConsensusState =
-                    fxt.msg.consensus_state.clone().try_into().unwrap();
+                    fxt.msg.upgraded_consensus_state.clone().try_into().unwrap();
                 assert_eq!(consensus_state, msg_consensus_state);
             }
         };
