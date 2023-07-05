@@ -32,3 +32,5 @@ To suggest an ADR, please make use of the [ADR template](./adr-template.md) prov
 | [003](./adr-003-ics20-implementation.md)           | ICS20 implementation                                  | Accepted |
 | [004](./adr-004-light-client-crates-extraction.md) | Light client crates extraction                        | Accepted |
 | [005](./adr-005-handlers-redesign.md)              | Handlers validation and execution separation          | Accepted |
+| [006](./adr-006-upgrade-client-implementation.md)  | Chain and client upgradability                        | Accepted |
+| [007](./adr-007-light-client-contexts.md)          | Light client contexts                                 | Accepted |
