@@ -3,12 +3,11 @@ use crate::prelude::*;
 use crate::signer::Signer;
 use alloc::string::String;
 use core::time::Duration;
+use derive_more::From;
 use displaydoc::Display;
 use ibc_proto::google::protobuf::Any;
 
 use crate::core::events::IbcEvent;
-use crate::core::ics02_client::client_state::ClientState;
-use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::ConnectionEnd;
 use crate::core::ics03_connection::error::ConnectionError;
@@ -25,15 +24,19 @@ use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{
-    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
-    CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
+    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
+    ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use crate::core::router::Router;
 use crate::core::timestamp::Timestamp;
 use crate::Height;
 
+use super::ics02_client::client_state::ClientState;
+use super::ics02_client::consensus_state::ConsensusState;
+use super::ics02_client::ClientExecutionContext;
+
 /// Top-level error
-#[derive(Debug, Display)]
+#[derive(Debug, Display, From)]
 pub enum ContextError {
     /// ICS02 Client error: {0}
     ClientError(ClientError),
@@ -43,30 +46,6 @@ pub enum ContextError {
     ChannelError(ChannelError),
     /// ICS04 Packet error: {0}
     PacketError(PacketError),
-}
-
-impl From<ClientError> for ContextError {
-    fn from(err: ClientError) -> ContextError {
-        Self::ClientError(err)
-    }
-}
-
-impl From<ConnectionError> for ContextError {
-    fn from(err: ConnectionError) -> ContextError {
-        Self::ConnectionError(err)
-    }
-}
-
-impl From<ChannelError> for ContextError {
-    fn from(err: ChannelError) -> ContextError {
-        Self::ChannelError(err)
-    }
-}
-
-impl From<PacketError> for ContextError {
-    fn from(err: PacketError) -> ContextError {
-        Self::PacketError(err)
-    }
 }
 
 #[cfg(feature = "std")]
@@ -114,34 +93,46 @@ impl std::error::Error for RouterError {
 ///
 /// Trait used for the top-level [`validate`](crate::core::validate)
 pub trait ValidationContext: Router {
+    type ClientValidationContext;
+    type E: ClientExecutionContext;
+    type AnyConsensusState: ConsensusState;
+    type AnyClientState: ClientState<Self::ClientValidationContext, Self::E>;
+
+    /// Retrieve the context that implements all clients' `ValidationContext`.
+    fn get_client_validation_context(&self) -> &Self::ClientValidationContext;
+
     /// Returns the ClientState for the given identifier `client_id`.
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError>;
+    ///
+    /// Note: Clients have the responsibility to store client states on client creation and update.
+    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError>;
 
     /// Tries to decode the given `client_state` into a concrete light client state.
-    fn decode_client_state(&self, client_state: Any) -> Result<Box<dyn ClientState>, ContextError>;
+    fn decode_client_state(&self, client_state: Any) -> Result<Self::AnyClientState, ContextError>;
 
     /// Retrieve the consensus state for the given client ID at the specified
     /// height.
     ///
     /// Returns an error if no such state exists.
+    ///
+    /// Note: Clients have the responsibility to store consensus states on client creation and update.
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Box<dyn ConsensusState>, ContextError>;
+    ) -> Result<Self::AnyConsensusState, ContextError>;
 
-    /// Search for the lowest consensus state higher than `height`.
-    fn next_consensus_state(
+    /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
+    fn client_update_time(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
+    ) -> Result<Timestamp, ContextError>;
 
-    /// Search for the highest consensus state lower than `height`.
-    fn prev_consensus_state(
+    /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
+    fn client_update_height(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Box<dyn ConsensusState>>, ContextError>;
+    ) -> Result<Height, ContextError>;
 
     /// Returns the current height of the local chain.
     fn host_height(&self) -> Result<Height, ContextError>;
@@ -153,7 +144,7 @@ pub trait ValidationContext: Router {
     fn host_consensus_state(
         &self,
         height: &Height,
-    ) -> Result<Box<dyn ConsensusState>, ContextError>;
+    ) -> Result<Self::AnyConsensusState, ContextError>;
 
     /// Returns a natural number, counting how many clients have been created
     /// thus far. The value of this counter should increase only via method
@@ -230,20 +221,6 @@ pub trait ValidationContext: Router {
         ack_path: &AckPath,
     ) -> Result<AcknowledgementCommitment, ContextError>;
 
-    /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_time(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Timestamp, ContextError>;
-
-    /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_height(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ContextError>;
-
     /// Returns a counter on the number of channel ids have been created thus far.
     /// The value of this counter should increase only via method
     /// `ExecutionContext::increase_channel_counter`.
@@ -267,19 +244,8 @@ pub trait ValidationContext: Router {
 ///
 /// Trait used for the top-level [`execute`](crate::core::execute) and [`dispatch`](crate::core::dispatch)
 pub trait ExecutionContext: ValidationContext {
-    /// Called upon successful client creation and update
-    fn store_client_state(
-        &mut self,
-        client_state_path: ClientStatePath,
-        client_state: Box<dyn ClientState>,
-    ) -> Result<(), ContextError>;
-
-    /// Called upon successful client creation and update
-    fn store_consensus_state(
-        &mut self,
-        consensus_state_path: ClientConsensusStatePath,
-        consensus_state: Box<dyn ConsensusState>,
-    ) -> Result<(), ContextError>;
+    /// Retrieve the context that implements all clients' `ExecutionContext`.
+    fn get_client_execution_context(&mut self) -> &mut Self::E;
 
     /// Called upon client creation.
     /// Increases the counter which keeps track of how many clients have been created.

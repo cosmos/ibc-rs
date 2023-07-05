@@ -4,12 +4,14 @@ use crate::prelude::*;
 
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::client_state::UpdatedState;
+use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::client_state::ClientStateExecution;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
 use crate::core::ics23_commitment::merkle::MerkleProof;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
+use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::{ExecutionContext, ValidationContext};
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
@@ -81,22 +83,17 @@ where
 
     let old_client_state = ctx.client_state(&client_id)?;
 
-    let UpdatedState {
-        client_state,
-        consensus_state,
-    } = old_client_state
-        .update_state_with_upgrade_client(msg.client_state.clone(), msg.consensus_state)?;
-
-    ctx.store_client_state(ClientStatePath::new(&client_id), client_state.clone())?;
-    ctx.store_consensus_state(
-        ClientConsensusStatePath::new(&client_id, &client_state.latest_height()),
-        consensus_state,
+    let latest_height = old_client_state.update_state_with_upgrade_client(
+        ctx.get_client_execution_context(),
+        &client_id,
+        msg.client_state.clone(),
+        msg.consensus_state,
     )?;
 
     let event = IbcEvent::UpgradeClient(UpgradeClient::new(
         client_id,
-        client_state.client_type(),
-        client_state.latest_height(),
+        old_client_state.client_type(),
+        latest_height,
     ));
     ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
     ctx.emit_ibc_event(event);
@@ -119,7 +116,7 @@ mod tests {
     use crate::Height;
 
     use crate::mock::client_state::client_type as mock_client_type;
-    use crate::mock::context::MockContext;
+    use crate::mock::context::{AnyClientState, AnyConsensusState, MockContext};
 
     enum Ctx {
         Default,
@@ -206,7 +203,10 @@ mod tests {
                 assert_eq!(upgrade_client_event.consensus_height(), &plan_height);
 
                 let client_state = fxt.ctx.client_state(&fxt.msg.client_id).unwrap();
-                assert_eq!(client_state.as_ref().clone_into(), fxt.msg.client_state);
+                let msg_client_state: AnyClientState =
+                    fxt.msg.client_state.clone().try_into().unwrap();
+                assert_eq!(client_state, msg_client_state);
+
                 let consensus_state = fxt
                     .ctx
                     .consensus_state(&ClientConsensusStatePath::new(
@@ -214,10 +214,9 @@ mod tests {
                         &plan_height,
                     ))
                     .unwrap();
-                assert_eq!(
-                    consensus_state.as_ref().clone_into(),
-                    fxt.msg.consensus_state
-                );
+                let msg_consensus_state: AnyConsensusState =
+                    fxt.msg.consensus_state.clone().try_into().unwrap();
+                assert_eq!(consensus_state, msg_consensus_state);
             }
         };
     }

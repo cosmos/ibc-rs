@@ -6,20 +6,23 @@ use tendermint_light_client_verifier::Verifier;
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
-use crate::core::ics02_client::client_state::ClientState as Ics2ClientState;
+use crate::clients::ics07_tendermint::ValidationContext as TmValidationContext;
 use crate::core::ics02_client::error::ClientError;
+use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
-use crate::core::{ics24_host::identifier::ClientId, ValidationContext};
 
-use super::{check_header_trusted_next_validator_set, downcast_tm_consensus_state, ClientState};
+use super::{check_header_trusted_next_validator_set, ClientState};
 
 impl ClientState {
-    pub fn verify_header(
+    pub fn verify_header<ClientValidationContext>(
         &self,
-        ctx: &dyn ValidationContext,
+        ctx: &ClientValidationContext,
         client_id: &ClientId,
         header: TmHeader,
-    ) -> Result<(), ClientError> {
+    ) -> Result<(), ClientError>
+    where
+        ClientValidationContext: TmValidationContext,
+    {
         // Checks that the header fields are valid.
         header.validate_basic()?;
 
@@ -34,10 +37,12 @@ impl ClientState {
                 {
                     let trusted_client_cons_state_path =
                         ClientConsensusStatePath::new(client_id, &header.trusted_height);
-                    let trusted_consensus_state = downcast_tm_consensus_state(
-                        ctx.consensus_state(&trusted_client_cons_state_path)?
-                            .as_ref(),
-                    )?;
+                    let trusted_consensus_state: TmConsensusState = ctx
+                        .consensus_state(&trusted_client_cons_state_path)?
+                        .try_into()
+                        .map_err(|err| ClientError::Other {
+                            description: err.to_string(),
+                        })?;
 
                     check_header_trusted_next_validator_set(&header, &trusted_consensus_state)?;
 
@@ -86,12 +91,15 @@ impl ClientState {
         Ok(())
     }
 
-    pub fn check_for_misbehaviour_update_client(
+    pub fn check_for_misbehaviour_update_client<ClientValidationContext>(
         &self,
-        ctx: &dyn ValidationContext,
+        ctx: &ClientValidationContext,
         client_id: &ClientId,
         header: TmHeader,
-    ) -> Result<bool, ClientError> {
+    ) -> Result<bool, ClientError>
+    where
+        ClientValidationContext: TmValidationContext,
+    {
         let header_consensus_state = TmConsensusState::from(header.clone());
 
         let maybe_existing_consensus_state = {
@@ -102,8 +110,11 @@ impl ClientState {
 
         match maybe_existing_consensus_state {
             Some(existing_consensus_state) => {
-                let existing_consensus_state =
-                    downcast_tm_consensus_state(existing_consensus_state.as_ref())?;
+                let existing_consensus_state: TmConsensusState = existing_consensus_state
+                    .try_into()
+                    .map_err(|err| ClientError::Other {
+                        description: err.to_string(),
+                    })?;
 
                 // There is evidence of misbehaviour if the stored consensus state
                 // is different from the new one we received.
@@ -120,7 +131,10 @@ impl ClientState {
                     if let Some(prev_cs) = maybe_prev_cs {
                         // New header timestamp cannot occur *before* the
                         // previous consensus state's height
-                        let prev_cs = downcast_tm_consensus_state(prev_cs.as_ref())?;
+                        let prev_cs: TmConsensusState =
+                            prev_cs.try_into().map_err(|err| ClientError::Other {
+                                description: err.to_string(),
+                            })?;
 
                         if header.signed_header.header().time <= prev_cs.timestamp {
                             return Ok(true);
@@ -130,13 +144,16 @@ impl ClientState {
 
                 // 2. if a header comes in and is not the “last” header, then we also ensure
                 //    that its timestamp is less than the “next header”
-                if header.height() < self.latest_height() {
+                if header.height() < self.latest_height {
                     let maybe_next_cs = ctx.next_consensus_state(client_id, &header.height())?;
 
                     if let Some(next_cs) = maybe_next_cs {
                         // New (untrusted) header timestamp cannot occur *after* next
                         // consensus state's height
-                        let next_cs = downcast_tm_consensus_state(next_cs.as_ref())?;
+                        let next_cs: TmConsensusState =
+                            next_cs.try_into().map_err(|err| ClientError::Other {
+                                description: err.to_string(),
+                            })?;
 
                         if header.signed_header.header().time >= next_cs.timestamp {
                             return Ok(true);

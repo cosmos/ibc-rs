@@ -27,8 +27,8 @@ use super::ics04_channel::handler::timeout::{
     timeout_packet_execute, timeout_packet_validate, TimeoutMsgType,
 };
 use super::ics04_channel::msgs::{ChannelMsg, PacketMsg};
-use super::ContextError;
-use super::{msgs::MsgEnvelope, ExecutionContext, ValidationContext};
+use super::msgs::MsgEnvelope;
+use super::{ContextError, ExecutionContext, ValidationContext};
 
 /// Entrypoint which performs both validation and message execution
 pub fn dispatch(ctx: &mut impl ExecutionContext, msg: MsgEnvelope) -> Result<(), RouterError> {

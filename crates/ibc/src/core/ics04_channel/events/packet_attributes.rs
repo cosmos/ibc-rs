@@ -1,6 +1,6 @@
 //! This module holds all the abci event attributes for IBC events emitted
 //! during packet-related datagrams.
-//!
+
 use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
 

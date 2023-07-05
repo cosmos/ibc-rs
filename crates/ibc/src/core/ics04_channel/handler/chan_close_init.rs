@@ -2,6 +2,7 @@
 use crate::prelude::*;
 
 use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
