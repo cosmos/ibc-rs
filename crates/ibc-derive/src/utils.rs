@@ -61,10 +61,6 @@ impl Imports {
         quote! {ibc_proto::google::protobuf::Any}
     }
 
-    pub fn MerkleProof() -> TokenStream {
-        quote! {ibc::core::ics23_commitment::merkle::MerkleProof}
-    }
-
     pub fn Timestamp() -> TokenStream {
         quote! {ibc::core::timestamp::Timestamp}
     }
