@@ -121,9 +121,13 @@ impl Timestamp {
             // about year 2554, there is no risk of overflowing `Time`
             // or `OffsetDateTime`.
             let ts = OffsetDateTime::from_unix_timestamp_nanos(nanoseconds as i128)
-                .unwrap()
+                .map_err(|e: time::error::ComponentRange| {
+                    ParseTimestampError::DataOutOfRange(e.to_string())
+                })?
                 .try_into()
-                .unwrap();
+                .map_err(|e: tendermint::error::Error| {
+                    ParseTimestampError::DataOutOfRange(e.to_string())
+                })?;
             Ok(Timestamp { time: Some(ts) })
         }
     }
@@ -180,7 +184,9 @@ impl Timestamp {
             let t: OffsetDateTime = time.into();
             let s = t.unix_timestamp_nanos();
             assert!(s >= 0, "time {time:?} has negative `.timestamp()`");
-            s.try_into().unwrap()
+            s.try_into().expect(
+                "Fails UNIX timestamp is negative, but we don't allow that to be constructed",
+            )
         })
     }
 
@@ -269,6 +275,8 @@ impl Sub<Duration> for Timestamp {
 pub enum ParseTimestampError {
     /// parsing u64 integer from string error: `{0}`
     ParseInt(ParseIntError),
+    /// Out of Range: `{0}`
+    DataOutOfRange(String),
 }
 
 #[cfg(feature = "std")]
@@ -276,6 +284,7 @@ impl std::error::Error for ParseTimestampError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             ParseTimestampError::ParseInt(e) => Some(e),
+            ParseTimestampError::DataOutOfRange(_) => None,
         }
     }
 }

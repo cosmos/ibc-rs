@@ -551,7 +551,7 @@ where
         _client_message: Any,
         _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
-        let frozen_client_state = self.clone().with_frozen_height(Height::new(0, 1).unwrap());
+        let frozen_client_state = self.clone().with_frozen_height(Height::min(0));
 
         ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state.into())?;
 
@@ -813,7 +813,7 @@ mod tests {
             trusting_period: Duration::new(64000, 0),
             unbonding_period: Duration::new(128000, 0),
             max_clock_drift: Duration::new(3, 0),
-            latest_height: Height::new(0, 10).unwrap(),
+            latest_height: Height::new(0, 10).expect("Never fails"),
             proof_specs: ProofSpecs::default(),
             upgrade_path: Default::default(),
             allow_update: AllowUpdate {
@@ -919,7 +919,7 @@ mod tests {
             Test {
                 name: "Invalid (too small) trusting trust threshold".to_string(),
                 params: ClientStateParams {
-                    trust_level: TrustThreshold::new(1, 4).unwrap(),
+                    trust_level: TrustThreshold::new(1, 4).expect("Never fails"),
                     ..default_params.clone()
                 },
                 want_pass: false,
@@ -927,7 +927,7 @@ mod tests {
             Test {
                 name: "Invalid latest height revision number (doesn't match chain)".to_string(),
                 params: ClientStateParams {
-                    latest_height: Height::new(1, 1).unwrap(),
+                    latest_height: Height::new(1, 1).expect("Never fails"),
                     ..default_params.clone()
                 },
                 want_pass: false,
@@ -979,7 +979,7 @@ mod tests {
             trusting_period: Duration::new(64000, 0),
             unbonding_period: Duration::new(128000, 0),
             max_clock_drift: Duration::new(3, 0),
-            latest_height: Height::new(1, 10).unwrap(),
+            latest_height: Height::new(1, 10).expect("Never fails"),
             proof_specs: ProofSpecs::default(),
             upgrade_path: Default::default(),
             allow_update: AllowUpdate {
@@ -998,13 +998,13 @@ mod tests {
         let tests = vec![
             Test {
                 name: "Successful height verification".to_string(),
-                height: Height::new(1, 8).unwrap(),
+                height: Height::new(1, 8).expect("Never fails"),
                 setup: None,
                 want_pass: true,
             },
             Test {
                 name: "Invalid (too large)  client height".to_string(),
-                height: Height::new(1, 12).unwrap(),
+                height: Height::new(1, 12).expect("Never fails"),
                 setup: None,
                 want_pass: false,
             },
@@ -1023,7 +1023,7 @@ mod tests {
                 p.upgrade_path,
                 p.allow_update,
             )
-            .unwrap();
+            .expect("Never fails");
             let client_state = match test.setup {
                 Some(setup) => (setup)(client_state),
                 _ => client_state,
@@ -1050,13 +1050,17 @@ mod tests {
         });
         assert!(tm_client_state_from_raw.is_ok());
 
-        let any_from_tm_client_state =
-            Any::from(tm_client_state_from_raw.as_ref().unwrap().clone());
+        let any_from_tm_client_state = Any::from(
+            tm_client_state_from_raw
+                .as_ref()
+                .expect("Never fails")
+                .clone(),
+        );
         let tm_client_state_from_any = ClientState::try_from(any_from_tm_client_state);
         assert!(tm_client_state_from_any.is_ok());
         assert_eq!(
-            tm_client_state_from_raw.unwrap(),
-            tm_client_state_from_any.unwrap()
+            tm_client_state_from_raw.expect("Never fails"),
+            tm_client_state_from_any.expect("Never fails")
         );
 
         // check client state creation path from a tendermint header
@@ -1067,7 +1071,7 @@ mod tests {
         assert!(tm_client_state_from_any.is_ok());
         assert_eq!(
             tm_client_state_from_header,
-            tm_client_state_from_any.unwrap()
+            tm_client_state_from_any.expect("Never fails")
         );
     }
 
@@ -1136,7 +1140,7 @@ pub mod test_util {
                     ChainId::chain_version(tm_header.chain_id.as_str()),
                     u64::from(tm_header.height),
                 )
-                .unwrap(),
+                .expect("Never fails"),
                 Default::default(),
                 Default::default(),
                 AllowUpdate {
@@ -1144,7 +1148,7 @@ pub mod test_util {
                     after_misbehaviour: false,
                 },
             )
-            .unwrap()
+            .expect("Never fails")
         }
     }
 
@@ -1159,7 +1163,7 @@ pub mod test_util {
             trusting_period: Some(Duration::from_secs(64000).into()),
             unbonding_period: Some(Duration::from_secs(128000).into()),
             max_clock_drift: Some(Duration::from_millis(3000).into()),
-            latest_height: Some(Height::new(0, 10).unwrap().into()),
+            latest_height: Some(Height::new(0, 10).expect("Never fails").into()),
             proof_specs: ProofSpecs::default().into(),
             upgrade_path: Default::default(),
             frozen_height: Some(frozen_height),

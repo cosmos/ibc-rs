@@ -55,7 +55,11 @@ impl TmValidationContext for MockContext {
             if h > *height {
                 // unwrap should never happen, as the consensus state for h must exist
                 return Ok(Some(
-                    client_record.consensus_states.get(&h).unwrap().clone(),
+                    client_record
+                        .consensus_states
+                        .get(&h)
+                        .expect("Never fails")
+                        .clone(),
                 ));
             }
         }
@@ -85,7 +89,11 @@ impl TmValidationContext for MockContext {
             if h < *height {
                 // unwrap should never happen, as the consensus state for h must exist
                 return Ok(Some(
-                    client_record.consensus_states.get(&h).unwrap().clone(),
+                    client_record
+                        .consensus_states
+                        .get(&h)
+                        .expect("Never fails")
+                        .clone(),
                 ));
             }
         }
@@ -134,7 +142,8 @@ impl ClientExecutionContext for MockContext {
                 client_state: Default::default(),
             });
 
-        let height = Height::new(consensus_state_path.epoch, consensus_state_path.height).unwrap();
+        let height = Height::new(consensus_state_path.epoch, consensus_state_path.height)
+            .expect("Never fails");
         client_record
             .consensus_states
             .insert(height, consensus_state);

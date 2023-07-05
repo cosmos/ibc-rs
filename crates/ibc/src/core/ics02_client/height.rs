@@ -50,6 +50,13 @@ impl Height {
         })
     }
 
+    pub fn min(revision_number: u64) -> Self {
+        Self {
+            revision_number,
+            revision_height: 1,
+        }
+    }
+
     pub fn revision_number(&self) -> u64 {
         self.revision_number
     }

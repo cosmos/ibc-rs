@@ -125,8 +125,8 @@ impl From<ConsensusState> for Any {
     fn from(consensus_state: ConsensusState) -> Self {
         Any {
             type_url: TENDERMINT_CONSENSUS_STATE_TYPE_URL.to_string(),
-            // TODO: How to properly do this?
-            value: Protobuf::<RawConsensusState>::encode_vec(&consensus_state).unwrap(),
+            value: Protobuf::<RawConsensusState>::encode_vec(&consensus_state)
+                .expect("Out of memory"),
         }
     }
 }
