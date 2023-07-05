@@ -12,7 +12,7 @@ use core::time::Duration;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-use ibc_proto::ibc::core::commitment::v1::{MerklePath, MerkleProof as RawMerkleProof};
+use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
 use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
@@ -318,12 +318,12 @@ impl ClientStateCommon for ClientState {
         &self,
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
-        proof_upgrade_client: MerkleProof,
-        proof_upgrade_consensus_state: MerkleProof,
+        proof_upgrade_client: CommitmentProofBytes,
+        proof_upgrade_consensus_state: CommitmentProofBytes,
         root: &CommitmentRoot,
     ) -> Result<(), ClientError> {
         // Make sure that the client type is of Tendermint type `ClientState`
-        let mut upgraded_tm_client_state = Self::try_from(upgraded_client_state.clone())?;
+        let upgraded_tm_client_state = Self::try_from(upgraded_client_state.clone())?;
 
         // Make sure that the consensus type is of Tendermint type `ConsensusState`
         TmConsensusState::try_from(upgraded_consensus_state.clone())?;
@@ -346,17 +346,10 @@ impl ClientStateCommon for ClientState {
             });
         };
 
+        let upgrade_path_prefix = CommitmentPrefix::try_from(upgrade_path[0].clone().into_bytes())
+            .map_err(ClientError::InvalidCommitmentProof)?;
+
         let last_height = self.latest_height().revision_height();
-
-        // Construct the merkle path for the client state
-        let mut client_upgrade_path = upgrade_path.clone();
-        client_upgrade_path.push(UpgradeClientPath::UpgradedClientState(last_height).to_string());
-
-        let client_upgrade_merkle_path = MerklePath {
-            key_path: client_upgrade_path,
-        };
-
-        upgraded_tm_client_state.zero_custom_fields();
 
         let mut client_state_value = Vec::new();
         upgraded_client_state
@@ -364,23 +357,13 @@ impl ClientStateCommon for ClientState {
             .map_err(ClientError::Encode)?;
 
         // Verify the proof of the upgraded client state
-        proof_upgrade_client
-            .verify_membership(
-                &self.proof_specs,
-                root.clone().into(),
-                client_upgrade_merkle_path,
-                client_state_value,
-                0,
-            )
-            .map_err(ClientError::Ics23Verification)?;
-
-        // Construct the merkle path for the consensus state
-        let mut cons_upgrade_path = upgrade_path;
-        cons_upgrade_path
-            .push(UpgradeClientPath::UpgradedClientConsensusState(last_height).to_string());
-        let cons_upgrade_merkle_path = MerklePath {
-            key_path: cons_upgrade_path,
-        };
+        self.verify_membership(
+            &upgrade_path_prefix,
+            &proof_upgrade_client,
+            root,
+            Path::UpgradeClient(UpgradeClientPath::UpgradedClientState(last_height)),
+            client_state_value,
+        )?;
 
         let mut cons_state_value = Vec::new();
         upgraded_consensus_state
@@ -388,15 +371,13 @@ impl ClientStateCommon for ClientState {
             .map_err(ClientError::Encode)?;
 
         // Verify the proof of the upgraded consensus state
-        proof_upgrade_consensus_state
-            .verify_membership(
-                &self.proof_specs,
-                root.clone().into(),
-                cons_upgrade_merkle_path,
-                cons_state_value,
-                0,
-            )
-            .map_err(ClientError::Ics23Verification)?;
+        self.verify_membership(
+            &upgrade_path_prefix,
+            &proof_upgrade_consensus_state,
+            root,
+            Path::UpgradeClient(UpgradeClientPath::UpgradedClientConsensusState(last_height)),
+            cons_state_value,
+        )?;
 
         Ok(())
     }
@@ -559,15 +540,17 @@ where
     }
 
     // Commit the new client state and consensus state to the store
-    fn update_state_with_upgrade_client(
+    fn update_state_on_upgrade(
         &self,
         ctx: &mut E,
         client_id: &ClientId,
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
     ) -> Result<Height, ClientError> {
-        let upgraded_tm_client_state = Self::try_from(upgraded_client_state)?;
+        let mut upgraded_tm_client_state = Self::try_from(upgraded_client_state)?;
         let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
+
+        upgraded_tm_client_state.zero_custom_fields();
 
         // Construct new client state and consensus state relayer chosen client
         // parameters are ignored. All chain-chosen parameters come from

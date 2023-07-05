@@ -12,7 +12,6 @@ use crate::core::ics02_client::ClientExecutionContext;
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
-use crate::core::ics23_commitment::merkle::MerkleProof;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::Path;
 use crate::prelude::*;
@@ -72,8 +71,8 @@ pub trait ClientStateCommon {
         &self,
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
-        proof_upgrade_client: MerkleProof,
-        proof_upgrade_consensus_state: MerkleProof,
+        proof_upgrade_client: CommitmentProofBytes,
+        proof_upgrade_consensus_state: CommitmentProofBytes,
         root: &CommitmentRoot,
     ) -> Result<(), ClientError>;
 
@@ -193,7 +192,7 @@ where
     ) -> Result<(), ClientError>;
 
     // Update the client state and consensus state in the store with the upgraded ones.
-    fn update_state_with_upgrade_client(
+    fn update_state_on_upgrade(
         &self,
         ctx: &mut E,
         client_id: &ClientId,

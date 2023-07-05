@@ -39,7 +39,7 @@ pub(crate) fn impl_ClientStateExecution(
         client_state_enum_name,
         enum_variants.iter(),
         opts,
-        quote! { update_state_with_upgrade_client(cs, ctx, client_id, upgraded_client_state, upgraded_consensus_state) },
+        quote! { update_state_on_upgrade(cs, ctx, client_id, upgraded_client_state, upgraded_consensus_state) },
     );
 
     let HostClientState = client_state_enum_name;
@@ -88,7 +88,7 @@ pub(crate) fn impl_ClientStateExecution(
                 }
             }
 
-            fn update_state_with_upgrade_client(
+            fn update_state_on_upgrade(
                 &self,
                 ctx: &mut #ClientExecutionContext,
                 client_id: &#ClientId,
