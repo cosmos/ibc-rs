@@ -346,7 +346,7 @@ impl ClientStateCommon for ClientState {
             });
         };
 
-        let upgrade_path_prefix = CommitmentPrefix::try_from(upgrade_path[0].encode_to_vec())
+        let upgrade_path_prefix = CommitmentPrefix::try_from(upgrade_path[0].clone().into_bytes())
             .map_err(ClientError::InvalidCommitmentProof)?;
 
         let last_height = self.latest_height().revision_height();
