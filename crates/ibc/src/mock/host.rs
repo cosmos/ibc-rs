@@ -61,7 +61,7 @@ impl HostBlock {
                 ChainId::chain_version(light_block.header().chain_id.as_str()),
                 light_block.header().height.value(),
             )
-            .unwrap(),
+            .expect("Never fails"),
         }
     }
 
@@ -89,7 +89,7 @@ impl HostBlock {
     ) -> HostBlock {
         match chain_type {
             HostType::Mock => HostBlock::Mock(Box::new(MockHeader {
-                height: Height::new(chain_id.version(), height).unwrap(),
+                height: Height::new(chain_id.version(), height).expect("Never fails"),
                 timestamp,
             })),
             HostType::SyntheticTendermint => HostBlock::SyntheticTendermint(Box::new(
@@ -105,13 +105,13 @@ impl HostBlock {
     ) -> SyntheticTmBlock {
         let light_block = TestgenLightBlock::new_default_with_time_and_chain_id(
             chain_id.to_string(),
-            timestamp.into_tm_time().unwrap(),
+            timestamp.into_tm_time().expect("Never fails"),
             height,
         )
         .generate()
-        .unwrap();
+        .expect("Never fails");
         SyntheticTmBlock {
-            trusted_height: Height::new(chain_id.version(), 1).unwrap(),
+            trusted_height: Height::new(chain_id.version(), 1).expect("Never fails"),
             light_block,
         }
     }

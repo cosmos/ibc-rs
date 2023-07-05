@@ -237,7 +237,7 @@ impl FromStr for ClientId {
 
 impl Default for ClientId {
     fn default() -> Self {
-        Self::new(tm_client_type(), 0).unwrap()
+        Self::new(tm_client_type(), 0).expect("Never fails because we use a valid client type")
     }
 }
 

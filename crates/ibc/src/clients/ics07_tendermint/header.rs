@@ -272,7 +272,7 @@ pub mod test_util {
         serde_json::from_str::<SignedHeader>(include_str!(
             "../../../tests/support/signed_header.json"
         ))
-        .unwrap()
+        .expect("Never fails")
         .header
     }
 
@@ -295,7 +295,7 @@ pub mod test_util {
         let shdr = serde_json::from_str::<SignedHeader>(include_str!(
             "../../../tests/support/signed_header.json"
         ))
-        .unwrap();
+        .expect("Never fails");
 
         // Build a set of validators.
         // Below are test values inspired form `test_validator_set()` in tendermint-rs.
@@ -304,10 +304,10 @@ pub mod test_util {
                 &hex::decode_upper(
                     "F349539C7E5EF7C49549B09C4BFC2335318AB0FE51FBFAA2433B4F13E816F4A7",
                 )
-                .unwrap(),
+                .expect("Never fails"),
             )
-            .unwrap(),
-            281_815_u64.try_into().unwrap(),
+            .expect("Never fails"),
+            281_815_u64.try_into().expect("Never fails"),
         );
 
         let vs = ValidatorSet::new(vec![v1.clone()], Some(v1));
@@ -315,7 +315,7 @@ pub mod test_util {
         Header {
             signed_header: shdr,
             validator_set: vs.clone(),
-            trusted_height: Height::new(0, 1).unwrap(),
+            trusted_height: Height::min(0),
             trusted_next_validator_set: vs,
         }
     }

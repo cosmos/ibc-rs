@@ -71,7 +71,11 @@ impl ClientState {
             };
 
             let options = self.as_light_client_options()?;
-            let now = ctx.host_timestamp()?.into_tm_time().unwrap();
+            let now = ctx.host_timestamp()?.into_tm_time().ok_or_else(|| {
+                ClientError::ClientSpecific {
+                    description: "host timestamp is not a valid TM timestamp".to_string(),
+                }
+            })?;
 
             // main header verification, delegated to the tendermint-light-client crate.
             self.verifier

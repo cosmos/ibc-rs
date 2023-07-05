@@ -87,7 +87,7 @@ impl TryFrom<RawMockClientState> for MockClientState {
     type Error = ClientError;
 
     fn try_from(raw: RawMockClientState) -> Result<Self, Self::Error> {
-        Ok(Self::new(raw.header.unwrap().try_into()?))
+        Ok(Self::new(raw.header.expect("Never fails").try_into()?))
     }
 }
 
@@ -316,9 +316,7 @@ impl ClientState for MockClientState {
         _client_message: Any,
         _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
-        let frozen_client_state = self
-            .with_frozen_height(Height::new(0, 1).unwrap())
-            .into_box();
+        let frozen_client_state = self.with_frozen_height(Height::min(0)).into_box();
 
         ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state)?;
 
