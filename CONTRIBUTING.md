@@ -251,22 +251,25 @@ Our release process is as follows:
    3. Committing the updated `CHANGELOG.md` file and `.changelog` directory to the repo.
 2. Push this to a branch `release/vX.Y.Z` according to the version number of
    the anticipated release (e.g. `release/v0.18.0`) and open a **draft PR**.
-3. Bump all relevant versions in the `crates/ibc/Cargo.toml` file (making sure
-      dependencies' versions are updated too) to the new version and push these
-      changes to the release PR.
-4. In the `crates/ibc/` directory, run `cargo doc --all-features --open` locally to double-check that all the
+3. If there were changes in the `ibc-derive` crate, we need to publish a new version of that crate.
+   1. bump the version in `crates/ibc-derive/Cargo.toml`
+   2. Publish `ibc-derive` with `cargo publish -p ibc-derive`
+4. Bump all relevant versions in `crates/ibc/Cargo.toml` to the new version and
+      push these changes to the release PR.
+      + If you released a new version of `ibc-derive` in step 3, make sure to update that dependency.
+5. Run `cargo doc -p ibc --all-features --open` locally to double-check that all the
    documentation compiles and seems up-to-date and coherent. Fix any potential
    issues here and push them to the release PR.
-5. In the `crates/ibc/` directory, run `cargo publish --dry-run` to double-check that publishing will work. Fix
+6. Run `cargo publish -p ibc --dry-run` to double-check that publishing will work. Fix
    any potential issues here and push them to the release PR.
-6. Mark the PR as **Ready for Review** and incorporate feedback on the release.
-7. Once approved, merge the PR, and pull the `main` branch.
-8. Once all crates have been successfully released, create a signed tag and push it to
+7. Mark the PR as **Ready for Review** and incorporate feedback on the release.
+8. Once approved, merge the PR, and pull the `main` branch.
+9. Once all crates have been successfully released, create a signed tag and push it to
    GitHub: `git tag -s -a vX.Y.Z`. In the tag message, write the version and the link
    to the corresponding section of the changelog. Pushing the tag will trigger the [Release workflow](https://github.com/cosmos/ibc-rs/actions/workflows/release.yml),
    which publishes the crate on crates.io.
-9. Once the tag is pushed, create a GitHub release and append
+10. Once the tag is pushed, create a GitHub release and append
    `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)` 
    to the release description.
-10. Make sure that the [Release workflow](https://github.com/cosmos/ibc-rs/actions/workflows/release.yml) to crates.io has completed successfully.
-11. All done! 🎉
+11. Make sure that the [Release workflow](https://github.com/cosmos/ibc-rs/actions/workflows/release.yml) to crates.io has completed successfully.
+12. All done! 🎉
