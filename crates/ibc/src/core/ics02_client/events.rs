@@ -154,7 +154,8 @@ impl From<HeaderAttribute> for abci::EventAttribute {
     fn from(attr: HeaderAttribute) -> Self {
         (
             HEADER_ATTRIBUTE_KEY,
-            String::from_utf8(hex::encode(attr.header.value)).unwrap(),
+            String::from_utf8(hex::encode(attr.header.value))
+                .expect("Never fails because hexadecimal is valid UTF-8"),
         )
             .into()
     }

@@ -6,7 +6,9 @@ where
     S: Serializer,
     T: AsRef<[u8]>,
 {
-    let hex = Hex::upper_case().encode_to_string(data).unwrap();
+    let hex = Hex::upper_case()
+        .encode_to_string(data)
+        .map_err(|e| serde::ser::Error::custom(alloc::format!("failed to serialize hex: {}", e)))?;
     hex.serialize(serializer)
 }
 

@@ -1,5 +1,6 @@
 //! Defines the commitment error type
 
+use alloc::string::String;
 use displaydoc::Display;
 use prost::DecodeError;
 
@@ -25,6 +26,8 @@ pub enum CommitmentError {
     InvalidMerkleProof,
     /// proof verification failed
     VerificationFailure,
+    /// encoded commitment prefix is not a valid hex string: `{0}`
+    EncodingFailure(String),
 }
 
 #[cfg(feature = "std")]

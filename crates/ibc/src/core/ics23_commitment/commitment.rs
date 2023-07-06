@@ -23,7 +23,9 @@ pub struct CommitmentRoot {
 
 impl fmt::Debug for CommitmentRoot {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let hex = Hex::upper_case().encode_to_string(&self.bytes).unwrap();
+        let hex = Hex::upper_case()
+            .encode_to_string(&self.bytes)
+            .map_err(|_| fmt::Error)?;
         f.debug_tuple("CommitmentRoot").field(&hex).finish()
     }
 }
@@ -72,7 +74,9 @@ pub struct CommitmentProofBytes {
 
 impl fmt::Debug for CommitmentProofBytes {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let hex = Hex::upper_case().encode_to_string(&self.bytes).unwrap();
+        let hex = Hex::upper_case()
+            .encode_to_string(&self.bytes)
+            .map_err(|_| fmt::Error)?;
         f.debug_tuple("CommitmentProof").field(&hex).finish()
     }
 }
@@ -100,7 +104,8 @@ impl TryFrom<RawMerkleProof> for CommitmentProofBytes {
 
     fn try_from(proof: RawMerkleProof) -> Result<Self, Self::Error> {
         let mut buf = Vec::new();
-        prost::Message::encode(&proof, &mut buf).unwrap();
+        prost::Message::encode(&proof, &mut buf)
+            .map_err(|e| Self::Error::EncodingFailure(e.to_string()))?;
         buf.try_into()
     }
 }
@@ -189,14 +194,16 @@ impl serde::Serialize for CommitmentPrefix {
 
 #[cfg(test)]
 pub mod test_util {
+    use super::CommitmentProofBytes;
     use crate::prelude::*;
     use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
     use ibc_proto::ics23::CommitmentProof;
 
-    /// Returns a dummy `RawMerkleProof`, for testing only!
-    pub fn get_dummy_merkle_proof() -> RawMerkleProof {
+    /// Returns a dummy `CommitmentProofBytes`, for testing only!
+    pub fn get_dummy_commitment_proof_bytes() -> CommitmentProofBytes {
         let parsed = CommitmentProof { proof: None };
         let mproofs: Vec<CommitmentProof> = vec![parsed];
-        RawMerkleProof { proofs: mproofs }
+        let raw_mp = RawMerkleProof { proofs: mproofs };
+        raw_mp.try_into().unwrap()
     }
 }

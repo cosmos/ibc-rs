@@ -21,7 +21,7 @@ pub struct MockHeader {
 impl Default for MockHeader {
     fn default() -> Self {
         Self {
-            height: Height::new(0, 1).unwrap(),
+            height: Height::min(0),
             timestamp: Default::default(),
         }
     }
@@ -120,7 +120,8 @@ mod tests {
 
     #[test]
     fn encode_any() {
-        let header = MockHeader::new(Height::new(1, 10).unwrap()).with_timestamp(Timestamp::none());
+        let header = MockHeader::new(Height::new(1, 10).expect("Never fails"))
+            .with_timestamp(Timestamp::none());
         let bytes = <MockHeader as Protobuf<Any>>::encode_vec(&header);
 
         assert_eq!(

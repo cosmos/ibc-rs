@@ -1,9 +1,8 @@
 use crate::prelude::*;
 
-use crate::core::ics02_client::client_state::ClientState;
-
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ContextError;
+use crate::mock::context::AnyClientState;
 use crate::signer::Signer;
 use crate::Height;
 
@@ -18,7 +17,7 @@ pub trait RelayerContext {
 
     /// Returns this client state for the given `client_id` on this chain.
     /// Wrapper over the `/abci_query?path=..` endpoint.
-    fn query_client_full_state(&self, client_id: &ClientId) -> Option<Box<dyn ClientState>>;
+    fn query_client_full_state(&self, client_id: &ClientId) -> Option<AnyClientState>;
 
     /// Temporary solution. Similar to `CosmosSDKChain::key_and_signer()` but simpler.
     fn signer(&self) -> Signer;
@@ -27,6 +26,7 @@ pub trait RelayerContext {
 #[cfg(test)]
 mod tests {
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
+    use crate::core::ics02_client::client_state::ClientStateCommon;
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
     use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};

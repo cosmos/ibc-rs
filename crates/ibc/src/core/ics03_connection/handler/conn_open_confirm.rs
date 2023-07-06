@@ -3,6 +3,8 @@
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::context::ContextError;
+use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenConfirm;
@@ -179,8 +181,6 @@ mod tests {
     use crate::mock::context::MockContext;
     use crate::Height;
 
-    use crate::core::ValidationContext;
-
     enum Ctx {
         Default,
         CorrectConnection,
@@ -258,7 +258,7 @@ mod tests {
                     IbcEvent::OpenConfirmConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = <MockContext as ValidationContext>::connection_end(
+                let conn_end = ValidationContext::connection_end(
                     &fxt.ctx,
                     conn_open_try_event.connection_id(),
                 )

@@ -2,6 +2,7 @@
 
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
+use crate::core::ics02_client::ClientExecutionContext;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
@@ -20,6 +21,11 @@ use super::packet::Sequence;
 
 /// Methods required in send packet validation, to be implemented by the host
 pub trait SendPacketValidationContext {
+    type ClientValidationContext;
+    type E: ClientExecutionContext;
+    type AnyConsensusState: ConsensusState;
+    type AnyClientState: ClientState<Self::ClientValidationContext, Self::E>;
+
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
 
@@ -28,12 +34,12 @@ pub trait SendPacketValidationContext {
 
     /// Returns the ClientState for the given identifier `client_id`. Necessary dependency towards
     /// proof verification.
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError>;
+    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError>;
 
     fn client_consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Box<dyn ConsensusState>, ContextError>;
+    ) -> Result<Self::AnyConsensusState, ContextError>;
 
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
         -> Result<Sequence, ContextError>;
@@ -43,6 +49,11 @@ impl<T> SendPacketValidationContext for T
 where
     T: ValidationContext,
 {
+    type ClientValidationContext = T::ClientValidationContext;
+    type E = T::E;
+    type AnyConsensusState = T::AnyConsensusState;
+    type AnyClientState = T::AnyClientState;
+
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
         self.channel_end(channel_end_path)
     }
@@ -51,14 +62,14 @@ where
         self.connection_end(connection_id)
     }
 
-    fn client_state(&self, client_id: &ClientId) -> Result<Box<dyn ClientState>, ContextError> {
+    fn client_state(&self, client_id: &ClientId) -> Result<T::AnyClientState, ContextError> {
         self.client_state(client_id)
     }
 
     fn client_consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Box<dyn ConsensusState>, ContextError> {
+    ) -> Result<T::AnyConsensusState, ContextError> {
         self.consensus_state(client_cons_state_path)
     }
 
