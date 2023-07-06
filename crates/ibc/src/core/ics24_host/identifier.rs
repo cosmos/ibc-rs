@@ -41,10 +41,6 @@ const TRANSFER_PORT_ID: &str = "transfer";
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(from = "tendermint::chain::Id", into = "tendermint::chain::Id")
-)]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ChainId {
     id: String,
@@ -55,18 +51,17 @@ impl ChainId {
     /// Creates a new `ChainId` given a chain name and an epoch number.
     ///
     /// The returned `ChainId` will have the format: `{chain name}-{epoch number}`.
+    ///
     /// ```
     /// use ibc::core::ics24_host::identifier::ChainId;
     ///
     /// let epoch_number = 10;
-    /// let id = ChainId::new("chainA".to_string(), epoch_number);
+    /// let id = ChainId::new("chainA", epoch_number);
     /// assert_eq!(id.version(), epoch_number);
     /// ```
-    pub fn new(name: String, version: u64) -> Self {
-        Self {
-            id: format!("{name}-{version}"),
-            version,
-        }
+    pub fn new(name: &str, version: u64) -> Self {
+        let id = format!("{name}-{version}");
+        Self { id, version }
     }
 
     pub fn from_string(id: &str) -> Self {
@@ -133,7 +128,7 @@ impl ChainId {
     /// replaces it's version with the specified version
     /// ```
     /// use ibc::core::ics24_host::identifier::ChainId;
-    /// assert_eq!(ChainId::new("chainA".to_string(), 1).with_version(2), ChainId::new("chainA".to_string(), 2));
+    /// assert_eq!(ChainId::new("chainA", 1).with_version(2), ChainId::new("chainA", 2));
     /// assert_eq!("chain1".parse::<ChainId>().unwrap().with_version(2), "chain1".parse::<ChainId>().unwrap());
     /// ```
     pub fn with_version(mut self, version: u64) -> Self {
@@ -163,18 +158,6 @@ impl FromStr for ChainId {
 impl Display for ChainId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         write!(f, "{}", self.id)
-    }
-}
-
-impl From<ChainId> for tendermint::chain::Id {
-    fn from(id: ChainId) -> Self {
-        tendermint::chain::Id::from_str(id.as_str()).unwrap()
-    }
-}
-
-impl From<tendermint::chain::Id> for ChainId {
-    fn from(id: tendermint::chain::Id) -> Self {
-        ChainId::from(id.to_string())
     }
 }
 
@@ -214,7 +197,8 @@ impl ClientId {
     /// ```
     /// # use ibc::core::ics24_host::identifier::ClientId;
     /// # use ibc::core::ics02_client::client_type::ClientType;
-    /// let tm_client_id = ClientId::new(ClientType::from("07-tendermint".to_string()), 0);
+    /// # use std::str::FromStr;
+    /// let tm_client_id = ClientId::new(ClientType::from_str("07-tendermint").unwrap(), 0);
     /// assert!(tm_client_id.is_ok());
     /// tm_client_id.map(|id| { assert_eq!(&id, "07-tendermint-0") });
     /// ```
@@ -253,7 +237,7 @@ impl FromStr for ClientId {
 
 impl Default for ClientId {
     fn default() -> Self {
-        Self::new(tm_client_type(), 0).unwrap()
+        Self::new(tm_client_type(), 0).expect("Never fails because we use a valid client type")
     }
 }
 

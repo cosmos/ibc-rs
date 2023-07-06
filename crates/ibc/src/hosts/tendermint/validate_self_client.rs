@@ -5,7 +5,7 @@ use alloc::string::{String, ToString};
 use ibc_proto::google::protobuf::Any;
 
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use crate::core::ics02_client::client_state::ClientState;
+use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics23_commitment::specs::ProofSpecs;

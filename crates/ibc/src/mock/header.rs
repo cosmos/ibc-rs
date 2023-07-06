@@ -6,7 +6,6 @@ use ibc_proto::ibc::mock::Header as RawMockHeader;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics02_client::header::Header;
 use crate::core::timestamp::Timestamp;
 use crate::Height;
 
@@ -22,7 +21,7 @@ pub struct MockHeader {
 impl Default for MockHeader {
     fn default() -> Self {
         Self {
-            height: Height::new(0, 1).unwrap(),
+            height: Height::min(0),
             timestamp: Default::default(),
         }
     }
@@ -89,16 +88,6 @@ impl MockHeader {
     }
 }
 
-impl Header for MockHeader {
-    fn height(&self) -> Height {
-        self.height
-    }
-
-    fn timestamp(&self) -> Timestamp {
-        self.timestamp
-    }
-}
-
 impl Protobuf<Any> for MockHeader {}
 
 impl TryFrom<Any> for MockHeader {
@@ -131,7 +120,8 @@ mod tests {
 
     #[test]
     fn encode_any() {
-        let header = MockHeader::new(Height::new(1, 10).unwrap()).with_timestamp(Timestamp::none());
+        let header = MockHeader::new(Height::new(1, 10).expect("Never fails"))
+            .with_timestamp(Timestamp::none());
         let bytes = <MockHeader as Protobuf<Any>>::encode_vec(&header);
 
         assert_eq!(

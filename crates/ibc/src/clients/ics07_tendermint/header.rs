@@ -14,7 +14,7 @@ use tendermint::chain::Id as TmChainId;
 use tendermint::validator::Set as ValidatorSet;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 
-use crate::clients::ics07_tendermint::consensus_state::ConsensusState;
+use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ChainId;
@@ -48,6 +48,10 @@ impl Display for Header {
 }
 
 impl Header {
+    pub fn timestamp(&self) -> Timestamp {
+        self.signed_header.header.time.into()
+    }
+
     pub fn height(&self) -> Height {
         Height::new(
             ChainId::chain_version(self.signed_header.header.chain_id.as_str()),
@@ -66,7 +70,7 @@ impl Header {
 
     pub(crate) fn as_trusted_block_state<'a>(
         &'a self,
-        consensus_state: &ConsensusState,
+        consensus_state: &TmConsensusState,
         chain_id: &'a TmChainId,
     ) -> Result<TrustedBlockState<'a>, Error> {
         Ok(TrustedBlockState {
@@ -128,16 +132,6 @@ impl Header {
             });
         }
         Ok(())
-    }
-}
-
-impl crate::core::ics02_client::header::Header for Header {
-    fn height(&self) -> Height {
-        self.height()
-    }
-
-    fn timestamp(&self) -> Timestamp {
-        self.signed_header.header.time.into()
     }
 }
 
@@ -278,7 +272,7 @@ pub mod test_util {
         serde_json::from_str::<SignedHeader>(include_str!(
             "../../../tests/support/signed_header.json"
         ))
-        .unwrap()
+        .expect("Never fails")
         .header
     }
 
@@ -301,7 +295,7 @@ pub mod test_util {
         let shdr = serde_json::from_str::<SignedHeader>(include_str!(
             "../../../tests/support/signed_header.json"
         ))
-        .unwrap();
+        .expect("Never fails");
 
         // Build a set of validators.
         // Below are test values inspired form `test_validator_set()` in tendermint-rs.
@@ -310,10 +304,10 @@ pub mod test_util {
                 &hex::decode_upper(
                     "F349539C7E5EF7C49549B09C4BFC2335318AB0FE51FBFAA2433B4F13E816F4A7",
                 )
-                .unwrap(),
+                .expect("Never fails"),
             )
-            .unwrap(),
-            281_815_u64.try_into().unwrap(),
+            .expect("Never fails"),
+            281_815_u64.try_into().expect("Never fails"),
         );
 
         let vs = ValidatorSet::new(vec![v1.clone()], Some(v1));
@@ -321,7 +315,7 @@ pub mod test_util {
         Header {
             signed_header: shdr,
             validator_set: vs.clone(),
-            trusted_height: Height::new(0, 1).unwrap(),
+            trusted_height: Height::min(0),
             trusted_next_validator_set: vs,
         }
     }

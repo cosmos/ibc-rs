@@ -8,17 +8,17 @@ use tendermint::block::Header as TmHeader;
 use tendermint_testgen::light_block::TmLightBlock;
 use tendermint_testgen::{Generator, LightBlock as TestgenLightBlock};
 
-use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TMConsensusState;
+use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::header::TENDERMINT_HEADER_TYPE_URL;
-use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics02_client::header::Header;
 use crate::core::ics24_host::identifier::ChainId;
 use crate::core::timestamp::Timestamp;
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::prelude::*;
 use crate::Height;
+
+use super::context::AnyConsensusState;
 
 /// Defines the different types of host chains that a mock context can emulate.
 /// The variants are as follows:
@@ -62,7 +62,7 @@ impl HostBlock {
                 ChainId::chain_version(light_block.header().chain_id.as_str()),
                 light_block.header().height.value(),
             )
-            .unwrap(),
+            .expect("Never fails"),
         }
     }
 
@@ -90,7 +90,7 @@ impl HostBlock {
     ) -> HostBlock {
         match chain_type {
             HostType::Mock => HostBlock::Mock(Box::new(MockHeader {
-                height: Height::new(chain_id.version(), height).unwrap(),
+                height: Height::new(chain_id.version(), height).expect("Never fails"),
                 timestamp,
             })),
             HostType::SyntheticTendermint => HostBlock::SyntheticTendermint(Box::new(
@@ -106,13 +106,13 @@ impl HostBlock {
     ) -> SyntheticTmBlock {
         let light_block = TestgenLightBlock::new_default_with_time_and_chain_id(
             chain_id.to_string(),
-            timestamp.into_tm_time().unwrap(),
+            timestamp.into_tm_time().expect("Never fails"),
             height,
         )
         .generate()
-        .unwrap();
+        .expect("Never fails");
         SyntheticTmBlock {
-            trusted_height: Height::new(chain_id.version(), 1).unwrap(),
+            trusted_height: Height::new(chain_id.version(), 1).expect("Never fails"),
             light_block,
         }
     }
@@ -125,19 +125,19 @@ impl HostBlock {
     }
 }
 
-impl From<SyntheticTmBlock> for Box<dyn ConsensusState> {
+impl From<SyntheticTmBlock> for AnyConsensusState {
     fn from(light_block: SyntheticTmBlock) -> Self {
-        let cs = TMConsensusState::from(light_block.header().clone());
-        cs.into_box()
+        let cs = TmConsensusState::from(light_block.header().clone());
+        cs.into()
     }
 }
 
-impl From<HostBlock> for Box<dyn ConsensusState> {
+impl From<HostBlock> for AnyConsensusState {
     fn from(any_block: HostBlock) -> Self {
         match any_block {
-            HostBlock::Mock(mock_header) => MockConsensusState::new(*mock_header).into_box(),
+            HostBlock::Mock(mock_header) => MockConsensusState::new(*mock_header).into(),
             HostBlock::SyntheticTendermint(light_block) => {
-                TMConsensusState::from(light_block.header().clone()).into_box()
+                TmConsensusState::from(light_block.header().clone()).into()
             }
         }
     }
@@ -179,15 +179,5 @@ impl From<HostBlock> for Any {
                 value: encode_light_block(*light_block),
             },
         }
-    }
-}
-
-impl Header for HostBlock {
-    fn height(&self) -> Height {
-        HostBlock::height(self)
-    }
-
-    fn timestamp(&self) -> Timestamp {
-        HostBlock::timestamp(self)
     }
 }

@@ -120,7 +120,7 @@ impl Module for DummyTransferModule {
     ) -> (ModuleExtras, Acknowledgement) {
         (
             ModuleExtras::empty(),
-            Acknowledgement::try_from(vec![1u8]).unwrap(),
+            Acknowledgement::try_from(vec![1u8]).expect("Never fails"),
         )
     }
 

@@ -154,7 +154,8 @@ impl From<HeaderAttribute> for abci::EventAttribute {
     fn from(attr: HeaderAttribute) -> Self {
         (
             HEADER_ATTRIBUTE_KEY,
-            String::from_utf8(hex::encode(attr.header.value)).unwrap(),
+            String::from_utf8(hex::encode(attr.header.value))
+                .expect("Never fails because hexadecimal is valid UTF-8"),
         )
             .into()
     }
@@ -419,6 +420,7 @@ mod tests {
     use crate::core::timestamp::Timestamp;
     use crate::mock::header::MockHeader;
     use ibc_proto::google::protobuf::Any;
+    use std::str::FromStr;
     use tendermint::abci::Event as AbciEvent;
 
     #[test]
@@ -430,7 +432,8 @@ mod tests {
             expected_values: Vec<&'static str>,
         }
 
-        let client_type = ClientType::from("07-tendermint".to_string());
+        let client_type = ClientType::from_str("07-tendermint")
+            .expect("never fails because it's a valid client type");
         let client_id = ClientId::new(client_type.clone(), 0).unwrap();
         let consensus_height = Height::new(0, 5).unwrap();
         let consensus_heights = vec![Height::new(0, 5).unwrap(), Height::new(0, 7).unwrap()];

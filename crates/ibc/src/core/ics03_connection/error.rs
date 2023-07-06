@@ -9,6 +9,7 @@ use crate::Height;
 use alloc::string::String;
 use displaydoc::Display;
 use ibc_proto::protobuf::Error as ProtoError;
+use tendermint_proto::Error as TmProtoError;
 
 #[derive(Debug, Display)]
 pub enum ConnectionError {
@@ -16,6 +17,8 @@ pub enum ConnectionError {
     Client(client_error::ClientError),
     /// invalid connection state: expected `{expected}`, actual `{actual}`
     InvalidState { expected: String, actual: String },
+    /// failed to encode consensus state: `{0}`
+    ConsensusStateEncodeFailure(TmProtoError),
     /// invalid connection end error: `{0}`
     InvalidConnectionEnd(ProtoError),
     /// consensus height claimed by the client on the other party is too advanced: `{target_height}` (host chain current height: `{current_height}`)

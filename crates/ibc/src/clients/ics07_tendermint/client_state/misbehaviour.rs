@@ -1,28 +1,32 @@
 use tendermint_light_client_verifier::Verifier;
 
-use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::prelude::*;
 
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
+use crate::clients::ics07_tendermint::ValidationContext as TmValidationContext;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
+use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::timestamp::Timestamp;
-use crate::core::{ics24_host::identifier::ClientId, ValidationContext};
 
-use super::{check_header_trusted_next_validator_set, downcast_tm_consensus_state, ClientState};
+use super::{check_header_trusted_next_validator_set, ClientState};
 
 impl ClientState {
     // verify_misbehaviour determines whether or not two conflicting headers at
     // the same height would have convinced the light client.
-    pub fn verify_misbehaviour(
+    pub fn verify_misbehaviour<ClientValidationContext>(
         &self,
-        ctx: &dyn ValidationContext,
+        ctx: &ClientValidationContext,
         client_id: &ClientId,
         misbehaviour: TmMisbehaviour,
-    ) -> Result<(), ClientError> {
+    ) -> Result<(), ClientError>
+    where
+        ClientValidationContext: TmValidationContext,
+    {
         misbehaviour.validate_basic()?;
 
         let header_1 = misbehaviour.header1();
@@ -31,8 +35,12 @@ impl ClientState {
                 ClientConsensusStatePath::new(client_id, &header_1.trusted_height);
             let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
-            downcast_tm_consensus_state(consensus_state.as_ref())
-        }?;
+            consensus_state
+                .try_into()
+                .map_err(|err| ClientError::Other {
+                    description: err.to_string(),
+                })?
+        };
 
         let header_2 = misbehaviour.header2();
         let trusted_consensus_state_2 = {
@@ -40,8 +48,12 @@ impl ClientState {
                 ClientConsensusStatePath::new(client_id, &header_2.trusted_height);
             let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
-            downcast_tm_consensus_state(consensus_state.as_ref())
-        }?;
+            consensus_state
+                .try_into()
+                .map_err(|err| ClientError::Other {
+                    description: err.to_string(),
+                })?
+        };
 
         let current_timestamp = ctx.host_timestamp()?;
         self.verify_misbehaviour_header(header_1, &trusted_consensus_state_1, current_timestamp)?;
@@ -78,7 +90,13 @@ impl ClientState {
         // main header verification, delegated to the tendermint-light-client crate.
         let untrusted_state = header.as_untrusted_block_state();
 
-        let chain_id = self.chain_id.clone().into();
+        let chain_id = self
+            .chain_id
+            .to_string()
+            .try_into()
+            .map_err(|e| ClientError::Other {
+                description: format!("failed to parse chain id: {}", e),
+            })?;
         let trusted_state = header.as_trusted_block_state(trusted_consensus_state, &chain_id)?;
 
         let options = self.as_light_client_options()?;

@@ -1,15 +1,16 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpdateAnyClient`.
 
-use crate::core::ics02_client::client_state::UpdateKind;
-use crate::core::ics02_client::error::ClientError;
-use crate::core::ics02_client::msgs::MsgUpdateOrMisbehaviour;
 use crate::prelude::*;
 
-use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
-
 use crate::core::context::ContextError;
-
+use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::client_state::ClientStateExecution;
+use crate::core::ics02_client::client_state::ClientStateValidation;
+use crate::core::ics02_client::client_state::UpdateKind;
+use crate::core::ics02_client::error::ClientError;
+use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
+use crate::core::ics02_client::msgs::MsgUpdateOrMisbehaviour;
 use crate::core::{ExecutionContext, ValidationContext};
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>
@@ -31,7 +32,12 @@ where
 
     let client_message = msg.client_message();
 
-    client_state.verify_client_message(ctx, &client_id, client_message, &update_kind)?;
+    client_state.verify_client_message(
+        ctx.get_client_validation_context(),
+        &client_id,
+        client_message,
+        &update_kind,
+    )?;
 
     Ok(())
 }
@@ -50,17 +56,22 @@ where
     let client_state = ctx.client_state(&client_id)?;
 
     let found_misbehaviour = client_state.check_for_misbehaviour(
-        ctx,
+        ctx.get_client_validation_context(),
         &client_id,
         client_message.clone(),
         &update_kind,
     )?;
 
     if found_misbehaviour {
-        client_state.update_state_on_misbehaviour(ctx, &client_id, client_message, &update_kind)?;
+        client_state.update_state_on_misbehaviour(
+            ctx.get_client_execution_context(),
+            &client_id,
+            client_message,
+            &update_kind,
+        )?;
 
         let event = IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(
-            client_id.clone(),
+            client_id,
             client_state.client_type(),
         ));
         ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
@@ -75,21 +86,40 @@ where
 
         let header = client_message;
 
-        let consensus_heights = client_state.update_state(ctx, &client_id, header.clone())?;
+        let consensus_heights = client_state.update_state(
+            ctx.get_client_execution_context(),
+            &client_id,
+            header.clone(),
+        )?;
 
-        let consensus_height = consensus_heights.get(0).ok_or(ClientError::Other {
-            description: "client update state returned no updated height".to_string(),
-        })?;
+        // Store host height and time for all updated headers
+        {
+            let host_timestamp = ctx.host_timestamp()?;
+            let host_height = ctx.host_height()?;
 
-        let event = IbcEvent::UpdateClient(UpdateClient::new(
-            client_id.clone(),
-            client_state.client_type(),
-            *consensus_height,
-            consensus_heights,
-            header,
-        ));
-        ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
-        ctx.emit_ibc_event(event);
+            for consensus_height in consensus_heights.iter() {
+                ctx.store_update_time(client_id.clone(), *consensus_height, host_timestamp)?;
+                ctx.store_update_height(client_id.clone(), *consensus_height, host_height)?;
+            }
+        }
+
+        {
+            let event = {
+                let consensus_height = consensus_heights.get(0).ok_or(ClientError::Other {
+                    description: "client update state returned no updated height".to_string(),
+                })?;
+
+                IbcEvent::UpdateClient(UpdateClient::new(
+                    client_id,
+                    client_state.client_type(),
+                    *consensus_height,
+                    consensus_heights,
+                    header,
+                ))
+            };
+            ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
+            ctx.emit_ibc_event(event);
+        }
     }
 
     Ok(())
@@ -109,20 +139,17 @@ mod tests {
     use crate::clients::ics07_tendermint::header::Header as TmHeader;
     use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
     use crate::core::events::IbcEvent;
-    use crate::core::ics02_client::client_state::ClientState;
     use crate::core::ics02_client::client_type::ClientType;
-    use crate::core::ics02_client::consensus_state::ConsensusState;
     use crate::core::ics02_client::handler::update_client::{execute, validate};
     use crate::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::timestamp::Timestamp;
-    use crate::core::ValidationContext;
     use crate::downcast;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::client_state::MockClientState;
-    use crate::mock::context::MockContext;
+    use crate::mock::context::{AnyConsensusState, MockContext};
     use crate::mock::header::MockHeader;
     use crate::mock::host::{HostBlock, HostType};
     use crate::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
@@ -154,7 +181,7 @@ mod tests {
 
         assert_eq!(
             ctx.client_state(&msg.client_id).unwrap(),
-            MockClientState::new(MockHeader::new(height).with_timestamp(timestamp)).into_box()
+            MockClientState::new(MockHeader::new(height).with_timestamp(timestamp)).into()
         );
     }
 
@@ -181,10 +208,10 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let update_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
+        let chain_id_b = ChainId::new("mockgaiaB", 1);
 
         let mut ctx = MockContext::new(
-            ChainId::new("mockgaiaA".to_string(), 1),
+            ChainId::new("mockgaiaA", 1),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),
@@ -227,10 +254,10 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let update_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
+        let chain_id_b = ChainId::new("mockgaiaB", 1);
 
         let mut ctx = MockContext::new(
-            ChainId::new("mockgaiaA".to_string(), 1),
+            ChainId::new("mockgaiaA", 1),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),
@@ -274,8 +301,8 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
 
-        let ctx_a_chain_id = ChainId::new("mockgaiaA".to_string(), 1);
-        let ctx_b_chain_id = ChainId::new("mockgaiaB".to_string(), 1);
+        let ctx_a_chain_id = ChainId::new("mockgaiaA", 1);
+        let ctx_b_chain_id = ChainId::new("mockgaiaB", 1);
         let start_height = Height::new(1, 11).unwrap();
 
         let mut ctx_a = MockContext::new(ctx_a_chain_id, HostType::Mock, 5, start_height)
@@ -322,14 +349,14 @@ mod tests {
         {
             // FIXME: idea: we need to update the light client with the latest block from
             // chain B
-            let consensus_state: Box<dyn ConsensusState> = block.clone().into();
+            let consensus_state: AnyConsensusState = block.clone().into();
 
             let tm_block = downcast!(block.clone() => HostBlock::SyntheticTendermint).unwrap();
 
             let client_state = {
                 #[allow(deprecated)]
                 let raw_client_state = RawTmClientState {
-                    chain_id: ChainId::from(tm_block.header().chain_id.clone()).to_string(),
+                    chain_id: ChainId::from(tm_block.header().chain_id.to_string()).to_string(),
                     trust_level: Some(Fraction {
                         numerator: 1,
                         denominator: 3,
@@ -354,7 +381,7 @@ mod tests {
 
                 let client_state = TmClientState::try_from(raw_client_state).unwrap();
 
-                client_state.into_box()
+                client_state.into()
             };
 
             let mut ibc_store = ctx_a.ibc_store.lock();
@@ -399,7 +426,7 @@ mod tests {
         let chain_start_height = Height::new(1, 11).unwrap();
 
         let ctx = MockContext::new(
-            ChainId::new("mockgaiaA".to_string(), 1),
+            ChainId::new("mockgaiaA", 1),
             HostType::Mock,
             5,
             chain_start_height,
@@ -412,7 +439,7 @@ mod tests {
         );
 
         let ctx_b = MockContext::new(
-            ChainId::new("mockgaiaB".to_string(), 1),
+            ChainId::new("mockgaiaB", 1),
             HostType::SyntheticTendermint,
             5,
             client_height,
@@ -538,11 +565,11 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let misbehaviour_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
+        let chain_id_b = ChainId::new("mockgaiaB", 1);
 
         // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
         let mut ctx_a = MockContext::new(
-            ChainId::new("mockgaiaA".to_string(), 1),
+            ChainId::new("mockgaiaA", 1),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),
@@ -599,11 +626,11 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let misbehaviour_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB".to_string(), 1);
+        let chain_id_b = ChainId::new("mockgaiaB", 1);
 
         // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
         let mut ctx_a = MockContext::new(
-            ChainId::new("mockgaiaA".to_string(), 1),
+            ChainId::new("mockgaiaA", 1),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),
