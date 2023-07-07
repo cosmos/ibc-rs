@@ -57,43 +57,43 @@ const CHANNEL_CLOSED_EVENT: &str = "channel_close";
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenInit {
-    port_id: PortIdAttribute,
-    channel_id: ChannelIdAttribute,
-    counterparty_port_id: CounterpartyPortIdAttribute,
-    connection_id: ConnectionIdAttribute,
-    version: VersionAttribute,
+    port_id_attr_on_a: PortIdAttribute,
+    chan_id_attr_on_a: ChannelIdAttribute,
+    port_id_attr_on_b: CounterpartyPortIdAttribute,
+    conn_id_attr_on_a: ConnectionIdAttribute,
+    version_attr_on_a: VersionAttribute,
 }
 
 impl OpenInit {
     pub fn new(
-        port_id: PortId,
-        channel_id: ChannelId,
-        counterparty_port_id: PortId,
-        connection_id: ConnectionId,
-        version: Version,
+        port_id_on_a: PortId,
+        chan_id_on_a: ChannelId,
+        port_id_on_b: PortId,
+        conn_id_on_a: ConnectionId,
+        version_on_a: Version,
     ) -> Self {
         Self {
-            port_id: port_id.into(),
-            channel_id: channel_id.into(),
-            counterparty_port_id: counterparty_port_id.into(),
-            connection_id: connection_id.into(),
-            version: version.into(),
+            port_id_attr_on_a: port_id_on_a.into(),
+            chan_id_attr_on_a: chan_id_on_a.into(),
+            port_id_attr_on_b: port_id_on_b.into(),
+            conn_id_attr_on_a: conn_id_on_a.into(),
+            version_attr_on_a: version_on_a.into(),
         }
     }
-    pub fn port_id(&self) -> &PortId {
-        &self.port_id.port_id
+    pub fn port_id_on_a(&self) -> &PortId {
+        &self.port_id_attr_on_a.port_id
     }
-    pub fn channel_id(&self) -> &ChannelId {
-        &self.channel_id.channel_id
+    pub fn chan_id_on_a(&self) -> &ChannelId {
+        &self.chan_id_attr_on_a.channel_id
     }
-    pub fn counterparty_port_id(&self) -> &PortId {
-        &self.counterparty_port_id.counterparty_port_id
+    pub fn port_id_on_b(&self) -> &PortId {
+        &self.port_id_attr_on_b.counterparty_port_id
     }
-    pub fn connection_id(&self) -> &ConnectionId {
-        &self.connection_id.connection_id
+    pub fn conn_id_on_a(&self) -> &ConnectionId {
+        &self.conn_id_attr_on_a.connection_id
     }
-    pub fn version(&self) -> &Version {
-        &self.version.version
+    pub fn version_on_a(&self) -> &Version {
+        &self.version_attr_on_a.version
     }
 
     pub fn event_type(&self) -> &str {
@@ -106,12 +106,12 @@ impl From<OpenInit> for abci::Event {
         abci::Event {
             kind: CHANNEL_OPEN_INIT_EVENT.to_string(),
             attributes: vec![
-                o.port_id.into(),
-                o.channel_id.into(),
-                o.counterparty_port_id.into(),
+                o.port_id_attr_on_a.into(),
+                o.chan_id_attr_on_a.into(),
+                o.port_id_attr_on_b.into(),
                 (COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY, "").into(),
-                o.connection_id.into(),
-                o.version.into(),
+                o.conn_id_attr_on_a.into(),
+                o.version_attr_on_a.into(),
             ],
         }
     }
@@ -132,49 +132,49 @@ impl From<OpenInit> for abci::Event {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenTry {
-    port_id: PortIdAttribute,
-    channel_id: ChannelIdAttribute,
-    counterparty_port_id: CounterpartyPortIdAttribute,
-    counterparty_channel_id: CounterpartyChannelIdAttribute,
-    connection_id: ConnectionIdAttribute,
-    version: VersionAttribute,
+    port_id_attr_on_b: PortIdAttribute,
+    chan_id_attr_on_b: ChannelIdAttribute,
+    port_id_attr_on_a: CounterpartyPortIdAttribute,
+    chan_id_attr_on_a: CounterpartyChannelIdAttribute,
+    conn_id_attr_on_b: ConnectionIdAttribute,
+    version_attr_on_b: VersionAttribute,
 }
 
 impl OpenTry {
     pub fn new(
-        port_id: PortId,
-        channel_id: ChannelId,
-        counterparty_port_id: PortId,
-        counterparty_channel_id: ChannelId,
-        connection_id: ConnectionId,
-        version: Version,
+        port_id_on_b: PortId,
+        chan_id_on_b: ChannelId,
+        port_id_on_a: PortId,
+        chan_id_on_a: ChannelId,
+        conn_id_on_b: ConnectionId,
+        version_on_b: Version,
     ) -> Self {
         Self {
-            port_id: port_id.into(),
-            channel_id: channel_id.into(),
-            counterparty_port_id: counterparty_port_id.into(),
-            counterparty_channel_id: counterparty_channel_id.into(),
-            connection_id: connection_id.into(),
-            version: version.into(),
+            port_id_attr_on_b: port_id_on_b.into(),
+            chan_id_attr_on_b: chan_id_on_b.into(),
+            port_id_attr_on_a: port_id_on_a.into(),
+            chan_id_attr_on_a: chan_id_on_a.into(),
+            conn_id_attr_on_b: conn_id_on_b.into(),
+            version_attr_on_b: version_on_b.into(),
         }
     }
-    pub fn port_id(&self) -> &PortId {
-        &self.port_id.port_id
+    pub fn port_id_on_b(&self) -> &PortId {
+        &self.port_id_attr_on_b.port_id
     }
-    pub fn channel_id(&self) -> &ChannelId {
-        &self.channel_id.channel_id
+    pub fn chan_id_on_b(&self) -> &ChannelId {
+        &self.chan_id_attr_on_b.channel_id
     }
-    pub fn counterparty_port_id(&self) -> &PortId {
-        &self.counterparty_port_id.counterparty_port_id
+    pub fn port_id_on_a(&self) -> &PortId {
+        &self.port_id_attr_on_a.counterparty_port_id
     }
-    pub fn counterparty_channel_id(&self) -> &ChannelId {
-        &self.counterparty_channel_id.counterparty_channel_id
+    pub fn chan_id_on_a(&self) -> &ChannelId {
+        &self.chan_id_attr_on_a.counterparty_channel_id
     }
-    pub fn connection_id(&self) -> &ConnectionId {
-        &self.connection_id.connection_id
+    pub fn conn_id_on_b(&self) -> &ConnectionId {
+        &self.conn_id_attr_on_b.connection_id
     }
-    pub fn version(&self) -> &Version {
-        &self.version.version
+    pub fn version_on_b(&self) -> &Version {
+        &self.version_attr_on_b.version
     }
 
     pub fn event_type(&self) -> &str {
@@ -187,12 +187,12 @@ impl From<OpenTry> for abci::Event {
         abci::Event {
             kind: CHANNEL_OPEN_TRY_EVENT.to_string(),
             attributes: vec![
-                o.port_id.into(),
-                o.channel_id.into(),
-                o.counterparty_port_id.into(),
-                o.counterparty_channel_id.into(),
-                o.connection_id.into(),
-                o.version.into(),
+                o.port_id_attr_on_b.into(),
+                o.chan_id_attr_on_b.into(),
+                o.port_id_attr_on_a.into(),
+                o.chan_id_attr_on_a.into(),
+                o.conn_id_attr_on_b.into(),
+                o.version_attr_on_b.into(),
             ],
         }
     }
@@ -213,43 +213,43 @@ impl From<OpenTry> for abci::Event {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenAck {
-    port_id: PortIdAttribute,
-    channel_id: ChannelIdAttribute,
-    counterparty_port_id: CounterpartyPortIdAttribute,
-    counterparty_channel_id: CounterpartyChannelIdAttribute,
-    connection_id: ConnectionIdAttribute,
+    port_id_attr_on_a: PortIdAttribute,
+    chan_id_attr_on_a: ChannelIdAttribute,
+    port_id_attr_on_b: CounterpartyPortIdAttribute,
+    chan_id_attr_on_b: CounterpartyChannelIdAttribute,
+    conn_id_attr_on_a: ConnectionIdAttribute,
 }
 
 impl OpenAck {
     pub fn new(
-        port_id: PortId,
-        channel_id: ChannelId,
-        counterparty_port_id: PortId,
-        counterparty_channel_id: ChannelId,
-        connection_id: ConnectionId,
+        port_id_on_a: PortId,
+        chan_id_on_a: ChannelId,
+        port_id_on_b: PortId,
+        chan_id_on_b: ChannelId,
+        conn_id_on_a: ConnectionId,
     ) -> Self {
         Self {
-            port_id: port_id.into(),
-            channel_id: channel_id.into(),
-            counterparty_port_id: counterparty_port_id.into(),
-            counterparty_channel_id: counterparty_channel_id.into(),
-            connection_id: connection_id.into(),
+            port_id_attr_on_a: port_id_on_a.into(),
+            chan_id_attr_on_a: chan_id_on_a.into(),
+            port_id_attr_on_b: port_id_on_b.into(),
+            chan_id_attr_on_b: chan_id_on_b.into(),
+            conn_id_attr_on_a: conn_id_on_a.into(),
         }
     }
-    pub fn port_id(&self) -> &PortId {
-        &self.port_id.port_id
+    pub fn port_id_on_a(&self) -> &PortId {
+        &self.port_id_attr_on_a.port_id
     }
-    pub fn channel_id(&self) -> &ChannelId {
-        &self.channel_id.channel_id
+    pub fn chan_id_on_a(&self) -> &ChannelId {
+        &self.chan_id_attr_on_a.channel_id
     }
-    pub fn counterparty_port_id(&self) -> &PortId {
-        &self.counterparty_port_id.counterparty_port_id
+    pub fn port_id_on_b(&self) -> &PortId {
+        &self.port_id_attr_on_b.counterparty_port_id
     }
-    pub fn counterparty_channel_id(&self) -> &ChannelId {
-        &self.counterparty_channel_id.counterparty_channel_id
+    pub fn chan_id_on_b(&self) -> &ChannelId {
+        &self.chan_id_attr_on_b.counterparty_channel_id
     }
-    pub fn connection_id(&self) -> &ConnectionId {
-        &self.connection_id.connection_id
+    pub fn conn_id_on_a(&self) -> &ConnectionId {
+        &self.conn_id_attr_on_a.connection_id
     }
 
     pub fn event_type(&self) -> &str {
@@ -262,11 +262,11 @@ impl From<OpenAck> for abci::Event {
         abci::Event {
             kind: CHANNEL_OPEN_ACK_EVENT.to_string(),
             attributes: vec![
-                o.port_id.into(),
-                o.channel_id.into(),
-                o.counterparty_port_id.into(),
-                o.counterparty_channel_id.into(),
-                o.connection_id.into(),
+                o.port_id_attr_on_a.into(),
+                o.chan_id_attr_on_a.into(),
+                o.port_id_attr_on_b.into(),
+                o.chan_id_attr_on_b.into(),
+                o.conn_id_attr_on_a.into(),
             ],
         }
     }
@@ -287,43 +287,43 @@ impl From<OpenAck> for abci::Event {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenConfirm {
-    port_id: PortIdAttribute,
-    channel_id: ChannelIdAttribute,
-    counterparty_port_id: CounterpartyPortIdAttribute,
-    counterparty_channel_id: CounterpartyChannelIdAttribute,
-    connection_id: ConnectionIdAttribute,
+    port_id_attr_on_b: PortIdAttribute,
+    chan_id_attr_on_b: ChannelIdAttribute,
+    port_id_attr_on_a: CounterpartyPortIdAttribute,
+    chan_id_attr_on_a: CounterpartyChannelIdAttribute,
+    conn_id_attr_on_b: ConnectionIdAttribute,
 }
 
 impl OpenConfirm {
     pub fn new(
-        port_id: PortId,
-        channel_id: ChannelId,
-        counterparty_port_id: PortId,
-        counterparty_channel_id: ChannelId,
-        connection_id: ConnectionId,
+        port_id_on_b: PortId,
+        chan_id_on_b: ChannelId,
+        port_id_on_a: PortId,
+        chan_id_on_a: ChannelId,
+        conn_id_on_b: ConnectionId,
     ) -> Self {
         Self {
-            port_id: port_id.into(),
-            channel_id: channel_id.into(),
-            counterparty_port_id: counterparty_port_id.into(),
-            counterparty_channel_id: counterparty_channel_id.into(),
-            connection_id: connection_id.into(),
+            port_id_attr_on_b: port_id_on_b.into(),
+            chan_id_attr_on_b: chan_id_on_b.into(),
+            port_id_attr_on_a: port_id_on_a.into(),
+            chan_id_attr_on_a: chan_id_on_a.into(),
+            conn_id_attr_on_b: conn_id_on_b.into(),
         }
     }
-    pub fn port_id(&self) -> &PortId {
-        &self.port_id.port_id
+    pub fn port_id_on_b(&self) -> &PortId {
+        &self.port_id_attr_on_b.port_id
     }
-    pub fn channel_id(&self) -> &ChannelId {
-        &self.channel_id.channel_id
+    pub fn chan_id_on_b(&self) -> &ChannelId {
+        &self.chan_id_attr_on_b.channel_id
     }
-    pub fn counterparty_port_id(&self) -> &PortId {
-        &self.counterparty_port_id.counterparty_port_id
+    pub fn port_id_on_a(&self) -> &PortId {
+        &self.port_id_attr_on_a.counterparty_port_id
     }
-    pub fn counterparty_channel_id(&self) -> &ChannelId {
-        &self.counterparty_channel_id.counterparty_channel_id
+    pub fn chan_id_on_a(&self) -> &ChannelId {
+        &self.chan_id_attr_on_a.counterparty_channel_id
     }
-    pub fn connection_id(&self) -> &ConnectionId {
-        &self.connection_id.connection_id
+    pub fn conn_id_on_b(&self) -> &ConnectionId {
+        &self.conn_id_attr_on_b.connection_id
     }
 
     pub fn event_type(&self) -> &str {
@@ -336,11 +336,11 @@ impl From<OpenConfirm> for abci::Event {
         abci::Event {
             kind: CHANNEL_OPEN_CONFIRM_EVENT.to_string(),
             attributes: vec![
-                o.port_id.into(),
-                o.channel_id.into(),
-                o.counterparty_port_id.into(),
-                o.counterparty_channel_id.into(),
-                o.connection_id.into(),
+                o.port_id_attr_on_b.into(),
+                o.chan_id_attr_on_b.into(),
+                o.port_id_attr_on_a.into(),
+                o.chan_id_attr_on_a.into(),
+                o.conn_id_attr_on_b.into(),
             ],
         }
     }
@@ -361,43 +361,43 @@ impl From<OpenConfirm> for abci::Event {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CloseInit {
-    port_id: PortIdAttribute,
-    channel_id: ChannelIdAttribute,
-    counterparty_port_id: CounterpartyPortIdAttribute,
-    counterparty_channel_id: CounterpartyChannelIdAttribute,
-    connection_id: ConnectionIdAttribute,
+    port_id_attr_on_a: PortIdAttribute,
+    chan_id_attr_on_a: ChannelIdAttribute,
+    port_id_attr_on_b: CounterpartyPortIdAttribute,
+    chan_id_attr_on_b: CounterpartyChannelIdAttribute,
+    conn_id_attr_on_a: ConnectionIdAttribute,
 }
 
 impl CloseInit {
     pub fn new(
-        port_id: PortId,
-        channel_id: ChannelId,
-        counterparty_port_id: PortId,
-        counterparty_channel_id: ChannelId,
-        connection_id: ConnectionId,
+        port_id_on_a: PortId,
+        chan_id_on_a: ChannelId,
+        port_id_on_b: PortId,
+        chan_id_on_b: ChannelId,
+        conn_id_on_a: ConnectionId,
     ) -> Self {
         Self {
-            port_id: port_id.into(),
-            channel_id: channel_id.into(),
-            counterparty_port_id: counterparty_port_id.into(),
-            counterparty_channel_id: counterparty_channel_id.into(),
-            connection_id: connection_id.into(),
+            port_id_attr_on_a: port_id_on_a.into(),
+            chan_id_attr_on_a: chan_id_on_a.into(),
+            port_id_attr_on_b: port_id_on_b.into(),
+            chan_id_attr_on_b: chan_id_on_b.into(),
+            conn_id_attr_on_a: conn_id_on_a.into(),
         }
     }
-    pub fn port_id(&self) -> &PortId {
-        &self.port_id.port_id
+    pub fn port_id_on_a(&self) -> &PortId {
+        &self.port_id_attr_on_a.port_id
     }
-    pub fn channel_id(&self) -> &ChannelId {
-        &self.channel_id.channel_id
+    pub fn chan_id_on_a(&self) -> &ChannelId {
+        &self.chan_id_attr_on_a.channel_id
     }
-    pub fn counterparty_port_id(&self) -> &PortId {
-        &self.counterparty_port_id.counterparty_port_id
+    pub fn port_id_on_b(&self) -> &PortId {
+        &self.port_id_attr_on_b.counterparty_port_id
     }
-    pub fn counterparty_channel_id(&self) -> &ChannelId {
-        &self.counterparty_channel_id.counterparty_channel_id
+    pub fn chan_id_on_b(&self) -> &ChannelId {
+        &self.chan_id_attr_on_b.counterparty_channel_id
     }
-    pub fn connection_id(&self) -> &ConnectionId {
-        &self.connection_id.connection_id
+    pub fn conn_id_on_a(&self) -> &ConnectionId {
+        &self.conn_id_attr_on_a.connection_id
     }
 
     pub fn event_type(&self) -> &str {
@@ -410,11 +410,11 @@ impl From<CloseInit> for abci::Event {
         abci::Event {
             kind: CHANNEL_CLOSE_INIT_EVENT.to_string(),
             attributes: vec![
-                o.port_id.into(),
-                o.channel_id.into(),
-                o.counterparty_port_id.into(),
-                o.counterparty_channel_id.into(),
-                o.connection_id.into(),
+                o.port_id_attr_on_a.into(),
+                o.chan_id_attr_on_a.into(),
+                o.port_id_attr_on_b.into(),
+                o.chan_id_attr_on_b.into(),
+                o.conn_id_attr_on_a.into(),
             ],
         }
     }
@@ -435,43 +435,43 @@ impl From<CloseInit> for abci::Event {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CloseConfirm {
-    port_id: PortIdAttribute,
-    channel_id: ChannelIdAttribute,
-    counterparty_port_id: CounterpartyPortIdAttribute,
-    counterparty_channel_id: CounterpartyChannelIdAttribute,
-    connection_id: ConnectionIdAttribute,
+    port_id_attr_on_b: PortIdAttribute,
+    chan_id_attr_on_b: ChannelIdAttribute,
+    port_id_attr_on_a: CounterpartyPortIdAttribute,
+    chan_id_attr_on_a: CounterpartyChannelIdAttribute,
+    conn_id_attr_on_b: ConnectionIdAttribute,
 }
 
 impl CloseConfirm {
     pub fn new(
-        port_id: PortId,
-        channel_id: ChannelId,
-        counterparty_port_id: PortId,
-        counterparty_channel_id: ChannelId,
-        connection_id: ConnectionId,
+        port_id_on_b: PortId,
+        chan_id_on_b: ChannelId,
+        port_id_on_a: PortId,
+        chan_id_on_a: ChannelId,
+        conn_id_on_b: ConnectionId,
     ) -> Self {
         Self {
-            port_id: port_id.into(),
-            channel_id: channel_id.into(),
-            counterparty_port_id: counterparty_port_id.into(),
-            counterparty_channel_id: counterparty_channel_id.into(),
-            connection_id: connection_id.into(),
+            port_id_attr_on_b: port_id_on_b.into(),
+            chan_id_attr_on_b: chan_id_on_b.into(),
+            port_id_attr_on_a: port_id_on_a.into(),
+            chan_id_attr_on_a: chan_id_on_a.into(),
+            conn_id_attr_on_b: conn_id_on_b.into(),
         }
     }
-    pub fn port_id(&self) -> &PortId {
-        &self.port_id.port_id
+    pub fn port_id_on_b(&self) -> &PortId {
+        &self.port_id_attr_on_b.port_id
     }
-    pub fn channel_id(&self) -> &ChannelId {
-        &self.channel_id.channel_id
+    pub fn chan_id_on_b(&self) -> &ChannelId {
+        &self.chan_id_attr_on_b.channel_id
     }
-    pub fn counterparty_port_id(&self) -> &PortId {
-        &self.counterparty_port_id.counterparty_port_id
+    pub fn port_id_on_a(&self) -> &PortId {
+        &self.port_id_attr_on_a.counterparty_port_id
     }
-    pub fn counterparty_channel_id(&self) -> &ChannelId {
-        &self.counterparty_channel_id.counterparty_channel_id
+    pub fn chan_id_on_a(&self) -> &ChannelId {
+        &self.chan_id_attr_on_a.counterparty_channel_id
     }
-    pub fn connection_id(&self) -> &ConnectionId {
-        &self.connection_id.connection_id
+    pub fn conn_id_on_b(&self) -> &ConnectionId {
+        &self.conn_id_attr_on_b.connection_id
     }
 
     pub fn event_type(&self) -> &str {
@@ -484,11 +484,11 @@ impl From<CloseConfirm> for abci::Event {
         abci::Event {
             kind: CHANNEL_CLOSE_CONFIRM_EVENT.to_string(),
             attributes: vec![
-                o.port_id.into(),
-                o.channel_id.into(),
-                o.counterparty_port_id.into(),
-                o.counterparty_channel_id.into(),
-                o.connection_id.into(),
+                o.port_id_attr_on_b.into(),
+                o.chan_id_attr_on_b.into(),
+                o.port_id_attr_on_a.into(),
+                o.chan_id_attr_on_a.into(),
+                o.conn_id_attr_on_b.into(),
             ],
         }
     }
@@ -513,51 +513,49 @@ impl From<CloseConfirm> for abci::Event {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ChannelClosed {
-    port_id: PortIdAttribute,
-    channel_id: ChannelIdAttribute,
-    counterparty_port_id: CounterpartyPortIdAttribute,
-    maybe_counterparty_channel_id: Option<CounterpartyChannelIdAttribute>,
-    connection_id: ConnectionIdAttribute,
-    channel_ordering: ChannelOrderingAttribute,
+    port_id_attr_on_a: PortIdAttribute,
+    chan_id_attr_on_a: ChannelIdAttribute,
+    port_id_attr_on_b: CounterpartyPortIdAttribute,
+    maybe_chan_id_attr_on_b: Option<CounterpartyChannelIdAttribute>,
+    conn_id_attr_on_a: ConnectionIdAttribute,
+    channel_ordering_attr: ChannelOrderingAttribute,
 }
 
 impl ChannelClosed {
     pub fn new(
-        port_id: PortId,
-        channel_id: ChannelId,
-        counterparty_port_id: PortId,
-        maybe_counterparty_channel_id: Option<ChannelId>,
-        connection_id: ConnectionId,
+        port_id_on_a: PortId,
+        chan_id_on_a: ChannelId,
+        port_id_on_b: PortId,
+        maybe_chan_id_on_b: Option<ChannelId>,
+        conn_id_on_a: ConnectionId,
         channel_ordering: Order,
     ) -> Self {
         Self {
-            port_id: port_id.into(),
-            channel_id: channel_id.into(),
-            counterparty_port_id: counterparty_port_id.into(),
-            maybe_counterparty_channel_id: maybe_counterparty_channel_id.map(|c| c.into()),
-            connection_id: connection_id.into(),
-            channel_ordering: channel_ordering.into(),
+            port_id_attr_on_a: port_id_on_a.into(),
+            chan_id_attr_on_a: chan_id_on_a.into(),
+            port_id_attr_on_b: port_id_on_b.into(),
+            maybe_chan_id_attr_on_b: maybe_chan_id_on_b.map(|c| c.into()),
+            conn_id_attr_on_a: conn_id_on_a.into(),
+            channel_ordering_attr: channel_ordering.into(),
         }
     }
-    pub fn port_id(&self) -> &PortId {
-        &self.port_id.port_id
+    pub fn port_id_on_b(&self) -> &PortId {
+        &self.port_id_attr_on_a.port_id
     }
-    pub fn channel_id(&self) -> &ChannelId {
-        &self.channel_id.channel_id
+    pub fn chan_id_on_b(&self) -> &ChannelId {
+        &self.chan_id_attr_on_a.channel_id
     }
-    pub fn counterparty_port_id(&self) -> &PortId {
-        &self.counterparty_port_id.counterparty_port_id
+    pub fn port_id_on_a(&self) -> &PortId {
+        &self.port_id_attr_on_b.counterparty_port_id
     }
-    pub fn counterparty_channel_id(&self) -> Option<&ChannelId> {
-        self.maybe_counterparty_channel_id
-            .as_ref()
-            .map(|c| c.as_ref())
+    pub fn chan_id_on_a(&self) -> Option<&ChannelId> {
+        self.maybe_chan_id_attr_on_b.as_ref().map(|c| c.as_ref())
     }
-    pub fn connection_id(&self) -> &ConnectionId {
-        &self.connection_id.connection_id
+    pub fn conn_id_on_b(&self) -> &ConnectionId {
+        &self.conn_id_attr_on_a.connection_id
     }
     pub fn channel_ordering(&self) -> &Order {
-        &self.channel_ordering.order
+        &self.channel_ordering_attr.order
     }
 
     pub fn event_type(&self) -> &str {
@@ -570,15 +568,15 @@ impl From<ChannelClosed> for abci::Event {
         abci::Event {
             kind: CHANNEL_CLOSED_EVENT.to_string(),
             attributes: vec![
-                ev.port_id.into(),
-                ev.channel_id.into(),
-                ev.counterparty_port_id.into(),
-                ev.maybe_counterparty_channel_id.map_or_else(
+                ev.port_id_attr_on_a.into(),
+                ev.chan_id_attr_on_a.into(),
+                ev.port_id_attr_on_b.into(),
+                ev.maybe_chan_id_attr_on_b.map_or_else(
                     || (COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY, "").into(),
                     |c| c.into(),
                 ),
-                ev.connection_id.into(),
-                ev.channel_ordering.into(),
+                ev.conn_id_attr_on_a.into(),
+                ev.channel_ordering_attr.into(),
             ],
         }
     }
@@ -599,72 +597,72 @@ impl From<ChannelClosed> for abci::Event {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SendPacket {
-    packet_data: PacketDataAttribute,
-    timeout_height: TimeoutHeightAttribute,
-    timeout_timestamp: TimeoutTimestampAttribute,
-    sequence: SequenceAttribute,
-    src_port_id: SrcPortIdAttribute,
-    src_channel_id: SrcChannelIdAttribute,
-    dst_port_id: DstPortIdAttribute,
-    dst_channel_id: DstChannelIdAttribute,
-    channel_ordering: ChannelOrderingAttribute,
-    src_connection_id: PacketConnectionIdAttribute,
+    packet_data_attr: PacketDataAttribute,
+    timeout_height_attr_on_b: TimeoutHeightAttribute,
+    timeout_timestamp_attr_on_b: TimeoutTimestampAttribute,
+    seq_attr_on_a: SequenceAttribute,
+    port_id_attr_on_a: SrcPortIdAttribute,
+    chan_id_attr_on_a: SrcChannelIdAttribute,
+    port_id_attr_on_b: DstPortIdAttribute,
+    chan_id_attr_on_b: DstChannelIdAttribute,
+    channel_ordering_attr: ChannelOrderingAttribute,
+    conn_id_attr_on_a: PacketConnectionIdAttribute,
 }
 
 impl SendPacket {
     pub fn new(packet: Packet, channel_ordering: Order, src_connection_id: ConnectionId) -> Self {
         Self {
-            packet_data: packet.data.into(),
-            timeout_height: packet.timeout_height_on_b.into(),
-            timeout_timestamp: packet.timeout_timestamp_on_b.into(),
-            sequence: packet.seq_on_a.into(),
-            src_port_id: packet.port_id_on_a.into(),
-            src_channel_id: packet.chan_id_on_a.into(),
-            dst_port_id: packet.port_id_on_b.into(),
-            dst_channel_id: packet.chan_id_on_b.into(),
-            channel_ordering: channel_ordering.into(),
-            src_connection_id: src_connection_id.into(),
+            packet_data_attr: packet.data.into(),
+            timeout_height_attr_on_b: packet.timeout_height_on_b.into(),
+            timeout_timestamp_attr_on_b: packet.timeout_timestamp_on_b.into(),
+            seq_attr_on_a: packet.seq_on_a.into(),
+            port_id_attr_on_a: packet.port_id_on_a.into(),
+            chan_id_attr_on_a: packet.chan_id_on_a.into(),
+            port_id_attr_on_b: packet.port_id_on_b.into(),
+            chan_id_attr_on_b: packet.chan_id_on_b.into(),
+            channel_ordering_attr: channel_ordering.into(),
+            conn_id_attr_on_a: src_connection_id.into(),
         }
     }
 
     pub fn packet_data(&self) -> &[u8] {
-        &self.packet_data.packet_data
+        &self.packet_data_attr.packet_data
     }
 
-    pub fn timeout_height(&self) -> &TimeoutHeight {
-        &self.timeout_height.timeout_height
+    pub fn timeout_height_on_b(&self) -> &TimeoutHeight {
+        &self.timeout_height_attr_on_b.timeout_height
     }
 
-    pub fn timeout_timestamp(&self) -> &Timestamp {
-        &self.timeout_timestamp.timeout_timestamp
+    pub fn timeout_timestamp_on_b(&self) -> &Timestamp {
+        &self.timeout_timestamp_attr_on_b.timeout_timestamp
     }
 
-    pub fn sequence(&self) -> &Sequence {
-        &self.sequence.sequence
+    pub fn seq_on_a(&self) -> &Sequence {
+        &self.seq_attr_on_a.sequence
     }
 
-    pub fn src_port_id(&self) -> &PortId {
-        &self.src_port_id.src_port_id
+    pub fn port_id_on_a(&self) -> &PortId {
+        &self.port_id_attr_on_a.src_port_id
     }
 
-    pub fn src_channel_id(&self) -> &ChannelId {
-        &self.src_channel_id.src_channel_id
+    pub fn chan_id_on_a(&self) -> &ChannelId {
+        &self.chan_id_attr_on_a.src_channel_id
     }
 
-    pub fn dst_port_id(&self) -> &PortId {
-        &self.dst_port_id.dst_port_id
+    pub fn port_id_on_b(&self) -> &PortId {
+        &self.port_id_attr_on_b.dst_port_id
     }
 
-    pub fn dst_channel_id(&self) -> &ChannelId {
-        &self.dst_channel_id.dst_channel_id
+    pub fn chan_id_on_b(&self) -> &ChannelId {
+        &self.chan_id_attr_on_b.dst_channel_id
     }
 
     pub fn channel_ordering(&self) -> &Order {
-        &self.channel_ordering.order
+        &self.channel_ordering_attr.order
     }
 
-    pub fn src_connection_id(&self) -> &ConnectionId {
-        &self.src_connection_id.connection_id
+    pub fn conn_id_on_a(&self) -> &ConnectionId {
+        &self.conn_id_attr_on_a.connection_id
     }
 
     pub fn event_type(&self) -> &str {
@@ -677,16 +675,16 @@ impl TryFrom<SendPacket> for abci::Event {
 
     fn try_from(v: SendPacket) -> Result<Self, Self::Error> {
         let mut attributes = Vec::with_capacity(11);
-        attributes.append(&mut v.packet_data.try_into()?);
-        attributes.push(v.timeout_height.into());
-        attributes.push(v.timeout_timestamp.into());
-        attributes.push(v.sequence.into());
-        attributes.push(v.src_port_id.into());
-        attributes.push(v.src_channel_id.into());
-        attributes.push(v.dst_port_id.into());
-        attributes.push(v.dst_channel_id.into());
-        attributes.push(v.channel_ordering.into());
-        attributes.push(v.src_connection_id.into());
+        attributes.append(&mut v.packet_data_attr.try_into()?);
+        attributes.push(v.timeout_height_attr_on_b.into());
+        attributes.push(v.timeout_timestamp_attr_on_b.into());
+        attributes.push(v.seq_attr_on_a.into());
+        attributes.push(v.port_id_attr_on_a.into());
+        attributes.push(v.chan_id_attr_on_a.into());
+        attributes.push(v.port_id_attr_on_b.into());
+        attributes.push(v.chan_id_attr_on_b.into());
+        attributes.push(v.channel_ordering_attr.into());
+        attributes.push(v.conn_id_attr_on_a.into());
 
         Ok(abci::Event {
             kind: SEND_PACKET_EVENT.to_string(),
@@ -710,72 +708,72 @@ impl TryFrom<SendPacket> for abci::Event {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReceivePacket {
-    packet_data: PacketDataAttribute,
-    timeout_height: TimeoutHeightAttribute,
-    timeout_timestamp: TimeoutTimestampAttribute,
-    sequence: SequenceAttribute,
-    src_port_id: SrcPortIdAttribute,
-    src_channel_id: SrcChannelIdAttribute,
-    dst_port_id: DstPortIdAttribute,
-    dst_channel_id: DstChannelIdAttribute,
-    channel_ordering: ChannelOrderingAttribute,
-    dst_connection_id: PacketConnectionIdAttribute,
+    packet_data_attr: PacketDataAttribute,
+    timeout_height_attr_on_b: TimeoutHeightAttribute,
+    timeout_timestamp_attr_on_b: TimeoutTimestampAttribute,
+    seq_attr_on_a: SequenceAttribute,
+    port_id_attr_on_a: SrcPortIdAttribute,
+    chan_id_attr_on_a: SrcChannelIdAttribute,
+    port_id_attr_on_b: DstPortIdAttribute,
+    chan_id_attr_on_b: DstChannelIdAttribute,
+    channel_ordering_attr: ChannelOrderingAttribute,
+    conn_id_attr_on_b: PacketConnectionIdAttribute,
 }
 
 impl ReceivePacket {
     pub fn new(packet: Packet, channel_ordering: Order, dst_connection_id: ConnectionId) -> Self {
         Self {
-            packet_data: packet.data.into(),
-            timeout_height: packet.timeout_height_on_b.into(),
-            timeout_timestamp: packet.timeout_timestamp_on_b.into(),
-            sequence: packet.seq_on_a.into(),
-            src_port_id: packet.port_id_on_a.into(),
-            src_channel_id: packet.chan_id_on_a.into(),
-            dst_port_id: packet.port_id_on_b.into(),
-            dst_channel_id: packet.chan_id_on_b.into(),
-            channel_ordering: channel_ordering.into(),
-            dst_connection_id: dst_connection_id.into(),
+            packet_data_attr: packet.data.into(),
+            timeout_height_attr_on_b: packet.timeout_height_on_b.into(),
+            timeout_timestamp_attr_on_b: packet.timeout_timestamp_on_b.into(),
+            seq_attr_on_a: packet.seq_on_a.into(),
+            port_id_attr_on_a: packet.port_id_on_a.into(),
+            chan_id_attr_on_a: packet.chan_id_on_a.into(),
+            port_id_attr_on_b: packet.port_id_on_b.into(),
+            chan_id_attr_on_b: packet.chan_id_on_b.into(),
+            channel_ordering_attr: channel_ordering.into(),
+            conn_id_attr_on_b: dst_connection_id.into(),
         }
     }
 
     pub fn packet_data(&self) -> &[u8] {
-        &self.packet_data.packet_data
+        &self.packet_data_attr.packet_data
     }
 
-    pub fn timeout_height(&self) -> &TimeoutHeight {
-        &self.timeout_height.timeout_height
+    pub fn timeout_height_on_b(&self) -> &TimeoutHeight {
+        &self.timeout_height_attr_on_b.timeout_height
     }
 
-    pub fn timeout_timestamp(&self) -> &Timestamp {
-        &self.timeout_timestamp.timeout_timestamp
+    pub fn timeout_timestamp_on_b(&self) -> &Timestamp {
+        &self.timeout_timestamp_attr_on_b.timeout_timestamp
     }
 
-    pub fn sequence(&self) -> &Sequence {
-        &self.sequence.sequence
+    pub fn seq_on_b(&self) -> &Sequence {
+        &self.seq_attr_on_a.sequence
     }
 
-    pub fn src_port_id(&self) -> &PortId {
-        &self.src_port_id.src_port_id
+    pub fn port_id_on_b(&self) -> &PortId {
+        &self.port_id_attr_on_a.src_port_id
     }
 
-    pub fn src_channel_id(&self) -> &ChannelId {
-        &self.src_channel_id.src_channel_id
+    pub fn chan_id_on_b(&self) -> &ChannelId {
+        &self.chan_id_attr_on_a.src_channel_id
     }
 
-    pub fn dst_port_id(&self) -> &PortId {
-        &self.dst_port_id.dst_port_id
+    pub fn port_id_on_a(&self) -> &PortId {
+        &self.port_id_attr_on_b.dst_port_id
     }
 
-    pub fn dst_channel_id(&self) -> &ChannelId {
-        &self.dst_channel_id.dst_channel_id
+    pub fn chan_id_on_a(&self) -> &ChannelId {
+        &self.chan_id_attr_on_b.dst_channel_id
     }
 
     pub fn channel_ordering(&self) -> &Order {
-        &self.channel_ordering.order
+        &self.channel_ordering_attr.order
     }
 
-    pub fn dst_connection_id(&self) -> &ConnectionId {
-        &self.dst_connection_id.connection_id
+    pub fn conn_id_on_a(&self) -> &ConnectionId {
+        &self.conn_id_attr_on_b.connection_id
     }
 
     pub fn event_type(&self) -> &str {
@@ -788,16 +786,16 @@ impl TryFrom<ReceivePacket> for abci::Event {
 
     fn try_from(v: ReceivePacket) -> Result<Self, Self::Error> {
         let mut attributes = Vec::with_capacity(11);
-        attributes.append(&mut v.packet_data.try_into()?);
-        attributes.push(v.timeout_height.into());
-        attributes.push(v.timeout_timestamp.into());
-        attributes.push(v.sequence.into());
-        attributes.push(v.src_port_id.into());
-        attributes.push(v.src_channel_id.into());
-        attributes.push(v.dst_port_id.into());
-        attributes.push(v.dst_channel_id.into());
-        attributes.push(v.channel_ordering.into());
-        attributes.push(v.dst_connection_id.into());
+        attributes.append(&mut v.packet_data_attr.try_into()?);
+        attributes.push(v.timeout_height_attr_on_b.into());
+        attributes.push(v.timeout_timestamp_attr_on_b.into());
+        attributes.push(v.seq_attr_on_a.into());
+        attributes.push(v.port_id_attr_on_a.into());
+        attributes.push(v.chan_id_attr_on_a.into());
+        attributes.push(v.port_id_attr_on_b.into());
+        attributes.push(v.chan_id_attr_on_b.into());
+        attributes.push(v.channel_ordering_attr.into());
+        attributes.push(v.conn_id_attr_on_b.into());
 
         Ok(abci::Event {
             kind: RECEIVE_PACKET_EVENT.to_string(),
@@ -822,34 +820,34 @@ impl TryFrom<ReceivePacket> for abci::Event {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WriteAcknowledgement {
     packet_data: PacketDataAttribute,
-    timeout_height: TimeoutHeightAttribute,
-    timeout_timestamp: TimeoutTimestampAttribute,
-    sequence: SequenceAttribute,
-    src_port_id: SrcPortIdAttribute,
-    src_channel_id: SrcChannelIdAttribute,
-    dst_port_id: DstPortIdAttribute,
-    dst_channel_id: DstChannelIdAttribute,
+    timeout_height_attr_on_b: TimeoutHeightAttribute,
+    timeout_timestamp_attr_on_b: TimeoutTimestampAttribute,
+    seq_attr_on_a: SequenceAttribute,
+    port_id_attr_on_a: SrcPortIdAttribute,
+    chan_id_attr_on_a: SrcChannelIdAttribute,
+    port_id_attr_on_b: DstPortIdAttribute,
+    chan_id_attr_on_b: DstChannelIdAttribute,
     acknowledgement: AcknowledgementAttribute,
-    dst_connection_id: PacketConnectionIdAttribute,
+    conn_id_attr_on_b: PacketConnectionIdAttribute,
 }
 
 impl WriteAcknowledgement {
     pub fn new(
         packet: Packet,
         acknowledgement: Acknowledgement,
-        dst_connection_id: ConnectionId,
+        conn_id_on_b: ConnectionId,
     ) -> Self {
         Self {
             packet_data: packet.data.into(),
-            timeout_height: packet.timeout_height_on_b.into(),
-            timeout_timestamp: packet.timeout_timestamp_on_b.into(),
-            sequence: packet.seq_on_a.into(),
-            src_port_id: packet.port_id_on_a.into(),
-            src_channel_id: packet.chan_id_on_a.into(),
-            dst_port_id: packet.port_id_on_b.into(),
-            dst_channel_id: packet.chan_id_on_b.into(),
+            timeout_height_attr_on_b: packet.timeout_height_on_b.into(),
+            timeout_timestamp_attr_on_b: packet.timeout_timestamp_on_b.into(),
+            seq_attr_on_a: packet.seq_on_a.into(),
+            port_id_attr_on_a: packet.port_id_on_a.into(),
+            chan_id_attr_on_a: packet.chan_id_on_a.into(),
+            port_id_attr_on_b: packet.port_id_on_b.into(),
+            chan_id_attr_on_b: packet.chan_id_on_b.into(),
             acknowledgement: acknowledgement.into(),
-            dst_connection_id: dst_connection_id.into(),
+            conn_id_attr_on_b: conn_id_on_b.into(),
         }
     }
 
@@ -857,40 +855,40 @@ impl WriteAcknowledgement {
         &self.packet_data.packet_data
     }
 
-    pub fn timeout_height(&self) -> &TimeoutHeight {
-        &self.timeout_height.timeout_height
+    pub fn timeout_height_on_b(&self) -> &TimeoutHeight {
+        &self.timeout_height_attr_on_b.timeout_height
     }
 
-    pub fn timeout_timestamp(&self) -> &Timestamp {
-        &self.timeout_timestamp.timeout_timestamp
+    pub fn timeout_timestamp_on_b(&self) -> &Timestamp {
+        &self.timeout_timestamp_attr_on_b.timeout_timestamp
     }
 
-    pub fn sequence(&self) -> &Sequence {
-        &self.sequence.sequence
+    pub fn seq_on_a(&self) -> &Sequence {
+        &self.seq_attr_on_a.sequence
     }
 
-    pub fn src_port_id(&self) -> &PortId {
-        &self.src_port_id.src_port_id
+    pub fn port_id_on_a(&self) -> &PortId {
+        &self.port_id_attr_on_a.src_port_id
     }
 
-    pub fn src_channel_id(&self) -> &ChannelId {
-        &self.src_channel_id.src_channel_id
+    pub fn chan_id_on_a(&self) -> &ChannelId {
+        &self.chan_id_attr_on_a.src_channel_id
     }
 
-    pub fn dst_port_id(&self) -> &PortId {
-        &self.dst_port_id.dst_port_id
+    pub fn port_id_on_b(&self) -> &PortId {
+        &self.port_id_attr_on_b.dst_port_id
     }
 
-    pub fn dst_channel_id(&self) -> &ChannelId {
-        &self.dst_channel_id.dst_channel_id
+    pub fn chan_id_on_b(&self) -> &ChannelId {
+        &self.chan_id_attr_on_b.dst_channel_id
     }
 
     pub fn acknowledgement(&self) -> &Acknowledgement {
         &self.acknowledgement.acknowledgement
     }
 
-    pub fn dst_connection_id(&self) -> &ConnectionId {
-        &self.dst_connection_id.connection_id
+    pub fn conn_id_on_b(&self) -> &ConnectionId {
+        &self.conn_id_attr_on_b.connection_id
     }
 
     pub fn event_type(&self) -> &str {
@@ -904,15 +902,15 @@ impl TryFrom<WriteAcknowledgement> for abci::Event {
     fn try_from(v: WriteAcknowledgement) -> Result<Self, Self::Error> {
         let mut attributes = Vec::with_capacity(11);
         attributes.append(&mut v.packet_data.try_into()?);
-        attributes.push(v.timeout_height.into());
-        attributes.push(v.timeout_timestamp.into());
-        attributes.push(v.sequence.into());
-        attributes.push(v.src_port_id.into());
-        attributes.push(v.src_channel_id.into());
-        attributes.push(v.dst_port_id.into());
-        attributes.push(v.dst_channel_id.into());
+        attributes.push(v.timeout_height_attr_on_b.into());
+        attributes.push(v.timeout_timestamp_attr_on_b.into());
+        attributes.push(v.seq_attr_on_a.into());
+        attributes.push(v.port_id_attr_on_a.into());
+        attributes.push(v.chan_id_attr_on_a.into());
+        attributes.push(v.port_id_attr_on_b.into());
+        attributes.push(v.chan_id_attr_on_b.into());
         attributes.append(&mut v.acknowledgement.try_into()?);
-        attributes.push(v.dst_connection_id.into());
+        attributes.push(v.conn_id_attr_on_b.into());
 
         Ok(abci::Event {
             kind: WRITE_ACK_EVENT.to_string(),
@@ -936,66 +934,66 @@ impl TryFrom<WriteAcknowledgement> for abci::Event {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AcknowledgePacket {
-    timeout_height: TimeoutHeightAttribute,
-    timeout_timestamp: TimeoutTimestampAttribute,
-    sequence: SequenceAttribute,
-    src_port_id: SrcPortIdAttribute,
-    src_channel_id: SrcChannelIdAttribute,
-    dst_port_id: DstPortIdAttribute,
-    dst_channel_id: DstChannelIdAttribute,
-    channel_ordering: ChannelOrderingAttribute,
-    src_connection_id: PacketConnectionIdAttribute,
+    timeout_height_attr_on_b: TimeoutHeightAttribute,
+    timeout_timestamp_attr_on_b: TimeoutTimestampAttribute,
+    seq_on_a: SequenceAttribute,
+    port_id_attr_on_a: SrcPortIdAttribute,
+    chan_id_attr_on_a: SrcChannelIdAttribute,
+    port_id_attr_on_b: DstPortIdAttribute,
+    chan_id_attr_on_b: DstChannelIdAttribute,
+    channel_ordering_attr: ChannelOrderingAttribute,
+    conn_id_attr_on_a: PacketConnectionIdAttribute,
 }
 
 impl AcknowledgePacket {
     pub fn new(packet: Packet, channel_ordering: Order, src_connection_id: ConnectionId) -> Self {
         Self {
-            timeout_height: packet.timeout_height_on_b.into(),
-            timeout_timestamp: packet.timeout_timestamp_on_b.into(),
-            sequence: packet.seq_on_a.into(),
-            src_port_id: packet.port_id_on_a.into(),
-            src_channel_id: packet.chan_id_on_a.into(),
-            dst_port_id: packet.port_id_on_b.into(),
-            dst_channel_id: packet.chan_id_on_b.into(),
-            channel_ordering: channel_ordering.into(),
-            src_connection_id: src_connection_id.into(),
+            timeout_height_attr_on_b: packet.timeout_height_on_b.into(),
+            timeout_timestamp_attr_on_b: packet.timeout_timestamp_on_b.into(),
+            seq_on_a: packet.seq_on_a.into(),
+            port_id_attr_on_a: packet.port_id_on_a.into(),
+            chan_id_attr_on_a: packet.chan_id_on_a.into(),
+            port_id_attr_on_b: packet.port_id_on_b.into(),
+            chan_id_attr_on_b: packet.chan_id_on_b.into(),
+            channel_ordering_attr: channel_ordering.into(),
+            conn_id_attr_on_a: src_connection_id.into(),
         }
     }
 
-    pub fn timeout_height(&self) -> &TimeoutHeight {
-        &self.timeout_height.timeout_height
+    pub fn timeout_height_on_b(&self) -> &TimeoutHeight {
+        &self.timeout_height_attr_on_b.timeout_height
     }
 
-    pub fn timeout_timestamp(&self) -> &Timestamp {
-        &self.timeout_timestamp.timeout_timestamp
+    pub fn timeout_timestamp_on_b(&self) -> &Timestamp {
+        &self.timeout_timestamp_attr_on_b.timeout_timestamp
     }
 
-    pub fn sequence(&self) -> &Sequence {
-        &self.sequence.sequence
+    pub fn seq_on_a(&self) -> &Sequence {
+        &self.seq_on_a.sequence
     }
 
-    pub fn src_port_id(&self) -> &PortId {
-        &self.src_port_id.src_port_id
+    pub fn port_id_on_a(&self) -> &PortId {
+        &self.port_id_attr_on_a.src_port_id
     }
 
-    pub fn src_channel_id(&self) -> &ChannelId {
-        &self.src_channel_id.src_channel_id
+    pub fn chan_id_on_a(&self) -> &ChannelId {
+        &self.chan_id_attr_on_a.src_channel_id
     }
 
-    pub fn dst_port_id(&self) -> &PortId {
-        &self.dst_port_id.dst_port_id
+    pub fn port_id_on_b(&self) -> &PortId {
+        &self.port_id_attr_on_b.dst_port_id
     }
 
-    pub fn dst_channel_id(&self) -> &ChannelId {
-        &self.dst_channel_id.dst_channel_id
+    pub fn chan_id_on_b(&self) -> &ChannelId {
+        &self.chan_id_attr_on_b.dst_channel_id
     }
 
     pub fn channel_ordering(&self) -> &Order {
-        &self.channel_ordering.order
+        &self.channel_ordering_attr.order
     }
 
-    pub fn src_connection_id(&self) -> &ConnectionId {
-        &self.src_connection_id.connection_id
+    pub fn conn_id_on_a(&self) -> &ConnectionId {
+        &self.conn_id_attr_on_a.connection_id
     }
 
     pub fn event_type(&self) -> &str {
@@ -1010,15 +1008,15 @@ impl TryFrom<AcknowledgePacket> for abci::Event {
         Ok(abci::Event {
             kind: ACK_PACKET_EVENT.to_string(),
             attributes: vec![
-                v.timeout_height.into(),
-                v.timeout_timestamp.into(),
-                v.sequence.into(),
-                v.src_port_id.into(),
-                v.src_channel_id.into(),
-                v.dst_port_id.into(),
-                v.dst_channel_id.into(),
-                v.channel_ordering.into(),
-                v.src_connection_id.into(),
+                v.timeout_height_attr_on_b.into(),
+                v.timeout_timestamp_attr_on_b.into(),
+                v.seq_on_a.into(),
+                v.port_id_attr_on_a.into(),
+                v.chan_id_attr_on_a.into(),
+                v.port_id_attr_on_b.into(),
+                v.chan_id_attr_on_b.into(),
+                v.channel_ordering_attr.into(),
+                v.conn_id_attr_on_a.into(),
             ],
         })
     }
@@ -1039,60 +1037,60 @@ impl TryFrom<AcknowledgePacket> for abci::Event {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TimeoutPacket {
-    timeout_height: TimeoutHeightAttribute,
-    timeout_timestamp: TimeoutTimestampAttribute,
-    sequence: SequenceAttribute,
-    src_port_id: SrcPortIdAttribute,
-    src_channel_id: SrcChannelIdAttribute,
-    dst_port_id: DstPortIdAttribute,
-    dst_channel_id: DstChannelIdAttribute,
-    channel_ordering: ChannelOrderingAttribute,
+    timeout_height_attr_on_b: TimeoutHeightAttribute,
+    timeout_timestamp_attr_on_b: TimeoutTimestampAttribute,
+    seq_attr_on_a: SequenceAttribute,
+    port_id_attr_on_a: SrcPortIdAttribute,
+    chan_id_attr_on_a: SrcChannelIdAttribute,
+    port_id_attr_on_b: DstPortIdAttribute,
+    chan_id_attr_on_b: DstChannelIdAttribute,
+    channel_ordering_attr: ChannelOrderingAttribute,
 }
 
 impl TimeoutPacket {
     pub fn new(packet: Packet, channel_ordering: Order) -> Self {
         Self {
-            timeout_height: packet.timeout_height_on_b.into(),
-            timeout_timestamp: packet.timeout_timestamp_on_b.into(),
-            sequence: packet.seq_on_a.into(),
-            src_port_id: packet.port_id_on_a.into(),
-            src_channel_id: packet.chan_id_on_a.into(),
-            dst_port_id: packet.port_id_on_b.into(),
-            dst_channel_id: packet.chan_id_on_b.into(),
-            channel_ordering: channel_ordering.into(),
+            timeout_height_attr_on_b: packet.timeout_height_on_b.into(),
+            timeout_timestamp_attr_on_b: packet.timeout_timestamp_on_b.into(),
+            seq_attr_on_a: packet.seq_on_a.into(),
+            port_id_attr_on_a: packet.port_id_on_a.into(),
+            chan_id_attr_on_a: packet.chan_id_on_a.into(),
+            port_id_attr_on_b: packet.port_id_on_b.into(),
+            chan_id_attr_on_b: packet.chan_id_on_b.into(),
+            channel_ordering_attr: channel_ordering.into(),
         }
     }
 
-    pub fn timeout_height(&self) -> &TimeoutHeight {
-        &self.timeout_height.timeout_height
+    pub fn timeout_height_on_b(&self) -> &TimeoutHeight {
+        &self.timeout_height_attr_on_b.timeout_height
     }
 
-    pub fn timeout_timestamp(&self) -> &Timestamp {
-        &self.timeout_timestamp.timeout_timestamp
+    pub fn timeout_timestamp_on_b(&self) -> &Timestamp {
+        &self.timeout_timestamp_attr_on_b.timeout_timestamp
     }
 
-    pub fn sequence(&self) -> &Sequence {
-        &self.sequence.sequence
+    pub fn seq_on_a(&self) -> &Sequence {
+        &self.seq_attr_on_a.sequence
     }
 
-    pub fn src_port_id(&self) -> &PortId {
-        &self.src_port_id.src_port_id
+    pub fn port_id_on_a(&self) -> &PortId {
+        &self.port_id_attr_on_a.src_port_id
     }
 
-    pub fn src_channel_id(&self) -> &ChannelId {
-        &self.src_channel_id.src_channel_id
+    pub fn chan_id_on_a(&self) -> &ChannelId {
+        &self.chan_id_attr_on_a.src_channel_id
     }
 
-    pub fn dst_port_id(&self) -> &PortId {
-        &self.dst_port_id.dst_port_id
+    pub fn port_id_on_b(&self) -> &PortId {
+        &self.port_id_attr_on_b.dst_port_id
     }
 
-    pub fn dst_channel_id(&self) -> &ChannelId {
-        &self.dst_channel_id.dst_channel_id
+    pub fn chan_id_on_b(&self) -> &ChannelId {
+        &self.chan_id_attr_on_b.dst_channel_id
     }
 
     pub fn channel_ordering(&self) -> &Order {
-        &self.channel_ordering.order
+        &self.channel_ordering_attr.order
     }
 
     pub fn event_type(&self) -> &str {
@@ -1107,14 +1105,14 @@ impl TryFrom<TimeoutPacket> for abci::Event {
         Ok(abci::Event {
             kind: TIMEOUT_EVENT.to_string(),
             attributes: vec![
-                v.timeout_height.into(),
-                v.timeout_timestamp.into(),
-                v.sequence.into(),
-                v.src_port_id.into(),
-                v.src_channel_id.into(),
-                v.dst_port_id.into(),
-                v.dst_channel_id.into(),
-                v.channel_ordering.into(),
+                v.timeout_height_attr_on_b.into(),
+                v.timeout_timestamp_attr_on_b.into(),
+                v.seq_attr_on_a.into(),
+                v.port_id_attr_on_a.into(),
+                v.chan_id_attr_on_a.into(),
+                v.port_id_attr_on_b.into(),
+                v.chan_id_attr_on_b.into(),
+                v.channel_ordering_attr.into(),
             ],
         })
     }

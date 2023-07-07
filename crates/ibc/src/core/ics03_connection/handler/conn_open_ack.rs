@@ -340,7 +340,7 @@ mod tests {
                 };
                 let conn_end = <MockContext as ValidationContext>::connection_end(
                     &fxt.ctx,
-                    conn_open_try_event.connection_id(),
+                    conn_open_try_event.conn_id_on_a(),
                 )
                 .unwrap();
                 assert_eq!(conn_end.state().clone(), State::Open);

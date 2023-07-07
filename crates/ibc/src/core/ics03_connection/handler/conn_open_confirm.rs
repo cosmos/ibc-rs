@@ -258,11 +258,9 @@ mod tests {
                     IbcEvent::OpenConfirmConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = ValidationContext::connection_end(
-                    &fxt.ctx,
-                    conn_open_try_event.connection_id(),
-                )
-                .unwrap();
+                let conn_end =
+                    ValidationContext::connection_end(&fxt.ctx, conn_open_try_event.conn_id_on_b())
+                        .unwrap();
                 assert_eq!(conn_end.state().clone(), State::Open);
             }
         }
