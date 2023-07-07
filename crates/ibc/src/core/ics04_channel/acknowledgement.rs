@@ -50,11 +50,9 @@ impl TryFrom<Vec<u8>> for Acknowledgement {
     }
 }
 
-/// Defines a convenient and generic type for IBC applications to construct an
-/// [`Acknowledgement`](super::acknowledgement::Acknowledgement) based on
-/// success or failure of a received packet. The resulting acknowledgement is
-/// then emitted through an IBC event, which can be interpreted by operators,
-/// like relayers, to take an appropriate action.
+/// Defines a convenience type for IBC applications to construct an
+/// [`Acknowledgement`](super::acknowledgement::Acknowledgement) based on the
+/// success or failure of processing a received packet. 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AcknowledgementStatus {
