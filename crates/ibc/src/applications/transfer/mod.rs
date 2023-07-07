@@ -37,5 +37,5 @@ use crate::core::ics04_channel::acknowledgement::StatusValue;
 
 /// Returns a successful acknowledgement status for the token transfer application.
 pub fn ack_success_b64() -> StatusValue {
-    StatusValue::new(ACK_SUCCESS_B64).expect("ack status is never supposed to be empty")
+    StatusValue::new(ACK_SUCCESS_B64).expect("ack status value is never supposed to be empty")
 }
