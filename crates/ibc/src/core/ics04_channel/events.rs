@@ -22,8 +22,9 @@ use self::packet_attributes::{
     SrcPortIdAttribute, TimeoutHeightAttribute, TimeoutTimestampAttribute,
 };
 
+use super::acknowledgement::Acknowledgement;
 use super::channel::Order;
-use super::packet::{Acknowledgement, Sequence};
+use super::packet::Sequence;
 use super::timeout::TimeoutHeight;
 use super::Version;
 

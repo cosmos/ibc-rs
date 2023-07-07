@@ -3,8 +3,8 @@ use crate::prelude::*;
 
 use sha2::{Digest, Sha256};
 
+use super::ack_success_b64;
 use super::error::TokenTransferError;
-use crate::applications::transfer::acknowledgement::TokenTransferAcknowledgement;
 use crate::applications::transfer::events::{AckEvent, AckStatusEvent, RecvEvent, TimeoutEvent};
 use crate::applications::transfer::packet::PacketData;
 use crate::applications::transfer::relay::refund_packet_token_execute;
@@ -12,11 +12,13 @@ use crate::applications::transfer::relay::{
     on_recv_packet::process_recv_packet_execute, refund_packet_token_validate,
 };
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
+use crate::core::ics04_channel::acknowledgement::Acknowledgement;
+use crate::core::ics04_channel::acknowledgement::AcknowledgementStatus;
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::context::{
     SendPacketExecutionContext, SendPacketValidationContext,
 };
-use crate::core::ics04_channel::packet::{Acknowledgement, Packet};
+use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::router::ModuleExtras;
@@ -269,16 +271,15 @@ pub fn on_recv_packet_execute(
     let data = match serde_json::from_slice::<PacketData>(&packet.data) {
         Ok(data) => data,
         Err(_) => {
-            let ack = TokenTransferAcknowledgement::Error(
-                TokenTransferError::PacketDataDeserialization.to_string(),
-            );
+            let ack =
+                AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into());
             return (ModuleExtras::empty(), ack.into());
         }
     };
 
     let (mut extras, ack) = match process_recv_packet_execute(ctx_b, packet, data.clone()) {
-        Ok(extras) => (extras, TokenTransferAcknowledgement::success()),
-        Err((extras, error)) => (extras, TokenTransferAcknowledgement::from_error(error)),
+        Ok(extras) => (extras, AcknowledgementStatus::success(ack_success_b64())),
+        Err((extras, error)) => (extras, AcknowledgementStatus::error(error.into())),
     };
 
     let recv_event = RecvEvent {
@@ -306,9 +307,8 @@ where
     let data = serde_json::from_slice::<PacketData>(&packet.data)
         .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
 
-    let acknowledgement =
-        serde_json::from_slice::<TokenTransferAcknowledgement>(acknowledgement.as_ref())
-            .map_err(|_| TokenTransferError::AckDeserialization)?;
+    let acknowledgement = serde_json::from_slice::<AcknowledgementStatus>(acknowledgement.as_ref())
+        .map_err(|_| TokenTransferError::AckDeserialization)?;
 
     if !acknowledgement.is_successful() {
         refund_packet_token_validate(ctx, packet, &data)?;
@@ -334,7 +334,7 @@ pub fn on_acknowledgement_packet_execute(
     };
 
     let acknowledgement =
-        match serde_json::from_slice::<TokenTransferAcknowledgement>(acknowledgement.as_ref()) {
+        match serde_json::from_slice::<AcknowledgementStatus>(acknowledgement.as_ref()) {
             Ok(ack) => ack,
             Err(_) => {
                 return (

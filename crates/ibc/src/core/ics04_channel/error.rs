@@ -136,6 +136,8 @@ pub enum PacketError {
     AcknowledgementExists { sequence: Sequence },
     /// Acknowledgment cannot be empty
     InvalidAcknowledgement,
+    /// Acknowledgment status cannot be empty
+    EmptyAcknowledgementStatus,
     /// Acknowledgment for the packet `{sequence}` not found
     PacketAcknowledgementNotFound { sequence: Sequence },
     /// invalid proof: missing height
