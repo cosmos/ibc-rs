@@ -15,6 +15,10 @@ pub use coin::*;
 pub use denom::*;
 pub use memo::*;
 
+mod relay;
+
+pub use relay::send_transfer::{send_transfer, send_transfer_execute, send_transfer_validate};
+
 /// Module identifier for the ICS20 application.
 pub const MODULE_ID_STR: &str = "transfer";
 
@@ -25,9 +29,13 @@ pub const PORT_ID_STR: &str = "transfer";
 /// ICS20 application current version.
 pub const VERSION: &str = "ics20-1";
 
-/// A successful token transfer acknowledgement, equivalent to `base64::encode(0x01)`.
+/// The successful string used for creating an acknowledgement status,
+/// equivalent to `base64::encode(0x01)`.
 pub const ACK_SUCCESS_B64: &str = "AQ==";
 
-mod relay;
+use crate::core::ics04_channel::acknowledgement::StatusValue;
 
-pub use relay::send_transfer::{send_transfer, send_transfer_execute, send_transfer_validate};
+/// Returns a successful acknowledgement status for the token transfer application.
+pub fn ack_success_b64() -> StatusValue {
+    StatusValue::new(ACK_SUCCESS_B64).expect("ack status is never supposed to be empty")
+}

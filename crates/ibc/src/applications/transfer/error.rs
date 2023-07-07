@@ -6,6 +6,7 @@ use displaydoc::Display;
 use ibc_proto::protobuf::Error as TendermintProtoError;
 use uint::FromDecStrErr;
 
+use crate::core::ics04_channel::acknowledgement::StatusValue;
 use crate::core::ics04_channel::channel::Order;
 use crate::core::ics24_host::identifier::{ChannelId, IdentifierError, PortId};
 use crate::core::ContextError;
@@ -109,5 +110,11 @@ impl From<ContextError> for TokenTransferError {
 impl From<IdentifierError> for TokenTransferError {
     fn from(err: IdentifierError) -> TokenTransferError {
         Self::InvalidIdentifier(err)
+    }
+}
+
+impl From<TokenTransferError> for StatusValue {
+    fn from(err: TokenTransferError) -> Self {
+        StatusValue::new(err.to_string()).expect("error message must not be empty")
     }
 }
