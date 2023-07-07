@@ -169,7 +169,7 @@ mod tests {
                 };
                 let conn_end = ValidationContext::connection_end(
                     &fxt.ctx,
-                    conn_open_init_event.connection_id(),
+                    conn_open_init_event.conn_id_on_a(),
                 )
                 .unwrap();
                 assert_eq!(conn_end.state().clone(), State::Init);
