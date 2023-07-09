@@ -4,7 +4,7 @@ use crate::core::ics04_channel::timeout::TimeoutHeight;
 use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
 
-use super::packet::Acknowledgement;
+use super::acknowledgement::Acknowledgement;
 
 /// Packet commitment
 #[cfg_attr(

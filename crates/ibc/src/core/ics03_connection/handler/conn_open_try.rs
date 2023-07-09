@@ -4,6 +4,8 @@ use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
 use crate::core::context::ContextError;
+use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenTry;
@@ -112,7 +114,9 @@ where
                 &msg.proof_consensus_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
                 Path::ClientConsensusState(client_cons_state_path_on_a),
-                expected_consensus_state_of_b_on_a.encode_vec(),
+                expected_consensus_state_of_b_on_a
+                    .encode_vec()
+                    .map_err(ConnectionError::ConsensusStateEncodeFailure)?,
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
                 height: msg.proofs_height_on_a,
@@ -208,7 +212,6 @@ mod tests {
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
     use crate::core::ics24_host::identifier::ChainId;
-    use crate::core::ValidationContext;
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::Height;
@@ -303,11 +306,9 @@ mod tests {
                     IbcEvent::OpenTryConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = <MockContext as ValidationContext>::connection_end(
-                    &fxt.ctx,
-                    conn_open_try_event.connection_id(),
-                )
-                .unwrap();
+                let conn_end =
+                    ValidationContext::connection_end(&fxt.ctx, conn_open_try_event.conn_id_on_b())
+                        .unwrap();
                 assert_eq!(conn_end.state().clone(), State::TryOpen);
             }
         }

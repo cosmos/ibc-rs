@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## v0.42.0
+
+*July 5, 2023*
+
+This release primarily implements ADR 7. It also includes a number of miscellaneous improvements.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+-  Implement ADR 7, where `ClientState` objects are now statically dispatched instead
+   of dynamically dispatched.
+([#296](https://github.com/cosmos/ibc-rs/issues/296))
+- Revise the `verify_upgrade_client` method to utilize the domain-specific
+  `MerkleProof` type
+  ([#691](https://github.com/cosmos/ibc-rs/issues/691))
+- Revise the `ChainId::new` method so that rather than taking String argument
+  it borrows a str.  ([#721](https://github.com/cosmos/ibc-rs/issues/721))
+- Modify `MsgUpgradeClient` struct to utilize `CommitmentProofBytes` and
+  apply some refinements around upgrade client methods and impls respectively.
+  ([#739](https://github.com/cosmos/ibc-rs/issues/739))
+- Remove `Router::has_route`
+  ([#503](https://github.com/cosmos/ibc-rs/issues/503))
+
+### FEATURES
+
+- Upgrade to tendermint v0.32, ibc-proto-rs v0.32, ics23 v0.10, and get
+  prehash_key_before_comparison field available for the `ProofSpec`
+  ([#640](https://github.com/cosmos/ibc-rs/issues/640))
+
+### IMPROVEMENT
+
+- Remove Header trait ([#617](https://github.com/cosmos/ibc-rs/issues/617))
+- Deny use of `unwrap()` throughout the crate
+  ([#655](https://github.com/cosmos/ibc-rs/issues/655))
+- `ChainId` should serialize itself without using `tendermint::chain::Id`
+  ([#729](https://github.com/cosmos/ibc-rs/issues/729))
+- use `FromStr` in client_type functions to construct `ClientType`
+  ([#731](https://github.com/cosmos/ibc-rs/pull/731))
+
 ## v0.41.0
 
 *May 23, 2023*

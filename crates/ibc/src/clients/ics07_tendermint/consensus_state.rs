@@ -4,17 +4,20 @@ use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::ConsensusState as RawConsensusState;
-use ibc_proto::protobuf::Protobuf;
 use tendermint::{hash::Algorithm, time::Time, Hash};
 use tendermint_proto::google::protobuf as tpb;
+use tendermint_proto::Error as TmProtoError;
+use tendermint_proto::Protobuf;
 
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
+use crate::core::ics02_client::consensus_state::ConsensusState as ConsensusStateTrait;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::core::timestamp::Timestamp;
 
-const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ConsensusState";
+pub const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str =
+    "/ibc.lightclients.tendermint.v1.ConsensusState";
 
 /// Defines the Tendermint light client's consensus state
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -32,16 +35,6 @@ impl ConsensusState {
             root,
             next_validators_hash,
         }
-    }
-}
-
-impl crate::core::ics02_client::consensus_state::ConsensusState for ConsensusState {
-    fn root(&self) -> &CommitmentRoot {
-        &self.root
-    }
-
-    fn timestamp(&self) -> Timestamp {
-        self.timestamp.into()
     }
 }
 
@@ -132,7 +125,8 @@ impl From<ConsensusState> for Any {
     fn from(consensus_state: ConsensusState) -> Self {
         Any {
             type_url: TENDERMINT_CONSENSUS_STATE_TYPE_URL.to_string(),
-            value: Protobuf::<RawConsensusState>::encode_vec(&consensus_state),
+            value: Protobuf::<RawConsensusState>::encode_vec(&consensus_state)
+                .expect("Out of memory"),
         }
     }
 }
@@ -150,6 +144,20 @@ impl From<tendermint::block::Header> for ConsensusState {
 impl From<Header> for ConsensusState {
     fn from(header: Header) -> Self {
         Self::from(header.signed_header.header)
+    }
+}
+
+impl ConsensusStateTrait for ConsensusState {
+    fn root(&self) -> &CommitmentRoot {
+        &self.root
+    }
+
+    fn timestamp(&self) -> Timestamp {
+        self.timestamp.into()
+    }
+
+    fn encode_vec(&self) -> Result<Vec<u8>, TmProtoError> {
+        <Self as Protobuf<Any>>::encode_vec(self)
     }
 }
 

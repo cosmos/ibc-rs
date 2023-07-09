@@ -4,6 +4,8 @@ use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
 use crate::core::context::ContextError;
+use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenAck;
@@ -115,7 +117,9 @@ where
                 &msg.proof_consensus_state_of_a_on_b,
                 consensus_state_of_b_on_a.root(),
                 Path::ClientConsensusState(client_cons_state_path_on_b),
-                expected_consensus_state_of_a_on_b.encode_vec(),
+                expected_consensus_state_of_a_on_b
+                    .encode_vec()
+                    .map_err(ConnectionError::ConsensusStateEncodeFailure)?,
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
                 height: msg.proofs_height_on_b,
@@ -207,7 +211,6 @@ mod tests {
     use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
-    use crate::core::ValidationContext;
 
     use crate::core::events::IbcEvent;
     use crate::core::timestamp::ZERO_DURATION;
@@ -337,7 +340,7 @@ mod tests {
                 };
                 let conn_end = <MockContext as ValidationContext>::connection_end(
                     &fxt.ctx,
-                    conn_open_try_event.connection_id(),
+                    conn_open_try_event.conn_id_on_a(),
                 )
                 .unwrap();
                 assert_eq!(conn_end.state().clone(), State::Open);

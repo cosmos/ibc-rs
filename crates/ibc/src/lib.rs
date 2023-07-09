@@ -1,6 +1,4 @@
-// TODO: disable unwraps:
-// https://github.com/informalsystems/ibc-rs/issues/987
-// #![cfg_attr(not(test), deny(clippy::unwrap_used))]
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
 #![no_std]
 #![deny(
     warnings,
@@ -60,7 +58,6 @@ pub mod mock;
 #[cfg(any(test, feature = "mocks"))]
 pub mod test_utils; // Context mock, the underlying host chain, and client types: for testing all handlers.
 
-mod erased;
 mod prelude;
 mod signer;
 mod utils;
@@ -70,3 +67,6 @@ mod serializers;
 
 #[cfg(test)]
 mod test;
+
+/// Re-export the `Any` type which used across the library.
+pub use ibc_proto::google::protobuf::Any;

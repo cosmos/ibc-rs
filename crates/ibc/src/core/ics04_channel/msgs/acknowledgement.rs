@@ -3,8 +3,9 @@ use crate::prelude::*;
 use ibc_proto::ibc::core::channel::v1::MsgAcknowledgement as RawMsgAcknowledgement;
 use ibc_proto::protobuf::Protobuf;
 
+use crate::core::ics04_channel::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::error::PacketError;
-use crate::core::ics04_channel::packet::{Acknowledgement, Packet};
+use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::Msg;
 use crate::signer::Signer;

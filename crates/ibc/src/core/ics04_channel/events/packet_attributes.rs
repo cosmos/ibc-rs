@@ -1,23 +1,20 @@
 //! This module holds all the abci event attributes for IBC events emitted
 //! during packet-related datagrams.
 //!
-use crate::core::timestamp::Timestamp;
-use crate::prelude::*;
-
-use crate::core::{
-    ics04_channel::{
-        channel::Order,
-        error::ChannelError,
-        packet::{Acknowledgement, Sequence},
-        timeout::TimeoutHeight,
-    },
-    ics24_host::identifier::{ChannelId, ConnectionId, PortId},
-};
+use core::str;
 use derive_more::From;
 use subtle_encoding::hex;
 use tendermint::abci;
 
-use core::str;
+use crate::prelude::*;
+
+use crate::core::ics04_channel::acknowledgement::Acknowledgement;
+use crate::core::ics04_channel::channel::Order;
+use crate::core::ics04_channel::error::ChannelError;
+use crate::core::ics04_channel::packet::Sequence;
+use crate::core::ics04_channel::timeout::TimeoutHeight;
+use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+use crate::core::timestamp::Timestamp;
 
 const PKT_SEQ_ATTRIBUTE_KEY: &str = "packet_sequence";
 const PKT_DATA_ATTRIBUTE_KEY: &str = "packet_data";
@@ -63,7 +60,8 @@ impl TryFrom<PacketDataAttribute> for Vec<abci::EventAttribute> {
                 .into(),
             (
                 PKT_DATA_HEX_ATTRIBUTE_KEY,
-                String::from_utf8(hex::encode(attr.packet_data)).unwrap(),
+                String::from_utf8(hex::encode(attr.packet_data))
+                    .expect("Never fails because hexadecimal is valid UTF8"),
             )
                 .into(),
         ];
@@ -332,7 +330,8 @@ impl TryFrom<AcknowledgementAttribute> for Vec<abci::EventAttribute> {
                 .into(),
             (
                 PKT_ACK_HEX_ATTRIBUTE_KEY,
-                String::from_utf8(hex::encode(attr.acknowledgement)).unwrap(),
+                String::from_utf8(hex::encode(attr.acknowledgement))
+                    .expect("Never fails because hexadecimal is always valid UTF-8"),
             )
                 .into(),
         ];

@@ -3,6 +3,7 @@ use crate::prelude::*;
 
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
@@ -166,9 +167,9 @@ mod tests {
                     IbcEvent::OpenInitConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = <MockContext as ValidationContext>::connection_end(
+                let conn_end = ValidationContext::connection_end(
                     &fxt.ctx,
-                    conn_open_init_event.connection_id(),
+                    conn_open_init_event.conn_id_on_a(),
                 )
                 .unwrap();
                 assert_eq!(conn_end.state().clone(), State::Init);
