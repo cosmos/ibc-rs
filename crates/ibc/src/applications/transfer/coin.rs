@@ -23,6 +23,10 @@ pub type RawCoin = Coin<String>;
 
 /// Coin defines a token with a denomination and an amount.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(parity_scale_codec::Encode, parity_scale_codec::Decode,)
+)]
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Coin<D> {
     /// Denomination
