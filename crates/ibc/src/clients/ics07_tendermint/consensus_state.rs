@@ -4,10 +4,9 @@ use crate::prelude::*;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::ConsensusState as RawConsensusState;
+use ibc_proto::protobuf::Protobuf;
 use tendermint::{hash::Algorithm, time::Time, Hash};
 use tendermint_proto::google::protobuf as tpb;
-use tendermint_proto::Error as TmProtoError;
-use tendermint_proto::Protobuf;
 
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
@@ -125,8 +124,7 @@ impl From<ConsensusState> for Any {
     fn from(consensus_state: ConsensusState) -> Self {
         Any {
             type_url: TENDERMINT_CONSENSUS_STATE_TYPE_URL.to_string(),
-            value: Protobuf::<RawConsensusState>::encode_vec(&consensus_state)
-                .expect("Out of memory"),
+            value: Protobuf::<RawConsensusState>::encode_vec(&consensus_state),
         }
     }
 }
@@ -156,7 +154,7 @@ impl ConsensusStateTrait for ConsensusState {
         self.timestamp.into()
     }
 
-    fn encode_vec(&self) -> Result<Vec<u8>, TmProtoError> {
+    fn encode_vec(&self) -> Vec<u8> {
         <Self as Protobuf<Any>>::encode_vec(self)
     }
 }
