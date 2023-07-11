@@ -150,7 +150,7 @@ impl core::fmt::Display for Height {
 }
 
 /// Encodes all errors related to chain heights
-#[derive(Debug, Display)]
+#[derive(Debug, Display, PartialEq)]
 pub enum HeightError {
     /// cannot convert into a `Height` type from string `{height}`
     HeightConversion {
@@ -159,6 +159,8 @@ pub enum HeightError {
     },
     /// attempted to parse an invalid zero height
     ZeroHeight,
+    /// the height is not valid, this format must be used: [revision_number]-[revision_height]
+    InvalidHeight { raw_height: String },
 }
 
 #[cfg(feature = "std")]
@@ -167,6 +169,7 @@ impl std::error::Error for HeightError {
         match &self {
             HeightError::HeightConversion { error: e, .. } => Some(e),
             HeightError::ZeroHeight => None,
+            HeightError::InvalidHeight { .. } => None,
         }
     }
 }
@@ -177,22 +180,22 @@ impl TryFrom<&str> for Height {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let split: Vec<&str> = value.split('-').collect();
 
-        let revision_number =
-            split[0]
-                .parse::<u64>()
-                .map_err(|e| HeightError::HeightConversion {
-                    height: value.to_owned(),
-                    error: e,
-                })?;
-        let revision_height =
-            split[1]
-                .parse::<u64>()
-                .map_err(|e| HeightError::HeightConversion {
-                    height: value.to_owned(),
-                    error: e,
-                })?;
+        if split.len() != 2 {
+            return Err(HeightError::InvalidHeight {
+                raw_height: value.to_owned(),
+            });
+        }
 
-        Height::new(revision_number, revision_height).map_err(|_| HeightError::ZeroHeight)
+        let split_number = split
+            .into_iter()
+            .map(|s| s.parse::<u64>())
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| HeightError::HeightConversion {
+                height: value.to_owned(),
+                error: e,
+            })?;
+
+        Height::new(split_number[0], split_number[1]).map_err(|_| HeightError::ZeroHeight)
     }
 }
 
@@ -208,4 +211,40 @@ impl FromStr for Height {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Height::try_from(s)
     }
+}
+
+#[test]
+fn test_invalid_and_valid_height() {
+    assert_eq!(
+        "1-1-1".parse::<Height>(),
+        Err(HeightError::InvalidHeight {
+            raw_height: "1-1-1".to_owned()
+        })
+    );
+    assert_eq!(
+        "1".parse::<Height>(),
+        Err(HeightError::InvalidHeight {
+            raw_height: "1".to_owned()
+        })
+    );
+    assert_eq!(
+        "".parse::<Height>(),
+        Err(HeightError::InvalidHeight {
+            raw_height: "".to_owned()
+        })
+    );
+    assert_eq!(
+        "1-1".parse::<Height>(),
+        Ok(Height {
+            revision_number: 1,
+            revision_height: 1
+        })
+    );
+    assert_eq!(
+        "1-10".parse::<Height>(),
+        Ok(Height {
+            revision_number: 1,
+            revision_height: 10
+        })
+    );
 }
