@@ -195,7 +195,7 @@ impl TryFrom<&str> for Height {
                     error: e,
                 })?;
 
-        let rev_height =
+        let revision_height =
             rev_height_str
                 .parse::<u64>()
                 .map_err(|e| HeightError::HeightConversion {
@@ -203,7 +203,7 @@ impl TryFrom<&str> for Height {
                     error: e,
                 })?;
 
-        Height::new(revision_number, rev_height).map_err(|_| HeightError::ZeroHeight)
+        Height::new(revision_number, revision_height).map_err(|_| HeightError::ZeroHeight)
     }
 }
 
