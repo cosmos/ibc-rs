@@ -178,24 +178,32 @@ impl TryFrom<&str> for Height {
     type Error = HeightError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let split: Vec<&str> = value.split('-').collect();
+        let (rev_number_str, rev_height_str) = match value.split_once('-') {
+            Some((rev_number_str, rev_height_str)) => (rev_number_str, rev_height_str),
+            None => {
+                return Err(HeightError::InvalidHeight {
+                    raw_height: value.to_owned(),
+                })
+            }
+        };
 
-        if split.len() != 2 {
-            return Err(HeightError::InvalidHeight {
-                raw_height: value.to_owned(),
-            });
-        }
+        let revision_number =
+            rev_number_str
+                .parse::<u64>()
+                .map_err(|e| HeightError::HeightConversion {
+                    height: value.to_owned(),
+                    error: e,
+                })?;
 
-        let split_number = split
-            .into_iter()
-            .map(|s| s.parse::<u64>())
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| HeightError::HeightConversion {
-                height: value.to_owned(),
-                error: e,
-            })?;
+        let rev_height =
+            rev_height_str
+                .parse::<u64>()
+                .map_err(|e| HeightError::HeightConversion {
+                    height: value.to_owned(),
+                    error: e,
+                })?;
 
-        Height::new(split_number[0], split_number[1]).map_err(|_| HeightError::ZeroHeight)
+        Height::new(revision_number, rev_height).map_err(|_| HeightError::ZeroHeight)
     }
 }
 
@@ -214,25 +222,7 @@ impl FromStr for Height {
 }
 
 #[test]
-fn test_invalid_and_valid_height() {
-    assert_eq!(
-        "1-1-1".parse::<Height>(),
-        Err(HeightError::InvalidHeight {
-            raw_height: "1-1-1".to_owned()
-        })
-    );
-    assert_eq!(
-        "1".parse::<Height>(),
-        Err(HeightError::InvalidHeight {
-            raw_height: "1".to_owned()
-        })
-    );
-    assert_eq!(
-        "".parse::<Height>(),
-        Err(HeightError::InvalidHeight {
-            raw_height: "".to_owned()
-        })
-    );
+fn test_valid_height() {
     assert_eq!(
         "1-1".parse::<Height>(),
         Ok(Height {
@@ -245,6 +235,30 @@ fn test_invalid_and_valid_height() {
         Ok(Height {
             revision_number: 1,
             revision_height: 10
+        })
+    );
+}
+
+#[test]
+fn test_invalid_height() {
+    assert_eq!(
+        HeightError::ZeroHeight,
+        "0-0".parse::<Height>().unwrap_err()
+    );
+    assert!("0-".parse::<Height>().is_err());
+    assert!("-0".parse::<Height>().is_err());
+    assert!("-".parse::<Height>().is_err());
+    assert!("1-1-1".parse::<Height>().is_err());
+    assert_eq!(
+        "1".parse::<Height>(),
+        Err(HeightError::InvalidHeight {
+            raw_height: "1".to_owned()
+        })
+    );
+    assert_eq!(
+        "".parse::<Height>(),
+        Err(HeightError::InvalidHeight {
+            raw_height: "".to_owned()
         })
     );
 }
