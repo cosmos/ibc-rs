@@ -159,8 +159,8 @@ pub enum HeightError {
     },
     /// attempted to parse an invalid zero height
     ZeroHeight,
-    /// the height(`{raw_height}`) is not valid, this format must be used: \[revision_number\]-\[revision_height\]
-    InvalidHeight { raw_height: String },
+    /// the height(`{raw_height}`) is not valid format, this format must be used: \[revision_number\]-\[revision_height\]
+    InvalidFormat { raw_height: String },
 }
 
 #[cfg(feature = "std")]
@@ -169,7 +169,7 @@ impl std::error::Error for HeightError {
         match &self {
             HeightError::HeightConversion { error: e, .. } => Some(e),
             HeightError::ZeroHeight => None,
-            HeightError::InvalidHeight { .. } => None,
+            HeightError::InvalidFormat { .. } => None,
         }
     }
 }
@@ -181,7 +181,7 @@ impl TryFrom<&str> for Height {
         let (rev_number_str, rev_height_str) = match value.split_once('-') {
             Some((rev_number_str, rev_height_str)) => (rev_number_str, rev_height_str),
             None => {
-                return Err(HeightError::InvalidHeight {
+                return Err(HeightError::InvalidFormat {
                     raw_height: value.to_owned(),
                 })
             }
@@ -251,13 +251,13 @@ fn test_invalid_height() {
     assert!("1-1-1".parse::<Height>().is_err());
     assert_eq!(
         "1".parse::<Height>(),
-        Err(HeightError::InvalidHeight {
+        Err(HeightError::InvalidFormat {
             raw_height: "1".to_owned()
         })
     );
     assert_eq!(
         "".parse::<Height>(),
-        Err(HeightError::InvalidHeight {
+        Err(HeightError::InvalidFormat {
             raw_height: "".to_owned()
         })
     );
