@@ -4,8 +4,6 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::mock::ConsensusState as RawMockConsensusState;
 use ibc_proto::protobuf::Protobuf;
 
-use tendermint_proto::{Error, Protobuf as TmProtobuf};
-
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
@@ -96,8 +94,6 @@ impl From<MockConsensusState> for Any {
     }
 }
 
-impl TmProtobuf<Any> for MockConsensusState {}
-
 impl ConsensusState for MockConsensusState {
     fn root(&self) -> &CommitmentRoot {
         &self.root
@@ -107,7 +103,7 @@ impl ConsensusState for MockConsensusState {
         self.header.timestamp
     }
 
-    fn encode_vec(&self) -> Result<Vec<u8>, Error> {
-        <Self as TmProtobuf<Any>>::encode_vec(self)
+    fn encode_vec(&self) -> Vec<u8> {
+        <Self as Protobuf<Any>>::encode_vec(self)
     }
 }
