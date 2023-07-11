@@ -150,7 +150,7 @@ impl core::fmt::Display for Height {
 }
 
 /// Encodes all errors related to chain heights
-#[derive(Debug, Display)]
+#[derive(Debug, Display, PartialEq)]
 pub enum HeightError {
     /// cannot convert into a `Height` type from string `{height}`
     HeightConversion {
@@ -159,6 +159,8 @@ pub enum HeightError {
     },
     /// attempted to parse an invalid zero height
     ZeroHeight,
+    /// the height(`{raw_height}`) is not valid format, this format must be used: \[revision_number\]-\[revision_height\]
+    InvalidFormat { raw_height: String },
 }
 
 #[cfg(feature = "std")]
@@ -167,6 +169,7 @@ impl std::error::Error for HeightError {
         match &self {
             HeightError::HeightConversion { error: e, .. } => Some(e),
             HeightError::ZeroHeight => None,
+            HeightError::InvalidFormat { .. } => None,
         }
     }
 }
@@ -175,17 +178,25 @@ impl TryFrom<&str> for Height {
     type Error = HeightError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let split: Vec<&str> = value.split('-').collect();
+        let (rev_number_str, rev_height_str) = match value.split_once('-') {
+            Some((rev_number_str, rev_height_str)) => (rev_number_str, rev_height_str),
+            None => {
+                return Err(HeightError::InvalidFormat {
+                    raw_height: value.to_owned(),
+                })
+            }
+        };
 
         let revision_number =
-            split[0]
+            rev_number_str
                 .parse::<u64>()
                 .map_err(|e| HeightError::HeightConversion {
                     height: value.to_owned(),
                     error: e,
                 })?;
+
         let revision_height =
-            split[1]
+            rev_height_str
                 .parse::<u64>()
                 .map_err(|e| HeightError::HeightConversion {
                     height: value.to_owned(),
@@ -208,4 +219,46 @@ impl FromStr for Height {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Height::try_from(s)
     }
+}
+
+#[test]
+fn test_valid_height() {
+    assert_eq!(
+        "1-1".parse::<Height>(),
+        Ok(Height {
+            revision_number: 1,
+            revision_height: 1
+        })
+    );
+    assert_eq!(
+        "1-10".parse::<Height>(),
+        Ok(Height {
+            revision_number: 1,
+            revision_height: 10
+        })
+    );
+}
+
+#[test]
+fn test_invalid_height() {
+    assert_eq!(
+        HeightError::ZeroHeight,
+        "0-0".parse::<Height>().unwrap_err()
+    );
+    assert!("0-".parse::<Height>().is_err());
+    assert!("-0".parse::<Height>().is_err());
+    assert!("-".parse::<Height>().is_err());
+    assert!("1-1-1".parse::<Height>().is_err());
+    assert_eq!(
+        "1".parse::<Height>(),
+        Err(HeightError::InvalidFormat {
+            raw_height: "1".to_owned()
+        })
+    );
+    assert_eq!(
+        "".parse::<Height>(),
+        Err(HeightError::InvalidFormat {
+            raw_height: "".to_owned()
+        })
+    );
 }
