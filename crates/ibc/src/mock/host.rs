@@ -62,7 +62,7 @@ impl HostBlock {
             HostBlock::Mock(header) => header.height(),
             HostBlock::SyntheticTendermint(light_block) => Height::new(
                 ChainId::from_str(light_block.header().chain_id.as_str())
-                    .unwrap()
+                    .expect("Never fails")
                     .revision_number(),
                 light_block.header().height.value(),
             )

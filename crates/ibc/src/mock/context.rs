@@ -234,7 +234,7 @@ pub struct MockContext {
 impl Default for MockContext {
     fn default() -> Self {
         Self::new(
-            ChainId::new("mockgaia", 0).unwrap(),
+            ChainId::new("mockgaia", 0).expect("Never fails"),
             HostType::Mock,
             5,
             Height::new(0, 5).expect("Never fails"),

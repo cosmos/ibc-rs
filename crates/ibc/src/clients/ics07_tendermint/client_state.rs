@@ -1119,7 +1119,7 @@ pub mod test_util {
         }
 
         pub fn new_dummy_from_header(tm_header: Header) -> Self {
-            let chain_id = ChainId::from_str(tm_header.chain_id.as_str()).unwrap();
+            let chain_id = ChainId::from_str(tm_header.chain_id.as_str()).expect("Never fails");
             Self::new(
                 chain_id.clone(),
                 Default::default(),
@@ -1142,7 +1142,7 @@ pub mod test_util {
     pub fn get_dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
         #[allow(deprecated)]
         RawTmClientState {
-            chain_id: ChainId::new("ibc", 0).unwrap().to_string(),
+            chain_id: ChainId::new("ibc", 0).expect("Never fails").to_string(),
             trust_level: Some(Fraction {
                 numerator: 1,
                 denominator: 3,
