@@ -234,7 +234,7 @@ pub struct MockContext {
 impl Default for MockContext {
     fn default() -> Self {
         Self::new(
-            ChainId::new("mockgaia", 0),
+            ChainId::new("mockgaia", 0).unwrap(),
             HostType::Mock,
             5,
             Height::new(0, 5).expect("Never fails"),
@@ -293,7 +293,7 @@ impl MockContext {
         let n = min(max_history_size as u64, latest_height.revision_height());
 
         assert_eq!(
-            host_id.version(),
+            host_id.revision_number(),
             latest_height.revision_number(),
             "The version in the chain identifier must match the version in the latest height"
         );
@@ -900,7 +900,7 @@ impl ValidationContext for MockContext {
         mock_client_state.confirm_not_frozen()?;
 
         let self_chain_id = &self.host_chain_id;
-        let self_revision_number = self_chain_id.version();
+        let self_revision_number = self_chain_id.revision_number();
         if self_revision_number != mock_client_state.latest_height().revision_number() {
             return Err(ConnectionError::InvalidClientState {
                 reason: format!(
@@ -1395,11 +1395,13 @@ mod tests {
         }
         let cv = 1; // The version to use for all chains.
 
+        let mock_chain_id = ChainId::new("mockgaia", cv).unwrap();
+
         let tests: Vec<Test> = vec![
             Test {
                 name: "Empty history, small pruning window".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::Mock,
                     2,
                     Height::new(cv, 1).expect("Never fails"),
@@ -1408,7 +1410,7 @@ mod tests {
             Test {
                 name: "[Synthetic TM host] Empty history, small pruning window".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mocksgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::SyntheticTendermint,
                     2,
                     Height::new(cv, 1).expect("Never fails"),
@@ -1417,7 +1419,7 @@ mod tests {
             Test {
                 name: "Large pruning window".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::Mock,
                     30,
                     Height::new(cv, 2).expect("Never fails"),
@@ -1426,7 +1428,7 @@ mod tests {
             Test {
                 name: "[Synthetic TM host] Large pruning window".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mocksgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::SyntheticTendermint,
                     30,
                     Height::new(cv, 2).expect("Never fails"),
@@ -1435,7 +1437,7 @@ mod tests {
             Test {
                 name: "Small pruning window".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::Mock,
                     3,
                     Height::new(cv, 30).expect("Never fails"),
@@ -1444,7 +1446,7 @@ mod tests {
             Test {
                 name: "[Synthetic TM host] Small pruning window".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::SyntheticTendermint,
                     3,
                     Height::new(cv, 30).expect("Never fails"),
@@ -1453,7 +1455,7 @@ mod tests {
             Test {
                 name: "Small pruning window, small starting height".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::Mock,
                     3,
                     Height::new(cv, 2).expect("Never fails"),
@@ -1462,7 +1464,7 @@ mod tests {
             Test {
                 name: "[Synthetic TM host] Small pruning window, small starting height".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::SyntheticTendermint,
                     3,
                     Height::new(cv, 2).expect("Never fails"),
@@ -1471,7 +1473,7 @@ mod tests {
             Test {
                 name: "Large pruning window, large starting height".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::Mock,
                     50,
                     Height::new(cv, 2000).expect("Never fails"),
@@ -1480,7 +1482,7 @@ mod tests {
             Test {
                 name: "[Synthetic TM host] Large pruning window, large starting height".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id,
                     HostType::SyntheticTendermint,
                     50,
                     Height::new(cv, 2000).expect("Never fails"),
@@ -1732,7 +1734,7 @@ mod tests {
         }
 
         let mut ctx = MockContext::new(
-            ChainId::new("mockgaia", 1),
+            ChainId::new("mockgaia", 1).unwrap(),
             HostType::Mock,
             1,
             Height::new(1, 1).expect("Never fails"),

@@ -1,5 +1,7 @@
 //! Host chain types and methods, used by context mock.
 
+use core::str::FromStr;
+
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
@@ -59,7 +61,9 @@ impl HostBlock {
         match self {
             HostBlock::Mock(header) => header.height(),
             HostBlock::SyntheticTendermint(light_block) => Height::new(
-                ChainId::chain_version(light_block.header().chain_id.as_str()),
+                ChainId::from_str(light_block.header().chain_id.as_str())
+                    .unwrap()
+                    .revision_number(),
                 light_block.header().height.value(),
             )
             .expect("Never fails"),
@@ -90,7 +94,7 @@ impl HostBlock {
     ) -> HostBlock {
         match chain_type {
             HostType::Mock => HostBlock::Mock(Box::new(MockHeader {
-                height: Height::new(chain_id.version(), height).expect("Never fails"),
+                height: Height::new(chain_id.revision_number(), height).expect("Never fails"),
                 timestamp,
             })),
             HostType::SyntheticTendermint => HostBlock::SyntheticTendermint(Box::new(
@@ -112,7 +116,7 @@ impl HostBlock {
         .generate()
         .expect("Never fails");
         SyntheticTmBlock {
-            trusted_height: Height::new(chain_id.version(), 1).expect("Never fails"),
+            trusted_height: Height::new(chain_id.revision_number(), 1).expect("Never fails"),
             light_block,
         }
     }
