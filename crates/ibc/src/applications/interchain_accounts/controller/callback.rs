@@ -6,7 +6,7 @@ use crate::applications::interchain_accounts::metadata::Metadata;
 use crate::applications::interchain_accounts::port::default_host_port_id;
 use crate::applications::interchain_accounts::port::verify_controller_port_id_prefix;
 use crate::core::ics04_channel::acknowledgement::Acknowledgement;
-use crate::core::ics04_channel::acknowledgement::AcknowledgementResult;
+use crate::core::ics04_channel::acknowledgement::AcknowledgementStatus;
 use crate::core::ics04_channel::channel::Counterparty;
 use crate::core::ics04_channel::channel::Order;
 use crate::core::ics04_channel::channel::State;
@@ -265,7 +265,10 @@ pub fn on_recv_packet_execute(
 ) -> (ModuleExtras, Acknowledgement) {
     (
         ModuleExtras::empty(),
-        AcknowledgementResult::success("").into(), // TODO: return error
+        AcknowledgementStatus::error(
+            InterchainAccountError::not_allowed("packet cannot be received").into(),
+        )
+        .into(),
     )
 }
 

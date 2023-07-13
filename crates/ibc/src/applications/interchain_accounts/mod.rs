@@ -25,3 +25,14 @@ pub const MODULE_ID_STR: &str = "interchainaccounts";
 
 /// ICS27 application current version.
 pub const VERSION: &str = "ics27-1";
+
+/// The successful string used for creating an acknowledgement status,
+/// equivalent to `base64::encode(0x01)`.
+pub const ACK_SUCCESS: &str = "AQ=="; //TODO: what's the result string?
+
+use crate::core::ics04_channel::acknowledgement::StatusValue;
+
+/// Returns a successful acknowledgement status for the interchain accounts application.
+pub fn ack_success() -> StatusValue {
+    StatusValue::new(ACK_SUCCESS).expect("ack status value is never supposed to be empty")
+}

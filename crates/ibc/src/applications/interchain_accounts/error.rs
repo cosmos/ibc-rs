@@ -1,3 +1,4 @@
+use crate::core::ics04_channel::acknowledgement::StatusValue;
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ContextError;
 use crate::prelude::*;
@@ -113,6 +114,12 @@ impl From<ContextError> for InterchainAccountError {
 impl From<ChannelError> for InterchainAccountError {
     fn from(err: ChannelError) -> InterchainAccountError {
         Self::source(err)
+    }
+}
+
+impl From<InterchainAccountError> for StatusValue {
+    fn from(err: InterchainAccountError) -> Self {
+        StatusValue::new(err.to_string()).expect("error message cannot be empty")
     }
 }
 

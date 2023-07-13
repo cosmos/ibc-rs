@@ -2,13 +2,14 @@
 
 use alloc::string::ToString;
 
+use crate::applications::interchain_accounts::ack_success;
 use crate::applications::interchain_accounts::context::InterchainAccountExecutionContext;
 use crate::applications::interchain_accounts::context::InterchainAccountValidationContext;
 use crate::applications::interchain_accounts::error::InterchainAccountError;
 use crate::applications::interchain_accounts::metadata::Metadata;
 use crate::applications::interchain_accounts::port::default_host_port_id;
 use crate::core::ics04_channel::acknowledgement::Acknowledgement;
-use crate::core::ics04_channel::acknowledgement::AcknowledgementResult;
+use crate::core::ics04_channel::acknowledgement::AcknowledgementStatus;
 use crate::core::ics04_channel::channel::Counterparty;
 use crate::core::ics04_channel::channel::Order;
 use crate::core::ics04_channel::packet::Packet;
@@ -280,7 +281,7 @@ pub fn on_recv_packet_execute(
         Err(e) => {
             return (
                 ModuleExtras::empty(),
-                AcknowledgementResult::from_error(e).into(),
+                AcknowledgementStatus::error(e.into()).into(),
             )
         }
     };
@@ -288,9 +289,9 @@ pub fn on_recv_packet_execute(
     if !params.host_enabled {
         return (
             ModuleExtras::empty(),
-            AcknowledgementResult::from_error(InterchainAccountError::not_supported(
-                "host chain is not enabled.",
-            ))
+            AcknowledgementStatus::error(
+                InterchainAccountError::not_supported("host chain is not enabled.").into(),
+            )
             .into(),
         );
     }
@@ -298,13 +299,13 @@ pub fn on_recv_packet_execute(
     if let Err(e) = on_recv_packet(ctx_b, packet) {
         return (
             ModuleExtras::empty(),
-            AcknowledgementResult::from_error(e).into(),
+            AcknowledgementStatus::error(e.into()).into(),
         );
     }
 
     (
         ModuleExtras::empty(),
-        AcknowledgementResult::success("").into(), //TODO: what's the result string?
+        AcknowledgementStatus::success(ack_success()).into(),
     )
 }
 
