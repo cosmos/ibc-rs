@@ -35,7 +35,7 @@ pub fn consensus_state_derive_impl(ast: DeriveInput) -> TokenStream {
                 }
             }
 
-            fn encode_vec(&self) -> core::result::Result<Vec<u8>, tendermint_proto::Error> {
+            fn encode_vec(&self) -> Vec<u8> {
                 match self {
                     #(#encode_vec_impl),*
                 }

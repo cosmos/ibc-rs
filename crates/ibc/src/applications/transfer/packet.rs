@@ -16,6 +16,10 @@ use crate::signer::Signer;
     feature = "serde",
     serde(try_from = "RawPacketData", into = "RawPacketData")
 )]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(parity_scale_codec::Encode, parity_scale_codec::Decode,)
+)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PacketData {
     pub token: PrefixedCoin,

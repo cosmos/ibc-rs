@@ -114,9 +114,7 @@ where
                 &msg.proof_consensus_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
                 Path::ClientConsensusState(client_cons_state_path_on_a),
-                expected_consensus_state_of_b_on_a
-                    .encode_vec()
-                    .map_err(ConnectionError::ConsensusStateEncodeFailure)?,
+                expected_consensus_state_of_b_on_a.encode_vec(),
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
                 height: msg.proofs_height_on_a,
@@ -306,11 +304,9 @@ mod tests {
                     IbcEvent::OpenTryConnection(e) => e,
                     _ => unreachable!(),
                 };
-                let conn_end = ValidationContext::connection_end(
-                    &fxt.ctx,
-                    conn_open_try_event.connection_id(),
-                )
-                .unwrap();
+                let conn_end =
+                    ValidationContext::connection_end(&fxt.ctx, conn_open_try_event.conn_id_on_b())
+                        .unwrap();
                 assert_eq!(conn_end.state().clone(), State::TryOpen);
             }
         }

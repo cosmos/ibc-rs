@@ -53,7 +53,7 @@ interchain-accounts = []
 ibc-proto = { version = "0.32.0", default-features = false }
 cosmrs = "0.14.0"
 ics23 = { version = "0.10.1", default-features = false, features = ["host-functions"] }
-time = { version = ">=0.3.0, <0.3.23", default-features = false }
+time = { version = ">=0.3.0, <0.3.24", default-features = false }
 serde_derive = { version = "1.0.104", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
 serde_json = { version = "1", default-features = false, optional = true }
@@ -98,7 +98,7 @@ default-features = false
 
 [dev-dependencies]
 env_logger = "0.10.0"
-rstest = "0.16.0"
+rstest = "0.18.1"
 tracing-subscriber = { version = "0.3.14", features = ["fmt", "env-filter", "json"]}
 test-log = { version = "0.2.10", features = ["trace"] }
 tendermint-rpc = { version = "0.32", features = ["http-client", "websocket-client"] }

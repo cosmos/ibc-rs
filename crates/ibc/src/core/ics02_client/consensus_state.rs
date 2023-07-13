@@ -25,8 +25,5 @@ pub trait ConsensusState: Send + Sync {
     /// Serializes the `ConsensusState`. This is expected to be implemented as
     /// first converting to the raw type (i.e. the protobuf definition), and then
     /// serializing that.
-    ///
-    /// Note that the `Protobuf` trait in `tendermint-proto` provides convenience methods
-    /// to do this automatically.
-    fn encode_vec(&self) -> Result<Vec<u8>, tendermint_proto::Error>;
+    fn encode_vec(&self) -> Vec<u8>;
 }
