@@ -2,7 +2,6 @@
 use crate::prelude::*;
 
 use derive_more::From;
-use ibc_proto::google::protobuf::Any;
 use subtle_encoding::hex;
 use tendermint::abci;
 
@@ -147,14 +146,14 @@ impl From<ConsensusHeightsAttribute> for abci::EventAttribute {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, From, PartialEq, Eq)]
 struct HeaderAttribute {
-    header: Any,
+    header: Vec<u8>,
 }
 
 impl From<HeaderAttribute> for abci::EventAttribute {
     fn from(attr: HeaderAttribute) -> Self {
         (
             HEADER_ATTRIBUTE_KEY,
-            String::from_utf8(hex::encode(attr.header.value))
+            String::from_utf8(hex::encode(attr.header))
                 .expect("Never fails because hexadecimal is valid UTF-8"),
         )
             .into()
@@ -252,7 +251,7 @@ impl UpdateClient {
         client_type: ClientType,
         consensus_height: Height,
         consensus_heights: Vec<Height>,
-        header: Any,
+        header: Vec<u8>,
     ) -> Self {
         Self {
             client_id: ClientIdAttribute::from(client_id),
@@ -279,7 +278,7 @@ impl UpdateClient {
         self.consensus_heights.consensus_heights.as_ref()
     }
 
-    pub fn header(&self) -> &Any {
+    pub fn header(&self) -> &Vec<u8> {
         &self.header.header
     }
 
@@ -471,7 +470,7 @@ mod tests {
                     client_type.clone(),
                     consensus_height,
                     consensus_heights,
-                    header,
+                    header.value,
                 )
                 .into(),
                 expected_keys: expected_keys.clone(),
