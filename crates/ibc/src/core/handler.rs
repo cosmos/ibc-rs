@@ -167,12 +167,8 @@ mod tests {
     use test_log::test;
 
     use crate::applications::transfer::error::TokenTransferError;
-    use crate::applications::transfer::msgs::transfer::test_util::get_dummy_transfer_packet;
     use crate::applications::transfer::send_transfer;
-    use crate::applications::transfer::{
-        msgs::transfer::test_util::get_dummy_msg_transfer, msgs::transfer::MsgTransfer,
-        packet::PacketData, PrefixedCoin, MODULE_ID_STR,
-    };
+    use crate::applications::transfer::{msgs::transfer::MsgTransfer, MODULE_ID_STR};
     use crate::core::dispatch;
     use crate::core::events::{IbcEvent, MessageEvent};
     use crate::core::ics02_client::msgs::{
@@ -321,10 +317,10 @@ mod tests {
             MsgChannelCloseConfirm::try_from(get_dummy_raw_msg_chan_close_confirm(client_height))
                 .unwrap();
 
-        let msg_transfer = get_dummy_msg_transfer(Height::new(0, 35).unwrap().into(), None);
-        let msg_transfer_two = get_dummy_msg_transfer(Height::new(0, 36).unwrap().into(), None);
-        let msg_transfer_no_timeout = get_dummy_msg_transfer(TimeoutHeight::no_timeout(), None);
-        let msg_transfer_no_timeout_or_timestamp = get_dummy_msg_transfer(
+        let msg_transfer = MsgTransfer::new_dummy(Height::new(0, 35).unwrap().into(), None);
+        let msg_transfer_two = MsgTransfer::new_dummy(Height::new(0, 36).unwrap().into(), None);
+        let msg_transfer_no_timeout = MsgTransfer::new_dummy(TimeoutHeight::no_timeout(), None);
+        let msg_transfer_no_timeout_or_timestamp = MsgTransfer::new_dummy(
             TimeoutHeight::no_timeout(),
             Some(Timestamp::from_nanoseconds(0).unwrap()),
         );
@@ -335,24 +331,14 @@ mod tests {
         msg_to_on_close.packet.timeout_height_on_b = msg_transfer_two.timeout_height_on_b;
         msg_to_on_close.packet.timeout_timestamp_on_b = msg_transfer_two.timeout_timestamp_on_b;
 
-        let denom = msg_transfer_two.packet_data.token.denom.clone();
-        let packet_data = {
-            let data = PacketData {
-                token: PrefixedCoin {
-                    denom,
-                    amount: msg_transfer_two.packet_data.token.amount,
-                },
-                sender: msg_transfer_two.packet_data.sender.clone(),
-                receiver: msg_transfer_two.packet_data.receiver.clone(),
-                memo: "".to_owned().into(),
-            };
-            serde_json::to_vec(&data).expect("PacketData's infallible Serialize impl failed")
-        };
+        let packet_data = serde_json::to_vec(&msg_transfer_two.packet_data)
+            .expect("PacketData's infallible Serialize impl failed");
+
         msg_to_on_close.packet.data = packet_data;
 
         let msg_recv_packet = MsgRecvPacket::try_from(get_dummy_raw_msg_recv_packet(35)).unwrap();
         let msg_ack_packet = MsgAcknowledgement::try_from(get_dummy_raw_msg_ack_with_packet(
-            get_dummy_transfer_packet(msg_transfer.clone(), 1u64.into()).into(),
+            msg_transfer.get_transfer_packet(1u64.into()).into(),
             35,
         ))
         .unwrap();

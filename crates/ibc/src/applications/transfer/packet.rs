@@ -55,3 +55,43 @@ impl From<PacketData> for RawPacketData {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::applications::transfer::BaseCoin;
+    use crate::test_utils::get_dummy_bech32_account;
+    use primitive_types::U256;
+
+    impl PacketData {
+        pub fn new_dummy() -> Self {
+            let address: Signer = get_dummy_bech32_account().into();
+
+            Self {
+                token: BaseCoin {
+                    denom: "uatom".parse().unwrap(),
+                    amount: U256::from(10).into(),
+                }
+                .into(),
+                sender: address.clone(),
+                receiver: address,
+                memo: "".to_string().into(),
+            }
+        }
+
+        pub fn ser_json_assert_eq(&self, json: &str) {
+            let ser = serde_json::to_string(&self).unwrap();
+            assert_eq!(ser, json);
+        }
+    }
+
+    /// Ensures `PacketData` properly encodes to JSON by first converting to a
+    /// `RawPacketData` and then serializing that.
+    #[test]
+    fn test_packet_data_ser() {
+        PacketData::new_dummy().ser_json_assert_eq(
+            r#"{"denom":"uatom","amount":"10","sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","memo":""}"#,
+        );
+    }
+}
