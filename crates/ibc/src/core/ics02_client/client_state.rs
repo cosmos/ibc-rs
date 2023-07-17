@@ -30,6 +30,21 @@ pub enum UpdateKind {
     SubmitMisbehaviour,
 }
 
+/// Represents the status of a client
+#[derive(Debug, PartialEq, Eq)]
+pub enum Status {
+    /// The client is active and allowed to be used
+    Active,
+    /// The client is frozen and not allowed to be used
+    Frozen,
+    /// The client is expired and not allowed to be used
+    Expired,
+    /// Indicates there was an error in determining the status of a client.
+    Unknown,
+    /// Unauthorized indicates that the client type is not registered as an allowed client type.
+    Unauthorized,
+}
+
 /// `ClientState` methods needed in both validation and execution.
 ///
 /// They do not require access to a client `ValidationContext` nor
