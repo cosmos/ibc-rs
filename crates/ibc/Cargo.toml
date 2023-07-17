@@ -41,6 +41,9 @@ borsh = ["dep:borsh", "ibc-proto/borsh"]
 # This feature is required for token transfer (ICS-20)
 serde = ["dep:serde", "dep:serde_derive", "serde_json", "ics23/serde"]
 
+# CosmWasm message API generator compatible
+schema = ["dep:schemars"]
+
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
 # Depends on the `testgen` suite for generating Tendermint light blocks.
 mocks = ["tendermint-testgen", "tendermint/clock", "parking_lot"]
@@ -73,6 +76,8 @@ borsh = {version = "0.9.0", default-features = false, optional = true }
 parking_lot = { version = "0.12.1", default-features = false, optional = true }
 
 ibc-derive = { version = "0.1.0", path = "../ibc-derive"}
+
+schemars = { version = "0.8.12", optional = true }
 
 [dependencies.tendermint]
 version = "0.32"

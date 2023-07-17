@@ -27,6 +27,7 @@ use crate::serializers::serde_string;
         scale_info::TypeInfo
     )
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Display)]
 pub struct BaseDenom(String);
 
@@ -61,6 +62,8 @@ impl FromStr for BaseDenom {
         scale_info::TypeInfo
     )
 )]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub struct TracePrefix {
     port_id: PortId,
@@ -94,6 +97,8 @@ impl Display for TracePrefix {
         scale_info::TypeInfo
     )
 )]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord, From)]
 pub struct TracePath(Vec<TracePrefix>);
 
