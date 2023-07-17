@@ -41,7 +41,7 @@ borsh = ["dep:borsh", "ibc-proto/borsh"]
 # This feature is required for token transfer (ICS-20)
 serde = ["dep:serde", "dep:serde_derive", "serde_json", "ics23/serde"]
 
-# CosmWasm message API generator compatible
+# CosmWasm message API generator compatible, should not be inside on chain code in general eventually
 schema = ["dep:schemars"]
 
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
