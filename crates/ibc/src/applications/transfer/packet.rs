@@ -84,6 +84,11 @@ mod tests {
             let ser = serde_json::to_string(&self).unwrap();
             assert_eq!(ser, json);
         }
+
+        pub fn deser_json_assert_eq(&self, json: &str) {
+            let deser: Self = serde_json::from_str(json).unwrap();
+            assert_eq!(&deser, self);
+        }
     }
 
     /// Ensures `PacketData` properly encodes to JSON by first converting to a
@@ -91,6 +96,15 @@ mod tests {
     #[test]
     fn test_packet_data_ser() {
         PacketData::new_dummy().ser_json_assert_eq(
+            r#"{"denom":"uatom","amount":"10","sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","memo":""}"#,
+        );
+    }
+
+    /// Ensures `PacketData` properly decodes from JSON by first deserializing to a
+    /// `RawPacketData` and then converting from that.
+    #[test]
+    fn test_packet_data_deser() {
+        PacketData::new_dummy().deser_json_assert_eq(
             r#"{"denom":"uatom","amount":"10","sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","memo":""}"#,
         );
     }
