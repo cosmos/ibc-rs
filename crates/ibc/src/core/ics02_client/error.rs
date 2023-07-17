@@ -12,6 +12,8 @@ use crate::core::timestamp::Timestamp;
 use crate::core::ContextError;
 use crate::Height;
 
+use super::client_state::Status;
+
 /// Encodes all the possible client errors
 #[derive(Debug, Display)]
 pub enum ClientError {
@@ -25,6 +27,8 @@ pub enum ClientError {
     },
     /// client is frozen with description: `{description}`
     ClientFrozen { description: String },
+    /// client is not active. Status=`{status}`
+    ClientNotActive { status: Status },
     /// client state not found: `{client_id}`
     ClientStateNotFound { client_id: ClientId },
     /// client state already exists: `{client_id}`

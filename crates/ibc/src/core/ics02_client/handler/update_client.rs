@@ -4,10 +4,10 @@ use crate::prelude::*;
 
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics02_client::client_state::ClientStateExecution;
 use crate::core::ics02_client::client_state::ClientStateValidation;
 use crate::core::ics02_client::client_state::UpdateKind;
+use crate::core::ics02_client::client_state::{ClientStateCommon, Status};
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
 use crate::core::ics02_client::msgs::MsgUpdateOrMisbehaviour;
@@ -28,7 +28,15 @@ where
     // Read client state from the host chain store. The client should already exist.
     let client_state = ctx.client_state(&client_id)?;
 
-    client_state.confirm_not_frozen()?;
+    {
+        let status = client_state.status(ctx.get_client_validation_context(), &client_id);
+        if status != Status::Active {
+            return Err(ClientError::ClientNotActive {
+                status,
+            }
+            .into());
+        }
+    }
 
     let client_message = msg.client_message();
 

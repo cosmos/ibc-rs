@@ -1,8 +1,9 @@
+use crate::core::ics02_client::error::ClientError;
 use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
-use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation, Status};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
 use crate::core::ics04_channel::channel::State;
@@ -70,7 +71,13 @@ where
         let client_id_on_a = conn_end_on_a.client_id();
         let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
 
-        client_state_of_b_on_a.confirm_not_frozen()?;
+        {
+            let status = client_state_of_b_on_a
+                .status(ctx_a.get_client_validation_context(), client_id_on_a);
+            if status != Status::Active {
+                return Err(ClientError::ClientNotActive { status }.into());
+            }
+        }
         client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
 
         let client_cons_state_path_on_a =

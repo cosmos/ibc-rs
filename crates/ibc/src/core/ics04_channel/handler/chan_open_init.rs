@@ -1,9 +1,10 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenInit`.
 
+use crate::core::ics02_client::error::ClientError;
 use crate::prelude::*;
 
 use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::client_state::{ClientStateValidation, Status};
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::events::OpenInit;
@@ -128,7 +129,14 @@ where
 
     let client_id_on_a = conn_end_on_a.client_id();
     let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
-    client_state_of_b_on_a.confirm_not_frozen()?;
+
+    {
+        let status =
+            client_state_of_b_on_a.status(ctx_a.get_client_validation_context(), client_id_on_a);
+        if status != Status::Active {
+            return Err(ClientError::ClientNotActive { status }.into());
+        }
+    }
 
     let conn_version = conn_end_on_a.versions();
 

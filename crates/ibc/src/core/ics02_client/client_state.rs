@@ -1,6 +1,6 @@
 //! Defines `ClientState`, the core type to be implemented by light clients
 
-use core::fmt::Debug;
+use core::fmt::{Debug, Display, Formatter};
 use core::marker::{Send, Sync};
 use core::time::Duration;
 
@@ -43,6 +43,12 @@ pub enum Status {
     Unknown,
     /// Unauthorized indicates that the client type is not registered as an allowed client type.
     Unauthorized,
+}
+
+impl Display for Status {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{self:?}")
+    }
 }
 
 /// `ClientState` methods needed in both validation and execution.

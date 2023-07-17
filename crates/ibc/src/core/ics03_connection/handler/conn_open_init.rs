@@ -1,9 +1,10 @@
 //! Protocol logic specific to ICS3 messages of type `MsgConnectionOpenInit`.
+use crate::core::ics02_client::client_state::{ClientStateValidation, Status};
+use crate::core::ics02_client::error::ClientError;
 use crate::prelude::*;
 
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
@@ -19,7 +20,14 @@ where
 
     // An IBC client running on the local (host) chain should exist.
     let client_state_of_b_on_a = ctx_a.client_state(&msg.client_id_on_a)?;
-    client_state_of_b_on_a.confirm_not_frozen()?;
+
+    {
+        let status = client_state_of_b_on_a
+            .status(ctx_a.get_client_validation_context(), &msg.client_id_on_a);
+        if status != Status::Active {
+            return Err(ClientError::ClientNotActive { status }.into());
+        }
+    }
 
     if let Some(version) = msg.version {
         version.verify_is_supported(&ctx_a.get_compatible_versions())?;
