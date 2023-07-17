@@ -91,21 +91,21 @@ mod tests {
         }
     }
 
+    pub fn dummy_json_packet_data() -> &'static str {
+        r#"{"denom":"uatom","amount":"10","sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","memo":""}"#
+    }
+
     /// Ensures `PacketData` properly encodes to JSON by first converting to a
     /// `RawPacketData` and then serializing that.
     #[test]
     fn test_packet_data_ser() {
-        PacketData::new_dummy().ser_json_assert_eq(
-            r#"{"denom":"uatom","amount":"10","sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","memo":""}"#,
-        );
+        PacketData::new_dummy().ser_json_assert_eq(dummy_json_packet_data());
     }
 
     /// Ensures `PacketData` properly decodes from JSON by first deserializing to a
     /// `RawPacketData` and then converting from that.
     #[test]
     fn test_packet_data_deser() {
-        PacketData::new_dummy().deser_json_assert_eq(
-            r#"{"denom":"uatom","amount":"10","sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","memo":""}"#,
-        );
+        PacketData::new_dummy().deser_json_assert_eq(dummy_json_packet_data());
     }
 }
