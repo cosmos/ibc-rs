@@ -30,6 +30,13 @@ pub(crate) fn impl_ClientStateValidation(
         quote! { check_for_misbehaviour(cs, ctx, client_id, client_message, update_kind) },
     );
 
+    let status_impl = delegate_call_in_match(
+        client_state_enum_name,
+        enum_variants.iter(),
+        opts,
+        quote! { status(cs, ctx, client_id) },
+    );
+
     let HostClientState = client_state_enum_name;
     let ClientValidationContext = &opts.client_validation_context;
 
@@ -37,6 +44,7 @@ pub(crate) fn impl_ClientStateValidation(
     let ClientId = Imports::ClientId();
     let ClientError = Imports::ClientError();
     let ClientStateValidation = Imports::ClientStateValidation();
+    let Status = Imports::Status();
     let UpdateKind = Imports::UpdateKind();
 
     quote! {
@@ -63,6 +71,17 @@ pub(crate) fn impl_ClientStateValidation(
                 match self {
                     #(#check_for_misbehaviour_impl),*
                 }
+            }
+
+            fn status(
+                &self,
+                ctx: &#ClientValidationContext,
+                client_id: &#ClientId,
+            ) -> #Status {
+                match self {
+                    #(#status_impl),*
+                }
+
             }
         }
 

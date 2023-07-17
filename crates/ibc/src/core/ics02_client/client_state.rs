@@ -155,6 +155,9 @@ pub trait ClientStateValidation<ClientValidationContext> {
         client_message: Any,
         update_kind: &UpdateKind,
     ) -> Result<bool, ClientError>;
+
+    /// Returns the status of the client. Only Active clients are allowed to process packets.
+    fn status(&self, ctx: &ClientValidationContext, client_id: &ClientId) -> Status;
 }
 
 /// `ClientState` methods which require access to the client's

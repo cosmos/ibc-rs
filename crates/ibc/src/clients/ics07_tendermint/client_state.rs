@@ -27,7 +27,7 @@ use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::core::ics02_client::client_state::{
-    ClientStateCommon, ClientStateExecution, ClientStateValidation, UpdateKind,
+    ClientStateCommon, ClientStateExecution, ClientStateValidation, Status, UpdateKind,
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
@@ -253,6 +253,10 @@ impl ClientState {
         self.chain_id.clone()
     }
 
+    fn is_frozen(&self) -> bool {
+        self.frozen_height.is_some()
+    }
+
     // Resets custom fields to zero values (used in `update_client`)
     pub fn zero_custom_fields(&mut self) {
         self.trusting_period = ZERO_DURATION;
@@ -427,6 +431,7 @@ impl ClientStateCommon for ClientState {
 impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for ClientState
 where
     ClientValidationContext: TmValidationContext,
+    ClientValidationContext::AnyConsensusState: TryInto<TmConsensusState>,
 {
     fn verify_client_message(
         &self,
@@ -464,6 +469,44 @@ where
                 self.check_for_misbehaviour_misbehavior(&misbehaviour)
             }
         }
+    }
+
+    fn status(&self, ctx: &ClientValidationContext, client_id: &ClientId) -> Status {
+        if self.is_frozen() {
+            return Status::Frozen;
+        }
+
+        let latest_consensus_state: TmConsensusState = {
+            let any_latest_consensus_state = match ctx.consensus_state(
+                &ClientConsensusStatePath::new(client_id, &self.latest_height),
+            ) {
+                Ok(cs) => cs,
+                // if the client state does not have an associated consensus state for its latest height
+                // then it must be expired
+                Err(_) => return Status::Expired,
+            };
+
+            match any_latest_consensus_state.try_into() {
+                Ok(tm_cs) => tm_cs,
+                Err(_) => return Status::Unknown,
+            }
+        };
+
+        let now = match ctx.host_timestamp() {
+            Ok(ts) => ts,
+            Err(_) => return Status::Unknown,
+        };
+        let elapsed_since_latest_consensus_state =
+            match now.duration_since(&latest_consensus_state.timestamp()) {
+                Some(ts) => ts,
+                None => return Status::Unknown,
+            };
+
+        if self.expired(elapsed_since_latest_consensus_state) {
+            return Status::Expired;
+        }
+
+        Status::Active
     }
 }
 

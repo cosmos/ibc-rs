@@ -1,3 +1,6 @@
+use crate::core::ics02_client::client_state::Status;
+use crate::core::timestamp::Timestamp;
+use crate::core::ContextError;
 use crate::prelude::*;
 
 use core::str::FromStr;
@@ -66,6 +69,10 @@ impl MockClientState {
             ..self
         }
     }
+
+    fn is_frozen(&self) -> bool {
+        self.frozen_height.is_some()
+    }
 }
 
 impl Protobuf<RawMockClientState> for MockClientState {}
@@ -123,6 +130,23 @@ impl From<MockClientState> for Any {
             value: Protobuf::<RawMockClientState>::encode_vec(&client_state),
         }
     }
+}
+
+pub trait MockClientContext {
+    type ConversionError: ToString;
+    type AnyConsensusState: TryInto<MockConsensusState, Error = Self::ConversionError>;
+
+    /// Retrieve the consensus state for the given client ID at the specified
+    /// height.
+    ///
+    /// Returns an error if no such state exists.
+    fn consensus_state(
+        &self,
+        client_cons_state_path: &ClientConsensusStatePath,
+    ) -> Result<Self::AnyConsensusState, ContextError>;
+
+    /// Returns the current timestamp of the local chain.
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
 }
 
 impl ClientStateCommon for MockClientState {
@@ -204,7 +228,11 @@ impl ClientStateCommon for MockClientState {
     }
 }
 
-impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for MockClientState {
+impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for MockClientState
+where
+    ClientValidationContext: MockClientContext,
+    ClientValidationContext::AnyConsensusState: TryInto<MockConsensusState>,
+{
     fn verify_client_message(
         &self,
         _ctx: &ClientValidationContext,
@@ -251,6 +279,44 @@ impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for
                 Ok(header_heights_equal && headers_are_in_future)
             }
         }
+    }
+
+    fn status(&self, ctx: &ClientValidationContext, client_id: &ClientId) -> Status {
+        if self.is_frozen() {
+            return Status::Frozen;
+        }
+
+        let latest_consensus_state: MockConsensusState = {
+            let any_latest_consensus_state = match ctx.consensus_state(
+                &ClientConsensusStatePath::new(client_id, &self.latest_height()),
+            ) {
+                Ok(cs) => cs,
+                // if the client state does not have an associated consensus state for its latest height
+                // then it must be expired
+                Err(_) => return Status::Expired,
+            };
+
+            match any_latest_consensus_state.try_into() {
+                Ok(mock_cs) => mock_cs,
+                Err(_) => return Status::Unknown,
+            }
+        };
+
+        let now = match ctx.host_timestamp() {
+            Ok(ts) => ts,
+            Err(_) => return Status::Unknown,
+        };
+        let elapsed_since_latest_consensus_state =
+            match now.duration_since(&latest_consensus_state.timestamp()) {
+                Some(ts) => ts,
+                None => return Status::Unknown,
+            };
+
+        if self.expired(elapsed_since_latest_consensus_state) {
+            return Status::Expired;
+        }
+
+        Status::Active
     }
 }
 
