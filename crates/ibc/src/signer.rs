@@ -2,6 +2,9 @@ use crate::prelude::*;
 
 use derive_more::Display;
 
+#[cfg(feature = "schema")]
+use crate::alloc::borrow::ToOwned;
+
 /// Represents the address of the signer of the current transaction
 #[cfg_attr(
     feature = "parity-scale-codec",
@@ -16,6 +19,7 @@ use derive_more::Display;
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 pub struct Signer(String);
 
