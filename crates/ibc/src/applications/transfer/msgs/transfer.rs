@@ -127,71 +127,44 @@ pub mod test_util {
 
     use core::ops::Add;
     use core::time::Duration;
-    use primitive_types::U256;
 
     use super::MsgTransfer;
     use crate::applications::transfer::packet::PacketData;
-    use crate::applications::transfer::Coin;
     use crate::core::ics04_channel::packet::{Packet, Sequence};
     use crate::core::ics04_channel::timeout::TimeoutHeight;
-    use crate::signer::Signer;
-    use crate::{
-        applications::transfer::BaseCoin,
-        core::ics24_host::identifier::{ChannelId, PortId},
-        test_utils::get_dummy_bech32_account,
-    };
+    use crate::core::ics24_host::identifier::{ChannelId, PortId};
 
-    // Returns a dummy ICS20 `MsgTransfer`. If no `timeout_timestamp` is
-    // specified, a timestamp of 10 seconds in the future is used.
-    pub fn get_dummy_msg_transfer(
-        timeout_height: TimeoutHeight,
-        timeout_timestamp: Option<Timestamp>,
-    ) -> MsgTransfer {
-        let address: Signer = get_dummy_bech32_account().into();
-        MsgTransfer {
-            port_id_on_a: PortId::default(),
-            chan_id_on_a: ChannelId::default(),
-            packet_data: PacketData {
-                token: BaseCoin {
-                    denom: "uatom".parse().unwrap(),
-                    amount: U256::from(10).into(),
-                }
-                .into(),
-                sender: address.clone(),
-                receiver: address,
-                memo: "".to_owned().into(),
-            },
-            timeout_timestamp_on_b: timeout_timestamp
-                .unwrap_or_else(|| Timestamp::now().add(Duration::from_secs(10)).unwrap()),
-            timeout_height_on_b: timeout_height,
+    impl MsgTransfer {
+        // Returns a dummy ICS20 `MsgTransfer`. If no `timeout_timestamp` is
+        // specified, a timestamp of 10 seconds in the future is used.
+        pub fn new_dummy(
+            timeout_height: TimeoutHeight,
+            timeout_timestamp: Option<Timestamp>,
+        ) -> Self {
+            Self {
+                port_id_on_a: PortId::default(),
+                chan_id_on_a: ChannelId::default(),
+                packet_data: PacketData::new_dummy(),
+                timeout_timestamp_on_b: timeout_timestamp
+                    .unwrap_or_else(|| Timestamp::now().add(Duration::from_secs(10)).unwrap()),
+                timeout_height_on_b: timeout_height,
+            }
         }
-    }
 
-    pub fn get_dummy_transfer_packet(msg: MsgTransfer, sequence: Sequence) -> Packet {
-        let coin = Coin {
-            denom: msg.packet_data.token.denom.clone(),
-            amount: msg.packet_data.token.amount,
-        };
+        pub fn get_transfer_packet(&self, sequence: Sequence) -> Packet {
+            let data = serde_json::to_vec(&self.packet_data)
+                .expect("PacketData's infallible Serialize impl failed");
 
-        let data = {
-            let data = PacketData {
-                token: coin,
-                sender: msg.packet_data.sender.clone(),
-                receiver: msg.packet_data.receiver.clone(),
-                memo: msg.packet_data.memo.clone(),
-            };
-            serde_json::to_vec(&data).expect("PacketData's infallible Serialize impl failed")
-        };
-
-        Packet {
-            seq_on_a: sequence,
-            port_id_on_a: msg.port_id_on_a,
-            chan_id_on_a: msg.chan_id_on_a,
-            port_id_on_b: PortId::default(),
-            chan_id_on_b: ChannelId::default(),
-            data,
-            timeout_height_on_b: msg.timeout_height_on_b,
-            timeout_timestamp_on_b: msg.timeout_timestamp_on_b,
+            Packet {
+                seq_on_a: sequence,
+                port_id_on_a: self.port_id_on_a.clone(),
+                chan_id_on_a: self.chan_id_on_a.clone(),
+                port_id_on_b: PortId::default(),
+                chan_id_on_b: ChannelId::default(),
+                data,
+                timeout_height_on_b: self.timeout_height_on_b,
+                timeout_timestamp_on_b: self.timeout_timestamp_on_b,
+            }
         }
     }
 }
