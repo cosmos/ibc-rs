@@ -189,6 +189,7 @@ impl Display for TracePath {
 
 /// A type that contains the base denomination for ICS20 and the source tracing information path.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -201,6 +202,7 @@ impl Display for TracePath {
 pub struct PrefixedDenom {
     /// A series of `{port-id}/{channel-id}`s for tracing the source of the token.
     #[cfg_attr(feature = "serde", serde(with = "serde_string"))]
+    #[cfg_attr(feature = "schema", schemars(with = "String"))]
     pub trace_path: TracePath,
     /// Base denomination of the relayed fungible token.
     pub base_denom: BaseDenom,

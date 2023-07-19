@@ -6,10 +6,21 @@ use derive_more::{Display, From, Into};
 use super::error::TokenTransferError;
 use primitive_types::U256;
 
+#[cfg(feature = "serde")]
+use crate::serializers::serde_string;
+
+#[cfg(feature = "schema")]
+use crate::alloc::{borrow::ToOwned, string::String};
+
 /// A type for representing token transfer amounts.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Display, From, Into)]
-pub struct Amount(U256);
+pub struct Amount(
+    #[cfg_attr(feature = "schema", schemars(with = "String"))]
+    #[cfg_attr(feature = "serde", serde(with = "serde_string"))]
+    U256,
+);
 
 #[cfg(feature = "parity-scale-codec")]
 impl parity_scale_codec::WrapperTypeDecode for Amount {
