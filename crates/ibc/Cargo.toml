@@ -42,7 +42,7 @@ borsh = ["dep:borsh", "ibc-proto/borsh"]
 serde = ["dep:serde", "dep:serde_derive", "serde_json", "ics23/serde"]
 
 # CosmWasm message API generator compatible, should not be inside on chain code
-schema = ["dep:schemars", "serde"]
+schema = ["dep:schemars", "serde", "std"]
 
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
 # Depends on the `testgen` suite for generating Tendermint light blocks.
