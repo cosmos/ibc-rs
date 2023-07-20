@@ -44,23 +44,18 @@ where
             height: old_client_state.latest_height(),
         })?;
 
-    let now = ctx.host_timestamp()?;
-    let duration = now
-        .duration_since(&old_consensus_state.timestamp())
-        .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
-            time1: old_consensus_state.timestamp(),
-            time2: now,
-        })?;
-
     // Check if the latest consensus state is within the trust period.
-    if old_client_state.expired(duration) {
-        return Err(ContextError::ClientError(
-            ClientError::HeaderNotWithinTrustPeriod {
-                latest_time: old_consensus_state.timestamp(),
-                update_time: now,
-            },
-        ));
-    };
+    {
+        let status = old_client_state.status(ctx.get_client_validation_context(), &client_id);
+        if status == Status::Expired {
+            return Err(ContextError::ClientError(
+                ClientError::HeaderNotWithinTrustPeriod {
+                    latest_time: old_consensus_state.timestamp(),
+                    update_time: ctx.host_timestamp()?,
+                },
+            ));
+        }
+    }
 
     // Validate the upgraded client state and consensus state and verify proofs against the root
     old_client_state.verify_upgrade_client(

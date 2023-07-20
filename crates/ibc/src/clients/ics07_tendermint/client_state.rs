@@ -257,6 +257,10 @@ impl ClientState {
         self.frozen_height.is_some()
     }
 
+    fn expired(&self, elapsed: Duration) -> bool {
+        elapsed > self.trusting_period
+    }
+
     // Resets custom fields to zero values (used in `update_client`)
     pub fn zero_custom_fields(&mut self) {
         self.trusting_period = ZERO_DURATION;
@@ -296,10 +300,6 @@ impl ClientStateCommon for ClientState {
             });
         }
         Ok(())
-    }
-
-    fn expired(&self, elapsed: Duration) -> bool {
-        elapsed > self.trusting_period
     }
 
     /// Perform client-specific verifications and check all data in the new

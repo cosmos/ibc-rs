@@ -2,7 +2,6 @@
 
 use core::fmt::{Debug, Display, Formatter};
 use core::marker::{Send, Sync};
-use core::time::Duration;
 
 use ibc_proto::google::protobuf::Any;
 
@@ -70,10 +69,6 @@ pub trait ClientStateCommon {
 
     /// Validate that the client is at a sufficient height
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError>;
-
-    /// Check if the state is expired when `elapsed` time has passed since the latest consensus
-    /// state timestamp
-    fn expired(&self, elapsed: Duration) -> bool;
 
     /// Verify the upgraded client and consensus states and validate proofs
     /// against the given root.

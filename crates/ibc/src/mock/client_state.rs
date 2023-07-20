@@ -73,6 +73,10 @@ impl MockClientState {
     pub fn is_frozen(&self) -> bool {
         self.frozen_height.is_some()
     }
+
+    fn expired(&self, _elapsed: Duration) -> bool {
+        false
+    }
 }
 
 impl Protobuf<RawMockClientState> for MockClientState {}
@@ -172,10 +176,6 @@ impl ClientStateCommon for MockClientState {
             });
         }
         Ok(())
-    }
-
-    fn expired(&self, _elapsed: Duration) -> bool {
-        false
     }
 
     fn verify_upgrade_client(
