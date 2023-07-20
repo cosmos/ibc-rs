@@ -30,7 +30,12 @@ pub trait ValidateSelfClientContext {
 
         tm_client_state.validate().map_err(ClientError::from)?;
 
-        tm_client_state.confirm_not_frozen()?;
+        if tm_client_state.is_frozen() {
+            return Err(ClientError::ClientFrozen {
+                description: String::new(),
+            }
+            .into());
+        }
 
         let self_chain_id = self.chain_id();
         if self_chain_id != &tm_client_state.chain_id {

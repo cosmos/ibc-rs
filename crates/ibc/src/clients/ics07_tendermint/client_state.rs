@@ -253,7 +253,7 @@ impl ClientState {
         self.chain_id.clone()
     }
 
-    fn is_frozen(&self) -> bool {
+    pub fn is_frozen(&self) -> bool {
         self.frozen_height.is_some()
     }
 
