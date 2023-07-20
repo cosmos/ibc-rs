@@ -31,10 +31,7 @@ where
     {
         let status = client_state.status(ctx.get_client_validation_context(), &client_id);
         if status != Status::Active {
-            return Err(ClientError::ClientNotActive {
-                status,
-            }
-            .into());
+            return Err(ClientError::ClientNotActive { status }.into());
         }
     }
 
@@ -502,7 +499,7 @@ mod tests {
     fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &ClientType) {
         let client_state = ctx.client_state(client_id).unwrap();
 
-        assert!(client_state.status(&ctx, &client_id) == Status::Active);
+        assert!(client_state.status(ctx, client_id) == Status::Active);
 
         // check events
         assert_eq!(ctx.events.len(), 2);
