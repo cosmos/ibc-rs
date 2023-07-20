@@ -499,7 +499,8 @@ mod tests {
     fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &ClientType) {
         let client_state = ctx.client_state(client_id).unwrap();
 
-        assert!(client_state.status(ctx, client_id) == Status::Active);
+        let status = client_state.status(ctx, client_id);
+        assert!(status == Status::Frozen, "client_state status: {status}");
 
         // check events
         assert_eq!(ctx.events.len(), 2);
