@@ -174,15 +174,6 @@ impl ClientStateCommon for MockClientState {
         Ok(())
     }
 
-    fn confirm_not_frozen(&self) -> Result<(), ClientError> {
-        if let Some(frozen_height) = self.frozen_height {
-            return Err(ClientError::ClientFrozen {
-                description: format!("The client is frozen at height {frozen_height}"),
-            });
-        }
-        Ok(())
-    }
-
     fn expired(&self, _elapsed: Duration) -> bool {
         false
     }

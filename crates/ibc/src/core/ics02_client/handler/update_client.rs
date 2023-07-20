@@ -253,7 +253,7 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(client_state.confirm_not_frozen().is_ok());
+        assert!(client_state.status(&ctx, &msg.client_id) == Status::Active);
         assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
@@ -300,7 +300,7 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(client_state.confirm_not_frozen().is_ok());
+        assert!(client_state.status(&ctx, &msg.client_id) == Status::Active);
         assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
@@ -419,7 +419,7 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx_a.client_state(&msg.client_id).unwrap();
-        assert!(client_state.confirm_not_frozen().is_ok());
+        assert!(client_state.status(&ctx_a, &msg.client_id) == Status::Active);
         assert_eq!(client_state.latest_height(), latest_header_height);
         assert_eq!(client_state, ctx_a.latest_client_states(&msg.client_id));
     }
@@ -502,7 +502,7 @@ mod tests {
     fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &ClientType) {
         let client_state = ctx.client_state(client_id).unwrap();
 
-        assert!(client_state.confirm_not_frozen().is_err());
+        assert!(client_state.status(&ctx, &client_id) == Status::Active);
 
         // check events
         assert_eq!(ctx.events.len(), 2);

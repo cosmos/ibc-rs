@@ -32,11 +32,6 @@ pub(crate) fn impl_ClientStateCommon(
         enum_variants.iter(),
         quote! {validate_proof_height(cs, proof_height)},
     );
-    let confirm_not_frozen_impl = delegate_call_in_match(
-        client_state_enum_name,
-        enum_variants.iter(),
-        quote! {confirm_not_frozen(cs)},
-    );
     let expired_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
@@ -92,12 +87,6 @@ pub(crate) fn impl_ClientStateCommon(
             fn validate_proof_height(&self, proof_height: #Height) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#validate_proof_height_impl),*
-                }
-            }
-
-            fn confirm_not_frozen(&self) -> core::result::Result<(), #ClientError> {
-                match self {
-                    #(#confirm_not_frozen_impl),*
                 }
             }
 

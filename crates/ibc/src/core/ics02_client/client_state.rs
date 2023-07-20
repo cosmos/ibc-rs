@@ -71,9 +71,6 @@ pub trait ClientStateCommon {
     /// Validate that the client is at a sufficient height
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError>;
 
-    /// Assert that the client is not frozen
-    fn confirm_not_frozen(&self) -> Result<(), ClientError>;
-
     /// Check if the state is expired when `elapsed` time has passed since the latest consensus
     /// state timestamp
     fn expired(&self, elapsed: Duration) -> bool;
