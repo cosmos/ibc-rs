@@ -145,11 +145,13 @@ To pull in updates from the origin repo, run `git fetch upstream` followed by
 
 ## Changelog
 
-Every non-trivial PR must update the [CHANGELOG](CHANGELOG.md). This is
+Every non-trivial PR must update the
+[CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md). This is
 accomplished indirectly by adding entries to the `.changelog` folder in
-[`unclog`](https://github.com/informalsystems/unclog) format using the `unclog` CLI tool.
-`CHANGELOG.md` will be built by whomever is responsible for performing a release just
-prior to release - this is to avoid changelog conflicts prior to releases.
+[`unclog`](https://github.com/informalsystems/unclog) format using the `unclog`
+CLI tool. `CHANGELOG.md` will be built by whomever is responsible for performing
+a release just prior to release - this is to avoid changelog conflicts prior to
+releases.
 
 ### Install `unclog`
 
