@@ -1,7 +1,7 @@
-name: Deploy Docs
+name: Build Docs
+
 on:
-  workflow_dispatch:
-  push:
+  pull_request:
     branches:
       - main
       - "release/**"
@@ -9,36 +9,28 @@ on:
       - "docs/**"
       - CONTRIBUTING.md
       - .github/workflows/deploy-docs.yml
+      - .github/workflows/build-docs.yml
 
 permissions:
   contents: read
 
 jobs:
-  build-and-deploy:
-    permissions:
-      contents: write
+  check-docs-build:
+    name: Check docs build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout 
         uses: actions/checkout@v3
         with:
           persist-credentials: false
           fetch-depth: 0
-          path: "."
 
-      - name: Setup Node.js
+      - name: Setup Node.js 
         uses: actions/setup-node@v3
         with:
           node-version: "16.x"
 
-      - name: Build
+      - name: Build docs 
         run: |
           npm install
           @cd docs && DOCS_DOMAIN=ibc-rs.informal.systems sh ./build.sh
-
-      - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@v4.4.3
-        with:
-          branch: gh-pages
-          folder: ~/output
-          single-commit: true

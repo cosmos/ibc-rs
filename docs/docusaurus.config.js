@@ -58,13 +58,6 @@ const config = {
       navbar: {
         title: "IBC-rs",
         hideOnScroll: false,
-        logo: {
-          alt: "IBC-rs Logo",
-          src: "img/logo-ibc-rs-black.svg",
-          srcDark: 'img/logo-ibc-rs-white.svg',
-          href: "/",
-          target: "_self",
-        },
         items: [
           { to: '/', label: 'Learn', position: 'left' },
           { to: '/developers', label: 'Developers', position: 'left' },
