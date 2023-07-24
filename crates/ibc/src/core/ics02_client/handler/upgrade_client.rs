@@ -28,7 +28,7 @@ where
 
     // Check if the client is frozen.
     {
-        let status = old_client_state.status(ctx.get_client_validation_context(), &client_id);
+        let status = old_client_state.status(ctx.get_client_validation_context(), &client_id)?;
         if status != Status::Active {
             return Err(ClientError::ClientNotActive { status }.into());
         }
@@ -46,7 +46,7 @@ where
 
     // Check if the latest consensus state is within the trust period.
     {
-        let status = old_client_state.status(ctx.get_client_validation_context(), &client_id);
+        let status = old_client_state.status(ctx.get_client_validation_context(), &client_id)?;
         if status == Status::Expired {
             return Err(ContextError::ClientError(
                 ClientError::HeaderNotWithinTrustPeriod {

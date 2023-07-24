@@ -61,7 +61,7 @@ where
 
         {
             let status = client_state_of_b_on_a
-                .status(ctx_a.get_client_validation_context(), vars.client_id_on_a());
+                .status(ctx_a.get_client_validation_context(), vars.client_id_on_a())?;
             if status != Status::Active {
                 return Err(ClientError::ClientNotActive { status }.into());
             }

@@ -125,6 +125,14 @@ impl From<ContextError> for ClientError {
     }
 }
 
+impl From<&'static str> for ClientError {
+    fn from(s: &'static str) -> Self {
+        Self::Other {
+            description: s.to_string(),
+        }
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for ClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {

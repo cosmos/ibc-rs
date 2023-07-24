@@ -423,6 +423,8 @@ impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for
 where
     ClientValidationContext: TmValidationContext,
     ClientValidationContext::AnyConsensusState: TryInto<TmConsensusState>,
+    ClientError:
+        From<<ClientValidationContext::AnyConsensusState as TryInto<TmConsensusState>>::Error>,
 {
     fn verify_client_message(
         &self,
@@ -462,9 +464,13 @@ where
         }
     }
 
-    fn status(&self, ctx: &ClientValidationContext, client_id: &ClientId) -> Status {
+    fn status(
+        &self,
+        ctx: &ClientValidationContext,
+        client_id: &ClientId,
+    ) -> Result<Status, ClientError> {
         if self.is_frozen() {
-            return Status::Frozen;
+            return Ok(Status::Frozen);
         }
 
         let latest_consensus_state: TmConsensusState = {
@@ -474,30 +480,24 @@ where
                 Ok(cs) => cs,
                 // if the client state does not have an associated consensus state for its latest height
                 // then it must be expired
-                Err(_) => return Status::Expired,
+                Err(_) => return Ok(Status::Expired),
             };
 
-            match any_latest_consensus_state.try_into() {
-                Ok(tm_cs) => tm_cs,
-                Err(_) => return Status::Unknown,
-            }
+            any_latest_consensus_state.try_into()?
         };
 
-        let now = match ctx.host_timestamp() {
-            Ok(ts) => ts,
-            Err(_) => return Status::Unknown,
-        };
-        let elapsed_since_latest_consensus_state =
-            match now.duration_since(&latest_consensus_state.timestamp()) {
-                Some(ts) => ts,
-                None => return Status::Unknown,
-            };
+        let now = ctx.host_timestamp()?;
+        let elapsed_since_latest_consensus_state = now
+            .duration_since(&latest_consensus_state.timestamp())
+            .ok_or(ClientError::Other {
+                description: format!("latest consensus state is in the future. now: {now}, latest consensus state: {}", latest_consensus_state.timestamp()),
+            })?;
 
         if self.expired(elapsed_since_latest_consensus_state) {
-            return Status::Expired;
+            return Ok(Status::Expired);
         }
 
-        Status::Active
+        Ok(Status::Active)
     }
 }
 

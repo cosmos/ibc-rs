@@ -77,7 +77,7 @@ pub(crate) fn impl_ClientStateValidation(
                 &self,
                 ctx: &#ClientValidationContext,
                 client_id: &#ClientId,
-            ) -> #Status {
+            ) -> core::result::Result<#Status, #ClientError> {
                 match self {
                     #(#status_impl),*
                 }

@@ -38,8 +38,6 @@ pub enum Status {
     Frozen,
     /// The client is expired and not allowed to be used
     Expired,
-    /// Indicates there was an error in determining the status of a client.
-    Unknown,
     /// Unauthorized indicates that the client type is not registered as an allowed client type.
     Unauthorized,
 }
@@ -155,7 +153,11 @@ pub trait ClientStateValidation<ClientValidationContext> {
     ) -> Result<bool, ClientError>;
 
     /// Returns the status of the client. Only Active clients are allowed to process packets.
-    fn status(&self, ctx: &ClientValidationContext, client_id: &ClientId) -> Status;
+    fn status(
+        &self,
+        ctx: &ClientValidationContext,
+        client_id: &ClientId,
+    ) -> Result<Status, ClientError>;
 }
 
 /// `ClientState` methods which require access to the client's
