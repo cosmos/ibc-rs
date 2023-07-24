@@ -34,10 +34,10 @@ from the interchain standards (ICS) are introduced to accommodate the
 implementation.
 
 * **IBC Light Clients**
-  * [**ICS-20: Tendermint**](./clients/00-tendermint.md)
+  * [**ICS-20: Tendermint**](./../clients/00-tendermint.md)
 * **IBC Applications**
-  * [**ICS-20: Fungible Token Transfer**](./apps/00-token-transfer.md)
-  * [**ICS-27: Interchain Accounts**](./apps/01-interchain-accounts.md) (Work in progress)
+  * [**ICS-20: Fungible Token Transfer**](./../apps/00-token-transfer.md)
+  * [**ICS-27: Interchain Accounts**](./../apps/01-interchain-accounts.md) (Work in progress)
 
 ## Latest Status
 
@@ -50,14 +50,14 @@ To get a better understanding of IBC-rs implementation, check out the following 
 
 * [**Overview**](./../learn/overview/overview) - Provides and overview of IBC-rs
   and learn about the basics of implementation.
-* [**ADRs**](./../developers/architecture/README.md) - Learn about the
+* [**ADRs**](./../../developers/architecture/README.md) - Learn about the
   architectural decisions.
 * [**FAQ Page**](https://github.com/cosmos/ibc-rs/wiki/FAQ) - Frequently asked
   questions about IBC-rs.
 
 ## How to Integrate
 
-* [**Integration**](./../developers/integration/00-integration.md) - Learn how to
+* [**Integration**](./../../developers/integration/00-integration.md) - Learn how to
   integrate IBC-rs into your project.
 
 ## Explore the Stack

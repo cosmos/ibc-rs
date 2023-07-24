@@ -4,7 +4,6 @@
 
 COMMIT=$(git rev-parse HEAD)
 
-chmod +rwx ./pre.sh ./post.sh
 mkdir -p ~/versioned_docs  ~/versioned_sidebars
 for version in $(jq -r .[] versions.json); do
     echo "building docusaurus $version docs"
