@@ -19,5 +19,6 @@ echo "building docusaurus main docs"
 mv ~/versioned_docs ~/versioned_sidebars .
 npm ci && npm run build
 mv build ~/output
+
 echo "setup domain"
 echo $DOCS_DOMAIN > ~/output/CNAME
