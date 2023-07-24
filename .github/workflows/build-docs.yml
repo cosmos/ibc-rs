@@ -32,5 +32,6 @@ jobs:
 
       - name: Build docs 
         run: |
-          npm install
-          @cd docs && DOCS_DOMAIN=ibc-rs.informal.systems sh ./build.sh
+          @cd docs && npm install && sh ./build.sh
+          DOCS_DOMAIN=ibc-rs.informal.systems
+          

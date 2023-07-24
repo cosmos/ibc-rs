@@ -33,8 +33,8 @@ jobs:
 
       - name: Build
         run: |
-          npm install
-          @cd docs && DOCS_DOMAIN=ibc-rs.informal.systems sh ./build.sh
+          @cd docs && npm install && sh ./build.sh
+          DOCS_DOMAIN=ibc-rs.informal.systems
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4.4.3
