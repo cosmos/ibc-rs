@@ -4,7 +4,7 @@
 rm -rf docs/developers/architecture
 
 ## Remove changelog documentation
-rm -rf docs/developers/migrations/01-changelog.md
+rm -rf docs/developers/migrations/changelog.md
 
 ## Remove contributing documentation
-rm -rf docs/developers/intro/01-contributing.md
+rm -rf docs/developers/intro/contributing.md

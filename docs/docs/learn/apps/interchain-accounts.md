@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+---
+
 # ICS-27: Interchain Accounts
 
 Learn about how IBC-rs implements the Interchain Accounts (ICS-27)

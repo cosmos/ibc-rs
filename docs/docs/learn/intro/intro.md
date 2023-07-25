@@ -34,10 +34,10 @@ from the interchain standards (ICS) are introduced to accommodate the
 implementation.
 
 * **IBC Light Clients**
-  * [**ICS-20: Tendermint**](./../clients/00-tendermint.md)
+  * [**ICS-20: Tendermint**](./../clients/tendermint.md)
 * **IBC Applications**
-  * [**ICS-20: Fungible Token Transfer**](./../apps/00-token-transfer.md)
-  * [**ICS-27: Interchain Accounts**](./../apps/01-interchain-accounts.md) (Work in progress)
+  * [**ICS-20: Fungible Token Transfer**](./../apps/token-transfer.md)
+  * [**ICS-27: Interchain Accounts**](./../apps/interchain-accounts.md) (Work in progress)
 
 ## Latest Status
 
@@ -57,7 +57,7 @@ To get a better understanding of IBC-rs implementation, check out the following 
 
 ## How to Integrate
 
-* [**Integration**](./../../developers/integration/00-integration.md) - Learn how to
+* [**Integration**](./../../developers/integration/integration.md) - Learn how to
   integrate IBC-rs into your project.
 
 ## Explore the Stack
@@ -88,11 +88,11 @@ repository](https://github.com/cosmos/ibc-go/security/policy).
 ## Help & Support
 
 * [**Migration Guide**](./developers/migrations/guideline) - Learn how to
-  migrate from/to different versions of IBC-rs.
+  migrate to a newer stable version of IBC-rs.
 * [**GitHub Discussions**](https://github.com/cosmos/ibc-rs/discussions) - Ask
   questions and discuss IBC-rs development on GitHub.
 * [**Want to
   Contribute?**](https://github.com/cosmos/ibc-rs/blob/main/CONTRIBUTING.md) -
   Learn how to contribute to IBC-rs development.
 * [**Found an Issue?**](https://github.com/cosmos/ibc-rs/edit/main/docs/docs/DOC_README.md) - Help us
-  improve this page by suggesting edits on GitHub.
+  improve the documentation by suggesting edits on GitHub.

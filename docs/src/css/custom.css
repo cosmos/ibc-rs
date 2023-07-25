@@ -184,6 +184,19 @@ html {
   }
 
   /* BREADCRUMBS */
+  .breadcrumbs {
+    @media (min-width: 997px) {
+      @apply flex flex-row items-baseline justify-between;
+    }
+  }
+
+  .edit-page {
+    display: none;
+    @media (min-width: 997px) {
+      @apply flex flex-row items-center text-muted text-2 hover:no-underline;
+    }
+  }
+
   .breadcrumbs__item {
     &:first-child {
       & > a {

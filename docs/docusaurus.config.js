@@ -60,7 +60,7 @@ const config = {
         hideOnScroll: false,
         items: [
           { to: '/', label: 'Learn', position: 'left' },
-          { to: '/developers', label: 'Developers', position: 'left' },
+          { to: '/developers/intro', label: 'Developers', position: 'left' },
           { href: "https://informal.systems/blog/category/all", label: "Blog", position: "left" },
           {
             type: "docsVersionDropdown",

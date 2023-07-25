@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+---
+
 # How to Contribute?
 
 Thank you for your interest in contributing! The goal
