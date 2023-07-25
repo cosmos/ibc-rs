@@ -48,7 +48,7 @@ Check out our [project board](https://github.com/orgs/cosmos/projects/27) for
 
 To get a better understanding of IBC-rs implementation, check out the following sections:
 
-* [**Overview**](./../learn/overview/overview) - Provides and overview of IBC-rs
+* [**Overview**](./../overview/overview.md) - Provides and overview of IBC-rs
   and learn about the basics of implementation.
 * [**ADRs**](./../../developers/architecture/README.md) - Learn about the
   architectural decisions.
