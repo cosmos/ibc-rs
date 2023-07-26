@@ -257,10 +257,6 @@ impl ClientState {
         self.frozen_height.is_some()
     }
 
-    fn expired(&self, elapsed: Duration) -> bool {
-        elapsed > self.trusting_period
-    }
-
     // Resets custom fields to zero values (used in `update_client`)
     pub fn zero_custom_fields(&mut self) {
         self.trusting_period = ZERO_DURATION;
@@ -486,15 +482,16 @@ where
             any_latest_consensus_state.try_into()?
         };
 
+        // Note: if the `duration_since()` is `None`, indicating that the latest
+        // consensus state is in the future, then we don't consider the client
+        // to be expired.
         let now = ctx.host_timestamp()?;
-        let elapsed_since_latest_consensus_state = now
-            .duration_since(&latest_consensus_state.timestamp())
-            .ok_or(ClientError::Other {
-                description: format!("latest consensus state is in the future. now: {now}, latest consensus state: {}", latest_consensus_state.timestamp()),
-            })?;
-
-        if self.expired(elapsed_since_latest_consensus_state) {
-            return Ok(Status::Expired);
+        if let Some(elapsed_since_latest_consensus_state) =
+            now.duration_since(&latest_consensus_state.timestamp())
+        {
+            if elapsed_since_latest_consensus_state > self.trusting_period {
+                return Ok(Status::Expired);
+            }
         }
 
         Ok(Status::Active)
