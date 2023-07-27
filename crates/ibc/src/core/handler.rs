@@ -214,6 +214,7 @@ mod tests {
     use crate::core::timestamp::Timestamp;
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
+    use crate::mock::context::applications::MockTokenTransferModule;
     use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
     use crate::prelude::*;
@@ -577,7 +578,7 @@ mod tests {
         for test in tests {
             let res = match test.msg.clone() {
                 TestMsg::Ics26(msg) => dispatch(&mut ctx, msg).map(|_| ()),
-                TestMsg::Ics20(msg) => send_transfer(&mut ctx, msg)
+                TestMsg::Ics20(msg) => send_transfer(&mut ctx, &mut MockTokenTransferModule, msg)
                     .map_err(|e: TokenTransferError| ChannelError::AppModule {
                         description: e.to_string(),
                     })

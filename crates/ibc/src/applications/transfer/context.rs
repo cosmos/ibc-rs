@@ -421,9 +421,11 @@ pub(crate) mod test {
     use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+    use crate::mock::context::applications::MockTokenTransferModule;
     use crate::mock::context::MockContext;
 
     fn get_defaults() -> (
+        MockTokenTransferModule,
         MockContext,
         Order,
         Vec<ConnectionId>,
@@ -439,6 +441,7 @@ pub(crate) mod test {
         let counterparty = Counterparty::new(port_id.clone(), Some(channel_id.clone()));
 
         (
+            MockTokenTransferModule,
             ctx,
             order,
             connection_hops,
@@ -482,7 +485,8 @@ pub(crate) mod test {
     /// We currently only support ics20
     #[test]
     fn test_on_chan_open_init_empty_version() {
-        let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
+        let (mut ctx, _, order, connection_hops, port_id, channel_id, counterparty) =
+            get_defaults();
 
         let in_version = Version::new("".to_string());
 
@@ -503,7 +507,8 @@ pub(crate) mod test {
     /// If the relayer passed in the only supported version (ics20), then return ics20
     #[test]
     fn test_on_chan_open_init_ics20_version() {
-        let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
+        let (mut ctx, _, order, connection_hops, port_id, channel_id, counterparty) =
+            get_defaults();
 
         let in_version = Version::new(VERSION.to_string());
         let (_, out_version) = on_chan_open_init_execute(
@@ -523,7 +528,7 @@ pub(crate) mod test {
     /// If the relayer passed in an unsupported version, then fail
     #[test]
     fn test_on_chan_open_init_incorrect_version() {
-        let (ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
+        let (ctx, _, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
 
         let in_version = Version::new("some-unsupported-version".to_string());
         let res = on_chan_open_init_validate(
@@ -542,7 +547,8 @@ pub(crate) mod test {
     /// If the counterparty supports ics20, then return ics20
     #[test]
     fn test_on_chan_open_try_counterparty_correct_version() {
-        let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
+        let (mut ctx, _, order, connection_hops, port_id, channel_id, counterparty) =
+            get_defaults();
 
         let counterparty_version = Version::new(VERSION.to_string());
 
@@ -563,7 +569,7 @@ pub(crate) mod test {
     /// If the counterparty doesn't support ics20, then fail
     #[test]
     fn test_on_chan_open_try_counterparty_incorrect_version() {
-        let (ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
+        let (ctx, _, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
 
         let counterparty_version = Version::new("some-unsupported-version".to_string());
 

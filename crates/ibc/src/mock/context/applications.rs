@@ -2,7 +2,6 @@
 
 use subtle_encoding::bech32;
 
-use super::MockContext;
 use crate::applications::transfer::context::cosmos_adr028_escrow_address;
 use crate::applications::transfer::context::TokenTransferExecutionContext;
 use crate::applications::transfer::context::TokenTransferValidationContext;
@@ -11,7 +10,9 @@ use crate::applications::transfer::PrefixedCoin;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::Signer;
 
-impl TokenTransferValidationContext for MockContext {
+pub struct MockTokenTransferModule;
+
+impl TokenTransferValidationContext for MockTokenTransferModule {
     type AccountId = Signer;
 
     fn get_port(&self) -> Result<PortId, TokenTransferError> {
@@ -61,7 +62,7 @@ impl TokenTransferValidationContext for MockContext {
     }
 }
 
-impl TokenTransferExecutionContext for MockContext {
+impl TokenTransferExecutionContext for MockTokenTransferModule {
     fn send_coins_execute(
         &mut self,
         _from_account: &Self::AccountId,

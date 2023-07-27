@@ -1,6 +1,6 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
-mod applications;
+pub mod applications;
 mod clients;
 
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
