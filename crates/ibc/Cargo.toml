@@ -39,7 +39,7 @@ parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-proto/par
 borsh = ["dep:borsh", "ibc-proto/borsh"]
 
 # This feature is required for token transfer (ICS-20)
-serde = ["dep:serde", "dep:serde_derive", "serde_json", "ics23/serde"]
+serde = ["dep:serde", "dep:serde_derive", "serde_json", "ibc-proto/serde", "ics23/serde"]
 
 # This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
 # Depends on the `testgen` suite for generating Tendermint light blocks.
@@ -47,8 +47,8 @@ mocks = ["tendermint-testgen", "tendermint/clock", "parking_lot"]
 
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
-ibc-proto = { version = "0.32.0", default-features = false }
-ics23 = { version = "0.10.1", default-features = false, features = ["host-functions"] }
+ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs.git", rev = "af385af", default-features = false }
+ics23 = { git = "https://github.com/cosmos/ics23.git", rev = "27868a6", default-features = false, features = ["host-functions"] }
 time = { version = ">=0.3.0, <0.3.24", default-features = false }
 serde_derive = { version = "1.0.104", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }

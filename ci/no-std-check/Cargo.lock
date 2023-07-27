@@ -1065,12 +1065,15 @@ dependencies = [
  "derive_more",
  "displaydoc",
  "ibc-derive",
- "ibc-proto",
- "ics23",
+ "ibc-proto 0.32.0 (git+https://github.com/cosmos/ibc-proto-rs.git?rev=af385af)",
+ "ics23 0.10.1 (git+https://github.com/cosmos/ics23.git?rev=27868a6)",
  "num-traits",
  "primitive-types",
  "prost",
  "safe-regex",
+ "serde",
+ "serde_derive",
+ "serde_json",
  "sha2 0.10.6",
  "subtle-encoding",
  "tendermint",
@@ -1101,10 +1104,25 @@ dependencies = [
  "borsh",
  "bytes",
  "flex-error",
- "ics23",
+ "ics23 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec",
  "prost",
  "scale-info",
+ "serde",
+ "subtle-encoding",
+ "tendermint-proto",
+]
+
+[[package]]
+name = "ibc-proto"
+version = "0.32.0"
+source = "git+https://github.com/cosmos/ibc-proto-rs.git?rev=af385af#af385afa8d7e4c407f5d12242ea1dfc6d273580b"
+dependencies = [
+ "base64 0.21.2",
+ "bytes",
+ "flex-error",
+ "ics23 0.10.1 (git+https://github.com/cosmos/ics23.git?rev=27868a6)",
+ "prost",
  "serde",
  "subtle-encoding",
  "tendermint-proto",
@@ -1120,7 +1138,20 @@ dependencies = [
  "bytes",
  "hex",
  "prost",
+]
+
+[[package]]
+name = "ics23"
+version = "0.10.1"
+source = "git+https://github.com/cosmos/ics23.git?rev=27868a6#27868a61368e6bcfd922c87f511677717c677f00"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "hex",
+ "informalsystems-pbjson",
+ "prost",
  "ripemd",
+ "serde",
  "sha2 0.10.6",
  "sha3",
 ]
@@ -1178,6 +1209,15 @@ checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
 dependencies = [
  "autocfg",
  "hashbrown 0.12.3",
+ "serde",
+]
+
+[[package]]
+name = "informalsystems-pbjson"
+version = "0.6.0"
+source = "git+https://github.com/informalsystems/pbjson?rev=e54f504#e54f504cb04e429bdb3cf14f0a659965235fd077"
+dependencies = [
+ "base64 0.13.1",
  "serde",
 ]
 
@@ -1420,7 +1460,7 @@ name = "no-std-check"
 version = "0.1.0"
 dependencies = [
  "ibc",
- "ibc-proto",
+ "ibc-proto 0.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-core 21.0.0",
  "sp-io",
  "sp-runtime",
