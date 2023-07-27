@@ -53,6 +53,9 @@ pub mod clients;
 pub mod core;
 pub mod hosts;
 
+#[cfg(feature = "grpc")]
+pub mod services;
+
 #[cfg(any(test, feature = "mocks"))]
 pub mod mock;
 #[cfg(any(test, feature = "mocks"))]
