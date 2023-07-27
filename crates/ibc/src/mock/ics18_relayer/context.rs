@@ -36,6 +36,7 @@ mod tests {
     use crate::mock::host::{HostBlock, HostType};
     use crate::mock::ics18_relayer::context::RelayerContext;
     use crate::mock::ics18_relayer::error::RelayerError;
+    use crate::mock::router::MockRouter;
     use crate::prelude::*;
     use crate::Height;
 
@@ -113,6 +114,9 @@ mod tests {
                     Some(tm_client_type()), // The target host chain (B) is synthetic TM.
                     Some(client_on_a_for_b_height),
                 );
+        // dummy; not actually used in client updates
+        let mut router_a = MockRouter::new();
+
         let mut ctx_b = MockContext::new(
             chain_id_b,
             HostType::SyntheticTendermint,
@@ -126,6 +130,8 @@ mod tests {
             Some(mock_client_type()), // The target host chain is mock.
             Some(client_on_b_for_a_height),
         );
+        // dummy; not actually used in client updates
+        let mut router_b = MockRouter::new();
 
         for _i in 0..num_iterations {
             // Update client on chain B to latest height of A.
@@ -143,7 +149,7 @@ mod tests {
 
             // - send the message to B. We bypass ICS18 interface and call directly into
             // MockContext `recv` method (to avoid additional serialization steps).
-            let dispatch_res_b = ctx_b.deliver(MsgEnvelope::Client(client_msg_b));
+            let dispatch_res_b = ctx_b.deliver(&mut router_b, MsgEnvelope::Client(client_msg_b));
             let validation_res = ctx_b.validate();
             assert!(
                 validation_res.is_ok(),
@@ -182,7 +188,7 @@ mod tests {
             debug!("client_msg_a = {:?}", client_msg_a);
 
             // - send the message to A
-            let dispatch_res_a = ctx_a.deliver(MsgEnvelope::Client(client_msg_a));
+            let dispatch_res_a = ctx_a.deliver(&mut router_a, MsgEnvelope::Client(client_msg_a));
             let validation_res = ctx_a.validate();
             assert!(
                 validation_res.is_ok(),

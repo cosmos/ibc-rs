@@ -27,7 +27,6 @@ use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
     ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
-use crate::core::router::Router;
 use crate::core::timestamp::Timestamp;
 use crate::Height;
 
@@ -92,7 +91,7 @@ impl std::error::Error for RouterError {
 /// Context to be implemented by the host that provides all "read-only" methods.
 ///
 /// Trait used for the top-level [`validate`](crate::core::validate)
-pub trait ValidationContext: Router {
+pub trait ValidationContext {
     type ClientValidationContext;
     type E: ClientExecutionContext;
     type AnyConsensusState: ConsensusState;

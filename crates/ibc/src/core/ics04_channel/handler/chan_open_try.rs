@@ -16,11 +16,12 @@ use crate::core::ics24_host::identifier::ChannelId;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::core::ics24_host::path::{SeqAckPath, SeqRecvPath, SeqSendPath};
-use crate::core::router::ModuleId;
+use crate::core::router::{ModuleId, Router};
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_open_try_validate<ValCtx>(
     ctx_b: &ValCtx,
+    router_b: &impl Router,
     module_id: ModuleId,
     msg: MsgChannelOpenTry,
 ) -> Result<(), ContextError>
@@ -31,7 +32,7 @@ where
 
     let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
 
-    let module = ctx_b
+    let module = router_b
         .get_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     module.on_chan_open_try_validate(
@@ -48,6 +49,7 @@ where
 
 pub(crate) fn chan_open_try_execute<ExecCtx>(
     ctx_b: &mut ExecCtx,
+    router_b: &mut impl Router,
     module_id: ModuleId,
     msg: MsgChannelOpenTry,
 ) -> Result<(), ContextError>
@@ -55,7 +57,7 @@ where
     ExecCtx: ExecutionContext,
 {
     let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
-    let module = ctx_b
+    let module = router_b
         .get_route_mut(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
 
@@ -205,10 +207,12 @@ mod tests {
     use crate::applications::transfer::MODULE_ID_STR;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
+    use crate::mock::router::MockRouter;
     use crate::test_utils::DummyTransferModule;
 
     pub struct Fixture {
         pub ctx: MockContext,
+        pub router: MockRouter,
         pub module_id: ModuleId,
         pub msg: MsgChannelOpenTry,
         pub client_id_on_b: ClientId,
@@ -242,12 +246,16 @@ mod tests {
         msg.connection_hops_on_b = hops;
 
         let mut ctx = MockContext::default();
-        let module = DummyTransferModule::new();
+
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        ctx.add_route(module_id.clone(), module).unwrap();
+        let mut router = MockRouter::new();
+        router
+            .add_route(module_id.clone(), DummyTransferModule::new())
+            .unwrap();
 
         Fixture {
             ctx,
+            router,
             module_id,
             msg,
             client_id_on_b,
@@ -313,6 +321,7 @@ mod tests {
     fn chan_open_try_execute_happy_path(fixture: Fixture) {
         let Fixture {
             ctx,
+            router,
             module_id,
             msg,
             client_id_on_b,
@@ -326,7 +335,7 @@ mod tests {
             .with_client(&client_id_on_b, Height::new(0, proof_height).unwrap())
             .with_connection(conn_id_on_b, conn_end_on_b);
 
-        let res = chan_open_try_execute(&mut ctx, module_id, msg);
+        let res = chan_open_try_execute(&mut ctx, &mut router, module_id, msg);
 
         assert!(res.is_ok(), "Execution success: happy path");
 

@@ -10,11 +10,12 @@ use crate::core::ics04_channel::events::OpenInit;
 use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
 use crate::core::ics24_host::identifier::ChannelId;
 use crate::core::ics24_host::path::{ChannelEndPath, SeqAckPath, SeqRecvPath, SeqSendPath};
-use crate::core::router::ModuleId;
+use crate::core::router::{ModuleId, Router};
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_open_init_validate<ValCtx>(
     ctx_a: &ValCtx,
+    router_a: &impl Router,
     module_id: ModuleId,
     msg: MsgChannelOpenInit,
 ) -> Result<(), ContextError>
@@ -24,7 +25,7 @@ where
     validate(ctx_a, &msg)?;
     let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
 
-    let module = ctx_a
+    let module = router_a
         .get_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     module.on_chan_open_init_validate(
@@ -41,6 +42,7 @@ where
 
 pub(crate) fn chan_open_init_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
+    router_a: &mut impl Router,
     module_id: ModuleId,
     msg: MsgChannelOpenInit,
 ) -> Result<(), ContextError>
@@ -48,7 +50,7 @@ where
     ExecCtx: ExecutionContext,
 {
     let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
-    let module = ctx_a
+    let module = router_a
         .get_route_mut(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     let (extras, version) = module.on_chan_open_init_execute(
@@ -156,11 +158,13 @@ mod tests {
 
     use crate::applications::transfer::MODULE_ID_STR;
     use crate::mock::context::MockContext;
+    use crate::mock::router::MockRouter;
     use crate::test_utils::DummyTransferModule;
     use test_log::test;
 
     pub struct Fixture {
         pub ctx: MockContext,
+        pub router: MockRouter,
         pub module_id: ModuleId,
         pub msg: MsgChannelOpenInit,
     }
@@ -171,8 +175,10 @@ mod tests {
 
         let mut default_ctx = MockContext::default();
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        let module = DummyTransferModule::new();
-        default_ctx.add_route(module_id.clone(), module).unwrap();
+        let mut router = MockRouter::new();
+        router
+            .add_route(module_id.clone(), DummyTransferModule::new())
+            .unwrap();
 
         let msg_conn_init = MsgConnectionOpenInit::new_dummy();
 
@@ -194,6 +200,7 @@ mod tests {
 
         Fixture {
             ctx,
+            router,
             module_id,
             msg,
         }
@@ -238,11 +245,12 @@ mod tests {
     fn chan_open_init_execute_happy_path(fixture: Fixture) {
         let Fixture {
             mut ctx,
+            mut router,
             module_id,
             msg,
         } = fixture;
 
-        let res = chan_open_init_execute(&mut ctx, module_id, msg);
+        let res = chan_open_init_execute(&mut ctx, &mut router, module_id, msg);
 
         assert!(res.is_ok(), "Execution succeeds; good parameters");
 

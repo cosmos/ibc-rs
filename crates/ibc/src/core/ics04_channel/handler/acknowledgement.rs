@@ -1,3 +1,4 @@
+use crate::core::router::Router;
 use crate::prelude::*;
 
 use crate::core::events::MessageEvent;
@@ -19,6 +20,7 @@ use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn acknowledgement_packet_validate<ValCtx>(
     ctx_a: &ValCtx,
+    router_a: &impl Router,
     module_id: ModuleId,
     msg: MsgAcknowledgement,
 ) -> Result<(), ContextError>
@@ -27,7 +29,7 @@ where
 {
     validate(ctx_a, &msg)?;
 
-    let module = ctx_a
+    let module = router_a
         .get_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
 
@@ -38,6 +40,7 @@ where
 
 pub(crate) fn acknowledgement_packet_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
+    router_a: &mut impl Router,
     module_id: ModuleId,
     msg: MsgAcknowledgement,
 ) -> Result<(), ContextError>
@@ -73,7 +76,7 @@ where
         return Ok(());
     };
 
-    let module = ctx_a
+    let module = router_a
         .get_route_mut(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
 
@@ -240,10 +243,12 @@ mod tests {
     use crate::core::timestamp::ZERO_DURATION;
 
     use crate::mock::context::MockContext;
+    use crate::mock::router::MockRouter;
     use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
 
     struct Fixture {
         ctx: MockContext,
+        router: MockRouter,
         client_height: Height,
         module_id: ModuleId,
         msg: MsgAcknowledgement,
@@ -257,10 +262,11 @@ mod tests {
     fn fixture() -> Fixture {
         let client_height = Height::new(0, 2).unwrap();
         let mut ctx = MockContext::default().with_client(&ClientId::default(), client_height);
+        let mut router = MockRouter::new();
 
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let module = DummyTransferModule::new();
-        ctx.add_route(module_id.clone(), module).unwrap();
+        router.add_route(module_id.clone(), module).unwrap();
 
         let msg = MsgAcknowledgement::try_from(get_dummy_raw_msg_acknowledgement(
             client_height.revision_height(),
@@ -302,6 +308,7 @@ mod tests {
 
         Fixture {
             ctx,
+            router,
             client_height,
             module_id,
             msg,
@@ -402,6 +409,7 @@ mod tests {
     fn ack_unordered_chan_execute(fixture: Fixture) {
         let Fixture {
             ctx,
+            mut router,
             module_id,
             msg,
             packet_commitment,
@@ -423,7 +431,7 @@ mod tests {
                 packet_commitment,
             );
 
-        let res = acknowledgement_packet_execute(&mut ctx, module_id, msg);
+        let res = acknowledgement_packet_execute(&mut ctx, &mut router, module_id, msg);
 
         assert!(res.is_ok());
 
@@ -439,6 +447,7 @@ mod tests {
     fn ack_ordered_chan_execute(fixture: Fixture) {
         let Fixture {
             ctx,
+            mut router,
             module_id,
             msg,
             packet_commitment,
@@ -460,7 +469,7 @@ mod tests {
                 packet_commitment,
             );
 
-        let res = acknowledgement_packet_execute(&mut ctx, module_id, msg);
+        let res = acknowledgement_packet_execute(&mut ctx, &mut router, module_id, msg);
 
         assert!(res.is_ok());
 

@@ -9,11 +9,12 @@ use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::events::CloseInit;
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
 use crate::core::ics24_host::path::ChannelEndPath;
-use crate::core::router::ModuleId;
+use crate::core::router::{ModuleId, Router};
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_close_init_validate<ValCtx>(
     ctx_a: &ValCtx,
+    router_a: &impl Router,
     module_id: ModuleId,
     msg: MsgChannelCloseInit,
 ) -> Result<(), ContextError>
@@ -22,7 +23,7 @@ where
 {
     validate(ctx_a, &msg)?;
 
-    let module = ctx_a
+    let module = router_a
         .get_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     module.on_chan_close_init_validate(&msg.port_id_on_a, &msg.chan_id_on_a)?;
@@ -32,13 +33,14 @@ where
 
 pub(crate) fn chan_close_init_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
+    router_a: &mut impl Router,
     module_id: ModuleId,
     msg: MsgChannelCloseInit,
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
 {
-    let module = ctx_a
+    let module = router_a
         .get_route_mut(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     let extras = module.on_chan_close_init_execute(&msg.port_id_on_a, &msg.chan_id_on_a)?;
@@ -142,6 +144,7 @@ mod tests {
     use crate::applications::transfer::MODULE_ID_STR;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
+    use crate::mock::router::MockRouter;
     use crate::test_utils::DummyTransferModule;
 
     #[test]
@@ -227,10 +230,6 @@ mod tests {
             let mut default_context = MockContext::default();
             let client_consensus_state_height = default_context.host_height().unwrap();
 
-            let module = DummyTransferModule::new();
-            let module_id = ModuleId::new(MODULE_ID_STR.to_string());
-            default_context.add_route(module_id, module).unwrap();
-
             default_context
                 .with_client(&client_id, client_consensus_state_height)
                 .with_connection(conn_id, conn_end)
@@ -241,8 +240,12 @@ mod tests {
                 )
         };
 
+        let mut router = MockRouter::new();
+        router.add_route(ModuleId::new(MODULE_ID_STR.to_string()), DummyTransferModule::new()).unwrap();
+
         let res = chan_close_init_execute(
             &mut context,
+            &mut router,
             ModuleId::new(MODULE_ID_STR.to_string()),
             msg_chan_close_init,
         );

@@ -16,7 +16,7 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
-use crate::core::router::ModuleId;
+use crate::core::router::{ModuleId, Router};
 use crate::core::timestamp::Expiry;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
@@ -36,6 +36,7 @@ where
 
 pub(crate) fn recv_packet_execute<ExecCtx>(
     ctx_b: &mut ExecCtx,
+    router_b: &mut impl Router,
     module_id: ModuleId,
     msg: MsgRecvPacket,
 ) -> Result<(), ContextError>
@@ -74,7 +75,7 @@ where
         }
     }
 
-    let module = ctx_b
+    let module = router_b
         .get_route_mut(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
 
@@ -301,11 +302,13 @@ mod tests {
 
     use crate::mock::context::MockContext;
     use crate::mock::ics18_relayer::context::RelayerContext;
+    use crate::mock::router::MockRouter;
     use crate::test_utils::get_dummy_account_id;
     use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
 
     pub struct Fixture {
         pub context: MockContext,
+        pub router: MockRouter,
         pub module_id: ModuleId,
         pub client_height: Height,
         pub host_height: Height,
@@ -319,8 +322,10 @@ mod tests {
         let mut context = MockContext::default();
 
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        let module = DummyTransferModule::new();
-        context.add_route(module_id.clone(), module).unwrap();
+        let mut router = MockRouter::new();
+        router
+            .add_route(module_id.clone(), DummyTransferModule::new())
+            .unwrap();
 
         let host_height = context.query_latest_height().unwrap().increment();
 
@@ -357,6 +362,7 @@ mod tests {
 
         Fixture {
             context,
+            router,
             module_id,
             client_height,
             host_height,
@@ -483,6 +489,7 @@ mod tests {
     fn recv_packet_execute_happy_path(fixture: Fixture) {
         let Fixture {
             context,
+            router,
             module_id,
             msg,
             conn_end_on_b,
@@ -495,7 +502,7 @@ mod tests {
             .with_connection(ConnectionId::default(), conn_end_on_b)
             .with_channel(PortId::default(), ChannelId::default(), chan_end_on_b);
 
-        let res = recv_packet_execute(&mut ctx, module_id, msg);
+        let res = recv_packet_execute(&mut ctx, &mut router, module_id, msg);
 
         assert!(res.is_ok());
 

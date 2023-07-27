@@ -14,11 +14,12 @@ use crate::core::ics04_channel::events::OpenAck;
 use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
-use crate::core::router::ModuleId;
+use crate::core::router::{ModuleId, Router};
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_open_ack_validate<ValCtx>(
     ctx_a: &ValCtx,
+    router_a: &impl Router,
     module_id: ModuleId,
     msg: MsgChannelOpenAck,
 ) -> Result<(), ContextError>
@@ -27,7 +28,7 @@ where
 {
     validate(ctx_a, &msg)?;
 
-    let module = ctx_a
+    let module = router_a
         .get_route(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     module.on_chan_open_ack_validate(&msg.port_id_on_a, &msg.chan_id_on_a, &msg.version_on_b)?;
@@ -37,13 +38,14 @@ where
 
 pub(crate) fn chan_open_ack_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
+    router_a: &mut impl Router,
     module_id: ModuleId,
     msg: MsgChannelOpenAck,
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
 {
-    let module = ctx_a
+    let module = router_a
         .get_route_mut(&module_id)
         .ok_or(ChannelError::RouteNotFound)?;
     let extras =
@@ -185,10 +187,12 @@ mod tests {
 
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
+    use crate::mock::router::MockRouter;
     use crate::test_utils::DummyTransferModule;
 
     pub struct Fixture {
         pub context: MockContext,
+        pub router: MockRouter,
         pub module_id: ModuleId,
         pub msg: MsgChannelOpenAck,
         pub client_id_on_a: ClientId,
@@ -202,9 +206,12 @@ mod tests {
     fn fixture() -> Fixture {
         let proof_height = 10;
         let mut context = MockContext::default();
-        let module = DummyTransferModule::new();
-        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        context.add_route(module_id.clone(), module).unwrap();
+
+        let module_id = ModuleId::new(MODULE_ID_STR.to_string());
+        let mut router = MockRouter::new();
+        router
+            .add_route(module_id.clone(), DummyTransferModule::new())
+            .unwrap();
 
         let client_id_on_a = ClientId::new(mock_client_type(), 45).unwrap();
         let conn_id_on_a = ConnectionId::new(2);
@@ -231,6 +238,7 @@ mod tests {
 
         Fixture {
             context,
+            router,
             module_id,
             msg,
             client_id_on_a,
@@ -359,6 +367,7 @@ mod tests {
     fn chan_open_ack_execute_happy_path(fixture: Fixture) {
         let Fixture {
             context,
+            router,
             module_id,
             msg,
             client_id_on_a,
@@ -378,7 +387,7 @@ mod tests {
                 chan_end_on_a,
             );
 
-        let res = chan_open_ack_execute(&mut context, module_id, msg);
+        let res = chan_open_ack_execute(&mut context, &mut router, module_id, msg);
 
         assert!(res.is_ok(), "Execution happy path");
 
