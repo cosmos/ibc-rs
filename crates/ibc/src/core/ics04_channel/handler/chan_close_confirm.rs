@@ -282,13 +282,18 @@ mod tests {
                 msg_chan_close_confirm.chan_id_on_b.clone(),
                 chan_end,
             );
-        let mut router = MockRouter::new();
+        let mut router = MockRouter::default();
 
         let module = DummyTransferModule::new();
         let module_id = ModuleId::new(MODULE_ID_STR.to_string());
         router.add_route(module_id.clone(), module).unwrap();
 
-        let res = chan_close_confirm_execute(&mut context, &mut router, module_id, msg_chan_close_confirm);
+        let res = chan_close_confirm_execute(
+            &mut context,
+            &mut router,
+            module_id,
+            msg_chan_close_confirm,
+        );
         assert!(res.is_ok(), "Execution success: happy path");
 
         assert_eq!(context.events.len(), 2);

@@ -3,6 +3,7 @@ use alloc::{collections::BTreeMap, sync::Arc};
 
 use crate::core::router::{Module, ModuleId, Router};
 
+#[derive(Default)]
 pub struct MockRouter {
     router: BTreeMap<ModuleId, Arc<dyn Module>>,
 
@@ -11,13 +12,6 @@ pub struct MockRouter {
 }
 
 impl MockRouter {
-    pub fn new() -> Self {
-        Self {
-            router: BTreeMap::new(),
-            port_to_module: BTreeMap::new(),
-        }
-    }
-
     pub fn add_route(
         &mut self,
         module_id: ModuleId,

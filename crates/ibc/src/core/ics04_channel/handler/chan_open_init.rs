@@ -173,9 +173,9 @@ mod tests {
     fn fixture() -> Fixture {
         let msg = MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
 
-        let mut default_ctx = MockContext::default();
+        let default_ctx = MockContext::default();
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        let mut router = MockRouter::new();
+        let mut router = MockRouter::default();
         router
             .add_route(module_id.clone(), DummyTransferModule::new())
             .unwrap();

@@ -314,12 +314,12 @@ mod tests {
     #[fixture]
     fn fixture() -> Fixture {
         let client_height = Height::new(0, 2).unwrap();
-        let mut ctx = MockContext::default().with_client(&ClientId::default(), client_height);
+        let ctx = MockContext::default().with_client(&ClientId::default(), client_height);
 
         let client_height = Height::new(0, 2).unwrap();
 
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        let mut router = MockRouter::new();
+        let mut router = MockRouter::default();
         router
             .add_route(module_id.clone(), DummyTransferModule::new())
             .unwrap();
@@ -616,7 +616,7 @@ mod tests {
     fn timeout_unordered_chan_execute(fixture: Fixture) {
         let Fixture {
             ctx,
-            router,
+            mut router,
             module_id,
             msg,
             packet_commitment,
@@ -660,7 +660,7 @@ mod tests {
     fn timeout_ordered_chan_execute(fixture: Fixture) {
         let Fixture {
             ctx,
-            router,
+            mut router,
             module_id,
             msg,
             packet_commitment,

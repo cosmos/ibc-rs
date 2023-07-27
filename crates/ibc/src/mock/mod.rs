@@ -6,8 +6,6 @@ pub mod client_state;
 pub mod consensus_state;
 #[cfg(any(test, feature = "mocks"))]
 pub mod context;
-#[cfg(any(test, feature = "mocks"))]
-pub mod router;
 #[cfg(any(test, feature = "mocks", feature = "mocks-no-std"))]
 pub mod header;
 #[cfg(any(test, feature = "mocks"))]
@@ -16,3 +14,5 @@ pub mod host;
 pub mod ics18_relayer;
 #[cfg(any(test, feature = "mocks", feature = "mocks-no-std"))]
 pub mod misbehaviour;
+#[cfg(any(test, feature = "mocks"))]
+pub mod router;

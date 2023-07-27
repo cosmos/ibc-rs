@@ -227,7 +227,7 @@ mod tests {
         .unwrap();
 
         let mut context = {
-            let mut default_context = MockContext::default();
+            let default_context = MockContext::default();
             let client_consensus_state_height = default_context.host_height().unwrap();
 
             default_context
@@ -240,8 +240,13 @@ mod tests {
                 )
         };
 
-        let mut router = MockRouter::new();
-        router.add_route(ModuleId::new(MODULE_ID_STR.to_string()), DummyTransferModule::new()).unwrap();
+        let mut router = MockRouter::default();
+        router
+            .add_route(
+                ModuleId::new(MODULE_ID_STR.to_string()),
+                DummyTransferModule::new(),
+            )
+            .unwrap();
 
         let res = chan_close_init_execute(
             &mut context,

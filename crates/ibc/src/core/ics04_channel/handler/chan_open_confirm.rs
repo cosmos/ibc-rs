@@ -210,10 +210,10 @@ mod tests {
     #[fixture]
     fn fixture() -> Fixture {
         let proof_height = 10;
-        let mut context = MockContext::default();
+        let context = MockContext::default();
 
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        let mut router = MockRouter::new();
+        let mut router = MockRouter::default();
         router
             .add_route(module_id.clone(), DummyTransferModule::new())
             .unwrap();
@@ -346,7 +346,7 @@ mod tests {
     fn chan_open_confirm_execute_happy_path(fixture: Fixture) {
         let Fixture {
             context,
-            router,
+            mut router,
             module_id,
             msg,
             client_id_on_b,

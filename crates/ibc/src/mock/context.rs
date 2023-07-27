@@ -1676,13 +1676,7 @@ mod tests {
             }
         }
 
-        let mut ctx = MockContext::new(
-            ChainId::new("mockgaia", 1),
-            HostType::Mock,
-            1,
-            Height::new(1, 1).expect("Never fails"),
-        );
-        let mut router = MockRouter::new();
+        let mut router = MockRouter::default();
         router
             .add_route(ModuleId::new("foomodule".to_string()), FooModule::default())
             .expect("Never fails");

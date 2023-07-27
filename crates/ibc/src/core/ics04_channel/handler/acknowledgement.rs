@@ -261,8 +261,8 @@ mod tests {
     #[fixture]
     fn fixture() -> Fixture {
         let client_height = Height::new(0, 2).unwrap();
-        let mut ctx = MockContext::default().with_client(&ClientId::default(), client_height);
-        let mut router = MockRouter::new();
+        let ctx = MockContext::default().with_client(&ClientId::default(), client_height);
+        let mut router = MockRouter::default();
 
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let module = DummyTransferModule::new();

@@ -301,7 +301,7 @@ mod tests {
         // We reuse this same context across all tests. Nothing in particular needs parametrizing.
         let mut ctx = MockContext::default();
 
-        let mut router = MockRouter::new();
+        let mut router = MockRouter::default();
         router
             .add_route(transfer_module_id.clone(), DummyTransferModule::new())
             .unwrap();
@@ -657,7 +657,7 @@ mod tests {
                 )
                 .unwrap(),
             );
-        let mut router = MockRouter::new();
+        let mut router = MockRouter::default();
 
         router
             .add_route(module_id.clone(), DummyTransferModule::new())
@@ -783,7 +783,7 @@ mod tests {
 
     #[test]
     fn test_chan_close_init_event() {
-        let (mut ctx, mut router) = get_channel_events_ctx_router();
+        let (ctx, mut router) = get_channel_events_ctx_router();
         let mut ctx = ctx.with_channel(
             PortId::default(),
             ChannelId::default(),
@@ -817,7 +817,7 @@ mod tests {
 
     #[test]
     fn test_chan_close_confirm_event() {
-        let (mut ctx, mut router) = get_channel_events_ctx_router();
+        let (ctx, mut router) = get_channel_events_ctx_router();
         let mut ctx = ctx.with_channel(
             PortId::default(),
             ChannelId::default(),

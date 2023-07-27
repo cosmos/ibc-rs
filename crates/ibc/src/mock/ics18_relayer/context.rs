@@ -115,7 +115,7 @@ mod tests {
                     Some(client_on_a_for_b_height),
                 );
         // dummy; not actually used in client updates
-        let mut router_a = MockRouter::new();
+        let mut router_a = MockRouter::default();
 
         let mut ctx_b = MockContext::new(
             chain_id_b,
@@ -131,7 +131,7 @@ mod tests {
             Some(client_on_b_for_a_height),
         );
         // dummy; not actually used in client updates
-        let mut router_b = MockRouter::new();
+        let mut router_b = MockRouter::default();
 
         for _i in 0..num_iterations {
             // Update client on chain B to latest height of A.

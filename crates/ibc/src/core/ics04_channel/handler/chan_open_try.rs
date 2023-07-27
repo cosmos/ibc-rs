@@ -245,10 +245,10 @@ mod tests {
         let hops = vec![conn_id_on_b.clone()];
         msg.connection_hops_on_b = hops;
 
-        let mut ctx = MockContext::default();
+        let ctx = MockContext::default();
 
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        let mut router = MockRouter::new();
+        let mut router = MockRouter::default();
         router
             .add_route(module_id.clone(), DummyTransferModule::new())
             .unwrap();
@@ -321,7 +321,7 @@ mod tests {
     fn chan_open_try_execute_happy_path(fixture: Fixture) {
         let Fixture {
             ctx,
-            router,
+            mut router,
             module_id,
             msg,
             client_id_on_b,
