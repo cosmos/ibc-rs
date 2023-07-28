@@ -198,6 +198,7 @@ html {
   }
 
   .breadcrumbs__item {
+    @apply flex items-center;
     &:first-child {
       & > a {
         &::after {
@@ -210,12 +211,7 @@ html {
     }
     &:not(:last-child)::after {
       content: ">";
-      @apply bg-none;
-    }
-  }
-  .theme-doc-breadcrumbs {
-    @media (min-width: 997px) {
-      @apply pt-[calc(theme(spacing.7)-1rem)];
+      @apply flex items-center bg-none;
     }
   }
   .theme-doc-toc-mobile {

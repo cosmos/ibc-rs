@@ -28,7 +28,7 @@ a good starting point to review terminology, concepts, and specifications:
 IBC-rs is designed to serve the complete suite of IBC protocol standards. As
 such, it supports all the core specifications essential for TAO (Transfer,
 Authentication, Ordering), spanning from ICS-02 to ICS-05, as well as ICS-24 and
-ICS-26. However, few
+ICS-26. However, a few
 [divergences](https://github.com/cosmos/ibc-rs/tree/main/crates/ibc#divergence-from-the-interchain-standards-ics)
 from the interchain standards (ICS) are introduced to accommodate the
 implementation.
@@ -48,17 +48,17 @@ Check out our [project board](https://github.com/orgs/cosmos/projects/27) for
 
 To get a better understanding of IBC-rs implementation, check out the following sections:
 
-* [**Overview**](./../overview/overview.md) - Provides and overview of IBC-rs
-  and learn about the basics of implementation.
+* [**Overview**](./../overview/overview.md) - Provides an overview of how IBC-rs
+  implements the IBC protocol.
 * [**ADRs**](./../../developers/architecture/README.md) - Learn about the
-  architectural decisions.
-* [**FAQ Page**](https://github.com/cosmos/ibc-rs/wiki/FAQ) - Frequently asked
+  architectural design decisions.
+* [**FAQ Page**](https://github.com/cosmos/ibc-rs/wiki/FAQ) - Browse frequently asked
   questions about IBC-rs.
 
-## How to Integrate
+## How to Integrate IBC
 
-* [**Integration**](./../../developers/integration/integration.md) - Learn how to
-  integrate IBC-rs into your project.
+* [**Integration**](./../../developers/integration/overview) - Learn how to
+  integrate IBC module and relayer into your blockchain.
 
 ## Explore the Stack
 
@@ -70,7 +70,7 @@ Check out the docs of projects relate to the IBC-rs stack:
   relayer.
 * [**Basecoin**](https://github.com/informalsystems/basecoin-rs) - A basic Rust
   implementation of the CometBFT ABCI application, primarily serving as our
-  testing platform.
+  testing stand.
 * [**IBC-Go**](https://ibc.cosmos.network/) - A Go implementation of the IBC
   protocol.
 
@@ -92,7 +92,7 @@ repository](https://github.com/cosmos/ibc-go/security/policy).
 * [**GitHub Discussions**](https://github.com/cosmos/ibc-rs/discussions) - Ask
   questions and discuss IBC-rs development on GitHub.
 * [**Want to
-  Contribute?**](https://github.com/cosmos/ibc-rs/blob/main/CONTRIBUTING.md) -
+  Contribute?**](./developers/intro/contributing) -
   Learn how to contribute to IBC-rs development.
 * [**Found an Issue?**](https://github.com/cosmos/ibc-rs/edit/main/docs/docs/DOC_README.md) - Help us
   improve the documentation by suggesting edits on GitHub.
