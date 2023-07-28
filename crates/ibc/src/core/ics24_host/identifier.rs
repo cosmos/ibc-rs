@@ -101,6 +101,8 @@ impl ChainId {
     /// assert_eq!(chain_id.revision_number(), 2);
     /// ```
     pub fn set_revision_number(&mut self, revision_number: u64) {
+        let chain_name = self.chain_name();
+        self.id = format!("{}-{}", chain_name, revision_number);
         self.revision_number = revision_number;
     }
 
