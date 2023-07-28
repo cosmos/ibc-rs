@@ -42,7 +42,10 @@ const TRANSFER_PORT_ID: &str = "transfer";
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ChainId(String);
+pub struct ChainId {
+    id: String,
+    revision_number: u64,
+}
 
 impl ChainId {
     /// Creates a new `ChainId` with the given chain name and revision number.
@@ -62,22 +65,22 @@ impl ChainId {
     pub fn new(name: &str, revision_number: u64) -> Result<Self, IdentifierError> {
         let prefix = name.trim();
         validate_identifier_chars(prefix)?;
-        Ok(Self::new_without_validation(name, revision_number))
-    }
-
-    /// Creates a new `ChainId` without validating the chain name.
-    fn new_without_validation(name: &str, revision_number: u64) -> Self {
-        Self(format!("{name}-{revision_number}"))
+        validate_identifier_length(prefix, 1, 43)?;
+        let id = format!("{prefix}-{revision_number}");
+        Ok(Self {
+            id,
+            revision_number,
+        })
     }
 
     /// Get a reference to the underlying string.
     pub fn as_str(&self) -> &str {
-        &self.0
+        &self.id
     }
 
     pub fn split_chain_id(&self) -> (&str, u64) {
         parse_chain_id_string(self.as_str())
-            .expect("never fails because we use a valid chain identifier")
+            .expect("never fails because a valid chain identifier is parsed")
     }
 
     /// Extract the chain name from the chain identifier
@@ -87,7 +90,7 @@ impl ChainId {
 
     /// Extract the revision number from the chain identifier
     pub fn revision_number(&self) -> u64 {
-        self.split_chain_id().1
+        self.revision_number
     }
 
     /// Swaps `ChainId`s revision number with the new specified revision number
@@ -98,9 +101,7 @@ impl ChainId {
     /// assert_eq!(chain_id.revision_number(), 2);
     /// ```
     pub fn set_revision_number(&mut self, revision_number: u64) {
-        let chain_name = self.chain_name();
-
-        self.0 = format!("{chain_name}-{revision_number}");
+        self.revision_number = revision_number;
     }
 
     /// A convenient method to check if the `ChainId` forms a valid identifier
@@ -117,36 +118,21 @@ impl ChainId {
 
 /// Construct a `ChainId` from a string literal only if it forms a valid
 /// identifier.
-///
-/// ```
-/// use core::str::FromStr;
-/// use ibc::core::ics24_host::identifier::ChainId;
-/// assert!(ChainId::from_str("chainA-0").is_ok());
-/// assert!(ChainId::from_str("chainA-1").is_ok());
-/// assert!(ChainId::from_str("chainA-1-2").is_ok());
-/// assert!(ChainId::from_str("1").is_err());
-/// assert!(ChainId::from_str("-1").is_err());
-/// assert!(ChainId::from_str("--1").is_err());
-/// assert!(ChainId::from_str("chainA").is_err());
-/// assert!(ChainId::from_str("chainA-").is_err());
-/// assert!(ChainId::from_str("chainA-a").is_err());
-/// assert!(ChainId::from_str("/chainA-1").is_err());
-/// assert!(ChainId::from_str("chainA-1-").is_err());
-/// assert!(ChainId::from_str("chainA-1--2").is_err());
-/// ```
-///
 impl FromStr for ChainId {
     type Err = IdentifierError;
 
     fn from_str(id: &str) -> Result<Self, Self::Err> {
-        let (name, revision_number) = parse_chain_id_string(id)?;
-        Self::new(name, revision_number)
+        let (_, revision_number) = parse_chain_id_string(id)?;
+        Ok(Self {
+            id: id.to_string(),
+            revision_number,
+        })
     }
 }
 
 impl Display for ChainId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "{}", self.0)
+        write!(f, "{}", self.id)
     }
 }
 
@@ -162,16 +148,17 @@ fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, u64), IdentifierEr
         }
     };
 
-    // The only additional check beyond ICS-24 to ensure the chain name does not
-    // end with a dash
-    if let Some(last_char) = name.chars().last() {
-        if last_char == '-' {
-            return Err(IdentifierError::InvalidCharacter {
-                id: chain_id_str.to_string(),
-            });
-        }
+    // Validates the chain name for allowed characters according to ICS-24.
+    validate_identifier_chars(name)?;
+
+    // Validates the revision number not to start with leading zeros, like "01".
+    if rev_number_str.as_bytes().first() == Some(&b'0') && rev_number_str.len() > 1 {
+        return Err(IdentifierError::InvalidCharacter {
+            id: chain_id_str.to_string(),
+        });
     }
 
+    // Parses the revision number string into a `u64` and checks its validity.
     let revision_number =
         rev_number_str
             .parse()
@@ -527,3 +514,30 @@ pub enum IdentifierError {
 
 #[cfg(feature = "std")]
 impl std::error::Error for IdentifierError {}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_valid_chain_id() {
+        assert!(ChainId::from_str("chainA-0").is_ok());
+        assert!(ChainId::from_str("chainA-1").is_ok());
+        assert!(ChainId::from_str("chainA--1").is_ok());
+        assert!(ChainId::from_str("chainA-1-2").is_ok());
+    }
+
+    #[test]
+    fn test_invalid_chain_id() {
+        assert!(ChainId::from_str("1").is_err());
+        assert!(ChainId::from_str("-1").is_err());
+        assert!(ChainId::from_str("   -1").is_err());
+        assert!(ChainId::from_str("chainA").is_err());
+        assert!(ChainId::from_str("chainA-").is_err());
+        assert!(ChainId::from_str("chainA-a").is_err());
+        assert!(ChainId::from_str("chainA-01").is_err());
+        assert!(ChainId::from_str("/chainA-1").is_err());
+        assert!(ChainId::from_str("chainA-1-").is_err());
+    }
+}

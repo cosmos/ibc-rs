@@ -55,6 +55,8 @@ pub fn validate_identifier_length(id: &str, min: usize, max: usize) -> Result<()
 }
 
 /// Checks if a prefix forms a valid identifier with the given min/max identifier's length.
+/// The prefix must be between `min_id_length - 2`, considering `u64::MIN` (1 char) and "-"
+/// and `max_id_length - 21` characters, considering `u64::MAX` (20 chars) and "-".
 pub fn validate_prefix_length(
     prefix: &str,
     min_id_length: usize,

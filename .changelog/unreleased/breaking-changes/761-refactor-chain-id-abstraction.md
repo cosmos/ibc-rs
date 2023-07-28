@@ -1,3 +1,3 @@
-- Enhance `ChainId` abstraction to achieve a more precise and optimized
-  approach in creating and validating chain identifiers.
+- Enhancements and fixes to `ChainId` impls and validation.
   ([#761](https://github.com/cosmos/ibc-rs/issues/761))
+

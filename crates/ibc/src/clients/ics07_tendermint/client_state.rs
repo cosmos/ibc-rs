@@ -829,27 +829,17 @@ mod tests {
                 want_pass: true,
             },
             Test {
-                name: "Max valid long (30 chars) chain-id to keep revision number under u16::MAX"
-                    .to_string(),
+                name: "Valid long (50 chars) chain-id that satisfies revision_number length < `u16::MAX` length".to_string(),
                 params: ClientStateParams {
-                    id: ChainId::new(&"a".repeat(28), 0).unwrap(),
+                    id: ChainId::new(&"a".repeat(29), 0).unwrap(),
                     ..default_params.clone()
                 },
                 want_pass: true,
             },
             Test {
-                name: "Invalid long (50 chars) chain-id since revision number can overflow"
-                    .to_string(),
-                params: ClientStateParams {
-                    id: ChainId::new(&"a".repeat(48), 0).unwrap(),
-                    ..default_params.clone()
-                },
-                want_pass: false,
-            },
-            Test {
                 name: "Invalid too-long (51 chars) chain-id".to_string(),
                 params: ClientStateParams {
-                    id: ChainId::new(&"a".repeat(49), 0).unwrap(),
+                    id: ChainId::new(&"a".repeat(30), 0).unwrap(),
                     ..default_params.clone()
                 },
                 want_pass: false,
