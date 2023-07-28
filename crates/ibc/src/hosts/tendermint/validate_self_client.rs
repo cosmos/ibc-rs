@@ -43,7 +43,7 @@ pub trait ValidateSelfClientContext {
             .map_err(ContextError::ConnectionError);
         }
 
-        let self_revision_number = self_chain_id.version();
+        let self_revision_number = self_chain_id.revision_number();
         if self_revision_number != tm_client_state.latest_height().revision_number() {
             return Err(ConnectionError::InvalidClientState {
                 reason: format!(

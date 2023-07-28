@@ -208,10 +208,10 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let update_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB", 1);
+        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
         let mut ctx = MockContext::new(
-            ChainId::new("mockgaiaA", 1),
+            ChainId::new("mockgaiaA", 1).unwrap(),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),
@@ -254,10 +254,10 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let update_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB", 1);
+        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
         let mut ctx = MockContext::new(
-            ChainId::new("mockgaiaA", 1),
+            ChainId::new("mockgaiaA", 1).unwrap(),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),
@@ -301,8 +301,8 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
 
-        let ctx_a_chain_id = ChainId::new("mockgaiaA", 1);
-        let ctx_b_chain_id = ChainId::new("mockgaiaB", 1);
+        let ctx_a_chain_id = ChainId::new("mockgaiaA", 1).unwrap();
+        let ctx_b_chain_id = ChainId::new("mockgaiaB", 1).unwrap();
         let start_height = Height::new(1, 11).unwrap();
 
         let mut ctx_a = MockContext::new(ctx_a_chain_id, HostType::Mock, 5, start_height)
@@ -353,10 +353,12 @@ mod tests {
 
             let tm_block = downcast!(block.clone() => HostBlock::SyntheticTendermint).unwrap();
 
+            let chain_id = ChainId::from_str(tm_block.header().chain_id.as_str()).unwrap();
+
             let client_state = {
                 #[allow(deprecated)]
                 let raw_client_state = RawTmClientState {
-                    chain_id: ChainId::from(tm_block.header().chain_id.to_string()).to_string(),
+                    chain_id: chain_id.to_string(),
                     trust_level: Some(Fraction {
                         numerator: 1,
                         denominator: 3,
@@ -366,7 +368,7 @@ mod tests {
                     max_clock_drift: Some(Duration::from_millis(3000).into()),
                     latest_height: Some(
                         Height::new(
-                            ChainId::chain_version(tm_block.header().chain_id.as_str()),
+                            chain_id.revision_number(),
                             u64::from(tm_block.header().height),
                         )
                         .unwrap()
@@ -426,7 +428,7 @@ mod tests {
         let chain_start_height = Height::new(1, 11).unwrap();
 
         let ctx = MockContext::new(
-            ChainId::new("mockgaiaA", 1),
+            ChainId::new("mockgaiaA", 1).unwrap(),
             HostType::Mock,
             5,
             chain_start_height,
@@ -439,7 +441,7 @@ mod tests {
         );
 
         let ctx_b = MockContext::new(
-            ChainId::new("mockgaiaB", 1),
+            ChainId::new("mockgaiaB", 1).unwrap(),
             HostType::SyntheticTendermint,
             5,
             client_height,
@@ -565,11 +567,11 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let misbehaviour_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB", 1);
+        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
         // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
         let mut ctx_a = MockContext::new(
-            ChainId::new("mockgaiaA", 1),
+            ChainId::new("mockgaiaA", 1).unwrap(),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),
@@ -626,11 +628,11 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let misbehaviour_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB", 1);
+        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
         // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
         let mut ctx_a = MockContext::new(
-            ChainId::new("mockgaiaA", 1),
+            ChainId::new("mockgaiaA", 1).unwrap(),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),
