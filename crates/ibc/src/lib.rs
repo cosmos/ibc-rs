@@ -63,7 +63,7 @@ mod signer;
 mod utils;
 
 #[cfg(feature = "serde")]
-mod serializers;
+pub mod serializers;
 
 #[cfg(test)]
 mod test;
