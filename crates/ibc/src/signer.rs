@@ -2,9 +2,6 @@ use crate::prelude::*;
 
 use derive_more::Display;
 
-#[cfg(feature = "schema")]
-use crate::alloc::borrow::ToOwned;
-
 /// Represents the address of the signer of the current transaction
 #[cfg_attr(
     feature = "parity-scale-codec",

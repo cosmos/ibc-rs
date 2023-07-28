@@ -6,9 +6,6 @@ use derive_more::{Display, From, Into};
 use super::error::TokenTransferError;
 use primitive_types::U256;
 
-#[cfg(feature = "serde")]
-use crate::serializers::serde_string;
-
 #[cfg(feature = "schema")]
 use crate::alloc::{borrow::ToOwned, string::String};
 
@@ -18,9 +15,30 @@ use crate::alloc::{borrow::ToOwned, string::String};
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Display, From, Into)]
 pub struct Amount(
     #[cfg_attr(feature = "schema", schemars(with = "String"))]
-    #[cfg_attr(feature = "serde", serde(with = "serde_string"))]
+    #[serde(serialize_with = "crate::serializers::serde_string::serialize")]
+    #[serde(deserialize_with = "deserialize")]
     U256,
 );
+
+#[cfg(feature = "serde")]
+fn deserialize<'de, D>(deserializer: D) -> Result<U256, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    U256::from_dec_str(<&str>::deserialize(deserializer)?).map_err(serde::de::Error::custom)
+}
+
+#[test]
+#[cfg(feature = "serde")]
+fn serde_amount() {
+    let value = Amount::from(42);
+    let string = serde_json::to_string(&value).expect("can serde string");
+    assert_eq!(string, "\"42\"");
+    let binary = serde_json::to_vec(&value).expect("can serde binary");
+    let de: Amount = serde_json::from_slice(binary.as_ref()).expect("can deserialize");
+    assert_eq!(de, value);
+}
 
 #[cfg(feature = "parity-scale-codec")]
 impl parity_scale_codec::WrapperTypeDecode for Amount {
