@@ -20,26 +20,6 @@ pub struct Amount(
     U256,
 );
 
-#[cfg(feature = "serde")]
-fn deserialize<'de, D>(deserializer: D) -> Result<U256, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    use serde::Deserialize;
-    U256::from_dec_str(<&str>::deserialize(deserializer)?).map_err(serde::de::Error::custom)
-}
-
-#[test]
-#[cfg(feature = "serde")]
-fn serde_amount() {
-    let value = Amount::from(42);
-    let string = serde_json::to_string(&value).expect("can serde string");
-    assert_eq!(string, "\"42\"");
-    let binary = serde_json::to_vec(&value).expect("can serde binary");
-    let de: Amount = serde_json::from_slice(binary.as_ref()).expect("can deserialize");
-    assert_eq!(de, value);
-}
-
 #[cfg(feature = "parity-scale-codec")]
 impl parity_scale_codec::WrapperTypeDecode for Amount {
     type Wrapped = [u64; 4];
@@ -90,5 +70,30 @@ impl FromStr for Amount {
 impl From<u64> for Amount {
     fn from(v: u64) -> Self {
         Self(v.into())
+    }
+}
+
+#[cfg(feature = "serde")]
+fn deserialize<'de, D>(deserializer: D) -> Result<U256, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    U256::from_dec_str(<&str>::deserialize(deserializer)?).map_err(serde::de::Error::custom)
+}
+
+#[cfg(test)]
+#[cfg(feature = "serde")]
+mod tests {
+    use super::Amount;
+
+    #[test]
+    fn serde_amount() {
+        let value = Amount::from(42);
+        let string = serde_json::to_string(&value).expect("can serde string");
+        assert_eq!(string, "\"42\"");
+        let binary = serde_json::to_vec(&value).expect("can serde binary");
+        let de: Amount = serde_json::from_slice(binary.as_ref()).expect("can deserialize");
+        assert_eq!(de, value);
     }
 }
