@@ -12,8 +12,7 @@ where
     hex.serialize(serializer)
 }
 
-
-/// use Display to serialize and FromStr to deserialize 
+/// use Display to serialize and FromStr to deserialize
 pub mod serde_string {
     use core::fmt::Display;
     use core::str::FromStr;
