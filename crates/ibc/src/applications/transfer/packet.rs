@@ -99,6 +99,10 @@ mod tests {
         r#"{"denom":"uatom","amount":"10","sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","memo":""}"#
     }
 
+    pub fn dummy_json_packet_data_without_memo() -> &'static str {
+        r#"{"denom":"uatom","amount":"10","sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng"}"#
+    }
+
     /// Ensures `PacketData` properly encodes to JSON by first converting to a
     /// `RawPacketData` and then serializing that.
     #[test]
@@ -111,5 +115,6 @@ mod tests {
     #[test]
     fn test_packet_data_deser() {
         PacketData::new_dummy().deser_json_assert_eq(dummy_json_packet_data());
+        PacketData::new_dummy().deser_json_assert_eq(dummy_json_packet_data_without_memo());
     }
 }
