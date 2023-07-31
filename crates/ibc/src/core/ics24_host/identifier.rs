@@ -3,7 +3,6 @@
 pub(crate) mod validate;
 use validate::*;
 
-use core::convert::{From, Infallible};
 use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
@@ -18,16 +17,17 @@ use crate::prelude::*;
 const CONNECTION_ID_PREFIX: &str = "connection";
 const CHANNEL_ID_PREFIX: &str = "channel";
 
-const DEFAULT_CHAIN_ID: &str = "defaultChainId";
 const DEFAULT_PORT_ID: &str = "defaultPort";
 const TRANSFER_PORT_ID: &str = "transfer";
 
-/// A `ChainId` is in "epoch format" if it is of the form `{chain name}-{epoch number}`,
-/// where the epoch number is the number of times the chain was upgraded. Chain IDs not
-/// in that format will be assumed to have epoch number 0.
+/// Defines the domain type for chain identifiers.
 ///
-/// This is not standardized yet, although compatible with ibc-go.
-/// See: <https://github.com/informalsystems/ibc-rs/pull/304#discussion_r503917283>.
+/// A valid `ChainId` follows the format {chain name}-{revision number} where
+/// the revision number indicates how many times the chain has been upgraded.
+/// Creating `ChainId`s not in this format will result in an error.
+///
+/// It should be noted this format is not standardized yet, though it is widely
+/// accepted and compatible with Cosmos SDK driven chains.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -44,37 +44,33 @@ const TRANSFER_PORT_ID: &str = "transfer";
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ChainId {
     id: String,
-    version: u64,
+    revision_number: u64,
 }
 
 impl ChainId {
-    /// Creates a new `ChainId` given a chain name and an epoch number.
+    /// Creates a new `ChainId` with the given chain name and revision number.
     ///
-    /// The returned `ChainId` will have the format: `{chain name}-{epoch number}`.
+    /// It checks the chain name for valid characters according to `ICS-24`
+    /// specification and returns a `ChainId` in the the format of {chain
+    /// name}-{revision number}. Stricter checks beyond `ICS-24` rests with
+    /// the users, based on their requirements.
     ///
     /// ```
     /// use ibc::core::ics24_host::identifier::ChainId;
     ///
-    /// let epoch_number = 10;
-    /// let id = ChainId::new("chainA", epoch_number);
-    /// assert_eq!(id.version(), epoch_number);
+    /// let revision_number = 10;
+    /// let id = ChainId::new("chainA", revision_number).unwrap();
+    /// assert_eq!(id.revision_number(), revision_number);
     /// ```
-    pub fn new(name: &str, version: u64) -> Self {
-        let id = format!("{name}-{version}");
-        Self { id, version }
-    }
-
-    pub fn from_string(id: &str) -> Self {
-        let version = if Self::is_epoch_format(id) {
-            Self::chain_version(id)
-        } else {
-            0
-        };
-
-        Self {
-            id: id.to_string(),
-            version,
-        }
+    pub fn new(name: &str, revision_number: u64) -> Result<Self, IdentifierError> {
+        let prefix = name.trim();
+        validate_identifier_chars(prefix)?;
+        validate_identifier_length(prefix, 1, 43)?;
+        let id = format!("{prefix}-{revision_number}");
+        Ok(Self {
+            id,
+            revision_number,
+        })
     }
 
     /// Get a reference to the underlying string.
@@ -82,76 +78,57 @@ impl ChainId {
         &self.id
     }
 
-    // TODO: this should probably be named epoch_number.
-    /// Extract the version from this chain identifier.
-    pub fn version(&self) -> u64 {
-        self.version
+    pub fn split_chain_id(&self) -> (&str, u64) {
+        parse_chain_id_string(self.as_str())
+            .expect("never fails because a valid chain identifier is parsed")
     }
 
-    /// Extract the version from the given chain identifier.
-    /// ```
-    /// use ibc::core::ics24_host::identifier::ChainId;
-    ///
-    /// assert_eq!(ChainId::chain_version("chain--a-0"), 0);
-    /// assert_eq!(ChainId::chain_version("ibc-10"), 10);
-    /// assert_eq!(ChainId::chain_version("cosmos-hub-97"), 97);
-    /// assert_eq!(ChainId::chain_version("testnet-helloworld-2"), 2);
-    /// ```
-    pub fn chain_version(chain_id: &str) -> u64 {
-        if !ChainId::is_epoch_format(chain_id) {
-            return 0;
-        }
-
-        let split: Vec<_> = chain_id.split('-').collect();
-        split
-            .last()
-            .expect("get revision number from chain_id")
-            .parse()
-            .unwrap_or(0)
+    /// Extract the chain name from the chain identifier
+    pub fn chain_name(&self) -> &str {
+        self.split_chain_id().0
     }
 
-    /// is_epoch_format() checks if a chain_id is in the format required for parsing epochs
-    /// The chainID must be in the form: `{chainID}-{version}`
-    /// ```
-    /// use ibc::core::ics24_host::identifier::ChainId;
-    /// assert_eq!(ChainId::is_epoch_format("chainA-0"), false);
-    /// assert_eq!(ChainId::is_epoch_format("chainA"), false);
-    /// assert_eq!(ChainId::is_epoch_format("chainA-1"), true);
-    /// assert_eq!(ChainId::is_epoch_format("c-1"), true);
-    /// ```
-    pub fn is_epoch_format(chain_id: &str) -> bool {
-        let re = safe_regex::regex!(br".*[^-]-[1-9][0-9]*");
-        re.is_match(chain_id.as_bytes())
+    /// Extract the revision number from the chain identifier
+    pub fn revision_number(&self) -> u64 {
+        self.revision_number
     }
 
-    /// with_version() checks if a chain_id is in the format required for parsing epochs, and if so
-    /// replaces it's version with the specified version
+    /// Swaps `ChainId`s revision number with the new specified revision number
     /// ```
     /// use ibc::core::ics24_host::identifier::ChainId;
-    /// assert_eq!(ChainId::new("chainA", 1).with_version(2), ChainId::new("chainA", 2));
-    /// assert_eq!("chain1".parse::<ChainId>().unwrap().with_version(2), "chain1".parse::<ChainId>().unwrap());
+    /// let mut chain_id = ChainId::new("chainA", 1).unwrap();
+    /// chain_id.set_revision_number(2);
+    /// assert_eq!(chain_id.revision_number(), 2);
     /// ```
-    pub fn with_version(mut self, version: u64) -> Self {
-        if Self::is_epoch_format(&self.id) {
-            self.id = {
-                let mut split: Vec<&str> = self.id.split('-').collect();
-                let version = version.to_string();
-                if let Some(last_elem) = split.last_mut() {
-                    *last_elem = &version;
-                }
-                split.join("-")
-            };
-            self.version = version;
-        }
-        self
+    pub fn set_revision_number(&mut self, revision_number: u64) {
+        let chain_name = self.chain_name();
+        self.id = format!("{}-{}", chain_name, revision_number);
+        self.revision_number = revision_number;
+    }
+
+    /// A convenient method to check if the `ChainId` forms a valid identifier
+    /// with the desired min/max length. However, ICS-24 does not specify a
+    /// certain min or max lengths for chain identifiers.
+    pub fn validate_length(
+        &self,
+        min_length: usize,
+        max_length: usize,
+    ) -> Result<(), IdentifierError> {
+        validate_prefix_length(self.chain_name(), min_length, max_length)
     }
 }
 
+/// Construct a `ChainId` from a string literal only if it forms a valid
+/// identifier.
 impl FromStr for ChainId {
-    type Err = Infallible;
+    type Err = IdentifierError;
 
     fn from_str(id: &str) -> Result<Self, Self::Err> {
-        Ok(Self::from_string(id))
+        let (_, revision_number) = parse_chain_id_string(id)?;
+        Ok(Self {
+            id: id.to_string(),
+            revision_number,
+        })
     }
 }
 
@@ -161,16 +138,37 @@ impl Display for ChainId {
     }
 }
 
-impl Default for ChainId {
-    fn default() -> Self {
-        Self::from_string(DEFAULT_CHAIN_ID)
-    }
-}
+/// Parses a string intended to represent a `ChainId` and, if successful,
+/// returns a tuple containing the chain name and revision number.
+fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, u64), IdentifierError> {
+    let (name, rev_number_str) = match chain_id_str.rsplit_once('-') {
+        Some((name, rev_number_str)) => (name, rev_number_str),
+        None => {
+            return Err(IdentifierError::InvalidCharacter {
+                id: chain_id_str.to_string(),
+            })
+        }
+    };
 
-impl From<String> for ChainId {
-    fn from(value: String) -> Self {
-        Self::from_string(&value)
+    // Validates the chain name for allowed characters according to ICS-24.
+    validate_identifier_chars(name)?;
+
+    // Validates the revision number not to start with leading zeros, like "01".
+    if rev_number_str.as_bytes().first() == Some(&b'0') && rev_number_str.len() > 1 {
+        return Err(IdentifierError::InvalidCharacter {
+            id: chain_id_str.to_string(),
+        });
     }
+
+    // Parses the revision number string into a `u64` and checks its validity.
+    let revision_number =
+        rev_number_str
+            .parse()
+            .map_err(|_| IdentifierError::InvalidCharacter {
+                id: chain_id_str.to_string(),
+            })?;
+
+    Ok((name, revision_number))
 }
 
 #[cfg_attr(
@@ -521,3 +519,30 @@ pub enum IdentifierError {
 
 #[cfg(feature = "std")]
 impl std::error::Error for IdentifierError {}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_valid_chain_id() {
+        assert!(ChainId::from_str("chainA-0").is_ok());
+        assert!(ChainId::from_str("chainA-1").is_ok());
+        assert!(ChainId::from_str("chainA--1").is_ok());
+        assert!(ChainId::from_str("chainA-1-2").is_ok());
+    }
+
+    #[test]
+    fn test_invalid_chain_id() {
+        assert!(ChainId::from_str("1").is_err());
+        assert!(ChainId::from_str("-1").is_err());
+        assert!(ChainId::from_str("   -1").is_err());
+        assert!(ChainId::from_str("chainA").is_err());
+        assert!(ChainId::from_str("chainA-").is_err());
+        assert!(ChainId::from_str("chainA-a").is_err());
+        assert!(ChainId::from_str("chainA-01").is_err());
+        assert!(ChainId::from_str("/chainA-1").is_err());
+        assert!(ChainId::from_str("chainA-1-").is_err());
+    }
+}
