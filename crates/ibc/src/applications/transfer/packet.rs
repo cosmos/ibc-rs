@@ -4,6 +4,9 @@ use alloc::string::ToString;
 use core::convert::TryFrom;
 use core::str::FromStr;
 
+#[cfg(feature = "schema")]
+use crate::alloc::borrow::ToOwned;
+
 use ibc_proto::ibc::applications::transfer::v2::FungibleTokenPacketData as RawPacketData;
 
 use super::error::TokenTransferError;
@@ -16,6 +19,7 @@ use crate::signer::Signer;
     feature = "serde",
     serde(try_from = "RawPacketData", into = "RawPacketData")
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(parity_scale_codec::Encode, parity_scale_codec::Decode,)
