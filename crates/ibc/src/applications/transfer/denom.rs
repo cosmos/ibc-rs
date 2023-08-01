@@ -131,7 +131,9 @@ impl<'a> TryFrom<Vec<&'a str>> for TracePath {
 
     fn try_from(v: Vec<&'a str>) -> Result<Self, Self::Error> {
         if v.len() % 2 != 0 {
-            return Err(TokenTransferError::InvalidTraceLength { len: v.len() });
+            return Err(TokenTransferError::InvalidTraceLength {
+                len: v.len() as u64,
+            });
         }
 
         let mut trace = vec![];
@@ -139,12 +141,12 @@ impl<'a> TryFrom<Vec<&'a str>> for TracePath {
         for (pos, (port_id, channel_id)) in id_pairs.rev().enumerate() {
             let port_id =
                 PortId::from_str(port_id).map_err(|e| TokenTransferError::InvalidTracePortId {
-                    pos,
+                    pos: pos as u64,
                     validation_error: e,
                 })?;
             let channel_id = ChannelId::from_str(channel_id).map_err(|e| {
                 TokenTransferError::InvalidTraceChannelId {
-                    pos,
+                    pos: pos as u64,
                     validation_error: e,
                 }
             })?;

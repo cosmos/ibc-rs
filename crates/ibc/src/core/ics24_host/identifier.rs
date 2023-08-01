@@ -41,6 +41,7 @@ const TRANSFER_PORT_ID: &str = "transfer";
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ChainId {
     id: String,
@@ -109,11 +110,7 @@ impl ChainId {
     /// A convenient method to check if the `ChainId` forms a valid identifier
     /// with the desired min/max length. However, ICS-24 does not specify a
     /// certain min or max lengths for chain identifiers.
-    pub fn validate_length(
-        &self,
-        min_length: usize,
-        max_length: usize,
-    ) -> Result<(), IdentifierError> {
+    pub fn validate_length(&self, min_length: u64, max_length: u64) -> Result<(), IdentifierError> {
         validate_prefix_length(self.chain_name(), min_length, max_length)
     }
 }
@@ -505,9 +502,9 @@ pub enum IdentifierError {
     /// identifier `{id}` has invalid length `{length}` must be between `{min}`-`{max}` characters
     InvalidLength {
         id: String,
-        length: usize,
-        min: usize,
-        max: usize,
+        length: u64,
+        min: u64,
+        max: u64,
     },
     /// identifier `{id}` must only contain alphanumeric characters or `.`, `_`, `+`, `-`, `#`, - `[`, `]`, `<`, `>`
     InvalidCharacter { id: String },

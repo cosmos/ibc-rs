@@ -231,7 +231,7 @@ mod tests {
         let client_cons_state_height = 10;
         let host_chain_height = Height::new(0, 35).unwrap();
         let pruned_height = host_chain_height
-            .sub(max_history_size as u64 + 1)
+            .sub(max_history_size + 1)
             .unwrap()
             .revision_height();
 

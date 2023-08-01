@@ -8,5 +8,6 @@ members = [
 ]
 
 exclude = [
+    "ci/cw-check",
     "ci/no-std-check",
 ]

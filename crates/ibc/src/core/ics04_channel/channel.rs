@@ -315,12 +315,12 @@ impl ChannelEnd {
 /// Checks if the `connection_hops` has a length of `expected`.
 pub(crate) fn verify_connection_hops_length(
     connection_hops: &Vec<ConnectionId>,
-    expected: usize,
+    expected: u64,
 ) -> Result<(), ChannelError> {
-    if connection_hops.len() != expected {
+    if connection_hops.len() as u64 != expected {
         return Err(ChannelError::InvalidConnectionHopsLength {
             expected,
-            actual: connection_hops.len(),
+            actual: connection_hops.len() as u64,
         });
     }
     Ok(())
