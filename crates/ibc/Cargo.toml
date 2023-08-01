@@ -26,6 +26,7 @@ std = [
     "prost/std",
     "bytes/std",
     "subtle-encoding/std",
+    "serde_json/std",
     "sha2/std",
     "displaydoc/std",
     "num-traits/std",
@@ -38,7 +39,7 @@ parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-proto/par
 borsh = ["dep:borsh", "ibc-proto/borsh"]
 
 # This feature is required for token transfer (ICS-20)
-serde = ["dep:serde", "dep:serde_derive", "serde_json", "ics23/serde"]
+serde = ["dep:serde", "dep:serde_derive", "serde_json", "ibc-proto/serde", "ics23/serde"]
 
 # CosmWasm message API generator compatible, should not be inside on chain code
 schema = ["dep:schemars", "serde", "std"]
@@ -49,16 +50,16 @@ mocks = ["tendermint-testgen", "tendermint/clock", "parking_lot"]
 
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
-ibc-proto = { version = "0.32.1", default-features = false }
-ics23 = { version = "0.10.1", default-features = false, features = ["host-functions"] }
-time = { version = ">=0.3.0, <0.3.25", default-features = false }
+ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs.git", rev = "af385af", default-features = false }
+ics23 = { git = "https://github.com/cosmos/ics23.git", rev = "27868a6", default-features = false, features = ["host-functions"] }
+time = { version = ">=0.3.0, <0.3.24", default-features = false }
 serde_derive = { version = "1.0.104", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
 
 # 1. it does not have hash tables, which have few reson on chain
 # 2. no floating points as these are hardware dependant
 # 3. have method to covert primitives without producing bad wasm which cannot operate on chain (smaller binary size)
-serde_json =  { package = "serde-json-wasm", version = "0.5.1", default-features = false, optional = true}
+serde_json =  { package = "serde-json-wasm", git = "https://github.com/dzmitry-lahoda-forks/serde-json-wasm", rev = "8a7e522c0e4de36a6dfb535766f26a9941017d81", default-features = false, optional = true}
 # can use old one to test if any other discrepancy
 # serde_json = { version = "1", default-features = false}
 
