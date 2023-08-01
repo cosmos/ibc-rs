@@ -81,7 +81,7 @@ where
         MsgEnvelope::Channel(msg) => {
             let port_id = channel_msg_to_port_id(&msg);
             let module_id = router
-                .lookup_module(&port_id)
+                .lookup_module(port_id)
                 .ok_or(RouterError::InvalidPort {
                     port_id: port_id.clone(),
                 })?;
@@ -102,7 +102,7 @@ where
         MsgEnvelope::Packet(msg) => {
             let port_id = packet_msg_to_port_id(&msg);
             let module_id = router
-                .lookup_module(&port_id)
+                .lookup_module(port_id)
                 .ok_or(RouterError::InvalidPort {
                     port_id: port_id.clone(),
                 })?;
@@ -156,7 +156,7 @@ where
         MsgEnvelope::Channel(msg) => {
             let port_id = channel_msg_to_port_id(&msg);
             let module_id = router
-                .lookup_module(&port_id)
+                .lookup_module(port_id)
                 .ok_or(RouterError::InvalidPort {
                     port_id: port_id.clone(),
                 })?;
@@ -177,7 +177,7 @@ where
         MsgEnvelope::Packet(msg) => {
             let port_id = packet_msg_to_port_id(&msg);
             let module_id = router
-                .lookup_module(&port_id)
+                .lookup_module(port_id)
                 .ok_or(RouterError::InvalidPort {
                     port_id: port_id.clone(),
                 })?;
