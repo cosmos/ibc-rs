@@ -1,5 +1,6 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenAck`.
 
+use crate::core::router::Module;
 use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
 
@@ -14,13 +15,11 @@ use crate::core::ics04_channel::events::OpenAck;
 use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
-use crate::core::router::{ModuleId, Router};
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_open_ack_validate<ValCtx>(
     ctx_a: &ValCtx,
-    router_a: &impl Router,
-    module_id: ModuleId,
+    module: &dyn Module,
     msg: MsgChannelOpenAck,
 ) -> Result<(), ContextError>
 where
@@ -28,9 +27,6 @@ where
 {
     validate(ctx_a, &msg)?;
 
-    let module = router_a
-        .get_route(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
     module.on_chan_open_ack_validate(&msg.port_id_on_a, &msg.chan_id_on_a, &msg.version_on_b)?;
 
     Ok(())
@@ -38,16 +34,12 @@ where
 
 pub(crate) fn chan_open_ack_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
-    router_a: &mut impl Router,
-    module_id: ModuleId,
+    module: &mut dyn Module,
     msg: MsgChannelOpenAck,
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
 {
-    let module = router_a
-        .get_route_mut(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
     let extras =
         module.on_chan_open_ack_execute(&msg.port_id_on_a, &msg.chan_id_on_a, &msg.version_on_b)?;
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
@@ -182,6 +174,8 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
     use crate::core::ics24_host::identifier::ClientId;
     use crate::core::ics24_host::identifier::ConnectionId;
+    use crate::core::router::ModuleId;
+    use crate::core::router::Router;
     use crate::core::timestamp::ZERO_DURATION;
     use crate::Height;
 
@@ -387,7 +381,8 @@ mod tests {
                 chan_end_on_a,
             );
 
-        let res = chan_open_ack_execute(&mut context, &mut router, module_id, msg);
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = chan_open_ack_execute(&mut context, module, msg);
 
         assert!(res.is_ok(), "Execution happy path");
 

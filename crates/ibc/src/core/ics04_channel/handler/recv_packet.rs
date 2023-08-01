@@ -16,7 +16,7 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
-use crate::core::router::{ModuleId, Router};
+use crate::core::router::Module;
 use crate::core::timestamp::Expiry;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
@@ -36,8 +36,7 @@ where
 
 pub(crate) fn recv_packet_execute<ExecCtx>(
     ctx_b: &mut ExecCtx,
-    router_b: &mut impl Router,
-    module_id: ModuleId,
+    module: &mut dyn Module,
     msg: MsgRecvPacket,
 ) -> Result<(), ContextError>
 where
@@ -74,10 +73,6 @@ where
             return Ok(());
         }
     }
-
-    let module = router_b
-        .get_route_mut(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
 
     let (extras, acknowledgement) = module.on_recv_packet_execute(&msg.packet, &msg.signer);
 
@@ -296,6 +291,8 @@ mod tests {
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
+    use crate::core::router::ModuleId;
+    use crate::core::router::Router;
     use crate::core::timestamp::Timestamp;
     use crate::core::timestamp::ZERO_DURATION;
     use crate::Height;
@@ -502,7 +499,8 @@ mod tests {
             .with_connection(ConnectionId::default(), conn_end_on_b)
             .with_channel(PortId::default(), ChannelId::default(), chan_end_on_b);
 
-        let res = recv_packet_execute(&mut ctx, &mut router, module_id, msg);
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = recv_packet_execute(&mut ctx, module, msg);
 
         assert!(res.is_ok());
 

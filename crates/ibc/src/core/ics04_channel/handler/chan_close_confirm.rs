@@ -14,13 +14,12 @@ use crate::core::ics04_channel::events::CloseConfirm;
 use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
-use crate::core::router::{ModuleId, Router};
+use crate::core::router::Module;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_close_confirm_validate<ValCtx>(
     ctx_b: &ValCtx,
-    router_b: &impl Router,
-    module_id: ModuleId,
+    module: &dyn Module,
     msg: MsgChannelCloseConfirm,
 ) -> Result<(), ContextError>
 where
@@ -28,9 +27,6 @@ where
 {
     validate(ctx_b, &msg)?;
 
-    let module = router_b
-        .get_route(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
     module.on_chan_close_confirm_validate(&msg.port_id_on_b, &msg.chan_id_on_b)?;
 
     Ok(())
@@ -38,16 +34,12 @@ where
 
 pub(crate) fn chan_close_confirm_execute<ExecCtx>(
     ctx_b: &mut ExecCtx,
-    router_b: &mut impl Router,
-    module_id: ModuleId,
+    module: &mut dyn Module,
     msg: MsgChannelCloseConfirm,
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
 {
-    let module = router_b
-        .get_route_mut(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
     let extras = module.on_chan_close_confirm_execute(&msg.port_id_on_b, &msg.chan_id_on_b)?;
     let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);
     let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
@@ -183,6 +175,7 @@ mod tests {
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
     use crate::core::router::ModuleId;
+    use crate::core::router::Router;
     use crate::core::timestamp::ZERO_DURATION;
 
     use crate::mock::client_state::client_type as mock_client_type;
@@ -284,16 +277,13 @@ mod tests {
             );
         let mut router = MockRouter::default();
 
-        let module = DummyTransferModule::new();
         let module_id = ModuleId::new(MODULE_ID_STR.to_string());
-        router.add_route(module_id.clone(), module).unwrap();
+        router
+            .add_route(module_id.clone(), DummyTransferModule::new())
+            .unwrap();
 
-        let res = chan_close_confirm_execute(
-            &mut context,
-            &mut router,
-            module_id,
-            msg_chan_close_confirm,
-        );
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = chan_close_confirm_execute(&mut context, module, msg_chan_close_confirm);
         assert!(res.is_ok(), "Execution success: happy path");
 
         assert_eq!(context.events.len(), 2);

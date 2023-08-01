@@ -5,6 +5,7 @@ use super::ics03_connection::handler::{
     conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try,
 };
 use super::ics03_connection::msgs::ConnectionMsg;
+use super::ics04_channel::error::ChannelError;
 use super::ics04_channel::handler::acknowledgement::{
     acknowledgement_packet_execute, acknowledgement_packet_validate,
 };
@@ -80,18 +81,17 @@ where
             let module_id = router
                 .lookup_module_channel(&msg)
                 .map_err(ContextError::from)?;
+            let module = router
+                .get_route(&module_id)
+                .ok_or(ContextError::from(ChannelError::RouteNotFound))?;
 
             match msg {
-                ChannelMsg::OpenInit(msg) => chan_open_init_validate(ctx, router, module_id, msg),
-                ChannelMsg::OpenTry(msg) => chan_open_try_validate(ctx, router, module_id, msg),
-                ChannelMsg::OpenAck(msg) => chan_open_ack_validate(ctx, router, module_id, msg),
-                ChannelMsg::OpenConfirm(msg) => {
-                    chan_open_confirm_validate(ctx, router, module_id, msg)
-                }
-                ChannelMsg::CloseInit(msg) => chan_close_init_validate(ctx, router, module_id, msg),
-                ChannelMsg::CloseConfirm(msg) => {
-                    chan_close_confirm_validate(ctx, router, module_id, msg)
-                }
+                ChannelMsg::OpenInit(msg) => chan_open_init_validate(ctx, module, msg),
+                ChannelMsg::OpenTry(msg) => chan_open_try_validate(ctx, module, msg),
+                ChannelMsg::OpenAck(msg) => chan_open_ack_validate(ctx, module, msg),
+                ChannelMsg::OpenConfirm(msg) => chan_open_confirm_validate(ctx, module, msg),
+                ChannelMsg::CloseInit(msg) => chan_close_init_validate(ctx, module, msg),
+                ChannelMsg::CloseConfirm(msg) => chan_close_confirm_validate(ctx, module, msg),
             }
             .map_err(RouterError::ContextError)
         }
@@ -99,19 +99,19 @@ where
             let module_id = router
                 .lookup_module_packet(&msg)
                 .map_err(ContextError::from)?;
+            let module = router
+                .get_route(&module_id)
+                .ok_or(ContextError::from(ChannelError::RouteNotFound))?;
 
             match msg {
                 PacketMsg::Recv(msg) => recv_packet_validate(ctx, msg),
-                PacketMsg::Ack(msg) => acknowledgement_packet_validate(ctx, router, module_id, msg),
+                PacketMsg::Ack(msg) => acknowledgement_packet_validate(ctx, module, msg),
                 PacketMsg::Timeout(msg) => {
-                    timeout_packet_validate(ctx, router, module_id, TimeoutMsgType::Timeout(msg))
+                    timeout_packet_validate(ctx, module, TimeoutMsgType::Timeout(msg))
                 }
-                PacketMsg::TimeoutOnClose(msg) => timeout_packet_validate(
-                    ctx,
-                    router,
-                    module_id,
-                    TimeoutMsgType::TimeoutOnClose(msg),
-                ),
+                PacketMsg::TimeoutOnClose(msg) => {
+                    timeout_packet_validate(ctx, module, TimeoutMsgType::TimeoutOnClose(msg))
+                }
             }
             .map_err(RouterError::ContextError)
         }
@@ -150,18 +150,17 @@ where
             let module_id = router
                 .lookup_module_channel(&msg)
                 .map_err(ContextError::from)?;
+            let module = router
+                .get_route_mut(&module_id)
+                .ok_or(ContextError::from(ChannelError::RouteNotFound))?;
 
             match msg {
-                ChannelMsg::OpenInit(msg) => chan_open_init_execute(ctx, router, module_id, msg),
-                ChannelMsg::OpenTry(msg) => chan_open_try_execute(ctx, router, module_id, msg),
-                ChannelMsg::OpenAck(msg) => chan_open_ack_execute(ctx, router, module_id, msg),
-                ChannelMsg::OpenConfirm(msg) => {
-                    chan_open_confirm_execute(ctx, router, module_id, msg)
-                }
-                ChannelMsg::CloseInit(msg) => chan_close_init_execute(ctx, router, module_id, msg),
-                ChannelMsg::CloseConfirm(msg) => {
-                    chan_close_confirm_execute(ctx, router, module_id, msg)
-                }
+                ChannelMsg::OpenInit(msg) => chan_open_init_execute(ctx, module, msg),
+                ChannelMsg::OpenTry(msg) => chan_open_try_execute(ctx, module, msg),
+                ChannelMsg::OpenAck(msg) => chan_open_ack_execute(ctx, module, msg),
+                ChannelMsg::OpenConfirm(msg) => chan_open_confirm_execute(ctx, module, msg),
+                ChannelMsg::CloseInit(msg) => chan_close_init_execute(ctx, module, msg),
+                ChannelMsg::CloseConfirm(msg) => chan_close_confirm_execute(ctx, module, msg),
             }
             .map_err(RouterError::ContextError)
         }
@@ -169,19 +168,19 @@ where
             let module_id = router
                 .lookup_module_packet(&msg)
                 .map_err(ContextError::from)?;
+            let module = router
+                .get_route_mut(&module_id)
+                .ok_or(ContextError::from(ChannelError::RouteNotFound))?;
 
             match msg {
-                PacketMsg::Recv(msg) => recv_packet_execute(ctx, router, module_id, msg),
-                PacketMsg::Ack(msg) => acknowledgement_packet_execute(ctx, router, module_id, msg),
+                PacketMsg::Recv(msg) => recv_packet_execute(ctx, module, msg),
+                PacketMsg::Ack(msg) => acknowledgement_packet_execute(ctx, module, msg),
                 PacketMsg::Timeout(msg) => {
-                    timeout_packet_execute(ctx, router, module_id, TimeoutMsgType::Timeout(msg))
+                    timeout_packet_execute(ctx, module, TimeoutMsgType::Timeout(msg))
                 }
-                PacketMsg::TimeoutOnClose(msg) => timeout_packet_execute(
-                    ctx,
-                    router,
-                    module_id,
-                    TimeoutMsgType::TimeoutOnClose(msg),
-                ),
+                PacketMsg::TimeoutOnClose(msg) => {
+                    timeout_packet_execute(ctx, module, TimeoutMsgType::TimeoutOnClose(msg))
+                }
             }
             .map_err(RouterError::ContextError)
         }

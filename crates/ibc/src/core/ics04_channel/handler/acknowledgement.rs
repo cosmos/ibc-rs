@@ -1,4 +1,3 @@
-use crate::core::router::Router;
 use crate::prelude::*;
 
 use crate::core::events::MessageEvent;
@@ -15,23 +14,19 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqAckPath,
 };
-use crate::core::{events::IbcEvent, ics04_channel::events::AcknowledgePacket, router::ModuleId};
+use crate::core::router::Module;
+use crate::core::{events::IbcEvent, ics04_channel::events::AcknowledgePacket};
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn acknowledgement_packet_validate<ValCtx>(
     ctx_a: &ValCtx,
-    router_a: &impl Router,
-    module_id: ModuleId,
+    module: &dyn Module,
     msg: MsgAcknowledgement,
 ) -> Result<(), ContextError>
 where
     ValCtx: ValidationContext,
 {
     validate(ctx_a, &msg)?;
-
-    let module = router_a
-        .get_route(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
 
     module
         .on_acknowledgement_packet_validate(&msg.packet, &msg.acknowledgement, &msg.signer)
@@ -40,8 +35,7 @@ where
 
 pub(crate) fn acknowledgement_packet_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
-    router_a: &mut impl Router,
-    module_id: ModuleId,
+    module: &mut dyn Module,
     msg: MsgAcknowledgement,
 ) -> Result<(), ContextError>
 where
@@ -75,10 +69,6 @@ where
         // prevent an entire relay transaction from failing and consuming unnecessary fees.
         return Ok(());
     };
-
-    let module = router_a
-        .get_route_mut(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
 
     let (extras, cb_result) =
         module.on_acknowledgement_packet_execute(&msg.packet, &msg.acknowledgement, &msg.signer);
@@ -239,6 +229,8 @@ mod tests {
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::PortId;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::core::router::ModuleId;
+    use crate::core::router::Router;
     use crate::core::timestamp::Timestamp;
     use crate::core::timestamp::ZERO_DURATION;
 
@@ -431,7 +423,8 @@ mod tests {
                 packet_commitment,
             );
 
-        let res = acknowledgement_packet_execute(&mut ctx, &mut router, module_id, msg);
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = acknowledgement_packet_execute(&mut ctx, module, msg);
 
         assert!(res.is_ok());
 
@@ -469,7 +462,8 @@ mod tests {
                 packet_commitment,
             );
 
-        let res = acknowledgement_packet_execute(&mut ctx, &mut router, module_id, msg);
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = acknowledgement_packet_execute(&mut ctx, module, msg);
 
         assert!(res.is_ok());
 

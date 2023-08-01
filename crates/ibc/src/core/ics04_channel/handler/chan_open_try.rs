@@ -1,5 +1,6 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenTry`.
 
+use crate::core::router::Module;
 use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
 
@@ -16,13 +17,11 @@ use crate::core::ics24_host::identifier::ChannelId;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
 use crate::core::ics24_host::path::{SeqAckPath, SeqRecvPath, SeqSendPath};
-use crate::core::router::{ModuleId, Router};
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_open_try_validate<ValCtx>(
     ctx_b: &ValCtx,
-    router_b: &impl Router,
-    module_id: ModuleId,
+    module: &dyn Module,
     msg: MsgChannelOpenTry,
 ) -> Result<(), ContextError>
 where
@@ -32,9 +31,6 @@ where
 
     let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
 
-    let module = router_b
-        .get_route(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
     module.on_chan_open_try_validate(
         msg.ordering,
         &msg.connection_hops_on_b,
@@ -49,18 +45,13 @@ where
 
 pub(crate) fn chan_open_try_execute<ExecCtx>(
     ctx_b: &mut ExecCtx,
-    router_b: &mut impl Router,
-    module_id: ModuleId,
+    module: &mut dyn Module,
     msg: MsgChannelOpenTry,
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
 {
     let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
-    let module = router_b
-        .get_route_mut(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
-
     let (extras, version) = module.on_chan_open_try_execute(
         msg.ordering,
         &msg.connection_hops_on_b,
@@ -201,6 +192,8 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_open_try::test_util::get_dummy_raw_msg_chan_open_try;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::core::router::ModuleId;
+    use crate::core::router::Router;
     use crate::core::timestamp::ZERO_DURATION;
     use crate::Height;
 
@@ -335,7 +328,8 @@ mod tests {
             .with_client(&client_id_on_b, Height::new(0, proof_height).unwrap())
             .with_connection(conn_id_on_b, conn_end_on_b);
 
-        let res = chan_open_try_execute(&mut ctx, &mut router, module_id, msg);
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = chan_open_try_execute(&mut ctx, module, msg);
 
         assert!(res.is_ok(), "Execution success: happy path");
 

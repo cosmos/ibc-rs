@@ -1,4 +1,3 @@
-use crate::core::router::Router;
 use crate::prelude::*;
 use prost::Message;
 
@@ -20,7 +19,7 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
-use crate::core::router::ModuleId;
+use crate::core::router::Module;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) enum TimeoutMsgType {
@@ -30,8 +29,7 @@ pub(crate) enum TimeoutMsgType {
 
 pub(crate) fn timeout_packet_validate<ValCtx>(
     ctx_a: &ValCtx,
-    router_a: &impl Router,
-    module_id: ModuleId,
+    module: &dyn Module,
     timeout_msg_type: TimeoutMsgType,
 ) -> Result<(), ContextError>
 where
@@ -41,10 +39,6 @@ where
         TimeoutMsgType::Timeout(msg) => validate(ctx_a, msg),
         TimeoutMsgType::TimeoutOnClose(msg) => timeout_on_close::validate(ctx_a, msg),
     }?;
-
-    let module = router_a
-        .get_route(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
 
     let (packet, signer) = match timeout_msg_type {
         TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),
@@ -58,8 +52,7 @@ where
 
 pub(crate) fn timeout_packet_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
-    router_a: &mut impl Router,
-    module_id: ModuleId,
+    module: &mut dyn Module,
     timeout_msg_type: TimeoutMsgType,
 ) -> Result<(), ContextError>
 where
@@ -88,10 +81,6 @@ where
         // prevent an entire relay transaction from failing and consuming unnecessary fees.
         return Ok(());
     };
-
-    let module = router_a
-        .get_route_mut(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
 
     let (extras, cb_result) = module.on_timeout_packet_execute(&packet, &signer);
 
@@ -291,6 +280,8 @@ mod tests {
     use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
+    use crate::core::router::ModuleId;
+    use crate::core::router::Router;
     use crate::core::timestamp::Timestamp;
     use crate::core::timestamp::ZERO_DURATION;
 
@@ -638,12 +629,8 @@ mod tests {
                 packet_commitment,
             );
 
-        let res = timeout_packet_execute(
-            &mut ctx,
-            &mut router,
-            module_id,
-            TimeoutMsgType::Timeout(msg),
-        );
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = timeout_packet_execute(&mut ctx, module, TimeoutMsgType::Timeout(msg));
 
         assert!(res.is_ok());
 
@@ -682,12 +669,8 @@ mod tests {
                 packet_commitment,
             );
 
-        let res = timeout_packet_execute(
-            &mut ctx,
-            &mut router,
-            module_id,
-            TimeoutMsgType::Timeout(msg),
-        );
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = timeout_packet_execute(&mut ctx, module, TimeoutMsgType::Timeout(msg));
 
         assert!(res.is_ok());
 
