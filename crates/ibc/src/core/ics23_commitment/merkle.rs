@@ -60,7 +60,7 @@ impl MerkleProof {
         root: MerkleRoot,
         keys: MerklePath,
         value: Vec<u8>,
-        start_index: usize,
+        start_index: u64,
     ) -> Result<(), CommitmentError> {
         // validate arguments
         if self.proofs.is_empty() {
@@ -89,7 +89,11 @@ impl MerkleProof {
             .iter()
             .zip(ics23_specs.iter())
             .zip(keys.key_path.iter().rev())
-            .skip(start_index)
+            .skip(
+                start_index
+                    .try_into()
+                    .expect("safe because if u64 is more than usize it will skip all anyway"),
+            )
         {
             match &proof.proof {
                 Some(Proof::Exist(existence_proof)) => {

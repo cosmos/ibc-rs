@@ -27,16 +27,16 @@ pub enum TokenTransferError {
     EmptyBaseDenom,
     /// invalid prot id n trace at position: `{pos}`, validation error: `{validation_error}`
     InvalidTracePortId {
-        pos: usize,
+        pos: u64,
         validation_error: IdentifierError,
     },
     /// invalid channel id in trace at position: `{pos}`, validation error: `{validation_error}`
     InvalidTraceChannelId {
-        pos: usize,
+        pos: u64,
         validation_error: IdentifierError,
     },
     /// trace length must be even but got: `{len}`
-    InvalidTraceLength { len: usize },
+    InvalidTraceLength { len: u64 },
     /// invalid amount error: `{0}`
     InvalidAmount(FromDecStrErr),
     /// invalid token

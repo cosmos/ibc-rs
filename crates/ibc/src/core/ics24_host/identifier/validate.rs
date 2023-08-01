@@ -38,14 +38,14 @@ pub fn validate_identifier_chars(id: &str) -> Result<(), Error> {
 /// Checks if the identifier forms a valid identifier with the given min/max length as specified in the
 /// [`ICS-24`](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#paths-identifiers-separators)]
 /// spec.
-pub fn validate_identifier_length(id: &str, min: usize, max: usize) -> Result<(), Error> {
+pub fn validate_identifier_length(id: &str, min: u64, max: u64) -> Result<(), Error> {
     assert!(max >= min);
 
     // Check identifier length is between given min/max
-    if id.len() < min || id.len() > max {
+    if (id.len() as u64) < min || id.len() as u64 > max {
         return Err(Error::InvalidLength {
             id: id.into(),
-            length: id.len(),
+            length: id.len() as u64,
             min,
             max,
         });
@@ -59,8 +59,8 @@ pub fn validate_identifier_length(id: &str, min: usize, max: usize) -> Result<()
 /// and `max_id_length - 21` characters, considering `u64::MAX` (20 chars) and "-".
 pub fn validate_prefix_length(
     prefix: &str,
-    min_id_length: usize,
-    max_id_length: usize,
+    min_id_length: u64,
+    max_id_length: u64,
 ) -> Result<(), Error> {
     // Checks if the prefix forms a valid identifier length when constructed with `u64::MIN`
     validate_identifier_length(

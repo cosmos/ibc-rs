@@ -40,7 +40,7 @@ pub enum ChannelError {
     /// invalid channel order type: expected `{expected}`, actual `{actual}`
     InvalidOrderType { expected: String, actual: String },
     /// invalid connection hops length: expected `{expected}`; actual `{actual}`
-    InvalidConnectionHopsLength { expected: usize, actual: usize },
+    InvalidConnectionHopsLength { expected: u64, actual: u64 },
     /// invalid signer error: `{reason}`
     InvalidSigner { reason: String },
     /// invalid proof: missing height

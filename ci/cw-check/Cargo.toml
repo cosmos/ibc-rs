@@ -1,0 +1,25 @@
+[package]
+edition = "2021"
+name = "cw-check"
+version = "0.1.0"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ibc = { path = "../../crates/ibc", default_features = false, features = ["serde", "parity-scale-codec"]}
+cosmwasm-std = { version = "1.2.5", default-features = false}
+cosmwasm-schema = { version = "1.2.5", default-features = false}
+thiserror = { version = "*", default-features = false}
+
+serde_json =  {package = "serde-json-wasm", version = "*", default-features = false }
+
+[profile.release]
+lto = true
+codegen-units = 1
+debug = false
+debug-assertions = false
+opt-level = "s"
+overflow-checks = true
+panic = "abort"
+rpath = false
