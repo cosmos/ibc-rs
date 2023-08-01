@@ -17,20 +17,7 @@ use crate::Height;
 use displaydoc::Display;
 
 #[derive(Debug, Display)]
-pub enum PortError {
-    /// port `{port_id}` is unknown
-    UnknownPort { port_id: PortId },
-    /// implementation specific error
-    ImplementationSpecific,
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for PortError {}
-
-#[derive(Debug, Display)]
 pub enum ChannelError {
-    /// port error: `{0}`
-    Port(PortError),
     /// invalid channel end: `{channel_end}`
     InvalidChannelEnd { channel_end: String },
     /// invalid channel id: expected `{expected}`, actual `{actual}`
@@ -79,8 +66,6 @@ pub enum ChannelError {
     ProcessedTimeNotFound { client_id: ClientId, height: Height },
     /// Processed height for the client `{client_id}` at height `{height}` not found
     ProcessedHeightNotFound { client_id: ClientId, height: Height },
-    /// route not found
-    RouteNotFound,
     /// application module error: `{description}`
     AppModule { description: String },
     /// other error: `{description}`
@@ -216,7 +201,6 @@ impl std::error::Error for PacketError {
 impl std::error::Error for ChannelError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::Port(e) => Some(e),
             Self::InvalidIdentifier(e) => Some(e),
             Self::PacketVerificationFailed {
                 client_error: e, ..

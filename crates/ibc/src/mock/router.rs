@@ -48,7 +48,7 @@ impl Router for MockRouter {
         }
     }
 
-    fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId> {
+    fn lookup_module(&self, port_id: &PortId) -> Option<ModuleId> {
         self.port_to_module.get(port_id).cloned()
     }
 }
