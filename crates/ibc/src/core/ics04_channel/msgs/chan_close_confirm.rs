@@ -80,7 +80,7 @@ pub mod test_util {
     /// Returns a dummy `RawMsgChannelCloseConfirm`, for testing only!
     pub fn get_dummy_raw_msg_chan_close_confirm(proof_height: u64) -> RawMsgChannelCloseConfirm {
         RawMsgChannelCloseConfirm {
-            port_id: PortId::transfer().to_string(),
+            port_id: PortId::default().to_string(),
             channel_id: ChannelId::default().to_string(),
             proof_init: get_dummy_proof(),
             proof_height: Some(Height {

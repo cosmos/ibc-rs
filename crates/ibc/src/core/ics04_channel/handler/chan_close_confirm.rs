@@ -173,14 +173,15 @@ mod tests {
     };
     use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
     use crate::core::ics04_channel::Version;
-    use crate::core::ics24_host::identifier::PortId;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::core::router::ModuleId;
     use crate::core::router::Router;
     use crate::core::timestamp::ZERO_DURATION;
 
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
 
+    use crate::applications::transfer::MODULE_ID_STR;
     use crate::mock::router::MockRouter;
     use crate::test_utils::DummyTransferModule;
 
@@ -276,13 +277,12 @@ mod tests {
             );
         let mut router = MockRouter::default();
 
+        let module_id = ModuleId::new(MODULE_ID_STR.to_string());
         router
-            .add_route(PortId::transfer(), DummyTransferModule::new())
+            .add_route(module_id.clone(), DummyTransferModule::new())
             .unwrap();
 
-        let module = router
-            .get_route_mut(&msg_chan_close_confirm.port_id_on_b)
-            .unwrap();
+        let module = router.get_route_mut(&module_id).unwrap();
         let res = chan_close_confirm_execute(&mut context, module, msg_chan_close_confirm);
         assert!(res.is_ok(), "Execution success: happy path");
 

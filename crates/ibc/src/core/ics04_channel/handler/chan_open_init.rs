@@ -147,7 +147,8 @@ mod tests {
     use crate::core::ics24_host::identifier::ClientId;
     use crate::core::ics24_host::identifier::ConnectionId;
 
-    use crate::core::ics24_host::identifier::PortId;
+    use crate::applications::transfer::MODULE_ID_STR;
+    use crate::core::router::ModuleId;
     use crate::core::router::Router;
     use crate::mock::context::MockContext;
     use crate::mock::router::MockRouter;
@@ -157,6 +158,7 @@ mod tests {
     pub struct Fixture {
         pub ctx: MockContext,
         pub router: MockRouter,
+        pub module_id: ModuleId,
         pub msg: MsgChannelOpenInit,
     }
 
@@ -165,9 +167,10 @@ mod tests {
         let msg = MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
 
         let default_ctx = MockContext::default();
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let mut router = MockRouter::default();
         router
-            .add_route(PortId::transfer(), DummyTransferModule::new())
+            .add_route(module_id.clone(), DummyTransferModule::new())
             .unwrap();
 
         let msg_conn_init = MsgConnectionOpenInit::new_dummy();
@@ -188,7 +191,12 @@ mod tests {
             .with_client(&client_id_on_a, client_height)
             .with_connection(ConnectionId::default(), conn_end_on_a);
 
-        Fixture { ctx, router, msg }
+        Fixture {
+            ctx,
+            router,
+            module_id,
+            msg,
+        }
     }
 
     #[rstest]
@@ -231,9 +239,10 @@ mod tests {
         let Fixture {
             mut ctx,
             mut router,
+            module_id,
             msg,
         } = fixture;
-        let module = router.get_route_mut(&msg.port_id_on_a).unwrap();
+        let module = router.get_route_mut(&module_id).unwrap();
 
         let res = chan_open_init_execute(&mut ctx, module, msg);
 

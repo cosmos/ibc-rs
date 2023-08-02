@@ -280,10 +280,12 @@ mod tests {
     use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
+    use crate::core::router::ModuleId;
     use crate::core::router::Router;
     use crate::core::timestamp::Timestamp;
     use crate::core::timestamp::ZERO_DURATION;
 
+    use crate::applications::transfer::MODULE_ID_STR;
     use crate::mock::context::MockContext;
     use crate::mock::router::MockRouter;
     use crate::test_utils::DummyTransferModule;
@@ -292,6 +294,7 @@ mod tests {
         ctx: MockContext,
         pub router: MockRouter,
         client_height: Height,
+        module_id: ModuleId,
         msg: MsgTimeout,
         packet_commitment: PacketCommitment,
         conn_end_on_a: ConnectionEnd,
@@ -306,9 +309,10 @@ mod tests {
 
         let client_height = Height::new(0, 2).unwrap();
 
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let mut router = MockRouter::default();
         router
-            .add_route(PortId::transfer(), DummyTransferModule::new())
+            .add_route(module_id.clone(), DummyTransferModule::new())
             .unwrap();
 
         let msg_proof_height = 2;
@@ -359,6 +363,7 @@ mod tests {
             ctx,
             router,
             client_height,
+            module_id,
             msg,
             packet_commitment,
             conn_end_on_a,
@@ -399,7 +404,7 @@ mod tests {
 
         let ctx = ctx
             .with_channel(
-                PortId::transfer(),
+                PortId::default(),
                 ChannelId::default(),
                 chan_end_on_a_unordered,
             )
@@ -446,7 +451,7 @@ mod tests {
             .with_client(&ClientId::default(), client_height)
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_channel(
-                PortId::transfer(),
+                PortId::default(),
                 ChannelId::default(),
                 chan_end_on_a_unordered,
             )
@@ -490,7 +495,7 @@ mod tests {
         } = fixture;
         let ctx = ctx
             .with_channel(
-                PortId::transfer(),
+                PortId::default(),
                 ChannelId::default(),
                 chan_end_on_a_unordered,
             )
@@ -522,7 +527,7 @@ mod tests {
             .with_client(&ClientId::default(), client_height)
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_channel(
-                PortId::transfer(),
+                PortId::default(),
                 ChannelId::default(),
                 chan_end_on_a_unordered,
             )
@@ -569,7 +574,7 @@ mod tests {
             .with_client(&ClientId::default(), client_height)
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_channel(
-                PortId::transfer(),
+                PortId::default(),
                 ChannelId::default(),
                 chan_end_on_a_ordered,
             )
@@ -603,6 +608,7 @@ mod tests {
         let Fixture {
             ctx,
             mut router,
+            module_id,
             msg,
             packet_commitment,
             conn_end_on_a,
@@ -611,7 +617,7 @@ mod tests {
         } = fixture;
         let mut ctx = ctx
             .with_channel(
-                PortId::transfer(),
+                PortId::default(),
                 ChannelId::default(),
                 chan_end_on_a_unordered,
             )
@@ -623,7 +629,7 @@ mod tests {
                 packet_commitment,
             );
 
-        let module = router.get_route_mut(&msg.packet.port_id_on_a).unwrap();
+        let module = router.get_route_mut(&module_id).unwrap();
         let res = timeout_packet_execute(&mut ctx, module, TimeoutMsgType::Timeout(msg));
 
         assert!(res.is_ok());
@@ -642,6 +648,7 @@ mod tests {
         let Fixture {
             ctx,
             mut router,
+            module_id,
             msg,
             packet_commitment,
             conn_end_on_a,
@@ -650,7 +657,7 @@ mod tests {
         } = fixture;
         let mut ctx = ctx
             .with_channel(
-                PortId::transfer(),
+                PortId::default(),
                 ChannelId::default(),
                 chan_end_on_a_ordered,
             )
@@ -662,7 +669,7 @@ mod tests {
                 packet_commitment,
             );
 
-        let module = router.get_route_mut(&msg.packet.port_id_on_a).unwrap();
+        let module = router.get_route_mut(&module_id).unwrap();
         let res = timeout_packet_execute(&mut ctx, module, TimeoutMsgType::Timeout(msg));
 
         assert!(res.is_ok());

@@ -171,7 +171,7 @@ mod tests {
         let chan_end_on_a = ChannelEnd::new(
             State::Open,
             Order::default(),
-            Counterparty::new(PortId::transfer(), Some(ChannelId::default())),
+            Counterparty::new(PortId::default(), Some(ChannelId::default())),
             vec![ConnectionId::default()],
             Version::new("ics20-1".to_string()),
         )
@@ -235,11 +235,11 @@ mod tests {
                     .with_client(&ClientId::default(), client_height)
                     .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                     .with_channel(
-                        PortId::transfer(),
+                        PortId::default(),
                         ChannelId::default(),
                         chan_end_on_a.clone(),
                     )
-                    .with_send_sequence(PortId::transfer(), ChannelId::default(), 1.into()),
+                    .with_send_sequence(PortId::default(), ChannelId::default(), 1.into()),
                 packet,
                 want_pass: true,
             },
@@ -250,11 +250,11 @@ mod tests {
                     .with_client(&ClientId::default(), client_height)
                     .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                     .with_channel(
-                        PortId::transfer(),
+                        PortId::default(),
                         ChannelId::default(),
                         chan_end_on_a.clone(),
                     )
-                    .with_send_sequence(PortId::transfer(), ChannelId::default(), 1.into()),
+                    .with_send_sequence(PortId::default(), ChannelId::default(), 1.into()),
                 packet: packet_timeout_equal_client_height,
                 want_pass: true,
             },
@@ -265,11 +265,11 @@ mod tests {
                     .with_client(&ClientId::default(), client_height)
                     .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                     .with_channel(
-                        PortId::transfer(),
+                        PortId::default(),
                         ChannelId::default(),
                         chan_end_on_a.clone(),
                     )
-                    .with_send_sequence(PortId::transfer(), ChannelId::default(), 1.into()),
+                    .with_send_sequence(PortId::default(), ChannelId::default(), 1.into()),
                 packet: packet_timeout_one_before_client_height,
                 want_pass: false,
             },
@@ -278,8 +278,8 @@ mod tests {
                 ctx: context
                     .with_client(&ClientId::default(), client_height)
                     .with_connection(ConnectionId::default(), conn_end_on_a)
-                    .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_a)
-                    .with_send_sequence(PortId::transfer(), ChannelId::default(), 1.into()),
+                    .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a)
+                    .with_send_sequence(PortId::default(), ChannelId::default(), 1.into()),
                 packet: packet_with_timestamp_old,
                 want_pass: false,
             },

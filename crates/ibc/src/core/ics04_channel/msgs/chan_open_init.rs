@@ -101,7 +101,7 @@ pub mod test_util {
         counterparty_channel_id: Option<u64>,
     ) -> RawMsgChannelOpenInit {
         RawMsgChannelOpenInit {
-            port_id: PortId::transfer().to_string(),
+            port_id: PortId::default().to_string(),
             channel: Some(get_dummy_raw_channel_end(1, counterparty_channel_id)),
             signer: get_dummy_bech32_account(),
         }

@@ -78,7 +78,7 @@ pub mod test_util {
     /// Returns a dummy `RawMsgChannelOpenConfirm`, for testing only!
     pub fn get_dummy_raw_msg_chan_open_confirm(proof_height: u64) -> RawMsgChannelOpenConfirm {
         RawMsgChannelOpenConfirm {
-            port_id: PortId::transfer().to_string(),
+            port_id: PortId::default().to_string(),
             channel_id: ChannelId::default().to_string(),
             proof_ack: get_dummy_proof(),
             proof_height: Some(Height {

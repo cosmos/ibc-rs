@@ -152,6 +152,11 @@ pub enum PacketError {
         port_id: PortId,
         channel_id: ChannelId,
     },
+    /// the channel end (`{port_id}`, `{channel_id}`) does not exist
+    ChannelNotFound {
+        port_id: PortId,
+        channel_id: ChannelId,
+    },
     /// Commitment for the packet `{sequence}` not found
     PacketCommitmentNotFound { sequence: Sequence },
     /// Missing sequence number for receiving packets on port `{port_id}` and channel `{channel_id}`

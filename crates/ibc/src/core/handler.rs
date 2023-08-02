@@ -80,8 +80,13 @@ where
         .map_err(RouterError::ContextError),
         MsgEnvelope::Channel(msg) => {
             let port_id = channel_msg_to_port_id(&msg);
+            let module_id = router
+                .lookup_module(port_id)
+                .ok_or(RouterError::InvalidPort {
+                    port_id: port_id.clone(),
+                })?;
             let module = router
-                .get_route(port_id)
+                .get_route(&module_id)
                 .ok_or(RouterError::RouteNotFound)?;
 
             match msg {
@@ -96,8 +101,13 @@ where
         }
         MsgEnvelope::Packet(msg) => {
             let port_id = packet_msg_to_port_id(&msg);
+            let module_id = router
+                .lookup_module(port_id)
+                .ok_or(RouterError::InvalidPort {
+                    port_id: port_id.clone(),
+                })?;
             let module = router
-                .get_route(port_id)
+                .get_route(&module_id)
                 .ok_or(RouterError::RouteNotFound)?;
 
             match msg {
@@ -145,8 +155,13 @@ where
         .map_err(RouterError::ContextError),
         MsgEnvelope::Channel(msg) => {
             let port_id = channel_msg_to_port_id(&msg);
+            let module_id = router
+                .lookup_module(port_id)
+                .ok_or(RouterError::InvalidPort {
+                    port_id: port_id.clone(),
+                })?;
             let module = router
-                .get_route_mut(port_id)
+                .get_route_mut(&module_id)
                 .ok_or(RouterError::RouteNotFound)?;
 
             match msg {
@@ -161,8 +176,13 @@ where
         }
         MsgEnvelope::Packet(msg) => {
             let port_id = packet_msg_to_port_id(&msg);
+            let module_id = router
+                .lookup_module(port_id)
+                .ok_or(RouterError::InvalidPort {
+                    port_id: port_id.clone(),
+                })?;
             let module = router
-                .get_route_mut(port_id)
+                .get_route_mut(&module_id)
                 .ok_or(RouterError::RouteNotFound)?;
 
             match msg {
@@ -190,8 +210,8 @@ mod tests {
     use test_log::test;
 
     use crate::applications::transfer::error::TokenTransferError;
-    use crate::applications::transfer::msgs::transfer::MsgTransfer;
     use crate::applications::transfer::send_transfer;
+    use crate::applications::transfer::{msgs::transfer::MsgTransfer, MODULE_ID_STR};
     use crate::core::dispatch;
     use crate::core::events::{IbcEvent, MessageEvent};
     use crate::core::ics02_client::msgs::{
@@ -233,6 +253,7 @@ mod tests {
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
     use crate::core::ics24_host::path::CommitmentPath;
     use crate::core::msgs::MsgEnvelope;
+    use crate::core::router::ModuleId;
     use crate::core::timestamp::Timestamp;
     use crate::mock::client_state::MockClientState;
     use crate::mock::consensus_state::MockConsensusState;
@@ -287,12 +308,14 @@ mod tests {
 
         let upgrade_client_height_second = Height::new(1, 1).unwrap();
 
+        let transfer_module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
+
         // We reuse this same context across all tests. Nothing in particular needs parametrizing.
         let mut ctx = MockContext::default();
 
         let mut router = MockRouter::default();
         router
-            .add_route(PortId::transfer(), DummyTransferModule::new())
+            .add_route(transfer_module_id.clone(), DummyTransferModule::new())
             .unwrap();
 
         let create_client_msg = MsgCreateClient::new(
@@ -374,6 +397,8 @@ mod tests {
             res.is_ok(),
             "ICS26 routing dispatch test 'client creation' failed for message {create_client_msg:?} with result: {res:?}",
         );
+
+        router.scope_port_to_module(msg_chan_init.port_id_on_a.clone(), transfer_module_id);
 
         // Figure out the ID of the client that was just created.
         assert!(matches!(
@@ -626,6 +651,7 @@ mod tests {
     }
 
     fn get_channel_events_ctx_router() -> (MockContext, MockRouter) {
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let ctx = MockContext::default()
             .with_client(&ClientId::default(), Height::new(0, 1).unwrap())
             .with_connection(
@@ -646,8 +672,11 @@ mod tests {
         let mut router = MockRouter::default();
 
         router
-            .add_route(PortId::transfer(), DummyTransferModule::new())
+            .add_route(module_id.clone(), DummyTransferModule::new())
             .unwrap();
+
+        // Note: messages will be using the default port
+        router.scope_port_to_module(PortId::default(), module_id);
 
         (ctx, router)
     }
@@ -700,12 +729,12 @@ mod tests {
     fn test_chan_open_ack_event() {
         let (ctx, mut router) = get_channel_events_ctx_router();
         let mut ctx = ctx.with_channel(
-            PortId::transfer(),
+            PortId::default(),
             ChannelId::default(),
             ChannelEnd::new(
                 ChannelState::Init,
                 ChannelOrder::Unordered,
-                ChannelCounterparty::new(PortId::transfer(), Some(ChannelId::default())),
+                ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
                 vec![ConnectionId::new(0)],
                 ChannelVersion::default(),
             )
@@ -734,12 +763,12 @@ mod tests {
     fn test_chan_open_confirm_event() {
         let (ctx, mut router) = get_channel_events_ctx_router();
         let mut ctx = ctx.with_channel(
-            PortId::transfer(),
+            PortId::default(),
             ChannelId::default(),
             ChannelEnd::new(
                 ChannelState::TryOpen,
                 ChannelOrder::Unordered,
-                ChannelCounterparty::new(PortId::transfer(), Some(ChannelId::default())),
+                ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
                 vec![ConnectionId::new(0)],
                 ChannelVersion::default(),
             )
@@ -768,12 +797,12 @@ mod tests {
     fn test_chan_close_init_event() {
         let (ctx, mut router) = get_channel_events_ctx_router();
         let mut ctx = ctx.with_channel(
-            PortId::transfer(),
+            PortId::default(),
             ChannelId::default(),
             ChannelEnd::new(
                 ChannelState::Open,
                 ChannelOrder::Unordered,
-                ChannelCounterparty::new(PortId::transfer(), Some(ChannelId::default())),
+                ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
                 vec![ConnectionId::new(0)],
                 ChannelVersion::default(),
             )
@@ -802,12 +831,12 @@ mod tests {
     fn test_chan_close_confirm_event() {
         let (ctx, mut router) = get_channel_events_ctx_router();
         let mut ctx = ctx.with_channel(
-            PortId::transfer(),
+            PortId::default(),
             ChannelId::default(),
             ChannelEnd::new(
                 ChannelState::Open,
                 ChannelOrder::Unordered,
-                ChannelCounterparty::new(PortId::transfer(), Some(ChannelId::default())),
+                ChannelCounterparty::new(PortId::default(), Some(ChannelId::default())),
                 vec![ConnectionId::new(0)],
                 ChannelVersion::default(),
             )

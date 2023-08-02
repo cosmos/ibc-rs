@@ -65,7 +65,7 @@ pub mod test_util {
     /// Returns a dummy `RawMsgChannelCloseInit`, for testing only!
     pub fn get_dummy_raw_msg_chan_close_init() -> RawMsgChannelCloseInit {
         RawMsgChannelCloseInit {
-            port_id: PortId::transfer().to_string(),
+            port_id: PortId::default().to_string(),
             channel_id: ChannelId::default().to_string(),
             signer: get_dummy_bech32_account(),
         }

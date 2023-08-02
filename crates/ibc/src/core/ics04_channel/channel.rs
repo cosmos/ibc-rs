@@ -582,7 +582,7 @@ pub mod test_util {
     /// Can be optionally parametrized with a specific channel identifier.
     pub fn get_dummy_raw_counterparty(channel_id: String) -> RawCounterparty {
         RawCounterparty {
-            port_id: PortId::transfer().to_string(),
+            port_id: PortId::default().to_string(),
             channel_id,
         }
     }

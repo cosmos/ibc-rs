@@ -191,12 +191,13 @@ mod tests {
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::msgs::chan_open_try::test_util::get_dummy_raw_msg_chan_open_try;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
-    use crate::core::ics24_host::identifier::PortId;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::core::router::ModuleId;
     use crate::core::router::Router;
     use crate::core::timestamp::ZERO_DURATION;
     use crate::Height;
 
+    use crate::applications::transfer::MODULE_ID_STR;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::mock::router::MockRouter;
@@ -205,6 +206,7 @@ mod tests {
     pub struct Fixture {
         pub ctx: MockContext,
         pub router: MockRouter,
+        pub module_id: ModuleId,
         pub msg: MsgChannelOpenTry,
         pub client_id_on_b: ClientId,
         pub conn_id_on_b: ConnectionId,
@@ -238,14 +240,16 @@ mod tests {
 
         let ctx = MockContext::default();
 
+        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let mut router = MockRouter::default();
         router
-            .add_route(PortId::transfer(), DummyTransferModule::new())
+            .add_route(module_id.clone(), DummyTransferModule::new())
             .unwrap();
 
         Fixture {
             ctx,
             router,
+            module_id,
             msg,
             client_id_on_b,
             conn_id_on_b,
@@ -311,6 +315,7 @@ mod tests {
         let Fixture {
             ctx,
             mut router,
+            module_id,
             msg,
             client_id_on_b,
             conn_id_on_b,
@@ -323,7 +328,7 @@ mod tests {
             .with_client(&client_id_on_b, Height::new(0, proof_height).unwrap())
             .with_connection(conn_id_on_b, conn_end_on_b);
 
-        let module = router.get_route_mut(&msg.port_id_on_b).unwrap();
+        let module = router.get_route_mut(&module_id).unwrap();
         let res = chan_open_try_execute(&mut ctx, module, msg);
 
         assert!(res.is_ok(), "Execution success: happy path");
