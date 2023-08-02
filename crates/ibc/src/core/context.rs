@@ -70,10 +70,10 @@ pub enum RouterError {
     UnknownMessageTypeUrl { url: String },
     /// the message is malformed and cannot be decoded error: `{0}`
     MalformedMessageBytes(ibc_proto::protobuf::Error),
-    /// route not found
-    RouteNotFound,
     /// port `{port_id}` is unknown
-    InvalidPort { port_id: PortId },
+    UnknownPort { port_id: PortId },
+    /// module not found
+    ModuleNotFound,
 }
 
 impl From<ContextError> for RouterError {
