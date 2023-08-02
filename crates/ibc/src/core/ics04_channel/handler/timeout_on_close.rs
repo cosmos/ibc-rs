@@ -273,7 +273,7 @@ mod tests {
             ..
         } = fixture;
         let context = context
-            .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a)
+            .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_a)
             .with_connection(ConnectionId::default(), conn_end_on_a);
 
         let res = validate(&context, &msg);
@@ -295,7 +295,7 @@ mod tests {
             ..
         } = fixture;
         let mut context = context
-            .with_channel(PortId::default(), ChannelId::default(), chan_end_on_a)
+            .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_a)
             .with_connection(ConnectionId::default(), conn_end_on_a)
             .with_packet_commitment(
                 msg.packet.port_id_on_a.clone(),

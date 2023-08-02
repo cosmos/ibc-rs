@@ -291,7 +291,6 @@ mod tests {
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::router::ModuleId;
     use crate::core::router::Router;
     use crate::core::timestamp::Timestamp;
     use crate::core::timestamp::ZERO_DURATION;
@@ -301,12 +300,11 @@ mod tests {
     use crate::mock::ics18_relayer::context::RelayerContext;
     use crate::mock::router::MockRouter;
     use crate::test_utils::get_dummy_account_id;
-    use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
+    use crate::test_utils::DummyTransferModule;
 
     pub struct Fixture {
         pub context: MockContext,
         pub router: MockRouter,
-        pub module_id: ModuleId,
         pub client_height: Height,
         pub host_height: Height,
         pub msg: MsgRecvPacket,
@@ -318,10 +316,9 @@ mod tests {
     fn fixture() -> Fixture {
         let context = MockContext::default();
 
-        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let mut router = MockRouter::default();
         router
-            .add_route(module_id.clone(), DummyTransferModule::new())
+            .add_route(PortId::transfer(), DummyTransferModule::new())
             .unwrap();
 
         let host_height = context.query_latest_height().unwrap().increment();
@@ -360,7 +357,6 @@ mod tests {
         Fixture {
             context,
             router,
-            module_id,
             client_height,
             host_height,
             msg,
@@ -452,9 +448,9 @@ mod tests {
 
         let packet_old = Packet {
             seq_on_a: 1.into(),
-            port_id_on_a: PortId::default(),
+            port_id_on_a: PortId::transfer(),
             chan_id_on_a: ChannelId::default(),
-            port_id_on_b: PortId::default(),
+            port_id_on_b: PortId::transfer(),
             chan_id_on_b: ChannelId::default(),
             data: Vec::new(),
             timeout_height_on_b: client_height.into(),
@@ -470,8 +466,8 @@ mod tests {
         let context = context
             .with_client(&ClientId::default(), client_height)
             .with_connection(ConnectionId::default(), conn_end_on_b)
-            .with_channel(PortId::default(), ChannelId::default(), chan_end_on_b)
-            .with_send_sequence(PortId::default(), ChannelId::default(), 1.into())
+            .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_b)
+            .with_send_sequence(PortId::transfer(), ChannelId::default(), 1.into())
             .with_height(host_height);
 
         let res = validate(&context, &msg_packet_old);
@@ -487,7 +483,6 @@ mod tests {
         let Fixture {
             context,
             mut router,
-            module_id,
             msg,
             conn_end_on_b,
             chan_end_on_b,
@@ -497,9 +492,9 @@ mod tests {
         let mut ctx = context
             .with_client(&ClientId::default(), client_height)
             .with_connection(ConnectionId::default(), conn_end_on_b)
-            .with_channel(PortId::default(), ChannelId::default(), chan_end_on_b);
+            .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_b);
 
-        let module = router.get_route_mut(&module_id).unwrap();
+        let module = router.get_route_mut(&msg.packet.port_id_on_b).unwrap();
         let res = recv_packet_execute(&mut ctx, module, msg);
 
         assert!(res.is_ok());

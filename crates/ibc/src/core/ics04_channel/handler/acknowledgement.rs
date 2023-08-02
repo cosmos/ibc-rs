@@ -229,20 +229,18 @@ mod tests {
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::PortId;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-    use crate::core::router::ModuleId;
     use crate::core::router::Router;
     use crate::core::timestamp::Timestamp;
     use crate::core::timestamp::ZERO_DURATION;
 
     use crate::mock::context::MockContext;
     use crate::mock::router::MockRouter;
-    use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
+    use crate::test_utils::DummyTransferModule;
 
     struct Fixture {
         ctx: MockContext,
         router: MockRouter,
         client_height: Height,
-        module_id: ModuleId,
         msg: MsgAcknowledgement,
         packet_commitment: PacketCommitment,
         conn_end_on_a: ConnectionEnd,
@@ -256,9 +254,8 @@ mod tests {
         let ctx = MockContext::default().with_client(&ClientId::default(), client_height);
         let mut router = MockRouter::default();
 
-        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let module = DummyTransferModule::new();
-        router.add_route(module_id.clone(), module).unwrap();
+        router.add_route(PortId::transfer(), module).unwrap();
 
         let msg = MsgAcknowledgement::try_from(get_dummy_raw_msg_acknowledgement(
             client_height.revision_height(),
@@ -302,7 +299,6 @@ mod tests {
             ctx,
             router,
             client_height,
-            module_id,
             msg,
             packet_commitment,
             conn_end_on_a,
@@ -337,7 +333,7 @@ mod tests {
         let ctx = ctx
             .with_client(&ClientId::default(), client_height)
             .with_channel(
-                PortId::default(),
+                PortId::transfer(),
                 ChannelId::default(),
                 chan_end_on_a_unordered,
             )
@@ -365,7 +361,7 @@ mod tests {
         let mut ctx: MockContext = ctx
             .with_client(&ClientId::default(), client_height)
             .with_channel(
-                PortId::default(),
+                PortId::transfer(),
                 ChannelId::default(),
                 chan_end_on_a_unordered,
             )
@@ -402,7 +398,6 @@ mod tests {
         let Fixture {
             ctx,
             mut router,
-            module_id,
             msg,
             packet_commitment,
             conn_end_on_a,
@@ -411,7 +406,7 @@ mod tests {
         } = fixture;
         let mut ctx = ctx
             .with_channel(
-                PortId::default(),
+                PortId::transfer(),
                 ChannelId::default(),
                 chan_end_on_a_unordered,
             )
@@ -423,7 +418,11 @@ mod tests {
                 packet_commitment,
             );
 
-        let module = router.get_route_mut(&module_id).unwrap();
+        std::println!("ctx");
+
+        let module = router.get_route_mut(&msg.packet.port_id_on_a).unwrap();
+
+        std::println!("module: {:?}", module);
         let res = acknowledgement_packet_execute(&mut ctx, module, msg);
 
         assert!(res.is_ok());
@@ -441,7 +440,6 @@ mod tests {
         let Fixture {
             ctx,
             mut router,
-            module_id,
             msg,
             packet_commitment,
             conn_end_on_a,
@@ -450,7 +448,7 @@ mod tests {
         } = fixture;
         let mut ctx = ctx
             .with_channel(
-                PortId::default(),
+                PortId::transfer(),
                 ChannelId::default(),
                 chan_end_on_a_ordered,
             )
@@ -462,7 +460,7 @@ mod tests {
                 packet_commitment,
             );
 
-        let module = router.get_route_mut(&module_id).unwrap();
+        let module = router.get_route_mut(&msg.packet.port_id_on_a).unwrap();
         let res = acknowledgement_packet_execute(&mut ctx, module, msg);
 
         assert!(res.is_ok());

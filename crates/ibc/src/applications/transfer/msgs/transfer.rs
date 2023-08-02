@@ -142,7 +142,7 @@ pub mod test_util {
             timeout_timestamp: Option<Timestamp>,
         ) -> Self {
             Self {
-                port_id_on_a: PortId::default(),
+                port_id_on_a: PortId::transfer(),
                 chan_id_on_a: ChannelId::default(),
                 packet_data: PacketData::new_dummy(),
                 timeout_timestamp_on_b: timeout_timestamp
@@ -159,7 +159,7 @@ pub mod test_util {
                 seq_on_a: sequence,
                 port_id_on_a: self.port_id_on_a.clone(),
                 chan_id_on_a: self.chan_id_on_a.clone(),
-                port_id_on_b: PortId::default(),
+                port_id_on_b: PortId::transfer(),
                 chan_id_on_b: ChannelId::default(),
                 data,
                 timeout_height_on_b: self.timeout_height_on_b,

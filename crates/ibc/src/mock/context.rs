@@ -1324,7 +1324,7 @@ mod tests {
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-    use crate::core::router::{Module, ModuleExtras, ModuleId};
+    use crate::core::router::{Module, ModuleExtras};
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
     use crate::mock::router::MockRouter;
@@ -1680,23 +1680,26 @@ mod tests {
 
         let mut router = MockRouter::default();
         router
-            .add_route(ModuleId::new("foomodule".to_string()), FooModule::default())
+            .add_route(
+                PortId::new("fooPort".to_string()).unwrap(),
+                FooModule::default(),
+            )
             .expect("Never fails");
         router
-            .add_route(ModuleId::new("barmodule".to_string()), BarModule)
+            .add_route(PortId::new("barPort".to_string()).unwrap(), BarModule)
             .expect("Never fails");
 
-        let mut on_recv_packet_result = |module_id: &'static str| {
-            let module_id = ModuleId::new(module_id.to_string());
-            let m = router.get_route_mut(&module_id).expect("Never fails");
+        let mut on_recv_packet_result = |port_id: &'static str| {
+            let port_id = PortId::new(port_id.to_string()).unwrap();
+            let m = router.get_route_mut(&port_id).expect("Never fails");
             let result =
                 m.on_recv_packet_execute(&Packet::default(), &get_dummy_bech32_account().into());
-            (module_id, result)
+            (port_id, result)
         };
 
         let _results = vec![
-            on_recv_packet_result("foomodule"),
-            on_recv_packet_result("barmodule"),
+            on_recv_packet_result("fooPort"),
+            on_recv_packet_result("barPort"),
         ];
     }
 }

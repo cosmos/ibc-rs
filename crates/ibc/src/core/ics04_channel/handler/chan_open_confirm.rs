@@ -177,8 +177,8 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChannelId;
+    use crate::core::ics24_host::identifier::PortId;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-    use crate::core::router::ModuleId;
     use crate::core::router::Router;
     use crate::core::timestamp::ZERO_DURATION;
     use crate::Height;
@@ -186,12 +186,11 @@ mod tests {
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::mock::router::MockRouter;
-    use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
+    use crate::test_utils::DummyTransferModule;
 
     pub struct Fixture {
         pub context: MockContext,
         pub router: MockRouter,
-        pub module_id: ModuleId,
         pub msg: MsgChannelOpenConfirm,
         pub client_id_on_b: ClientId,
         pub conn_id_on_b: ConnectionId,
@@ -205,10 +204,9 @@ mod tests {
         let proof_height = 10;
         let context = MockContext::default();
 
-        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let mut router = MockRouter::default();
         router
-            .add_route(module_id.clone(), DummyTransferModule::new())
+            .add_route(PortId::transfer(), DummyTransferModule::new())
             .unwrap();
 
         let client_id_on_b = ClientId::new(mock_client_type(), 45).unwrap();
@@ -238,7 +236,6 @@ mod tests {
         Fixture {
             context,
             router,
-            module_id,
             msg,
             client_id_on_b,
             conn_id_on_b,
@@ -340,7 +337,6 @@ mod tests {
         let Fixture {
             context,
             mut router,
-            module_id,
             msg,
             client_id_on_b,
             conn_id_on_b,
@@ -359,7 +355,7 @@ mod tests {
                 chan_end_on_b,
             );
 
-        let module = router.get_route_mut(&module_id).unwrap();
+        let module = router.get_route_mut(&msg.port_id_on_b).unwrap();
         let res = chan_open_confirm_execute(&mut context, module, msg);
 
         assert!(res.is_ok(), "Execution happy path");
