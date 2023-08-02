@@ -9,12 +9,12 @@ use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::events::CloseInit;
 use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
 use crate::core::ics24_host::path::ChannelEndPath;
-use crate::core::router::ModuleId;
+use crate::core::router::Module;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_close_init_validate<ValCtx>(
     ctx_a: &ValCtx,
-    module_id: ModuleId,
+    module: &dyn Module,
     msg: MsgChannelCloseInit,
 ) -> Result<(), ContextError>
 where
@@ -22,9 +22,6 @@ where
 {
     validate(ctx_a, &msg)?;
 
-    let module = ctx_a
-        .get_route(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
     module.on_chan_close_init_validate(&msg.port_id_on_a, &msg.chan_id_on_a)?;
 
     Ok(())
@@ -32,15 +29,12 @@ where
 
 pub(crate) fn chan_close_init_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
-    module_id: ModuleId,
+    module: &mut dyn Module,
     msg: MsgChannelCloseInit,
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
 {
-    let module = ctx_a
-        .get_route_mut(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
     let extras = module.on_chan_close_init_execute(&msg.port_id_on_a, &msg.chan_id_on_a)?;
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
@@ -137,11 +131,14 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_close_init::test_util::get_dummy_raw_msg_chan_close_init;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::core::router::ModuleId;
+    use crate::core::router::Router;
     use crate::core::timestamp::ZERO_DURATION;
 
     use crate::applications::transfer::MODULE_ID_STR;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
+    use crate::mock::router::MockRouter;
     use crate::test_utils::DummyTransferModule;
 
     #[test]
@@ -224,12 +221,8 @@ mod tests {
         .unwrap();
 
         let mut context = {
-            let mut default_context = MockContext::default();
+            let default_context = MockContext::default();
             let client_consensus_state_height = default_context.host_height().unwrap();
-
-            let module = DummyTransferModule::new();
-            let module_id = ModuleId::new(MODULE_ID_STR.to_string());
-            default_context.add_route(module_id, module).unwrap();
 
             default_context
                 .with_client(&client_id, client_consensus_state_height)
@@ -241,11 +234,16 @@ mod tests {
                 )
         };
 
-        let res = chan_close_init_execute(
-            &mut context,
-            ModuleId::new(MODULE_ID_STR.to_string()),
-            msg_chan_close_init,
-        );
+        let mut router = MockRouter::default();
+        router
+            .add_route(
+                ModuleId::new(MODULE_ID_STR.to_string()),
+                DummyTransferModule::new(),
+            )
+            .unwrap();
+        let module_id = ModuleId::new(MODULE_ID_STR.to_string());
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = chan_close_init_execute(&mut context, module, msg_chan_close_init);
         assert!(res.is_ok(), "Execution happy path");
 
         assert_eq!(context.events.len(), 2);

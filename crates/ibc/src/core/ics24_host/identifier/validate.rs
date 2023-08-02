@@ -6,15 +6,10 @@ use super::IdentifierError as Error;
 const PATH_SEPARATOR: char = '/';
 const VALID_SPECIAL_CHARS: &str = "._+-#[]<>";
 
-/// Default validator function for identifiers.
-///
-/// A valid identifier only contain valid characters, and be of a given min and
-/// max length as specified in the
+/// Checks if the identifier only contains valid characters as specified in the
 /// [`ICS-24`](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#paths-identifiers-separators)]
 /// spec.
-pub fn validate_identifier(id: &str, min: usize, max: usize) -> Result<(), Error> {
-    assert!(max >= min);
-
+pub fn validate_identifier_chars(id: &str) -> Result<(), Error> {
     // Check identifier is not empty
     if id.is_empty() {
         return Err(Error::Empty);
@@ -23,16 +18,6 @@ pub fn validate_identifier(id: &str, min: usize, max: usize) -> Result<(), Error
     // Check identifier does not contain path separators
     if id.contains(PATH_SEPARATOR) {
         return Err(Error::ContainSeparator { id: id.into() });
-    }
-
-    // Check identifier length is between given min/max
-    if id.len() < min || id.len() > max {
-        return Err(Error::InvalidLength {
-            id: id.into(),
-            length: id.len(),
-            min,
-            max,
-        });
     }
 
     // Check that the identifier comprises only valid characters:
@@ -50,26 +35,42 @@ pub fn validate_identifier(id: &str, min: usize, max: usize) -> Result<(), Error
     Ok(())
 }
 
-/// Checks if the prefix can form a valid identifier with the given min/max identifier's length.
-fn validate_prefix_epoch_format(
+/// Checks if the identifier forms a valid identifier with the given min/max length as specified in the
+/// [`ICS-24`](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#paths-identifiers-separators)]
+/// spec.
+pub fn validate_identifier_length(id: &str, min: usize, max: usize) -> Result<(), Error> {
+    assert!(max >= min);
+
+    // Check identifier length is between given min/max
+    if id.len() < min || id.len() > max {
+        return Err(Error::InvalidLength {
+            id: id.into(),
+            length: id.len(),
+            min,
+            max,
+        });
+    }
+
+    Ok(())
+}
+
+/// Checks if a prefix forms a valid identifier with the given min/max identifier's length.
+/// The prefix must be between `min_id_length - 2`, considering `u64::MIN` (1 char) and "-"
+/// and `max_id_length - 21` characters, considering `u64::MAX` (20 chars) and "-".
+pub fn validate_prefix_length(
     prefix: &str,
     min_id_length: usize,
     max_id_length: usize,
 ) -> Result<(), Error> {
-    // Checks if the prefix is not blank
-    if prefix.is_empty() {
-        return Err(Error::Empty)?;
-    }
-
-    // Checks if the prefix forms a valid identifier when used with `0`
-    validate_identifier(
+    // Checks if the prefix forms a valid identifier length when constructed with `u64::MIN`
+    validate_identifier_length(
         &format!("{prefix}-{}", u64::MIN),
         min_id_length,
         max_id_length,
     )?;
 
-    // Checks if the prefix forms a valid identifier when used with `u64::MAX`
-    validate_identifier(
+    // Checks if the prefix forms a valid identifier length when constructed with `u64::MAX`
+    validate_identifier_length(
         &format!("{prefix}-{}", u64::MAX),
         min_id_length,
         max_id_length,
@@ -80,7 +81,8 @@ fn validate_prefix_epoch_format(
 
 /// Default validator function for the Client types.
 pub fn validate_client_type(id: &str) -> Result<(), Error> {
-    validate_prefix_epoch_format(id, 9, 64)
+    validate_identifier_chars(id)?;
+    validate_prefix_length(id, 9, 64)
 }
 
 /// Default validator function for Client identifiers.
@@ -88,7 +90,8 @@ pub fn validate_client_type(id: &str) -> Result<(), Error> {
 /// A valid client identifier must be between 9-64 characters as specified in
 /// the ICS-24 spec.
 pub fn validate_client_identifier(id: &str) -> Result<(), Error> {
-    validate_identifier(id, 9, 64)
+    validate_identifier_chars(id)?;
+    validate_identifier_length(id, 9, 64)
 }
 
 /// Default validator function for Connection identifiers.
@@ -96,7 +99,8 @@ pub fn validate_client_identifier(id: &str) -> Result<(), Error> {
 /// A valid connection identifier must be between 10-64 characters as specified
 /// in the ICS-24 spec.
 pub fn validate_connection_identifier(id: &str) -> Result<(), Error> {
-    validate_identifier(id, 10, 64)
+    validate_identifier_chars(id)?;
+    validate_identifier_length(id, 10, 64)
 }
 
 /// Default validator function for Port identifiers.
@@ -104,7 +108,8 @@ pub fn validate_connection_identifier(id: &str) -> Result<(), Error> {
 /// A valid port identifier must be between 2-128 characters as specified in the
 /// ICS-24 spec.
 pub fn validate_port_identifier(id: &str) -> Result<(), Error> {
-    validate_identifier(id, 2, 128)
+    validate_identifier_chars(id)?;
+    validate_identifier_length(id, 2, 128)
 }
 
 /// Default validator function for Channel identifiers.
@@ -112,7 +117,8 @@ pub fn validate_port_identifier(id: &str) -> Result<(), Error> {
 /// A valid channel identifier must be between 8-64 characters as specified in
 /// the ICS-24 spec.
 pub fn validate_channel_identifier(id: &str) -> Result<(), Error> {
-    validate_identifier(id, 8, 64)
+    validate_identifier_chars(id)?;
+    validate_identifier_length(id, 8, 64)
 }
 
 #[cfg(test)]
@@ -188,21 +194,21 @@ mod tests {
     #[test]
     fn parse_invalid_id_chars() {
         // invalid id chars
-        let id = validate_identifier("channel@01", 1, 10);
+        let id = validate_identifier_chars("channel@01");
         assert!(id.is_err())
     }
 
     #[test]
     fn parse_invalid_id_empty() {
         // invalid id empty
-        let id = validate_identifier("", 1, 10);
+        let id = validate_identifier_chars("");
         assert!(id.is_err())
     }
 
     #[test]
     fn parse_invalid_id_path_separator() {
         // invalid id with path separator
-        let id = validate_identifier("id/1", 1, 10);
+        let id = validate_identifier_chars("id/1");
         assert!(id.is_err())
     }
 

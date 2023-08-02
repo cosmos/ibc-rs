@@ -27,6 +27,7 @@ use crate::serializers::serde_string;
         scale_info::TypeInfo
     )
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Display)]
 pub struct BaseDenom(String);
 
@@ -61,6 +62,8 @@ impl FromStr for BaseDenom {
         scale_info::TypeInfo
     )
 )]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub struct TracePrefix {
     port_id: PortId,
@@ -94,6 +97,8 @@ impl Display for TracePrefix {
         scale_info::TypeInfo
     )
 )]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord, From)]
 pub struct TracePath(Vec<TracePrefix>);
 
@@ -184,6 +189,7 @@ impl Display for TracePath {
 
 /// A type that contains the base denomination for ICS20 and the source tracing information path.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -196,6 +202,7 @@ impl Display for TracePath {
 pub struct PrefixedDenom {
     /// A series of `{port-id}/{channel-id}`s for tracing the source of the token.
     #[cfg_attr(feature = "serde", serde(with = "serde_string"))]
+    #[cfg_attr(feature = "schema", schemars(with = "String"))]
     pub trace_path: TracePath,
     /// Base denomination of the relayed fungible token.
     pub base_denom: BaseDenom,

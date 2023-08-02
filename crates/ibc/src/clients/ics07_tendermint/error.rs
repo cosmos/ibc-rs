@@ -3,7 +3,7 @@
 use crate::prelude::*;
 
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics24_host::identifier::{ChainId, ClientId};
+use crate::core::ics24_host::identifier::{ClientId, IdentifierError};
 use crate::Height;
 
 use core::time::Duration;
@@ -17,12 +17,8 @@ use tendermint_light_client_verifier::Verdict;
 /// The main error type
 #[derive(Debug, Display)]
 pub enum Error {
-    /// chain-id is (`{chain_id}`) is too long, got: `{len}`, max allowed: `{max_len}`
-    ChainIdTooLong {
-        chain_id: ChainId,
-        len: usize,
-        max_len: usize,
-    },
+    /// invalid identifier: `{0}`
+    InvalidIdentifier(IdentifierError),
     /// invalid header, failed basic validation: `{reason}`, error: `{error}`
     InvalidHeader {
         reason: String,
@@ -99,14 +95,13 @@ pub enum Error {
     MisbehaviourHeadersBlockHashesEqual,
     /// headers are not at same height and are monotonically increasing
     MisbehaviourHeadersNotAtSameHeight,
-    /// invalid raw client id: `{client_id}`
-    InvalidRawClientId { client_id: String },
 }
 
 #[cfg(feature = "std")]
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
+            Self::InvalidIdentifier(e) => Some(e),
             Self::InvalidHeader { error: e, .. } => Some(e),
             Self::InvalidTendermintTrustThreshold(e) => Some(e),
             Self::InvalidRawHeader(e) => Some(e),
@@ -121,6 +116,12 @@ impl From<Error> for ClientError {
         Self::ClientSpecific {
             description: e.to_string(),
         }
+    }
+}
+
+impl From<IdentifierError> for Error {
+    fn from(e: IdentifierError) -> Self {
+        Self::InvalidIdentifier(e)
     }
 }
 

@@ -4,6 +4,9 @@ use alloc::string::ToString;
 use core::convert::TryFrom;
 use core::str::FromStr;
 
+#[cfg(feature = "schema")]
+use crate::alloc::borrow::ToOwned;
+
 use ibc_proto::ibc::applications::transfer::v2::FungibleTokenPacketData as RawPacketData;
 
 use super::error::TokenTransferError;
@@ -16,6 +19,7 @@ use crate::signer::Signer;
     feature = "serde",
     serde(try_from = "RawPacketData", into = "RawPacketData")
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(parity_scale_codec::Encode, parity_scale_codec::Decode,)
@@ -95,6 +99,10 @@ mod tests {
         r#"{"denom":"uatom","amount":"10","sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","memo":""}"#
     }
 
+    pub fn dummy_json_packet_data_without_memo() -> &'static str {
+        r#"{"denom":"uatom","amount":"10","sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng"}"#
+    }
+
     /// Ensures `PacketData` properly encodes to JSON by first converting to a
     /// `RawPacketData` and then serializing that.
     #[test]
@@ -107,5 +115,6 @@ mod tests {
     #[test]
     fn test_packet_data_deser() {
         PacketData::new_dummy().deser_json_assert_eq(dummy_json_packet_data());
+        PacketData::new_dummy().deser_json_assert_eq(dummy_json_packet_data_without_memo());
     }
 }
