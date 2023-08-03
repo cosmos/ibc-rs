@@ -15,22 +15,19 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqAckPath,
 };
-use crate::core::{events::IbcEvent, ics04_channel::events::AcknowledgePacket, router::ModuleId};
+use crate::core::router::Module;
+use crate::core::{events::IbcEvent, ics04_channel::events::AcknowledgePacket};
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn acknowledgement_packet_validate<ValCtx>(
     ctx_a: &ValCtx,
-    module_id: ModuleId,
+    module: &dyn Module,
     msg: MsgAcknowledgement,
 ) -> Result<(), ContextError>
 where
     ValCtx: ValidationContext,
 {
     validate(ctx_a, &msg)?;
-
-    let module = ctx_a
-        .get_route(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
 
     module
         .on_acknowledgement_packet_validate(&msg.packet, &msg.acknowledgement, &msg.signer)
@@ -39,7 +36,7 @@ where
 
 pub(crate) fn acknowledgement_packet_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
-    module_id: ModuleId,
+    module: &mut dyn Module,
     msg: MsgAcknowledgement,
 ) -> Result<(), ContextError>
 where
@@ -73,10 +70,6 @@ where
         // prevent an entire relay transaction from failing and consuming unnecessary fees.
         return Ok(());
     };
-
-    let module = ctx_a
-        .get_route_mut(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
 
     let (extras, cb_result) =
         module.on_acknowledgement_packet_execute(&msg.packet, &msg.acknowledgement, &msg.signer);
@@ -243,14 +236,18 @@ mod tests {
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::PortId;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::core::router::ModuleId;
+    use crate::core::router::Router;
     use crate::core::timestamp::Timestamp;
     use crate::core::timestamp::ZERO_DURATION;
 
     use crate::mock::context::MockContext;
+    use crate::mock::router::MockRouter;
     use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
 
     struct Fixture {
         ctx: MockContext,
+        router: MockRouter,
         client_height: Height,
         module_id: ModuleId,
         msg: MsgAcknowledgement,
@@ -263,11 +260,12 @@ mod tests {
     #[fixture]
     fn fixture() -> Fixture {
         let client_height = Height::new(0, 2).unwrap();
-        let mut ctx = MockContext::default().with_client(&ClientId::default(), client_height);
+        let ctx = MockContext::default().with_client(&ClientId::default(), client_height);
+        let mut router = MockRouter::default();
 
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
         let module = DummyTransferModule::new();
-        ctx.add_route(module_id.clone(), module).unwrap();
+        router.add_route(module_id.clone(), module).unwrap();
 
         let msg = MsgAcknowledgement::try_from(get_dummy_raw_msg_acknowledgement(
             client_height.revision_height(),
@@ -309,6 +307,7 @@ mod tests {
 
         Fixture {
             ctx,
+            router,
             client_height,
             module_id,
             msg,
@@ -409,6 +408,7 @@ mod tests {
     fn ack_unordered_chan_execute(fixture: Fixture) {
         let Fixture {
             ctx,
+            mut router,
             module_id,
             msg,
             packet_commitment,
@@ -430,7 +430,8 @@ mod tests {
                 packet_commitment,
             );
 
-        let res = acknowledgement_packet_execute(&mut ctx, module_id, msg);
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = acknowledgement_packet_execute(&mut ctx, module, msg);
 
         assert!(res.is_ok());
 
@@ -446,6 +447,7 @@ mod tests {
     fn ack_ordered_chan_execute(fixture: Fixture) {
         let Fixture {
             ctx,
+            mut router,
             module_id,
             msg,
             packet_commitment,
@@ -467,7 +469,8 @@ mod tests {
                 packet_commitment,
             );
 
-        let res = acknowledgement_packet_execute(&mut ctx, module_id, msg);
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = acknowledgement_packet_execute(&mut ctx, module, msg);
 
         assert!(res.is_ok());
 

@@ -8,6 +8,7 @@ use crate::prelude::*;
 
 use core::cmp::max;
 use core::convert::{TryFrom, TryInto};
+use core::str::FromStr;
 use core::time::Duration;
 
 use ibc_proto::google::protobuf::Any;
@@ -147,13 +148,7 @@ impl ClientState {
     }
 
     pub fn validate(&self) -> Result<(), Error> {
-        if self.chain_id.as_str().len() > MaxChainIdLen {
-            return Err(Error::ChainIdTooLong {
-                chain_id: self.chain_id.clone(),
-                len: self.chain_id.as_str().len(),
-                max_len: MaxChainIdLen,
-            });
-        }
+        self.chain_id.validate_length(3, MaxChainIdLen)?;
 
         // `TrustThreshold` is guaranteed to be in the range `[0, 1)`, but a `TrustThreshold::ZERO`
         // value is invalid in this context
@@ -202,7 +197,7 @@ impl ClientState {
             });
         }
 
-        if self.latest_height.revision_number() != self.chain_id.version() {
+        if self.latest_height.revision_number() != self.chain_id.revision_number() {
             return Err(Error::InvalidLatestHeight {
                 reason: "ClientState latest-height revision number must match chain-id version"
                     .to_string(),
@@ -637,7 +632,7 @@ impl TryFrom<RawTmClientState> for ClientState {
     type Error = Error;
 
     fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
-        let chain_id = ChainId::from_string(raw.chain_id.as_str());
+        let chain_id = ChainId::from_str(raw.chain_id.as_str())?;
 
         let trust_level = {
             let trust_level = raw
@@ -822,7 +817,7 @@ mod tests {
     fn client_state_new() {
         // Define a "default" set of parameters to reuse throughout these tests.
         let default_params: ClientStateParams = ClientStateParams {
-            id: ChainId::default(),
+            id: ChainId::new("ibc", 0).unwrap(),
             trust_level: TrustThreshold::ONE_THIRD,
             trusting_period: Duration::new(64000, 0),
             unbonding_period: Duration::new(128000, 0),
@@ -865,9 +860,9 @@ mod tests {
                 want_pass: true,
             },
             Test {
-                name: "Valid long (50 chars) chain-id".to_string(),
+                name: "Valid long (50 chars) chain-id that satisfies revision_number length < `u16::MAX` length".to_string(),
                 params: ClientStateParams {
-                    id: ChainId::new(&"a".repeat(48), 0),
+                    id: ChainId::new(&"a".repeat(29), 0).unwrap(),
                     ..default_params.clone()
                 },
                 want_pass: true,
@@ -875,7 +870,7 @@ mod tests {
             Test {
                 name: "Invalid too-long (51 chars) chain-id".to_string(),
                 params: ClientStateParams {
-                    id: ChainId::new(&"a".repeat(49), 0),
+                    id: ChainId::new(&"a".repeat(30), 0).unwrap(),
                     ..default_params.clone()
                 },
                 want_pass: false,
@@ -988,7 +983,7 @@ mod tests {
     fn client_state_verify_height() {
         // Define a "default" set of parameters to reuse throughout these tests.
         let default_params: ClientStateParams = ClientStateParams {
-            id: ChainId::new("ibc", 1),
+            id: ChainId::new("ibc", 1).unwrap(),
             trust_level: TrustThreshold::ONE_THIRD,
             trusting_period: Duration::new(64000, 0),
             unbonding_period: Duration::new(128000, 0),
@@ -1126,6 +1121,7 @@ mod serde_tests {
 #[cfg(any(test, feature = "mocks"))]
 pub mod test_util {
     use crate::prelude::*;
+    use core::str::FromStr;
     use core::time::Duration;
 
     use tendermint::block::Header;
@@ -1144,17 +1140,15 @@ pub mod test_util {
         }
 
         pub fn new_dummy_from_header(tm_header: Header) -> Self {
+            let chain_id = ChainId::from_str(tm_header.chain_id.as_str()).expect("Never fails");
             Self::new(
-                tm_header.chain_id.to_string().into(),
+                chain_id.clone(),
                 Default::default(),
                 Duration::from_secs(64000),
                 Duration::from_secs(128000),
                 Duration::from_millis(3000),
-                Height::new(
-                    ChainId::chain_version(tm_header.chain_id.as_str()),
-                    u64::from(tm_header.height),
-                )
-                .expect("Never fails"),
+                Height::new(chain_id.revision_number(), u64::from(tm_header.height))
+                    .expect("Never fails"),
                 Default::default(),
                 Default::default(),
                 AllowUpdate {
@@ -1169,7 +1163,7 @@ pub mod test_util {
     pub fn get_dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
         #[allow(deprecated)]
         RawTmClientState {
-            chain_id: ChainId::new("ibc", 0).to_string(),
+            chain_id: ChainId::new("ibc", 0).expect("Never fails").to_string(),
             trust_level: Some(Fraction {
                 numerator: 1,
                 denominator: 3,

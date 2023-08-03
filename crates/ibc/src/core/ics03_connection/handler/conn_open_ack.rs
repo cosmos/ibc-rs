@@ -262,7 +262,7 @@ mod tests {
 
         let ctx_default = MockContext::default();
         let ctx_new = MockContext::new(
-            ChainId::new("mockgaia", latest_height.revision_number()),
+            ChainId::new("mockgaia", latest_height.revision_number()).unwrap(),
             HostType::Mock,
             max_history_size,
             latest_height,

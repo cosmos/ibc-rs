@@ -6,17 +6,16 @@ use crate::prelude::*;
 use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics02_client::client_state::ClientStateValidation;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
-use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::events::OpenInit;
 use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
 use crate::core::ics24_host::identifier::ChannelId;
 use crate::core::ics24_host::path::{ChannelEndPath, SeqAckPath, SeqRecvPath, SeqSendPath};
-use crate::core::router::ModuleId;
+use crate::core::router::Module;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_open_init_validate<ValCtx>(
     ctx_a: &ValCtx,
-    module_id: ModuleId,
+    module: &dyn Module,
     msg: MsgChannelOpenInit,
 ) -> Result<(), ContextError>
 where
@@ -25,9 +24,6 @@ where
     validate(ctx_a, &msg)?;
     let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
 
-    let module = ctx_a
-        .get_route(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
     module.on_chan_open_init_validate(
         msg.ordering,
         &msg.connection_hops_on_a,
@@ -42,16 +38,13 @@ where
 
 pub(crate) fn chan_open_init_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
-    module_id: ModuleId,
+    module: &mut dyn Module,
     msg: MsgChannelOpenInit,
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
 {
     let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
-    let module = ctx_a
-        .get_route_mut(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
     let (extras, version) = module.on_chan_open_init_execute(
         msg.ordering,
         &msg.connection_hops_on_a,
@@ -163,12 +156,16 @@ mod tests {
     use crate::core::ics24_host::identifier::ConnectionId;
 
     use crate::applications::transfer::MODULE_ID_STR;
+    use crate::core::router::ModuleId;
+    use crate::core::router::Router;
     use crate::mock::context::MockContext;
+    use crate::mock::router::MockRouter;
     use crate::test_utils::DummyTransferModule;
     use test_log::test;
 
     pub struct Fixture {
         pub ctx: MockContext,
+        pub router: MockRouter,
         pub module_id: ModuleId,
         pub msg: MsgChannelOpenInit,
     }
@@ -177,10 +174,12 @@ mod tests {
     fn fixture() -> Fixture {
         let msg = MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
 
-        let mut default_ctx = MockContext::default();
+        let default_ctx = MockContext::default();
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        let module = DummyTransferModule::new();
-        default_ctx.add_route(module_id.clone(), module).unwrap();
+        let mut router = MockRouter::default();
+        router
+            .add_route(module_id.clone(), DummyTransferModule::new())
+            .unwrap();
 
         let msg_conn_init = MsgConnectionOpenInit::new_dummy();
 
@@ -202,6 +201,7 @@ mod tests {
 
         Fixture {
             ctx,
+            router,
             module_id,
             msg,
         }
@@ -246,11 +246,13 @@ mod tests {
     fn chan_open_init_execute_happy_path(fixture: Fixture) {
         let Fixture {
             mut ctx,
+            mut router,
             module_id,
             msg,
         } = fixture;
+        let module = router.get_route_mut(&module_id).unwrap();
 
-        let res = chan_open_init_execute(&mut ctx, module_id, msg);
+        let res = chan_open_init_execute(&mut ctx, module, msg);
 
         assert!(res.is_ok(), "Execution succeeds; good parameters");
 

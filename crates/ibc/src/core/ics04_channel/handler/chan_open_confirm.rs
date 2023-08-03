@@ -15,12 +15,12 @@ use crate::core::ics04_channel::events::OpenConfirm;
 use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
 use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
-use crate::core::router::ModuleId;
+use crate::core::router::Module;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
 pub(crate) fn chan_open_confirm_validate<ValCtx>(
     ctx_b: &ValCtx,
-    module_id: ModuleId,
+    module: &dyn Module,
     msg: MsgChannelOpenConfirm,
 ) -> Result<(), ContextError>
 where
@@ -28,9 +28,6 @@ where
 {
     validate(ctx_b, &msg)?;
 
-    let module = ctx_b
-        .get_route(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
     module.on_chan_open_confirm_validate(&msg.port_id_on_b, &msg.chan_id_on_b)?;
 
     Ok(())
@@ -38,16 +35,12 @@ where
 
 pub(crate) fn chan_open_confirm_execute<ExecCtx>(
     ctx_b: &mut ExecCtx,
-    module_id: ModuleId,
+    module: &mut dyn Module,
     msg: MsgChannelOpenConfirm,
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
 {
-    let module = ctx_b
-        .get_route_mut(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
-
     let extras = module.on_chan_open_confirm_execute(&msg.port_id_on_b, &msg.chan_id_on_b)?;
     let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &msg.chan_id_on_b);
     let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
@@ -192,15 +185,19 @@ mod tests {
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::ChannelId;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::core::router::ModuleId;
+    use crate::core::router::Router;
     use crate::core::timestamp::ZERO_DURATION;
     use crate::Height;
 
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
+    use crate::mock::router::MockRouter;
     use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
 
     pub struct Fixture {
         pub context: MockContext,
+        pub router: MockRouter,
         pub module_id: ModuleId,
         pub msg: MsgChannelOpenConfirm,
         pub client_id_on_b: ClientId,
@@ -213,10 +210,13 @@ mod tests {
     #[fixture]
     fn fixture() -> Fixture {
         let proof_height = 10;
-        let mut context = MockContext::default();
-        let module = DummyTransferModule::new();
+        let context = MockContext::default();
+
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        context.add_route(module_id.clone(), module).unwrap();
+        let mut router = MockRouter::default();
+        router
+            .add_route(module_id.clone(), DummyTransferModule::new())
+            .unwrap();
 
         let client_id_on_b = ClientId::new(mock_client_type(), 45).unwrap();
         let conn_id_on_b = ConnectionId::new(2);
@@ -244,6 +244,7 @@ mod tests {
 
         Fixture {
             context,
+            router,
             module_id,
             msg,
             client_id_on_b,
@@ -345,6 +346,7 @@ mod tests {
     fn chan_open_confirm_execute_happy_path(fixture: Fixture) {
         let Fixture {
             context,
+            mut router,
             module_id,
             msg,
             client_id_on_b,
@@ -364,7 +366,8 @@ mod tests {
                 chan_end_on_b,
             );
 
-        let res = chan_open_confirm_execute(&mut context, module_id, msg);
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = chan_open_confirm_execute(&mut context, module, msg);
 
         assert!(res.is_ok(), "Execution happy path");
 
