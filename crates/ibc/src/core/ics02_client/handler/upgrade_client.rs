@@ -5,7 +5,7 @@ use crate::prelude::*;
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics02_client::client_state::ClientStateExecution;
-use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation, Status};
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeClient;
@@ -26,7 +26,7 @@ where
     // Read the current latest client state from the host chain store.
     let old_client_state = ctx.client_state(&client_id)?;
 
-    // Check if the client is frozen.
+    // Check if the client is active.
     {
         let status = old_client_state.status(ctx.get_client_validation_context(), &client_id)?;
         if !status.is_active() {
@@ -43,19 +43,6 @@ where
             client_id: client_id.clone(),
             height: old_client_state.latest_height(),
         })?;
-
-    // Check if the latest consensus state is within the trust period.
-    {
-        let status = old_client_state.status(ctx.get_client_validation_context(), &client_id)?;
-        if status == Status::Expired {
-            return Err(ContextError::ClientError(
-                ClientError::HeaderNotWithinTrustPeriod {
-                    latest_time: old_consensus_state.timestamp(),
-                    update_time: ctx.host_timestamp()?,
-                },
-            ));
-        }
-    }
 
     // Validate the upgraded client state and consensus state and verify proofs against the root
     old_client_state.verify_upgrade_client(
