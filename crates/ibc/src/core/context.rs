@@ -33,6 +33,7 @@ use crate::Height;
 use super::ics02_client::client_state::ClientState;
 use super::ics02_client::consensus_state::ConsensusState;
 use super::ics02_client::ClientExecutionContext;
+use super::ics24_host::identifier::PortId;
 
 /// Top-level error
 #[derive(Debug, Display, From)]
@@ -69,6 +70,10 @@ pub enum RouterError {
     UnknownMessageTypeUrl { url: String },
     /// the message is malformed and cannot be decoded error: `{0}`
     MalformedMessageBytes(ibc_proto::protobuf::Error),
+    /// port `{port_id}` is unknown
+    UnknownPort { port_id: PortId },
+    /// module not found
+    ModuleNotFound,
 }
 
 impl From<ContextError> for RouterError {
@@ -82,8 +87,8 @@ impl std::error::Error for RouterError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::ContextError(e) => Some(e),
-            Self::UnknownMessageTypeUrl { .. } => None,
             Self::MalformedMessageBytes(e) => Some(e),
+            _ => None,
         }
     }
 }
