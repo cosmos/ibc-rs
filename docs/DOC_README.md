@@ -17,9 +17,9 @@ stack:
 
   ```js
       algolia: {
-        appId: "", // TODO
-        apiKey: "", // TODO
-        indexName: "", // TODO
+        appId: "todo", 
+        apiKey: "todo", 
+        indexName: "todo", 
         contextualSearch: false,
       },
   ```

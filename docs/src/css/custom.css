@@ -186,7 +186,7 @@ html {
   /* BREADCRUMBS */
   .breadcrumbs {
     @media (min-width: 997px) {
-      @apply flex flex-row items-baseline justify-between;
+      @apply flex flex-row items-start justify-between;
     }
   }
 

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+slug: /developers/intro/contributing
 ---
 
 # How to Contribute?

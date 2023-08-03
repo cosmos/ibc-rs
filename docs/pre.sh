@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 ## Add architecture documentation
-cp -r ./architecture ./docs/developers
+rsync -a ./architecture/* ./docs/developers/06-architecture
 
 ## Add changelog documentation
-cp -r ./../CHANGELOG.md ./docs/developers/migrations/changelog.md
+cp -r ./../CHANGELOG.md ./docs/developers/07-migrations/01-changelog.md
 
 ## Add contributing documentation
-cp -r ./../CONTRIBUTING.md ./docs/developers/intro/contributing.md
+cp -r ./../CONTRIBUTING.md ./docs/developers/01-intro/01-contributing.md

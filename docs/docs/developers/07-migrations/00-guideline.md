@@ -1,13 +1,13 @@
 ---
+slug: /developers/migrations/guideline
 sidebar_label: Guideline
-sidebar_position: 0
 ---
 
 # Migration Guide
 
 This section is intended to highlight changes for migrating from a prior stable
 version to a more recent version of IBC-rs that may require further information
-than presented in our [CHANGELOG](changelog.md).
+than presented in our [CHANGELOG](./01-changelog.md).
 
 Please note that the APIs are currently under active development. Once we are
 prepared for the first production-level release, we will highlight necessary

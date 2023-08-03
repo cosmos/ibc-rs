@@ -136,11 +136,10 @@ const config = {
         darkTheme: darkCodeTheme,
         additionalLanguages: ["rust"],
       },
-      // TODO: add algolia search
       algolia: {
-        appId: "QLS2QSP47E",
-        apiKey: "4d9feeb481e3cfef8f91bbc63e090042",
-        indexName: "cosmos_network",
+        appId: "todo",
+        apiKey: "todo",
+        indexName: "todo",
         contextualSearch: false,
       },
     }),

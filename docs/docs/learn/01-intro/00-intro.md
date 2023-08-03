@@ -34,10 +34,10 @@ from the interchain standards (ICS) are introduced to accommodate the
 implementation.
 
 * **IBC Light Clients**
-  * [**ICS-20: Tendermint**](./../clients/tendermint.md)
+  * [**ICS-20: Tendermint**](./../learn/clients/tendermint)
 * **IBC Applications**
-  * [**ICS-20: Fungible Token Transfer**](./../apps/token-transfer.md)
-  * [**ICS-27: Interchain Accounts**](./../apps/interchain-accounts.md) (Work in progress)
+  * [**ICS-20: Fungible Token Transfer**](./../learn/apps/token-transfer)
+  * [**ICS-27: Interchain Accounts**](./../learn/apps/interchain-accounts) (Work in progress)
 
 ## Latest Status
 
@@ -48,9 +48,9 @@ Check out our [project board](https://github.com/orgs/cosmos/projects/27) for
 
 To get a better understanding of IBC-rs implementation, check out the following sections:
 
-* [**Overview**](./../overview/overview.md) - Provides an overview of how IBC-rs
-  implements the IBC protocol.
-* [**ADRs**](./../../developers/architecture/README.md) - Learn about the
+* [**Overview**](./../learn/overview/overview) - Provides an overview of IBC-rs and
+  how it implements the IBC protocol.
+* [**ADRs**](./../../developers/06-architecture/README.md) - Learn about the
   architectural design decisions.
 * [**FAQ Page**](https://github.com/cosmos/ibc-rs/wiki/FAQ) - Browse frequently asked
   questions about IBC-rs.
@@ -87,7 +87,7 @@ repository](https://github.com/cosmos/ibc-go/security/policy).
 
 ## Help & Support
 
-* [**Migration Guide**](./developers/migrations/guideline) - Learn how to
+* [**Migration Guide**](./../../developers/migrations/guideline) - Learn how to
   migrate to a newer stable version of IBC-rs.
 * [**GitHub Discussions**](https://github.com/cosmos/ibc-rs/discussions) - Ask
   questions and discuss IBC-rs development on GitHub.

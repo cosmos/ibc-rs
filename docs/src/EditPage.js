@@ -9,15 +9,14 @@ export default function EditPage() {
 
   useEffect(() => {
     let pagePath = window.location.pathname.slice(1);
-
     if (pagePath.startsWith('developers/architecture/')) {
       pagePath = pagePath.replace('developers/architecture/', 'architecture/')
     }
-
+    
     pagePath = "docs/" + pagePath;
-
+    
     const pageMappings = {
-      'docs/': 'docs/learn/intro',
+      'docs/': 'docs/learn/intro/intro',
       'docs/developers/intro/contributing': 'CONTRIBUTING',
       'docs/developers/migrations/changelog': 'CHANGELOG',
       'docs/developers/architecture': 'docs/architecture/README',

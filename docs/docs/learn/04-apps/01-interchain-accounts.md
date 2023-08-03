@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+slug: /learn/apps/interchain-accounts
 ---
 
 # ICS-27: Interchain Accounts

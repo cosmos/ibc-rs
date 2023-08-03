@@ -15,7 +15,7 @@ This ADR is meant to address the main limitation of our current light client API
 
 This ADR is all about fixing this issue; namely, to enable light clients to define their own `ValidationContext` and `ExecutionContext` traits for the host to implement. 
 
-[ADR 4]: ../architecture/adr-004-light-client-crates-extraction.md
+[ADR 4]: ./adr-004-light-client-crates-extraction.md
 [later improved]: https://github.com/cosmos/ibc-rs/pull/584
 [ADR 6]: https://github.com/cosmos/ibc-go/blob/main/docs/architecture/adr-006-02-client-refactor.md
 [access to the host timestamp]: https://github.com/cosmos/ibc-rs/blob/3e2566b3102af3fb6185cdc158cff818ec605535/crates/ibc/src/clients/ics07_tendermint/client_state/update_client.rs#L70

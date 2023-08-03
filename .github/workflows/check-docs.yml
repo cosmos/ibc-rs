@@ -1,4 +1,4 @@
-name: Build Docs
+name: Check Docs Build
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ on:
       - "docs/**"
       - CONTRIBUTING.md
       - .github/workflows/deploy-docs.yml
-      - .github/workflows/build-docs.yml
+      - .github/workflows/check-docs.yml
 
 permissions:
   contents: read
@@ -30,8 +30,9 @@ jobs:
         with:
           node-version: "16.x"
 
-      - name: Build docs 
+      - name: Install dependencies and build docs 
         run: |
-          @cd docs && npm install && sh ./build.sh
-          DOCS_DOMAIN=ibc-rs.informal.systems
+          cd docs
+          npm install
+          sh ./build.sh
           

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 0
+slug: /learn/apps/token-transfer
 ---
 
 # ICS-20: Token Transfer
