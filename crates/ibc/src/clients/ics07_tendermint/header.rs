@@ -3,6 +3,7 @@
 use crate::prelude::*;
 use alloc::string::ToString;
 use core::fmt::{Display, Error as FmtError, Formatter};
+use core::str::FromStr;
 
 use bytes::Buf;
 use ibc_proto::google::protobuf::Any;
@@ -54,7 +55,9 @@ impl Header {
 
     pub fn height(&self) -> Height {
         Height::new(
-            ChainId::chain_version(self.signed_header.header.chain_id.as_str()),
+            ChainId::from_str(self.signed_header.header.chain_id.as_str())
+                .expect("chain id")
+                .revision_number(),
             u64::from(self.signed_header.header.height),
         )
         .expect("malformed tendermint header domain type has an illegal height of 0")
@@ -89,7 +92,7 @@ impl Header {
     }
 
     pub fn verify_chain_id_version_matches_height(&self, chain_id: &ChainId) -> Result<(), Error> {
-        if self.height().revision_number() != chain_id.version() {
+        if self.height().revision_number() != chain_id.revision_number() {
             return Err(Error::MismatchHeaderChainId {
                 given: self.signed_header.header.chain_id.to_string(),
                 expected: chain_id.to_string(),

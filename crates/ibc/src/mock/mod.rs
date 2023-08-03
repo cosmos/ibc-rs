@@ -14,3 +14,5 @@ pub mod host;
 pub mod ics18_relayer;
 #[cfg(any(test, feature = "mocks", feature = "mocks-no-std"))]
 pub mod misbehaviour;
+#[cfg(any(test, feature = "mocks"))]
+pub mod router;

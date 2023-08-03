@@ -10,9 +10,6 @@ use super::denom::{BaseDenom, PrefixedDenom};
 use super::error::TokenTransferError;
 use crate::prelude::*;
 
-#[cfg(feature = "serde")]
-use crate::serializers::serde_string;
-
 /// A `Coin` type with fully qualified `PrefixedDenom`.
 pub type PrefixedCoin = Coin<PrefixedDenom>;
 
@@ -23,6 +20,7 @@ pub type RawCoin = Coin<String>;
 
 /// Coin defines a token with a denomination and an amount.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(parity_scale_codec::Encode, parity_scale_codec::Decode,)
@@ -32,7 +30,6 @@ pub struct Coin<D> {
     /// Denomination
     pub denom: D,
     /// Amount
-    #[cfg_attr(feature = "serde", serde(with = "serde_string"))]
     pub amount: Amount,
 }
 

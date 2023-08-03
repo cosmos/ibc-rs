@@ -76,18 +76,15 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
     type Error = Error;
 
     fn try_from(raw: RawMisbehaviour) -> Result<Self, Self::Error> {
-        let client_id = raw
-            .client_id
-            .parse()
-            .map_err(|_| Error::InvalidRawClientId {
-                client_id: raw.client_id.clone(),
-            })?;
+        let client_id = raw.client_id.parse()?;
+
         let header1: Header = raw
             .header_1
             .ok_or_else(|| Error::InvalidRawMisbehaviour {
                 reason: "missing header1".into(),
             })?
             .try_into()?;
+
         let header2: Header = raw
             .header_2
             .ok_or_else(|| Error::InvalidRawMisbehaviour {
