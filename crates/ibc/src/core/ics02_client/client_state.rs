@@ -42,6 +42,20 @@ pub enum Status {
     Unauthorized,
 }
 
+impl Status {
+    pub fn is_active(&self) -> bool {
+        *self == Status::Active
+    }
+
+    pub fn is_frozen(&self) -> bool {
+        *self == Status::Frozen
+    }
+
+    pub fn is_expired(&self) -> bool {
+        *self == Status::Expired
+    }
+}
+
 impl Display for Status {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         write!(f, "{self:?}")

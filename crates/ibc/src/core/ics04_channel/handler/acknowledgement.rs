@@ -2,7 +2,7 @@ use crate::core::ics02_client::error::ClientError;
 use crate::prelude::*;
 
 use crate::core::events::MessageEvent;
-use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation, Status};
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
@@ -190,7 +190,7 @@ where
         {
             let status = client_state_of_b_on_a
                 .status(ctx_a.get_client_validation_context(), client_id_on_a)?;
-            if status != Status::Active {
+            if !status.is_active() {
                 return Err(ClientError::ClientNotActive { status }.into());
             }
         }

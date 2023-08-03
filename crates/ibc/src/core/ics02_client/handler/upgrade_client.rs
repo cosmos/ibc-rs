@@ -29,7 +29,7 @@ where
     // Check if the client is frozen.
     {
         let status = old_client_state.status(ctx.get_client_validation_context(), &client_id)?;
-        if status != Status::Active {
+        if !status.is_active() {
             return Err(ClientError::ClientNotActive { status }.into());
         }
     }

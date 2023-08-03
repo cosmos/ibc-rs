@@ -4,7 +4,7 @@ use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
 use crate::core::context::ContextError;
-use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation, Status};
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
@@ -63,7 +63,7 @@ where
         {
             let status = client_state_of_a_on_b
                 .status(ctx_b.get_client_validation_context(), &msg.client_id_on_b)?;
-            if status != Status::Active {
+            if !status.is_active() {
                 return Err(ClientError::ClientNotActive { status }.into());
             }
         }

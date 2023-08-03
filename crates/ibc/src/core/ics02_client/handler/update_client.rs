@@ -4,10 +4,10 @@ use crate::prelude::*;
 
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics02_client::client_state::ClientStateExecution;
 use crate::core::ics02_client::client_state::ClientStateValidation;
 use crate::core::ics02_client::client_state::UpdateKind;
-use crate::core::ics02_client::client_state::{ClientStateCommon, Status};
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
 use crate::core::ics02_client::msgs::MsgUpdateOrMisbehaviour;
@@ -30,7 +30,7 @@ where
 
     {
         let status = client_state.status(ctx.get_client_validation_context(), &client_id)?;
-        if status != Status::Active {
+        if !status.is_active() {
             return Err(ClientError::ClientNotActive { status }.into());
         }
     }
@@ -250,7 +250,10 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(client_state.status(&ctx, &msg.client_id).unwrap() == Status::Active);
+        assert!(client_state
+            .status(&ctx, &msg.client_id)
+            .unwrap()
+            .is_active());
         assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
@@ -297,7 +300,10 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(client_state.status(&ctx, &msg.client_id).unwrap() == Status::Active);
+        assert!(client_state
+            .status(&ctx, &msg.client_id)
+            .unwrap()
+            .is_active());
         assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
@@ -416,7 +422,10 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx_a.client_state(&msg.client_id).unwrap();
-        assert!(client_state.status(&ctx_a, &msg.client_id).unwrap() == Status::Active);
+        assert!(client_state
+            .status(&ctx_a, &msg.client_id)
+            .unwrap()
+            .is_active());
         assert_eq!(client_state.latest_height(), latest_header_height);
         assert_eq!(client_state, ctx_a.latest_client_states(&msg.client_id));
     }
@@ -500,7 +509,7 @@ mod tests {
         let client_state = ctx.client_state(client_id).unwrap();
 
         let status = client_state.status(ctx, client_id).unwrap();
-        assert!(status == Status::Frozen, "client_state status: {status}");
+        assert!(status.is_frozen(), "client_state status: {status}");
 
         // check events
         assert_eq!(ctx.events.len(), 2);
