@@ -421,11 +421,11 @@ pub(crate) mod test {
     use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-    use crate::mock::context::applications::MockTokenTransferModule;
     use crate::mock::context::MockContext;
+    use crate::test_utils::DummyTransferModule;
 
     fn get_defaults() -> (
-        MockTokenTransferModule,
+        DummyTransferModule,
         MockContext,
         Order,
         Vec<ConnectionId>,
@@ -441,7 +441,7 @@ pub(crate) mod test {
         let counterparty = Counterparty::new(port_id.clone(), Some(channel_id.clone()));
 
         (
-            MockTokenTransferModule,
+            DummyTransferModule,
             ctx,
             order,
             connection_hops,
