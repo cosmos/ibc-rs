@@ -15,9 +15,6 @@ use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
 use crate::core::ics04_channel::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::acknowledgement::AcknowledgementStatus;
 use crate::core::ics04_channel::channel::{Counterparty, Order};
-use crate::core::ics04_channel::context::{
-    SendPacketExecutionContext, SendPacketValidationContext,
-};
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
@@ -26,7 +23,7 @@ use crate::core::ContextError;
 use crate::signer::Signer;
 
 /// Methods required in token transfer validation, to be implemented by the host
-pub trait TokenTransferValidationContext: SendPacketValidationContext {
+pub trait TokenTransferValidationContext {
     type AccountId: TryFrom<Signer>;
 
     /// get_port returns the portID for the transfer module.
@@ -75,9 +72,7 @@ pub trait TokenTransferValidationContext: SendPacketValidationContext {
 }
 
 /// Methods required in token transfer execution, to be implemented by the host
-pub trait TokenTransferExecutionContext:
-    TokenTransferValidationContext + SendPacketExecutionContext
-{
+pub trait TokenTransferExecutionContext: TokenTransferValidationContext {
     /// This function should enable sending ibc fungible tokens from one account to another
     fn send_coins_execute(
         &mut self,
@@ -426,17 +421,16 @@ pub(crate) mod test {
     use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-    use crate::mock::context::MockContext;
+    use crate::test_utils::DummyTransferModule;
 
     fn get_defaults() -> (
-        MockContext,
+        DummyTransferModule,
         Order,
         Vec<ConnectionId>,
         PortId,
         ChannelId,
         Counterparty,
     ) {
-        let ctx = MockContext::default();
         let order = Order::Unordered;
         let connection_hops = vec![ConnectionId::new(1)];
         let port_id = PortId::transfer();
@@ -444,7 +438,7 @@ pub(crate) mod test {
         let counterparty = Counterparty::new(port_id.clone(), Some(channel_id.clone()));
 
         (
-            ctx,
+            DummyTransferModule,
             order,
             connection_hops,
             port_id,

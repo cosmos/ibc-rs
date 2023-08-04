@@ -621,7 +621,7 @@ mod tests {
         for test in tests {
             let res = match test.msg.clone() {
                 TestMsg::Ics26(msg) => dispatch(&mut ctx, &mut router, msg).map(|_| ()),
-                TestMsg::Ics20(msg) => send_transfer(&mut ctx, msg)
+                TestMsg::Ics20(msg) => send_transfer(&mut ctx, &mut DummyTransferModule, msg)
                     .map_err(|e: TokenTransferError| ChannelError::AppModule {
                         description: e.to_string(),
                     })
