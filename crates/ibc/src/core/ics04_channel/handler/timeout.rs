@@ -1,3 +1,5 @@
+use crate::core::ics02_client::client_state::ClientStateValidation;
+use crate::core::ics02_client::error::ClientError;
 use crate::prelude::*;
 use prost::Message;
 
@@ -192,7 +194,14 @@ where
     {
         let client_id_on_a = conn_end_on_a.client_id();
         let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
-        client_state_of_b_on_a.confirm_not_frozen()?;
+
+        {
+            let status = client_state_of_b_on_a
+                .status(ctx_a.get_client_validation_context(), client_id_on_a)?;
+            if !status.is_active() {
+                return Err(ClientError::ClientNotActive { status }.into());
+            }
+        }
         client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
 
         // check that timeout height or timeout timestamp has passed on the other end

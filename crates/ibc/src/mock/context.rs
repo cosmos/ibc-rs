@@ -30,7 +30,6 @@ use crate::clients::ics07_tendermint::consensus_state::TENDERMINT_CONSENSUS_STAT
 use crate::core::dispatch;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
-use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
@@ -840,7 +839,12 @@ impl ValidationContext for MockContext {
             })
             .map_err(ContextError::ConnectionError)?;
 
-        mock_client_state.confirm_not_frozen()?;
+        if mock_client_state.is_frozen() {
+            return Err(ClientError::ClientFrozen {
+                description: String::new(),
+            }
+            .into());
+        }
 
         let self_chain_id = &self.host_chain_id;
         let self_revision_number = self_chain_id.revision_number();

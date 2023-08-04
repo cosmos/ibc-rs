@@ -1,8 +1,9 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelCloseInit`.
+use crate::core::ics02_client::error::ClientError;
 use crate::prelude::*;
 
 use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::client_state::ClientStateValidation;
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
@@ -111,7 +112,13 @@ where
 
     let client_id_on_a = conn_end_on_a.client_id();
     let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
-    client_state_of_b_on_a.confirm_not_frozen()?;
+    {
+        let status =
+            client_state_of_b_on_a.status(ctx_a.get_client_validation_context(), client_id_on_a)?;
+        if !status.is_active() {
+            return Err(ClientError::ClientNotActive { status }.into());
+        }
+    }
 
     Ok(())
 }

@@ -1,5 +1,6 @@
 //! Client context implementations for `MockContext`
 
+use crate::mock::client_state::MockClientContext;
 use crate::prelude::*;
 
 use super::{AnyClientState, AnyConsensusState, MockClientRecord, MockContext};
@@ -14,6 +15,22 @@ use crate::core::timestamp::Timestamp;
 use crate::core::ContextError;
 use crate::core::ValidationContext;
 use crate::Height;
+
+impl MockClientContext for MockContext {
+    type ConversionError = &'static str;
+    type AnyConsensusState = AnyConsensusState;
+
+    fn consensus_state(
+        &self,
+        client_cons_state_path: &ClientConsensusStatePath,
+    ) -> Result<Self::AnyConsensusState, ContextError> {
+        ValidationContext::consensus_state(self, client_cons_state_path)
+    }
+
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
+        ValidationContext::host_timestamp(self)
+    }
+}
 
 impl TmCommonContext for MockContext {
     type ConversionError = &'static str;

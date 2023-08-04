@@ -28,7 +28,12 @@ where
     // Read client state from the host chain store. The client should already exist.
     let client_state = ctx.client_state(&client_id)?;
 
-    client_state.confirm_not_frozen()?;
+    {
+        let status = client_state.status(ctx.get_client_validation_context(), &client_id)?;
+        if !status.is_active() {
+            return Err(ClientError::ClientNotActive { status }.into());
+        }
+    }
 
     let client_message = msg.client_message();
 
@@ -245,7 +250,10 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(client_state.confirm_not_frozen().is_ok());
+        assert!(client_state
+            .status(&ctx, &msg.client_id)
+            .unwrap()
+            .is_active());
         assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
@@ -292,7 +300,10 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(client_state.confirm_not_frozen().is_ok());
+        assert!(client_state
+            .status(&ctx, &msg.client_id)
+            .unwrap()
+            .is_active());
         assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
@@ -413,7 +424,10 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx_a.client_state(&msg.client_id).unwrap();
-        assert!(client_state.confirm_not_frozen().is_ok());
+        assert!(client_state
+            .status(&ctx_a, &msg.client_id)
+            .unwrap()
+            .is_active());
         assert_eq!(client_state.latest_height(), latest_header_height);
         assert_eq!(client_state, ctx_a.latest_client_states(&msg.client_id));
     }
@@ -496,7 +510,8 @@ mod tests {
     fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &ClientType) {
         let client_state = ctx.client_state(client_id).unwrap();
 
-        assert!(client_state.confirm_not_frozen().is_err());
+        let status = client_state.status(ctx, client_id).unwrap();
+        assert!(status.is_frozen(), "client_state status: {status}");
 
         // check events
         assert_eq!(ctx.events.len(), 2);

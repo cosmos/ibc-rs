@@ -12,6 +12,8 @@ use crate::core::timestamp::Timestamp;
 use crate::core::ContextError;
 use crate::Height;
 
+use super::client_state::Status;
+
 /// Encodes all the possible client errors
 #[derive(Debug, Display)]
 pub enum ClientError {
@@ -25,6 +27,8 @@ pub enum ClientError {
     },
     /// client is frozen with description: `{description}`
     ClientFrozen { description: String },
+    /// client is not active. Status=`{status}`
+    ClientNotActive { status: Status },
     /// client state not found: `{client_id}`
     ClientStateNotFound { client_id: ClientId },
     /// client state already exists: `{client_id}`
@@ -91,11 +95,6 @@ pub enum ClientError {
     },
     /// timestamp is invalid or missing, timestamp=`{time1}`,  now=`{time2}`
     InvalidConsensusStateTimestamp { time1: Timestamp, time2: Timestamp },
-    /// header not within trusting period: expires_at=`{latest_time}` now=`{update_time}`
-    HeaderNotWithinTrustPeriod {
-        latest_time: Timestamp,
-        update_time: Timestamp,
-    },
     /// the local consensus state could not be retrieved for height `{height}`
     MissingLocalConsensusState { height: Height },
     /// invalid signer error: `{reason}`
@@ -117,6 +116,14 @@ impl From<ContextError> for ClientError {
             _ => ClientError::Other {
                 description: context_error.to_string(),
             },
+        }
+    }
+}
+
+impl From<&'static str> for ClientError {
+    fn from(s: &'static str) -> Self {
+        Self::Other {
+            description: s.to_string(),
         }
     }
 }

@@ -26,6 +26,9 @@ pub trait SendPacketValidationContext {
     type AnyConsensusState: ConsensusState;
     type AnyClientState: ClientState<Self::ClientValidationContext, Self::E>;
 
+    /// Retrieve the context that implements all clients' `ValidationContext`.
+    fn get_client_validation_context(&self) -> &Self::ClientValidationContext;
+
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
 
@@ -53,6 +56,10 @@ where
     type E = T::E;
     type AnyConsensusState = T::AnyConsensusState;
     type AnyClientState = T::AnyClientState;
+
+    fn get_client_validation_context(&self) -> &Self::ClientValidationContext {
+        self.get_client_validation_context()
+    }
 
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
         self.channel_end(channel_end_path)

@@ -1,10 +1,11 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelCloseConfirm`.
 
+use crate::core::ics02_client::error::ClientError;
 use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::State;
@@ -116,7 +117,13 @@ where
         let client_id_on_b = conn_end_on_b.client_id();
         let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
 
-        client_state_of_a_on_b.confirm_not_frozen()?;
+        {
+            let status = client_state_of_a_on_b
+                .status(ctx_b.get_client_validation_context(), client_id_on_b)?;
+            if !status.is_active() {
+                return Err(ClientError::ClientNotActive { status }.into());
+            }
+        }
         client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
 
         let client_cons_state_path_on_b =
