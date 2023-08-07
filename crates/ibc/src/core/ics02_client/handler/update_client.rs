@@ -115,9 +115,9 @@ where
                     description: "client update state returned no updated height".to_string(),
                 })?;
 
-                let mut header_value = Vec::new();
+                let mut header_bytes = Vec::new();
                 header
-                    .encode(&mut header_value)
+                    .encode(&mut header_bytes)
                     .map_err(ClientError::Encode)?;
 
                 IbcEvent::UpdateClient(UpdateClient::new(
@@ -125,7 +125,7 @@ where
                     client_state.client_type(),
                     *consensus_height,
                     consensus_heights,
-                    header_value,
+                    header_bytes,
                 ))
             };
             ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
