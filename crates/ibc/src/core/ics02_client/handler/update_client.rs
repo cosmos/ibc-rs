@@ -1,6 +1,7 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpdateAnyClient`.
 
 use crate::prelude::*;
+use prost::Message;
 
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};
@@ -114,12 +115,17 @@ where
                     description: "client update state returned no updated height".to_string(),
                 })?;
 
+                let mut header_value = Vec::new();
+                header
+                    .encode(&mut header_value)
+                    .map_err(ClientError::Encode)?;
+
                 IbcEvent::UpdateClient(UpdateClient::new(
                     client_id,
                     client_state.client_type(),
                     *consensus_height,
                     consensus_heights,
-                    header.value,
+                    header_value,
                 ))
             };
             ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
@@ -504,7 +510,9 @@ mod tests {
         assert_eq!(update_client_event.client_type(), &mock_client_type());
         assert_eq!(update_client_event.consensus_height(), &height);
         assert_eq!(update_client_event.consensus_heights(), &vec![height]);
-        assert_eq!(update_client_event.header(), &header.value);
+
+        let decode_header = Any::decode(update_client_event.header().as_slice()).unwrap();
+        assert_eq!(decode_header, header);
     }
 
     fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &ClientType) {

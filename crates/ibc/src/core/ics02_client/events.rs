@@ -419,6 +419,7 @@ mod tests {
     use crate::core::timestamp::Timestamp;
     use crate::mock::header::MockHeader;
     use ibc_proto::google::protobuf::Any;
+    use prost::Message;
     use std::str::FromStr;
     use tendermint::abci::Event as AbciEvent;
 
@@ -439,6 +440,8 @@ mod tests {
         let header: Any = MockHeader::new(consensus_height)
             .with_timestamp(Timestamp::none())
             .into();
+        let mut header_bytes = Vec::new();
+        header.encode(&mut header_bytes).unwrap();
         let expected_keys = vec![
             "client_id",
             "client_type",
@@ -452,7 +455,7 @@ mod tests {
             "07-tendermint",
             "0-5",
             "0-5,0-7",
-            "0a021005",
+            "0a102f6962632e6d6f636b2e48656164657212040a021005",
         ];
 
         let tests: Vec<Test> = vec![
@@ -470,7 +473,7 @@ mod tests {
                     client_type.clone(),
                     consensus_height,
                     consensus_heights,
-                    header.value,
+                    header_bytes,
                 )
                 .into(),
                 expected_keys: expected_keys.clone(),
