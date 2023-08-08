@@ -246,6 +246,10 @@ pub struct UpdateClient {
 }
 
 impl UpdateClient {
+    /// Constructs a new UpdateClient event.
+    ///
+    /// NOTE: the `header` must be the encoded bytes of the
+    /// [`Any`](ibc_proto::google::protobuf::Any) type.
     pub fn new(
         client_id: ClientId,
         client_type: ClientType,
