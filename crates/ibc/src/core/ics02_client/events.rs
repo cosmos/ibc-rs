@@ -146,6 +146,8 @@ impl From<ConsensusHeightsAttribute> for abci::EventAttribute {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, From, PartialEq, Eq)]
 struct HeaderAttribute {
+    /// NOTE: The header is encoded as bytes of the
+    /// [`Any`](ibc_proto::google::protobuf::Any) type.
     header: Vec<u8>,
 }
 
@@ -248,7 +250,7 @@ pub struct UpdateClient {
 impl UpdateClient {
     /// Constructs a new UpdateClient event.
     ///
-    /// NOTE: the `header` must be the encoded bytes of the
+    /// NOTE: the `header` is the encoded bytes of the
     /// [`Any`](ibc_proto::google::protobuf::Any) type.
     pub fn new(
         client_id: ClientId,
@@ -444,8 +446,6 @@ mod tests {
         let header: Any = MockHeader::new(consensus_height)
             .with_timestamp(Timestamp::none())
             .into();
-        let mut header_bytes = Vec::new();
-        header.encode(&mut header_bytes).unwrap();
         let expected_keys = vec![
             "client_id",
             "client_type",
@@ -477,7 +477,7 @@ mod tests {
                     client_type.clone(),
                     consensus_height,
                     consensus_heights,
-                    header_bytes,
+                    header.encode_to_vec(),
                 )
                 .into(),
                 expected_keys: expected_keys.clone(),
