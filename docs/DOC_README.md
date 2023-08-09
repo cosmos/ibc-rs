@@ -42,7 +42,8 @@ deployment.
 
 ## How to Build the Docs Locally
 
-Go to the `docs` directory and run the following commands:
+Go to the `docs` directory and run the following commands. You need to have
+Node >= 16.x and npm >= 8.5 installed.
 
 ```shell
 cd docs
@@ -64,28 +65,6 @@ To build all the docs (including versioned documentation), run:
 ```shell
 ./build.sh
 ```
-
-## What to do for new major IBC-rs versions
-
-When a new major version of IBC-rs is released, the following steps should be
-taken:
-
-* On the `release/vX.Y.Z` branch, remove the deploy action
-  (`.github/workflows/deploy-docs.yml`), for avoiding deploying the docs from
-  the release branches.
-* On the `release/vX.Y.Z` branch, update `docusaurus.config.js` and set the
-  `lastVersion` to `current`, remove all other versions from the config.
-* Each time a new version is released (on docusaurus), drop support from the
-  oldest versions.
-* Add the new version sidebar to the list of versioned sidebar and add the
-  version to `versions.json`.
-* Update the latest version (`presets[1].docs.lastVersion`) in
-  `docusaurus.config.js`.
-* Add the new version with in `presets[1].docs.versions` in
-  `docusaurus.config.js`.
-
-Learn more about [versioning](https://docusaurus.io/docs/versioning) in
-Docusaurus.
 
 ## Acknowledgements
 

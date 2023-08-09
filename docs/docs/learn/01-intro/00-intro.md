@@ -34,7 +34,7 @@ from the interchain standards (ICS) are introduced to accommodate the
 implementation.
 
 * **IBC Light Clients**
-  * [**ICS-20: Tendermint**](./../learn/clients/tendermint)
+  * [**ICS-7: Tendermint**](./../learn/clients/tendermint)
 * **IBC Applications**
   * [**ICS-20: Fungible Token Transfer**](./../learn/apps/token-transfer)
   * [**ICS-27: Interchain Accounts**](./../learn/apps/interchain-accounts) (Work in progress)
@@ -60,9 +60,9 @@ To get a better understanding of IBC-rs implementation, check out the following 
 * [**Integration**](./../../developers/integration/overview) - Learn how to
   integrate IBC module and relayer into your blockchain.
 
-## Explore the Stack
+## Related Projects
 
-Check out the docs of projects relate to the IBC-rs stack:
+Check out the docs of projects relate to the IBC-rs:
 
 * [**CometBFT**](https://docs.cometbft.com) - The leading BFT engine for
   building blockchains, powering Cosmos SDK.

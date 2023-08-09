@@ -1,6 +1,6 @@
-## Releases
+# Releases
 
-Our release process is as follows:
+## How to release a new version
 
 1. In a new branch `release/vX.Y.Z`, update the [changelog](#changelog) to reflect and summarize all changes in
    the release. This involves:
@@ -21,18 +21,43 @@ Our release process is as follows:
 4. Bump all relevant versions in `crates/ibc/Cargo.toml` to the new version and
       push these changes to the release PR.
       + If you released a new version of `ibc-derive` in step 3, make sure to update that dependency.
-5. Run `cargo doc -p ibc --all-features --open` locally to double-check that all the
+5. If it's a major release, update the docs as described in the [next
+   section](#how-to-update-docs-for-new-major-releases).
+6. Run `cargo doc -p ibc --all-features --open` locally to double-check that all the
    documentation compiles and seems up-to-date and coherent. Fix any potential
    issues here and push them to the release PR.
-6. Run `cargo publish -p ibc --dry-run` to double-check that publishing will work. Fix
+7. Run `cargo publish -p ibc --dry-run` to double-check that publishing will work. Fix
    any potential issues here and push them to the release PR.
-7. Mark the PR as **Ready for Review** and incorporate feedback on the release.
-8. Once approved, merge the PR, and pull the `main` branch.
-9. Run `cargo publish -p ibc`
-10. Create a signed tag and push it to GitHub: `git tag -s -a vX.Y.Z`. In the tag
+8. Mark the PR as **Ready for Review** and incorporate feedback on the release.
+9. Once approved, merge the PR, and pull the `main` branch.
+10. Run `cargo publish -p ibc`
+11. Create a signed tag and push it to GitHub: `git tag -s -a vX.Y.Z`. In the tag
    message, write the version and the link to the corresponding section of the
    changelog + Push the tag with `git push --tags`
-11. Once the tag is pushed, create a GitHub release and append
-   `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)` 
+12. Once the tag is pushed, create a GitHub release and append
+   `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)`
    to the release description.
-12. All done! 🎉
+
+All done! 🎉
+
+## How to update Docs for new major releases
+
+When a new major version of IBC-rs is released, the following further steps
+should be taken:
+
+1. On the `release/vX.Y.Z` branch, remove the deploy action
+  (`.github/workflows/deploy-docs.yml`), for avoiding deploying the docs from
+  the release branches.
+2. Update `docusaurus.config.js` and set the `lastVersion` to `current`, remove
+  all other versions from the config.
+3. Each time a new version is released (on docusaurus), drop support from the
+  oldest versions.
+4. Add the new version sidebar to the list of versioned sidebar
+5. Add the version to `versions.json`.
+6. Update the latest version (`presets[0].docs.lastVersion`) in
+  `docusaurus.config.js`.
+7. Add the new version with in `presets[0].docs.versions` in
+  `docusaurus.config.js`.
+
+Learn more about [versioning](https://docusaurus.io/docs/versioning) in
+Docusaurus.
