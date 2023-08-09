@@ -74,17 +74,6 @@ Check out the docs of projects relate to the IBC-rs:
 * [**IBC-Go**](https://ibc.cosmos.network/) - A Go implementation of the IBC
   protocol.
 
-## Security Notice
-
-There are no established security practices specifically for IBC-rs. Please
-direct your security reports to the [IBC-go
-repository](https://github.com/cosmos/ibc-go/security/policy).
-
-**Note**: The [disclosure
-  log](https://github.com/informalsystems/hermes/blob/master/docs/disclosure-log.md) documents
-  problems we have uncovered while specifying and implementing IBC-rs. Some of
-  the cases recorded there might have been fixed.
-
 ## Help & Support
 
 * [**Migration Guide**](./../../developers/migrations/guideline) - Learn how to
