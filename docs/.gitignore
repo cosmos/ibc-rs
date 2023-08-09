@@ -9,8 +9,9 @@
 .cache-loader
 versioned_docs
 versioned_sidebars
-docs/node_modules
-docs/docs/architecture
+docs/developers/06-architecture
+docs/developers/01-intro/01-contributing.md
+docs/developers/07-migrations/01-changelog.md
 
 # Misc
 .DS_Store
