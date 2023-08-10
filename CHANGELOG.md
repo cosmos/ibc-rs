@@ -1,5 +1,22 @@
 # CHANGELOG
 
+
+# v0.44.1
+
+*August 4, 2023*
+
+This release fixes a bug with the `UpdateClient` event where the `header` field was not properly encoded.
+
+There are no consensus-breaking changes.
+
+### BUG FIXES
+
+- Remove traces of deprecated `mocks-no-std` feature
+  ([#819](https://github.com/cosmos/ibc-rs/issues/821))
+- Utilize encoded bytes from `Any` for the `header` field of `UpdateClient`
+  event
+  ([#821](https://github.com/cosmos/ibc-rs/issues/821))
+
 ## v0.44.0
 
 *August 4, 2023*
