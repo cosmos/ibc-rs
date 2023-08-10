@@ -1,3 +1,7 @@
+---
+slug: /developers/migrations/changelog
+---
+
 # CHANGELOG
 
 ## v0.43.1

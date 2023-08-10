@@ -1,4 +1,8 @@
-# Contributing
+---
+slug: /developers/intro/contributing
+---
+
+# How to Contribute?
 
 Thank you for your interest in contributing! The goal
 of ibc-rs is to provide a high quality, formally verified implementation of
@@ -19,7 +23,6 @@ repository:
 - [Pull Requests](#pull-requests) - what makes a good pull request
 - [Forking](#forking) - fork the repo to make pull requests
 - [Changelog](#changelog) - changes must be recorded in the changelog
-- [Releases](#releases) - how to release new version of the crates
 
 ## Decision Making
 
@@ -36,13 +39,13 @@ Architectural Decision Record
 Discussion at the RFC stage will build collective understanding of the dimensions
 of the problem and help structure conversations around trade-offs.
 
-When the problem is well understood but the solution leads to large
-structural changes to the code base, these changes should be proposed in
-the form of an [Architectural Decision Record
-(ADR)](./docs/architecture/). The ADR will help build consensus on an
-overall strategy to ensure that the code base maintains coherence
-in the larger context. If you are not comfortable with writing an ADR,
-you can open a regular issue and the maintainers will help you
+When the problem is well understood but the solution leads to large structural
+changes to the code base, these changes should be proposed in the form of an
+[Architectural Decision Record
+(ADR)](https://github.com/cosmos/ibc-rs/blob/main/docs/architecture/). The ADR
+will help build consensus on an overall strategy to ensure that the code base
+maintains coherence in the larger context. If you are not comfortable with
+writing an ADR, you can open a regular issue and the maintainers will help you
 turn it into an ADR.
 
 When the problem and the proposed solution are well understood,
@@ -146,11 +149,13 @@ To pull in updates from the origin repo, run `git fetch upstream` followed by
 
 ## Changelog
 
-Every non-trivial PR must update the [CHANGELOG](CHANGELOG.md). This is
+Every non-trivial PR must update the
+[CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md). This is
 accomplished indirectly by adding entries to the `.changelog` folder in
-[`unclog`](https://github.com/informalsystems/unclog) format using the `unclog` CLI tool.
-`CHANGELOG.md` will be built by whomever is responsible for performing a release just
-prior to release - this is to avoid changelog conflicts prior to releases.
+[`unclog`](https://github.com/informalsystems/unclog) format using the `unclog`
+CLI tool. `CHANGELOG.md` will be built by whomever is responsible for performing
+a release just prior to release - this is to avoid changelog conflicts prior to
+releases.
 
 ### Install `unclog`
 
@@ -201,7 +206,7 @@ See those changelogs for examples.
 We currently split changes for a given release between these four sections: Breaking
 Changes, Features, Improvements, Bug Fixes.
 
-Entries in the changelog should initially be logged in the __Unreleased__ section, which
+Entries in the changelog should initially be logged in the **Unreleased** section, which
 represents a "staging area" for accumulating all the changes throughout a
 release (see [Pull Requests](#pull-requests) below). With each release,
 the entries then move from this section into their permanent place under a
@@ -233,43 +238,3 @@ Any change that effects multiple APIs/users should be recorded multiply - for
 instance, a change to some core protocol data structure might need to be
 reflected both as breaking the core protocol but also breaking any APIs where core data structures are
 exposed.
-
-## Releases
-
-Our release process is as follows:
-
-1. In a new branch `release/vX.Y.Z`, update the [changelog](#changelog) to reflect and summarize all changes in
-   the release. This involves:
-   1. Running `unclog build -u` and copy pasting the output at the top
-      of the `CHANGELOG.md` file, making sure to update the header with
-      the new version.
-   2. Running `unclog release --editor <editor> --version vX.Y.Z` to create a summary of all of the changes
-      in this release.
-      1. Your text editor will open. Write the release summary, and close the editor.
-         1. Make sure to include a comment on whether or not the release contains consensus-breaking changes.
-      2. Add this same summary to `CHANGELOG.md` as well.
-   3. Committing the updated `CHANGELOG.md` file and `.changelog` directory to the repo.
-2. Push this to a branch `release/vX.Y.Z` according to the version number of
-   the anticipated release (e.g. `release/v0.18.0`) and open a **draft PR**.
-3. If there were changes in the `ibc-derive` crate, we need to publish a new version of that crate.
-   1. bump the version in `crates/ibc-derive/Cargo.toml`
-   2. Publish `ibc-derive` with `cargo publish -p ibc-derive`
-4. Bump all relevant versions in `crates/ibc/Cargo.toml` to the new version and
-      push these changes to the release PR.
-      + If you released a new version of `ibc-derive` in step 3, make sure to update that dependency.
-5. Run `cargo doc -p ibc --all-features --open` locally to double-check that all the
-   documentation compiles and seems up-to-date and coherent. Fix any potential
-   issues here and push them to the release PR.
-6. Run `cargo publish -p ibc --dry-run` to double-check that publishing will work. Fix
-   any potential issues here and push them to the release PR.
-7. Mark the PR as **Ready for Review** and incorporate feedback on the release.
-8. Once approved, merge the PR, and pull the `main` branch.
-9. Run `cargo publish -p ibc`
-9. Create a signed tag and push it to GitHub: `git tag -s -a vX.Y.Z`. In the tag
-   message, write the version and the link to the corresponding section of the
-   changelog.
-   + Push the tag with `git push --tags`
-10. Once the tag is pushed, create a GitHub release and append
-   `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)` 
-   to the release description.
-11. All done! 🎉

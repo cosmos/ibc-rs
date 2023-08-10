@@ -1,0 +1,38 @@
+name: Check Docs Build
+
+on:
+  pull_request:
+    branches:
+      - main
+      - "release/**"
+    paths:
+      - "docs/**"
+      - CONTRIBUTING.md
+      - .github/workflows/deploy-docs.yml
+      - .github/workflows/check-docs.yml
+
+permissions:
+  contents: read
+
+jobs:
+  check-docs-build:
+    name: Check docs build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Setup Node.js 
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16.x"
+
+      - name: Install dependencies and build docs 
+        run: |
+          cd docs
+          npm install
+          sh ./build.sh
+          

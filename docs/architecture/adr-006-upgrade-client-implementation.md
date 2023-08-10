@@ -20,7 +20,7 @@ justify the chain-wide logic behind upgrading light clients, list requisites for
 validation and execution steps, determine the boundary between basic and
 upgrade-specific validations by an IBC handler, and explain Tendermint's upgrade
 client implementation within the
-[ics07_tendermint](../../crates/ibc/src/clients/ics07_tendermint).
+[ics07_tendermint](https://github.com/cosmos/ibc-rs/tree/main/crates/ibc/src/clients/ics07_tendermint)
 
 ## Decision
 
