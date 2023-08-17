@@ -1,7 +1,8 @@
+use crate::core::ics02_client::error::ClientError;
 use crate::prelude::*;
 
 use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
@@ -16,7 +17,7 @@ use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
-use crate::core::router::ModuleId;
+use crate::core::router::Module;
 use crate::core::timestamp::Expiry;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 
@@ -36,7 +37,7 @@ where
 
 pub(crate) fn recv_packet_execute<ExecCtx>(
     ctx_b: &mut ExecCtx,
-    module_id: ModuleId,
+    module: &mut dyn Module,
     msg: MsgRecvPacket,
 ) -> Result<(), ContextError>
 where
@@ -73,10 +74,6 @@ where
             return Ok(());
         }
     }
-
-    let module = ctx_b
-        .get_route_mut(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
 
     let (extras, acknowledgement) = module.on_recv_packet_execute(&msg.packet, &msg.signer);
 
@@ -189,7 +186,13 @@ where
         let client_id_on_b = conn_end_on_b.client_id();
         let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
 
-        client_state_of_a_on_b.confirm_not_frozen()?;
+        {
+            let status = client_state_of_a_on_b
+                .status(ctx_b.get_client_validation_context(), client_id_on_b)?;
+            if !status.is_active() {
+                return Err(ClientError::ClientNotActive { status }.into());
+            }
+        }
         client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
 
         let client_cons_state_path_on_b =
@@ -295,17 +298,21 @@ mod tests {
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
+    use crate::core::router::ModuleId;
+    use crate::core::router::Router;
     use crate::core::timestamp::Timestamp;
     use crate::core::timestamp::ZERO_DURATION;
     use crate::Height;
 
     use crate::mock::context::MockContext;
     use crate::mock::ics18_relayer::context::RelayerContext;
+    use crate::mock::router::MockRouter;
     use crate::test_utils::get_dummy_account_id;
     use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
 
     pub struct Fixture {
         pub context: MockContext,
+        pub router: MockRouter,
         pub module_id: ModuleId,
         pub client_height: Height,
         pub host_height: Height,
@@ -316,11 +323,13 @@ mod tests {
 
     #[fixture]
     fn fixture() -> Fixture {
-        let mut context = MockContext::default();
+        let context = MockContext::default();
 
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        let module = DummyTransferModule::new();
-        context.add_route(module_id.clone(), module).unwrap();
+        let mut router = MockRouter::default();
+        router
+            .add_route(module_id.clone(), DummyTransferModule::new())
+            .unwrap();
 
         let host_height = context.query_latest_height().unwrap().increment();
 
@@ -357,6 +366,7 @@ mod tests {
 
         Fixture {
             context,
+            router,
             module_id,
             client_height,
             host_height,
@@ -483,6 +493,7 @@ mod tests {
     fn recv_packet_execute_happy_path(fixture: Fixture) {
         let Fixture {
             context,
+            mut router,
             module_id,
             msg,
             conn_end_on_b,
@@ -495,7 +506,8 @@ mod tests {
             .with_connection(ConnectionId::default(), conn_end_on_b)
             .with_channel(PortId::default(), ChannelId::default(), chan_end_on_b);
 
-        let res = recv_packet_execute(&mut ctx, module_id, msg);
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = recv_packet_execute(&mut ctx, module, msg);
 
         assert!(res.is_ok());
 

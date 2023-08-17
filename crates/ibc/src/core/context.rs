@@ -27,13 +27,13 @@ use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
     ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
-use crate::core::router::Router;
 use crate::core::timestamp::Timestamp;
 use crate::Height;
 
 use super::ics02_client::client_state::ClientState;
 use super::ics02_client::consensus_state::ConsensusState;
 use super::ics02_client::ClientExecutionContext;
+use super::ics24_host::identifier::PortId;
 
 /// Top-level error
 #[derive(Debug, Display, From)]
@@ -70,6 +70,10 @@ pub enum RouterError {
     UnknownMessageTypeUrl { url: String },
     /// the message is malformed and cannot be decoded error: `{0}`
     MalformedMessageBytes(ibc_proto::protobuf::Error),
+    /// port `{port_id}` is unknown
+    UnknownPort { port_id: PortId },
+    /// module not found
+    ModuleNotFound,
 }
 
 impl From<ContextError> for RouterError {
@@ -83,8 +87,8 @@ impl std::error::Error for RouterError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::ContextError(e) => Some(e),
-            Self::UnknownMessageTypeUrl { .. } => None,
             Self::MalformedMessageBytes(e) => Some(e),
+            _ => None,
         }
     }
 }
@@ -92,7 +96,7 @@ impl std::error::Error for RouterError {
 /// Context to be implemented by the host that provides all "read-only" methods.
 ///
 /// Trait used for the top-level [`validate`](crate::core::validate)
-pub trait ValidationContext: Router {
+pub trait ValidationContext {
     type ClientValidationContext;
     type E: ClientExecutionContext;
     type AnyConsensusState: ConsensusState;

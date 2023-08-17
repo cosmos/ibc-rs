@@ -1,8 +1,7 @@
 //! Defines `ClientState`, the core type to be implemented by light clients
 
-use core::fmt::Debug;
+use core::fmt::{Debug, Display, Formatter};
 use core::marker::{Send, Sync};
-use core::time::Duration;
 
 use ibc_proto::google::protobuf::Any;
 
@@ -30,6 +29,39 @@ pub enum UpdateKind {
     SubmitMisbehaviour,
 }
 
+/// Represents the status of a client
+#[derive(Debug, PartialEq, Eq)]
+pub enum Status {
+    /// The client is active and allowed to be used
+    Active,
+    /// The client is frozen and not allowed to be used
+    Frozen,
+    /// The client is expired and not allowed to be used
+    Expired,
+    /// Unauthorized indicates that the client type is not registered as an allowed client type.
+    Unauthorized,
+}
+
+impl Status {
+    pub fn is_active(&self) -> bool {
+        *self == Status::Active
+    }
+
+    pub fn is_frozen(&self) -> bool {
+        *self == Status::Frozen
+    }
+
+    pub fn is_expired(&self) -> bool {
+        *self == Status::Expired
+    }
+}
+
+impl Display for Status {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
 /// `ClientState` methods needed in both validation and execution.
 ///
 /// They do not require access to a client `ValidationContext` nor
@@ -49,13 +81,6 @@ pub trait ClientStateCommon {
 
     /// Validate that the client is at a sufficient height
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError>;
-
-    /// Assert that the client is not frozen
-    fn confirm_not_frozen(&self) -> Result<(), ClientError>;
-
-    /// Check if the state is expired when `elapsed` time has passed since the latest consensus
-    /// state timestamp
-    fn expired(&self, elapsed: Duration) -> bool;
 
     /// Verify the upgraded client and consensus states and validate proofs
     /// against the given root.
@@ -140,6 +165,13 @@ pub trait ClientStateValidation<ClientValidationContext> {
         client_message: Any,
         update_kind: &UpdateKind,
     ) -> Result<bool, ClientError>;
+
+    /// Returns the status of the client. Only Active clients are allowed to process packets.
+    fn status(
+        &self,
+        ctx: &ClientValidationContext,
+        client_id: &ClientId,
+    ) -> Result<Status, ClientError>;
 }
 
 /// `ClientState` methods which require access to the client's

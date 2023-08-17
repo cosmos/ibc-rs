@@ -68,6 +68,10 @@ impl Imports {
     pub fn UpdateKind() -> TokenStream {
         quote! {ibc::core::ics02_client::client_state::UpdateKind}
     }
+
+    pub fn Status() -> TokenStream {
+        quote! {ibc::core::ics02_client::client_state::Status}
+    }
 }
 
 /// Retrieves the field of a given enum variant. Outputs an error message if the enum variant

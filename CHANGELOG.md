@@ -1,5 +1,85 @@
 # CHANGELOG
 
+
+# v0.44.1
+
+*August 4, 2023*
+
+This release fixes a bug with the `UpdateClient` event where the `header` field was not properly encoded.
+
+There are no consensus-breaking changes.
+
+### BUG FIXES
+
+- Remove traces of deprecated `mocks-no-std` feature
+  ([#819](https://github.com/cosmos/ibc-rs/issues/821))
+- Utilize encoded bytes from `Any` for the `header` field of `UpdateClient`
+  event
+  ([#821](https://github.com/cosmos/ibc-rs/issues/821))
+
+## v0.44.0
+
+*August 4, 2023*
+
+The goal with this release was to replace `ClientState::{confirm_not_frozen, expired}()` with `ClientState::status()` ([#536](https://github.com/cosmos/ibc-rs/issues/536)). Updating basecoin-rs with the new changes exposed the shortcomings of having `SendPacket*Context` be supertraits of `TokenTransfer*Context`, which in turned exposed the shortcomings of having `Router` be a supertrait of `ValidationContext`. Hence, we decoupled everything!
+
+There are consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- [ibc-derive] Replace `ClientState::{confirm_not_frozen, expired}()` with `ClientState::status()`
+  ([#536](https://github.com/cosmos/ibc-rs/issues/536))
+- Decouple `TokenTransfer{Validation,Execution}` from `SendPacket{Validation,Execution}`
+  ([#786](https://github.com/cosmos/ibc-rs/issues/786))
+- Decouple `Router` from `ValidationContext`
+  ([#788](https://github.com/cosmos/ibc-rs/pull/788))
+- Simplify Module lookup in the `Router` trait
+ ([#802](https://github.com/cosmos/ibc-rs/issues/802))
+
+## v0.43.1
+
+*July 31, 2023*
+
+This release bumps ibc-proto to v0.32.1, resolving issue with token transfer
+deserialization for cases with no memo field provided. It also includes various
+enhancements and bug fixes, such as reorganized acknowledgement types, enhanced
+`ChainId` validation, improved `from_str` height creation, synchronized channel
+event namings for consistency.
+
+There are consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Organize acknowledgement types under the `ics04_channel` module to get
+  accessible by any applications.
+  ([#717](https://github.com/cosmos/ibc-rs/issues/717))
+- Sync field and method namings of ics04 events with the convention
+  ([#750](https://github.com/cosmos/ibc-rs/issues/750))
+- use ibc_proto::protobuf::Protobuf to replace tendermint_proto::Protobuf
+  ([#754](https://github.com/cosmos/ibc-rs/pull/754))
+- Enhancements and fixes to `ChainId` impls and validation.
+  ([#761](https://github.com/cosmos/ibc-rs/issues/761))
+- Use `Vec<u8>` for HeaderAttribute instead of `Any`
+  ([#764](https://github.com/cosmos/ibc-rs/issues/764))
+- Serde: Schema for Coin/Transfer, Amount is string
+  ([#772](https://github.com/cosmos/ibc-rs/issues/772))
+
+### BUG-FIXES
+
+- Tendermint ConsensusState -> Any can crash if out of memory
+  ([#747](https://github.com/cosmos/ibc-rs/issues/747))
+- `Height::from_str` accepts invalid heights
+  ([#752](https://github.com/cosmos/ibc-rs/issues/752))
+- Add serde serialization and deserialization to Packet Receipt
+  ([#794](https://github.com/cosmos/ibc-rs/pull/794))
+
+### IMPROVEMENTS
+
+- Scale encoding for ICS-20 transfer message
+  ([#745](https://github.com/cosmos/ibc-rs/issues/745))
+- Add test to ensure `PacketData` keeps proper JSON encoding
+  ([#763](https://github.com/cosmos/ibc-rs/issues/763))
+
 ## v0.42.0
 
 *July 5, 2023*

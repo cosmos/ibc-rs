@@ -1,6 +1,7 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpdateAnyClient`.
 
 use crate::prelude::*;
+use prost::Message;
 
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};
@@ -28,7 +29,12 @@ where
     // Read client state from the host chain store. The client should already exist.
     let client_state = ctx.client_state(&client_id)?;
 
-    client_state.confirm_not_frozen()?;
+    {
+        let status = client_state.status(ctx.get_client_validation_context(), &client_id)?;
+        if !status.is_active() {
+            return Err(ClientError::ClientNotActive { status }.into());
+        }
+    }
 
     let client_message = msg.client_message();
 
@@ -114,7 +120,7 @@ where
                     client_state.client_type(),
                     *consensus_height,
                     consensus_heights,
-                    header.value,
+                    header.encode_to_vec(),
                 ))
             };
             ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
@@ -208,10 +214,10 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let update_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB", 1);
+        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
         let mut ctx = MockContext::new(
-            ChainId::new("mockgaiaA", 1),
+            ChainId::new("mockgaiaA", 1).unwrap(),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),
@@ -245,7 +251,10 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(client_state.confirm_not_frozen().is_ok());
+        assert!(client_state
+            .status(&ctx, &msg.client_id)
+            .unwrap()
+            .is_active());
         assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
@@ -254,10 +263,10 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let update_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB", 1);
+        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
         let mut ctx = MockContext::new(
-            ChainId::new("mockgaiaA", 1),
+            ChainId::new("mockgaiaA", 1).unwrap(),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),
@@ -292,7 +301,10 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(client_state.confirm_not_frozen().is_ok());
+        assert!(client_state
+            .status(&ctx, &msg.client_id)
+            .unwrap()
+            .is_active());
         assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
@@ -301,8 +313,8 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
 
-        let ctx_a_chain_id = ChainId::new("mockgaiaA", 1);
-        let ctx_b_chain_id = ChainId::new("mockgaiaB", 1);
+        let ctx_a_chain_id = ChainId::new("mockgaiaA", 1).unwrap();
+        let ctx_b_chain_id = ChainId::new("mockgaiaB", 1).unwrap();
         let start_height = Height::new(1, 11).unwrap();
 
         let mut ctx_a = MockContext::new(ctx_a_chain_id, HostType::Mock, 5, start_height)
@@ -353,10 +365,12 @@ mod tests {
 
             let tm_block = downcast!(block.clone() => HostBlock::SyntheticTendermint).unwrap();
 
+            let chain_id = ChainId::from_str(tm_block.header().chain_id.as_str()).unwrap();
+
             let client_state = {
                 #[allow(deprecated)]
                 let raw_client_state = RawTmClientState {
-                    chain_id: ChainId::from(tm_block.header().chain_id.to_string()).to_string(),
+                    chain_id: chain_id.to_string(),
                     trust_level: Some(Fraction {
                         numerator: 1,
                         denominator: 3,
@@ -366,7 +380,7 @@ mod tests {
                     max_clock_drift: Some(Duration::from_millis(3000).into()),
                     latest_height: Some(
                         Height::new(
-                            ChainId::chain_version(tm_block.header().chain_id.as_str()),
+                            chain_id.revision_number(),
                             u64::from(tm_block.header().height),
                         )
                         .unwrap()
@@ -411,7 +425,10 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx_a.client_state(&msg.client_id).unwrap();
-        assert!(client_state.confirm_not_frozen().is_ok());
+        assert!(client_state
+            .status(&ctx_a, &msg.client_id)
+            .unwrap()
+            .is_active());
         assert_eq!(client_state.latest_height(), latest_header_height);
         assert_eq!(client_state, ctx_a.latest_client_states(&msg.client_id));
     }
@@ -426,7 +443,7 @@ mod tests {
         let chain_start_height = Height::new(1, 11).unwrap();
 
         let ctx = MockContext::new(
-            ChainId::new("mockgaiaA", 1),
+            ChainId::new("mockgaiaA", 1).unwrap(),
             HostType::Mock,
             5,
             chain_start_height,
@@ -439,7 +456,7 @@ mod tests {
         );
 
         let ctx_b = MockContext::new(
-            ChainId::new("mockgaiaB", 1),
+            ChainId::new("mockgaiaB", 1).unwrap(),
             HostType::SyntheticTendermint,
             5,
             client_height,
@@ -488,13 +505,14 @@ mod tests {
         assert_eq!(update_client_event.client_type(), &mock_client_type());
         assert_eq!(update_client_event.consensus_height(), &height);
         assert_eq!(update_client_event.consensus_heights(), &vec![height]);
-        assert_eq!(update_client_event.header(), &header.value);
+        assert_eq!(update_client_event.header(), &header.encode_to_vec());
     }
 
     fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &ClientType) {
         let client_state = ctx.client_state(client_id).unwrap();
 
-        assert!(client_state.confirm_not_frozen().is_err());
+        let status = client_state.status(ctx, client_id).unwrap();
+        assert!(status.is_frozen(), "client_state status: {status}");
 
         // check events
         assert_eq!(ctx.events.len(), 2);
@@ -565,11 +583,11 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let misbehaviour_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB", 1);
+        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
         // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
         let mut ctx_a = MockContext::new(
-            ChainId::new("mockgaiaA", 1),
+            ChainId::new("mockgaiaA", 1).unwrap(),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),
@@ -626,11 +644,11 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let misbehaviour_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB", 1);
+        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
         // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
         let mut ctx_a = MockContext::new(
-            ChainId::new("mockgaiaA", 1),
+            ChainId::new("mockgaiaA", 1).unwrap(),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),

@@ -28,6 +28,8 @@ pub use recv_packet::MsgRecvPacket;
 pub use timeout::MsgTimeout;
 pub use timeout_on_close::MsgTimeoutOnClose;
 
+use crate::core::ics24_host::identifier::PortId;
+
 /// All channel messages
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChannelMsg {
@@ -46,4 +48,24 @@ pub enum PacketMsg {
     Ack(MsgAcknowledgement),
     Timeout(MsgTimeout),
     TimeoutOnClose(MsgTimeoutOnClose),
+}
+
+pub(crate) fn channel_msg_to_port_id(msg: &ChannelMsg) -> &PortId {
+    match msg {
+        ChannelMsg::OpenInit(msg) => &msg.port_id_on_a,
+        ChannelMsg::OpenTry(msg) => &msg.port_id_on_b,
+        ChannelMsg::OpenAck(msg) => &msg.port_id_on_a,
+        ChannelMsg::OpenConfirm(msg) => &msg.port_id_on_b,
+        ChannelMsg::CloseInit(msg) => &msg.port_id_on_a,
+        ChannelMsg::CloseConfirm(msg) => &msg.port_id_on_b,
+    }
+}
+
+pub(crate) fn packet_msg_to_port_id(msg: &PacketMsg) -> &PortId {
+    match msg {
+        PacketMsg::Recv(msg) => &msg.packet.port_id_on_b,
+        PacketMsg::Ack(msg) => &msg.packet.port_id_on_a,
+        PacketMsg::Timeout(msg) => &msg.packet.port_id_on_a,
+        PacketMsg::TimeoutOnClose(msg) => &msg.packet.port_id_on_a,
+    }
 }

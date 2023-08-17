@@ -4,8 +4,9 @@ use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
 use crate::core::context::ContextError;
-use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenTry;
@@ -59,7 +60,13 @@ where
     {
         let client_state_of_a_on_b = ctx_b.client_state(vars.conn_end_on_b.client_id())?;
 
-        client_state_of_a_on_b.confirm_not_frozen()?;
+        {
+            let status = client_state_of_a_on_b
+                .status(ctx_b.get_client_validation_context(), &msg.client_id_on_b)?;
+            if !status.is_active() {
+                return Err(ClientError::ClientNotActive { status }.into());
+            }
+        }
         client_state_of_a_on_b.validate_proof_height(msg.proofs_height_on_a)?;
 
         let client_cons_state_path_on_b =
@@ -254,7 +261,7 @@ mod tests {
         };
 
         let ctx_new = MockContext::new(
-            ChainId::new("mockgaia", 0),
+            ChainId::new("mockgaia", 0).unwrap(),
             HostType::Mock,
             max_history_size,
             host_chain_height,

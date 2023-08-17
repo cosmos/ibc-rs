@@ -146,6 +146,8 @@ impl From<ConsensusHeightsAttribute> for abci::EventAttribute {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, From, PartialEq, Eq)]
 struct HeaderAttribute {
+    /// NOTE: The header is encoded as bytes of the
+    /// [`Any`](ibc_proto::google::protobuf::Any) type.
     header: Vec<u8>,
 }
 
@@ -246,6 +248,10 @@ pub struct UpdateClient {
 }
 
 impl UpdateClient {
+    /// Constructs a new UpdateClient event.
+    ///
+    /// NOTE: the `header` is the encoded bytes of the
+    /// [`Any`](ibc_proto::google::protobuf::Any) type.
     pub fn new(
         client_id: ClientId,
         client_type: ClientType,
@@ -419,6 +425,7 @@ mod tests {
     use crate::core::timestamp::Timestamp;
     use crate::mock::header::MockHeader;
     use ibc_proto::google::protobuf::Any;
+    use prost::Message;
     use std::str::FromStr;
     use tendermint::abci::Event as AbciEvent;
 
@@ -452,7 +459,7 @@ mod tests {
             "07-tendermint",
             "0-5",
             "0-5,0-7",
-            "0a021005",
+            "0a102f6962632e6d6f636b2e48656164657212040a021005",
         ];
 
         let tests: Vec<Test> = vec![
@@ -470,7 +477,7 @@ mod tests {
                     client_type.clone(),
                     consensus_height,
                     consensus_heights,
-                    header.value,
+                    header.encode_to_vec(),
                 )
                 .into(),
                 expected_keys: expected_keys.clone(),

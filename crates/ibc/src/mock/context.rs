@@ -1,6 +1,5 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
-mod applications;
 mod clients;
 
 use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
@@ -31,7 +30,6 @@ use crate::clients::ics07_tendermint::consensus_state::TENDERMINT_CONSENSUS_STAT
 use crate::core::dispatch;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
-use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
@@ -44,7 +42,6 @@ use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
 use crate::core::router::Router;
-use crate::core::router::{Module, ModuleId};
 use crate::core::timestamp::Timestamp;
 use crate::core::{ContextError, ValidationContext};
 use crate::core::{ExecutionContext, MsgEnvelope};
@@ -188,9 +185,6 @@ pub struct MockIbcStore {
 
     pub packet_acknowledgement: PortChannelIdMap<BTreeMap<Sequence, AcknowledgementCommitment>>,
 
-    /// Maps ports to the the module that owns it
-    pub port_to_module: BTreeMap<PortId, ModuleId>,
-
     /// Constant-size commitments to packets data fields
     pub packet_commitment: PortChannelIdMap<BTreeMap<Sequence, PacketCommitment>>,
 
@@ -220,9 +214,6 @@ pub struct MockContext {
     /// An object that stores all IBC related data.
     pub ibc_store: Arc<Mutex<MockIbcStore>>,
 
-    /// To implement ValidationContext Router
-    router: BTreeMap<ModuleId, Arc<dyn Module>>,
-
     pub events: Vec<IbcEvent>,
 
     pub logs: Vec<String>,
@@ -234,7 +225,7 @@ pub struct MockContext {
 impl Default for MockContext {
     fn default() -> Self {
         Self::new(
-            ChainId::new("mockgaia", 0),
+            ChainId::new("mockgaia", 0).expect("Never fails"),
             HostType::Mock,
             5,
             Height::new(0, 5).expect("Never fails"),
@@ -258,7 +249,6 @@ impl Clone for MockContext {
             history: self.history.clone(),
             block_time: self.block_time,
             ibc_store,
-            router: self.router.clone(),
             events: self.events.clone(),
             logs: self.logs.clone(),
         }
@@ -293,7 +283,7 @@ impl MockContext {
         let n = min(max_history_size as u64, latest_height.revision_height());
 
         assert_eq!(
-            host_id.version(),
+            host_id.revision_number(),
             latest_height.revision_number(),
             "The version in the chain identifier must match the version in the latest height"
         );
@@ -321,7 +311,6 @@ impl MockContext {
                 .collect(),
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
-            router: BTreeMap::new(),
             events: Vec::new(),
             logs: Vec::new(),
         }
@@ -608,17 +597,6 @@ impl MockContext {
         self
     }
 
-    pub fn add_route(
-        &mut self,
-        module_id: ModuleId,
-        module: impl Module + 'static,
-    ) -> Result<(), String> {
-        match self.router.insert(module_id, Arc::new(module)) {
-            None => Ok(()),
-            Some(_) => Err("Duplicate module_id".to_owned()),
-        }
-    }
-
     /// Accessor for a block of the local (host) chain from this context.
     /// Returns `None` if the block at the requested height does not exist.
     pub fn host_block(&self, target_height: &Height) -> Option<&HostBlock> {
@@ -660,8 +638,12 @@ impl MockContext {
     /// A datagram passes from the relayer to the IBC module (on host chain).
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
     /// Used in testing the Ics18 algorithms, hence this may return a Ics18Error.
-    pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), RelayerError> {
-        dispatch(self, msg).map_err(RelayerError::TransactionFailed)?;
+    pub fn deliver(
+        &mut self,
+        router: &mut impl Router,
+        msg: MsgEnvelope,
+    ) -> Result<(), RelayerError> {
+        dispatch(self, router, msg).map_err(RelayerError::TransactionFailed)?;
         // Create a new block.
         self.advance_host_chain_height();
         Ok(())
@@ -693,21 +675,6 @@ impl MockContext {
             }
         }
         Ok(())
-    }
-
-    pub fn add_port(&mut self, port_id: PortId) {
-        let module_id = ModuleId::new(format!("module{port_id}"));
-        self.ibc_store
-            .lock()
-            .port_to_module
-            .insert(port_id, module_id);
-    }
-
-    pub fn scope_port_to_module(&mut self, port_id: PortId, module_id: ModuleId) {
-        self.ibc_store
-            .lock()
-            .port_to_module
-            .insert(port_id, module_id);
     }
 
     pub fn latest_client_states(&self, client_id: &ClientId) -> AnyClientState {
@@ -763,31 +730,6 @@ impl RelayerContext for MockContext {
         "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C"
             .to_string()
             .into()
-    }
-}
-
-impl Router for MockContext {
-    fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module> {
-        self.router.get(module_id).map(Arc::as_ref)
-    }
-    fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module> {
-        // NOTE: The following:
-
-        // self.router.get_mut(module_id).and_then(Arc::get_mut)
-
-        // doesn't work due to a compiler bug. So we expand it out manually.
-
-        match self.router.get_mut(module_id) {
-            Some(arc_mod) => match Arc::get_mut(arc_mod) {
-                Some(m) => Some(m),
-                None => None,
-            },
-            None => None,
-        }
-    }
-
-    fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId> {
-        self.ibc_store.lock().port_to_module.get(port_id).cloned()
     }
 }
 
@@ -897,10 +839,15 @@ impl ValidationContext for MockContext {
             })
             .map_err(ContextError::ConnectionError)?;
 
-        mock_client_state.confirm_not_frozen()?;
+        if mock_client_state.is_frozen() {
+            return Err(ClientError::ClientFrozen {
+                description: String::new(),
+            }
+            .into());
+        }
 
         let self_chain_id = &self.host_chain_id;
-        let self_revision_number = self_chain_id.version();
+        let self_revision_number = self_chain_id.revision_number();
         if self_revision_number != mock_client_state.latest_height().revision_number() {
             return Err(ConnectionError::InvalidClientState {
                 reason: format!(
@@ -1383,6 +1330,7 @@ mod tests {
     use crate::core::router::{Module, ModuleExtras, ModuleId};
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
+    use crate::mock::router::MockRouter;
     use crate::signer::Signer;
     use crate::test_utils::get_dummy_bech32_account;
     use crate::Height;
@@ -1395,11 +1343,13 @@ mod tests {
         }
         let cv = 1; // The version to use for all chains.
 
+        let mock_chain_id = ChainId::new("mockgaia", cv).unwrap();
+
         let tests: Vec<Test> = vec![
             Test {
                 name: "Empty history, small pruning window".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::Mock,
                     2,
                     Height::new(cv, 1).expect("Never fails"),
@@ -1408,7 +1358,7 @@ mod tests {
             Test {
                 name: "[Synthetic TM host] Empty history, small pruning window".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mocksgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::SyntheticTendermint,
                     2,
                     Height::new(cv, 1).expect("Never fails"),
@@ -1417,7 +1367,7 @@ mod tests {
             Test {
                 name: "Large pruning window".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::Mock,
                     30,
                     Height::new(cv, 2).expect("Never fails"),
@@ -1426,7 +1376,7 @@ mod tests {
             Test {
                 name: "[Synthetic TM host] Large pruning window".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mocksgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::SyntheticTendermint,
                     30,
                     Height::new(cv, 2).expect("Never fails"),
@@ -1435,7 +1385,7 @@ mod tests {
             Test {
                 name: "Small pruning window".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::Mock,
                     3,
                     Height::new(cv, 30).expect("Never fails"),
@@ -1444,7 +1394,7 @@ mod tests {
             Test {
                 name: "[Synthetic TM host] Small pruning window".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::SyntheticTendermint,
                     3,
                     Height::new(cv, 30).expect("Never fails"),
@@ -1453,7 +1403,7 @@ mod tests {
             Test {
                 name: "Small pruning window, small starting height".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::Mock,
                     3,
                     Height::new(cv, 2).expect("Never fails"),
@@ -1462,7 +1412,7 @@ mod tests {
             Test {
                 name: "[Synthetic TM host] Small pruning window, small starting height".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::SyntheticTendermint,
                     3,
                     Height::new(cv, 2).expect("Never fails"),
@@ -1471,7 +1421,7 @@ mod tests {
             Test {
                 name: "Large pruning window, large starting height".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id.clone(),
                     HostType::Mock,
                     50,
                     Height::new(cv, 2000).expect("Never fails"),
@@ -1480,7 +1430,7 @@ mod tests {
             Test {
                 name: "[Synthetic TM host] Large pruning window, large starting height".to_string(),
                 ctx: MockContext::new(
-                    ChainId::new("mockgaia", cv),
+                    mock_chain_id,
                     HostType::SyntheticTendermint,
                     50,
                     Height::new(cv, 2000).expect("Never fails"),
@@ -1731,20 +1681,17 @@ mod tests {
             }
         }
 
-        let mut ctx = MockContext::new(
-            ChainId::new("mockgaia", 1),
-            HostType::Mock,
-            1,
-            Height::new(1, 1).expect("Never fails"),
-        );
-        ctx.add_route(ModuleId::new("foomodule".to_string()), FooModule::default())
+        let mut router = MockRouter::default();
+        router
+            .add_route(ModuleId::new("foomodule".to_string()), FooModule::default())
             .expect("Never fails");
-        ctx.add_route(ModuleId::new("barmodule".to_string()), BarModule)
+        router
+            .add_route(ModuleId::new("barmodule".to_string()), BarModule)
             .expect("Never fails");
 
         let mut on_recv_packet_result = |module_id: &'static str| {
             let module_id = ModuleId::new(module_id.to_string());
-            let m = ctx.get_route_mut(&module_id).expect("Never fails");
+            let m = router.get_route_mut(&module_id).expect("Never fails");
             let result =
                 m.on_recv_packet_execute(&Packet::default(), &get_dummy_bech32_account().into());
             (module_id, result)

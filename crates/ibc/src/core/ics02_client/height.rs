@@ -29,6 +29,7 @@ use crate::core::ics02_client::error::ClientError;
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Height {
     /// Previously known as "epoch"
