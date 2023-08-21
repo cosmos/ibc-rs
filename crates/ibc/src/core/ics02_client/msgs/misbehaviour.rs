@@ -14,10 +14,6 @@ use crate::signer::Signer;
 pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
 
 /// A type of message that submits client misbehaviour proof.
-///
-/// Note: The protobuf type of this message has been deprecated. All types of
-/// misbehaviour can be submitted through the `MsgUpdateClient` message as well.
-/// It is advised to use that message instead.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgSubmitMisbehaviour {
     /// client unique identifier

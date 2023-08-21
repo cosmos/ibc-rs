@@ -38,7 +38,7 @@ pub struct MsgConnectionOpenAck {
     pub signer: Signer,
     /// optional proof of host state machines (chain A) that are unable to
     /// introspect their own consensus state
-    pub proof_consensus_state_of_a: CommitmentProofBytes,
+    pub proof_consensus_state_of_a: Option<CommitmentProofBytes>,
 }
 
 impl Msg for MsgConnectionOpenAck {
@@ -92,10 +92,15 @@ impl TryFrom<RawMsgConnectionOpenAck> for MsgConnectionOpenAck {
                 .and_then(|raw_height| raw_height.try_into().ok())
                 .ok_or(ConnectionError::MissingConsensusHeight)?,
             signer: msg.signer.into(),
-            proof_consensus_state_of_a: msg
-                .host_consensus_state_proof
-                .try_into()
-                .map_err(|_| ConnectionError::InvalidProof)?,
+            proof_consensus_state_of_a: if msg.host_consensus_state_proof.is_empty() {
+                None
+            } else {
+                Some(
+                    msg.host_consensus_state_proof
+                        .try_into()
+                        .map_err(|_| ConnectionError::InvalidProof)?,
+                )
+            },
         })
     }
 }
@@ -113,7 +118,10 @@ impl From<MsgConnectionOpenAck> for RawMsgConnectionOpenAck {
             consensus_height: Some(msg.consensus_height_of_a_on_b.into()),
             version: Some(msg.version.into()),
             signer: msg.signer.to_string(),
-            host_consensus_state_proof: msg.proof_consensus_state_of_a.into(),
+            host_consensus_state_proof: match msg.proof_consensus_state_of_a {
+                Some(proof) => proof.into(),
+                None => vec![],
+            },
         }
     }
 }
@@ -167,7 +175,7 @@ pub mod test_util {
             proof_client: get_dummy_proof(),
             version: Some(Version::default().into()),
             signer: get_dummy_bech32_account(),
-            host_consensus_state_proof: get_dummy_proof(),
+            host_consensus_state_proof: vec![],
         }
     }
 }
