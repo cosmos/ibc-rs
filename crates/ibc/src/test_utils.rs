@@ -201,7 +201,7 @@ impl<D> TokenTransferValidationContext<D> for DummyTransferModule {
         &self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
-        _to_account: &Self::AccountId,
+        _from_account: &Self::AccountId,
         _coin: &PrefixedCoin,
         _extra: &D,
     ) -> Result<(), TokenTransferError> {
@@ -240,7 +240,7 @@ impl<D> TokenTransferExecutionContext<D> for DummyTransferModule {
         &self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
-        _to_account: &Self::AccountId,
+        _from_account: &Self::AccountId,
         _coin: &PrefixedCoin,
         _extra: &D,
     ) -> Result<(), TokenTransferError> {

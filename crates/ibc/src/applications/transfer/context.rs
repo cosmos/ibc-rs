@@ -40,7 +40,7 @@ pub trait TokenTransferValidationContext<D> {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-        to_account: &Self::AccountId,
+        from_account: &Self::AccountId,
         coin: &PrefixedCoin,
         extra: &D,
     ) -> Result<(), TokenTransferError>;
@@ -82,7 +82,7 @@ pub trait TokenTransferExecutionContext<D>: TokenTransferValidationContext<D> {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
-        to_account: &Self::AccountId,
+        from_account: &Self::AccountId,
         coin: &PrefixedCoin,
         extra: &D,
     ) -> Result<(), TokenTransferError>;
