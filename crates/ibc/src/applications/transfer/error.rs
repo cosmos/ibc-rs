@@ -12,12 +12,19 @@ use crate::core::ics24_host::identifier::{ChannelId, IdentifierError, PortId};
 use crate::core::ContextError;
 use crate::prelude::*;
 
+use super::Amount;
+
 #[derive(Display, Debug)]
 pub enum TokenTransferError {
     /// context error: `{0}`
     ContextError(ContextError),
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
+    /// insufficient funds: tried to send `{send_attempt}`, sender only has `{available_funds}`
+    InsufficientFunds {
+        send_attempt: Amount,
+        available_funds: Amount,
+    },
     /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
     DestinationChannelNotFound {
         port_id: PortId,
