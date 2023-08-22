@@ -23,18 +23,11 @@ use crate::core::ContextError;
 use crate::signer::Signer;
 
 /// Methods required in token transfer validation, to be implemented by the host
-pub trait TokenTransferValidationContext {
+pub trait TokenTransferValidationContext<D> {
     type AccountId: TryFrom<Signer>;
 
     /// get_port returns the portID for the transfer module.
     fn get_port(&self) -> Result<PortId, TokenTransferError>;
-
-    /// Returns the escrow account id for a port and channel combination
-    fn get_escrow_account(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<Self::AccountId, TokenTransferError>;
 
     /// Returns Ok() if the host chain supports sending coins.
     fn can_send_coins(&self) -> Result<(), TokenTransferError>;
@@ -42,10 +35,21 @@ pub trait TokenTransferValidationContext {
     /// Returns Ok() if the host chain supports receiving coins.
     fn can_receive_coins(&self) -> Result<(), TokenTransferError>;
 
-    /// Validates the sender and receiver accounts and the coin inputs
-    fn send_coins_validate(
+    /// Validates that the tokens can be escrowed successfully
+    fn escrow_coins_validate(
         &self,
-        from_account: &Self::AccountId,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        to_account: &Self::AccountId,
+        coin: &PrefixedCoin,
+        extra: &D,
+    ) -> Result<(), TokenTransferError>;
+
+    /// Validates that the tokens can be unescrowed successfully
+    fn unescrow_coins_validate(
+        &self,
+        port_id: &PortId,
+        channel_id: &ChannelId,
         to_account: &Self::AccountId,
         coin: &PrefixedCoin,
     ) -> Result<(), TokenTransferError>;
@@ -72,11 +76,22 @@ pub trait TokenTransferValidationContext {
 }
 
 /// Methods required in token transfer execution, to be implemented by the host
-pub trait TokenTransferExecutionContext: TokenTransferValidationContext {
-    /// This function should enable sending ibc fungible tokens from one account to another
-    fn send_coins_execute(
-        &mut self,
-        from_account: &Self::AccountId,
+pub trait TokenTransferExecutionContext<D>: TokenTransferValidationContext<D> {
+    /// Escrows the tokens
+    fn escrow_coins_execute(
+        &self,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        to_account: &Self::AccountId,
+        coin: &PrefixedCoin,
+        extra: &D,
+    ) -> Result<(), TokenTransferError>;
+
+    /// Unescrows the tokens
+    fn unescrow_coins_execute(
+        &self,
+        port_id: &PortId,
+        channel_id: &ChannelId,
         to_account: &Self::AccountId,
         coin: &PrefixedCoin,
     ) -> Result<(), TokenTransferError>;
@@ -110,8 +125,8 @@ pub fn cosmos_adr028_escrow_address(port_id: &PortId, channel_id: &ChannelId) ->
     hash
 }
 
-pub fn on_chan_open_init_validate(
-    ctx: &impl TokenTransferValidationContext,
+pub fn on_chan_open_init_validate<D>(
+    ctx: &impl TokenTransferValidationContext<D>,
     order: Order,
     _connection_hops: &[ConnectionId],
     port_id: &PortId,
@@ -142,8 +157,8 @@ pub fn on_chan_open_init_validate(
     Ok(())
 }
 
-pub fn on_chan_open_init_execute(
-    _ctx: &mut impl TokenTransferExecutionContext,
+pub fn on_chan_open_init_execute<D>(
+    _ctx: &mut impl TokenTransferExecutionContext<D>,
     _order: Order,
     _connection_hops: &[ConnectionId],
     _port_id: &PortId,
@@ -154,8 +169,8 @@ pub fn on_chan_open_init_execute(
     Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
 }
 
-pub fn on_chan_open_try_validate(
-    _ctx: &impl TokenTransferValidationContext,
+pub fn on_chan_open_try_validate<D>(
+    _ctx: &impl TokenTransferValidationContext<D>,
     order: Order,
     _connection_hops: &[ConnectionId],
     _port_id: &PortId,
@@ -177,8 +192,8 @@ pub fn on_chan_open_try_validate(
     Ok(())
 }
 
-pub fn on_chan_open_try_execute(
-    _ctx: &mut impl TokenTransferExecutionContext,
+pub fn on_chan_open_try_execute<D>(
+    _ctx: &mut impl TokenTransferExecutionContext<D>,
     _order: Order,
     _connection_hops: &[ConnectionId],
     _port_id: &PortId,
@@ -189,8 +204,8 @@ pub fn on_chan_open_try_execute(
     Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
 }
 
-pub fn on_chan_open_ack_validate(
-    _ctx: &impl TokenTransferValidationContext,
+pub fn on_chan_open_ack_validate<D>(
+    _ctx: &impl TokenTransferValidationContext<D>,
     _port_id: &PortId,
     _channel_id: &ChannelId,
     counterparty_version: &Version,
@@ -202,8 +217,8 @@ pub fn on_chan_open_ack_validate(
     Ok(())
 }
 
-pub fn on_chan_open_ack_execute(
-    _ctx: &mut impl TokenTransferExecutionContext,
+pub fn on_chan_open_ack_execute<D>(
+    _ctx: &mut impl TokenTransferExecutionContext<D>,
     _port_id: &PortId,
     _channel_id: &ChannelId,
     _counterparty_version: &Version,
@@ -211,56 +226,56 @@ pub fn on_chan_open_ack_execute(
     Ok(ModuleExtras::empty())
 }
 
-pub fn on_chan_open_confirm_validate(
-    _ctx: &impl TokenTransferValidationContext,
+pub fn on_chan_open_confirm_validate<D>(
+    _ctx: &impl TokenTransferValidationContext<D>,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<(), TokenTransferError> {
     Ok(())
 }
 
-pub fn on_chan_open_confirm_execute(
-    _ctx: &mut impl TokenTransferExecutionContext,
+pub fn on_chan_open_confirm_execute<D>(
+    _ctx: &mut impl TokenTransferExecutionContext<D>,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, TokenTransferError> {
     Ok(ModuleExtras::empty())
 }
 
-pub fn on_chan_close_init_validate(
-    _ctx: &impl TokenTransferValidationContext,
+pub fn on_chan_close_init_validate<D>(
+    _ctx: &impl TokenTransferValidationContext<D>,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<(), TokenTransferError> {
     Err(TokenTransferError::CantCloseChannel)
 }
 
-pub fn on_chan_close_init_execute(
-    _ctx: &mut impl TokenTransferExecutionContext,
+pub fn on_chan_close_init_execute<D>(
+    _ctx: &mut impl TokenTransferExecutionContext<D>,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, TokenTransferError> {
     Err(TokenTransferError::CantCloseChannel)
 }
 
-pub fn on_chan_close_confirm_validate(
-    _ctx: &impl TokenTransferValidationContext,
+pub fn on_chan_close_confirm_validate<D>(
+    _ctx: &impl TokenTransferValidationContext<D>,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<(), TokenTransferError> {
     Ok(())
 }
 
-pub fn on_chan_close_confirm_execute(
-    _ctx: &mut impl TokenTransferExecutionContext,
+pub fn on_chan_close_confirm_execute<D>(
+    _ctx: &mut impl TokenTransferExecutionContext<D>,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, TokenTransferError> {
     Ok(ModuleExtras::empty())
 }
 
-pub fn on_recv_packet_execute(
-    ctx_b: &mut impl TokenTransferExecutionContext,
+pub fn on_recv_packet_execute<D>(
+    ctx_b: &mut impl TokenTransferExecutionContext<D>,
     packet: &Packet,
 ) -> (ModuleExtras, Acknowledgement) {
     let data = match serde_json::from_slice::<PacketData>(&packet.data) {
@@ -290,14 +305,14 @@ pub fn on_recv_packet_execute(
     (extras, ack.into())
 }
 
-pub fn on_acknowledgement_packet_validate<Ctx>(
+pub fn on_acknowledgement_packet_validate<Ctx, D>(
     ctx: &Ctx,
     packet: &Packet,
     acknowledgement: &Acknowledgement,
     _relayer: &Signer,
 ) -> Result<(), TokenTransferError>
 where
-    Ctx: TokenTransferValidationContext,
+    Ctx: TokenTransferValidationContext<D>,
 {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
         .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
@@ -312,8 +327,8 @@ where
     Ok(())
 }
 
-pub fn on_acknowledgement_packet_execute(
-    ctx: &mut impl TokenTransferExecutionContext,
+pub fn on_acknowledgement_packet_execute<D>(
+    ctx: &mut impl TokenTransferExecutionContext<D>,
     packet: &Packet,
     acknowledgement: &Acknowledgement,
     _relayer: &Signer,
@@ -362,13 +377,13 @@ pub fn on_acknowledgement_packet_execute(
     (extras, Ok(()))
 }
 
-pub fn on_timeout_packet_validate<Ctx>(
+pub fn on_timeout_packet_validate<Ctx, D>(
     ctx: &Ctx,
     packet: &Packet,
     _relayer: &Signer,
 ) -> Result<(), TokenTransferError>
 where
-    Ctx: TokenTransferValidationContext,
+    Ctx: TokenTransferValidationContext<D>,
 {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
         .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
@@ -378,8 +393,8 @@ where
     Ok(())
 }
 
-pub fn on_timeout_packet_execute(
-    ctx: &mut impl TokenTransferExecutionContext,
+pub fn on_timeout_packet_execute<D>(
+    ctx: &mut impl TokenTransferExecutionContext<D>,
     packet: &Packet,
     _relayer: &Signer,
 ) -> (ModuleExtras, Result<(), TokenTransferError>) {
@@ -485,7 +500,7 @@ pub(crate) mod test {
 
         let in_version = Version::new("".to_string());
 
-        let (_, out_version) = on_chan_open_init_execute(
+        let (_, out_version) = on_chan_open_init_execute::<()>(
             &mut ctx,
             order,
             &connection_hops,
@@ -505,7 +520,7 @@ pub(crate) mod test {
         let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
 
         let in_version = Version::new(VERSION.to_string());
-        let (_, out_version) = on_chan_open_init_execute(
+        let (_, out_version) = on_chan_open_init_execute::<()>(
             &mut ctx,
             order,
             &connection_hops,
@@ -525,7 +540,7 @@ pub(crate) mod test {
         let (ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
 
         let in_version = Version::new("some-unsupported-version".to_string());
-        let res = on_chan_open_init_validate(
+        let res = on_chan_open_init_validate::<()>(
             &ctx,
             order,
             &connection_hops,
@@ -545,7 +560,7 @@ pub(crate) mod test {
 
         let counterparty_version = Version::new(VERSION.to_string());
 
-        let (_, out_version) = on_chan_open_try_execute(
+        let (_, out_version) = on_chan_open_try_execute::<()>(
             &mut ctx,
             order,
             &connection_hops,
@@ -566,7 +581,7 @@ pub(crate) mod test {
 
         let counterparty_version = Version::new("some-unsupported-version".to_string());
 
-        let res = on_chan_open_try_validate(
+        let res = on_chan_open_try_validate::<()>(
             &ctx,
             order,
             &connection_hops,

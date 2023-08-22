@@ -15,28 +15,30 @@ use crate::core::ics24_host::path::{ChannelEndPath, SeqSendPath};
 use crate::prelude::*;
 
 /// Initiate a token transfer. Equivalent to calling [`send_transfer_validate`], followed by [`send_transfer_execute`].
-pub fn send_transfer<SendPacketCtx, TokenCtx>(
+pub fn send_transfer<SendPacketCtx, TokenCtx, D>(
     send_packet_ctx_a: &mut SendPacketCtx,
     token_ctx_a: &mut TokenCtx,
     msg: MsgTransfer,
+    extra: &D,
 ) -> Result<(), TokenTransferError>
 where
     SendPacketCtx: SendPacketExecutionContext,
-    TokenCtx: TokenTransferExecutionContext,
+    TokenCtx: TokenTransferExecutionContext<D>,
 {
-    send_transfer_validate(send_packet_ctx_a, token_ctx_a, msg.clone())?;
-    send_transfer_execute(send_packet_ctx_a, token_ctx_a, msg)
+    send_transfer_validate(send_packet_ctx_a, token_ctx_a, msg.clone(), extra)?;
+    send_transfer_execute(send_packet_ctx_a, token_ctx_a, msg, extra)
 }
 
 /// Validates the token tranfer. If this succeeds, then it is legal to initiate the transfer with [`send_transfer_execute`].
-pub fn send_transfer_validate<SendPacketCtx, TokenCtx>(
+pub fn send_transfer_validate<SendPacketCtx, TokenCtx, D>(
     send_packet_ctx_a: &SendPacketCtx,
     token_ctx_a: &TokenCtx,
     msg: MsgTransfer,
+    extra: &D,
 ) -> Result<(), TokenTransferError>
 where
     SendPacketCtx: SendPacketValidationContext,
-    TokenCtx: TokenTransferValidationContext,
+    TokenCtx: TokenTransferValidationContext<D>,
 {
     token_ctx_a.can_send_coins()?;
 
@@ -70,9 +72,13 @@ where
         msg.chan_id_on_a.clone(),
         &token.denom,
     ) {
-        let escrow_address =
-            token_ctx_a.get_escrow_account(&msg.port_id_on_a, &msg.chan_id_on_a)?;
-        token_ctx_a.send_coins_validate(&sender, &escrow_address, token)?;
+        token_ctx_a.escrow_coins_validate(
+            &msg.port_id_on_a,
+            &msg.chan_id_on_a,
+            &sender,
+            token,
+            extra,
+        )?;
     } else {
         token_ctx_a.burn_coins_validate(&sender, token)?;
     }
@@ -99,14 +105,15 @@ where
 }
 
 /// Executes the token transfer. A prior call to [`send_transfer_validate`] MUST have succeeded.
-pub fn send_transfer_execute<SendPacketCtx, TokenCtx>(
+pub fn send_transfer_execute<SendPacketCtx, TokenCtx, D>(
     send_packet_ctx_a: &mut SendPacketCtx,
     token_ctx_a: &mut TokenCtx,
     msg: MsgTransfer,
+    extra: &D,
 ) -> Result<(), TokenTransferError>
 where
     SendPacketCtx: SendPacketExecutionContext,
-    TokenCtx: TokenTransferExecutionContext,
+    TokenCtx: TokenTransferExecutionContext<D>,
 {
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let chan_end_on_a = send_packet_ctx_a.channel_end(&chan_end_path_on_a)?;
@@ -139,9 +146,13 @@ where
         msg.chan_id_on_a.clone(),
         &token.denom,
     ) {
-        let escrow_address =
-            token_ctx_a.get_escrow_account(&msg.port_id_on_a, &msg.chan_id_on_a)?;
-        token_ctx_a.send_coins_execute(&sender, &escrow_address, token)?;
+        token_ctx_a.escrow_coins_execute(
+            &msg.port_id_on_a,
+            &msg.chan_id_on_a,
+            &sender,
+            token,
+            extra,
+        )?;
     } else {
         token_ctx_a.burn_coins_execute(&sender, token)?;
     }
