@@ -67,8 +67,8 @@ pub enum ClientError {
     InvalidClientIdentifier(IdentifierError),
     /// invalid raw header error: `{0}`
     InvalidRawHeader(TendermintProtoError),
-    /// missing raw header
-    MissingRawHeader,
+    /// missing raw client message
+    MissingClientMessage,
     /// invalid raw misbehaviour error: `{0}`
     InvalidRawMisbehaviour(IdentifierError),
     /// missing raw misbehaviour
