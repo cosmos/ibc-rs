@@ -80,6 +80,8 @@ pub enum TokenTransferError {
     InvalidCoin { coin: String },
     /// decoding raw bytes as UTF8 string error: `{0}`
     Utf8Decode(Utf8Error),
+    /// `{0}`
+    Other(String)
 }
 
 #[cfg(feature = "std")]
