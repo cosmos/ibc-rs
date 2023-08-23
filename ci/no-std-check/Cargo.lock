@@ -1384,7 +1384,7 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
- "sp-std 7.0.0",
+ "sp-std",
  "syn 2.0.27",
  "tendermint",
  "tendermint-light-client-verifier",
@@ -2150,7 +2150,7 @@ dependencies = [
  "serde",
  "sp-core",
  "sp-io",
- "sp-std 9.0.0",
+ "sp-std",
 ]
 
 [[package]]
@@ -2164,7 +2164,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sp-std 9.0.0",
+ "sp-std",
  "static_assertions",
 ]
 
@@ -2204,7 +2204,7 @@ dependencies = [
  "sp-debug-derive",
  "sp-externalities",
  "sp-runtime-interface",
- "sp-std 9.0.0",
+ "sp-std",
  "sp-storage",
  "ss58-registry",
  "substrate-bip39",
@@ -2247,7 +2247,7 @@ checksum = "3313e2c5f2523b06062e541dff9961bde88ad5a28861621dc7b7b47a32bb0f7c"
 dependencies = [
  "environmental",
  "parity-scale-codec",
- "sp-std 9.0.0",
+ "sp-std",
  "sp-storage",
 ]
 
@@ -2270,7 +2270,7 @@ dependencies = [
  "sp-keystore",
  "sp-runtime-interface",
  "sp-state-machine",
- "sp-std 9.0.0",
+ "sp-std",
  "sp-tracing",
  "sp-trie",
  "tracing",
@@ -2320,7 +2320,7 @@ dependencies = [
  "sp-arithmetic",
  "sp-core",
  "sp-io",
- "sp-std 9.0.0",
+ "sp-std",
  "sp-weights",
 ]
 
@@ -2336,7 +2336,7 @@ dependencies = [
  "primitive-types",
  "sp-externalities",
  "sp-runtime-interface-proc-macro",
- "sp-std 9.0.0",
+ "sp-std",
  "sp-storage",
  "sp-tracing",
  "sp-wasm-interface",
@@ -2371,18 +2371,12 @@ dependencies = [
  "sp-core",
  "sp-externalities",
  "sp-panic-handler",
- "sp-std 9.0.0",
+ "sp-std",
  "sp-trie",
  "thiserror",
  "tracing",
  "trie-db",
 ]
-
-[[package]]
-name = "sp-std"
-version = "7.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1de8eef39962b5b97478719c493bed2926cf70cb621005bbf68ebe58252ff986"
 
 [[package]]
 name = "sp-std"
@@ -2401,7 +2395,7 @@ dependencies = [
  "ref-cast",
  "serde",
  "sp-debug-derive",
- "sp-std 9.0.0",
+ "sp-std",
 ]
 
 [[package]]
@@ -2411,7 +2405,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6f5ba26db1f7513d5975970d1ba1f0580d7a1b8da8c86ea3f9f0f8dbe2cfa96e"
 dependencies = [
  "parity-scale-codec",
- "sp-std 9.0.0",
+ "sp-std",
  "tracing",
  "tracing-core",
  "tracing-subscriber",
@@ -2434,7 +2428,7 @@ dependencies = [
  "scale-info",
  "schnellru",
  "sp-core",
- "sp-std 9.0.0",
+ "sp-std",
  "thiserror",
  "tracing",
  "trie-db",
@@ -2451,7 +2445,7 @@ dependencies = [
  "impl-trait-for-tuples",
  "log",
  "parity-scale-codec",
- "sp-std 9.0.0",
+ "sp-std",
  "wasmtime",
 ]
 
@@ -2468,7 +2462,7 @@ dependencies = [
  "sp-arithmetic",
  "sp-core",
  "sp-debug-derive",
- "sp-std 9.0.0",
+ "sp-std",
 ]
 
 [[package]]
