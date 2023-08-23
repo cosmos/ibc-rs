@@ -82,7 +82,7 @@ mod tests {
         // Client on destination chain can be updated.
         Ok(ClientMsg::UpdateClient(MsgUpdateClient {
             client_id: client_id.clone(),
-            header: (*src_header).clone().into(),
+            client_message: (*src_header).clone().into(),
             signer: dest.signer(),
         }))
     }

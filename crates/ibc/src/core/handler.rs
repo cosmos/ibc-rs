@@ -421,7 +421,7 @@ mod tests {
                 name: "Client update successful".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    header: MockHeader::new(update_client_height)
+                    client_message: MockHeader::new(update_client_height)
                         .with_timestamp(Timestamp::now())
                         .into(),
                     signer: default_signer.clone(),
@@ -434,7 +434,7 @@ mod tests {
                 name: "Client update fails due to stale header".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    header: MockHeader::new(update_client_height).into(),
+                    client_message: MockHeader::new(update_client_height).into(),
                     signer: default_signer.clone(),
                 }))
                 .into(),
@@ -509,7 +509,7 @@ mod tests {
                 name: "Client update successful #2".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    header: MockHeader::new(update_client_height_after_send)
+                    client_message: MockHeader::new(update_client_height_after_send)
                         .with_timestamp(Timestamp::now())
                         .into(),
                     signer: default_signer.clone(),
@@ -554,7 +554,7 @@ mod tests {
                 name: "Client update successful".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    header: MockHeader::new(update_client_height_after_second_send).into(),
+                    client_message: MockHeader::new(update_client_height_after_second_send).into(),
                     signer: default_signer,
                 }))
                 .into(),

@@ -44,6 +44,9 @@ pub struct MsgConnectionOpenTry {
     pub consensus_height_of_b_on_a: Height,
     pub delay_period: Duration,
     pub signer: Signer,
+    /// optional proof of host state machines (chain B) that are unable to
+    /// introspect their own consensus state
+    pub proof_consensus_state_of_b: Option<CommitmentProofBytes>,
 
     #[deprecated(since = "0.22.0")]
     /// Only kept here for proper conversion to/from the raw type
@@ -113,6 +116,15 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
                 .ok_or(ConnectionError::MissingConsensusHeight)?,
             delay_period: Duration::from_nanos(msg.delay_period),
             signer: msg.signer.into(),
+            proof_consensus_state_of_b: if msg.host_consensus_state_proof.is_empty() {
+                None
+            } else {
+                Some(
+                    msg.host_consensus_state_proof
+                        .try_into()
+                        .map_err(|_| ConnectionError::InvalidProof)?,
+                )
+            },
         })
     }
 }
@@ -133,6 +145,10 @@ impl From<MsgConnectionOpenTry> for RawMsgConnectionOpenTry {
             proof_consensus: msg.proof_consensus_state_of_b_on_a.into(),
             consensus_height: Some(msg.consensus_height_of_b_on_a.into()),
             signer: msg.signer.to_string(),
+            host_consensus_state_proof: match msg.proof_consensus_state_of_b {
+                Some(proof) => proof.into(),
+                None => vec![],
+            },
         }
     }
 }
@@ -204,6 +220,7 @@ pub mod test_util {
             }),
             proof_client: get_dummy_proof(),
             signer: get_dummy_bech32_account(),
+            host_consensus_state_proof: vec![],
         }
     }
 }

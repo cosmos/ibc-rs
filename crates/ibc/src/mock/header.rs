@@ -47,7 +47,7 @@ impl TryFrom<RawMockHeader> for MockHeader {
             height: raw
                 .height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(ClientError::MissingRawHeader)?,
+                .ok_or(ClientError::MissingClientMessage)?,
 
             timestamp: Timestamp::from_nanoseconds(raw.timestamp)
                 .map_err(ClientError::InvalidPacketTimestamp)?,

@@ -39,7 +39,7 @@ impl MsgUpdateOrMisbehaviour {
 
     pub(crate) fn client_message(self) -> Any {
         match self {
-            MsgUpdateOrMisbehaviour::UpdateClient(msg) => msg.header,
+            MsgUpdateOrMisbehaviour::UpdateClient(msg) => msg.client_message,
             MsgUpdateOrMisbehaviour::Misbehaviour(msg) => msg.misbehaviour,
         }
     }

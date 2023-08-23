@@ -1,8 +1,5 @@
-use core::convert::Infallible;
-
 use alloc::string::ToString;
 use tendermint::abci::Event as TmEvent;
-use tendermint_proto::abci::Event as ProtoEvent;
 
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 use crate::core::ics02_client::error::UpgradeClientError;
@@ -19,7 +16,7 @@ use crate::hosts::tendermint::upgrade_proposal::UpgradeProposal;
 pub fn upgrade_client_proposal_handler<Ctx>(
     ctx: &mut Ctx,
     proposal: UpgradeProposal,
-) -> Result<ProtoEvent, UpgradeClientError>
+) -> Result<TmEvent, UpgradeClientError>
 where
     Ctx: UpgradeExecutionContext,
     Ctx::AnyClientState: From<TmClientState>,
@@ -45,11 +42,7 @@ where
 
     ctx.store_upgraded_client_state(upgraded_client_state_path, client_state.into())?;
 
-    let event = TmEvent::from(UpgradeClientProposal::new(proposal.title, plan.height))
-        .try_into()
-        .map_err(|e: Infallible| UpgradeClientError::Other {
-            reason: e.to_string(),
-        })?;
+    let event = TmEvent::from(UpgradeClientProposal::new(proposal.title, plan.height));
 
     Ok(event)
 }
