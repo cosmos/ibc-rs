@@ -29,14 +29,14 @@ use crate::core::ics24_host::path::{
 use crate::core::timestamp::Timestamp;
 use crate::Height;
 
-use super::ics02_client::client_state::{ClientState, Status};
+use super::ics02_client::client_state::ClientState;
 use super::ics02_client::consensus_state::ConsensusState;
 use super::ics02_client::ClientExecutionContext;
 use super::ics24_host::identifier::PortId;
 
 #[cfg(feature = "grpc")]
 use super::{
-    ics03_connection::connection::IdentifiedConnectionEnd,
+    ics02_client::client_state::Status, ics03_connection::connection::IdentifiedConnectionEnd,
     ics04_channel::channel::IdentifiedChannelEnd,
 };
 
