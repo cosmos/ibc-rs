@@ -110,7 +110,7 @@ where
             .map_err(|_| Status::not_found("Connections not found"))?;
 
         Ok(Response::new(QueryClientConnectionsResponse {
-            connection_paths: connections,
+            connection_paths: connections.into_iter().map(|x| x.as_str().into()).collect(),
             proof: Default::default(),
             proof_height: None,
         }))

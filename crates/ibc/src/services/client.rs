@@ -211,7 +211,7 @@ where
         })?;
 
         Ok(Response::new(QueryClientStatusResponse {
-            status: client_status,
+            status: std::format!("{}", client_status),
         }))
     }
 

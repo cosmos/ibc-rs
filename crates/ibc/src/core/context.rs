@@ -29,7 +29,7 @@ use crate::core::ics24_host::path::{
 use crate::core::timestamp::Timestamp;
 use crate::Height;
 
-use super::ics02_client::client_state::ClientState;
+use super::ics02_client::client_state::{ClientState, Status};
 use super::ics02_client::consensus_state::ConsensusState;
 use super::ics02_client::ClientExecutionContext;
 use super::ics24_host::identifier::PortId;
@@ -263,11 +263,14 @@ pub trait QueryContext: ValidationContext {
         client_id: &ClientId,
     ) -> Result<Vec<(Height, <Self as ValidationContext>::AnyConsensusState)>, ContextError>;
     fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError>;
-    fn client_status(&self, client_id: &ClientId) -> Result<String, ContextError>;
+    fn client_status(&self, client_id: &ClientId) -> Result<Status, ContextError>;
 
     // Connection queries
     fn connection_ends(&self) -> Result<Vec<IdentifiedConnectionEnd>, ContextError>;
-    fn client_connection_ends(&self, client_id: &ClientId) -> Result<Vec<String>, ContextError>;
+    fn client_connection_ends(
+        &self,
+        client_id: &ClientId,
+    ) -> Result<Vec<ConnectionId>, ContextError>;
 
     // Channel queries
     fn channel_ends(&self) -> Result<Vec<IdentifiedChannelEnd>, ContextError>;
