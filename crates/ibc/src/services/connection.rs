@@ -15,8 +15,11 @@ use ibc_proto::{
 
 use crate::{
     core::{
-        ics24_host::{identifier::ConnectionId, path::ClientConsensusStatePath},
-        ValidationContext,
+        ics24_host::{
+            identifier::{ClientId, ConnectionId},
+            path::ClientConsensusStatePath,
+        },
+        QueryContext, ValidationContext,
     },
     Height,
 };
@@ -39,7 +42,7 @@ impl<T> ConnectionQueryServer<T> {
 #[tonic::async_trait]
 impl<T> ConnectionQuery for ConnectionQueryServer<T>
 where
-    T: ValidationContext + Send + Sync + 'static,
+    T: QueryContext + Send + Sync + 'static,
     <T as ValidationContext>::AnyClientState: Into<Any>,
     <T as ValidationContext>::AnyConsensusState: Into<Any>,
 {
@@ -73,9 +76,20 @@ where
 
     async fn connections(
         &self,
-        _request: Request<QueryConnectionsRequest>,
+        request: Request<QueryConnectionsRequest>,
     ) -> Result<Response<QueryConnectionsResponse>, Status> {
-        todo!()
+        trace!("Got connections request: {:?}", request);
+
+        let connections = self
+            .context
+            .connection_ends()
+            .map_err(|_| Status::not_found("Connections not found"))?;
+
+        Ok(Response::new(QueryConnectionsResponse {
+            connections: connections.into_iter().map(Into::into).collect(),
+            pagination: None,
+            height: None,
+        }))
     }
 
     async fn client_connections(
@@ -83,7 +97,23 @@ where
         request: Request<QueryClientConnectionsRequest>,
     ) -> Result<Response<QueryClientConnectionsResponse>, Status> {
         trace!("Got client connections request: {:?}", request);
-        todo!()
+
+        let request_ref = request.get_ref();
+
+        let client_id = ClientId::from_str(request_ref.client_id.as_str()).map_err(|_| {
+            Status::invalid_argument(std::format!("Invalid client id: {}", request_ref.client_id))
+        })?;
+
+        let connections = self
+            .context
+            .client_connection_ends(&client_id)
+            .map_err(|_| Status::not_found("Connections not found"))?;
+
+        Ok(Response::new(QueryClientConnectionsResponse {
+            connection_paths: connections,
+            proof: Default::default(),
+            proof_height: None,
+        }))
     }
 
     async fn connection_client_state(
@@ -180,6 +210,7 @@ where
         &self,
         _request: Request<QueryConnectionParamsRequest>,
     ) -> Result<Response<QueryConnectionParamsResponse>, Status> {
-        todo!()
+        trace!("Got connection params request: {:?}", _request);
+        Err(Status::unimplemented("Not implemented"))
     }
 }

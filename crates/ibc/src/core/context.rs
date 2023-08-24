@@ -21,8 +21,7 @@ use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::identifier::ConnectionId;
+use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
     ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
@@ -33,6 +32,8 @@ use crate::Height;
 use super::ics02_client::client_state::ClientState;
 use super::ics02_client::consensus_state::ConsensusState;
 use super::ics02_client::ClientExecutionContext;
+use super::ics03_connection::connection::IdentifiedConnectionEnd;
+use super::ics04_channel::channel::IdentifiedChannelEnd;
 use super::ics24_host::identifier::PortId;
 
 /// Top-level error
@@ -242,6 +243,54 @@ pub trait ValidationContext {
     /// Validates the `signer` field of IBC messages, which represents the address
     /// of the user/relayer that signed the given message.
     fn validate_message_signer(&self, signer: &Signer) -> Result<(), ContextError>;
+}
+
+/// Context to be implemented by the host that provides gRPC query services.
+///
+/// Trait used for the [`gRPC query services`](crate::services).
+pub trait QueryContext: ValidationContext {
+    // Client queries
+    fn client_states(
+        &self,
+    ) -> Result<Vec<(ClientId, <Self as ValidationContext>::AnyClientState)>, ContextError>;
+    fn consensus_states(
+        &self,
+        client_id: &ClientId,
+    ) -> Result<Vec<(Height, <Self as ValidationContext>::AnyConsensusState)>, ContextError>;
+    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError>;
+    fn client_status(&self, client_id: &ClientId) -> Result<String, ContextError>;
+
+    // Connection queries
+    fn connection_ends(&self) -> Result<Vec<IdentifiedConnectionEnd>, ContextError>;
+    fn client_connection_ends(&self, client_id: &ClientId) -> Result<Vec<String>, ContextError>;
+
+    // Channel queries
+    fn channel_ends(&self) -> Result<Vec<IdentifiedChannelEnd>, ContextError>;
+    fn connection_channel_ends(
+        &self,
+        connection_id: &ConnectionId,
+    ) -> Result<Vec<IdentifiedChannelEnd>, ContextError>;
+
+    // Packet queries
+    fn packet_commitments(
+        &self,
+        channel_end_path: &ChannelEndPath,
+    ) -> Result<Vec<CommitmentPath>, ContextError>;
+    fn packet_acknowledgements(
+        &self,
+        channel_end_path: &ChannelEndPath,
+        sequences: impl IntoIterator<Item = Sequence>,
+    ) -> Result<Vec<AckPath>, ContextError>;
+    fn unreceived_packets(
+        &self,
+        channel_end_path: &ChannelEndPath,
+        sequences: impl IntoIterator<Item = Sequence>,
+    ) -> Result<Vec<Sequence>, ContextError>;
+    fn unreceived_acks(
+        &self,
+        channel_end_path: &ChannelEndPath,
+        sequences: impl IntoIterator<Item = Sequence>,
+    ) -> Result<Vec<Sequence>, ContextError>;
 }
 
 /// Context to be implemented by the host that provides all "write-only" methods.

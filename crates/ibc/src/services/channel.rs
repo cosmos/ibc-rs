@@ -2,12 +2,13 @@ use ibc_proto::{
     google::protobuf::Any,
     ibc::core::{
         channel::v1::{
-            query_server::Query as ChannelQuery, QueryChannelClientStateRequest,
+            query_server::Query as ChannelQuery, PacketState, QueryChannelClientStateRequest,
             QueryChannelClientStateResponse, QueryChannelConsensusStateRequest,
             QueryChannelConsensusStateResponse, QueryChannelRequest, QueryChannelResponse,
             QueryChannelsRequest, QueryChannelsResponse, QueryConnectionChannelsRequest,
             QueryConnectionChannelsResponse, QueryNextSequenceReceiveRequest,
-            QueryNextSequenceReceiveResponse, QueryPacketAcknowledgementRequest,
+            QueryNextSequenceReceiveResponse, QueryNextSequenceSendRequest,
+            QueryNextSequenceSendResponse, QueryPacketAcknowledgementRequest,
             QueryPacketAcknowledgementResponse, QueryPacketAcknowledgementsRequest,
             QueryPacketAcknowledgementsResponse, QueryPacketCommitmentRequest,
             QueryPacketCommitmentResponse, QueryPacketCommitmentsRequest,
@@ -23,13 +24,13 @@ use crate::{
     core::{
         ics04_channel::packet::Sequence,
         ics24_host::{
-            identifier::{ChannelId, PortId},
+            identifier::{ChannelId, ConnectionId, PortId},
             path::{
                 AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath,
-                SeqRecvPath,
+                SeqRecvPath, SeqSendPath,
             },
         },
-        ValidationContext,
+        QueryContext, ValidationContext,
     },
     Height,
 };
@@ -52,7 +53,7 @@ impl<T> ChannelQueryServer<T> {
 #[tonic::async_trait]
 impl<T> ChannelQuery for ChannelQueryServer<T>
 where
-    T: ValidationContext + Send + Sync + 'static,
+    T: QueryContext + Send + Sync + 'static,
     <T as ValidationContext>::AnyClientState: Into<Any>,
     <T as ValidationContext>::AnyConsensusState: Into<Any>,
 {
@@ -92,17 +93,54 @@ where
     /// Channels queries all the IBC channels of a chain.
     async fn channels(
         &self,
-        _request: Request<QueryChannelsRequest>,
+        request: Request<QueryChannelsRequest>,
     ) -> Result<Response<QueryChannelsResponse>, Status> {
-        todo!()
+        trace!("Got channels request: {:?}", request);
+
+        let channel_ends = self
+            .context
+            .channel_ends()
+            .map_err(|_| Status::not_found("Channel ends not found"))?;
+
+        Ok(Response::new(QueryChannelsResponse {
+            channels: channel_ends.into_iter().map(Into::into).collect(),
+            pagination: None,
+            height: None,
+        }))
     }
     /// ConnectionChannels queries all the channels associated with a connection
     /// end.
     async fn connection_channels(
         &self,
-        _request: Request<QueryConnectionChannelsRequest>,
+        request: Request<QueryConnectionChannelsRequest>,
     ) -> Result<Response<QueryConnectionChannelsResponse>, Status> {
-        todo!()
+        trace!("Got connection channels request: {:?}", request);
+
+        let request_ref = request.get_ref();
+
+        let connection_id =
+            ConnectionId::from_str(request_ref.connection.as_str()).map_err(|_| {
+                Status::invalid_argument(std::format!(
+                    "Invalid connection id: {}",
+                    request_ref.connection
+                ))
+            })?;
+
+        let channel_ends = self
+            .context
+            .connection_channel_ends(&connection_id)
+            .map_err(|_| {
+                Status::not_found(std::format!(
+                    "Connection channels not found for connection {}",
+                    connection_id
+                ))
+            })?;
+
+        Ok(Response::new(QueryConnectionChannelsResponse {
+            channels: channel_ends.into_iter().map(Into::into).collect(),
+            pagination: None,
+            height: None,
+        }))
     }
     /// ChannelClientState queries for the client state for the channel associated
     /// with the provided channel identifiers.
@@ -110,6 +148,8 @@ where
         &self,
         request: Request<QueryChannelClientStateRequest>,
     ) -> Result<Response<QueryChannelClientStateResponse>, Status> {
+        trace!("Got channel client state request: {:?}", request);
+
         let request_ref = request.get_ref();
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
@@ -175,6 +215,8 @@ where
         &self,
         request: Request<QueryChannelConsensusStateRequest>,
     ) -> Result<Response<QueryChannelConsensusStateResponse>, Status> {
+        trace!("Got channel consensus state request: {:?}", request);
+
         let request_ref = request.get_ref();
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
@@ -248,6 +290,8 @@ where
         &self,
         request: Request<QueryPacketCommitmentRequest>,
     ) -> Result<Response<QueryPacketCommitmentResponse>, Status> {
+        trace!("Got packet commitment request: {:?}", request);
+
         let request_ref = request.get_ref();
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
@@ -282,13 +326,64 @@ where
             proof_height: None,
         }))
     }
+
     /// PacketCommitments returns all the packet commitments hashes associated
     /// with a channel.
     async fn packet_commitments(
         &self,
-        _request: Request<QueryPacketCommitmentsRequest>,
+        request: Request<QueryPacketCommitmentsRequest>,
     ) -> Result<Response<QueryPacketCommitmentsResponse>, Status> {
-        todo!()
+        trace!("Got packet commitments request: {:?}", request);
+
+        let request_ref = request.get_ref();
+
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
+            Status::invalid_argument(std::format!(
+                "Invalid channel id: {}",
+                request_ref.channel_id
+            ))
+        })?;
+
+        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
+            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
+        })?;
+
+        let channel_end_path = ChannelEndPath::new(&port_id, &channel_id);
+
+        let commitments = self
+            .context
+            .packet_commitments(&channel_end_path)
+            .map_err(|_| {
+                Status::not_found(std::format!(
+                    "Packet commitments not found for channel {}",
+                    channel_id
+                ))
+            })?
+            .into_iter()
+            .map(|path| {
+                self.context
+                    .get_packet_commitment(&path)
+                    .map(|commitment| PacketState {
+                        port_id: path.port_id.as_str().into(),
+                        channel_id: path.channel_id.as_str().into(),
+                        sequence: path.sequence.into(),
+                        data: commitment.into_vec(),
+                    })
+                    .map_err(|_| {
+                        Status::not_found(std::format!(
+                            "Packet commitment not found for channel {} and sequence {}",
+                            channel_id,
+                            path.sequence
+                        ))
+                    })
+            })
+            .collect::<Result<_, _>>()?;
+
+        Ok(Response::new(QueryPacketCommitmentsResponse {
+            commitments,
+            pagination: None,
+            height: None,
+        }))
     }
 
     /// PacketReceipt queries if a given packet sequence has been received on the
@@ -369,9 +464,63 @@ where
     /// with a channel.
     async fn packet_acknowledgements(
         &self,
-        _request: Request<QueryPacketAcknowledgementsRequest>,
+        request: Request<QueryPacketAcknowledgementsRequest>,
     ) -> Result<Response<QueryPacketAcknowledgementsResponse>, Status> {
-        todo!()
+        let request_ref = request.get_ref();
+
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
+            Status::invalid_argument(std::format!(
+                "Invalid channel id: {}",
+                request_ref.channel_id
+            ))
+        })?;
+
+        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
+            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
+        })?;
+
+        let commitment_sequences = request_ref
+            .packet_commitment_sequences
+            .iter()
+            .copied()
+            .map(Sequence::from);
+
+        let channel_end_path = ChannelEndPath::new(&port_id, &channel_id);
+
+        let acknowledgements = self
+            .context
+            .packet_acknowledgements(&channel_end_path, commitment_sequences)
+            .map_err(|_| {
+                Status::not_found(std::format!(
+                    "Packet acknowledgements not found for channel {}",
+                    channel_id
+                ))
+            })?
+            .into_iter()
+            .map(|path| {
+                self.context
+                    .get_packet_acknowledgement(&path)
+                    .map(|acknowledgement| PacketState {
+                        port_id: path.port_id.as_str().into(),
+                        channel_id: path.channel_id.as_str().into(),
+                        sequence: path.sequence.into(),
+                        data: acknowledgement.into_vec(),
+                    })
+                    .map_err(|_| {
+                        Status::not_found(std::format!(
+                            "Packet acknowledgement not found for channel {} and sequence {}",
+                            channel_id,
+                            path.sequence
+                        ))
+                    })
+            })
+            .collect::<Result<_, _>>()?;
+
+        Ok(Response::new(QueryPacketAcknowledgementsResponse {
+            acknowledgements,
+            pagination: None,
+            height: None,
+        }))
     }
 
     /// UnreceivedPackets returns all the unreceived IBC packets associated with
@@ -382,9 +531,43 @@ where
     /// this query only ever makes sense on unordered channels.
     async fn unreceived_packets(
         &self,
-        _request: Request<QueryUnreceivedPacketsRequest>,
+        request: Request<QueryUnreceivedPacketsRequest>,
     ) -> Result<Response<QueryUnreceivedPacketsResponse>, Status> {
-        todo!()
+        let request_ref = request.get_ref();
+
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
+            Status::invalid_argument(std::format!(
+                "Invalid channel id: {}",
+                request_ref.channel_id
+            ))
+        })?;
+
+        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
+            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
+        })?;
+
+        let sequences = request_ref
+            .packet_commitment_sequences
+            .iter()
+            .copied()
+            .map(Sequence::from);
+
+        let channel_end_path = ChannelEndPath::new(&port_id, &channel_id);
+
+        let unreceived_packets = self
+            .context
+            .unreceived_packets(&channel_end_path, sequences)
+            .map_err(|_| {
+                Status::not_found(std::format!(
+                    "Unreceived packets not found for channel {}",
+                    channel_id
+                ))
+            })?;
+
+        Ok(Response::new(QueryUnreceivedPacketsResponse {
+            sequences: unreceived_packets.into_iter().map(Into::into).collect(),
+            height: None,
+        }))
     }
 
     /// UnreceivedAcks returns all the unreceived IBC acknowledgements associated
@@ -393,7 +576,41 @@ where
         &self,
         _request: Request<QueryUnreceivedAcksRequest>,
     ) -> Result<Response<QueryUnreceivedAcksResponse>, Status> {
-        todo!()
+        let request_ref = _request.get_ref();
+
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
+            Status::invalid_argument(std::format!(
+                "Invalid channel id: {}",
+                request_ref.channel_id
+            ))
+        })?;
+
+        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
+            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
+        })?;
+
+        let sequences = request_ref
+            .packet_ack_sequences
+            .iter()
+            .copied()
+            .map(Sequence::from);
+
+        let channel_end_path = ChannelEndPath::new(&port_id, &channel_id);
+
+        let unreceived_acks = self
+            .context
+            .unreceived_acks(&channel_end_path, sequences)
+            .map_err(|_| {
+                Status::not_found(std::format!(
+                    "Unreceived acks not found for channel {}",
+                    channel_id
+                ))
+            })?;
+
+        Ok(Response::new(QueryUnreceivedAcksResponse {
+            sequences: unreceived_acks.into_iter().map(Into::into).collect(),
+            height: None,
+        }))
     }
 
     /// NextSequenceReceive returns the next receive sequence for a given channel.
@@ -428,6 +645,43 @@ where
 
         Ok(Response::new(QueryNextSequenceReceiveResponse {
             next_sequence_receive: next_sequence_recv.into(),
+            proof: Default::default(),
+            proof_height: None,
+        }))
+    }
+
+    // NextSequenceSend returns the next send sequence for a given channel.
+    async fn next_sequence_send(
+        &self,
+        request: Request<QueryNextSequenceSendRequest>,
+    ) -> Result<Response<QueryNextSequenceSendResponse>, Status> {
+        let request_ref = request.get_ref();
+
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
+            Status::invalid_argument(std::format!(
+                "Invalid channel id: {}",
+                request_ref.channel_id
+            ))
+        })?;
+
+        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
+            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
+        })?;
+
+        let next_seq_send_path = SeqSendPath::new(&port_id, &channel_id);
+
+        let next_sequence_send = self
+            .context
+            .get_next_sequence_send(&next_seq_send_path)
+            .map_err(|_| {
+                Status::not_found(std::format!(
+                    "Next sequence send not found for channel {}",
+                    channel_id
+                ))
+            })?;
+
+        Ok(Response::new(QueryNextSequenceSendResponse {
+            next_sequence_send: next_sequence_send.into(),
             proof: Default::default(),
             proof_height: None,
         }))
