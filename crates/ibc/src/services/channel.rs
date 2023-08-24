@@ -105,7 +105,12 @@ where
         Ok(Response::new(QueryChannelsResponse {
             channels: channel_ends.into_iter().map(Into::into).collect(),
             pagination: None,
-            height: None,
+            height: Some(
+                self.context
+                    .host_height()
+                    .map_err(|_| Status::not_found("Host chain height not found"))?
+                    .into(),
+            ),
         }))
     }
     /// ConnectionChannels queries all the channels associated with a connection
@@ -139,7 +144,12 @@ where
         Ok(Response::new(QueryConnectionChannelsResponse {
             channels: channel_ends.into_iter().map(Into::into).collect(),
             pagination: None,
-            height: None,
+            height: Some(
+                self.context
+                    .host_height()
+                    .map_err(|_| Status::not_found("Host chain height not found"))?
+                    .into(),
+            ),
         }))
     }
     /// ChannelClientState queries for the client state for the channel associated
@@ -382,7 +392,12 @@ where
         Ok(Response::new(QueryPacketCommitmentsResponse {
             commitments,
             pagination: None,
-            height: None,
+            height: Some(
+                self.context
+                    .host_height()
+                    .map_err(|_| Status::not_found("Host chain height not found"))?
+                    .into(),
+            ),
         }))
     }
 
@@ -519,7 +534,12 @@ where
         Ok(Response::new(QueryPacketAcknowledgementsResponse {
             acknowledgements,
             pagination: None,
-            height: None,
+            height: Some(
+                self.context
+                    .host_height()
+                    .map_err(|_| Status::not_found("Host chain height not found"))?
+                    .into(),
+            ),
         }))
     }
 
@@ -566,7 +586,12 @@ where
 
         Ok(Response::new(QueryUnreceivedPacketsResponse {
             sequences: unreceived_packets.into_iter().map(Into::into).collect(),
-            height: None,
+            height: Some(
+                self.context
+                    .host_height()
+                    .map_err(|_| Status::not_found("Host chain height not found"))?
+                    .into(),
+            ),
         }))
     }
 
@@ -609,7 +634,12 @@ where
 
         Ok(Response::new(QueryUnreceivedAcksResponse {
             sequences: unreceived_acks.into_iter().map(Into::into).collect(),
-            height: None,
+            height: Some(
+                self.context
+                    .host_height()
+                    .map_err(|_| Status::not_found("Host chain height not found"))?
+                    .into(),
+            ),
         }))
     }
 

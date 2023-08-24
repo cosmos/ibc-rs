@@ -88,7 +88,12 @@ where
         Ok(Response::new(QueryConnectionsResponse {
             connections: connections.into_iter().map(Into::into).collect(),
             pagination: None,
-            height: None,
+            height: Some(
+                self.context
+                    .host_height()
+                    .map_err(|_| Status::not_found("Host chain height not found"))?
+                    .into(),
+            ),
         }))
     }
 
