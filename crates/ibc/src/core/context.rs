@@ -30,14 +30,20 @@ use crate::core::timestamp::Timestamp;
 use crate::Height;
 
 use super::ics02_client::client_state::ClientState;
+use super::ics02_client::client_type::ClientType;
 use super::ics02_client::consensus_state::ConsensusState;
 use super::ics02_client::ClientExecutionContext;
 use super::ics24_host::identifier::PortId;
 
+use super::ics24_host::path::Path;
+
 #[cfg(feature = "grpc")]
-use super::{
-    ics02_client::client_state::Status, ics03_connection::connection::IdentifiedConnectionEnd,
-    ics04_channel::channel::IdentifiedChannelEnd,
+use crate::{
+    core::{
+        ics02_client::client_state::Status, ics03_connection::connection::IdentifiedConnectionEnd,
+        ics04_channel::channel::IdentifiedChannelEnd,
+    },
+    hosts::tendermint::upgrade_proposal::UpgradeValidationContext,
 };
 
 /// Top-level error
@@ -253,7 +259,7 @@ pub trait ValidationContext {
 ///
 /// Trait used for the [`gRPC query services`](crate::services).
 #[cfg(feature = "grpc")]
-pub trait QueryContext: ValidationContext {
+pub trait QueryContext: UpgradeValidationContext + ValidationContext {
     // Client queries
     fn client_states(
         &self,

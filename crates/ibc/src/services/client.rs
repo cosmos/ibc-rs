@@ -15,9 +15,13 @@ use ibc_proto::{
 
 use crate::{
     core::{
-        ics24_host::{identifier::ClientId, path::ClientConsensusStatePath},
+        ics24_host::{
+            identifier::ClientId,
+            path::{ClientConsensusStatePath, UpgradeClientPath},
+        },
         QueryContext, ValidationContext,
     },
+    hosts::tendermint::upgrade_proposal::UpgradeValidationContext,
     Height,
 };
 
@@ -42,6 +46,8 @@ where
     T: QueryContext + Send + Sync + 'static,
     <T as ValidationContext>::AnyClientState: Into<Any>,
     <T as ValidationContext>::AnyConsensusState: Into<Any>,
+    <T as UpgradeValidationContext>::AnyClientState: Into<Any>,
+    <T as UpgradeValidationContext>::AnyConsensusState: Into<Any>,
 {
     async fn client_state(
         &self,
@@ -239,7 +245,23 @@ where
         request: Request<QueryUpgradedClientStateRequest>,
     ) -> Result<Response<QueryUpgradedClientStateResponse>, Status> {
         trace!("Got upgraded client state request: {:?}", request);
-        Err(Status::unimplemented("Not implemented"))
+
+        let plan = self
+            .context
+            .upgrade_plan()
+            .map_err(|_| Status::not_found("Upgrade plan not found"))?;
+
+        let upgraded_client_state_path = UpgradeClientPath::UpgradedClientState(plan.height);
+
+        let upgraded_client_state = UpgradeValidationContext::upgraded_client_state(
+            &self.context,
+            &upgraded_client_state_path,
+        )
+        .map_err(|_| Status::not_found("Upgraded client state not found"))?;
+
+        Ok(Response::new(QueryUpgradedClientStateResponse {
+            upgraded_client_state: Some(upgraded_client_state.into()),
+        }))
     }
 
     async fn upgraded_consensus_state(
@@ -247,6 +269,23 @@ where
         request: Request<QueryUpgradedConsensusStateRequest>,
     ) -> Result<Response<QueryUpgradedConsensusStateResponse>, Status> {
         trace!("Got upgraded consensus state request: {:?}", request);
-        Err(Status::unimplemented("Not implemented"))
+
+        let plan = self
+            .context
+            .upgrade_plan()
+            .map_err(|_| Status::not_found("Upgrade plan not found"))?;
+
+        let upgraded_consensus_state_path =
+            UpgradeClientPath::UpgradedClientConsensusState(plan.height);
+
+        let upgraded_consensus_state = UpgradeValidationContext::upgraded_consensus_state(
+            &self.context,
+            &upgraded_consensus_state_path,
+        )
+        .map_err(|_| Status::not_found("Upgraded consensus state not found"))?;
+
+        Ok(Response::new(QueryUpgradedConsensusStateResponse {
+            upgraded_consensus_state: Some(upgraded_consensus_state.into()),
+        }))
     }
 }
