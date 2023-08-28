@@ -264,6 +264,7 @@ pub trait QueryContext: ValidationContext {
     ) -> Result<Vec<(Height, <Self as ValidationContext>::AnyConsensusState)>, ContextError>;
     fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError>;
     fn client_status(&self, client_id: &ClientId) -> Result<Status, ContextError>;
+    fn allowed_clients(&self) -> Vec<ClientType>;
 
     // Connection queries
     fn connection_ends(&self) -> Result<Vec<IdentifiedConnectionEnd>, ContextError>;

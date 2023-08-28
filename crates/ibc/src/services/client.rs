@@ -2,13 +2,14 @@ use ibc_proto::{
     google::protobuf::Any,
     ibc::core::client::v1::{
         query_server::Query as ClientQuery, ConsensusStateWithHeight, IdentifiedClientState,
-        QueryClientParamsRequest, QueryClientParamsResponse, QueryClientStateRequest,
-        QueryClientStateResponse, QueryClientStatesRequest, QueryClientStatesResponse,
-        QueryClientStatusRequest, QueryClientStatusResponse, QueryConsensusStateHeightsRequest,
-        QueryConsensusStateHeightsResponse, QueryConsensusStateRequest,
-        QueryConsensusStateResponse, QueryConsensusStatesRequest, QueryConsensusStatesResponse,
-        QueryUpgradedClientStateRequest, QueryUpgradedClientStateResponse,
-        QueryUpgradedConsensusStateRequest, QueryUpgradedConsensusStateResponse,
+        Params as ClientParams, QueryClientParamsRequest, QueryClientParamsResponse,
+        QueryClientStateRequest, QueryClientStateResponse, QueryClientStatesRequest,
+        QueryClientStatesResponse, QueryClientStatusRequest, QueryClientStatusResponse,
+        QueryConsensusStateHeightsRequest, QueryConsensusStateHeightsResponse,
+        QueryConsensusStateRequest, QueryConsensusStateResponse, QueryConsensusStatesRequest,
+        QueryConsensusStatesResponse, QueryUpgradedClientStateRequest,
+        QueryUpgradedClientStateResponse, QueryUpgradedConsensusStateRequest,
+        QueryUpgradedConsensusStateResponse,
     },
 };
 
@@ -220,7 +221,17 @@ where
         request: Request<QueryClientParamsRequest>,
     ) -> Result<Response<QueryClientParamsResponse>, Status> {
         trace!("Got client params request: {:?}", request);
-        Err(Status::unimplemented("Not implemented"))
+
+        Ok(Response::new(QueryClientParamsResponse {
+            params: Some(ClientParams {
+                allowed_clients: self
+                    .context
+                    .allowed_clients()
+                    .into_iter()
+                    .map(|x| x.as_str().into())
+                    .collect(),
+            }),
+        }))
     }
 
     async fn upgraded_client_state(

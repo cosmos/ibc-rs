@@ -3,12 +3,12 @@ use ibc_proto::{
     ibc::core::{
         client::v1::IdentifiedClientState,
         connection::v1::{
-            query_server::Query as ConnectionQuery, QueryClientConnectionsRequest,
-            QueryClientConnectionsResponse, QueryConnectionClientStateRequest,
-            QueryConnectionClientStateResponse, QueryConnectionConsensusStateRequest,
-            QueryConnectionConsensusStateResponse, QueryConnectionParamsRequest,
-            QueryConnectionParamsResponse, QueryConnectionRequest, QueryConnectionResponse,
-            QueryConnectionsRequest, QueryConnectionsResponse,
+            query_server::Query as ConnectionQuery, Params as ConnectionParams,
+            QueryClientConnectionsRequest, QueryClientConnectionsResponse,
+            QueryConnectionClientStateRequest, QueryConnectionClientStateResponse,
+            QueryConnectionConsensusStateRequest, QueryConnectionConsensusStateResponse,
+            QueryConnectionParamsRequest, QueryConnectionParamsResponse, QueryConnectionRequest,
+            QueryConnectionResponse, QueryConnectionsRequest, QueryConnectionsResponse,
         },
     },
 };
@@ -213,9 +213,14 @@ where
 
     async fn connection_params(
         &self,
-        _request: Request<QueryConnectionParamsRequest>,
+        request: Request<QueryConnectionParamsRequest>,
     ) -> Result<Response<QueryConnectionParamsResponse>, Status> {
-        trace!("Got connection params request: {:?}", _request);
-        Err(Status::unimplemented("Not implemented"))
+        trace!("Got connection params request: {:?}", request);
+
+        Ok(Response::new(QueryConnectionParamsResponse {
+            params: Some(ConnectionParams {
+                max_expected_time_per_block: self.context.max_expected_time_per_block().as_secs(),
+            }),
+        }))
     }
 }
