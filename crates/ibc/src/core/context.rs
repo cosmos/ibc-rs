@@ -255,11 +255,16 @@ pub trait ValidationContext {
     fn validate_message_signer(&self, signer: &Signer) -> Result<(), ContextError>;
 }
 
+#[cfg(feature = "grpc")]
+pub trait ProofContext {
+    fn get_proof(&self, height: Height, path: &Path) -> Result<Vec<u8>, ContextError>;
+}
+
 /// Context to be implemented by the host that provides gRPC query services.
 ///
 /// Trait used for the [`gRPC query services`](crate::services).
 #[cfg(feature = "grpc")]
-pub trait QueryContext: UpgradeValidationContext + ValidationContext {
+pub trait QueryContext: ValidationContext {
     // Client queries
     fn client_states(
         &self,
