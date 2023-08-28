@@ -30,20 +30,15 @@ use crate::core::timestamp::Timestamp;
 use crate::Height;
 
 use super::ics02_client::client_state::ClientState;
-use super::ics02_client::client_type::ClientType;
 use super::ics02_client::consensus_state::ConsensusState;
 use super::ics02_client::ClientExecutionContext;
 use super::ics24_host::identifier::PortId;
 
-use super::ics24_host::path::Path;
-
 #[cfg(feature = "grpc")]
-use crate::{
-    core::{
-        ics02_client::client_state::Status, ics03_connection::connection::IdentifiedConnectionEnd,
-        ics04_channel::channel::IdentifiedChannelEnd,
-    },
-    hosts::tendermint::upgrade_proposal::UpgradeValidationContext,
+use crate::core::{
+    ics02_client::{client_state::Status, client_type::ClientType},
+    ics03_connection::connection::IdentifiedConnectionEnd,
+    ics04_channel::channel::IdentifiedChannelEnd,
 };
 
 /// Top-level error
@@ -253,11 +248,6 @@ pub trait ValidationContext {
     /// Validates the `signer` field of IBC messages, which represents the address
     /// of the user/relayer that signed the given message.
     fn validate_message_signer(&self, signer: &Signer) -> Result<(), ContextError>;
-}
-
-#[cfg(feature = "grpc")]
-pub trait ProofContext {
-    fn get_proof(&self, height: Height, path: &Path) -> Result<Vec<u8>, ContextError>;
 }
 
 /// Context to be implemented by the host that provides gRPC query services.
