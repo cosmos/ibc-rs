@@ -29,22 +29,22 @@ use std::boxed::Box;
 use tonic::{Request, Response, Status};
 use tracing::trace;
 
-pub struct ConnectionQueryServer<T> {
-    pub context: T,
+pub struct ConnectionQueryServer<I> {
+    ibc_context: I,
 }
 
-impl<T> ConnectionQueryServer<T> {
-    pub fn new(context: T) -> Self {
-        Self { context }
+impl<I> ConnectionQueryServer<I> {
+    pub fn new(ibc_context: I) -> Self {
+        Self { ibc_context }
     }
 }
 
 #[tonic::async_trait]
-impl<T> ConnectionQuery for ConnectionQueryServer<T>
+impl<I> ConnectionQuery for ConnectionQueryServer<I>
 where
-    T: QueryContext + Send + Sync + 'static,
-    <T as ValidationContext>::AnyClientState: Into<Any>,
-    <T as ValidationContext>::AnyConsensusState: Into<Any>,
+    I: QueryContext + Send + Sync + 'static,
+    <I as ValidationContext>::AnyClientState: Into<Any>,
+    <I as ValidationContext>::AnyConsensusState: Into<Any>,
 {
     async fn connection(
         &self,
@@ -60,12 +60,15 @@ where
                 ))
             })?;
 
-        let connection_end = self.context.connection_end(&connection_id).map_err(|_| {
-            Status::not_found(std::format!(
-                "Connection end not found for connection {}",
-                connection_id
-            ))
-        })?;
+        let connection_end = self
+            .ibc_context
+            .connection_end(&connection_id)
+            .map_err(|_| {
+                Status::not_found(std::format!(
+                    "Connection end not found for connection {}",
+                    connection_id
+                ))
+            })?;
 
         Ok(Response::new(QueryConnectionResponse {
             connection: Some(connection_end.into()),
@@ -81,7 +84,7 @@ where
         trace!("Got connections request: {:?}", request);
 
         let connections = self
-            .context
+            .ibc_context
             .connection_ends()
             .map_err(|_| Status::not_found("Connections not found"))?;
 
@@ -89,7 +92,7 @@ where
             connections: connections.into_iter().map(Into::into).collect(),
             pagination: None,
             height: Some(
-                self.context
+                self.ibc_context
                     .host_height()
                     .map_err(|_| Status::not_found("Host chain height not found"))?
                     .into(),
@@ -110,7 +113,7 @@ where
         })?;
 
         let connections = self
-            .context
+            .ibc_context
             .client_connection_ends(&client_id)
             .map_err(|_| Status::not_found("Connections not found"))?;
 
@@ -135,15 +138,18 @@ where
                 ))
             })?;
 
-        let connection_end = self.context.connection_end(&connection_id).map_err(|_| {
-            Status::not_found(std::format!(
-                "Connection end not found for connection {}",
-                connection_id
-            ))
-        })?;
+        let connection_end = self
+            .ibc_context
+            .connection_end(&connection_id)
+            .map_err(|_| {
+                Status::not_found(std::format!(
+                    "Connection end not found for connection {}",
+                    connection_id
+                ))
+            })?;
 
         let client_state = self
-            .context
+            .ibc_context
             .client_state(connection_end.client_id())
             .map_err(|_| {
                 Status::not_found(std::format!(
@@ -176,12 +182,15 @@ where
                 ))
             })?;
 
-        let connection_end = self.context.connection_end(&connection_id).map_err(|_| {
-            Status::not_found(std::format!(
-                "Connection end not found for connection {}",
-                connection_id
-            ))
-        })?;
+        let connection_end = self
+            .ibc_context
+            .connection_end(&connection_id)
+            .map_err(|_| {
+                Status::not_found(std::format!(
+                    "Connection end not found for connection {}",
+                    connection_id
+                ))
+            })?;
 
         let consensus_path = ClientConsensusStatePath::new(
             connection_end.client_id(),
@@ -196,12 +205,15 @@ where
             )?,
         );
 
-        let consensus_state = self.context.consensus_state(&consensus_path).map_err(|_| {
-            Status::not_found(std::format!(
-                "Consensus state not found for connection {}",
-                connection_id
-            ))
-        })?;
+        let consensus_state = self
+            .ibc_context
+            .consensus_state(&consensus_path)
+            .map_err(|_| {
+                Status::not_found(std::format!(
+                    "Consensus state not found for connection {}",
+                    connection_id
+                ))
+            })?;
 
         Ok(Response::new(QueryConnectionConsensusStateResponse {
             consensus_state: Some(consensus_state.into()),
@@ -219,7 +231,10 @@ where
 
         Ok(Response::new(QueryConnectionParamsResponse {
             params: Some(ConnectionParams {
-                max_expected_time_per_block: self.context.max_expected_time_per_block().as_secs(),
+                max_expected_time_per_block: self
+                    .ibc_context
+                    .max_expected_time_per_block()
+                    .as_secs(),
             }),
         }))
     }

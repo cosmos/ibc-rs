@@ -30,27 +30,27 @@ use std::boxed::Box;
 use tonic::{Request, Response, Status};
 use tracing::trace;
 
-pub struct ClientQueryServer<T, U> {
-    context: T,
+pub struct ClientQueryServer<I, U> {
+    ibc_context: I,
     upgrade_context: U,
 }
 
-impl<T, U> ClientQueryServer<T, U> {
-    pub fn new(context: T, upgrade_context: U) -> Self {
+impl<I, U> ClientQueryServer<I, U> {
+    pub fn new(ibc_context: I, upgrade_context: U) -> Self {
         Self {
-            context,
+            ibc_context,
             upgrade_context,
         }
     }
 }
 
 #[tonic::async_trait]
-impl<T, U> ClientQuery for ClientQueryServer<T, U>
+impl<I, U> ClientQuery for ClientQueryServer<I, U>
 where
-    T: QueryContext + Send + Sync + 'static,
+    I: QueryContext + Send + Sync + 'static,
     U: UpgradeValidationContext + Send + Sync + 'static,
-    <T as ValidationContext>::AnyClientState: Into<Any>,
-    <T as ValidationContext>::AnyConsensusState: Into<Any>,
+    <I as ValidationContext>::AnyClientState: Into<Any>,
+    <I as ValidationContext>::AnyConsensusState: Into<Any>,
     <U as UpgradeValidationContext>::AnyClientState: Into<Any>,
     <U as UpgradeValidationContext>::AnyConsensusState: Into<Any>,
 {
@@ -65,7 +65,7 @@ where
         let client_id = ClientId::from_str(request_ref.client_id.as_str()).map_err(|_| {
             Status::invalid_argument(std::format!("Invalid client id: {}", request_ref.client_id))
         })?;
-        let client_state = self.context.client_state(&client_id).map_err(|_| {
+        let client_state = self.ibc_context.client_state(&client_id).map_err(|_| {
             Status::not_found(std::format!(
                 "Client state not found for client {}",
                 client_id
@@ -86,7 +86,7 @@ where
         trace!("Got client states request: {:?}", request);
 
         let client_states = self
-            .context
+            .ibc_context
             .client_states()
             .map_err(|_| Status::not_found("Client states not found"))?;
 
@@ -124,7 +124,7 @@ where
             })?;
 
         let consensus_state = self
-            .context
+            .ibc_context
             .consensus_state(&ClientConsensusStatePath::new(&client_id, &height))
             .map_err(|_| {
                 Status::not_found(std::format!(
@@ -153,7 +153,7 @@ where
             Status::invalid_argument(std::format!("Invalid client id: {}", request_ref.client_id))
         })?;
 
-        let consensus_states = self.context.consensus_states(&client_id).map_err(|_| {
+        let consensus_states = self.ibc_context.consensus_states(&client_id).map_err(|_| {
             Status::not_found(std::format!(
                 "Consensus states not found for client {}",
                 client_id
@@ -184,15 +184,15 @@ where
             Status::invalid_argument(std::format!("Invalid client id: {}", request_ref.client_id))
         })?;
 
-        let consensus_state_heights =
-            self.context
-                .consensus_state_heights(&client_id)
-                .map_err(|_| {
-                    Status::not_found(std::format!(
-                        "Consensus state heights not found for client {}",
-                        client_id
-                    ))
-                })?;
+        let consensus_state_heights = self
+            .ibc_context
+            .consensus_state_heights(&client_id)
+            .map_err(|_| {
+                Status::not_found(std::format!(
+                    "Consensus state heights not found for client {}",
+                    client_id
+                ))
+            })?;
 
         Ok(Response::new(QueryConsensusStateHeightsResponse {
             consensus_state_heights: consensus_state_heights
@@ -215,7 +215,7 @@ where
             Status::invalid_argument(std::format!("Invalid client id: {}", request_ref.client_id))
         })?;
 
-        let client_status = self.context.client_status(&client_id).map_err(|_| {
+        let client_status = self.ibc_context.client_status(&client_id).map_err(|_| {
             Status::not_found(std::format!(
                 "Client status not found for client {}",
                 client_id
@@ -236,7 +236,7 @@ where
         Ok(Response::new(QueryClientParamsResponse {
             params: Some(ClientParams {
                 allowed_clients: self
-                    .context
+                    .ibc_context
                     .allowed_clients()
                     .into_iter()
                     .map(|x| x.as_str().into())

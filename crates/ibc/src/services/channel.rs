@@ -40,22 +40,22 @@ use std::boxed::Box;
 use tonic::{Request, Response, Status};
 use tracing::trace;
 
-pub struct ChannelQueryServer<T> {
-    context: T,
+pub struct ChannelQueryServer<I> {
+    ibc_context: I,
 }
 
-impl<T> ChannelQueryServer<T> {
-    pub fn new(context: T) -> Self {
-        Self { context }
+impl<I> ChannelQueryServer<I> {
+    pub fn new(ibc_context: I) -> Self {
+        Self { ibc_context }
     }
 }
 
 #[tonic::async_trait]
-impl<T> ChannelQuery for ChannelQueryServer<T>
+impl<I> ChannelQuery for ChannelQueryServer<I>
 where
-    T: QueryContext + Send + Sync + 'static,
-    <T as ValidationContext>::AnyClientState: Into<Any>,
-    <T as ValidationContext>::AnyConsensusState: Into<Any>,
+    I: QueryContext + Send + Sync + 'static,
+    <I as ValidationContext>::AnyClientState: Into<Any>,
+    <I as ValidationContext>::AnyConsensusState: Into<Any>,
 {
     async fn channel(
         &self,
@@ -77,12 +77,15 @@ where
 
         let channel_end_path = ChannelEndPath::new(&port_id, &channel_id);
 
-        let channel_end = self.context.channel_end(&channel_end_path).map_err(|_| {
-            Status::not_found(std::format!(
-                "Channel end not found for channel {}",
-                channel_id
-            ))
-        })?;
+        let channel_end = self
+            .ibc_context
+            .channel_end(&channel_end_path)
+            .map_err(|_| {
+                Status::not_found(std::format!(
+                    "Channel end not found for channel {}",
+                    channel_id
+                ))
+            })?;
 
         Ok(Response::new(QueryChannelResponse {
             channel: Some(channel_end.into()),
@@ -98,7 +101,7 @@ where
         trace!("Got channels request: {:?}", request);
 
         let channel_ends = self
-            .context
+            .ibc_context
             .channel_ends()
             .map_err(|_| Status::not_found("Channel ends not found"))?;
 
@@ -106,7 +109,7 @@ where
             channels: channel_ends.into_iter().map(Into::into).collect(),
             pagination: None,
             height: Some(
-                self.context
+                self.ibc_context
                     .host_height()
                     .map_err(|_| Status::not_found("Host chain height not found"))?
                     .into(),
@@ -132,7 +135,7 @@ where
             })?;
 
         let channel_ends = self
-            .context
+            .ibc_context
             .connection_channel_ends(&connection_id)
             .map_err(|_| {
                 Status::not_found(std::format!(
@@ -145,7 +148,7 @@ where
             channels: channel_ends.into_iter().map(Into::into).collect(),
             pagination: None,
             height: Some(
-                self.context
+                self.ibc_context
                     .host_height()
                     .map_err(|_| Status::not_found("Host chain height not found"))?
                     .into(),
@@ -175,18 +178,21 @@ where
 
         let channel_end_path = ChannelEndPath::new(&port_id, &channel_id);
 
-        let channel_end = self.context.channel_end(&channel_end_path).map_err(|_| {
-            Status::not_found(std::format!(
-                "Channel end not found for channel {}",
-                channel_id
-            ))
-        })?;
+        let channel_end = self
+            .ibc_context
+            .channel_end(&channel_end_path)
+            .map_err(|_| {
+                Status::not_found(std::format!(
+                    "Channel end not found for channel {}",
+                    channel_id
+                ))
+            })?;
 
         let connection_end = channel_end
             .connection_hops()
             .first()
             .map(|connection_id| {
-                self.context.connection_end(connection_id).map_err(|_| {
+                self.ibc_context.connection_end(connection_id).map_err(|_| {
                     Status::not_found(std::format!(
                         "Connection end not found for connection {}",
                         connection_id
@@ -201,7 +207,7 @@ where
             })??;
 
         let client_state = self
-            .context
+            .ibc_context
             .client_state(connection_end.client_id())
             .map_err(|_| {
                 Status::not_found(std::format!(
@@ -242,18 +248,21 @@ where
 
         let channel_end_path = ChannelEndPath::new(&port_id, &channel_id);
 
-        let channel_end = self.context.channel_end(&channel_end_path).map_err(|_| {
-            Status::not_found(std::format!(
-                "Channel end not found for channel {}",
-                channel_id
-            ))
-        })?;
+        let channel_end = self
+            .ibc_context
+            .channel_end(&channel_end_path)
+            .map_err(|_| {
+                Status::not_found(std::format!(
+                    "Channel end not found for channel {}",
+                    channel_id
+                ))
+            })?;
 
         let connection_end = channel_end
             .connection_hops()
             .first()
             .map(|connection_id| {
-                self.context.connection_end(connection_id).map_err(|_| {
+                self.ibc_context.connection_end(connection_id).map_err(|_| {
                     Status::not_found(std::format!(
                         "Connection end not found for connection {}",
                         connection_id
@@ -280,13 +289,16 @@ where
             )?,
         );
 
-        let consensus_state = self.context.consensus_state(&consensus_path).map_err(|_| {
-            Status::not_found(std::format!(
-                "Consensus state not found for client {} and revision {}",
-                connection_end.client_id(),
-                request_ref.revision_number
-            ))
-        })?;
+        let consensus_state = self
+            .ibc_context
+            .consensus_state(&consensus_path)
+            .map_err(|_| {
+                Status::not_found(std::format!(
+                    "Consensus state not found for client {} and revision {}",
+                    connection_end.client_id(),
+                    request_ref.revision_number
+                ))
+            })?;
 
         Ok(Response::new(QueryChannelConsensusStateResponse {
             client_id: connection_end.client_id().as_str().into(),
@@ -320,7 +332,7 @@ where
         let commitment_path = CommitmentPath::new(&port_id, &channel_id, sequence);
 
         let packet_commitment_data = self
-            .context
+            .ibc_context
             .get_packet_commitment(&commitment_path)
             .map_err(|_| {
                 Status::not_found(std::format!(
@@ -361,7 +373,7 @@ where
         let channel_end_path = ChannelEndPath::new(&port_id, &channel_id);
 
         let commitments = self
-            .context
+            .ibc_context
             .packet_commitments(&channel_end_path)
             .map_err(|_| {
                 Status::not_found(std::format!(
@@ -371,7 +383,7 @@ where
             })?
             .into_iter()
             .map(|path| {
-                self.context
+                self.ibc_context
                     .get_packet_commitment(&path)
                     .map(|commitment| PacketState {
                         port_id: path.port_id.as_str().into(),
@@ -393,7 +405,7 @@ where
             commitments,
             pagination: None,
             height: Some(
-                self.context
+                self.ibc_context
                     .host_height()
                     .map_err(|_| Status::not_found("Host chain height not found"))?
                     .into(),
@@ -426,7 +438,7 @@ where
 
         // Receipt only has one enum
         // Unreceived packets are not stored
-        let packet_receipt_data = self.context.get_packet_receipt(&receipt_path);
+        let packet_receipt_data = self.ibc_context.get_packet_receipt(&receipt_path);
 
         Ok(Response::new(QueryPacketReceiptResponse {
             received: packet_receipt_data.is_ok(),
@@ -458,7 +470,7 @@ where
         let acknowledgement_path = AckPath::new(&port_id, &channel_id, sequence);
 
         let packet_acknowledgement_data = self
-            .context
+            .ibc_context
             .get_packet_acknowledgement(&acknowledgement_path)
             .map_err(|_| {
                 Status::not_found(std::format!(
@@ -503,7 +515,7 @@ where
         let channel_end_path = ChannelEndPath::new(&port_id, &channel_id);
 
         let acknowledgements = self
-            .context
+            .ibc_context
             .packet_acknowledgements(&channel_end_path, commitment_sequences)
             .map_err(|_| {
                 Status::not_found(std::format!(
@@ -513,7 +525,7 @@ where
             })?
             .into_iter()
             .map(|path| {
-                self.context
+                self.ibc_context
                     .get_packet_acknowledgement(&path)
                     .map(|acknowledgement| PacketState {
                         port_id: path.port_id.as_str().into(),
@@ -535,7 +547,7 @@ where
             acknowledgements,
             pagination: None,
             height: Some(
-                self.context
+                self.ibc_context
                     .host_height()
                     .map_err(|_| Status::not_found("Host chain height not found"))?
                     .into(),
@@ -575,7 +587,7 @@ where
         let channel_end_path = ChannelEndPath::new(&port_id, &channel_id);
 
         let unreceived_packets = self
-            .context
+            .ibc_context
             .unreceived_packets(&channel_end_path, sequences)
             .map_err(|_| {
                 Status::not_found(std::format!(
@@ -587,7 +599,7 @@ where
         Ok(Response::new(QueryUnreceivedPacketsResponse {
             sequences: unreceived_packets.into_iter().map(Into::into).collect(),
             height: Some(
-                self.context
+                self.ibc_context
                     .host_height()
                     .map_err(|_| Status::not_found("Host chain height not found"))?
                     .into(),
@@ -623,7 +635,7 @@ where
         let channel_end_path = ChannelEndPath::new(&port_id, &channel_id);
 
         let unreceived_acks = self
-            .context
+            .ibc_context
             .unreceived_acks(&channel_end_path, sequences)
             .map_err(|_| {
                 Status::not_found(std::format!(
@@ -635,7 +647,7 @@ where
         Ok(Response::new(QueryUnreceivedAcksResponse {
             sequences: unreceived_acks.into_iter().map(Into::into).collect(),
             height: Some(
-                self.context
+                self.ibc_context
                     .host_height()
                     .map_err(|_| Status::not_found("Host chain height not found"))?
                     .into(),
@@ -664,7 +676,7 @@ where
         let next_seq_recv_path = SeqRecvPath::new(&port_id, &channel_id);
 
         let next_sequence_recv = self
-            .context
+            .ibc_context
             .get_next_sequence_recv(&next_seq_recv_path)
             .map_err(|_| {
                 Status::not_found(std::format!(
@@ -701,7 +713,7 @@ where
         let next_seq_send_path = SeqSendPath::new(&port_id, &channel_id);
 
         let next_sequence_send = self
-            .context
+            .ibc_context
             .get_next_sequence_send(&next_seq_send_path)
             .map_err(|_| {
                 Status::not_found(std::format!(
