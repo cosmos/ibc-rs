@@ -30,24 +30,29 @@ use std::boxed::Box;
 use tonic::{Request, Response, Status};
 use tracing::trace;
 
-pub struct ClientQueryServer<T> {
+pub struct ClientQueryServer<T, U> {
     context: T,
+    upgrade_context: U,
 }
 
-impl<T> ClientQueryServer<T> {
-    pub fn new(context: T) -> Self {
-        Self { context }
+impl<T, U> ClientQueryServer<T, U> {
+    pub fn new(context: T, upgrade_context: U) -> Self {
+        Self {
+            context,
+            upgrade_context,
+        }
     }
 }
 
 #[tonic::async_trait]
-impl<T> ClientQuery for ClientQueryServer<T>
+impl<T, U> ClientQuery for ClientQueryServer<T, U>
 where
     T: QueryContext + Send + Sync + 'static,
+    U: UpgradeValidationContext + Send + Sync + 'static,
     <T as ValidationContext>::AnyClientState: Into<Any>,
     <T as ValidationContext>::AnyConsensusState: Into<Any>,
-    <T as UpgradeValidationContext>::AnyClientState: Into<Any>,
-    <T as UpgradeValidationContext>::AnyConsensusState: Into<Any>,
+    <U as UpgradeValidationContext>::AnyClientState: Into<Any>,
+    <U as UpgradeValidationContext>::AnyConsensusState: Into<Any>,
 {
     async fn client_state(
         &self,
@@ -247,17 +252,16 @@ where
         trace!("Got upgraded client state request: {:?}", request);
 
         let plan = self
-            .context
+            .upgrade_context
             .upgrade_plan()
             .map_err(|_| Status::not_found("Upgrade plan not found"))?;
 
         let upgraded_client_state_path = UpgradeClientPath::UpgradedClientState(plan.height);
 
-        let upgraded_client_state = UpgradeValidationContext::upgraded_client_state(
-            &self.context,
-            &upgraded_client_state_path,
-        )
-        .map_err(|_| Status::not_found("Upgraded client state not found"))?;
+        let upgraded_client_state = self
+            .upgrade_context
+            .upgraded_client_state(&upgraded_client_state_path)
+            .map_err(|_| Status::not_found("Upgraded client state not found"))?;
 
         Ok(Response::new(QueryUpgradedClientStateResponse {
             upgraded_client_state: Some(upgraded_client_state.into()),
@@ -271,18 +275,17 @@ where
         trace!("Got upgraded consensus state request: {:?}", request);
 
         let plan = self
-            .context
+            .upgrade_context
             .upgrade_plan()
             .map_err(|_| Status::not_found("Upgrade plan not found"))?;
 
         let upgraded_consensus_state_path =
             UpgradeClientPath::UpgradedClientConsensusState(plan.height);
 
-        let upgraded_consensus_state = UpgradeValidationContext::upgraded_consensus_state(
-            &self.context,
-            &upgraded_consensus_state_path,
-        )
-        .map_err(|_| Status::not_found("Upgraded consensus state not found"))?;
+        let upgraded_consensus_state = self
+            .upgrade_context
+            .upgraded_consensus_state(&upgraded_consensus_state_path)
+            .map_err(|_| Status::not_found("Upgraded consensus state not found"))?;
 
         Ok(Response::new(QueryUpgradedConsensusStateResponse {
             upgraded_consensus_state: Some(upgraded_consensus_state.into()),
