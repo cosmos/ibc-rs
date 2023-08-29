@@ -30,12 +30,28 @@ use std::boxed::Box;
 use tonic::{Request, Response, Status};
 use tracing::trace;
 
-pub struct ClientQueryServer<I, U> {
+pub struct ClientQueryService<I, U>
+where
+    I: QueryContext + Send + Sync + 'static,
+    U: UpgradeValidationContext + Send + Sync + 'static,
+    <I as ValidationContext>::AnyClientState: Into<Any>,
+    <I as ValidationContext>::AnyConsensusState: Into<Any>,
+    <U as UpgradeValidationContext>::AnyClientState: Into<Any>,
+    <U as UpgradeValidationContext>::AnyConsensusState: Into<Any>,
+{
     ibc_context: I,
     upgrade_context: U,
 }
 
-impl<I, U> ClientQueryServer<I, U> {
+impl<I, U> ClientQueryService<I, U>
+where
+    I: QueryContext + Send + Sync + 'static,
+    U: UpgradeValidationContext + Send + Sync + 'static,
+    <I as ValidationContext>::AnyClientState: Into<Any>,
+    <I as ValidationContext>::AnyConsensusState: Into<Any>,
+    <U as UpgradeValidationContext>::AnyClientState: Into<Any>,
+    <U as UpgradeValidationContext>::AnyConsensusState: Into<Any>,
+{
     pub fn new(ibc_context: I, upgrade_context: U) -> Self {
         Self {
             ibc_context,
@@ -45,7 +61,7 @@ impl<I, U> ClientQueryServer<I, U> {
 }
 
 #[tonic::async_trait]
-impl<I, U> ClientQuery for ClientQueryServer<I, U>
+impl<I, U> ClientQuery for ClientQueryService<I, U>
 where
     I: QueryContext + Send + Sync + 'static,
     U: UpgradeValidationContext + Send + Sync + 'static,

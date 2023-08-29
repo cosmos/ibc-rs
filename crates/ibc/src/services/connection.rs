@@ -32,18 +32,28 @@ use std::boxed::Box;
 use tonic::{Request, Response, Status};
 use tracing::trace;
 
-pub struct ConnectionQueryServer<I> {
+pub struct ConnectionQueryService<I>
+where
+    I: QueryContext + Send + Sync + 'static,
+    <I as ValidationContext>::AnyClientState: Into<Any>,
+    <I as ValidationContext>::AnyConsensusState: Into<Any>,
+{
     ibc_context: I,
 }
 
-impl<I> ConnectionQueryServer<I> {
+impl<I> ConnectionQueryService<I>
+where
+    I: QueryContext + Send + Sync + 'static,
+    <I as ValidationContext>::AnyClientState: Into<Any>,
+    <I as ValidationContext>::AnyConsensusState: Into<Any>,
+{
     pub fn new(ibc_context: I) -> Self {
         Self { ibc_context }
     }
 }
 
 #[tonic::async_trait]
-impl<I> ConnectionQuery for ConnectionQueryServer<I>
+impl<I> ConnectionQuery for ConnectionQueryService<I>
 where
     I: QueryContext + Send + Sync + 'static,
     <I as ValidationContext>::AnyClientState: Into<Any>,
