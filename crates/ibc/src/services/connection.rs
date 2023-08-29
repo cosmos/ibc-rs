@@ -17,9 +17,12 @@ use crate::{
     core::{
         ics24_host::{
             identifier::{ClientId, ConnectionId},
-            path::ClientConsensusStatePath,
+            path::{
+                ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath,
+                Path,
+            },
         },
-        QueryContext, ValidationContext,
+        ProvableContext, QueryContext, ValidationContext,
     },
     Height,
 };
@@ -42,7 +45,7 @@ impl<I> ConnectionQueryServer<I> {
 #[tonic::async_trait]
 impl<I> ConnectionQuery for ConnectionQueryServer<I>
 where
-    I: QueryContext + Send + Sync + 'static,
+    I: QueryContext + ProvableContext + Send + Sync + 'static,
     <I as ValidationContext>::AnyClientState: Into<Any>,
     <I as ValidationContext>::AnyConsensusState: Into<Any>,
 {
@@ -70,10 +73,28 @@ where
                 ))
             })?;
 
+        let current_height = self
+            .ibc_context
+            .current_height()
+            .map_err(|_| Status::not_found("Current height not found"))?;
+
+        let proof = self
+            .ibc_context
+            .get_proof(
+                current_height,
+                &Path::Connection(ConnectionPath::new(&connection_id)),
+            )
+            .ok_or_else(|| {
+                Status::not_found(std::format!(
+                    "Proof not found for connection path {}",
+                    connection_id.as_str()
+                ))
+            })?;
+
         Ok(Response::new(QueryConnectionResponse {
             connection: Some(connection_end.into()),
-            proof: Default::default(),
-            proof_height: None,
+            proof,
+            proof_height: Some(current_height.into()),
         }))
     }
 
@@ -93,8 +114,8 @@ where
             pagination: None,
             height: Some(
                 self.ibc_context
-                    .host_height()
-                    .map_err(|_| Status::not_found("Host chain height not found"))?
+                    .current_height()
+                    .map_err(|_| Status::not_found("Current height not found"))?
                     .into(),
             ),
         }))
@@ -117,10 +138,28 @@ where
             .client_connection_ends(&client_id)
             .map_err(|_| Status::not_found("Connections not found"))?;
 
+        let current_height = self
+            .ibc_context
+            .current_height()
+            .map_err(|_| Status::not_found("Current height not found"))?;
+
+        let proof: alloc::vec::Vec<u8> = self
+            .ibc_context
+            .get_proof(
+                current_height,
+                &Path::ClientConnection(ClientConnectionPath::new(&client_id)),
+            )
+            .ok_or_else(|| {
+                Status::not_found(std::format!(
+                    "Proof not found for client connection path {}",
+                    client_id.as_str()
+                ))
+            })?;
+
         Ok(Response::new(QueryClientConnectionsResponse {
             connection_paths: connections.into_iter().map(|x| x.as_str().into()).collect(),
-            proof: Default::default(),
-            proof_height: None,
+            proof,
+            proof_height: Some(current_height.into()),
         }))
     }
 
@@ -158,13 +197,31 @@ where
                 ))
             })?;
 
+        let current_height = self
+            .ibc_context
+            .current_height()
+            .map_err(|_| Status::not_found("Current height not found"))?;
+
+        let proof = self
+            .ibc_context
+            .get_proof(
+                current_height,
+                &Path::ClientState(ClientStatePath::new(connection_end.client_id())),
+            )
+            .ok_or_else(|| {
+                Status::not_found(std::format!(
+                    "Proof not found for client state path {}",
+                    connection_end.client_id().as_str()
+                ))
+            })?;
+
         Ok(Response::new(QueryConnectionClientStateResponse {
             identified_client_state: Some(IdentifiedClientState {
                 client_id: connection_end.client_id().as_str().into(),
                 client_state: Some(client_state.into()),
             }),
-            proof: Default::default(),
-            proof_height: None,
+            proof,
+            proof_height: Some(current_height.into()),
         }))
     }
 
@@ -215,11 +272,26 @@ where
                 ))
             })?;
 
+        let current_height = self
+            .ibc_context
+            .current_height()
+            .map_err(|_| Status::not_found("Current height not found"))?;
+
+        let proof = self
+            .ibc_context
+            .get_proof(current_height, &Path::ClientConsensusState(consensus_path))
+            .ok_or_else(|| {
+                Status::not_found(std::format!(
+                    "Proof not found for consensus state path {}",
+                    connection_end.client_id().as_str()
+                ))
+            })?;
+
         Ok(Response::new(QueryConnectionConsensusStateResponse {
             consensus_state: Some(consensus_state.into()),
             client_id: connection_end.client_id().as_str().into(),
-            proof: Default::default(),
-            proof_height: None,
+            proof,
+            proof_height: Some(current_height.into()),
         }))
     }
 
