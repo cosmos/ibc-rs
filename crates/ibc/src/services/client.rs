@@ -17,9 +17,9 @@ use crate::{
     core::{
         ics24_host::{
             identifier::ClientId,
-            path::{ClientConsensusStatePath, UpgradeClientPath},
+            path::{ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath},
         },
-        QueryContext, ValidationContext,
+        ProvableContext, QueryContext, ValidationContext,
     },
     hosts::tendermint::upgrade_proposal::UpgradeValidationContext,
     Height,
@@ -47,7 +47,7 @@ impl<I, U> ClientQueryServer<I, U> {
 #[tonic::async_trait]
 impl<I, U> ClientQuery for ClientQueryServer<I, U>
 where
-    I: QueryContext + Send + Sync + 'static,
+    I: QueryContext + ProvableContext + Send + Sync + 'static,
     U: UpgradeValidationContext + Send + Sync + 'static,
     <I as ValidationContext>::AnyClientState: Into<Any>,
     <I as ValidationContext>::AnyConsensusState: Into<Any>,
@@ -72,10 +72,29 @@ where
             ))
         })?;
 
+        let current_height = self
+            .ibc_context
+            .current_height()
+            .map_err(|_| Status::not_found("Current height not found"))?;
+
+        let proof = self
+            .ibc_context
+            .get_proof(
+                current_height,
+                &Path::ClientState(ClientStatePath::new(&client_id)),
+            )
+            .ok_or_else(|| {
+                Status::not_found(std::format!(
+                    "Client state not found for client {} at height {}",
+                    client_id,
+                    current_height
+                ))
+            })?;
+
         Ok(Response::new(QueryClientStateResponse {
             client_state: Some(client_state.into()),
-            proof: Default::default(),
-            proof_height: None,
+            proof,
+            proof_height: Some(current_height.into()),
         }))
     }
 
@@ -134,10 +153,29 @@ where
                 ))
             })?;
 
+        let current_height = self
+            .ibc_context
+            .current_height()
+            .map_err(|_| Status::not_found("Current height not found"))?;
+
+        let proof = self
+            .ibc_context
+            .get_proof(
+                current_height,
+                &Path::ClientConsensusState(ClientConsensusStatePath::new(&client_id, &height)),
+            )
+            .ok_or_else(|| {
+                Status::not_found(std::format!(
+                    "Consensus state not found for client {} at height {}",
+                    client_id,
+                    height
+                ))
+            })?;
+
         Ok(Response::new(QueryConsensusStateResponse {
             consensus_state: Some(consensus_state.into()),
-            proof: Default::default(),
-            proof_height: None,
+            proof,
+            proof_height: Some(current_height.into()),
         }))
     }
 
