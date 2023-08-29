@@ -87,7 +87,7 @@ where
                 ))
             })?;
 
-        let current_height = self.ibc_context.current_height().map_err(|_| {
+        let current_height = self.ibc_context.host_height().map_err(|_| {
             Status::not_found(std::format!(
                 "Current height not found for channel {}",
                 channel_id
@@ -127,7 +127,7 @@ where
             pagination: None,
             height: Some(
                 self.ibc_context
-                    .current_height()
+                    .host_height()
                     .map_err(|_| Status::not_found("Current height not found"))?
                     .into(),
             ),
@@ -166,7 +166,7 @@ where
             pagination: None,
             height: Some(
                 self.ibc_context
-                    .current_height()
+                    .host_height()
                     .map_err(|_| {
                         Status::not_found(std::format!(
                             "Current height not found for connection {}",
@@ -238,7 +238,7 @@ where
                 ))
             })?;
 
-        let current_height = self.ibc_context.current_height().map_err(|_| {
+        let current_height = self.ibc_context.host_height().map_err(|_| {
             Status::not_found(std::format!(
                 "Current height not found for client {}",
                 connection_end.client_id()
@@ -342,7 +342,7 @@ where
                 ))
             })?;
 
-        let current_height = self.ibc_context.current_height().map_err(|_| {
+        let current_height = self.ibc_context.host_height().map_err(|_| {
             Status::not_found(std::format!(
                 "Current height not found for client {}",
                 connection_end.client_id()
@@ -401,7 +401,7 @@ where
                 ))
             })?;
 
-        let current_height = self.ibc_context.current_height().map_err(|_| {
+        let current_height = self.ibc_context.host_height().map_err(|_| {
             Status::not_found(std::format!(
                 "Current height not found for channel {}",
                 channel_id
@@ -482,7 +482,7 @@ where
             pagination: None,
             height: Some(
                 self.ibc_context
-                    .current_height()
+                    .host_height()
                     .map_err(|_| {
                         Status::not_found(std::format!(
                             "Current height not found for channel {}",
@@ -521,7 +521,7 @@ where
         // Unreceived packets are not stored
         let packet_receipt_data = self.ibc_context.get_packet_receipt(&receipt_path);
 
-        let current_height = self.ibc_context.current_height().map_err(|_| {
+        let current_height = self.ibc_context.host_height().map_err(|_| {
             Status::not_found(std::format!(
                 "Current height not found for channel {}",
                 channel_id
@@ -578,7 +578,7 @@ where
                 ))
             })?;
 
-        let current_height = self.ibc_context.current_height().map_err(|_| {
+        let current_height = self.ibc_context.host_height().map_err(|_| {
             Status::not_found(std::format!(
                 "Current height not found for channel {}",
                 channel_id
@@ -663,7 +663,7 @@ where
             pagination: None,
             height: Some(
                 self.ibc_context
-                    .current_height()
+                    .host_height()
                     .map_err(|_| {
                         Status::not_found(std::format!(
                             "Current height not found for channel {}",
@@ -720,7 +720,7 @@ where
             sequences: unreceived_packets.into_iter().map(Into::into).collect(),
             height: Some(
                 self.ibc_context
-                    .current_height()
+                    .host_height()
                     .map_err(|_| {
                         Status::not_found(std::format!(
                             "Current height not found for channel {}",
@@ -773,7 +773,7 @@ where
             sequences: unreceived_acks.into_iter().map(Into::into).collect(),
             height: Some(
                 self.ibc_context
-                    .current_height()
+                    .host_height()
                     .map_err(|_| {
                         Status::not_found(std::format!(
                             "Current height not found for channel {}",
@@ -815,7 +815,7 @@ where
                 ))
             })?;
 
-        let current_height = self.ibc_context.current_height().map_err(|_| {
+        let current_height = self.ibc_context.host_height().map_err(|_| {
             Status::not_found(std::format!(
                 "Current height not found for channel {}",
                 channel_id
@@ -869,7 +869,7 @@ where
                 ))
             })?;
 
-        let current_height = self.ibc_context.current_height().map_err(|_| {
+        let current_height = self.ibc_context.host_height().map_err(|_| {
             Status::not_found(std::format!(
                 "Current height not found for channel {}",
                 channel_id

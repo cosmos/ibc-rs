@@ -74,7 +74,7 @@ where
 
         let current_height = self
             .ibc_context
-            .current_height()
+            .host_height()
             .map_err(|_| Status::not_found("Current height not found"))?;
 
         let proof = self
@@ -155,7 +155,7 @@ where
 
         let current_height = self
             .ibc_context
-            .current_height()
+            .host_height()
             .map_err(|_| Status::not_found("Current height not found"))?;
 
         let proof = self

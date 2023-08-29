@@ -254,7 +254,6 @@ pub trait ValidationContext {
 #[cfg(feature = "grpc")]
 pub trait ProvableContext {
     fn get_proof(&self, height: Height, path: &Path) -> Option<Vec<u8>>;
-    fn current_height(&self) -> Result<Height, ContextError>;
 }
 
 /// Context to be implemented by the host that provides gRPC query services.
