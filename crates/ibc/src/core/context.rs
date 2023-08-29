@@ -39,6 +39,7 @@ use crate::core::{
     ics02_client::{client_state::Status, client_type::ClientType},
     ics03_connection::connection::IdentifiedConnectionEnd,
     ics04_channel::channel::IdentifiedChannelEnd,
+    ics24_host::path::Path,
 };
 
 /// Top-level error
@@ -248,6 +249,12 @@ pub trait ValidationContext {
     /// Validates the `signer` field of IBC messages, which represents the address
     /// of the user/relayer that signed the given message.
     fn validate_message_signer(&self, signer: &Signer) -> Result<(), ContextError>;
+}
+
+#[cfg(feature = "grpc")]
+pub trait ProvableContext {
+    fn get_proof(&self, height: Height, path: &Path) -> Option<Vec<u8>>;
+    fn current_height(&self) -> Result<Height, ContextError>;
 }
 
 /// Context to be implemented by the host that provides gRPC query services.
