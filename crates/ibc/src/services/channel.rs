@@ -26,11 +26,11 @@ use crate::{
         ics24_host::{
             identifier::{ChannelId, ConnectionId, PortId},
             path::{
-                AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath,
-                SeqRecvPath, SeqSendPath,
+                AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath,
+                Path, ReceiptPath, SeqRecvPath, SeqSendPath,
             },
         },
-        QueryContext, ValidationContext,
+        ProvableContext, QueryContext, ValidationContext,
     },
     Height,
 };
@@ -53,7 +53,7 @@ impl<I> ChannelQueryServer<I> {
 #[tonic::async_trait]
 impl<I> ChannelQuery for ChannelQueryServer<I>
 where
-    I: QueryContext + Send + Sync + 'static,
+    I: QueryContext + ProvableContext + Send + Sync + 'static,
     <I as ValidationContext>::AnyClientState: Into<Any>,
     <I as ValidationContext>::AnyConsensusState: Into<Any>,
 {
@@ -87,10 +87,27 @@ where
                 ))
             })?;
 
+        let current_height = self.ibc_context.current_height().map_err(|_| {
+            Status::not_found(std::format!(
+                "Current height not found for channel {}",
+                channel_id
+            ))
+        })?;
+
+        let proof = self
+            .ibc_context
+            .get_proof(current_height, &Path::ChannelEnd(channel_end_path))
+            .ok_or_else(|| {
+                Status::not_found(std::format!(
+                    "Channel end proof not found for channel {}",
+                    channel_id
+                ))
+            })?;
+
         Ok(Response::new(QueryChannelResponse {
             channel: Some(channel_end.into()),
-            proof: Default::default(),
-            proof_height: None,
+            proof,
+            proof_height: Some(current_height.into()),
         }))
     }
     /// Channels queries all the IBC channels of a chain.
@@ -110,8 +127,8 @@ where
             pagination: None,
             height: Some(
                 self.ibc_context
-                    .host_height()
-                    .map_err(|_| Status::not_found("Host chain height not found"))?
+                    .current_height()
+                    .map_err(|_| Status::not_found("Current height not found"))?
                     .into(),
             ),
         }))
@@ -149,8 +166,13 @@ where
             pagination: None,
             height: Some(
                 self.ibc_context
-                    .host_height()
-                    .map_err(|_| Status::not_found("Host chain height not found"))?
+                    .current_height()
+                    .map_err(|_| {
+                        Status::not_found(std::format!(
+                            "Current height not found for connection {}",
+                            connection_id
+                        ))
+                    })?
                     .into(),
             ),
         }))
@@ -216,13 +238,33 @@ where
                 ))
             })?;
 
+        let current_height = self.ibc_context.current_height().map_err(|_| {
+            Status::not_found(std::format!(
+                "Current height not found for client {}",
+                connection_end.client_id()
+            ))
+        })?;
+
+        let proof = self
+            .ibc_context
+            .get_proof(
+                current_height,
+                &Path::ClientState(ClientStatePath::new(connection_end.client_id())),
+            )
+            .ok_or_else(|| {
+                Status::not_found(std::format!(
+                    "Client state proof not found for client {}",
+                    connection_end.client_id()
+                ))
+            })?;
+
         Ok(Response::new(QueryChannelClientStateResponse {
             identified_client_state: Some(IdentifiedClientState {
                 client_id: connection_end.client_id().as_str().into(),
                 client_state: Some(client_state.into()),
             }),
-            proof: Default::default(),
-            proof_height: None,
+            proof,
+            proof_height: Some(current_height.into()),
         }))
     }
     /// ChannelConsensusState queries for the consensus state for the channel
@@ -300,11 +342,28 @@ where
                 ))
             })?;
 
+        let current_height = self.ibc_context.current_height().map_err(|_| {
+            Status::not_found(std::format!(
+                "Current height not found for client {}",
+                connection_end.client_id()
+            ))
+        })?;
+
+        let proof = self
+            .ibc_context
+            .get_proof(current_height, &Path::ClientConsensusState(consensus_path))
+            .ok_or_else(|| {
+                Status::not_found(std::format!(
+                    "Consensus state proof not found for client {}",
+                    connection_end.client_id()
+                ))
+            })?;
+
         Ok(Response::new(QueryChannelConsensusStateResponse {
             client_id: connection_end.client_id().as_str().into(),
             consensus_state: Some(consensus_state.into()),
-            proof: Default::default(),
-            proof_height: None,
+            proof,
+            proof_height: Some(current_height.into()),
         }))
     }
     /// PacketCommitment queries a stored packet commitment hash.
@@ -342,10 +401,27 @@ where
                 ))
             })?;
 
+        let current_height = self.ibc_context.current_height().map_err(|_| {
+            Status::not_found(std::format!(
+                "Current height not found for channel {}",
+                channel_id
+            ))
+        })?;
+
+        let proof = self
+            .ibc_context
+            .get_proof(current_height, &Path::Commitment(commitment_path))
+            .ok_or_else(|| {
+                Status::not_found(std::format!(
+                    "Packet commitment proof not found for channel {}",
+                    channel_id
+                ))
+            })?;
+
         Ok(Response::new(QueryPacketCommitmentResponse {
             commitment: packet_commitment_data.into_vec(),
-            proof: Default::default(),
-            proof_height: None,
+            proof,
+            proof_height: Some(current_height.into()),
         }))
     }
 
@@ -406,8 +482,13 @@ where
             pagination: None,
             height: Some(
                 self.ibc_context
-                    .host_height()
-                    .map_err(|_| Status::not_found("Host chain height not found"))?
+                    .current_height()
+                    .map_err(|_| {
+                        Status::not_found(std::format!(
+                            "Current height not found for channel {}",
+                            channel_id
+                        ))
+                    })?
                     .into(),
             ),
         }))
@@ -440,10 +521,27 @@ where
         // Unreceived packets are not stored
         let packet_receipt_data = self.ibc_context.get_packet_receipt(&receipt_path);
 
+        let current_height = self.ibc_context.current_height().map_err(|_| {
+            Status::not_found(std::format!(
+                "Current height not found for channel {}",
+                channel_id
+            ))
+        })?;
+
+        let proof = self
+            .ibc_context
+            .get_proof(current_height, &Path::Receipt(receipt_path))
+            .ok_or_else(|| {
+                Status::not_found(std::format!(
+                    "Packet receipt proof not found for channel {}",
+                    channel_id
+                ))
+            })?;
+
         Ok(Response::new(QueryPacketReceiptResponse {
             received: packet_receipt_data.is_ok(),
-            proof: Default::default(),
-            proof_height: None,
+            proof,
+            proof_height: Some(current_height.into()),
         }))
     }
 
@@ -480,10 +578,27 @@ where
                 ))
             })?;
 
+        let current_height = self.ibc_context.current_height().map_err(|_| {
+            Status::not_found(std::format!(
+                "Current height not found for channel {}",
+                channel_id
+            ))
+        })?;
+
+        let proof = self
+            .ibc_context
+            .get_proof(current_height, &Path::Ack(acknowledgement_path))
+            .ok_or_else(|| {
+                Status::not_found(std::format!(
+                    "Packet acknowledgement proof not found for channel {}",
+                    channel_id
+                ))
+            })?;
+
         Ok(Response::new(QueryPacketAcknowledgementResponse {
             acknowledgement: packet_acknowledgement_data.into_vec(),
-            proof: Default::default(),
-            proof_height: None,
+            proof,
+            proof_height: Some(current_height.into()),
         }))
     }
 
@@ -548,8 +663,13 @@ where
             pagination: None,
             height: Some(
                 self.ibc_context
-                    .host_height()
-                    .map_err(|_| Status::not_found("Host chain height not found"))?
+                    .current_height()
+                    .map_err(|_| {
+                        Status::not_found(std::format!(
+                            "Current height not found for channel {}",
+                            channel_id
+                        ))
+                    })?
                     .into(),
             ),
         }))
@@ -600,8 +720,13 @@ where
             sequences: unreceived_packets.into_iter().map(Into::into).collect(),
             height: Some(
                 self.ibc_context
-                    .host_height()
-                    .map_err(|_| Status::not_found("Host chain height not found"))?
+                    .current_height()
+                    .map_err(|_| {
+                        Status::not_found(std::format!(
+                            "Current height not found for channel {}",
+                            channel_id
+                        ))
+                    })?
                     .into(),
             ),
         }))
@@ -648,8 +773,13 @@ where
             sequences: unreceived_acks.into_iter().map(Into::into).collect(),
             height: Some(
                 self.ibc_context
-                    .host_height()
-                    .map_err(|_| Status::not_found("Host chain height not found"))?
+                    .current_height()
+                    .map_err(|_| {
+                        Status::not_found(std::format!(
+                            "Current height not found for channel {}",
+                            channel_id
+                        ))
+                    })?
                     .into(),
             ),
         }))
@@ -685,10 +815,27 @@ where
                 ))
             })?;
 
+        let current_height = self.ibc_context.current_height().map_err(|_| {
+            Status::not_found(std::format!(
+                "Current height not found for channel {}",
+                channel_id
+            ))
+        })?;
+
+        let proof = self
+            .ibc_context
+            .get_proof(current_height, &Path::SeqRecv(next_seq_recv_path))
+            .ok_or_else(|| {
+                Status::not_found(std::format!(
+                    "Next sequence receive proof not found for channel {}",
+                    channel_id
+                ))
+            })?;
+
         Ok(Response::new(QueryNextSequenceReceiveResponse {
             next_sequence_receive: next_sequence_recv.into(),
-            proof: Default::default(),
-            proof_height: None,
+            proof,
+            proof_height: Some(current_height.into()),
         }))
     }
 
@@ -722,10 +869,27 @@ where
                 ))
             })?;
 
+        let current_height = self.ibc_context.current_height().map_err(|_| {
+            Status::not_found(std::format!(
+                "Current height not found for channel {}",
+                channel_id
+            ))
+        })?;
+
+        let proof = self
+            .ibc_context
+            .get_proof(current_height, &Path::SeqSend(next_seq_send_path))
+            .ok_or_else(|| {
+                Status::not_found(std::format!(
+                    "Next sequence send proof not found for channel {}",
+                    channel_id
+                ))
+            })?;
+
         Ok(Response::new(QueryNextSequenceSendResponse {
             next_sequence_send: next_sequence_send.into(),
-            proof: Default::default(),
-            proof_height: None,
+            proof,
+            proof_height: Some(current_height.into()),
         }))
     }
 }
