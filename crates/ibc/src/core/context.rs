@@ -102,7 +102,7 @@ impl std::error::Error for RouterError {
 
 /// Context to be implemented by the host that provides all "read-only" methods.
 ///
-/// Trait used for the top-level [`validate`](crate::core::validate)
+/// Trait used for the top-level [`validate`](crate::core::validate) and the [`gRPC query services`](crate::services).
 pub trait ValidationContext {
     type ClientValidationContext;
     type E: ClientExecutionContext;
@@ -251,6 +251,9 @@ pub trait ValidationContext {
     fn validate_message_signer(&self, signer: &Signer) -> Result<(), ContextError>;
 }
 
+/// Context to be implemented by the host to provide proofs in gRPC query responses
+///
+/// Trait used for the [`gRPC query services`](crate::services).
 #[cfg(feature = "grpc")]
 pub trait ProvableContext {
     fn get_proof(&self, height: Height, path: &Path) -> Option<Vec<u8>>;
@@ -260,7 +263,7 @@ pub trait ProvableContext {
 ///
 /// Trait used for the [`gRPC query services`](crate::services).
 #[cfg(feature = "grpc")]
-pub trait QueryContext: ValidationContext {
+pub trait QueryContext: ProvableContext + ValidationContext {
     // Client queries
     fn client_states(
         &self,

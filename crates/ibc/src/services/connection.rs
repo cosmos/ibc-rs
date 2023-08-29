@@ -22,7 +22,7 @@ use crate::{
                 Path,
             },
         },
-        ProvableContext, QueryContext, ValidationContext,
+        QueryContext, ValidationContext,
     },
     Height,
 };
@@ -45,7 +45,7 @@ impl<I> ConnectionQueryServer<I> {
 #[tonic::async_trait]
 impl<I> ConnectionQuery for ConnectionQueryServer<I>
 where
-    I: QueryContext + ProvableContext + Send + Sync + 'static,
+    I: QueryContext + Send + Sync + 'static,
     <I as ValidationContext>::AnyClientState: Into<Any>,
     <I as ValidationContext>::AnyConsensusState: Into<Any>,
 {

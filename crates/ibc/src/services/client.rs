@@ -19,7 +19,7 @@ use crate::{
             identifier::ClientId,
             path::{ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath},
         },
-        ProvableContext, QueryContext, ValidationContext,
+        QueryContext, ValidationContext,
     },
     hosts::tendermint::upgrade_proposal::UpgradeValidationContext,
     Height,
@@ -47,7 +47,7 @@ impl<I, U> ClientQueryServer<I, U> {
 #[tonic::async_trait]
 impl<I, U> ClientQuery for ClientQueryServer<I, U>
 where
-    I: QueryContext + ProvableContext + Send + Sync + 'static,
+    I: QueryContext + Send + Sync + 'static,
     U: UpgradeValidationContext + Send + Sync + 'static,
     <I as ValidationContext>::AnyClientState: Into<Any>,
     <I as ValidationContext>::AnyConsensusState: Into<Any>,

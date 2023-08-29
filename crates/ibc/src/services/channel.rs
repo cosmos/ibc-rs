@@ -30,7 +30,7 @@ use crate::{
                 Path, ReceiptPath, SeqRecvPath, SeqSendPath,
             },
         },
-        ProvableContext, QueryContext, ValidationContext,
+        QueryContext, ValidationContext,
     },
     Height,
 };
@@ -53,7 +53,7 @@ impl<I> ChannelQueryServer<I> {
 #[tonic::async_trait]
 impl<I> ChannelQuery for ChannelQueryServer<I>
 where
-    I: QueryContext + ProvableContext + Send + Sync + 'static,
+    I: QueryContext + Send + Sync + 'static,
     <I as ValidationContext>::AnyClientState: Into<Any>,
     <I as ValidationContext>::AnyConsensusState: Into<Any>,
 {
