@@ -102,7 +102,7 @@ impl std::error::Error for RouterError {
 
 /// Context to be implemented by the host that provides all "read-only" methods.
 ///
-/// Trait used for the top-level [`validate`](crate::core::validate) and the [`gRPC query services`](crate::services).
+/// Trait used for the top-level [`validate`](crate::core::validate)
 pub trait ValidationContext {
     type ClientValidationContext;
     type E: ClientExecutionContext;
