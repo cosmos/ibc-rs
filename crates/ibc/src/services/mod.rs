@@ -44,6 +44,7 @@
 mod channel;
 mod client;
 mod connection;
+mod error;
 
 pub use channel::ChannelQueryService;
 pub use client::ClientQueryService;
