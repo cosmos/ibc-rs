@@ -29,6 +29,10 @@ pub(crate) const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
     feature = "parity-scale-codec",
     derive(parity_scale_codec::Encode, parity_scale_codec::Decode,)
 )]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 pub struct MsgTransfer {
     /// the port on which the packet will be sent
     pub port_id_on_a: PortId,
