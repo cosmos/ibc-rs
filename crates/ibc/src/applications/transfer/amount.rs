@@ -1,5 +1,6 @@
 //! Contains the `Amount` type, which represents amounts of tokens transferred.
 
+use crate::prelude::*;
 use core::{ops::Deref, str::FromStr};
 use derive_more::{Display, From, Into};
 
@@ -27,6 +28,54 @@ impl parity_scale_codec::WrapperTypeDecode for Amount {
 
 #[cfg(feature = "parity-scale-codec")]
 impl parity_scale_codec::WrapperTypeEncode for Amount {}
+
+#[cfg(feature = "borsh")]
+impl borsh::BorshSerialize for Amount {
+    fn serialize<W: borsh::maybestd::io::Write>(
+        &self,
+        writer: &mut W,
+    ) -> borsh::maybestd::io::Result<()> {
+        // Note: a "word" is 8 bytes (i.e. a u64)
+        let words = self.as_slice();
+        let bytes: Vec<u8> = words.iter().flat_map(|word| word.to_be_bytes()).collect();
+
+        writer.write_all(&bytes)
+    }
+}
+#[cfg(feature = "borsh")]
+impl borsh::BorshDeserialize for Amount {
+    fn deserialize_reader<R: borsh::maybestd::io::Read>(
+        reader: &mut R,
+    ) -> borsh::maybestd::io::Result<Self> {
+        const NUM_BYTES_IN_U64: usize = 8;
+        const NUM_WORDS_IN_U256: usize = 4;
+
+        let mut buf = [0; 32];
+        let bytes_read = reader.read(&mut buf)?;
+        if bytes_read != 32 {
+            return Err(borsh::maybestd::io::Error::new(
+                borsh::maybestd::io::ErrorKind::InvalidInput,
+                format!("Expected to read 32 bytes, read {bytes_read}"),
+            ));
+        }
+
+        let words: Vec<u64> = buf
+            .chunks_exact(NUM_BYTES_IN_U64)
+            .map(|word| {
+                let word: [u8; NUM_BYTES_IN_U64] = word
+                    .try_into()
+                    .expect("exact chunks of 8 bytes are expected to be 8 bytes");
+                u64::from_be_bytes(word)
+            })
+            .collect();
+
+        let four_words: [u64; NUM_WORDS_IN_U256] = words
+            .try_into()
+            .expect("U256 is always 4 four words, and we confirmed that we read 32 bytes");
+
+        Ok(four_words.into())
+    }
+}
 
 impl Deref for Amount {
     type Target = [u64; 4];
@@ -83,10 +132,10 @@ where
 }
 
 #[cfg(test)]
-#[cfg(feature = "serde")]
 mod tests {
     use super::Amount;
 
+    #[cfg(feature = "serde")]
     #[test]
     fn serde_amount() {
         let value = Amount::from(42);
@@ -95,5 +144,21 @@ mod tests {
         let binary = serde_json::to_vec(&value).expect("can serde binary");
         let de: Amount = serde_json::from_slice(binary.as_ref()).expect("can deserialize");
         assert_eq!(de, value);
+    }
+
+    #[cfg(feature = "borsh")]
+    #[test]
+    fn borsh_amount() {
+        use borsh::BorshDeserialize;
+
+        let value = Amount::from(42);
+        let serialized = borsh::to_vec(&value).unwrap();
+
+        // Amount is supposed to be a U256 according to the spec, which is 32 bytes
+        assert_eq!(serialized.len(), 32);
+
+        let value_deserialized = Amount::try_from_slice(&serialized).unwrap();
+
+        assert_eq!(value, value_deserialized);
     }
 }
