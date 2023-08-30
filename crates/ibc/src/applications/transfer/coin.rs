@@ -25,6 +25,10 @@ pub type RawCoin = Coin<String>;
     feature = "parity-scale-codec",
     derive(parity_scale_codec::Encode, parity_scale_codec::Decode,)
 )]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Coin<D> {
     /// Denomination
