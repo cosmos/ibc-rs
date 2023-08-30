@@ -1,3 +1,4 @@
+use alloc::string::ToString;
 use ibc_proto::{
     google::protobuf::Any,
     ibc::core::client::v1::{
@@ -15,11 +16,12 @@ use ibc_proto::{
 
 use crate::{
     core::{
+        ics02_client::error::ClientError,
         ics24_host::{
             identifier::ClientId,
             path::{ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath},
         },
-        QueryContext, ValidationContext,
+        ContextError, QueryContext, ValidationContext,
     },
     hosts::tendermint::upgrade_proposal::UpgradeValidationContext,
     Height,
@@ -78,20 +80,10 @@ where
 
         let request_ref = request.get_ref();
 
-        let client_id = ClientId::from_str(request_ref.client_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid client id: {}", request_ref.client_id))
-        })?;
-        let client_state = self.ibc_context.client_state(&client_id).map_err(|_| {
-            Status::not_found(std::format!(
-                "Client state not found for client {}",
-                client_id
-            ))
-        })?;
+        let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
+        let client_state = self.ibc_context.client_state(&client_id)?;
 
-        let current_height = self
-            .ibc_context
-            .host_height()
-            .map_err(|_| Status::not_found("Current height not found"))?;
+        let current_height = self.ibc_context.host_height()?;
 
         let proof = self
             .ibc_context
@@ -120,10 +112,7 @@ where
     ) -> Result<Response<QueryClientStatesResponse>, Status> {
         trace!("Got client states request: {:?}", request);
 
-        let client_states = self
-            .ibc_context
-            .client_states()
-            .map_err(|_| Status::not_found("Client states not found"))?;
+        let client_states = self.ibc_context.client_states()?;
 
         Ok(Response::new(QueryClientStatesResponse {
             client_states: client_states
@@ -145,34 +134,16 @@ where
 
         let request_ref = request.get_ref();
 
-        let client_id = ClientId::from_str(request_ref.client_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid client id: {}", request_ref.client_id))
-        })?;
+        let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
 
         let height = Height::new(request_ref.revision_number, request_ref.revision_height)
-            .map_err(|_| {
-                Status::invalid_argument(std::format!(
-                    "Invalid height: {}-{}",
-                    request_ref.revision_number,
-                    request_ref.revision_height
-                ))
-            })?;
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
 
         let consensus_state = self
             .ibc_context
-            .consensus_state(&ClientConsensusStatePath::new(&client_id, &height))
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Consensus state not found for client {} at height {}",
-                    client_id,
-                    height
-                ))
-            })?;
+            .consensus_state(&ClientConsensusStatePath::new(&client_id, &height))?;
 
-        let current_height = self
-            .ibc_context
-            .host_height()
-            .map_err(|_| Status::not_found("Current height not found"))?;
+        let current_height = self.ibc_context.host_height()?;
 
         let proof = self
             .ibc_context
@@ -203,16 +174,9 @@ where
 
         let request_ref = request.get_ref();
 
-        let client_id = ClientId::from_str(request_ref.client_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid client id: {}", request_ref.client_id))
-        })?;
+        let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
 
-        let consensus_states = self.ibc_context.consensus_states(&client_id).map_err(|_| {
-            Status::not_found(std::format!(
-                "Consensus states not found for client {}",
-                client_id
-            ))
-        })?;
+        let consensus_states = self.ibc_context.consensus_states(&client_id)?;
 
         Ok(Response::new(QueryConsensusStatesResponse {
             consensus_states: consensus_states
@@ -234,19 +198,9 @@ where
 
         let request_ref = request.get_ref();
 
-        let client_id = ClientId::from_str(request_ref.client_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid client id: {}", request_ref.client_id))
-        })?;
+        let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
 
-        let consensus_state_heights = self
-            .ibc_context
-            .consensus_state_heights(&client_id)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Consensus state heights not found for client {}",
-                    client_id
-                ))
-            })?;
+        let consensus_state_heights = self.ibc_context.consensus_state_heights(&client_id)?;
 
         Ok(Response::new(QueryConsensusStateHeightsResponse {
             consensus_state_heights: consensus_state_heights
@@ -265,16 +219,9 @@ where
 
         let request_ref = request.get_ref();
 
-        let client_id = ClientId::from_str(request_ref.client_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid client id: {}", request_ref.client_id))
-        })?;
+        let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
 
-        let client_status = self.ibc_context.client_status(&client_id).map_err(|_| {
-            Status::not_found(std::format!(
-                "Client status not found for client {}",
-                client_id
-            ))
-        })?;
+        let client_status = self.ibc_context.client_status(&client_id)?;
 
         Ok(Response::new(QueryClientStatusResponse {
             status: std::format!("{}", client_status),
@@ -308,14 +255,16 @@ where
         let plan = self
             .upgrade_context
             .upgrade_plan()
-            .map_err(|_| Status::not_found("Upgrade plan not found"))?;
+            .map_err(ClientError::from)
+            .map_err(ContextError::from)?;
 
         let upgraded_client_state_path = UpgradeClientPath::UpgradedClientState(plan.height);
 
         let upgraded_client_state = self
             .upgrade_context
             .upgraded_client_state(&upgraded_client_state_path)
-            .map_err(|_| Status::not_found("Upgraded client state not found"))?;
+            .map_err(ClientError::from)
+            .map_err(ContextError::from)?;
 
         Ok(Response::new(QueryUpgradedClientStateResponse {
             upgraded_client_state: Some(upgraded_client_state.into()),
@@ -331,7 +280,8 @@ where
         let plan = self
             .upgrade_context
             .upgrade_plan()
-            .map_err(|_| Status::not_found("Upgrade plan not found"))?;
+            .map_err(ClientError::from)
+            .map_err(ContextError::from)?;
 
         let upgraded_consensus_state_path =
             UpgradeClientPath::UpgradedClientConsensusState(plan.height);
@@ -339,7 +289,8 @@ where
         let upgraded_consensus_state = self
             .upgrade_context
             .upgraded_consensus_state(&upgraded_consensus_state_path)
-            .map_err(|_| Status::not_found("Upgraded consensus state not found"))?;
+            .map_err(ClientError::from)
+            .map_err(ContextError::from)?;
 
         Ok(Response::new(QueryUpgradedConsensusStateResponse {
             upgraded_consensus_state: Some(upgraded_consensus_state.into()),

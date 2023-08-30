@@ -1,3 +1,4 @@
+use alloc::string::ToString;
 use ibc_proto::{
     google::protobuf::Any,
     ibc::core::{
@@ -74,35 +75,15 @@ where
         trace!("Got channel request: {:?}", request);
         let request_ref = request.get_ref();
 
-        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!(
-                "Invalid channel id: {}",
-                request_ref.channel_id
-            ))
-        })?;
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
-        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
-        })?;
+        let port_id = PortId::from_str(request_ref.port_id.as_str())?;
 
         let channel_end_path = ChannelEndPath::new(&port_id, &channel_id);
 
-        let channel_end = self
-            .ibc_context
-            .channel_end(&channel_end_path)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Channel end not found for channel {}",
-                    channel_id
-                ))
-            })?;
+        let channel_end = self.ibc_context.channel_end(&channel_end_path)?;
 
-        let current_height = self.ibc_context.host_height().map_err(|_| {
-            Status::not_found(std::format!(
-                "Current height not found for channel {}",
-                channel_id
-            ))
-        })?;
+        let current_height = self.ibc_context.host_height()?;
 
         let proof = self
             .ibc_context
@@ -127,20 +108,12 @@ where
     ) -> Result<Response<QueryChannelsResponse>, Status> {
         trace!("Got channels request: {:?}", request);
 
-        let channel_ends = self
-            .ibc_context
-            .channel_ends()
-            .map_err(|_| Status::not_found("Channel ends not found"))?;
+        let channel_ends = self.ibc_context.channel_ends()?;
 
         Ok(Response::new(QueryChannelsResponse {
             channels: channel_ends.into_iter().map(Into::into).collect(),
             pagination: None,
-            height: Some(
-                self.ibc_context
-                    .host_height()
-                    .map_err(|_| Status::not_found("Current height not found"))?
-                    .into(),
-            ),
+            height: Some(self.ibc_context.host_height()?.into()),
         }))
     }
     /// ConnectionChannels queries all the channels associated with a connection
@@ -153,38 +126,14 @@ where
 
         let request_ref = request.get_ref();
 
-        let connection_id =
-            ConnectionId::from_str(request_ref.connection.as_str()).map_err(|_| {
-                Status::invalid_argument(std::format!(
-                    "Invalid connection id: {}",
-                    request_ref.connection
-                ))
-            })?;
+        let connection_id = ConnectionId::from_str(request_ref.connection.as_str())?;
 
-        let channel_ends = self
-            .ibc_context
-            .connection_channel_ends(&connection_id)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Connection channels not found for connection {}",
-                    connection_id
-                ))
-            })?;
+        let channel_ends = self.ibc_context.connection_channel_ends(&connection_id)?;
 
         Ok(Response::new(QueryConnectionChannelsResponse {
             channels: channel_ends.into_iter().map(Into::into).collect(),
             pagination: None,
-            height: Some(
-                self.ibc_context
-                    .host_height()
-                    .map_err(|_| {
-                        Status::not_found(std::format!(
-                            "Current height not found for connection {}",
-                            connection_id
-                        ))
-                    })?
-                    .into(),
-            ),
+            height: Some(self.ibc_context.host_height()?.into()),
         }))
     }
     /// ChannelClientState queries for the client state for the channel associated
@@ -197,40 +146,18 @@ where
 
         let request_ref = request.get_ref();
 
-        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!(
-                "Invalid channel id: {}",
-                request_ref.channel_id
-            ))
-        })?;
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
-        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
-        })?;
+        let port_id = PortId::from_str(request_ref.port_id.as_str())?;
 
         let channel_end_path = ChannelEndPath::new(&port_id, &channel_id);
 
-        let channel_end = self
-            .ibc_context
-            .channel_end(&channel_end_path)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Channel end not found for channel {}",
-                    channel_id
-                ))
-            })?;
+        let channel_end = self.ibc_context.channel_end(&channel_end_path)?;
 
         let connection_end = channel_end
             .connection_hops()
             .first()
-            .map(|connection_id| {
-                self.ibc_context.connection_end(connection_id).map_err(|_| {
-                    Status::not_found(std::format!(
-                        "Connection end not found for connection {}",
-                        connection_id
-                    ))
-                })
-            })
+            .map(|connection_id| self.ibc_context.connection_end(connection_id))
             .ok_or_else(|| {
                 Status::not_found(std::format!(
                     "Channel {} has no connection hops",
@@ -238,22 +165,9 @@ where
                 ))
             })??;
 
-        let client_state = self
-            .ibc_context
-            .client_state(connection_end.client_id())
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Client state not found for client {}",
-                    connection_end.client_id()
-                ))
-            })?;
+        let client_state = self.ibc_context.client_state(connection_end.client_id())?;
 
-        let current_height = self.ibc_context.host_height().map_err(|_| {
-            Status::not_found(std::format!(
-                "Current height not found for client {}",
-                connection_end.client_id()
-            ))
-        })?;
+        let current_height = self.ibc_context.host_height()?;
 
         let proof = self
             .ibc_context
@@ -287,40 +201,21 @@ where
 
         let request_ref = request.get_ref();
 
-        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!(
-                "Invalid channel id: {}",
-                request_ref.channel_id
-            ))
-        })?;
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
-        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
-        })?;
+        let port_id = PortId::from_str(request_ref.port_id.as_str())?;
+
+        let height = Height::new(request_ref.revision_number, request_ref.revision_height)
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
 
         let channel_end_path = ChannelEndPath::new(&port_id, &channel_id);
 
-        let channel_end = self
-            .ibc_context
-            .channel_end(&channel_end_path)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Channel end not found for channel {}",
-                    channel_id
-                ))
-            })?;
+        let channel_end = self.ibc_context.channel_end(&channel_end_path)?;
 
         let connection_end = channel_end
             .connection_hops()
             .first()
-            .map(|connection_id| {
-                self.ibc_context.connection_end(connection_id).map_err(|_| {
-                    Status::not_found(std::format!(
-                        "Connection end not found for connection {}",
-                        connection_id
-                    ))
-                })
-            })
+            .map(|connection_id| self.ibc_context.connection_end(connection_id))
             .ok_or_else(|| {
                 Status::not_found(std::format!(
                     "Channel {} has no connection hops",
@@ -328,36 +223,11 @@ where
                 ))
             })??;
 
-        let consensus_path = ClientConsensusStatePath::new(
-            connection_end.client_id(),
-            &Height::new(request_ref.revision_number, request_ref.revision_height).map_err(
-                |_| {
-                    Status::invalid_argument(std::format!(
-                        "Invalid height: {}-{}",
-                        request_ref.revision_number,
-                        request_ref.revision_height
-                    ))
-                },
-            )?,
-        );
+        let consensus_path = ClientConsensusStatePath::new(connection_end.client_id(), &height);
 
-        let consensus_state = self
-            .ibc_context
-            .consensus_state(&consensus_path)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Consensus state not found for client {} and revision {}",
-                    connection_end.client_id(),
-                    request_ref.revision_number
-                ))
-            })?;
+        let consensus_state = self.ibc_context.consensus_state(&consensus_path)?;
 
-        let current_height = self.ibc_context.host_height().map_err(|_| {
-            Status::not_found(std::format!(
-                "Current height not found for client {}",
-                connection_end.client_id()
-            ))
-        })?;
+        let current_height = self.ibc_context.host_height()?;
 
         let proof = self
             .ibc_context
@@ -385,38 +255,17 @@ where
 
         let request_ref = request.get_ref();
 
-        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!(
-                "Invalid channel id: {}",
-                request_ref.channel_id
-            ))
-        })?;
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
-        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
-        })?;
+        let port_id = PortId::from_str(request_ref.port_id.as_str())?;
 
         let sequence = Sequence::from(request_ref.sequence);
 
         let commitment_path = CommitmentPath::new(&port_id, &channel_id, sequence);
 
-        let packet_commitment_data = self
-            .ibc_context
-            .get_packet_commitment(&commitment_path)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Packet commitment not found for channel {} and sequence {}",
-                    channel_id,
-                    sequence
-                ))
-            })?;
+        let packet_commitment_data = self.ibc_context.get_packet_commitment(&commitment_path)?;
 
-        let current_height = self.ibc_context.host_height().map_err(|_| {
-            Status::not_found(std::format!(
-                "Current height not found for channel {}",
-                channel_id
-            ))
-        })?;
+        let current_height = self.ibc_context.host_height()?;
 
         let proof = self
             .ibc_context
@@ -445,28 +294,15 @@ where
 
         let request_ref = request.get_ref();
 
-        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!(
-                "Invalid channel id: {}",
-                request_ref.channel_id
-            ))
-        })?;
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
-        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
-        })?;
+        let port_id = PortId::from_str(request_ref.port_id.as_str())?;
 
         let channel_end_path = ChannelEndPath::new(&port_id, &channel_id);
 
         let commitments = self
             .ibc_context
-            .packet_commitments(&channel_end_path)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Packet commitments not found for channel {}",
-                    channel_id
-                ))
-            })?
+            .packet_commitments(&channel_end_path)?
             .into_iter()
             .map(|path| {
                 self.ibc_context
@@ -477,30 +313,13 @@ where
                         sequence: path.sequence.into(),
                         data: commitment.into_vec(),
                     })
-                    .map_err(|_| {
-                        Status::not_found(std::format!(
-                            "Packet commitment not found for channel {} and sequence {}",
-                            channel_id,
-                            path.sequence
-                        ))
-                    })
             })
             .collect::<Result<_, _>>()?;
 
         Ok(Response::new(QueryPacketCommitmentsResponse {
             commitments,
             pagination: None,
-            height: Some(
-                self.ibc_context
-                    .host_height()
-                    .map_err(|_| {
-                        Status::not_found(std::format!(
-                            "Current height not found for channel {}",
-                            channel_id
-                        ))
-                    })?
-                    .into(),
-            ),
+            height: Some(self.ibc_context.host_height()?.into()),
         }))
     }
 
@@ -512,16 +331,9 @@ where
     ) -> Result<Response<QueryPacketReceiptResponse>, Status> {
         let request_ref = request.get_ref();
 
-        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!(
-                "Invalid channel id: {}",
-                request_ref.channel_id
-            ))
-        })?;
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
-        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
-        })?;
+        let port_id = PortId::from_str(request_ref.port_id.as_str())?;
 
         let sequence = Sequence::from(request_ref.sequence);
 
@@ -531,12 +343,7 @@ where
         // Unreceived packets are not stored
         let packet_receipt_data = self.ibc_context.get_packet_receipt(&receipt_path);
 
-        let current_height = self.ibc_context.host_height().map_err(|_| {
-            Status::not_found(std::format!(
-                "Current height not found for channel {}",
-                channel_id
-            ))
-        })?;
+        let current_height = self.ibc_context.host_height()?;
 
         let proof = self
             .ibc_context
@@ -562,16 +369,9 @@ where
     ) -> Result<Response<QueryPacketAcknowledgementResponse>, Status> {
         let request_ref = request.get_ref();
 
-        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!(
-                "Invalid channel id: {}",
-                request_ref.channel_id
-            ))
-        })?;
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
-        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
-        })?;
+        let port_id = PortId::from_str(request_ref.port_id.as_str())?;
 
         let sequence = Sequence::from(request_ref.sequence);
 
@@ -579,21 +379,9 @@ where
 
         let packet_acknowledgement_data = self
             .ibc_context
-            .get_packet_acknowledgement(&acknowledgement_path)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Packet acknowledgement not found for channel {} and sequence {}",
-                    channel_id,
-                    sequence
-                ))
-            })?;
+            .get_packet_acknowledgement(&acknowledgement_path)?;
 
-        let current_height = self.ibc_context.host_height().map_err(|_| {
-            Status::not_found(std::format!(
-                "Current height not found for channel {}",
-                channel_id
-            ))
-        })?;
+        let current_height = self.ibc_context.host_height()?;
 
         let proof = self
             .ibc_context
@@ -620,16 +408,9 @@ where
     ) -> Result<Response<QueryPacketAcknowledgementsResponse>, Status> {
         let request_ref = request.get_ref();
 
-        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!(
-                "Invalid channel id: {}",
-                request_ref.channel_id
-            ))
-        })?;
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
-        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
-        })?;
+        let port_id = PortId::from_str(request_ref.port_id.as_str())?;
 
         let commitment_sequences = request_ref
             .packet_commitment_sequences
@@ -641,13 +422,7 @@ where
 
         let acknowledgements = self
             .ibc_context
-            .packet_acknowledgements(&channel_end_path, commitment_sequences)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Packet acknowledgements not found for channel {}",
-                    channel_id
-                ))
-            })?
+            .packet_acknowledgements(&channel_end_path, commitment_sequences)?
             .into_iter()
             .map(|path| {
                 self.ibc_context
@@ -658,30 +433,13 @@ where
                         sequence: path.sequence.into(),
                         data: acknowledgement.into_vec(),
                     })
-                    .map_err(|_| {
-                        Status::not_found(std::format!(
-                            "Packet acknowledgement not found for channel {} and sequence {}",
-                            channel_id,
-                            path.sequence
-                        ))
-                    })
             })
             .collect::<Result<_, _>>()?;
 
         Ok(Response::new(QueryPacketAcknowledgementsResponse {
             acknowledgements,
             pagination: None,
-            height: Some(
-                self.ibc_context
-                    .host_height()
-                    .map_err(|_| {
-                        Status::not_found(std::format!(
-                            "Current height not found for channel {}",
-                            channel_id
-                        ))
-                    })?
-                    .into(),
-            ),
+            height: Some(self.ibc_context.host_height()?.into()),
         }))
     }
 
@@ -697,16 +455,9 @@ where
     ) -> Result<Response<QueryUnreceivedPacketsResponse>, Status> {
         let request_ref = request.get_ref();
 
-        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!(
-                "Invalid channel id: {}",
-                request_ref.channel_id
-            ))
-        })?;
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
-        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
-        })?;
+        let port_id = PortId::from_str(request_ref.port_id.as_str())?;
 
         let sequences = request_ref
             .packet_commitment_sequences
@@ -718,27 +469,11 @@ where
 
         let unreceived_packets = self
             .ibc_context
-            .unreceived_packets(&channel_end_path, sequences)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Unreceived packets not found for channel {}",
-                    channel_id
-                ))
-            })?;
+            .unreceived_packets(&channel_end_path, sequences)?;
 
         Ok(Response::new(QueryUnreceivedPacketsResponse {
             sequences: unreceived_packets.into_iter().map(Into::into).collect(),
-            height: Some(
-                self.ibc_context
-                    .host_height()
-                    .map_err(|_| {
-                        Status::not_found(std::format!(
-                            "Current height not found for channel {}",
-                            channel_id
-                        ))
-                    })?
-                    .into(),
-            ),
+            height: Some(self.ibc_context.host_height()?.into()),
         }))
     }
 
@@ -750,16 +485,9 @@ where
     ) -> Result<Response<QueryUnreceivedAcksResponse>, Status> {
         let request_ref = _request.get_ref();
 
-        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!(
-                "Invalid channel id: {}",
-                request_ref.channel_id
-            ))
-        })?;
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
-        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
-        })?;
+        let port_id = PortId::from_str(request_ref.port_id.as_str())?;
 
         let sequences = request_ref
             .packet_ack_sequences
@@ -771,27 +499,11 @@ where
 
         let unreceived_acks = self
             .ibc_context
-            .unreceived_acks(&channel_end_path, sequences)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Unreceived acks not found for channel {}",
-                    channel_id
-                ))
-            })?;
+            .unreceived_acks(&channel_end_path, sequences)?;
 
         Ok(Response::new(QueryUnreceivedAcksResponse {
             sequences: unreceived_acks.into_iter().map(Into::into).collect(),
-            height: Some(
-                self.ibc_context
-                    .host_height()
-                    .map_err(|_| {
-                        Status::not_found(std::format!(
-                            "Current height not found for channel {}",
-                            channel_id
-                        ))
-                    })?
-                    .into(),
-            ),
+            height: Some(self.ibc_context.host_height()?.into()),
         }))
     }
 
@@ -802,35 +514,17 @@ where
     ) -> Result<Response<QueryNextSequenceReceiveResponse>, Status> {
         let request_ref = request.get_ref();
 
-        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!(
-                "Invalid channel id: {}",
-                request_ref.channel_id
-            ))
-        })?;
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
-        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
-        })?;
+        let port_id = PortId::from_str(request_ref.port_id.as_str())?;
 
         let next_seq_recv_path = SeqRecvPath::new(&port_id, &channel_id);
 
         let next_sequence_recv = self
             .ibc_context
-            .get_next_sequence_recv(&next_seq_recv_path)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Next sequence receive not found for channel {}",
-                    channel_id
-                ))
-            })?;
+            .get_next_sequence_recv(&next_seq_recv_path)?;
 
-        let current_height = self.ibc_context.host_height().map_err(|_| {
-            Status::not_found(std::format!(
-                "Current height not found for channel {}",
-                channel_id
-            ))
-        })?;
+        let current_height = self.ibc_context.host_height()?;
 
         let proof = self
             .ibc_context
@@ -856,35 +550,17 @@ where
     ) -> Result<Response<QueryNextSequenceSendResponse>, Status> {
         let request_ref = request.get_ref();
 
-        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!(
-                "Invalid channel id: {}",
-                request_ref.channel_id
-            ))
-        })?;
+        let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
-        let port_id = PortId::from_str(request_ref.port_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid port id: {}", request_ref.port_id))
-        })?;
+        let port_id = PortId::from_str(request_ref.port_id.as_str())?;
 
         let next_seq_send_path = SeqSendPath::new(&port_id, &channel_id);
 
         let next_sequence_send = self
             .ibc_context
-            .get_next_sequence_send(&next_seq_send_path)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Next sequence send not found for channel {}",
-                    channel_id
-                ))
-            })?;
+            .get_next_sequence_send(&next_seq_send_path)?;
 
-        let current_height = self.ibc_context.host_height().map_err(|_| {
-            Status::not_found(std::format!(
-                "Current height not found for channel {}",
-                channel_id
-            ))
-        })?;
+        let current_height = self.ibc_context.host_height()?;
 
         let proof = self
             .ibc_context

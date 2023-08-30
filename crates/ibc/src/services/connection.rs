@@ -1,3 +1,4 @@
+use alloc::string::ToString;
 use ibc_proto::{
     google::protobuf::Any,
     ibc::core::{
@@ -65,28 +66,11 @@ where
     ) -> Result<Response<QueryConnectionResponse>, Status> {
         let request_ref = request.get_ref();
 
-        let connection_id =
-            ConnectionId::from_str(request_ref.connection_id.as_str()).map_err(|_| {
-                Status::invalid_argument(std::format!(
-                    "Invalid connection id: {}",
-                    request_ref.connection_id
-                ))
-            })?;
+        let connection_id = ConnectionId::from_str(request_ref.connection_id.as_str())?;
 
-        let connection_end = self
-            .ibc_context
-            .connection_end(&connection_id)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Connection end not found for connection {}",
-                    connection_id
-                ))
-            })?;
+        let connection_end = self.ibc_context.connection_end(&connection_id)?;
 
-        let current_height = self
-            .ibc_context
-            .host_height()
-            .map_err(|_| Status::not_found("Current height not found"))?;
+        let current_height = self.ibc_context.host_height()?;
 
         let proof = self
             .ibc_context
@@ -114,20 +98,12 @@ where
     ) -> Result<Response<QueryConnectionsResponse>, Status> {
         trace!("Got connections request: {:?}", request);
 
-        let connections = self
-            .ibc_context
-            .connection_ends()
-            .map_err(|_| Status::not_found("Connections not found"))?;
+        let connections = self.ibc_context.connection_ends()?;
 
         Ok(Response::new(QueryConnectionsResponse {
             connections: connections.into_iter().map(Into::into).collect(),
             pagination: None,
-            height: Some(
-                self.ibc_context
-                    .host_height()
-                    .map_err(|_| Status::not_found("Current height not found"))?
-                    .into(),
-            ),
+            height: Some(self.ibc_context.host_height()?.into()),
         }))
     }
 
@@ -139,19 +115,11 @@ where
 
         let request_ref = request.get_ref();
 
-        let client_id = ClientId::from_str(request_ref.client_id.as_str()).map_err(|_| {
-            Status::invalid_argument(std::format!("Invalid client id: {}", request_ref.client_id))
-        })?;
+        let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
 
-        let connections = self
-            .ibc_context
-            .client_connection_ends(&client_id)
-            .map_err(|_| Status::not_found("Connections not found"))?;
+        let connections = self.ibc_context.client_connection_ends(&client_id)?;
 
-        let current_height = self
-            .ibc_context
-            .host_height()
-            .map_err(|_| Status::not_found("Current height not found"))?;
+        let current_height = self.ibc_context.host_height()?;
 
         let proof: alloc::vec::Vec<u8> = self
             .ibc_context
@@ -179,38 +147,13 @@ where
     ) -> Result<Response<QueryConnectionClientStateResponse>, Status> {
         let request_ref = request.get_ref();
 
-        let connection_id =
-            ConnectionId::from_str(request_ref.connection_id.as_str()).map_err(|_| {
-                Status::invalid_argument(std::format!(
-                    "Invalid connection id: {}",
-                    request_ref.connection_id
-                ))
-            })?;
+        let connection_id = ConnectionId::from_str(request_ref.connection_id.as_str())?;
 
-        let connection_end = self
-            .ibc_context
-            .connection_end(&connection_id)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Connection end not found for connection {}",
-                    connection_id
-                ))
-            })?;
+        let connection_end = self.ibc_context.connection_end(&connection_id)?;
 
-        let client_state = self
-            .ibc_context
-            .client_state(connection_end.client_id())
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Client state not found for connection {}",
-                    connection_id
-                ))
-            })?;
+        let client_state = self.ibc_context.client_state(connection_end.client_id())?;
 
-        let current_height = self
-            .ibc_context
-            .host_height()
-            .map_err(|_| Status::not_found("Current height not found"))?;
+        let current_height = self.ibc_context.host_height()?;
 
         let proof = self
             .ibc_context
@@ -241,51 +184,18 @@ where
     ) -> Result<Response<QueryConnectionConsensusStateResponse>, Status> {
         let request_ref = request.get_ref();
 
-        let connection_id =
-            ConnectionId::from_str(request_ref.connection_id.as_str()).map_err(|_| {
-                Status::invalid_argument(std::format!(
-                    "Invalid connection id: {}",
-                    request_ref.connection_id
-                ))
-            })?;
+        let connection_id = ConnectionId::from_str(request_ref.connection_id.as_str())?;
 
-        let connection_end = self
-            .ibc_context
-            .connection_end(&connection_id)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Connection end not found for connection {}",
-                    connection_id
-                ))
-            })?;
+        let connection_end = self.ibc_context.connection_end(&connection_id)?;
 
-        let consensus_path = ClientConsensusStatePath::new(
-            connection_end.client_id(),
-            &Height::new(request_ref.revision_number, request_ref.revision_height).map_err(
-                |_| {
-                    Status::invalid_argument(std::format!(
-                        "Invalid height: {}-{}",
-                        request_ref.revision_number,
-                        request_ref.revision_height
-                    ))
-                },
-            )?,
-        );
+        let height = Height::new(request_ref.revision_number, request_ref.revision_height)
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
 
-        let consensus_state = self
-            .ibc_context
-            .consensus_state(&consensus_path)
-            .map_err(|_| {
-                Status::not_found(std::format!(
-                    "Consensus state not found for connection {}",
-                    connection_id
-                ))
-            })?;
+        let consensus_path = ClientConsensusStatePath::new(connection_end.client_id(), &height);
 
-        let current_height = self
-            .ibc_context
-            .host_height()
-            .map_err(|_| Status::not_found("Current height not found"))?;
+        let consensus_state = self.ibc_context.consensus_state(&consensus_path)?;
+
+        let current_height = self.ibc_context.host_height()?;
 
         let proof = self
             .ibc_context
