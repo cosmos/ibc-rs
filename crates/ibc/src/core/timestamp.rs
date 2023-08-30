@@ -23,9 +23,17 @@ pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 /// represented as a `u64` Unix timestamp in nanoseconds, with 0 representing the absence
 /// of timestamp.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Default, PartialOrd, Ord)]
 pub struct Timestamp {
+    #[cfg_attr(feature = "schema", schemars(with = "Option<TimeSchema>"))]
     time: Option<Time>,
+}
+
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct TimeSchema {
+    pub seconds: i64,
+    pub nanos: i32,
 }
 
 #[cfg(feature = "borsh")]
