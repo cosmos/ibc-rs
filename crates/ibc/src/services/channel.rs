@@ -445,10 +445,6 @@ where
 
     /// UnreceivedPackets returns all the unreceived IBC packets associated with
     /// a channel and sequences.
-    ///
-    /// QUESTION. Currently only works for unordered channels; ordered channels
-    /// don't use receipts. However, ibc-go does it this way. Investigate if
-    /// this query only ever makes sense on unordered channels.
     async fn unreceived_packets(
         &self,
         request: Request<QueryUnreceivedPacketsRequest>,
