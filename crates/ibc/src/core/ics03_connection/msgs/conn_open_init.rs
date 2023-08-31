@@ -297,4 +297,21 @@ mod tests {
             msg_with_counterpary_conn_id_some_back
         );
     }
+
+    /// Test that borsh serialization/deserialization works well with delay periods up to u64::MAX
+    #[cfg(feature = "borsh")]
+    #[test]
+    fn test_borsh() {
+        let mut raw = get_dummy_raw_msg_conn_open_init();
+        raw.delay_period = u64::MAX;
+        let msg = MsgConnectionOpenInit::try_from(raw.clone()).unwrap();
+
+        let serialized = borsh::to_vec(&msg).unwrap();
+
+        let msg_deserialized =
+            <MsgConnectionOpenInit as borsh::BorshDeserialize>::try_from_slice(&serialized)
+                .unwrap();
+
+        assert_eq!(msg, msg_deserialized);
+    }
 }

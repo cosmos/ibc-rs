@@ -450,4 +450,20 @@ mod tests {
         assert_eq!(raw, raw_back);
         assert_eq!(msg, msg_back);
     }
+
+    /// Test that borsh serialization/deserialization works well with delay periods up to u64::MAX
+    #[cfg(feature = "borsh")]
+    #[test]
+    fn test_borsh() {
+        let mut raw = get_dummy_raw_msg_conn_open_try(10, 34);
+        raw.delay_period = u64::MAX;
+        let msg = MsgConnectionOpenTry::try_from(raw.clone()).unwrap();
+
+        let serialized = borsh::to_vec(&msg).unwrap();
+
+        let msg_deserialized =
+            <MsgConnectionOpenTry as borsh::BorshDeserialize>::try_from_slice(&serialized).unwrap();
+
+        assert_eq!(msg, msg_deserialized);
+    }
 }
