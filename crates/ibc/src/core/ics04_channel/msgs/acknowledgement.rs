@@ -16,6 +16,10 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgAcknowledgement";
 ///
 /// Message definition for packet acknowledgements.
 ///
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgAcknowledgement {
     pub packet: Packet,

@@ -15,6 +15,10 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgTimeoutOnClose";
 ///
 /// Message definition for packet timeout domain type.
 ///
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgTimeoutOnClose {
     pub packet: Packet,
