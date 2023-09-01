@@ -20,7 +20,7 @@ pub mod upgrade_client;
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ClientMsg {
     CreateClient(MsgCreateClient),
     UpdateClient(MsgUpdateClient),
