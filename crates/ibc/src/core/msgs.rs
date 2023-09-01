@@ -36,6 +36,10 @@ pub trait Msg: Clone {
 }
 
 /// Enumeration of all messages that the local ICS26 module is capable of routing.
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug)]
 pub enum MsgEnvelope {
     Client(ClientMsg),

@@ -14,6 +14,10 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenAck";
 /// Message definition for the third step in the channel open handshake (`ChanOpenAck` datagram).
 ///
 /// Per our convention, this message is sent to chain A.
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelOpenAck {
     pub port_id_on_a: PortId,

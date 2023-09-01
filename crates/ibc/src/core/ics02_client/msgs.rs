@@ -16,6 +16,10 @@ pub mod upgrade_client;
 
 /// Encodes all the different client messages
 #[allow(dead_code)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug)]
 pub enum ClientMsg {
     CreateClient(MsgCreateClient),

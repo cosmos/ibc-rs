@@ -61,6 +61,10 @@ impl From<Vec<u8>> for CommitmentRoot {
 ///
 /// For example, in the case of a proof of membership in a Merkle tree,
 /// this encodes a Merkle proof.
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
 #[derive(Clone, PartialEq, Eq)]

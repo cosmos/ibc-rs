@@ -16,6 +16,10 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgRecvPacket";
 ///
 /// Message definition for the "packet receiving" datagram.
 ///
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgRecvPacket {
     /// The packet to be received

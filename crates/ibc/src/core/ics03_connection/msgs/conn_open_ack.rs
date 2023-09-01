@@ -16,6 +16,10 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenAck"
 
 /// Per our convention, this message is sent to chain A.
 /// The handler will check proofs of chain B.
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgConnectionOpenAck {
     /// ConnectionId that chain A has chosen for it's ConnectionEnd

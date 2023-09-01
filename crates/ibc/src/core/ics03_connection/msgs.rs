@@ -23,6 +23,10 @@ pub mod conn_open_init;
 pub mod conn_open_try;
 
 /// Enumeration of all possible messages that the ICS3 protocol processes.
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConnectionMsg {
     OpenInit(MsgConnectionOpenInit),
