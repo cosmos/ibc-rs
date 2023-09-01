@@ -34,6 +34,64 @@ impl Msg for MsgConnectionOpenInit {
     }
 }
 
+/// This module encapsulates the workarounds we need to do to implement
+/// `BorshSerialize` and `BorshDeserialize` on `MsgConnectionOpenInit`
+#[cfg(feature = "borsh")]
+mod borsh_impls {
+    use borsh::{
+        maybestd::io::{self, Read},
+        BorshDeserialize, BorshSerialize,
+    };
+
+    use super::*;
+
+    #[derive(BorshSerialize, BorshDeserialize)]
+    pub struct InnerMsgConnectionOpenInit {
+        /// ClientId on chain A that the connection is being opened for
+        pub client_id_on_a: ClientId,
+        pub counterparty: Counterparty,
+        pub version: Option<Version>,
+        pub delay_period_nanos: u64,
+        pub signer: Signer,
+    }
+
+    impl BorshSerialize for MsgConnectionOpenInit {
+        fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+            let delay_period_nanos: u64 =
+                self.delay_period.as_nanos().try_into().map_err(|_| {
+                    io::Error::new(
+                        io::ErrorKind::Other,
+                        format!("Duration too long: {} nanos", self.delay_period.as_nanos()),
+                    )
+                })?;
+
+            let inner = InnerMsgConnectionOpenInit {
+                client_id_on_a: self.client_id_on_a.clone(),
+                counterparty: self.counterparty.clone(),
+                version: self.version.clone(),
+                delay_period_nanos,
+                signer: self.signer.clone(),
+            };
+
+            inner.serialize(writer)
+        }
+    }
+
+    impl BorshDeserialize for MsgConnectionOpenInit {
+        fn deserialize_reader<R: Read>(reader: &mut R) -> io::Result<Self> {
+            let inner = InnerMsgConnectionOpenInit::deserialize_reader(reader)?;
+
+            Ok(MsgConnectionOpenInit {
+                client_id_on_a: inner.client_id_on_a,
+                counterparty: inner.counterparty,
+                version: inner.version,
+                delay_period: Duration::from_nanos(inner.delay_period_nanos),
+                signer: inner.signer,
+            })
+        }
+    }
+}
+
 impl Protobuf<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {}
 
 impl TryFrom<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {
@@ -238,5 +296,22 @@ mod tests {
             msg_with_counterpary_conn_id_some,
             msg_with_counterpary_conn_id_some_back
         );
+    }
+
+    /// Test that borsh serialization/deserialization works well with delay periods up to u64::MAX
+    #[cfg(feature = "borsh")]
+    #[test]
+    fn test_borsh() {
+        let mut raw = get_dummy_raw_msg_conn_open_init();
+        raw.delay_period = u64::MAX;
+        let msg = MsgConnectionOpenInit::try_from(raw.clone()).unwrap();
+
+        let serialized = borsh::to_vec(&msg).unwrap();
+
+        let msg_deserialized =
+            <MsgConnectionOpenInit as borsh::BorshDeserialize>::try_from_slice(&serialized)
+                .unwrap();
+
+        assert_eq!(msg, msg_deserialized);
     }
 }

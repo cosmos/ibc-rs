@@ -17,6 +17,10 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCloseConfirm";
 /// datagram).
 /// Per our convention, this message is sent to chain B.
 ///
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelCloseConfirm {
     pub port_id_on_b: PortId,

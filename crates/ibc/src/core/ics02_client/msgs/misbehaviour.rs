@@ -14,6 +14,10 @@ use crate::signer::Signer;
 pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
 
 /// A type of message that submits client misbehaviour proof.
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgSubmitMisbehaviour {
     /// client unique identifier

@@ -31,6 +31,10 @@ pub use timeout_on_close::MsgTimeoutOnClose;
 use crate::core::ics24_host::identifier::PortId;
 
 /// All channel messages
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChannelMsg {
     OpenInit(MsgChannelOpenInit),
@@ -42,6 +46,10 @@ pub enum ChannelMsg {
 }
 
 /// All packet messages
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PacketMsg {
     Recv(MsgRecvPacket),
