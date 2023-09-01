@@ -2,14 +2,13 @@
 
 use core::fmt::Display;
 
-use crate::prelude::*;
-use crate::utils::pretty::PrettySlice;
-
 use ibc_proto::ibc::core::connection::v1::Version as RawVersion;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics04_channel::channel::Order;
+use crate::prelude::*;
+use crate::utils::pretty::PrettySlice;
 
 /// Stores the identifier and the features supported by a version
 #[cfg_attr(
@@ -189,14 +188,12 @@ fn get_feature_set_intersection(
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
-
-    use test_log::test;
-
     use ibc_proto::ibc::core::connection::v1::Version as RawVersion;
+    use test_log::test;
 
     use crate::core::ics03_connection::error::ConnectionError;
     use crate::core::ics03_connection::version::{get_compatible_versions, pick_version, Version};
+    use crate::prelude::*;
 
     fn get_dummy_features() -> Vec<String> {
         vec!["ORDER_RANDOM".to_string(), "ORDER_UNORDERED".to_string()]

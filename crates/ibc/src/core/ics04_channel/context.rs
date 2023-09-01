@@ -1,23 +1,23 @@
 //! ICS4 (channel) context.
 
+use core::time::Duration;
+
+use num_traits::float::FloatCore;
+
+use super::packet::Sequence;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
+use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::ClientExecutionContext;
+use crate::core::ics03_connection::connection::ConnectionEnd;
+use crate::core::ics04_channel::channel::ChannelEnd;
+use crate::core::ics04_channel::commitment::PacketCommitment;
+use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 use crate::prelude::*;
-use core::time::Duration;
-use num_traits::float::FloatCore;
-
-use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics03_connection::connection::ConnectionEnd;
-use crate::core::ics04_channel::channel::ChannelEnd;
-use crate::core::ics04_channel::commitment::PacketCommitment;
-use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-
-use super::packet::Sequence;
 
 /// Methods required in send packet validation, to be implemented by the host
 pub trait SendPacketValidationContext {

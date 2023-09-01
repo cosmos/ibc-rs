@@ -2,6 +2,7 @@
 
 use alloc::format;
 use alloc::string::{String, ToString};
+
 use ibc_proto::cosmos::upgrade::v1beta1::Plan as RawPlan;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::protobuf::Protobuf;

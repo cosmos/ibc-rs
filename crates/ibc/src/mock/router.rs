@@ -1,7 +1,9 @@
-use crate::{core::ics24_host::identifier::PortId, prelude::*};
-use alloc::{collections::BTreeMap, sync::Arc};
+use alloc::collections::BTreeMap;
+use alloc::sync::Arc;
 
+use crate::core::ics24_host::identifier::PortId;
 use crate::core::router::{Module, ModuleId, Router};
+use crate::prelude::*;
 
 #[derive(Default)]
 pub struct MockRouter {

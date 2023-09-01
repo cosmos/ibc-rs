@@ -1,13 +1,12 @@
 //! Definition of domain type message `MsgCreateClient`.
 
-use crate::prelude::*;
-
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgCreateClient as RawMsgCreateClient;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::Msg;
+use crate::prelude::*;
 use crate::signer::Signer;
 
 pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgCreateClient";
@@ -75,9 +74,8 @@ impl From<MsgCreateClient> for RawMsgCreateClient {
 #[cfg(test)]
 mod tests {
 
-    use test_log::test;
-
     use ibc_proto::ibc::core::client::v1::MsgCreateClient as RawMsgCreateClient;
+    use test_log::test;
 
     use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;

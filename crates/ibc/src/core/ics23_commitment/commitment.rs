@@ -1,13 +1,14 @@
 //! Defines core commitment types
 
-use crate::core::ics23_commitment::error::CommitmentError;
-use crate::prelude::*;
+use core::convert::TryFrom;
+use core::fmt;
 
-use core::{convert::TryFrom, fmt};
 use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
 use subtle_encoding::{Encoding, Hex};
 
 use super::merkle::MerkleProof;
+use crate::core::ics23_commitment::error::CommitmentError;
+use crate::prelude::*;
 
 /// Encodes a commitment root; most often a Merkle tree root hash.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -198,10 +199,11 @@ impl serde::Serialize for CommitmentPrefix {
 
 #[cfg(test)]
 pub mod test_util {
-    use super::CommitmentProofBytes;
-    use crate::prelude::*;
     use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
     use ibc_proto::ics23::CommitmentProof;
+
+    use super::CommitmentProofBytes;
+    use crate::prelude::*;
 
     /// Returns a dummy `CommitmentProofBytes`, for testing only!
     pub fn get_dummy_commitment_proof_bytes() -> CommitmentProofBytes {

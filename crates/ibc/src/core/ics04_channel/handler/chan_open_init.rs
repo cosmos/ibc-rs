@@ -1,10 +1,8 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenInit`.
 
-use crate::core::ics02_client::error::ClientError;
-use crate::prelude::*;
-
 use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics02_client::client_state::ClientStateValidation;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
 use crate::core::ics04_channel::events::OpenInit;
 use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
@@ -12,6 +10,7 @@ use crate::core::ics24_host::identifier::ChannelId;
 use crate::core::ics24_host::path::{ChannelEndPath, SeqAckPath, SeqRecvPath, SeqSendPath};
 use crate::core::router::Module;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) fn chan_open_init_validate<ValCtx>(
     ctx_a: &ValCtx,
@@ -140,28 +139,24 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use rstest::*;
+    use test_log::test;
 
+    use super::*;
+    use crate::applications::transfer::MODULE_ID_STR;
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::core::ics02_client::height::Height;
-    use crate::core::ics03_connection::connection::ConnectionEnd;
-    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use crate::core::ics03_connection::connection::{ConnectionEnd, State as ConnectionState};
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::handler::chan_open_init::validate;
     use crate::core::ics04_channel::msgs::chan_open_init::test_util::get_dummy_raw_msg_chan_open_init;
     use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
-    use crate::core::ics24_host::identifier::ClientId;
-    use crate::core::ics24_host::identifier::ConnectionId;
-
-    use crate::applications::transfer::MODULE_ID_STR;
-    use crate::core::router::ModuleId;
-    use crate::core::router::Router;
+    use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::core::router::{ModuleId, Router};
     use crate::mock::context::MockContext;
     use crate::mock::router::MockRouter;
     use crate::test_utils::DummyTransferModule;
-    use test_log::test;
 
     pub struct Fixture {
         pub ctx: MockContext,
