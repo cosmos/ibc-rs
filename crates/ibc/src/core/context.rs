@@ -320,21 +320,21 @@ pub trait QueryContext: ProvableContext + ValidationContext {
     fn packet_acknowledgements(
         &self,
         channel_end_path: &ChannelEndPath,
-        sequences: impl IntoIterator<Item = Sequence>,
+        sequences: impl ExactSizeIterator<Item = Sequence>,
     ) -> Result<Vec<AckPath>, ContextError>;
 
     /// Filters the list of packet sequencees for the given channel end that are not received.
     fn unreceived_packets(
         &self,
         channel_end_path: &ChannelEndPath,
-        sequences: impl IntoIterator<Item = Sequence>,
+        sequences: impl ExactSizeIterator<Item = Sequence>,
     ) -> Result<Vec<Sequence>, ContextError>;
 
     /// Filters the list of packet sequencees for the given channel end whose acknowledgement is not received.
     fn unreceived_acks(
         &self,
         channel_end_path: &ChannelEndPath,
-        sequences: impl IntoIterator<Item = Sequence>,
+        sequences: impl ExactSizeIterator<Item = Sequence>,
     ) -> Result<Vec<Sequence>, ContextError>;
 }
 
