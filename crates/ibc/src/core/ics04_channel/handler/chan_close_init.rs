@@ -1,9 +1,7 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelCloseInit`.
-use crate::core::ics02_client::error::ClientError;
-use crate::prelude::*;
-
 use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics02_client::client_state::ClientStateValidation;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::error::ChannelError;
@@ -12,6 +10,7 @@ use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
 use crate::core::ics24_host::path::ChannelEndPath;
 use crate::core::router::Module;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) fn chan_close_init_validate<ValCtx>(
     ctx_a: &ValCtx,
@@ -126,10 +125,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    use crate::core::ics03_connection::connection::ConnectionEnd;
-    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
-    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use crate::applications::transfer::MODULE_ID_STR;
+    use crate::core::ics03_connection::connection::{
+        ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
+    };
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{
@@ -138,11 +137,8 @@ mod tests {
     use crate::core::ics04_channel::msgs::chan_close_init::test_util::get_dummy_raw_msg_chan_close_init;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-    use crate::core::router::ModuleId;
-    use crate::core::router::Router;
+    use crate::core::router::{ModuleId, Router};
     use crate::core::timestamp::ZERO_DURATION;
-
-    use crate::applications::transfer::MODULE_ID_STR;
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::mock::router::MockRouter;

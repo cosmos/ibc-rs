@@ -115,8 +115,9 @@ impl From<MockHeader> for Any {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use ibc_proto::protobuf::Protobuf;
+
+    use super::*;
 
     #[test]
     fn encode_any() {

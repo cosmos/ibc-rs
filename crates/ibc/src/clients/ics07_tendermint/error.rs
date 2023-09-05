@@ -1,11 +1,5 @@
 //! Defines the Tendermint light client's error type
 
-use crate::prelude::*;
-
-use crate::core::ics02_client::error::ClientError;
-use crate::core::ics24_host::identifier::{ClientId, IdentifierError};
-use crate::Height;
-
 use core::time::Duration;
 
 use displaydoc::Display;
@@ -13,6 +7,11 @@ use tendermint::{Error as TendermintError, Hash};
 use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
 use tendermint_light_client_verifier::operations::VotingPowerTally;
 use tendermint_light_client_verifier::Verdict;
+
+use crate::core::ics02_client::error::ClientError;
+use crate::core::ics24_host::identifier::{ClientId, IdentifierError};
+use crate::prelude::*;
+use crate::Height;
 
 /// The main error type
 #[derive(Debug, Display)]

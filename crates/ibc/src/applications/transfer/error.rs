@@ -2,6 +2,7 @@
 
 use core::convert::Infallible;
 use core::str::Utf8Error;
+
 use displaydoc::Display;
 use ibc_proto::protobuf::Error as TendermintProtoError;
 use uint::FromDecStrErr;

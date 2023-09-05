@@ -40,10 +40,11 @@ pub enum ConnectionMsg {
 #[cfg(test)]
 pub mod test_util {
 
-    use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-    use crate::prelude::*;
     use ibc_proto::ibc::core::commitment::v1::MerklePrefix;
     use ibc_proto::ibc::core::connection::v1::Counterparty as RawCounterparty;
+
+    use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::prelude::*;
 
     pub fn get_dummy_raw_counterparty(conn_id: Option<u64>) -> RawCounterparty {
         let connection_id = match conn_id {

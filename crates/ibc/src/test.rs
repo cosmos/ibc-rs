@@ -1,5 +1,7 @@
 #[cfg(feature = "serde")]
-use serde::{de::DeserializeOwned, Serialize};
+use serde::de::DeserializeOwned;
+#[cfg(feature = "serde")]
+use serde::Serialize;
 
 /// Test that a struct `T` can be:
 ///

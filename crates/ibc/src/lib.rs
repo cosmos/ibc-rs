@@ -44,9 +44,10 @@ extern crate alloc;
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
+pub use signer::Signer;
+
 /// Represents a block height
 pub use crate::core::ics02_client::height::Height;
-pub use signer::Signer;
 
 pub mod applications;
 pub mod clients;

@@ -1,7 +1,8 @@
 //! Defines proof specs, which encode the structure of proofs
 
-use crate::prelude::*;
 use ibc_proto::ics23::{InnerSpec as RawInnerSpec, LeafOp as RawLeafOp, ProofSpec as RawProofSpec};
+
+use crate::prelude::*;
 /// An array of proof specifications.
 ///
 /// This type encapsulates different types of proof specifications, mostly predefined, e.g., for

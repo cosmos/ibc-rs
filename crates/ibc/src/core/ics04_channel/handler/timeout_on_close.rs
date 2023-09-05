@@ -1,21 +1,19 @@
-use crate::core::ics02_client::error::ClientError;
-use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
 use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
-use crate::core::ics04_channel::channel::State;
-use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order};
+use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
 use crate::core::ics04_channel::commitment::compute_packet_commitment;
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
-use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
-    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
+    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
 };
 use crate::core::{ContextError, ValidationContext};
+use crate::prelude::*;
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), ContextError>
 where
@@ -175,26 +173,24 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ics04_channel::commitment::compute_packet_commitment;
-    use crate::core::ics04_channel::commitment::PacketCommitment;
-    use crate::core::ics04_channel::handler::timeout_on_close::validate;
-    use crate::core::timestamp::Timestamp;
-    use crate::core::ExecutionContext;
-    use crate::mock::context::MockContext;
-    use crate::prelude::*;
-    use crate::Height;
     use rstest::*;
 
-    use crate::core::ics03_connection::connection::ConnectionEnd;
-    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
-    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use crate::core::ics03_connection::connection::{
+        ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
+    };
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
+    use crate::core::ics04_channel::commitment::{compute_packet_commitment, PacketCommitment};
+    use crate::core::ics04_channel::handler::timeout_on_close::validate;
     use crate::core::ics04_channel::msgs::timeout_on_close::test_util::get_dummy_raw_msg_timeout_on_close;
     use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::timestamp::ZERO_DURATION;
+    use crate::core::timestamp::{Timestamp, ZERO_DURATION};
+    use crate::core::ExecutionContext;
+    use crate::mock::context::MockContext;
+    use crate::prelude::*;
+    use crate::Height;
 
     pub struct Fixture {
         pub context: MockContext,

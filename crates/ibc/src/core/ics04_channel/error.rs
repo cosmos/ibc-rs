@@ -1,5 +1,7 @@
 //! Defines the main channel, port and packet error types
 
+use displaydoc::Display;
+
 use super::channel::Counterparty;
 use super::packet::Sequence;
 use super::timeout::TimeoutHeight;
@@ -13,8 +15,6 @@ use crate::core::ics24_host::identifier::{
 use crate::core::timestamp::{ParseTimestampError, Timestamp};
 use crate::prelude::*;
 use crate::Height;
-
-use displaydoc::Display;
 
 #[derive(Debug, Display)]
 pub enum ChannelError {

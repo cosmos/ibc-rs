@@ -1,7 +1,5 @@
 //! Defines the representation of timestamps used in packet timeouts
 
-use crate::prelude::*;
-
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::hash::{Hash, Hasher};
 use core::num::ParseIntError;
@@ -12,6 +10,8 @@ use core::time::Duration;
 use displaydoc::Display;
 use tendermint::Time;
 use time::OffsetDateTime;
+
+use crate::prelude::*;
 
 pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 
@@ -314,11 +314,11 @@ impl From<Time> for Timestamp {
 
 #[cfg(test)]
 mod tests {
-    use time::OffsetDateTime;
-
     use core::time::Duration;
     use std::thread::sleep;
+
     use test_log::test;
+    use time::OffsetDateTime;
 
     use super::{Expiry, Timestamp, ZERO_DURATION};
 

@@ -1,13 +1,11 @@
-use crate::prelude::*;
-
-use ibc_proto::protobuf::Protobuf;
-
 use ibc_proto::ibc::core::channel::v1::MsgTimeout as RawMsgTimeout;
+use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::Msg;
+use crate::prelude::*;
 use crate::signer::Signer;
 use crate::Height;
 
@@ -109,15 +107,13 @@ pub mod test_util {
 
 #[cfg(test)]
 mod test {
-    use crate::prelude::*;
-
-    use test_log::test;
-
     use ibc_proto::ibc::core::channel::v1::MsgTimeout as RawMsgTimeout;
+    use test_log::test;
 
     use crate::core::ics04_channel::error::PacketError;
     use crate::core::ics04_channel::msgs::timeout::test_util::get_dummy_raw_msg_timeout;
     use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
+    use crate::prelude::*;
     use crate::test_utils::get_dummy_bech32_account;
 
     #[test]

@@ -5,12 +5,6 @@ mod packet_attributes;
 
 use tendermint::abci;
 
-use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics04_channel::packet::Packet;
-use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use crate::core::timestamp::Timestamp;
-use crate::prelude::*;
-
 use self::channel_attributes::{
     ChannelIdAttribute, ConnectionIdAttribute, CounterpartyChannelIdAttribute,
     CounterpartyPortIdAttribute, PortIdAttribute, VersionAttribute,
@@ -21,12 +15,16 @@ use self::packet_attributes::{
     PacketConnectionIdAttribute, PacketDataAttribute, SequenceAttribute, SrcChannelIdAttribute,
     SrcPortIdAttribute, TimeoutHeightAttribute, TimeoutTimestampAttribute,
 };
-
 use super::acknowledgement::Acknowledgement;
 use super::channel::Order;
 use super::packet::Sequence;
 use super::timeout::TimeoutHeight;
 use super::Version;
+use crate::core::ics04_channel::error::ChannelError;
+use crate::core::ics04_channel::packet::Packet;
+use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+use crate::core::timestamp::Timestamp;
+use crate::prelude::*;
 
 /// Channel event types
 const CHANNEL_OPEN_INIT_EVENT: &str = "channel_open_init";
@@ -1121,8 +1119,9 @@ impl TryFrom<TimeoutPacket> for abci::Event {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tendermint::abci::Event as AbciEvent;
+
+    use super::*;
 
     #[test]
     fn ibc_to_abci_channel_events() {

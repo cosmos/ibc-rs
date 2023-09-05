@@ -1,14 +1,13 @@
 //! Definition of domain type message `MsgUpdateClient`.
 
-use crate::core::Msg;
-use crate::prelude::*;
-
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::core::Msg;
+use crate::prelude::*;
 use crate::signer::Signer;
 
 pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
@@ -69,13 +68,11 @@ impl From<MsgUpdateClient> for RawMsgUpdateClient {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use test_log::test;
-
     use ibc_proto::google::protobuf::Any;
     use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;
+    use test_log::test;
 
+    use super::*;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_ics07_header;
     use crate::core::ics02_client::msgs::MsgUpdateClient;
     use crate::core::ics24_host::identifier::ClientId;

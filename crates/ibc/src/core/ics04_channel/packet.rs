@@ -1,7 +1,5 @@
 //! Defines the packet type
 
-use crate::prelude::*;
-
 use core::str::FromStr;
 
 use ibc_proto::ibc::core::channel::v1::Packet as RawPacket;
@@ -9,7 +7,9 @@ use ibc_proto::ibc::core::channel::v1::Packet as RawPacket;
 use super::timeout::TimeoutHeight;
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
-use crate::core::timestamp::{Expiry::Expired, Timestamp};
+use crate::core::timestamp::Expiry::Expired;
+use crate::core::timestamp::Timestamp;
+use crate::prelude::*;
 use crate::Height;
 
 /// Enumeration of proof carrying ICS4 message, helper for relayer.
@@ -289,11 +289,11 @@ impl From<Packet> for RawPacket {
 
 #[cfg(test)]
 pub mod test_utils {
-    use crate::prelude::*;
     use ibc_proto::ibc::core::channel::v1::Packet as RawPacket;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 
     use crate::core::ics24_host::identifier::{ChannelId, PortId};
+    use crate::prelude::*;
 
     /// Returns a dummy `RawPacket`, for testing only!
     pub fn get_dummy_raw_packet(timeout_height: u64, timeout_timestamp: u64) -> RawPacket {
@@ -315,15 +315,13 @@ pub mod test_utils {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
-
-    use test_log::test;
-
     use ibc_proto::ibc::core::channel::v1::Packet as RawPacket;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
+    use test_log::test;
 
     use crate::core::ics04_channel::packet::test_utils::get_dummy_raw_packet;
     use crate::core::ics04_channel::packet::Packet;
+    use crate::prelude::*;
 
     #[test]
     fn packet_try_from_raw() {

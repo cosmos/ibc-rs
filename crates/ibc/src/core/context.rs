@@ -1,12 +1,14 @@
-use crate::prelude::*;
-
-use crate::signer::Signer;
 use alloc::string::String;
 use core::time::Duration;
+
 use derive_more::From;
 use displaydoc::Display;
 use ibc_proto::google::protobuf::Any;
 
+use super::ics02_client::client_state::ClientState;
+use super::ics02_client::consensus_state::ConsensusState;
+use super::ics02_client::ClientExecutionContext;
+use super::ics24_host::identifier::PortId;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::ConnectionEnd;
@@ -17,23 +19,18 @@ use crate::core::ics03_connection::version::{
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::context::calculate_block_delay;
-use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics04_channel::error::PacketError;
+use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::identifier::ConnectionId;
+use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
     ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use crate::core::timestamp::Timestamp;
+use crate::prelude::*;
+use crate::signer::Signer;
 use crate::Height;
-
-use super::ics02_client::client_state::ClientState;
-use super::ics02_client::consensus_state::ConsensusState;
-use super::ics02_client::ClientExecutionContext;
-use super::ics24_host::identifier::PortId;
 
 /// Top-level error
 #[derive(Debug, Display, From)]

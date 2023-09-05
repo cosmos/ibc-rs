@@ -1,10 +1,6 @@
 //! Merkle proof utilities
 
-use crate::prelude::*;
-
-use ibc_proto::ibc::core::commitment::v1::MerklePath;
-use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
-use ibc_proto::ibc::core::commitment::v1::MerkleRoot;
+use ibc_proto::ibc::core::commitment::v1::{MerklePath, MerkleProof as RawMerkleProof, MerkleRoot};
 use ibc_proto::ics23::commitment_proof::Proof;
 use ibc_proto::ics23::{
     calculate_existence_root, verify_membership, verify_non_membership, CommitmentProof,
@@ -14,6 +10,7 @@ use ibc_proto::ics23::{
 use crate::core::ics23_commitment::commitment::{CommitmentPrefix, CommitmentRoot};
 use crate::core::ics23_commitment::error::CommitmentError;
 use crate::core::ics23_commitment::specs::ProofSpecs;
+use crate::prelude::*;
 
 pub fn apply_prefix(prefix: &CommitmentPrefix, mut path: Vec<String>) -> MerklePath {
     let mut key_path: Vec<String> = vec![format!("{prefix:?}")];

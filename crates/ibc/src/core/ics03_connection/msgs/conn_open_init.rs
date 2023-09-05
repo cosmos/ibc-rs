@@ -1,5 +1,3 @@
-use crate::prelude::*;
-
 use core::time::Duration;
 
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenInit as RawMsgConnectionOpenInit;
@@ -10,6 +8,7 @@ use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::Msg;
+use crate::prelude::*;
 use crate::signer::Signer;
 
 pub(crate) const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenInit";
@@ -39,10 +38,8 @@ impl Msg for MsgConnectionOpenInit {
 /// `BorshSerialize` and `BorshDeserialize` on `MsgConnectionOpenInit`
 #[cfg(feature = "borsh")]
 mod borsh_impls {
-    use borsh::{
-        maybestd::io::{self, Read},
-        BorshDeserialize, BorshSerialize,
-    };
+    use borsh::maybestd::io::{self, Read};
+    use borsh::{BorshDeserialize, BorshSerialize};
 
     use super::*;
 
@@ -133,16 +130,16 @@ impl From<MsgConnectionOpenInit> for RawMsgConnectionOpenInit {
 
 #[cfg(test)]
 pub mod test_util {
-    use crate::core::ics03_connection::connection::Counterparty;
-    use crate::prelude::*;
     use ibc_proto::ibc::core::connection::v1::{
         MsgConnectionOpenInit as RawMsgConnectionOpenInit, Version as RawVersion,
     };
 
+    use crate::core::ics03_connection::connection::Counterparty;
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
     use crate::core::ics03_connection::version::Version;
     use crate::core::ics24_host::identifier::ClientId;
+    use crate::prelude::*;
     use crate::test_utils::get_dummy_bech32_account;
 
     /// Extends the implementation with additional helper methods.
@@ -200,16 +197,15 @@ pub mod test_util {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
-
+    use ibc_proto::ibc::core::connection::v1::{
+        Counterparty as RawCounterparty, MsgConnectionOpenInit as RawMsgConnectionOpenInit,
+    };
     use test_log::test;
-
-    use ibc_proto::ibc::core::connection::v1::Counterparty as RawCounterparty;
-    use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenInit as RawMsgConnectionOpenInit;
 
     use super::MsgConnectionOpenInit;
     use crate::core::ics03_connection::msgs::conn_open_init::test_util::get_dummy_raw_msg_conn_open_init;
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
+    use crate::prelude::*;
 
     #[test]
     fn parse_connection_open_init_msg() {

@@ -1,6 +1,4 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the client module.
-use crate::prelude::*;
-
 use derive_more::From;
 use subtle_encoding::hex;
 use tendermint::abci;
@@ -8,6 +6,7 @@ use tendermint::abci;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::height::Height;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::prelude::*;
 
 /// Client event types
 const CREATE_CLIENT_EVENT: &str = "create_client";
@@ -421,13 +420,15 @@ impl From<UpgradeClient> for abci::Event {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
+    use ibc_proto::google::protobuf::Any;
+    use prost::Message;
+    use tendermint::abci::Event as AbciEvent;
+
     use super::*;
     use crate::core::timestamp::Timestamp;
     use crate::mock::header::MockHeader;
-    use ibc_proto::google::protobuf::Any;
-    use prost::Message;
-    use std::str::FromStr;
-    use tendermint::abci::Event as AbciEvent;
 
     #[test]
     fn ibc_to_abci_client_events() {

@@ -1,13 +1,11 @@
-use crate::prelude::*;
-
-use ibc_proto::protobuf::Protobuf;
-
 use ibc_proto::ibc::core::channel::v1::MsgRecvPacket as RawMsgRecvPacket;
+use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::Msg;
+use crate::prelude::*;
 use crate::signer::Signer;
 use crate::Height;
 
@@ -78,6 +76,9 @@ impl From<MsgRecvPacket> for RawMsgRecvPacket {
 
 #[cfg(test)]
 pub mod test_util {
+    use core::ops::Add;
+    use core::time::Duration;
+
     use ibc_proto::ibc::core::channel::v1::MsgRecvPacket as RawMsgRecvPacket;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 
@@ -88,8 +89,6 @@ pub mod test_util {
     use crate::core::timestamp::Timestamp;
     use crate::signer::Signer;
     use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
-    use core::ops::Add;
-    use core::time::Duration;
 
     impl MsgRecvPacket {
         pub fn new(
@@ -128,15 +127,13 @@ pub mod test_util {
 
 #[cfg(test)]
 mod test {
-    use crate::prelude::*;
-
-    use test_log::test;
-
     use ibc_proto::ibc::core::channel::v1::MsgRecvPacket as RawMsgRecvPacket;
+    use test_log::test;
 
     use crate::core::ics04_channel::error::PacketError;
     use crate::core::ics04_channel::msgs::recv_packet::test_util::get_dummy_raw_msg_recv_packet;
     use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
+    use crate::prelude::*;
     use crate::test_utils::get_dummy_bech32_account;
 
     #[test]
