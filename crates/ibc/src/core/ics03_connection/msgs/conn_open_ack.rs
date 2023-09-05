@@ -20,6 +20,7 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenAck"
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgConnectionOpenAck {
     /// ConnectionId that chain A has chosen for it's ConnectionEnd
@@ -27,6 +28,7 @@ pub struct MsgConnectionOpenAck {
     /// ConnectionId that chain B has chosen for it's ConnectionEnd
     pub conn_id_on_b: ConnectionId,
     /// ClientState of client tracking chain A on chain B
+    #[cfg_attr(feature = "schema", schemars(with = "crate::utils::schema::AnySchema"))]
     pub client_state_of_a_on_b: Any,
     /// proof of ConnectionEnd stored on Chain B during ConnOpenTry
     pub proof_conn_end_on_b: CommitmentProofBytes,

@@ -1,5 +1,5 @@
 //! Defines the client message types that are sent to the chain by the relayer.
-
+use crate::prelude::*;
 use ibc_proto::google::protobuf::Any;
 
 use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
@@ -20,6 +20,7 @@ pub mod upgrade_client;
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ClientMsg {
     CreateClient(MsgCreateClient),

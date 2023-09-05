@@ -40,6 +40,7 @@ pub trait Msg: Clone {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MsgEnvelope {
     Client(ClientMsg),

@@ -66,6 +66,7 @@ impl core::fmt::Display for PacketMsgType {
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 /// The sequence number of a packet enforces ordering among packets from the same source.
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Sequence(u64);
@@ -127,6 +128,7 @@ impl core::fmt::Display for Sequence {
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Default, Hash, PartialEq, Eq)]
 pub struct Packet {
     pub seq_on_a: Sequence,

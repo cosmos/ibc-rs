@@ -1,6 +1,8 @@
 //! Message definitions for all ICS4 domain types: channel open & close handshake datagrams, as well
 //! as packets.
 
+use crate::prelude::*;
+
 pub(crate) mod acknowledgement;
 pub(crate) mod chan_close_confirm;
 pub(crate) mod chan_close_init;
@@ -35,6 +37,7 @@ use crate::core::ics24_host::identifier::PortId;
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChannelMsg {
     OpenInit(MsgChannelOpenInit),
@@ -50,6 +53,7 @@ pub enum ChannelMsg {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PacketMsg {
     Recv(MsgRecvPacket),

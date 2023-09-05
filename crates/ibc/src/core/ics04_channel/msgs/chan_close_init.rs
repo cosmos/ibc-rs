@@ -19,6 +19,7 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCloseInit";
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelCloseInit {
     pub port_id_on_a: PortId,

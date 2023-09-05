@@ -17,6 +17,7 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenInit
 /// Per our convention, this message is sent to chain A.
 /// The handler will check proofs of chain B.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct MsgConnectionOpenInit {
     /// ClientId on chain A that the connection is being opened for
     pub client_id_on_a: ClientId,

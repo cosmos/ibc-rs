@@ -22,14 +22,17 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpgradeClient";
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgUpgradeClient {
     // client unique identifier
     pub client_id: ClientId,
     // Upgraded client state
+    #[cfg_attr(feature = "schema", schemars(with = "crate::utils::schema::AnySchema"))]
     pub upgraded_client_state: Any,
     // Upgraded consensus state, only contains enough information
     // to serve as a basis of trust in update logic
+    #[cfg_attr(feature = "schema", schemars(with = "crate::utils::schema::AnySchema"))]
     pub upgraded_consensus_state: Any,
     // proof that old chain committed to new client
     pub proof_upgrade_client: CommitmentProofBytes,

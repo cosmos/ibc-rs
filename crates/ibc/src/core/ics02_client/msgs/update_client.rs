@@ -21,9 +21,11 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgUpdateClient {
     pub client_id: ClientId,
+    #[cfg_attr(feature = "schema", schemars(with = "crate::utils::schema::AnySchema"))]
     pub client_message: Any,
     pub signer: Signer,
 }
