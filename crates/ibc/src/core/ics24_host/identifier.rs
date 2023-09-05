@@ -182,6 +182,7 @@ fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, u64), IdentifierEr
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Into)]
 pub struct ClientId(String);
 

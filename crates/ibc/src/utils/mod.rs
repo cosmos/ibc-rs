@@ -2,3 +2,4 @@
 
 pub mod macros;
 pub mod pretty;
+pub(crate) mod schema;

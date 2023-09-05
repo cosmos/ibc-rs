@@ -16,6 +16,7 @@ use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
+use crate::prelude::*;
 
 pub mod conn_open_ack;
 pub mod conn_open_confirm;
@@ -27,6 +28,7 @@ pub mod conn_open_try;
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConnectionMsg {
     OpenInit(MsgConnectionOpenInit),

@@ -68,6 +68,7 @@ impl From<Vec<u8>> for CommitmentRoot {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, PartialEq, Eq)]
 pub struct CommitmentProofBytes {
     #[cfg_attr(
@@ -150,6 +151,7 @@ impl TryFrom<CommitmentProofBytes> for RawMerkleProof {
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, PartialEq, Eq, Hash, Default)]
 pub struct CommitmentPrefix {
     bytes: Vec<u8>,

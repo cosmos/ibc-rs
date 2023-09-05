@@ -377,6 +377,7 @@ impl ConnectionEnd {
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct Counterparty {
     client_id: ClientId,

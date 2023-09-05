@@ -17,6 +17,7 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenConf
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgConnectionOpenConfirm {
     /// ConnectionId that chain B has chosen for it's ConnectionEnd

@@ -17,11 +17,13 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgSubmitMisbehaviour {
     /// client unique identifier
     pub client_id: ClientId,
     /// misbehaviour used for freezing the light client
+    #[cfg_attr(feature = "schema", schemars(with = "crate::utils::schema::AnySchema"))]
     pub misbehaviour: ProtoAny,
     /// signer address
     pub signer: Signer,
