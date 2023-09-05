@@ -1,4 +1,5 @@
-use tendermint::{block, consensus, evidence, public_key::Algorithm};
+use tendermint::public_key::Algorithm;
+use tendermint::{block, consensus, evidence};
 
 use crate::applications::transfer::context::{
     TokenTransferExecutionContext, TokenTransferValidationContext,

@@ -1,25 +1,23 @@
 //! Defines the main context traits and IBC module callbacks
-use crate::prelude::*;
-
 use sha2::{Digest, Sha256};
 
 use super::ack_success_b64;
 use super::error::TokenTransferError;
 use crate::applications::transfer::events::{AckEvent, AckStatusEvent, RecvEvent, TimeoutEvent};
 use crate::applications::transfer::packet::PacketData;
-use crate::applications::transfer::relay::refund_packet_token_execute;
+use crate::applications::transfer::relay::on_recv_packet::process_recv_packet_execute;
 use crate::applications::transfer::relay::{
-    on_recv_packet::process_recv_packet_execute, refund_packet_token_validate,
+    refund_packet_token_execute, refund_packet_token_validate,
 };
 use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
-use crate::core::ics04_channel::acknowledgement::Acknowledgement;
-use crate::core::ics04_channel::acknowledgement::AcknowledgementStatus;
+use crate::core::ics04_channel::acknowledgement::{Acknowledgement, AcknowledgementStatus};
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::router::ModuleExtras;
 use crate::core::ContextError;
+use crate::prelude::*;
 use crate::signer::Signer;
 
 /// Methods required in token transfer validation, to be implemented by the host
@@ -429,9 +427,9 @@ pub fn on_timeout_packet_execute<D>(
 
 #[cfg(test)]
 pub(crate) mod test {
-    use super::*;
     use subtle_encoding::bech32;
 
+    use super::*;
     use crate::applications::transfer::context::cosmos_adr028_escrow_address;
     use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::Version;

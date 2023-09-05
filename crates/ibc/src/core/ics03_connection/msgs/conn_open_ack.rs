@@ -1,5 +1,3 @@
-use crate::prelude::*;
-
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenAck as RawMsgConnectionOpenAck;
 use ibc_proto::protobuf::Protobuf;
@@ -9,6 +7,7 @@ use crate::core::ics03_connection::version::Version;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::Msg;
+use crate::prelude::*;
 use crate::signer::Signer;
 use crate::Height;
 
@@ -20,6 +19,7 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenAck"
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgConnectionOpenAck {
     /// ConnectionId that chain A has chosen for it's ConnectionEnd
@@ -27,6 +27,7 @@ pub struct MsgConnectionOpenAck {
     /// ConnectionId that chain B has chosen for it's ConnectionEnd
     pub conn_id_on_b: ConnectionId,
     /// ClientState of client tracking chain A on chain B
+    #[cfg_attr(feature = "schema", schemars(with = "crate::utils::schema::AnySchema"))]
     pub client_state_of_a_on_b: Any,
     /// proof of ConnectionEnd stored on Chain B during ConnOpenTry
     pub proof_conn_end_on_b: CommitmentProofBytes,
@@ -132,18 +133,17 @@ impl From<MsgConnectionOpenAck> for RawMsgConnectionOpenAck {
 
 #[cfg(test)]
 pub mod test_util {
-    use crate::core::ics02_client::height::Height;
-    use crate::mock::client_state::MockClientState;
-    use crate::mock::header::MockHeader;
-    use crate::prelude::*;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenAck as RawMsgConnectionOpenAck;
 
+    use super::MsgConnectionOpenAck;
+    use crate::core::ics02_client::height::Height;
     use crate::core::ics03_connection::version::Version;
     use crate::core::ics24_host::identifier::ConnectionId;
+    use crate::mock::client_state::MockClientState;
+    use crate::mock::header::MockHeader;
+    use crate::prelude::*;
     use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
-
-    use super::MsgConnectionOpenAck;
 
     /// Testing-specific helper methods.
     impl MsgConnectionOpenAck {
@@ -186,15 +186,13 @@ pub mod test_util {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
-
-    use test_log::test;
-
     use ibc_proto::ibc::core::client::v1::Height;
     use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenAck as RawMsgConnectionOpenAck;
+    use test_log::test;
 
     use crate::core::ics03_connection::msgs::conn_open_ack::test_util::get_dummy_raw_msg_conn_open_ack;
     use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
+    use crate::prelude::*;
 
     #[test]
     fn parse_connection_open_ack_msg() {

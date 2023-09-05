@@ -1,8 +1,9 @@
 //! ICS 07: Tendermint Client implements a client verification algorithm for blockchains which use
 //! the Tendermint consensus algorithm.
 
-use crate::core::ics02_client::client_type::ClientType;
 use core::str::FromStr;
+
+use crate::core::ics02_client::client_type::ClientType;
 
 pub mod client_state;
 pub mod consensus_state;

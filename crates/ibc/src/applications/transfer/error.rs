@@ -2,17 +2,17 @@
 
 use core::convert::Infallible;
 use core::str::Utf8Error;
+
 use displaydoc::Display;
 use ibc_proto::protobuf::Error as TendermintProtoError;
 use uint::FromDecStrErr;
 
+use super::Amount;
 use crate::core::ics04_channel::acknowledgement::StatusValue;
 use crate::core::ics04_channel::channel::Order;
 use crate::core::ics24_host::identifier::{ChannelId, IdentifierError, PortId};
 use crate::core::ContextError;
 use crate::prelude::*;
-
-use super::Amount;
 
 #[derive(Display, Debug)]
 pub enum TokenTransferError {

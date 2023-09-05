@@ -1,18 +1,14 @@
 //! Defines the types that define a connection
 
-use crate::prelude::*;
-use ibc_proto::protobuf::Protobuf;
-
+use core::fmt::{Display, Error as FmtError, Formatter};
 use core::time::Duration;
-use core::{
-    fmt::{Display, Error as FmtError, Formatter},
-    u64,
-};
+use core::u64;
 
 use ibc_proto::ibc::core::connection::v1::{
     ConnectionEnd as RawConnectionEnd, Counterparty as RawCounterparty,
     IdentifiedConnection as RawIdentifiedConnection,
 };
+use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::error::ConnectionError;
@@ -20,6 +16,7 @@ use crate::core::ics03_connection::version::Version;
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::core::timestamp::ZERO_DURATION;
+use crate::prelude::*;
 
 #[cfg_attr(
     feature = "parity-scale-codec",
@@ -380,6 +377,7 @@ impl ConnectionEnd {
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct Counterparty {
     client_id: ClientId,

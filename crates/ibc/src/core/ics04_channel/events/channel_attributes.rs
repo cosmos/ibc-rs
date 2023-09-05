@@ -3,10 +3,8 @@
 use derive_more::From;
 use tendermint::abci;
 
-use crate::core::{
-    ics04_channel::Version,
-    ics24_host::identifier::{ChannelId, ConnectionId, PortId},
-};
+use crate::core::ics04_channel::Version;
+use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 
 const CONNECTION_ID_ATTRIBUTE_KEY: &str = "connection_id";
 const CHANNEL_ID_ATTRIBUTE_KEY: &str = "channel_id";

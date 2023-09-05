@@ -1,7 +1,5 @@
 //! Definition of domain type message `MsgSubmitMisbehaviour`.
 
-use crate::prelude::*;
-
 use ibc_proto::google::protobuf::Any as ProtoAny;
 use ibc_proto::ibc::core::client::v1::MsgSubmitMisbehaviour as RawMsgSubmitMisbehaviour;
 use ibc_proto::protobuf::Protobuf;
@@ -9,6 +7,7 @@ use ibc_proto::protobuf::Protobuf;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::Msg;
+use crate::prelude::*;
 use crate::signer::Signer;
 
 pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
@@ -18,11 +17,13 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgSubmitMisbehaviour {
     /// client unique identifier
     pub client_id: ClientId,
     /// misbehaviour used for freezing the light client
+    #[cfg_attr(feature = "schema", schemars(with = "crate::utils::schema::AnySchema"))]
     pub misbehaviour: ProtoAny,
     /// signer address
     pub signer: Signer,

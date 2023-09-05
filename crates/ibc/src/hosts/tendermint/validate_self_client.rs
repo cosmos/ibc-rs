@@ -1,8 +1,9 @@
-use core::time::Duration;
-
 use alloc::format;
 use alloc::string::{String, ToString};
+use core::time::Duration;
+
 use ibc_proto::google::protobuf::Any;
+use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 
 use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 use crate::core::ics02_client::client_state::ClientStateCommon;
@@ -12,8 +13,6 @@ use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::ChainId;
 use crate::core::ContextError;
 use crate::Height;
-
-use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 
 /// Provides an implementation of `ValidationContext::validate_self_client` for
 /// Tendermint-based hosts.

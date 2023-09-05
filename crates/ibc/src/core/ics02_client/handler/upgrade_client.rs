@@ -1,17 +1,17 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpgradeAnyClient`.
 //!
-use crate::prelude::*;
-
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::client_state::ClientStateExecution;
-use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
+use crate::core::ics02_client::client_state::{
+    ClientStateCommon, ClientStateExecution, ClientStateValidation,
+};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::{ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
@@ -85,19 +85,15 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
     use crate::clients::ics07_tendermint::client_type;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
-
     use crate::core::ics02_client::error::UpgradeClientError;
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics24_host::identifier::ClientId;
-    use crate::downcast;
-    use crate::Height;
-
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::{AnyClientState, AnyConsensusState, MockContext};
+    use crate::{downcast, Height};
 
     enum Ctx {
         Default,

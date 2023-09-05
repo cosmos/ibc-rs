@@ -1,13 +1,14 @@
+use ibc_proto::ibc::core::channel::v1::MsgChannelOpenAck as RawMsgChannelOpenAck;
+use ibc_proto::protobuf::Protobuf;
+
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::Version;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::Msg;
+use crate::prelude::*;
 use crate::signer::Signer;
-use crate::{prelude::*, Height};
-
-use ibc_proto::ibc::core::channel::v1::MsgChannelOpenAck as RawMsgChannelOpenAck;
-use ibc_proto::protobuf::Protobuf;
+use crate::Height;
 
 pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenAck";
 
@@ -18,6 +19,7 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenAck";
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelOpenAck {
     pub port_id_on_a: PortId,
@@ -77,12 +79,12 @@ impl From<MsgChannelOpenAck> for RawMsgChannelOpenAck {
 
 #[cfg(test)]
 pub mod test_util {
-    use crate::prelude::*;
     use ibc_proto::ibc::core::channel::v1::MsgChannelOpenAck as RawMsgChannelOpenAck;
+    use ibc_proto::ibc::core::client::v1::Height;
 
     use crate::core::ics24_host::identifier::{ChannelId, PortId};
+    use crate::prelude::*;
     use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
-    use ibc_proto::ibc::core::client::v1::Height;
 
     /// Returns a dummy `RawMsgChannelOpenAck`, for testing only!
     pub fn get_dummy_raw_msg_chan_open_ack(proof_height: u64) -> RawMsgChannelOpenAck {
@@ -103,14 +105,13 @@ pub mod test_util {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
     use ibc_proto::ibc::core::channel::v1::MsgChannelOpenAck as RawMsgChannelOpenAck;
+    use ibc_proto::ibc::core::client::v1::Height;
     use test_log::test;
 
     use crate::core::ics04_channel::msgs::chan_open_ack::test_util::get_dummy_raw_msg_chan_open_ack;
     use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
-
-    use ibc_proto::ibc::core::client::v1::Height;
+    use crate::prelude::*;
 
     #[test]
     fn parse_channel_open_ack_msg() {

@@ -1,6 +1,7 @@
 //! Defines acknowledgment types used by various IBC messages and applications.
 
 use core::fmt::{Display, Error as FmtError, Formatter};
+
 use derive_more::Into;
 
 use super::error::PacketError;
@@ -22,6 +23,7 @@ use crate::prelude::*;
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq, Into)]
 pub struct Acknowledgement(Vec<u8>);
 
@@ -142,7 +144,8 @@ impl From<AcknowledgementStatus> for Acknowledgement {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::applications::transfer::{ack_success_b64, error::TokenTransferError};
+    use crate::applications::transfer::ack_success_b64;
+    use crate::applications::transfer::error::TokenTransferError;
 
     #[test]
     fn test_ack_ser() {

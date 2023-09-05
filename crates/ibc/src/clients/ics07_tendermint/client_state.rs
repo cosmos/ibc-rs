@@ -4,8 +4,6 @@
 mod misbehaviour;
 mod update_client;
 
-use crate::prelude::*;
-
 use core::cmp::max;
 use core::convert::{TryFrom, TryInto};
 use core::str::FromStr;
@@ -17,12 +15,16 @@ use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
 use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
-
 use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::ProdVerifier;
 
+use super::trust_threshold::TrustThreshold;
+use super::{
+    client_type as tm_client_type, ExecutionContext as TmExecutionContext,
+    ValidationContext as TmValidationContext,
+};
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
@@ -40,16 +42,12 @@ use crate::core::ics23_commitment::commitment::{
 use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::core::ics24_host::path::Path;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, UpgradeClientPath};
-use crate::core::timestamp::ZERO_DURATION;
-use crate::Height;
-
-use super::trust_threshold::TrustThreshold;
-use super::{
-    client_type as tm_client_type, ExecutionContext as TmExecutionContext,
-    ValidationContext as TmValidationContext,
+use crate::core::ics24_host::path::{
+    ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
+use crate::core::timestamp::ZERO_DURATION;
+use crate::prelude::*;
+use crate::Height;
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
@@ -735,8 +733,9 @@ impl TryFrom<Any> for ClientState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        use bytes::Buf;
         use core::ops::Deref;
+
+        use bytes::Buf;
 
         fn decode_client_state<B: Buf>(buf: B) -> Result<ClientState, Error> {
             RawTmClientState::decode(buf)
@@ -783,22 +782,21 @@ fn check_header_trusted_next_validator_set(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
-    use crate::Height;
     use core::time::Duration;
-    use test_log::test;
 
     use ibc_proto::google::protobuf::Any;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use ibc_proto::ics23::ProofSpec as Ics23ProofSpec;
+    use test_log::test;
 
+    use super::*;
     use crate::clients::ics07_tendermint::client_state::AllowUpdate;
     use crate::clients::ics07_tendermint::error::Error;
+    use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::timestamp::ZERO_DURATION;
+    use crate::Height;
 
     #[derive(Clone, Debug, PartialEq)]
     struct ClientStateParams {
@@ -1120,10 +1118,11 @@ mod serde_tests {
 
 #[cfg(any(test, feature = "mocks"))]
 pub mod test_util {
-    use crate::prelude::*;
     use core::str::FromStr;
     use core::time::Duration;
 
+    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
+    use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
     use tendermint::block::Header;
 
     use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState};
@@ -1131,8 +1130,7 @@ pub mod test_util {
     use crate::core::ics02_client::height::Height;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ChainId;
-    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-    use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
+    use crate::prelude::*;
 
     impl ClientState {
         pub fn new_dummy_from_raw(frozen_height: RawHeight) -> Result<Self, Error> {

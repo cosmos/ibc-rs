@@ -4,7 +4,8 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 
-use crate::core::ics02_client::{error::ClientError, height::Height};
+use crate::core::ics02_client::error::ClientError;
+use crate::core::ics02_client::height::Height;
 use crate::prelude::*;
 
 /// Indicates a consensus height on the destination chain after which the packet
@@ -150,8 +151,9 @@ impl Display for TimeoutHeight {
 
 #[cfg(feature = "serde")]
 mod tests {
-    use super::TimeoutHeight;
     use serde::{Deserialize, Serialize};
+
+    use super::TimeoutHeight;
 
     impl Serialize for TimeoutHeight {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

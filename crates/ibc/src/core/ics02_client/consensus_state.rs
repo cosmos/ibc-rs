@@ -1,15 +1,14 @@
 //! Defines the trait to be implemented by all concrete consensus state types
 
-use crate::prelude::*;
-
 use core::marker::{Send, Sync};
-
-use crate::core::ics23_commitment::commitment::CommitmentRoot;
-use crate::core::timestamp::Timestamp;
 
 /// Derive macro that implements [`ConsensusState`] for enums containing
 /// variants that implement [`ConsensusState`]
 pub use ibc_derive::ConsensusState;
+
+use crate::core::ics23_commitment::commitment::CommitmentRoot;
+use crate::core::timestamp::Timestamp;
+use crate::prelude::*;
 
 /// Defines methods that all `ConsensusState`s should provide.
 ///

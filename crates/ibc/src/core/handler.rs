@@ -202,51 +202,53 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use core::default::Default;
     use core::time::Duration;
 
     use test_log::test;
 
+    use super::*;
     use crate::applications::transfer::error::TokenTransferError;
-    use crate::applications::transfer::send_transfer;
-    use crate::applications::transfer::{msgs::transfer::MsgTransfer, MODULE_ID_STR};
+    use crate::applications::transfer::msgs::transfer::MsgTransfer;
+    use crate::applications::transfer::{send_transfer, MODULE_ID_STR};
     use crate::core::dispatch;
     use crate::core::events::{IbcEvent, MessageEvent};
-    use crate::core::ics02_client::msgs::{
-        create_client::MsgCreateClient, update_client::MsgUpdateClient,
-        upgrade_client::MsgUpgradeClient, ClientMsg,
-    };
+    use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
+    use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
+    use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
+    use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics03_connection::connection::{
         ConnectionEnd, Counterparty as ConnCounterparty, State as ConnState,
     };
-    use crate::core::ics03_connection::msgs::{
-        conn_open_ack::MsgConnectionOpenAck, conn_open_init::MsgConnectionOpenInit,
-        conn_open_try::MsgConnectionOpenTry, ConnectionMsg,
-    };
+    use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
+    use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
+    use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
+    use crate::core::ics03_connection::msgs::ConnectionMsg;
     use crate::core::ics03_connection::version::Version as ConnVersion;
-    use crate::core::ics04_channel::channel::ChannelEnd;
-    use crate::core::ics04_channel::channel::Counterparty as ChannelCounterparty;
-    use crate::core::ics04_channel::channel::Order as ChannelOrder;
-    use crate::core::ics04_channel::channel::State as ChannelState;
+    use crate::core::ics04_channel::channel::{
+        ChannelEnd, Counterparty as ChannelCounterparty, Order as ChannelOrder,
+        State as ChannelState,
+    };
     use crate::core::ics04_channel::error::ChannelError;
     use crate::core::ics04_channel::msgs::acknowledgement::test_util::get_dummy_raw_msg_ack_with_packet;
     use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
+    use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
+    use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
+    use crate::core::ics04_channel::msgs::chan_close_init::test_util::get_dummy_raw_msg_chan_close_init;
+    use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
+    use crate::core::ics04_channel::msgs::chan_open_ack::test_util::get_dummy_raw_msg_chan_open_ack;
+    use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
     use crate::core::ics04_channel::msgs::chan_open_confirm::test_util::get_dummy_raw_msg_chan_open_confirm;
     use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
-    use crate::core::ics04_channel::msgs::{
-        chan_close_confirm::{
-            test_util::get_dummy_raw_msg_chan_close_confirm, MsgChannelCloseConfirm,
-        },
-        chan_close_init::{test_util::get_dummy_raw_msg_chan_close_init, MsgChannelCloseInit},
-        chan_open_ack::{test_util::get_dummy_raw_msg_chan_open_ack, MsgChannelOpenAck},
-        chan_open_init::{test_util::get_dummy_raw_msg_chan_open_init, MsgChannelOpenInit},
-        chan_open_try::{test_util::get_dummy_raw_msg_chan_open_try, MsgChannelOpenTry},
-        recv_packet::{test_util::get_dummy_raw_msg_recv_packet, MsgRecvPacket},
-        timeout_on_close::{test_util::get_dummy_raw_msg_timeout_on_close, MsgTimeoutOnClose},
-        ChannelMsg, PacketMsg,
-    };
+    use crate::core::ics04_channel::msgs::chan_open_init::test_util::get_dummy_raw_msg_chan_open_init;
+    use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
+    use crate::core::ics04_channel::msgs::chan_open_try::test_util::get_dummy_raw_msg_chan_open_try;
+    use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
+    use crate::core::ics04_channel::msgs::recv_packet::test_util::get_dummy_raw_msg_recv_packet;
+    use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
+    use crate::core::ics04_channel::msgs::timeout_on_close::test_util::get_dummy_raw_msg_timeout_on_close;
+    use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
+    use crate::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
     use crate::core::ics04_channel::timeout::TimeoutHeight;
     use crate::core::ics04_channel::Version as ChannelVersion;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;

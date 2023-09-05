@@ -1,7 +1,6 @@
 use super::client_state::ClientState;
 use super::consensus_state::ConsensusState;
-use crate::core::ics24_host::path::ClientConsensusStatePath;
-use crate::core::ics24_host::path::ClientStatePath;
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 use crate::core::ContextError;
 
 /// Defines the methods that all client `ExecutionContext`s (precisely the

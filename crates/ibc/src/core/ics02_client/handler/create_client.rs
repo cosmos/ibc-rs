@@ -1,18 +1,14 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
-use crate::prelude::*;
-
 use crate::core::context::ContextError;
-use crate::core::events::IbcEvent;
-use crate::core::events::MessageEvent;
-use crate::core::ics02_client::client_state::ClientStateCommon;
-use crate::core::ics02_client::client_state::ClientStateExecution;
+use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateExecution};
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::CreateClient;
 use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ExecutionContext;
-use crate::core::ValidationContext;
+use crate::core::{ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
@@ -104,10 +100,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use test_log::test;
 
+    use super::*;
     use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;

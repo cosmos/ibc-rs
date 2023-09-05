@@ -1,6 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{punctuated::Iter, DeriveInput, Ident, Variant};
+use syn::punctuated::Iter;
+use syn::{DeriveInput, Ident, Variant};
 
 use crate::utils::{get_enum_variant_type_path, Imports};
 

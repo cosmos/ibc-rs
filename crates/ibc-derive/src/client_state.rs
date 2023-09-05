@@ -4,11 +4,9 @@ use darling::FromDeriveInput;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::DeriveInput;
-
-use traits::{
-    client_state_common::impl_ClientStateCommon, client_state_execution::impl_ClientStateExecution,
-    client_state_validation::impl_ClientStateValidation,
-};
+use traits::client_state_common::impl_ClientStateCommon;
+use traits::client_state_execution::impl_ClientStateExecution;
+use traits::client_state_validation::impl_ClientStateValidation;
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(generics))]

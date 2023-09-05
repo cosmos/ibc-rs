@@ -3,6 +3,7 @@
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::context::ContextError;
+use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
@@ -11,12 +12,9 @@ use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenConfirm;
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-use crate::core::ics24_host::path::Path;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ConnectionPath};
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ConnectionPath, Path};
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
-
-use crate::core::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ContextError>
 where
@@ -173,11 +171,11 @@ impl LocalVars {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use core::str::FromStr;
+
     use test_log::test;
 
+    use super::*;
     use crate::core::events::IbcEvent;
     use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};

@@ -1,9 +1,5 @@
-use crate::prelude::*;
-
-use core::{
-    convert::{TryFrom, TryInto},
-    time::Duration,
-};
+use core::convert::{TryFrom, TryInto};
+use core::time::Duration;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenTry as RawMsgConnectionOpenTry;
@@ -15,6 +11,7 @@ use crate::core::ics03_connection::version::Version;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::Msg;
+use crate::prelude::*;
 use crate::signer::Signer;
 use crate::Height;
 
@@ -22,11 +19,13 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenTry"
 
 /// Per our convention, this message is sent to chain B.
 /// The handler will check proofs of chain A.
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgConnectionOpenTry {
     /// ClientId on B that the connection is being opened for
     pub client_id_on_b: ClientId,
     /// ClientState of client tracking chain B on chain A
+    #[cfg_attr(feature = "schema", schemars(with = "crate::utils::schema::AnySchema"))]
     pub client_state_of_b_on_a: Any,
     /// ClientId, ConnectionId and prefix of chain A
     pub counterparty: Counterparty,
@@ -63,10 +62,8 @@ impl Msg for MsgConnectionOpenTry {
 #[allow(deprecated)]
 #[cfg(feature = "borsh")]
 mod borsh_impls {
-    use borsh::{
-        maybestd::io::{self, Read},
-        BorshDeserialize, BorshSerialize,
-    };
+    use borsh::maybestd::io::{self, Read};
+    use borsh::{BorshDeserialize, BorshSerialize};
 
     use super::*;
 
@@ -248,17 +245,17 @@ impl From<MsgConnectionOpenTry> for RawMsgConnectionOpenTry {
 
 #[cfg(test)]
 pub mod test_util {
-    use crate::core::ics02_client::height::Height;
-    use crate::mock::client_state::MockClientState;
-    use crate::mock::header::MockHeader;
-    use crate::prelude::*;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenTry as RawMsgConnectionOpenTry;
 
+    use crate::core::ics02_client::height::Height;
     use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::mock::client_state::MockClientState;
+    use crate::mock::header::MockHeader;
+    use crate::prelude::*;
     use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
 
     /// Testing-specific helper methods.
@@ -320,17 +317,16 @@ pub mod test_util {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
-
-    use test_log::test;
-
     use ibc_proto::ibc::core::client::v1::Height;
-    use ibc_proto::ibc::core::connection::v1::Counterparty as RawCounterparty;
-    use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenTry as RawMsgConnectionOpenTry;
+    use ibc_proto::ibc::core::connection::v1::{
+        Counterparty as RawCounterparty, MsgConnectionOpenTry as RawMsgConnectionOpenTry,
+    };
+    use test_log::test;
 
     use crate::core::ics03_connection::msgs::conn_open_try::test_util::get_dummy_raw_msg_conn_open_try;
     use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
+    use crate::prelude::*;
 
     #[test]
     fn parse_connection_open_try_msg() {
