@@ -1,6 +1,7 @@
-use crate::core::{ics02_client::height::Height, ContextError, ValidationContext};
-
-use super::{connection::ConnectionEnd, error::ConnectionError};
+use super::connection::ConnectionEnd;
+use super::error::ConnectionError;
+use crate::core::ics02_client::height::Height;
+use crate::core::{ContextError, ValidationContext};
 
 pub fn verify_conn_delay_passed<Ctx>(
     ctx: &Ctx,

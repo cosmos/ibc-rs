@@ -1,7 +1,8 @@
+use displaydoc::Display;
+
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::{ics03_connection, RouterError};
 use crate::Height;
-use displaydoc::Display;
 
 #[derive(Debug, Display)]
 pub enum RelayerError {

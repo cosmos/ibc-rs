@@ -1,22 +1,20 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenConfirm`.
 
-use crate::core::ics02_client::error::ClientError;
-use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::State as ConnectionState;
-use crate::core::ics04_channel::channel::State;
-use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State as ChannelState};
+use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State, State as ChannelState};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::events::OpenConfirm;
 use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
-use crate::core::ics24_host::path::Path;
-use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
+use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath, Path};
 use crate::core::router::Module;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) fn chan_open_confirm_validate<ValCtx>(
     ctx_b: &ValCtx,
@@ -170,30 +168,28 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use rstest::*;
     use test_log::test;
 
-    use crate::core::ics03_connection::connection::ConnectionEnd;
-    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
-    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use super::*;
+    use crate::applications::transfer::MODULE_ID_STR;
+    use crate::core::ics03_connection::connection::{
+        ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
+    };
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
     use crate::core::ics04_channel::msgs::chan_open_confirm::test_util::get_dummy_raw_msg_chan_open_confirm;
     use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
     use crate::core::ics04_channel::Version;
-    use crate::core::ics24_host::identifier::ChannelId;
-    use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-    use crate::core::router::ModuleId;
-    use crate::core::router::Router;
+    use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId};
+    use crate::core::router::{ModuleId, Router};
     use crate::core::timestamp::ZERO_DURATION;
-    use crate::Height;
-
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::mock::router::MockRouter;
-    use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
+    use crate::test_utils::DummyTransferModule;
+    use crate::Height;
 
     pub struct Fixture {
         pub context: MockContext,

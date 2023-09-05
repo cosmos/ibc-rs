@@ -1,5 +1,6 @@
 use subtle_encoding::bech32;
-use tendermint::{block, consensus, evidence, public_key::Algorithm};
+use tendermint::public_key::Algorithm;
+use tendermint::{block, consensus, evidence};
 
 use crate::applications::transfer::context::{
     cosmos_adr028_escrow_address, TokenTransferExecutionContext, TokenTransferValidationContext,

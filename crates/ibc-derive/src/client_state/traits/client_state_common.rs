@@ -1,10 +1,8 @@
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use syn::{
-    punctuated::{Iter, Punctuated},
-    token::Comma,
-    Variant,
-};
+use syn::punctuated::{Iter, Punctuated};
+use syn::token::Comma;
+use syn::Variant;
 
 use crate::utils::{get_enum_variant_type_path, Imports};
 

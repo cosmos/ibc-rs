@@ -1,8 +1,3 @@
-use crate::core::ics02_client::client_state::Status;
-use crate::core::timestamp::Timestamp;
-use crate::core::ContextError;
-use crate::prelude::*;
-
 use core::str::FromStr;
 use core::time::Duration;
 
@@ -10,10 +5,9 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::mock::ClientState as RawMockClientState;
 use ibc_proto::protobuf::Protobuf;
 
-use crate::core::ics02_client::client_state::ClientStateCommon;
-use crate::core::ics02_client::client_state::ClientStateExecution;
-use crate::core::ics02_client::client_state::ClientStateValidation;
-use crate::core::ics02_client::client_state::UpdateKind;
+use crate::core::ics02_client::client_state::{
+    ClientStateCommon, ClientStateExecution, ClientStateValidation, Status, UpdateKind,
+};
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
 use crate::core::ics02_client::ClientExecutionContext;
@@ -21,13 +15,14 @@ use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::path::Path;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, Path};
+use crate::core::timestamp::Timestamp;
+use crate::core::ContextError;
 use crate::mock::client_state::client_type as mock_client_type;
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::mock::misbehaviour::Misbehaviour;
-
+use crate::prelude::*;
 use crate::Height;
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
@@ -106,8 +101,9 @@ impl TryFrom<Any> for MockClientState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        use bytes::Buf;
         use core::ops::Deref;
+
+        use bytes::Buf;
         use prost::Message;
 
         fn decode_client_state<B: Buf>(buf: B) -> Result<MockClientState, ClientError> {

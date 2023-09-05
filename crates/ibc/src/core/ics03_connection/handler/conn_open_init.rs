@@ -1,16 +1,15 @@
 //! Protocol logic specific to ICS3 messages of type `MsgConnectionOpenInit`.
-use crate::core::ics02_client::client_state::ClientStateValidation;
-use crate::core::ics02_client::error::ClientError;
-use crate::prelude::*;
-
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics02_client::client_state::ClientStateValidation;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::events::OpenInit;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics24_host::identifier::ConnectionId;
 use crate::core::ics24_host::path::{ClientConnectionPath, ConnectionPath};
 use crate::core::{ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
 where
@@ -90,8 +89,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use test_log::test;
 
+    use super::*;
     use crate::core::events::IbcEvent;
     use crate::core::ics03_connection::connection::State;
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
@@ -99,7 +99,6 @@ mod tests {
     use crate::core::ics03_connection::version::Version;
     use crate::mock::context::MockContext;
     use crate::Height;
-    use test_log::test;
 
     enum Ctx {
         Default,

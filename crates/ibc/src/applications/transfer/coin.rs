@@ -2,6 +2,7 @@
 
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::{from_utf8, FromStr};
+
 use ibc_proto::cosmos::base::v1beta1::Coin as ProtoCoin;
 use safe_regex::regex;
 

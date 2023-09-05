@@ -1,9 +1,9 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the connection module.
 
-use crate::prelude::*;
 use tendermint::abci;
 
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+use crate::prelude::*;
 
 /// Connection event types
 const CONNECTION_OPEN_INIT_EVENT: &str = "connection_open_init";
@@ -306,10 +306,12 @@ impl From<OpenConfirm> for abci::Event {
 #[cfg(test)]
 mod tests {
 
+    use std::str::FromStr;
+
+    use tendermint::abci::Event as AbciEvent;
+
     use super::*;
     use crate::core::ics02_client::client_type::ClientType;
-    use std::str::FromStr;
-    use tendermint::abci::Event as AbciEvent;
 
     #[test]
     fn ibc_to_abci_connection_events() {

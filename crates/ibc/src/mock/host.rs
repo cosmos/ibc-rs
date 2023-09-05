@@ -5,11 +5,11 @@ use core::str::FromStr;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
-
 use tendermint::block::Header as TmHeader;
 use tendermint_testgen::light_block::TmLightBlock;
 use tendermint_testgen::{Generator, LightBlock as TestgenLightBlock};
 
+use super::context::AnyConsensusState;
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::header::TENDERMINT_HEADER_TYPE_URL;
 use crate::core::ics02_client::error::ClientError;
@@ -19,8 +19,6 @@ use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::prelude::*;
 use crate::Height;
-
-use super::context::AnyConsensusState;
 
 /// Defines the different types of host chains that a mock context can emulate.
 /// The variants are as follows:

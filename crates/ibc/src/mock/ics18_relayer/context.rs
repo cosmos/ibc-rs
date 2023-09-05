@@ -1,8 +1,7 @@
-use crate::prelude::*;
-
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ContextError;
 use crate::mock::context::AnyClientState;
+use crate::prelude::*;
 use crate::signer::Signer;
 use crate::Height;
 
@@ -25,6 +24,9 @@ pub trait RelayerContext {
 
 #[cfg(test)]
 mod tests {
+    use test_log::test;
+    use tracing::debug;
+
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::core::ics02_client::client_state::ClientStateCommon;
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
@@ -39,9 +41,6 @@ mod tests {
     use crate::mock::router::MockRouter;
     use crate::prelude::*;
     use crate::Height;
-
-    use test_log::test;
-    use tracing::debug;
 
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
     /// context, assuming that the latest header on the source context is `src_header`.

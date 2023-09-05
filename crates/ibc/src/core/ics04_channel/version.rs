@@ -6,9 +6,8 @@ use core::convert::Infallible;
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
-use crate::prelude::*;
-
 use super::error::ChannelError;
+use crate::prelude::*;
 
 /// The version field for a `ChannelEnd`.
 ///

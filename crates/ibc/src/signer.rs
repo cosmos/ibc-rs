@@ -1,6 +1,6 @@
-use crate::prelude::*;
-
 use derive_more::Display;
+
+use crate::prelude::*;
 
 /// Represents the address of the signer of the current transaction
 #[cfg_attr(

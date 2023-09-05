@@ -2,7 +2,9 @@
 //! with a token transfer
 
 use core::convert::Infallible;
-use core::fmt::{self, Display};
+use core::fmt::{
+    Display, {self},
+};
 use core::str::FromStr;
 
 use crate::prelude::*;

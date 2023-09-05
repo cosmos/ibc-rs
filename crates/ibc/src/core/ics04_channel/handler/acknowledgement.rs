@@ -1,23 +1,20 @@
-use crate::core::ics02_client::error::ClientError;
-use crate::prelude::*;
-
-use crate::core::events::MessageEvent;
+use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
 use crate::core::ics04_channel::channel::{Counterparty, Order, State as ChannelState};
 use crate::core::ics04_channel::commitment::{compute_ack_commitment, compute_packet_commitment};
-use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics04_channel::error::PacketError;
+use crate::core::ics04_channel::error::{ChannelError, PacketError};
+use crate::core::ics04_channel::events::AcknowledgePacket;
 use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
-use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
-    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqAckPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, SeqAckPath,
 };
 use crate::core::router::Module;
-use crate::core::{events::IbcEvent, ics04_channel::events::AcknowledgePacket};
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) fn acknowledgement_packet_validate<ValCtx>(
     ctx_a: &ValCtx,
@@ -219,31 +216,27 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use rstest::*;
     use test_log::test;
 
+    use super::*;
+    use crate::applications::transfer::MODULE_ID_STR;
     use crate::core::ics02_client::height::Height;
-    use crate::core::ics03_connection::connection::ConnectionEnd;
-    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
-    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use crate::core::ics03_connection::connection::{
+        ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
+    };
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
     use crate::core::ics04_channel::commitment::PacketCommitment;
     use crate::core::ics04_channel::msgs::acknowledgement::test_util::get_dummy_raw_msg_acknowledgement;
     use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
     use crate::core::ics04_channel::Version;
-    use crate::core::ics24_host::identifier::ChannelId;
-    use crate::core::ics24_host::identifier::PortId;
-    use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-    use crate::core::router::ModuleId;
-    use crate::core::router::Router;
-    use crate::core::timestamp::Timestamp;
-    use crate::core::timestamp::ZERO_DURATION;
-
+    use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
+    use crate::core::router::{ModuleId, Router};
+    use crate::core::timestamp::{Timestamp, ZERO_DURATION};
     use crate::mock::context::MockContext;
     use crate::mock::router::MockRouter;
-    use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
+    use crate::test_utils::DummyTransferModule;
 
     struct Fixture {
         ctx: MockContext,

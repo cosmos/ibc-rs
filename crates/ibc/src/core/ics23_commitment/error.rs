@@ -1,6 +1,7 @@
 //! Defines the commitment error type
 
 use alloc::string::String;
+
 use displaydoc::Display;
 use prost::DecodeError;
 

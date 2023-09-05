@@ -1,28 +1,23 @@
-use crate::core::ics02_client::client_state::ClientStateValidation;
-use crate::core::ics02_client::error::ClientError;
-use crate::prelude::*;
 use prost::Message;
 
-use crate::core::events::IbcEvent;
-use crate::core::events::MessageEvent;
-use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
-use crate::core::ics04_channel::channel::State;
-use crate::core::ics04_channel::channel::{Counterparty, Order};
+use crate::core::ics04_channel::channel::{Counterparty, Order, State};
 use crate::core::ics04_channel::commitment::compute_packet_commitment;
-use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics04_channel::error::PacketError;
-use crate::core::ics04_channel::events::ChannelClosed;
+use crate::core::ics04_channel::error::{ChannelError, PacketError};
+use crate::core::ics04_channel::events::{ChannelClosed, TimeoutPacket};
+use crate::core::ics04_channel::handler::timeout_on_close;
 use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
-use crate::core::ics04_channel::{events::TimeoutPacket, handler::timeout_on_close};
-use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
-    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
+    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
 };
 use crate::core::router::Module;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) enum TimeoutMsgType {
     Timeout(MsgTimeout),
@@ -274,13 +269,14 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use rstest::*;
 
+    use super::*;
+    use crate::applications::transfer::MODULE_ID_STR;
     use crate::core::ics02_client::height::Height;
-    use crate::core::ics03_connection::connection::ConnectionEnd;
-    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
-    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use crate::core::ics03_connection::connection::{
+        ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
+    };
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
     use crate::core::ics04_channel::commitment::PacketCommitment;
@@ -289,12 +285,8 @@ mod tests {
     use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::router::ModuleId;
-    use crate::core::router::Router;
-    use crate::core::timestamp::Timestamp;
-    use crate::core::timestamp::ZERO_DURATION;
-
-    use crate::applications::transfer::MODULE_ID_STR;
+    use crate::core::router::{ModuleId, Router};
+    use crate::core::timestamp::{Timestamp, ZERO_DURATION};
     use crate::mock::context::MockContext;
     use crate::mock::router::MockRouter;
     use crate::test_utils::DummyTransferModule;

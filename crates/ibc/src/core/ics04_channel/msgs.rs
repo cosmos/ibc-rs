@@ -13,17 +13,15 @@ pub(crate) mod timeout;
 pub(crate) mod timeout_on_close;
 
 // Opening handshake messages.
+// Packet specific messages.
+pub use acknowledgement::MsgAcknowledgement;
+// Closing handshake messages.
+pub use chan_close_confirm::MsgChannelCloseConfirm;
+pub use chan_close_init::MsgChannelCloseInit;
 pub use chan_open_ack::MsgChannelOpenAck;
 pub use chan_open_confirm::MsgChannelOpenConfirm;
 pub use chan_open_init::MsgChannelOpenInit;
 pub use chan_open_try::MsgChannelOpenTry;
-
-// Closing handshake messages.
-pub use chan_close_confirm::MsgChannelCloseConfirm;
-pub use chan_close_init::MsgChannelCloseInit;
-
-// Packet specific messages.
-pub use acknowledgement::MsgAcknowledgement;
 pub use recv_packet::MsgRecvPacket;
 pub use timeout::MsgTimeout;
 pub use timeout_on_close::MsgTimeoutOnClose;

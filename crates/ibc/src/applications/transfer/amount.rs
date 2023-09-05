@@ -1,14 +1,17 @@
 //! Contains the `Amount` type, which represents amounts of tokens transferred.
 
-use crate::prelude::*;
-use core::{ops::Deref, str::FromStr};
-use derive_more::{Display, From, Into};
+use core::ops::Deref;
+use core::str::FromStr;
 
-use super::error::TokenTransferError;
+use derive_more::{Display, From, Into};
 use primitive_types::U256;
 
+use super::error::TokenTransferError;
 #[cfg(feature = "schema")]
-use crate::alloc::{borrow::ToOwned, string::String};
+use crate::alloc::borrow::ToOwned;
+#[cfg(feature = "schema")]
+use crate::alloc::string::String;
+use crate::prelude::*;
 
 /// A type for representing token transfer amounts.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
