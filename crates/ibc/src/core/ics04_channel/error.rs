@@ -171,6 +171,8 @@ pub enum PacketError {
     },
     /// Cannot encode sequence `{sequence}`
     CannotEncodeSequence { sequence: Sequence },
+    /// other error: `{description}`
+    Other { description: String },
 }
 
 impl From<IdentifierError> for ChannelError {
