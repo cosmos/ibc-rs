@@ -66,6 +66,8 @@ where
     ) -> Result<Response<QueryConnectionResponse>, Status> {
         let request_ref = request.get_ref();
 
+        trace!("Got connection request: {:?}", request_ref);
+
         let connection_id = ConnectionId::from_str(request_ref.connection_id.as_str())?;
 
         let connection_end = self.ibc_context.connection_end(&connection_id)?;
@@ -96,7 +98,9 @@ where
         &self,
         request: Request<QueryConnectionsRequest>,
     ) -> Result<Response<QueryConnectionsResponse>, Status> {
-        trace!("Got connections request: {:?}", request);
+        let request_ref = request.get_ref();
+
+        trace!("Got connections request: {:?}", request_ref);
 
         let connections = self.ibc_context.connection_ends()?;
 
@@ -111,7 +115,9 @@ where
         &self,
         request: Request<QueryClientConnectionsRequest>,
     ) -> Result<Response<QueryClientConnectionsResponse>, Status> {
-        trace!("Got client connections request: {:?}", request);
+        let request_ref = request.get_ref();
+
+        trace!("Got client connections request: {:?}", request_ref);
 
         let request_ref = request.get_ref();
 
@@ -146,6 +152,8 @@ where
         request: Request<QueryConnectionClientStateRequest>,
     ) -> Result<Response<QueryConnectionClientStateResponse>, Status> {
         let request_ref = request.get_ref();
+
+        trace!("Got connection client state request: {:?}", request_ref);
 
         let connection_id = ConnectionId::from_str(request_ref.connection_id.as_str())?;
 
@@ -184,6 +192,8 @@ where
     ) -> Result<Response<QueryConnectionConsensusStateResponse>, Status> {
         let request_ref = request.get_ref();
 
+        trace!("Got connection consensus state request: {:?}", request_ref);
+
         let connection_id = ConnectionId::from_str(request_ref.connection_id.as_str())?;
 
         let connection_end = self.ibc_context.connection_end(&connection_id)?;
@@ -219,7 +229,9 @@ where
         &self,
         request: Request<QueryConnectionParamsRequest>,
     ) -> Result<Response<QueryConnectionParamsResponse>, Status> {
-        trace!("Got connection params request: {:?}", request);
+        let request_ref = request.get_ref();
+
+        trace!("Got connection params request: {:?}", request_ref);
 
         Ok(Response::new(QueryConnectionParamsResponse {
             params: Some(ConnectionParams {

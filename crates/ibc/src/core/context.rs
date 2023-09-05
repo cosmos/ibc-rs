@@ -256,7 +256,7 @@ pub trait ValidationContext {
 /// Trait used for the [`gRPC query services`](crate::services).
 #[cfg(feature = "grpc")]
 pub trait ProvableContext {
-    /// Returns a proof for the given path at the given height.
+    /// Returns the proof for the given path at the given height.
     /// As this is in the context of IBC, the path is expected to be an [`IbcPath`](Path).
     fn get_proof(&self, height: Height, path: &Path) -> Option<Vec<u8>>;
 }
@@ -284,6 +284,8 @@ pub trait QueryContext: ProvableContext + ValidationContext {
 
     /// Returns the status of the given client.
     fn client_status(&self, client_id: &ClientId) -> Result<Status, ContextError>;
+
+    /// Returns the list of supported client types.
     fn allowed_clients(&self) -> Vec<ClientType>;
 
     // Connection queries
@@ -316,21 +318,23 @@ pub trait QueryContext: ProvableContext + ValidationContext {
         channel_end_path: &ChannelEndPath,
     ) -> Result<Vec<CommitmentPath>, ContextError>;
 
-    /// Filters the list of packet sequencees for the given channel end that are acknowledged.
+    /// Filters the list of packet sequences for the given channel end that are acknowledged.
+    /// Returns all the packet acknowledgements if `sequences` is empty.
     fn packet_acknowledgements(
         &self,
         channel_end_path: &ChannelEndPath,
         sequences: impl ExactSizeIterator<Item = Sequence>,
     ) -> Result<Vec<AckPath>, ContextError>;
 
-    /// Filters the list of packet sequencees for the given channel end that are not received.
+    /// Filters the packet sequences for the given channel end that are not received.
     fn unreceived_packets(
         &self,
         channel_end_path: &ChannelEndPath,
         sequences: impl ExactSizeIterator<Item = Sequence>,
     ) -> Result<Vec<Sequence>, ContextError>;
 
-    /// Filters the list of packet sequencees for the given channel end whose acknowledgement is not received.
+    /// Filters the list of packet sequences for the given channel end whose acknowledgement is not received.
+    /// Returns all the unreceived acknowledgements if `sequences` is empty.
     fn unreceived_acks(
         &self,
         channel_end_path: &ChannelEndPath,

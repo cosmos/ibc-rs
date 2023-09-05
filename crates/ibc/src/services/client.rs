@@ -76,9 +76,9 @@ where
         &self,
         request: Request<QueryClientStateRequest>,
     ) -> Result<Response<QueryClientStateResponse>, Status> {
-        trace!("Got client state request: {:?}", request);
-
         let request_ref = request.get_ref();
+
+        trace!("Got client state request: {:?}", request_ref);
 
         let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
         let client_state = self.ibc_context.client_state(&client_id)?;
@@ -110,7 +110,9 @@ where
         &self,
         request: Request<QueryClientStatesRequest>,
     ) -> Result<Response<QueryClientStatesResponse>, Status> {
-        trace!("Got client states request: {:?}", request);
+        let request_ref = request.get_ref();
+
+        trace!("Got client states request: {:?}", request_ref);
 
         let client_states = self.ibc_context.client_states()?;
 
@@ -130,9 +132,9 @@ where
         &self,
         request: Request<QueryConsensusStateRequest>,
     ) -> Result<Response<QueryConsensusStateResponse>, Status> {
-        trace!("Got consensus state request: {:?}", request);
-
         let request_ref = request.get_ref();
+
+        trace!("Got consensus state request: {:?}", request_ref);
 
         let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
 
@@ -170,9 +172,9 @@ where
         &self,
         request: Request<QueryConsensusStatesRequest>,
     ) -> Result<Response<QueryConsensusStatesResponse>, Status> {
-        trace!("Got consensus states request: {:?}", request);
-
         let request_ref = request.get_ref();
+
+        trace!("Got consensus states request: {:?}", request_ref);
 
         let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
 
@@ -194,9 +196,9 @@ where
         &self,
         request: Request<QueryConsensusStateHeightsRequest>,
     ) -> Result<Response<QueryConsensusStateHeightsResponse>, Status> {
-        trace!("Got consensus state heights request: {:?}", request);
-
         let request_ref = request.get_ref();
+
+        trace!("Got consensus state heights request: {:?}", request_ref);
 
         let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
 
@@ -215,9 +217,9 @@ where
         &self,
         request: Request<QueryClientStatusRequest>,
     ) -> Result<Response<QueryClientStatusResponse>, Status> {
-        trace!("Got client status request: {:?}", request);
-
         let request_ref = request.get_ref();
+
+        trace!("Got client status request: {:?}", request_ref);
 
         let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
 
@@ -232,7 +234,9 @@ where
         &self,
         request: Request<QueryClientParamsRequest>,
     ) -> Result<Response<QueryClientParamsResponse>, Status> {
-        trace!("Got client params request: {:?}", request);
+        let request_ref = request.get_ref();
+
+        trace!("Got client params request: {:?}", request_ref);
 
         Ok(Response::new(QueryClientParamsResponse {
             params: Some(ClientParams {
@@ -250,7 +254,9 @@ where
         &self,
         request: Request<QueryUpgradedClientStateRequest>,
     ) -> Result<Response<QueryUpgradedClientStateResponse>, Status> {
-        trace!("Got upgraded client state request: {:?}", request);
+        let request_ref = request.get_ref();
+
+        trace!("Got upgraded client state request: {:?}", request_ref);
 
         let plan = self
             .upgrade_context
@@ -275,7 +281,9 @@ where
         &self,
         request: Request<QueryUpgradedConsensusStateRequest>,
     ) -> Result<Response<QueryUpgradedConsensusStateResponse>, Status> {
-        trace!("Got upgraded consensus state request: {:?}", request);
+        let request_ref = request.get_ref();
+
+        trace!("Got upgraded consensus state request: {:?}", request_ref);
 
         let plan = self
             .upgrade_context

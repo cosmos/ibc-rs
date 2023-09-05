@@ -72,8 +72,9 @@ where
         &self,
         request: Request<QueryChannelRequest>,
     ) -> Result<Response<QueryChannelResponse>, Status> {
-        trace!("Got channel request: {:?}", request);
         let request_ref = request.get_ref();
+
+        trace!("Got channel request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -101,14 +102,16 @@ where
             proof_height: Some(current_height.into()),
         }))
     }
-    /// Channels queries all the IBC channels of a chain.
+
     async fn channels(
         &self,
         request: Request<QueryChannelsRequest>,
     ) -> Result<Response<QueryChannelsResponse>, Status> {
-        trace!("Got channels request: {:?}", request);
+        let request_ref = request.get_ref();
 
         let channel_ends = self.ibc_context.channel_ends()?;
+
+        trace!("Got channels request: {:?}", &request_ref);
 
         Ok(Response::new(QueryChannelsResponse {
             channels: channel_ends.into_iter().map(Into::into).collect(),
@@ -116,15 +119,14 @@ where
             height: Some(self.ibc_context.host_height()?.into()),
         }))
     }
-    /// ConnectionChannels queries all the channels associated with a connection
-    /// end.
+
     async fn connection_channels(
         &self,
         request: Request<QueryConnectionChannelsRequest>,
     ) -> Result<Response<QueryConnectionChannelsResponse>, Status> {
-        trace!("Got connection channels request: {:?}", request);
-
         let request_ref = request.get_ref();
+
+        trace!("Got connection channels request: {:?}", &request_ref);
 
         let connection_id = ConnectionId::from_str(request_ref.connection.as_str())?;
 
@@ -136,15 +138,14 @@ where
             height: Some(self.ibc_context.host_height()?.into()),
         }))
     }
-    /// ChannelClientState queries for the client state for the channel associated
-    /// with the provided channel identifiers.
+
     async fn channel_client_state(
         &self,
         request: Request<QueryChannelClientStateRequest>,
     ) -> Result<Response<QueryChannelClientStateResponse>, Status> {
-        trace!("Got channel client state request: {:?}", request);
-
         let request_ref = request.get_ref();
+
+        trace!("Got channel client state request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -191,15 +192,14 @@ where
             proof_height: Some(current_height.into()),
         }))
     }
-    /// ChannelConsensusState queries for the consensus state for the channel
-    /// associated with the provided channel identifiers.
+
     async fn channel_consensus_state(
         &self,
         request: Request<QueryChannelConsensusStateRequest>,
     ) -> Result<Response<QueryChannelConsensusStateResponse>, Status> {
-        trace!("Got channel consensus state request: {:?}", request);
-
         let request_ref = request.get_ref();
+
+        trace!("Got channel consensus state request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -246,14 +246,14 @@ where
             proof_height: Some(current_height.into()),
         }))
     }
-    /// PacketCommitment queries a stored packet commitment hash.
+
     async fn packet_commitment(
         &self,
         request: Request<QueryPacketCommitmentRequest>,
     ) -> Result<Response<QueryPacketCommitmentResponse>, Status> {
-        trace!("Got packet commitment request: {:?}", request);
-
         let request_ref = request.get_ref();
+
+        trace!("Got packet commitment request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -284,15 +284,13 @@ where
         }))
     }
 
-    /// PacketCommitments returns all the packet commitments hashes associated
-    /// with a channel.
     async fn packet_commitments(
         &self,
         request: Request<QueryPacketCommitmentsRequest>,
     ) -> Result<Response<QueryPacketCommitmentsResponse>, Status> {
-        trace!("Got packet commitments request: {:?}", request);
-
         let request_ref = request.get_ref();
+
+        trace!("Got packet commitments request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -323,13 +321,13 @@ where
         }))
     }
 
-    /// PacketReceipt queries if a given packet sequence has been received on the
-    /// queried chain
     async fn packet_receipt(
         &self,
         request: Request<QueryPacketReceiptRequest>,
     ) -> Result<Response<QueryPacketReceiptResponse>, Status> {
         let request_ref = request.get_ref();
+
+        trace!("Got packet receipt request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -362,12 +360,13 @@ where
         }))
     }
 
-    /// PacketAcknowledgement queries a stored packet acknowledgement hash.
     async fn packet_acknowledgement(
         &self,
         request: Request<QueryPacketAcknowledgementRequest>,
     ) -> Result<Response<QueryPacketAcknowledgementResponse>, Status> {
         let request_ref = request.get_ref();
+
+        trace!("Got packet acknowledgement request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -400,13 +399,14 @@ where
         }))
     }
 
-    /// PacketAcknowledgements returns all the packet acknowledgements associated
-    /// with a channel.
+    /// Returns all the acknowledgements if sequences is omitted.
     async fn packet_acknowledgements(
         &self,
         request: Request<QueryPacketAcknowledgementsRequest>,
     ) -> Result<Response<QueryPacketAcknowledgementsResponse>, Status> {
         let request_ref = request.get_ref();
+
+        trace!("Got packet acknowledgements request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -443,13 +443,13 @@ where
         }))
     }
 
-    /// UnreceivedPackets returns all the unreceived IBC packets associated with
-    /// a channel and sequences.
     async fn unreceived_packets(
         &self,
         request: Request<QueryUnreceivedPacketsRequest>,
     ) -> Result<Response<QueryUnreceivedPacketsResponse>, Status> {
         let request_ref = request.get_ref();
+
+        trace!("Got unreceived packets request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -473,13 +473,14 @@ where
         }))
     }
 
-    /// UnreceivedAcks returns all the unreceived IBC acknowledgements associated
-    /// with a channel and sequences.
+    /// Returns all the unreceived acknowledgements if sequences is omitted.
     async fn unreceived_acks(
         &self,
-        _request: Request<QueryUnreceivedAcksRequest>,
+        request: Request<QueryUnreceivedAcksRequest>,
     ) -> Result<Response<QueryUnreceivedAcksResponse>, Status> {
-        let request_ref = _request.get_ref();
+        let request_ref = request.get_ref();
+
+        trace!("Got unreceived acks request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -503,12 +504,13 @@ where
         }))
     }
 
-    /// NextSequenceReceive returns the next receive sequence for a given channel.
     async fn next_sequence_receive(
         &self,
         request: Request<QueryNextSequenceReceiveRequest>,
     ) -> Result<Response<QueryNextSequenceReceiveResponse>, Status> {
         let request_ref = request.get_ref();
+
+        trace!("Got next sequence receive request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -539,12 +541,13 @@ where
         }))
     }
 
-    // NextSequenceSend returns the next send sequence for a given channel.
     async fn next_sequence_send(
         &self,
         request: Request<QueryNextSequenceSendRequest>,
     ) -> Result<Response<QueryNextSequenceSendResponse>, Status> {
         let request_ref = request.get_ref();
+
+        trace!("Got next sequence send request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
