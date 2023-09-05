@@ -77,7 +77,7 @@ where
         ctx_a.emit_ibc_event(event);
     }
 
-    ctx_a.increase_connection_counter();
+    ctx_a.increase_connection_counter()?;
     ctx_a.store_connection_to_client(
         &ClientConnectionPath::new(&msg.client_id_on_a),
         conn_id_on_a.clone(),
@@ -161,6 +161,9 @@ mod tests {
             }
             Expect::Success => {
                 assert!(res.is_ok(), "{err_msg}");
+
+                assert_eq!(fxt.ctx.connection_counter().unwrap(), 1);
+
                 assert_eq!(fxt.ctx.events.len(), 2);
 
                 assert!(matches!(

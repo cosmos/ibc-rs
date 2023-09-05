@@ -85,6 +85,8 @@ pub enum ConnectionError {
     },
     /// timestamp overflowed error: `{0}`
     TimestampOverflow(TimestampOverflowError),
+    /// connection counter overflow error
+    CounterOverflow,
     /// other error: `{description}`
     Other { description: String },
 }

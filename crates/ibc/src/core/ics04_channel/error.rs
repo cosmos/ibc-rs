@@ -68,14 +68,16 @@ pub enum ChannelError {
     ProcessedHeightNotFound { client_id: ClientId, height: Height },
     /// application module error: `{description}`
     AppModule { description: String },
-    /// other error: `{description}`
-    Other { description: String },
     /// Undefined counterparty connection for `{connection_id}`
     UndefinedConnectionCounterparty { connection_id: ConnectionId },
     /// invalid proof: empty proof
     InvalidProof,
     /// identifier error: `{0}`
     InvalidIdentifier(IdentifierError),
+    /// channel counter overflow error
+    CounterOverflow,
+    /// other error: `{description}`
+    Other { description: String },
 }
 
 #[derive(Debug, Display)]

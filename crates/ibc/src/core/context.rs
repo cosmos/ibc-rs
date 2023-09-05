@@ -251,7 +251,7 @@ pub trait ExecutionContext: ValidationContext {
     /// Called upon client creation.
     /// Increases the counter which keeps track of how many clients have been created.
     /// Should never fail.
-    fn increase_client_counter(&mut self);
+    fn increase_client_counter(&mut self) -> Result<(), ContextError>;
 
     /// Called upon successful client update.
     /// Implementations are expected to use this to record the specified time as the time at which
@@ -290,7 +290,7 @@ pub trait ExecutionContext: ValidationContext {
     /// Called upon connection identifier creation (Init or Try process).
     /// Increases the counter which keeps track of how many connections have been created.
     /// Should never fail.
-    fn increase_connection_counter(&mut self);
+    fn increase_connection_counter(&mut self) -> Result<(), ContextError>;
 
     /// Stores the given packet commitment at the given store path
     fn store_packet_commitment(
@@ -353,7 +353,7 @@ pub trait ExecutionContext: ValidationContext {
     /// Called upon channel identifier creation (Init or Try message processing).
     /// Increases the counter which keeps track of how many channels have been created.
     /// Should never fail.
-    fn increase_channel_counter(&mut self);
+    fn increase_channel_counter(&mut self) -> Result<(), ContextError>;
 
     /// Emit the given IBC event
     fn emit_ibc_event(&mut self, event: IbcEvent);
