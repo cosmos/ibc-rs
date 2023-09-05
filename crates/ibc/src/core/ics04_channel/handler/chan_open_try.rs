@@ -75,7 +75,7 @@ where
 
         let chan_end_path_on_b = ChannelEndPath::new(&msg.port_id_on_b, &chan_id_on_b);
         ctx_b.store_channel(&chan_end_path_on_b, chan_end_on_b)?;
-        ctx_b.increase_channel_counter();
+        ctx_b.increase_channel_counter()?;
 
         // Initialize send, recv, and ack sequence numbers.
         let seq_send_path = SeqSendPath::new(&msg.port_id_on_b, &chan_id_on_b);
@@ -337,7 +337,10 @@ mod tests {
 
         assert!(res.is_ok(), "Execution success: happy path");
 
+        assert_eq!(ctx.channel_counter().unwrap(), 1);
+
         assert_eq!(ctx.events.len(), 2);
+
         assert!(matches!(
             ctx.events[0],
             IbcEvent::Message(MessageEvent::Channel)

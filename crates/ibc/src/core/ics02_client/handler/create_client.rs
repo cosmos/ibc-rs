@@ -81,7 +81,7 @@ where
 
     ctx.store_update_time(client_id.clone(), latest_height, ctx.host_timestamp()?)?;
     ctx.store_update_height(client_id.clone(), latest_height, ctx.host_height()?)?;
-    ctx.increase_client_counter();
+    ctx.increase_client_counter()?;
 
     let event = IbcEvent::CreateClient(CreateClient::new(
         client_id.clone(),
@@ -144,8 +144,12 @@ mod tests {
 
         assert!(res.is_ok(), "execution happy path");
 
+        assert_eq!(ctx.client_counter().unwrap(), 1);
+
         let expected_client_state = ctx.decode_client_state(msg.client_state).unwrap();
+
         assert_eq!(expected_client_state.client_type(), client_type);
+
         assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
     }
 
@@ -173,13 +177,19 @@ mod tests {
         );
 
         let res = validate(&ctx, msg.clone());
+
         assert!(res.is_ok(), "tendermint client validation happy path");
 
         let res = execute(&mut ctx, msg.clone());
+
         assert!(res.is_ok(), "tendermint client execution happy path");
 
+        assert_eq!(ctx.client_counter().unwrap(), 1);
+
         let expected_client_state = ctx.decode_client_state(msg.client_state).unwrap();
+
         assert_eq!(expected_client_state.client_type(), client_type);
+
         assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
     }
 }
