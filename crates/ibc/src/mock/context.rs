@@ -1090,8 +1090,15 @@ impl ExecutionContext for MockContext {
         self
     }
 
-    fn increase_client_counter(&mut self) {
-        self.ibc_store.lock().client_ids_counter += 1
+    fn increase_client_counter(&mut self) -> Result<(), ContextError> {
+        let mut ibc_store = self.ibc_store.lock();
+
+        ibc_store.client_ids_counter = ibc_store
+            .client_ids_counter
+            .checked_add(1)
+            .ok_or(ClientError::CounterOverflow)?;
+
+        Ok(())
     }
 
     fn store_update_time(
@@ -1148,8 +1155,15 @@ impl ExecutionContext for MockContext {
         Ok(())
     }
 
-    fn increase_connection_counter(&mut self) {
-        self.ibc_store.lock().connection_ids_counter += 1;
+    fn increase_connection_counter(&mut self) -> Result<(), ContextError> {
+        let mut ibc_store = self.ibc_store.lock();
+
+        ibc_store.connection_ids_counter = ibc_store
+            .connection_ids_counter
+            .checked_add(1)
+            .ok_or(ClientError::CounterOverflow)?;
+
+        Ok(())
     }
 
     fn store_packet_commitment(
@@ -1299,8 +1313,15 @@ impl ExecutionContext for MockContext {
         Ok(())
     }
 
-    fn increase_channel_counter(&mut self) {
-        self.ibc_store.lock().channel_ids_counter += 1;
+    fn increase_channel_counter(&mut self) -> Result<(), ContextError> {
+        let mut ibc_store = self.ibc_store.lock();
+
+        ibc_store.channel_ids_counter = ibc_store
+            .channel_ids_counter
+            .checked_add(1)
+            .ok_or(ClientError::CounterOverflow)?;
+
+        Ok(())
     }
 
     fn emit_ibc_event(&mut self, event: IbcEvent) {

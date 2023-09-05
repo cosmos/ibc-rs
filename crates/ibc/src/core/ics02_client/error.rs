@@ -103,6 +103,8 @@ pub enum ClientError {
     MisbehaviourHandlingFailure { reason: String },
     /// client specific error: `{description}`
     ClientSpecific { description: String },
+    /// client counter overflow error
+    CounterOverflow,
     /// other error: `{description}`
     Other { description: String },
 }

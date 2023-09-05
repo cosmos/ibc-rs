@@ -160,7 +160,7 @@ where
     ctx_b.emit_ibc_event(event);
     ctx_b.log_message("success: conn_open_try verification passed".to_string());
 
-    ctx_b.increase_connection_counter();
+    ctx_b.increase_connection_counter()?;
     ctx_b.store_connection_to_client(
         &ClientConnectionPath::new(&msg.client_id_on_b),
         vars.conn_id_on_b.clone(),
@@ -294,6 +294,9 @@ mod tests {
             }
             Expect::Success => {
                 assert!(res.is_ok(), "{err_msg}");
+
+                assert_eq!(fxt.ctx.connection_counter().unwrap(), 1);
+
                 assert_eq!(fxt.ctx.events.len(), 2);
 
                 assert!(matches!(
