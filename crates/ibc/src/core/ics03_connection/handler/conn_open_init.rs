@@ -63,7 +63,7 @@ where
 
     ctx_a.log_message(format!(
         "success: conn_open_init: generated new connection identifier: {conn_id_on_a}"
-    ));
+    ))?;
 
     {
         let client_id_on_b = msg.counterparty.client_id().clone();
@@ -73,8 +73,8 @@ where
             msg.client_id_on_a.clone(),
             client_id_on_b,
         ));
-        ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection));
-        ctx_a.emit_ibc_event(event);
+        ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection))?;
+        ctx_a.emit_ibc_event(event)?;
     }
 
     ctx_a.increase_connection_counter()?;

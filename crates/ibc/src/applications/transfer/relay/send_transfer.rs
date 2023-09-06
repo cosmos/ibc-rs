@@ -170,7 +170,7 @@ where
         send_packet_ctx_a.log_message(format!(
             "IBC fungible token transfer: {} --({})--> {}",
             msg.packet_data.sender, token, msg.packet_data.receiver
-        ));
+        ))?;
 
         let transfer_event = TransferEvent {
             sender: msg.packet_data.sender,
@@ -179,9 +179,9 @@ where
             denom: msg.packet_data.token.denom,
             memo: msg.packet_data.memo,
         };
-        send_packet_ctx_a.emit_ibc_event(ModuleEvent::from(transfer_event).into());
+        send_packet_ctx_a.emit_ibc_event(ModuleEvent::from(transfer_event).into())?;
 
-        send_packet_ctx_a.emit_ibc_event(MessageEvent::Module(MODULE_ID_STR.to_string()).into());
+        send_packet_ctx_a.emit_ibc_event(MessageEvent::Module(MODULE_ID_STR.to_string()).into())?;
     }
 
     Ok(())

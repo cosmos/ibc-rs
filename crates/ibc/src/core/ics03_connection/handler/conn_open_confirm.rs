@@ -117,9 +117,9 @@ where
         conn_id_on_a.clone(),
         client_id_on_a.clone(),
     ));
-    ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection));
-    ctx_b.emit_ibc_event(event);
-    ctx_b.log_message("success: conn_open_confirm verification passed".to_string());
+    ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection))?;
+    ctx_b.emit_ibc_event(event)?;
+    ctx_b.log_message("success: conn_open_confirm verification passed".to_string())?;
 
     {
         let new_conn_end_on_b = {
