@@ -34,7 +34,6 @@ std = [
     "primitive-types/std",
     "tendermint/clock",
     "tendermint/std",
-    "grpc",
 ]
 parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-proto/parity-scale-codec"]
 borsh = ["dep:borsh", "ibc-proto/borsh"]
