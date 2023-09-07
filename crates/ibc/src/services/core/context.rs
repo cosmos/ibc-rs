@@ -60,12 +60,6 @@ pub trait QueryContext: ProvableContext + ValidationContext {
     /// Returns the list of all channel ends.
     fn channel_ends(&self) -> Result<Vec<IdentifiedChannelEnd>, ContextError>;
 
-    /// Returns the list of all channel ends of the given connection.
-    fn connection_channel_ends(
-        &self,
-        connection_id: &ConnectionId,
-    ) -> Result<Vec<IdentifiedChannelEnd>, ContextError>;
-
     // Packet queries
 
     /// Returns the list of all packet commitments for the given channel end.

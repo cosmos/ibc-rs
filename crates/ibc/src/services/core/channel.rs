@@ -119,10 +119,22 @@ where
 
         let connection_id = ConnectionId::from_str(request_ref.connection.as_str())?;
 
-        let channel_ends = self.ibc_context.connection_channel_ends(&connection_id)?;
+        let all_channel_ends = self.ibc_context.channel_ends()?;
+
+        let connection_channel_ends = all_channel_ends
+            .into_iter()
+            .filter(|channel_end| {
+                channel_end
+                    .channel_end
+                    .connection_hops()
+                    .iter()
+                    .any(|connection_hop| connection_hop == &connection_id)
+            })
+            .map(Into::into)
+            .collect();
 
         Ok(Response::new(QueryConnectionChannelsResponse {
-            channels: channel_ends.into_iter().map(Into::into).collect(),
+            channels: connection_channel_ends,
             pagination: None,
             height: Some(self.ibc_context.host_height()?.into()),
         }))
