@@ -55,7 +55,7 @@ where
 
     // emit events and logs
     {
-        ctx_b.log_message("success: channel close confirm".to_string());
+        ctx_b.log_message("success: channel close confirm".to_string())?;
 
         let core_event = {
             let port_id_on_a = chan_end_on_b.counterparty().port_id.clone();
@@ -78,15 +78,15 @@ where
                 conn_id_on_b,
             ))
         };
-        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
-        ctx_b.emit_ibc_event(core_event);
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+        ctx_b.emit_ibc_event(core_event)?;
 
         for module_event in extras.events {
-            ctx_b.emit_ibc_event(IbcEvent::Module(module_event));
+            ctx_b.emit_ibc_event(IbcEvent::Module(module_event))?;
         }
 
         for log_message in extras.log {
-            ctx_b.log_message(log_message);
+            ctx_b.log_message(log_message)?;
         }
     }
 

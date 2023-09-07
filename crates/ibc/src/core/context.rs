@@ -356,8 +356,8 @@ pub trait ExecutionContext: ValidationContext {
     fn increase_channel_counter(&mut self) -> Result<(), ContextError>;
 
     /// Emit the given IBC event
-    fn emit_ibc_event(&mut self, event: IbcEvent);
+    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ContextError>;
 
     /// Log the given message.
-    fn log_message(&mut self, message: String);
+    fn log_message(&mut self, message: String) -> Result<(), ContextError>;
 }

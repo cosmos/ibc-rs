@@ -157,10 +157,10 @@ where
         msg.conn_id_on_b.clone(),
         vars.client_id_on_b().clone(),
     ));
-    ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection));
-    ctx_a.emit_ibc_event(event);
+    ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection))?;
+    ctx_a.emit_ibc_event(event)?;
 
-    ctx_a.log_message("success: conn_open_ack verification passed".to_string());
+    ctx_a.log_message("success: conn_open_ack verification passed".to_string())?;
 
     {
         let new_conn_end_on_a = {

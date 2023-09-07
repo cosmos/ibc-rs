@@ -64,8 +64,8 @@ where
 
     // In all cases, this event is emitted
     let event = IbcEvent::TimeoutPacket(TimeoutPacket::new(packet.clone(), chan_end_on_a.ordering));
-    ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
-    ctx_a.emit_ibc_event(event);
+    ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+    ctx_a.emit_ibc_event(event)?;
 
     let commitment_path_on_a =
         CommitmentPath::new(&packet.port_id_on_a, &packet.chan_id_on_a, packet.seq_on_a);
@@ -105,7 +105,7 @@ where
 
     // emit events and logs
     {
-        ctx_a.log_message("success: packet timeout".to_string());
+        ctx_a.log_message("success: packet timeout".to_string())?;
 
         if let Order::Ordered = chan_end_on_a.ordering {
             let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
@@ -118,16 +118,16 @@ where
                 conn_id_on_a,
                 chan_end_on_a.ordering,
             ));
-            ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
-            ctx_a.emit_ibc_event(event);
+            ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+            ctx_a.emit_ibc_event(event)?;
         }
 
         for module_event in extras.events {
-            ctx_a.emit_ibc_event(IbcEvent::Module(module_event));
+            ctx_a.emit_ibc_event(IbcEvent::Module(module_event))?;
         }
 
         for log_message in extras.log {
-            ctx_a.log_message(log_message);
+            ctx_a.log_message(log_message)?;
         }
     }
 

@@ -50,8 +50,8 @@ where
         chan_end_on_a.ordering,
         conn_id_on_a.clone(),
     ));
-    ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
-    ctx_a.emit_ibc_event(event);
+    ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+    ctx_a.emit_ibc_event(event)?;
 
     let commitment_path_on_a = CommitmentPath::new(
         &msg.packet.port_id_on_a,
@@ -93,16 +93,16 @@ where
 
     // emit events and logs
     {
-        ctx_a.log_message("success: packet acknowledgement".to_string());
+        ctx_a.log_message("success: packet acknowledgement".to_string())?;
 
         // Note: Acknowledgement event was emitted at the beginning
 
         for module_event in extras.events {
-            ctx_a.emit_ibc_event(IbcEvent::Module(module_event));
+            ctx_a.emit_ibc_event(IbcEvent::Module(module_event))?
         }
 
         for log_message in extras.log {
-            ctx_a.log_message(log_message);
+            ctx_a.log_message(log_message)?;
         }
     }
 

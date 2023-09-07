@@ -1324,12 +1324,14 @@ impl ExecutionContext for MockContext {
         Ok(())
     }
 
-    fn emit_ibc_event(&mut self, event: IbcEvent) {
+    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ContextError> {
         self.events.push(event);
+        Ok(())
     }
 
-    fn log_message(&mut self, message: String) {
+    fn log_message(&mut self, message: String) -> Result<(), ContextError> {
         self.logs.push(message);
+        Ok(())
     }
 }
 

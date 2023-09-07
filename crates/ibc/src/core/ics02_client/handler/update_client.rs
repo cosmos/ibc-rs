@@ -79,8 +79,8 @@ where
             client_id,
             client_state.client_type(),
         ));
-        ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
-        ctx.emit_ibc_event(event);
+        ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))?;
+        ctx.emit_ibc_event(event)?;
     } else {
         if !matches!(update_kind, UpdateKind::UpdateClient) {
             return Err(ClientError::MisbehaviourHandlingFailure {
@@ -122,8 +122,8 @@ where
                     header.encode_to_vec(),
                 ))
             };
-            ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
-            ctx.emit_ibc_event(event);
+            ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))?;
+            ctx.emit_ibc_event(event)?;
         }
     }
 

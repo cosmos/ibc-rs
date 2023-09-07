@@ -88,12 +88,12 @@ where
         client_type,
         latest_height,
     ));
-    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
-    ctx.emit_ibc_event(event);
+    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))?;
+    ctx.emit_ibc_event(event)?;
 
     ctx.log_message(format!(
         "success: generated new client identifier: {client_id}"
-    ));
+    ))?;
 
     Ok(())
 }
