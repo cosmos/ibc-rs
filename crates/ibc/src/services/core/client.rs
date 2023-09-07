@@ -132,12 +132,26 @@ where
 
         let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
 
-        let height = Height::new(request_ref.revision_number, request_ref.revision_height)
-            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+        let (height, consensus_state) = if request_ref.latest_height {
+            self.ibc_context
+                .consensus_states(&client_id)?
+                .into_iter()
+                .max_by_key(|(h, _)| *h)
+                .ok_or_else(|| {
+                    Status::not_found(format!(
+                        "Consensus state not found for client {}",
+                        client_id
+                    ))
+                })?
+        } else {
+            let height = Height::new(request_ref.revision_number, request_ref.revision_height)
+                .map_err(|e| Status::invalid_argument(e.to_string()))?;
+            let consensus_state = self
+                .ibc_context
+                .consensus_state(&ClientConsensusStatePath::new(&client_id, &height))?;
 
-        let consensus_state = self
-            .ibc_context
-            .consensus_state(&ClientConsensusStatePath::new(&client_id, &height))?;
+            (height, consensus_state)
+        };
 
         let current_height = self.ibc_context.host_height()?;
 
