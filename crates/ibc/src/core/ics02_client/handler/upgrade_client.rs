@@ -76,8 +76,8 @@ where
         old_client_state.client_type(),
         latest_height,
     ));
-    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
-    ctx.emit_ibc_event(event);
+    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))?;
+    ctx.emit_ibc_event(event)?;
 
     Ok(())
 }

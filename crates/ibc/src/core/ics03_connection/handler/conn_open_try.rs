@@ -156,9 +156,9 @@ where
         conn_id_on_a.clone(),
         vars.client_id_on_a.clone(),
     ));
-    ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection));
-    ctx_b.emit_ibc_event(event);
-    ctx_b.log_message("success: conn_open_try verification passed".to_string());
+    ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection))?;
+    ctx_b.emit_ibc_event(event)?;
+    ctx_b.log_message("success: conn_open_try verification passed".to_string())?;
 
     ctx_b.increase_connection_counter()?;
     ctx_b.store_connection_to_client(

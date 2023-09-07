@@ -110,8 +110,8 @@ where
 
     // emit events and logs
     {
-        ctx_b.log_message("success: packet receive".to_string());
-        ctx_b.log_message("success: packet write acknowledgement".to_string());
+        ctx_b.log_message("success: packet receive".to_string())?;
+        ctx_b.log_message("success: packet write acknowledgement".to_string())?;
 
         let conn_id_on_b = &chan_end_on_b.connection_hops()[0];
         let event = IbcEvent::ReceivePacket(ReceivePacket::new(
@@ -119,22 +119,22 @@ where
             chan_end_on_b.ordering,
             conn_id_on_b.clone(),
         ));
-        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
-        ctx_b.emit_ibc_event(event);
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+        ctx_b.emit_ibc_event(event)?;
         let event = IbcEvent::WriteAcknowledgement(WriteAcknowledgement::new(
             msg.packet,
             acknowledgement,
             conn_id_on_b.clone(),
         ));
-        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
-        ctx_b.emit_ibc_event(event);
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+        ctx_b.emit_ibc_event(event)?;
 
         for module_event in extras.events {
-            ctx_b.emit_ibc_event(IbcEvent::Module(module_event));
+            ctx_b.emit_ibc_event(IbcEvent::Module(module_event))?;
         }
 
         for log_message in extras.log {
-            ctx_b.log_message(log_message);
+            ctx_b.log_message(log_message)?;
         }
     }
 

@@ -103,10 +103,10 @@ pub trait SendPacketExecutionContext: SendPacketValidationContext {
     ) -> Result<(), ContextError>;
 
     /// Ibc events
-    fn emit_ibc_event(&mut self, event: IbcEvent);
+    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ContextError>;
 
     /// Logging facility
-    fn log_message(&mut self, message: String);
+    fn log_message(&mut self, message: String) -> Result<(), ContextError>;
 }
 
 impl<T> SendPacketExecutionContext for T
@@ -129,11 +129,11 @@ where
         self.store_packet_commitment(commitment_path, commitment)
     }
 
-    fn emit_ibc_event(&mut self, event: IbcEvent) {
+    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ContextError> {
         self.emit_ibc_event(event)
     }
 
-    fn log_message(&mut self, message: String) {
+    fn log_message(&mut self, message: String) -> Result<(), ContextError> {
         self.log_message(message)
     }
 }
