@@ -15,8 +15,9 @@
 //!     client::v1::query_server::QueryServer as ClientQueryServer,
 //!     connection::v1::query_server::QueryServer as ConnectionQueryServer,
 //! }
-//! use ibc::core::{ProvableContext, QueryContext, ValidationContext};
+//! use ibc::core::ValidationContext;
 //! use ibc::hosts::tendermint::upgrade_proposal::UpgradeValidationContext;
+//! use ibc::services::core::{ProvableContext, QueryContext};
 //! use ibc::services::{ChannelQueryService, ClientQueryService, ConnectionQueryService};
 //!
 //! struct Ibc;
@@ -41,11 +42,5 @@
 //!       .serve(addr);
 //! ```
 
-mod channel;
-mod client;
-mod connection;
-mod error;
-
-pub use channel::ChannelQueryService;
-pub use client::ClientQueryService;
-pub use connection::ConnectionQueryService;
+pub mod core;
+pub mod error;
