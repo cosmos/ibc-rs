@@ -1,4 +1,3 @@
-use alloc::string::ToString;
 use ibc_proto::{
     google::protobuf::Any,
     ibc::core::{
@@ -23,12 +22,14 @@ use crate::{
                 Path,
             },
         },
-        QueryContext, ValidationContext,
+        ValidationContext,
     },
+    services::core::context::QueryContext,
     Height,
 };
 
-use core::str::FromStr;
+use crate::prelude::*;
+
 use std::boxed::Box;
 use tonic::{Request, Response, Status};
 use tracing::trace;
@@ -81,7 +82,7 @@ where
                 &Path::Connection(ConnectionPath::new(&connection_id)),
             )
             .ok_or_else(|| {
-                Status::not_found(std::format!(
+                Status::not_found(format!(
                     "Proof not found for connection path {}",
                     connection_id.as_str()
                 ))
@@ -127,14 +128,14 @@ where
 
         let current_height = self.ibc_context.host_height()?;
 
-        let proof: alloc::vec::Vec<u8> = self
+        let proof: Vec<u8> = self
             .ibc_context
             .get_proof(
                 current_height,
                 &Path::ClientConnection(ClientConnectionPath::new(&client_id)),
             )
             .ok_or_else(|| {
-                Status::not_found(std::format!(
+                Status::not_found(format!(
                     "Proof not found for client connection path {}",
                     client_id.as_str()
                 ))
@@ -170,7 +171,7 @@ where
                 &Path::ClientState(ClientStatePath::new(connection_end.client_id())),
             )
             .ok_or_else(|| {
-                Status::not_found(std::format!(
+                Status::not_found(format!(
                     "Proof not found for client state path {}",
                     connection_end.client_id().as_str()
                 ))
@@ -211,7 +212,7 @@ where
             .ibc_context
             .get_proof(current_height, &Path::ClientConsensusState(consensus_path))
             .ok_or_else(|| {
-                Status::not_found(std::format!(
+                Status::not_found(format!(
                     "Proof not found for consensus state path {}",
                     connection_end.client_id().as_str()
                 ))

@@ -1,4 +1,3 @@
-use alloc::string::ToString;
 use ibc_proto::{
     google::protobuf::Any,
     ibc::core::{
@@ -21,6 +20,8 @@ use ibc_proto::{
     },
 };
 
+use crate::prelude::*;
+
 use crate::{
     core::{
         ics04_channel::packet::Sequence,
@@ -31,12 +32,12 @@ use crate::{
                 Path, ReceiptPath, SeqRecvPath, SeqSendPath,
             },
         },
-        QueryContext, ValidationContext,
+        ValidationContext,
     },
+    services::core::context::QueryContext,
     Height,
 };
 
-use core::str::FromStr;
 use std::boxed::Box;
 use tonic::{Request, Response, Status};
 use tracing::trace;
@@ -90,7 +91,7 @@ where
             .ibc_context
             .get_proof(current_height, &Path::ChannelEnd(channel_end_path))
             .ok_or_else(|| {
-                Status::not_found(std::format!(
+                Status::not_found(format!(
                     "Channel end proof not found for channel {}",
                     channel_id
                 ))
@@ -160,10 +161,7 @@ where
             .first()
             .map(|connection_id| self.ibc_context.connection_end(connection_id))
             .ok_or_else(|| {
-                Status::not_found(std::format!(
-                    "Channel {} has no connection hops",
-                    channel_id
-                ))
+                Status::not_found(format!("Channel {} has no connection hops", channel_id))
             })??;
 
         let client_state = self.ibc_context.client_state(connection_end.client_id())?;
@@ -177,7 +175,7 @@ where
                 &Path::ClientState(ClientStatePath::new(connection_end.client_id())),
             )
             .ok_or_else(|| {
-                Status::not_found(std::format!(
+                Status::not_found(format!(
                     "Client state proof not found for client {}",
                     connection_end.client_id()
                 ))
@@ -217,10 +215,7 @@ where
             .first()
             .map(|connection_id| self.ibc_context.connection_end(connection_id))
             .ok_or_else(|| {
-                Status::not_found(std::format!(
-                    "Channel {} has no connection hops",
-                    channel_id
-                ))
+                Status::not_found(format!("Channel {} has no connection hops", channel_id))
             })??;
 
         let consensus_path = ClientConsensusStatePath::new(connection_end.client_id(), &height);
@@ -233,7 +228,7 @@ where
             .ibc_context
             .get_proof(current_height, &Path::ClientConsensusState(consensus_path))
             .ok_or_else(|| {
-                Status::not_found(std::format!(
+                Status::not_found(format!(
                     "Consensus state proof not found for client {}",
                     connection_end.client_id()
                 ))
@@ -271,7 +266,7 @@ where
             .ibc_context
             .get_proof(current_height, &Path::Commitment(commitment_path))
             .ok_or_else(|| {
-                Status::not_found(std::format!(
+                Status::not_found(format!(
                     "Packet commitment proof not found for channel {}",
                     channel_id
                 ))
@@ -347,7 +342,7 @@ where
             .ibc_context
             .get_proof(current_height, &Path::Receipt(receipt_path))
             .ok_or_else(|| {
-                Status::not_found(std::format!(
+                Status::not_found(format!(
                     "Packet receipt proof not found for channel {}",
                     channel_id
                 ))
@@ -386,7 +381,7 @@ where
             .ibc_context
             .get_proof(current_height, &Path::Ack(acknowledgement_path))
             .ok_or_else(|| {
-                Status::not_found(std::format!(
+                Status::not_found(format!(
                     "Packet acknowledgement proof not found for channel {}",
                     channel_id
                 ))
@@ -528,7 +523,7 @@ where
             .ibc_context
             .get_proof(current_height, &Path::SeqRecv(next_seq_recv_path))
             .ok_or_else(|| {
-                Status::not_found(std::format!(
+                Status::not_found(format!(
                     "Next sequence receive proof not found for channel {}",
                     channel_id
                 ))
@@ -565,7 +560,7 @@ where
             .ibc_context
             .get_proof(current_height, &Path::SeqSend(next_seq_send_path))
             .ok_or_else(|| {
-                Status::not_found(std::format!(
+                Status::not_found(format!(
                     "Next sequence send proof not found for channel {}",
                     channel_id
                 ))

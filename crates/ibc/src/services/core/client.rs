@@ -1,4 +1,3 @@
-use alloc::string::ToString;
 use ibc_proto::{
     google::protobuf::Any,
     ibc::core::client::v1::{
@@ -14,6 +13,8 @@ use ibc_proto::{
     },
 };
 
+use crate::prelude::*;
+
 use crate::{
     core::{
         ics02_client::error::ClientError,
@@ -21,9 +22,10 @@ use crate::{
             identifier::ClientId,
             path::{ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath},
         },
-        ContextError, QueryContext, ValidationContext,
+        ContextError, ValidationContext,
     },
     hosts::tendermint::upgrade_proposal::UpgradeValidationContext,
+    services::core::context::QueryContext,
     Height,
 };
 
@@ -92,10 +94,9 @@ where
                 &Path::ClientState(ClientStatePath::new(&client_id)),
             )
             .ok_or_else(|| {
-                Status::not_found(std::format!(
+                Status::not_found(format!(
                     "Client state not found for client {} at height {}",
-                    client_id,
-                    current_height
+                    client_id, current_height
                 ))
             })?;
 
@@ -154,10 +155,9 @@ where
                 &Path::ClientConsensusState(ClientConsensusStatePath::new(&client_id, &height)),
             )
             .ok_or_else(|| {
-                Status::not_found(std::format!(
+                Status::not_found(format!(
                     "Consensus state not found for client {} at height {}",
-                    client_id,
-                    height
+                    client_id, height
                 ))
             })?;
 
@@ -226,7 +226,7 @@ where
         let client_status = self.ibc_context.client_status(&client_id)?;
 
         Ok(Response::new(QueryClientStatusResponse {
-            status: std::format!("{}", client_status),
+            status: format!("{}", client_status),
         }))
     }
 
