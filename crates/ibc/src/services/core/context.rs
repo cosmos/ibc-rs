@@ -1,18 +1,13 @@
+use crate::core::ics02_client::client_state::Status;
+use crate::core::ics02_client::client_type::ClientType;
+use crate::core::ics03_connection::connection::IdentifiedConnectionEnd;
+use crate::core::ics04_channel::channel::IdentifiedChannelEnd;
+use crate::core::ics04_channel::packet::Sequence;
+use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+use crate::core::ics24_host::path::{AckPath, ChannelEndPath, CommitmentPath, Path};
+use crate::core::{ContextError, ValidationContext};
 use crate::prelude::*;
-
-use crate::{
-    core::{
-        ics02_client::{client_state::Status, client_type::ClientType},
-        ics03_connection::connection::IdentifiedConnectionEnd,
-        ics04_channel::{channel::IdentifiedChannelEnd, packet::Sequence},
-        ics24_host::{
-            identifier::{ClientId, ConnectionId},
-            path::{AckPath, ChannelEndPath, CommitmentPath, Path},
-        },
-        ContextError, ValidationContext,
-    },
-    Height,
-};
+use crate::Height;
 
 /// Context to be implemented by the host to provide proofs in gRPC query responses
 ///

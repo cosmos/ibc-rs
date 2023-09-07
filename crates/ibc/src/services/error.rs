@@ -1,7 +1,9 @@
 use alloc::string::ToString;
 
-use crate::core::{ics24_host::identifier::IdentifierError, ContextError};
 use tonic::Status;
+
+use crate::core::ics24_host::identifier::IdentifierError;
+use crate::core::ContextError;
 
 impl From<IdentifierError> for Status {
     fn from(err: IdentifierError) -> Self {

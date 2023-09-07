@@ -1,38 +1,26 @@
-use ibc_proto::{
-    google::protobuf::Any,
-    ibc::core::{
-        client::v1::IdentifiedClientState,
-        connection::v1::{
-            query_server::Query as ConnectionQuery, Params as ConnectionParams,
-            QueryClientConnectionsRequest, QueryClientConnectionsResponse,
-            QueryConnectionClientStateRequest, QueryConnectionClientStateResponse,
-            QueryConnectionConsensusStateRequest, QueryConnectionConsensusStateResponse,
-            QueryConnectionParamsRequest, QueryConnectionParamsResponse, QueryConnectionRequest,
-            QueryConnectionResponse, QueryConnectionsRequest, QueryConnectionsResponse,
-        },
-    },
-};
-
-use crate::{
-    core::{
-        ics24_host::{
-            identifier::{ClientId, ConnectionId},
-            path::{
-                ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath,
-                Path,
-            },
-        },
-        ValidationContext,
-    },
-    services::core::context::QueryContext,
-    Height,
-};
-
-use crate::prelude::*;
-
 use std::boxed::Box;
+
+use ibc_proto::google::protobuf::Any;
+use ibc_proto::ibc::core::client::v1::IdentifiedClientState;
+use ibc_proto::ibc::core::connection::v1::query_server::Query as ConnectionQuery;
+use ibc_proto::ibc::core::connection::v1::{
+    Params as ConnectionParams, QueryClientConnectionsRequest, QueryClientConnectionsResponse,
+    QueryConnectionClientStateRequest, QueryConnectionClientStateResponse,
+    QueryConnectionConsensusStateRequest, QueryConnectionConsensusStateResponse,
+    QueryConnectionParamsRequest, QueryConnectionParamsResponse, QueryConnectionRequest,
+    QueryConnectionResponse, QueryConnectionsRequest, QueryConnectionsResponse,
+};
 use tonic::{Request, Response, Status};
 use tracing::trace;
+
+use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+use crate::core::ics24_host::path::{
+    ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path,
+};
+use crate::core::ValidationContext;
+use crate::prelude::*;
+use crate::services::core::context::QueryContext;
+use crate::Height;
 
 pub struct ConnectionQueryService<I>
 where

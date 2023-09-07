@@ -1,46 +1,34 @@
-use ibc_proto::{
-    google::protobuf::Any,
-    ibc::core::{
-        channel::v1::{
-            query_server::Query as ChannelQuery, PacketState, QueryChannelClientStateRequest,
-            QueryChannelClientStateResponse, QueryChannelConsensusStateRequest,
-            QueryChannelConsensusStateResponse, QueryChannelRequest, QueryChannelResponse,
-            QueryChannelsRequest, QueryChannelsResponse, QueryConnectionChannelsRequest,
-            QueryConnectionChannelsResponse, QueryNextSequenceReceiveRequest,
-            QueryNextSequenceReceiveResponse, QueryNextSequenceSendRequest,
-            QueryNextSequenceSendResponse, QueryPacketAcknowledgementRequest,
-            QueryPacketAcknowledgementResponse, QueryPacketAcknowledgementsRequest,
-            QueryPacketAcknowledgementsResponse, QueryPacketCommitmentRequest,
-            QueryPacketCommitmentResponse, QueryPacketCommitmentsRequest,
-            QueryPacketCommitmentsResponse, QueryPacketReceiptRequest, QueryPacketReceiptResponse,
-            QueryUnreceivedAcksRequest, QueryUnreceivedAcksResponse, QueryUnreceivedPacketsRequest,
-            QueryUnreceivedPacketsResponse,
-        },
-        client::v1::IdentifiedClientState,
-    },
-};
-
-use crate::prelude::*;
-
-use crate::{
-    core::{
-        ics04_channel::packet::Sequence,
-        ics24_host::{
-            identifier::{ChannelId, ConnectionId, PortId},
-            path::{
-                AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath,
-                Path, ReceiptPath, SeqRecvPath, SeqSendPath,
-            },
-        },
-        ValidationContext,
-    },
-    services::core::context::QueryContext,
-    Height,
-};
-
 use std::boxed::Box;
+
+use ibc_proto::google::protobuf::Any;
+use ibc_proto::ibc::core::channel::v1::query_server::Query as ChannelQuery;
+use ibc_proto::ibc::core::channel::v1::{
+    PacketState, QueryChannelClientStateRequest, QueryChannelClientStateResponse,
+    QueryChannelConsensusStateRequest, QueryChannelConsensusStateResponse, QueryChannelRequest,
+    QueryChannelResponse, QueryChannelsRequest, QueryChannelsResponse,
+    QueryConnectionChannelsRequest, QueryConnectionChannelsResponse,
+    QueryNextSequenceReceiveRequest, QueryNextSequenceReceiveResponse,
+    QueryNextSequenceSendRequest, QueryNextSequenceSendResponse, QueryPacketAcknowledgementRequest,
+    QueryPacketAcknowledgementResponse, QueryPacketAcknowledgementsRequest,
+    QueryPacketAcknowledgementsResponse, QueryPacketCommitmentRequest,
+    QueryPacketCommitmentResponse, QueryPacketCommitmentsRequest, QueryPacketCommitmentsResponse,
+    QueryPacketReceiptRequest, QueryPacketReceiptResponse, QueryUnreceivedAcksRequest,
+    QueryUnreceivedAcksResponse, QueryUnreceivedPacketsRequest, QueryUnreceivedPacketsResponse,
+};
+use ibc_proto::ibc::core::client::v1::IdentifiedClientState;
 use tonic::{Request, Response, Status};
 use tracing::trace;
+
+use crate::core::ics04_channel::packet::Sequence;
+use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+use crate::core::ics24_host::path::{
+    AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath, Path,
+    ReceiptPath, SeqRecvPath, SeqSendPath,
+};
+use crate::core::ValidationContext;
+use crate::prelude::*;
+use crate::services::core::context::QueryContext;
+use crate::Height;
 
 pub struct ChannelQueryService<I>
 where

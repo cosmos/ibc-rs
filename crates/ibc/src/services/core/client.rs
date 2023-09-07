@@ -1,38 +1,31 @@
-use ibc_proto::{
-    google::protobuf::Any,
-    ibc::core::client::v1::{
-        query_server::Query as ClientQuery, ConsensusStateWithHeight, IdentifiedClientState,
-        Params as ClientParams, QueryClientParamsRequest, QueryClientParamsResponse,
-        QueryClientStateRequest, QueryClientStateResponse, QueryClientStatesRequest,
-        QueryClientStatesResponse, QueryClientStatusRequest, QueryClientStatusResponse,
-        QueryConsensusStateHeightsRequest, QueryConsensusStateHeightsResponse,
-        QueryConsensusStateRequest, QueryConsensusStateResponse, QueryConsensusStatesRequest,
-        QueryConsensusStatesResponse, QueryUpgradedClientStateRequest,
-        QueryUpgradedClientStateResponse, QueryUpgradedConsensusStateRequest,
-        QueryUpgradedConsensusStateResponse,
-    },
-};
-
-use crate::prelude::*;
-
-use crate::{
-    core::{
-        ics02_client::error::ClientError,
-        ics24_host::{
-            identifier::ClientId,
-            path::{ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath},
-        },
-        ContextError, ValidationContext,
-    },
-    hosts::tendermint::upgrade_proposal::UpgradeValidationContext,
-    services::core::context::QueryContext,
-    Height,
-};
-
 use core::str::FromStr;
 use std::boxed::Box;
+
+use ibc_proto::google::protobuf::Any;
+use ibc_proto::ibc::core::client::v1::query_server::Query as ClientQuery;
+use ibc_proto::ibc::core::client::v1::{
+    ConsensusStateWithHeight, IdentifiedClientState, Params as ClientParams,
+    QueryClientParamsRequest, QueryClientParamsResponse, QueryClientStateRequest,
+    QueryClientStateResponse, QueryClientStatesRequest, QueryClientStatesResponse,
+    QueryClientStatusRequest, QueryClientStatusResponse, QueryConsensusStateHeightsRequest,
+    QueryConsensusStateHeightsResponse, QueryConsensusStateRequest, QueryConsensusStateResponse,
+    QueryConsensusStatesRequest, QueryConsensusStatesResponse, QueryUpgradedClientStateRequest,
+    QueryUpgradedClientStateResponse, QueryUpgradedConsensusStateRequest,
+    QueryUpgradedConsensusStateResponse,
+};
 use tonic::{Request, Response, Status};
 use tracing::trace;
+
+use crate::core::ics02_client::error::ClientError;
+use crate::core::ics24_host::identifier::ClientId;
+use crate::core::ics24_host::path::{
+    ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
+};
+use crate::core::{ContextError, ValidationContext};
+use crate::hosts::tendermint::upgrade_proposal::UpgradeValidationContext;
+use crate::prelude::*;
+use crate::services::core::context::QueryContext;
+use crate::Height;
 
 pub struct ClientQueryService<I, U>
 where
