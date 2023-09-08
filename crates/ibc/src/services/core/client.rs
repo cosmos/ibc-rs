@@ -16,6 +16,7 @@ use ibc_proto::ibc::core::client::v1::{
 use tonic::{Request, Response, Status};
 use tracing::trace;
 
+use crate::core::ics02_client::client_state::ClientStateValidation;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::{
@@ -235,7 +236,11 @@ where
 
         let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
 
-        let client_status = self.ibc_context.client_status(&client_id)?;
+        let client_state = self.ibc_context.client_state(&client_id)?;
+        let client_validation_ctx = self.ibc_context.get_client_validation_context();
+        let client_status = client_state
+            .status(client_validation_ctx, &client_id)
+            .map_err(ContextError::from)?;
 
         Ok(Response::new(QueryClientStatusResponse {
             status: format!("{}", client_status),
