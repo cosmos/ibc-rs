@@ -1,4 +1,3 @@
-use crate::core::ics02_client::client_state::Status;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics03_connection::connection::IdentifiedConnectionEnd;
 use crate::core::ics04_channel::channel::IdentifiedChannelEnd;
@@ -37,9 +36,6 @@ pub trait QueryContext: ProvableContext + ValidationContext {
 
     /// Returns the list of all heights at which consensus states for the given client are.
     fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError>;
-
-    /// Returns the status of the given client.
-    fn client_status(&self, client_id: &ClientId) -> Result<Status, ContextError>;
 
     /// Returns the list of supported client types.
     fn allowed_clients(&self) -> Vec<ClientType>;
