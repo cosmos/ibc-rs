@@ -30,6 +30,8 @@ use crate::prelude::*;
 use crate::services::core::context::QueryContext;
 use crate::Height;
 
+// TODO(rano): currently the services don't support pagination, so we return all the results.
+
 pub struct ChannelQueryService<I>
 where
     I: QueryContext + Send + Sync + 'static,
@@ -104,8 +106,9 @@ where
 
         Ok(Response::new(QueryChannelsResponse {
             channels: channel_ends.into_iter().map(Into::into).collect(),
-            pagination: None,
             height: Some(self.ibc_context.host_height()?.into()),
+            // no support for pagination yet
+            pagination: None,
         }))
     }
 
@@ -135,8 +138,9 @@ where
 
         Ok(Response::new(QueryConnectionChannelsResponse {
             channels: connection_channel_ends,
-            pagination: None,
             height: Some(self.ibc_context.host_height()?.into()),
+            // no support for pagination yet
+            pagination: None,
         }))
     }
 
@@ -311,8 +315,9 @@ where
 
         Ok(Response::new(QueryPacketCommitmentsResponse {
             commitments,
-            pagination: None,
             height: Some(self.ibc_context.host_height()?.into()),
+            // no support for pagination yet
+            pagination: None,
         }))
     }
 
@@ -433,8 +438,9 @@ where
 
         Ok(Response::new(QueryPacketAcknowledgementsResponse {
             acknowledgements,
-            pagination: None,
             height: Some(self.ibc_context.host_height()?.into()),
+            // no support for pagination yet
+            pagination: None,
         }))
     }
 

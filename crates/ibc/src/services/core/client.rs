@@ -27,6 +27,8 @@ use crate::prelude::*;
 use crate::services::core::context::QueryContext;
 use crate::Height;
 
+// TODO(rano): currently the services don't support pagination, so we return all the results.
+
 pub struct ClientQueryService<I, U>
 where
     I: QueryContext + Send + Sync + 'static,
@@ -118,6 +120,7 @@ where
                     client_state: Some(state.into()),
                 })
                 .collect(),
+            // no support for pagination yet
             pagination: None,
         }))
     }
@@ -195,6 +198,7 @@ where
                     consensus_state: Some(state.into()),
                 })
                 .collect(),
+            // no support for pagination yet
             pagination: None,
         }))
     }
@@ -216,6 +220,7 @@ where
                 .into_iter()
                 .map(|height| height.into())
                 .collect(),
+            // no support for pagination yet
             pagination: None,
         }))
     }
