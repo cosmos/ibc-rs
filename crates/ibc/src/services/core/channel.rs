@@ -17,7 +17,6 @@ use ibc_proto::ibc::core::channel::v1::{
 };
 use ibc_proto::ibc::core::client::v1::IdentifiedClientState;
 use tonic::{Request, Response, Status};
-use tracing::trace;
 
 use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
@@ -65,8 +64,6 @@ where
     ) -> Result<Response<QueryChannelResponse>, Status> {
         let request_ref = request.get_ref();
 
-        trace!("Got channel request: {:?}", &request_ref);
-
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
         let port_id = PortId::from_str(request_ref.port_id.as_str())?;
@@ -96,13 +93,9 @@ where
 
     async fn channels(
         &self,
-        request: Request<QueryChannelsRequest>,
+        _request: Request<QueryChannelsRequest>,
     ) -> Result<Response<QueryChannelsResponse>, Status> {
-        let request_ref = request.get_ref();
-
         let channel_ends = self.ibc_context.channel_ends()?;
-
-        trace!("Got channels request: {:?}", &request_ref);
 
         Ok(Response::new(QueryChannelsResponse {
             channels: channel_ends.into_iter().map(Into::into).collect(),
@@ -117,8 +110,6 @@ where
         request: Request<QueryConnectionChannelsRequest>,
     ) -> Result<Response<QueryConnectionChannelsResponse>, Status> {
         let request_ref = request.get_ref();
-
-        trace!("Got connection channels request: {:?}", &request_ref);
 
         let connection_id = ConnectionId::from_str(request_ref.connection.as_str())?;
 
@@ -149,8 +140,6 @@ where
         request: Request<QueryChannelClientStateRequest>,
     ) -> Result<Response<QueryChannelClientStateResponse>, Status> {
         let request_ref = request.get_ref();
-
-        trace!("Got channel client state request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -201,8 +190,6 @@ where
     ) -> Result<Response<QueryChannelConsensusStateResponse>, Status> {
         let request_ref = request.get_ref();
 
-        trace!("Got channel consensus state request: {:?}", &request_ref);
-
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
         let port_id = PortId::from_str(request_ref.port_id.as_str())?;
@@ -252,8 +239,6 @@ where
     ) -> Result<Response<QueryPacketCommitmentResponse>, Status> {
         let request_ref = request.get_ref();
 
-        trace!("Got packet commitment request: {:?}", &request_ref);
-
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
         let port_id = PortId::from_str(request_ref.port_id.as_str())?;
@@ -288,8 +273,6 @@ where
         request: Request<QueryPacketCommitmentsRequest>,
     ) -> Result<Response<QueryPacketCommitmentsResponse>, Status> {
         let request_ref = request.get_ref();
-
-        trace!("Got packet commitments request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -326,8 +309,6 @@ where
         request: Request<QueryPacketReceiptRequest>,
     ) -> Result<Response<QueryPacketReceiptResponse>, Status> {
         let request_ref = request.get_ref();
-
-        trace!("Got packet receipt request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -366,8 +347,6 @@ where
     ) -> Result<Response<QueryPacketAcknowledgementResponse>, Status> {
         let request_ref = request.get_ref();
 
-        trace!("Got packet acknowledgement request: {:?}", &request_ref);
-
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
         let port_id = PortId::from_str(request_ref.port_id.as_str())?;
@@ -405,8 +384,6 @@ where
         request: Request<QueryPacketAcknowledgementsRequest>,
     ) -> Result<Response<QueryPacketAcknowledgementsResponse>, Status> {
         let request_ref = request.get_ref();
-
-        trace!("Got packet acknowledgements request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -450,8 +427,6 @@ where
     ) -> Result<Response<QueryUnreceivedPacketsResponse>, Status> {
         let request_ref = request.get_ref();
 
-        trace!("Got unreceived packets request: {:?}", &request_ref);
-
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
         let port_id = PortId::from_str(request_ref.port_id.as_str())?;
@@ -481,8 +456,6 @@ where
     ) -> Result<Response<QueryUnreceivedAcksResponse>, Status> {
         let request_ref = request.get_ref();
 
-        trace!("Got unreceived acks request: {:?}", &request_ref);
-
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
         let port_id = PortId::from_str(request_ref.port_id.as_str())?;
@@ -510,8 +483,6 @@ where
         request: Request<QueryNextSequenceReceiveRequest>,
     ) -> Result<Response<QueryNextSequenceReceiveResponse>, Status> {
         let request_ref = request.get_ref();
-
-        trace!("Got next sequence receive request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 
@@ -547,8 +518,6 @@ where
         request: Request<QueryNextSequenceSendRequest>,
     ) -> Result<Response<QueryNextSequenceSendResponse>, Status> {
         let request_ref = request.get_ref();
-
-        trace!("Got next sequence send request: {:?}", &request_ref);
 
         let channel_id = ChannelId::from_str(request_ref.channel_id.as_str())?;
 

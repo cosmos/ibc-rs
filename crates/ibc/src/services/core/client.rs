@@ -14,7 +14,6 @@ use ibc_proto::ibc::core::client::v1::{
     QueryUpgradedConsensusStateResponse,
 };
 use tonic::{Request, Response, Status};
-use tracing::trace;
 
 use crate::core::ics02_client::client_state::ClientStateValidation;
 use crate::core::ics02_client::error::ClientError;
@@ -76,8 +75,6 @@ where
     ) -> Result<Response<QueryClientStateResponse>, Status> {
         let request_ref = request.get_ref();
 
-        trace!("Got client state request: {:?}", request_ref);
-
         let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
         let client_state = self.ibc_context.client_state(&client_id)?;
 
@@ -105,12 +102,8 @@ where
 
     async fn client_states(
         &self,
-        request: Request<QueryClientStatesRequest>,
+        _request: Request<QueryClientStatesRequest>,
     ) -> Result<Response<QueryClientStatesResponse>, Status> {
-        let request_ref = request.get_ref();
-
-        trace!("Got client states request: {:?}", request_ref);
-
         let client_states = self.ibc_context.client_states()?;
 
         Ok(Response::new(QueryClientStatesResponse {
@@ -131,8 +124,6 @@ where
         request: Request<QueryConsensusStateRequest>,
     ) -> Result<Response<QueryConsensusStateResponse>, Status> {
         let request_ref = request.get_ref();
-
-        trace!("Got consensus state request: {:?}", request_ref);
 
         let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
 
@@ -185,8 +176,6 @@ where
     ) -> Result<Response<QueryConsensusStatesResponse>, Status> {
         let request_ref = request.get_ref();
 
-        trace!("Got consensus states request: {:?}", request_ref);
-
         let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
 
         let consensus_states = self.ibc_context.consensus_states(&client_id)?;
@@ -210,8 +199,6 @@ where
     ) -> Result<Response<QueryConsensusStateHeightsResponse>, Status> {
         let request_ref = request.get_ref();
 
-        trace!("Got consensus state heights request: {:?}", request_ref);
-
         let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
 
         let consensus_state_heights = self.ibc_context.consensus_state_heights(&client_id)?;
@@ -232,8 +219,6 @@ where
     ) -> Result<Response<QueryClientStatusResponse>, Status> {
         let request_ref = request.get_ref();
 
-        trace!("Got client status request: {:?}", request_ref);
-
         let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
 
         let client_state = self.ibc_context.client_state(&client_id)?;
@@ -249,12 +234,8 @@ where
 
     async fn client_params(
         &self,
-        request: Request<QueryClientParamsRequest>,
+        _request: Request<QueryClientParamsRequest>,
     ) -> Result<Response<QueryClientParamsResponse>, Status> {
-        let request_ref = request.get_ref();
-
-        trace!("Got client params request: {:?}", request_ref);
-
         Err(Status::unimplemented(
             "Querying ClientParams is not supported yet",
         ))
@@ -262,12 +243,8 @@ where
 
     async fn upgraded_client_state(
         &self,
-        request: Request<QueryUpgradedClientStateRequest>,
+        _request: Request<QueryUpgradedClientStateRequest>,
     ) -> Result<Response<QueryUpgradedClientStateResponse>, Status> {
-        let request_ref = request.get_ref();
-
-        trace!("Got upgraded client state request: {:?}", request_ref);
-
         let plan = self
             .upgrade_context
             .upgrade_plan()
@@ -289,12 +266,8 @@ where
 
     async fn upgraded_consensus_state(
         &self,
-        request: Request<QueryUpgradedConsensusStateRequest>,
+        _request: Request<QueryUpgradedConsensusStateRequest>,
     ) -> Result<Response<QueryUpgradedConsensusStateResponse>, Status> {
-        let request_ref = request.get_ref();
-
-        trace!("Got upgraded consensus state request: {:?}", request_ref);
-
         let plan = self
             .upgrade_context
             .upgrade_plan()

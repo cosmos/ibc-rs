@@ -11,7 +11,6 @@ use ibc_proto::ibc::core::connection::v1::{
     QueryConnectionResponse, QueryConnectionsRequest, QueryConnectionsResponse,
 };
 use tonic::{Request, Response, Status};
-use tracing::trace;
 
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::core::ics24_host::path::{
@@ -57,8 +56,6 @@ where
     ) -> Result<Response<QueryConnectionResponse>, Status> {
         let request_ref = request.get_ref();
 
-        trace!("Got connection request: {:?}", request_ref);
-
         let connection_id = ConnectionId::from_str(request_ref.connection_id.as_str())?;
 
         let connection_end = self.ibc_context.connection_end(&connection_id)?;
@@ -87,12 +84,8 @@ where
 
     async fn connections(
         &self,
-        request: Request<QueryConnectionsRequest>,
+        _request: Request<QueryConnectionsRequest>,
     ) -> Result<Response<QueryConnectionsResponse>, Status> {
-        let request_ref = request.get_ref();
-
-        trace!("Got connections request: {:?}", request_ref);
-
         let connections = self.ibc_context.connection_ends()?;
 
         Ok(Response::new(QueryConnectionsResponse {
@@ -107,10 +100,6 @@ where
         &self,
         request: Request<QueryClientConnectionsRequest>,
     ) -> Result<Response<QueryClientConnectionsResponse>, Status> {
-        let request_ref = request.get_ref();
-
-        trace!("Got client connections request: {:?}", request_ref);
-
         let request_ref = request.get_ref();
 
         let client_id = ClientId::from_str(request_ref.client_id.as_str())?;
@@ -144,8 +133,6 @@ where
         request: Request<QueryConnectionClientStateRequest>,
     ) -> Result<Response<QueryConnectionClientStateResponse>, Status> {
         let request_ref = request.get_ref();
-
-        trace!("Got connection client state request: {:?}", request_ref);
 
         let connection_id = ConnectionId::from_str(request_ref.connection_id.as_str())?;
 
@@ -184,8 +171,6 @@ where
     ) -> Result<Response<QueryConnectionConsensusStateResponse>, Status> {
         let request_ref = request.get_ref();
 
-        trace!("Got connection consensus state request: {:?}", request_ref);
-
         let connection_id = ConnectionId::from_str(request_ref.connection_id.as_str())?;
 
         let connection_end = self.ibc_context.connection_end(&connection_id)?;
@@ -219,12 +204,8 @@ where
 
     async fn connection_params(
         &self,
-        request: Request<QueryConnectionParamsRequest>,
+        _request: Request<QueryConnectionParamsRequest>,
     ) -> Result<Response<QueryConnectionParamsResponse>, Status> {
-        let request_ref = request.get_ref();
-
-        trace!("Got connection params request: {:?}", request_ref);
-
         Ok(Response::new(QueryConnectionParamsResponse {
             params: Some(ConnectionParams {
                 max_expected_time_per_block: self
