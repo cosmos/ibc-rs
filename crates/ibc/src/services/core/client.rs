@@ -4,10 +4,10 @@ use std::boxed::Box;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::query_server::Query as ClientQuery;
 use ibc_proto::ibc::core::client::v1::{
-    ConsensusStateWithHeight, IdentifiedClientState, Params as ClientParams,
-    QueryClientParamsRequest, QueryClientParamsResponse, QueryClientStateRequest,
-    QueryClientStateResponse, QueryClientStatesRequest, QueryClientStatesResponse,
-    QueryClientStatusRequest, QueryClientStatusResponse, QueryConsensusStateHeightsRequest,
+    ConsensusStateWithHeight, IdentifiedClientState, QueryClientParamsRequest,
+    QueryClientParamsResponse, QueryClientStateRequest, QueryClientStateResponse,
+    QueryClientStatesRequest, QueryClientStatesResponse, QueryClientStatusRequest,
+    QueryClientStatusResponse, QueryConsensusStateHeightsRequest,
     QueryConsensusStateHeightsResponse, QueryConsensusStateRequest, QueryConsensusStateResponse,
     QueryConsensusStatesRequest, QueryConsensusStatesResponse, QueryUpgradedClientStateRequest,
     QueryUpgradedClientStateResponse, QueryUpgradedConsensusStateRequest,
@@ -255,16 +255,9 @@ where
 
         trace!("Got client params request: {:?}", request_ref);
 
-        Ok(Response::new(QueryClientParamsResponse {
-            params: Some(ClientParams {
-                allowed_clients: self
-                    .ibc_context
-                    .allowed_clients()
-                    .into_iter()
-                    .map(|x| x.as_str().into())
-                    .collect(),
-            }),
-        }))
+        Err(Status::unimplemented(
+            "Querying ClientParams is not supported yet",
+        ))
     }
 
     async fn upgraded_client_state(
