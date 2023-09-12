@@ -91,7 +91,7 @@ where
             )
             .ok_or_else(|| {
                 Status::not_found(format!(
-                    "Client state not found for client {} at height {}",
+                    "Proof unavailable for client {} at height {}",
                     client_id, current_height
                 ))
             })?;
