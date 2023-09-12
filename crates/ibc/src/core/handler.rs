@@ -53,7 +53,7 @@ pub fn dispatch(
 /// `dispatch()` on each successively.
 pub fn validate<Ctx>(
     ctx: &Ctx,
-    router: &mut impl Router,
+    router: &impl Router,
     msg: MsgEnvelope,
 ) -> Result<(), RouterError>
 where
