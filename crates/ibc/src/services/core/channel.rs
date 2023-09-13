@@ -46,6 +46,7 @@ where
     <I as ValidationContext>::AnyClientState: Into<Any>,
     <I as ValidationContext>::AnyConsensusState: Into<Any>,
 {
+    /// `ibc_context` must be thread-safe. Possibly wrapped in `Arc<Mutex<_>>` or `Arc<RwLock<_>>` or similar.
     pub fn new(ibc_context: I) -> Self {
         Self { ibc_context }
     }

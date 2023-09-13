@@ -51,6 +51,7 @@ where
     <U as UpgradeValidationContext>::AnyClientState: Into<Any>,
     <U as UpgradeValidationContext>::AnyConsensusState: Into<Any>,
 {
+    /// `ibc_context` and `upgrade_context` must be thread-safe. Possibly wrapped in `Arc<Mutex<_>>` or `Arc<RwLock<_>>` or similar.
     pub fn new(ibc_context: I, upgrade_context: U) -> Self {
         Self {
             ibc_context,

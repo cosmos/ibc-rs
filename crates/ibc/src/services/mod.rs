@@ -31,8 +31,10 @@
 //! let ibc = Ibc::new();
 //! let upgrade = Upgrade::new();
 //!
-//! let client_service = ClientQueryServer::new(ClientQueryService::new(ibc, upgrade))
-//! let connection_service = ConnectionQueryServer::new(ConnectionQueryService::new(ibc))
+//! // `ibc` and `upgrade` must be thread-safe
+//!
+//! let client_service = ClientQueryServer::new(ClientQueryService::new(ibc.clone(), upgrade))
+//! let connection_service = ConnectionQueryServer::new(ConnectionQueryService::new(ibc.clone()))
 //! let channel_service = ChannelQueryServer::new(ChannelQueryService::new(ibc))
 //!
 //! let grpc_server = tonic::transport::Server::builder()
