@@ -238,7 +238,7 @@ impl<D> TokenTransferExecutionContext<D> for DummyTransferModule {
     }
 
     fn escrow_coins_execute(
-        &self,
+        &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
         _from_account: &Self::AccountId,
@@ -249,7 +249,7 @@ impl<D> TokenTransferExecutionContext<D> for DummyTransferModule {
     }
 
     fn unescrow_coins_execute(
-        &self,
+        &mut self,
         _port_id: &PortId,
         _channel_id: &ChannelId,
         _to_account: &Self::AccountId,

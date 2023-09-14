@@ -77,7 +77,7 @@ pub trait TokenTransferValidationContext<D> {
 pub trait TokenTransferExecutionContext<D>: TokenTransferValidationContext<D> {
     /// Escrows the tokens
     fn escrow_coins_execute(
-        &self,
+        &mut self,
         port_id: &PortId,
         channel_id: &ChannelId,
         from_account: &Self::AccountId,
@@ -87,7 +87,7 @@ pub trait TokenTransferExecutionContext<D>: TokenTransferValidationContext<D> {
 
     /// Unescrows the tokens
     fn unescrow_coins_execute(
-        &self,
+        &mut self,
         port_id: &PortId,
         channel_id: &ChannelId,
         to_account: &Self::AccountId,
