@@ -1,3 +1,5 @@
+//! Required traits for blanket implementations of [`gRPC query services`](crate::services::core).
+
 use crate::core::ics03_connection::connection::IdentifiedConnectionEnd;
 use crate::core::ics04_channel::channel::IdentifiedChannelEnd;
 use crate::core::ics04_channel::packet::Sequence;

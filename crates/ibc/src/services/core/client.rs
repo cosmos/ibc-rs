@@ -1,3 +1,7 @@
+//! [`ClientQueryService`](ClientQueryService) takes generics `I` and `U` to store `ibc_context` and `upgrade_context` that implement [`QueryContext`](QueryContext) and [`UpgradeValidationContext`](UpgradeValidationContext) respectively.
+//! `I` must be a type where writes from one thread are readable from another.
+//! This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
+
 use core::str::FromStr;
 use std::boxed::Box;
 
@@ -29,6 +33,8 @@ use crate::Height;
 
 // TODO(rano): currently the services don't support pagination, so we return all the results.
 
+/// Generics `I` and `U` must be a type where writes from one thread are readable from another.
+/// This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
 pub struct ClientQueryService<I, U>
 where
     I: QueryContext + Send + Sync + 'static,
@@ -51,7 +57,8 @@ where
     <U as UpgradeValidationContext>::AnyClientState: Into<Any>,
     <U as UpgradeValidationContext>::AnyConsensusState: Into<Any>,
 {
-    /// `ibc_context` and `upgrade_context` must be thread-safe. Possibly wrapped in `Arc<Mutex<_>>` or `Arc<RwLock<_>>` or similar.
+    /// Parameters `ibc_context` and `upgrade_context` must be a type where writes from one thread are readable from another.
+    /// This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
     pub fn new(ibc_context: I, upgrade_context: U) -> Self {
         Self {
             ibc_context,

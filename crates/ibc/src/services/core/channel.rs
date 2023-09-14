@@ -1,3 +1,7 @@
+//! [`ChannelQueryService`](ChannelQueryService) takes a generic `I` to store `ibc_context` that implements [`QueryContext`](QueryContext).
+//! `I` must be a type where writes from one thread are readable from another.
+//! This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
+
 use alloc::str::FromStr;
 use std::boxed::Box;
 
@@ -32,6 +36,8 @@ use crate::Height;
 
 // TODO(rano): currently the services don't support pagination, so we return all the results.
 
+/// The generic `I` must be a type where writes from one thread are readable from another.
+/// This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
 pub struct ChannelQueryService<I>
 where
     I: QueryContext + Send + Sync + 'static,
@@ -47,7 +53,8 @@ where
     <I as ValidationContext>::AnyClientState: Into<Any>,
     <I as ValidationContext>::AnyConsensusState: Into<Any>,
 {
-    /// `ibc_context` must be thread-safe. Possibly wrapped in `Arc<Mutex<_>>` or `Arc<RwLock<_>>` or similar.
+    /// The parameter `ibc_context` must be a type where writes from one thread are readable from another.
+    /// This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
     pub fn new(ibc_context: I) -> Self {
         Self { ibc_context }
     }
