@@ -4,7 +4,6 @@ pub use core::prelude::v1::*;
 // https://doc.rust-lang.org/src/alloc/prelude/v1.rs.html
 pub use alloc::borrow::ToOwned;
 pub use alloc::boxed::Box;
-pub use alloc::str::FromStr;
 pub use alloc::string::{String, ToString};
 pub use alloc::vec::Vec;
 

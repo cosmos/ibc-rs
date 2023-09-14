@@ -1,3 +1,4 @@
+use alloc::str::FromStr;
 use std::boxed::Box;
 
 use ibc_proto::google::protobuf::Any;
