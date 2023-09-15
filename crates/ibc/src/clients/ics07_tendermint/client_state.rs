@@ -1099,8 +1099,7 @@ mod tests {
 mod serde_tests {
     use tendermint_rpc::endpoint::abci_query::AbciQuery;
 
-    use crate::test::test_serialization_roundtrip;
-
+    use crate::serializers::tests::test_serialization_roundtrip;
     #[test]
     fn serialization_roundtrip_no_proof() {
         let json_data =

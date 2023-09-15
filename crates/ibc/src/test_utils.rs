@@ -1,6 +1,4 @@
 use subtle_encoding::bech32;
-use tendermint::public_key::Algorithm;
-use tendermint::{block, consensus, evidence};
 
 use crate::applications::transfer::context::{
     cosmos_adr028_escrow_address, TokenTransferExecutionContext, TokenTransferValidationContext,
@@ -16,29 +14,6 @@ use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::router::{Module, ModuleExtras};
 use crate::prelude::*;
 use crate::signer::Signer;
-
-// Needed in mocks.
-pub fn default_consensus_params() -> consensus::Params {
-    consensus::Params {
-        block: block::Size {
-            max_bytes: 22020096,
-            max_gas: -1,
-            time_iota_ms: 1000,
-        },
-        evidence: evidence::Params {
-            max_age_num_blocks: 100000,
-            max_age_duration: evidence::Duration(core::time::Duration::new(48 * 3600, 0)),
-            max_bytes: 0,
-        },
-        validator: consensus::params::ValidatorParams {
-            pub_key_types: vec![Algorithm::Ed25519],
-        },
-        version: Some(consensus::params::VersionParams::default()),
-        abci: consensus::params::AbciParams {
-            vote_extensions_enable_height: None,
-        },
-    }
-}
 
 pub fn get_dummy_proof() -> Vec<u8> {
     "Y29uc2Vuc3VzU3RhdGUvaWJjb25lY2xpZW50LzIy"

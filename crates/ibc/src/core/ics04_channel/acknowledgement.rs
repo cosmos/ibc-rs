@@ -193,8 +193,6 @@ mod test {
     fn test_ack_de() {
         fn de_json_assert_eq(json_str: &str, ack: AcknowledgementStatus) {
             let de = serde_json::from_str::<AcknowledgementStatus>(json_str).unwrap();
-            std::println!("de: {:?}", de);
-            std::println!("ack: {:?}", ack);
             assert_eq!(de, ack)
         }
 

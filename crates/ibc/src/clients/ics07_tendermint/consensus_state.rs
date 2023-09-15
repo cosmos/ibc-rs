@@ -167,7 +167,7 @@ mod tests {
     use tendermint_rpc::endpoint::abci_query::AbciQuery;
     use test_log::test;
 
-    use crate::test::test_serialization_roundtrip;
+    use crate::serializers::tests::test_serialization_roundtrip;
 
     #[test]
     fn serialization_roundtrip_no_proof() {
