@@ -65,7 +65,7 @@ where
 
     let client_id = ClientId::new(client_type.clone(), id_counter).map_err(|e| {
         ContextError::from(ClientError::ClientIdentifierConstructor {
-            client_type: client_state.client_type(),
+            client_type: client_type.clone(),
             counter: id_counter,
             validation_error: e,
         })
