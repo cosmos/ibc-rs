@@ -69,8 +69,5 @@ mod utils;
 #[cfg(feature = "serde")]
 mod serializers;
 
-#[cfg(test)]
-mod test;
-
 /// Re-export the `Any` type which used across the library.
 pub use ibc_proto::google::protobuf::Any;
