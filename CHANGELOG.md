@@ -4,8 +4,7 @@
 
 *September 20, 2023*
 
-This release introduces a new API under the `grpc` feature flag, which has ibc-rs expose grpc endpoints that the hermes relayer needs. There are other miscellaneous changes.
-
+This release introduces a new API under the `grpc` feature flag, which has ibc-rs expose grpc endpoints that the hermes relayer needs. Furthermore, `no_std` support for the `serde` feature has been restored, accompanied by other miscellaneous changes.
 There are no consensus-breaking changes.
 
 ### BREAKING CHANGES
