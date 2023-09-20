@@ -1,5 +1,58 @@
 # CHANGELOG
 
+# v0.45.0
+
+*September 20, 2023*
+
+This release introduces a new API under the `grpc` feature flag, which has ibc-rs expose grpc endpoints that the hermes relayer needs. There are other miscellaneous changes.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Bump tendermint-rs to v0.33.0 
+  ([#785](https://github.com/cosmos/ibc-rs/issues/785))
+- Bump ibc-proto-rs to v0.34.0 
+  ([#790](https://github.com/cosmos/ibc-rs/issues/790))
+- Allow hosts to handle overflow cases in `increase_*_counter` methods by
+  returning `Result<(),ContextError>` type.
+  ([#857](https://github.com/cosmos/ibc-rs/issues/857))
+- logger and event emitter methods return `Result<(), ContextError>` type.
+  ([#859](https://github.com/cosmos/ibc-rs/issues/859))
+- Bump `ibc-proto-rs` to v0.35.0 along with some other minor dependency updates
+  ([#873](https://github.com/cosmos/ibc-rs/issues/873))
+
+### BUG FIXES
+
+- Fix compilation error of v0.41.0 by restoring no_std support for serde
+  feature ([#741](https://github.com/cosmos/ibc-rs/issues/741))
+- Replace mutable ref with immutable ref in validate handler
+  ([\#863](https://github.com/cosmos/ibc-rs/issues/863))
+
+### FEATURES
+
+- Blanket implementation of core gRPC services
+  ([\#686](https://github.com/cosmos/ibc-rs/issues/686))
+
+### IMPROVEMENTS
+
+- Switch to domain Tendermint event type instead of proto for the
+  `upgrade_client_proposal_handler` return
+  ([#838](https://github.com/cosmos/ibc-rs/issues/838))
+- Bump ibc-proto to v0.34.1 and borsh to v0.10
+  ([#844](https://github.com/cosmos/ibc-rs/issues/844))
+- Add borsh derive for `MsgTransfer`
+  ([#845](https://github.com/cosmos/ibc-rs/pull/845))
+- Add borsh derive for `MsgEnvelope`
+  ([#846](https://github.com/cosmos/ibc-rs/pull/846))
+- Derive `PartialEq`, `Eq` for `MsgEnvelope`
+  ([#847](https://github.com/cosmos/ibc-rs/pull/847))
+- Organize imports grouping and granularity using `rustfmt.toml`
+  ([#848](https://github.com/cosmos/ibc-rs/issues/848))
+- Add `JsonSchema` derive for `MsgEnvelope`
+  ([#856](https://github.com/cosmos/ibc-rs/pull/856))
+- Remove unused code snippets and move serializer roundtrip test to `serializers.rs`
+  ([#869](https://github.com/cosmos/ibc-rs/issues/869))
 
 # v0.44.1
 
