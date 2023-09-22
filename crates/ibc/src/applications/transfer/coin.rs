@@ -4,7 +4,6 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use ibc_proto::cosmos::base::v1beta1::Coin as ProtoCoin;
-use regex::Regex;
 
 use super::amount::Amount;
 use super::denom::{BaseDenom, PrefixedDenom};
