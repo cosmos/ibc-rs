@@ -1,10 +1,10 @@
 //! Defines coin types; the objects that are being transferred.
 
 use core::fmt::{Display, Error as FmtError, Formatter};
-use core::str::{from_utf8, FromStr};
+use core::str::FromStr;
 
 use ibc_proto::cosmos::base::v1beta1::Coin as ProtoCoin;
-use safe_regex::regex;
+use regex::Regex;
 
 use super::amount::Amount;
 use super::denom::{BaseDenom, PrefixedDenom};
@@ -59,24 +59,24 @@ where
         // a letter, a number or a separator ('/', ':', '.', '_' or '-').
         // Loosely copy the regex from here:
         // https://github.com/cosmos/cosmos-sdk/blob/v0.45.5/types/coin.go#L760-L762
-        let matcher = regex!(br"([0-9]+)([a-zA-Z0-9/:\\._\x2d]+)");
+        let re = Regex::new(r"^([0-9]+)([a-zA-Z0-9/:\\._-]+)$")
+            .map_err(TokenTransferError::InvalidRegex)?;
 
-        let (m1, m2) = matcher.match_slices(coin_str.as_bytes()).ok_or_else(|| {
-            TokenTransferError::InvalidCoin {
+        let (amount_str, denom_str) = re
+            .captures(coin_str)
+            .and_then(|cap| {
+                let amount_str = cap.get(1)?;
+                let denom_str = cap.get(2)?;
+                Some((amount_str.as_str(), denom_str.as_str()))
+            })
+            .ok_or_else(|| TokenTransferError::InvalidCoin {
                 coin: coin_str.to_string(),
-            }
-        })?;
+            })?;
 
-        let amount = from_utf8(m1)
-            .map_err(TokenTransferError::Utf8Decode)?
-            .parse()?;
-
-        let denom = from_utf8(m2)
-            .map_err(TokenTransferError::Utf8Decode)?
-            .parse()
-            .map_err(Into::into)?;
-
-        Ok(Coin { amount, denom })
+        Ok(Coin {
+            amount: amount_str.parse()?,
+            denom: denom_str.parse().map_err(Into::into)?,
+        })
     }
 }
 
