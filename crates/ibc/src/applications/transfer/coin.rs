@@ -59,23 +59,25 @@ where
         // a letter, a number or a separator ('/', ':', '.', '_' or '-').
         // Loosely copy the regex from here:
         // https://github.com/cosmos/cosmos-sdk/blob/v0.45.5/types/coin.go#L760-L762
-        let re = Regex::new(r"^([0-9]+)([a-zA-Z0-9/:\\._-]+)$")
-            .map_err(TokenTransferError::InvalidRegex)?;
+        // old regex: ^(?<amount>[0-9]+)(?<denom>[a-zA-Z0-9/:\\._-]+)$
 
-        let (amount_str, denom_str) = re
-            .captures(coin_str)
-            .and_then(|cap| {
-                let amount_str = cap.get(1)?;
-                let denom_str = cap.get(2)?;
-                Some((amount_str.as_str(), denom_str.as_str()))
+        let (amount, denom) = coin_str
+            .chars()
+            .position(|x| !x.is_numeric())
+            .map(|index| coin_str.split_at(index))
+            .filter(|(amount, denom)| amount.is_empty() || denom.is_empty())
+            .filter(|(_, denom)| {
+                denom.contains(|x| {
+                    !matches!(x, 'a'..='z' | 'A'..='Z' | '0'..='9' | '/' | ':' | '\\' | '.' | '_' | '-')
+                })
             })
             .ok_or_else(|| TokenTransferError::InvalidCoin {
                 coin: coin_str.to_string(),
             })?;
 
         Ok(Coin {
-            amount: amount_str.parse()?,
-            denom: denom_str.parse().map_err(Into::into)?,
+            amount: amount.parse()?,
+            denom: denom.parse().map_err(Into::into)?,
         })
     }
 }
