@@ -5,6 +5,7 @@ use core::str::Utf8Error;
 
 use displaydoc::Display;
 use ibc_proto::protobuf::Error as TendermintProtoError;
+use regex::Error as RegexError;
 use uint::FromDecStrErr;
 
 use crate::core::ics04_channel::acknowledgement::StatusValue;
@@ -72,6 +73,8 @@ pub enum TokenTransferError {
     InvalidCoin { coin: String },
     /// decoding raw bytes as UTF8 string error: `{0}`
     Utf8Decode(Utf8Error),
+    /// regex error: `{0}`
+    InvalidRegex(RegexError),
 }
 
 #[cfg(feature = "std")]
