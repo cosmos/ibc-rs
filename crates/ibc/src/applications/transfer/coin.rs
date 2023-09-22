@@ -64,9 +64,9 @@ where
             .chars()
             .position(|x| !x.is_numeric())
             .map(|index| coin_str.split_at(index))
-            .filter(|(amount, denom)| amount.is_empty() || denom.is_empty())
+            .filter(|(amount, denom)| !amount.is_empty() && !denom.is_empty())
             .filter(|(_, denom)| {
-                denom.contains(|x| {
+                !denom.contains(|x| {
                     !matches!(x, 'a'..='z' | 'A'..='Z' | '0'..='9' | '/' | ':' | '\\' | '.' | '_' | '-')
                 })
             })
