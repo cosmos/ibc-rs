@@ -54,6 +54,9 @@ pub mod clients;
 pub mod core;
 pub mod hosts;
 
+#[cfg(feature = "grpc")]
+pub mod services;
+
 #[cfg(any(test, feature = "mocks"))]
 pub mod mock;
 #[cfg(any(test, feature = "mocks"))]
@@ -65,9 +68,6 @@ mod utils;
 
 #[cfg(feature = "serde")]
 mod serializers;
-
-#[cfg(test)]
-mod test;
 
 /// Re-export the `Any` type which used across the library.
 pub use ibc_proto::google::protobuf::Any;

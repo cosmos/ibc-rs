@@ -51,11 +51,7 @@ pub fn dispatch(
 /// That is, the state transition of message `i` must be applied before
 /// message `i+1` is validated. This is equivalent to calling
 /// `dispatch()` on each successively.
-pub fn validate<Ctx>(
-    ctx: &Ctx,
-    router: &mut impl Router,
-    msg: MsgEnvelope,
-) -> Result<(), RouterError>
+pub fn validate<Ctx>(ctx: &Ctx, router: &impl Router, msg: MsgEnvelope) -> Result<(), RouterError>
 where
     Ctx: ValidationContext,
 {
