@@ -138,7 +138,7 @@ mod tests {
     use super::*;
 
     #[rstest]
-    #[case::pos("123stake", RawCoin::new(123, "stake"))]
+    #[case::nat("123stake", RawCoin::new(123, "stake"))]
     #[case::zero("0stake", RawCoin::new(0, "stake"))]
     #[case::u256_max(
         "115792089237316195423570985008687907853269984665640564039457584007913129639935stake",
@@ -155,6 +155,8 @@ mod tests {
     }
 
     #[rstest]
+    #[case::pos("+123stake")]
+    #[case::pos_zero("+0stake")]
     #[case::neg("-123stake")]
     #[case::neg_zero("-0stake")]
     #[case::u256_max_plus_1(
