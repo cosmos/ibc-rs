@@ -133,53 +133,32 @@ impl<D: Display> Display for Coin<D> {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
-    #[test]
-    fn test_parse_raw_coin() -> Result<(), TokenTransferError> {
-        {
-            let coin = RawCoin::from_str("123stake")?;
-            assert_eq!(coin.denom, "stake");
-            assert_eq!(coin.amount, 123u64.into());
-        }
-
-        {
-            let coin = RawCoin::from_str("1a1")?;
-            assert_eq!(coin.denom, "a1");
-            assert_eq!(coin.amount, 1u64.into());
-        }
-
-        {
-            let coin = RawCoin::from_str("0x1/:.\\_-")?;
-            assert_eq!(coin.denom, "x1/:.\\_-");
-            assert_eq!(coin.amount, 0u64.into());
-        }
-
-        {
-            // `!` is not allowed
-            let res = RawCoin::from_str("0x!");
-            assert!(res.is_err());
-        }
-
-        Ok(())
+    #[rstest]
+    #[case("123stake", RawCoin::new(123, "stake"))]
+    #[case("1a1", RawCoin::new(1, "a1"))]
+    #[case("0x1/:.\\_-", RawCoin::new(0, "x1/:.\\_-"))]
+    fn test_parse_raw_coin(#[case] parsed: RawCoin, #[case] expected: RawCoin) {
+        assert_eq!(parsed, expected);
     }
 
-    #[test]
-    fn test_parse_raw_coin_list() -> Result<(), TokenTransferError> {
-        {
-            let coins = RawCoin::from_string_list("123stake,1a1,999den0m")?;
-            assert_eq!(coins.len(), 3);
+    #[rstest]
+    #[case("0x!")]
+    #[should_panic]
+    fn test_failed_parse_raw_coin(#[case] raw: &str) {
+        RawCoin::from_str(raw).expect("parsing failure");
+    }
 
-            assert_eq!(coins[0].denom, "stake");
-            assert_eq!(coins[0].amount, 123u64.into());
-
-            assert_eq!(coins[1].denom, "a1");
-            assert_eq!(coins[1].amount, 1u64.into());
-
-            assert_eq!(coins[2].denom, "den0m");
-            assert_eq!(coins[2].amount, 999u64.into());
-        }
-
+    #[rstest]
+    #[case("123stake,1a1,999den0m", &[RawCoin::new(123, "stake"), RawCoin::new(1, "a1"), RawCoin::new(999, "den0m")])]
+    fn test_parse_raw_coin_list(
+        #[case] coins_str: &str,
+        #[case] coins: &[RawCoin],
+    ) -> Result<(), TokenTransferError> {
+        assert_eq!(RawCoin::from_string_list(coins_str)?, coins);
         Ok(())
     }
 }
