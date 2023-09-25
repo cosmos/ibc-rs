@@ -138,28 +138,53 @@ mod tests {
     use super::*;
 
     #[rstest]
-    #[case("123stake", RawCoin::new(123, "stake"))]
-    #[case("1a1", RawCoin::new(1, "a1"))]
-    #[case("0x1/:._-", RawCoin::new(0, "x1/:._-"))]
+    #[case::pos("123stake", RawCoin::new(123, "stake"))]
+    #[case::zero("0stake", RawCoin::new(0, "stake"))]
+    #[case::u256_max(
+        "115792089237316195423570985008687907853269984665640564039457584007913129639935stake",
+        RawCoin::new(
+            [u64::MAX; 4],
+            "stake"
+        )
+    )]
+    #[case::digit_in_denom("1a1", RawCoin::new(1, "a1"))]
+    #[case::chars_in_denom("0x1/:._-", RawCoin::new(0, "x1/:._-"))]
+    #[case::ibc_denom("1234ibc/a0B1C", RawCoin::new(1234, "ibc/a0B1C"))]
     fn test_parse_raw_coin(#[case] parsed: RawCoin, #[case] expected: RawCoin) {
         assert_eq!(parsed, expected);
     }
 
     #[rstest]
-    #[case("0x!")]
-    #[case("0x1/:.\\_-")]
+    #[case::neg("-123stake")]
+    #[case::neg_zero("-0stake")]
+    #[case::u256_max_plus_1(
+        "115792089237316195423570985008687907853269984665640564039457584007913129639936stake"
+    )]
+    #[case::invalid_char_in_denom("0x!")]
+    #[case::blackslash_in_denom("0x1/:.\\_-")]
     #[should_panic]
     fn test_failed_parse_raw_coin(#[case] raw: &str) {
         RawCoin::from_str(raw).expect("parsing failure");
     }
 
     #[rstest]
-    #[case("123stake,1a1,999den0m", &[RawCoin::new(123, "stake"), RawCoin::new(1, "a1"), RawCoin::new(999, "den0m")])]
+    #[case::nomal("123stake,1a1,999den0m", &[RawCoin::new(123, "stake"), RawCoin::new(1, "a1"), RawCoin::new(999, "den0m")])]
+    #[case::tricky("123stake,1a1-999den0m", &[RawCoin::new(123, "stake"), RawCoin::new(1, "a1-999den0m")])]
+    #[case::colon_delimiter("123stake:1a1:999den0m", &[RawCoin::new(123, "stake:1a1:999den0m")])]
+    #[case::dash_delimiter("123stake-1a1-999den0m", &[RawCoin::new(123, "stake-1a1-999den0m")])]
     fn test_parse_raw_coin_list(
         #[case] coins_str: &str,
         #[case] coins: &[RawCoin],
     ) -> Result<(), TokenTransferError> {
         assert_eq!(RawCoin::from_string_list(coins_str)?, coins);
         Ok(())
+    }
+
+    #[rstest]
+    #[case::semicolon_delimiter("123stake;1a1;999den0m")]
+    #[case::mixed_delimiter("123stake,1a1;999den0m")]
+    #[should_panic]
+    fn test_failed_parse_raw_coin_list(#[case] coins_str: &str) {
+        RawCoin::from_string_list(coins_str).expect("failure");
     }
 }
