@@ -176,6 +176,7 @@ mod tests {
     #[case::tricky("123stake,1a1-999den0m", &[RawCoin::new(123, "stake"), RawCoin::new(1, "a1-999den0m")])]
     #[case::colon_delimiter("123stake:1a1:999den0m", &[RawCoin::new(123, "stake:1a1:999den0m")])]
     #[case::dash_delimiter("123stake-1a1-999den0m", &[RawCoin::new(123, "stake-1a1-999den0m")])]
+    #[case::slash_delimiter("123stake/1a1/999den0m", &[RawCoin::new(123, "stake/1a1/999den0m")])]
     fn test_parse_raw_coin_list(
         #[case] coins_str: &str,
         #[case] coins: &[RawCoin],
