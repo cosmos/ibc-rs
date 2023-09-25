@@ -140,13 +140,14 @@ mod tests {
     #[rstest]
     #[case("123stake", RawCoin::new(123, "stake"))]
     #[case("1a1", RawCoin::new(1, "a1"))]
-    #[case("0x1/:.\\_-", RawCoin::new(0, "x1/:.\\_-"))]
+    #[case("0x1/:._-", RawCoin::new(0, "x1/:._-"))]
     fn test_parse_raw_coin(#[case] parsed: RawCoin, #[case] expected: RawCoin) {
         assert_eq!(parsed, expected);
     }
 
     #[rstest]
     #[case("0x!")]
+    #[case("0x1/:.\\_-")]
     #[should_panic]
     fn test_failed_parse_raw_coin(#[case] raw: &str) {
         RawCoin::from_str(raw).expect("parsing failure");
