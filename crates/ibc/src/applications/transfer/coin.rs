@@ -168,10 +168,8 @@ mod tests {
     )]
     #[case::invalid_char_in_denom("0x!")]
     #[case::blackslash_in_denom("0x1/:.\\_-")]
-    #[should_panic(expected = "parsing failure in test")]
-    fn test_failed_parse_raw_coin(#[case] raw: &str) {
-        RawCoin::from_str(raw).expect("parsing failure in test");
-    }
+    #[should_panic]
+    fn test_failed_parse_raw_coin(#[case] _raw: RawCoin) {}
 
     #[rstest]
     #[case::nomal("123stake,1a1,999den0m", &[RawCoin::new(123, "stake"), RawCoin::new(1, "a1"), RawCoin::new(999, "den0m")])]
