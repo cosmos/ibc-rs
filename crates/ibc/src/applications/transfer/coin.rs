@@ -37,6 +37,19 @@ pub struct Coin<D> {
     pub amount: Amount,
 }
 
+impl<D> Coin<D> {
+    pub fn new<T, DT>(amount: T, denom: DT) -> Self
+    where
+        T: Into<Amount>,
+        DT: Into<D>,
+    {
+        Self {
+            denom: denom.into(),
+            amount: amount.into(),
+        }
+    }
+}
+
 impl<D: FromStr> Coin<D>
 where
     D::Err: Into<TokenTransferError>,
