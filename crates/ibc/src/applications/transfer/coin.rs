@@ -80,7 +80,7 @@ where
             .filter(|(amount, denom)| !amount.is_empty() && !denom.is_empty())
             .filter(|(_, denom)| {
                 !denom.contains(|x| {
-                    !matches!(x, 'a'..='z' | 'A'..='Z' | '0'..='9' | '/' | ':' | '\\' | '.' | '_' | '-')
+                    !matches!(x, 'a'..='z' | 'A'..='Z' | '0'..='9' | '/' | ':' | '.' | '_' | '-')
                 })
             })
             .ok_or_else(|| TokenTransferError::InvalidCoin {
