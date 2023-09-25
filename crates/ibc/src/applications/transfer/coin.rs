@@ -162,9 +162,9 @@ mod tests {
     )]
     #[case::invalid_char_in_denom("0x!")]
     #[case::blackslash_in_denom("0x1/:.\\_-")]
-    #[should_panic]
+    #[should_panic(expected = "parsing failure in test")]
     fn test_failed_parse_raw_coin(#[case] raw: &str) {
-        RawCoin::from_str(raw).expect("parsing failure");
+        RawCoin::from_str(raw).expect("parsing failure in test");
     }
 
     #[rstest]
@@ -183,8 +183,8 @@ mod tests {
     #[rstest]
     #[case::semicolon_delimiter("123stake;1a1;999den0m")]
     #[case::mixed_delimiter("123stake,1a1;999den0m")]
-    #[should_panic]
+    #[should_panic(expected = "parsing failure in test")]
     fn test_failed_parse_raw_coin_list(#[case] coins_str: &str) {
-        RawCoin::from_string_list(coins_str).expect("failure");
+        RawCoin::from_string_list(coins_str).expect("parsing failure in test");
     }
 }
