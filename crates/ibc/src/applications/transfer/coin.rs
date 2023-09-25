@@ -71,7 +71,11 @@ where
         // a letter, a number or a separator ('/', ':', '.', '_' or '-').
         // Loosely copy the regex from here:
         // https://github.com/cosmos/cosmos-sdk/blob/v0.45.5/types/coin.go#L760-L762
-        // old regex: ^(?<amount>[0-9]+)(?<denom>[a-zA-Z0-9/:\\._-]+)$
+        //
+        // equivalent regex code in rust:
+        // let re = Regex::new(r"^(?<amount>[0-9]+)(?<denom>[a-zA-Z0-9/:._-]+)$")?;
+        // let cap = re.captures("123stake")?;
+        // let (amount, denom) = (cap.name("amount")?.as_str(), cap.name("denom")?.as_str());
 
         let (amount, denom) = coin_str
             .chars()
