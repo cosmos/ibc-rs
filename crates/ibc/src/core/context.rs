@@ -90,7 +90,7 @@ impl std::error::Error for RouterError {
     }
 }
 
-/// Context to be implemented by the host that provides all "read-only" methods.
+/// Context to be implemented by the host that provides all methods that read from the store.
 ///
 /// Trait used for the top-level [`validate`](crate::core::validate)
 pub trait ValidationContext {
@@ -241,7 +241,7 @@ pub trait ValidationContext {
     fn validate_message_signer(&self, signer: &Signer) -> Result<(), ContextError>;
 }
 
-/// Context to be implemented by the host that provides all "write-only" methods.
+/// Context to be implemented by the host that provides all methods that write to the store.
 ///
 /// Trait used for the top-level [`execute`](crate::core::execute) and [`dispatch`](crate::core::dispatch)
 pub trait ExecutionContext: ValidationContext {
