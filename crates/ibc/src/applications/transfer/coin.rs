@@ -18,6 +18,9 @@ pub type BaseCoin = Coin<BaseDenom>;
 
 pub type RawCoin = Coin<String>;
 
+/// Allowed characters in string representation of a denomination.
+const VALID_DENOM_CHARACTERS: &str = "/:._-";
+
 /// Coin defines a token with a denomination and an amount.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -81,11 +84,11 @@ where
             .chars()
             .position(|x| !x.is_numeric())
             .map(|index| coin_str.split_at(index))
-            .filter(|(amount, denom)| !amount.is_empty() && !denom.is_empty())
+            .filter(|(amount, _)| !amount.is_empty())
             .filter(|(_, denom)| {
-                denom.chars().all(|x| {
-                    matches!(x, 'a'..='z' | 'A'..='Z' | '0'..='9' | '/' | ':' | '.' | '_' | '-')
-                })
+                denom
+                    .chars()
+                    .all(|x| x.is_alphanumeric() || VALID_DENOM_CHARACTERS.contains(x))
             })
             .ok_or_else(|| TokenTransferError::InvalidCoin {
                 coin: coin_str.to_string(),
