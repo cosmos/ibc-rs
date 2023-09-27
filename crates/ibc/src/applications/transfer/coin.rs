@@ -70,7 +70,7 @@ where
         // Denominations can be 3 ~ 128 characters long and support letters, followed by either
         // a letter, a number or a separator ('/', ':', '.', '_' or '-').
         // Loosely copy the regex from here:
-        // https://github.com/cosmos/cosmos-sdk/blob/v0.45.5/types/coin.go#L760-L762
+        // https://github.com/cosmos/cosmos-sdk/blob/v0.47.5/types/coin.go#L838-L840
         //
         // equivalent regex code in rust:
         // let re = Regex::new(r"^(?<amount>[0-9]+)(?<denom>[a-zA-Z0-9/:._-]+)$")?;
