@@ -146,12 +146,12 @@ mod tests {
     fn test_parse_raw_coin(
         #[case] parsed: RawCoin,
         #[case] amount: impl Into<Amount>,
-        #[case] denom: String,
+        #[case] denom: &str,
     ) {
         assert_eq!(
             parsed,
             RawCoin {
-                denom,
+                denom: denom.into(),
                 amount: amount.into()
             }
         );
