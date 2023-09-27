@@ -140,25 +140,34 @@ impl<D: Display> Display for Coin<D> {
 
 #[cfg(test)]
 mod tests {
+    use primitive_types::U256;
     use rstest::rstest;
 
     use super::*;
 
     #[rstest]
-    #[case::nat("123stake", RawCoin::new(123, "stake"))]
-    #[case::zero("0stake", RawCoin::new(0, "stake"))]
+    #[case::nat("123stake", 123, "stake")]
+    #[case::zero("0stake", 0, "stake")]
     #[case::u256_max(
         "115792089237316195423570985008687907853269984665640564039457584007913129639935stake",
-        RawCoin::new(
-            [u64::MAX; 4],
-            "stake"
-        )
+        U256::MAX,
+        "stake"
     )]
-    #[case::digit_in_denom("1a1", RawCoin::new(1, "a1"))]
-    #[case::chars_in_denom("0x1/:._-", RawCoin::new(0, "x1/:._-"))]
-    #[case::ibc_denom("1234ibc/a0B1C", RawCoin::new(1234, "ibc/a0B1C"))]
-    fn test_parse_raw_coin(#[case] parsed: RawCoin, #[case] expected: RawCoin) {
-        assert_eq!(parsed, expected);
+    #[case::digit_in_denom("1a1", 1, "a1")]
+    #[case::chars_in_denom("0x1/:._-", 0, "x1/:._-")]
+    #[case::ibc_denom("1234ibc/a0B1C", 1234, "ibc/a0B1C")]
+    fn test_parse_raw_coin(
+        #[case] parsed: RawCoin,
+        #[case] amount: impl Into<Amount>,
+        #[case] denom: String,
+    ) {
+        assert_eq!(
+            parsed,
+            RawCoin {
+                denom,
+                amount: amount.into()
+            }
+        );
     }
 
     #[rstest]
@@ -175,16 +184,25 @@ mod tests {
     fn test_failed_parse_raw_coin(#[case] _raw: RawCoin) {}
 
     #[rstest]
-    #[case::nomal("123stake,1a1,999den0m", &[RawCoin::new(123, "stake"), RawCoin::new(1, "a1"), RawCoin::new(999, "den0m")])]
-    #[case::tricky("123stake,1a1-999den0m", &[RawCoin::new(123, "stake"), RawCoin::new(1, "a1-999den0m")])]
-    #[case::colon_delimiter("123stake:1a1:999den0m", &[RawCoin::new(123, "stake:1a1:999den0m")])]
-    #[case::dash_delimiter("123stake-1a1-999den0m", &[RawCoin::new(123, "stake-1a1-999den0m")])]
-    #[case::slash_delimiter("123stake/1a1/999den0m", &[RawCoin::new(123, "stake/1a1/999den0m")])]
+    #[case::nomal("123stake,1a1,999den0m", &[(123, "stake"), (1, "a1"), (999, "den0m")])]
+    #[case::tricky("123stake,1a1-999den0m", &[(123, "stake"), (1, "a1-999den0m")])]
+    #[case::colon_delimiter("123stake:1a1:999den0m", &[(123, "stake:1a1:999den0m")])]
+    #[case::dash_delimiter("123stake-1a1-999den0m", &[(123, "stake-1a1-999den0m")])]
+    #[case::slash_delimiter("123stake/1a1/999den0m", &[(123, "stake/1a1/999den0m")])]
     fn test_parse_raw_coin_list(
         #[case] coins_str: &str,
-        #[case] coins: &[RawCoin],
+        #[case] coins: &[(u64, &str)],
     ) -> Result<(), TokenTransferError> {
-        assert_eq!(RawCoin::from_string_list(coins_str)?, coins);
+        assert_eq!(
+            RawCoin::from_string_list(coins_str)?,
+            coins
+                .iter()
+                .map(|&(amount, denom)| RawCoin {
+                    denom: denom.to_string(),
+                    amount: amount.into(),
+                })
+                .collect::<Vec<_>>()
+        );
         Ok(())
     }
 
