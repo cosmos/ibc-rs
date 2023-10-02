@@ -1,0 +1,6 @@
+{
+  "default": true,
+  "MD013": false, // https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md#md013---line-length
+  "MD033": false, // https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md#md033---inline-html
+  "MD041": false // https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md#md041---first-line-in-a-file-should-be-a-top-level-heading
+}
