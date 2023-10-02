@@ -82,7 +82,7 @@ ibc-derive = { version ="0.3.0", path = "../ibc-derive" }
 schemars = { version = "0.8.12", optional = true }
 
 [dependencies.tendermint]
-version = "0.33"
+version = "0.34"
 default-features = false
 
 [dependencies.tendermint-proto]
