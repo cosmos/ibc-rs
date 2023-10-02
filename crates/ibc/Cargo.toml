@@ -57,14 +57,7 @@ ics23 = { version = "0.10.1", default-features = false, features = ["host-functi
 time = { version = ">=0.3.0, <0.3.29", default-features = false }
 serde_derive = { version = "1.0.104", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
-
-# 1. it does not have hash tables, which have few reson on chain
-# 2. no floating points as these are hardware dependant
-# 3. have method to covert primitives without producing bad wasm which cannot operate on chain (smaller binary size)
-serde_json =  { package = "serde-json-wasm", git = "https://github.com/dzmitry-lahoda-forks/serde-json-wasm", rev = "8a7e522c0e4de36a6dfb535766f26a9941017d81", default-features = false, optional = true}
-# can use old one to test if any other discrepancy
-# serde_json = { version = "1", default-features = false}
-
+serde_json =  { package = "serde-json-wasm", version = "1.0.0" , default-features = false, optional = true}
 tracing = { version = "0.1.36", default-features = false }
 prost = { version = "0.11", default-features = false }
 bytes = { version = "1.2.1", default-features = false }
