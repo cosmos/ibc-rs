@@ -1,17 +1,15 @@
 //! Defines identifier types
 
 pub(crate) mod validate;
-use validate::*;
-
 use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use derive_more::Into;
 use displaydoc::Display;
+use validate::*;
 
 use crate::clients::ics07_tendermint::client_type as tm_client_type;
 use crate::core::ics02_client::client_type::ClientType;
-
 use crate::prelude::*;
 
 const CONNECTION_ID_PREFIX: &str = "connection";
@@ -181,6 +179,7 @@ fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, u64), IdentifierEr
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Into)]
 pub struct ClientId(String);
 

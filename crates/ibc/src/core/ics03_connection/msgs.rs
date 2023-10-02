@@ -16,6 +16,7 @@ use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
 use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
+use crate::prelude::*;
 
 pub mod conn_open_ack;
 pub mod conn_open_confirm;
@@ -23,6 +24,11 @@ pub mod conn_open_init;
 pub mod conn_open_try;
 
 /// Enumeration of all possible messages that the ICS3 protocol processes.
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConnectionMsg {
     OpenInit(MsgConnectionOpenInit),
@@ -34,10 +40,11 @@ pub enum ConnectionMsg {
 #[cfg(test)]
 pub mod test_util {
 
-    use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-    use crate::prelude::*;
     use ibc_proto::ibc::core::commitment::v1::MerklePrefix;
     use ibc_proto::ibc::core::connection::v1::Counterparty as RawCounterparty;
+
+    use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::prelude::*;
 
     pub fn get_dummy_raw_counterparty(conn_id: Option<u64>) -> RawCounterparty {
         let connection_id = match conn_id {

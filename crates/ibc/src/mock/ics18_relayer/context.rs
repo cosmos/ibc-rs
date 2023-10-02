@@ -1,8 +1,7 @@
-use crate::prelude::*;
-
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ContextError;
 use crate::mock::context::AnyClientState;
+use crate::prelude::*;
 use crate::signer::Signer;
 use crate::Height;
 
@@ -25,6 +24,9 @@ pub trait RelayerContext {
 
 #[cfg(test)]
 mod tests {
+    use test_log::test;
+    use tracing::debug;
+
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::core::ics02_client::client_state::ClientStateCommon;
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
@@ -36,11 +38,9 @@ mod tests {
     use crate::mock::host::{HostBlock, HostType};
     use crate::mock::ics18_relayer::context::RelayerContext;
     use crate::mock::ics18_relayer::error::RelayerError;
+    use crate::mock::router::MockRouter;
     use crate::prelude::*;
     use crate::Height;
-
-    use test_log::test;
-    use tracing::debug;
 
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
     /// context, assuming that the latest header on the source context is `src_header`.
@@ -81,7 +81,7 @@ mod tests {
         // Client on destination chain can be updated.
         Ok(ClientMsg::UpdateClient(MsgUpdateClient {
             client_id: client_id.clone(),
-            header: (*src_header).clone().into(),
+            client_message: (*src_header).clone().into(),
             signer: dest.signer(),
         }))
     }
@@ -113,6 +113,9 @@ mod tests {
                     Some(tm_client_type()), // The target host chain (B) is synthetic TM.
                     Some(client_on_a_for_b_height),
                 );
+        // dummy; not actually used in client updates
+        let mut router_a = MockRouter::default();
+
         let mut ctx_b = MockContext::new(
             chain_id_b,
             HostType::SyntheticTendermint,
@@ -126,6 +129,8 @@ mod tests {
             Some(mock_client_type()), // The target host chain is mock.
             Some(client_on_b_for_a_height),
         );
+        // dummy; not actually used in client updates
+        let mut router_b = MockRouter::default();
 
         for _i in 0..num_iterations {
             // Update client on chain B to latest height of A.
@@ -143,7 +148,7 @@ mod tests {
 
             // - send the message to B. We bypass ICS18 interface and call directly into
             // MockContext `recv` method (to avoid additional serialization steps).
-            let dispatch_res_b = ctx_b.deliver(MsgEnvelope::Client(client_msg_b));
+            let dispatch_res_b = ctx_b.deliver(&mut router_b, MsgEnvelope::Client(client_msg_b));
             let validation_res = ctx_b.validate();
             assert!(
                 validation_res.is_ok(),
@@ -182,7 +187,7 @@ mod tests {
             debug!("client_msg_a = {:?}", client_msg_a);
 
             // - send the message to A
-            let dispatch_res_a = ctx_a.deliver(MsgEnvelope::Client(client_msg_a));
+            let dispatch_res_a = ctx_a.deliver(&mut router_a, MsgEnvelope::Client(client_msg_a));
             let validation_res = ctx_a.validate();
             assert!(
                 validation_res.is_ok(),

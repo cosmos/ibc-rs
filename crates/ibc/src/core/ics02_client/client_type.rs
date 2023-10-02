@@ -1,14 +1,11 @@
 //! Defines the `ClientType` format, typically used in chain IDs.
 
-use crate::prelude::*;
-use core::{
-    fmt::{Display, Error as FmtError, Formatter},
-    str::FromStr,
-};
+use core::fmt::{Display, Error as FmtError, Formatter};
+use core::str::FromStr;
 
-use crate::core::ics24_host::{
-    identifier::validate::validate_client_type, identifier::IdentifierError,
-};
+use crate::core::ics24_host::identifier::validate::validate_client_type;
+use crate::core::ics24_host::identifier::IdentifierError;
+use crate::prelude::*;
 
 #[cfg_attr(
     feature = "parity-scale-codec",

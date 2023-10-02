@@ -1,6 +1,5 @@
-use crate::prelude::*;
-
 use super::IdentifierError as Error;
+use crate::prelude::*;
 
 /// Path separator (ie. forward slash '/')
 const PATH_SEPARATOR: char = '/';
@@ -123,9 +122,9 @@ pub fn validate_channel_identifier(id: &str) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use test_log::test;
+
+    use super::*;
 
     #[test]
     fn parse_invalid_port_id_min() {

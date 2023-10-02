@@ -26,14 +26,21 @@ use super::ics04_channel::handler::recv_packet::{recv_packet_execute, recv_packe
 use super::ics04_channel::handler::timeout::{
     timeout_packet_execute, timeout_packet_validate, TimeoutMsgType,
 };
-use super::ics04_channel::msgs::{ChannelMsg, PacketMsg};
+use super::ics04_channel::msgs::{
+    channel_msg_to_port_id, packet_msg_to_port_id, ChannelMsg, PacketMsg,
+};
 use super::msgs::MsgEnvelope;
-use super::{ContextError, ExecutionContext, ValidationContext};
+use super::router::Router;
+use super::{ExecutionContext, ValidationContext};
 
 /// Entrypoint which performs both validation and message execution
-pub fn dispatch(ctx: &mut impl ExecutionContext, msg: MsgEnvelope) -> Result<(), RouterError> {
-    validate(ctx, msg.clone())?;
-    execute(ctx, msg)
+pub fn dispatch(
+    ctx: &mut impl ExecutionContext,
+    router: &mut impl Router,
+    msg: MsgEnvelope,
+) -> Result<(), RouterError> {
+    validate(ctx, router, msg.clone())?;
+    execute(ctx, router, msg)
 }
 
 /// Entrypoint which only performs message validation
@@ -44,7 +51,7 @@ pub fn dispatch(ctx: &mut impl ExecutionContext, msg: MsgEnvelope) -> Result<(),
 /// That is, the state transition of message `i` must be applied before
 /// message `i+1` is validated. This is equivalent to calling
 /// `dispatch()` on each successively.
-pub fn validate<Ctx>(ctx: &Ctx, msg: MsgEnvelope) -> Result<(), RouterError>
+pub fn validate<Ctx>(ctx: &Ctx, router: &impl Router, msg: MsgEnvelope) -> Result<(), RouterError>
 where
     Ctx: ValidationContext,
 {
@@ -68,31 +75,45 @@ where
         }
         .map_err(RouterError::ContextError),
         MsgEnvelope::Channel(msg) => {
-            let module_id = ctx
-                .lookup_module_channel(&msg)
-                .map_err(ContextError::from)?;
+            let port_id = channel_msg_to_port_id(&msg);
+            let module_id = router
+                .lookup_module(port_id)
+                .ok_or(RouterError::UnknownPort {
+                    port_id: port_id.clone(),
+                })?;
+            let module = router
+                .get_route(&module_id)
+                .ok_or(RouterError::ModuleNotFound)?;
 
             match msg {
-                ChannelMsg::OpenInit(msg) => chan_open_init_validate(ctx, module_id, msg),
-                ChannelMsg::OpenTry(msg) => chan_open_try_validate(ctx, module_id, msg),
-                ChannelMsg::OpenAck(msg) => chan_open_ack_validate(ctx, module_id, msg),
-                ChannelMsg::OpenConfirm(msg) => chan_open_confirm_validate(ctx, module_id, msg),
-                ChannelMsg::CloseInit(msg) => chan_close_init_validate(ctx, module_id, msg),
-                ChannelMsg::CloseConfirm(msg) => chan_close_confirm_validate(ctx, module_id, msg),
+                ChannelMsg::OpenInit(msg) => chan_open_init_validate(ctx, module, msg),
+                ChannelMsg::OpenTry(msg) => chan_open_try_validate(ctx, module, msg),
+                ChannelMsg::OpenAck(msg) => chan_open_ack_validate(ctx, module, msg),
+                ChannelMsg::OpenConfirm(msg) => chan_open_confirm_validate(ctx, module, msg),
+                ChannelMsg::CloseInit(msg) => chan_close_init_validate(ctx, module, msg),
+                ChannelMsg::CloseConfirm(msg) => chan_close_confirm_validate(ctx, module, msg),
             }
             .map_err(RouterError::ContextError)
         }
         MsgEnvelope::Packet(msg) => {
-            let module_id = ctx.lookup_module_packet(&msg).map_err(ContextError::from)?;
+            let port_id = packet_msg_to_port_id(&msg);
+            let module_id = router
+                .lookup_module(port_id)
+                .ok_or(RouterError::UnknownPort {
+                    port_id: port_id.clone(),
+                })?;
+            let module = router
+                .get_route(&module_id)
+                .ok_or(RouterError::ModuleNotFound)?;
 
             match msg {
                 PacketMsg::Recv(msg) => recv_packet_validate(ctx, msg),
-                PacketMsg::Ack(msg) => acknowledgement_packet_validate(ctx, module_id, msg),
+                PacketMsg::Ack(msg) => acknowledgement_packet_validate(ctx, module, msg),
                 PacketMsg::Timeout(msg) => {
-                    timeout_packet_validate(ctx, module_id, TimeoutMsgType::Timeout(msg))
+                    timeout_packet_validate(ctx, module, TimeoutMsgType::Timeout(msg))
                 }
                 PacketMsg::TimeoutOnClose(msg) => {
-                    timeout_packet_validate(ctx, module_id, TimeoutMsgType::TimeoutOnClose(msg))
+                    timeout_packet_validate(ctx, module, TimeoutMsgType::TimeoutOnClose(msg))
                 }
             }
             .map_err(RouterError::ContextError)
@@ -101,7 +122,11 @@ where
 }
 
 /// Entrypoint which only performs message execution
-pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgEnvelope) -> Result<(), RouterError>
+pub fn execute<Ctx>(
+    ctx: &mut Ctx,
+    router: &mut impl Router,
+    msg: MsgEnvelope,
+) -> Result<(), RouterError>
 where
     Ctx: ExecutionContext,
 {
@@ -125,31 +150,45 @@ where
         }
         .map_err(RouterError::ContextError),
         MsgEnvelope::Channel(msg) => {
-            let module_id = ctx
-                .lookup_module_channel(&msg)
-                .map_err(ContextError::from)?;
+            let port_id = channel_msg_to_port_id(&msg);
+            let module_id = router
+                .lookup_module(port_id)
+                .ok_or(RouterError::UnknownPort {
+                    port_id: port_id.clone(),
+                })?;
+            let module = router
+                .get_route_mut(&module_id)
+                .ok_or(RouterError::ModuleNotFound)?;
 
             match msg {
-                ChannelMsg::OpenInit(msg) => chan_open_init_execute(ctx, module_id, msg),
-                ChannelMsg::OpenTry(msg) => chan_open_try_execute(ctx, module_id, msg),
-                ChannelMsg::OpenAck(msg) => chan_open_ack_execute(ctx, module_id, msg),
-                ChannelMsg::OpenConfirm(msg) => chan_open_confirm_execute(ctx, module_id, msg),
-                ChannelMsg::CloseInit(msg) => chan_close_init_execute(ctx, module_id, msg),
-                ChannelMsg::CloseConfirm(msg) => chan_close_confirm_execute(ctx, module_id, msg),
+                ChannelMsg::OpenInit(msg) => chan_open_init_execute(ctx, module, msg),
+                ChannelMsg::OpenTry(msg) => chan_open_try_execute(ctx, module, msg),
+                ChannelMsg::OpenAck(msg) => chan_open_ack_execute(ctx, module, msg),
+                ChannelMsg::OpenConfirm(msg) => chan_open_confirm_execute(ctx, module, msg),
+                ChannelMsg::CloseInit(msg) => chan_close_init_execute(ctx, module, msg),
+                ChannelMsg::CloseConfirm(msg) => chan_close_confirm_execute(ctx, module, msg),
             }
             .map_err(RouterError::ContextError)
         }
         MsgEnvelope::Packet(msg) => {
-            let module_id = ctx.lookup_module_packet(&msg).map_err(ContextError::from)?;
+            let port_id = packet_msg_to_port_id(&msg);
+            let module_id = router
+                .lookup_module(port_id)
+                .ok_or(RouterError::UnknownPort {
+                    port_id: port_id.clone(),
+                })?;
+            let module = router
+                .get_route_mut(&module_id)
+                .ok_or(RouterError::ModuleNotFound)?;
 
             match msg {
-                PacketMsg::Recv(msg) => recv_packet_execute(ctx, module_id, msg),
-                PacketMsg::Ack(msg) => acknowledgement_packet_execute(ctx, module_id, msg),
+                PacketMsg::Recv(msg) => recv_packet_execute(ctx, module, msg),
+                PacketMsg::Ack(msg) => acknowledgement_packet_execute(ctx, module, msg),
                 PacketMsg::Timeout(msg) => {
-                    timeout_packet_execute(ctx, module_id, TimeoutMsgType::Timeout(msg))
+                    timeout_packet_execute(ctx, module, TimeoutMsgType::Timeout(msg))
                 }
                 PacketMsg::TimeoutOnClose(msg) => {
-                    timeout_packet_execute(ctx, module_id, TimeoutMsgType::TimeoutOnClose(msg))
+                    timeout_packet_execute(ctx, module, TimeoutMsgType::TimeoutOnClose(msg))
                 }
             }
             .map_err(RouterError::ContextError)
@@ -159,51 +198,53 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use core::default::Default;
     use core::time::Duration;
 
     use test_log::test;
 
+    use super::*;
     use crate::applications::transfer::error::TokenTransferError;
-    use crate::applications::transfer::send_transfer;
-    use crate::applications::transfer::{msgs::transfer::MsgTransfer, MODULE_ID_STR};
+    use crate::applications::transfer::msgs::transfer::MsgTransfer;
+    use crate::applications::transfer::{send_transfer, MODULE_ID_STR};
     use crate::core::dispatch;
     use crate::core::events::{IbcEvent, MessageEvent};
-    use crate::core::ics02_client::msgs::{
-        create_client::MsgCreateClient, update_client::MsgUpdateClient,
-        upgrade_client::MsgUpgradeClient, ClientMsg,
-    };
+    use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
+    use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
+    use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
+    use crate::core::ics02_client::msgs::ClientMsg;
     use crate::core::ics03_connection::connection::{
         ConnectionEnd, Counterparty as ConnCounterparty, State as ConnState,
     };
-    use crate::core::ics03_connection::msgs::{
-        conn_open_ack::MsgConnectionOpenAck, conn_open_init::MsgConnectionOpenInit,
-        conn_open_try::MsgConnectionOpenTry, ConnectionMsg,
-    };
+    use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
+    use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
+    use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
+    use crate::core::ics03_connection::msgs::ConnectionMsg;
     use crate::core::ics03_connection::version::Version as ConnVersion;
-    use crate::core::ics04_channel::channel::ChannelEnd;
-    use crate::core::ics04_channel::channel::Counterparty as ChannelCounterparty;
-    use crate::core::ics04_channel::channel::Order as ChannelOrder;
-    use crate::core::ics04_channel::channel::State as ChannelState;
+    use crate::core::ics04_channel::channel::{
+        ChannelEnd, Counterparty as ChannelCounterparty, Order as ChannelOrder,
+        State as ChannelState,
+    };
     use crate::core::ics04_channel::error::ChannelError;
     use crate::core::ics04_channel::msgs::acknowledgement::test_util::get_dummy_raw_msg_ack_with_packet;
     use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
+    use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
+    use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
+    use crate::core::ics04_channel::msgs::chan_close_init::test_util::get_dummy_raw_msg_chan_close_init;
+    use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
+    use crate::core::ics04_channel::msgs::chan_open_ack::test_util::get_dummy_raw_msg_chan_open_ack;
+    use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
     use crate::core::ics04_channel::msgs::chan_open_confirm::test_util::get_dummy_raw_msg_chan_open_confirm;
     use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
-    use crate::core::ics04_channel::msgs::{
-        chan_close_confirm::{
-            test_util::get_dummy_raw_msg_chan_close_confirm, MsgChannelCloseConfirm,
-        },
-        chan_close_init::{test_util::get_dummy_raw_msg_chan_close_init, MsgChannelCloseInit},
-        chan_open_ack::{test_util::get_dummy_raw_msg_chan_open_ack, MsgChannelOpenAck},
-        chan_open_init::{test_util::get_dummy_raw_msg_chan_open_init, MsgChannelOpenInit},
-        chan_open_try::{test_util::get_dummy_raw_msg_chan_open_try, MsgChannelOpenTry},
-        recv_packet::{test_util::get_dummy_raw_msg_recv_packet, MsgRecvPacket},
-        timeout_on_close::{test_util::get_dummy_raw_msg_timeout_on_close, MsgTimeoutOnClose},
-        ChannelMsg, PacketMsg,
-    };
+    use crate::core::ics04_channel::msgs::chan_open_init::test_util::get_dummy_raw_msg_chan_open_init;
+    use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
+    use crate::core::ics04_channel::msgs::chan_open_try::test_util::get_dummy_raw_msg_chan_open_try;
+    use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
+    use crate::core::ics04_channel::msgs::recv_packet::test_util::get_dummy_raw_msg_recv_packet;
+    use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
+    use crate::core::ics04_channel::msgs::timeout_on_close::test_util::get_dummy_raw_msg_timeout_on_close;
+    use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
+    use crate::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
     use crate::core::ics04_channel::timeout::TimeoutHeight;
     use crate::core::ics04_channel::Version as ChannelVersion;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
@@ -216,6 +257,7 @@ mod tests {
     use crate::mock::consensus_state::MockConsensusState;
     use crate::mock::context::MockContext;
     use crate::mock::header::MockHeader;
+    use crate::mock::router::MockRouter;
     use crate::prelude::*;
     use crate::test_utils::{get_dummy_account_id, DummyTransferModule};
     use crate::Height;
@@ -267,13 +309,12 @@ mod tests {
         let transfer_module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
 
         // We reuse this same context across all tests. Nothing in particular needs parametrizing.
-        let mut ctx = {
-            let mut ctx = MockContext::default();
-            let module = DummyTransferModule::new();
-            ctx.add_route(transfer_module_id.clone(), module).unwrap();
+        let mut ctx = MockContext::default();
 
-            ctx
-        };
+        let mut router = MockRouter::default();
+        router
+            .add_route(transfer_module_id.clone(), DummyTransferModule::new())
+            .unwrap();
 
         let create_client_msg = MsgCreateClient::new(
             MockClientState::new(MockHeader::new(start_client_height)).into(),
@@ -346,6 +387,7 @@ mod tests {
         // First, create a client..
         let res = dispatch(
             &mut ctx,
+            &mut router,
             MsgEnvelope::Client(ClientMsg::CreateClient(create_client_msg.clone())),
         );
 
@@ -354,7 +396,7 @@ mod tests {
             "ICS26 routing dispatch test 'client creation' failed for message {create_client_msg:?} with result: {res:?}",
         );
 
-        ctx.scope_port_to_module(msg_chan_init.port_id_on_a.clone(), transfer_module_id);
+        router.scope_port_to_module(msg_chan_init.port_id_on_a.clone(), transfer_module_id);
 
         // Figure out the ID of the client that was just created.
         assert!(matches!(
@@ -377,7 +419,7 @@ mod tests {
                 name: "Client update successful".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    header: MockHeader::new(update_client_height)
+                    client_message: MockHeader::new(update_client_height)
                         .with_timestamp(Timestamp::now())
                         .into(),
                     signer: default_signer.clone(),
@@ -390,7 +432,7 @@ mod tests {
                 name: "Client update fails due to stale header".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    header: MockHeader::new(update_client_height).into(),
+                    client_message: MockHeader::new(update_client_height).into(),
                     signer: default_signer.clone(),
                 }))
                 .into(),
@@ -465,7 +507,7 @@ mod tests {
                 name: "Client update successful #2".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    header: MockHeader::new(update_client_height_after_send)
+                    client_message: MockHeader::new(update_client_height_after_send)
                         .with_timestamp(Timestamp::now())
                         .into(),
                     signer: default_signer.clone(),
@@ -510,7 +552,7 @@ mod tests {
                 name: "Client update successful".to_string(),
                 msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                     client_id: client_id.clone(),
-                    header: MockHeader::new(update_client_height_after_second_send).into(),
+                    client_message: MockHeader::new(update_client_height_after_second_send).into(),
                     signer: default_signer,
                 }))
                 .into(),
@@ -576,8 +618,8 @@ mod tests {
 
         for test in tests {
             let res = match test.msg.clone() {
-                TestMsg::Ics26(msg) => dispatch(&mut ctx, msg).map(|_| ()),
-                TestMsg::Ics20(msg) => send_transfer(&mut ctx, msg)
+                TestMsg::Ics26(msg) => dispatch(&mut ctx, &mut router, msg).map(|_| ()),
+                TestMsg::Ics20(msg) => send_transfer(&mut ctx, &mut DummyTransferModule, msg)
                     .map_err(|e: TokenTransferError| ChannelError::AppModule {
                         description: e.to_string(),
                     })
@@ -606,9 +648,9 @@ mod tests {
         }
     }
 
-    fn get_channel_events_ctx() -> MockContext {
+    fn get_channel_events_ctx_router() -> (MockContext, MockRouter) {
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        let mut ctx = MockContext::default()
+        let ctx = MockContext::default()
             .with_client(&ClientId::default(), Height::new(0, 1).unwrap())
             .with_connection(
                 ConnectionId::new(0),
@@ -625,25 +667,28 @@ mod tests {
                 )
                 .unwrap(),
             );
-        let module = DummyTransferModule::new();
+        let mut router = MockRouter::default();
 
-        ctx.add_route(module_id.clone(), module).unwrap();
+        router
+            .add_route(module_id.clone(), DummyTransferModule::new())
+            .unwrap();
 
         // Note: messages will be using the default port
-        ctx.scope_port_to_module(PortId::default(), module_id);
+        router.scope_port_to_module(PortId::default(), module_id);
 
-        ctx
+        (ctx, router)
     }
 
     #[test]
     fn test_chan_open_init_event() {
-        let mut ctx = get_channel_events_ctx();
+        let (mut ctx, mut router) = get_channel_events_ctx_router();
 
         let msg_chan_open_init =
             MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
 
         dispatch(
             &mut ctx,
+            &mut router,
             MsgEnvelope::Channel(ChannelMsg::OpenInit(msg_chan_open_init)),
         )
         .unwrap();
@@ -658,13 +703,14 @@ mod tests {
 
     #[test]
     fn test_chan_open_try_event() {
-        let mut ctx = get_channel_events_ctx();
+        let (mut ctx, mut router) = get_channel_events_ctx_router();
 
         let msg_chan_open_try =
             MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(1)).unwrap();
 
         dispatch(
             &mut ctx,
+            &mut router,
             MsgEnvelope::Channel(ChannelMsg::OpenTry(msg_chan_open_try)),
         )
         .unwrap();
@@ -679,7 +725,8 @@ mod tests {
 
     #[test]
     fn test_chan_open_ack_event() {
-        let mut ctx = get_channel_events_ctx().with_channel(
+        let (ctx, mut router) = get_channel_events_ctx_router();
+        let mut ctx = ctx.with_channel(
             PortId::default(),
             ChannelId::default(),
             ChannelEnd::new(
@@ -697,6 +744,7 @@ mod tests {
 
         dispatch(
             &mut ctx,
+            &mut router,
             MsgEnvelope::Channel(ChannelMsg::OpenAck(msg_chan_open_ack)),
         )
         .unwrap();
@@ -711,7 +759,8 @@ mod tests {
 
     #[test]
     fn test_chan_open_confirm_event() {
-        let mut ctx = get_channel_events_ctx().with_channel(
+        let (ctx, mut router) = get_channel_events_ctx_router();
+        let mut ctx = ctx.with_channel(
             PortId::default(),
             ChannelId::default(),
             ChannelEnd::new(
@@ -729,6 +778,7 @@ mod tests {
 
         dispatch(
             &mut ctx,
+            &mut router,
             MsgEnvelope::Channel(ChannelMsg::OpenConfirm(msg_chan_open_confirm)),
         )
         .unwrap();
@@ -743,7 +793,8 @@ mod tests {
 
     #[test]
     fn test_chan_close_init_event() {
-        let mut ctx = get_channel_events_ctx().with_channel(
+        let (ctx, mut router) = get_channel_events_ctx_router();
+        let mut ctx = ctx.with_channel(
             PortId::default(),
             ChannelId::default(),
             ChannelEnd::new(
@@ -761,6 +812,7 @@ mod tests {
 
         dispatch(
             &mut ctx,
+            &mut router,
             MsgEnvelope::Channel(ChannelMsg::CloseInit(msg_chan_close_init)),
         )
         .unwrap();
@@ -775,7 +827,8 @@ mod tests {
 
     #[test]
     fn test_chan_close_confirm_event() {
-        let mut ctx = get_channel_events_ctx().with_channel(
+        let (ctx, mut router) = get_channel_events_ctx_router();
+        let mut ctx = ctx.with_channel(
             PortId::default(),
             ChannelId::default(),
             ChannelEnd::new(
@@ -793,6 +846,7 @@ mod tests {
 
         dispatch(
             &mut ctx,
+            &mut router,
             MsgEnvelope::Channel(ChannelMsg::CloseConfirm(msg_chan_close_confirm)),
         )
         .unwrap();

@@ -3,19 +3,18 @@
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::context::ContextError;
-use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenConfirm;
 use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
 use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-use crate::core::ics24_host::path::Path;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ConnectionPath};
+use crate::core::ics24_host::path::{ClientConsensusStatePath, ConnectionPath, Path};
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
-
-use crate::core::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ContextError>
 where
@@ -47,7 +46,13 @@ where
     {
         let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
 
-        client_state_of_a_on_b.confirm_not_frozen()?;
+        {
+            let status = client_state_of_a_on_b
+                .status(ctx_b.get_client_validation_context(), client_id_on_b)?;
+            if !status.is_active() {
+                return Err(ClientError::ClientNotActive { status }.into());
+            }
+        }
         client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
 
         let client_cons_state_path_on_b =
@@ -112,9 +117,9 @@ where
         conn_id_on_a.clone(),
         client_id_on_a.clone(),
     ));
-    ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection));
-    ctx_b.emit_ibc_event(event);
-    ctx_b.log_message("success: conn_open_confirm verification passed".to_string());
+    ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection))?;
+    ctx_b.emit_ibc_event(event)?;
+    ctx_b.log_message("success: conn_open_confirm verification passed".to_string())?;
 
     {
         let new_conn_end_on_b = {
@@ -166,11 +171,11 @@ impl LocalVars {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use core::str::FromStr;
+
     use test_log::test;
 
+    use super::*;
     use crate::core::events::IbcEvent;
     use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};

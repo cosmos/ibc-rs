@@ -9,7 +9,6 @@ use ibc_proto::ibc::applications::transfer::v1::DenomTrace as RawDenomTrace;
 use super::error::TokenTransferError;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::prelude::*;
-
 #[cfg(feature = "serde")]
 use crate::serializers::serde_string;
 
@@ -26,6 +25,10 @@ use crate::serializers::serde_string;
         parity_scale_codec::Decode,
         scale_info::TypeInfo
     )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Display)]
@@ -62,6 +65,10 @@ impl FromStr for BaseDenom {
         scale_info::TypeInfo
     )
 )]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
@@ -96,6 +103,10 @@ impl Display for TracePrefix {
         parity_scale_codec::Decode,
         scale_info::TypeInfo
     )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -199,6 +210,10 @@ impl Display for TracePath {
         parity_scale_codec::Decode,
         scale_info::TypeInfo
     )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct PrefixedDenom {

@@ -4,13 +4,12 @@ use alloc::string::ToString;
 use core::convert::TryFrom;
 use core::str::FromStr;
 
-#[cfg(feature = "schema")]
-use crate::alloc::borrow::ToOwned;
-
 use ibc_proto::ibc::applications::transfer::v2::FungibleTokenPacketData as RawPacketData;
 
 use super::error::TokenTransferError;
 use super::{Amount, Memo, PrefixedCoin, PrefixedDenom};
+#[cfg(feature = "schema")]
+use crate::alloc::borrow::ToOwned;
 use crate::signer::Signer;
 
 /// Defines the structure of token transfers' packet bytes
@@ -23,6 +22,10 @@ use crate::signer::Signer;
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(parity_scale_codec::Encode, parity_scale_codec::Decode,)
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PacketData {
@@ -63,10 +66,11 @@ impl From<PacketData> for RawPacketData {
 #[cfg(test)]
 mod tests {
 
+    use primitive_types::U256;
+
     use super::*;
     use crate::applications::transfer::BaseCoin;
     use crate::test_utils::get_dummy_bech32_account;
-    use primitive_types::U256;
 
     impl PacketData {
         pub fn new_dummy() -> Self {

@@ -1,25 +1,24 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenAck`.
 
-use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::State as ConnectionState;
-use crate::core::ics04_channel::channel::State;
-use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State as ChannelState};
+use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State, State as ChannelState};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::events::OpenAck;
 use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
-use crate::core::ics24_host::path::Path;
-use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
-use crate::core::router::ModuleId;
+use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath, Path};
+use crate::core::router::Module;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) fn chan_open_ack_validate<ValCtx>(
     ctx_a: &ValCtx,
-    module_id: ModuleId,
+    module: &dyn Module,
     msg: MsgChannelOpenAck,
 ) -> Result<(), ContextError>
 where
@@ -27,9 +26,6 @@ where
 {
     validate(ctx_a, &msg)?;
 
-    let module = ctx_a
-        .get_route(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
     module.on_chan_open_ack_validate(&msg.port_id_on_a, &msg.chan_id_on_a, &msg.version_on_b)?;
 
     Ok(())
@@ -37,15 +33,12 @@ where
 
 pub(crate) fn chan_open_ack_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
-    module_id: ModuleId,
+    module: &mut dyn Module,
     msg: MsgChannelOpenAck,
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
 {
-    let module = ctx_a
-        .get_route_mut(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
     let extras =
         module.on_chan_open_ack_execute(&msg.port_id_on_a, &msg.chan_id_on_a, &msg.version_on_b)?;
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
@@ -67,7 +60,7 @@ where
 
     // emit events and logs
     {
-        ctx_a.log_message("success: channel open ack".to_string());
+        ctx_a.log_message("success: channel open ack".to_string())?;
 
         let core_event = {
             let port_id_on_b = chan_end_on_a.counterparty().port_id.clone();
@@ -81,15 +74,15 @@ where
                 conn_id_on_a,
             ))
         };
-        ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
-        ctx_a.emit_ibc_event(core_event);
+        ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+        ctx_a.emit_ibc_event(core_event)?;
 
         for module_event in extras.events {
-            ctx_a.emit_ibc_event(IbcEvent::Module(module_event));
+            ctx_a.emit_ibc_event(IbcEvent::Module(module_event))?;
         }
 
         for log_message in extras.log {
-            ctx_a.log_message(log_message);
+            ctx_a.log_message(log_message)?;
         }
     }
 
@@ -120,7 +113,13 @@ where
         let client_id_on_a = conn_end_on_a.client_id();
         let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
 
-        client_state_of_b_on_a.confirm_not_frozen()?;
+        {
+            let status = client_state_of_b_on_a
+                .status(ctx_a.get_client_validation_context(), client_id_on_a)?;
+            if !status.is_active() {
+                return Err(ClientError::ClientNotActive { status }.into());
+            }
+        }
         client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
 
         let client_cons_state_path_on_a =
@@ -164,31 +163,31 @@ where
 #[cfg(test)]
 mod tests {
 
-    use super::*;
     use rstest::*;
     use test_log::test;
 
+    use super::*;
     use crate::applications::transfer::MODULE_ID_STR;
-    use crate::core::ics03_connection::connection::ConnectionEnd;
-    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
-    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use crate::core::ics03_connection::connection::{
+        ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
+    };
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
     use crate::core::ics03_connection::version::get_compatible_versions;
-    use crate::core::ics04_channel::channel::Order;
-    use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State};
+    use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
     use crate::core::ics04_channel::msgs::chan_open_ack::test_util::get_dummy_raw_msg_chan_open_ack;
     use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
-    use crate::core::ics24_host::identifier::ClientId;
-    use crate::core::ics24_host::identifier::ConnectionId;
+    use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::core::router::{ModuleId, Router};
     use crate::core::timestamp::ZERO_DURATION;
-    use crate::Height;
-
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
+    use crate::mock::router::MockRouter;
     use crate::test_utils::DummyTransferModule;
+    use crate::Height;
 
     pub struct Fixture {
         pub context: MockContext,
+        pub router: MockRouter,
         pub module_id: ModuleId,
         pub msg: MsgChannelOpenAck,
         pub client_id_on_a: ClientId,
@@ -201,10 +200,13 @@ mod tests {
     #[fixture]
     fn fixture() -> Fixture {
         let proof_height = 10;
-        let mut context = MockContext::default();
-        let module = DummyTransferModule::new();
-        let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        context.add_route(module_id.clone(), module).unwrap();
+        let context = MockContext::default();
+
+        let module_id = ModuleId::new(MODULE_ID_STR.to_string());
+        let mut router = MockRouter::default();
+        router
+            .add_route(module_id.clone(), DummyTransferModule::new())
+            .unwrap();
 
         let client_id_on_a = ClientId::new(mock_client_type(), 45).unwrap();
         let conn_id_on_a = ConnectionId::new(2);
@@ -231,6 +233,7 @@ mod tests {
 
         Fixture {
             context,
+            router,
             module_id,
             msg,
             client_id_on_a,
@@ -359,6 +362,7 @@ mod tests {
     fn chan_open_ack_execute_happy_path(fixture: Fixture) {
         let Fixture {
             context,
+            mut router,
             module_id,
             msg,
             client_id_on_a,
@@ -378,7 +382,8 @@ mod tests {
                 chan_end_on_a,
             );
 
-        let res = chan_open_ack_execute(&mut context, module_id, msg);
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = chan_open_ack_execute(&mut context, module, msg);
 
         assert!(res.is_ok(), "Execution happy path");
 

@@ -1,20 +1,17 @@
 //! Events emitted during message handling
 
-use crate::prelude::*;
-
 use core::convert::{TryFrom, TryInto};
+
 use displaydoc::Display;
 use tendermint::abci;
 
+use super::ics24_host::identifier::IdentifierError;
 use crate::core::ics02_client::error as client_error;
 use crate::core::ics02_client::events::{self as ClientEvents};
-use crate::core::ics03_connection::error as connection_error;
-use crate::core::ics03_connection::events as ConnectionEvents;
-use crate::core::ics04_channel::error as channel_error;
-use crate::core::ics04_channel::events as ChannelEvents;
+use crate::core::ics03_connection::{error as connection_error, events as ConnectionEvents};
+use crate::core::ics04_channel::{error as channel_error, events as ChannelEvents};
 use crate::core::timestamp::ParseTimestampError;
-
-use super::ics24_host::identifier::IdentifierError;
+use crate::prelude::*;
 
 /// All error variants related to IBC events
 #[derive(Debug, Display)]
@@ -284,17 +281,14 @@ impl From<MessageEvent> for IbcEvent {
 
 #[cfg(test)]
 pub mod tests {
-    use super::*;
     use alloc::vec;
 
-    use crate::core::{
-        ics04_channel::{
-            channel::Order,
-            events::SendPacket,
-            packet::{test_utils::get_dummy_raw_packet, Packet},
-        },
-        ics24_host::identifier::ConnectionId,
-    };
+    use super::*;
+    use crate::core::ics04_channel::channel::Order;
+    use crate::core::ics04_channel::events::SendPacket;
+    use crate::core::ics04_channel::packet::test_utils::get_dummy_raw_packet;
+    use crate::core::ics04_channel::packet::Packet;
+    use crate::core::ics24_host::identifier::ConnectionId;
 
     #[test]
     /// Ensures that we don't panic when packet data is not valid UTF-8.

@@ -1,24 +1,23 @@
-use crate::prelude::*;
-
 use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
 use crate::core::ics04_channel::channel::{Counterparty, Order, State as ChannelState};
 use crate::core::ics04_channel::commitment::{compute_ack_commitment, compute_packet_commitment};
-use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics04_channel::error::PacketError;
+use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::events::{ReceivePacket, WriteAcknowledgement};
 use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
 use crate::core::ics04_channel::packet::Receipt;
-use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
-    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath,
+    SeqRecvPath,
 };
-use crate::core::router::ModuleId;
+use crate::core::router::Module;
 use crate::core::timestamp::Expiry;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) fn recv_packet_validate<ValCtx>(
     ctx_b: &ValCtx,
@@ -36,7 +35,7 @@ where
 
 pub(crate) fn recv_packet_execute<ExecCtx>(
     ctx_b: &mut ExecCtx,
-    module_id: ModuleId,
+    module: &mut dyn Module,
     msg: MsgRecvPacket,
 ) -> Result<(), ContextError>
 where
@@ -73,10 +72,6 @@ where
             return Ok(());
         }
     }
-
-    let module = ctx_b
-        .get_route_mut(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
 
     let (extras, acknowledgement) = module.on_recv_packet_execute(&msg.packet, &msg.signer);
 
@@ -115,8 +110,8 @@ where
 
     // emit events and logs
     {
-        ctx_b.log_message("success: packet receive".to_string());
-        ctx_b.log_message("success: packet write acknowledgement".to_string());
+        ctx_b.log_message("success: packet receive".to_string())?;
+        ctx_b.log_message("success: packet write acknowledgement".to_string())?;
 
         let conn_id_on_b = &chan_end_on_b.connection_hops()[0];
         let event = IbcEvent::ReceivePacket(ReceivePacket::new(
@@ -124,22 +119,22 @@ where
             chan_end_on_b.ordering,
             conn_id_on_b.clone(),
         ));
-        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
-        ctx_b.emit_ibc_event(event);
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+        ctx_b.emit_ibc_event(event)?;
         let event = IbcEvent::WriteAcknowledgement(WriteAcknowledgement::new(
             msg.packet,
             acknowledgement,
             conn_id_on_b.clone(),
         ));
-        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
-        ctx_b.emit_ibc_event(event);
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+        ctx_b.emit_ibc_event(event)?;
 
         for module_event in extras.events {
-            ctx_b.emit_ibc_event(IbcEvent::Module(module_event));
+            ctx_b.emit_ibc_event(IbcEvent::Module(module_event))?;
         }
 
         for log_message in extras.log {
-            ctx_b.log_message(log_message);
+            ctx_b.log_message(log_message)?;
         }
     }
 
@@ -189,7 +184,13 @@ where
         let client_id_on_b = conn_end_on_b.client_id();
         let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
 
-        client_state_of_a_on_b.confirm_not_frozen()?;
+        {
+            let status = client_state_of_a_on_b
+                .status(ctx_b.get_client_validation_context(), client_id_on_b)?;
+            if !status.is_active() {
+                return Err(ClientError::ClientNotActive { status }.into());
+            }
+        }
         client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
 
         let client_cons_state_path_on_b =
@@ -281,13 +282,14 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use rstest::*;
     use test_log::test;
 
-    use crate::core::ics03_connection::connection::ConnectionEnd;
-    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
-    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use super::*;
+    use crate::applications::transfer::MODULE_ID_STR;
+    use crate::core::ics03_connection::connection::{
+        ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
+    };
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
     use crate::core::ics04_channel::msgs::recv_packet::test_util::get_dummy_raw_msg_recv_packet;
@@ -295,17 +297,17 @@ mod tests {
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::timestamp::Timestamp;
-    use crate::core::timestamp::ZERO_DURATION;
-    use crate::Height;
-
+    use crate::core::router::{ModuleId, Router};
+    use crate::core::timestamp::{Timestamp, ZERO_DURATION};
     use crate::mock::context::MockContext;
     use crate::mock::ics18_relayer::context::RelayerContext;
-    use crate::test_utils::get_dummy_account_id;
-    use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
+    use crate::mock::router::MockRouter;
+    use crate::test_utils::{get_dummy_account_id, DummyTransferModule};
+    use crate::Height;
 
     pub struct Fixture {
         pub context: MockContext,
+        pub router: MockRouter,
         pub module_id: ModuleId,
         pub client_height: Height,
         pub host_height: Height,
@@ -316,11 +318,13 @@ mod tests {
 
     #[fixture]
     fn fixture() -> Fixture {
-        let mut context = MockContext::default();
+        let context = MockContext::default();
 
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        let module = DummyTransferModule::new();
-        context.add_route(module_id.clone(), module).unwrap();
+        let mut router = MockRouter::default();
+        router
+            .add_route(module_id.clone(), DummyTransferModule::new())
+            .unwrap();
 
         let host_height = context.query_latest_height().unwrap().increment();
 
@@ -357,6 +361,7 @@ mod tests {
 
         Fixture {
             context,
+            router,
             module_id,
             client_height,
             host_height,
@@ -483,6 +488,7 @@ mod tests {
     fn recv_packet_execute_happy_path(fixture: Fixture) {
         let Fixture {
             context,
+            mut router,
             module_id,
             msg,
             conn_end_on_b,
@@ -495,7 +501,8 @@ mod tests {
             .with_connection(ConnectionId::default(), conn_end_on_b)
             .with_channel(PortId::default(), ChannelId::default(), chan_end_on_b);
 
-        let res = recv_packet_execute(&mut ctx, module_id, msg);
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = recv_packet_execute(&mut ctx, module, msg);
 
         assert!(res.is_ok());
 

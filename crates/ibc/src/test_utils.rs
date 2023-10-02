@@ -1,5 +1,10 @@
-use tendermint::{block, consensus, evidence, public_key::Algorithm};
+use subtle_encoding::bech32;
 
+use crate::applications::transfer::context::{
+    cosmos_adr028_escrow_address, TokenTransferExecutionContext, TokenTransferValidationContext,
+};
+use crate::applications::transfer::error::TokenTransferError;
+use crate::applications::transfer::PrefixedCoin;
 use crate::core::ics04_channel::acknowledgement::Acknowledgement;
 use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
@@ -9,26 +14,6 @@ use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use crate::core::router::{Module, ModuleExtras};
 use crate::prelude::*;
 use crate::signer::Signer;
-
-// Needed in mocks.
-pub fn default_consensus_params() -> consensus::Params {
-    consensus::Params {
-        block: block::Size {
-            max_bytes: 22020096,
-            max_gas: -1,
-            time_iota_ms: 1000,
-        },
-        evidence: evidence::Params {
-            max_age_num_blocks: 100000,
-            max_age_duration: evidence::Duration(core::time::Duration::new(48 * 3600, 0)),
-            max_bytes: 0,
-        },
-        validator: consensus::params::ValidatorParams {
-            pub_key_types: vec![Algorithm::Ed25519],
-        },
-        version: Some(consensus::params::VersionParams::default()),
-    }
-}
 
 pub fn get_dummy_proof() -> Vec<u8> {
     "Y29uc2Vuc3VzU3RhdGUvaWJjb25lY2xpZW50LzIy"
@@ -156,5 +141,82 @@ impl Module for DummyTransferModule {
         _relayer: &Signer,
     ) -> (ModuleExtras, Result<(), PacketError>) {
         (ModuleExtras::empty(), Ok(()))
+    }
+}
+
+impl TokenTransferValidationContext for DummyTransferModule {
+    type AccountId = Signer;
+
+    fn get_port(&self) -> Result<PortId, TokenTransferError> {
+        Ok(PortId::transfer())
+    }
+
+    fn get_escrow_account(
+        &self,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+    ) -> Result<Self::AccountId, TokenTransferError> {
+        let addr = cosmos_adr028_escrow_address(port_id, channel_id);
+        Ok(bech32::encode("cosmos", addr).into())
+    }
+
+    fn can_send_coins(&self) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    fn can_receive_coins(&self) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    fn send_coins_validate(
+        &self,
+        _from_account: &Self::AccountId,
+        _to_account: &Self::AccountId,
+        _coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    fn mint_coins_validate(
+        &self,
+        _account: &Self::AccountId,
+        _coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    fn burn_coins_validate(
+        &self,
+        _account: &Self::AccountId,
+        _coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+}
+
+impl TokenTransferExecutionContext for DummyTransferModule {
+    fn send_coins_execute(
+        &mut self,
+        _from_account: &Self::AccountId,
+        _to_account: &Self::AccountId,
+        _coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    fn mint_coins_execute(
+        &mut self,
+        _account: &Self::AccountId,
+        _coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    fn burn_coins_execute(
+        &mut self,
+        _account: &Self::AccountId,
+        _coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError> {
+        Ok(())
     }
 }

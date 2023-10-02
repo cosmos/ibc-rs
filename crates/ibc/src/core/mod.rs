@@ -36,15 +36,9 @@ mod context;
 mod handler;
 mod msgs;
 
-pub use handler::dispatch;
-pub use handler::execute;
-pub use handler::validate;
-
 pub use context::*;
-
-pub use msgs::Msg;
-pub use msgs::MsgEnvelope;
-
+pub use handler::{dispatch, execute, validate};
 pub use ics04_channel::handler::send_packet::{
     send_packet, send_packet_execute, send_packet_validate,
 };
+pub use msgs::{Msg, MsgEnvelope};

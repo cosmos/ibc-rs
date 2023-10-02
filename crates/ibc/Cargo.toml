@@ -1,6 +1,6 @@
 [package]
 name         = "ibc"
-version      = "0.43.1"
+version      = "0.45.0"
 edition      = "2021"
 license      = "Apache-2.0"
 readme       = "README.md"
@@ -37,6 +37,8 @@ std = [
 ]
 parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-proto/parity-scale-codec"]
 borsh = ["dep:borsh", "ibc-proto/borsh"]
+# includes gRPC services for IBC core
+grpc = ["dep:tonic", "ibc-proto/server"]
 
 # This feature is required for token transfer (ICS-20)
 serde = ["dep:serde", "dep:serde_derive", "serde_json", "ibc-proto/serde", "ics23/serde"]
@@ -50,9 +52,9 @@ mocks = ["tendermint-testgen", "tendermint/clock", "parking_lot"]
 
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
-ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs.git", rev = "af385af", default-features = false }
-ics23 = { git = "https://github.com/cosmos/ics23.git", rev = "27868a6", default-features = false, features = ["host-functions"] }
-time = { version = ">=0.3.0, <0.3.24", default-features = false }
+ibc-proto = { version = "0.35.0", default-features = false, features = ["serde"] }
+ics23 = { version = "0.10.1", default-features = false, features = ["host-functions"] }
+time = { version = ">=0.3.0, <0.3.29", default-features = false }
 serde_derive = { version = "1.0.104", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
 
@@ -66,7 +68,6 @@ serde_json =  { package = "serde-json-wasm", git = "https://github.com/dzmitry-l
 tracing = { version = "0.1.36", default-features = false }
 prost = { version = "0.11", default-features = false }
 bytes = { version = "1.2.1", default-features = false }
-safe-regex = { version = "0.2.5", default-features = false }
 subtle-encoding = { version = "0.5", default-features = false }
 sha2 = { version = "0.10.6", default-features = false }
 displaydoc = { version = "0.2", default-features = false }
@@ -74,33 +75,34 @@ num-traits = { version = "0.2.15", default-features = false }
 derive_more = { version = "0.99.17", default-features = false, features = ["from", "into", "display", "try_into"] }
 uint = { version = "0.9", default-features = false }
 primitive-types = { version = "0.12.0", default-features = false, features = ["serde_no_std"] }
+tonic = { version = "0.9", optional = true }
 
 ## for codec encode or decode
 parity-scale-codec = { version = "3.0.0", default-features = false, features = ["full"], optional = true }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"], optional = true }
 ## for borsh encode or decode
-borsh = {version = "0.9.0", default-features = false, optional = true }
+borsh = {version = "0.10", default-features = false, optional = true }
 parking_lot = { version = "0.12.1", default-features = false, optional = true }
 
-ibc-derive = "0.2.0"
+ibc-derive = { version ="0.3.0", path = "../ibc-derive" }
 
 schemars = { version = "0.8.12", optional = true }
 
 [dependencies.tendermint]
-version = "0.32"
+version = "0.33"
 default-features = false
 
 [dependencies.tendermint-proto]
-version = "0.32"
+version = "0.33"
 default-features = false
 
 [dependencies.tendermint-light-client-verifier]
-version = "0.32"
+version = "0.33"
 default-features = false
 features = ["rust-crypto"]
 
 [dependencies.tendermint-testgen]
-version = "0.32"
+version = "0.33"
 optional = true
 default-features = false
 
@@ -109,6 +111,6 @@ env_logger = "0.10.0"
 rstest = "0.18.1"
 tracing-subscriber = { version = "0.3.14", features = ["fmt", "env-filter", "json"]}
 test-log = { version = "0.2.10", features = ["trace"] }
-tendermint-rpc = { version = "0.32", features = ["http-client", "websocket-client"] }
-tendermint-testgen = { version = "0.32" } # Needed for generating (synthetic) light blocks.
+tendermint-rpc = { version = "0.33", features = ["http-client", "websocket-client"] }
+tendermint-testgen = { version = "0.33" } # Needed for generating (synthetic) light blocks.
 parking_lot = { version = "0.12.1" }

@@ -1,26 +1,23 @@
-use crate::prelude::*;
 use prost::Message;
 
-use crate::core::events::IbcEvent;
-use crate::core::events::MessageEvent;
-use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
-use crate::core::ics04_channel::channel::State;
-use crate::core::ics04_channel::channel::{Counterparty, Order};
+use crate::core::ics04_channel::channel::{Counterparty, Order, State};
 use crate::core::ics04_channel::commitment::compute_packet_commitment;
-use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics04_channel::error::PacketError;
-use crate::core::ics04_channel::events::ChannelClosed;
+use crate::core::ics04_channel::error::{ChannelError, PacketError};
+use crate::core::ics04_channel::events::{ChannelClosed, TimeoutPacket};
+use crate::core::ics04_channel::handler::timeout_on_close;
 use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
 use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
-use crate::core::ics04_channel::{events::TimeoutPacket, handler::timeout_on_close};
-use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
-    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
+    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
 };
-use crate::core::router::ModuleId;
+use crate::core::router::Module;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) enum TimeoutMsgType {
     Timeout(MsgTimeout),
@@ -29,7 +26,7 @@ pub(crate) enum TimeoutMsgType {
 
 pub(crate) fn timeout_packet_validate<ValCtx>(
     ctx_a: &ValCtx,
-    module_id: ModuleId,
+    module: &dyn Module,
     timeout_msg_type: TimeoutMsgType,
 ) -> Result<(), ContextError>
 where
@@ -39,10 +36,6 @@ where
         TimeoutMsgType::Timeout(msg) => validate(ctx_a, msg),
         TimeoutMsgType::TimeoutOnClose(msg) => timeout_on_close::validate(ctx_a, msg),
     }?;
-
-    let module = ctx_a
-        .get_route(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
 
     let (packet, signer) = match timeout_msg_type {
         TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),
@@ -56,7 +49,7 @@ where
 
 pub(crate) fn timeout_packet_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
-    module_id: ModuleId,
+    module: &mut dyn Module,
     timeout_msg_type: TimeoutMsgType,
 ) -> Result<(), ContextError>
 where
@@ -71,8 +64,8 @@ where
 
     // In all cases, this event is emitted
     let event = IbcEvent::TimeoutPacket(TimeoutPacket::new(packet.clone(), chan_end_on_a.ordering));
-    ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
-    ctx_a.emit_ibc_event(event);
+    ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+    ctx_a.emit_ibc_event(event)?;
 
     let commitment_path_on_a =
         CommitmentPath::new(&packet.port_id_on_a, &packet.chan_id_on_a, packet.seq_on_a);
@@ -85,10 +78,6 @@ where
         // prevent an entire relay transaction from failing and consuming unnecessary fees.
         return Ok(());
     };
-
-    let module = ctx_a
-        .get_route_mut(&module_id)
-        .ok_or(ChannelError::RouteNotFound)?;
 
     let (extras, cb_result) = module.on_timeout_packet_execute(&packet, &signer);
 
@@ -116,7 +105,7 @@ where
 
     // emit events and logs
     {
-        ctx_a.log_message("success: packet timeout".to_string());
+        ctx_a.log_message("success: packet timeout".to_string())?;
 
         if let Order::Ordered = chan_end_on_a.ordering {
             let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
@@ -129,16 +118,16 @@ where
                 conn_id_on_a,
                 chan_end_on_a.ordering,
             ));
-            ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
-            ctx_a.emit_ibc_event(event);
+            ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+            ctx_a.emit_ibc_event(event)?;
         }
 
         for module_event in extras.events {
-            ctx_a.emit_ibc_event(IbcEvent::Module(module_event));
+            ctx_a.emit_ibc_event(IbcEvent::Module(module_event))?;
         }
 
         for log_message in extras.log {
-            ctx_a.log_message(log_message);
+            ctx_a.log_message(log_message)?;
         }
     }
 
@@ -200,7 +189,14 @@ where
     {
         let client_id_on_a = conn_end_on_a.client_id();
         let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
-        client_state_of_b_on_a.confirm_not_frozen()?;
+
+        {
+            let status = client_state_of_b_on_a
+                .status(ctx_a.get_client_validation_context(), client_id_on_a)?;
+            if !status.is_active() {
+                return Err(ClientError::ClientNotActive { status }.into());
+            }
+        }
         client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
 
         // check that timeout height or timeout timestamp has passed on the other end
@@ -273,13 +269,14 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use rstest::*;
 
+    use super::*;
+    use crate::applications::transfer::MODULE_ID_STR;
     use crate::core::ics02_client::height::Height;
-    use crate::core::ics03_connection::connection::ConnectionEnd;
-    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
-    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use crate::core::ics03_connection::connection::{
+        ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
+    };
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
     use crate::core::ics04_channel::commitment::PacketCommitment;
@@ -288,15 +285,15 @@ mod tests {
     use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::timestamp::Timestamp;
-    use crate::core::timestamp::ZERO_DURATION;
-
-    use crate::applications::transfer::MODULE_ID_STR;
+    use crate::core::router::{ModuleId, Router};
+    use crate::core::timestamp::{Timestamp, ZERO_DURATION};
     use crate::mock::context::MockContext;
+    use crate::mock::router::MockRouter;
     use crate::test_utils::DummyTransferModule;
 
     struct Fixture {
         ctx: MockContext,
+        pub router: MockRouter,
         client_height: Height,
         module_id: ModuleId,
         msg: MsgTimeout,
@@ -309,13 +306,15 @@ mod tests {
     #[fixture]
     fn fixture() -> Fixture {
         let client_height = Height::new(0, 2).unwrap();
-        let mut ctx = MockContext::default().with_client(&ClientId::default(), client_height);
+        let ctx = MockContext::default().with_client(&ClientId::default(), client_height);
 
         let client_height = Height::new(0, 2).unwrap();
 
         let module_id: ModuleId = ModuleId::new(MODULE_ID_STR.to_string());
-        let module = DummyTransferModule::new();
-        ctx.add_route(module_id.clone(), module).unwrap();
+        let mut router = MockRouter::default();
+        router
+            .add_route(module_id.clone(), DummyTransferModule::new())
+            .unwrap();
 
         let msg_proof_height = 2;
         let msg_timeout_height = 5;
@@ -363,6 +362,7 @@ mod tests {
 
         Fixture {
             ctx,
+            router,
             client_height,
             module_id,
             msg,
@@ -608,6 +608,7 @@ mod tests {
     fn timeout_unordered_chan_execute(fixture: Fixture) {
         let Fixture {
             ctx,
+            mut router,
             module_id,
             msg,
             packet_commitment,
@@ -629,7 +630,8 @@ mod tests {
                 packet_commitment,
             );
 
-        let res = timeout_packet_execute(&mut ctx, module_id, TimeoutMsgType::Timeout(msg));
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = timeout_packet_execute(&mut ctx, module, TimeoutMsgType::Timeout(msg));
 
         assert!(res.is_ok());
 
@@ -646,6 +648,7 @@ mod tests {
     fn timeout_ordered_chan_execute(fixture: Fixture) {
         let Fixture {
             ctx,
+            mut router,
             module_id,
             msg,
             packet_commitment,
@@ -667,7 +670,8 @@ mod tests {
                 packet_commitment,
             );
 
-        let res = timeout_packet_execute(&mut ctx, module_id, TimeoutMsgType::Timeout(msg));
+        let module = router.get_route_mut(&module_id).unwrap();
+        let res = timeout_packet_execute(&mut ctx, module, TimeoutMsgType::Timeout(msg));
 
         assert!(res.is_ok());
 

@@ -1,12 +1,14 @@
-use crate::prelude::*;
-
-use crate::signer::Signer;
 use alloc::string::String;
 use core::time::Duration;
+
 use derive_more::From;
 use displaydoc::Display;
 use ibc_proto::google::protobuf::Any;
 
+use super::ics02_client::client_state::ClientState;
+use super::ics02_client::consensus_state::ConsensusState;
+use super::ics02_client::ClientExecutionContext;
+use super::ics24_host::identifier::PortId;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::ConnectionEnd;
@@ -17,23 +19,18 @@ use crate::core::ics03_connection::version::{
 use crate::core::ics04_channel::channel::ChannelEnd;
 use crate::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
 use crate::core::ics04_channel::context::calculate_block_delay;
-use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics04_channel::error::PacketError;
+use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
-use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::identifier::ConnectionId;
+use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::core::ics24_host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
     ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
-use crate::core::router::Router;
 use crate::core::timestamp::Timestamp;
+use crate::prelude::*;
+use crate::signer::Signer;
 use crate::Height;
-
-use super::ics02_client::client_state::ClientState;
-use super::ics02_client::consensus_state::ConsensusState;
-use super::ics02_client::ClientExecutionContext;
 
 /// Top-level error
 #[derive(Debug, Display, From)]
@@ -70,6 +67,10 @@ pub enum RouterError {
     UnknownMessageTypeUrl { url: String },
     /// the message is malformed and cannot be decoded error: `{0}`
     MalformedMessageBytes(ibc_proto::protobuf::Error),
+    /// port `{port_id}` is unknown
+    UnknownPort { port_id: PortId },
+    /// module not found
+    ModuleNotFound,
 }
 
 impl From<ContextError> for RouterError {
@@ -83,8 +84,8 @@ impl std::error::Error for RouterError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::ContextError(e) => Some(e),
-            Self::UnknownMessageTypeUrl { .. } => None,
             Self::MalformedMessageBytes(e) => Some(e),
+            _ => None,
         }
     }
 }
@@ -92,7 +93,7 @@ impl std::error::Error for RouterError {
 /// Context to be implemented by the host that provides all "read-only" methods.
 ///
 /// Trait used for the top-level [`validate`](crate::core::validate)
-pub trait ValidationContext: Router {
+pub trait ValidationContext {
     type ClientValidationContext;
     type E: ClientExecutionContext;
     type AnyConsensusState: ConsensusState;
@@ -250,7 +251,7 @@ pub trait ExecutionContext: ValidationContext {
     /// Called upon client creation.
     /// Increases the counter which keeps track of how many clients have been created.
     /// Should never fail.
-    fn increase_client_counter(&mut self);
+    fn increase_client_counter(&mut self) -> Result<(), ContextError>;
 
     /// Called upon successful client update.
     /// Implementations are expected to use this to record the specified time as the time at which
@@ -289,7 +290,7 @@ pub trait ExecutionContext: ValidationContext {
     /// Called upon connection identifier creation (Init or Try process).
     /// Increases the counter which keeps track of how many connections have been created.
     /// Should never fail.
-    fn increase_connection_counter(&mut self);
+    fn increase_connection_counter(&mut self) -> Result<(), ContextError>;
 
     /// Stores the given packet commitment at the given store path
     fn store_packet_commitment(
@@ -352,11 +353,11 @@ pub trait ExecutionContext: ValidationContext {
     /// Called upon channel identifier creation (Init or Try message processing).
     /// Increases the counter which keeps track of how many channels have been created.
     /// Should never fail.
-    fn increase_channel_counter(&mut self);
+    fn increase_channel_counter(&mut self) -> Result<(), ContextError>;
 
     /// Emit the given IBC event
-    fn emit_ibc_event(&mut self, event: IbcEvent);
+    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ContextError>;
 
     /// Log the given message.
-    fn log_message(&mut self, message: String);
+    fn log_message(&mut self, message: String) -> Result<(), ContextError>;
 }

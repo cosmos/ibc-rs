@@ -1,5 +1,3 @@
-use crate::prelude::*;
-
 use core::time::Duration;
 
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenInit as RawMsgConnectionOpenInit;
@@ -10,6 +8,7 @@ use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::version::Version;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::Msg;
+use crate::prelude::*;
 use crate::signer::Signer;
 
 pub(crate) const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenInit";
@@ -17,6 +16,7 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenInit
 /// Per our convention, this message is sent to chain A.
 /// The handler will check proofs of chain B.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct MsgConnectionOpenInit {
     /// ClientId on chain A that the connection is being opened for
     pub client_id_on_a: ClientId,
@@ -31,6 +31,62 @@ impl Msg for MsgConnectionOpenInit {
 
     fn type_url(&self) -> String {
         TYPE_URL.to_string()
+    }
+}
+
+/// This module encapsulates the workarounds we need to do to implement
+/// `BorshSerialize` and `BorshDeserialize` on `MsgConnectionOpenInit`
+#[cfg(feature = "borsh")]
+mod borsh_impls {
+    use borsh::maybestd::io::{self, Read};
+    use borsh::{BorshDeserialize, BorshSerialize};
+
+    use super::*;
+
+    #[derive(BorshSerialize, BorshDeserialize)]
+    pub struct InnerMsgConnectionOpenInit {
+        /// ClientId on chain A that the connection is being opened for
+        pub client_id_on_a: ClientId,
+        pub counterparty: Counterparty,
+        pub version: Option<Version>,
+        pub delay_period_nanos: u64,
+        pub signer: Signer,
+    }
+
+    impl BorshSerialize for MsgConnectionOpenInit {
+        fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+            let delay_period_nanos: u64 =
+                self.delay_period.as_nanos().try_into().map_err(|_| {
+                    io::Error::new(
+                        io::ErrorKind::Other,
+                        format!("Duration too long: {} nanos", self.delay_period.as_nanos()),
+                    )
+                })?;
+
+            let inner = InnerMsgConnectionOpenInit {
+                client_id_on_a: self.client_id_on_a.clone(),
+                counterparty: self.counterparty.clone(),
+                version: self.version.clone(),
+                delay_period_nanos,
+                signer: self.signer.clone(),
+            };
+
+            inner.serialize(writer)
+        }
+    }
+
+    impl BorshDeserialize for MsgConnectionOpenInit {
+        fn deserialize_reader<R: Read>(reader: &mut R) -> io::Result<Self> {
+            let inner = InnerMsgConnectionOpenInit::deserialize_reader(reader)?;
+
+            Ok(MsgConnectionOpenInit {
+                client_id_on_a: inner.client_id_on_a,
+                counterparty: inner.counterparty,
+                version: inner.version,
+                delay_period: Duration::from_nanos(inner.delay_period_nanos),
+                signer: inner.signer,
+            })
+        }
     }
 }
 
@@ -74,16 +130,16 @@ impl From<MsgConnectionOpenInit> for RawMsgConnectionOpenInit {
 
 #[cfg(test)]
 pub mod test_util {
-    use crate::core::ics03_connection::connection::Counterparty;
-    use crate::prelude::*;
     use ibc_proto::ibc::core::connection::v1::{
         MsgConnectionOpenInit as RawMsgConnectionOpenInit, Version as RawVersion,
     };
 
+    use crate::core::ics03_connection::connection::Counterparty;
     use crate::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
     use crate::core::ics03_connection::version::Version;
     use crate::core::ics24_host::identifier::ClientId;
+    use crate::prelude::*;
     use crate::test_utils::get_dummy_bech32_account;
 
     /// Extends the implementation with additional helper methods.
@@ -141,16 +197,15 @@ pub mod test_util {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
-
+    use ibc_proto::ibc::core::connection::v1::{
+        Counterparty as RawCounterparty, MsgConnectionOpenInit as RawMsgConnectionOpenInit,
+    };
     use test_log::test;
-
-    use ibc_proto::ibc::core::connection::v1::Counterparty as RawCounterparty;
-    use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenInit as RawMsgConnectionOpenInit;
 
     use super::MsgConnectionOpenInit;
     use crate::core::ics03_connection::msgs::conn_open_init::test_util::get_dummy_raw_msg_conn_open_init;
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
+    use crate::prelude::*;
 
     #[test]
     fn parse_connection_open_init_msg() {
@@ -238,5 +293,22 @@ mod tests {
             msg_with_counterpary_conn_id_some,
             msg_with_counterpary_conn_id_some_back
         );
+    }
+
+    /// Test that borsh serialization/deserialization works well with delay periods up to u64::MAX
+    #[cfg(feature = "borsh")]
+    #[test]
+    fn test_borsh() {
+        let mut raw = get_dummy_raw_msg_conn_open_init();
+        raw.delay_period = u64::MAX;
+        let msg = MsgConnectionOpenInit::try_from(raw.clone()).unwrap();
+
+        let serialized = borsh::to_vec(&msg).unwrap();
+
+        let msg_deserialized =
+            <MsgConnectionOpenInit as borsh::BorshDeserialize>::try_from_slice(&serialized)
+                .unwrap();
+
+        assert_eq!(msg, msg_deserialized);
     }
 }

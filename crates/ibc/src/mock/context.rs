@@ -1,14 +1,6 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
-mod applications;
 mod clients;
-
-use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
-use crate::core::ics24_host::path::{
-    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
-    ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
-};
-use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap;
 use alloc::sync::Arc;
@@ -16,22 +8,24 @@ use core::cmp::min;
 use core::fmt::Debug;
 use core::ops::{Add, Sub};
 use core::time::Duration;
+
 use derive_more::{From, TryInto};
+use ibc_proto::google::protobuf::Any;
 use ibc_proto::protobuf::Protobuf;
 use parking_lot::Mutex;
-
-use ibc_proto::google::protobuf::Any;
 use tracing::debug;
 
-use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use crate::clients::ics07_tendermint::client_state::TENDERMINT_CLIENT_STATE_TYPE_URL;
-use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
-use crate::clients::ics07_tendermint::consensus_state::TENDERMINT_CONSENSUS_STATE_TYPE_URL;
-
-use crate::core::dispatch;
+use super::client_state::{MOCK_CLIENT_STATE_TYPE_URL, MOCK_CLIENT_TYPE};
+use super::consensus_state::MOCK_CONSENSUS_STATE_TYPE_URL;
+use crate::clients::ics07_tendermint::client_state::{
+    ClientState as TmClientState, TENDERMINT_CLIENT_STATE_TYPE_URL,
+};
+use crate::clients::ics07_tendermint::consensus_state::{
+    ConsensusState as TmConsensusState, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
+};
+use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
-use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
@@ -43,22 +37,22 @@ use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
+use crate::core::ics24_host::path::{
+    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
+    ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
+};
 use crate::core::router::Router;
-use crate::core::router::{Module, ModuleId};
 use crate::core::timestamp::Timestamp;
-use crate::core::{ContextError, ValidationContext};
-use crate::core::{ExecutionContext, MsgEnvelope};
+use crate::core::{dispatch, ContextError, ExecutionContext, MsgEnvelope, ValidationContext};
 use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::mock::host::{HostBlock, HostType};
 use crate::mock::ics18_relayer::context::RelayerContext;
 use crate::mock::ics18_relayer::error::RelayerError;
+use crate::prelude::*;
 use crate::signer::Signer;
 use crate::Height;
-
-use super::client_state::{MOCK_CLIENT_STATE_TYPE_URL, MOCK_CLIENT_TYPE};
-use super::consensus_state::MOCK_CONSENSUS_STATE_TYPE_URL;
 
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
@@ -188,9 +182,6 @@ pub struct MockIbcStore {
 
     pub packet_acknowledgement: PortChannelIdMap<BTreeMap<Sequence, AcknowledgementCommitment>>,
 
-    /// Maps ports to the the module that owns it
-    pub port_to_module: BTreeMap<PortId, ModuleId>,
-
     /// Constant-size commitments to packets data fields
     pub packet_commitment: PortChannelIdMap<BTreeMap<Sequence, PacketCommitment>>,
 
@@ -219,9 +210,6 @@ pub struct MockContext {
 
     /// An object that stores all IBC related data.
     pub ibc_store: Arc<Mutex<MockIbcStore>>,
-
-    /// To implement ValidationContext Router
-    router: BTreeMap<ModuleId, Arc<dyn Module>>,
 
     pub events: Vec<IbcEvent>,
 
@@ -258,7 +246,6 @@ impl Clone for MockContext {
             history: self.history.clone(),
             block_time: self.block_time,
             ibc_store,
-            router: self.router.clone(),
             events: self.events.clone(),
             logs: self.logs.clone(),
         }
@@ -321,7 +308,6 @@ impl MockContext {
                 .collect(),
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
-            router: BTreeMap::new(),
             events: Vec::new(),
             logs: Vec::new(),
         }
@@ -608,17 +594,6 @@ impl MockContext {
         self
     }
 
-    pub fn add_route(
-        &mut self,
-        module_id: ModuleId,
-        module: impl Module + 'static,
-    ) -> Result<(), String> {
-        match self.router.insert(module_id, Arc::new(module)) {
-            None => Ok(()),
-            Some(_) => Err("Duplicate module_id".to_owned()),
-        }
-    }
-
     /// Accessor for a block of the local (host) chain from this context.
     /// Returns `None` if the block at the requested height does not exist.
     pub fn host_block(&self, target_height: &Height) -> Option<&HostBlock> {
@@ -660,8 +635,12 @@ impl MockContext {
     /// A datagram passes from the relayer to the IBC module (on host chain).
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
     /// Used in testing the Ics18 algorithms, hence this may return a Ics18Error.
-    pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), RelayerError> {
-        dispatch(self, msg).map_err(RelayerError::TransactionFailed)?;
+    pub fn deliver(
+        &mut self,
+        router: &mut impl Router,
+        msg: MsgEnvelope,
+    ) -> Result<(), RelayerError> {
+        dispatch(self, router, msg).map_err(RelayerError::TransactionFailed)?;
         // Create a new block.
         self.advance_host_chain_height();
         Ok(())
@@ -693,21 +672,6 @@ impl MockContext {
             }
         }
         Ok(())
-    }
-
-    pub fn add_port(&mut self, port_id: PortId) {
-        let module_id = ModuleId::new(format!("module{port_id}"));
-        self.ibc_store
-            .lock()
-            .port_to_module
-            .insert(port_id, module_id);
-    }
-
-    pub fn scope_port_to_module(&mut self, port_id: PortId, module_id: ModuleId) {
-        self.ibc_store
-            .lock()
-            .port_to_module
-            .insert(port_id, module_id);
     }
 
     pub fn latest_client_states(&self, client_id: &ClientId) -> AnyClientState {
@@ -763,31 +727,6 @@ impl RelayerContext for MockContext {
         "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C"
             .to_string()
             .into()
-    }
-}
-
-impl Router for MockContext {
-    fn get_route(&self, module_id: &ModuleId) -> Option<&dyn Module> {
-        self.router.get(module_id).map(Arc::as_ref)
-    }
-    fn get_route_mut(&mut self, module_id: &ModuleId) -> Option<&mut dyn Module> {
-        // NOTE: The following:
-
-        // self.router.get_mut(module_id).and_then(Arc::get_mut)
-
-        // doesn't work due to a compiler bug. So we expand it out manually.
-
-        match self.router.get_mut(module_id) {
-            Some(arc_mod) => match Arc::get_mut(arc_mod) {
-                Some(m) => Some(m),
-                None => None,
-            },
-            None => None,
-        }
-    }
-
-    fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId> {
-        self.ibc_store.lock().port_to_module.get(port_id).cloned()
     }
 }
 
@@ -897,7 +836,12 @@ impl ValidationContext for MockContext {
             })
             .map_err(ContextError::ConnectionError)?;
 
-        mock_client_state.confirm_not_frozen()?;
+        if mock_client_state.is_frozen() {
+            return Err(ClientError::ClientFrozen {
+                description: String::new(),
+            }
+            .into());
+        }
 
         let self_chain_id = &self.host_chain_id;
         let self_revision_number = self_chain_id.revision_number();
@@ -1146,8 +1090,15 @@ impl ExecutionContext for MockContext {
         self
     }
 
-    fn increase_client_counter(&mut self) {
-        self.ibc_store.lock().client_ids_counter += 1
+    fn increase_client_counter(&mut self) -> Result<(), ContextError> {
+        let mut ibc_store = self.ibc_store.lock();
+
+        ibc_store.client_ids_counter = ibc_store
+            .client_ids_counter
+            .checked_add(1)
+            .ok_or(ClientError::CounterOverflow)?;
+
+        Ok(())
     }
 
     fn store_update_time(
@@ -1204,8 +1155,15 @@ impl ExecutionContext for MockContext {
         Ok(())
     }
 
-    fn increase_connection_counter(&mut self) {
-        self.ibc_store.lock().connection_ids_counter += 1;
+    fn increase_connection_counter(&mut self) -> Result<(), ContextError> {
+        let mut ibc_store = self.ibc_store.lock();
+
+        ibc_store.connection_ids_counter = ibc_store
+            .connection_ids_counter
+            .checked_add(1)
+            .ok_or(ClientError::CounterOverflow)?;
+
+        Ok(())
     }
 
     fn store_packet_commitment(
@@ -1355,34 +1313,43 @@ impl ExecutionContext for MockContext {
         Ok(())
     }
 
-    fn increase_channel_counter(&mut self) {
-        self.ibc_store.lock().channel_ids_counter += 1;
+    fn increase_channel_counter(&mut self) -> Result<(), ContextError> {
+        let mut ibc_store = self.ibc_store.lock();
+
+        ibc_store.channel_ids_counter = ibc_store
+            .channel_ids_counter
+            .checked_add(1)
+            .ok_or(ClientError::CounterOverflow)?;
+
+        Ok(())
     }
 
-    fn emit_ibc_event(&mut self, event: IbcEvent) {
+    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ContextError> {
         self.events.push(event);
+        Ok(())
     }
 
-    fn log_message(&mut self, message: String) {
+    fn log_message(&mut self, message: String) -> Result<(), ContextError> {
         self.logs.push(message);
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use test_log::test;
 
+    use super::*;
     use crate::core::ics04_channel::acknowledgement::Acknowledgement;
     use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::error::ChannelError;
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
-    use crate::core::ics24_host::identifier::ChainId;
-    use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+    use crate::core::ics24_host::identifier::{ChainId, ChannelId, ConnectionId, PortId};
     use crate::core::router::{Module, ModuleExtras, ModuleId};
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;
+    use crate::mock::router::MockRouter;
     use crate::signer::Signer;
     use crate::test_utils::get_dummy_bech32_account;
     use crate::Height;
@@ -1733,20 +1700,17 @@ mod tests {
             }
         }
 
-        let mut ctx = MockContext::new(
-            ChainId::new("mockgaia", 1).unwrap(),
-            HostType::Mock,
-            1,
-            Height::new(1, 1).expect("Never fails"),
-        );
-        ctx.add_route(ModuleId::new("foomodule".to_string()), FooModule::default())
+        let mut router = MockRouter::default();
+        router
+            .add_route(ModuleId::new("foomodule".to_string()), FooModule::default())
             .expect("Never fails");
-        ctx.add_route(ModuleId::new("barmodule".to_string()), BarModule)
+        router
+            .add_route(ModuleId::new("barmodule".to_string()), BarModule)
             .expect("Never fails");
 
         let mut on_recv_packet_result = |module_id: &'static str| {
             let module_id = ModuleId::new(module_id.to_string());
-            let m = ctx.get_route_mut(&module_id).expect("Never fails");
+            let m = router.get_route_mut(&module_id).expect("Never fails");
             let result =
                 m.on_recv_packet_execute(&Packet::default(), &get_dummy_bech32_account().into());
             (module_id, result)
