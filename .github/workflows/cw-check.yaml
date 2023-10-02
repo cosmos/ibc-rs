@@ -5,7 +5,7 @@ on:
       - .github/workflows/cw-check.yml
       - Cargo.toml
       - Cargo.lock
-      - ci/**
+      - ci/cw-check/**
       - crates/**
   push:
     branches: main
@@ -13,7 +13,7 @@ on:
       - .github/workflows/cw-check.yml
       - Cargo.toml
       - Cargo.lock
-      - ci/**
+      - ci/cw-check/**
       - crates/**
 
 jobs:
@@ -25,19 +25,11 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v22
         with:
+          nix_path: nixpkgs=channel:nixos-unstable
           extra_nix_config: |
             experimental-features = nix-command flakes
-
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      
-      - name: Use Rust cache
-        uses: Swatinem/rust-cache@v2
 
       - name: Run cw-check
         run: |
           cd ci/cw-check
-          nix-shell shell.nix --command "cw-check"
+          nix-shell --run "cw-check"
