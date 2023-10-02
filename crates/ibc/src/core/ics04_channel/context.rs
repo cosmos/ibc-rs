@@ -2,8 +2,6 @@
 
 use core::time::Duration;
 
-use num_traits::float::FloatCore;
-
 use super::packet::Sequence;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;

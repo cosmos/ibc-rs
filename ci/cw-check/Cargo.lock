@@ -173,7 +173,7 @@ dependencies = [
  "hex",
  "schemars",
  "serde",
- "serde-json-wasm",
+ "serde-json-wasm 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "sha2 0.10.7",
  "thiserror",
 ]
@@ -248,7 +248,7 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "ibc",
- "serde-json-wasm",
+ "serde-json-wasm 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror",
 ]
 
@@ -613,7 +613,7 @@ dependencies = [
 
 [[package]]
 name = "ibc"
-version = "0.43.1"
+version = "0.45.0"
 dependencies = [
  "bytes",
  "derive_more",
@@ -625,10 +625,9 @@ dependencies = [
  "parity-scale-codec",
  "primitive-types",
  "prost",
- "safe-regex",
  "scale-info",
  "serde",
- "serde-json-wasm",
+ "serde-json-wasm 0.5.1 (git+https://github.com/dzmitry-lahoda-forks/serde-json-wasm?rev=8a7e522c0e4de36a6dfb535766f26a9941017d81)",
  "serde_derive",
  "sha2 0.10.7",
  "subtle-encoding",
@@ -642,9 +641,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-derive"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2628857829b03dc5d434d116a0ed865e6634bad684368f466bd1a0431f49d0a6"
+version = "0.3.0"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -654,9 +651,9 @@ dependencies = [
 
 [[package]]
 name = "ibc-proto"
-version = "0.32.1"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11c352715b36685c2543556a77091fb16af5d26257d5ce9c28e6756c1ccd71aa"
+checksum = "459ccbab879b749bf500ae13244593fa16fc64c1b3159f6b0753c169625a1e23"
 dependencies = [
  "base64 0.21.2",
  "bytes",
@@ -672,14 +669,14 @@ dependencies = [
 
 [[package]]
 name = "ics23"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af9e8f569c5cc88e08b8d076dc207e0748aa1f52d4b84910ec919c8f2bed6ea7"
+checksum = "442d4bab37956e76f739c864f246c825d87c0bb7f9afa65660c57833c91bf6d4"
 dependencies = [
  "anyhow",
  "bytes",
  "hex",
- "pbjson",
+ "informalsystems-pbjson",
  "prost",
  "ripemd",
  "serde",
@@ -721,6 +718,16 @@ checksum = "d5477fe2230a79769d8dc68e0eabf5437907c0457a5614a9e8dddb67f65eb65d"
 dependencies = [
  "equivalent",
  "hashbrown 0.14.0",
+]
+
+[[package]]
+name = "informalsystems-pbjson"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4eecd90f87bea412eac91c6ef94f6b1e390128290898cbe14f2b926787ae1fb"
+dependencies = [
+ "base64 0.13.1",
+ "serde",
 ]
 
 [[package]]
@@ -832,16 +839,6 @@ name = "paste"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
-
-[[package]]
-name = "pbjson"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "048f9ac93c1eab514f9470c4bc8d97ca2a0a236b84f45cc19d69a59fc11467f6"
-dependencies = [
- "base64 0.13.1",
- "serde",
-]
 
 [[package]]
 name = "pin-project-lite"
@@ -988,53 +985,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ad4cc8da4ef723ed60bced201181d83791ad433213d8c24efffda1eec85d741"
 
 [[package]]
-name = "safe-proc-macro2"
-version = "1.0.36"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "814c536dcd27acf03296c618dab7ad62d28e70abd7ba41d3f34a2ce707a2c666"
-dependencies = [
- "unicode-xid",
-]
-
-[[package]]
-name = "safe-quote"
-version = "1.0.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77e530f7831f3feafcd5f1aae406ac205dd998436b4007c8e80f03eca78a88f7"
-dependencies = [
- "safe-proc-macro2",
-]
-
-[[package]]
-name = "safe-regex"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a15289bf322e0673d52756a18194167f2378ec1a15fe884af6e2d2cb934822b0"
-dependencies = [
- "safe-regex-macro",
-]
-
-[[package]]
-name = "safe-regex-compiler"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fba76fae590a2aa665279deb1f57b5098cbace01a0c5e60e262fcf55f7c51542"
-dependencies = [
- "safe-proc-macro2",
- "safe-quote",
-]
-
-[[package]]
-name = "safe-regex-macro"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96c2e96b5c03f158d1b16ba79af515137795f4ad4e8de3f790518aae91f1d127"
-dependencies = [
- "safe-proc-macro2",
- "safe-regex-compiler",
-]
-
-[[package]]
 name = "scale-info"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1110,6 +1060,14 @@ name = "serde-json-wasm"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "16a62a1fad1e1828b24acac8f2b468971dade7b8c3c2e672bcadefefb1f8c137"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "serde-json-wasm"
+version = "0.5.1"
+source = "git+https://github.com/dzmitry-lahoda-forks/serde-json-wasm?rev=8a7e522c0e4de36a6dfb535766f26a9941017d81#8a7e522c0e4de36a6dfb535766f26a9941017d81"
 dependencies = [
  "serde",
 ]
@@ -1294,9 +1252,9 @@ dependencies = [
 
 [[package]]
 name = "tendermint"
-version = "0.32.2"
+version = "0.33.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f0a7d05cf78524782337f8edd55cbc578d159a16ad4affe2135c92f7dbac7f0"
+checksum = "7c35fe4fd24a7715571814c22416dbc40ec0f2a6e3cce75d73e19699faecd246"
 dependencies = [
  "bytes",
  "digest 0.10.7",
@@ -1323,9 +1281,9 @@ dependencies = [
 
 [[package]]
 name = "tendermint-light-client-verifier"
-version = "0.32.2"
+version = "0.33.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9875dce5c1b08201152eb0860f8fb1dce96c53e37532c310ffc4956d20f90def"
+checksum = "680639f67d51eceb700bff18b45b584373ec94ee0d7ffe61f4ca6c54ed7787ff"
 dependencies = [
  "derive_more",
  "flex-error",
@@ -1336,9 +1294,9 @@ dependencies = [
 
 [[package]]
 name = "tendermint-proto"
-version = "0.32.2"
+version = "0.33.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0cec054567d16d85e8c3f6a3139963d1a66d9d3051ed545d31562550e9bcc3d"
+checksum = "639e5adffd77220d238a800a72c74c98d7e869290a6e4494c10b6b4e8f702f02"
 dependencies = [
  "bytes",
  "flex-error",
@@ -1454,12 +1412,6 @@ name = "unicode-ident"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "301abaae475aa91687eb82514b328ab47a211a533026cb25fc3e519b86adfc3c"
-
-[[package]]
-name = "unicode-xid"
-version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f962df74c8c05a667b5ee8bcf162993134c104e96440b663c8daa176dc772d8c"
 
 [[package]]
 name = "version_check"

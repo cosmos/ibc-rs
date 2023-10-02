@@ -13,15 +13,16 @@ where
 }
 
 pub mod serde_string {
-    use crate::prelude::*;
     use core::fmt::Display;
     use core::str::FromStr;
+
     use serde::{de, Deserialize, Deserializer, Serializer};
 
-    // used String version (slower + heap) instead of str,
-    // because both str ser/de hit some kind of f64/f32 case which compiled into wasm
+    use crate::prelude::*;
+
+    // Note: used String version (slower + heap) instead of str,
+    // because both str ser/de hit some kind of f64/f32 case when compiled into wasm
     // and fails to be validated f32/f64 wasm runtimes
-    // sure fix must be eventually in serde
     pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
     where
         T: Display,

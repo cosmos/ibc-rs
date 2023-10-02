@@ -19,7 +19,7 @@ use crate::prelude::*;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Display, From, Into)]
 pub struct Amount(
     #[cfg_attr(feature = "schema", schemars(with = "String"))]
-    #[serde(serialize_with = "serialize")]
+    #[serde(serialize_with = "crate::serializers::serde_string::serialize")]
     #[serde(deserialize_with = "deserialize")]
     U256,
 );
@@ -126,20 +126,10 @@ impl From<u64> for Amount {
 }
 
 #[cfg(feature = "serde")]
-pub fn serialize<S>(value: &U256, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    use crate::alloc::string::ToString;
-    serializer.serialize_str(value.to_string().as_ref())
-}
-
-#[cfg(feature = "serde")]
 fn deserialize<'de, D>(deserializer: D) -> Result<U256, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    use crate::prelude::*;
     use serde::Deserialize;
     U256::from_dec_str(<String>::deserialize(deserializer)?.as_str())
         .map_err(serde::de::Error::custom)
