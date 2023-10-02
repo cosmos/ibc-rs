@@ -13,7 +13,7 @@ ibc-proto = { version = "0.35.0", default-features = false, features = [
 ] }
 tendermint = { version = "0.33", default-features = false }
 tendermint-proto = { version = "0.33", default-features = false }
-tendermint-light-client-verifier = { version = "0.33", default-features = false, features = ["rust-crypto"] }
+tendermint-light-client-verifier = { version = "0.34", default-features = false, features = ["rust-crypto"] }
 
 sp-core = { version = "23.0.0", default-features = false, optional = true }
 sp-io = { version = "25.0.0", default-features = false, optional = true }
