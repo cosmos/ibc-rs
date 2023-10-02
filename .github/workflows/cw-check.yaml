@@ -28,11 +28,6 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
 
-      - name: Use cachix cache
-        uses: cachix/cachix-action@v12
-        with:
-          name: ibc
-
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
