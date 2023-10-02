@@ -11,7 +11,7 @@ ibc-proto = { version = "0.35.0", default-features = false, features = [
   "borsh",
   "serde",
 ] }
-tendermint = { version = "0.33", default-features = false }
+tendermint = { version = "0.34", default-features = false }
 tendermint-proto = { version = "0.33", default-features = false }
 tendermint-light-client-verifier = { version = "0.33", default-features = false, features = ["rust-crypto"] }
 
