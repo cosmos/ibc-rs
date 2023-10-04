@@ -19,6 +19,7 @@ use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::ProdVerifier;
+use crate::clients::ics07_tendermint::CommonContext;
 
 use super::trust_threshold::TrustThreshold;
 use super::{
@@ -29,6 +30,7 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConse
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
+use crate::core::ExecutionContext;
 use crate::core::ics02_client::client_state::{
     ClientStateCommon, ClientStateExecution, ClientStateValidation, Status, UpdateKind,
 };
@@ -493,7 +495,7 @@ where
 
 impl<E> ClientStateExecution<E> for ClientState
 where
-    E: TmExecutionContext,
+    E: TmExecutionContext + ExecutionContext,
     <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
     <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
 {
@@ -528,7 +530,7 @@ where
         let maybe_existing_consensus_state = {
             let path_at_header_height = ClientConsensusStatePath::new(client_id, &header_height);
 
-            ctx.consensus_state(&path_at_header_height).ok()
+            CommonContext::consensus_state(ctx, &path_at_header_height).ok()
         };
 
         if maybe_existing_consensus_state.is_some() {
@@ -629,15 +631,18 @@ where
         &self,
         ctx: &mut E,
         client_id: &ClientId,
-        latest_height: &Height,
     ) -> Result<(), ClientError> {
         let mut heights = ctx.consensus_state_heights()?;
+
         heights.sort();
 
         for height in heights {
             let client_consensus_state_path = ClientConsensusStatePath::new(client_id, &height);
-            let consensus_state = ctx.consensus_state(&client_consensus_state_path)?;
-            let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
+            let consensus_state = CommonContext::consensus_state(ctx, &client_consensus_state_path)?;
+            let tm_consensus_state: TmConsensusState = consensus_state.try_into()
+                .map_err(|err| ClientError::Other {
+                    description: err.to_string(),
+                })?;
             let host_timestamp = ctx.host_timestamp()?;
 
             if tm_consensus_state.timestamp() + self.trusting_period <= host_timestamp {

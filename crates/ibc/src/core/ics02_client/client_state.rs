@@ -240,7 +240,6 @@ where
         &self,
         ctx: &mut E,
         client_id: &ClientId,
-        latest_height: &Height,
     ) -> Result<(), ClientError>;
 }
 
