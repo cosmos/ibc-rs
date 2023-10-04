@@ -54,15 +54,12 @@ pub mod clients;
 pub mod core;
 pub mod hosts;
 
-#[cfg(feature = "grpc")]
-pub mod services;
-
 #[cfg(any(test, feature = "mocks"))]
 pub mod mock;
 #[cfg(any(test, feature = "mocks"))]
 pub mod test_utils; // Context mock, the underlying host chain, and client types: for testing all handlers.
 
-mod prelude;
+pub mod prelude;
 mod signer;
 mod utils;
 

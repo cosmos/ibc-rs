@@ -1,10 +1,9 @@
 //! Defines coin types; the objects that are being transferred.
 
 use core::fmt::{Display, Error as FmtError, Formatter};
-use core::str::{from_utf8, FromStr};
+use core::str::FromStr;
 
 use ibc_proto::cosmos::base::v1beta1::Coin as ProtoCoin;
-use safe_regex::regex;
 
 use super::amount::Amount;
 use super::denom::{BaseDenom, PrefixedDenom};
@@ -18,6 +17,9 @@ pub type PrefixedCoin = Coin<PrefixedDenom>;
 pub type BaseCoin = Coin<BaseDenom>;
 
 pub type RawCoin = Coin<String>;
+
+/// Allowed characters in string representation of a denomination.
+const VALID_DENOM_CHARACTERS: &str = "/:._-";
 
 /// Coin defines a token with a denomination and an amount.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -58,25 +60,31 @@ where
         // Denominations can be 3 ~ 128 characters long and support letters, followed by either
         // a letter, a number or a separator ('/', ':', '.', '_' or '-').
         // Loosely copy the regex from here:
-        // https://github.com/cosmos/cosmos-sdk/blob/v0.45.5/types/coin.go#L760-L762
-        let matcher = regex!(br"([0-9]+)([a-zA-Z0-9/:\\._\x2d]+)");
+        // https://github.com/cosmos/cosmos-sdk/blob/v0.47.5/types/coin.go#L838-L840
+        //
+        // equivalent regex code in rust:
+        // let re = Regex::new(r"^(?<amount>[0-9]+)(?<denom>[a-zA-Z0-9/:._-]+)$")?;
+        // let cap = re.captures("123stake")?;
+        // let (amount, denom) = (cap.name("amount")?.as_str(), cap.name("denom")?.as_str());
 
-        let (m1, m2) = matcher.match_slices(coin_str.as_bytes()).ok_or_else(|| {
-            TokenTransferError::InvalidCoin {
+        let (amount, denom) = coin_str
+            .chars()
+            .position(|x| !x.is_numeric())
+            .map(|index| coin_str.split_at(index))
+            .filter(|(amount, _)| !amount.is_empty())
+            .filter(|(_, denom)| {
+                denom
+                    .chars()
+                    .all(|x| x.is_alphanumeric() || VALID_DENOM_CHARACTERS.contains(x))
+            })
+            .ok_or_else(|| TokenTransferError::InvalidCoin {
                 coin: coin_str.to_string(),
-            }
-        })?;
+            })?;
 
-        let amount = from_utf8(m1)
-            .map_err(TokenTransferError::Utf8Decode)?
-            .parse()?;
-
-        let denom = from_utf8(m2)
-            .map_err(TokenTransferError::Utf8Decode)?
-            .parse()
-            .map_err(Into::into)?;
-
-        Ok(Coin { amount, denom })
+        Ok(Coin {
+            amount: amount.parse()?,
+            denom: denom.parse().map_err(Into::into)?,
+        })
     }
 }
 
@@ -119,53 +127,77 @@ impl<D: Display> Display for Coin<D> {
 
 #[cfg(test)]
 mod tests {
+    use primitive_types::U256;
+    use rstest::rstest;
+
     use super::*;
 
-    #[test]
-    fn test_parse_raw_coin() -> Result<(), TokenTransferError> {
-        {
-            let coin = RawCoin::from_str("123stake")?;
-            assert_eq!(coin.denom, "stake");
-            assert_eq!(coin.amount, 123u64.into());
-        }
+    #[rstest]
+    #[case::nat("123stake", 123, "stake")]
+    #[case::zero("0stake", 0, "stake")]
+    #[case::u256_max(
+        "115792089237316195423570985008687907853269984665640564039457584007913129639935stake",
+        U256::MAX,
+        "stake"
+    )]
+    #[case::digit_in_denom("1a1", 1, "a1")]
+    #[case::chars_in_denom("0x1/:._-", 0, "x1/:._-")]
+    #[case::ibc_denom("1234ibc/a0B1C", 1234, "ibc/a0B1C")]
+    fn test_parse_raw_coin(
+        #[case] parsed: RawCoin,
+        #[case] amount: impl Into<Amount>,
+        #[case] denom: &str,
+    ) {
+        assert_eq!(
+            parsed,
+            RawCoin {
+                denom: denom.into(),
+                amount: amount.into()
+            }
+        );
+    }
 
-        {
-            let coin = RawCoin::from_str("1a1")?;
-            assert_eq!(coin.denom, "a1");
-            assert_eq!(coin.amount, 1u64.into());
-        }
+    #[rstest]
+    #[case::pos("+123stake")]
+    #[case::pos_zero("+0stake")]
+    #[case::neg("-123stake")]
+    #[case::neg_zero("-0stake")]
+    #[case::u256_max_plus_1(
+        "115792089237316195423570985008687907853269984665640564039457584007913129639936stake"
+    )]
+    #[case::invalid_char_in_denom("0x!")]
+    #[case::blackslash_in_denom("0x1/:.\\_-")]
+    #[should_panic]
+    fn test_failed_parse_raw_coin(#[case] _raw: RawCoin) {}
 
-        {
-            let coin = RawCoin::from_str("0x1/:.\\_-")?;
-            assert_eq!(coin.denom, "x1/:.\\_-");
-            assert_eq!(coin.amount, 0u64.into());
-        }
-
-        {
-            // `!` is not allowed
-            let res = RawCoin::from_str("0x!");
-            assert!(res.is_err());
-        }
-
+    #[rstest]
+    #[case::nomal("123stake,1a1,999den0m", &[(123, "stake"), (1, "a1"), (999, "den0m")])]
+    #[case::tricky("123stake,1a1-999den0m", &[(123, "stake"), (1, "a1-999den0m")])]
+    #[case::colon_delimiter("123stake:1a1:999den0m", &[(123, "stake:1a1:999den0m")])]
+    #[case::dash_delimiter("123stake-1a1-999den0m", &[(123, "stake-1a1-999den0m")])]
+    #[case::slash_delimiter("123stake/1a1/999den0m", &[(123, "stake/1a1/999den0m")])]
+    fn test_parse_raw_coin_list(
+        #[case] coins_str: &str,
+        #[case] coins: &[(u64, &str)],
+    ) -> Result<(), TokenTransferError> {
+        assert_eq!(
+            RawCoin::from_string_list(coins_str)?,
+            coins
+                .iter()
+                .map(|&(amount, denom)| RawCoin {
+                    denom: denom.to_string(),
+                    amount: amount.into(),
+                })
+                .collect::<Vec<_>>()
+        );
         Ok(())
     }
 
-    #[test]
-    fn test_parse_raw_coin_list() -> Result<(), TokenTransferError> {
-        {
-            let coins = RawCoin::from_string_list("123stake,1a1,999den0m")?;
-            assert_eq!(coins.len(), 3);
-
-            assert_eq!(coins[0].denom, "stake");
-            assert_eq!(coins[0].amount, 123u64.into());
-
-            assert_eq!(coins[1].denom, "a1");
-            assert_eq!(coins[1].amount, 1u64.into());
-
-            assert_eq!(coins[2].denom, "den0m");
-            assert_eq!(coins[2].amount, 999u64.into());
-        }
-
-        Ok(())
+    #[rstest]
+    #[case::semicolon_delimiter("123stake;1a1;999den0m")]
+    #[case::mixed_delimiter("123stake,1a1;999den0m")]
+    #[should_panic(expected = "parsing failure in test")]
+    fn test_failed_parse_raw_coin_list(#[case] coins_str: &str) {
+        RawCoin::from_string_list(coins_str).expect("parsing failure in test");
     }
 }
