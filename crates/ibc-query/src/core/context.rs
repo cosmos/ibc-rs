@@ -1,13 +1,13 @@
 //! Required traits for blanket implementations of [`gRPC query services`](crate::services::core).
 
-use crate::core::ics03_connection::connection::IdentifiedConnectionEnd;
-use crate::core::ics04_channel::channel::IdentifiedChannelEnd;
-use crate::core::ics04_channel::packet::Sequence;
-use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-use crate::core::ics24_host::path::{AckPath, ChannelEndPath, CommitmentPath, Path};
-use crate::core::{ContextError, ValidationContext};
-use crate::prelude::*;
-use crate::Height;
+use ibc::core::ics03_connection::connection::IdentifiedConnectionEnd;
+use ibc::core::ics04_channel::channel::IdentifiedChannelEnd;
+use ibc::core::ics04_channel::packet::Sequence;
+use ibc::core::ics24_host::identifier::{ClientId, ConnectionId};
+use ibc::core::ics24_host::path::{AckPath, ChannelEndPath, CommitmentPath, Path};
+use ibc::core::{ContextError, ValidationContext};
+use ibc::prelude::*;
+use ibc::Height;
 
 /// Context to be implemented by the host to provide proofs in gRPC query responses
 ///

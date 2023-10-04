@@ -1,4 +1,4 @@
-//! Implementation of the gRPC services of core IBC components.
+//! Implementation of the gRPC query services of core IBC components.
 //!
 //! The provided structs includes blanket implementation of their corresponding gRPC service traits,
 //! if the host implements the following _context_ traits.
@@ -43,6 +43,8 @@
 //!       .add_service(channel_service)
 //!       .serve(addr);
 //! ```
+
+extern crate alloc;
 
 pub mod core;
 pub mod error;
