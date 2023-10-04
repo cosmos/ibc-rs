@@ -640,9 +640,9 @@ where
             let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
 
             if tm_consensus_state.timestamp() + self.trusting_period > ctx.host_timestamp()? {
-                ctx.delete_consensus_state(client_consensus_state_path)?;
-                ctx.delete_update_time(client_id, height)?;
-                ctx.delete_update_height(client_id, height)?;
+                ctx.delete_consensus_state(&client_consensus_state_path)?;
+                ctx.delete_update_time(&client_id, &height)?;
+                ctx.delete_update_height(&client_id, &height)?;
             } else {
                 break;
             }
