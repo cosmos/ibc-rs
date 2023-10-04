@@ -1,3 +1,5 @@
+//! Provides utility functions for querying IBC channel states.
+
 use alloc::format;
 use core::str::FromStr;
 
@@ -28,6 +30,8 @@ use ibc_proto::ibc::core::client::v1::IdentifiedClientState;
 use crate::core::context::{ProvableContext, QueryContext};
 use crate::error::QueryError;
 
+/// Queries for a specific IBC channel by the given channel and port ids and
+/// returns the channel end with the associated proof.
 pub fn query_channel<I>(
     ibc_ctx: &I,
     request: &QueryChannelRequest,
@@ -60,6 +64,7 @@ where
     })
 }
 
+/// Queries for all existing IBC channels and returns the corresponding channel ends
 pub fn query_channels<I>(
     ibc_ctx: &I,
     _request: &QueryChannelsRequest,
@@ -77,6 +82,7 @@ where
     })
 }
 
+/// Queries for all channels associated with a given connection
 pub fn query_connection_channels<I>(
     ibc_ctx: &I,
     request: &QueryConnectionChannelsRequest,
@@ -108,6 +114,8 @@ where
     })
 }
 
+/// Queries for the client state associated with a channel by the given channel
+/// and port ids
 pub fn query_channel_client_state<I>(
     ibc_ctx: &I,
     request: &QueryChannelClientStateRequest,
@@ -158,6 +166,8 @@ where
     })
 }
 
+/// Queries for the consensus state associated with a channel by the given
+/// target height, channel and port ids
 pub fn query_channel_consensus_state<I>(
     ibc_ctx: &I,
     request: &QueryChannelConsensusStateRequest,
@@ -210,6 +220,8 @@ where
     })
 }
 
+/// Queries for the packet commitment associated with a channel by the given
+/// sequence, channel and port ids
 pub fn query_packet_commitment<I>(
     ibc_ctx: &I,
     request: &QueryPacketCommitmentRequest,
@@ -245,6 +257,7 @@ where
     })
 }
 
+/// Queries for all packet commitments associated with a channel
 pub fn query_packet_commitments<I>(
     ibc_ctx: &I,
     request: &QueryPacketCommitmentsRequest,
@@ -281,6 +294,8 @@ where
     })
 }
 
+/// Queries for the packet receipt associated with a channel by the given
+/// sequence, channel and port ids
 pub fn query_packet_receipt<I>(
     ibc_ctx: &I,
     request: &QueryPacketReceiptRequest,
@@ -318,6 +333,8 @@ where
     })
 }
 
+/// Queries for the packet acknowledgement associated with a channel by the
+/// given sequence, channel and port ids
 pub fn query_packet_acknowledgement<I>(
     ibc_ctx: &I,
     request: &QueryPacketAcknowledgementRequest,
@@ -353,6 +370,7 @@ where
     })
 }
 
+/// Queries for all packet acknowledgements associated with a channel
 pub fn query_packet_acknowledgements<I>(
     ibc_ctx: &I,
     request: &QueryPacketAcknowledgementsRequest,
@@ -395,6 +413,7 @@ where
     })
 }
 
+/// Queries for all unreceived packets associated with a channel
 pub fn query_unreceived_packets<I>(
     ibc_ctx: &I,
     request: &QueryUnreceivedPacketsRequest,
@@ -422,6 +441,7 @@ where
     })
 }
 
+/// Queries for all unreceived acknowledgements associated with a channel
 pub fn query_unreceived_acks<I>(
     ibc_ctx: &I,
     request: &QueryUnreceivedAcksRequest,
@@ -449,6 +469,7 @@ where
     })
 }
 
+/// Queries for the next sequence send associated with a channel
 pub fn query_next_sequence_send<I>(
     ibc_ctx: &I,
     request: &QueryNextSequenceSendRequest,
@@ -482,6 +503,7 @@ where
     })
 }
 
+/// Queries for the next sequence receive associated with a channel
 pub fn query_next_sequence_receive<I>(
     ibc_ctx: &I,
     request: &QueryNextSequenceReceiveRequest,

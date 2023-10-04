@@ -1,3 +1,5 @@
+//! Provides utility functions for querying IBC client states.
+
 use alloc::format;
 use core::str::FromStr;
 
@@ -24,6 +26,7 @@ use ibc_proto::ibc::core::client::v1::{
 use crate::core::context::{ProvableContext, QueryContext};
 use crate::error::QueryError;
 
+/// Queries for the client state of a given client id.
 pub fn query_client_state<I>(
     ibc_ctx: &I,
     request: &QueryClientStateRequest,
@@ -54,6 +57,7 @@ where
     })
 }
 
+/// Queries for all the existing client states.
 pub fn query_client_states<I>(
     ibc_ctx: &I,
     _request: &QueryClientStatesRequest,
@@ -77,6 +81,7 @@ where
     })
 }
 
+/// Queries for the consensus state of a given client id and height.
 pub fn query_consensus_state<I>(
     ibc_ctx: &I,
     request: &QueryConsensusStateRequest,
@@ -122,6 +127,7 @@ where
     })
 }
 
+/// Queries for all the consensus states of a given client id.
 pub fn query_consensus_states<I>(
     ibc_ctx: &I,
     request: &QueryConsensusStatesRequest,
@@ -147,6 +153,7 @@ where
     })
 }
 
+/// Queries for the heights of all the consensus states of a given client id.
 pub fn query_consensus_state_heights<I>(
     ibc_ctx: &I,
     request: &QueryConsensusStateHeightsRequest,
@@ -168,6 +175,7 @@ where
     })
 }
 
+/// Queries for the status (Active, Frozen, Expired, Unauthorized) of a given client.
 pub fn query_client_status<I>(
     ibc_ctx: &I,
     request: &QueryClientStatusRequest,
@@ -186,6 +194,7 @@ where
     })
 }
 
+/// Queries for the upgraded client state.
 pub fn query_upgraded_client_state<U>(
     upgrade_ctx: &U,
     _request: &QueryUpgradedClientStateRequest,
@@ -207,6 +216,7 @@ where
     })
 }
 
+/// Queries for the upgraded consensus state.
 pub fn query_upgraded_consensus_state<U>(
     upgrade_ctx: &U,
     _request: &QueryUpgradedConsensusStateRequest,

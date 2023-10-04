@@ -1,3 +1,5 @@
+//! Provides utility functions for querying IBC connection states.
+
 use alloc::format;
 use alloc::vec::Vec;
 use core::str::FromStr;
@@ -21,6 +23,7 @@ use ibc_proto::ibc::core::connection::v1::{
 use crate::core::context::{ProvableContext, QueryContext};
 use crate::error::QueryError;
 
+/// Queries for the connection end of a given connection id.
 pub fn query_connection<I>(
     ibc_ctx: &I,
     request: &QueryConnectionRequest,
@@ -50,6 +53,7 @@ where
     })
 }
 
+/// Queries for all the existing connection ends.
 pub fn query_connections<I>(
     ibc_ctx: &I,
     _request: &QueryConnectionsRequest,
@@ -67,6 +71,7 @@ where
     })
 }
 
+/// Queries for all the existing connection ends for a given client.
 pub fn query_client_connections<I>(
     ibc_ctx: &I,
     request: &QueryClientConnectionsRequest,
@@ -97,6 +102,7 @@ where
     })
 }
 
+/// Queries for the client state of a given connection id.
 pub fn query_connection_client_state<I>(
     ibc_ctx: &I,
     request: &QueryConnectionClientStateRequest,
@@ -135,6 +141,7 @@ where
     })
 }
 
+/// Queries for the consensus state of a given connection id and height.
 pub fn query_connection_consensus_state<I>(
     ibc_ctx: &I,
     request: &QueryConnectionConsensusStateRequest,
@@ -172,6 +179,7 @@ where
     })
 }
 
+/// Queries for the connection parameters.
 pub fn query_connection_params<I>(
     ibc_ctx: &I,
     _request: &QueryConnectionParamsRequest,
