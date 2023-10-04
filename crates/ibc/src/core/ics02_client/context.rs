@@ -29,4 +29,12 @@ pub trait ClientExecutionContext: Sized {
         consensus_state_path: ClientConsensusStatePath,
         consensus_state: Self::AnyConsensusState,
     ) -> Result<(), ContextError>;
+
+    fn delete_consensus_state(
+        &mut self,
+    ) -> Result<(), ContextError>;
+
+    fn delete_consensus_metadata(
+        &mut self,
+    ) -> Result<(), ContextError>;
 }

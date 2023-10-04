@@ -172,16 +172,6 @@ pub trait ClientStateValidation<ClientValidationContext> {
         ctx: &ClientValidationContext,
         client_id: &ClientId,
     ) -> Result<Status, ClientError>;
-
-    /// Retrieves the earliest consensus state for the given client ID and checks if it is expired.
-    /// If it is, that consensus state will be pruned from the store, along with all associated
-    /// metadata. This will prevent the client store from becoming bloated with expired consensus
-    /// states that can no longer be used for updates and packet verification.
-    fn prune_oldest_consensus_state(
-        &self,
-        ctx: &ClientValidationContext,
-        client_id: &ClientId,
-    ) -> Result<(), ClientError>;
 }
 
 /// `ClientState` methods which require access to the client's
@@ -241,6 +231,17 @@ where
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
     ) -> Result<Height, ClientError>;
+
+    /// Retrieves the earliest consensus state for the given client ID and checks if it is expired.
+    /// If it is, that consensus state will be pruned from the store, along with all associated
+    /// metadata. This will prevent the client store from becoming bloated with expired consensus
+    /// states that can no longer be used for updates and packet verification.
+    fn prune_oldest_consensus_state(
+        &self,
+        ctx: &mut E,
+        client_id: &ClientId,
+        latest_height: &Height,
+    ) -> Result<(), ClientError>;
 }
 
 /// Derive macro that implements [`ClientState`] for enums containing variants

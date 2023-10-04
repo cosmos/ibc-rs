@@ -523,6 +523,8 @@ where
         let header = TmHeader::try_from(header)?;
         let header_height = header.height();
 
+        // self.prune_oldest_consensus_state(ctx, &client_id, &header_height)?;
+
         let maybe_existing_consensus_state = {
             let path_at_header_height = ClientConsensusStatePath::new(client_id, &header_height);
 
@@ -621,6 +623,42 @@ where
         )?;
 
         Ok(latest_height)
+    }
+
+    fn prune_oldest_consensus_state(
+        &self,
+        ctx: &mut E,
+        client_id: &ClientId,
+        latest_height: &Height,
+    ) -> Result<(), ClientError> {
+        let heights = ctx.consensus_state_heights()?;
+
+        heights.sort();
+
+        let client_consensus_state_path = ClientConsensusStatePath::new(client_id, latest_height);
+        let consensus_state = ctx.consensus_state(&client_consensus_state_path)?;
+        // fetch the earliest consensus state for a given client
+        // ibc-go fetches this using the clientStore
+        // how should client information be passed to this function?
+        // how to fetch the consensus state?
+        // at what height is the consensus state fetched at?
+        // once the consensus state is fetched, check that it is expired
+        let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
+        // if it is expired, delete the consensus state and its associated metadata
+        // from the store, at the height at which it expired
+        // ibc-go code calls a function `IterateConsensusStateAscending` that iterates
+        // through all the consensus states in the store until it reaches the first
+        // expired consensus state to be deleted
+        // should we follow the same pattern here?
+
+        // ~~Need to add an iterator over consensus states on the ClientExecutionContext~~
+        // Turns out we cannot implement an iterator over the consensus states, as we don't
+        // get access to the hosts' stores to be able to iterate over them
+        // Require hosts to provide the heights at which consensus states exist
+
+        // Add `update_height` and `update_client` methods to the ExecutionContext
+
+        todo!()
     }
 }
 
