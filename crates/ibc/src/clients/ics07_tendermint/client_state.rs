@@ -638,13 +638,14 @@ where
             let client_consensus_state_path = ClientConsensusStatePath::new(client_id, &height);
             let consensus_state = ctx.consensus_state(&client_consensus_state_path)?;
             let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
+            let host_timestamp = ctx.host_timestamp()?;
 
-            if tm_consensus_state.timestamp() + self.trusting_period > ctx.host_timestamp()? {
+            if tm_consensus_state.timestamp() + self.trusting_period <= host_timestamp {
+                break;
+            } else {
                 ctx.delete_consensus_state(&client_consensus_state_path)?;
                 ctx.delete_update_time(&client_id, &height)?;
                 ctx.delete_update_height(&client_id, &height)?;
-            } else {
-                break;
             }
         }
 
