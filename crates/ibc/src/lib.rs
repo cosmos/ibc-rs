@@ -68,6 +68,5 @@ mod serializers;
 
 /// Re-export the `Any` type which used across the library.
 pub use ibc_proto::google::protobuf::Any;
-/// Re-export the ibc proto type of `ibc-proto` crate,
-/// so users of this crate do not need to depend on it.
+/// Re-export ibc proto types from `ibc-proto-rs` crate.
 pub use ibc_proto::ibc as proto;
