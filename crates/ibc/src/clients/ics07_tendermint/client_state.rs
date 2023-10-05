@@ -19,7 +19,6 @@ use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::ProdVerifier;
-use crate::clients::ics07_tendermint::CommonContext;
 
 use super::trust_threshold::TrustThreshold;
 use super::{
@@ -30,7 +29,7 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConse
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
-use crate::core::ExecutionContext;
+use crate::clients::ics07_tendermint::CommonContext;
 use crate::core::ics02_client::client_state::{
     ClientStateCommon, ClientStateExecution, ClientStateValidation, Status, UpdateKind,
 };
@@ -47,7 +46,8 @@ use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
-use crate::core::timestamp::ZERO_DURATION;
+use crate::core::timestamp::{TimestampOverflowError, ZERO_DURATION};
+use crate::core::ExecutionContext;
 use crate::prelude::*;
 use crate::Height;
 
@@ -638,14 +638,22 @@ where
 
         for height in heights {
             let client_consensus_state_path = ClientConsensusStatePath::new(client_id, &height);
-            let consensus_state = CommonContext::consensus_state(ctx, &client_consensus_state_path)?;
-            let tm_consensus_state: TmConsensusState = consensus_state.try_into()
-                .map_err(|err| ClientError::Other {
-                    description: err.to_string(),
-                })?;
+            let consensus_state =
+                CommonContext::consensus_state(ctx, &client_consensus_state_path)?;
+            let tm_consensus_state: TmConsensusState =
+                consensus_state
+                    .try_into()
+                    .map_err(|err| ClientError::Other {
+                        description: err.to_string(),
+                    })?;
             let host_timestamp = ctx.host_timestamp()?;
+            let tm_consensus_state_timestamp = (tm_consensus_state.timestamp() + self.trusting_period)
+                .map_err(|_| TimestampOverflowError::TimestampOverflow)
+                .map_err(|_| ClientError::Other {
+                    description: String::from("Timestamp overflow error occurred while attempting to parse TmConsensusState")
+                })?;
 
-            if tm_consensus_state.timestamp() + self.trusting_period <= host_timestamp {
+            if tm_consensus_state_timestamp <= host_timestamp {
                 break;
             } else {
                 ctx.delete_consensus_state(&client_consensus_state_path)?;
