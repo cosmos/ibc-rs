@@ -66,7 +66,11 @@ mod utils;
 #[cfg(feature = "serde")]
 mod serializers;
 
-/// Re-export the `Any` type which used across the library.
-pub use ibc_proto::google::protobuf::Any;
-/// Re-export ibc proto types from `ibc-proto-rs` crate.
-pub use ibc_proto::ibc as proto;
+/// Re-exports pertinent ibc proto types from the `ibc-proto-rs` crate for added convenience
+pub mod proto {
+    pub use ibc_proto::google::protobuf::Any;
+    pub use ibc_proto::ibc::apps::transfer;
+    pub use ibc_proto::ibc::core;
+    pub use ibc_proto::ibc::lightclients::tendermint;
+    pub use ibc_proto::protobuf::{Error, Protobuf};
+}

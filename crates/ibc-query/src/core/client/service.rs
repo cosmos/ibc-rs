@@ -2,7 +2,7 @@
 //! `I` must be a type where writes from one thread are readable from another.
 //! This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
 
-use std::boxed::Box;
+use alloc::boxed::Box;
 
 use ibc::core::ValidationContext;
 use ibc::hosts::tendermint::upgrade_proposal::UpgradeValidationContext;

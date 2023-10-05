@@ -2,10 +2,10 @@
 //!
 //! The provided structs includes blanket implementation of their corresponding gRPC service traits,
 //! if the host implements the following _context_ traits.
-//! - [`ValidationContext`](crate::core::ValidationContext)
-//! - [`ProvableContext`](crate::services::core::context::ProvableContext)
-//! - [`QueryContext`](crate::services::core::context::QueryContext)
-//! - [`UpgradeValidationContext`](crate::hosts::tendermint::upgrade_proposal::UpgradeValidationContext)
+//! - [`ValidationContext`](ibc::core::ValidationContext)
+//! - [`ProvableContext`](crate::core::context::ProvableContext)
+//! - [`QueryContext`](crate::core::context::QueryContext)
+//! - [`UpgradeValidationContext`](ibc::hosts::tendermint::upgrade_proposal::UpgradeValidationContext)
 //!   - Only for [`ClientQuery::upgraded_client_state`](ibc_proto::ibc::core::client::v1::query_server::Query::upgraded_client_state) and [`ClientQuery::upgraded_client_state`](ibc_proto::ibc::core::client::v1::query_server::Query::upgraded_consensus_state)
 //!
 //! Example
@@ -43,6 +43,19 @@
 //!       .add_service(channel_service)
 //!       .serve(addr);
 //! ```
+//!
+
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
+#![no_std]
+#![deny(
+    warnings,
+    trivial_casts,
+    trivial_numeric_casts,
+    unused_import_braces,
+    unused_qualifications,
+    rust_2018_idioms
+)]
+#![forbid(unsafe_code)]
 
 extern crate alloc;
 
