@@ -61,7 +61,7 @@ pub mod test_utils; // Context mock, the underlying host chain, and client types
 
 pub mod prelude;
 mod signer;
-mod utils;
+pub mod utils;
 
 #[cfg(feature = "serde")]
 mod serializers;
