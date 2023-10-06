@@ -1,3 +1,5 @@
+use alloc::string::{String, ToString};
+
 use displaydoc::Display;
 use ibc::core::ics02_client::error::ClientError;
 use ibc::core::ics24_host::identifier::IdentifierError;

@@ -1,4 +1,4 @@
-//! Required traits for blanket implementations of [`gRPC query services`](crate::services::core).
+//! Required traits for blanket implementations of [`gRPC query services`](crate::core).
 
 use ibc::core::ics03_connection::connection::IdentifiedConnectionEnd;
 use ibc::core::ics04_channel::channel::IdentifiedChannelEnd;
@@ -9,9 +9,7 @@ use ibc::core::{ContextError, ValidationContext};
 use ibc::prelude::*;
 use ibc::Height;
 
-/// Context to be implemented by the host to provide proofs in gRPC query responses
-///
-/// Trait used for the [`gRPC query services`](crate::services).
+/// Context to be implemented by the host to provide proofs in query responses
 pub trait ProvableContext {
     /// Returns the proof for the given path at the given height.
     /// As this is in the context of IBC, the path is expected to be an [`IbcPath`](Path).
@@ -19,8 +17,6 @@ pub trait ProvableContext {
 }
 
 /// Context to be implemented by the host that provides gRPC query services.
-///
-/// Trait used for the [`gRPC query services`](crate::services).
 pub trait QueryContext: ProvableContext + ValidationContext {
     // Client queries
 
