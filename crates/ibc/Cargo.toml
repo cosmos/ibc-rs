@@ -83,7 +83,7 @@ version = "0.33"
 default-features = false
 
 [dependencies.tendermint-proto]
-version = "0.33"
+version = "0.34"
 default-features = false
 
 [dependencies.tendermint-light-client-verifier]
