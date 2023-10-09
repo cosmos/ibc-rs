@@ -15,7 +15,7 @@ tendermint = { version = "0.33", default-features = false }
 tendermint-proto = { version = "0.33", default-features = false }
 tendermint-light-client-verifier = { version = "0.33", default-features = false, features = ["rust-crypto"] }
 
-sp-core = { version = "23.0.0", default-features = false, optional = true }
+sp-core = { version = "24.0.0", default-features = false, optional = true }
 sp-io = { version = "25.0.0", default-features = false, optional = true }
 sp-runtime = { version = "26.0.0", default-features = false, optional = true }
 sp-std = { version = "10.0.0", default-features = false, optional = true }
