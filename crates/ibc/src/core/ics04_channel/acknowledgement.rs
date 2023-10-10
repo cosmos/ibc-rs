@@ -53,7 +53,7 @@ impl TryFrom<Vec<u8>> for Acknowledgement {
 }
 
 /// Defines a convenience type for IBC applications to construct an
-/// [`Acknowledgement`](super::acknowledgement::Acknowledgement) based on the
+/// [`Acknowledgement`] based on the
 /// success or failure of processing a received packet.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -69,7 +69,7 @@ pub enum AcknowledgementStatus {
 }
 
 /// A wrapper type that guards variants of
-/// [`AcknowledgementStatus`](crate::core::ics04_channel::acknowledgement::AcknowledgementStatus)
+/// [`AcknowledgementStatus`]
 /// against being constructed with an empty value.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]

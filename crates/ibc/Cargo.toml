@@ -37,8 +37,6 @@ std = [
 ]
 parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-proto/parity-scale-codec"]
 borsh = ["dep:borsh", "ibc-proto/borsh"]
-# includes gRPC services for IBC core
-grpc = ["dep:tonic", "ibc-proto/server"]
 
 # This feature is required for token transfer (ICS-20)
 serde = ["dep:serde", "dep:serde_derive", "serde_json", "ics23/serde"]
@@ -68,7 +66,6 @@ num-traits = { version = "0.2.15", default-features = false }
 derive_more = { version = "0.99.17", default-features = false, features = ["from", "into", "display", "try_into"] }
 uint = { version = "0.9", default-features = false }
 primitive-types = { version = "0.12.0", default-features = false, features = ["serde_no_std"] }
-tonic = { version = "0.10", optional = true }
 
 ## for codec encode or decode
 parity-scale-codec = { version = "3.0.0", default-features = false, features = ["full"], optional = true }
