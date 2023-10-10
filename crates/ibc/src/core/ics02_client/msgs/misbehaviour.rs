@@ -42,6 +42,7 @@ impl Protobuf<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {}
 impl TryFrom<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {
     type Error = ClientError;
 
+    #[allow(deprecated)]
     fn try_from(raw: RawMsgSubmitMisbehaviour) -> Result<Self, Self::Error> {
         let raw_misbehaviour = raw
             .misbehaviour
@@ -60,6 +61,7 @@ impl TryFrom<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {
 
 impl From<MsgSubmitMisbehaviour> for RawMsgSubmitMisbehaviour {
     fn from(ics_msg: MsgSubmitMisbehaviour) -> Self {
+        #[allow(deprecated)]
         RawMsgSubmitMisbehaviour {
             client_id: ics_msg.client_id.to_string(),
             misbehaviour: Some(ics_msg.misbehaviour),
