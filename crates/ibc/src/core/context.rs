@@ -273,24 +273,6 @@ pub trait ExecutionContext: ValidationContext {
         host_height: Height,
     ) -> Result<(), ContextError>;
 
-    /// Delete the update time associated with the client at the specified height. This update
-    /// time should be associated with a consensus state through the specified height.
-    ///
-    /// Note that this timestamp is determined by the host.
-    fn delete_update_time(
-        &mut self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<(), ContextError>;
-
-    /// Delete the update height associated with the client at the specified height. This update
-    /// time should be associated with a consensus state through the specified height.
-    fn delete_update_height(
-        &mut self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<(), ContextError>;
-
     /// Stores the given connection_end at path
     fn store_connection(
         &mut self,

@@ -24,7 +24,7 @@ pub trait CommonContext {
     ) -> Result<Self::AnyConsensusState, ContextError>;
 
     /// Returns all the heights at which a consensus state is stored
-    fn consensus_state_heights(&self) -> Result<Vec<Height>, ContextError>;
+    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError>;
 }
 
 /// Client's context required during validation

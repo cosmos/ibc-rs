@@ -46,7 +46,7 @@ use crate::core::ics24_host::identifier::{ChainId, ClientId};
 use crate::core::ics24_host::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
-use crate::core::timestamp::{TimestampOverflowError, ZERO_DURATION};
+use crate::core::timestamp::ZERO_DURATION;
 use crate::core::ExecutionContext;
 use crate::prelude::*;
 use crate::Height;
@@ -495,7 +495,7 @@ where
 
 impl<E> ClientStateExecution<E> for ClientState
 where
-    E: TmExecutionContext + ExecutionContext,
+    E: TmExecutionContext + ExecutionContext + TmValidationContext,
     <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
     <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
 {
@@ -525,7 +525,7 @@ where
         let header = TmHeader::try_from(header)?;
         let header_height = header.height();
 
-        // self.prune_oldest_consensus_state(ctx, &client_id, &header_height)?;
+        self.prune_oldest_consensus_state(ctx, client_id)?;
 
         let maybe_existing_consensus_state = {
             let path_at_header_height = ClientConsensusStatePath::new(client_id, &header_height);
@@ -625,44 +625,6 @@ where
         )?;
 
         Ok(latest_height)
-    }
-
-    fn prune_oldest_consensus_state(
-        &self,
-        ctx: &mut E,
-        client_id: &ClientId,
-    ) -> Result<(), ClientError> {
-        let mut heights = ctx.consensus_state_heights()?;
-
-        heights.sort();
-
-        for height in heights {
-            let client_consensus_state_path = ClientConsensusStatePath::new(client_id, &height);
-            let consensus_state =
-                CommonContext::consensus_state(ctx, &client_consensus_state_path)?;
-            let tm_consensus_state: TmConsensusState =
-                consensus_state
-                    .try_into()
-                    .map_err(|err| ClientError::Other {
-                        description: err.to_string(),
-                    })?;
-            let host_timestamp = ctx.host_timestamp()?;
-            let tm_consensus_state_timestamp = (tm_consensus_state.timestamp() + self.trusting_period)
-                .map_err(|_| TimestampOverflowError::TimestampOverflow)
-                .map_err(|_| ClientError::Other {
-                    description: String::from("Timestamp overflow error occurred while attempting to parse TmConsensusState")
-                })?;
-
-            if tm_consensus_state_timestamp <= host_timestamp {
-                break;
-            } else {
-                ctx.delete_consensus_state(&client_consensus_state_path)?;
-                ctx.delete_update_time(&client_id, &height)?;
-                ctx.delete_update_height(&client_id, &height)?;
-            }
-        }
-
-        Ok(())
     }
 }
 

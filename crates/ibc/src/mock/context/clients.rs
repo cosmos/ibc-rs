@@ -40,6 +40,22 @@ impl TmCommonContext for MockContext {
     ) -> Result<Self::AnyConsensusState, ContextError> {
         ValidationContext::consensus_state(self, client_cons_state_path)
     }
+
+    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError> {
+        let ibc_store = self.ibc_store.lock();
+        let client_record =
+            ibc_store
+                .clients
+                .get(client_id)
+                .ok_or_else(|| ClientError::ClientStateNotFound {
+                    client_id: client_id.clone(),
+                })?;
+
+        // Get the consensus state heights and sort them in ascending order.
+        let heights = client_record.consensus_states.keys().cloned().collect();
+
+        Ok(heights)
+    }
 }
 
 impl TmValidationContext for MockContext {
@@ -162,6 +178,47 @@ impl ClientExecutionContext for MockContext {
         client_record
             .consensus_states
             .insert(height, consensus_state);
+
+        Ok(())
+    }
+
+    fn delete_consensus_state(&mut self, consensus_state_path: ClientConsensusStatePath) -> Result<(), ContextError> {
+        let mut ibc_store = self.ibc_store.lock();
+
+        let client_record = ibc_store
+            .clients
+            .entry(consensus_state_path.client_id)
+            .or_insert(MockClientRecord {
+                consensus_states: Default::default(),
+                client_state: Default::default(),
+            });
+
+        let height = Height::new(consensus_state_path.epoch, consensus_state_path.height)
+            .expect("Never fails");
+
+        client_record
+            .consensus_states
+            .remove(&height);
+
+        Ok(())
+    }
+
+    fn delete_update_height(&mut self, client_id: ClientId, height: Height) -> Result<(), ContextError> {
+        let _ = self
+            .ibc_store
+            .lock()
+            .client_processed_heights
+            .remove(&(client_id, height));
+
+        Ok(())
+    }
+
+    fn delete_update_time(&mut self, client_id: ClientId, height: Height) -> Result<(), ContextError> {
+        let _ = self
+            .ibc_store
+            .lock()
+            .client_processed_times
+            .remove(&(client_id, height));
 
         Ok(())
     }
