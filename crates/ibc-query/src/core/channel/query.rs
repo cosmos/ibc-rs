@@ -469,10 +469,12 @@ where
     })
 }
 
-// NOTE: The `query_next_sequence_send` method is currently not present in the
-// generated protobuf from `ibc-go` v0.7.3. However, this method has been
-// reintroduced through [this PR](https://github.com/cosmos/ibc-go/pull/3417) in
-// ibc-go. Once included in a new release, we can implement this method call.
+// NOTE: The [previous `query_next_sequence_send`
+// method](https://github.com/cosmos/ibc-rs/blob/a4a5f78405bd3a28c060df6c65438edf0b02e9e2/crates/ibc-query/src/core/channel/query.rs#L472-L504)
+// is currently not present in the generated protobuf from `ibc-go` v0.7.3.
+// However, this method has been reintroduced through [this
+// PR](https://github.com/cosmos/ibc-go/pull/3417) in ibc-go. Once included in a
+// new release, we can implement this method call.
 
 /// Queries for the next sequence receive associated with a channel
 pub fn query_next_sequence_receive<I>(
