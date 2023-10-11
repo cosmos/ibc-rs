@@ -314,10 +314,10 @@ impl MockContext {
         }
     }
 
-    /// Same as ::new() but with custom validator sets for each block.
+    /// Same as [Self::new] but with custom validator sets for each block.
     /// Note: the validator history is used accordingly for current validator set and next validator set.
-    /// validator_history[i] and validator_history[i+1] is i'th block's current and next validator set.
-    /// The number of blocks will be validator_history.len() - 1 due to the above.
+    /// `validator_history[i]` and `validator_history[i+1]` is i'th block's current and next validator set.
+    /// The number of blocks will be `validator_history.len() - 1` due to the above.
     pub fn new_with_validator_history(
         host_id: ChainId,
         host_type: HostType,

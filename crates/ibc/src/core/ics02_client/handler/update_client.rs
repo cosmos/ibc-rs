@@ -281,6 +281,9 @@ mod tests {
             chain_id_b,
             HostType::SyntheticTendermint,
             &[
+                // TODO(rano): the validator set params during setups.
+                // Here I picked the default validator set which is
+                // used at host side client creation.
                 vec![
                     TestgenValidator::new("1").voting_power(50),
                     TestgenValidator::new("2").voting_power(50),
