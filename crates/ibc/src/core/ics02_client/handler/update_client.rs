@@ -97,17 +97,6 @@ where
             header.clone(),
         )?;
 
-        // Store host height and time for all updated headers
-        {
-            let host_timestamp = ctx.host_timestamp()?;
-            let host_height = ctx.host_height()?;
-
-            for consensus_height in consensus_heights.iter() {
-                ctx.store_update_time(client_id.clone(), *consensus_height, host_timestamp)?;
-                ctx.store_update_height(client_id.clone(), *consensus_height, host_height)?;
-            }
-        }
-
         {
             let event = {
                 let consensus_height = consensus_heights.get(0).ok_or(ClientError::Other {

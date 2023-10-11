@@ -33,8 +33,10 @@ pub enum ClientError {
     ClientStateAlreadyExists { client_id: ClientId },
     /// consensus state not found at: `{client_id}` at height `{height}`
     ConsensusStateNotFound { client_id: ClientId, height: Height },
-    /// implementation specific error
-    ImplementationSpecific,
+    /// Processed time for the client `{client_id}` at height `{height}` not found
+    ProcessedTimeNotFound { client_id: ClientId, height: Height },
+    /// Processed height for the client `{client_id}` at height `{height}` not found
+    ProcessedHeightNotFound { client_id: ClientId, height: Height },
     /// header verification failed with reason: `{reason}`
     HeaderVerificationFailure { reason: String },
     /// failed to build trust threshold from fraction: `{numerator}`/`{denominator}`
