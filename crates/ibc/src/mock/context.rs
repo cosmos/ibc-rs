@@ -13,6 +13,7 @@ use derive_more::{From, TryInto};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::protobuf::Protobuf;
 use parking_lot::Mutex;
+use tendermint_testgen::Validator as TestgenValidator;
 use tracing::debug;
 
 use super::client_state::{MOCK_CLIENT_STATE_TYPE_URL, MOCK_CLIENT_TYPE};
@@ -306,6 +307,78 @@ impl MockContext {
                     )
                 })
                 .collect(),
+            block_time,
+            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+            events: Vec::new(),
+            logs: Vec::new(),
+        }
+    }
+
+    /// Same as ::new() but with custom validator sets for each block.
+    /// Note: the validator history is used accordingly for current validator set and next validator set.
+    /// validator_history[i] and validator_history[i+1] is i'th block's current and next validator set.
+    /// The number of blocks will be validator_history.len() - 1 due to the above.
+    pub fn new_with_validator_history(
+        host_id: ChainId,
+        host_type: HostType,
+        validator_history: &[Vec<TestgenValidator>],
+        latest_height: Height,
+    ) -> Self {
+        let max_history_size = validator_history.len() - 1;
+
+        assert_ne!(
+            max_history_size, 0,
+            "The chain must have a non-zero max_history_size"
+        );
+
+        assert_ne!(
+            latest_height.revision_height(),
+            0,
+            "The chain must have a non-zero revision_height"
+        );
+
+        assert!(
+            max_history_size as u64 <= latest_height.revision_height(),
+            "The number of blocks must be greater than the number of validator set histories"
+        );
+
+        assert_eq!(
+            host_id.revision_number(),
+            latest_height.revision_number(),
+            "The version in the chain identifier must match the version in the latest height"
+        );
+
+        let block_time = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS);
+        let next_block_timestamp = Timestamp::now().add(block_time).expect("Never fails");
+
+        let history = (0..max_history_size)
+            .rev()
+            .map(|i| {
+                // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
+                // where N = now(), BT = block_time
+                HostBlock::generate_block_with_validators(
+                    host_id.clone(),
+                    host_type,
+                    latest_height
+                        .sub(i as u64)
+                        .expect("Never fails")
+                        .revision_height(),
+                    next_block_timestamp
+                        .sub(Duration::from_secs(
+                            DEFAULT_BLOCK_TIME_SECS * (i as u64 + 1),
+                        ))
+                        .expect("Never fails"),
+                    &validator_history[i],
+                    &validator_history[i + 1],
+                )
+            })
+            .collect();
+
+        MockContext {
+            host_chain_type: host_type,
+            host_chain_id: host_id.clone(),
+            max_history_size,
+            history,
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
             events: Vec::new(),
