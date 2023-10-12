@@ -10,7 +10,7 @@ use crate::core::ics02_client::client_state::{
 };
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
-use crate::core::ics02_client::ClientExecutionContext;
+use crate::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -136,6 +136,12 @@ pub trait MockClientContext {
     type ConversionError: ToString;
     type AnyConsensusState: TryInto<MockConsensusState, Error = Self::ConversionError>;
 
+    /// Returns the current timestamp of the local chain.
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
+
+    /// Returns the current height of the local chain.
+    fn host_height(&self) -> Result<Height, ContextError>;
+
     /// Retrieve the consensus state for the given client ID at the specified
     /// height.
     ///
@@ -144,9 +150,6 @@ pub trait MockClientContext {
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Self::AnyConsensusState, ContextError>;
-
-    /// Returns the current timestamp of the local chain.
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
 }
 
 impl ClientStateCommon for MockClientState {
@@ -215,16 +218,15 @@ impl ClientStateCommon for MockClientState {
     }
 }
 
-impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for MockClientState
+impl<V> ClientStateValidation<V> for MockClientState
 where
-    ClientValidationContext: MockClientContext,
-    ClientValidationContext::AnyConsensusState: TryInto<MockConsensusState>,
-    ClientError:
-        From<<ClientValidationContext::AnyConsensusState as TryInto<MockConsensusState>>::Error>,
+    V: ClientValidationContext + MockClientContext,
+    V::AnyConsensusState: TryInto<MockConsensusState>,
+    ClientError: From<<V::AnyConsensusState as TryInto<MockConsensusState>>::Error>,
 {
     fn verify_client_message(
         &self,
-        _ctx: &ClientValidationContext,
+        _ctx: &V,
         _client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -250,7 +252,7 @@ where
 
     fn check_for_misbehaviour(
         &self,
-        _ctx: &ClientValidationContext,
+        _ctx: &V,
         _client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -270,11 +272,7 @@ where
         }
     }
 
-    fn status(
-        &self,
-        ctx: &ClientValidationContext,
-        client_id: &ClientId,
-    ) -> Result<Status, ClientError> {
+    fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError> {
         if self.is_frozen() {
             return Ok(Status::Frozen);
         }
@@ -309,7 +307,7 @@ where
 
 impl<E> ClientStateExecution<E> for MockClientState
 where
-    E: ClientExecutionContext,
+    E: ClientExecutionContext + MockClientContext,
     <E as ClientExecutionContext>::AnyClientState: From<MockClientState>,
     <E as ClientExecutionContext>::AnyConsensusState: From<MockConsensusState>,
 {
@@ -347,6 +345,8 @@ where
             new_consensus_state.into(),
         )?;
         ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
+        ctx.store_update_time(client_id.clone(), header_height, ctx.host_timestamp()?)?;
+        ctx.store_update_height(client_id.clone(), header_height, ctx.host_height()?)?;
 
         Ok(vec![header_height])
     }
@@ -382,6 +382,12 @@ where
             new_consensus_state.into(),
         )?;
         ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
+
+        let host_timestamp = ctx.host_timestamp()?;
+        let host_height = ctx.host_height()?;
+
+        ctx.store_update_time(client_id.clone(), latest_height, host_timestamp)?;
+        ctx.store_update_height(client_id.clone(), latest_height, host_height)?;
 
         Ok(latest_height)
     }

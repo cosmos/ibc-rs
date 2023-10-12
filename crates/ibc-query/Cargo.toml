@@ -1,6 +1,6 @@
 [package]
 name         = "ibc-query"
-version      = "0.45.0"
+version      = "0.46.0"
 edition      = "2021"
 license      = "Apache-2.0"
 readme       = "README.md"
@@ -18,7 +18,7 @@ default = ["std"]
 std = ["ibc-proto/std", "ibc/std"]
 
 [dependencies]
-ibc = { version = "0.45.0", path = "../ibc", default-features = false }
+ibc = { version = "0.46.0", path = "../ibc", default-features = false }
 ibc-proto = { version = "0.37.1", default-features = false, features = ["server"] }
 displaydoc = { version = "0.2", default-features = false }
 tonic = "0.10"

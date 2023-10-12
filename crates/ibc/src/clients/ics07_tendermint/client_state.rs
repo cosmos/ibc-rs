@@ -35,7 +35,7 @@ use crate::core::ics02_client::client_state::{
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
-use crate::core::ics02_client::ClientExecutionContext;
+use crate::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -408,16 +408,15 @@ impl ClientStateCommon for ClientState {
     }
 }
 
-impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for ClientState
+impl<V> ClientStateValidation<V> for ClientState
 where
-    ClientValidationContext: TmValidationContext,
-    ClientValidationContext::AnyConsensusState: TryInto<TmConsensusState>,
-    ClientError:
-        From<<ClientValidationContext::AnyConsensusState as TryInto<TmConsensusState>>::Error>,
+    V: ClientValidationContext + TmValidationContext,
+    V::AnyConsensusState: TryInto<TmConsensusState>,
+    ClientError: From<<V::AnyConsensusState as TryInto<TmConsensusState>>::Error>,
 {
     fn verify_client_message(
         &self,
-        ctx: &ClientValidationContext,
+        ctx: &V,
         client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -436,7 +435,7 @@ where
 
     fn check_for_misbehaviour(
         &self,
-        ctx: &ClientValidationContext,
+        ctx: &V,
         client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -453,11 +452,7 @@ where
         }
     }
 
-    fn status(
-        &self,
-        ctx: &ClientValidationContext,
-        client_id: &ClientId,
-    ) -> Result<Status, ClientError> {
+    fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError> {
         if self.is_frozen() {
             return Ok(Status::Frozen);
         }
@@ -510,6 +505,12 @@ where
             ClientConsensusStatePath::new(client_id, &self.latest_height),
             tm_consensus_state.into(),
         )?;
+        ctx.store_update_time(
+            client_id.clone(),
+            self.latest_height(),
+            ctx.host_timestamp()?,
+        )?;
+        ctx.store_update_height(client_id.clone(), self.latest_height(), ctx.host_height()?)?;
 
         Ok(())
     }
@@ -543,10 +544,11 @@ where
                 new_consensus_state.into(),
             )?;
             ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
+            ctx.store_update_time(client_id.clone(), header_height, ctx.host_timestamp()?)?;
+            ctx.store_update_height(client_id.clone(), header_height, ctx.host_height()?)?;
         }
 
-        let updated_heights = vec![header_height];
-        Ok(updated_heights)
+        Ok(vec![header_height])
     }
 
     fn update_state_on_misbehaviour(
@@ -619,6 +621,8 @@ where
             ClientConsensusStatePath::new(client_id, &latest_height),
             new_consensus_state.into(),
         )?;
+        ctx.store_update_time(client_id.clone(), latest_height, ctx.host_timestamp()?)?;
+        ctx.store_update_height(client_id.clone(), latest_height, ctx.host_height()?)?;
 
         Ok(latest_height)
     }

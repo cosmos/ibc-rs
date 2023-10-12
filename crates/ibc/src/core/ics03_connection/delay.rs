@@ -1,6 +1,7 @@
 use super::connection::ConnectionEnd;
 use super::error::ConnectionError;
 use crate::core::ics02_client::height::Height;
+use crate::core::ics02_client::ClientValidationContext;
 use crate::core::{ContextError, ValidationContext};
 
 pub fn verify_conn_delay_passed<Ctx>(
@@ -17,8 +18,12 @@ where
 
     // Fetch the latest time and height that the counterparty client was updated on the host chain.
     let client_id = connection_end.client_id();
-    let last_client_update_time = ctx.client_update_time(client_id, &packet_proof_height)?;
-    let last_client_update_height = ctx.client_update_height(client_id, &packet_proof_height)?;
+    let last_client_update_time = ctx
+        .get_client_validation_context()
+        .client_update_time(client_id, &packet_proof_height)?;
+    let last_client_update_height = ctx
+        .get_client_validation_context()
+        .client_update_height(client_id, &packet_proof_height)?;
 
     // Fetch the connection delay time and height periods.
     let conn_delay_time_period = connection_end.delay_period();

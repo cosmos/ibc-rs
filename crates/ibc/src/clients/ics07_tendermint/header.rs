@@ -126,13 +126,6 @@ impl Header {
             });
         }
 
-        if self.trusted_next_validator_set.hash() != self.signed_header.header.next_validators_hash
-        {
-            return Err(Error::MismatchValidatorsHashes {
-                signed_header_validators_hash: self.signed_header.header.next_validators_hash,
-                validators_hash: self.trusted_next_validator_set.hash(),
-            });
-        }
         Ok(())
     }
 }
