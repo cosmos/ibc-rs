@@ -500,6 +500,9 @@ where
         client_id: &ClientId,
         consensus_state: Any,
     ) -> Result<(), ClientError> {
+        let host_timestamp = CommonContext::host_timestamp(ctx)?;
+        let host_height = CommonContext::host_height(ctx)?;
+
         let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
 
         ctx.store_client_state(ClientStatePath::new(client_id), self.clone().into())?;
@@ -510,9 +513,9 @@ where
         ctx.store_update_time(
             client_id.clone(),
             self.latest_height(),
-            ctx.host_timestamp()?,
+            host_timestamp,
         )?;
-        ctx.store_update_height(client_id.clone(), self.latest_height(), ctx.host_height()?)?;
+        ctx.store_update_height(client_id.clone(), self.latest_height(), host_height)?;
 
         Ok(())
     }
@@ -540,6 +543,9 @@ where
             //
             // Do nothing.
         } else {
+            let host_timestamp = CommonContext::host_timestamp(ctx)?;
+            let host_height = CommonContext::host_height(ctx)?;
+
             let new_consensus_state = TmConsensusState::from(header.clone());
             let new_client_state = self.clone().with_header(header)?;
 
@@ -548,8 +554,8 @@ where
                 new_consensus_state.into(),
             )?;
             ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
-            ctx.store_update_time(client_id.clone(), header_height, ctx.host_timestamp()?)?;
-            ctx.store_update_height(client_id.clone(), header_height, ctx.host_height()?)?;
+            ctx.store_update_time(client_id.clone(), header_height, host_timestamp)?;
+            ctx.store_update_height(client_id.clone(), header_height, host_height)?;
         }
 
         Ok(vec![header_height])
@@ -619,14 +625,16 @@ where
         );
 
         let latest_height = new_client_state.latest_height;
+        let host_timestamp = CommonContext::host_timestamp(ctx)?;
+        let host_height = CommonContext::host_height(ctx)?;
 
         ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(client_id, &latest_height),
             new_consensus_state.into(),
         )?;
-        ctx.store_update_time(client_id.clone(), latest_height, ctx.host_timestamp()?)?;
-        ctx.store_update_height(client_id.clone(), latest_height, ctx.host_height()?)?;
+        ctx.store_update_time(client_id.clone(), latest_height, host_timestamp)?;
+        ctx.store_update_height(client_id.clone(), latest_height, host_height)?;
 
         Ok(latest_height)
     }
