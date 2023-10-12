@@ -13,6 +13,12 @@ pub trait CommonContext {
     type ConversionError: ToString;
     type AnyConsensusState: TryInto<TmConsensusState, Error = Self::ConversionError>;
 
+    /// Returns the current timestamp of the local chain.
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
+
+    /// Returns the current height of the local chain.
+    fn host_height(&self) -> Result<Height, ContextError>;
+
     /// Retrieve the consensus state for the given client ID at the specified
     /// height.
     ///
@@ -25,9 +31,6 @@ pub trait CommonContext {
 
 /// Client's context required during validation
 pub trait ValidationContext: CommonContext {
-    /// Returns the current timestamp of the local chain.
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
-
     /// Search for the lowest consensus state higher than `height`.
     fn next_consensus_state(
         &self,

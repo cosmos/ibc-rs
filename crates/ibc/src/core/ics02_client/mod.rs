@@ -10,4 +10,4 @@ pub mod height;
 pub mod msgs;
 
 mod context;
-pub use context::ClientExecutionContext;
+pub use context::{ClientExecutionContext, ClientValidationContext};

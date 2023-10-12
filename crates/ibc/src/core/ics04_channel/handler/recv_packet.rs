@@ -287,6 +287,7 @@ mod tests {
 
     use super::*;
     use crate::applications::transfer::MODULE_ID_STR;
+    use crate::core::ics02_client::ClientExecutionContext;
     use crate::core::ics03_connection::connection::{
         ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
     };
@@ -418,6 +419,7 @@ mod tests {
             );
 
         context
+            .get_client_execution_context()
             .store_update_time(
                 ClientId::default(),
                 client_height,
@@ -425,6 +427,7 @@ mod tests {
             )
             .unwrap();
         context
+            .get_client_execution_context()
             .store_update_height(
                 ClientId::default(),
                 client_height,

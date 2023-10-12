@@ -9,9 +9,7 @@ use crate::core::ics02_client::error as client_error;
 use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::Version;
-use crate::core::ics24_host::identifier::{
-    ChannelId, ClientId, ConnectionId, IdentifierError, PortId,
-};
+use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, IdentifierError, PortId};
 use crate::core::timestamp::{ParseTimestampError, Timestamp};
 use crate::prelude::*;
 use crate::Height;
@@ -62,10 +60,6 @@ pub enum ChannelError {
         expected: Counterparty,
         actual: Counterparty,
     },
-    /// Processed time for the client `{client_id}` at height `{height}` not found
-    ProcessedTimeNotFound { client_id: ClientId, height: Height },
-    /// Processed height for the client `{client_id}` at height `{height}` not found
-    ProcessedHeightNotFound { client_id: ClientId, height: Height },
     /// application module error: `{description}`
     AppModule { description: String },
     /// Undefined counterparty connection for `{connection_id}`

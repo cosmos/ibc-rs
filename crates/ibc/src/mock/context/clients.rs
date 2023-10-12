@@ -5,7 +5,7 @@ use crate::clients::ics07_tendermint::{
     CommonContext as TmCommonContext, ValidationContext as TmValidationContext,
 };
 use crate::core::ics02_client::error::ClientError;
-use crate::core::ics02_client::ClientExecutionContext;
+use crate::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 use crate::core::timestamp::Timestamp;
@@ -18,21 +18,33 @@ impl MockClientContext for MockContext {
     type ConversionError = &'static str;
     type AnyConsensusState = AnyConsensusState;
 
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
+        ValidationContext::host_timestamp(self)
+    }
+
+    fn host_height(&self) -> Result<Height, ContextError> {
+        ValidationContext::host_height(self)
+    }
+
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Self::AnyConsensusState, ContextError> {
         ValidationContext::consensus_state(self, client_cons_state_path)
     }
-
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
-        ValidationContext::host_timestamp(self)
-    }
 }
 
 impl TmCommonContext for MockContext {
     type ConversionError = &'static str;
     type AnyConsensusState = AnyConsensusState;
+
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
+        ValidationContext::host_timestamp(self)
+    }
+
+    fn host_height(&self) -> Result<Height, ContextError> {
+        ValidationContext::host_height(self)
+    }
 
     fn consensus_state(
         &self,
@@ -43,10 +55,6 @@ impl TmCommonContext for MockContext {
 }
 
 impl TmValidationContext for MockContext {
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
-        ValidationContext::host_timestamp(self)
-    }
-
     fn next_consensus_state(
         &self,
         client_id: &ClientId,
@@ -116,8 +124,48 @@ impl TmValidationContext for MockContext {
     }
 }
 
+impl ClientValidationContext for MockContext {
+    fn client_update_time(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Timestamp, ContextError> {
+        match self
+            .ibc_store
+            .lock()
+            .client_processed_times
+            .get(&(client_id.clone(), *height))
+        {
+            Some(time) => Ok(*time),
+            None => Err(ClientError::ProcessedTimeNotFound {
+                client_id: client_id.clone(),
+                height: *height,
+            })?,
+        }
+    }
+
+    fn client_update_height(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Height, ContextError> {
+        match self
+            .ibc_store
+            .lock()
+            .client_processed_heights
+            .get(&(client_id.clone(), *height))
+        {
+            Some(height) => Ok(*height),
+            None => Err(ClientError::ProcessedHeightNotFound {
+                client_id: client_id.clone(),
+                height: *height,
+            })?,
+        }
+    }
+}
+
 impl ClientExecutionContext for MockContext {
-    type ClientValidationContext = Self;
+    type V = Self;
     type AnyClientState = AnyClientState;
     type AnyConsensusState = AnyConsensusState;
 
@@ -163,6 +211,34 @@ impl ClientExecutionContext for MockContext {
             .consensus_states
             .insert(height, consensus_state);
 
+        Ok(())
+    }
+
+    fn store_update_time(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        timestamp: Timestamp,
+    ) -> Result<(), ContextError> {
+        let _ = self
+            .ibc_store
+            .lock()
+            .client_processed_times
+            .insert((client_id, height), timestamp);
+        Ok(())
+    }
+
+    fn store_update_height(
+        &mut self,
+        client_id: ClientId,
+        height: Height,
+        host_height: Height,
+    ) -> Result<(), ContextError> {
+        let _ = self
+            .ibc_store
+            .lock()
+            .client_processed_heights
+            .insert((client_id, height), host_height);
         Ok(())
     }
 }
