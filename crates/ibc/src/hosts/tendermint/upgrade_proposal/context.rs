@@ -9,16 +9,16 @@ use super::Plan;
 use crate::core::ics02_client::client_state::ClientState;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::UpgradeClientError;
-use crate::core::ics02_client::ClientExecutionContext;
+use crate::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
 use crate::core::ics24_host::path::UpgradeClientPath;
 
 /// Helper context to validate client upgrades, providing methods to retrieve
 /// an upgrade plan and related upgraded client and consensus states.
 pub trait UpgradeValidationContext {
-    type ClientValidationContext;
+    type V: ClientValidationContext;
     type E: ClientExecutionContext;
     type AnyConsensusState: ConsensusState;
-    type AnyClientState: ClientState<Self::ClientValidationContext, Self::E>;
+    type AnyClientState: ClientState<Self::V, Self::E>;
 
     /// Returns the upgrade plan that is scheduled and not have been executed yet.
     fn upgrade_plan(&self) -> Result<Plan, UpgradeClientError>;

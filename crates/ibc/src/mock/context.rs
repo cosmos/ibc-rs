@@ -804,7 +804,7 @@ impl RelayerContext for MockContext {
 }
 
 impl ValidationContext for MockContext {
-    type ClientValidationContext = Self;
+    type V = Self;
     type E = Self;
     type AnyConsensusState = AnyConsensusState;
     type AnyClientState = AnyClientState;
@@ -1101,46 +1101,6 @@ impl ValidationContext for MockContext {
         .map_err(ContextError::PacketError)
     }
 
-    fn client_update_time(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Timestamp, ContextError> {
-        match self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .get(&(client_id.clone(), *height))
-        {
-            Some(time) => Ok(*time),
-            None => Err(ChannelError::ProcessedTimeNotFound {
-                client_id: client_id.clone(),
-                height: *height,
-            }),
-        }
-        .map_err(ContextError::ChannelError)
-    }
-
-    fn client_update_height(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ContextError> {
-        match self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .get(&(client_id.clone(), *height))
-        {
-            Some(height) => Ok(*height),
-            None => Err(ChannelError::ProcessedHeightNotFound {
-                client_id: client_id.clone(),
-                height: *height,
-            }),
-        }
-        .map_err(ContextError::ChannelError)
-    }
-
     fn channel_counter(&self) -> Result<u64, ContextError> {
         Ok(self.ibc_store.lock().channel_ids_counter)
     }
@@ -1153,7 +1113,7 @@ impl ValidationContext for MockContext {
         Ok(())
     }
 
-    fn get_client_validation_context(&self) -> &Self::ClientValidationContext {
+    fn get_client_validation_context(&self) -> &Self::V {
         self
     }
 }
@@ -1171,34 +1131,6 @@ impl ExecutionContext for MockContext {
             .checked_add(1)
             .ok_or(ClientError::CounterOverflow)?;
 
-        Ok(())
-    }
-
-    fn store_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .insert((client_id, height), timestamp);
-        Ok(())
-    }
-
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_height: Height,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .insert((client_id, height), host_height);
         Ok(())
     }
 
