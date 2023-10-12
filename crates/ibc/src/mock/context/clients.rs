@@ -53,7 +53,10 @@ impl TmCommonContext for MockContext {
         ValidationContext::consensus_state(self, client_cons_state_path)
     }
 
-    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError> {
+    fn consensus_state_heights(
+        &self,
+        client_id: &ClientId
+    ) -> Result<Vec<Height>, ContextError> {
         let ibc_store = self.ibc_store.lock();
         let client_record =
             ibc_store
@@ -63,7 +66,6 @@ impl TmCommonContext for MockContext {
                     client_id: client_id.clone(),
                 })?;
 
-        // Get the consensus state heights and sort them in ascending order.
         let heights = client_record.consensus_states.keys().cloned().collect();
 
         Ok(heights)
