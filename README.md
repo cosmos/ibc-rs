@@ -1,6 +1,16 @@
-# ibc-rs
+<div align="center">
+    <h1>ibc-rs</h1>
+</div>
+
+![banner](docs/static/img/ibc-rs-cover.svg)
+
+<div align="center">
+<div>
 
 [![Cosmos ecosystem][cosmos-shield]][cosmos-link]
+
+</div>
+<div>
 
 [![Docs][docs-image]][docs-link]
 [![Build Status][build-image]][build-link]
@@ -8,11 +18,15 @@
 [![Apache 2.0 Licensed][license-image]][license-link]
 ![Rust Stable][rustc-image]
 ![Rust 1.60+][rustc-version]
+![Lines of Code][loc-image]
+
+</div>
+</div>
 
 Rust implementation of the Inter-Blockchain Communication (IBC) protocol. This project hosts
 the `ibc` rust crate which defines the main data structures and on-chain logic for the IBC protocol.
 
-See the [ibc](crates/ibc) crate's README.md for more detailed information on the `ibc` crate.
+See the [ibc](crates/ibc/README.md) crate's README.md for more detailed information on the `ibc` crate.
 
 ## Contributing
 
@@ -26,9 +40,13 @@ See also [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Community calls
 
-We run monthly community calls to update the community with current our direction and gather feedback on what to work on next. The community calls are also a platform for you to update everyone else with what you're working on, and find opportunities to collaborate.
+We run monthly community calls to update the community with current our
+direction and gather feedback on what to work on next. The community calls are
+also a platform for you to update everyone else with what you're working on, and
+find opportunities to collaborate.
 
-Please join the [Google group](https://groups.google.com/g/ibc-rs-community) to receive a calendar invitation for the monthly meeting.
+Please join the [Google group](https://groups.google.com/g/ibc-rs-community) to
+receive a calendar invitation for the monthly meeting.
 
 ## Versioning
 
@@ -60,13 +78,13 @@ CONDITIONS OF ANY KIND, either express or implied. See the License for the speci
 [build-link]: https://github.com/cosmos/ibc-rs/actions?query=workflow%3ARust
 [codecov-image]: https://codecov.io/gh/cosmos/ibc-rs/branch/main/graph/badge.svg?token=wUm2aLCOu
 [codecov-link]: https://codecov.io/gh/cosmos/ibc-rs
+[loc-image]: https://tokei.rs/b1/github/cosmos/ibc-rs
 [license-image]: https://img.shields.io/badge/license-Apache2.0-blue.svg
 [license-link]: https://github.com/cosmos/ibc-rs/blob/main/LICENSE
 [rustc-image]: https://img.shields.io/badge/rustc-stable-blue.svg
 [rustc-version]: https://img.shields.io/badge/rustc-1.60+-blue.svg
 
 [//]: # (general links)
-[ibc-rs]: https://github.com/cosmos/ibc-rs
 [ibc]: https://github.com/cosmos/ibc
 [ibc-go]: https://github.com/cosmos/ibc-go
 [ibc-homepage]: https://cosmos.network/ibc

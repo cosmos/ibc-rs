@@ -1,14 +1,6 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
-mod applications;
 mod clients;
-
-use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
-use crate::core::ics24_host::path::{
-    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
-    ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
-};
-use crate::prelude::*;
 
 use alloc::collections::btree_map::BTreeMap;
 use alloc::sync::Arc;
@@ -16,22 +8,25 @@ use core::cmp::min;
 use core::fmt::Debug;
 use core::ops::{Add, Sub};
 use core::time::Duration;
+
 use derive_more::{From, TryInto};
+use ibc_proto::google::protobuf::Any;
 use ibc_proto::protobuf::Protobuf;
 use parking_lot::Mutex;
-
-use ibc_proto::google::protobuf::Any;
+use tendermint_testgen::Validator as TestgenValidator;
 use tracing::debug;
 
-use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use crate::clients::ics07_tendermint::client_state::TENDERMINT_CLIENT_STATE_TYPE_URL;
-use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
-use crate::clients::ics07_tendermint::consensus_state::TENDERMINT_CONSENSUS_STATE_TYPE_URL;
-
-use crate::core::dispatch;
+use super::client_state::{MOCK_CLIENT_STATE_TYPE_URL, MOCK_CLIENT_TYPE};
+use super::consensus_state::MOCK_CONSENSUS_STATE_TYPE_URL;
+use crate::clients::ics07_tendermint::client_state::{
+    ClientState as TmClientState, TENDERMINT_CLIENT_STATE_TYPE_URL,
+};
+use crate::clients::ics07_tendermint::consensus_state::{
+    ConsensusState as TmConsensusState, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
+};
+use crate::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
-use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
@@ -43,21 +38,22 @@ use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::packet::{Receipt, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentPrefix;
 use crate::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
+use crate::core::ics24_host::path::{
+    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
+    ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
+};
 use crate::core::router::Router;
 use crate::core::timestamp::Timestamp;
-use crate::core::{ContextError, ValidationContext};
-use crate::core::{ExecutionContext, MsgEnvelope};
+use crate::core::{dispatch, ContextError, ExecutionContext, MsgEnvelope, ValidationContext};
 use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
 use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::mock::host::{HostBlock, HostType};
 use crate::mock::ics18_relayer::context::RelayerContext;
 use crate::mock::ics18_relayer::error::RelayerError;
+use crate::prelude::*;
 use crate::signer::Signer;
 use crate::Height;
-
-use super::client_state::{MOCK_CLIENT_STATE_TYPE_URL, MOCK_CLIENT_TYPE};
-use super::consensus_state::MOCK_CONSENSUS_STATE_TYPE_URL;
 
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
@@ -311,6 +307,78 @@ impl MockContext {
                     )
                 })
                 .collect(),
+            block_time,
+            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+            events: Vec::new(),
+            logs: Vec::new(),
+        }
+    }
+
+    /// Same as [Self::new] but with custom validator sets for each block.
+    /// Note: the validator history is used accordingly for current validator set and next validator set.
+    /// `validator_history[i]` and `validator_history[i+1]` is i'th block's current and next validator set.
+    /// The number of blocks will be `validator_history.len() - 1` due to the above.
+    pub fn new_with_validator_history(
+        host_id: ChainId,
+        host_type: HostType,
+        validator_history: &[Vec<TestgenValidator>],
+        latest_height: Height,
+    ) -> Self {
+        let max_history_size = validator_history.len() - 1;
+
+        assert_ne!(
+            max_history_size, 0,
+            "The chain must have a non-zero max_history_size"
+        );
+
+        assert_ne!(
+            latest_height.revision_height(),
+            0,
+            "The chain must have a non-zero revision_height"
+        );
+
+        assert!(
+            max_history_size as u64 <= latest_height.revision_height(),
+            "The number of blocks must be greater than the number of validator set histories"
+        );
+
+        assert_eq!(
+            host_id.revision_number(),
+            latest_height.revision_number(),
+            "The version in the chain identifier must match the version in the latest height"
+        );
+
+        let block_time = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS);
+        let next_block_timestamp = Timestamp::now().add(block_time).expect("Never fails");
+
+        let history = (0..max_history_size)
+            .rev()
+            .map(|i| {
+                // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
+                // where N = now(), BT = block_time
+                HostBlock::generate_block_with_validators(
+                    host_id.clone(),
+                    host_type,
+                    latest_height
+                        .sub(i as u64)
+                        .expect("Never fails")
+                        .revision_height(),
+                    next_block_timestamp
+                        .sub(Duration::from_secs(
+                            DEFAULT_BLOCK_TIME_SECS * (i as u64 + 1),
+                        ))
+                        .expect("Never fails"),
+                    &validator_history[i],
+                    &validator_history[i + 1],
+                )
+            })
+            .collect();
+
+        MockContext {
+            host_chain_type: host_type,
+            host_chain_id: host_id.clone(),
+            max_history_size,
+            history,
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
             events: Vec::new(),
@@ -736,7 +804,7 @@ impl RelayerContext for MockContext {
 }
 
 impl ValidationContext for MockContext {
-    type ClientValidationContext = Self;
+    type V = Self;
     type E = Self;
     type AnyConsensusState = AnyConsensusState;
     type AnyClientState = AnyClientState;
@@ -841,7 +909,12 @@ impl ValidationContext for MockContext {
             })
             .map_err(ContextError::ConnectionError)?;
 
-        mock_client_state.confirm_not_frozen()?;
+        if mock_client_state.is_frozen() {
+            return Err(ClientError::ClientFrozen {
+                description: String::new(),
+            }
+            .into());
+        }
 
         let self_chain_id = &self.host_chain_id;
         let self_revision_number = self_chain_id.revision_number();
@@ -1028,46 +1101,6 @@ impl ValidationContext for MockContext {
         .map_err(ContextError::PacketError)
     }
 
-    fn client_update_time(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Timestamp, ContextError> {
-        match self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .get(&(client_id.clone(), *height))
-        {
-            Some(time) => Ok(*time),
-            None => Err(ChannelError::ProcessedTimeNotFound {
-                client_id: client_id.clone(),
-                height: *height,
-            }),
-        }
-        .map_err(ContextError::ChannelError)
-    }
-
-    fn client_update_height(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ContextError> {
-        match self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .get(&(client_id.clone(), *height))
-        {
-            Some(height) => Ok(*height),
-            None => Err(ChannelError::ProcessedHeightNotFound {
-                client_id: client_id.clone(),
-                height: *height,
-            }),
-        }
-        .map_err(ContextError::ChannelError)
-    }
-
     fn channel_counter(&self) -> Result<u64, ContextError> {
         Ok(self.ibc_store.lock().channel_ids_counter)
     }
@@ -1080,7 +1113,7 @@ impl ValidationContext for MockContext {
         Ok(())
     }
 
-    fn get_client_validation_context(&self) -> &Self::ClientValidationContext {
+    fn get_client_validation_context(&self) -> &Self::V {
         self
     }
 }
@@ -1090,35 +1123,14 @@ impl ExecutionContext for MockContext {
         self
     }
 
-    fn increase_client_counter(&mut self) {
-        self.ibc_store.lock().client_ids_counter += 1
-    }
+    fn increase_client_counter(&mut self) -> Result<(), ContextError> {
+        let mut ibc_store = self.ibc_store.lock();
 
-    fn store_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .insert((client_id, height), timestamp);
-        Ok(())
-    }
+        ibc_store.client_ids_counter = ibc_store
+            .client_ids_counter
+            .checked_add(1)
+            .ok_or(ClientError::CounterOverflow)?;
 
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_height: Height,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .insert((client_id, height), host_height);
         Ok(())
     }
 
@@ -1148,8 +1160,15 @@ impl ExecutionContext for MockContext {
         Ok(())
     }
 
-    fn increase_connection_counter(&mut self) {
-        self.ibc_store.lock().connection_ids_counter += 1;
+    fn increase_connection_counter(&mut self) -> Result<(), ContextError> {
+        let mut ibc_store = self.ibc_store.lock();
+
+        ibc_store.connection_ids_counter = ibc_store
+            .connection_ids_counter
+            .checked_add(1)
+            .ok_or(ClientError::CounterOverflow)?;
+
+        Ok(())
     }
 
     fn store_packet_commitment(
@@ -1299,31 +1318,39 @@ impl ExecutionContext for MockContext {
         Ok(())
     }
 
-    fn increase_channel_counter(&mut self) {
-        self.ibc_store.lock().channel_ids_counter += 1;
+    fn increase_channel_counter(&mut self) -> Result<(), ContextError> {
+        let mut ibc_store = self.ibc_store.lock();
+
+        ibc_store.channel_ids_counter = ibc_store
+            .channel_ids_counter
+            .checked_add(1)
+            .ok_or(ClientError::CounterOverflow)?;
+
+        Ok(())
     }
 
-    fn emit_ibc_event(&mut self, event: IbcEvent) {
+    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ContextError> {
         self.events.push(event);
+        Ok(())
     }
 
-    fn log_message(&mut self, message: String) {
+    fn log_message(&mut self, message: String) -> Result<(), ContextError> {
         self.logs.push(message);
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use test_log::test;
 
+    use super::*;
     use crate::core::ics04_channel::acknowledgement::Acknowledgement;
     use crate::core::ics04_channel::channel::{Counterparty, Order};
     use crate::core::ics04_channel::error::ChannelError;
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
-    use crate::core::ics24_host::identifier::ChainId;
-    use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+    use crate::core::ics24_host::identifier::{ChainId, ChannelId, ConnectionId, PortId};
     use crate::core::router::{Module, ModuleExtras, ModuleId};
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;

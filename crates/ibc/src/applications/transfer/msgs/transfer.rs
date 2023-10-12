@@ -1,7 +1,5 @@
 //! Defines the token transfer message type
 
-use crate::prelude::*;
-
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::applications::transfer::v1::MsgTransfer as RawMsgTransfer;
 use ibc_proto::protobuf::Protobuf;
@@ -13,6 +11,7 @@ use crate::core::ics04_channel::timeout::TimeoutHeight;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::timestamp::Timestamp;
 use crate::core::{ContextError, Msg};
+use crate::prelude::*;
 
 pub(crate) const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 
@@ -28,6 +27,10 @@ pub(crate) const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(parity_scale_codec::Encode, parity_scale_codec::Decode,)
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 pub struct MsgTransfer {
     /// the port on which the packet will be sent
@@ -123,12 +126,10 @@ impl TryFrom<Any> for MsgTransfer {
 
 #[cfg(test)]
 pub mod test_util {
-    use super::*;
-
     use core::ops::Add;
     use core::time::Duration;
 
-    use super::MsgTransfer;
+    use super::{MsgTransfer, *};
     use crate::applications::transfer::packet::PacketData;
     use crate::core::ics04_channel::packet::{Packet, Sequence};
     use crate::core::ics04_channel::timeout::TimeoutHeight;

@@ -1,5 +1,3 @@
-use crate::prelude::*;
-
 use ibc_proto::ibc::core::channel::v1::MsgTimeoutOnClose as RawMsgTimeoutOnClose;
 use ibc_proto::protobuf::Protobuf;
 
@@ -7,6 +5,7 @@ use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::{Packet, Sequence};
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::Msg;
+use crate::prelude::*;
 use crate::signer::Signer;
 use crate::Height;
 
@@ -15,6 +14,11 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgTimeoutOnClose";
 ///
 /// Message definition for packet timeout domain type.
 ///
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgTimeoutOnClose {
     pub packet: Packet,
@@ -81,12 +85,12 @@ impl From<MsgTimeoutOnClose> for RawMsgTimeoutOnClose {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
     use ibc_proto::ibc::core::channel::v1::MsgTimeoutOnClose as RawMsgTimeoutOnClose;
     use test_log::test;
 
     use crate::core::ics04_channel::msgs::timeout_on_close::test_util::get_dummy_raw_msg_timeout_on_close;
     use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
+    use crate::prelude::*;
 
     #[test]
     fn msg_timeout_on_close_try_from_raw() {

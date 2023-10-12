@@ -4,19 +4,20 @@ use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
 use crate::core::context::ContextError;
-use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenAck;
 use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::path::Path;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath};
+use crate::core::ics24_host::path::{
+    ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path,
+};
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
-
-use crate::core::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
@@ -58,7 +59,13 @@ where
     {
         let client_state_of_b_on_a = ctx_a.client_state(vars.client_id_on_a())?;
 
-        client_state_of_b_on_a.confirm_not_frozen()?;
+        {
+            let status = client_state_of_b_on_a
+                .status(ctx_a.get_client_validation_context(), vars.client_id_on_a())?;
+            if !status.is_active() {
+                return Err(ClientError::ClientNotActive { status }.into());
+            }
+        }
         client_state_of_b_on_a.validate_proof_height(msg.proofs_height_on_b)?;
 
         let client_cons_state_path_on_a =
@@ -150,10 +157,10 @@ where
         msg.conn_id_on_b.clone(),
         vars.client_id_on_b().clone(),
     ));
-    ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection));
-    ctx_a.emit_ibc_event(event);
+    ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection))?;
+    ctx_a.emit_ibc_event(event)?;
 
-    ctx_a.log_message("success: conn_open_ack verification passed".to_string());
+    ctx_a.log_message("success: conn_open_ack verification passed".to_string())?;
 
     {
         let new_conn_end_on_a = {
@@ -198,19 +205,18 @@ impl LocalVars {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use core::str::FromStr;
+
     use test_log::test;
 
+    use super::*;
+    use crate::core::events::IbcEvent;
     use crate::core::ics02_client::height::Height;
     use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
     use crate::core::ics23_commitment::commitment::CommitmentPrefix;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
-
-    use crate::core::events::IbcEvent;
     use crate::core::timestamp::ZERO_DURATION;
     use crate::mock::context::MockContext;
     use crate::mock::host::HostType;

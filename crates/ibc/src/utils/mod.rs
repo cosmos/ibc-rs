@@ -1,4 +1,5 @@
 //! Various utilities used internally
 
-pub mod macros;
-pub mod pretty;
+pub(crate) mod macros;
+pub(crate) mod pretty;
+pub mod schema;

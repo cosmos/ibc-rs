@@ -1,6 +1,5 @@
-use crate::prelude::*;
-
 use ibc_proto::google::protobuf::Any;
+use ibc_proto::protobuf::Protobuf;
 
 use crate::core::context::RouterError;
 use crate::core::ics02_client::msgs::{
@@ -13,7 +12,7 @@ use crate::core::ics04_channel::msgs::{
     acknowledgement, chan_close_confirm, chan_close_init, chan_open_ack, chan_open_confirm,
     chan_open_init, chan_open_try, recv_packet, timeout, timeout_on_close, ChannelMsg, PacketMsg,
 };
-use ibc_proto::protobuf::Protobuf;
+use crate::prelude::*;
 
 /// Trait to be implemented by all IBC messages
 pub trait Msg: Clone {
@@ -36,7 +35,12 @@ pub trait Msg: Clone {
 }
 
 /// Enumeration of all messages that the local ICS26 module is capable of routing.
-#[derive(Clone, Debug)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MsgEnvelope {
     Client(ClientMsg),
     Connection(ConnectionMsg),

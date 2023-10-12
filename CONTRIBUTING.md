@@ -238,3 +238,4 @@ Any change that effects multiple APIs/users should be recorded multiply - for
 instance, a change to some core protocol data structure might need to be
 reflected both as breaking the core protocol but also breaking any APIs where core data structures are
 exposed.
+

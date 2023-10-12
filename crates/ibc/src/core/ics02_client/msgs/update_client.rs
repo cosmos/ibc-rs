@@ -1,14 +1,13 @@
 //! Definition of domain type message `MsgUpdateClient`.
 
-use crate::core::Msg;
-use crate::prelude::*;
-
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::core::Msg;
+use crate::prelude::*;
 use crate::signer::Signer;
 
 pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
@@ -17,10 +16,16 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
 /// either with new headers, or evidence of misbehaviour.
 /// Note that some types of misbehaviour can be detected when a headers
 /// are updated (`UpdateKind::UpdateClient`).
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgUpdateClient {
     pub client_id: ClientId,
-    pub header: Any,
+    #[cfg_attr(feature = "schema", schemars(with = "crate::utils::schema::AnySchema"))]
+    pub client_message: Any,
     pub signer: Signer,
 }
 
@@ -43,7 +48,9 @@ impl TryFrom<RawMsgUpdateClient> for MsgUpdateClient {
                 .client_id
                 .parse()
                 .map_err(ClientError::InvalidMsgUpdateClientId)?,
-            header: raw.header.ok_or(ClientError::MissingRawHeader)?,
+            client_message: raw
+                .client_message
+                .ok_or(ClientError::MissingClientMessage)?,
             signer: raw.signer.into(),
         })
     }
@@ -53,7 +60,7 @@ impl From<MsgUpdateClient> for RawMsgUpdateClient {
     fn from(ics_msg: MsgUpdateClient) -> Self {
         RawMsgUpdateClient {
             client_id: ics_msg.client_id.to_string(),
-            header: Some(ics_msg.header),
+            client_message: Some(ics_msg.client_message),
             signer: ics_msg.signer.to_string(),
         }
     }
@@ -61,13 +68,11 @@ impl From<MsgUpdateClient> for RawMsgUpdateClient {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use test_log::test;
-
     use ibc_proto::google::protobuf::Any;
     use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;
+    use test_log::test;
 
+    use super::*;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_ics07_header;
     use crate::core::ics02_client::msgs::MsgUpdateClient;
     use crate::core::ics24_host::identifier::ClientId;
@@ -75,10 +80,10 @@ mod tests {
     use crate::test_utils::get_dummy_account_id;
 
     impl MsgUpdateClient {
-        pub fn new(client_id: ClientId, header: Any, signer: Signer) -> Self {
+        pub fn new(client_id: ClientId, client_message: Any, signer: Signer) -> Self {
             MsgUpdateClient {
                 client_id,
-                header,
+                client_message,
                 signer,
             }
         }

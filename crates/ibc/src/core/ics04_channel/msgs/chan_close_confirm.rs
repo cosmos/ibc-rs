@@ -1,14 +1,13 @@
-use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
-use crate::{prelude::*, Height};
-
+use ibc_proto::ibc::core::channel::v1::MsgChannelCloseConfirm as RawMsgChannelCloseConfirm;
 use ibc_proto::protobuf::Protobuf;
 
-use ibc_proto::ibc::core::channel::v1::MsgChannelCloseConfirm as RawMsgChannelCloseConfirm;
-
 use crate::core::ics04_channel::error::ChannelError;
+use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};
 use crate::core::Msg;
+use crate::prelude::*;
 use crate::signer::Signer;
+use crate::Height;
 
 pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCloseConfirm";
 
@@ -17,6 +16,11 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCloseConfirm";
 /// datagram).
 /// Per our convention, this message is sent to chain B.
 ///
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelCloseConfirm {
     pub port_id_on_b: PortId,
@@ -70,11 +74,11 @@ impl From<MsgChannelCloseConfirm> for RawMsgChannelCloseConfirm {
 
 #[cfg(test)]
 pub mod test_util {
-    use crate::prelude::*;
     use ibc_proto::ibc::core::channel::v1::MsgChannelCloseConfirm as RawMsgChannelCloseConfirm;
     use ibc_proto::ibc::core::client::v1::Height;
 
     use crate::core::ics24_host::identifier::{ChannelId, PortId};
+    use crate::prelude::*;
     use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
 
     /// Returns a dummy `RawMsgChannelCloseConfirm`, for testing only!
@@ -94,13 +98,12 @@ pub mod test_util {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
-
     use ibc_proto::ibc::core::channel::v1::MsgChannelCloseConfirm as RawMsgChannelCloseConfirm;
     use ibc_proto::ibc::core::client::v1::Height;
 
     use crate::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
+    use crate::prelude::*;
 
     #[test]
     fn parse_channel_close_confirm_msg() {

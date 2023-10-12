@@ -8,10 +8,12 @@ pub mod conn_open_try;
 
 #[cfg(test)]
 pub mod test_util {
+    use alloc::format;
     use core::fmt::Debug;
 
-    use crate::{core::ContextError, mock::context::MockContext, prelude::String};
-    use alloc::format;
+    use crate::core::ContextError;
+    use crate::mock::context::MockContext;
+    use crate::prelude::String;
 
     pub enum Expect {
         Success,

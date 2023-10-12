@@ -1,7 +1,9 @@
-use crate::{core::ics24_host::identifier::PortId, prelude::*};
-use alloc::{collections::BTreeMap, sync::Arc};
+use alloc::collections::BTreeMap;
+use alloc::sync::Arc;
 
+use crate::core::ics24_host::identifier::PortId;
 use crate::core::router::{Module, ModuleId, Router};
+use crate::prelude::*;
 
 #[derive(Default)]
 pub struct MockRouter {
@@ -48,7 +50,7 @@ impl Router for MockRouter {
         }
     }
 
-    fn lookup_module_by_port(&self, port_id: &PortId) -> Option<ModuleId> {
+    fn lookup_module(&self, port_id: &PortId) -> Option<ModuleId> {
         self.port_to_module.get(port_id).cloned()
     }
 }

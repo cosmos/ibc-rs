@@ -5,11 +5,14 @@ use core::str::FromStr;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
-
 use tendermint::block::Header as TmHeader;
 use tendermint_testgen::light_block::TmLightBlock;
-use tendermint_testgen::{Generator, LightBlock as TestgenLightBlock};
+use tendermint_testgen::{
+    Generator, Header as TestgenHeader, LightBlock as TestgenLightBlock,
+    Validator as TestgenValidator,
+};
 
+use super::context::AnyConsensusState;
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::header::TENDERMINT_HEADER_TYPE_URL;
 use crate::core::ics02_client::error::ClientError;
@@ -19,8 +22,6 @@ use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::prelude::*;
 use crate::Height;
-
-use super::context::AnyConsensusState;
 
 /// Defines the different types of host chains that a mock context can emulate.
 /// The variants are as follows:
@@ -100,6 +101,38 @@ impl HostBlock {
             HostType::SyntheticTendermint => HostBlock::SyntheticTendermint(Box::new(
                 Self::generate_tm_block(chain_id, height, timestamp),
             )),
+        }
+    }
+
+    /// Generates a new block at `height` for the given chain identifier, chain type and validator sets.
+    pub fn generate_block_with_validators(
+        chain_id: ChainId,
+        chain_type: HostType,
+        height: u64,
+        timestamp: Timestamp,
+        validators: &[TestgenValidator],
+        next_validators: &[TestgenValidator],
+    ) -> HostBlock {
+        match chain_type {
+            HostType::Mock => HostBlock::Mock(Box::new(MockHeader {
+                height: Height::new(chain_id.revision_number(), height).expect("Never fails"),
+                timestamp,
+            })),
+            HostType::SyntheticTendermint => {
+                HostBlock::SyntheticTendermint(Box::new(SyntheticTmBlock {
+                    trusted_height: Height::new(chain_id.revision_number(), 1)
+                        .expect("Never fails"),
+                    light_block: TestgenLightBlock::new_default_with_header(
+                        TestgenHeader::new(validators)
+                            .height(height)
+                            .chain_id(&chain_id.to_string())
+                            .next_validators(next_validators)
+                            .time(timestamp.into_tm_time().expect("Never fails")),
+                    )
+                    .generate()
+                    .expect("Never fails"),
+                }))
+            }
         }
     }
 

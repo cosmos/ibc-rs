@@ -1,5 +1,3 @@
-use crate::prelude::*;
-
 use bytes::Buf;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::mock::Misbehaviour as RawMisbehaviour;
@@ -8,6 +6,7 @@ use ibc_proto::protobuf::Protobuf;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::mock::header::MockHeader;
+use crate::prelude::*;
 
 pub const MOCK_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.mock.Misbehavior";
 

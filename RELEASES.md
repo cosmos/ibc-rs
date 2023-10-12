@@ -2,6 +2,10 @@
 
 ## How to release a new version
 
+## Releases
+
+Our release process is as follows:
+
 1. In a new branch `release/vX.Y.Z`, update the [changelog](#changelog) to reflect and summarize all changes in
    the release. This involves:
    1. Running `unclog build -u` and copy pasting the output at the top
@@ -18,24 +22,23 @@
 3. If there were changes in the `ibc-derive` crate, we need to publish a new version of that crate.
    1. bump the version in `crates/ibc-derive/Cargo.toml`
    2. Publish `ibc-derive` with `cargo publish -p ibc-derive`
-4. Bump all relevant versions in `crates/ibc/Cargo.toml` to the new version and
-      push these changes to the release PR.
+4. Bump the versions of relevant crates (`ibc` and `ibc-query`) in their
+   `Cargo.toml` to the new version, and push these changes to the release PR.
       + If you released a new version of `ibc-derive` in step 3, make sure to update that dependency.
-5. If it's a major release, update the docs as described in the [next
-   section](#how-to-update-docs-for-new-major-releases).
-6. Run `cargo doc -p ibc --all-features --open` locally to double-check that all the
+5. Run `cargo doc -p ibc --all-features --open` locally to double-check that all the
    documentation compiles and seems up-to-date and coherent. Fix any potential
    issues here and push them to the release PR.
-7. Run `cargo publish -p ibc --dry-run` to double-check that publishing will work. Fix
+6. Run `cargo publish -p ibc --dry-run` to double-check that publishing will work. Fix
    any potential issues here and push them to the release PR.
-8. Mark the PR as **Ready for Review** and incorporate feedback on the release.
-9. Once approved, merge the PR, and pull the `main` branch.
-10. Run `cargo publish -p ibc`
-11. Create a signed tag and push it to GitHub: `git tag -s -a vX.Y.Z`. In the tag
-   message, write the version and the link to the corresponding section of the
-   changelog + Push the tag with `git push --tags`
-12. Once the tag is pushed, create a GitHub release and append
-   `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)`
+7. Mark the PR as **Ready for Review** and incorporate feedback on the release.
+8. Once approved, merge the PR, and pull the `main` branch.
+9. Run `cargo publish -p ibc` and `cargo publish -p ibc-query` to publish the crates.
+10. Create a signed tag and push it to GitHub: `git tag -s -a vX.Y.Z`. In the
+   tag message, write the version and the link to the corresponding section of
+   the changelog.
+       + Push the tag with `git push --tags`
+11. Once the tag is pushed, create a GitHub release and append
+   `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)` 
    to the release description.
 
 All done! 🎉

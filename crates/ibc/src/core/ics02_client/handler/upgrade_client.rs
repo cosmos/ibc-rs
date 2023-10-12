@@ -1,17 +1,17 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpgradeAnyClient`.
 //!
-use crate::prelude::*;
-
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::client_state::ClientStateCommon;
-use crate::core::ics02_client::client_state::ClientStateExecution;
+use crate::core::ics02_client::client_state::{
+    ClientStateCommon, ClientStateExecution, ClientStateValidation,
+};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::UpgradeClient;
 use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::{ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
@@ -26,8 +26,13 @@ where
     // Read the current latest client state from the host chain store.
     let old_client_state = ctx.client_state(&client_id)?;
 
-    // Check if the client is frozen.
-    old_client_state.confirm_not_frozen()?;
+    // Check if the client is active.
+    {
+        let status = old_client_state.status(ctx.get_client_validation_context(), &client_id)?;
+        if !status.is_active() {
+            return Err(ClientError::ClientNotActive { status }.into());
+        }
+    }
 
     // Read the latest consensus state from the host chain store.
     let old_client_cons_state_path =
@@ -38,24 +43,6 @@ where
             client_id: client_id.clone(),
             height: old_client_state.latest_height(),
         })?;
-
-    let now = ctx.host_timestamp()?;
-    let duration = now
-        .duration_since(&old_consensus_state.timestamp())
-        .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
-            time1: old_consensus_state.timestamp(),
-            time2: now,
-        })?;
-
-    // Check if the latest consensus state is within the trust period.
-    if old_client_state.expired(duration) {
-        return Err(ContextError::ClientError(
-            ClientError::HeaderNotWithinTrustPeriod {
-                latest_time: old_consensus_state.timestamp(),
-                update_time: now,
-            },
-        ));
-    };
 
     // Validate the upgraded client state and consensus state and verify proofs against the root
     old_client_state.verify_upgrade_client(
@@ -89,8 +76,8 @@ where
         old_client_state.client_type(),
         latest_height,
     ));
-    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
-    ctx.emit_ibc_event(event);
+    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))?;
+    ctx.emit_ibc_event(event)?;
 
     Ok(())
 }
@@ -98,19 +85,15 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
     use crate::clients::ics07_tendermint::client_type;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
-
     use crate::core::ics02_client::error::UpgradeClientError;
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
     use crate::core::ics24_host::identifier::ClientId;
-    use crate::downcast;
-    use crate::Height;
-
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::{AnyClientState, AnyConsensusState, MockContext};
+    use crate::{downcast, Height};
 
     enum Ctx {
         Default,

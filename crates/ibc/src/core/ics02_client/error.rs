@@ -1,15 +1,15 @@
 //! Defines the client error type
 
-use crate::prelude::*;
-
 use displaydoc::Display;
 use ibc_proto::protobuf::Error as TendermintProtoError;
 
+use super::client_state::Status;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics23_commitment::error::CommitmentError;
 use crate::core::ics24_host::identifier::{ClientId, IdentifierError};
 use crate::core::timestamp::Timestamp;
 use crate::core::ContextError;
+use crate::prelude::*;
 use crate::Height;
 
 /// Encodes all the possible client errors
@@ -25,14 +25,18 @@ pub enum ClientError {
     },
     /// client is frozen with description: `{description}`
     ClientFrozen { description: String },
+    /// client is not active. Status=`{status}`
+    ClientNotActive { status: Status },
     /// client state not found: `{client_id}`
     ClientStateNotFound { client_id: ClientId },
     /// client state already exists: `{client_id}`
     ClientStateAlreadyExists { client_id: ClientId },
     /// consensus state not found at: `{client_id}` at height `{height}`
     ConsensusStateNotFound { client_id: ClientId, height: Height },
-    /// implementation specific error
-    ImplementationSpecific,
+    /// Processed time for the client `{client_id}` at height `{height}` not found
+    ProcessedTimeNotFound { client_id: ClientId, height: Height },
+    /// Processed height for the client `{client_id}` at height `{height}` not found
+    ProcessedHeightNotFound { client_id: ClientId, height: Height },
     /// header verification failed with reason: `{reason}`
     HeaderVerificationFailure { reason: String },
     /// failed to build trust threshold from fraction: `{numerator}`/`{denominator}`
@@ -63,8 +67,8 @@ pub enum ClientError {
     InvalidClientIdentifier(IdentifierError),
     /// invalid raw header error: `{0}`
     InvalidRawHeader(TendermintProtoError),
-    /// missing raw header
-    MissingRawHeader,
+    /// missing raw client message
+    MissingClientMessage,
     /// invalid raw misbehaviour error: `{0}`
     InvalidRawMisbehaviour(IdentifierError),
     /// missing raw misbehaviour
@@ -91,11 +95,6 @@ pub enum ClientError {
     },
     /// timestamp is invalid or missing, timestamp=`{time1}`,  now=`{time2}`
     InvalidConsensusStateTimestamp { time1: Timestamp, time2: Timestamp },
-    /// header not within trusting period: expires_at=`{latest_time}` now=`{update_time}`
-    HeaderNotWithinTrustPeriod {
-        latest_time: Timestamp,
-        update_time: Timestamp,
-    },
     /// the local consensus state could not be retrieved for height `{height}`
     MissingLocalConsensusState { height: Height },
     /// invalid signer error: `{reason}`
@@ -106,6 +105,8 @@ pub enum ClientError {
     MisbehaviourHandlingFailure { reason: String },
     /// client specific error: `{description}`
     ClientSpecific { description: String },
+    /// client counter overflow error
+    CounterOverflow,
     /// other error: `{description}`
     Other { description: String },
 }
@@ -117,6 +118,14 @@ impl From<ContextError> for ClientError {
             _ => ClientError::Other {
                 description: context_error.to_string(),
             },
+        }
+    }
+}
+
+impl From<&'static str> for ClientError {
+    fn from(s: &'static str) -> Self {
+        Self::Other {
+            description: s.to_string(),
         }
     }
 }

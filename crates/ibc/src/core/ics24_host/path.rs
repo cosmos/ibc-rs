@@ -1,17 +1,17 @@
 //! Defines all store paths used by IBC
 
-use crate::{prelude::*, Height};
-
 /// Path-space as listed in ICS-024
 /// https://github.com/cosmos/ibc/tree/master/spec/core/ics-024-host-requirements#path-space
 /// Some of these are implemented in other ICSs, but ICS-024 has a nice summary table.
 ///
 use core::str::FromStr;
 
+use derive_more::{Display, From};
+
 use crate::core::ics04_channel::packet::Sequence;
 use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-
-use derive_more::{Display, From};
+use crate::prelude::*;
+use crate::Height;
 
 /// ABCI client upgrade keys
 /// - The key identifying the upgraded IBC state within the upgrade sub-store
@@ -834,8 +834,9 @@ fn parse_upgrades(components: &[&str]) -> Option<Path> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use core::str::FromStr;
+
+    use super::*;
 
     #[test]
     fn invalid_path_doesnt_parse() {

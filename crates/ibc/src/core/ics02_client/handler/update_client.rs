@@ -1,17 +1,17 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpdateAnyClient`.
 
-use crate::prelude::*;
+use prost::Message;
 
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::client_state::ClientStateCommon;
-use crate::core::ics02_client::client_state::ClientStateExecution;
-use crate::core::ics02_client::client_state::ClientStateValidation;
-use crate::core::ics02_client::client_state::UpdateKind;
+use crate::core::ics02_client::client_state::{
+    ClientStateCommon, ClientStateExecution, ClientStateValidation, UpdateKind,
+};
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::{ClientMisbehaviour, UpdateClient};
 use crate::core::ics02_client::msgs::MsgUpdateOrMisbehaviour;
 use crate::core::{ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>
 where
@@ -28,7 +28,12 @@ where
     // Read client state from the host chain store. The client should already exist.
     let client_state = ctx.client_state(&client_id)?;
 
-    client_state.confirm_not_frozen()?;
+    {
+        let status = client_state.status(ctx.get_client_validation_context(), &client_id)?;
+        if !status.is_active() {
+            return Err(ClientError::ClientNotActive { status }.into());
+        }
+    }
 
     let client_message = msg.client_message();
 
@@ -74,8 +79,8 @@ where
             client_id,
             client_state.client_type(),
         ));
-        ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
-        ctx.emit_ibc_event(event);
+        ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))?;
+        ctx.emit_ibc_event(event)?;
     } else {
         if !matches!(update_kind, UpdateKind::UpdateClient) {
             return Err(ClientError::MisbehaviourHandlingFailure {
@@ -92,17 +97,6 @@ where
             header.clone(),
         )?;
 
-        // Store host height and time for all updated headers
-        {
-            let host_timestamp = ctx.host_timestamp()?;
-            let host_height = ctx.host_height()?;
-
-            for consensus_height in consensus_heights.iter() {
-                ctx.store_update_time(client_id.clone(), *consensus_height, host_timestamp)?;
-                ctx.store_update_height(client_id.clone(), *consensus_height, host_height)?;
-            }
-        }
-
         {
             let event = {
                 let consensus_height = consensus_heights.get(0).ok_or(ClientError::Other {
@@ -114,11 +108,11 @@ where
                     client_state.client_type(),
                     *consensus_height,
                     consensus_heights,
-                    header.value,
+                    header.encode_to_vec(),
                 ))
             };
-            ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
-            ctx.emit_ibc_event(event);
+            ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))?;
+            ctx.emit_ibc_event(event)?;
         }
     }
 
@@ -127,13 +121,15 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use core::str::FromStr;
     use core::time::Duration;
+
     use ibc_proto::google::protobuf::Any;
+    use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
+    use tendermint_testgen::Validator as TestgenValidator;
     use test_log::test;
 
+    use super::*;
     use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::clients::ics07_tendermint::header::Header as TmHeader;
@@ -146,16 +142,13 @@ mod tests {
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::timestamp::Timestamp;
-    use crate::downcast;
-    use crate::mock::client_state::client_type as mock_client_type;
-    use crate::mock::client_state::MockClientState;
+    use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
     use crate::mock::context::{AnyConsensusState, MockContext};
     use crate::mock::header::MockHeader;
     use crate::mock::host::{HostBlock, HostType};
     use crate::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
     use crate::test_utils::get_dummy_account_id;
-    use crate::Height;
-    use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
+    use crate::{downcast, Height};
 
     #[test]
     fn test_update_client_ok() {
@@ -168,7 +161,7 @@ mod tests {
         let height = Height::new(0, 46).unwrap();
         let msg = MsgUpdateClient {
             client_id,
-            header: MockHeader::new(height).with_timestamp(timestamp).into(),
+            client_message: MockHeader::new(height).with_timestamp(timestamp).into(),
             signer,
         };
 
@@ -194,7 +187,7 @@ mod tests {
 
         let msg = MsgUpdateClient {
             client_id: ClientId::from_str("nonexistingclient").unwrap(),
-            header: MockHeader::new(Height::new(0, 46).unwrap()).into(),
+            client_message: MockHeader::new(Height::new(0, 46).unwrap()).into(),
             signer,
         };
 
@@ -234,7 +227,7 @@ mod tests {
         let latest_header_height = block.height();
         let msg = MsgUpdateClient {
             client_id,
-            header: block.into(),
+            client_message: block.into(),
             signer,
         };
 
@@ -245,7 +238,76 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(client_state.confirm_not_frozen().is_ok());
+        assert!(client_state
+            .status(&ctx, &msg.client_id)
+            .unwrap()
+            .is_active());
+        assert_eq!(client_state.latest_height(), latest_header_height);
+    }
+
+    #[test]
+    fn test_update_synthetic_tendermint_client_validator_change_ok() {
+        let client_id = ClientId::new(tm_client_type(), 0).unwrap();
+        let client_height = Height::new(1, 20).unwrap();
+        let update_height = Height::new(1, 21).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
+
+        let mut ctx = MockContext::new(
+            ChainId::new("mockgaiaA", 1).unwrap(),
+            HostType::Mock,
+            5,
+            Height::new(1, 1).unwrap(),
+        )
+        .with_client_parametrized_with_chain_id(
+            chain_id_b.clone(),
+            &client_id,
+            client_height,
+            Some(tm_client_type()), // The target host chain (B) is synthetic TM.
+            Some(client_height),
+        );
+
+        let ctx_b = MockContext::new_with_validator_history(
+            chain_id_b,
+            HostType::SyntheticTendermint,
+            &[
+                // TODO(rano): the validator set params during setups.
+                // Here I picked the default validator set which is
+                // used at host side client creation.
+                vec![
+                    TestgenValidator::new("1").voting_power(50),
+                    TestgenValidator::new("2").voting_power(50),
+                ],
+                vec![
+                    TestgenValidator::new("1").voting_power(60),
+                    TestgenValidator::new("2").voting_power(40),
+                ],
+            ],
+            update_height,
+        );
+
+        let signer = get_dummy_account_id();
+
+        let mut block = ctx_b.host_block(&update_height).unwrap().clone();
+        block.set_trusted_height(client_height);
+
+        let latest_header_height = block.height();
+        let msg = MsgUpdateClient {
+            client_id,
+            client_message: block.into(),
+            signer,
+        };
+
+        let res = validate(&ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
+        assert!(res.is_ok());
+
+        let res = execute(&mut ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
+        assert!(res.is_ok(), "result: {res:?}");
+
+        let client_state = ctx.client_state(&msg.client_id).unwrap();
+        assert!(client_state
+            .status(&ctx, &msg.client_id)
+            .unwrap()
+            .is_active());
         assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
@@ -281,7 +343,7 @@ mod tests {
         let latest_header_height = block.height();
         let msg = MsgUpdateClient {
             client_id,
-            header: block.into(),
+            client_message: block.into(),
             signer,
         };
 
@@ -292,7 +354,10 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx.client_state(&msg.client_id).unwrap();
-        assert!(client_state.confirm_not_frozen().is_ok());
+        assert!(client_state
+            .status(&ctx, &msg.client_id)
+            .unwrap()
+            .is_active());
         assert_eq!(client_state.latest_height(), latest_header_height);
     }
 
@@ -399,7 +464,7 @@ mod tests {
         let latest_header_height = block.height();
         let msg = MsgUpdateClient {
             client_id,
-            header: block.into(),
+            client_message: block.into(),
             signer,
         };
 
@@ -413,7 +478,10 @@ mod tests {
         assert!(res.is_ok(), "result: {res:?}");
 
         let client_state = ctx_a.client_state(&msg.client_id).unwrap();
-        assert!(client_state.confirm_not_frozen().is_ok());
+        assert!(client_state
+            .status(&ctx_a, &msg.client_id)
+            .unwrap()
+            .is_active());
         assert_eq!(client_state.latest_height(), latest_header_height);
         assert_eq!(client_state, ctx_a.latest_client_states(&msg.client_id));
     }
@@ -453,7 +521,7 @@ mod tests {
 
         let msg = MsgUpdateClient {
             client_id,
-            header: block_ref.clone().into(),
+            client_message: block_ref.clone().into(),
             signer,
         };
 
@@ -473,7 +541,7 @@ mod tests {
         let header: Any = MockHeader::new(height).with_timestamp(timestamp).into();
         let msg = MsgUpdateClient {
             client_id: client_id.clone(),
-            header: header.clone(),
+            client_message: header.clone(),
             signer,
         };
 
@@ -490,13 +558,14 @@ mod tests {
         assert_eq!(update_client_event.client_type(), &mock_client_type());
         assert_eq!(update_client_event.consensus_height(), &height);
         assert_eq!(update_client_event.consensus_heights(), &vec![height]);
-        assert_eq!(update_client_event.header(), &header.value);
+        assert_eq!(update_client_event.header(), &header.encode_to_vec());
     }
 
     fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &ClientType) {
         let client_state = ctx.client_state(client_id).unwrap();
 
-        assert!(client_state.confirm_not_frozen().is_err());
+        let status = client_state.status(ctx, client_id).unwrap();
+        assert!(status.is_frozen(), "client_state status: {status}");
 
         // check events
         assert_eq!(ctx.events.len(), 2);

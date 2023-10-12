@@ -1,21 +1,20 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenConfirm`.
 
-use crate::prelude::*;
 use ibc_proto::protobuf::Protobuf;
 
 use crate::core::events::{IbcEvent, MessageEvent};
-use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::State as ConnectionState;
-use crate::core::ics04_channel::channel::State;
-use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State as ChannelState};
+use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, State, State as ChannelState};
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics04_channel::events::OpenConfirm;
 use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
-use crate::core::ics24_host::path::Path;
-use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath};
+use crate::core::ics24_host::path::{ChannelEndPath, ClientConsensusStatePath, Path};
 use crate::core::router::Module;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) fn chan_open_confirm_validate<ValCtx>(
     ctx_b: &ValCtx,
@@ -57,7 +56,7 @@ where
 
     // emit events and logs
     {
-        ctx_b.log_message("success: channel open confirm".to_string());
+        ctx_b.log_message("success: channel open confirm".to_string())?;
 
         let conn_id_on_b = chan_end_on_b.connection_hops[0].clone();
         let port_id_on_a = chan_end_on_b.counterparty().port_id.clone();
@@ -78,15 +77,15 @@ where
             chan_id_on_a,
             conn_id_on_b,
         ));
-        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
-        ctx_b.emit_ibc_event(core_event);
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+        ctx_b.emit_ibc_event(core_event)?;
 
         for module_event in extras.events {
-            ctx_b.emit_ibc_event(IbcEvent::Module(module_event));
+            ctx_b.emit_ibc_event(IbcEvent::Module(module_event))?;
         }
 
         for log_message in extras.log {
-            ctx_b.log_message(log_message);
+            ctx_b.log_message(log_message)?;
         }
     }
 
@@ -118,7 +117,13 @@ where
         let client_id_on_b = conn_end_on_b.client_id();
         let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
 
-        client_state_of_a_on_b.confirm_not_frozen()?;
+        {
+            let status = client_state_of_a_on_b
+                .status(ctx_b.get_client_validation_context(), client_id_on_b)?;
+            if !status.is_active() {
+                return Err(ClientError::ClientNotActive { status }.into());
+            }
+        }
         client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
 
         let client_cons_state_path_on_b =
@@ -163,30 +168,28 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use rstest::*;
     use test_log::test;
 
-    use crate::core::ics03_connection::connection::ConnectionEnd;
-    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
-    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use super::*;
+    use crate::applications::transfer::MODULE_ID_STR;
+    use crate::core::ics03_connection::connection::{
+        ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
+    };
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
     use crate::core::ics04_channel::msgs::chan_open_confirm::test_util::get_dummy_raw_msg_chan_open_confirm;
     use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
     use crate::core::ics04_channel::Version;
-    use crate::core::ics24_host::identifier::ChannelId;
-    use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-    use crate::core::router::ModuleId;
-    use crate::core::router::Router;
+    use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId};
+    use crate::core::router::{ModuleId, Router};
     use crate::core::timestamp::ZERO_DURATION;
-    use crate::Height;
-
     use crate::mock::client_state::client_type as mock_client_type;
     use crate::mock::context::MockContext;
     use crate::mock::router::MockRouter;
-    use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
+    use crate::test_utils::DummyTransferModule;
+    use crate::Height;
 
     pub struct Fixture {
         pub context: MockContext,

@@ -6,9 +6,8 @@ use core::convert::Infallible;
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
-use crate::prelude::*;
-
 use super::error::ChannelError;
+use crate::prelude::*;
 
 /// The version field for a `ChannelEnd`.
 ///
@@ -28,6 +27,7 @@ use super::error::ChannelError;
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Version(String);
 

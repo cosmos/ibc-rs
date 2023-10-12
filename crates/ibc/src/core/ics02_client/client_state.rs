@@ -1,8 +1,7 @@
 //! Defines `ClientState`, the core type to be implemented by light clients
 
-use core::fmt::Debug;
+use core::fmt::{Debug, Display, Formatter};
 use core::marker::{Send, Sync};
-use core::time::Duration;
 
 use ibc_proto::google::protobuf::Any;
 
@@ -30,6 +29,39 @@ pub enum UpdateKind {
     SubmitMisbehaviour,
 }
 
+/// Represents the status of a client
+#[derive(Debug, PartialEq, Eq)]
+pub enum Status {
+    /// The client is active and allowed to be used
+    Active,
+    /// The client is frozen and not allowed to be used
+    Frozen,
+    /// The client is expired and not allowed to be used
+    Expired,
+    /// Unauthorized indicates that the client type is not registered as an allowed client type.
+    Unauthorized,
+}
+
+impl Status {
+    pub fn is_active(&self) -> bool {
+        *self == Status::Active
+    }
+
+    pub fn is_frozen(&self) -> bool {
+        *self == Status::Frozen
+    }
+
+    pub fn is_expired(&self) -> bool {
+        *self == Status::Expired
+    }
+}
+
+impl Display for Status {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
 /// `ClientState` methods needed in both validation and execution.
 ///
 /// They do not require access to a client `ValidationContext` nor
@@ -49,13 +81,6 @@ pub trait ClientStateCommon {
 
     /// Validate that the client is at a sufficient height
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError>;
-
-    /// Assert that the client is not frozen
-    fn confirm_not_frozen(&self) -> Result<(), ClientError>;
-
-    /// Check if the state is expired when `elapsed` time has passed since the latest consensus
-    /// state timestamp
-    fn expired(&self, elapsed: Duration) -> bool;
 
     /// Verify the upgraded client and consensus states and validate proofs
     /// against the given root.
@@ -98,16 +123,17 @@ pub trait ClientStateCommon {
     ) -> Result<(), ClientError>;
 }
 
-/// `ClientState` methods which require access to the client's
-/// `ValidationContext`.
+/// `ClientState` methods which require access to the client's validation
+/// context
 ///
-/// The `ClientValidationContext` enables the light client implementation to
-/// define its own `ValidationContext` trait and use it in its implementation.
+/// The generic type `V` enables light client developers to expand the set of
+/// methods available under the [`ClientValidationContext`] trait and use them in
+/// their implementation for validating a client state transition.
 ///
 /// ```ignore
-/// impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for MyClientState
+/// impl<V> ClientStateValidation<V> for MyClientState
 /// where
-///     ClientValidationContext: MyValidationContext,
+///     V: ClientValidationContext + MyValidationContext,
 /// {
 ///   // `MyValidationContext` methods available
 /// }
@@ -116,7 +142,10 @@ pub trait ClientStateCommon {
 ///   // My Context methods
 /// }
 /// ```
-pub trait ClientStateValidation<ClientValidationContext> {
+pub trait ClientStateValidation<V>
+where
+    V: ClientValidationContext,
+{
     /// verify_client_message must verify a client_message. A client_message
     /// could be a Header, Misbehaviour. It must handle each type of
     /// client_message appropriately. Calls to check_for_misbehaviour,
@@ -125,7 +154,7 @@ pub trait ClientStateValidation<ClientValidationContext> {
     /// error should be returned if the client_message fails to verify.
     fn verify_client_message(
         &self,
-        ctx: &ClientValidationContext,
+        ctx: &V,
         client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -135,21 +164,22 @@ pub trait ClientStateValidation<ClientValidationContext> {
     /// assumes the client_message has already been verified.
     fn check_for_misbehaviour(
         &self,
-        ctx: &ClientValidationContext,
+        ctx: &V,
         client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
     ) -> Result<bool, ClientError>;
+
+    /// Returns the status of the client. Only Active clients are allowed to process packets.
+    fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError>;
 }
 
 /// `ClientState` methods which require access to the client's
 /// `ExecutionContext`.
 ///
-/// A client can define its own `ExecutionContext` in a manner analogous to how
-/// it can define a `ValidationContext` in [`ClientStateValidation`]. The one
-/// difference is every client's `ExecutionContext` must have
-/// [`ClientExecutionContext`] as a supertrait, which provides a set of common
-/// methods to store a client state and consensus state.
+/// The generic type `E` enables light client developers to expand the set of
+/// methods available under the [`ClientExecutionContext`] trait and use them in
+/// their implementation for executing a client state transition.
 pub trait ClientStateExecution<E>
 where
     E: ClientExecutionContext,
@@ -212,6 +242,8 @@ where
 /// `ClientExecutionContext` (e.g. `MyType<T>` would not be supported).
 pub use ibc_derive::ClientState;
 
+use super::ClientValidationContext;
+
 /// Primary client trait. Defines all the methods that clients must implement.
 ///
 /// `ClientState` is broken up in 3 separate traits to avoid needing to use
@@ -222,22 +254,12 @@ pub use ibc_derive::ClientState;
 ///
 /// Refer to [`ClientStateValidation`] and [`ClientStateExecution`] to learn
 /// more about what both generic parameters represent.
-pub trait ClientState<ClientValidationContext, E: ClientExecutionContext>:
-    Send
-    + Sync
-    + ClientStateCommon
-    + ClientStateValidation<ClientValidationContext>
-    + ClientStateExecution<E>
+pub trait ClientState<V: ClientValidationContext, E: ClientExecutionContext>:
+    Send + Sync + ClientStateCommon + ClientStateValidation<V> + ClientStateExecution<E>
 {
 }
 
-impl<ClientValidationContext, E: ClientExecutionContext, T> ClientState<ClientValidationContext, E>
-    for T
-where
-    T: Send
-        + Sync
-        + ClientStateCommon
-        + ClientStateValidation<ClientValidationContext>
-        + ClientStateExecution<E>,
+impl<V: ClientValidationContext, E: ClientExecutionContext, T> ClientState<V, E> for T where
+    T: Send + Sync + ClientStateCommon + ClientStateValidation<V> + ClientStateExecution<E>
 {
 }
