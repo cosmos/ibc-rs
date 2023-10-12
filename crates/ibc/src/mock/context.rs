@@ -377,7 +377,7 @@ impl MockContext {
         MockContext {
             host_chain_type: host_type,
             host_chain_id: host_id.clone(),
-            max_history_size,
+            max_history_size: max_history_size as u64,
             history,
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
