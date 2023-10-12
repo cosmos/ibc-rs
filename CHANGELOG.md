@@ -1,7 +1,19 @@
 # CHANGELOG
 
+## v0.44.2
 
-# v0.44.1
+*October 12, 2023*
+
+This release introduces a vital fixation that removes an incorrect validation during a Tendermint client update.
+
+There are no consensus-breaking changes.
+
+### BUG FIXES
+
+- Remove an incorrect validation during tendermint client update
+  ([\#911](https://github.com/cosmos/ibc-rs/issues/911))
+
+## v0.44.1
 
 *August 4, 2023*
 
