@@ -1,7 +1,5 @@
 //! Defines the misbehaviour type for the tendermint light client
 
-use crate::prelude::*;
-
 use bytes::Buf;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Misbehaviour as RawMisbehaviour;
@@ -12,6 +10,7 @@ use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ClientId;
+use crate::prelude::*;
 
 const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
 
@@ -74,7 +73,7 @@ impl Protobuf<RawMisbehaviour> for Misbehaviour {}
 
 impl TryFrom<RawMisbehaviour> for Misbehaviour {
     type Error = Error;
-
+    #[allow(deprecated)]
     fn try_from(raw: RawMisbehaviour) -> Result<Self, Self::Error> {
         let client_id = raw.client_id.parse()?;
 
@@ -98,6 +97,7 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
 
 impl From<Misbehaviour> for RawMisbehaviour {
     fn from(value: Misbehaviour) -> Self {
+        #[allow(deprecated)]
         RawMisbehaviour {
             client_id: value.client_id.to_string(),
             header_1: Some(value.header1.into()),

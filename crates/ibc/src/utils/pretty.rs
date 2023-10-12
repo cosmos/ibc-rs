@@ -20,9 +20,8 @@ impl<'a, T: Display> Display for PrettySlice<'a, T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::prelude::*;
-
     use crate::alloc::string::ToString;
+    use crate::prelude::*;
 
     #[test]
     fn test_pretty_vec_display() {

@@ -5,14 +5,14 @@ use core::str::FromStr;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
-
 use tendermint::block::Header as TmHeader;
 use tendermint_testgen::light_block::TmLightBlock;
 use tendermint_testgen::{
-    Commit as TestgenCommit, Generator, Header as TestgenHeader, LightBlock as TestgenLightBlock,
+    Generator, Header as TestgenHeader, LightBlock as TestgenLightBlock,
     Validator as TestgenValidator,
 };
 
+use super::context::AnyConsensusState;
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::header::TENDERMINT_HEADER_TYPE_URL;
 use crate::core::ics02_client::error::ClientError;
@@ -22,8 +22,6 @@ use crate::mock::consensus_state::MockConsensusState;
 use crate::mock::header::MockHeader;
 use crate::prelude::*;
 use crate::Height;
-
-use super::context::AnyConsensusState;
 
 /// Defines the different types of host chains that a mock context can emulate.
 /// The variants are as follows:
@@ -121,20 +119,18 @@ impl HostBlock {
                 timestamp,
             })),
             HostType::SyntheticTendermint => {
-                let header = TestgenHeader::new(validators)
-                    .height(height)
-                    .chain_id(&chain_id.to_string())
-                    .next_validators(next_validators)
-                    .time(timestamp.into_tm_time().expect("Never fails"));
-
-                let commit = TestgenCommit::new(header.clone(), 1);
-
                 HostBlock::SyntheticTendermint(Box::new(SyntheticTmBlock {
                     trusted_height: Height::new(chain_id.revision_number(), 1)
                         .expect("Never fails"),
-                    light_block: TestgenLightBlock::new(header, commit)
-                        .generate()
-                        .expect("Never fails"),
+                    light_block: TestgenLightBlock::new_default_with_header(
+                        TestgenHeader::new(validators)
+                            .height(height)
+                            .chain_id(&chain_id.to_string())
+                            .next_validators(next_validators)
+                            .time(timestamp.into_tm_time().expect("Never fails")),
+                    )
+                    .generate()
+                    .expect("Never fails"),
                 }))
             }
         }

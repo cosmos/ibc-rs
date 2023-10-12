@@ -1,7 +1,5 @@
 //! Defines the representation of timestamps used in packet timeouts
 
-use crate::prelude::*;
-
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::hash::{Hash, Hasher};
 use core::num::ParseIntError;
@@ -13,6 +11,8 @@ use displaydoc::Display;
 use tendermint::Time;
 use time::OffsetDateTime;
 
+use crate::prelude::*;
+
 pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 
 /// A newtype wrapper over `Option<Time>` to keep track of
@@ -23,8 +23,11 @@ pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 /// represented as a `u64` Unix timestamp in nanoseconds, with 0 representing the absence
 /// of timestamp.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Default, PartialOrd, Ord)]
 pub struct Timestamp {
+    // Note: The schema representation is the timestamp in nanoseconds (as we do with borsh).
+    #[cfg_attr(feature = "schema", schemars(with = "u64"))]
     time: Option<Time>,
 }
 
@@ -41,8 +44,10 @@ impl borsh::BorshSerialize for Timestamp {
 
 #[cfg(feature = "borsh")]
 impl borsh::BorshDeserialize for Timestamp {
-    fn deserialize(reader: &mut &[u8]) -> borsh::maybestd::io::Result<Self> {
-        let timestamp = u64::deserialize(reader)?;
+    fn deserialize_reader<R: borsh::maybestd::io::Read>(
+        reader: &mut R,
+    ) -> borsh::maybestd::io::Result<Self> {
+        let timestamp = u64::deserialize_reader(reader)?;
         Ok(Timestamp::from_nanoseconds(timestamp)
             .map_err(|_| borsh::maybestd::io::ErrorKind::Other)?)
     }
@@ -309,11 +314,11 @@ impl From<Time> for Timestamp {
 
 #[cfg(test)]
 mod tests {
-    use time::OffsetDateTime;
-
     use core::time::Duration;
     use std::thread::sleep;
+
     use test_log::test;
+    use time::OffsetDateTime;
 
     use super::{Expiry, Timestamp, ZERO_DURATION};
 

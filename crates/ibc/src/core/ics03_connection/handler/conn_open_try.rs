@@ -4,6 +4,7 @@ use ibc_proto::protobuf::Protobuf;
 use prost::Message;
 
 use crate::core::context::ContextError;
+use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::ClientError;
@@ -11,16 +12,12 @@ use crate::core::ics03_connection::connection::{ConnectionEnd, Counterparty, Sta
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics03_connection::events::OpenTry;
 use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
-use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::identifier::ConnectionId;
-use crate::core::ics24_host::path::Path;
+use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::core::ics24_host::path::{
-    ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath,
+    ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path,
 };
 use crate::core::{ExecutionContext, ValidationContext};
 use crate::prelude::*;
-
-use crate::core::events::{IbcEvent, MessageEvent};
 
 pub(crate) fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
@@ -159,11 +156,11 @@ where
         conn_id_on_a.clone(),
         vars.client_id_on_a.clone(),
     ));
-    ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection));
-    ctx_b.emit_ibc_event(event);
-    ctx_b.log_message("success: conn_open_try verification passed".to_string());
+    ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Connection))?;
+    ctx_b.emit_ibc_event(event)?;
+    ctx_b.log_message("success: conn_open_try verification passed".to_string())?;
 
-    ctx_b.increase_connection_counter();
+    ctx_b.increase_connection_counter()?;
     ctx_b.store_connection_to_client(
         &ClientConnectionPath::new(&msg.client_id_on_b),
         vars.conn_id_on_b.clone(),
@@ -208,10 +205,9 @@ impl LocalVars {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use test_log::test;
 
+    use super::*;
     use crate::core::events::IbcEvent;
     use crate::core::ics03_connection::connection::State;
     use crate::core::ics03_connection::handler::test_util::{Expect, Fixture};
@@ -298,6 +294,9 @@ mod tests {
             }
             Expect::Success => {
                 assert!(res.is_ok(), "{err_msg}");
+
+                assert_eq!(fxt.ctx.connection_counter().unwrap(), 1);
+
                 assert_eq!(fxt.ctx.events.len(), 2);
 
                 assert!(matches!(

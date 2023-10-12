@@ -1,6 +1,8 @@
 //! Message definitions for all ICS4 domain types: channel open & close handshake datagrams, as well
 //! as packets.
 
+use crate::prelude::*;
+
 pub(crate) mod acknowledgement;
 pub(crate) mod chan_close_confirm;
 pub(crate) mod chan_close_init;
@@ -13,17 +15,15 @@ pub(crate) mod timeout;
 pub(crate) mod timeout_on_close;
 
 // Opening handshake messages.
+// Packet specific messages.
+pub use acknowledgement::MsgAcknowledgement;
+// Closing handshake messages.
+pub use chan_close_confirm::MsgChannelCloseConfirm;
+pub use chan_close_init::MsgChannelCloseInit;
 pub use chan_open_ack::MsgChannelOpenAck;
 pub use chan_open_confirm::MsgChannelOpenConfirm;
 pub use chan_open_init::MsgChannelOpenInit;
 pub use chan_open_try::MsgChannelOpenTry;
-
-// Closing handshake messages.
-pub use chan_close_confirm::MsgChannelCloseConfirm;
-pub use chan_close_init::MsgChannelCloseInit;
-
-// Packet specific messages.
-pub use acknowledgement::MsgAcknowledgement;
 pub use recv_packet::MsgRecvPacket;
 pub use timeout::MsgTimeout;
 pub use timeout_on_close::MsgTimeoutOnClose;
@@ -31,6 +31,11 @@ pub use timeout_on_close::MsgTimeoutOnClose;
 use crate::core::ics24_host::identifier::PortId;
 
 /// All channel messages
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChannelMsg {
     OpenInit(MsgChannelOpenInit),
@@ -42,6 +47,11 @@ pub enum ChannelMsg {
 }
 
 /// All packet messages
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PacketMsg {
     Recv(MsgRecvPacket),

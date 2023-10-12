@@ -1,6 +1,7 @@
 //! Definition of domain `UpgradeProposal` type for handling upgrade client proposal
 
 use alloc::string::{String, ToString};
+
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::UpgradeProposal as RawUpgradeProposal;
 use ibc_proto::protobuf::Protobuf;

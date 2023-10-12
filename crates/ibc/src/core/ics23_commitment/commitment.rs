@@ -1,13 +1,14 @@
 //! Defines core commitment types
 
-use crate::core::ics23_commitment::error::CommitmentError;
-use crate::prelude::*;
+use core::convert::TryFrom;
+use core::fmt;
 
-use core::{convert::TryFrom, fmt};
 use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
 use subtle_encoding::{Encoding, Hex};
 
 use super::merkle::MerkleProof;
+use crate::core::ics23_commitment::error::CommitmentError;
+use crate::prelude::*;
 
 /// Encodes a commitment root; most often a Merkle tree root hash.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -61,8 +62,13 @@ impl From<Vec<u8>> for CommitmentRoot {
 ///
 /// For example, in the case of a proof of membership in a Merkle tree,
 /// this encodes a Merkle proof.
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, PartialEq, Eq)]
 pub struct CommitmentProofBytes {
     #[cfg_attr(
@@ -145,6 +151,7 @@ impl TryFrom<CommitmentProofBytes> for RawMerkleProof {
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, PartialEq, Eq, Hash, Default)]
 pub struct CommitmentPrefix {
     bytes: Vec<u8>,
@@ -194,10 +201,11 @@ impl serde::Serialize for CommitmentPrefix {
 
 #[cfg(test)]
 pub mod test_util {
-    use super::CommitmentProofBytes;
-    use crate::prelude::*;
     use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
     use ibc_proto::ics23::CommitmentProof;
+
+    use super::CommitmentProofBytes;
+    use crate::prelude::*;
 
     /// Returns a dummy `CommitmentProofBytes`, for testing only!
     pub fn get_dummy_commitment_proof_bytes() -> CommitmentProofBytes {

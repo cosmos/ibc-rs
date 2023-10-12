@@ -1,33 +1,33 @@
 //! ICS4 (channel) context.
 
+use core::time::Duration;
+
+use num_traits::float::FloatCore;
+
+use super::packet::Sequence;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
-use crate::core::ics02_client::ClientExecutionContext;
+use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
+use crate::core::ics03_connection::connection::ConnectionEnd;
+use crate::core::ics04_channel::channel::ChannelEnd;
+use crate::core::ics04_channel::commitment::PacketCommitment;
+use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
 use crate::core::ics24_host::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
 use crate::prelude::*;
-use core::time::Duration;
-use num_traits::float::FloatCore;
-
-use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics03_connection::connection::ConnectionEnd;
-use crate::core::ics04_channel::channel::ChannelEnd;
-use crate::core::ics04_channel::commitment::PacketCommitment;
-use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-
-use super::packet::Sequence;
 
 /// Methods required in send packet validation, to be implemented by the host
 pub trait SendPacketValidationContext {
-    type ClientValidationContext;
+    type V: ClientValidationContext;
     type E: ClientExecutionContext;
     type AnyConsensusState: ConsensusState;
-    type AnyClientState: ClientState<Self::ClientValidationContext, Self::E>;
+    type AnyClientState: ClientState<Self::V, Self::E>;
 
     /// Retrieve the context that implements all clients' `ValidationContext`.
-    fn get_client_validation_context(&self) -> &Self::ClientValidationContext;
+    fn get_client_validation_context(&self) -> &Self::V;
 
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
@@ -52,12 +52,12 @@ impl<T> SendPacketValidationContext for T
 where
     T: ValidationContext,
 {
-    type ClientValidationContext = T::ClientValidationContext;
+    type V = T::V;
     type E = T::E;
     type AnyConsensusState = T::AnyConsensusState;
     type AnyClientState = T::AnyClientState;
 
-    fn get_client_validation_context(&self) -> &Self::ClientValidationContext {
+    fn get_client_validation_context(&self) -> &Self::V {
         self.get_client_validation_context()
     }
 
@@ -103,10 +103,10 @@ pub trait SendPacketExecutionContext: SendPacketValidationContext {
     ) -> Result<(), ContextError>;
 
     /// Ibc events
-    fn emit_ibc_event(&mut self, event: IbcEvent);
+    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ContextError>;
 
     /// Logging facility
-    fn log_message(&mut self, message: String);
+    fn log_message(&mut self, message: String) -> Result<(), ContextError>;
 }
 
 impl<T> SendPacketExecutionContext for T
@@ -129,11 +129,11 @@ where
         self.store_packet_commitment(commitment_path, commitment)
     }
 
-    fn emit_ibc_event(&mut self, event: IbcEvent) {
+    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ContextError> {
         self.emit_ibc_event(event)
     }
 
-    fn log_message(&mut self, message: String) {
+    fn log_message(&mut self, message: String) -> Result<(), ContextError> {
         self.log_message(message)
     }
 }

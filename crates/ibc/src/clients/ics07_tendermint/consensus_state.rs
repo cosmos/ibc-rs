@@ -1,11 +1,11 @@
 //! Defines Tendermint's `ConsensusState` type
 
-use crate::prelude::*;
-
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::ConsensusState as RawConsensusState;
 use ibc_proto::protobuf::Protobuf;
-use tendermint::{hash::Algorithm, time::Time, Hash};
+use tendermint::hash::Algorithm;
+use tendermint::time::Time;
+use tendermint::Hash;
 use tendermint_proto::google::protobuf as tpb;
 
 use crate::clients::ics07_tendermint::error::Error;
@@ -14,6 +14,7 @@ use crate::core::ics02_client::consensus_state::ConsensusState as ConsensusState
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics23_commitment::commitment::CommitmentRoot;
 use crate::core::timestamp::Timestamp;
+use crate::prelude::*;
 
 pub const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str =
     "/ibc.lightclients.tendermint.v1.ConsensusState";
@@ -99,8 +100,9 @@ impl TryFrom<Any> for ConsensusState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        use bytes::Buf;
         use core::ops::Deref;
+
+        use bytes::Buf;
         use prost::Message;
 
         fn decode_consensus_state<B: Buf>(buf: B) -> Result<ConsensusState, Error> {
@@ -165,7 +167,7 @@ mod tests {
     use tendermint_rpc::endpoint::abci_query::AbciQuery;
     use test_log::test;
 
-    use crate::test::test_serialization_roundtrip;
+    use crate::serializers::tests::test_serialization_roundtrip;
 
     #[test]
     fn serialization_roundtrip_no_proof() {

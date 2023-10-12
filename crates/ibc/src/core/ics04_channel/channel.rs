@@ -1,20 +1,19 @@
 //! Implementation of IBC channels, as described in ICS 4.
 
-use crate::prelude::*;
-use crate::utils::pretty::PrettySlice;
-
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
-
-use ibc_proto::protobuf::Protobuf;
 
 use ibc_proto::ibc::core::channel::v1::{
     Channel as RawChannel, Counterparty as RawCounterparty,
     IdentifiedChannel as RawIdentifiedChannel,
 };
+use ibc_proto::protobuf::Protobuf;
 
-use crate::core::ics04_channel::{error::ChannelError, Version};
+use crate::core::ics04_channel::error::ChannelError;
+use crate::core::ics04_channel::Version;
 use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+use crate::prelude::*;
+use crate::utils::pretty::PrettySlice;
 
 /// A [`ChannelEnd`] along with its ID and the port it is bound to
 #[cfg_attr(
@@ -435,6 +434,7 @@ impl From<Counterparty> for RawCounterparty {
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Order {
     None = 0isize,
@@ -573,10 +573,12 @@ impl Display for State {
 
 #[cfg(test)]
 pub mod test_util {
+    use ibc_proto::ibc::core::channel::v1::{
+        Channel as RawChannel, Counterparty as RawCounterparty,
+    };
+
     use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
     use crate::prelude::*;
-    use ibc_proto::ibc::core::channel::v1::Channel as RawChannel;
-    use ibc_proto::ibc::core::channel::v1::Counterparty as RawCounterparty;
 
     /// Returns a dummy `RawCounterparty`, for testing only!
     /// Can be optionally parametrized with a specific channel identifier.
@@ -605,15 +607,14 @@ pub mod test_util {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
-
     use core::str::FromStr;
-    use test_log::test;
 
     use ibc_proto::ibc::core::channel::v1::Channel as RawChannel;
+    use test_log::test;
 
     use crate::core::ics04_channel::channel::test_util::get_dummy_raw_channel_end;
     use crate::core::ics04_channel::channel::ChannelEnd;
+    use crate::prelude::*;
 
     #[test]
     fn channel_end_try_from_raw() {

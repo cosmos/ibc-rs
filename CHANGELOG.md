@@ -1,5 +1,97 @@
 # CHANGELOG
 
+## v0.46.0
+
+*October 12, 2023*
+
+This release introduces vital bug fixes, including removal of an incorrect
+validation during a Tendermint client update and the addition of a missing state
+update during a successful client upgrade ensuring the inclusion of the host's
+height and timestamp in the store.
+
+Additionally, it eliminates the `safe-regex` dependency, and restructures IBC
+query implementations under the previous `grpc` feature flag and moves it to a
+separate crate called as `ibc-query`.
+
+There are consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Relocate `*_update_time` and `*_update_height` to the client contexts' traits
+  for improved access by light clients
+  ([#914](https://github.com/cosmos/ibc-rs/issues/914))
+
+### BUG FIXES
+
+- Remove an incorrect validation during tendermint client update
+  ([\#911](https://github.com/cosmos/ibc-rs/issues/911))
+- Add missing update in the state, which should include the host's height and
+   timestamp when a successful client upgrade take place.
+   ([\#913](https://github.com/cosmos/ibc-rs/issues/913))
+
+### IMPROVEMENTS
+
+- Remove `safe-regex` dependency
+  ([\#875](https://github.com/cosmos/ibc-rs/issues/875))
+- Enhance IBC query methods usability and code organization
+  - The implementation of query methods is now publicly accessible as standalone functions.
+  - `grpc` feature now lives as a separate crate called as `ibc-query`
+  ([#896](https://github.com/cosmos/ibc-rs/issues/896))
+- Re-export ibc proto types from `ibc-proto-rs`` for dep
+
+## v0.45.0
+
+*September 20, 2023*
+
+This release introduces a new API under the `grpc` feature flag, which has ibc-rs expose grpc endpoints that the hermes relayer needs. Furthermore, `no_std` support for the `serde` feature has been restored, accompanied by other miscellaneous changes.
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Bump tendermint-rs to v0.33.0
+  ([#785](https://github.com/cosmos/ibc-rs/issues/785))
+- Bump ibc-proto-rs to v0.34.0
+  ([#790](https://github.com/cosmos/ibc-rs/issues/790))
+- Allow hosts to handle overflow cases in `increase_*_counter` methods by
+  returning `Result<(),ContextError>` type.
+  ([#857](https://github.com/cosmos/ibc-rs/issues/857))
+- logger and event emitter methods return `Result<(), ContextError>` type.
+  ([#859](https://github.com/cosmos/ibc-rs/issues/859))
+- Bump `ibc-proto-rs` to v0.35.0 along with some other minor dependency updates
+  ([#873](https://github.com/cosmos/ibc-rs/issues/873))
+
+### BUG FIXES
+
+- Fix compilation error of v0.41.0 by restoring no_std support for serde
+  feature ([#741](https://github.com/cosmos/ibc-rs/issues/741))
+- Replace mutable ref with immutable ref in validate handler
+  ([\#863](https://github.com/cosmos/ibc-rs/issues/863))
+
+### FEATURES
+
+- Blanket implementation of core gRPC services
+  ([\#686](https://github.com/cosmos/ibc-rs/issues/686))
+
+### IMPROVEMENTS
+
+- Switch to domain Tendermint event type instead of proto for the
+  `upgrade_client_proposal_handler` return
+  ([#838](https://github.com/cosmos/ibc-rs/issues/838))
+- Bump ibc-proto to v0.34.1 and borsh to v0.10
+  ([#844](https://github.com/cosmos/ibc-rs/issues/844))
+- Add borsh derive for `MsgTransfer`
+  ([#845](https://github.com/cosmos/ibc-rs/pull/845))
+- Add borsh derive for `MsgEnvelope`
+  ([#846](https://github.com/cosmos/ibc-rs/pull/846))
+- Derive `PartialEq`, `Eq` for `MsgEnvelope`
+  ([#847](https://github.com/cosmos/ibc-rs/pull/847))
+- Organize imports grouping and granularity using `rustfmt.toml`
+  ([#848](https://github.com/cosmos/ibc-rs/issues/848))
+- Add `JsonSchema` derive for `MsgEnvelope`
+  ([#856](https://github.com/cosmos/ibc-rs/pull/856))
+- Remove unused code snippets and move serializer roundtrip test to `serializers.rs`
+  ([#869](https://github.com/cosmos/ibc-rs/issues/869))
+
 ## v0.44.2
 
 *October 12, 2023*
@@ -7,11 +99,6 @@
 This release introduces a vital fix that removes an incorrect validation during a Tendermint client update.
 
 There are no consensus-breaking changes.
-
-### BUG FIXES
-
-- Remove an incorrect validation during tendermint client update
-  ([\#911](https://github.com/cosmos/ibc-rs/issues/911))
 
 ## v0.44.1
 
@@ -102,7 +189,7 @@ There are no consensus-breaking changes.
 
 ### BREAKING CHANGES
 
--  Implement ADR 7, where `ClientState` objects are now statically dispatched instead
+- Implement ADR 7, where `ClientState` objects are now statically dispatched instead
    of dynamically dispatched.
 ([#296](https://github.com/cosmos/ibc-rs/issues/296))
 - Revise the `verify_upgrade_client` method to utilize the domain-specific

@@ -1,6 +1,5 @@
 //! Defines the domain type for tendermint headers
 
-use crate::prelude::*;
 use alloc::string::ToString;
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
@@ -9,6 +8,7 @@ use bytes::Buf;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
 use ibc_proto::protobuf::Protobuf;
+use pretty::{PrettySignedHeader, PrettyValidatorSet};
 use prost::Message;
 use tendermint::block::signed_header::SignedHeader;
 use tendermint::chain::Id as TmChainId;
@@ -20,9 +20,8 @@ use crate::clients::ics07_tendermint::error::Error;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics24_host::identifier::ChainId;
 use crate::core::timestamp::Timestamp;
+use crate::prelude::*;
 use crate::Height;
-
-use pretty::{PrettySignedHeader, PrettyValidatorSet};
 
 pub(crate) const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
 
@@ -256,8 +255,7 @@ pub mod test_util {
 
     use subtle_encoding::hex;
     use tendermint::block::signed_header::SignedHeader;
-    use tendermint::validator::Info as ValidatorInfo;
-    use tendermint::validator::Set as ValidatorSet;
+    use tendermint::validator::{Info as ValidatorInfo, Set as ValidatorSet};
     use tendermint::PublicKey;
 
     use crate::clients::ics07_tendermint::header::Header;

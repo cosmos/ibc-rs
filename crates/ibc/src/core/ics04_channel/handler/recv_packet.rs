@@ -1,25 +1,23 @@
-use crate::core::ics02_client::error::ClientError;
-use crate::prelude::*;
-
 use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::connection::State as ConnectionState;
 use crate::core::ics03_connection::delay::verify_conn_delay_passed;
 use crate::core::ics04_channel::channel::{Counterparty, Order, State as ChannelState};
 use crate::core::ics04_channel::commitment::{compute_ack_commitment, compute_packet_commitment};
-use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ics04_channel::error::PacketError;
+use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::events::{ReceivePacket, WriteAcknowledgement};
 use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
 use crate::core::ics04_channel::packet::Receipt;
-use crate::core::ics24_host::path::Path;
 use crate::core::ics24_host::path::{
-    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath,
+    SeqRecvPath,
 };
 use crate::core::router::Module;
 use crate::core::timestamp::Expiry;
 use crate::core::{ContextError, ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) fn recv_packet_validate<ValCtx>(
     ctx_b: &ValCtx,
@@ -112,8 +110,8 @@ where
 
     // emit events and logs
     {
-        ctx_b.log_message("success: packet receive".to_string());
-        ctx_b.log_message("success: packet write acknowledgement".to_string());
+        ctx_b.log_message("success: packet receive".to_string())?;
+        ctx_b.log_message("success: packet write acknowledgement".to_string())?;
 
         let conn_id_on_b = &chan_end_on_b.connection_hops()[0];
         let event = IbcEvent::ReceivePacket(ReceivePacket::new(
@@ -121,22 +119,22 @@ where
             chan_end_on_b.ordering,
             conn_id_on_b.clone(),
         ));
-        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
-        ctx_b.emit_ibc_event(event);
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+        ctx_b.emit_ibc_event(event)?;
         let event = IbcEvent::WriteAcknowledgement(WriteAcknowledgement::new(
             msg.packet,
             acknowledgement,
             conn_id_on_b.clone(),
         ));
-        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
-        ctx_b.emit_ibc_event(event);
+        ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+        ctx_b.emit_ibc_event(event)?;
 
         for module_event in extras.events {
-            ctx_b.emit_ibc_event(IbcEvent::Module(module_event));
+            ctx_b.emit_ibc_event(IbcEvent::Module(module_event))?;
         }
 
         for log_message in extras.log {
-            ctx_b.log_message(log_message);
+            ctx_b.log_message(log_message)?;
         }
     }
 
@@ -284,13 +282,15 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use rstest::*;
     use test_log::test;
 
-    use crate::core::ics03_connection::connection::ConnectionEnd;
-    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
-    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use super::*;
+    use crate::applications::transfer::MODULE_ID_STR;
+    use crate::core::ics02_client::ClientExecutionContext;
+    use crate::core::ics03_connection::connection::{
+        ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
+    };
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
     use crate::core::ics04_channel::msgs::recv_packet::test_util::get_dummy_raw_msg_recv_packet;
@@ -298,17 +298,13 @@ mod tests {
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::router::ModuleId;
-    use crate::core::router::Router;
-    use crate::core::timestamp::Timestamp;
-    use crate::core::timestamp::ZERO_DURATION;
-    use crate::Height;
-
+    use crate::core::router::{ModuleId, Router};
+    use crate::core::timestamp::{Timestamp, ZERO_DURATION};
     use crate::mock::context::MockContext;
     use crate::mock::ics18_relayer::context::RelayerContext;
     use crate::mock::router::MockRouter;
-    use crate::test_utils::get_dummy_account_id;
-    use crate::{applications::transfer::MODULE_ID_STR, test_utils::DummyTransferModule};
+    use crate::test_utils::{get_dummy_account_id, DummyTransferModule};
+    use crate::Height;
 
     pub struct Fixture {
         pub context: MockContext,
@@ -423,6 +419,7 @@ mod tests {
             );
 
         context
+            .get_client_execution_context()
             .store_update_time(
                 ClientId::default(),
                 client_height,
@@ -430,6 +427,7 @@ mod tests {
             )
             .unwrap();
         context
+            .get_client_execution_context()
             .store_update_height(
                 ClientId::default(),
                 client_height,

@@ -1,6 +1,5 @@
 //! Defines the `Router`, which binds modules to ports
 
-use crate::prelude::*;
 use alloc::borrow::Borrow;
 use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 
@@ -10,8 +9,8 @@ use crate::core::ics04_channel::channel::{Counterparty, Order};
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
 use crate::core::ics04_channel::packet::Packet;
 use crate::core::ics04_channel::Version;
-use crate::core::ics24_host::identifier::PortId;
-use crate::core::ics24_host::identifier::{ChannelId, ConnectionId};
+use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+use crate::prelude::*;
 use crate::signer::Signer;
 
 /// Router as defined in ICS-26, which binds modules to ports.

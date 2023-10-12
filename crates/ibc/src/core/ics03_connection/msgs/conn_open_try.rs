@@ -1,9 +1,5 @@
-use crate::prelude::*;
-
-use core::{
-    convert::{TryFrom, TryInto},
-    time::Duration,
-};
+use core::convert::{TryFrom, TryInto};
+use core::time::Duration;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenTry as RawMsgConnectionOpenTry;
@@ -15,6 +11,7 @@ use crate::core::ics03_connection::version::Version;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
 use crate::core::ics24_host::identifier::ClientId;
 use crate::core::Msg;
+use crate::prelude::*;
 use crate::signer::Signer;
 use crate::Height;
 
@@ -22,11 +19,13 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenTry"
 
 /// Per our convention, this message is sent to chain B.
 /// The handler will check proofs of chain A.
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgConnectionOpenTry {
     /// ClientId on B that the connection is being opened for
     pub client_id_on_b: ClientId,
     /// ClientState of client tracking chain B on chain A
+    #[cfg_attr(feature = "schema", schemars(with = "crate::utils::schema::AnySchema"))]
     pub client_state_of_b_on_a: Any,
     /// ClientId, ConnectionId and prefix of chain A
     pub counterparty: Counterparty,
@@ -44,6 +43,9 @@ pub struct MsgConnectionOpenTry {
     pub consensus_height_of_b_on_a: Height,
     pub delay_period: Duration,
     pub signer: Signer,
+    /// optional proof of host state machines (chain B) that are unable to
+    /// introspect their own consensus state
+    pub proof_consensus_state_of_b: Option<CommitmentProofBytes>,
 
     #[deprecated(since = "0.22.0")]
     /// Only kept here for proper conversion to/from the raw type
@@ -55,6 +57,97 @@ impl Msg for MsgConnectionOpenTry {
 
     fn type_url(&self) -> String {
         TYPE_URL.to_string()
+    }
+}
+#[allow(deprecated)]
+#[cfg(feature = "borsh")]
+mod borsh_impls {
+    use borsh::maybestd::io::{self, Read};
+    use borsh::{BorshDeserialize, BorshSerialize};
+
+    use super::*;
+
+    #[derive(BorshSerialize, BorshDeserialize)]
+    pub struct InnerMsgConnectionOpenTry {
+        /// ClientId on B that the connection is being opened for
+        pub client_id_on_b: ClientId,
+        /// ClientState of client tracking chain B on chain A
+        pub client_state_of_b_on_a: Any,
+        /// ClientId, ConnectionId and prefix of chain A
+        pub counterparty: Counterparty,
+        /// Versions supported by chain A
+        pub versions_on_a: Vec<Version>,
+        /// proof of ConnectionEnd stored on Chain A during ConnOpenInit
+        pub proof_conn_end_on_a: CommitmentProofBytes,
+        /// proof that chain A has stored ClientState of chain B on its client
+        pub proof_client_state_of_b_on_a: CommitmentProofBytes,
+        /// proof that chain A has stored ConsensusState of chain B on its client
+        pub proof_consensus_state_of_b_on_a: CommitmentProofBytes,
+        /// Height at which all proofs in this message were taken
+        pub proofs_height_on_a: Height,
+        /// height of latest header of chain A that updated the client on chain B
+        pub consensus_height_of_b_on_a: Height,
+        pub delay_period_nanos: u64,
+        pub signer: Signer,
+        /// optional proof of host state machines (chain B) that are unable to
+        /// introspect their own consensus state
+        pub proof_consensus_state_of_b: Option<CommitmentProofBytes>,
+
+        #[deprecated(since = "0.22.0")]
+        /// Only kept here for proper conversion to/from the raw type
+        previous_connection_id: String,
+    }
+
+    impl BorshSerialize for MsgConnectionOpenTry {
+        fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+            let delay_period_nanos: u64 =
+                self.delay_period.as_nanos().try_into().map_err(|_| {
+                    io::Error::new(
+                        io::ErrorKind::Other,
+                        format!("Duration too long: {} nanos", self.delay_period.as_nanos()),
+                    )
+                })?;
+
+            let inner = InnerMsgConnectionOpenTry {
+                client_id_on_b: self.client_id_on_b.clone(),
+                client_state_of_b_on_a: self.client_state_of_b_on_a.clone(),
+                counterparty: self.counterparty.clone(),
+                versions_on_a: self.versions_on_a.clone(),
+                proof_conn_end_on_a: self.proof_conn_end_on_a.clone(),
+                proof_client_state_of_b_on_a: self.proof_client_state_of_b_on_a.clone(),
+                proof_consensus_state_of_b_on_a: self.proof_consensus_state_of_b_on_a.clone(),
+                proofs_height_on_a: self.proofs_height_on_a,
+                consensus_height_of_b_on_a: self.consensus_height_of_b_on_a,
+                delay_period_nanos,
+                signer: self.signer.clone(),
+                proof_consensus_state_of_b: self.proof_consensus_state_of_b.clone(),
+                previous_connection_id: self.previous_connection_id.clone(),
+            };
+
+            inner.serialize(writer)
+        }
+    }
+
+    impl BorshDeserialize for MsgConnectionOpenTry {
+        fn deserialize_reader<R: Read>(reader: &mut R) -> io::Result<Self> {
+            let inner = InnerMsgConnectionOpenTry::deserialize_reader(reader)?;
+
+            Ok(MsgConnectionOpenTry {
+                client_id_on_b: inner.client_id_on_b,
+                client_state_of_b_on_a: inner.client_state_of_b_on_a,
+                counterparty: inner.counterparty,
+                versions_on_a: inner.versions_on_a,
+                proof_conn_end_on_a: inner.proof_conn_end_on_a,
+                proof_client_state_of_b_on_a: inner.proof_client_state_of_b_on_a,
+                proof_consensus_state_of_b_on_a: inner.proof_consensus_state_of_b_on_a,
+                proofs_height_on_a: inner.proofs_height_on_a,
+                consensus_height_of_b_on_a: inner.consensus_height_of_b_on_a,
+                delay_period: Duration::from_nanos(inner.delay_period_nanos),
+                signer: inner.signer,
+                proof_consensus_state_of_b: inner.proof_consensus_state_of_b,
+                previous_connection_id: inner.previous_connection_id,
+            })
+        }
     }
 }
 
@@ -113,6 +206,15 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
                 .ok_or(ConnectionError::MissingConsensusHeight)?,
             delay_period: Duration::from_nanos(msg.delay_period),
             signer: msg.signer.into(),
+            proof_consensus_state_of_b: if msg.host_consensus_state_proof.is_empty() {
+                None
+            } else {
+                Some(
+                    msg.host_consensus_state_proof
+                        .try_into()
+                        .map_err(|_| ConnectionError::InvalidProof)?,
+                )
+            },
         })
     }
 }
@@ -133,23 +235,27 @@ impl From<MsgConnectionOpenTry> for RawMsgConnectionOpenTry {
             proof_consensus: msg.proof_consensus_state_of_b_on_a.into(),
             consensus_height: Some(msg.consensus_height_of_b_on_a.into()),
             signer: msg.signer.to_string(),
+            host_consensus_state_proof: match msg.proof_consensus_state_of_b {
+                Some(proof) => proof.into(),
+                None => vec![],
+            },
         }
     }
 }
 
 #[cfg(test)]
 pub mod test_util {
-    use crate::core::ics02_client::height::Height;
-    use crate::mock::client_state::MockClientState;
-    use crate::mock::header::MockHeader;
-    use crate::prelude::*;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenTry as RawMsgConnectionOpenTry;
 
+    use crate::core::ics02_client::height::Height;
     use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
+    use crate::mock::client_state::MockClientState;
+    use crate::mock::header::MockHeader;
+    use crate::prelude::*;
     use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
 
     /// Testing-specific helper methods.
@@ -204,23 +310,23 @@ pub mod test_util {
             }),
             proof_client: get_dummy_proof(),
             signer: get_dummy_bech32_account(),
+            host_consensus_state_proof: vec![],
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
-
-    use test_log::test;
-
     use ibc_proto::ibc::core::client::v1::Height;
-    use ibc_proto::ibc::core::connection::v1::Counterparty as RawCounterparty;
-    use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenTry as RawMsgConnectionOpenTry;
+    use ibc_proto::ibc::core::connection::v1::{
+        Counterparty as RawCounterparty, MsgConnectionOpenTry as RawMsgConnectionOpenTry,
+    };
+    use test_log::test;
 
     use crate::core::ics03_connection::msgs::conn_open_try::test_util::get_dummy_raw_msg_conn_open_try;
     use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
     use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
+    use crate::prelude::*;
 
     #[test]
     fn parse_connection_open_try_msg() {
@@ -339,5 +445,21 @@ mod tests {
         let msg_back = MsgConnectionOpenTry::try_from(raw_back.clone()).unwrap();
         assert_eq!(raw, raw_back);
         assert_eq!(msg, msg_back);
+    }
+
+    /// Test that borsh serialization/deserialization works well with delay periods up to u64::MAX
+    #[cfg(feature = "borsh")]
+    #[test]
+    fn test_borsh() {
+        let mut raw = get_dummy_raw_msg_conn_open_try(10, 34);
+        raw.delay_period = u64::MAX;
+        let msg = MsgConnectionOpenTry::try_from(raw.clone()).unwrap();
+
+        let serialized = borsh::to_vec(&msg).unwrap();
+
+        let msg_deserialized =
+            <MsgConnectionOpenTry as borsh::BorshDeserialize>::try_from_slice(&serialized).unwrap();
+
+        assert_eq!(msg, msg_deserialized);
     }
 }

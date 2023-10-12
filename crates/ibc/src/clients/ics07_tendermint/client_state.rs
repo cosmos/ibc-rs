@@ -4,8 +4,6 @@
 mod misbehaviour;
 mod update_client;
 
-use crate::prelude::*;
-
 use core::cmp::max;
 use core::convert::{TryFrom, TryInto};
 use core::str::FromStr;
@@ -17,12 +15,16 @@ use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
 use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
 use ibc_proto::protobuf::Protobuf;
 use prost::Message;
-
 use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::ProdVerifier;
 
+use super::trust_threshold::TrustThreshold;
+use super::{
+    client_type as tm_client_type, ExecutionContext as TmExecutionContext,
+    ValidationContext as TmValidationContext,
+};
 use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
@@ -33,23 +35,19 @@ use crate::core::ics02_client::client_state::{
 use crate::core::ics02_client::client_type::ClientType;
 use crate::core::ics02_client::consensus_state::ConsensusState;
 use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
-use crate::core::ics02_client::ClientExecutionContext;
+use crate::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
 use crate::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
 use crate::core::ics23_commitment::specs::ProofSpecs;
 use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::core::ics24_host::path::Path;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, UpgradeClientPath};
-use crate::core::timestamp::ZERO_DURATION;
-use crate::Height;
-
-use super::trust_threshold::TrustThreshold;
-use super::{
-    client_type as tm_client_type, ExecutionContext as TmExecutionContext,
-    ValidationContext as TmValidationContext,
+use crate::core::ics24_host::path::{
+    ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
+use crate::core::timestamp::ZERO_DURATION;
+use crate::prelude::*;
+use crate::Height;
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
@@ -410,16 +408,15 @@ impl ClientStateCommon for ClientState {
     }
 }
 
-impl<ClientValidationContext> ClientStateValidation<ClientValidationContext> for ClientState
+impl<V> ClientStateValidation<V> for ClientState
 where
-    ClientValidationContext: TmValidationContext,
-    ClientValidationContext::AnyConsensusState: TryInto<TmConsensusState>,
-    ClientError:
-        From<<ClientValidationContext::AnyConsensusState as TryInto<TmConsensusState>>::Error>,
+    V: ClientValidationContext + TmValidationContext,
+    V::AnyConsensusState: TryInto<TmConsensusState>,
+    ClientError: From<<V::AnyConsensusState as TryInto<TmConsensusState>>::Error>,
 {
     fn verify_client_message(
         &self,
-        ctx: &ClientValidationContext,
+        ctx: &V,
         client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -438,7 +435,7 @@ where
 
     fn check_for_misbehaviour(
         &self,
-        ctx: &ClientValidationContext,
+        ctx: &V,
         client_id: &ClientId,
         client_message: Any,
         update_kind: &UpdateKind,
@@ -455,11 +452,7 @@ where
         }
     }
 
-    fn status(
-        &self,
-        ctx: &ClientValidationContext,
-        client_id: &ClientId,
-    ) -> Result<Status, ClientError> {
+    fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError> {
         if self.is_frozen() {
             return Ok(Status::Frozen);
         }
@@ -512,6 +505,12 @@ where
             ClientConsensusStatePath::new(client_id, &self.latest_height),
             tm_consensus_state.into(),
         )?;
+        ctx.store_update_time(
+            client_id.clone(),
+            self.latest_height(),
+            ctx.host_timestamp()?,
+        )?;
+        ctx.store_update_height(client_id.clone(), self.latest_height(), ctx.host_height()?)?;
 
         Ok(())
     }
@@ -545,10 +544,11 @@ where
                 new_consensus_state.into(),
             )?;
             ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
+            ctx.store_update_time(client_id.clone(), header_height, ctx.host_timestamp()?)?;
+            ctx.store_update_height(client_id.clone(), header_height, ctx.host_height()?)?;
         }
 
-        let updated_heights = vec![header_height];
-        Ok(updated_heights)
+        Ok(vec![header_height])
     }
 
     fn update_state_on_misbehaviour(
@@ -621,6 +621,8 @@ where
             ClientConsensusStatePath::new(client_id, &latest_height),
             new_consensus_state.into(),
         )?;
+        ctx.store_update_time(client_id.clone(), latest_height, ctx.host_timestamp()?)?;
+        ctx.store_update_height(client_id.clone(), latest_height, ctx.host_height()?)?;
 
         Ok(latest_height)
     }
@@ -735,8 +737,9 @@ impl TryFrom<Any> for ClientState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        use bytes::Buf;
         use core::ops::Deref;
+
+        use bytes::Buf;
 
         fn decode_client_state<B: Buf>(buf: B) -> Result<ClientState, Error> {
             RawTmClientState::decode(buf)
@@ -783,22 +786,21 @@ fn check_header_trusted_next_validator_set(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
-    use crate::Height;
     use core::time::Duration;
-    use test_log::test;
 
     use ibc_proto::google::protobuf::Any;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use ibc_proto::ics23::ProofSpec as Ics23ProofSpec;
+    use test_log::test;
 
+    use super::*;
     use crate::clients::ics07_tendermint::client_state::AllowUpdate;
     use crate::clients::ics07_tendermint::error::Error;
+    use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ChainId;
     use crate::core::timestamp::ZERO_DURATION;
+    use crate::Height;
 
     #[derive(Clone, Debug, PartialEq)]
     struct ClientStateParams {
@@ -1101,8 +1103,7 @@ mod tests {
 mod serde_tests {
     use tendermint_rpc::endpoint::abci_query::AbciQuery;
 
-    use crate::test::test_serialization_roundtrip;
-
+    use crate::serializers::tests::test_serialization_roundtrip;
     #[test]
     fn serialization_roundtrip_no_proof() {
         let json_data =
@@ -1120,10 +1121,11 @@ mod serde_tests {
 
 #[cfg(any(test, feature = "mocks"))]
 pub mod test_util {
-    use crate::prelude::*;
     use core::str::FromStr;
     use core::time::Duration;
 
+    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
+    use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
     use tendermint::block::Header;
 
     use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState};
@@ -1131,8 +1133,7 @@ pub mod test_util {
     use crate::core::ics02_client::height::Height;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ChainId;
-    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-    use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
+    use crate::prelude::*;
 
     impl ClientState {
         pub fn new_dummy_from_raw(frozen_height: RawHeight) -> Result<Self, Error> {

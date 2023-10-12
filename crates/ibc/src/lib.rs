@@ -44,9 +44,10 @@ extern crate alloc;
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
+pub use signer::Signer;
+
 /// Represents a block height
 pub use crate::core::ics02_client::height::Height;
-pub use signer::Signer;
 
 pub mod applications;
 pub mod clients;
@@ -58,15 +59,18 @@ pub mod mock;
 #[cfg(any(test, feature = "mocks"))]
 pub mod test_utils; // Context mock, the underlying host chain, and client types: for testing all handlers.
 
-mod prelude;
+pub mod prelude;
 mod signer;
-mod utils;
+pub mod utils;
 
 #[cfg(feature = "serde")]
 mod serializers;
 
-#[cfg(test)]
-mod test;
-
-/// Re-export the `Any` type which used across the library.
-pub use ibc_proto::google::protobuf::Any;
+/// Re-exports pertinent ibc proto types from the `ibc-proto-rs` crate for added convenience
+pub mod proto {
+    pub use ibc_proto::google::protobuf::Any;
+    pub use ibc_proto::ibc::apps::transfer;
+    pub use ibc_proto::ibc::core;
+    pub use ibc_proto::ibc::lightclients::tendermint;
+    pub use ibc_proto::protobuf;
+}

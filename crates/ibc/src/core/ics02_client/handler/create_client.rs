@@ -1,18 +1,14 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
-use crate::prelude::*;
-
 use crate::core::context::ContextError;
-use crate::core::events::IbcEvent;
-use crate::core::events::MessageEvent;
-use crate::core::ics02_client::client_state::ClientStateCommon;
-use crate::core::ics02_client::client_state::ClientStateExecution;
+use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateExecution};
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::events::CreateClient;
 use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
 use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ExecutionContext;
-use crate::core::ValidationContext;
+use crate::core::{ExecutionContext, ValidationContext};
+use crate::prelude::*;
 
 pub(crate) fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
@@ -69,7 +65,7 @@ where
 
     let client_id = ClientId::new(client_type.clone(), id_counter).map_err(|e| {
         ContextError::from(ClientError::ClientIdentifierConstructor {
-            client_type: client_state.client_type(),
+            client_type: client_type.clone(),
             counter: id_counter,
             validation_error: e,
         })
@@ -81,33 +77,28 @@ where
         consensus_state,
     )?;
 
-    let latest_height = client_state.latest_height();
-
-    ctx.store_update_time(client_id.clone(), latest_height, ctx.host_timestamp()?)?;
-    ctx.store_update_height(client_id.clone(), latest_height, ctx.host_height()?)?;
-    ctx.increase_client_counter();
+    ctx.increase_client_counter()?;
 
     let event = IbcEvent::CreateClient(CreateClient::new(
         client_id.clone(),
         client_type,
-        latest_height,
+        client_state.latest_height(),
     ));
-    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client));
-    ctx.emit_ibc_event(event);
+    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))?;
+    ctx.emit_ibc_event(event)?;
 
     ctx.log_message(format!(
         "success: generated new client identifier: {client_id}"
-    ));
+    ))?;
 
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use test_log::test;
 
+    use super::*;
     use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
     use crate::clients::ics07_tendermint::client_type as tm_client_type;
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
@@ -149,8 +140,12 @@ mod tests {
 
         assert!(res.is_ok(), "execution happy path");
 
+        assert_eq!(ctx.client_counter().unwrap(), 1);
+
         let expected_client_state = ctx.decode_client_state(msg.client_state).unwrap();
+
         assert_eq!(expected_client_state.client_type(), client_type);
+
         assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
     }
 
@@ -178,13 +173,19 @@ mod tests {
         );
 
         let res = validate(&ctx, msg.clone());
+
         assert!(res.is_ok(), "tendermint client validation happy path");
 
         let res = execute(&mut ctx, msg.clone());
+
         assert!(res.is_ok(), "tendermint client execution happy path");
 
+        assert_eq!(ctx.client_counter().unwrap(), 1);
+
         let expected_client_state = ctx.decode_client_state(msg.client_state).unwrap();
+
         assert_eq!(expected_client_state.client_type(), client_type);
+
         assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
     }
 }

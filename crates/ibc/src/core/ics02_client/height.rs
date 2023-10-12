@@ -1,17 +1,15 @@
 //! Defines the core `Height` type used throughout the library
 
-use crate::prelude::*;
 use core::cmp::Ordering;
-
 use core::num::ParseIntError;
 use core::str::FromStr;
 
 use displaydoc::Display;
+use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use ibc_proto::protobuf::Protobuf;
 
-use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-
 use crate::core::ics02_client::error::ClientError;
+use crate::prelude::*;
 
 /// The core IBC height type, which represents the height of a chain,
 /// which typically is the number of blocks since genesis

@@ -1,5 +1,7 @@
 //! Defines the main channel, port and packet error types
 
+use displaydoc::Display;
+
 use super::channel::Counterparty;
 use super::packet::Sequence;
 use super::timeout::TimeoutHeight;
@@ -7,14 +9,10 @@ use crate::core::ics02_client::error as client_error;
 use crate::core::ics03_connection::error as connection_error;
 use crate::core::ics04_channel::channel::State;
 use crate::core::ics04_channel::Version;
-use crate::core::ics24_host::identifier::{
-    ChannelId, ClientId, ConnectionId, IdentifierError, PortId,
-};
+use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, IdentifierError, PortId};
 use crate::core::timestamp::{ParseTimestampError, Timestamp};
 use crate::prelude::*;
 use crate::Height;
-
-use displaydoc::Display;
 
 #[derive(Debug, Display)]
 pub enum ChannelError {
@@ -62,20 +60,18 @@ pub enum ChannelError {
         expected: Counterparty,
         actual: Counterparty,
     },
-    /// Processed time for the client `{client_id}` at height `{height}` not found
-    ProcessedTimeNotFound { client_id: ClientId, height: Height },
-    /// Processed height for the client `{client_id}` at height `{height}` not found
-    ProcessedHeightNotFound { client_id: ClientId, height: Height },
     /// application module error: `{description}`
     AppModule { description: String },
-    /// other error: `{description}`
-    Other { description: String },
     /// Undefined counterparty connection for `{connection_id}`
     UndefinedConnectionCounterparty { connection_id: ConnectionId },
     /// invalid proof: empty proof
     InvalidProof,
     /// identifier error: `{0}`
     InvalidIdentifier(IdentifierError),
+    /// channel counter overflow error
+    CounterOverflow,
+    /// other error: `{description}`
+    Other { description: String },
 }
 
 #[derive(Debug, Display)]
@@ -171,6 +167,8 @@ pub enum PacketError {
     },
     /// Cannot encode sequence `{sequence}`
     CannotEncodeSequence { sequence: Sequence },
+    /// other error: `{description}`
+    Other { description: String },
 }
 
 impl From<IdentifierError> for ChannelError {

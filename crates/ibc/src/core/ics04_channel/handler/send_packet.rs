@@ -1,24 +1,21 @@
-use crate::core::ics02_client::client_state::ClientStateValidation;
-use crate::core::ics02_client::error::ClientError;
-use crate::prelude::*;
-
-use crate::core::events::IbcEvent;
-use crate::core::events::MessageEvent;
-use crate::core::ics02_client::client_state::ClientStateCommon;
+use crate::core::events::{IbcEvent, MessageEvent};
+use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
 use crate::core::ics02_client::consensus_state::ConsensusState;
+use crate::core::ics02_client::error::ClientError;
 use crate::core::ics04_channel::channel::Counterparty;
 use crate::core::ics04_channel::commitment::compute_packet_commitment;
-use crate::core::ics04_channel::context::SendPacketExecutionContext;
-use crate::core::ics04_channel::events::SendPacket;
-use crate::core::ics04_channel::{
-    context::SendPacketValidationContext, error::PacketError, packet::Packet,
+use crate::core::ics04_channel::context::{
+    SendPacketExecutionContext, SendPacketValidationContext,
 };
-use crate::core::ics24_host::path::ChannelEndPath;
-use crate::core::ics24_host::path::ClientConsensusStatePath;
-use crate::core::ics24_host::path::CommitmentPath;
-use crate::core::ics24_host::path::SeqSendPath;
+use crate::core::ics04_channel::error::PacketError;
+use crate::core::ics04_channel::events::SendPacket;
+use crate::core::ics04_channel::packet::Packet;
+use crate::core::ics24_host::path::{
+    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
+};
 use crate::core::timestamp::Expiry;
 use crate::core::ContextError;
+use crate::prelude::*;
 
 /// Send the given packet, including all necessary validation.
 ///
@@ -128,14 +125,14 @@ pub fn send_packet_execute(
         let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
         let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
 
-        ctx_a.log_message("success: packet send".to_string());
+        ctx_a.log_message("success: packet send".to_string())?;
         let event = IbcEvent::SendPacket(SendPacket::new(
             packet,
             chan_end_on_a.ordering,
             conn_id_on_a.clone(),
         ));
-        ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel));
-        ctx_a.emit_ibc_event(event);
+        ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+        ctx_a.emit_ibc_event(event)?;
     }
 
     Ok(())
@@ -143,17 +140,17 @@ pub fn send_packet_execute(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use core::ops::Add;
     use core::time::Duration;
 
     use test_log::test;
 
+    use super::*;
     use crate::core::events::IbcEvent;
     use crate::core::ics02_client::height::Height;
-    use crate::core::ics03_connection::connection::ConnectionEnd;
-    use crate::core::ics03_connection::connection::Counterparty as ConnectionCounterparty;
-    use crate::core::ics03_connection::connection::State as ConnectionState;
+    use crate::core::ics03_connection::connection::{
+        ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
+    };
     use crate::core::ics03_connection::version::get_compatible_versions;
     use crate::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
     use crate::core::ics04_channel::handler::send_packet::send_packet;
@@ -161,8 +158,7 @@ mod tests {
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics04_channel::Version;
     use crate::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-    use crate::core::timestamp::Timestamp;
-    use crate::core::timestamp::ZERO_DURATION;
+    use crate::core::timestamp::{Timestamp, ZERO_DURATION};
     use crate::mock::context::MockContext;
 
     #[test]
