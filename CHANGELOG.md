@@ -92,6 +92,15 @@ There are no consensus-breaking changes.
 - Remove unused code snippets and move serializer roundtrip test to `serializers.rs`
   ([#869](https://github.com/cosmos/ibc-rs/issues/869))
 
+## v0.44.2
+
+*October 12, 2023*
+
+This release is a critical patch release that introduces a vital fix by removing
+an incorrect validation during a Tendermint client update.
+
+There are no consensus-breaking changes.
+
 ## v0.44.1
 
 *August 4, 2023*
