@@ -222,6 +222,7 @@ mod tests {
     use super::*;
     use crate::applications::transfer::MODULE_ID_STR;
     use crate::core::ics02_client::height::Height;
+    use crate::core::ics02_client::ClientExecutionContext;
     use crate::core::ics03_connection::connection::{
         ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
     };
@@ -376,18 +377,20 @@ mod tests {
                 msg.packet.seq_on_a,
                 packet_commitment,
             );
-        ctx.store_update_time(
-            ClientId::default(),
-            client_height,
-            Timestamp::from_nanoseconds(1000).unwrap(),
-        )
-        .unwrap();
-        ctx.store_update_height(
-            ClientId::default(),
-            client_height,
-            Height::new(0, 4).unwrap(),
-        )
-        .unwrap();
+        ctx.get_client_execution_context()
+            .store_update_time(
+                ClientId::default(),
+                client_height,
+                Timestamp::from_nanoseconds(1000).unwrap(),
+            )
+            .unwrap();
+        ctx.get_client_execution_context()
+            .store_update_height(
+                ClientId::default(),
+                client_height,
+                Height::new(0, 4).unwrap(),
+            )
+            .unwrap();
 
         let res = validate(&ctx, &msg);
 

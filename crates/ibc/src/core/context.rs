@@ -7,7 +7,7 @@ use ibc_proto::google::protobuf::Any;
 
 use super::ics02_client::client_state::ClientState;
 use super::ics02_client::consensus_state::ConsensusState;
-use super::ics02_client::ClientExecutionContext;
+use super::ics02_client::{ClientExecutionContext, ClientValidationContext};
 use super::ics24_host::identifier::PortId;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::error::ClientError;
@@ -94,13 +94,13 @@ impl std::error::Error for RouterError {
 ///
 /// Trait used for the top-level [`validate`](crate::core::validate)
 pub trait ValidationContext {
-    type ClientValidationContext;
+    type V: ClientValidationContext;
     type E: ClientExecutionContext;
     type AnyConsensusState: ConsensusState;
-    type AnyClientState: ClientState<Self::ClientValidationContext, Self::E>;
+    type AnyClientState: ClientState<Self::V, Self::E>;
 
     /// Retrieve the context that implements all clients' `ValidationContext`.
-    fn get_client_validation_context(&self) -> &Self::ClientValidationContext;
+    fn get_client_validation_context(&self) -> &Self::V;
 
     /// Returns the ClientState for the given identifier `client_id`.
     ///
@@ -120,20 +120,6 @@ pub trait ValidationContext {
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Self::AnyConsensusState, ContextError>;
-
-    /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_time(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Timestamp, ContextError>;
-
-    /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_height(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ContextError>;
 
     /// Returns the current height of the local chain.
     fn host_height(&self) -> Result<Height, ContextError>;
@@ -252,26 +238,6 @@ pub trait ExecutionContext: ValidationContext {
     /// Increases the counter which keeps track of how many clients have been created.
     /// Should never fail.
     fn increase_client_counter(&mut self) -> Result<(), ContextError>;
-
-    /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified time as the time at which
-    /// this update (or header) was processed.
-    fn store_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), ContextError>;
-
-    /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified height as the height at
-    /// at which this update (or header) was processed.
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_height: Height,
-    ) -> Result<(), ContextError>;
 
     /// Stores the given connection_end at path
     fn store_connection(

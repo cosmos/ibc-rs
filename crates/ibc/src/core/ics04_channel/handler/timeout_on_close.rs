@@ -175,6 +175,7 @@ where
 mod tests {
     use rstest::*;
 
+    use crate::core::ics02_client::ClientExecutionContext;
     use crate::core::ics03_connection::connection::{
         ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
     };
@@ -308,6 +309,7 @@ mod tests {
             );
 
         context
+            .get_client_execution_context()
             .store_update_time(
                 ClientId::default(),
                 Height::new(0, 2).unwrap(),
@@ -315,6 +317,7 @@ mod tests {
             )
             .unwrap();
         context
+            .get_client_execution_context()
             .store_update_height(
                 ClientId::default(),
                 Height::new(0, 2).unwrap(),

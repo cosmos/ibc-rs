@@ -77,16 +77,12 @@ where
         consensus_state,
     )?;
 
-    let latest_height = client_state.latest_height();
-
-    ctx.store_update_time(client_id.clone(), latest_height, ctx.host_timestamp()?)?;
-    ctx.store_update_height(client_id.clone(), latest_height, ctx.host_height()?)?;
     ctx.increase_client_counter()?;
 
     let event = IbcEvent::CreateClient(CreateClient::new(
         client_id.clone(),
         client_type,
-        latest_height,
+        client_state.latest_height(),
     ));
     ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))?;
     ctx.emit_ibc_event(event)?;
