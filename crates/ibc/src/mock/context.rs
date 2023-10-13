@@ -16,6 +16,8 @@ use parking_lot::Mutex;
 use tendermint_testgen::Validator as TestgenValidator;
 use tracing::debug;
 
+use self::clients::TmClientStateConfig;
+
 use super::client_state::{MOCK_CLIENT_STATE_TYPE_URL, MOCK_CLIENT_TYPE};
 use super::consensus_state::MOCK_CONSENSUS_STATE_TYPE_URL;
 use crate::clients::ics07_tendermint::client_state::{
@@ -54,6 +56,7 @@ use crate::mock::ics18_relayer::error::RelayerError;
 use crate::prelude::*;
 use crate::signer::Signer;
 use crate::Height;
+use typed_builder::TypedBuilder;
 
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
@@ -215,6 +218,100 @@ pub struct MockContext {
     pub events: Vec<IbcEvent>,
 
     pub logs: Vec<String>,
+}
+
+#[derive(Debug, TypedBuilder)]
+#[builder(build_method(into = MockContext))]
+pub struct MockContextConfig {
+    #[builder(default = HostType::Mock)]
+    host_type: HostType,
+
+    host_id: ChainId,
+
+    #[builder(default = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS))]
+    block_time: Duration,
+
+    #[builder(default = 5)]
+    max_history_size: usize,
+
+    latest_height: Height,
+
+    #[builder(default = Timestamp::now())]
+    latest_timestamp: Timestamp,
+}
+
+impl From<MockContextConfig> for MockContext {
+    fn from(params: MockContextConfig) -> Self {
+        assert_ne!(
+            params.max_history_size, 0,
+            "The chain must have a non-zero max_history_size"
+        );
+
+        assert_ne!(
+            params.latest_height.revision_height(),
+            0,
+            "The chain must have a non-zero revision_height"
+        );
+
+        // Compute the number of blocks to store.
+        let n = min(
+            params.max_history_size as u64,
+            params.latest_height.revision_height(),
+        );
+
+        assert_eq!(
+            params.host_id.revision_number(),
+            params.latest_height.revision_number(),
+            "The version in the chain identifier must match the version in the latest height"
+        );
+
+        let next_block_timestamp = params
+            .latest_timestamp
+            .add(params.block_time)
+            .expect("Never fails");
+
+        MockContext {
+            host_chain_type: params.host_type,
+            host_chain_id: params.host_id.clone(),
+            max_history_size: params.max_history_size,
+            history: (0..n)
+                .rev()
+                .map(|i| {
+                    // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
+                    // where N = now(), BT = block_time
+                    HostBlock::generate_block(
+                        params.host_id.clone(),
+                        params.host_type,
+                        params
+                            .latest_height
+                            .sub(i)
+                            .expect("Never fails")
+                            .revision_height(),
+                        next_block_timestamp
+                            .sub(params.block_time * ((i + 1) as u32))
+                            .expect("Never fails"),
+                    )
+                })
+                .collect(),
+            block_time: params.block_time,
+            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+            events: Vec::new(),
+            logs: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, TypedBuilder)]
+pub struct MockClientConfig {
+    client_chain_id: ChainId,
+    client_id: ClientId,
+    #[builder(default = mock_client_type())]
+    client_type: ClientType,
+    client_state_height: Height,
+    #[builder(default)]
+    consensus_state_heights: Vec<Height>,
+    #[builder(default = Timestamp::now())]
+    latest_timestamp: Timestamp,
 }
 
 /// Returns a MockContext with bare minimum initialization: no clients, no connections and no channels are
@@ -554,6 +651,81 @@ impl MockContext {
         self
     }
 
+    pub fn with_client_config(self, client: MockClientConfig) -> Self {
+        let cs_heights = if client.consensus_state_heights.is_empty() {
+            vec![client.client_state_height]
+        } else {
+            client.consensus_state_heights
+        };
+
+        let (client_state, consensus_states) = match client.client_type.as_str() {
+            MOCK_CLIENT_TYPE => {
+                let blocks: Vec<_> = cs_heights
+                    .into_iter()
+                    .map(|cs_height| (cs_height, MockHeader::new(cs_height)))
+                    .collect();
+
+                let client_state = MockClientState::new(blocks.last().expect("never fails").1);
+
+                let cs_states = blocks
+                    .into_iter()
+                    .map(|(height, block)| (height, MockConsensusState::new(block).into()))
+                    .collect();
+
+                (client_state.into(), cs_states)
+            }
+            TENDERMINT_CLIENT_TYPE => {
+                let n_blocks = cs_heights.len();
+                let blocks: Vec<_> = cs_heights
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, cs_height)| {
+                        (
+                            cs_height,
+                            HostBlock::generate_tm_block(
+                                client.client_chain_id.clone(),
+                                cs_height.revision_height(),
+                                client
+                                    .latest_timestamp
+                                    .sub(self.block_time * ((n_blocks - 1 - i) as u32))
+                                    .expect("never fails"),
+                            ),
+                        )
+                    })
+                    .collect();
+
+                // TODO(rano): parametrize the other params
+                let client_state: TmClientState = TmClientStateConfig::builder()
+                    .chain_id(client.client_chain_id)
+                    .latest_height(client.client_state_height)
+                    .build()
+                    .try_into()
+                    .expect("never fails");
+
+                client_state.validate().expect("never fails");
+
+                let cs_states = blocks
+                    .into_iter()
+                    .map(|(height, block)| (height, block.into()))
+                    .collect();
+
+                (client_state.into(), cs_states)
+            }
+            _ => todo!(),
+        };
+
+        let client_record = MockClientRecord {
+            client_state: Some(client_state),
+            consensus_states,
+        };
+
+        self.ibc_store
+            .lock()
+            .clients
+            .insert(client.client_id.clone(), client_record);
+        self
+    }
+
     /// Associates a connection to this context.
     pub fn with_connection(
         self,
@@ -683,15 +855,17 @@ impl MockContext {
 
     /// Triggers the advancing of the host chain, by extending the history of blocks (or headers).
     pub fn advance_host_chain_height(&mut self) {
+        self.advance_host_chain_height_with_timestamp(self.host_timestamp().expect("Never fails"))
+    }
+
+    /// Triggers the advancing of the host chain, by extending the history of blocks (or headers).
+    pub fn advance_host_chain_height_with_timestamp(&mut self, timestamp: Timestamp) {
         let latest_block = self.history.last().expect("history cannot be empty");
         let new_block = HostBlock::generate_block(
             self.host_chain_id.clone(),
             self.host_chain_type,
             latest_block.height().increment().revision_height(),
-            latest_block
-                .timestamp()
-                .add(self.block_time)
-                .expect("Never fails"),
+            timestamp,
         );
 
         // Append the new header at the tip of the history.
