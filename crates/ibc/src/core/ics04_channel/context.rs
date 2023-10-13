@@ -153,11 +153,10 @@ pub(crate) fn calculate_block_delay(
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
 
     use rstest::rstest;
 
-    use crate::core::ics04_channel::context::calculate_block_delay;
+    use super::*;
 
     #[rstest]
     #[case::remainder_zero(10, 2, 5)]
