@@ -252,7 +252,6 @@ mod tests {
     fn test_update_synthetic_tendermint_client_validator_change_ok() {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
-        let update_height = Height::new(1, 21).unwrap();
         let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
         let mut ctx = MockContext::new(
@@ -262,6 +261,8 @@ mod tests {
             Height::new(1, 1).unwrap(),
         )
         .with_client_parametrized_with_chain_id(
+            // client state initialized with client_height, and
+            // [{id: 1, power: 50}, {id: 2, power: 50}] for validator set and next validator set.
             chain_id_b.clone(),
             &client_id,
             client_height,
@@ -269,22 +270,39 @@ mod tests {
             Some(client_height),
         );
 
+        let ctx_b_val_history = [
+            // TODO(rano): the validator set params during setups.
+            // Here I picked the default validator set which is
+            // used at host side client creation.
+            //
+            // validator set of height-20
+            vec![
+                TestgenValidator::new("1").voting_power(50),
+                TestgenValidator::new("2").voting_power(50),
+            ],
+            // validator set of height-21
+            vec![
+                TestgenValidator::new("1").voting_power(50),
+                TestgenValidator::new("2").voting_power(50),
+            ],
+            // validator set of height-22
+            vec![
+                TestgenValidator::new("1").voting_power(30),
+                TestgenValidator::new("2").voting_power(70),
+            ],
+            // validator set of height-23
+            vec![
+                TestgenValidator::new("1").voting_power(20),
+                TestgenValidator::new("2").voting_power(80),
+            ],
+        ];
+
+        let update_height = client_height.add(ctx_b_val_history.len() as u64 - 2);
+
         let ctx_b = MockContext::new_with_validator_history(
             chain_id_b,
             HostType::SyntheticTendermint,
-            &[
-                // TODO(rano): the validator set params during setups.
-                // Here I picked the default validator set which is
-                // used at host side client creation.
-                vec![
-                    TestgenValidator::new("1").voting_power(50),
-                    TestgenValidator::new("2").voting_power(50),
-                ],
-                vec![
-                    TestgenValidator::new("1").voting_power(60),
-                    TestgenValidator::new("2").voting_power(40),
-                ],
-            ],
+            &ctx_b_val_history,
             update_height,
         );
 
@@ -292,6 +310,13 @@ mod tests {
 
         let mut block = ctx_b.host_block(&update_height).unwrap().clone();
         block.set_trusted_height(client_height);
+
+        let trusted_next_validator_set = match ctx_b.host_block(&client_height).expect("no error") {
+            HostBlock::SyntheticTendermint(header) => header.light_block.next_validators.clone(),
+            _ => panic!("unexpected host block type"),
+        };
+
+        block.set_trusted_next_validators_set(trusted_next_validator_set);
 
         let latest_header_height = block.height();
         let msg = MsgUpdateClient {
