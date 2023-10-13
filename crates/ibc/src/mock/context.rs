@@ -465,8 +465,8 @@ impl MockContext {
                             DEFAULT_BLOCK_TIME_SECS * (i as u64 + 1),
                         ))
                         .expect("Never fails"),
-                    &validator_history[i],
-                    &validator_history[i + 1],
+                    &validator_history[max_history_size - 1 - i],
+                    &validator_history[max_history_size - i],
                 )
             })
             .collect();
