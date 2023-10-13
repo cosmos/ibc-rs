@@ -6,6 +6,7 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
 use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
 use tendermint::block::Header as TmHeader;
+use tendermint::validator::Set as ValidatorSet;
 use tendermint_testgen::light_block::TmLightBlock;
 use tendermint_testgen::{
     Generator, Header as TestgenHeader, LightBlock as TestgenLightBlock,
@@ -38,6 +39,7 @@ pub enum HostType {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SyntheticTmBlock {
     pub trusted_height: Height,
+    pub trusted_next_validators: ValidatorSet,
     pub light_block: TmLightBlock,
 }
 
@@ -75,6 +77,15 @@ impl HostBlock {
         match self {
             HostBlock::Mock(_) => {}
             HostBlock::SyntheticTendermint(light_block) => light_block.trusted_height = height,
+        }
+    }
+
+    pub fn set_trusted_next_validators_set(&mut self, trusted_next_validators: ValidatorSet) {
+        match self {
+            HostBlock::Mock(_) => {}
+            HostBlock::SyntheticTendermint(light_block) => {
+                light_block.trusted_next_validators = trusted_next_validators
+            }
         }
     }
 
@@ -119,18 +130,23 @@ impl HostBlock {
                 timestamp,
             })),
             HostType::SyntheticTendermint => {
+                let light_block = TestgenLightBlock::new_default_with_header(
+                    TestgenHeader::new(validators)
+                        .height(height)
+                        .chain_id(&chain_id.to_string())
+                        .next_validators(next_validators)
+                        .time(timestamp.into_tm_time().expect("Never fails")),
+                )
+                .validators(validators)
+                .next_validators(next_validators)
+                .generate()
+                .expect("Never fails");
+
                 HostBlock::SyntheticTendermint(Box::new(SyntheticTmBlock {
                     trusted_height: Height::new(chain_id.revision_number(), 1)
                         .expect("Never fails"),
-                    light_block: TestgenLightBlock::new_default_with_header(
-                        TestgenHeader::new(validators)
-                            .height(height)
-                            .chain_id(&chain_id.to_string())
-                            .next_validators(next_validators)
-                            .time(timestamp.into_tm_time().expect("Never fails")),
-                    )
-                    .generate()
-                    .expect("Never fails"),
+                    trusted_next_validators: light_block.next_validators.clone(),
+                    light_block,
                 }))
             }
         }
@@ -141,15 +157,27 @@ impl HostBlock {
         height: u64,
         timestamp: Timestamp,
     ) -> SyntheticTmBlock {
-        let light_block = TestgenLightBlock::new_default_with_time_and_chain_id(
-            chain_id.to_string(),
-            timestamp.into_tm_time().expect("Never fails"),
-            height,
-        )
-        .generate()
-        .expect("Never fails");
+        // TODO(rano): use HeaderBuilder pattern
+
+        let validators = [
+            TestgenValidator::new("1").voting_power(50),
+            TestgenValidator::new("2").voting_power(50),
+        ];
+
+        let header = TestgenHeader::new(&validators)
+            .height(height)
+            .chain_id(chain_id.as_str())
+            .next_validators(&validators)
+            .time(timestamp.into_tm_time().expect("Never fails"));
+
+        let light_block = TestgenLightBlock::new_default_with_header(header)
+            .generate()
+            .expect("Never fails");
+
         SyntheticTmBlock {
+            // TODO(rano): don't use constant for rev_height
             trusted_height: Height::new(chain_id.revision_number(), 1).expect("Never fails"),
+            trusted_next_validators: light_block.next_validators.clone(),
             light_block,
         }
     }
@@ -197,6 +225,7 @@ impl From<HostBlock> for Any {
 
             let SyntheticTmBlock {
                 trusted_height,
+                trusted_next_validators,
                 light_block,
             } = light_block;
 
@@ -204,7 +233,7 @@ impl From<HostBlock> for Any {
                 signed_header: Some(light_block.signed_header.into()),
                 validator_set: Some(light_block.validators.into()),
                 trusted_height: Some(trusted_height.into()),
-                trusted_validators: Some(light_block.next_validators.into()),
+                trusted_validators: Some(trusted_next_validators.into()),
             }
             .encode_to_vec()
         }

@@ -318,13 +318,14 @@ pub mod test_util {
         fn from(light_block: SyntheticTmBlock) -> Self {
             let SyntheticTmBlock {
                 trusted_height,
+                trusted_next_validators,
                 light_block,
             } = light_block;
             Self {
                 signed_header: light_block.signed_header,
                 validator_set: light_block.validators,
                 trusted_height,
-                trusted_next_validator_set: light_block.next_validators,
+                trusted_next_validator_set: trusted_next_validators,
             }
         }
     }
