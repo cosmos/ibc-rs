@@ -121,6 +121,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use core::ops::Add;
     use core::str::FromStr;
     use core::time::Duration;
 
@@ -143,7 +144,9 @@ mod tests {
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
     use crate::core::timestamp::Timestamp;
     use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
-    use crate::mock::context::{AnyConsensusState, MockContext};
+    use crate::mock::context::{
+        AnyClientState, AnyConsensusState, MockClientConfig, MockContext, MockContextConfig,
+    };
     use crate::mock::header::MockHeader;
     use crate::mock::host::{HostBlock, HostType};
     use crate::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
@@ -752,5 +755,67 @@ mod tests {
         let res = execute(&mut ctx_a, MsgUpdateOrMisbehaviour::Misbehaviour(msg));
         assert!(res.is_ok());
         ensure_misbehaviour(&ctx_a, &client_id, &tm_client_type());
+    }
+
+    #[test]
+    fn test_expired_client() {
+        let remote_chain_id = ChainId::new("mockgaiaB", 1).unwrap();
+        let host_chain_id = ChainId::new("mockgaiaA", 1).unwrap();
+
+        let remote_height = Height::new(1, 21).unwrap();
+        let remote_client_height_on_host = remote_height.sub(3).unwrap();
+
+        let remote_client_id_on_host = ClientId::new(tm_client_type(), 0).unwrap();
+
+        let timestamp = Timestamp::now();
+
+        let mut host_ctx = MockContextConfig::builder()
+            .host_id(host_chain_id.clone())
+            .latest_height(Height::new(1, 1).unwrap())
+            .latest_timestamp(timestamp)
+            .build()
+            .with_client_config(
+                MockClientConfig::builder()
+                    .client_chain_id(remote_chain_id.clone())
+                    .client_id(remote_client_id_on_host.clone())
+                    .client_state_height(remote_client_height_on_host)
+                    .client_type(tm_client_type())
+                    .latest_timestamp(timestamp)
+                    .build(),
+            );
+
+        let mut remote_ctx = MockContextConfig::builder()
+            .host_id(remote_chain_id.clone())
+            .host_type(HostType::SyntheticTendermint)
+            .latest_height(remote_height)
+            .latest_timestamp(timestamp)
+            .build();
+
+        {
+            let remote_raw_client_state = host_ctx.client_state(&remote_client_id_on_host).unwrap();
+
+            let remote_client_state = match remote_raw_client_state {
+                AnyClientState::Tendermint(tm_client_state) => tm_client_state,
+                _ => panic!("never fails. not mock client"),
+            };
+
+            let client_trusting_period = remote_client_state.trusting_period;
+
+            let future_timestamp = host_ctx
+                .host_timestamp()
+                .expect("never fails")
+                .add(client_trusting_period)
+                .expect("overflow");
+
+            host_ctx.advance_host_chain_height_with_timestamp(future_timestamp);
+            remote_ctx.advance_host_chain_height_with_timestamp(future_timestamp);
+        }
+
+        let remote_client_state = host_ctx.client_state(&remote_client_id_on_host).unwrap();
+
+        assert!(remote_client_state
+            .status(&host_ctx, &remote_client_id_on_host)
+            .unwrap()
+            .is_expired());
     }
 }
