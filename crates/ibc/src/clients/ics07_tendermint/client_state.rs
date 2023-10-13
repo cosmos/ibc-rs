@@ -510,11 +510,7 @@ where
             ClientConsensusStatePath::new(client_id, &self.latest_height),
             tm_consensus_state.into(),
         )?;
-        ctx.store_update_time(
-            client_id.clone(),
-            self.latest_height(),
-            host_timestamp,
-        )?;
+        ctx.store_update_time(client_id.clone(), self.latest_height(), host_timestamp)?;
         ctx.store_update_height(client_id.clone(), self.latest_height(), host_height)?;
 
         Ok(())

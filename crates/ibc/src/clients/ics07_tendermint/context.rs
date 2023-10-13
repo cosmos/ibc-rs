@@ -6,8 +6,8 @@ use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::timestamp::Timestamp;
 use crate::core::ContextError;
-use crate::Height;
 use crate::prelude::*;
+use crate::Height;
 
 /// Client's context required during both validation and execution
 pub trait CommonContext {

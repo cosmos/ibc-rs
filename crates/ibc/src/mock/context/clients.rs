@@ -53,10 +53,7 @@ impl TmCommonContext for MockContext {
         ValidationContext::consensus_state(self, client_cons_state_path)
     }
 
-    fn consensus_state_heights(
-        &self,
-        client_id: &ClientId
-    ) -> Result<Vec<Height>, ContextError> {
+    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError> {
         let ibc_store = self.ibc_store.lock();
         let client_record =
             ibc_store
@@ -234,7 +231,7 @@ impl ClientExecutionContext for MockContext {
 
     fn delete_consensus_state(
         &mut self,
-        consensus_state_path: ClientConsensusStatePath
+        consensus_state_path: ClientConsensusStatePath,
     ) -> Result<(), ContextError> {
         let mut ibc_store = self.ibc_store.lock();
 
@@ -249,9 +246,7 @@ impl ClientExecutionContext for MockContext {
         let height = Height::new(consensus_state_path.epoch, consensus_state_path.height)
             .expect("Never fails");
 
-        client_record
-            .consensus_states
-            .remove(&height);
+        client_record.consensus_states.remove(&height);
 
         Ok(())
     }
@@ -259,7 +254,7 @@ impl ClientExecutionContext for MockContext {
     fn delete_update_height(
         &mut self,
         client_id: ClientId,
-        height: Height
+        height: Height,
     ) -> Result<(), ContextError> {
         let _ = self
             .ibc_store
@@ -273,7 +268,7 @@ impl ClientExecutionContext for MockContext {
     fn delete_update_time(
         &mut self,
         client_id: ClientId,
-        height: Height
+        height: Height,
     ) -> Result<(), ContextError> {
         let _ = self
             .ibc_store
