@@ -15,9 +15,9 @@ use ibc_proto::protobuf::Protobuf;
 use parking_lot::Mutex;
 use tendermint_testgen::Validator as TestgenValidator;
 use tracing::debug;
+use typed_builder::TypedBuilder;
 
 use self::clients::TmClientStateConfig;
-
 use super::client_state::{MOCK_CLIENT_STATE_TYPE_URL, MOCK_CLIENT_TYPE};
 use super::consensus_state::MOCK_CONSENSUS_STATE_TYPE_URL;
 use crate::clients::ics07_tendermint::client_state::{
@@ -56,7 +56,6 @@ use crate::mock::ics18_relayer::error::RelayerError;
 use crate::prelude::*;
 use crate::signer::Signer;
 use crate::Height;
-use typed_builder::TypedBuilder;
 
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 

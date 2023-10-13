@@ -3,10 +3,10 @@
 use core::time::Duration;
 
 use super::{AnyClientState, AnyConsensusState, MockClientRecord, MockContext};
-use crate::clients::ics07_tendermint::client_state::AllowUpdate;
+use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState as TmClientState};
+use crate::clients::ics07_tendermint::error::Error as TmClientError;
 use crate::clients::ics07_tendermint::trust_threshold::TrustThreshold;
 use crate::clients::ics07_tendermint::{
-    client_state::ClientState as TmClientState, error::Error as TmClientError,
     CommonContext as TmCommonContext, ValidationContext as TmValidationContext,
 };
 use crate::core::ics02_client::error::ClientError;
