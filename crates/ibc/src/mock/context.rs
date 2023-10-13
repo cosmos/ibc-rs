@@ -200,7 +200,7 @@ pub struct MockContext {
     host_chain_id: ChainId,
 
     /// Maximum size for the history of the host chain. Any block older than this is pruned.
-    max_history_size: usize,
+    max_history_size: u64,
 
     /// The chain of blocks underlying this context. A vector of size up to `max_history_size`
     /// blocks, ascending order by their height (latest block is on the last position).
@@ -263,7 +263,7 @@ impl MockContext {
     pub fn new(
         host_id: ChainId,
         host_type: HostType,
-        max_history_size: usize,
+        max_history_size: u64,
         latest_height: Height,
     ) -> Self {
         assert_ne!(
@@ -278,7 +278,7 @@ impl MockContext {
         );
 
         // Compute the number of blocks to store.
-        let n = min(max_history_size as u64, latest_height.revision_height());
+        let n = min(max_history_size, latest_height.revision_height());
 
         assert_eq!(
             host_id.revision_number(),
@@ -377,7 +377,7 @@ impl MockContext {
         MockContext {
             host_chain_type: host_type,
             host_chain_id: host_id.clone(),
-            max_history_size,
+            max_history_size: max_history_size as u64,
             history,
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
@@ -638,7 +638,7 @@ impl MockContext {
             panic!("Cannot rewind history of the chain to a smaller revision height!")
         } else if target_height.revision_height() > latest_height.revision_height() {
             // Repeatedly advance the host chain height till we hit the desired height
-            let mut ctx = MockContext { ..self };
+            let mut ctx = self;
             while ctx.latest_height().revision_height() < target_height.revision_height() {
                 ctx.advance_host_chain_height()
             }
@@ -670,14 +670,14 @@ impl MockContext {
     /// Accessor for a block of the local (host) chain from this context.
     /// Returns `None` if the block at the requested height does not exist.
     pub fn host_block(&self, target_height: &Height) -> Option<&HostBlock> {
-        let target = target_height.revision_height() as usize;
-        let latest = self.latest_height().revision_height() as usize;
+        let target = target_height.revision_height();
+        let latest = self.latest_height().revision_height();
 
         // Check that the block is not too advanced, nor has it been pruned.
-        if (target > latest) || (target <= latest - self.history.len()) {
+        if (target > latest) || (target <= latest - self.history.len() as u64) {
             None // Block for requested height does not exist in history.
         } else {
-            Some(&self.history[self.history.len() + target - latest - 1])
+            Some(&self.history[self.history.len() + target as usize - latest as usize - 1])
         }
     }
 
@@ -695,10 +695,10 @@ impl MockContext {
         );
 
         // Append the new header at the tip of the history.
-        if self.history.len() >= self.max_history_size {
+        if self.history.len() as u64 >= self.max_history_size {
             // History is full, we rotate and replace the tip with the new header.
             self.history.rotate_left(1);
-            self.history[self.max_history_size - 1] = new_block;
+            self.history[self.max_history_size as usize - 1] = new_block;
         } else {
             // History is not full yet.
             self.history.push(new_block);
@@ -722,7 +722,7 @@ impl MockContext {
     /// Validates this context. Should be called after the context is mutated by a test.
     pub fn validate(&self) -> Result<(), String> {
         // Check that the number of entries is not higher than window size.
-        if self.history.len() > self.max_history_size {
+        if self.history.len() as u64 > self.max_history_size {
             return Err("too many entries".to_string());
         }
 
@@ -1507,7 +1507,7 @@ mod tests {
     fn test_router() {
         #[derive(Debug, Default)]
         struct FooModule {
-            counter: usize,
+            counter: u64,
         }
 
         impl Module for FooModule {

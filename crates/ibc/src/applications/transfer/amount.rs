@@ -131,7 +131,8 @@ where
     D: serde::Deserializer<'de>,
 {
     use serde::Deserialize;
-    U256::from_dec_str(<&str>::deserialize(deserializer)?).map_err(serde::de::Error::custom)
+    U256::from_dec_str(<String>::deserialize(deserializer)?.as_str())
+        .map_err(serde::de::Error::custom)
 }
 
 #[cfg(test)]

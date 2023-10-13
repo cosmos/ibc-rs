@@ -148,7 +148,7 @@ impl ClientState {
     }
 
     pub fn validate(&self) -> Result<(), Error> {
-        self.chain_id.validate_length(3, MaxChainIdLen)?;
+        self.chain_id.validate_length(3, MaxChainIdLen as u64)?;
 
         // `TrustThreshold` is guaranteed to be in the range `[0, 1)`, but a `TrustThreshold::ZERO`
         // value is invalid in this context

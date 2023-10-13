@@ -2,8 +2,6 @@
 
 use core::time::Duration;
 
-use num_traits::float::FloatCore;
-
 use super::packet::Sequence;
 use crate::core::events::IbcEvent;
 use crate::core::ics02_client::client_state::ClientState;
@@ -142,10 +140,42 @@ pub(crate) fn calculate_block_delay(
     delay_period_time: &Duration,
     max_expected_time_per_block: &Duration,
 ) -> u64 {
-    if max_expected_time_per_block.is_zero() {
+    let delay_period_time = delay_period_time.as_secs();
+    let max_expected_time_per_block = max_expected_time_per_block.as_secs();
+    if max_expected_time_per_block == 0 {
         return 0;
     }
+    if delay_period_time % max_expected_time_per_block == 0 {
+        return delay_period_time / max_expected_time_per_block;
+    }
+    (delay_period_time / max_expected_time_per_block) + 1
+}
 
-    FloatCore::ceil(delay_period_time.as_secs_f64() / max_expected_time_per_block.as_secs_f64())
-        as u64
+#[cfg(test)]
+mod tests {
+
+    use rstest::rstest;
+
+    use super::*;
+
+    #[rstest]
+    #[case::remainder_zero(10, 2, 5)]
+    #[case::remainder_not_zero(10, 3, 4)]
+    #[case::max_expected_zero(10, 0, 0)]
+    #[case::delay_period_zero(0, 2, 0)]
+    #[case::both_zero(0, 0, 0)]
+    #[case::delay_less_than_max(10, 11, 1)]
+    fn test_calculate_block_delay_zero(
+        #[case] delay_period_time: u64,
+        #[case] max_expected_time_per_block: u64,
+        #[case] expected: u64,
+    ) {
+        assert_eq!(
+            calculate_block_delay(
+                &Duration::from_secs(delay_period_time),
+                &Duration::from_secs(max_expected_time_per_block)
+            ),
+            expected
+        );
+    }
 }
