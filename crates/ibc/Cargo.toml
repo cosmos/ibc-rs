@@ -21,12 +21,12 @@ default = ["std"]
 std = [
     "ibc-proto/std",
     "ics23/std",
-    "serde/std",
-    "serde_json/std",
+    "serde/std",    
     "tracing/std",
     "prost/std",
     "bytes/std",
     "subtle-encoding/std",
+    "serde_json/std",
     "sha2/std",
     "displaydoc/std",
     "num-traits/std",
@@ -39,7 +39,7 @@ parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-proto/par
 borsh = ["dep:borsh", "ibc-proto/borsh"]
 
 # This feature is required for token transfer (ICS-20)
-serde = ["dep:serde", "dep:serde_derive", "serde_json", "ics23/serde"]
+serde = ["dep:serde", "dep:serde_derive", "serde_json", "ibc-proto/serde", "ics23/serde"]
 
 # CosmWasm message API generator compatible, should not be inside on chain code
 schema = ["dep:schemars", "serde", "std"]
@@ -55,7 +55,7 @@ ics23 = { version = "0.11", default-features = false, features = ["host-function
 time = { version = ">=0.3.0, <0.3.30", default-features = false }
 serde_derive = { version = "1.0.104", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
-serde_json = { version = "1", default-features = false, optional = true }
+serde_json =  { package = "serde-json-wasm", version = "1.0.0" , default-features = false, optional = true}
 tracing = { version = "0.1.36", default-features = false }
 prost = { version = "0.12", default-features = false }
 bytes = { version = "1.2.1", default-features = false }
