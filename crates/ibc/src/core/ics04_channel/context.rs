@@ -148,7 +148,7 @@ pub(crate) fn calculate_block_delay(
     if delay_period_time % max_expected_time_per_block == 0 {
         return delay_period_time / max_expected_time_per_block;
     }
-    u64::max(1, (delay_period_time / max_expected_time_per_block) + 1)
+    (delay_period_time / max_expected_time_per_block) + 1
 }
 
 #[cfg(test)]
