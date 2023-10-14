@@ -1,0 +1,38 @@
+name: CosmWasm Compilation Check
+on:
+  pull_request:
+    paths:
+      - .github/workflows/cw-check.yml
+      - ci/cw-check/**
+
+on:
+  push:
+    tags:
+      - v[0-9]+.*
+    branches:
+      - 'release/*'
+      - main
+    paths:
+      - .github/workflows/cw-check.yml
+      - Cargo.toml
+      - Cargo.lock
+      - ci/cw-check/**
+      - crates/**
+
+jobs:
+  cw-check:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v22
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Run cw-check
+        run: |
+          cd ci/cw-check
+          nix-shell --run "cw-check"

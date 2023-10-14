@@ -14,21 +14,20 @@ use ibc_proto::ibc::core::channel::v1::{
     QueryChannelResponse, QueryChannelsRequest, QueryChannelsResponse,
     QueryConnectionChannelsRequest, QueryConnectionChannelsResponse,
     QueryNextSequenceReceiveRequest, QueryNextSequenceReceiveResponse,
-    QueryNextSequenceSendRequest, QueryNextSequenceSendResponse, QueryPacketAcknowledgementRequest,
-    QueryPacketAcknowledgementResponse, QueryPacketAcknowledgementsRequest,
-    QueryPacketAcknowledgementsResponse, QueryPacketCommitmentRequest,
-    QueryPacketCommitmentResponse, QueryPacketCommitmentsRequest, QueryPacketCommitmentsResponse,
-    QueryPacketReceiptRequest, QueryPacketReceiptResponse, QueryUnreceivedAcksRequest,
-    QueryUnreceivedAcksResponse, QueryUnreceivedPacketsRequest, QueryUnreceivedPacketsResponse,
+    QueryPacketAcknowledgementRequest, QueryPacketAcknowledgementResponse,
+    QueryPacketAcknowledgementsRequest, QueryPacketAcknowledgementsResponse,
+    QueryPacketCommitmentRequest, QueryPacketCommitmentResponse, QueryPacketCommitmentsRequest,
+    QueryPacketCommitmentsResponse, QueryPacketReceiptRequest, QueryPacketReceiptResponse,
+    QueryUnreceivedAcksRequest, QueryUnreceivedAcksResponse, QueryUnreceivedPacketsRequest,
+    QueryUnreceivedPacketsResponse,
 };
 use tonic::{Request, Response, Status};
 
 use super::{
     query_channel, query_channel_client_state, query_channel_consensus_state, query_channels,
-    query_connection_channels, query_next_sequence_receive, query_next_sequence_send,
-    query_packet_acknowledgement, query_packet_acknowledgements, query_packet_commitment,
-    query_packet_commitments, query_packet_receipt, query_unreceived_acks,
-    query_unreceived_packets,
+    query_connection_channels, query_next_sequence_receive, query_packet_acknowledgement,
+    query_packet_acknowledgements, query_packet_commitment, query_packet_commitments,
+    query_packet_receipt, query_unreceived_acks, query_unreceived_packets,
 };
 use crate::core::context::QueryContext;
 
@@ -172,15 +171,6 @@ where
         request: Request<QueryUnreceivedAcksRequest>,
     ) -> Result<Response<QueryUnreceivedAcksResponse>, Status> {
         let response = query_unreceived_acks(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
-    }
-
-    async fn next_sequence_send(
-        &self,
-        request: Request<QueryNextSequenceSendRequest>,
-    ) -> Result<Response<QueryNextSequenceSendResponse>, Status> {
-        let response = query_next_sequence_send(&self.ibc_context, request.get_ref())?;
 
         Ok(Response::new(response))
     }

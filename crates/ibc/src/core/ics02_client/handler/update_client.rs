@@ -97,17 +97,6 @@ where
             header.clone(),
         )?;
 
-        // Store host height and time for all updated headers
-        {
-            let host_timestamp = ctx.host_timestamp()?;
-            let host_height = ctx.host_height()?;
-
-            for consensus_height in consensus_heights.iter() {
-                ctx.store_update_time(client_id.clone(), *consensus_height, host_timestamp)?;
-                ctx.store_update_height(client_id.clone(), *consensus_height, host_height)?;
-            }
-        }
-
         {
             let event = {
                 let consensus_height = consensus_heights.get(0).ok_or(ClientError::Other {
@@ -137,6 +126,7 @@ mod tests {
 
     use ibc_proto::google::protobuf::Any;
     use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
+    use tendermint_testgen::Validator as TestgenValidator;
     use test_log::test;
 
     use super::*;
@@ -228,6 +218,72 @@ mod tests {
         );
 
         let ctx_b = MockContext::new(chain_id_b, HostType::SyntheticTendermint, 5, update_height);
+
+        let signer = get_dummy_account_id();
+
+        let mut block = ctx_b.host_block(&update_height).unwrap().clone();
+        block.set_trusted_height(client_height);
+
+        let latest_header_height = block.height();
+        let msg = MsgUpdateClient {
+            client_id,
+            client_message: block.into(),
+            signer,
+        };
+
+        let res = validate(&ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
+        assert!(res.is_ok());
+
+        let res = execute(&mut ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
+        assert!(res.is_ok(), "result: {res:?}");
+
+        let client_state = ctx.client_state(&msg.client_id).unwrap();
+        assert!(client_state
+            .status(&ctx, &msg.client_id)
+            .unwrap()
+            .is_active());
+        assert_eq!(client_state.latest_height(), latest_header_height);
+    }
+
+    #[test]
+    fn test_update_synthetic_tendermint_client_validator_change_ok() {
+        let client_id = ClientId::new(tm_client_type(), 0).unwrap();
+        let client_height = Height::new(1, 20).unwrap();
+        let update_height = Height::new(1, 21).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
+
+        let mut ctx = MockContext::new(
+            ChainId::new("mockgaiaA", 1).unwrap(),
+            HostType::Mock,
+            5,
+            Height::new(1, 1).unwrap(),
+        )
+        .with_client_parametrized_with_chain_id(
+            chain_id_b.clone(),
+            &client_id,
+            client_height,
+            Some(tm_client_type()), // The target host chain (B) is synthetic TM.
+            Some(client_height),
+        );
+
+        let ctx_b = MockContext::new_with_validator_history(
+            chain_id_b,
+            HostType::SyntheticTendermint,
+            &[
+                // TODO(rano): the validator set params during setups.
+                // Here I picked the default validator set which is
+                // used at host side client creation.
+                vec![
+                    TestgenValidator::new("1").voting_power(50),
+                    TestgenValidator::new("2").voting_power(50),
+                ],
+                vec![
+                    TestgenValidator::new("1").voting_power(60),
+                    TestgenValidator::new("2").voting_power(40),
+                ],
+            ],
+            update_height,
+        );
 
         let signer = get_dummy_account_id();
 

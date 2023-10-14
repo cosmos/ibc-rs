@@ -5,7 +5,7 @@ on:
       - .github/workflows/no-std.yml
       - Cargo.toml
       - Cargo.lock
-      - ci/**
+      - ci/no-std-check/**
       - crates/**
   push:
     branches: main
@@ -13,7 +13,7 @@ on:
       - .github/workflows/no-std.yml
       - Cargo.toml
       - Cargo.lock
-      - ci/**
+      - ci/no-std-check/**
       - crates/**
 
 jobs:

@@ -1,12 +1,19 @@
-//! Implementation of the gRPC query services of core IBC components.
+//! Contains a set of utility traits and implementations for querying the state
+//! of an `ibc-rs` enabled chain, including implementation of essential IBC
+//! query methods and gRPC query services defined in `ibc-proto-rs`. Therefore,
+//! some ready-to-use Query structs for each layer of the client, connection,
+//! and channel have been implemented and exposed by this crate.
 //!
-//! The provided structs includes blanket implementation of their corresponding gRPC service traits,
-//! if the host implements the following _context_ traits.
+//! The provided structs includes blanket implementation of their corresponding
+//! gRPC service traits, if the host implements the following _context_ traits:
 //! - [`ValidationContext`](ibc::core::ValidationContext)
 //! - [`ProvableContext`](crate::core::context::ProvableContext)
 //! - [`QueryContext`](crate::core::context::QueryContext)
 //! - [`UpgradeValidationContext`](ibc::hosts::tendermint::upgrade_proposal::UpgradeValidationContext)
-//!   - Only for [`ClientQuery::upgraded_client_state`](ibc_proto::ibc::core::client::v1::query_server::Query::upgraded_client_state) and [`ClientQuery::upgraded_client_state`](ibc_proto::ibc::core::client::v1::query_server::Query::upgraded_consensus_state)
+//!   - Only for
+//!     [`ClientQuery::upgraded_client_state`](ibc_proto::ibc::core::client::v1::query_server::Query::upgraded_client_state)
+//!     and
+//!     [`ClientQuery::upgraded_client_state`](ibc_proto::ibc::core::client::v1::query_server::Query::upgraded_consensus_state)
 //!
 //! Example
 //! ```rust,ignore

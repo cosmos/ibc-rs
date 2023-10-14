@@ -13,6 +13,7 @@ use derive_more::{From, TryInto};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::protobuf::Protobuf;
 use parking_lot::Mutex;
+use tendermint_testgen::Validator as TestgenValidator;
 use tracing::debug;
 
 use super::client_state::{MOCK_CLIENT_STATE_TYPE_URL, MOCK_CLIENT_TYPE};
@@ -199,7 +200,7 @@ pub struct MockContext {
     host_chain_id: ChainId,
 
     /// Maximum size for the history of the host chain. Any block older than this is pruned.
-    max_history_size: usize,
+    max_history_size: u64,
 
     /// The chain of blocks underlying this context. A vector of size up to `max_history_size`
     /// blocks, ascending order by their height (latest block is on the last position).
@@ -262,7 +263,7 @@ impl MockContext {
     pub fn new(
         host_id: ChainId,
         host_type: HostType,
-        max_history_size: usize,
+        max_history_size: u64,
         latest_height: Height,
     ) -> Self {
         assert_ne!(
@@ -277,7 +278,7 @@ impl MockContext {
         );
 
         // Compute the number of blocks to store.
-        let n = min(max_history_size as u64, latest_height.revision_height());
+        let n = min(max_history_size, latest_height.revision_height());
 
         assert_eq!(
             host_id.revision_number(),
@@ -306,6 +307,78 @@ impl MockContext {
                     )
                 })
                 .collect(),
+            block_time,
+            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+            events: Vec::new(),
+            logs: Vec::new(),
+        }
+    }
+
+    /// Same as [Self::new] but with custom validator sets for each block.
+    /// Note: the validator history is used accordingly for current validator set and next validator set.
+    /// `validator_history[i]` and `validator_history[i+1]` is i'th block's current and next validator set.
+    /// The number of blocks will be `validator_history.len() - 1` due to the above.
+    pub fn new_with_validator_history(
+        host_id: ChainId,
+        host_type: HostType,
+        validator_history: &[Vec<TestgenValidator>],
+        latest_height: Height,
+    ) -> Self {
+        let max_history_size = validator_history.len() - 1;
+
+        assert_ne!(
+            max_history_size, 0,
+            "The chain must have a non-zero max_history_size"
+        );
+
+        assert_ne!(
+            latest_height.revision_height(),
+            0,
+            "The chain must have a non-zero revision_height"
+        );
+
+        assert!(
+            max_history_size as u64 <= latest_height.revision_height(),
+            "The number of blocks must be greater than the number of validator set histories"
+        );
+
+        assert_eq!(
+            host_id.revision_number(),
+            latest_height.revision_number(),
+            "The version in the chain identifier must match the version in the latest height"
+        );
+
+        let block_time = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS);
+        let next_block_timestamp = Timestamp::now().add(block_time).expect("Never fails");
+
+        let history = (0..max_history_size)
+            .rev()
+            .map(|i| {
+                // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
+                // where N = now(), BT = block_time
+                HostBlock::generate_block_with_validators(
+                    host_id.clone(),
+                    host_type,
+                    latest_height
+                        .sub(i as u64)
+                        .expect("Never fails")
+                        .revision_height(),
+                    next_block_timestamp
+                        .sub(Duration::from_secs(
+                            DEFAULT_BLOCK_TIME_SECS * (i as u64 + 1),
+                        ))
+                        .expect("Never fails"),
+                    &validator_history[i],
+                    &validator_history[i + 1],
+                )
+            })
+            .collect();
+
+        MockContext {
+            host_chain_type: host_type,
+            host_chain_id: host_id.clone(),
+            max_history_size: max_history_size as u64,
+            history,
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
             events: Vec::new(),
@@ -565,7 +638,7 @@ impl MockContext {
             panic!("Cannot rewind history of the chain to a smaller revision height!")
         } else if target_height.revision_height() > latest_height.revision_height() {
             // Repeatedly advance the host chain height till we hit the desired height
-            let mut ctx = MockContext { ..self };
+            let mut ctx = self;
             while ctx.latest_height().revision_height() < target_height.revision_height() {
                 ctx.advance_host_chain_height()
             }
@@ -597,14 +670,14 @@ impl MockContext {
     /// Accessor for a block of the local (host) chain from this context.
     /// Returns `None` if the block at the requested height does not exist.
     pub fn host_block(&self, target_height: &Height) -> Option<&HostBlock> {
-        let target = target_height.revision_height() as usize;
-        let latest = self.latest_height().revision_height() as usize;
+        let target = target_height.revision_height();
+        let latest = self.latest_height().revision_height();
 
         // Check that the block is not too advanced, nor has it been pruned.
-        if (target > latest) || (target <= latest - self.history.len()) {
+        if (target > latest) || (target <= latest - self.history.len() as u64) {
             None // Block for requested height does not exist in history.
         } else {
-            Some(&self.history[self.history.len() + target - latest - 1])
+            Some(&self.history[self.history.len() + target as usize - latest as usize - 1])
         }
     }
 
@@ -622,10 +695,10 @@ impl MockContext {
         );
 
         // Append the new header at the tip of the history.
-        if self.history.len() >= self.max_history_size {
+        if self.history.len() as u64 >= self.max_history_size {
             // History is full, we rotate and replace the tip with the new header.
             self.history.rotate_left(1);
-            self.history[self.max_history_size - 1] = new_block;
+            self.history[self.max_history_size as usize - 1] = new_block;
         } else {
             // History is not full yet.
             self.history.push(new_block);
@@ -649,7 +722,7 @@ impl MockContext {
     /// Validates this context. Should be called after the context is mutated by a test.
     pub fn validate(&self) -> Result<(), String> {
         // Check that the number of entries is not higher than window size.
-        if self.history.len() > self.max_history_size {
+        if self.history.len() as u64 > self.max_history_size {
             return Err("too many entries".to_string());
         }
 
@@ -731,7 +804,7 @@ impl RelayerContext for MockContext {
 }
 
 impl ValidationContext for MockContext {
-    type ClientValidationContext = Self;
+    type V = Self;
     type E = Self;
     type AnyConsensusState = AnyConsensusState;
     type AnyClientState = AnyClientState;
@@ -1028,46 +1101,6 @@ impl ValidationContext for MockContext {
         .map_err(ContextError::PacketError)
     }
 
-    fn client_update_time(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Timestamp, ContextError> {
-        match self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .get(&(client_id.clone(), *height))
-        {
-            Some(time) => Ok(*time),
-            None => Err(ChannelError::ProcessedTimeNotFound {
-                client_id: client_id.clone(),
-                height: *height,
-            }),
-        }
-        .map_err(ContextError::ChannelError)
-    }
-
-    fn client_update_height(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ContextError> {
-        match self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .get(&(client_id.clone(), *height))
-        {
-            Some(height) => Ok(*height),
-            None => Err(ChannelError::ProcessedHeightNotFound {
-                client_id: client_id.clone(),
-                height: *height,
-            }),
-        }
-        .map_err(ContextError::ChannelError)
-    }
-
     fn channel_counter(&self) -> Result<u64, ContextError> {
         Ok(self.ibc_store.lock().channel_ids_counter)
     }
@@ -1080,7 +1113,7 @@ impl ValidationContext for MockContext {
         Ok(())
     }
 
-    fn get_client_validation_context(&self) -> &Self::ClientValidationContext {
+    fn get_client_validation_context(&self) -> &Self::V {
         self
     }
 }
@@ -1098,34 +1131,6 @@ impl ExecutionContext for MockContext {
             .checked_add(1)
             .ok_or(ClientError::CounterOverflow)?;
 
-        Ok(())
-    }
-
-    fn store_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .insert((client_id, height), timestamp);
-        Ok(())
-    }
-
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_height: Height,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .insert((client_id, height), host_height);
         Ok(())
     }
 
@@ -1502,7 +1507,7 @@ mod tests {
     fn test_router() {
         #[derive(Debug, Default)]
         struct FooModule {
-            counter: usize,
+            counter: u64,
         }
 
         impl Module for FooModule {
