@@ -254,23 +254,24 @@ mod tests {
         let client_height = Height::new(1, 20).unwrap();
         let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
-        let mut ctx = MockContext::new(
-            ChainId::new("mockgaiaA", 1).unwrap(),
-            HostType::Mock,
-            5,
-            Height::new(1, 1).unwrap(),
-        )
-        .with_client_parametrized_with_chain_id(
-            // client state initialized with client_height, and
-            // [{id: 1, power: 50}, {id: 2, power: 50}] for validator set and next validator set.
-            chain_id_b.clone(),
-            &client_id,
-            client_height,
-            Some(tm_client_type()), // The target host chain (B) is synthetic TM.
-            Some(client_height),
-        );
+        let mut ctx = MockContextConfig::builder()
+            .host_id(ChainId::new("mockgaiaA", 1).unwrap())
+            .host_type(HostType::Mock)
+            .latest_height(Height::new(1, 1).unwrap())
+            .max_history_size(5)
+            .build()
+            .with_client_config(
+                // client state initialized with client_height, and
+                // [{id: 1, power: 50}, {id: 2, power: 50}] for validator set and next validator set.
+                MockClientConfig::builder()
+                    .client_chain_id(chain_id_b.clone())
+                    .client_id(client_id.clone())
+                    .client_state_height(client_height)
+                    .client_type(tm_client_type())
+                    .build(),
+            );
 
-        let ctx_b_val_history = [
+        let ctx_b_val_history = vec![
             // TODO(rano): the validator set params during setups.
             // Here I picked the default validator set which is
             // used at host side client creation.
@@ -299,12 +300,13 @@ mod tests {
 
         let update_height = client_height.add(ctx_b_val_history.len() as u64 - 2);
 
-        let ctx_b = MockContext::new_with_validator_history(
-            chain_id_b,
-            HostType::SyntheticTendermint,
-            &ctx_b_val_history,
-            update_height,
-        );
+        let ctx_b = MockContextConfig::builder()
+            .host_id(chain_id_b.clone())
+            .host_type(HostType::SyntheticTendermint)
+            .latest_height(update_height)
+            .max_history_size(ctx_b_val_history.len() as u64 - 1)
+            .validator_set_history(ctx_b_val_history)
+            .build();
 
         let signer = get_dummy_account_id();
 
@@ -345,23 +347,24 @@ mod tests {
         let client_height = Height::new(1, 20).unwrap();
         let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
-        let ctx = MockContext::new(
-            ChainId::new("mockgaiaA", 1).unwrap(),
-            HostType::Mock,
-            5,
-            Height::new(1, 1).unwrap(),
-        )
-        .with_client_parametrized_with_chain_id(
-            // client state initialized with client_height, and
-            // [{id: 1, power: 50}, {id: 2, power: 50}] for validator set and next validator set.
-            chain_id_b.clone(),
-            &client_id,
-            client_height,
-            Some(tm_client_type()), // The target host chain (B) is synthetic TM.
-            Some(client_height),
-        );
+        let ctx = MockContextConfig::builder()
+            .host_id(ChainId::new("mockgaiaA", 1).unwrap())
+            .host_type(HostType::Mock)
+            .latest_height(Height::new(1, 1).unwrap())
+            .max_history_size(5)
+            .build()
+            .with_client_config(
+                // client state initialized with client_height, and
+                // [{id: 1, power: 50}, {id: 2, power: 50}] for validator set and next validator set.
+                MockClientConfig::builder()
+                    .client_chain_id(chain_id_b.clone())
+                    .client_id(client_id.clone())
+                    .client_state_height(client_height)
+                    .client_type(tm_client_type())
+                    .build(),
+            );
 
-        let ctx_b_val_history = [
+        let ctx_b_val_history = vec![
             // TODO(rano): the validator set params during setups.
             // Here I picked the default validator set which is
             // used at host side client creation.
@@ -391,12 +394,13 @@ mod tests {
 
         let update_height = client_height.add(ctx_b_val_history.len() as u64 - 2);
 
-        let ctx_b = MockContext::new_with_validator_history(
-            chain_id_b,
-            HostType::SyntheticTendermint,
-            &ctx_b_val_history,
-            update_height,
-        );
+        let ctx_b = MockContextConfig::builder()
+            .host_id(chain_id_b.clone())
+            .host_type(HostType::SyntheticTendermint)
+            .latest_height(update_height)
+            .max_history_size(ctx_b_val_history.len() as u64 - 1)
+            .validator_set_history(ctx_b_val_history)
+            .build();
 
         let signer = get_dummy_account_id();
 
