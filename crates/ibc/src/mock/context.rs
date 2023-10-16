@@ -233,6 +233,9 @@ pub struct MockContextConfig {
     #[builder(default = 5)]
     max_history_size: u64,
 
+    #[builder(default, setter(strip_option))]
+    validator_set_history: Option<Vec<Vec<TestgenValidator>>>,
+
     latest_height: Height,
 
     #[builder(default = Timestamp::now())]
@@ -269,11 +272,30 @@ impl From<MockContextConfig> for MockContext {
             .add(params.block_time)
             .expect("Never fails");
 
-        MockContext {
-            host_chain_type: params.host_type,
-            host_chain_id: params.host_id.clone(),
-            max_history_size: params.max_history_size,
-            history: (0..n)
+        let history = if let Some(validator_set_history) = params.validator_set_history {
+            (0..n)
+                .rev()
+                .map(|i| {
+                    // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
+                    // where N = now(), BT = block_time
+                    HostBlock::generate_block_with_validators(
+                        params.host_id.clone(),
+                        params.host_type,
+                        params
+                            .latest_height
+                            .sub(i)
+                            .expect("Never fails")
+                            .revision_height(),
+                        next_block_timestamp
+                            .sub(params.block_time * ((i + 1) as u32))
+                            .expect("Never fails"),
+                        &validator_set_history[(n - i) as usize - 1],
+                        &validator_set_history[(n - i) as usize],
+                    )
+                })
+                .collect()
+        } else {
+            (0..n)
                 .rev()
                 .map(|i| {
                     // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
@@ -291,7 +313,14 @@ impl From<MockContextConfig> for MockContext {
                             .expect("Never fails"),
                     )
                 })
-                .collect(),
+                .collect()
+        };
+
+        MockContext {
+            host_chain_type: params.host_type,
+            host_chain_id: params.host_id.clone(),
+            max_history_size: params.max_history_size,
+            history,
             block_time: params.block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
             events: Vec::new(),
