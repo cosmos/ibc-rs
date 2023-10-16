@@ -231,7 +231,7 @@ pub struct MockContextConfig {
     block_time: Duration,
 
     #[builder(default = 5)]
-    max_history_size: usize,
+    max_history_size: u64,
 
     latest_height: Height,
 
@@ -254,7 +254,7 @@ impl From<MockContextConfig> for MockContext {
 
         // Compute the number of blocks to store.
         let n = min(
-            params.max_history_size as u64,
+            params.max_history_size,
             params.latest_height.revision_height(),
         );
 
@@ -420,7 +420,7 @@ impl MockContext {
         validator_history: &[Vec<TestgenValidator>],
         latest_height: Height,
     ) -> Self {
-        let max_history_size = validator_history.len() - 1;
+        let max_history_size = validator_history.len() as u64 - 1;
 
         assert_ne!(
             max_history_size, 0,
@@ -434,7 +434,7 @@ impl MockContext {
         );
 
         assert!(
-            max_history_size as u64 <= latest_height.revision_height(),
+            max_history_size <= latest_height.revision_height(),
             "The number of blocks must be greater than the number of validator set histories"
         );
 
@@ -455,17 +455,12 @@ impl MockContext {
                 HostBlock::generate_block_with_validators(
                     host_id.clone(),
                     host_type,
-                    latest_height
-                        .sub(i as u64)
-                        .expect("Never fails")
-                        .revision_height(),
+                    latest_height.sub(i).expect("Never fails").revision_height(),
                     next_block_timestamp
-                        .sub(Duration::from_secs(
-                            DEFAULT_BLOCK_TIME_SECS * (i as u64 + 1),
-                        ))
+                        .sub(Duration::from_secs(DEFAULT_BLOCK_TIME_SECS * (i + 1)))
                         .expect("Never fails"),
-                    &validator_history[max_history_size - 1 - i],
-                    &validator_history[max_history_size - i],
+                    &validator_history[(max_history_size - i) as usize - 1],
+                    &validator_history[(max_history_size - i) as usize],
                 )
             })
             .collect();
@@ -473,7 +468,7 @@ impl MockContext {
         MockContext {
             host_chain_type: host_type,
             host_chain_id: host_id.clone(),
-            max_history_size: max_history_size as u64,
+            max_history_size,
             history,
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
