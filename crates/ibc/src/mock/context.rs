@@ -230,6 +230,8 @@ pub struct MockContextConfig {
     #[builder(default = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS))]
     block_time: Duration,
 
+    // TODO(rano): make max_history_size optional
+    // should be default to `validator_set_history.unwrap_or(6) - 1`
     #[builder(default = 5)]
     max_history_size: u64,
 
