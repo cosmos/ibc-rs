@@ -103,6 +103,4 @@ rstest = "0.18.1"
 tracing-subscriber = { version = "0.3.14", features = ["fmt", "env-filter", "json"]}
 test-log = { version = "0.2.10", features = ["trace"] }
 tendermint-rpc = { version = "0.34", features = ["http-client", "websocket-client"] }
-tendermint-testgen = { version = "0.34" } # Needed for generating (synthetic) light blocks.
-parking_lot = { version = "0.12.1" }
-typed-builder = { version = "0.17.0" }
+ibc = { path = ".", features = ["mocks"] }
