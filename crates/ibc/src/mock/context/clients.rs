@@ -1,62 +1,18 @@
 //! Client context implementations for `MockContext`
 
-use core::time::Duration;
-
 use super::{AnyClientState, AnyConsensusState, MockClientRecord, MockContext};
-use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState as TmClientState};
-use crate::clients::ics07_tendermint::error::Error as TmClientError;
-use crate::clients::ics07_tendermint::trust_threshold::TrustThreshold;
 use crate::clients::ics07_tendermint::{
     CommonContext as TmCommonContext, ValidationContext as TmValidationContext,
 };
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
-use crate::core::ics23_commitment::specs::ProofSpecs;
-use crate::core::ics24_host::identifier::{ChainId, ClientId};
+use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 use crate::core::timestamp::Timestamp;
 use crate::core::{ContextError, ValidationContext};
 use crate::mock::client_state::MockClientContext;
 use crate::prelude::*;
 use crate::Height;
-
-#[derive(typed_builder::TypedBuilder, Debug)]
-pub struct TmClientStateConfig {
-    pub chain_id: ChainId,
-    #[builder(default)]
-    pub trust_level: TrustThreshold,
-    #[builder(default = Duration::from_secs(64000))]
-    pub trusting_period: Duration,
-    #[builder(default = Duration::from_secs(128000))]
-    pub unbonding_period: Duration,
-    #[builder(default = Duration::from_millis(3000))]
-    max_clock_drift: Duration,
-    pub latest_height: Height,
-    #[builder(default)]
-    pub proof_specs: ProofSpecs,
-    #[builder(default)]
-    pub upgrade_path: Vec<String>,
-    #[builder(default = AllowUpdate { after_expiry: false, after_misbehaviour: false })]
-    allow_update: AllowUpdate,
-}
-
-impl TryFrom<TmClientStateConfig> for TmClientState {
-    type Error = TmClientError;
-
-    fn try_from(config: TmClientStateConfig) -> Result<Self, Self::Error> {
-        TmClientState::new(
-            config.chain_id,
-            config.trust_level,
-            config.trusting_period,
-            config.unbonding_period,
-            config.max_clock_drift,
-            config.latest_height,
-            config.proof_specs,
-            config.upgrade_path,
-            config.allow_update,
-        )
-    }
-}
 
 impl MockClientContext for MockContext {
     type ConversionError = &'static str;

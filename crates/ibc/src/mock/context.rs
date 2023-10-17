@@ -17,9 +17,9 @@ use tendermint_testgen::Validator as TestgenValidator;
 use tracing::debug;
 use typed_builder::TypedBuilder;
 
-use self::clients::TmClientStateConfig;
 use super::client_state::{MOCK_CLIENT_STATE_TYPE_URL, MOCK_CLIENT_TYPE};
 use super::consensus_state::MOCK_CONSENSUS_STATE_TYPE_URL;
+use crate::clients::ics07_tendermint::client_state::test_util::ClientStateConfig as TmClientStateConfig;
 use crate::clients::ics07_tendermint::client_state::{
     ClientState as TmClientState, TENDERMINT_CLIENT_STATE_TYPE_URL,
 };

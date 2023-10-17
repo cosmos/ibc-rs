@@ -1129,7 +1129,8 @@ pub mod test_util {
     use tendermint::block::Header;
 
     use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState};
-    use crate::clients::ics07_tendermint::error::Error;
+    use crate::clients::ics07_tendermint::error::{Error as ClientError, Error};
+    use crate::clients::ics07_tendermint::trust_threshold::TrustThreshold;
     use crate::core::ics02_client::height::Height;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ChainId;
@@ -1178,6 +1179,44 @@ pub mod test_util {
             frozen_height: Some(frozen_height),
             allow_update_after_expiry: false,
             allow_update_after_misbehaviour: false,
+        }
+    }
+
+    #[derive(typed_builder::TypedBuilder, Debug)]
+    pub struct ClientStateConfig {
+        pub chain_id: ChainId,
+        #[builder(default)]
+        pub trust_level: TrustThreshold,
+        #[builder(default = Duration::from_secs(64000))]
+        pub trusting_period: Duration,
+        #[builder(default = Duration::from_secs(128000))]
+        pub unbonding_period: Duration,
+        #[builder(default = Duration::from_millis(3000))]
+        max_clock_drift: Duration,
+        pub latest_height: Height,
+        #[builder(default)]
+        pub proof_specs: ProofSpecs,
+        #[builder(default)]
+        pub upgrade_path: Vec<String>,
+        #[builder(default = AllowUpdate { after_expiry: false, after_misbehaviour: false })]
+        allow_update: AllowUpdate,
+    }
+
+    impl TryFrom<ClientStateConfig> for ClientState {
+        type Error = ClientError;
+
+        fn try_from(config: ClientStateConfig) -> Result<Self, Self::Error> {
+            ClientState::new(
+                config.chain_id,
+                config.trust_level,
+                config.trusting_period,
+                config.unbonding_period,
+                config.max_clock_drift,
+                config.latest_height,
+                config.proof_specs,
+                config.upgrade_path,
+                config.allow_update,
+            )
         }
     }
 }
