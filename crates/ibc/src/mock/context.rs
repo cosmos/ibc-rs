@@ -736,7 +736,7 @@ impl MockContext {
 
                 (client_state.into(), cs_states)
             }
-            _ => todo!(),
+            _ => panic!("unknown client type"),
         };
 
         let client_record = MockClientRecord {
