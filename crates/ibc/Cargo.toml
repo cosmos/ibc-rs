@@ -73,7 +73,7 @@ scale-info = { version = "2.1.2", default-features = false, features = ["derive"
 ## for borsh encode or decode
 borsh = {version = "0.10", default-features = false, optional = true }
 parking_lot = { version = "0.12.1", default-features = false, optional = true }
-typed-builder = { version = "0.16.2", optional = true }
+typed-builder = { version = "0.17.0", optional = true }
 
 ibc-derive = { version ="0.3.0", path = "../ibc-derive" }
 
@@ -105,4 +105,4 @@ test-log = { version = "0.2.10", features = ["trace"] }
 tendermint-rpc = { version = "0.34", features = ["http-client", "websocket-client"] }
 tendermint-testgen = { version = "0.34" } # Needed for generating (synthetic) light blocks.
 parking_lot = { version = "0.12.1" }
-typed-builder = { version = "0.16.2" }
+typed-builder = { version = "0.17.0" }
