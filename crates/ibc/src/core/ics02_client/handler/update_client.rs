@@ -206,7 +206,7 @@ mod tests {
         let update_height = Height::new(1, 21).unwrap();
         let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
-        let mut ctx = MockContext::new(
+        let mut ctx_a = MockContext::new(
             ChainId::new("mockgaiaA", 1).unwrap(),
             HostType::Mock,
             5,
@@ -234,15 +234,18 @@ mod tests {
             signer,
         };
 
-        let res = validate(&ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
+        let res = validate(&ctx_a, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
         assert!(res.is_ok());
 
-        let res = execute(&mut ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
+        let res = execute(
+            &mut ctx_a,
+            MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()),
+        );
         assert!(res.is_ok(), "result: {res:?}");
 
-        let client_state = ctx.client_state(&msg.client_id).unwrap();
+        let client_state = ctx_a.client_state(&msg.client_id).unwrap();
         assert!(client_state
-            .status(&ctx, &msg.client_id)
+            .status(&ctx_a, &msg.client_id)
             .unwrap()
             .is_active());
         assert_eq!(client_state.latest_height(), latest_header_height);
@@ -254,7 +257,7 @@ mod tests {
         let client_height = Height::new(1, 20).unwrap();
         let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
-        let mut ctx = MockContextConfig::builder()
+        let mut ctx_a = MockContextConfig::builder()
             .host_id(ChainId::new("mockgaiaA", 1).unwrap())
             .latest_height(Height::new(1, 1).unwrap())
             .build()
@@ -325,15 +328,18 @@ mod tests {
             signer,
         };
 
-        let res = validate(&ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
+        let res = validate(&ctx_a, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
         assert!(res.is_ok());
 
-        let res = execute(&mut ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
+        let res = execute(
+            &mut ctx_a,
+            MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()),
+        );
         assert!(res.is_ok(), "result: {res:?}");
 
-        let client_state = ctx.client_state(&msg.client_id).unwrap();
+        let client_state = ctx_a.client_state(&msg.client_id).unwrap();
         assert!(client_state
-            .status(&ctx, &msg.client_id)
+            .status(&ctx_a, &msg.client_id)
             .unwrap()
             .is_active());
         assert_eq!(client_state.latest_height(), latest_header_height);
@@ -345,7 +351,7 @@ mod tests {
         let client_height = Height::new(1, 20).unwrap();
         let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
-        let ctx = MockContextConfig::builder()
+        let ctx_a = MockContextConfig::builder()
             .host_id(ChainId::new("mockgaiaA", 1).unwrap())
             .latest_height(Height::new(1, 1).unwrap())
             .build()
@@ -416,7 +422,7 @@ mod tests {
             signer,
         };
 
-        let res = validate(&ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
+        let res = validate(&ctx_a, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
         assert!(res.is_err());
     }
 
@@ -427,7 +433,7 @@ mod tests {
         let update_height = Height::new(1, 21).unwrap();
         let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
-        let mut ctx = MockContext::new(
+        let mut ctx_a = MockContext::new(
             ChainId::new("mockgaiaA", 1).unwrap(),
             HostType::Mock,
             5,
@@ -456,15 +462,18 @@ mod tests {
             signer,
         };
 
-        let res = validate(&ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
+        let res = validate(&ctx_a, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
         assert!(res.is_ok());
 
-        let res = execute(&mut ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
+        let res = execute(
+            &mut ctx_a,
+            MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()),
+        );
         assert!(res.is_ok(), "result: {res:?}");
 
-        let client_state = ctx.client_state(&msg.client_id).unwrap();
+        let client_state = ctx_a.client_state(&msg.client_id).unwrap();
         assert!(client_state
-            .status(&ctx, &msg.client_id)
+            .status(&ctx_a, &msg.client_id)
             .unwrap()
             .is_active());
         assert_eq!(client_state.latest_height(), latest_header_height);
@@ -604,7 +613,7 @@ mod tests {
 
         let chain_start_height = Height::new(1, 11).unwrap();
 
-        let ctx = MockContext::new(
+        let ctx_a = MockContext::new(
             ChainId::new("mockgaiaA", 1).unwrap(),
             HostType::Mock,
             5,
@@ -634,7 +643,7 @@ mod tests {
             signer,
         };
 
-        let res = validate(&ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg));
+        let res = validate(&ctx_a, MsgUpdateOrMisbehaviour::UpdateClient(msg));
         assert!(res.is_err());
     }
 
