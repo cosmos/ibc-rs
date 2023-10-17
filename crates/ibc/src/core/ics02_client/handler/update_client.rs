@@ -869,62 +869,60 @@ mod tests {
 
     #[test]
     fn test_expired_client() {
-        let remote_chain_id = ChainId::new("mockgaiaB", 1).unwrap();
-        let host_chain_id = ChainId::new("mockgaiaA", 1).unwrap();
+        let chain_id_a = ChainId::new("mockgaiaA", 1).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
-        let remote_height = Height::new(1, 21).unwrap();
-        let remote_client_height_on_host = remote_height.sub(3).unwrap();
+        let update_height = Height::new(1, 21).unwrap();
+        let client_height = update_height.sub(3).unwrap();
 
-        let remote_client_id_on_host = ClientId::new(tm_client_type(), 0).unwrap();
+        let client_id_b = ClientId::new(tm_client_type(), 0).unwrap();
 
         let timestamp = Timestamp::now();
 
-        let mut host_ctx = MockContextConfig::builder()
-            .host_id(host_chain_id.clone())
+        let mut ctx_a = MockContextConfig::builder()
+            .host_id(chain_id_a.clone())
             .latest_height(Height::new(1, 1).unwrap())
             .latest_timestamp(timestamp)
             .build()
             .with_client_config(
                 MockClientConfig::builder()
-                    .client_chain_id(remote_chain_id.clone())
-                    .client_id(remote_client_id_on_host.clone())
-                    .client_state_height(remote_client_height_on_host)
+                    .client_chain_id(chain_id_b.clone())
+                    .client_id(client_id_b.clone())
+                    .client_state_height(client_height)
                     .client_type(tm_client_type())
                     .latest_timestamp(timestamp)
                     .build(),
             );
 
-        let mut remote_ctx = MockContextConfig::builder()
-            .host_id(remote_chain_id.clone())
+        let mut ctx_b = MockContextConfig::builder()
+            .host_id(chain_id_b.clone())
             .host_type(HostType::SyntheticTendermint)
-            .latest_height(remote_height)
+            .latest_height(update_height)
             .latest_timestamp(timestamp)
             .build();
 
         {
-            let remote_raw_client_state = host_ctx.client_state(&remote_client_id_on_host).unwrap();
-
-            let remote_client_state = match remote_raw_client_state {
+            let client_state = match ctx_a.client_state(&client_id_b).unwrap() {
                 AnyClientState::Tendermint(tm_client_state) => tm_client_state,
                 _ => panic!("never fails. not mock client"),
             };
 
-            let client_trusting_period = remote_client_state.trusting_period;
+            let client_trusting_period = client_state.trusting_period;
 
-            let future_timestamp = host_ctx
+            let future_timestamp = ctx_a
                 .host_timestamp()
                 .expect("never fails")
                 .add(client_trusting_period)
                 .expect("overflow");
 
-            host_ctx.advance_host_chain_height_with_timestamp(future_timestamp);
-            remote_ctx.advance_host_chain_height_with_timestamp(future_timestamp);
+            ctx_a.advance_host_chain_height_with_timestamp(future_timestamp);
+            ctx_b.advance_host_chain_height_with_timestamp(future_timestamp);
         }
 
-        let remote_client_state = host_ctx.client_state(&remote_client_id_on_host).unwrap();
+        let client_state = ctx_a.client_state(&client_id_b).unwrap();
 
-        assert!(remote_client_state
-            .status(&host_ctx, &remote_client_id_on_host)
+        assert!(client_state
+            .status(&ctx_a, &client_id_b)
             .unwrap()
             .is_expired());
     }
