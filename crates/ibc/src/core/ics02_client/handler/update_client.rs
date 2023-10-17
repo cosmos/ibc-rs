@@ -874,25 +874,24 @@ mod tests {
 
     #[test]
     fn test_expired_client() {
-        let chain_id_a = ChainId::new("mockgaiaA", 1).unwrap();
         let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
 
         let update_height = Height::new(1, 21).unwrap();
         let client_height = update_height.sub(3).unwrap();
 
-        let client_id_b = ClientId::new(tm_client_type(), 0).unwrap();
+        let client_id = ClientId::new(tm_client_type(), 0).unwrap();
 
         let timestamp = Timestamp::now();
 
         let mut ctx_a = MockContextConfig::builder()
-            .host_id(chain_id_a.clone())
+            .host_id(ChainId::new("mockgaiaA", 1).unwrap())
             .latest_height(Height::new(1, 1).unwrap())
             .latest_timestamp(timestamp)
             .build()
             .with_client_config(
                 MockClientConfig::builder()
                     .client_chain_id(chain_id_b.clone())
-                    .client_id(client_id_b.clone())
+                    .client_id(client_id.clone())
                     .client_state_height(client_height)
                     .client_type(tm_client_type())
                     .latest_timestamp(timestamp)
@@ -907,7 +906,7 @@ mod tests {
             .build();
 
         {
-            let client_state = match ctx_a.client_state(&client_id_b).unwrap() {
+            let client_state = match ctx_a.client_state(&client_id).unwrap() {
                 AnyClientState::Tendermint(tm_client_state) => tm_client_state,
                 _ => panic!("never fails. not mock client"),
             };
@@ -924,10 +923,10 @@ mod tests {
             ctx_b.advance_host_chain_height_with_timestamp(future_timestamp);
         }
 
-        let client_state = ctx_a.client_state(&client_id_b).unwrap();
+        let client_state = ctx_a.client_state(&client_id).unwrap();
 
         assert!(client_state
-            .status(&ctx_a, &client_id_b)
+            .status(&ctx_a, &client_id)
             .unwrap()
             .is_expired());
     }
