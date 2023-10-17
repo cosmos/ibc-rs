@@ -256,9 +256,7 @@ mod tests {
 
         let mut ctx = MockContextConfig::builder()
             .host_id(ChainId::new("mockgaiaA", 1).unwrap())
-            .host_type(HostType::Mock)
             .latest_height(Height::new(1, 1).unwrap())
-            .max_history_size(5)
             .build()
             .with_client_config(
                 // client state initialized with client_height, and
@@ -349,9 +347,7 @@ mod tests {
 
         let ctx = MockContextConfig::builder()
             .host_id(ChainId::new("mockgaiaA", 1).unwrap())
-            .host_type(HostType::Mock)
             .latest_height(Height::new(1, 1).unwrap())
-            .max_history_size(5)
             .build()
             .with_client_config(
                 // client state initialized with client_height, and
