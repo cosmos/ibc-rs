@@ -121,7 +121,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use core::ops::Add;
     use core::str::FromStr;
     use core::time::Duration;
 
@@ -145,7 +144,7 @@ mod tests {
     use crate::core::timestamp::Timestamp;
     use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
     use crate::mock::context::{
-        AnyClientState, AnyConsensusState, MockClientConfig, MockContext, MockContextConfig,
+        AnyConsensusState, MockClientConfig, MockContext, MockContextConfig,
     };
     use crate::mock::header::MockHeader;
     use crate::mock::host::{HostBlock, HostType};
@@ -883,7 +882,9 @@ mod tests {
 
         let timestamp = Timestamp::now();
 
-        let mut ctx_a = MockContextConfig::builder()
+        let trusting_period = Duration::from_secs(64);
+
+        let mut ctx = MockContextConfig::builder()
             .host_id(ChainId::new("mockgaiaA", 1).unwrap())
             .latest_height(Height::new(1, 1).unwrap())
             .latest_timestamp(timestamp)
@@ -895,39 +896,18 @@ mod tests {
                     .client_state_height(client_height)
                     .client_type(tm_client_type())
                     .latest_timestamp(timestamp)
+                    .trusting_period(trusting_period)
                     .build(),
             );
 
-        let mut ctx_b = MockContextConfig::builder()
-            .host_id(chain_id_b.clone())
-            .host_type(HostType::SyntheticTendermint)
-            .latest_height(update_height)
-            .latest_timestamp(timestamp)
-            .build();
-
+        while ctx.host_timestamp().expect("no error")
+            < (timestamp + trusting_period).expect("no error")
         {
-            let client_state = match ctx_a.client_state(&client_id).unwrap() {
-                AnyClientState::Tendermint(tm_client_state) => tm_client_state,
-                _ => panic!("never fails. not mock client"),
-            };
-
-            let client_trusting_period = client_state.trusting_period;
-
-            let future_timestamp = ctx_a
-                .host_timestamp()
-                .expect("never fails")
-                .add(client_trusting_period)
-                .expect("overflow");
-
-            ctx_a.advance_host_chain_height_with_timestamp(future_timestamp);
-            ctx_b.advance_host_chain_height_with_timestamp(future_timestamp);
+            ctx.advance_host_chain_height();
         }
 
-        let client_state = ctx_a.client_state(&client_id).unwrap();
+        let client_state = ctx.client_state(&client_id).unwrap();
 
-        assert!(client_state
-            .status(&ctx_a, &client_id)
-            .unwrap()
-            .is_expired());
+        assert!(client_state.status(&ctx, &client_id).unwrap().is_expired());
     }
 }
