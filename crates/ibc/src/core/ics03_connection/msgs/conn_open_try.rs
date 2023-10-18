@@ -25,7 +25,6 @@ pub struct MsgConnectionOpenTry {
     /// ClientId on B that the connection is being opened for
     pub client_id_on_b: ClientId,
     /// ClientState of client tracking chain B on chain A
-    #[cfg_attr(feature = "schema", schemars(with = "crate::utils::schema::AnySchema"))]
     pub client_state_of_b_on_a: Any,
     /// ClientId, ConnectionId and prefix of chain A
     pub counterparty: Counterparty,
