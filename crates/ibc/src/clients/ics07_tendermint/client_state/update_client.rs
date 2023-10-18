@@ -188,13 +188,14 @@ impl ClientState {
                     .map_err(|err| ClientError::Other {
                         description: err.to_string(),
                     })?;
+
             let host_timestamp = ctx.host_timestamp()?;
             let tm_consensus_state_timestamp = (tm_consensus_state.timestamp() + self.trusting_period)
                 .map_err(|_| ClientError::Other {
                     description: String::from("Timestamp overflow error occurred while attempting to parse TmConsensusState")
                 })?;
 
-            if tm_consensus_state_timestamp <= host_timestamp {
+            if tm_consensus_state_timestamp > host_timestamp {
                 break;
             } else {
                 let client_id = client_id.clone();
