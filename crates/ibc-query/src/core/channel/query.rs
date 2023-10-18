@@ -13,7 +13,7 @@ use ibc::core::ValidationContext;
 use ibc::Height;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::channel::v1::{
-    PacketState, QueryChannelClientStateRequest, QueryChannelClientStateResponse,
+    QueryChannelClientStateRequest, QueryChannelClientStateResponse,
     QueryChannelConsensusStateRequest, QueryChannelConsensusStateResponse, QueryChannelRequest,
     QueryChannelResponse, QueryChannelsRequest, QueryChannelsResponse,
     QueryConnectionChannelsRequest, QueryConnectionChannelsResponse,
@@ -274,17 +274,8 @@ where
     let commitments = ibc_ctx
         .packet_commitments(&channel_end_path)?
         .into_iter()
-        .map(|path| {
-            ibc_ctx
-                .get_packet_commitment(&path)
-                .map(|commitment| PacketState {
-                    port_id: path.port_id.as_str().into(),
-                    channel_id: path.channel_id.as_str().into(),
-                    sequence: path.sequence.into(),
-                    data: commitment.into_vec(),
-                })
-        })
-        .collect::<Result<_, _>>()?;
+        .map(Into::into)
+        .collect();
 
     Ok(QueryPacketCommitmentsResponse {
         commitments,
@@ -393,17 +384,8 @@ where
     let acknowledgements = ibc_ctx
         .packet_acknowledgements(&channel_end_path, commitment_sequences)?
         .into_iter()
-        .map(|path| {
-            ibc_ctx
-                .get_packet_acknowledgement(&path)
-                .map(|acknowledgement| PacketState {
-                    port_id: path.port_id.as_str().into(),
-                    channel_id: path.channel_id.as_str().into(),
-                    sequence: path.sequence.into(),
-                    data: acknowledgement.into_vec(),
-                })
-        })
-        .collect::<Result<_, _>>()?;
+        .map(Into::into)
+        .collect();
 
     Ok(QueryPacketAcknowledgementsResponse {
         acknowledgements,
