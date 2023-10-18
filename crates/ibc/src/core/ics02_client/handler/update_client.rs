@@ -272,9 +272,7 @@ mod tests {
             );
 
         let ctx_b_val_history = vec![
-            // TODO(rano): the validator set params during setups.
-            // Here I picked the default validator set which is
-            // used at host side client creation.
+            // First two validator sets are default at client creation
             //
             // validator set of height-20
             vec![
@@ -366,9 +364,7 @@ mod tests {
             );
 
         let ctx_b_val_history = vec![
-            // TODO(rano): the validator set params during setups.
-            // Here I picked the default validator set which is
-            // used at host side client creation.
+            // First two validator sets are default at client creation
             //
             // validator set of height-20
             vec![

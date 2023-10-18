@@ -157,8 +157,6 @@ impl HostBlock {
         height: u64,
         timestamp: Timestamp,
     ) -> SyntheticTmBlock {
-        // TODO(rano): use HeaderBuilder pattern
-
         let validators = [
             TestgenValidator::new("1").voting_power(50),
             TestgenValidator::new("2").voting_power(50),
@@ -175,7 +173,6 @@ impl HostBlock {
             .expect("Never fails");
 
         SyntheticTmBlock {
-            // TODO(rano): don't use constant for rev_height
             trusted_height: Height::new(chain_id.revision_number(), 1).expect("Never fails"),
             trusted_next_validators: light_block.next_validators.clone(),
             light_block,

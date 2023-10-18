@@ -230,8 +230,7 @@ pub struct MockContextConfig {
     #[builder(default = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS))]
     block_time: Duration,
 
-    // TODO(rano): make max_history_size optional
-    // should be default to `validator_set_history.unwrap_or(6) - 1`
+    // may panic if validator_set_history size is less than max_history_size + 1
     #[builder(default = 5)]
     max_history_size: u64,
 
@@ -724,7 +723,6 @@ impl MockContext {
                     })
                     .collect();
 
-                // TODO(rano): parametrize the other params
                 let client_state: TmClientState = TmClientStateConfig::builder()
                     .chain_id(client.client_chain_id)
                     .latest_height(client.client_state_height)
