@@ -910,4 +910,73 @@ mod tests {
 
         assert!(client_state.status(&ctx, &client_id).unwrap().is_expired());
     }
+
+    #[test]
+    fn test_client_update_max_clock_drift() {
+        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
+
+        let client_height = Height::new(1, 20).unwrap();
+
+        let client_id = ClientId::new(tm_client_type(), 0).unwrap();
+
+        let timestamp = Timestamp::now();
+
+        let max_clock_drift = Duration::from_secs(64);
+
+        let ctx_a = MockContextConfig::builder()
+            .host_id(ChainId::new("mockgaiaA", 1).unwrap())
+            .latest_height(Height::new(1, 1).unwrap())
+            .latest_timestamp(timestamp)
+            .build()
+            .with_client_config(
+                MockClientConfig::builder()
+                    .client_chain_id(chain_id_b.clone())
+                    .client_id(client_id.clone())
+                    .client_state_height(client_height)
+                    .client_type(tm_client_type())
+                    .latest_timestamp(timestamp)
+                    .max_clock_drift(max_clock_drift)
+                    .build(),
+            );
+
+        let mut ctx_b = MockContextConfig::builder()
+            .host_id(chain_id_b.clone())
+            .host_type(HostType::SyntheticTendermint)
+            .latest_height(client_height)
+            .latest_timestamp(timestamp)
+            .max_history_size(u64::MAX)
+            .build();
+
+        while ctx_b.host_timestamp().expect("no error")
+            < (ctx_a.host_timestamp().expect("no error") + max_clock_drift).expect("no error")
+        {
+            ctx_b.advance_host_chain_height();
+        }
+
+        // include current block
+        ctx_b.advance_host_chain_height();
+
+        let update_height = ctx_b.latest_height();
+
+        let signer = get_dummy_account_id();
+
+        let mut block = ctx_b.host_block(&update_height).unwrap().clone();
+        block.set_trusted_height(client_height);
+
+        let trusted_next_validator_set = match ctx_b.host_block(&client_height).expect("no error") {
+            HostBlock::SyntheticTendermint(header) => header.light_block.next_validators.clone(),
+            _ => panic!("unexpected host block type"),
+        };
+
+        block.set_trusted_next_validators_set(trusted_next_validator_set);
+
+        let msg = MsgUpdateClient {
+            client_id,
+            client_message: block.clone().into(),
+            signer,
+        };
+
+        let res = validate(&ctx_a, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
+        assert!(res.is_err());
+    }
 }
