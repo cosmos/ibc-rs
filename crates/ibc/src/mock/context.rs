@@ -342,6 +342,11 @@ pub struct MockClientConfig {
     consensus_state_heights: Vec<Height>,
     #[builder(default = Timestamp::now())]
     latest_timestamp: Timestamp,
+
+    #[builder(default = Duration::from_secs(64000))]
+    pub trusting_period: Duration,
+    #[builder(default = Duration::from_millis(3000))]
+    max_clock_drift: Duration,
 }
 
 /// Returns a MockContext with bare minimum initialization: no clients, no connections and no channels are
@@ -723,6 +728,8 @@ impl MockContext {
                 let client_state: TmClientState = TmClientStateConfig::builder()
                     .chain_id(client.client_chain_id)
                     .latest_height(client.client_state_height)
+                    .trusting_period(client.trusting_period)
+                    .max_clock_drift(client.max_clock_drift)
                     .build()
                     .try_into()
                     .expect("never fails");
