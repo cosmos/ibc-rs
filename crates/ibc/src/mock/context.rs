@@ -887,17 +887,15 @@ impl MockContext {
 
     /// Triggers the advancing of the host chain, by extending the history of blocks (or headers).
     pub fn advance_host_chain_height(&mut self) {
-        self.advance_host_chain_height_with_timestamp(self.host_timestamp().expect("Never fails"))
-    }
-
-    /// Triggers the advancing of the host chain, by extending the history of blocks (or headers).
-    pub fn advance_host_chain_height_with_timestamp(&mut self, timestamp: Timestamp) {
         let latest_block = self.history.last().expect("history cannot be empty");
         let new_block = HostBlock::generate_block(
             self.host_chain_id.clone(),
             self.host_chain_type,
             latest_block.height().increment().revision_height(),
-            timestamp,
+            latest_block
+                .timestamp()
+                .add(self.block_time)
+                .expect("Never fails"),
         );
 
         // Append the new header at the tip of the history.
