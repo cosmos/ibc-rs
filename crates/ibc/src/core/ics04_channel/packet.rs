@@ -2,7 +2,7 @@
 
 use core::str::FromStr;
 
-use ibc_proto::ibc::core::channel::v1::Packet as RawPacket;
+use ibc_proto::ibc::core::channel::v1::{Packet as RawPacket, PacketState as RawPacketState};
 
 use super::timeout::TimeoutHeight;
 use crate::core::ics04_channel::error::{ChannelError, PacketError};
@@ -283,6 +283,91 @@ impl From<Packet> for RawPacket {
             data: packet.data,
             timeout_height: packet.timeout_height_on_b.into(),
             timeout_timestamp: packet.timeout_timestamp_on_b.nanoseconds(),
+        }
+    }
+}
+
+/// The packet state type.
+///
+/// Each application defines the structure of the `data` field.
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(Clone, Default, Hash, PartialEq, Eq)]
+pub struct PacketState {
+    pub port_id: PortId,
+    pub chan_id: ChannelId,
+    pub seq: Sequence,
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "crate::serializers::ser_hex_upper")
+    )]
+    pub data: Vec<u8>,
+}
+impl core::fmt::Debug for PacketState {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
+        let data_wrapper = PacketData(&self.data);
+
+        formatter
+            .debug_struct("PacketState")
+            .field("port", &self.port_id)
+            .field("channel", &self.chan_id)
+            .field("sequence", &self.seq)
+            .field("data", &data_wrapper)
+            .finish()
+    }
+}
+
+/// Custom debug output to omit the packet data
+impl core::fmt::Display for PacketState {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
+        write!(
+            f,
+            "seq:{}, path:{}/{}",
+            self.seq, self.chan_id, self.port_id,
+        )
+    }
+}
+
+impl TryFrom<RawPacketState> for PacketState {
+    type Error = PacketError;
+
+    fn try_from(raw_pkt: RawPacketState) -> Result<Self, Self::Error> {
+        if Sequence::from(raw_pkt.sequence).is_zero() {
+            return Err(PacketError::ZeroPacketSequence);
+        }
+
+        if raw_pkt.data.is_empty() {
+            return Err(PacketError::ZeroPacketData);
+        }
+
+        Ok(PacketState {
+            seq: Sequence::from(raw_pkt.sequence),
+            port_id: raw_pkt.port_id.parse()?,
+            chan_id: raw_pkt.channel_id.parse()?,
+            data: raw_pkt.data,
+        })
+    }
+}
+
+impl From<PacketState> for RawPacketState {
+    fn from(packet: PacketState) -> Self {
+        Self {
+            sequence: packet.seq.0,
+            port_id: packet.port_id.to_string(),
+            channel_id: packet.chan_id.to_string(),
+            data: packet.data,
         }
     }
 }
