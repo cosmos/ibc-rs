@@ -2,9 +2,9 @@
 
 use ibc::core::ics03_connection::connection::IdentifiedConnectionEnd;
 use ibc::core::ics04_channel::channel::IdentifiedChannelEnd;
-use ibc::core::ics04_channel::packet::Sequence;
+use ibc::core::ics04_channel::packet::{PacketState, Sequence};
 use ibc::core::ics24_host::identifier::{ClientId, ConnectionId};
-use ibc::core::ics24_host::path::{AckPath, ChannelEndPath, CommitmentPath, Path};
+use ibc::core::ics24_host::path::{ChannelEndPath, Path};
 use ibc::core::{ContextError, ValidationContext};
 use ibc::prelude::*;
 use ibc::Height;
@@ -56,7 +56,7 @@ pub trait QueryContext: ProvableContext + ValidationContext {
     fn packet_commitments(
         &self,
         channel_end_path: &ChannelEndPath,
-    ) -> Result<Vec<CommitmentPath>, ContextError>;
+    ) -> Result<Vec<PacketState>, ContextError>;
 
     /// Filters the list of packet sequences for the given channel end that are acknowledged.
     /// Returns all the packet acknowledgements if `sequences` is empty.
@@ -64,7 +64,7 @@ pub trait QueryContext: ProvableContext + ValidationContext {
         &self,
         channel_end_path: &ChannelEndPath,
         sequences: impl ExactSizeIterator<Item = Sequence>,
-    ) -> Result<Vec<AckPath>, ContextError>;
+    ) -> Result<Vec<PacketState>, ContextError>;
 
     /// Filters the packet sequences for the given channel end that are not received.
     fn unreceived_packets(
