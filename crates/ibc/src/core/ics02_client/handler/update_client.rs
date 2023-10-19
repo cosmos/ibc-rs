@@ -189,7 +189,7 @@ mod tests {
     /// period of 3 seconds. It then advances the state of the MockContext
     /// by 2 heights, and thus 6 seconds, due to the DEFAULT_BLOCK_TIME_SECS
     /// constant being set to 3 seconds. At this point, the chain is at height
-    /// 3. Any consensus states associated with a block more than 6 seconds
+    /// 3. Any consensus states associated with a block more than 3 seconds
     /// in the past should be expired and pruned from the IBC store. The test
     /// thus checks that the consensus state at height 1 is not contained in
     /// the store. It also checks that the consensus state at height 2 is
