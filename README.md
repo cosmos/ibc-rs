@@ -26,7 +26,13 @@
 Rust implementation of the Inter-Blockchain Communication (IBC) protocol. This project hosts
 the `ibc` rust crate which defines the main data structures and on-chain logic for the IBC protocol.
 
-See the [ibc](crates/ibc/README.md) crate's README.md for more detailed information on the `ibc` crate.
+## Libraries
+
+- [ibc](crates/ibc/README.md) - Data structures and on-chain logic for the IBC protocol.
+- [ibc-query](crates/ibc-query/README.md) - Utility traits and implementations for querying the
+state of an `ibc-rs` enabled chain.
+- [ibc-derive](crates/ibc-derive/README.md) - Derive macros for `ClientState`
+  and `ConsensusState` traits, reducing boilerplate.
 
 ## Contributing
 
