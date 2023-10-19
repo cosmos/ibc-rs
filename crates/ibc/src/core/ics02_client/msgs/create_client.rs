@@ -19,9 +19,7 @@ pub(crate) const TYPE_URL: &str = "/ibc.core.client.v1.MsgCreateClient";
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgCreateClient {
-    #[cfg_attr(feature = "schema", schemars(with = "crate::utils::schema::AnySchema"))]
     pub client_state: Any,
-    #[cfg_attr(feature = "schema", schemars(with = "crate::utils::schema::AnySchema"))]
     pub consensus_state: Any,
     pub signer: Signer,
 }

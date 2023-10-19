@@ -23,7 +23,6 @@ pub struct MsgSubmitMisbehaviour {
     /// client unique identifier
     pub client_id: ClientId,
     /// misbehaviour used for freezing the light client
-    #[cfg_attr(feature = "schema", schemars(with = "crate::utils::schema::AnySchema"))]
     pub misbehaviour: ProtoAny,
     /// signer address
     pub signer: Signer,
