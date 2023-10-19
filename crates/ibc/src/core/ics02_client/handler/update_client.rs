@@ -139,8 +139,10 @@ mod tests {
     use crate::core::ics02_client::handler::update_client::{execute, validate};
     use crate::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
     use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
+    use crate::core::ics02_client::ClientValidationContext;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::{ChainId, ClientId};
+    use crate::core::ics24_host::path::ClientConsensusStatePath;
     use crate::core::timestamp::Timestamp;
     use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
     use crate::mock::context::{
@@ -178,6 +180,76 @@ mod tests {
             ctx.client_state(&msg.client_id).unwrap(),
             MockClientState::new(MockHeader::new(height).with_timestamp(timestamp)).into()
         );
+    }
+
+    #[test]
+    fn test_cons_state_pruning() {
+        let chain_id = ChainId::new("mockgaiaA", 1).unwrap();
+
+        let client_height = Height::new(1, 10).unwrap();
+
+        let client_id = ClientId::new(tm_client_type(), 0).unwrap();
+
+        let mut ctx = MockContextConfig::builder()
+            .host_id(chain_id.clone())
+            .host_type(HostType::SyntheticTendermint)
+            .latest_height(client_height)
+            .latest_timestamp(Timestamp::now())
+            .max_history_size(u64::MAX)
+            .build()
+            .with_client_config(
+                MockClientConfig::builder()
+                    .client_chain_id(chain_id.clone())
+                    .client_id(client_id.clone())
+                    .client_state_height(client_height)
+                    .client_type(tm_client_type())
+                    .trusting_period(Duration::from_secs(10))
+                    .build(),
+            );
+
+        // Move the chain forward by 4 blocks to pass the trusting period.
+        for _ in 10..14 {
+            let signer = get_dummy_account_id();
+
+            ctx.advance_host_chain_height();
+
+            let update_height = ctx.latest_height();
+
+            let mut block = ctx.host_block(&update_height).unwrap().clone();
+
+            block.set_trusted_height(client_height);
+
+            let msg = MsgUpdateClient {
+                client_id: client_id.clone(),
+                client_message: block.clone().into(),
+                signer,
+            };
+
+            let _ = validate(&ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
+            let _ = execute(&mut ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg.clone()));
+        }
+
+        // Check that latest expired consensus state is pruned.
+        let expired_height = Height::new(1, 11).unwrap();
+        let client_cons_state_path = ClientConsensusStatePath::new(&client_id, &expired_height);
+        assert!(ctx
+            .client_update_height(&client_id, &expired_height)
+            .is_err());
+        assert!(ctx.client_update_time(&client_id, &expired_height).is_err());
+        assert!(ctx.consensus_state(&client_cons_state_path).is_err());
+
+        // Check that latest valid consensus state exists.
+        let earliest_valid_height = Height::new(1, 12).unwrap();
+        let client_cons_state_path =
+            ClientConsensusStatePath::new(&client_id, &earliest_valid_height);
+
+        assert!(ctx
+            .client_update_height(&client_id, &earliest_valid_height)
+            .is_ok());
+        assert!(ctx
+            .client_update_time(&client_id, &earliest_valid_height)
+            .is_ok());
+        assert!(ctx.consensus_state(&client_cons_state_path).is_ok())
     }
 
     #[test]
