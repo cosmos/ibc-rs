@@ -172,7 +172,7 @@ impl ClientState {
         client_id: &ClientId,
     ) -> Result<(), ClientError>
     where
-        E: ClientExecutionContext + TmValidationContext,
+        E: ClientExecutionContext + CommonContext,
     {
         let mut heights = ctx.consensus_state_heights(client_id)?;
 
@@ -190,12 +190,12 @@ impl ClientState {
                     })?;
 
             let host_timestamp = ctx.host_timestamp()?;
-            let tm_consensus_state_timestamp = (tm_consensus_state.timestamp() + self.trusting_period)
+            let tm_consensus_state_expiry = (tm_consensus_state.timestamp() + self.trusting_period)
                 .map_err(|_| ClientError::Other {
                     description: String::from("Timestamp overflow error occurred while attempting to parse TmConsensusState")
                 })?;
 
-            if tm_consensus_state_timestamp > host_timestamp {
+            if tm_consensus_state_expiry > host_timestamp {
                 break;
             } else {
                 let client_id = client_id.clone();

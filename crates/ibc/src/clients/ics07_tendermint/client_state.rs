@@ -490,7 +490,7 @@ where
 
 impl<E> ClientStateExecution<E> for ClientState
 where
-    E: TmExecutionContext + ExecutionContext + TmValidationContext,
+    E: TmExecutionContext + ExecutionContext,
     <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
     <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
 {
