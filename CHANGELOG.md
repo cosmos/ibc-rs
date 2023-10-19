@@ -4,7 +4,7 @@
 
 *October 19, 2023*
 
-This release adds necessary API for featuring consensus state pruning and
+This release adds necessary APIs for featuring consensus state pruning and
 implements pertaining logic for Tendermint light clients. This prevents
 unlimited store growth. Additionally, we've enhanced ibc-rs compatibility with
 no-float environments making Wasm compilation smoother and updated main
