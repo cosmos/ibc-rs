@@ -6,6 +6,7 @@ use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::timestamp::Timestamp;
 use crate::core::ContextError;
+use crate::prelude::*;
 use crate::Height;
 
 /// Client's context required during both validation and execution
@@ -27,6 +28,9 @@ pub trait CommonContext {
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Self::AnyConsensusState, ContextError>;
+
+    /// Returns all the heights at which a consensus state is stored
+    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError>;
 }
 
 /// Client's context required during validation

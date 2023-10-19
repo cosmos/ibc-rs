@@ -29,6 +29,7 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConse
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
+use crate::clients::ics07_tendermint::CommonContext;
 use crate::core::ics02_client::client_state::{
     ClientStateCommon, ClientStateExecution, ClientStateValidation, Status, UpdateKind,
 };
@@ -46,6 +47,7 @@ use crate::core::ics24_host::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
 use crate::core::timestamp::ZERO_DURATION;
+use crate::core::ExecutionContext;
 use crate::prelude::*;
 use crate::Height;
 
@@ -488,7 +490,7 @@ where
 
 impl<E> ClientStateExecution<E> for ClientState
 where
-    E: TmExecutionContext,
+    E: TmExecutionContext + ExecutionContext,
     <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
     <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
 {
@@ -498,6 +500,9 @@ where
         client_id: &ClientId,
         consensus_state: Any,
     ) -> Result<(), ClientError> {
+        let host_timestamp = CommonContext::host_timestamp(ctx)?;
+        let host_height = CommonContext::host_height(ctx)?;
+
         let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
 
         ctx.store_client_state(ClientStatePath::new(client_id), self.clone().into())?;
@@ -505,12 +510,8 @@ where
             ClientConsensusStatePath::new(client_id, &self.latest_height),
             tm_consensus_state.into(),
         )?;
-        ctx.store_update_time(
-            client_id.clone(),
-            self.latest_height(),
-            ctx.host_timestamp()?,
-        )?;
-        ctx.store_update_height(client_id.clone(), self.latest_height(), ctx.host_height()?)?;
+        ctx.store_update_time(client_id.clone(), self.latest_height(), host_timestamp)?;
+        ctx.store_update_height(client_id.clone(), self.latest_height(), host_height)?;
 
         Ok(())
     }
@@ -524,10 +525,12 @@ where
         let header = TmHeader::try_from(header)?;
         let header_height = header.height();
 
+        self.prune_oldest_consensus_state(ctx, client_id)?;
+
         let maybe_existing_consensus_state = {
             let path_at_header_height = ClientConsensusStatePath::new(client_id, &header_height);
 
-            ctx.consensus_state(&path_at_header_height).ok()
+            CommonContext::consensus_state(ctx, &path_at_header_height).ok()
         };
 
         if maybe_existing_consensus_state.is_some() {
@@ -536,6 +539,9 @@ where
             //
             // Do nothing.
         } else {
+            let host_timestamp = CommonContext::host_timestamp(ctx)?;
+            let host_height = CommonContext::host_height(ctx)?;
+
             let new_consensus_state = TmConsensusState::from(header.clone());
             let new_client_state = self.clone().with_header(header)?;
 
@@ -544,8 +550,8 @@ where
                 new_consensus_state.into(),
             )?;
             ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
-            ctx.store_update_time(client_id.clone(), header_height, ctx.host_timestamp()?)?;
-            ctx.store_update_height(client_id.clone(), header_height, ctx.host_height()?)?;
+            ctx.store_update_time(client_id.clone(), header_height, host_timestamp)?;
+            ctx.store_update_height(client_id.clone(), header_height, host_height)?;
         }
 
         Ok(vec![header_height])
@@ -615,14 +621,16 @@ where
         );
 
         let latest_height = new_client_state.latest_height;
+        let host_timestamp = CommonContext::host_timestamp(ctx)?;
+        let host_height = CommonContext::host_height(ctx)?;
 
         ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(client_id, &latest_height),
             new_consensus_state.into(),
         )?;
-        ctx.store_update_time(client_id.clone(), latest_height, ctx.host_timestamp()?)?;
-        ctx.store_update_height(client_id.clone(), latest_height, ctx.host_height()?)?;
+        ctx.store_update_time(client_id.clone(), latest_height, host_timestamp)?;
+        ctx.store_update_height(client_id.clone(), latest_height, host_height)?;
 
         Ok(latest_height)
     }
