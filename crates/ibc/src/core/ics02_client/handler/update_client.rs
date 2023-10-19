@@ -183,10 +183,10 @@ mod tests {
     }
 
     #[test]
-    fn test_cons_state_pruning() {
+    fn test_consensus_state_pruning() {
         let chain_id = ChainId::new("mockgaiaA", 1).unwrap();
 
-        let client_height = Height::new(1, 10).unwrap();
+        let client_height = Height::new(1, 1).unwrap();
 
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
 
@@ -203,17 +203,19 @@ mod tests {
                     .client_id(client_id.clone())
                     .client_state_height(client_height)
                     .client_type(tm_client_type())
-                    .trusting_period(Duration::from_secs(10))
+                    .trusting_period(Duration::from_secs(3))
                     .build(),
             );
 
-        // Move the chain forward by 4 blocks to pass the trusting period.
-        for _ in 10..14 {
+        let start_host_timestamp = ctx.host_timestamp().unwrap();
+
+        // Move the chain forward by 2 blocks to pass the trusting period.
+        for _ in 1..=2 {
             let signer = get_dummy_account_id();
 
-            ctx.advance_host_chain_height();
-
             let update_height = ctx.latest_height();
+
+            ctx.advance_host_chain_height();
 
             let mut block = ctx.host_block(&update_height).unwrap().clone();
 
@@ -230,7 +232,7 @@ mod tests {
         }
 
         // Check that latest expired consensus state is pruned.
-        let expired_height = Height::new(1, 11).unwrap();
+        let expired_height = Height::new(1, 1).unwrap();
         let client_cons_state_path = ClientConsensusStatePath::new(&client_id, &expired_height);
         assert!(ctx
             .client_update_height(&client_id, &expired_height)
@@ -239,7 +241,7 @@ mod tests {
         assert!(ctx.consensus_state(&client_cons_state_path).is_err());
 
         // Check that latest valid consensus state exists.
-        let earliest_valid_height = Height::new(1, 12).unwrap();
+        let earliest_valid_height = Height::new(1, 2).unwrap();
         let client_cons_state_path =
             ClientConsensusStatePath::new(&client_id, &earliest_valid_height);
 
@@ -249,7 +251,13 @@ mod tests {
         assert!(ctx
             .client_update_time(&client_id, &earliest_valid_height)
             .is_ok());
-        assert!(ctx.consensus_state(&client_cons_state_path).is_ok())
+        assert!(ctx.consensus_state(&client_cons_state_path).is_ok());
+
+        let end_host_timestamp = ctx.host_timestamp().unwrap();
+        assert_eq!(
+            end_host_timestamp,
+            (start_host_timestamp + Duration::from_secs(6)).unwrap()
+        );
     }
 
     #[test]
