@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## v0.47.0
+
+*October 19, 2023*
+
+This release adds necessary APIs for featuring consensus state pruning and
+implements pertaining logic for Tendermint light clients. This prevents
+unlimited store growth. Additionally, we've enhanced ibc-rs compatibility with
+no-float environments making Wasm compilation smoother and updated main
+dependencies including `prost` to v0.12, `ibc-proto-rs` to v0.37, and
+`tendermint-rs` to v0.34, ensuring the latest advancements.
+
+There are no consensus-breaking changes.
+
+### FEATURES
+
+- Implement consensus state pruning for Tendermint light clients. ([\#600](https://github.com/cosmos/ibc-rs/issues/600))
+
+### IMPROVEMENTS
+
+- Add test for expired client status.
+  ([\#538](https://github.com/cosmos/ibc-rs/issues/538))
+
+- Fix compilation issue with Wasm envs because of floats. ([\#850](https://github.com/cosmos/ibc-rs/issues/850))
+  - Use `serde-json-wasm` dependency instead of `serde-json` for no-floats support
+  - Add CI test to include CosmWasm compilation check
+
+- Change `mocks` feature to imply `std` since it requires
+  Timestamp::now to work.
+  ([\#926](https://github.com/cosmos/ibc-rs/pull/926))
+- Return PacketStates instead of paths from packet_commitments and
+  packet_acknowledgements. ([\#927](https://github.com/cosmos/ibc-rs/issues/927))
+- Remove `AnySchema` as `JsonSchema` derive on `Any` now accessible through
+  `ibc-proto-rs`. ([#929](https://github.com/cosmos/ibc-rs/issues/929))
+
 ## v0.46.0
 
 *October 12, 2023*
