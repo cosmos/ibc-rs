@@ -15,9 +15,11 @@ use ibc_proto::protobuf::Protobuf;
 use parking_lot::Mutex;
 use tendermint_testgen::Validator as TestgenValidator;
 use tracing::debug;
+use typed_builder::TypedBuilder;
 
 use super::client_state::{MOCK_CLIENT_STATE_TYPE_URL, MOCK_CLIENT_TYPE};
 use super::consensus_state::MOCK_CONSENSUS_STATE_TYPE_URL;
+use crate::clients::ics07_tendermint::client_state::test_util::ClientStateConfig as TmClientStateConfig;
 use crate::clients::ics07_tendermint::client_state::{
     ClientState as TmClientState, TENDERMINT_CLIENT_STATE_TYPE_URL,
 };
@@ -217,6 +219,135 @@ pub struct MockContext {
     pub logs: Vec<String>,
 }
 
+#[derive(Debug, TypedBuilder)]
+#[builder(build_method(into = MockContext))]
+pub struct MockContextConfig {
+    #[builder(default = HostType::Mock)]
+    host_type: HostType,
+
+    host_id: ChainId,
+
+    #[builder(default = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS))]
+    block_time: Duration,
+
+    // may panic if validator_set_history size is less than max_history_size + 1
+    #[builder(default = 5)]
+    max_history_size: u64,
+
+    #[builder(default, setter(strip_option))]
+    validator_set_history: Option<Vec<Vec<TestgenValidator>>>,
+
+    latest_height: Height,
+
+    #[builder(default = Timestamp::now())]
+    latest_timestamp: Timestamp,
+}
+
+impl From<MockContextConfig> for MockContext {
+    fn from(params: MockContextConfig) -> Self {
+        assert_ne!(
+            params.max_history_size, 0,
+            "The chain must have a non-zero max_history_size"
+        );
+
+        assert_ne!(
+            params.latest_height.revision_height(),
+            0,
+            "The chain must have a non-zero revision_height"
+        );
+
+        // Compute the number of blocks to store.
+        let n = min(
+            params.max_history_size,
+            params.latest_height.revision_height(),
+        );
+
+        assert_eq!(
+            params.host_id.revision_number(),
+            params.latest_height.revision_number(),
+            "The version in the chain identifier must match the version in the latest height"
+        );
+
+        let next_block_timestamp = params
+            .latest_timestamp
+            .add(params.block_time)
+            .expect("Never fails");
+
+        let history = if let Some(validator_set_history) = params.validator_set_history {
+            (0..n)
+                .rev()
+                .map(|i| {
+                    // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
+                    // where N = now(), BT = block_time
+                    HostBlock::generate_block_with_validators(
+                        params.host_id.clone(),
+                        params.host_type,
+                        params
+                            .latest_height
+                            .sub(i)
+                            .expect("Never fails")
+                            .revision_height(),
+                        next_block_timestamp
+                            .sub(params.block_time * ((i + 1) as u32))
+                            .expect("Never fails"),
+                        &validator_set_history[(n - i) as usize - 1],
+                        &validator_set_history[(n - i) as usize],
+                    )
+                })
+                .collect()
+        } else {
+            (0..n)
+                .rev()
+                .map(|i| {
+                    // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
+                    // where N = now(), BT = block_time
+                    HostBlock::generate_block(
+                        params.host_id.clone(),
+                        params.host_type,
+                        params
+                            .latest_height
+                            .sub(i)
+                            .expect("Never fails")
+                            .revision_height(),
+                        next_block_timestamp
+                            .sub(params.block_time * ((i + 1) as u32))
+                            .expect("Never fails"),
+                    )
+                })
+                .collect()
+        };
+
+        MockContext {
+            host_chain_type: params.host_type,
+            host_chain_id: params.host_id.clone(),
+            max_history_size: params.max_history_size,
+            history,
+            block_time: params.block_time,
+            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+            events: Vec::new(),
+            logs: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, TypedBuilder)]
+pub struct MockClientConfig {
+    client_chain_id: ChainId,
+    client_id: ClientId,
+    #[builder(default = mock_client_type())]
+    client_type: ClientType,
+    client_state_height: Height,
+    #[builder(default)]
+    consensus_state_heights: Vec<Height>,
+    #[builder(default = Timestamp::now())]
+    latest_timestamp: Timestamp,
+
+    #[builder(default = Duration::from_secs(64000))]
+    pub trusting_period: Duration,
+    #[builder(default = Duration::from_millis(3000))]
+    max_clock_drift: Duration,
+}
+
 /// Returns a MockContext with bare minimum initialization: no clients, no connections and no channels are
 /// present, and the chain has Height(5). This should be used sparingly, mostly for testing the
 /// creation of new domain objects.
@@ -324,7 +455,7 @@ impl MockContext {
         validator_history: &[Vec<TestgenValidator>],
         latest_height: Height,
     ) -> Self {
-        let max_history_size = validator_history.len() - 1;
+        let max_history_size = validator_history.len() as u64 - 1;
 
         assert_ne!(
             max_history_size, 0,
@@ -338,7 +469,7 @@ impl MockContext {
         );
 
         assert!(
-            max_history_size as u64 <= latest_height.revision_height(),
+            max_history_size <= latest_height.revision_height(),
             "The number of blocks must be greater than the number of validator set histories"
         );
 
@@ -359,17 +490,12 @@ impl MockContext {
                 HostBlock::generate_block_with_validators(
                     host_id.clone(),
                     host_type,
-                    latest_height
-                        .sub(i as u64)
-                        .expect("Never fails")
-                        .revision_height(),
+                    latest_height.sub(i).expect("Never fails").revision_height(),
                     next_block_timestamp
-                        .sub(Duration::from_secs(
-                            DEFAULT_BLOCK_TIME_SECS * (i as u64 + 1),
-                        ))
+                        .sub(Duration::from_secs(DEFAULT_BLOCK_TIME_SECS * (i + 1)))
                         .expect("Never fails"),
-                    &validator_history[i],
-                    &validator_history[i + 1],
+                    &validator_history[(max_history_size - i) as usize - 1],
+                    &validator_history[(max_history_size - i) as usize],
                 )
             })
             .collect();
@@ -377,7 +503,7 @@ impl MockContext {
         MockContext {
             host_chain_type: host_type,
             host_chain_id: host_id.clone(),
-            max_history_size: max_history_size as u64,
+            max_history_size,
             history,
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
@@ -551,6 +677,82 @@ impl MockContext {
             .lock()
             .clients
             .insert(client_id.clone(), client_record);
+        self
+    }
+
+    pub fn with_client_config(self, client: MockClientConfig) -> Self {
+        let cs_heights = if client.consensus_state_heights.is_empty() {
+            vec![client.client_state_height]
+        } else {
+            client.consensus_state_heights
+        };
+
+        let (client_state, consensus_states) = match client.client_type.as_str() {
+            MOCK_CLIENT_TYPE => {
+                let blocks: Vec<_> = cs_heights
+                    .into_iter()
+                    .map(|cs_height| (cs_height, MockHeader::new(cs_height)))
+                    .collect();
+
+                let client_state = MockClientState::new(blocks.last().expect("never fails").1);
+
+                let cs_states = blocks
+                    .into_iter()
+                    .map(|(height, block)| (height, MockConsensusState::new(block).into()))
+                    .collect();
+
+                (client_state.into(), cs_states)
+            }
+            TENDERMINT_CLIENT_TYPE => {
+                let n_blocks = cs_heights.len();
+                let blocks: Vec<_> = cs_heights
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, cs_height)| {
+                        (
+                            cs_height,
+                            HostBlock::generate_tm_block(
+                                client.client_chain_id.clone(),
+                                cs_height.revision_height(),
+                                client
+                                    .latest_timestamp
+                                    .sub(self.block_time * ((n_blocks - 1 - i) as u32))
+                                    .expect("never fails"),
+                            ),
+                        )
+                    })
+                    .collect();
+
+                let client_state: TmClientState = TmClientStateConfig::builder()
+                    .chain_id(client.client_chain_id)
+                    .latest_height(client.client_state_height)
+                    .trusting_period(client.trusting_period)
+                    .max_clock_drift(client.max_clock_drift)
+                    .build()
+                    .try_into()
+                    .expect("never fails");
+
+                client_state.validate().expect("never fails");
+
+                let cs_states = blocks
+                    .into_iter()
+                    .map(|(height, block)| (height, block.into()))
+                    .collect();
+
+                (client_state.into(), cs_states)
+            }
+            _ => panic!("unknown client type"),
+        };
+
+        let client_record = MockClientRecord {
+            client_state: Some(client_state),
+            consensus_states,
+        };
+
+        self.ibc_store
+            .lock()
+            .clients
+            .insert(client.client_id.clone(), client_record);
         self
     }
 

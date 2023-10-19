@@ -75,14 +75,13 @@ We welcome bug reports, feature requests, and other contributions to our project
 
 3. **Provide detailed information**: In the issue description, clearly state the purpose of the issue and follow the guidelines of the issue template
 
-4. A maintainer will take care of assigning the appropriate labels to your issue.
+Note: A maintainer will take care of assigning the appropriate labels to your issue with the following convention:
 
-We use the following convention for issue label names:
-    - (WHY) The purpose or objective of this issue with Objective-level "O" labels like `O: security`, `O: new-feature`, etc.
-    - (WHICH) The part of the system this issue relates to using:
-      - External-level "E" labels if the issue fall outside the current scope of the system and is related to external dependencies or projects like `E: non-cosmos`, `E: no-std` etc.
-      - or "Internal-level "I" labels for anything related to the current scope of the product like `I: errors`, `I: documentation`, etc.
-    - (HOW) If any administrative considerations should be taken into account use Administrative-level "A" labels like `A: help-wanted`, `A: critical`, etc.
+- Objective-level (WHY): conveys the overarching purpose or objective of the issue by labels starting with "O" like `O: security`, `O: new-feature`, etc.
+
+- Scope-level (WHICH): specifies the part of the system that the issue pertains to and labels starting with "S" like `S: non-cosmos`, `S: no-std`, etc.
+
+- Admin-level (HOW) includes relevant administrative considerations on how best handling the issue and labels starting with "A" like `A: help-wanted`, `A: critical`, etc.
 
 ## Pull Requests
 
@@ -256,7 +255,7 @@ Our release process is as follows:
    2. Publish `ibc-derive` with `cargo publish -p ibc-derive`
 4. Bump the versions of relevant crates (`ibc` and `ibc-query`) in their
    `Cargo.toml` to the new version, and push these changes to the release PR.
-      + If you released a new version of `ibc-derive` in step 3, make sure to update that dependency.
+      - If you released a new version of `ibc-derive` in step 3, make sure to update that dependency.
 5. Run `cargo doc -p ibc --all-features --open` locally to double-check that all the
    documentation compiles and seems up-to-date and coherent. Fix any potential
    issues here and push them to the release PR.
@@ -268,7 +267,7 @@ Our release process is as follows:
 10. Create a signed tag and push it to GitHub: `git tag -s -a vX.Y.Z`. In the
    tag message, write the version and the link to the corresponding section of
    the changelog.
-       + Push the tag with `git push --tags`
+       - Push the tag with `git push --tags`
 11. Once the tag is pushed, create a GitHub release and append
    `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)` 
    to the release description.
