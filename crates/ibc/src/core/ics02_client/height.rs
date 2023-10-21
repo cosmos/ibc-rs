@@ -1,7 +1,6 @@
 //! Defines the core `Height` type used throughout the library
 
-use core::cmp::Ordering;
-use core::num::ParseIntError;
+use core::num::{NonZeroU64, ParseIntError};
 use core::str::FromStr;
 
 use displaydoc::Display;
@@ -28,31 +27,29 @@ use crate::prelude::*;
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Height {
     /// Previously known as "epoch"
     revision_number: u64,
 
     /// The height of a block
-    revision_height: u64,
+    revision_height: NonZeroU64,
 }
 
 impl Height {
     pub fn new(revision_number: u64, revision_height: u64) -> Result<Self, ClientError> {
-        if revision_height == 0 {
-            return Err(ClientError::InvalidHeight);
-        }
-
-        Ok(Self {
-            revision_number,
-            revision_height,
-        })
+        NonZeroU64::new(revision_height)
+            .map(|revision_height| Self {
+                revision_number,
+                revision_height,
+            })
+            .ok_or(ClientError::InvalidHeight)
     }
 
     pub fn min(revision_number: u64) -> Self {
         Self {
             revision_number,
-            revision_height: 1,
+            revision_height: NonZeroU64::MIN,
         }
     }
 
@@ -61,13 +58,17 @@ impl Height {
     }
 
     pub fn revision_height(&self) -> u64 {
-        self.revision_height
+        self.revision_height.get()
     }
 
     pub fn add(&self, delta: u64) -> Height {
+        let revision_height = self
+            .revision_height
+            .checked_add(delta)
+            .expect("height should never overflow u64");
         Height {
             revision_number: self.revision_number,
-            revision_height: self.revision_height + delta,
+            revision_height,
         }
     }
 
@@ -76,40 +77,20 @@ impl Height {
     }
 
     pub fn sub(&self, delta: u64) -> Result<Height, ClientError> {
-        if self.revision_height <= delta {
-            return Err(ClientError::InvalidHeightResult);
-        }
-
+        let revision_height = self
+            .revision_height
+            .get()
+            .checked_sub(delta)
+            .and_then(NonZeroU64::new)
+            .ok_or(ClientError::InvalidHeightResult)?;
         Ok(Height {
             revision_number: self.revision_number,
-            revision_height: self.revision_height - delta,
+            revision_height,
         })
     }
 
     pub fn decrement(&self) -> Result<Height, ClientError> {
         self.sub(1)
-    }
-}
-
-impl PartialOrd for Height {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for Height {
-    fn cmp(&self, other: &Self) -> Ordering {
-        if self.revision_number < other.revision_number {
-            Ordering::Less
-        } else if self.revision_number > other.revision_number {
-            Ordering::Greater
-        } else if self.revision_height < other.revision_height {
-            Ordering::Less
-        } else if self.revision_height > other.revision_height {
-            Ordering::Greater
-        } else {
-            Ordering::Equal
-        }
     }
 }
 
@@ -127,7 +108,7 @@ impl From<Height> for RawHeight {
     fn from(ics_height: Height) -> Self {
         RawHeight {
             revision_number: ics_height.revision_number,
-            revision_height: ics_height.revision_height,
+            revision_height: ics_height.revision_height.get(),
         }
     }
 }
@@ -136,7 +117,7 @@ impl core::fmt::Debug for Height {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
         f.debug_struct("Height")
             .field("revision", &self.revision_number)
-            .field("height", &self.revision_height)
+            .field("height", &self.revision_height.get())
             .finish()
     }
 }
@@ -222,20 +203,9 @@ impl FromStr for Height {
 
 #[test]
 fn test_valid_height() {
-    assert_eq!(
-        "1-1".parse::<Height>(),
-        Ok(Height {
-            revision_number: 1,
-            revision_height: 1
-        })
-    );
-    assert_eq!(
-        "1-10".parse::<Height>(),
-        Ok(Height {
-            revision_number: 1,
-            revision_height: 10
-        })
-    );
+    assert_eq!("1-1".parse::<Height>(), Ok(Height::new(1, 1).unwrap()));
+    assert_eq!("1-10".parse::<Height>(), Ok(Height::new(1, 10).unwrap()));
+    assert_eq!("10-1".parse::<Height>(), Ok(Height::new(10, 1).unwrap()));
 }
 
 #[test]
@@ -260,4 +230,37 @@ fn test_invalid_height() {
             raw_height: "".to_owned()
         })
     );
+}
+
+#[cfg(feature = "borsh")]
+#[test]
+fn test_borsh() {
+    use borsh::BorshDeserialize;
+
+    let height = Height::new(42, 24).unwrap();
+    let encoded = borsh::to_vec(&height).unwrap();
+    assert_eq!(
+        &[42, 0, 0, 0, 0, 0, 0, 0, 24, 0, 0, 0, 0, 0, 0, 0],
+        encoded.as_slice()
+    );
+    let decoded = Height::try_from_slice(&encoded).unwrap();
+    assert_eq!(height, decoded);
+
+    // Test 0 revision height doesn’t deserialize.
+    let encoded = [42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    Height::try_from_slice(&encoded).unwrap_err();
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn test_serde() {
+    let height = Height::new(42, 24).unwrap();
+    let encoded = serde_json::to_string(&height).unwrap();
+    assert_eq!(r#"{"revision_number":42,"revision_height":24}"#, encoded);
+    let decoded = serde_json::from_str::<Height>(&encoded).unwrap();
+    assert_eq!(height, decoded);
+
+    // Test 0 revision height doesn’t deserialize.
+    let encoded = r#"{"revision_number":42,"revision_height":0}"#;
+    serde_json::from_str::<Height>(encoded).unwrap_err();
 }
