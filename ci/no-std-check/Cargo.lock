@@ -1070,7 +1070,7 @@ dependencies = [
  "derive_more",
  "displaydoc",
  "ibc-derive",
- "ibc-proto",
+ "ibc-proto 0.37.1",
  "ics23",
  "num-traits",
  "primitive-types",
@@ -1103,6 +1103,22 @@ name = "ibc-proto"
 version = "0.37.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "63042806bb2f662ca1c68026231900cfe13361136ddfd0dd09bcb315056a22b8"
+dependencies = [
+ "base64 0.21.4",
+ "bytes",
+ "flex-error",
+ "ics23",
+ "prost",
+ "serde",
+ "subtle-encoding",
+ "tendermint-proto",
+]
+
+[[package]]
+name = "ibc-proto"
+version = "0.38.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93cbf4cbe9e5113cc7c70f3208a7029b2205c629502cbb2ae7ea0a09a97d3005"
 dependencies = [
  "base64 0.21.4",
  "borsh",
@@ -1428,7 +1444,7 @@ name = "no-std-check"
 version = "0.1.0"
 dependencies = [
  "ibc",
- "ibc-proto",
+ "ibc-proto 0.38.0",
  "sp-core",
  "sp-io",
  "sp-runtime",
