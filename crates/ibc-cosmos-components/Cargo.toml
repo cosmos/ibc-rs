@@ -21,3 +21,9 @@ all-features = true
 
 [dependencies]
 cgp-core = { version = "0.1.0" }
+ibc = { path = "../ibc" }
+
+[dependencies.tendermint-light-client-verifier]
+version = "0.34"
+default-features = false
+features = ["rust-crypto"]
