@@ -4,6 +4,7 @@ resolver = "2"
 
 members = [
     "crates/ibc",
+    "crates/ibc-components",
     "crates/ibc-derive",
     "crates/ibc-query",
 ]
@@ -12,3 +13,11 @@ exclude = [
     "ci/cw-check",
     "ci/no-std-check",
 ]
+
+[patch.crates-io]
+cgp-core            = { git = "https://github.com/informalsystems/cgp.git", branch = "main" }
+cgp-component       = { git = "https://github.com/informalsystems/cgp.git", branch = "main" }
+cgp-component-macro = { git = "https://github.com/informalsystems/cgp.git", branch = "main" }
+cgp-error           = { git = "https://github.com/informalsystems/cgp.git", branch = "main" }
+cgp-async           = { git = "https://github.com/informalsystems/cgp.git", branch = "main" }
+cgp-run             = { git = "https://github.com/informalsystems/cgp.git", branch = "main" }
