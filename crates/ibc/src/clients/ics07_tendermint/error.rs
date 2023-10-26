@@ -124,7 +124,7 @@ impl From<IdentifierError> for Error {
     }
 }
 
-pub(crate) trait IntoResult<T, E> {
+pub trait IntoResult<T, E> {
     fn into_result(self) -> Result<T, E>;
 }
 
