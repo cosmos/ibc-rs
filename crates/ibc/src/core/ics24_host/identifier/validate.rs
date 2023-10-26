@@ -2,36 +2,75 @@ use super::IdentifierError as Error;
 use crate::prelude::*;
 
 /// Path separator (ie. forward slash '/')
-const PATH_SEPARATOR: char = '/';
-const VALID_SPECIAL_CHARS: &str = "._+-#[]<>";
+const PATH_SEPARATOR: u8 = b'/';
 
 /// Checks if the identifier only contains valid characters as specified in the
 /// [`ICS-24`](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#paths-identifiers-separators)]
 /// spec.
-pub fn validate_identifier_chars(id: &str) -> Result<(), Error> {
-    // Check identifier is not empty
-    if id.is_empty() {
-        return Err(Error::Empty);
+pub(crate) fn validate_identifier_chars<I: Id + ?Sized>(id: &I) -> Result<&str, Error> {
+    /// Checks whether byte corresponds to valid identifier character.
+    ///
+    /// Valid identifier characters are:
+    /// - alphanumeric,
+    /// - `.`, `_`, `+`, `-`, `#`,
+    /// - `[`, `]`, `<` and `>`
+    fn validate_char(byte: &u8) -> bool {
+        const VALID_SPECIAL_CHARS: &[u8; 9] = b"._+-#[]<>";
+        byte.is_ascii_alphanumeric() || VALID_SPECIAL_CHARS.contains(byte)
     }
 
-    // Check identifier does not contain path separators
-    if id.contains(PATH_SEPARATOR) {
-        return Err(Error::ContainSeparator { id: id.into() });
+    /// Possible validation results.
+    enum CheckError {
+        Empty,
+        BadChar(bool),
     }
 
-    // Check that the identifier comprises only valid characters:
-    // - Alphanumeric
-    // - `.`, `_`, `+`, `-`, `#`
-    // - `[`, `]`, `<`, `>`
-    if !id
-        .chars()
-        .all(|c| c.is_alphanumeric() || VALID_SPECIAL_CHARS.contains(c))
-    {
-        return Err(Error::InvalidCharacter { id: id.into() });
+    /// Monomorphisation of the validation check.
+    fn validate(id: &[u8]) -> Result<&str, CheckError> {
+        if id.is_empty() {
+            Err(CheckError::Empty)
+        } else if let Some(pos) = id.iter().position(|b| !validate_char(b)) {
+            Err(CheckError::BadChar(id[pos..].contains(&PATH_SEPARATOR)))
+        } else {
+            // SAFETY: We've just checked that id consists of ASCII characters
+            // only.
+            #[allow(unsafe_code)]
+            Ok(unsafe { core::str::from_utf8_unchecked(id) })
+        }
     }
 
-    // All good!
-    Ok(())
+    match validate(id.as_ref()) {
+        Ok(id) => Ok(id),
+        Err(CheckError::Empty) => Err(Error::Empty),
+        Err(CheckError::BadChar(separator)) => {
+            let id = id.try_to_string()?;
+            Err(match separator {
+                true => Error::ContainSeparator { id },
+                false => Error::InvalidCharacter { id },
+            })
+        }
+    }
+}
+
+pub(crate) trait Id: AsRef<[u8]> {
+    /// Converts identifier into String or returns `Error::InvalidUtf8` if the
+    /// identifier is invalid UTF-8.
+    fn try_to_string(&self) -> Result<String, Error>;
+}
+
+impl Id for str {
+    fn try_to_string(&self) -> Result<String, Error> {
+        Ok(self.into())
+    }
+}
+
+impl Id for [u8] {
+    fn try_to_string(&self) -> Result<String, Error> {
+        match core::str::from_utf8(self) {
+            Ok(id) => Ok(id.into()),
+            Err(_) => Err(Error::InvalidUtf8 { id: self.into() }),
+        }
+    }
 }
 
 /// Checks if the identifier forms a valid identifier with the given min/max length as specified in the
@@ -84,31 +123,37 @@ pub fn validate_client_type(id: &str) -> Result<(), Error> {
     validate_prefix_length(id, 9, 64)
 }
 
-/// Default validator function for Client identifiers.
-///
-/// A valid client identifier must be between 9-64 characters as specified in
-/// the ICS-24 spec.
-pub fn validate_client_identifier(id: &str) -> Result<(), Error> {
-    validate_identifier_chars(id)?;
-    validate_identifier_length(id, 9, 64)
+macro_rules! define_validate {
+    ($( $(#[$meta:meta])* $name:ident($min:literal..=$max:literal); )*) => {
+        $(
+            $(#[$meta])*
+            pub(crate) fn $name<I: Id + ?Sized>(id: &I) -> Result<&str, Error> {
+                let id = validate_identifier_chars(id)?;
+                validate_identifier_length(id, $min, $max)?;
+                Ok(id)
+            }
+        )*
+    }
 }
 
-/// Default validator function for Connection identifiers.
-///
-/// A valid connection identifier must be between 10-64 characters as specified
-/// in the ICS-24 spec.
-pub fn validate_connection_identifier(id: &str) -> Result<(), Error> {
-    validate_identifier_chars(id)?;
-    validate_identifier_length(id, 10, 64)
-}
+define_validate! {
+    /// Default validator function for Client identifiers.
+    ///
+    /// A valid client identifier must be between 9-64 characters as specified in
+    /// the ICS-24 spec.
+    validate_client_identifier(9..=64);
 
-/// Default validator function for Port identifiers.
-///
-/// A valid port identifier must be between 2-128 characters as specified in the
-/// ICS-24 spec.
-pub fn validate_port_identifier(id: &str) -> Result<(), Error> {
-    validate_identifier_chars(id)?;
-    validate_identifier_length(id, 2, 128)
+    /// Default validator function for Connection identifiers.
+    ///
+    /// A valid connection identifier must be between 10-64 characters as specified
+    /// in the ICS-24 spec.
+    validate_connection_identifier(10..=64);
+
+    /// Default validator function for Port identifiers.
+    ///
+    /// A valid port identifier must be between 2-128 characters as specified in the
+    /// ICS-24 spec.
+    validate_port_identifier(2..=128);
 }
 
 /// Default validator function for Channel identifiers.

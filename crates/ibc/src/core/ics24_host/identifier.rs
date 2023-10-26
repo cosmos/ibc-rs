@@ -352,7 +352,12 @@ pub struct PortId(String);
 
 impl PortId {
     pub fn new(id: String) -> Result<Self, IdentifierError> {
-        Self::from_str(&id)
+        validate_port_identifier(id.as_bytes())?;
+        Ok(Self(id))
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, IdentifierError> {
+        validate_port_identifier(bytes).map(|id| Self(id.into()))
     }
 
     /// Infallible creation of the well-known transfer port
@@ -371,7 +376,7 @@ impl PortId {
     }
 
     pub fn validate(&self) -> Result<(), IdentifierError> {
-        validate_port_identifier(self.as_str())
+        validate_port_identifier(self.as_str()).map(|_| ())
     }
 }
 
@@ -495,6 +500,7 @@ impl PartialEq<str> for ChannelId {
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Display)]
+#[cfg_attr(test, derive(Clone, PartialEq))]
 pub enum IdentifierError {
     /// identifier `{id}` cannot contain separator '/'
     ContainSeparator { id: String },
@@ -511,6 +517,8 @@ pub enum IdentifierError {
     InvalidPrefix { prefix: String },
     /// identifier cannot be empty
     Empty,
+    /// identifier `{id:?}` is an invalid UTF-8 string.
+    InvalidUtf8 { id: Vec<u8> },
 }
 
 #[cfg(feature = "std")]
@@ -540,5 +548,68 @@ mod tests {
         assert!(ChainId::from_str("chainA-01").is_err());
         assert!(ChainId::from_str("/chainA-1").is_err());
         assert!(ChainId::from_str("chainA-1-").is_err());
+    }
+
+    #[test]
+    fn test_port_id() {
+        fn good(id: &str) {
+            let want = Ok(PortId(id.into()));
+            assert_eq!(want, PortId::from_str(id), "id: {id}");
+            assert_eq!(want, PortId::from_bytes(id.as_bytes()), "id: {id}");
+        }
+
+        good(TRANSFER_PORT_ID);
+        good(DEFAULT_PORT_ID);
+        good("xx");
+        good(&"x".repeat(128));
+
+        fn bad(want: IdentifierError, id: &str) {
+            assert_eq!(Err(want.clone()), PortId::from_str(id), "id: {id}");
+            assert_eq!(Err(want), PortId::from_bytes(id.as_bytes()), "id: {id}");
+        }
+
+        bad(IdentifierError::Empty, "");
+        bad(
+            IdentifierError::InvalidLength {
+                id: "x".into(),
+                length: 1,
+                min: 2,
+                max: 128,
+            },
+            "x",
+        );
+        let id = "x".repeat(129);
+        bad(
+            IdentifierError::InvalidLength {
+                id: id.clone(),
+                length: 129,
+                min: 2,
+                max: 128,
+            },
+            &id,
+        );
+
+        bad(
+            IdentifierError::ContainSeparator { id: "x*y/z".into() },
+            "x*y/z",
+        );
+        bad(
+            IdentifierError::InvalidCharacter { id: "x*y".into() },
+            "x*y",
+        );
+        bad(
+            IdentifierError::InvalidCharacter {
+                id: "żólw".into()
+            },
+            "żólw",
+        );
+
+        let bytes = b"\xbf\xf3\xb3\x77";
+        assert_eq!(
+            Err(IdentifierError::InvalidUtf8 {
+                id: bytes[..].into()
+            }),
+            PortId::from_bytes(bytes)
+        );
     }
 }

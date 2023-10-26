@@ -9,7 +9,7 @@
     rust_2018_idioms
 )]
 #![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types,))]
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 // https://github.com/cosmos/ibc-rs/issues/342
 #![allow(clippy::result_large_err)]
 //! This library implements the InterBlockchain Communication (IBC) protocol in Rust. IBC is
