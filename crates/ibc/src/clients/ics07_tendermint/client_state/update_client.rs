@@ -23,6 +23,8 @@ impl ClientState {
     where
         ClientValidationContext: TmValidationContext,
     {
+        // VerifyTendermintHeader::verify_header(ctx, self, client_id, header)
+
         // Checks that the header fields are valid.
         header.validate_basic()?;
 
