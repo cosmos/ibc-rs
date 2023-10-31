@@ -29,7 +29,7 @@ pub mod conn_open_try;
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, derive_more::From)]
 pub enum ConnectionMsg {
     OpenInit(MsgConnectionOpenInit),
     OpenTry(MsgConnectionOpenTry),
