@@ -547,27 +547,54 @@ impl std::error::Error for IdentifierError {}
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
 
     use super::*;
 
-    #[test]
-    fn test_valid_chain_id() {
-        assert!(ChainId::from_str("chainA-0").is_ok());
-        assert!(ChainId::from_str("chainA-1").is_ok());
-        assert!(ChainId::from_str("chainA--1").is_ok());
-        assert!(ChainId::from_str("chainA-1-2").is_ok());
+    #[rstest]
+    #[case("chainA", 0)]
+    #[case("chainA", 1)]
+    #[case("chainA-", 1)]
+    #[case("chainA-1", 2)]
+    #[case("111", 2)]
+    #[case("---", 1)]
+    #[case("._+", 1)]
+    fn test_valid_chain_id_with_rev(#[case] chain_name: &str, #[case] revision_number: u64) {
+        assert_eq!(
+            ChainId::from_str(&format!("{chain_name}-{revision_number}")).unwrap(),
+            ChainId::new(chain_name, revision_number).unwrap()
+        );
     }
 
-    #[test]
-    fn test_invalid_chain_id() {
-        assert!(ChainId::from_str("1").is_err());
-        assert!(ChainId::from_str("-1").is_err());
-        assert!(ChainId::from_str("   -1").is_err());
-        assert!(ChainId::from_str("chainA").is_err());
-        assert!(ChainId::from_str("chainA-").is_err());
-        assert!(ChainId::from_str("chainA-a").is_err());
-        assert!(ChainId::from_str("chainA-01").is_err());
-        assert!(ChainId::from_str("/chainA-1").is_err());
-        assert!(ChainId::from_str("chainA-1-").is_err());
+    #[rstest]
+    #[case("chainA")]
+    #[case("chainA.2")]
+    #[case("123")]
+    #[case("._+")]
+    fn test_valid_chain_id_without_rev(#[case] chain_name: &str) {
+        assert_eq!(
+            ChainId::from_str(chain_name).unwrap(),
+            ChainId::new_with_opt_rev(chain_name, None).unwrap()
+        );
+    }
+
+    #[rstest]
+    #[case("-1")]
+    #[case(" ----1")]
+    #[case(" ")]
+    #[case(" chainA")]
+    #[case("chain A")]
+    #[case(" chainA.2")]
+    #[case(" chainA.2-1")]
+    #[case(" 1")]
+    #[case(" -")]
+    #[case("   -1")]
+    #[case("chainA-")]
+    #[case("chainA-a")]
+    #[case("chainA-01")]
+    #[case("/chainA-1")]
+    #[case("chainA-1-")]
+    fn test_invalid_chain_id(#[case] chain_id_str: &str) {
+        assert!(ChainId::from_str(chain_id_str).is_err());
     }
 }
