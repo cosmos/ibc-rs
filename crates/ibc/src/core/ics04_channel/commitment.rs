@@ -86,16 +86,16 @@ pub(crate) fn compute_packet_commitment(
     timeout_height: &TimeoutHeight,
     timeout_timestamp: &Timestamp,
 ) -> PacketCommitment {
-    let mut hash_input = timeout_timestamp.nanoseconds().to_be_bytes().to_vec();
+    use sha2::Digest;
 
-    let revision_number = timeout_height.commitment_revision_number().to_be_bytes();
-    hash_input.append(&mut revision_number.to_vec());
+    let mut hash_input = [0; 3 * 8 + 32];
 
-    let revision_height = timeout_height.commitment_revision_height().to_be_bytes();
-    hash_input.append(&mut revision_height.to_vec());
+    hash_input[..8].copy_from_slice(&timeout_timestamp.nanoseconds().to_be_bytes());
+    hash_input[8..16].copy_from_slice(&timeout_height.commitment_revision_number().to_be_bytes());
+    hash_input[16..24].copy_from_slice(&timeout_height.commitment_revision_height().to_be_bytes());
 
-    let packet_data_hash = hash(packet_data);
-    hash_input.append(&mut packet_data_hash.to_vec());
+    let packet_data_hash = sha2::Sha256::digest(packet_data);
+    hash_input[24..].copy_from_slice(packet_data_hash.as_slice());
 
     hash(&hash_input).into()
 }
@@ -109,8 +109,32 @@ pub(crate) fn compute_ack_commitment(ack: &Acknowledgement) -> AcknowledgementCo
 ///
 /// Note that computing commitments with anything other than SHA256 will
 /// break the Merkle proofs of the IBC provable store.
-fn hash(data: impl AsRef<[u8]>) -> Vec<u8> {
+fn hash(data: &[u8]) -> Vec<u8> {
     use sha2::Digest;
 
-    sha2::Sha256::digest(&data).to_vec()
+    sha2::Sha256::digest(data).to_vec()
+}
+
+#[test]
+fn test_compute_commitment() {
+    // PacketCommitment
+    let want: [u8; 32] = [
+        169, 40, 181, 31, 98, 189, 84, 0, 145, 236, 69, 31, 78, 243, 69, 121, 79, 5, 158, 101, 145,
+        8, 22, 134, 97, 38, 220, 54, 79, 132, 204, 21,
+    ];
+    let got = compute_packet_commitment(
+        "packet data".as_bytes(),
+        &TimeoutHeight::At(crate::Height::new(42, 24).unwrap()),
+        &Timestamp::from_nanoseconds(0x42).unwrap(),
+    );
+    assert_eq!(&want[..], got.as_ref());
+
+    // AcknowledgementCommitment
+    let want: [u8; 32] = [
+        5, 78, 222, 193, 208, 33, 31, 98, 79, 237, 12, 188, 169, 212, 249, 64, 11, 14, 73, 28, 67,
+        116, 42, 242, 197, 176, 171, 235, 240, 201, 144, 216,
+    ];
+    let ack = Acknowledgement::try_from(vec![0u8, 1, 2, 3]).unwrap();
+    let got = compute_ack_commitment(&ack);
+    assert_eq!(&want[..], got.as_ref())
 }
