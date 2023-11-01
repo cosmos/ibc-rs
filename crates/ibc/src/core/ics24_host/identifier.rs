@@ -103,6 +103,11 @@ impl ChainId {
         self.revision_number.unwrap_or_default()
     }
 
+    /// Check if the revision number is set
+    pub fn has_revision_number(&self) -> bool {
+        self.revision_number.is_some()
+    }
+
     /// Swaps `ChainId`s revision number with the new specified revision number
     /// ```
     /// use ibc::core::ics24_host::identifier::ChainId;
@@ -114,6 +119,21 @@ impl ChainId {
         let chain_name = self.chain_name();
         self.id = format!("{}-{}", chain_name, revision_number);
         self.revision_number = Some(revision_number);
+    }
+
+    /// Unsets the revision number of the `ChainId`
+    /// ```
+    /// use ibc::core::ics24_host::identifier::ChainId;
+    /// let mut chain_id = ChainId::new("chainA", 1).unwrap();
+    /// chain_id.unset_revision_number();
+    /// assert!(!chain_id.has_revision_number());
+    /// assert_eq!(chain_id.revision_number(), 0);
+    /// assert_eq!(chain_id.as_str(), "chainA");
+    /// ```
+    pub fn unset_revision_number(&mut self) {
+        let chain_name = self.chain_name();
+        self.id = chain_name.to_string();
+        self.revision_number = None;
     }
 
     /// A convenient method to check if the `ChainId` forms a valid identifier
