@@ -43,7 +43,7 @@ const TRANSFER_PORT_ID: &str = "transfer";
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ChainId {
     id: String,
-    revision_number: u64,
+    revision_number: Option<u64>,
 }
 
 impl ChainId {
@@ -62,10 +62,21 @@ impl ChainId {
     /// assert_eq!(id.revision_number(), revision_number);
     /// ```
     pub fn new(name: &str, revision_number: u64) -> Result<Self, IdentifierError> {
+        Self::new_with_opt_rev(name, Some(revision_number))
+    }
+
+    pub fn new_with_opt_rev(
+        name: &str,
+        revision_number: Option<u64>,
+    ) -> Result<Self, IdentifierError> {
         let prefix = name.trim();
         validate_identifier_chars(prefix)?;
         validate_identifier_length(prefix, 1, 43)?;
-        let id = format!("{prefix}-{revision_number}");
+        let id = if let Some(rev) = revision_number {
+            format!("{prefix}-{rev}")
+        } else {
+            prefix.to_owned()
+        };
         Ok(Self {
             id,
             revision_number,
@@ -77,7 +88,7 @@ impl ChainId {
         &self.id
     }
 
-    pub fn split_chain_id(&self) -> (&str, u64) {
+    pub fn split_chain_id(&self) -> (&str, Option<u64>) {
         parse_chain_id_string(self.as_str())
             .expect("never fails because a valid chain identifier is parsed")
     }
@@ -89,7 +100,7 @@ impl ChainId {
 
     /// Extract the revision number from the chain identifier
     pub fn revision_number(&self) -> u64 {
-        self.revision_number
+        self.revision_number.unwrap_or_default()
     }
 
     /// Swaps `ChainId`s revision number with the new specified revision number
@@ -102,7 +113,7 @@ impl ChainId {
     pub fn set_revision_number(&mut self, revision_number: u64) {
         let chain_name = self.chain_name();
         self.id = format!("{}-{}", chain_name, revision_number);
-        self.revision_number = revision_number;
+        self.revision_number = Some(revision_number);
     }
 
     /// A convenient method to check if the `ChainId` forms a valid identifier
@@ -135,35 +146,33 @@ impl Display for ChainId {
 
 /// Parses a string intended to represent a `ChainId` and, if successful,
 /// returns a tuple containing the chain name and revision number.
-fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, u64), IdentifierError> {
-    let (name, rev_number_str) = match chain_id_str.rsplit_once('-') {
-        Some((name, rev_number_str)) => (name, rev_number_str),
-        None => {
-            return Err(IdentifierError::InvalidCharacter {
-                id: chain_id_str.to_string(),
-            })
-        }
-    };
+fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, Option<u64>), IdentifierError> {
+    let (chain_name, revision_number) =
+        if let Some((name, rev_number_str)) = chain_id_str.rsplit_once('-') {
+            // Validates the revision number not to start with leading zeros, like "01".
+            if rev_number_str.as_bytes().first() == Some(&b'0') && rev_number_str.len() > 1 {
+                return Err(IdentifierError::InvalidCharacter {
+                    id: chain_id_str.to_string(),
+                });
+            }
+
+            // Parses the revision number string into a `u64` and checks its validity.
+            let revision_number =
+                rev_number_str
+                    .parse()
+                    .map_err(|_| IdentifierError::InvalidCharacter {
+                        id: chain_id_str.to_string(),
+                    })?;
+
+            (name, Some(revision_number))
+        } else {
+            (chain_id_str, None)
+        };
 
     // Validates the chain name for allowed characters according to ICS-24.
-    validate_identifier_chars(name)?;
+    validate_identifier_chars(chain_name)?;
 
-    // Validates the revision number not to start with leading zeros, like "01".
-    if rev_number_str.as_bytes().first() == Some(&b'0') && rev_number_str.len() > 1 {
-        return Err(IdentifierError::InvalidCharacter {
-            id: chain_id_str.to_string(),
-        });
-    }
-
-    // Parses the revision number string into a `u64` and checks its validity.
-    let revision_number =
-        rev_number_str
-            .parse()
-            .map_err(|_| IdentifierError::InvalidCharacter {
-                id: chain_id_str.to_string(),
-            })?;
-
-    Ok((name, revision_number))
+    Ok((chain_name, revision_number))
 }
 
 #[cfg_attr(
