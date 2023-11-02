@@ -86,33 +86,29 @@ pub(crate) fn compute_packet_commitment(
     timeout_height: &TimeoutHeight,
     timeout_timestamp: &Timestamp,
 ) -> PacketCommitment {
-    use sha2::Digest;
-
     let mut hash_input = [0; 3 * 8 + 32];
 
     hash_input[..8].copy_from_slice(&timeout_timestamp.nanoseconds().to_be_bytes());
     hash_input[8..16].copy_from_slice(&timeout_height.commitment_revision_number().to_be_bytes());
     hash_input[16..24].copy_from_slice(&timeout_height.commitment_revision_height().to_be_bytes());
+    hash_input[24..].copy_from_slice(&hash(packet_data));
 
-    let packet_data_hash = sha2::Sha256::digest(packet_data);
-    hash_input[24..].copy_from_slice(packet_data_hash.as_slice());
-
-    hash(&hash_input).into()
+    PacketCommitment(hash(&hash_input).into())
 }
 
 /// Compute the commitment for an acknowledgement.
 pub(crate) fn compute_ack_commitment(ack: &Acknowledgement) -> AcknowledgementCommitment {
-    hash(ack.as_ref()).into()
+    AcknowledgementCommitment(hash(ack.as_ref()).into())
 }
 
 /// Helper function to hash a byte slice using SHA256.
 ///
 /// Note that computing commitments with anything other than SHA256 will
 /// break the Merkle proofs of the IBC provable store.
-fn hash(data: &[u8]) -> Vec<u8> {
+fn hash(data: &[u8]) -> [u8; 32] {
     use sha2::Digest;
 
-    sha2::Sha256::digest(data).to_vec()
+    sha2::Sha256::digest(data).into()
 }
 
 #[test]
