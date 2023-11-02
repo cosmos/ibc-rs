@@ -98,7 +98,7 @@ pub(crate) fn compute_packet_commitment(
 
 /// Compute the commitment for an acknowledgement.
 pub(crate) fn compute_ack_commitment(ack: &Acknowledgement) -> AcknowledgementCommitment {
-    AcknowledgementCommitment(hash(ack.as_ref()).into())
+    hash(ack.as_ref()).to_vec().into()
 }
 
 /// Helper function to hash a byte slice using SHA256.
