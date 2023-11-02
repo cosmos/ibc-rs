@@ -86,7 +86,7 @@ pub(crate) fn compute_packet_commitment(
     timeout_height: &TimeoutHeight,
     timeout_timestamp: &Timestamp,
 ) -> PacketCommitment {
-    let mut hash_input = [0; 3 * 8 + 32];
+    let mut hash_input = [0; 8 * 3 + 32];
 
     hash_input[..8].copy_from_slice(&timeout_timestamp.nanoseconds().to_be_bytes());
     hash_input[8..16].copy_from_slice(&timeout_height.commitment_revision_number().to_be_bytes());
