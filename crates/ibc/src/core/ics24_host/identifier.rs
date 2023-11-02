@@ -547,16 +547,20 @@ mod tests {
     use super::*;
 
     #[rstest]
-    #[case("chainA", 0)]
-    #[case("chainA", 1)]
-    #[case("chainA-", 1)]
-    #[case("chainA-1", 2)]
-    #[case("111", 2)]
-    #[case("---", 1)]
-    #[case("._+", 1)]
-    fn test_valid_chain_id_with_rev(#[case] chain_name: &str, #[case] revision_number: u64) {
+    #[case("chainA-0", "chainA", 0)]
+    #[case("chainA-1", "chainA", 1)]
+    #[case("chainA--1", "chainA-", 1)]
+    #[case("chainA-1-2", "chainA-1", 2)]
+    #[case("111-2", "111", 2)]
+    #[case("----1", "---", 1)]
+    #[case("._+-1", "._+", 1)]
+    fn test_valid_chain_id_with_rev(
+        #[case] raw_chain_id: &str,
+        #[case] chain_name: &str,
+        #[case] revision_number: u64,
+    ) {
         assert_eq!(
-            ChainId::from_str(&format!("{chain_name}-{revision_number}")).unwrap(),
+            ChainId::from_str(raw_chain_id).unwrap(),
             ChainId::new(chain_name, revision_number).unwrap()
         );
     }
