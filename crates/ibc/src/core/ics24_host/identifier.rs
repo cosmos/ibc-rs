@@ -88,7 +88,7 @@ impl ChainId {
     }
 
     pub fn split_chain_id(&self) -> (&str, Option<u64>) {
-        parse_chain_id_with_revision_number(self.as_str())
+        parse_chain_id_string(self.as_str())
             .expect("never fails because a valid chain identifier is parsed")
     }
 
@@ -149,7 +149,7 @@ impl FromStr for ChainId {
     type Err = IdentifierError;
 
     fn from_str(id: &str) -> Result<Self, Self::Err> {
-        let (_, revision_number) = parse_chain_id_with_revision_number(id)?;
+        let (_, revision_number) = parse_chain_id_string(id)?;
         Ok(Self {
             id: id.to_string(),
             revision_number: revision_number.unwrap_or(0),
@@ -165,9 +165,7 @@ impl Display for ChainId {
 
 /// Parses a string intended to represent a `ChainId` and, if successful,
 /// returns a tuple containing the chain name and (optional) revision number.
-fn parse_chain_id_with_revision_number(
-    chain_id_str: &str,
-) -> Result<(&str, Option<u64>), IdentifierError> {
+fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, Option<u64>), IdentifierError> {
     let (chain_name, revision_number) = chain_id_str
         .rsplit_once('-')
         .filter(|(_, rev_number_str)| {
