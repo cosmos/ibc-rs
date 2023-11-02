@@ -111,26 +111,34 @@ fn hash(data: &[u8]) -> [u8; 32] {
     sha2::Sha256::digest(data).into()
 }
 
-#[test]
-fn test_compute_commitment() {
-    // PacketCommitment
-    let want: [u8; 32] = [
-        169, 40, 181, 31, 98, 189, 84, 0, 145, 236, 69, 31, 78, 243, 69, 121, 79, 5, 158, 101, 145,
-        8, 22, 134, 97, 38, 220, 54, 79, 132, 204, 21,
-    ];
-    let got = compute_packet_commitment(
-        "packet data".as_bytes(),
-        &TimeoutHeight::At(crate::Height::new(42, 24).unwrap()),
-        &Timestamp::from_nanoseconds(0x42).unwrap(),
-    );
-    assert_eq!(&want[..], got.as_ref());
+#[cfg(test)]
+mod test {
+    use super::*;
 
-    // AcknowledgementCommitment
-    let want: [u8; 32] = [
-        5, 78, 222, 193, 208, 33, 31, 98, 79, 237, 12, 188, 169, 212, 249, 64, 11, 14, 73, 28, 67,
-        116, 42, 242, 197, 176, 171, 235, 240, 201, 144, 216,
-    ];
-    let ack = Acknowledgement::try_from(vec![0u8, 1, 2, 3]).unwrap();
-    let got = compute_ack_commitment(&ack);
-    assert_eq!(&want[..], got.as_ref())
+    #[test]
+    fn test_compute_packet_commitment() {
+        let expected: [u8; 32] = [
+            0xa9, 0x28, 0xb5, 0x1f, 0x62, 0xbd, 0x54, 0x00, 0x91, 0xec, 0x45, 0x1f, 0x4e, 0xf3,
+            0x45, 0x79, 0x4f, 0x05, 0x9e, 0x65, 0x91, 0x08, 0x16, 0x86, 0x61, 0x26, 0xdc, 0x36,
+            0x4f, 0x84, 0xcc, 0x15,
+        ];
+        let actual = compute_packet_commitment(
+            "packet data".as_bytes(),
+            &TimeoutHeight::At(crate::Height::new(42, 24).unwrap()),
+            &Timestamp::from_nanoseconds(0x42).unwrap(),
+        );
+        assert_eq!(&expected[..], actual.as_ref());
+    }
+
+    #[test]
+    fn test_compute_ack_commitment() {
+        let expected: [u8; 32] = [
+            0x05, 0x4e, 0xde, 0xc1, 0xd0, 0x21, 0x1f, 0x62, 0x4f, 0xed, 0x0c, 0xbc, 0xa9, 0xd4,
+            0xf9, 0x40, 0x0b, 0x0e, 0x49, 0x1c, 0x43, 0x74, 0x2a, 0xf2, 0xc5, 0xb0, 0xab, 0xeb,
+            0xf0, 0xc9, 0x90, 0xd8,
+        ];
+        let ack = Acknowledgement::try_from(vec![0, 1, 2, 3]).unwrap();
+        let actual = compute_ack_commitment(&ack);
+        assert_eq!(&expected[..], actual.as_ref())
+    }
 }
