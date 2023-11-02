@@ -93,7 +93,7 @@ pub(crate) fn compute_packet_commitment(
     hash_input[16..24].copy_from_slice(&timeout_height.commitment_revision_height().to_be_bytes());
     hash_input[24..].copy_from_slice(&hash(packet_data));
 
-    PacketCommitment(hash(&hash_input).into())
+    hash(&hash_input).to_vec().into()
 }
 
 /// Compute the commitment for an acknowledgement.
