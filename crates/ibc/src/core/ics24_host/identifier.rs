@@ -566,6 +566,10 @@ mod tests {
     #[case("chainA.2")]
     #[case("123")]
     #[case("._+")]
+    #[case("chainA-")]
+    #[case("chainA-a")]
+    #[case("chainA-01")]
+    #[case("chainA-1-")]
     fn test_valid_chain_id_without_rev(#[case] chain_name: &str) {
         assert_eq!(
             ChainId::from_str(chain_name).unwrap(),
@@ -584,11 +588,7 @@ mod tests {
     #[case(" 1")]
     #[case(" -")]
     #[case("   -1")]
-    #[case("chainA-")]
-    #[case("chainA-a")]
-    #[case("chainA-01")]
     #[case("/chainA-1")]
-    #[case("chainA-1-")]
     fn test_invalid_chain_id(#[case] chain_id_str: &str) {
         assert!(ChainId::from_str(chain_id_str).is_err());
     }
