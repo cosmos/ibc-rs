@@ -36,7 +36,7 @@ use crate::core::ics24_host::identifier::PortId;
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, derive_more::From)]
 pub enum ChannelMsg {
     OpenInit(MsgChannelOpenInit),
     OpenTry(MsgChannelOpenTry),
@@ -52,7 +52,7 @@ pub enum ChannelMsg {
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, derive_more::From)]
 pub enum PacketMsg {
     Recv(MsgRecvPacket),
     Ack(MsgAcknowledgement),
