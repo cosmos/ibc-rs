@@ -47,14 +47,15 @@ pub struct ChainId {
 }
 
 impl ChainId {
-    /// Creates a new `ChainId` with the given chain ID.
+    /// Creates a new `ChainId` with the given chain identifier.
     ///
     /// It checks the ID for valid characters according to `ICS-24`
     /// specification and returns a `ChainId` successfully.
     /// Stricter checks beyond `ICS-24` rests with the users,
     /// based on their requirements.
     ///
-    /// The revision number is set to zero if it is not parsed.
+    /// If the chain identifier is in the {chain name}-{revision number} format,
+    /// the revision number is parsed. Otherwise, revision number is set to 0.
     ///
     /// ```
     /// use ibc::core::ics24_host::identifier::ChainId;
