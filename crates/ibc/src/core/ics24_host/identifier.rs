@@ -126,8 +126,7 @@ impl FromStr for ChainId {
         match parse_chain_id_string(id) {
             Ok((chain_name, revision_number)) => {
                 // Validate if the chain name with revision number has a valid length.
-                // 43 = 64 - len('-') - len(u64::MAX)
-                validate_identifier_length(chain_name, 1, 43)?;
+                validate_prefix_length(chain_name, 1, 64)?;
                 Ok(Self {
                     id: id.into(),
                     revision_number,
