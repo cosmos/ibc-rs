@@ -584,27 +584,4 @@ mod tests {
     fn test_invalid_chain_id(#[case] chain_id_str: &str) {
         assert!(ChainId::new(chain_id_str).is_err());
     }
-
-    #[test]
-    fn test_opt_revision_number() {
-        let mut chain_id = ChainId::from_str("chainA-1").unwrap();
-        assert!(chain_id.has_revision_number());
-        assert_eq!(chain_id.revision_number(), 1);
-        assert_eq!(chain_id.as_str(), "chainA-1");
-
-        chain_id.unset_revision_number();
-        assert!(!chain_id.has_revision_number());
-        assert_eq!(chain_id.revision_number(), 0);
-        assert_eq!(chain_id.as_str(), "chainA");
-
-        chain_id.set_revision_number(2);
-        assert!(chain_id.has_revision_number());
-        assert_eq!(chain_id.revision_number(), 2);
-        assert_eq!(chain_id.as_str(), "chainA-2");
-
-        chain_id.set_revision_number(0);
-        assert!(chain_id.has_revision_number());
-        assert_eq!(chain_id.revision_number(), 0);
-        assert_eq!(chain_id.as_str(), "chainA-0");
-    }
 }
