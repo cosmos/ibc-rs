@@ -47,39 +47,30 @@ pub struct ChainId {
 }
 
 impl ChainId {
-    /// Creates a new `ChainId` with the given chain name and revision number.
+    /// Creates a new `ChainId` with the given chain ID.
     ///
-    /// It checks the chain name for valid characters according to `ICS-24`
-    /// specification and returns a `ChainId` in the the format of {chain
-    /// name}-{revision number}. Stricter checks beyond `ICS-24` rests with
-    /// the users, based on their requirements.
+    /// It checks the ID for valid characters according to `ICS-24`
+    /// specification and returns a `ChainId` successfully.
+    /// Stricter checks beyond `ICS-24` rests with the users,
+    /// based on their requirements.
+    ///
+    /// The revision number is set to zero if it is not parsed.
     ///
     /// ```
     /// use ibc::core::ics24_host::identifier::ChainId;
     ///
-    /// let revision_number = 10;
-    /// let id = ChainId::new("chainA", revision_number).unwrap();
-    /// assert_eq!(id.revision_number(), revision_number);
+    /// let chain_id = "chainA";
+    /// let id = ChainId::new(chain_id).unwrap();
+    /// assert_eq!(id.revision_number(), 0);
+    /// assert_eq!(id.as_str(), chain_id);
+    ///
+    /// let chain_id = "chainA-12";
+    /// let id = ChainId::new(chain_id).unwrap();
+    /// assert_eq!(id.revision_number(), 12);
+    /// assert_eq!(id.as_str(), chain_id);
     /// ```
-    pub fn new(name: &str, revision_number: u64) -> Result<Self, IdentifierError> {
-        let prefix = name.trim();
-        validate_identifier_chars(prefix)?;
-        validate_identifier_length(prefix, 1, 43)?;
-        let id = format!("{prefix}-{revision_number}");
-        Ok(Self {
-            id,
-            revision_number,
-        })
-    }
-
-    pub fn new_without_revision_number(name: &str) -> Result<Self, IdentifierError> {
-        let prefix = name.trim();
-        validate_identifier_chars(prefix)?;
-        validate_identifier_length(prefix, 1, 43)?;
-        Ok(Self {
-            id: prefix.to_owned(),
-            revision_number: 0,
-        })
+    pub fn new(chain_id: &str) -> Result<Self, IdentifierError> {
+        Self::from_str(chain_id)
     }
 
     /// Get a reference to the underlying string.
@@ -87,14 +78,8 @@ impl ChainId {
         &self.id
     }
 
-    pub fn split_chain_id(&self) -> (&str, Option<u64>) {
+    pub fn split_chain_id(&self) -> Result<(&str, u64), IdentifierError> {
         parse_chain_id_string(self.as_str())
-            .expect("never fails because a valid chain identifier is parsed")
-    }
-
-    /// Extract the chain name from the chain identifier
-    pub fn chain_name(&self) -> &str {
-        self.split_chain_id().0
     }
 
     /// Extract the revision number from the chain identifier
@@ -139,7 +124,10 @@ impl ChainId {
     /// with the desired min/max length. However, ICS-24 does not specify a
     /// certain min or max lengths for chain identifiers.
     pub fn validate_length(&self, min_length: u64, max_length: u64) -> Result<(), IdentifierError> {
-        validate_prefix_length(self.chain_name(), min_length, max_length)
+        match self.split_chain_id() {
+            Ok((chain_name, _)) => validate_prefix_length(chain_name, min_length, max_length),
+            _ => validate_identifier_length(&self.id, min_length, min_length),
+        }
     }
 }
 
@@ -149,11 +137,27 @@ impl FromStr for ChainId {
     type Err = IdentifierError;
 
     fn from_str(id: &str) -> Result<Self, Self::Err> {
-        let (_, revision_number) = parse_chain_id_string(id)?;
-        Ok(Self {
-            id: id.to_string(),
-            revision_number: revision_number.unwrap_or(0),
-        })
+        // Validates the chain name for allowed characters according to ICS-24.
+        validate_identifier_chars(id)?;
+        match parse_chain_id_string(id) {
+            Ok((chain_name, revision_number)) => {
+                // Validate if the chain name with revision number has a valid length.
+                validate_prefix_length(chain_name, 1, 43)?;
+                Ok(Self {
+                    id: id.into(),
+                    revision_number,
+                })
+            }
+
+            _ => {
+                // Validate if the ID has a valid length.
+                validate_identifier_length(id, 1, 43)?;
+                Ok(Self {
+                    id: id.into(),
+                    revision_number: 0,
+                })
+            }
+        }
     }
 }
 
@@ -165,8 +169,8 @@ impl Display for ChainId {
 
 /// Parses a string intended to represent a `ChainId` and, if successful,
 /// returns a tuple containing the chain name and (optional) revision number.
-fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, Option<u64>), IdentifierError> {
-    let (chain_name, revision_number) = chain_id_str
+fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, u64), IdentifierError> {
+    chain_id_str
         .rsplit_once('-')
         .filter(|(_, rev_number_str)| {
             // Validates the revision number not to start with leading zeros, like "01".
@@ -178,14 +182,11 @@ fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, Option<u64>), Iden
             rev_number_str
                 .parse()
                 .ok()
-                .map(|revision_number| (chain_name, Some(revision_number)))
+                .map(|revision_number| (chain_name, revision_number))
         })
-        .unwrap_or((chain_id_str, None));
-
-    // Validates the chain name for allowed characters according to ICS-24.
-    validate_identifier_chars(chain_name)?;
-
-    Ok((chain_name, revision_number))
+        .ok_or(IdentifierError::UnformattedRevisionNumber {
+            chain_id: chain_id_str.to_string(),
+        })
 }
 
 #[cfg_attr(
@@ -531,6 +532,8 @@ pub enum IdentifierError {
     InvalidCharacter { id: String },
     /// identifier prefix `{prefix}` is invalid
     InvalidPrefix { prefix: String },
+    /// chain identifier is not formatted with revision number
+    UnformattedRevisionNumber { chain_id: String },
     /// identifier cannot be empty
     Empty,
 }
@@ -558,8 +561,11 @@ mod tests {
         #[case] revision_number: u64,
     ) {
         assert_eq!(
-            ChainId::from_str(raw_chain_id).unwrap(),
-            ChainId::new(chain_name, revision_number).unwrap()
+            ChainId::new(raw_chain_id).unwrap(),
+            ChainId {
+                id: format!("{chain_name}-{revision_number}"),
+                revision_number
+            }
         );
     }
 
@@ -574,8 +580,11 @@ mod tests {
     #[case("chainA-1-")]
     fn test_valid_chain_id_without_rev(#[case] chain_name: &str) {
         assert_eq!(
-            ChainId::from_str(chain_name).unwrap(),
-            ChainId::new_without_revision_number(chain_name).unwrap()
+            ChainId {
+                id: chain_name.into(),
+                revision_number: 0
+            },
+            ChainId::new(chain_name).unwrap()
         );
     }
 
@@ -592,7 +601,7 @@ mod tests {
     #[case("   -1")]
     #[case("/chainA-1")]
     fn test_invalid_chain_id(#[case] chain_id_str: &str) {
-        assert!(ChainId::from_str(chain_id_str).is_err());
+        assert!(ChainId::new(chain_id_str).is_err());
     }
 
     #[test]

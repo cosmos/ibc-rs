@@ -61,6 +61,12 @@ pub fn validate_prefix_length(
     min_id_length: u64,
     max_id_length: u64,
 ) -> Result<(), Error> {
+    if prefix.is_empty() {
+        return Err(Error::InvalidPrefix {
+            prefix: prefix.into(),
+        });
+    }
+
     // Checks if the prefix forms a valid identifier length when constructed with `u64::MIN`
     validate_identifier_length(
         &format!("{prefix}-{}", u64::MIN),
