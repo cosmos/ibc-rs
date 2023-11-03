@@ -49,7 +49,7 @@ pub struct ChainId {
 impl ChainId {
     /// Creates a new `ChainId` with the given chain identifier.
     ///
-    /// It checks the ID for valid characters according to `ICS-24`
+    /// It checks the identifier for valid characters according to `ICS-24`
     /// specification and returns a `ChainId` successfully.
     /// Stricter checks beyond `ICS-24` rests with the users,
     /// based on their requirements.
@@ -119,7 +119,7 @@ impl FromStr for ChainId {
     type Err = IdentifierError;
 
     fn from_str(id: &str) -> Result<Self, Self::Err> {
-        // ID string must have a maximum length of 64 characters.
+        // Identifier string must have a maximum length of 64 characters.
 
         // Validates the chain name for allowed characters according to ICS-24.
         validate_identifier_chars(id)?;
@@ -135,7 +135,7 @@ impl FromStr for ChainId {
             }
 
             _ => {
-                // Validate if the ID has a valid length.
+                // Validate if the identifier has a valid length.
                 validate_identifier_length(id, 1, 64)?;
                 Ok(Self {
                     id: id.into(),
