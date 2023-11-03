@@ -108,7 +108,7 @@ impl ChainId {
     pub fn validate_length(&self, min_length: u64, max_length: u64) -> Result<(), IdentifierError> {
         match self.split_chain_id() {
             Ok((chain_name, _)) => validate_prefix_length(chain_name, min_length, max_length),
-            _ => validate_identifier_length(&self.id, min_length, min_length),
+            _ => validate_identifier_length(&self.id, min_length, max_length),
         }
     }
 }
