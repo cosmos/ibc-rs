@@ -91,28 +91,14 @@ impl ChainId {
     /// ```
     /// use ibc::core::ics24_host::identifier::ChainId;
     /// let mut chain_id = ChainId::new("chainA", 1).unwrap();
-    /// chain_id.set_revision_number(2);
+    /// chain_id.increment_revision_number();
     /// assert_eq!(chain_id.revision_number(), 2);
     /// ```
-    pub fn set_revision_number(&mut self, revision_number: u64) {
-        let chain_name = self.chain_name();
-        self.id = format!("{}-{}", chain_name, revision_number);
-        self.revision_number = revision_number;
-    }
-
-    /// Unsets the revision number of the `ChainId`
-    /// ```
-    /// use ibc::core::ics24_host::identifier::ChainId;
-    /// let mut chain_id = ChainId::new("chainA", 1).unwrap();
-    /// chain_id.unset_revision_number();
-    /// assert!(!chain_id.has_revision_number());
-    /// assert_eq!(chain_id.revision_number(), 0);
-    /// assert_eq!(chain_id.as_str(), "chainA");
-    /// ```
-    pub fn unset_revision_number(&mut self) {
-        let chain_name = self.chain_name();
-        self.id = chain_name.to_string();
-        self.revision_number = 0;
+    pub fn increment_revision_number(&mut self) -> Result<(), IdentifierError> {
+        let (chain_name, _) = self.split_chain_id()?;
+        self.id = format!("{}-{}", chain_name, self.revision_number + 1);
+        self.revision_number += 1;
+        Ok(())
     }
 
     /// A convenient method to check if the `ChainId` forms a valid identifier
