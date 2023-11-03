@@ -152,7 +152,7 @@ impl Display for ChainId {
 }
 
 /// Parses a string intended to represent a `ChainId` and, if successful,
-/// returns a tuple containing the chain name and (optional) revision number.
+/// returns a tuple containing the chain name and revision number.
 fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, u64), IdentifierError> {
     chain_id_str
         .rsplit_once('-')
