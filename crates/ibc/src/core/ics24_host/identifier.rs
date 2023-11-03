@@ -584,4 +584,26 @@ mod tests {
     fn test_invalid_chain_id(#[case] chain_id_str: &str) {
         assert!(ChainId::new(chain_id_str).is_err());
     }
+
+    #[test]
+    fn test_inc_revision_number() {
+        let mut chain_id = ChainId::new("chainA-1").unwrap();
+
+        assert!(chain_id.increment_revision_number().is_ok());
+        assert_eq!(chain_id.revision_number(), 2);
+        assert_eq!(chain_id.as_str(), "chainA-2");
+
+        assert!(chain_id.increment_revision_number().is_ok());
+        assert_eq!(chain_id.revision_number(), 3);
+        assert_eq!(chain_id.as_str(), "chainA-3");
+    }
+
+    #[test]
+    fn test_failed_inc_revision_number() {
+        let mut chain_id = ChainId::new("chainA").unwrap();
+
+        assert!(chain_id.increment_revision_number().is_err());
+        assert_eq!(chain_id.revision_number(), 0);
+        assert_eq!(chain_id.as_str(), "chainA");
+    }
 }
