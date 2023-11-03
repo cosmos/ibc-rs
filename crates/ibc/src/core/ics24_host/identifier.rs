@@ -536,6 +536,7 @@ mod tests {
     #[case("111-2", "111", 2)]
     #[case("----1", "---", 1)]
     #[case("._+-1", "._+", 1)]
+    #[case(&("A".repeat(22) + "-3"), &("A".repeat(22)), 3)]
     fn test_valid_chain_id_with_rev(
         #[case] raw_chain_id: &str,
         #[case] chain_name: &str,
@@ -559,6 +560,7 @@ mod tests {
     #[case("chainA-a")]
     #[case("chainA-01")]
     #[case("chainA-1-")]
+    #[case(&"A".repeat(43))]
     fn test_valid_chain_id_without_rev(#[case] chain_name: &str) {
         assert_eq!(
             ChainId {
@@ -570,6 +572,8 @@ mod tests {
     }
 
     #[rstest]
+    #[case(&"A".repeat(44))]
+    #[case(&("A".repeat(23) + "-0"))]
     #[case("-1")]
     #[case(" ----1")]
     #[case(" ")]
