@@ -546,8 +546,10 @@ mod tests {
         #[case] chain_name: &str,
         #[case] revision_number: u64,
     ) {
+        let chain_id = ChainId::new(raw_chain_id).unwrap();
+        assert!(chain_id.validate_length(1, 64).is_ok());
         assert_eq!(
-            ChainId::new(raw_chain_id).unwrap(),
+            chain_id,
             ChainId {
                 id: format!("{chain_name}-{revision_number}"),
                 revision_number
@@ -567,12 +569,14 @@ mod tests {
     #[case(&"A".repeat(64))]
     #[case::special_case("chainA-0")]
     fn test_valid_chain_id_without_rev(#[case] chain_name: &str) {
+        let chain_id = ChainId::new(chain_name).unwrap();
+        assert!(chain_id.validate_length(1, 64).is_ok());
         assert_eq!(
+            chain_id,
             ChainId {
                 id: chain_name.into(),
                 revision_number: 0
-            },
-            ChainId::new(chain_name).unwrap()
+            }
         );
     }
 
