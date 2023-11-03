@@ -118,12 +118,15 @@ impl FromStr for ChainId {
     type Err = IdentifierError;
 
     fn from_str(id: &str) -> Result<Self, Self::Err> {
+        // ID string must have a maximum length of 64 characters.
+
         // Validates the chain name for allowed characters according to ICS-24.
         validate_identifier_chars(id)?;
         match parse_chain_id_string(id) {
             Ok((chain_name, revision_number)) => {
                 // Validate if the chain name with revision number has a valid length.
-                validate_prefix_length(chain_name, 1, 43)?;
+                // 43 = 64 - len('-') - len(u64::MAX)
+                validate_identifier_length(chain_name, 1, 43)?;
                 Ok(Self {
                     id: id.into(),
                     revision_number,
@@ -132,7 +135,7 @@ impl FromStr for ChainId {
 
             _ => {
                 // Validate if the ID has a valid length.
-                validate_identifier_length(id, 1, 43)?;
+                validate_identifier_length(id, 1, 64)?;
                 Ok(Self {
                     id: id.into(),
                     revision_number: 0,
