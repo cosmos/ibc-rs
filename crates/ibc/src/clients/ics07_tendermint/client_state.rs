@@ -870,7 +870,7 @@ mod tests {
                 want_pass: true,
             },
             Test {
-                name: "Valid long (50 chars) chain-id that satisfies revision_number length < `u16::MAX` length".to_string(),
+                name: "Valid long (50 chars) chain-id that satisfies revision_number length < `u64::MAX` length".to_string(),
                 params: ClientStateParams {
                     id: ChainId::new(&format!("{}-{}", "a".repeat(29), 0)).unwrap(),
                     ..default_params.clone()
