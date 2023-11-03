@@ -61,25 +61,26 @@ pub fn validate_prefix_length(
     min_id_length: u64,
     max_id_length: u64,
 ) -> Result<(), Error> {
+    assert!(max_id_length >= min_id_length);
+
     if prefix.is_empty() {
         return Err(Error::InvalidPrefix {
             prefix: prefix.into(),
         });
     }
 
-    // Checks if the prefix forms a valid identifier length when constructed with `u64::MIN`
-    validate_identifier_length(
-        &format!("{prefix}-{}", u64::MIN),
-        min_id_length,
-        max_id_length,
-    )?;
-
-    // Checks if the prefix forms a valid identifier length when constructed with `u64::MAX`
-    validate_identifier_length(
-        &format!("{prefix}-{}", u64::MAX),
-        min_id_length,
-        max_id_length,
-    )?;
+    // Checks if the prefix forms a valid identifier length when constructed with `u64::MIN` and `u64::MAX`
+    // Checks `prefix` directly adding the 2 and 21 chars for the separator and the `u64::MIN` and `u64::MAX` value.
+    // Valid condition: (min <= len + 2 <= max) && (min <= len + 21 <= max) which can be simplified to:
+    //                  (min <= len + 2) && (len + 21 <= max)
+    if (prefix.len() as u64 + 2) < min_id_length || (prefix.len() as u64 + 21) > max_id_length {
+        return Err(Error::InvalidLength {
+            id: prefix.into(),
+            length: prefix.len() as u64,
+            min: min_id_length,
+            max: max_id_length,
+        });
+    }
 
     Ok(())
 }
