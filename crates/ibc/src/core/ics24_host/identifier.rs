@@ -87,11 +87,6 @@ impl ChainId {
         self.revision_number
     }
 
-    /// Check if the revision number is set
-    pub fn has_revision_number(&self) -> bool {
-        self.split_chain_id().1.is_some()
-    }
-
     /// Swaps `ChainId`s revision number with the new specified revision number
     /// ```
     /// use ibc::core::ics24_host::identifier::ChainId;
