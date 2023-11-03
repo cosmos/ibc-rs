@@ -90,7 +90,7 @@ impl ChainId {
     /// Swaps `ChainId`s revision number with the new specified revision number
     /// ```
     /// use ibc::core::ics24_host::identifier::ChainId;
-    /// let mut chain_id = ChainId::new("chainA", 1).unwrap();
+    /// let mut chain_id = ChainId::new("chainA-1").unwrap();
     /// chain_id.increment_revision_number();
     /// assert_eq!(chain_id.revision_number(), 2);
     /// ```
