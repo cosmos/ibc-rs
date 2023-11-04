@@ -143,18 +143,16 @@ pub fn validate_channel_identifier(id: &str) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
-    use test_log::test;
-
     use super::*;
 
-    #[test]
+    #[test_log::test]
     fn parse_invalid_port_id_min() {
         // invalid min port id
         let id = validate_port_identifier("p");
         assert!(id.is_err())
     }
 
-    #[test]
+    #[test_log::test]
     fn parse_invalid_port_id_max() {
         // invalid max port id (test string length is 130 chars)
         let id = validate_port_identifier(
@@ -163,14 +161,14 @@ mod tests {
         assert!(id.is_err())
     }
 
-    #[test]
+    #[test_log::test]
     fn parse_invalid_connection_id_min() {
         // invalid min connection id
         let id = validate_connection_identifier("connect01");
         assert!(id.is_err())
     }
 
-    #[test]
+    #[test_log::test]
     fn parse_connection_id_max() {
         // invalid max connection id (test string length is 65)
         let id = validate_connection_identifier(
@@ -179,14 +177,14 @@ mod tests {
         assert!(id.is_err())
     }
 
-    #[test]
+    #[test_log::test]
     fn parse_invalid_channel_id_min() {
         // invalid channel id, must be at least 8 characters
         let id = validate_channel_identifier("channel");
         assert!(id.is_err())
     }
 
-    #[test]
+    #[test_log::test]
     fn parse_channel_id_max() {
         // invalid channel id (test string length is 65)
         let id = validate_channel_identifier(
@@ -195,14 +193,14 @@ mod tests {
         assert!(id.is_err())
     }
 
-    #[test]
+    #[test_log::test]
     fn parse_invalid_client_id_min() {
         // invalid min client id
         let id = validate_client_identifier("client");
         assert!(id.is_err())
     }
 
-    #[test]
+    #[test_log::test]
     fn parse_client_id_max() {
         // invalid max client id (test string length is 65)
         let id = validate_client_identifier(
@@ -211,40 +209,40 @@ mod tests {
         assert!(id.is_err())
     }
 
-    #[test]
+    #[test_log::test]
     fn parse_invalid_id_chars() {
         // invalid id chars
         let id = validate_identifier_chars("channel@01");
         assert!(id.is_err())
     }
 
-    #[test]
+    #[test_log::test]
     fn parse_invalid_id_empty() {
         // invalid id empty
         let id = validate_identifier_chars("");
         assert!(id.is_err())
     }
 
-    #[test]
+    #[test_log::test]
     fn parse_invalid_id_path_separator() {
         // invalid id with path separator
         let id = validate_identifier_chars("id/1");
         assert!(id.is_err())
     }
 
-    #[test]
+    #[test_log::test]
     fn parse_healthy_client_type() {
         let id = validate_client_type("07-tendermint");
         assert!(id.is_ok())
     }
 
-    #[test]
+    #[test_log::test]
     fn parse_invalid_short_client_type() {
         let id = validate_client_type("<7Char");
         assert!(id.is_err())
     }
 
-    #[test]
+    #[test_log::test]
     fn parse_invalid_lengthy_client_type() {
         let id = validate_client_type("InvalidClientTypeWithLengthOfClientId>65Char");
         assert!(id.is_err())
