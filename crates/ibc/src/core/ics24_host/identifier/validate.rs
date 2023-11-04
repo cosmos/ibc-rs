@@ -249,4 +249,22 @@ mod tests {
         let id = validate_client_type("InvalidClientTypeWithLengthOfClientId>65Char");
         assert!(id.is_err())
     }
+
+    #[rstest::rstest]
+    #[case::empty_prefix("", 1, 64, false)]
+    #[case::max_is_low("a", 1, 10, false)]
+    #[case::u64_max_is_too_big("a", 3, 21, false)]
+    #[case::u64_min_is_loo_small("a", 4, 22, false)]
+    #[case::u64_min_max_boundary("a", 3, 22, true)]
+    #[case("chainA", 1, 32, true)]
+    #[case("chainA", 1, 64, true)]
+    fn test_prefix_length_validation(
+        #[case] prefix: &str,
+        #[case] min: u64,
+        #[case] max: u64,
+        #[case] success: bool,
+    ) {
+        let result = validate_prefix_length(prefix, min, max);
+        assert_eq!(result.is_ok(), success);
+    }
 }
