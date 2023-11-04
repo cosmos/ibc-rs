@@ -95,9 +95,14 @@ impl ChainId {
     ///
     /// ```
     /// use ibc::core::ics24_host::identifier::ChainId;
+    ///
     /// let mut chain_id = ChainId::new("chainA-1").unwrap();
-    /// chain_id.increment_revision_number();
+    /// assert!(chain_id.increment_revision_number().is_ok());
     /// assert_eq!(chain_id.revision_number(), 2);
+    ///
+    /// let mut chain_id = ChainId::new(&format!("chainA-{}", u64::MAX)).unwrap();
+    /// assert!(chain_id.increment_revision_number().is_err());
+    /// assert_eq!(chain_id.revision_number(), u64::MAX);
     /// ```
     pub fn increment_revision_number(&mut self) -> Result<(), IdentifierError> {
         let (chain_name, _) = self.split_chain_id()?;
