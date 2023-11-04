@@ -97,8 +97,12 @@ impl ChainId {
     /// ```
     pub fn increment_revision_number(&mut self) -> Result<(), IdentifierError> {
         let (chain_name, _) = self.split_chain_id()?;
-        self.id = format!("{}-{}", chain_name, self.revision_number + 1);
-        self.revision_number += 1;
+        let inc_revision_number = self
+            .revision_number
+            .checked_add(1)
+            .ok_or(IdentifierError::RevisionNumberOverflow)?;
+        self.id = format!("{}-{}", chain_name, inc_revision_number);
+        self.revision_number = inc_revision_number;
         Ok(())
     }
 
@@ -518,6 +522,8 @@ pub enum IdentifierError {
     InvalidPrefix { prefix: String },
     /// chain identifier is not formatted with revision number
     UnformattedRevisionNumber { chain_id: String },
+    /// revision number overflowed
+    RevisionNumberOverflow,
     /// identifier cannot be empty
     Empty,
 }
