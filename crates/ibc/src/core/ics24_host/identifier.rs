@@ -88,7 +88,11 @@ impl ChainId {
         self.revision_number
     }
 
-    /// Swaps `ChainId`s revision number with the new specified revision number
+    /// Increases `ChainId`s revision number by one.
+    /// Fails if the chain identifier is not in
+    /// `{chain_name}-{revision_number}` format or
+    /// the revision number overflows.
+    ///
     /// ```
     /// use ibc::core::ics24_host::identifier::ChainId;
     /// let mut chain_id = ChainId::new("chainA-1").unwrap();
