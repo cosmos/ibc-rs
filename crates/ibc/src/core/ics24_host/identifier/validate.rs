@@ -255,7 +255,7 @@ mod tests {
     #[case::empty_prefix("", 1, 64, false)]
     #[case::max_is_low("a", 1, 10, false)]
     #[case::u64_max_is_too_big("a", 3, 21, false)]
-    #[case::u64_min_is_loo_small("a", 4, 22, false)]
+    #[case::u64_min_is_too_small("a", 4, 22, false)]
     #[case::u64_min_max_boundary("a", 3, 22, true)]
     #[case("chainA", 1, 32, true)]
     #[case("chainA", 1, 64, true)]
