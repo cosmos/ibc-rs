@@ -196,7 +196,7 @@ mod tests {
     /// contained in the store and has not expired.
     #[test]
     fn test_consensus_state_pruning() {
-        let chain_id = ChainId::new("mockgaiaA", 1).unwrap();
+        let chain_id = ChainId::new("mockgaiaA-1").unwrap();
 
         let client_height = Height::new(1, 1).unwrap();
 
@@ -295,10 +295,10 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let update_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
         let mut ctx = MockContext::new(
-            ChainId::new("mockgaiaA", 1).unwrap(),
+            ChainId::new("mockgaiaA-1").unwrap(),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),
@@ -343,10 +343,10 @@ mod tests {
     fn test_update_synthetic_tendermint_client_validator_change_ok() {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
         let mut ctx_a = MockContextConfig::builder()
-            .host_id(ChainId::new("mockgaiaA", 1).unwrap())
+            .host_id(ChainId::new("mockgaiaA-1").unwrap())
             .latest_height(Height::new(1, 1).unwrap())
             .build()
             .with_client_config(
@@ -435,10 +435,10 @@ mod tests {
     fn test_update_synthetic_tendermint_client_validator_change_fail() {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
         let ctx_a = MockContextConfig::builder()
-            .host_id(ChainId::new("mockgaiaA", 1).unwrap())
+            .host_id(ChainId::new("mockgaiaA-1").unwrap())
             .latest_height(Height::new(1, 1).unwrap())
             .build()
             .with_client_config(
@@ -515,10 +515,10 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let update_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
         let mut ctx = MockContext::new(
-            ChainId::new("mockgaiaA", 1).unwrap(),
+            ChainId::new("mockgaiaA-1").unwrap(),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),
@@ -565,8 +565,8 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
 
-        let ctx_a_chain_id = ChainId::new("mockgaiaA", 1).unwrap();
-        let ctx_b_chain_id = ChainId::new("mockgaiaB", 1).unwrap();
+        let ctx_a_chain_id = ChainId::new("mockgaiaA-1").unwrap();
+        let ctx_b_chain_id = ChainId::new("mockgaiaB-1").unwrap();
         let start_height = Height::new(1, 11).unwrap();
 
         let mut ctx_a = MockContext::new(ctx_a_chain_id, HostType::Mock, 5, start_height)
@@ -695,7 +695,7 @@ mod tests {
         let chain_start_height = Height::new(1, 11).unwrap();
 
         let ctx = MockContext::new(
-            ChainId::new("mockgaiaA", 1).unwrap(),
+            ChainId::new("mockgaiaA-1").unwrap(),
             HostType::Mock,
             5,
             chain_start_height,
@@ -708,7 +708,7 @@ mod tests {
         );
 
         let ctx_b = MockContext::new(
-            ChainId::new("mockgaiaB", 1).unwrap(),
+            ChainId::new("mockgaiaB-1").unwrap(),
             HostType::SyntheticTendermint,
             5,
             client_height,
@@ -835,11 +835,11 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let misbehaviour_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
         // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
         let mut ctx_a = MockContext::new(
-            ChainId::new("mockgaiaA", 1).unwrap(),
+            ChainId::new("mockgaiaA-1").unwrap(),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),
@@ -896,11 +896,11 @@ mod tests {
         let client_id = ClientId::new(tm_client_type(), 0).unwrap();
         let client_height = Height::new(1, 20).unwrap();
         let misbehaviour_height = Height::new(1, 21).unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
         // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
         let mut ctx_a = MockContext::new(
-            ChainId::new("mockgaiaA", 1).unwrap(),
+            ChainId::new("mockgaiaA-1").unwrap(),
             HostType::Mock,
             5,
             Height::new(1, 1).unwrap(),
@@ -955,7 +955,7 @@ mod tests {
 
     #[test]
     fn test_expired_client() {
-        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
         let update_height = Height::new(1, 21).unwrap();
         let client_height = update_height.sub(3).unwrap();
@@ -967,7 +967,7 @@ mod tests {
         let trusting_period = Duration::from_secs(64);
 
         let mut ctx = MockContextConfig::builder()
-            .host_id(ChainId::new("mockgaiaA", 1).unwrap())
+            .host_id(ChainId::new("mockgaiaA-1").unwrap())
             .latest_height(Height::new(1, 1).unwrap())
             .latest_timestamp(timestamp)
             .build()
@@ -995,7 +995,7 @@ mod tests {
 
     #[test]
     fn test_client_update_max_clock_drift() {
-        let chain_id_b = ChainId::new("mockgaiaB", 1).unwrap();
+        let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
         let client_height = Height::new(1, 20).unwrap();
 
@@ -1006,7 +1006,7 @@ mod tests {
         let max_clock_drift = Duration::from_secs(64);
 
         let ctx_a = MockContextConfig::builder()
-            .host_id(ChainId::new("mockgaiaA", 1).unwrap())
+            .host_id(ChainId::new("mockgaiaA-1").unwrap())
             .latest_height(Height::new(1, 1).unwrap())
             .latest_timestamp(timestamp)
             .build()

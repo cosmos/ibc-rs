@@ -61,18 +61,39 @@ pub fn validate_prefix_length(
     min_id_length: u64,
     max_id_length: u64,
 ) -> Result<(), Error> {
+    assert!(max_id_length >= min_id_length);
+
+    if prefix.is_empty() {
+        return Err(Error::InvalidPrefix {
+            prefix: prefix.into(),
+        });
+    }
+
+    // Statically checks if the prefix forms a valid identifier length when constructed with `u64::MAX`
+    // len(prefix + '-' + u64::MAX) <= max_id_length (minimum prefix length is 1)
+    if max_id_length < 22 {
+        return Err(Error::InvalidLength {
+            id: prefix.into(),
+            length: prefix.len() as u64,
+            min: 0,
+            max: 0,
+        });
+    }
+
     // Checks if the prefix forms a valid identifier length when constructed with `u64::MIN`
+    // len('-' + u64::MIN) = 2
     validate_identifier_length(
-        &format!("{prefix}-{}", u64::MIN),
-        min_id_length,
-        max_id_length,
+        prefix,
+        min_id_length.saturating_sub(2),
+        max_id_length.saturating_sub(2),
     )?;
 
     // Checks if the prefix forms a valid identifier length when constructed with `u64::MAX`
+    // len('-' + u64::MAX) = 21
     validate_identifier_length(
-        &format!("{prefix}-{}", u64::MAX),
-        min_id_length,
-        max_id_length,
+        prefix,
+        min_id_length.saturating_sub(21),
+        max_id_length.saturating_sub(21),
     )?;
 
     Ok(())
@@ -122,6 +143,7 @@ pub fn validate_channel_identifier(id: &str) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
     use test_log::test;
 
     use super::*;
@@ -227,5 +249,24 @@ mod tests {
     fn parse_invalid_lengthy_client_type() {
         let id = validate_client_type("InvalidClientTypeWithLengthOfClientId>65Char");
         assert!(id.is_err())
+    }
+
+    #[rstest]
+    #[case::empty_prefix("", 1, 64, false)]
+    #[case::max_is_low("a", 1, 10, false)]
+    #[case::u64_max_is_too_big("a", 3, 21, false)]
+    #[case::u64_min_is_too_small("a", 4, 22, false)]
+    #[case::u64_min_max_boundary("a", 3, 22, true)]
+    #[case("chainA", 1, 32, true)]
+    #[case("chainA", 1, 64, true)]
+    #[test_log::test]
+    fn test_prefix_length_validation(
+        #[case] prefix: &str,
+        #[case] min: u64,
+        #[case] max: u64,
+        #[case] success: bool,
+    ) {
+        let result = validate_prefix_length(prefix, min, max);
+        assert_eq!(result.is_ok(), success);
     }
 }

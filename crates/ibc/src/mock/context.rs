@@ -354,7 +354,7 @@ pub struct MockClientConfig {
 impl Default for MockContext {
     fn default() -> Self {
         Self::new(
-            ChainId::new("mockgaia", 0).expect("Never fails"),
+            ChainId::new("mockgaia-0").expect("Never fails"),
             HostType::Mock,
             5,
             Height::new(0, 5).expect("Never fails"),
@@ -1569,7 +1569,7 @@ mod tests {
         }
         let cv = 1; // The version to use for all chains.
 
-        let mock_chain_id = ChainId::new("mockgaia", cv).unwrap();
+        let mock_chain_id = ChainId::new(&format!("mockgaia-{cv}")).unwrap();
 
         let tests: Vec<Test> = vec![
             Test {
