@@ -143,10 +143,10 @@ pub fn validate_channel_identifier(id: &str) -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use rstest::rstest;
     use test_log::test;
+
+    use super::*;
 
     #[test]
     fn parse_invalid_port_id_min() {
