@@ -259,7 +259,7 @@ mod tests {
     #[case::u64_min_max_boundary("a", 3, 22, true)]
     #[case("chainA", 1, 32, true)]
     #[case("chainA", 1, 64, true)]
-    #[test]
+    #[test_log::test]
     fn test_prefix_length_validation(
         #[case] prefix: &str,
         #[case] min: u64,
