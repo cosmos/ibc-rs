@@ -1,5 +1,5 @@
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenInit as RawMsgChannelOpenInit;
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::Protobuf;
 
 use crate::core::ics04_channel::channel::{
     verify_connection_hops_length, ChannelEnd, Counterparty, Order, State,

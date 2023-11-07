@@ -65,8 +65,8 @@ pub enum RouterError {
     ContextError(ContextError),
     /// unknown type URL `{url}`
     UnknownMessageTypeUrl { url: String },
-    /// the message is malformed and cannot be decoded error: `{0}`
-    MalformedMessageBytes(ibc_proto::protobuf::Error),
+    /// the message is malformed and cannot be decoded error: `{reason}`
+    MalformedMessageBytes { reason: String },
     /// port `{port_id}` is unknown
     UnknownPort { port_id: PortId },
     /// module not found
@@ -84,7 +84,6 @@ impl std::error::Error for RouterError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::ContextError(e) => Some(e),
-            Self::MalformedMessageBytes(e) => Some(e),
             _ => None,
         }
     }

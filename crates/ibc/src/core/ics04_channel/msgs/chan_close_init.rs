@@ -1,5 +1,5 @@
 use ibc_proto::ibc::core::channel::v1::MsgChannelCloseInit as RawMsgChannelCloseInit;
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::Protobuf;
 
 use crate::core::ics04_channel::error::ChannelError;
 use crate::core::ics24_host::identifier::{ChannelId, PortId};

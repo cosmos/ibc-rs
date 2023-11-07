@@ -1,4 +1,4 @@
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::Protobuf;
 use prost::Message;
 
 use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};

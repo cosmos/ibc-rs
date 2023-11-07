@@ -2,7 +2,7 @@
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::applications::transfer::v1::MsgTransfer as RawMsgTransfer;
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::Protobuf;
 
 use crate::applications::transfer::error::TokenTransferError;
 use crate::applications::transfer::packet::PacketData;
@@ -115,7 +115,9 @@ impl TryFrom<Any> for MsgTransfer {
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         match raw.type_url.as_str() {
             TYPE_URL => {
-                MsgTransfer::decode_vec(&raw.value).map_err(TokenTransferError::DecodeRawMsg)
+                MsgTransfer::decode_vec(&raw.value).map_err(|e| TokenTransferError::DecodeRawMsg {
+                    reason: e.to_string(),
+                })
             }
             _ => Err(TokenTransferError::UnknownMsgType {
                 msg_type: raw.type_url,

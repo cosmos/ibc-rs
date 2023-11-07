@@ -4,7 +4,7 @@ use core::str::FromStr;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
-use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
+use ibc_proto::Protobuf as ErasedProtobuf;
 use tendermint::block::Header as TmHeader;
 use tendermint::validator::Set as ValidatorSet;
 use tendermint_testgen::light_block::TmLightBlock;

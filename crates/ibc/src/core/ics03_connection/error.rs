@@ -3,7 +3,6 @@
 use alloc::string::String;
 
 use displaydoc::Display;
-use ibc_proto::protobuf::Error as ProtoError;
 
 use crate::core::ics02_client::error as client_error;
 use crate::core::ics03_connection::version::Version;
@@ -17,8 +16,6 @@ pub enum ConnectionError {
     Client(client_error::ClientError),
     /// invalid connection state: expected `{expected}`, actual `{actual}`
     InvalidState { expected: String, actual: String },
-    /// invalid connection end error: `{0}`
-    InvalidConnectionEnd(ProtoError),
     /// consensus height claimed by the client on the other party is too advanced: `{target_height}` (host chain current height: `{current_height}`)
     InvalidConsensusHeight {
         target_height: Height,

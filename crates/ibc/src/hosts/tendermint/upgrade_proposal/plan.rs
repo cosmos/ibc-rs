@@ -5,7 +5,7 @@ use alloc::string::{String, ToString};
 
 use ibc_proto::cosmos::upgrade::v1beta1::Plan as RawPlan;
 use ibc_proto::google::protobuf::Any;
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::Protobuf;
 
 use crate::core::ics02_client::error::UpgradeClientError;
 
@@ -108,7 +108,7 @@ impl From<Plan> for Any {
     fn from(value: Plan) -> Self {
         Any {
             type_url: TYPE_URL.to_string(),
-            value: Protobuf::<RawPlan>::encode_vec(&value),
+            value: Protobuf::<RawPlan>::encode_vec(value),
         }
     }
 }

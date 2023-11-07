@@ -1,6 +1,6 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenConfirm`.
 
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::Protobuf;
 
 use crate::core::context::ContextError;
 use crate::core::events::{IbcEvent, MessageEvent};

@@ -4,7 +4,7 @@ use alloc::string::{String, ToString};
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::UpgradeProposal as RawUpgradeProposal;
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::Protobuf;
 
 use super::Plan;
 use crate::core::ics02_client::error::UpgradeClientError;
