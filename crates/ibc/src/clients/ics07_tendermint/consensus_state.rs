@@ -2,7 +2,7 @@
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::ConsensusState as RawConsensusState;
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::Protobuf;
 use tendermint::hash::Algorithm;
 use tendermint::time::Time;
 use tendermint::Hash;
@@ -126,7 +126,7 @@ impl From<ConsensusState> for Any {
     fn from(consensus_state: ConsensusState) -> Self {
         Any {
             type_url: TENDERMINT_CONSENSUS_STATE_TYPE_URL.to_string(),
-            value: Protobuf::<RawConsensusState>::encode_vec(&consensus_state),
+            value: Protobuf::<RawConsensusState>::encode_vec(consensus_state),
         }
     }
 }
@@ -156,7 +156,7 @@ impl ConsensusStateTrait for ConsensusState {
         self.timestamp.into()
     }
 
-    fn encode_vec(&self) -> Vec<u8> {
+    fn encode_vec(self) -> Vec<u8> {
         <Self as Protobuf<Any>>::encode_vec(self)
     }
 }

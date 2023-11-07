@@ -4,7 +4,6 @@ use core::convert::Infallible;
 use core::str::Utf8Error;
 
 use displaydoc::Display;
-use ibc_proto::protobuf::Error as TendermintProtoError;
 use uint::FromDecStrErr;
 
 use crate::core::ics04_channel::acknowledgement::StatusValue;
@@ -64,8 +63,8 @@ pub enum TokenTransferError {
         port_id: PortId,
         exp_port_id: PortId,
     },
-    /// decoding raw msg error: `{0}`
-    DecodeRawMsg(TendermintProtoError),
+    /// decoding raw msg error: `{reason}`
+    DecodeRawMsg { reason: String },
     /// unknown msg type: `{msg_type}`
     UnknownMsgType { msg_type: String },
     /// invalid coin string: `{coin}`
@@ -89,7 +88,6 @@ impl std::error::Error for TokenTransferError {
                 ..
             } => Some(e),
             Self::InvalidAmount(e) => Some(e),
-            Self::DecodeRawMsg(e) => Some(e),
             Self::Utf8Decode(e) => Some(e),
             _ => None,
         }

@@ -8,7 +8,7 @@ use ibc_proto::ibc::core::connection::v1::{
     ConnectionEnd as RawConnectionEnd, Counterparty as RawCounterparty,
     IdentifiedConnection as RawIdentifiedConnection,
 };
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::Protobuf;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::error::ConnectionError;

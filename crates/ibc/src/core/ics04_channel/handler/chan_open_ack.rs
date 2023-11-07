@@ -1,6 +1,6 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenAck`.
 
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::Protobuf;
 
 use crate::core::events::{IbcEvent, MessageEvent};
 use crate::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};

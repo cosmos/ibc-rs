@@ -3,7 +3,7 @@
 use bytes::Buf;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Misbehaviour as RawMisbehaviour;
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::Protobuf;
 use prost::Message;
 
 use crate::clients::ics07_tendermint::error::Error;
@@ -135,7 +135,7 @@ impl From<Misbehaviour> for Any {
     fn from(misbehaviour: Misbehaviour) -> Self {
         Any {
             type_url: TENDERMINT_MISBEHAVIOUR_TYPE_URL.to_string(),
-            value: Protobuf::<RawMisbehaviour>::encode_vec(&misbehaviour),
+            value: Protobuf::<RawMisbehaviour>::encode_vec(misbehaviour),
         }
     }
 }

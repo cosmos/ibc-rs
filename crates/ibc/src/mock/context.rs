@@ -11,7 +11,7 @@ use core::time::Duration;
 
 use derive_more::{From, TryInto};
 use ibc_proto::google::protobuf::Any;
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::Protobuf;
 use parking_lot::Mutex;
 use tendermint_testgen::Validator as TestgenValidator;
 use tracing::debug;

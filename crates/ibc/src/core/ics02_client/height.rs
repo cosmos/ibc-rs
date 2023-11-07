@@ -6,7 +6,7 @@ use core::str::FromStr;
 
 use displaydoc::Display;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::Protobuf;
 
 use crate::core::ics02_client::error::ClientError;
 use crate::prelude::*;
