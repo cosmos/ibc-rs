@@ -5,7 +5,7 @@ resolver = "2"
 members = [
     "crates/ibc",
     "crates/ibc-derive",
-    "crates/ibc-mocks",
+    "crates/ibc-testkit",
     "crates/ibc-query",
 ]
 
