@@ -1,7 +1,6 @@
 //! Defines the client error type
 
 use displaydoc::Display;
-use ibc_proto::protobuf::Error as TendermintProtoError;
 
 use super::client_state::Status;
 use crate::core::ics02_client::client_type::ClientType;
@@ -65,8 +64,8 @@ pub enum ClientError {
     Decode(prost::DecodeError),
     /// invalid client identifier error: `{0}`
     InvalidClientIdentifier(IdentifierError),
-    /// invalid raw header error: `{0}`
-    InvalidRawHeader(TendermintProtoError),
+    /// invalid raw header error: `{reason}`
+    InvalidRawHeader { reason: String },
     /// missing raw client message
     MissingClientMessage,
     /// invalid raw misbehaviour error: `{0}`
@@ -140,7 +139,6 @@ impl std::error::Error for ClientError {
             } => Some(e),
             Self::InvalidMsgUpdateClientId(e) => Some(e),
             Self::InvalidClientIdentifier(e) => Some(e),
-            Self::InvalidRawHeader(e) => Some(e),
             Self::InvalidRawMisbehaviour(e) => Some(e),
             Self::InvalidCommitmentProof(e) => Some(e),
             Self::InvalidPacketTimestamp(e) => Some(e),

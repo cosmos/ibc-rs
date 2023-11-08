@@ -35,8 +35,7 @@ use ibc::mock::client_state::{
 use ibc::mock::consensus_state::{MockConsensusState, MOCK_CONSENSUS_STATE_TYPE_URL};
 use ibc::mock::header::MockHeader;
 use ibc::prelude::*;
-use ibc::proto::protobuf::Protobuf;
-use ibc::proto::Any;
+use ibc::proto::{Any, Protobuf};
 use ibc::Height;
 use parking_lot::Mutex;
 use tendermint_testgen::Validator as TestgenValidator;

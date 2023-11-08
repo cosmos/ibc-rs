@@ -72,5 +72,5 @@ pub mod proto {
     pub use ibc_proto::ibc::apps::transfer;
     pub use ibc_proto::ibc::core;
     pub use ibc_proto::ibc::lightclients::tendermint;
-    pub use ibc_proto::protobuf;
+    pub use ibc_proto::Protobuf;
 }

@@ -1,5 +1,5 @@
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenConfirm as RawMsgConnectionOpenConfirm;
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::Protobuf;
 
 use crate::core::ics03_connection::error::ConnectionError;
 use crate::core::ics23_commitment::commitment::CommitmentProofBytes;

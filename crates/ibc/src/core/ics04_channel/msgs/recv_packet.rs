@@ -1,5 +1,5 @@
 use ibc_proto::ibc::core::channel::v1::MsgRecvPacket as RawMsgRecvPacket;
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::Protobuf;
 
 use crate::core::ics04_channel::error::PacketError;
 use crate::core::ics04_channel::packet::Packet;
