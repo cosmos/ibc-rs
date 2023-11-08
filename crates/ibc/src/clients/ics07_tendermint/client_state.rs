@@ -792,6 +792,128 @@ fn check_header_trusted_next_validator_set(
     }
 }
 
+#[cfg(any(test, feature = "test-utils"))]
+pub mod test_util {
+    use core::str::FromStr;
+    use core::time::Duration;
+
+    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
+    use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
+    use tendermint::block::Header;
+
+    use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState};
+    use crate::clients::ics07_tendermint::error::{Error as ClientError, Error};
+    use crate::clients::ics07_tendermint::trust_threshold::TrustThreshold;
+    use crate::core::ics02_client::height::Height;
+    use crate::core::ics23_commitment::specs::ProofSpecs;
+    use crate::core::ics24_host::identifier::ChainId;
+    use crate::prelude::*;
+
+    impl ClientState {
+        pub fn new_dummy_from_raw(frozen_height: RawHeight) -> Result<Self, Error> {
+            Self::try_from(get_dummy_raw_tm_client_state(frozen_height))
+        }
+
+        pub fn new_dummy_from_header(tm_header: Header) -> Self {
+            let chain_id = ChainId::from_str(tm_header.chain_id.as_str()).expect("Never fails");
+            Self::new(
+                chain_id.clone(),
+                Default::default(),
+                Duration::from_secs(64000),
+                Duration::from_secs(128000),
+                Duration::from_millis(3000),
+                Height::new(chain_id.revision_number(), u64::from(tm_header.height))
+                    .expect("Never fails"),
+                Default::default(),
+                Default::default(),
+                AllowUpdate {
+                    after_expiry: false,
+                    after_misbehaviour: false,
+                },
+            )
+            .expect("Never fails")
+        }
+    }
+
+    pub fn get_dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
+        #[allow(deprecated)]
+        RawTmClientState {
+            chain_id: ChainId::new("ibc-0").expect("Never fails").to_string(),
+            trust_level: Some(Fraction {
+                numerator: 1,
+                denominator: 3,
+            }),
+            trusting_period: Some(Duration::from_secs(64000).into()),
+            unbonding_period: Some(Duration::from_secs(128000).into()),
+            max_clock_drift: Some(Duration::from_millis(3000).into()),
+            latest_height: Some(Height::new(0, 10).expect("Never fails").into()),
+            proof_specs: ProofSpecs::default().into(),
+            upgrade_path: Default::default(),
+            frozen_height: Some(frozen_height),
+            allow_update_after_expiry: false,
+            allow_update_after_misbehaviour: false,
+        }
+    }
+
+    #[derive(typed_builder::TypedBuilder, Debug)]
+    pub struct ClientStateConfig {
+        pub chain_id: ChainId,
+        #[builder(default)]
+        pub trust_level: TrustThreshold,
+        #[builder(default = Duration::from_secs(64000))]
+        pub trusting_period: Duration,
+        #[builder(default = Duration::from_secs(128000))]
+        pub unbonding_period: Duration,
+        #[builder(default = Duration::from_millis(3000))]
+        max_clock_drift: Duration,
+        pub latest_height: Height,
+        #[builder(default)]
+        pub proof_specs: ProofSpecs,
+        #[builder(default)]
+        pub upgrade_path: Vec<String>,
+        #[builder(default = AllowUpdate { after_expiry: false, after_misbehaviour: false })]
+        allow_update: AllowUpdate,
+    }
+
+    impl TryFrom<ClientStateConfig> for ClientState {
+        type Error = ClientError;
+
+        fn try_from(config: ClientStateConfig) -> Result<Self, Self::Error> {
+            ClientState::new(
+                config.chain_id,
+                config.trust_level,
+                config.trusting_period,
+                config.unbonding_period,
+                config.max_clock_drift,
+                config.latest_height,
+                config.proof_specs,
+                config.upgrade_path,
+                config.allow_update,
+            )
+        }
+    }
+}
+
+#[cfg(all(test, feature = "serde"))]
+mod serde_tests {
+    use tendermint_rpc::endpoint::abci_query::AbciQuery;
+
+    use crate::serializers::tests::test_serialization_roundtrip;
+    #[test]
+    fn serialization_roundtrip_no_proof() {
+        let json_data =
+            include_str!("../../../tests/support/query/serialization/client_state.json");
+        test_serialization_roundtrip::<AbciQuery>(json_data);
+    }
+
+    #[test]
+    fn serialization_roundtrip_with_proof() {
+        let json_data =
+            include_str!("../../../tests/support/query/serialization/client_state_proof.json");
+        test_serialization_roundtrip::<AbciQuery>(json_data);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use core::time::Duration;
@@ -1103,128 +1225,6 @@ mod tests {
         match tm_client_state_from_raw {
             Err(Error::FrozenHeightNotAllowed) => {}
             _ => panic!("Expected to fail with FrozenHeightNotAllowed error"),
-        }
-    }
-}
-
-#[cfg(all(test, feature = "serde"))]
-mod serde_tests {
-    use tendermint_rpc::endpoint::abci_query::AbciQuery;
-
-    use crate::serializers::tests::test_serialization_roundtrip;
-    #[test]
-    fn serialization_roundtrip_no_proof() {
-        let json_data =
-            include_str!("../../../tests/support/query/serialization/client_state.json");
-        test_serialization_roundtrip::<AbciQuery>(json_data);
-    }
-
-    #[test]
-    fn serialization_roundtrip_with_proof() {
-        let json_data =
-            include_str!("../../../tests/support/query/serialization/client_state_proof.json");
-        test_serialization_roundtrip::<AbciQuery>(json_data);
-    }
-}
-
-#[cfg(any(test, feature = "mocks"))]
-pub mod test_util {
-    use core::str::FromStr;
-    use core::time::Duration;
-
-    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-    use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
-    use tendermint::block::Header;
-
-    use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState};
-    use crate::clients::ics07_tendermint::error::{Error as ClientError, Error};
-    use crate::clients::ics07_tendermint::trust_threshold::TrustThreshold;
-    use crate::core::ics02_client::height::Height;
-    use crate::core::ics23_commitment::specs::ProofSpecs;
-    use crate::core::ics24_host::identifier::ChainId;
-    use crate::prelude::*;
-
-    impl ClientState {
-        pub fn new_dummy_from_raw(frozen_height: RawHeight) -> Result<Self, Error> {
-            Self::try_from(get_dummy_raw_tm_client_state(frozen_height))
-        }
-
-        pub fn new_dummy_from_header(tm_header: Header) -> Self {
-            let chain_id = ChainId::from_str(tm_header.chain_id.as_str()).expect("Never fails");
-            Self::new(
-                chain_id.clone(),
-                Default::default(),
-                Duration::from_secs(64000),
-                Duration::from_secs(128000),
-                Duration::from_millis(3000),
-                Height::new(chain_id.revision_number(), u64::from(tm_header.height))
-                    .expect("Never fails"),
-                Default::default(),
-                Default::default(),
-                AllowUpdate {
-                    after_expiry: false,
-                    after_misbehaviour: false,
-                },
-            )
-            .expect("Never fails")
-        }
-    }
-
-    pub fn get_dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
-        #[allow(deprecated)]
-        RawTmClientState {
-            chain_id: ChainId::new("ibc-0").expect("Never fails").to_string(),
-            trust_level: Some(Fraction {
-                numerator: 1,
-                denominator: 3,
-            }),
-            trusting_period: Some(Duration::from_secs(64000).into()),
-            unbonding_period: Some(Duration::from_secs(128000).into()),
-            max_clock_drift: Some(Duration::from_millis(3000).into()),
-            latest_height: Some(Height::new(0, 10).expect("Never fails").into()),
-            proof_specs: ProofSpecs::default().into(),
-            upgrade_path: Default::default(),
-            frozen_height: Some(frozen_height),
-            allow_update_after_expiry: false,
-            allow_update_after_misbehaviour: false,
-        }
-    }
-
-    #[derive(typed_builder::TypedBuilder, Debug)]
-    pub struct ClientStateConfig {
-        pub chain_id: ChainId,
-        #[builder(default)]
-        pub trust_level: TrustThreshold,
-        #[builder(default = Duration::from_secs(64000))]
-        pub trusting_period: Duration,
-        #[builder(default = Duration::from_secs(128000))]
-        pub unbonding_period: Duration,
-        #[builder(default = Duration::from_millis(3000))]
-        max_clock_drift: Duration,
-        pub latest_height: Height,
-        #[builder(default)]
-        pub proof_specs: ProofSpecs,
-        #[builder(default)]
-        pub upgrade_path: Vec<String>,
-        #[builder(default = AllowUpdate { after_expiry: false, after_misbehaviour: false })]
-        allow_update: AllowUpdate,
-    }
-
-    impl TryFrom<ClientStateConfig> for ClientState {
-        type Error = ClientError;
-
-        fn try_from(config: ClientStateConfig) -> Result<Self, Self::Error> {
-            ClientState::new(
-                config.chain_id,
-                config.trust_level,
-                config.trusting_period,
-                config.unbonding_period,
-                config.max_clock_drift,
-                config.latest_height,
-                config.proof_specs,
-                config.upgrade_path,
-                config.allow_update,
-            )
         }
     }
 }

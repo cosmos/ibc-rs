@@ -242,7 +242,7 @@ impl From<MsgConnectionOpenTry> for RawMsgConnectionOpenTry {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 pub mod test_util {
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenTry as RawMsgConnectionOpenTry;
@@ -265,7 +265,7 @@ pub mod test_util {
                 proof_height,
                 consensus_height,
             ))
-            .unwrap()
+            .expect("Never fails")
         }
         /// Setter for `client_id`.
         pub fn with_client_id(self, client_id: ClientId) -> MsgConnectionOpenTry {
@@ -284,7 +284,8 @@ pub mod test_util {
         proof_height: u64,
         consensus_height: u64,
     ) -> RawMsgConnectionOpenTry {
-        let client_state_height = Height::new(0, consensus_height).unwrap();
+        let client_state_height =
+            Height::new(0, consensus_height).expect("could not create height");
 
         #[allow(deprecated)]
         RawMsgConnectionOpenTry {

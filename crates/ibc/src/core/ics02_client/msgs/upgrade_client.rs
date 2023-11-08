@@ -97,7 +97,7 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 pub mod test_util {
     use super::*;
     use crate::core::ics02_client::height::Height;
@@ -112,7 +112,7 @@ pub mod test_util {
     impl MsgUpgradeClient {
         pub fn new_dummy(upgrade_height: Height) -> Self {
             MsgUpgradeClient {
-                client_id: ClientId::new(mock_client_type(), 0).unwrap(),
+                client_id: ClientId::new(mock_client_type(), 0).expect("invalid client id"),
                 upgraded_client_state: MockClientState::new(MockHeader::new(upgrade_height)).into(),
                 upgraded_consensus_state: MockConsensusState::new(MockHeader::new(upgrade_height))
                     .into(),

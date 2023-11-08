@@ -130,7 +130,7 @@ impl From<MsgConnectionOpenAck> for RawMsgConnectionOpenAck {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 pub mod test_util {
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenAck as RawMsgConnectionOpenAck;
@@ -152,7 +152,7 @@ pub mod test_util {
                 proof_height,
                 consensus_height,
             ))
-            .unwrap()
+            .expect("Never fails")
         }
     }
 
@@ -160,7 +160,7 @@ pub mod test_util {
         proof_height: u64,
         consensus_height: u64,
     ) -> RawMsgConnectionOpenAck {
-        let client_state_height = Height::new(0, consensus_height).unwrap();
+        let client_state_height = Height::new(0, consensus_height).expect("invalid height");
         RawMsgConnectionOpenAck {
             connection_id: ConnectionId::new(0).to_string(),
             counterparty_connection_id: ConnectionId::new(1).to_string(),

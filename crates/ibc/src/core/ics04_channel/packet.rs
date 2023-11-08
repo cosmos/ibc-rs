@@ -129,7 +129,7 @@ impl core::fmt::Display for Sequence {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Default, Hash, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct Packet {
     pub seq_on_a: Sequence,
     pub port_id_on_a: PortId,
@@ -304,7 +304,7 @@ impl From<Packet> for RawPacket {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Default, Hash, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct PacketState {
     pub port_id: PortId,
     pub chan_id: ChannelId,
@@ -372,8 +372,8 @@ impl From<PacketState> for RawPacketState {
     }
 }
 
-#[cfg(test)]
-pub mod test_utils {
+#[cfg(any(test, feature = "test-utils"))]
+pub mod test_util {
     use ibc_proto::ibc::core::channel::v1::Packet as RawPacket;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 
@@ -384,9 +384,9 @@ pub mod test_utils {
     pub fn get_dummy_raw_packet(timeout_height: u64, timeout_timestamp: u64) -> RawPacket {
         RawPacket {
             sequence: 1,
-            source_port: PortId::default().to_string(),
+            source_port: PortId::transfer().to_string(),
             source_channel: ChannelId::default().to_string(),
-            destination_port: PortId::default().to_string(),
+            destination_port: PortId::transfer().to_string(),
             destination_channel: ChannelId::default().to_string(),
             data: vec![0],
             timeout_height: Some(RawHeight {
@@ -404,7 +404,7 @@ mod tests {
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use test_log::test;
 
-    use crate::core::ics04_channel::packet::test_utils::get_dummy_raw_packet;
+    use crate::core::ics04_channel::packet::test_util::get_dummy_raw_packet;
     use crate::core::ics04_channel::packet::Packet;
     use crate::prelude::*;
 

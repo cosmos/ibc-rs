@@ -128,7 +128,7 @@ impl From<MsgConnectionOpenInit> for RawMsgConnectionOpenInit {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 pub mod test_util {
     use ibc_proto::ibc::core::connection::v1::{
         MsgConnectionOpenInit as RawMsgConnectionOpenInit, Version as RawVersion,
@@ -146,7 +146,8 @@ pub mod test_util {
     impl MsgConnectionOpenInit {
         /// Returns a new `MsgConnectionOpenInit` with dummy values.
         pub fn new_dummy() -> Self {
-            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init()).unwrap()
+            MsgConnectionOpenInit::try_from(get_dummy_raw_msg_conn_open_init())
+                .expect("Never fails")
         }
 
         /// Setter for `client_id`. Amenable to chaining, since it consumes the input message.
@@ -161,7 +162,7 @@ pub mod test_util {
         pub fn with_counterparty_conn_id(self, counterparty_conn_id: u64) -> Self {
             let counterparty =
                 Counterparty::try_from(get_dummy_raw_counterparty(Some(counterparty_conn_id)))
-                    .unwrap();
+                    .expect("Never fails");
             MsgConnectionOpenInit {
                 counterparty,
                 ..self
@@ -174,7 +175,7 @@ pub mod test_util {
                     identifier: v.to_string(),
                     features: vec![],
                 })
-                .unwrap()
+                .expect("could not create version from identifier")
                 .into(),
                 None => None,
             };

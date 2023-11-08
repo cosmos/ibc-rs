@@ -65,7 +65,6 @@ impl From<PacketData> for RawPacketData {
 
 #[cfg(test)]
 mod tests {
-
     use primitive_types::U256;
 
     use super::*;

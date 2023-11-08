@@ -74,7 +74,7 @@ impl From<MsgRecvPacket> for RawMsgRecvPacket {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 pub mod test_util {
     use core::ops::Add;
     use core::time::Duration;
@@ -83,7 +83,7 @@ pub mod test_util {
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 
     use super::MsgRecvPacket;
-    use crate::core::ics04_channel::packet::test_utils::get_dummy_raw_packet;
+    use crate::core::ics04_channel::packet::test_util::get_dummy_raw_packet;
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
     use crate::core::timestamp::Timestamp;
@@ -113,7 +113,7 @@ pub mod test_util {
         RawMsgRecvPacket {
             packet: Some(get_dummy_raw_packet(
                 height,
-                timestamp.unwrap().nanoseconds(),
+                timestamp.expect("timestamp").nanoseconds(),
             )),
             proof_commitment: get_dummy_proof(),
             proof_height: Some(RawHeight {

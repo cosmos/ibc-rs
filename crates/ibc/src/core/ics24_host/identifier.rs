@@ -15,7 +15,6 @@ use crate::prelude::*;
 const CONNECTION_ID_PREFIX: &str = "connection";
 const CHANNEL_ID_PREFIX: &str = "channel";
 
-const DEFAULT_PORT_ID: &str = "defaultPort";
 const TRANSFER_PORT_ID: &str = "transfer";
 
 /// Defines the domain type for chain identifiers.
@@ -413,12 +412,6 @@ impl FromStr for PortId {
 impl AsRef<str> for PortId {
     fn as_ref(&self) -> &str {
         self.0.as_str()
-    }
-}
-
-impl Default for PortId {
-    fn default() -> Self {
-        Self(DEFAULT_PORT_ID.to_string())
     }
 }
 

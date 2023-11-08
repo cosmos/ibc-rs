@@ -44,9 +44,9 @@ serde = ["dep:serde", "dep:serde_derive", "serde_json", "ibc-proto/serde", "ics2
 # CosmWasm message API generator compatible, should not be inside on chain code
 schema = ["dep:schemars", "ibc-proto/json-schema", "serde", "std"]
 
-# This feature grants access to development-time mocking libraries, such as `MockContext` or `MockHeader`.
-# Depends on the `testgen` suite for generating Tendermint light blocks.
-mocks = ["tendermint-testgen", "parking_lot", "typed-builder", "std"]
+# This feature provides access to utility implementations for IBC types,
+# specifically designed for testing purposes
+test-utils = ["typed-builder"]
 
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
@@ -72,10 +72,9 @@ parity-scale-codec = { version = "3.0.0", default-features = false, features = [
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"], optional = true }
 ## for borsh encode or decode
 borsh = {version = "0.10", default-features = false, optional = true }
-parking_lot = { version = "0.12.1", default-features = false, optional = true }
 typed-builder = { version = "0.17.0", optional = true }
 
-ibc-derive = { version ="0.3.0", path = "../ibc-derive" }
+ibc-derive = { version = "0.3.0", path = "../ibc-derive" }
 
 schemars = { version = "0.8.12", optional = true }
 
@@ -92,15 +91,9 @@ version = "0.34"
 default-features = false
 features = ["rust-crypto"]
 
-[dependencies.tendermint-testgen]
-version = "0.34"
-optional = true
-default-features = false
-
 [dev-dependencies]
 env_logger = "0.10.0"
 rstest = "0.18.1"
 tracing-subscriber = { version = "0.3.14", features = ["fmt", "env-filter", "json"]}
 test-log = { version = "0.2.10", features = ["trace"] }
 tendermint-rpc = { version = "0.34", features = ["http-client", "websocket-client"] }
-ibc = { path = ".", features = ["mocks"] }

@@ -338,7 +338,7 @@ pub(crate) fn verify_connection_hops_length(
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Counterparty {
     pub port_id: PortId,
     pub channel_id: Option<ChannelId>,
@@ -571,7 +571,7 @@ impl Display for State {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 pub mod test_util {
     use ibc_proto::ibc::core::channel::v1::{
         Channel as RawChannel, Counterparty as RawCounterparty,
@@ -584,7 +584,7 @@ pub mod test_util {
     /// Can be optionally parametrized with a specific channel identifier.
     pub fn get_dummy_raw_counterparty(channel_id: String) -> RawCounterparty {
         RawCounterparty {
-            port_id: PortId::default().to_string(),
+            port_id: PortId::transfer().to_string(),
             channel_id,
         }
     }

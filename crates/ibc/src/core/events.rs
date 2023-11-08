@@ -286,7 +286,7 @@ pub mod tests {
     use super::*;
     use crate::core::ics04_channel::channel::Order;
     use crate::core::ics04_channel::events::SendPacket;
-    use crate::core::ics04_channel::packet::test_utils::get_dummy_raw_packet;
+    use crate::core::ics04_channel::packet::test_util::get_dummy_raw_packet;
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics24_host::identifier::ConnectionId;
 

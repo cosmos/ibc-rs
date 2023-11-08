@@ -37,7 +37,7 @@ pub enum ConnectionMsg {
     OpenConfirm(MsgConnectionOpenConfirm),
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 pub mod test_util {
 
     use ibc_proto::ibc::core::commitment::v1::MerklePrefix;

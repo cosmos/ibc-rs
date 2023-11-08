@@ -1,18 +1,21 @@
-//! Client context implementations for `MockContext`
+use alloc::collections::BTreeMap;
+use alloc::vec::Vec;
 
-use super::{AnyClientState, AnyConsensusState, MockClientRecord, MockContext};
-use crate::clients::ics07_tendermint::{
+use ibc::clients::ics07_tendermint::{
     CommonContext as TmCommonContext, ValidationContext as TmValidationContext,
 };
-use crate::core::ics02_client::error::ClientError;
-use crate::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
-use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
-use crate::core::timestamp::Timestamp;
-use crate::core::{ContextError, ValidationContext};
-use crate::mock::client_state::MockClientContext;
-use crate::prelude::*;
-use crate::Height;
+use ibc::core::ics02_client::error::ClientError;
+use ibc::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
+use ibc::core::ics24_host::identifier::{ChannelId, ClientId, PortId};
+use ibc::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
+use ibc::core::timestamp::Timestamp;
+use ibc::core::{ContextError, ValidationContext};
+use ibc::mock::client_state::MockClientContext;
+use ibc::Height;
+
+use super::definition::{AnyClientState, AnyConsensusState, MockClientRecord, MockContext};
+
+pub type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
 
 impl MockClientContext for MockContext {
     type ConversionError = &'static str;
@@ -29,7 +32,7 @@ impl MockClientContext for MockContext {
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::AnyConsensusState, ContextError> {
+    ) -> Result<AnyConsensusState, ContextError> {
         ValidationContext::consensus_state(self, client_cons_state_path)
     }
 }

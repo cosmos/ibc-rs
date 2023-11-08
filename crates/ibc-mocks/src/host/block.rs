@@ -2,9 +2,18 @@
 
 use core::str::FromStr;
 
-use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
-use ibc_proto::protobuf::Protobuf as ErasedProtobuf;
+use ibc::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
+use ibc::clients::ics07_tendermint::header::{Header, TENDERMINT_HEADER_TYPE_URL};
+use ibc::core::ics02_client::error::ClientError;
+use ibc::core::ics24_host::identifier::ChainId;
+use ibc::core::timestamp::Timestamp;
+use ibc::mock::consensus_state::MockConsensusState;
+use ibc::mock::header::MockHeader;
+use ibc::prelude::*;
+use ibc::proto::protobuf::Protobuf;
+use ibc::proto::tendermint::v1::Header as RawHeader;
+use ibc::proto::Any;
+use ibc::Height;
 use tendermint::block::Header as TmHeader;
 use tendermint::validator::Set as ValidatorSet;
 use tendermint_testgen::light_block::TmLightBlock;
@@ -13,17 +22,7 @@ use tendermint_testgen::{
     Validator as TestgenValidator,
 };
 
-use super::context::AnyConsensusState;
-use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
-use crate::clients::ics07_tendermint::header::TENDERMINT_HEADER_TYPE_URL;
-use crate::core::ics02_client::error::ClientError;
-use crate::core::ics24_host::identifier::ChainId;
-use crate::core::timestamp::Timestamp;
-use crate::mock::consensus_state::MockConsensusState;
-use crate::mock::header::MockHeader;
-use crate::prelude::*;
-use crate::Height;
-
+use crate::core::definition::AnyConsensusState;
 /// Defines the different types of host chains that a mock context can emulate.
 /// The variants are as follows:
 /// - `Mock` defines that the context history consists of `MockHeader` blocks.
@@ -46,6 +45,22 @@ pub struct SyntheticTmBlock {
 impl SyntheticTmBlock {
     pub fn header(&self) -> &TmHeader {
         &self.light_block.signed_header.header
+    }
+}
+
+impl From<SyntheticTmBlock> for Header {
+    fn from(light_block: SyntheticTmBlock) -> Self {
+        let SyntheticTmBlock {
+            trusted_height,
+            trusted_next_validators,
+            light_block,
+        } = light_block;
+        Self {
+            signed_header: light_block.signed_header,
+            validator_set: light_block.validators,
+            trusted_height,
+            trusted_next_validator_set: trusted_next_validators,
+        }
     }
 }
 
@@ -205,7 +220,7 @@ impl From<HostBlock> for AnyConsensusState {
     }
 }
 
-impl ErasedProtobuf<Any> for HostBlock {}
+impl Protobuf<Any> for HostBlock {}
 
 impl TryFrom<Any> for HostBlock {
     type Error = ClientError;

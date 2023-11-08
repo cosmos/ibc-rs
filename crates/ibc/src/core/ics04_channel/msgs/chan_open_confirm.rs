@@ -72,7 +72,7 @@ impl From<MsgChannelOpenConfirm> for RawMsgChannelOpenConfirm {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 pub mod test_util {
     use ibc_proto::ibc::core::channel::v1::MsgChannelOpenConfirm as RawMsgChannelOpenConfirm;
     use ibc_proto::ibc::core::client::v1::Height;
@@ -84,7 +84,7 @@ pub mod test_util {
     /// Returns a dummy `RawMsgChannelOpenConfirm`, for testing only!
     pub fn get_dummy_raw_msg_chan_open_confirm(proof_height: u64) -> RawMsgChannelOpenConfirm {
         RawMsgChannelOpenConfirm {
-            port_id: PortId::default().to_string(),
+            port_id: PortId::transfer().to_string(),
             channel_id: ChannelId::default().to_string(),
             proof_ack: get_dummy_proof(),
             proof_height: Some(Height {

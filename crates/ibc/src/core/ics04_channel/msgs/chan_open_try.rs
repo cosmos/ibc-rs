@@ -128,7 +128,7 @@ impl From<MsgChannelOpenTry> for RawMsgChannelOpenTry {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 pub mod test_util {
     use ibc_proto::ibc::core::channel::v1::MsgChannelOpenTry as RawMsgChannelOpenTry;
     use ibc_proto::ibc::core::client::v1::Height;
@@ -142,7 +142,7 @@ pub mod test_util {
     pub fn get_dummy_raw_msg_chan_open_try(proof_height: u64) -> RawMsgChannelOpenTry {
         #[allow(deprecated)]
         RawMsgChannelOpenTry {
-            port_id: PortId::default().to_string(),
+            port_id: PortId::transfer().to_string(),
             previous_channel_id: "".to_string(),
             channel: Some(get_dummy_raw_channel_end(2, Some(0))),
             counterparty_version: "".to_string(),

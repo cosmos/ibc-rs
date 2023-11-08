@@ -77,12 +77,12 @@ impl From<MsgTimeout> for RawMsgTimeout {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 pub mod test_util {
     use ibc_proto::ibc::core::channel::v1::MsgTimeout as RawMsgTimeout;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 
-    use crate::core::ics04_channel::packet::test_utils::get_dummy_raw_packet;
+    use crate::core::ics04_channel::packet::test_util::get_dummy_raw_packet;
     use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
 
     /// Returns a dummy `RawMsgTimeout`, for testing only!

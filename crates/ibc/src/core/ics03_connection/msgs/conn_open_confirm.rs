@@ -72,7 +72,7 @@ impl From<MsgConnectionOpenConfirm> for RawMsgConnectionOpenConfirm {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 pub mod test_util {
     use ibc_proto::ibc::core::client::v1::Height;
     use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenConfirm as RawMsgConnectionOpenConfirm;
@@ -85,7 +85,8 @@ pub mod test_util {
     impl MsgConnectionOpenConfirm {
         /// Returns a new `MsgConnectionOpenConfirm` with dummy values.
         pub fn new_dummy() -> Self {
-            MsgConnectionOpenConfirm::try_from(get_dummy_raw_msg_conn_open_confirm()).unwrap()
+            MsgConnectionOpenConfirm::try_from(get_dummy_raw_msg_conn_open_confirm())
+                .expect("Never fails")
         }
     }
 

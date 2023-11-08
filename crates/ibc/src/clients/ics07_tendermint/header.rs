@@ -23,7 +23,7 @@ use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
 use crate::Height;
 
-pub(crate) const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
+pub const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// Tendermint consensus header
@@ -249,7 +249,7 @@ mod pretty {
     }
 }
 
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(any(test, feature = "test-utils"))]
 pub mod test_util {
     use alloc::vec;
 
@@ -259,7 +259,6 @@ pub mod test_util {
     use tendermint::PublicKey;
 
     use crate::clients::ics07_tendermint::header::Header;
-    use crate::mock::host::SyntheticTmBlock;
     use crate::Height;
 
     pub fn get_dummy_tendermint_header() -> tendermint::block::Header {
@@ -311,22 +310,6 @@ pub mod test_util {
             validator_set: vs.clone(),
             trusted_height: Height::min(0),
             trusted_next_validator_set: vs,
-        }
-    }
-
-    impl From<SyntheticTmBlock> for Header {
-        fn from(light_block: SyntheticTmBlock) -> Self {
-            let SyntheticTmBlock {
-                trusted_height,
-                trusted_next_validators,
-                light_block,
-            } = light_block;
-            Self {
-                signed_header: light_block.signed_header,
-                validator_set: light_block.validators,
-                trusted_height,
-                trusted_next_validator_set: trusted_next_validators,
-            }
         }
     }
 }

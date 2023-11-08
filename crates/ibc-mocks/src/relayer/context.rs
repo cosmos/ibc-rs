@@ -1,9 +1,9 @@
-use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ContextError;
-use crate::mock::context::AnyClientState;
-use crate::prelude::*;
-use crate::signer::Signer;
-use crate::Height;
+use ibc::core::ics24_host::identifier::ClientId;
+use ibc::core::{ContextError, ValidationContext};
+use ibc::prelude::*;
+use ibc::{Height, Signer};
+
+use crate::core::definition::{AnyClientState, MockContext};
 
 /// Trait capturing all dependencies (i.e., the context) which algorithms in ICS18 require to
 /// relay packets between chains. This trait comprises the dependencies towards a single chain.
@@ -22,25 +22,42 @@ pub trait RelayerContext {
     fn signer(&self) -> Signer;
 }
 
+impl RelayerContext for MockContext {
+    fn query_latest_height(&self) -> Result<Height, ContextError> {
+        ValidationContext::host_height(self)
+    }
+
+    fn query_client_full_state(&self, client_id: &ClientId) -> Option<AnyClientState> {
+        // Forward call to Ics2.
+        self.client_state(client_id).ok()
+    }
+
+    fn signer(&self) -> Signer {
+        "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C"
+            .to_string()
+            .into()
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use ibc::clients::ics07_tendermint::client_type as tm_client_type;
+    use ibc::core::ics02_client::client_state::ClientStateCommon;
+    use ibc::core::ics02_client::msgs::update_client::MsgUpdateClient;
+    use ibc::core::ics02_client::msgs::ClientMsg;
+    use ibc::core::ics24_host::identifier::{ChainId, ClientId};
+    use ibc::core::MsgEnvelope;
+    use ibc::mock::client_state::client_type as mock_client_type;
+    use ibc::prelude::*;
+    use ibc::Height;
     use test_log::test;
     use tracing::debug;
 
-    use crate::clients::ics07_tendermint::client_type as tm_client_type;
-    use crate::core::ics02_client::client_state::ClientStateCommon;
-    use crate::core::ics02_client::msgs::update_client::MsgUpdateClient;
-    use crate::core::ics02_client::msgs::ClientMsg;
-    use crate::core::ics24_host::identifier::{ChainId, ClientId};
-    use crate::core::MsgEnvelope;
-    use crate::mock::client_state::client_type as mock_client_type;
-    use crate::mock::context::MockContext;
-    use crate::mock::host::{HostBlock, HostType};
-    use crate::mock::ics18_relayer::context::RelayerContext;
-    use crate::mock::ics18_relayer::error::RelayerError;
-    use crate::mock::router::MockRouter;
-    use crate::prelude::*;
-    use crate::Height;
+    use super::RelayerContext;
+    use crate::core::definition::MockContext;
+    use crate::host::block::{HostBlock, HostType};
+    use crate::relayer::error::RelayerError;
+    use crate::router::definition::MockRouter;
 
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
     /// context, assuming that the latest header on the source context is `src_header`.
@@ -114,7 +131,7 @@ mod tests {
                     Some(client_on_a_for_b_height),
                 );
         // dummy; not actually used in client updates
-        let mut router_a = MockRouter::default();
+        let mut router_a = MockRouter::new_with_transfer();
 
         let mut ctx_b = MockContext::new(
             chain_id_b,
@@ -130,7 +147,7 @@ mod tests {
             Some(client_on_b_for_a_height),
         );
         // dummy; not actually used in client updates
-        let mut router_b = MockRouter::default();
+        let mut router_b = MockRouter::new_with_transfer();
 
         for _i in 0..num_iterations {
             // Update client on chain B to latest height of A.

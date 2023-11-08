@@ -199,7 +199,7 @@ impl serde::Serialize for CommitmentPrefix {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 pub mod test_util {
     use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
     use ibc_proto::ics23::CommitmentProof;
@@ -212,6 +212,8 @@ pub mod test_util {
         let parsed = CommitmentProof { proof: None };
         let mproofs: Vec<CommitmentProof> = vec![parsed];
         let raw_mp = RawMerkleProof { proofs: mproofs };
-        raw_mp.try_into().unwrap()
+        raw_mp
+            .try_into()
+            .expect("could not convert to CommitmentProofBytes")
     }
 }
