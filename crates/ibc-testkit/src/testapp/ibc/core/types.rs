@@ -30,7 +30,7 @@ use tendermint_testgen::Validator as TestgenValidator;
 use tracing::debug;
 use typed_builder::TypedBuilder;
 
-use super::client_ctx::{PortChannelIdMap, MockClientRecord};
+use super::client_ctx::{MockClientRecord, PortChannelIdMap};
 use crate::hosts::block::{HostBlock, HostType};
 use crate::relayer::error::RelayerError;
 use crate::testapp::ibc::clients::types::{AnyClientState, AnyConsensusState};
