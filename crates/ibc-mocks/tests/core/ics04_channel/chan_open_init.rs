@@ -52,7 +52,6 @@ fn fixture() -> Fixture {
     Fixture { ctx, router, msg }
 }
 
-
 #[rstest]
 fn chan_open_init_validate_happy_path(fixture: Fixture) {
     let Fixture {
