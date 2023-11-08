@@ -37,6 +37,7 @@ use test_log::test;
 #[test]
 fn test_update_client_ok() {
     let client_id = ClientId::default();
+
     let signer = get_dummy_account_id();
 
     let timestamp = Timestamp::now();
@@ -148,12 +149,15 @@ fn test_consensus_state_pruning() {
     assert!(ctx
         .client_update_height(&client_id, &earliest_valid_height)
         .is_ok());
+
     assert!(ctx
         .client_update_time(&client_id, &earliest_valid_height)
         .is_ok());
+
     assert!(ctx.consensus_state(&client_cons_state_path).is_ok());
 
     let end_host_timestamp = ctx.host_timestamp().unwrap();
+
     assert_eq!(
         end_host_timestamp,
         (start_host_timestamp + Duration::from_secs(6)).unwrap()
@@ -163,6 +167,7 @@ fn test_consensus_state_pruning() {
 #[test]
 fn test_update_nonexisting_client() {
     let client_id = ClientId::from_str("mockclient1").unwrap();
+
     let signer = get_dummy_account_id();
 
     let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
@@ -227,10 +232,12 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
     assert!(res.is_ok(), "result: {res:?}");
 
     let client_state = ctx.client_state(&msg.client_id).unwrap();
+
     assert!(client_state
         .status(&ctx, &msg.client_id)
         .unwrap()
         .is_active());
+
     assert_eq!(client_state.latest_height(), latest_header_height);
 }
 
@@ -406,6 +413,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
     let res = validate(&ctx_a, &router, msg_envelope);
+
     assert!(res.is_err());
 }
 
@@ -456,10 +464,12 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
     assert!(res.is_ok(), "result: {res:?}");
 
     let client_state = ctx.client_state(&msg.client_id).unwrap();
+
     assert!(client_state
         .status(&ctx, &msg.client_id)
         .unwrap()
         .is_active());
+
     assert_eq!(client_state.latest_height(), latest_header_height);
 }
 

@@ -1,5 +1,3 @@
-use alloc::collections::BTreeMap;
-
 use derive_more::{From, TryInto};
 use ibc::clients::ics07_tendermint::client_state::{
     ClientState as TmClientState, TENDERMINT_CLIENT_STATE_TYPE_URL,
@@ -14,7 +12,6 @@ use ibc::mock::client_state::{MockClientState, MOCK_CLIENT_STATE_TYPE_URL};
 use ibc::mock::consensus_state::{MockConsensusState, MOCK_CONSENSUS_STATE_TYPE_URL};
 use ibc::prelude::*;
 use ibc::proto::{Any, Protobuf};
-use ibc::Height;
 
 use crate::testapp::ibc::core::types::MockContext;
 
@@ -85,15 +82,4 @@ impl From<AnyConsensusState> for Any {
             AnyConsensusState::Mock(cs) => cs.into(),
         }
     }
-}
-
-/// A mock of an IBC client record as it is stored in a mock context.
-/// For testing ICS02 handlers mostly, cf. `MockClientContext`.
-#[derive(Clone, Debug)]
-pub struct MockClientRecord {
-    /// The client state (representing only the latest height at the moment).
-    pub client_state: Option<AnyClientState>,
-
-    /// Mapping of heights to consensus states for this client.
-    pub consensus_states: BTreeMap<Height, AnyConsensusState>,
 }

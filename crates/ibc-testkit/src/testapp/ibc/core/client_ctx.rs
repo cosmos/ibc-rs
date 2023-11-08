@@ -13,10 +13,21 @@ use ibc::core::{ContextError, ValidationContext};
 use ibc::mock::client_state::MockClientContext;
 use ibc::Height;
 
-use crate::testapp::ibc::clients::types::{AnyClientState, AnyConsensusState, MockClientRecord};
+use crate::testapp::ibc::clients::types::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::types::MockContext;
 
 pub type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
+
+/// A mock of an IBC client record as it is stored in a mock context.
+/// For testing ICS02 handlers mostly, cf. `MockClientContext`.
+#[derive(Clone, Debug)]
+pub struct MockClientRecord {
+    /// The client state (representing only the latest height at the moment).
+    pub client_state: Option<AnyClientState>,
+
+    /// Mapping of heights to consensus states for this client.
+    pub consensus_states: BTreeMap<Height, AnyConsensusState>,
+}
 
 impl MockClientContext for MockContext {
     type ConversionError = &'static str;

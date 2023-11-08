@@ -30,10 +30,10 @@ use tendermint_testgen::Validator as TestgenValidator;
 use tracing::debug;
 use typed_builder::TypedBuilder;
 
+use super::client_ctx::{PortChannelIdMap, MockClientRecord};
 use crate::hosts::block::{HostBlock, HostType};
 use crate::relayer::error::RelayerError;
-use crate::testapp::ibc::clients::context::PortChannelIdMap;
-use crate::testapp::ibc::clients::types::{AnyClientState, AnyConsensusState, MockClientRecord};
+use crate::testapp::ibc::clients::types::{AnyClientState, AnyConsensusState};
 
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
