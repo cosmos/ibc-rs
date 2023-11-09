@@ -346,8 +346,13 @@ impl MockContext {
         let client_type = client_type.unwrap_or_else(mock_client_type);
         let (client_state, consensus_state) = if client_type.as_str() == MOCK_CLIENT_TYPE {
             (
-                Some(MockClientState::new(MockHeader::new(client_state_height)).into()),
-                MockConsensusState::new(MockHeader::new(cs_height)).into(),
+                Some(
+                    MockClientState::new(
+                        MockHeader::new(client_state_height).with_current_timestamp(),
+                    )
+                    .into(),
+                ),
+                MockConsensusState::new(MockHeader::new(cs_height).with_current_timestamp()).into(),
             )
         } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
             let light_block = HostBlock::generate_tm_block(

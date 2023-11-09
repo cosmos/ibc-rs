@@ -78,7 +78,10 @@ impl MockHeader {
 
     #[cfg(any(test, feature = "std"))]
     pub fn with_current_timestamp(self) -> Self {
-        self.with_timestamp(Timestamp::now())
+        Self {
+            timestamp: Timestamp::now(),
+            ..self
+        }
     }
 
     pub fn with_timestamp(self, timestamp: Timestamp) -> Self {

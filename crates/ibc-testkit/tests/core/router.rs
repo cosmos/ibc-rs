@@ -98,8 +98,9 @@ fn routing_module_and_keepers() {
     let mut router = MockRouter::new_with_transfer();
 
     let create_client_msg = MsgCreateClient::new(
-        MockClientState::new(MockHeader::new(start_client_height)).into(),
-        MockConsensusState::new(MockHeader::new(start_client_height)).into(),
+        MockClientState::new(MockHeader::new(start_client_height).with_current_timestamp()).into(),
+        MockConsensusState::new(MockHeader::new(start_client_height).with_current_timestamp())
+            .into(),
         default_signer.clone(),
     );
 
@@ -220,7 +221,7 @@ fn routing_module_and_keepers() {
             msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                 client_id: client_id.clone(),
                 client_message: MockHeader::new(update_client_height)
-                    .with_timestamp(Timestamp::now())
+                    .with_current_timestamp()
                     .into(),
                 signer: default_signer.clone(),
             }))
@@ -307,7 +308,7 @@ fn routing_module_and_keepers() {
             msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                 client_id: client_id.clone(),
                 client_message: MockHeader::new(update_client_height_after_send)
-                    .with_timestamp(Timestamp::now())
+                    .with_current_timestamp()
                     .into(),
                 signer: default_signer.clone(),
             }))
@@ -351,7 +352,9 @@ fn routing_module_and_keepers() {
             name: "Client update successful".to_string(),
             msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
                 client_id: client_id.clone(),
-                client_message: MockHeader::new(update_client_height_after_second_send).into(),
+                client_message: MockHeader::new(update_client_height_after_second_send)
+                    .with_current_timestamp()
+                    .into(),
                 signer: default_signer,
             }))
             .into(),
