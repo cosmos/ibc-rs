@@ -84,7 +84,7 @@ pub mod test_util {
 
     use crate::core::ics24_host::identifier::{ChannelId, PortId};
     use crate::prelude::*;
-    use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
+    use crate::utils::dummy::{get_dummy_bech32_account, get_dummy_proof};
 
     /// Returns a dummy `RawMsgChannelOpenAck`, for testing only!
     pub fn get_dummy_raw_msg_chan_open_ack(proof_height: u64) -> RawMsgChannelOpenAck {

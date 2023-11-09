@@ -79,7 +79,7 @@ pub mod test_util {
 
     use super::MsgConnectionOpenConfirm;
     use crate::prelude::*;
-    use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
+    use crate::utils::dummy::{get_dummy_bech32_account, get_dummy_proof};
 
     /// Testing-specific helper methods.
     impl MsgConnectionOpenConfirm {

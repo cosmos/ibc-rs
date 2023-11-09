@@ -37,7 +37,7 @@ use ibc::mock::client_state::MockClientState;
 use ibc::mock::consensus_state::MockConsensusState;
 use ibc::mock::header::MockHeader;
 use ibc::prelude::*;
-use ibc::test_utils::get_dummy_account_id;
+use ibc::utils::dummy::get_dummy_account_id;
 use ibc::Height;
 use ibc_testkit::testapp::ibc::applications::transfer::configs::{
     extract_transfer_packet, MsgTransferConfig, PacketDataConfig,

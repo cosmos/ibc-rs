@@ -82,7 +82,7 @@ mod tests {
     use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
     use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
     use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
-    use crate::test_utils::get_dummy_account_id;
+    use crate::utils::dummy::get_dummy_account_id;
 
     #[test]
     fn msg_create_client_serialization() {

@@ -88,7 +88,7 @@ pub mod test_util {
     use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
     use crate::core::timestamp::Timestamp;
     use crate::signer::Signer;
-    use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
+    use crate::utils::dummy::{get_dummy_bech32_account, get_dummy_proof};
 
     impl MsgRecvPacket {
         pub fn new(
@@ -134,7 +134,7 @@ mod test {
     use crate::core::ics04_channel::msgs::recv_packet::test_util::get_dummy_raw_msg_recv_packet;
     use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
     use crate::prelude::*;
-    use crate::test_utils::get_dummy_bech32_account;
+    use crate::utils::dummy::get_dummy_bech32_account;
 
     #[test]
     fn msg_recv_packet_try_from_raw() {

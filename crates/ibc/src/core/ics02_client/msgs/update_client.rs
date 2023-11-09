@@ -76,7 +76,7 @@ mod tests {
     use crate::core::ics02_client::msgs::MsgUpdateClient;
     use crate::core::ics24_host::identifier::ClientId;
     use crate::signer::Signer;
-    use crate::test_utils::get_dummy_account_id;
+    use crate::utils::dummy::get_dummy_account_id;
 
     impl MsgUpdateClient {
         pub fn new(client_id: ClientId, client_message: Any, signer: Signer) -> Self {

@@ -14,7 +14,7 @@ use ibc::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortI
 use ibc::core::timestamp::{Timestamp, ZERO_DURATION};
 use ibc::core::{execute, validate, ExecutionContext, MsgEnvelope};
 use ibc::prelude::*;
-use ibc::test_utils::get_dummy_account_id;
+use ibc::utils::dummy::get_dummy_account_id;
 use ibc::Height;
 use ibc_testkit::relayer::context::RelayerContext;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;

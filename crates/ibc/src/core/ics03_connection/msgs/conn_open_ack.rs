@@ -142,7 +142,7 @@ pub mod test_util {
     use crate::mock::client_state::MockClientState;
     use crate::mock::header::MockHeader;
     use crate::prelude::*;
-    use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
+    use crate::utils::dummy::{get_dummy_bech32_account, get_dummy_proof};
 
     /// Testing-specific helper methods.
     impl MsgConnectionOpenAck {

@@ -10,7 +10,7 @@ use ibc::core::{execute, validate, MsgEnvelope, ValidationContext};
 use ibc::mock::client_state::{client_type as mock_client_type, MockClientState};
 use ibc::mock::consensus_state::MockConsensusState;
 use ibc::mock::header::MockHeader;
-use ibc::test_utils::get_dummy_account_id;
+use ibc::utils::dummy::get_dummy_account_id;
 use ibc::Height;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;

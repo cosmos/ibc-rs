@@ -84,7 +84,7 @@ pub mod test_util {
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 
     use crate::core::ics04_channel::packet::test_util::get_dummy_raw_packet;
-    use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
+    use crate::utils::dummy::{get_dummy_bech32_account, get_dummy_proof};
 
     /// Returns a dummy `RawMsgAcknowledgement`, for testing only!
     /// The `height` parametrizes both the proof height as well as the timeout height.
@@ -118,7 +118,7 @@ mod test {
     use crate::core::ics04_channel::msgs::acknowledgement::test_util::get_dummy_raw_msg_acknowledgement;
     use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
     use crate::prelude::*;
-    use crate::test_utils::get_dummy_bech32_account;
+    use crate::utils::dummy::get_dummy_bech32_account;
 
     #[test]
     fn msg_acknowledgment_try_from_raw() {

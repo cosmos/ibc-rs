@@ -23,7 +23,7 @@ use ibc::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
 use ibc::prelude::*;
 use ibc::proto::tendermint::v1::{ClientState as RawTmClientState, Fraction};
 use ibc::proto::Any;
-use ibc::test_utils::get_dummy_account_id;
+use ibc::utils::dummy::get_dummy_account_id;
 use ibc::{downcast, Height};
 use ibc_testkit::hosts::block::{HostBlock, HostType};
 use ibc_testkit::testapp::ibc::clients::types::AnyConsensusState;

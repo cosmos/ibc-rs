@@ -98,7 +98,7 @@ pub mod test_util {
     use crate::core::ics04_channel::channel::test_util::get_dummy_raw_channel_end;
     use crate::core::ics24_host::identifier::PortId;
     use crate::prelude::*;
-    use crate::test_utils::get_dummy_bech32_account;
+    use crate::utils::dummy::get_dummy_bech32_account;
 
     /// Returns a dummy `RawMsgChannelOpenInit`, for testing only!
     pub fn get_dummy_raw_msg_chan_open_init(

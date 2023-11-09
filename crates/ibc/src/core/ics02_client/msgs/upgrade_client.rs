@@ -106,7 +106,7 @@ pub mod test_util {
     use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
     use crate::mock::consensus_state::MockConsensusState;
     use crate::mock::header::MockHeader;
-    use crate::test_utils::{get_dummy_account_id, get_dummy_bech32_account, get_dummy_proof};
+    use crate::utils::dummy::{get_dummy_account_id, get_dummy_bech32_account, get_dummy_proof};
 
     /// Extends the implementation with additional helper methods.
     impl MsgUpgradeClient {

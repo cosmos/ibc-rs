@@ -69,7 +69,7 @@ mod tests {
 
     use super::*;
     use crate::applications::transfer::BaseCoin;
-    use crate::test_utils::get_dummy_bech32_account;
+    use crate::utils::dummy::get_dummy_bech32_account;
 
     impl PacketData {
         pub fn new_dummy() -> Self {

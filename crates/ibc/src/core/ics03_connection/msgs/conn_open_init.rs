@@ -140,7 +140,7 @@ pub mod test_util {
     use crate::core::ics03_connection::version::Version;
     use crate::core::ics24_host::identifier::ClientId;
     use crate::prelude::*;
-    use crate::test_utils::get_dummy_bech32_account;
+    use crate::utils::dummy::get_dummy_bech32_account;
 
     /// Extends the implementation with additional helper methods.
     impl MsgConnectionOpenInit {

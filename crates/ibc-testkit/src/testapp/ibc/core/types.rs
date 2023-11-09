@@ -786,7 +786,7 @@ mod tests {
     use ibc::core::ics04_channel::Version;
     use ibc::core::ics24_host::identifier::{ChainId, ChannelId, ConnectionId, PortId};
     use ibc::core::router::{Module, ModuleExtras, ModuleId};
-    use ibc::test_utils::get_dummy_bech32_account;
+    use ibc::utils::dummy::get_dummy_bech32_account;
     use ibc::{Height, Signer};
     use test_log::test;
 

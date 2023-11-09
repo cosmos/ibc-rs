@@ -8,7 +8,7 @@ use ibc::core::ics04_channel::packet::{Packet, Sequence};
 use ibc::core::ics04_channel::timeout::TimeoutHeight;
 use ibc::core::ics24_host::identifier::{ChannelId, PortId};
 use ibc::core::timestamp::Timestamp;
-use ibc::test_utils::get_dummy_account_id;
+use ibc::utils::dummy::get_dummy_account_id;
 use ibc::Signer;
 use typed_builder::TypedBuilder;
 

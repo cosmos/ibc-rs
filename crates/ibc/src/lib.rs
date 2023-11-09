@@ -56,9 +56,6 @@ pub mod core;
 pub mod hosts;
 pub mod mock;
 
-#[cfg(any(test, feature = "test-utils"))]
-pub mod test_utils;
-
 pub mod prelude;
 mod signer;
 pub mod utils;
