@@ -18,6 +18,7 @@ description  = """
 default = ["std"]
 std = [
     "ibc/std",
+    "tracing/std",
     "prost/std",
     "serde/std",
     "serde_json/std",
