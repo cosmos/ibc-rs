@@ -44,7 +44,7 @@ impl MockClientContext for MockContext {
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<AnyConsensusState, ContextError> {
+    ) -> Result<Self::AnyConsensusState, ContextError> {
         ValidationContext::consensus_state(self, client_cons_state_path)
     }
 }

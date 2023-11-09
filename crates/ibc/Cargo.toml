@@ -43,7 +43,7 @@ serde = ["dep:serde", "dep:serde_derive", "serde_json", "ibc-proto/serde", "ics2
 schema = ["dep:schemars", "ibc-proto/json-schema", "serde", "std"]
 
 # This feature provides access to utility implementations for IBC types,
-# specifically designed for testing purposes
+# specifically designed for testing purposes.
 test-utils = ["typed-builder", "std"]
 
 [dependencies]
