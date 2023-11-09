@@ -124,13 +124,16 @@ mod tests {
         let low_upgrade_height = Height::new(0, 26).unwrap();
         let msg_with_low_upgrade_height = MsgUpgradeClient::new_dummy(low_upgrade_height);
 
-        let msg_with_unknown_upgraded_cs = MsgUpgradeClient {
-            upgraded_client_state: TmClientState::new_dummy_from_header(
-                get_dummy_tendermint_header(),
-            )
-            .into(),
-            ..msg_default.clone()
-        };
+        let msg_with_unknown_upgraded_cs =
+            MsgUpgradeClient {
+                upgraded_client_state: TmClientState::<
+                    tendermint::crypto::default::signature::Verifier,
+                >::new_dummy_from_header(
+                    get_dummy_tendermint_header()
+                )
+                .into(),
+                ..msg_default.clone()
+            };
 
         let msg = match msg_variant {
             Msg::Default => msg_default,

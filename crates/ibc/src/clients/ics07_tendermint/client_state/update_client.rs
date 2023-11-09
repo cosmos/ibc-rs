@@ -13,7 +13,8 @@ use crate::core::ics24_host::identifier::ClientId;
 use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::prelude::*;
 
-impl ClientState {
+impl<V> ClientState<V>
+where V: Clone + tendermint::crypto::signature::Verifier {
     pub fn verify_header<ClientValidationContext>(
         &self,
         ctx: &ClientValidationContext,

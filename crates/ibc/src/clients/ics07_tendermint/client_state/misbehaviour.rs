@@ -13,7 +13,8 @@ use crate::core::ics24_host::path::ClientConsensusStatePath;
 use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
 
-impl ClientState {
+impl<V> ClientState<V>
+where V: Clone + tendermint::crypto::signature::Verifier {
     // verify_misbehaviour determines whether or not two conflicting headers at
     // the same height would have convinced the light client.
     pub fn verify_misbehaviour<ClientValidationContext>(

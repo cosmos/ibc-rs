@@ -157,7 +157,7 @@ mod tests {
 
         let tm_header = get_dummy_tendermint_header();
 
-        let tm_client_state = TmClientState::new_dummy_from_header(tm_header.clone()).into();
+        let tm_client_state = TmClientState::<tendermint::crypto::default::signature::Verifier>::new_dummy_from_header(tm_header.clone()).into();
 
         let client_type = tm_client_type();
 

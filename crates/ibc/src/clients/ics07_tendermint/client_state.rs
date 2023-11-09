@@ -18,7 +18,11 @@ use prost::Message;
 use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
-use tendermint_light_client_verifier::ProdVerifier;
+use tendermint_light_client_verifier::{
+    operations::{ProdCommitValidator, ProvidedVotingPowerCalculator},
+    predicates::ProdPredicates,
+    PredicateVerifier,
+};
 
 use super::trust_threshold::TrustThreshold;
 use super::{
@@ -63,7 +67,10 @@ pub struct AllowUpdate {
 /// Contains the core implementation of the Tendermint light client
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
-pub struct ClientState {
+pub struct ClientState<V>
+where
+    V: Clone + tendermint::crypto::signature::Verifier,
+{
     pub chain_id: ChainId,
     pub trust_level: TrustThreshold,
     pub trusting_period: Duration,
@@ -75,10 +82,14 @@ pub struct ClientState {
     allow_update: AllowUpdate,
     frozen_height: Option<Height>,
     #[cfg_attr(feature = "serde", serde(skip))]
-    verifier: ProdVerifier,
+    verifier:
+        PredicateVerifier<ProdPredicates, ProvidedVotingPowerCalculator<V>, ProdCommitValidator>,
 }
 
-impl ClientState {
+impl<V> ClientState<V>
+where
+    V: Clone + tendermint::crypto::signature::Verifier,
+{
     #[allow(clippy::too_many_arguments)]
     fn new_without_validation(
         chain_id: ChainId,
@@ -102,7 +113,11 @@ impl ClientState {
             upgrade_path,
             allow_update,
             frozen_height: None,
-            verifier: ProdVerifier::default(),
+            verifier: PredicateVerifier::new(
+                ProdPredicates::default(),
+                ProvidedVotingPowerCalculator::<V>::default(),
+                ProdCommitValidator::default(),
+            ),
         }
     }
 
@@ -263,7 +278,10 @@ impl ClientState {
     }
 }
 
-impl ClientStateCommon for ClientState {
+impl<V> ClientStateCommon for ClientState<V>
+where
+    V: Clone + tendermint::crypto::signature::Verifier,
+{
     fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
         let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
         if tm_consensus_state.root().is_empty() {
@@ -410,11 +428,12 @@ impl ClientStateCommon for ClientState {
     }
 }
 
-impl<V> ClientStateValidation<V> for ClientState
+impl<V, R> ClientStateValidation<V> for ClientState<R>
 where
     V: ClientValidationContext + TmValidationContext,
     V::AnyConsensusState: TryInto<TmConsensusState>,
     ClientError: From<<V::AnyConsensusState as TryInto<TmConsensusState>>::Error>,
+    R: Clone + tendermint::crypto::signature::Verifier,
 {
     fn verify_client_message(
         &self,
@@ -488,11 +507,12 @@ where
     }
 }
 
-impl<E> ClientStateExecution<E> for ClientState
+impl<E, V> ClientStateExecution<E> for ClientState<V>
 where
     E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
+    <E as ClientExecutionContext>::AnyClientState: From<ClientState<V>>,
     <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
+    V: Clone + tendermint::crypto::signature::Verifier,
 {
     fn initialise(
         &self,
@@ -636,9 +656,15 @@ where
     }
 }
 
-impl Protobuf<RawTmClientState> for ClientState {}
+impl<V> Protobuf<RawTmClientState> for ClientState<V> where
+    V: Clone + tendermint::crypto::signature::Verifier
+{
+}
 
-impl TryFrom<RawTmClientState> for ClientState {
+impl<V> TryFrom<RawTmClientState> for ClientState<V>
+where
+    V: Clone + tendermint::crypto::signature::Verifier,
+{
     type Error = Error;
 
     fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
@@ -715,8 +741,11 @@ impl TryFrom<RawTmClientState> for ClientState {
     }
 }
 
-impl From<ClientState> for RawTmClientState {
-    fn from(value: ClientState) -> Self {
+impl<V> From<ClientState<V>> for RawTmClientState
+where
+    V: Clone + tendermint::crypto::signature::Verifier,
+{
+    fn from(value: ClientState<V>) -> Self {
         #[allow(deprecated)]
         Self {
             chain_id: value.chain_id.to_string(),
@@ -739,9 +768,12 @@ impl From<ClientState> for RawTmClientState {
     }
 }
 
-impl Protobuf<Any> for ClientState {}
+impl<V> Protobuf<Any> for ClientState<V> where V: Clone + tendermint::crypto::signature::Verifier {}
 
-impl TryFrom<Any> for ClientState {
+impl<V> TryFrom<Any> for ClientState<V>
+where
+    V: Clone + tendermint::crypto::signature::Verifier,
+{
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
@@ -749,7 +781,9 @@ impl TryFrom<Any> for ClientState {
 
         use bytes::Buf;
 
-        fn decode_client_state<B: Buf>(buf: B) -> Result<ClientState, Error> {
+        fn decode_client_state<B: Buf, V: Clone + tendermint::crypto::signature::Verifier>(
+            buf: B,
+        ) -> Result<ClientState<V>, Error> {
             RawTmClientState::decode(buf)
                 .map_err(Error::Decode)?
                 .try_into()
@@ -766,8 +800,11 @@ impl TryFrom<Any> for ClientState {
     }
 }
 
-impl From<ClientState> for Any {
-    fn from(client_state: ClientState) -> Self {
+impl<V> From<ClientState<V>> for Any
+where
+    V: Clone + tendermint::crypto::signature::Verifier,
+{
+    fn from(client_state: ClientState<V>) -> Self {
         Any {
             type_url: TENDERMINT_CLIENT_STATE_TYPE_URL.to_string(),
             value: Protobuf::<RawTmClientState>::encode_vec(client_state),
@@ -966,7 +1003,7 @@ mod tests {
         for test in tests {
             let p = test.params.clone();
 
-            let cs_result = ClientState::new(
+            let cs_result = ClientState::<tendermint::crypto::default::signature::Verifier>::new(
                 p.id,
                 p.trust_level,
                 p.trusting_period,
@@ -1010,7 +1047,14 @@ mod tests {
         struct Test {
             name: String,
             height: Height,
-            setup: Option<Box<dyn FnOnce(ClientState) -> ClientState>>,
+            setup: Option<
+                Box<
+                    dyn FnOnce(
+                        ClientState<tendermint::crypto::default::signature::Verifier>,
+                    )
+                        -> ClientState<tendermint::crypto::default::signature::Verifier>,
+                >,
+            >,
             want_pass: bool,
         }
 
@@ -1063,7 +1107,9 @@ mod tests {
     #[test]
     fn tm_client_state_conversions_healthy() {
         // check client state creation path from a proto type
-        let tm_client_state_from_raw = ClientState::new_dummy_from_raw(RawHeight {
+        let tm_client_state_from_raw = ClientState::<
+            tendermint::crypto::default::signature::Verifier,
+        >::new_dummy_from_raw(RawHeight {
             revision_number: 0,
             revision_height: 0,
         });
@@ -1084,7 +1130,9 @@ mod tests {
 
         // check client state creation path from a tendermint header
         let tm_header = get_dummy_tendermint_header();
-        let tm_client_state_from_header = ClientState::new_dummy_from_header(tm_header);
+        let tm_client_state_from_header = ClientState::<
+            tendermint::crypto::default::signature::Verifier,
+        >::new_dummy_from_header(tm_header);
         let any_from_header = Any::from(tm_client_state_from_header.clone());
         let tm_client_state_from_any = ClientState::try_from(any_from_header);
         assert!(tm_client_state_from_any.is_ok());
@@ -1096,7 +1144,9 @@ mod tests {
 
     #[test]
     fn tm_client_state_malformed_with_frozen_height() {
-        let tm_client_state_from_raw = ClientState::new_dummy_from_raw(RawHeight {
+        let tm_client_state_from_raw = ClientState::<
+            tendermint::crypto::default::signature::Verifier,
+        >::new_dummy_from_raw(RawHeight {
             revision_number: 0,
             revision_height: 10,
         });
@@ -1144,7 +1194,10 @@ pub mod test_util {
     use crate::core::ics24_host::identifier::ChainId;
     use crate::prelude::*;
 
-    impl ClientState {
+    impl<V> ClientState<V>
+    where
+        V: Clone + tendermint::crypto::signature::Verifier,
+    {
         pub fn new_dummy_from_raw(frozen_height: RawHeight) -> Result<Self, Error> {
             Self::try_from(get_dummy_raw_tm_client_state(frozen_height))
         }
@@ -1210,7 +1263,10 @@ pub mod test_util {
         allow_update: AllowUpdate,
     }
 
-    impl TryFrom<ClientStateConfig> for ClientState {
+    impl<V> TryFrom<ClientStateConfig> for ClientState<V>
+    where
+        V: Clone + tendermint::crypto::signature::Verifier,
+    {
         type Error = ClientError;
 
         fn try_from(config: ClientStateConfig) -> Result<Self, Self::Error> {

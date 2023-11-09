@@ -20,7 +20,7 @@ pub fn upgrade_client_proposal_handler<Ctx>(
 ) -> Result<TmEvent, UpgradeClientError>
 where
     Ctx: UpgradeExecutionContext,
-    Ctx::AnyClientState: From<TmClientState>,
+    Ctx::AnyClientState: From<TmClientState<tendermint::crypto::default::signature::Verifier>>,
 {
     let plan = proposal.plan;
 

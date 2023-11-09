@@ -65,7 +65,7 @@ pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 ]
 #[mock]
 pub enum AnyClientState {
-    Tendermint(TmClientState),
+    Tendermint(TmClientState<tendermint::crypto::default::signature::Verifier>),
     Mock(MockClientState),
 }
 
@@ -723,7 +723,7 @@ impl MockContext {
                     })
                     .collect();
 
-                let client_state: TmClientState = TmClientStateConfig::builder()
+                let client_state: TmClientState<tendermint::crypto::default::signature::Verifier> = TmClientStateConfig::builder()
                     .chain_id(client.client_chain_id)
                     .latest_height(client.client_state_height)
                     .trusting_period(client.trusting_period)
