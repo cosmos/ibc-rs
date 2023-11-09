@@ -1,13 +1,13 @@
 [package]
 name         = "ibc"
-version      = "0.47.0"
-edition      = "2021"
-license      = "Apache-2.0"
-readme       = "README.md"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
 keywords     = ["blockchain", "consensus", "cosmos", "ibc", "tendermint"]
-repository   = "https://github.com/cosmos/ibc-rs"
-authors      = ["Informal Systems <hello@informal.systems>"]
-rust-version = "1.60"
+readme       = "README.md"
 description  = """
     Implementation of the Inter-Blockchain Communication Protocol (IBC).
     This crate comprises the main data structures and on-chain logic.
@@ -16,8 +16,50 @@ description  = """
 [package.metadata.docs.rs]
 all-features = true
 
+[dependencies]
+# external dependencies
+borsh = { workspace = true, optional = true }
+bytes = { workspace = true }
+derive_more = { workspace = true }
+displaydoc = { workspace = true }
+cfg-if = "1.0.0"
+primitive-types = { workspace = true }
+prost = { workspace = true }
+serde_derive = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+serde_json =  { workspace = true, optional = true}
+subtle-encoding = { workspace = true, default-features = false }
+sha2 = { workspace = true, default-features = false }
+time = { workspace = true, default-features = false }
+schemars = { workspace = true, optional = true }
+typed-builder = { workspace = true, optional = true }
+uint = { version = "0.9", default-features = false }
+
+# internal dependencies
+ibc-derive = { version = "0.3.0", path = "../ibc-derive" }
+
+# cosmos dependencies
+ibc-proto = { workspace = true }
+ics23 = { workspace = true, features = ["host-functions"] }
+tendermint = { workspace = true }
+tendermint-proto = { workspace = true }
+tendermint-light-client-verifier = { workspace = true, features = ["rust-crypto"] }
+
+## parity dependencies
+parity-scale-codec = { workspace = true , optional = true }
+scale-info = { workspace = true , optional = true }
+
+
+[dev-dependencies]
+env_logger = { workspace = true }
+rstest = { workspace = true }
+tracing-subscriber = { workspace = true }
+test-log = { workspace = true }
+tendermint-rpc = {  workspace = true, features = ["http-client", "websocket-client"] }
+
 [features]
 default = ["std"]
+
 std = [
     "ibc-proto/std",
     "ics23/std",
@@ -33,7 +75,9 @@ std = [
     "tendermint/clock",
     "tendermint/std",
 ]
+
 parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-proto/parity-scale-codec"]
+
 borsh = ["dep:borsh", "ibc-proto/borsh"]
 
 # This feature is required for token transfer (ICS-20)
@@ -45,52 +89,3 @@ schema = ["dep:schemars", "ibc-proto/json-schema", "serde", "std"]
 # This feature provides access to utility implementations for IBC types,
 # specifically designed for testing purposes
 test-utils = ["typed-builder", "std"]
-
-[dependencies]
-# Proto definitions for all IBC-related interfaces, e.g., connections or channels.
-ibc-proto = { version = "0.38.0", default-features = false }
-ics23 = { version = "0.11", default-features = false, features = ["host-functions"] }
-time = { version = ">=0.3.0, <0.3.31", default-features = false }
-serde_derive = { version = "1.0", default-features = false, optional = true }
-serde = { version = "1.0", default-features = false, optional = true }
-serde_json =  { package = "serde-json-wasm", version = "1.0.0" , default-features = false, optional = true}
-prost = { version = "0.12", default-features = false }
-bytes = { version = "1.5.0", default-features = false }
-subtle-encoding = { version = "0.5", default-features = false }
-sha2 = { version = "0.10.8", default-features = false }
-displaydoc = { version = "0.2", default-features = false }
-derive_more = { version = "0.99.17", default-features = false, features = ["from", "into", "display", "try_into"] }
-uint = { version = "0.9", default-features = false }
-primitive-types = { version = "0.12.2", default-features = false, features = ["serde_no_std"] }
-cfg-if = "1.0.0"
-
-## for codec encode or decode
-parity-scale-codec = { version = "3.6.5", default-features = false, features = ["full"], optional = true }
-scale-info = { version = "2.10.0", default-features = false, features = ["derive"], optional = true }
-## for borsh encode or decode
-borsh = {version = "0.10", default-features = false, optional = true }
-typed-builder = { version = "0.18.0", optional = true }
-
-ibc-derive = { version = "0.3.0", path = "../ibc-derive" }
-
-schemars = { version = "0.8.15", optional = true }
-
-[dependencies.tendermint]
-version = "0.34"
-default-features = false
-
-[dependencies.tendermint-proto]
-version = "0.34"
-default-features = false
-
-[dependencies.tendermint-light-client-verifier]
-version = "0.34"
-default-features = false
-features = ["rust-crypto"]
-
-[dev-dependencies]
-env_logger = "0.10.0"
-rstest = "0.18.2"
-tracing-subscriber = { version = "0.3.17", features = ["fmt", "env-filter", "json"]}
-test-log = { version = "0.2.13", features = ["trace"] }
-tendermint-rpc = { version = "0.34", features = ["http-client", "websocket-client"] }

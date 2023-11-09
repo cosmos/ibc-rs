@@ -17,7 +17,7 @@
 [![Code Coverage][codecov-image]][codecov-link]
 [![Apache 2.0 Licensed][license-image]][license-link]
 ![Rust Stable][rustc-image]
-![Rust 1.60+][rustc-version]
+![Rust 1.64+][rustc-version]
 ![Lines of Code][loc-image]
 
 </div>
