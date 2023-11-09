@@ -28,7 +28,6 @@ std = [
     "serde_json/std",
     "sha2/std",
     "displaydoc/std",
-    "num-traits/std",
     "uint/std",
     "primitive-types/std",
     "tendermint/clock",
@@ -60,7 +59,6 @@ bytes = { version = "1.5.0", default-features = false }
 subtle-encoding = { version = "0.5", default-features = false }
 sha2 = { version = "0.10.8", default-features = false }
 displaydoc = { version = "0.2", default-features = false }
-num-traits = { version = "0.2.17", default-features = false }
 derive_more = { version = "0.99.17", default-features = false, features = ["from", "into", "display", "try_into"] }
 uint = { version = "0.9", default-features = false }
 primitive-types = { version = "0.12.2", default-features = false, features = ["serde_no_std"] }
