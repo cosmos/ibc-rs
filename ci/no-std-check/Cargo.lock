@@ -1216,6 +1216,7 @@ name = "ibc"
 version = "0.47.0"
 dependencies = [
  "bytes",
+ "cfg-if",
  "derive_more",
  "displaydoc",
  "ibc-derive",
