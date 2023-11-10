@@ -8,14 +8,16 @@ use ibc::proto::core::connection::v1::MsgConnectionOpenAck as RawMsgConnectionOp
 
 use crate::testapp::ibc::clients::mock::client_state::MockClientState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;
-use crate::utils::dummies::core::signer::{dummy_bech32_account, dummy_proof};
+use crate::utils::dummies::core::channel::dummy_proof;
+use crate::utils::dummies::core::signer::dummy_bech32_account;
 
-/// Returns a new `MsgConnectionOpenAck` with dummy values.
+/// Returns a dummy `MsgConnectionOpenAck` with dummy values.
 pub fn dummy_msg_conn_open_ack(proof_height: u64, consensus_height: u64) -> MsgConnectionOpenAck {
     MsgConnectionOpenAck::try_from(dummy_raw_msg_conn_open_ack(proof_height, consensus_height))
         .expect("Never fails")
 }
 
+/// Returns a dummy `RawMsgConnectionOpenAck`, for testing purposes only!
 pub fn dummy_raw_msg_conn_open_ack(
     proof_height: u64,
     consensus_height: u64,

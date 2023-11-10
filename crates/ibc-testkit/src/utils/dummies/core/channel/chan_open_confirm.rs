@@ -3,9 +3,10 @@ use ibc::prelude::*;
 use ibc::proto::core::channel::v1::MsgChannelOpenConfirm as RawMsgChannelOpenConfirm;
 use ibc::proto::core::client::v1::Height;
 
-use crate::utils::dummies::core::signer::{dummy_bech32_account, dummy_proof};
+use super::dummy_proof;
+use crate::utils::dummies::core::signer::dummy_bech32_account;
 
-/// Returns a dummy `RawMsgChannelOpenConfirm`, for testing only!
+/// Returns a dummy `RawMsgChannelOpenConfirm`, for testing purposes only!
 pub fn dummy_raw_msg_chan_open_confirm(proof_height: u64) -> RawMsgChannelOpenConfirm {
     RawMsgChannelOpenConfirm {
         port_id: PortId::transfer().to_string(),

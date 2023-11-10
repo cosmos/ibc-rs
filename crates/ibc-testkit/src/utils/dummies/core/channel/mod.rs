@@ -25,16 +25,16 @@ pub use recv_packet::*;
 pub use timeout::*;
 pub use timeout_on_close::*;
 
-/// Returns a dummy `RawCounterparty`, for testing only!
+/// Returns a dummy `RawCounterparty`, for testing purposes only!
 /// Can be optionally parametrized with a specific channel identifier.
-pub fn dummy_raw_counterparty(channel_id: String) -> RawCounterparty {
+pub fn dummy_raw_counterparty_chan(channel_id: String) -> RawCounterparty {
     RawCounterparty {
         port_id: PortId::transfer().to_string(),
         channel_id,
     }
 }
 
-/// Returns a dummy `RawChannel`, for testing only!
+/// Returns a dummy `RawChannel`, for testing purposes only!
 pub fn dummy_raw_channel_end(state: i32, channel_id: Option<u64>) -> RawChannel {
     let channel_id = match channel_id {
         Some(id) => ChannelId::new(id).to_string(),
@@ -43,7 +43,7 @@ pub fn dummy_raw_channel_end(state: i32, channel_id: Option<u64>) -> RawChannel 
     RawChannel {
         state,
         ordering: 2,
-        counterparty: Some(dummy_raw_counterparty(channel_id)),
+        counterparty: Some(dummy_raw_counterparty_chan(channel_id)),
         connection_hops: vec![ConnectionId::default().to_string()],
         version: "".to_string(), // The version is not validated.
     }

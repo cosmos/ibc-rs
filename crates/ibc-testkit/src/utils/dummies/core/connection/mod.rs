@@ -36,7 +36,7 @@ impl From<CounterpartyConfig> for RawCounterparty {
     }
 }
 
-pub fn dummy_raw_counterparty(conn_id: Option<u64>) -> RawCounterparty {
+pub fn dummy_raw_counterparty_conn(conn_id: Option<u64>) -> RawCounterparty {
     let connection_id = match conn_id {
         Some(id) => ConnectionId::new(id).to_string(),
         None => "".to_string(),

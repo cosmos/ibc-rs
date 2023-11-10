@@ -3,10 +3,10 @@ use ibc::prelude::*;
 use ibc::proto::core::channel::v1::MsgChannelOpenTry as RawMsgChannelOpenTry;
 use ibc::proto::core::client::v1::Height;
 
-use super::dummy_raw_channel_end;
-use crate::utils::dummies::core::signer::{dummy_bech32_account, dummy_proof};
+use super::{dummy_proof, dummy_raw_channel_end};
+use crate::utils::dummies::core::signer::dummy_bech32_account;
 
-/// Returns a dummy `RawMsgChannelOpenTry`, for testing only!
+/// Returns a dummy `RawMsgChannelOpenTry`, for testing purposes only!
 pub fn dummy_raw_msg_chan_open_try(proof_height: u64) -> RawMsgChannelOpenTry {
     #[allow(deprecated)]
     RawMsgChannelOpenTry {

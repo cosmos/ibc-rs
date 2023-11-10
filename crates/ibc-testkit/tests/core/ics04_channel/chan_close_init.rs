@@ -14,7 +14,7 @@ use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
 use ibc_testkit::utils::dummies::core::channel::dummy_raw_msg_chan_close_init;
-use ibc_testkit::utils::dummies::core::connection::dummy_raw_counterparty;
+use ibc_testkit::utils::dummies::core::connection::dummy_raw_counterparty_conn;
 
 #[test]
 fn test_chan_close_init_validate() {
@@ -24,7 +24,7 @@ fn test_chan_close_init_validate() {
     let conn_end = ConnectionEnd::new(
         ConnectionState::Open,
         client_id.clone(),
-        ConnectionCounterparty::try_from(dummy_raw_counterparty(Some(0))).unwrap(),
+        ConnectionCounterparty::try_from(dummy_raw_counterparty_conn(Some(0))).unwrap(),
         get_compatible_versions(),
         ZERO_DURATION,
     )
@@ -79,7 +79,7 @@ fn test_chan_close_init_execute() {
     let conn_end = ConnectionEnd::new(
         ConnectionState::Open,
         client_id.clone(),
-        ConnectionCounterparty::try_from(dummy_raw_counterparty(Some(0))).unwrap(),
+        ConnectionCounterparty::try_from(dummy_raw_counterparty_conn(Some(0))).unwrap(),
         get_compatible_versions(),
         ZERO_DURATION,
     )

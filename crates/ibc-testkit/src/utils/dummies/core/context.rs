@@ -14,7 +14,7 @@ use typed_builder::TypedBuilder;
 use crate::hosts::block::{HostBlock, HostType};
 use crate::testapp::ibc::core::types::{MockContext, MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
 
-/// Configuration for a `MockContext` type.
+/// Configuration of the `MockContext` type for generating dummy contexts.
 #[derive(Debug, TypedBuilder)]
 #[builder(build_method(into = MockContext))]
 pub struct MockContextConfig {

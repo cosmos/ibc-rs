@@ -4,13 +4,15 @@ use ibc::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfi
 use ibc::proto::core::client::v1::Height;
 use ibc::proto::core::connection::v1::MsgConnectionOpenConfirm as RawMsgConnectionOpenConfirm;
 
-use crate::utils::dummies::core::signer::{dummy_bech32_account, dummy_proof};
+use crate::utils::dummies::core::channel::dummy_proof;
+use crate::utils::dummies::core::signer::dummy_bech32_account;
 
-/// Returns a new `MsgConnectionOpenConfirm` with dummy values.
+/// Returns a dummy `MsgConnectionOpenConfirm` for testing purposes only!
 pub fn dummy_conn_open_confirm() -> MsgConnectionOpenConfirm {
     MsgConnectionOpenConfirm::try_from(dummy_raw_msg_conn_open_confirm()).expect("Never fails")
 }
 
+/// Returns a dummy `RawMsgConnectionOpenConfirm` for testing purposes only!
 pub fn dummy_raw_msg_conn_open_confirm() -> RawMsgConnectionOpenConfirm {
     RawMsgConnectionOpenConfirm {
         connection_id: "srcconnection".to_string(),

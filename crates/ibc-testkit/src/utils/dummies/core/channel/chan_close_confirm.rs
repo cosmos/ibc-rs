@@ -3,9 +3,10 @@ use ibc::prelude::*;
 use ibc::proto::core::channel::v1::MsgChannelCloseConfirm as RawMsgChannelCloseConfirm;
 use ibc::proto::core::client::v1::Height;
 
-use crate::utils::dummies::core::signer::{dummy_bech32_account, dummy_proof};
+use super::dummy_proof;
+use crate::utils::dummies::core::signer::dummy_bech32_account;
 
-/// Returns a dummy `RawMsgChannelCloseConfirm`, for testing only!
+/// Returns a dummy `RawMsgChannelCloseConfirm`, for testing purposes only!
 pub fn dummy_raw_msg_chan_close_confirm(proof_height: u64) -> RawMsgChannelCloseConfirm {
     RawMsgChannelCloseConfirm {
         port_id: PortId::transfer().to_string(),

@@ -4,8 +4,10 @@ use ibc::proto::Any;
 use crate::utils::dummies::clients::tendermint::dummy_ics07_header;
 use crate::utils::dummies::core::signer::dummy_bech32_account;
 
+/// Returns a dummy `RawMsgUpdateClient`, for testing purposes only!
 pub fn dummy_raw_msg_update_client() -> MsgUpdateClient {
-    let client_id = "tendermint".parse().unwrap();
+    let client_id = "07-tendermint-0".parse().unwrap();
+
     let tm_header = dummy_ics07_header();
 
     MsgUpdateClient {

@@ -97,25 +97,20 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use ibc_proto::ibc::core::client::v1::MsgUpgradeClient as RawMsgUpgradeClient;
-//     use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
-//     use ibc_testkit::utils::builders::core::client::dummy_msg_upgrade_client;
+#[cfg(test)]
+mod tests {
+    use ibc_proto::ibc::core::client::v1::MsgUpgradeClient as RawMsgUpgradeClient;
+    use ibc_testkit::utils::dummies::core::client::dummy_raw_msg_upgrade_client;
 
-//     use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
-//     use crate::core::ics24_host::identifier::ClientId;
-//     use crate::Height;
+    use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
 
-//     #[test]
-//     fn msg_upgrade_client_serialization() {
-//         let client_id = ClientId::new(mock_client_type(), 0).expect("invalid client id");
-//         let height = Height::new(1, 1).unwrap();
-//         let msg = dummy_msg_upgrade_client(client_id, height);
-//         let raw: RawMsgUpgradeClient = RawMsgUpgradeClient::from(msg.clone());
-//         let msg_back = MsgUpgradeClient::try_from(raw.clone()).unwrap();
-//         let raw_back: RawMsgUpgradeClient = RawMsgUpgradeClient::from(msg_back.clone());
-//         assert_eq!(msg, msg_back);
-//         assert_eq!(raw, raw_back);
-//     }
-// }
+    #[test]
+    fn msg_upgrade_client_serialization() {
+        let raw = dummy_raw_msg_upgrade_client();
+        let msg = MsgUpgradeClient::try_from(raw.clone()).unwrap();
+        let raw_back: RawMsgUpgradeClient = RawMsgUpgradeClient::from(msg.clone());
+        let msg_back = MsgUpgradeClient::try_from(raw_back.clone()).unwrap();
+        assert_eq!(msg, msg_back);
+        assert_eq!(raw, raw_back);
+    }
+}

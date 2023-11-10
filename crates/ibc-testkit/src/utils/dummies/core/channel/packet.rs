@@ -7,7 +7,7 @@ use ibc::proto::core::channel::v1::Packet as RawPacket;
 use ibc::proto::core::client::v1::Height as RawHeight;
 use typed_builder::TypedBuilder;
 
-/// Configuration for a `PacketData` type.
+/// Configuration of the `PacketData` type for building dummy packets.
 #[derive(TypedBuilder, Debug)]
 #[builder(build_method(into = Packet))]
 pub struct PacketConfig {
@@ -44,7 +44,7 @@ impl From<PacketConfig> for Packet {
     }
 }
 
-/// Returns a dummy `RawPacket`, for testing only!
+/// Returns a dummy `RawPacket`, for testing purposes only!
 pub fn dummy_raw_packet(timeout_height: u64, timeout_timestamp: u64) -> RawPacket {
     RawPacket {
         sequence: 1,
@@ -59,4 +59,10 @@ pub fn dummy_raw_packet(timeout_height: u64, timeout_timestamp: u64) -> RawPacke
         }),
         timeout_timestamp,
     }
+}
+
+pub fn dummy_proof() -> Vec<u8> {
+    "Y29uc2Vuc3VzU3RhdGUvaWJjb25lY2xpZW50LzIy"
+        .as_bytes()
+        .to_vec()
 }

@@ -134,7 +134,7 @@ mod tests {
         Counterparty as RawCounterparty, MsgConnectionOpenInit as RawMsgConnectionOpenInit,
     };
     use ibc_testkit::utils::dummies::core::connection::{
-        dummy_raw_counterparty, dummy_raw_msg_conn_open_init,
+        dummy_raw_counterparty_conn, dummy_raw_msg_conn_open_init,
     };
     use test_log::test;
 
@@ -173,7 +173,7 @@ mod tests {
                         connection_id:
                             "abcdefghijksdffjssdkflweldflsfladfsfwjkrekcmmsdfsdfjflddmnopqrstu"
                                 .to_string(),
-                        ..dummy_raw_counterparty(None)
+                        ..dummy_raw_counterparty_conn(None)
                     }),
                     ..default_init_msg
                 },

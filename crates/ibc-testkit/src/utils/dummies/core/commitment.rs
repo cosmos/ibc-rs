@@ -3,7 +3,7 @@ use ibc::prelude::*;
 use ibc::proto::core::commitment::v1::MerkleProof as RawMerkleProof;
 use ibc::proto::ics23::CommitmentProof;
 
-/// Returns a dummy `CommitmentProofBytes`, for testing only!
+/// Returns a dummy `CommitmentProofBytes`, for testing purposes only!
 pub fn dummy_commitment_proof_bytes() -> CommitmentProofBytes {
     let parsed = CommitmentProof { proof: None };
     let mproofs: Vec<CommitmentProof> = vec![parsed];

@@ -12,7 +12,7 @@ use typed_builder::TypedBuilder;
 
 use crate::utils::dummies::core::signer::dummy_account_id;
 
-/// Configuration for a `MsgTransfer` message.
+/// Configuration of the `MsgTransfer` message for building dummy messages.
 #[derive(TypedBuilder, Debug)]
 #[builder(build_method(into = MsgTransfer))]
 pub struct MsgTransferConfig {
@@ -55,7 +55,7 @@ pub fn extract_transfer_packet(msg: &MsgTransfer, sequence: Sequence) -> Packet 
     }
 }
 
-/// Configuration for a `PacketData` type.
+/// Configuration of the `PacketData` type for building dummy packets.
 #[derive(TypedBuilder, Debug)]
 #[builder(build_method(into = PacketData))]
 pub struct PacketDataConfig {

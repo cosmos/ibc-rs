@@ -14,7 +14,7 @@ use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
 use ibc_testkit::utils::dummies::core::channel::dummy_raw_msg_chan_open_try;
-use ibc_testkit::utils::dummies::core::connection::dummy_raw_counterparty;
+use ibc_testkit::utils::dummies::core::connection::dummy_raw_counterparty_conn;
 use rstest::*;
 use test_log::test;
 
@@ -38,7 +38,7 @@ fn fixture() -> Fixture {
     let conn_end_on_b = ConnectionEnd::new(
         ConnectionState::Open,
         client_id_on_b.clone(),
-        ConnectionCounterparty::try_from(dummy_raw_counterparty(Some(0))).unwrap(),
+        ConnectionCounterparty::try_from(dummy_raw_counterparty_conn(Some(0))).unwrap(),
         get_compatible_versions(),
         ZERO_DURATION,
     )

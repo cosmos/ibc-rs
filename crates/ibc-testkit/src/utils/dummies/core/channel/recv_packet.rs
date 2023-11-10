@@ -9,8 +9,8 @@ use ibc::proto::core::channel::v1::MsgRecvPacket as RawMsgRecvPacket;
 use ibc::proto::core::client::v1::Height as RawHeight;
 use ibc::{Height, Signer};
 
-use super::dummy_raw_packet;
-use crate::utils::dummies::core::signer::{dummy_bech32_account, dummy_proof};
+use super::{dummy_proof, dummy_raw_packet};
+use crate::utils::dummies::core::signer::dummy_bech32_account;
 
 pub fn dummy_msg_recv_packet(
     packet: Packet,
@@ -26,8 +26,8 @@ pub fn dummy_msg_recv_packet(
     }
 }
 
-/// Returns a dummy `RawMsgRecvPacket`, for testing only! The `height` parametrizes both the
-/// proof height as well as the timeout height.
+/// Returns a dummy `RawMsgRecvPacket`, for testing purposes only! The `height`
+/// parametrizes both the proof height as well as the timeout height.
 pub fn dummy_raw_msg_recv_packet(height: u64) -> RawMsgRecvPacket {
     let timestamp = Timestamp::now().add(Duration::from_secs(9));
     RawMsgRecvPacket {

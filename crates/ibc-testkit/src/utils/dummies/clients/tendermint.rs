@@ -14,10 +14,12 @@ use ibc::proto::core::client::v1::Height as RawHeight;
 use ibc::proto::tendermint::v1::{ClientState as RawTmClientState, Fraction};
 use tendermint::block::Header as TmHeader;
 
+/// Returns a dummy tendermint `ClientState` by given `frozen_height`, for testing purposes only!
 pub fn dummy_tm_client_state_from_raw(frozen_height: RawHeight) -> Result<ClientState, Error> {
     ClientState::try_from(dummy_raw_tm_client_state(frozen_height))
 }
 
+/// Returns a dummy tendermint `ClientState` from a `TmHeader`, for testing purposes only!
 pub fn dummy_tm_client_state_from_header(tm_header: TmHeader) -> ClientState {
     let chain_id = ChainId::from_str(tm_header.chain_id.as_str()).expect("Never fails");
     ClientState::new(
@@ -37,6 +39,7 @@ pub fn dummy_tm_client_state_from_header(tm_header: TmHeader) -> ClientState {
     .expect("Never fails")
 }
 
+/// Returns a dummy tendermint `RawTmClientState` by given `frozen_height`, for testing purposes only!
 pub fn dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
     #[allow(deprecated)]
     RawTmClientState {

@@ -7,6 +7,7 @@ use crate::utils::dummies::clients::tendermint::{
 };
 use crate::utils::dummies::core::signer::dummy_bech32_account;
 
+/// Returns a dummy `RawMsgCreateClient`, for testing purposes only!
 pub fn dummy_raw_msg_create_client() -> MsgCreateClient {
     let tm_header = dummy_tendermint_header();
 

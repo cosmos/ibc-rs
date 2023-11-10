@@ -249,7 +249,7 @@ mod tests {
         Counterparty as RawCounterparty, MsgConnectionOpenTry as RawMsgConnectionOpenTry,
     };
     use ibc_testkit::utils::dummies::core::connection::{
-        dummy_raw_counterparty, dummy_raw_msg_conn_open_try,
+        dummy_raw_counterparty_conn, dummy_raw_msg_conn_open_try,
     };
     use test_log::test;
 
@@ -289,7 +289,7 @@ mod tests {
                             connection_id:
                             "abcdasdfasdfsdfasfdwefwfsdfsfsfasfwewvxcvdvwgadvaadsefghijklmnopqrstu"
                                 .to_string(),
-                            ..dummy_raw_counterparty(Some(0))
+                            ..dummy_raw_counterparty_conn(Some(0))
                         }),
                         ..default_try_msg.clone()
                     },
@@ -301,7 +301,7 @@ mod tests {
                     raw: RawMsgConnectionOpenTry {
                         counterparty: Some(RawCounterparty {
                             client_id: "ClientId_".to_string(),
-                            ..dummy_raw_counterparty(Some(0))
+                            ..dummy_raw_counterparty_conn(Some(0))
                         }),
                         ..default_try_msg.clone()
                     },
