@@ -15,7 +15,7 @@ pub mod trust_threshold;
 mod context;
 pub use context::*;
 
-pub(crate) const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
+pub const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
 
 /// Returns the tendermint `ClientType`
 pub fn client_type() -> ClientType {

@@ -55,11 +55,6 @@ pub mod clients;
 pub mod core;
 pub mod hosts;
 
-#[cfg(any(test, feature = "mocks"))]
-pub mod mock;
-#[cfg(any(test, feature = "mocks"))]
-pub mod test_utils; // Context mock, the underlying host chain, and client types: for testing all handlers.
-
 pub mod prelude;
 mod signer;
 pub mod utils;
@@ -71,7 +66,7 @@ mod serializers;
 pub mod proto {
     pub use ibc_proto::google::protobuf::Any;
     pub use ibc_proto::ibc::apps::transfer;
-    pub use ibc_proto::ibc::core;
     pub use ibc_proto::ibc::lightclients::tendermint;
-    pub use ibc_proto::Protobuf;
+    pub use ibc_proto::ibc::{core, mock};
+    pub use ibc_proto::{ics23, Protobuf};
 }

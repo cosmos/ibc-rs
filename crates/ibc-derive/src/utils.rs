@@ -58,7 +58,7 @@ impl Imports {
     }
 
     pub fn Any() -> TokenStream {
-        quote! {ibc_proto::google::protobuf::Any}
+        quote! {ibc::proto::Any}
     }
 
     pub fn Timestamp() -> TokenStream {

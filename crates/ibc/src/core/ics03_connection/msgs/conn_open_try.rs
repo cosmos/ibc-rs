@@ -48,7 +48,7 @@ pub struct MsgConnectionOpenTry {
 
     #[deprecated(since = "0.22.0")]
     /// Only kept here for proper conversion to/from the raw type
-    previous_connection_id: String,
+    pub previous_connection_id: String,
 }
 
 impl Msg for MsgConnectionOpenTry {
@@ -243,88 +243,17 @@ impl From<MsgConnectionOpenTry> for RawMsgConnectionOpenTry {
 }
 
 #[cfg(test)]
-pub mod test_util {
-    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-    use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenTry as RawMsgConnectionOpenTry;
-
-    use crate::core::ics02_client::height::Height;
-    use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
-    use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
-    use crate::core::ics03_connection::version::get_compatible_versions;
-    use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-    use crate::mock::client_state::MockClientState;
-    use crate::mock::header::MockHeader;
-    use crate::prelude::*;
-    use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
-
-    /// Testing-specific helper methods.
-    impl MsgConnectionOpenTry {
-        /// Returns a new `MsgConnectionOpenTry` with dummy values.
-        pub fn new_dummy(proof_height: u64, consensus_height: u64) -> Self {
-            MsgConnectionOpenTry::try_from(get_dummy_raw_msg_conn_open_try(
-                proof_height,
-                consensus_height,
-            ))
-            .unwrap()
-        }
-        /// Setter for `client_id`.
-        pub fn with_client_id(self, client_id: ClientId) -> MsgConnectionOpenTry {
-            MsgConnectionOpenTry {
-                client_id_on_b: client_id,
-                ..self
-            }
-        }
-    }
-
-    /// Returns a dummy `RawMsgConnectionOpenTry` with parametrized heights. The parameter
-    /// `proof_height` represents the height, on the source chain, at which this chain produced the
-    /// proof. Parameter `consensus_height` represents the height of destination chain which a
-    /// client on the source chain stores.
-    pub fn get_dummy_raw_msg_conn_open_try(
-        proof_height: u64,
-        consensus_height: u64,
-    ) -> RawMsgConnectionOpenTry {
-        let client_state_height = Height::new(0, consensus_height).unwrap();
-
-        #[allow(deprecated)]
-        RawMsgConnectionOpenTry {
-            client_id: ClientId::default().to_string(),
-            previous_connection_id: ConnectionId::default().to_string(),
-            client_state: Some(MockClientState::new(MockHeader::new(client_state_height)).into()),
-            counterparty: Some(get_dummy_raw_counterparty(Some(0))),
-            delay_period: 0,
-            counterparty_versions: get_compatible_versions()
-                .iter()
-                .map(|v| v.clone().into())
-                .collect(),
-            proof_init: get_dummy_proof(),
-            proof_height: Some(RawHeight {
-                revision_number: 0,
-                revision_height: proof_height,
-            }),
-            proof_consensus: get_dummy_proof(),
-            consensus_height: Some(RawHeight {
-                revision_number: 0,
-                revision_height: consensus_height,
-            }),
-            proof_client: get_dummy_proof(),
-            signer: get_dummy_bech32_account(),
-            host_consensus_state_proof: vec![],
-        }
-    }
-}
-
-#[cfg(test)]
 mod tests {
     use ibc_proto::ibc::core::client::v1::Height;
     use ibc_proto::ibc::core::connection::v1::{
         Counterparty as RawCounterparty, MsgConnectionOpenTry as RawMsgConnectionOpenTry,
     };
+    use ibc_testkit::utils::core::connection::{
+        dummy_raw_counterparty_conn, dummy_raw_msg_conn_open_try,
+    };
     use test_log::test;
 
-    use crate::core::ics03_connection::msgs::conn_open_try::test_util::get_dummy_raw_msg_conn_open_try;
     use crate::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
-    use crate::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
     use crate::prelude::*;
 
     #[test]
@@ -336,7 +265,7 @@ mod tests {
             want_pass: bool,
         }
 
-        let default_try_msg = get_dummy_raw_msg_conn_open_try(10, 34);
+        let default_try_msg = dummy_raw_msg_conn_open_try(10, 34);
 
         let tests: Vec<Test> =
             vec![
@@ -360,7 +289,7 @@ mod tests {
                             connection_id:
                             "abcdasdfasdfsdfasfdwefwfsdfsfsfasfwewvxcvdvwgadvaadsefghijklmnopqrstu"
                                 .to_string(),
-                            ..get_dummy_raw_counterparty(Some(0))
+                            ..dummy_raw_counterparty_conn(Some(0))
                         }),
                         ..default_try_msg.clone()
                     },
@@ -372,7 +301,7 @@ mod tests {
                     raw: RawMsgConnectionOpenTry {
                         counterparty: Some(RawCounterparty {
                             client_id: "ClientId_".to_string(),
-                            ..get_dummy_raw_counterparty(Some(0))
+                            ..dummy_raw_counterparty_conn(Some(0))
                         }),
                         ..default_try_msg.clone()
                     },
@@ -438,7 +367,7 @@ mod tests {
 
     #[test]
     fn to_and_from() {
-        let raw = get_dummy_raw_msg_conn_open_try(10, 34);
+        let raw = dummy_raw_msg_conn_open_try(10, 34);
         let msg = MsgConnectionOpenTry::try_from(raw.clone()).unwrap();
         let raw_back = RawMsgConnectionOpenTry::from(msg.clone());
         let msg_back = MsgConnectionOpenTry::try_from(raw_back.clone()).unwrap();
@@ -450,7 +379,7 @@ mod tests {
     #[cfg(feature = "borsh")]
     #[test]
     fn test_borsh() {
-        let mut raw = get_dummy_raw_msg_conn_open_try(10, 34);
+        let mut raw = dummy_raw_msg_conn_open_try(10, 34);
         raw.delay_period = u64::MAX;
         let msg = MsgConnectionOpenTry::try_from(raw.clone()).unwrap();
 

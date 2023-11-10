@@ -65,16 +65,15 @@ impl From<PacketData> for RawPacketData {
 
 #[cfg(test)]
 mod tests {
-
+    use ibc_testkit::utils::core::signer::dummy_bech32_account;
     use primitive_types::U256;
 
     use super::*;
     use crate::applications::transfer::BaseCoin;
-    use crate::test_utils::get_dummy_bech32_account;
 
     impl PacketData {
         pub fn new_dummy() -> Self {
-            let address: Signer = get_dummy_bech32_account().into();
+            let address: Signer = dummy_bech32_account().into();
 
             Self {
                 token: BaseCoin {

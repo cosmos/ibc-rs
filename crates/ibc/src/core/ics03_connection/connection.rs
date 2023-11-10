@@ -380,9 +380,9 @@ impl ConnectionEnd {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct Counterparty {
-    client_id: ClientId,
+    pub client_id: ClientId,
     pub connection_id: Option<ConnectionId>,
-    prefix: CommitmentPrefix,
+    pub prefix: CommitmentPrefix,
 }
 
 impl Protobuf<RawCounterparty> for Counterparty {}

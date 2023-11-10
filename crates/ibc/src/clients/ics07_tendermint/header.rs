@@ -23,7 +23,7 @@ use crate::core::timestamp::Timestamp;
 use crate::prelude::*;
 use crate::Height;
 
-pub(crate) const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
+pub const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 /// Tendermint consensus header
@@ -244,88 +244,6 @@ mod pretty {
                 PrettySlice(&validator_addresses),
                 self.0.total_voting_power()
             )
-            }
-        }
-    }
-}
-
-#[cfg(any(test, feature = "mocks"))]
-pub mod test_util {
-    use alloc::vec;
-
-    use subtle_encoding::hex;
-    use tendermint::block::signed_header::SignedHeader;
-    use tendermint::validator::{Info as ValidatorInfo, Set as ValidatorSet};
-    use tendermint::PublicKey;
-
-    use crate::clients::ics07_tendermint::header::Header;
-    use crate::mock::host::SyntheticTmBlock;
-    use crate::Height;
-
-    pub fn get_dummy_tendermint_header() -> tendermint::block::Header {
-        serde_json::from_str::<SignedHeader>(include_str!(
-            "../../../tests/support/signed_header.json"
-        ))
-        .expect("Never fails")
-        .header
-    }
-
-    // TODO: This should be replaced with a ::default() or ::produce().
-    // The implementation of this function comprises duplicate code (code borrowed from
-    // `tendermint-rs` for assembling a Header).
-    // See https://github.com/informalsystems/tendermint-rs/issues/381.
-    //
-    // The normal flow is:
-    // - get the (trusted) signed header and the `trusted_validator_set` at a `trusted_height`
-    // - get the `signed_header` and the `validator_set` at latest height
-    // - build the ics07 Header
-    // For testing purposes this function does:
-    // - get the `signed_header` from a .json file
-    // - create the `validator_set` with a single validator that is also the proposer
-    // - assume a `trusted_height` of 1 and no change in the validator set since height 1,
-    //   i.e. `trusted_validator_set` = `validator_set`
-    pub fn get_dummy_ics07_header() -> Header {
-        // Build a SignedHeader from a JSON file.
-        let shdr = serde_json::from_str::<SignedHeader>(include_str!(
-            "../../../tests/support/signed_header.json"
-        ))
-        .expect("Never fails");
-
-        // Build a set of validators.
-        // Below are test values inspired form `test_validator_set()` in tendermint-rs.
-        let v1: ValidatorInfo = ValidatorInfo::new(
-            PublicKey::from_raw_ed25519(
-                &hex::decode_upper(
-                    "F349539C7E5EF7C49549B09C4BFC2335318AB0FE51FBFAA2433B4F13E816F4A7",
-                )
-                .expect("Never fails"),
-            )
-            .expect("Never fails"),
-            281_815_u64.try_into().expect("Never fails"),
-        );
-
-        let vs = ValidatorSet::new(vec![v1.clone()], Some(v1));
-
-        Header {
-            signed_header: shdr,
-            validator_set: vs.clone(),
-            trusted_height: Height::min(0),
-            trusted_next_validator_set: vs,
-        }
-    }
-
-    impl From<SyntheticTmBlock> for Header {
-        fn from(light_block: SyntheticTmBlock) -> Self {
-            let SyntheticTmBlock {
-                trusted_height,
-                trusted_next_validators,
-                light_block,
-            } = light_block;
-            Self {
-                signed_header: light_block.signed_header,
-                validator_set: light_block.validators,
-                trusted_height,
-                trusted_next_validator_set: trusted_next_validators,
             }
         }
     }
