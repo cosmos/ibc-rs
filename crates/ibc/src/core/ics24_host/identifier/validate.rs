@@ -7,11 +7,6 @@ const VALID_SPECIAL_CHARS: &str = "._+-#[]<>";
 /// [`ICS-24`](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#paths-identifiers-separators)]
 /// spec.
 pub fn validate_identifier_chars(id: &str) -> Result<(), Error> {
-    // Check identifier is not empty
-    if id.is_empty() {
-        return Err(Error::Empty);
-    }
-
     // Check that the identifier comprises only valid characters:
     // - Alphanumeric
     // - `.`, `_`, `+`, `-`, `#`
@@ -207,13 +202,6 @@ mod tests {
     fn parse_invalid_id_chars() {
         // invalid id chars
         let id = validate_identifier_chars("channel@01");
-        assert!(id.is_err())
-    }
-
-    #[test]
-    fn parse_invalid_id_empty() {
-        // invalid id empty
-        let id = validate_identifier_chars("");
         assert!(id.is_err())
     }
 
