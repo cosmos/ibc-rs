@@ -37,10 +37,10 @@ tendermint = { workspace = true }
 tendermint-testgen = { workspace = true }
 
 [dev-dependencies]
-env_logger = "0.10.0"
-rstest = "0.18.1"
-tracing-subscriber = { version = "0.3.14", features = ["fmt", "env-filter", "json"]}
-test-log = { version = "0.2.10", features = ["trace"] }
+env_logger = { workspace = true }
+rstest =  { workspace = true }
+tracing-subscriber = { workspace = true }
+test-log = { workspace = true }
 
 [features]
 default = ["std"]
