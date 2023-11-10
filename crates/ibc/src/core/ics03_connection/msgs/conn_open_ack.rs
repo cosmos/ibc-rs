@@ -134,7 +134,7 @@ impl From<MsgConnectionOpenAck> for RawMsgConnectionOpenAck {
 mod tests {
     use ibc_proto::ibc::core::client::v1::Height;
     use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenAck as RawMsgConnectionOpenAck;
-    use ibc_testkit::utils::dummies::core::connection::dummy_raw_msg_conn_open_ack;
+    use ibc_testkit::utils::core::connection::dummy_raw_msg_conn_open_ack;
     use test_log::test;
 
     use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;

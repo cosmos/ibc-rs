@@ -17,10 +17,8 @@ use ibc::Height;
 use ibc_testkit::relayer::context::RelayerContext;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
-use ibc_testkit::utils::dummies::core::channel::{
-    dummy_msg_recv_packet, dummy_raw_msg_recv_packet,
-};
-use ibc_testkit::utils::dummies::core::signer::dummy_account_id;
+use ibc_testkit::utils::core::channel::{dummy_msg_recv_packet, dummy_raw_msg_recv_packet};
+use ibc_testkit::utils::core::signer::dummy_account_id;
 use rstest::*;
 use test_log::test;
 

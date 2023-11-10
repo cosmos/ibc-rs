@@ -133,7 +133,7 @@ mod tests {
     use ibc_proto::ibc::core::connection::v1::{
         Counterparty as RawCounterparty, MsgConnectionOpenInit as RawMsgConnectionOpenInit,
     };
-    use ibc_testkit::utils::dummies::core::connection::{
+    use ibc_testkit::utils::core::connection::{
         dummy_raw_counterparty_conn, dummy_raw_msg_conn_open_init,
     };
     use test_log::test;

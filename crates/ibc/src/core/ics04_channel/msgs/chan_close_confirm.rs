@@ -76,7 +76,7 @@ impl From<MsgChannelCloseConfirm> for RawMsgChannelCloseConfirm {
 mod tests {
     use ibc_proto::ibc::core::channel::v1::MsgChannelCloseConfirm as RawMsgChannelCloseConfirm;
     use ibc_proto::ibc::core::client::v1::Height;
-    use ibc_testkit::utils::dummies::core::channel::dummy_raw_msg_chan_close_confirm;
+    use ibc_testkit::utils::core::channel::dummy_raw_msg_chan_close_confirm;
 
     use crate::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
     use crate::prelude::*;

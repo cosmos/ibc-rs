@@ -68,7 +68,7 @@ impl From<MsgUpdateClient> for RawMsgUpdateClient {
 #[cfg(test)]
 mod tests {
     use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;
-    use ibc_testkit::utils::dummies::core::client::dummy_raw_msg_update_client;
+    use ibc_testkit::utils::core::client::dummy_raw_msg_update_client;
     use test_log::test;
 
     use super::*;

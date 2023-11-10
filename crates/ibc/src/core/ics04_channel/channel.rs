@@ -576,7 +576,7 @@ mod tests {
     use core::str::FromStr;
 
     use ibc_proto::ibc::core::channel::v1::Channel as RawChannel;
-    use ibc_testkit::utils::dummies::core::channel::dummy_raw_channel_end;
+    use ibc_testkit::utils::core::channel::dummy_raw_channel_end;
     use test_log::test;
 
     use crate::core::ics04_channel::channel::ChannelEnd;

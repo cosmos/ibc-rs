@@ -13,8 +13,8 @@ use ibc::prelude::*;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
-use ibc_testkit::utils::dummies::core::channel::dummy_raw_msg_chan_close_confirm;
-use ibc_testkit::utils::dummies::core::connection::dummy_raw_counterparty_conn;
+use ibc_testkit::utils::core::channel::dummy_raw_msg_chan_close_confirm;
+use ibc_testkit::utils::core::connection::dummy_raw_counterparty_conn;
 
 #[test]
 fn test_chan_close_confirm_validate() {

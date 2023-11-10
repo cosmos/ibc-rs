@@ -65,7 +65,7 @@ impl From<PacketData> for RawPacketData {
 
 #[cfg(test)]
 mod tests {
-    use ibc_testkit::utils::dummies::core::signer::dummy_bech32_account;
+    use ibc_testkit::utils::core::signer::dummy_bech32_account;
     use primitive_types::U256;
 
     use super::*;

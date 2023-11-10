@@ -76,7 +76,7 @@ impl From<MsgCreateClient> for RawMsgCreateClient {
 mod tests {
 
     use ibc_proto::ibc::core::client::v1::MsgCreateClient as RawMsgCreateClient;
-    use ibc_testkit::utils::dummies::core::client::dummy_raw_msg_create_client;
+    use ibc_testkit::utils::core::client::dummy_raw_msg_create_client;
     use test_log::test;
 
     use crate::core::ics02_client::msgs::create_client::MsgCreateClient;

@@ -30,8 +30,8 @@ use ibc_testkit::testapp::ibc::clients::mock::misbehaviour::Misbehaviour as Mock
 use ibc_testkit::testapp::ibc::clients::AnyConsensusState;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
-use ibc_testkit::utils::dummies::core::context::MockContextConfig;
-use ibc_testkit::utils::dummies::core::signer::dummy_account_id;
+use ibc_testkit::utils::core::context::MockContextConfig;
+use ibc_testkit::utils::core::signer::dummy_account_id;
 use prost::Message;
 use tendermint_testgen::Validator as TestgenValidator;
 use test_log::test;

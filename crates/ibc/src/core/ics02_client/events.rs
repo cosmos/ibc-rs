@@ -423,7 +423,7 @@ mod tests {
     use std::str::FromStr;
 
     use ibc_proto::google::protobuf::Any;
-    use ibc_testkit::utils::dummies::clients::mock::dummy_new_mock_header;
+    use ibc_testkit::utils::clients::mock::dummy_new_mock_header;
     use prost::Message;
     use tendermint::abci::Event as AbciEvent;
 

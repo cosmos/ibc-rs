@@ -15,7 +15,7 @@ use ibc::prelude::*;
 use ibc::Height;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
-use ibc_testkit::utils::dummies::core::channel::dummy_raw_msg_timeout_on_close;
+use ibc_testkit::utils::core::channel::dummy_raw_msg_timeout_on_close;
 use rstest::*;
 
 pub struct Fixture {

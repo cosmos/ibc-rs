@@ -8,11 +8,11 @@ use ibc::prelude::*;
 use ibc::Height;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
-use ibc_testkit::utils::dummies::core::connection::{
+use ibc_testkit::utils::core::connection::{
     dummy_msg_conn_open_init, msg_conn_open_init_with_counterparty_conn_id,
     msg_conn_open_with_version,
 };
-use ibc_testkit::utils::fixture::{Expect, Fixture};
+use ibc_testkit::utils::{Expect, Fixture};
 use test_log::test;
 
 enum Ctx {

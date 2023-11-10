@@ -12,11 +12,11 @@ use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_
 use ibc_testkit::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
-use ibc_testkit::utils::dummies::clients::tendermint::{
+use ibc_testkit::utils::clients::tendermint::{
     dummy_tendermint_header, dummy_tm_client_state_from_header,
 };
-use ibc_testkit::utils::dummies::core::client::dummy_msg_upgrade_client;
-use ibc_testkit::utils::fixture::{Expect, Fixture};
+use ibc_testkit::utils::core::client::dummy_msg_upgrade_client;
+use ibc_testkit::utils::{Expect, Fixture};
 
 enum Ctx {
     Default,

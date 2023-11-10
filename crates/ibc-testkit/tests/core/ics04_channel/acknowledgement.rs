@@ -16,7 +16,7 @@ use ibc::core::{execute, validate, ExecutionContext, MsgEnvelope};
 use ibc::prelude::*;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
-use ibc_testkit::utils::dummies::core::channel::dummy_raw_msg_acknowledgement;
+use ibc_testkit::utils::core::channel::dummy_raw_msg_acknowledgement;
 use rstest::*;
 use test_log::test;
 

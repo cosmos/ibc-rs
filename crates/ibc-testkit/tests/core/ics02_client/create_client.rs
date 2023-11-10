@@ -13,10 +13,10 @@ use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusStat
 use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
-use ibc_testkit::utils::dummies::clients::tendermint::{
+use ibc_testkit::utils::clients::tendermint::{
     dummy_tendermint_header, dummy_tm_client_state_from_header,
 };
-use ibc_testkit::utils::dummies::core::signer::dummy_account_id;
+use ibc_testkit::utils::core::signer::dummy_account_id;
 use test_log::test;
 
 #[test]

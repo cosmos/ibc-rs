@@ -86,7 +86,7 @@ impl From<MsgTimeoutOnClose> for RawMsgTimeoutOnClose {
 #[cfg(test)]
 mod tests {
     use ibc_proto::ibc::core::channel::v1::MsgTimeoutOnClose as RawMsgTimeoutOnClose;
-    use ibc_testkit::utils::dummies::core::channel::dummy_raw_msg_timeout_on_close;
+    use ibc_testkit::utils::core::channel::dummy_raw_msg_timeout_on_close;
     use test_log::test;
 
     use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;

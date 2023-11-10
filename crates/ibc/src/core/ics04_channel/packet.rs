@@ -376,7 +376,7 @@ impl From<PacketState> for RawPacketState {
 mod tests {
     use ibc_proto::ibc::core::channel::v1::Packet as RawPacket;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-    use ibc_testkit::utils::dummies::core::channel::dummy_raw_packet;
+    use ibc_testkit::utils::core::channel::dummy_raw_packet;
     use test_log::test;
 
     use crate::core::ics04_channel::packet::Packet;

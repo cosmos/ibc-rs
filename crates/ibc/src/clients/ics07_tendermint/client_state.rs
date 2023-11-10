@@ -882,7 +882,7 @@ mod tests {
     use ibc_proto::google::protobuf::Any;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use ibc_proto::ics23::ProofSpec as Ics23ProofSpec;
-    use ibc_testkit::utils::dummies::clients::tendermint::dummy_tendermint_header;
+    use ibc_testkit::utils::clients::tendermint::dummy_tendermint_header;
     use test_log::test;
 
     use super::*;

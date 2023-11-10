@@ -10,8 +10,8 @@ use ibc::core::{execute, validate, MsgEnvelope, ValidationContext};
 use ibc::prelude::*;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
-use ibc_testkit::utils::dummies::core::channel::dummy_raw_msg_chan_open_init;
-use ibc_testkit::utils::dummies::core::connection::dummy_msg_conn_open_init;
+use ibc_testkit::utils::core::channel::dummy_raw_msg_chan_open_init;
+use ibc_testkit::utils::core::connection::dummy_msg_conn_open_init;
 use rstest::*;
 use test_log::test;
 

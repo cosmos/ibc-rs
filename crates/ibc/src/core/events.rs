@@ -283,7 +283,7 @@ impl From<MessageEvent> for IbcEvent {
 pub mod tests {
     use alloc::vec;
 
-    use ibc_testkit::utils::dummies::core::channel::dummy_raw_packet;
+    use ibc_testkit::utils::core::channel::dummy_raw_packet;
 
     use super::*;
     use crate::core::ics04_channel::channel::Order;

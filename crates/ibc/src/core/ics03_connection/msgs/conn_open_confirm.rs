@@ -76,7 +76,7 @@ impl From<MsgConnectionOpenConfirm> for RawMsgConnectionOpenConfirm {
 mod tests {
     use ibc_proto::ibc::core::client::v1::Height;
     use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenConfirm as RawMsgConnectionOpenConfirm;
-    use ibc_testkit::utils::dummies::core::connection::dummy_raw_msg_conn_open_confirm;
+    use ibc_testkit::utils::core::connection::dummy_raw_msg_conn_open_confirm;
     use test_log::test;
 
     use crate::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;

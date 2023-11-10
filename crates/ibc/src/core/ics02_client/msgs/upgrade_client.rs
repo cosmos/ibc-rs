@@ -100,7 +100,7 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
 #[cfg(test)]
 mod tests {
     use ibc_proto::ibc::core::client::v1::MsgUpgradeClient as RawMsgUpgradeClient;
-    use ibc_testkit::utils::dummies::core::client::dummy_raw_msg_upgrade_client;
+    use ibc_testkit::utils::core::client::dummy_raw_msg_upgrade_client;
 
     use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
 

@@ -79,8 +79,8 @@ impl From<MsgAcknowledgement> for RawMsgAcknowledgement {
 #[cfg(test)]
 mod test {
     use ibc_proto::ibc::core::channel::v1::MsgAcknowledgement as RawMsgAcknowledgement;
-    use ibc_testkit::utils::dummies::core::channel::dummy_raw_msg_acknowledgement;
-    use ibc_testkit::utils::dummies::core::signer::dummy_bech32_account;
+    use ibc_testkit::utils::core::channel::dummy_raw_msg_acknowledgement;
+    use ibc_testkit::utils::core::signer::dummy_bech32_account;
     use test_log::test;
 
     use crate::core::ics04_channel::error::PacketError;
