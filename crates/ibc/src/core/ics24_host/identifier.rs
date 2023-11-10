@@ -516,8 +516,6 @@ impl PartialEq<str> for ChannelId {
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Display)]
 pub enum IdentifierError {
-    /// identifier `{id}` cannot contain separator '/'
-    ContainSeparator { id: String },
     /// identifier `{id}` has invalid length `{length}` must be between `{min}`-`{max}` characters
     InvalidLength {
         id: String,

@@ -1,8 +1,6 @@
 use super::IdentifierError as Error;
 use crate::prelude::*;
 
-/// Path separator (ie. forward slash '/')
-const PATH_SEPARATOR: char = '/';
 const VALID_SPECIAL_CHARS: &str = "._+-#[]<>";
 
 /// Checks if the identifier only contains valid characters as specified in the
@@ -12,11 +10,6 @@ pub fn validate_identifier_chars(id: &str) -> Result<(), Error> {
     // Check identifier is not empty
     if id.is_empty() {
         return Err(Error::Empty);
-    }
-
-    // Check identifier does not contain path separators
-    if id.contains(PATH_SEPARATOR) {
-        return Err(Error::ContainSeparator { id: id.into() });
     }
 
     // Check that the identifier comprises only valid characters:
