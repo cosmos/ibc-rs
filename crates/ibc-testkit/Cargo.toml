@@ -31,7 +31,7 @@ serde = ["dep:serde", "ibc/serde", "serde_json"]
 bytes = { version = "1.2.1", default-features = false }
 derive_more = { version = "0.99.17", default-features = false, features = ["from", "into", "display", "try_into"] }
 displaydoc = { version = "0.2", default-features = false }
-ibc = { version = "0.47.0" , path = "../ibc" }
+ibc = { version = "0.47.0" , path = "../ibc" } # NOTE: since `ibc-testkit` does not well support `no_std` yet, we keep `ibc` default features enabled
 parking_lot = { version = "0.12.1", default-features = false }
 prost = { version = "0.12", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true }
