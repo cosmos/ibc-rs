@@ -78,43 +78,15 @@ impl From<MsgTimeout> for RawMsgTimeout {
 }
 
 #[cfg(test)]
-pub mod test_util {
-    use ibc_proto::ibc::core::channel::v1::MsgTimeout as RawMsgTimeout;
-    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-
-    use crate::core::ics04_channel::packet::test_utils::get_dummy_raw_packet;
-    use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
-
-    /// Returns a dummy `RawMsgTimeout`, for testing only!
-    /// The `height` parametrizes both the proof height as well as the timeout height.
-    pub fn get_dummy_raw_msg_timeout(
-        proof_height: u64,
-        timeout_height: u64,
-        timeout_timestamp: u64,
-    ) -> RawMsgTimeout {
-        RawMsgTimeout {
-            packet: Some(get_dummy_raw_packet(timeout_height, timeout_timestamp)),
-            proof_unreceived: get_dummy_proof(),
-            proof_height: Some(RawHeight {
-                revision_number: 0,
-                revision_height: proof_height,
-            }),
-            next_sequence_recv: 1,
-            signer: get_dummy_bech32_account(),
-        }
-    }
-}
-
-#[cfg(test)]
 mod test {
     use ibc_proto::ibc::core::channel::v1::MsgTimeout as RawMsgTimeout;
+    use ibc_testkit::utils::core::channel::dummy_raw_msg_timeout;
+    use ibc_testkit::utils::core::signer::dummy_bech32_account;
     use test_log::test;
 
     use crate::core::ics04_channel::error::PacketError;
-    use crate::core::ics04_channel::msgs::timeout::test_util::get_dummy_raw_msg_timeout;
     use crate::core::ics04_channel::msgs::timeout::MsgTimeout;
     use crate::prelude::*;
-    use crate::test_utils::get_dummy_bech32_account;
 
     #[test]
     fn msg_timeout_try_from_raw() {
@@ -128,7 +100,7 @@ mod test {
         let timeout_height = proof_height;
         let timeout_timestamp = 0;
         let default_raw_msg =
-            get_dummy_raw_msg_timeout(proof_height, timeout_height, timeout_timestamp);
+            dummy_raw_msg_timeout(proof_height, timeout_height, timeout_timestamp);
 
         let tests: Vec<Test> = vec![
             Test {
@@ -163,7 +135,7 @@ mod test {
             Test {
                 name: "Empty signer".to_string(),
                 raw: RawMsgTimeout {
-                    signer: get_dummy_bech32_account(),
+                    signer: dummy_bech32_account(),
                     ..default_raw_msg
                 },
                 want_pass: true,
@@ -186,7 +158,8 @@ mod test {
 
     #[test]
     fn to_and_from() {
-        let raw = get_dummy_raw_msg_timeout(15, 20, 0);
+        let dummy_raw_msg_timeout = dummy_raw_msg_timeout(15, 20, 0);
+        let raw = dummy_raw_msg_timeout;
         let msg = MsgTimeout::try_from(raw.clone()).unwrap();
         let raw_back = RawMsgTimeout::from(msg.clone());
         let msg_back = MsgTimeout::try_from(raw_back.clone()).unwrap();

@@ -933,22 +933,22 @@ mod tests {
 
     #[test]
     fn test_parse_ports_fn() {
-        let path = "ports/defaultPort";
+        let path = "ports/transfer";
         let components: Vec<&str> = path.split('/').collect();
 
         assert_eq!(
             parse_ports(&components),
-            Some(Path::Ports(PortPath(PortId::default()))),
+            Some(Path::Ports(PortPath(PortId::transfer()))),
         );
     }
 
     #[test]
     fn ports_path_parses() {
-        let path = "ports/defaultPort";
+        let path = "ports/transfer";
         let path = Path::from_str(path);
 
         assert!(path.is_ok());
-        assert_eq!(path.unwrap(), Path::Ports(PortPath(PortId::default())));
+        assert_eq!(path.unwrap(), Path::Ports(PortPath(PortId::transfer())));
     }
 
     #[test]
@@ -991,13 +991,13 @@ mod tests {
 
     #[test]
     fn test_parse_channel_ends_fn() {
-        let path = "channelEnds/ports/defaultPort/channels/channel-0";
+        let path = "channelEnds/ports/transfer/channels/channel-0";
         let components: Vec<&str> = path.split('/').collect();
 
         assert_eq!(
             parse_channel_ends(&components),
             Some(Path::ChannelEnd(ChannelEndPath(
-                PortId::default(),
+                PortId::transfer(),
                 ChannelId::default()
             ))),
         );
@@ -1005,47 +1005,47 @@ mod tests {
 
     #[test]
     fn channel_ends_path_parses() {
-        let path = "channelEnds/ports/defaultPort/channels/channel-0";
+        let path = "channelEnds/ports/transfer/channels/channel-0";
         let path = Path::from_str(path);
 
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
-            Path::ChannelEnd(ChannelEndPath(PortId::default(), ChannelId::default())),
+            Path::ChannelEnd(ChannelEndPath(PortId::transfer(), ChannelId::default())),
         );
     }
 
     #[test]
     fn test_parse_seqs_fn() {
-        let path = "nextSequenceSend/ports/defaultPort/channels/channel-0";
+        let path = "nextSequenceSend/ports/transfer/channels/channel-0";
         let components: Vec<&str> = path.split('/').collect();
 
         assert_eq!(
             parse_seqs(&components),
             Some(Path::SeqSend(SeqSendPath(
-                PortId::default(),
+                PortId::transfer(),
                 ChannelId::default()
             ))),
         );
 
-        let path = "nextSequenceRecv/ports/defaultPort/channels/channel-0";
+        let path = "nextSequenceRecv/ports/transfer/channels/channel-0";
         let components: Vec<&str> = path.split('/').collect();
 
         assert_eq!(
             parse_seqs(&components),
             Some(Path::SeqRecv(SeqRecvPath(
-                PortId::default(),
+                PortId::transfer(),
                 ChannelId::default()
             ))),
         );
 
-        let path = "nextSequenceAck/ports/defaultPort/channels/channel-0";
+        let path = "nextSequenceAck/ports/transfer/channels/channel-0";
         let components: Vec<&str> = path.split('/').collect();
 
         assert_eq!(
             parse_seqs(&components),
             Some(Path::SeqAck(SeqAckPath(
-                PortId::default(),
+                PortId::transfer(),
                 ChannelId::default()
             ))),
         );
@@ -1053,49 +1053,49 @@ mod tests {
 
     #[test]
     fn sequence_send_path_parses() {
-        let path = "nextSequenceSend/ports/defaultPort/channels/channel-0";
+        let path = "nextSequenceSend/ports/transfer/channels/channel-0";
         let path = Path::from_str(path);
 
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
-            Path::SeqSend(SeqSendPath(PortId::default(), ChannelId::default())),
+            Path::SeqSend(SeqSendPath(PortId::transfer(), ChannelId::default())),
         );
     }
 
     #[test]
     fn sequence_recv_path_parses() {
-        let path = "nextSequenceRecv/ports/defaultPort/channels/channel-0";
+        let path = "nextSequenceRecv/ports/transfer/channels/channel-0";
         let path = Path::from_str(path);
 
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
-            Path::SeqRecv(SeqRecvPath(PortId::default(), ChannelId::default())),
+            Path::SeqRecv(SeqRecvPath(PortId::transfer(), ChannelId::default())),
         );
     }
 
     #[test]
     fn sequence_ack_path_parses() {
-        let path = "nextSequenceAck/ports/defaultPort/channels/channel-0";
+        let path = "nextSequenceAck/ports/transfer/channels/channel-0";
         let path = Path::from_str(path);
 
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
-            Path::SeqAck(SeqAckPath(PortId::default(), ChannelId::default())),
+            Path::SeqAck(SeqAckPath(PortId::transfer(), ChannelId::default())),
         );
     }
 
     #[test]
     fn test_parse_commitments_fn() {
-        let path = "commitments/ports/defaultPort/channels/channel-0/sequences/0";
+        let path = "commitments/ports/transfer/channels/channel-0/sequences/0";
         let components: Vec<&str> = path.split('/').collect();
 
         assert_eq!(
             parse_commitments(&components),
             Some(Path::Commitment(CommitmentPath {
-                port_id: PortId::default(),
+                port_id: PortId::transfer(),
                 channel_id: ChannelId::default(),
                 sequence: Sequence::default(),
             })),
@@ -1104,14 +1104,14 @@ mod tests {
 
     #[test]
     fn commitments_path_parses() {
-        let path = "commitments/ports/defaultPort/channels/channel-0/sequences/0";
+        let path = "commitments/ports/transfer/channels/channel-0/sequences/0";
         let path = Path::from_str(path);
 
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
             Path::Commitment(CommitmentPath {
-                port_id: PortId::default(),
+                port_id: PortId::transfer(),
                 channel_id: ChannelId::default(),
                 sequence: Sequence::default(),
             }),
@@ -1120,13 +1120,13 @@ mod tests {
 
     #[test]
     fn test_parse_acks_fn() {
-        let path = "acks/ports/defaultPort/channels/channel-0/sequences/0";
+        let path = "acks/ports/transfer/channels/channel-0/sequences/0";
         let components: Vec<&str> = path.split('/').collect();
 
         assert_eq!(
             parse_acks(&components),
             Some(Path::Ack(AckPath {
-                port_id: PortId::default(),
+                port_id: PortId::transfer(),
                 channel_id: ChannelId::default(),
                 sequence: Sequence::default(),
             })),
@@ -1135,14 +1135,14 @@ mod tests {
 
     #[test]
     fn acks_path_parses() {
-        let path = "acks/ports/defaultPort/channels/channel-0/sequences/0";
+        let path = "acks/ports/transfer/channels/channel-0/sequences/0";
         let path = Path::from_str(path);
 
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
             Path::Ack(AckPath {
-                port_id: PortId::default(),
+                port_id: PortId::transfer(),
                 channel_id: ChannelId::default(),
                 sequence: Sequence::default(),
             }),
@@ -1151,13 +1151,13 @@ mod tests {
 
     #[test]
     fn test_parse_receipts_fn() {
-        let path = "receipts/ports/defaultPort/channels/channel-0/sequences/0";
+        let path = "receipts/ports/transfer/channels/channel-0/sequences/0";
         let components: Vec<&str> = path.split('/').collect();
 
         assert_eq!(
             parse_receipts(&components),
             Some(Path::Receipt(ReceiptPath {
-                port_id: PortId::default(),
+                port_id: PortId::transfer(),
                 channel_id: ChannelId::default(),
                 sequence: Sequence::default(),
             })),
@@ -1166,14 +1166,14 @@ mod tests {
 
     #[test]
     fn receipts_path_parses() {
-        let path = "receipts/ports/defaultPort/channels/channel-0/sequences/0";
+        let path = "receipts/ports/transfer/channels/channel-0/sequences/0";
         let path = Path::from_str(path);
 
         assert!(path.is_ok());
         assert_eq!(
             path.unwrap(),
             Path::Receipt(ReceiptPath {
-                port_id: PortId::default(),
+                port_id: PortId::transfer(),
                 channel_id: ChannelId::default(),
                 sequence: Sequence::default(),
             }),

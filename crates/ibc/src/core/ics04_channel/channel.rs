@@ -338,7 +338,7 @@ pub(crate) fn verify_connection_hops_length(
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Counterparty {
     pub port_id: PortId,
     pub channel_id: Option<ChannelId>,
@@ -572,53 +572,19 @@ impl Display for State {
 }
 
 #[cfg(test)]
-pub mod test_util {
-    use ibc_proto::ibc::core::channel::v1::{
-        Channel as RawChannel, Counterparty as RawCounterparty,
-    };
-
-    use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-    use crate::prelude::*;
-
-    /// Returns a dummy `RawCounterparty`, for testing only!
-    /// Can be optionally parametrized with a specific channel identifier.
-    pub fn get_dummy_raw_counterparty(channel_id: String) -> RawCounterparty {
-        RawCounterparty {
-            port_id: PortId::default().to_string(),
-            channel_id,
-        }
-    }
-
-    /// Returns a dummy `RawChannel`, for testing only!
-    pub fn get_dummy_raw_channel_end(state: i32, channel_id: Option<u64>) -> RawChannel {
-        let channel_id = match channel_id {
-            Some(id) => ChannelId::new(id).to_string(),
-            None => "".to_string(),
-        };
-        RawChannel {
-            state,
-            ordering: 2,
-            counterparty: Some(get_dummy_raw_counterparty(channel_id)),
-            connection_hops: vec![ConnectionId::default().to_string()],
-            version: "".to_string(), // The version is not validated.
-        }
-    }
-}
-
-#[cfg(test)]
 mod tests {
     use core::str::FromStr;
 
     use ibc_proto::ibc::core::channel::v1::Channel as RawChannel;
+    use ibc_testkit::utils::core::channel::dummy_raw_channel_end;
     use test_log::test;
 
-    use crate::core::ics04_channel::channel::test_util::get_dummy_raw_channel_end;
     use crate::core::ics04_channel::channel::ChannelEnd;
     use crate::prelude::*;
 
     #[test]
     fn channel_end_try_from_raw() {
-        let raw_channel_end = get_dummy_raw_channel_end(2, Some(0));
+        let raw_channel_end = dummy_raw_channel_end(2, Some(0));
 
         let empty_raw_channel_end = RawChannel {
             counterparty: None,

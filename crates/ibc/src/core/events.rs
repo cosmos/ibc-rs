@@ -283,10 +283,11 @@ impl From<MessageEvent> for IbcEvent {
 pub mod tests {
     use alloc::vec;
 
+    use ibc_testkit::utils::core::channel::dummy_raw_packet;
+
     use super::*;
     use crate::core::ics04_channel::channel::Order;
     use crate::core::ics04_channel::events::SendPacket;
-    use crate::core::ics04_channel::packet::test_utils::get_dummy_raw_packet;
     use crate::core::ics04_channel::packet::Packet;
     use crate::core::ics24_host::identifier::ConnectionId;
 
@@ -294,7 +295,7 @@ pub mod tests {
     /// Ensures that we don't panic when packet data is not valid UTF-8.
     /// See issue [#199](https://github.com/cosmos/ibc-rs/issues/199)
     pub fn test_packet_data_non_utf8() {
-        let mut packet = Packet::try_from(get_dummy_raw_packet(1, 1)).unwrap();
+        let mut packet = Packet::try_from(dummy_raw_packet(1, 1)).unwrap();
         packet.data = vec![128];
 
         let ibc_event = IbcEvent::SendPacket(SendPacket::new(

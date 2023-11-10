@@ -161,8 +161,7 @@ impl ConsensusStateTrait for ConsensusState {
     }
 }
 
-#[cfg(test)]
-#[cfg(feature = "serde")]
+#[cfg(all(test, feature = "serde"))]
 mod tests {
     use tendermint_rpc::endpoint::abci_query::AbciQuery;
     use test_log::test;
@@ -171,15 +170,19 @@ mod tests {
 
     #[test]
     fn serialization_roundtrip_no_proof() {
-        let json_data =
-            include_str!("../../../tests/support/query/serialization/consensus_state.json");
+        let json_data = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../ibc-testkit/tests/data/json/consensus_state.json"
+        ));
         test_serialization_roundtrip::<AbciQuery>(json_data);
     }
 
     #[test]
     fn serialization_roundtrip_with_proof() {
-        let json_data =
-            include_str!("../../../tests/support/query/serialization/consensus_state_proof.json");
+        let json_data = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../ibc-testkit/tests/data/json/consensus_state_proof.json"
+        ));
         test_serialization_roundtrip::<AbciQuery>(json_data);
     }
 }

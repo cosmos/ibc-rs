@@ -67,38 +67,19 @@ impl From<MsgUpdateClient> for RawMsgUpdateClient {
 
 #[cfg(test)]
 mod tests {
-    use ibc_proto::google::protobuf::Any;
     use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;
+    use ibc_testkit::utils::core::client::dummy_raw_msg_update_client;
     use test_log::test;
 
     use super::*;
-    use crate::clients::ics07_tendermint::header::test_util::get_dummy_ics07_header;
     use crate::core::ics02_client::msgs::MsgUpdateClient;
-    use crate::core::ics24_host::identifier::ClientId;
-    use crate::signer::Signer;
-    use crate::test_utils::get_dummy_account_id;
-
-    impl MsgUpdateClient {
-        pub fn new(client_id: ClientId, client_message: Any, signer: Signer) -> Self {
-            MsgUpdateClient {
-                client_id,
-                client_message,
-                signer,
-            }
-        }
-    }
 
     #[test]
     fn msg_update_client_serialization() {
-        let client_id: ClientId = "tendermint".parse().unwrap();
-        let signer = get_dummy_account_id();
-
-        let header = get_dummy_ics07_header();
-
-        let msg = MsgUpdateClient::new(client_id, header.into(), signer);
-        let raw = RawMsgUpdateClient::from(msg.clone());
-        let msg_back = MsgUpdateClient::try_from(raw.clone()).unwrap();
-        let raw_back = RawMsgUpdateClient::from(msg_back.clone());
+        let raw = dummy_raw_msg_update_client();
+        let msg = MsgUpdateClient::try_from(raw.clone()).unwrap();
+        let raw_back = RawMsgUpdateClient::from(msg.clone());
+        let msg_back = MsgUpdateClient::try_from(raw_back.clone()).unwrap();
         assert_eq!(msg, msg_back);
         assert_eq!(raw, raw_back);
     }
