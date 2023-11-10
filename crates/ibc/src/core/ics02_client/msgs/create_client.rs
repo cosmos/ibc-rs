@@ -76,30 +76,17 @@ impl From<MsgCreateClient> for RawMsgCreateClient {
 mod tests {
 
     use ibc_proto::ibc::core::client::v1::MsgCreateClient as RawMsgCreateClient;
+    use ibc_testkit::utils::dummies::core::client::dummy_raw_msg_create_client;
     use test_log::test;
 
-    use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-    use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
-    use crate::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
     use crate::core::ics02_client::msgs::create_client::MsgCreateClient;
-    use crate::utils::dummy::get_dummy_account_id;
 
     #[test]
     fn msg_create_client_serialization() {
-        let signer = get_dummy_account_id();
-
-        let tm_header = get_dummy_tendermint_header();
-        let tm_client_state = TmClientState::new_dummy_from_header(tm_header.clone()).into();
-
-        let msg = MsgCreateClient::new(
-            tm_client_state,
-            TmConsensusState::try_from(tm_header).unwrap().into(),
-            signer,
-        );
-
-        let raw = RawMsgCreateClient::from(msg.clone());
-        let msg_back = MsgCreateClient::try_from(raw.clone()).unwrap();
-        let raw_back = RawMsgCreateClient::from(msg_back.clone());
+        let raw = dummy_raw_msg_create_client();
+        let msg = MsgCreateClient::try_from(raw.clone()).unwrap();
+        let raw_back = RawMsgCreateClient::from(msg.clone());
+        let msg_back = MsgCreateClient::try_from(raw_back.clone()).unwrap();
         assert_eq!(msg, msg_back);
         assert_eq!(raw, raw_back);
     }

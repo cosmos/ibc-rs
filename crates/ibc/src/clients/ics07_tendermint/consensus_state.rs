@@ -171,14 +171,15 @@ mod tests {
     #[test]
     fn serialization_roundtrip_no_proof() {
         let json_data =
-            include_str!("../../../tests/support/query/serialization/consensus_state.json");
+            include_str!("../../../../ibc-testkit/src/utils/dummies/json/consensus_state.json");
         test_serialization_roundtrip::<AbciQuery>(json_data);
     }
 
     #[test]
     fn serialization_roundtrip_with_proof() {
-        let json_data =
-            include_str!("../../../tests/support/query/serialization/consensus_state_proof.json");
+        let json_data = include_str!(
+            "../../../../ibc-testkit/src/utils/dummies/json/consensus_state_proof.json"
+        );
         test_serialization_roundtrip::<AbciQuery>(json_data);
     }
 }

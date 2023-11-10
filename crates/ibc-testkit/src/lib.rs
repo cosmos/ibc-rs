@@ -18,6 +18,3 @@ pub mod hosts;
 pub mod relayer;
 pub mod testapp;
 pub mod utils;
-
-// Re-export the `mock` types from `ibc` crate.
-pub use ibc::mock;

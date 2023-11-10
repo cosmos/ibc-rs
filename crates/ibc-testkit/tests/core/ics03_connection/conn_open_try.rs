@@ -8,6 +8,7 @@ use ibc::Height;
 use ibc_testkit::hosts::block::HostType;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::utils::dummies::core::connection::dummy_msg_conn_open_try;
 use ibc_testkit::utils::fixture::{Expect, Fixture};
 use test_log::test;
 
@@ -33,16 +34,16 @@ fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConne
         .revision_height();
 
     let msg = match msg_variant {
-        Msg::Default => MsgConnectionOpenTry::new_dummy(
+        Msg::Default => dummy_msg_conn_open_try(
             client_cons_state_height,
             host_chain_height.revision_height(),
         ),
-        Msg::HeightAdvanced => MsgConnectionOpenTry::new_dummy(
+        Msg::HeightAdvanced => dummy_msg_conn_open_try(
             client_cons_state_height,
             host_chain_height.increment().revision_height(),
         ),
-        Msg::HeightOld => MsgConnectionOpenTry::new_dummy(client_cons_state_height, pruned_height),
-        Msg::ProofHeightMissing => MsgConnectionOpenTry::new_dummy(
+        Msg::HeightOld => dummy_msg_conn_open_try(client_cons_state_height, pruned_height),
+        Msg::ProofHeightMissing => dummy_msg_conn_open_try(
             client_cons_state_height - 1,
             host_chain_height.revision_height(),
         ),

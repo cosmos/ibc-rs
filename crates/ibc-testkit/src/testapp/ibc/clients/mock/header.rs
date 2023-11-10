@@ -1,13 +1,11 @@
 use alloc::string::ToString;
 use core::fmt::{Display, Error as FmtError, Formatter};
 
-use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::mock::Header as RawMockHeader;
-use ibc_proto::Protobuf;
-
-use crate::core::ics02_client::error::ClientError;
-use crate::core::timestamp::Timestamp;
-use crate::Height;
+use ibc::core::ics02_client::error::ClientError;
+use ibc::core::timestamp::Timestamp;
+use ibc::proto::mock::Header as RawMockHeader;
+use ibc::proto::{Any, Protobuf};
+use ibc::Height;
 
 pub const MOCK_HEADER_TYPE_URL: &str = "/ibc.mock.Header";
 
@@ -76,7 +74,6 @@ impl MockHeader {
         }
     }
 
-    #[cfg(any(test, feature = "std"))]
     pub fn with_current_timestamp(self) -> Self {
         Self {
             timestamp: Timestamp::now(),

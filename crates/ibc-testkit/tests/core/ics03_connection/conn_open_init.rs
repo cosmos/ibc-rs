@@ -8,6 +8,10 @@ use ibc::prelude::*;
 use ibc::Height;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::utils::dummies::core::connection::{
+    dummy_msg_conn_open_init, msg_conn_open_init_with_counterparty_conn_id,
+    msg_conn_open_with_version,
+};
 use ibc_testkit::utils::fixture::{Expect, Fixture};
 use test_log::test;
 
@@ -24,12 +28,14 @@ enum Msg {
 }
 
 fn conn_open_init_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConnectionOpenInit> {
-    let msg_default = MsgConnectionOpenInit::new_dummy();
+    let msg_default = dummy_msg_conn_open_init();
     let msg = match msg_variant {
-        Msg::Default => msg_default,
-        Msg::NoVersion => msg_default.with_version(None),
-        Msg::BadVersion => msg_default.with_version(Some("random identifier 424242")),
-        Msg::WithCounterpartyConnId => msg_default.with_counterparty_conn_id(2),
+        Msg::Default => msg_default.clone(),
+        Msg::NoVersion => msg_conn_open_with_version(msg_default, None),
+        Msg::BadVersion => {
+            msg_conn_open_with_version(msg_default, Some("random identifier 424242"))
+        }
+        Msg::WithCounterpartyConnId => msg_conn_open_init_with_counterparty_conn_id(msg_default, 2),
     };
 
     let ctx_default = MockContext::default();

@@ -76,49 +76,16 @@ impl From<MsgAcknowledgement> for RawMsgAcknowledgement {
     }
 }
 
-#[cfg(any(test, feature = "test-utils"))]
-pub mod test_util {
-    use ibc_proto::ibc::core::channel::v1::{
-        MsgAcknowledgement as RawMsgAcknowledgement, Packet as RawPacket,
-    };
-    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-
-    use crate::core::ics04_channel::packet::test_util::get_dummy_raw_packet;
-    use crate::utils::dummy::{get_dummy_bech32_account, get_dummy_proof};
-
-    /// Returns a dummy `RawMsgAcknowledgement`, for testing only!
-    /// The `height` parametrizes both the proof height as well as the timeout height.
-    pub fn get_dummy_raw_msg_acknowledgement(height: u64) -> RawMsgAcknowledgement {
-        get_dummy_raw_msg_ack_with_packet(get_dummy_raw_packet(height, 1), height)
-    }
-
-    pub fn get_dummy_raw_msg_ack_with_packet(
-        packet: RawPacket,
-        height: u64,
-    ) -> RawMsgAcknowledgement {
-        RawMsgAcknowledgement {
-            packet: Some(packet),
-            acknowledgement: get_dummy_proof(),
-            proof_acked: get_dummy_proof(),
-            proof_height: Some(RawHeight {
-                revision_number: 0,
-                revision_height: height,
-            }),
-            signer: get_dummy_bech32_account(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
     use ibc_proto::ibc::core::channel::v1::MsgAcknowledgement as RawMsgAcknowledgement;
+    use ibc_testkit::utils::dummies::core::channel::dummy_raw_msg_acknowledgement;
+    use ibc_testkit::utils::dummies::core::signer::dummy_bech32_account;
     use test_log::test;
 
     use crate::core::ics04_channel::error::PacketError;
-    use crate::core::ics04_channel::msgs::acknowledgement::test_util::get_dummy_raw_msg_acknowledgement;
     use crate::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
     use crate::prelude::*;
-    use crate::utils::dummy::get_dummy_bech32_account;
 
     #[test]
     fn msg_acknowledgment_try_from_raw() {
@@ -129,7 +96,7 @@ mod test {
         }
 
         let height = 50;
-        let default_raw_msg = get_dummy_raw_msg_acknowledgement(height);
+        let default_raw_msg = dummy_raw_msg_acknowledgement(height);
 
         let tests: Vec<Test> = vec![
             Test {
@@ -156,7 +123,7 @@ mod test {
             Test {
                 name: "Empty signer".to_string(),
                 raw: RawMsgAcknowledgement {
-                    signer: get_dummy_bech32_account(),
+                    signer: dummy_bech32_account(),
                     ..default_raw_msg.clone()
                 },
                 want_pass: true,

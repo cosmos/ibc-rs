@@ -1,26 +1,29 @@
-use ibc::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::ics07_tendermint::client_type as tm_client_type;
 use ibc::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
-use ibc::clients::ics07_tendermint::header::test_util::get_dummy_tendermint_header;
 use ibc::core::ics02_client::client_state::ClientStateCommon;
 use ibc::core::ics02_client::msgs::create_client::MsgCreateClient;
 use ibc::core::ics02_client::msgs::ClientMsg;
 use ibc::core::ics24_host::identifier::ClientId;
 use ibc::core::{execute, validate, MsgEnvelope, ValidationContext};
-use ibc::mock::client_state::{client_type as mock_client_type, MockClientState};
-use ibc::mock::consensus_state::MockConsensusState;
-use ibc::mock::header::MockHeader;
-use ibc::utils::dummy::get_dummy_account_id;
 use ibc::Height;
+use ibc_testkit::testapp::ibc::clients::mock::client_state::{
+    client_type as mock_client_type, MockClientState,
+};
+use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
+use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::utils::dummies::clients::tendermint::{
+    dummy_tendermint_header, dummy_tm_client_state_from_header,
+};
+use ibc_testkit::utils::dummies::core::signer::dummy_account_id;
 use test_log::test;
 
 #[test]
 fn test_create_client_ok() {
     let mut ctx = MockContext::default();
     let mut router = MockRouter::new_with_transfer();
-    let signer = get_dummy_account_id();
+    let signer = dummy_account_id();
     let height = Height::new(0, 42).unwrap();
 
     let msg = MsgCreateClient::new(
@@ -53,15 +56,15 @@ fn test_create_client_ok() {
 
 #[test]
 fn test_tm_create_client_ok() {
-    let signer = get_dummy_account_id();
+    let signer = dummy_account_id();
 
     let mut ctx = MockContext::default();
 
     let mut router = MockRouter::new_with_transfer();
 
-    let tm_header = get_dummy_tendermint_header();
+    let tm_header = dummy_tendermint_header();
 
-    let tm_client_state = TmClientState::new_dummy_from_header(tm_header.clone()).into();
+    let tm_client_state = dummy_tm_client_state_from_header(tm_header.clone()).into();
 
     let client_type = tm_client_type();
 

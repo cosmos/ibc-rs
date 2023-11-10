@@ -5,7 +5,6 @@ use ibc::core::ics03_connection::connection::{
 };
 use ibc::core::ics03_connection::version::get_compatible_versions;
 use ibc::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
-use ibc::core::ics04_channel::msgs::recv_packet::test_util::get_dummy_raw_msg_recv_packet;
 use ibc::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
 use ibc::core::ics04_channel::msgs::PacketMsg;
 use ibc::core::ics04_channel::packet::Packet;
@@ -14,11 +13,14 @@ use ibc::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortI
 use ibc::core::timestamp::{Timestamp, ZERO_DURATION};
 use ibc::core::{execute, validate, ExecutionContext, MsgEnvelope};
 use ibc::prelude::*;
-use ibc::utils::dummy::get_dummy_account_id;
 use ibc::Height;
 use ibc_testkit::relayer::context::RelayerContext;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::utils::dummies::core::channel::{
+    dummy_msg_recv_packet, dummy_raw_msg_recv_packet,
+};
+use ibc_testkit::utils::dummies::core::signer::dummy_account_id;
 use rstest::*;
 use test_log::test;
 
@@ -42,10 +44,8 @@ fn fixture() -> Fixture {
 
     let client_height = host_height.increment();
 
-    let msg = MsgRecvPacket::try_from(get_dummy_raw_msg_recv_packet(
-        client_height.revision_height(),
-    ))
-    .unwrap();
+    let msg = MsgRecvPacket::try_from(dummy_raw_msg_recv_packet(client_height.revision_height()))
+        .unwrap();
 
     let packet = msg.packet.clone();
 
@@ -187,11 +187,11 @@ fn recv_packet_timeout_expired(fixture: Fixture) {
         timeout_timestamp_on_b: Timestamp::from_nanoseconds(1).unwrap(),
     };
 
-    let msg_packet_old = MsgRecvPacket::new(
+    let msg_packet_old = dummy_msg_recv_packet(
         packet_old,
         msg.proof_commitment_on_a.clone(),
         msg.proof_height_on_a,
-        get_dummy_account_id(),
+        dummy_account_id(),
     );
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg_packet_old));

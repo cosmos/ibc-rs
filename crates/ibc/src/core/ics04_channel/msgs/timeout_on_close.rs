@@ -86,9 +86,9 @@ impl From<MsgTimeoutOnClose> for RawMsgTimeoutOnClose {
 #[cfg(test)]
 mod tests {
     use ibc_proto::ibc::core::channel::v1::MsgTimeoutOnClose as RawMsgTimeoutOnClose;
+    use ibc_testkit::utils::dummies::core::channel::dummy_raw_msg_timeout_on_close;
     use test_log::test;
 
-    use crate::core::ics04_channel::msgs::timeout_on_close::test_util::get_dummy_raw_msg_timeout_on_close;
     use crate::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
     use crate::prelude::*;
 
@@ -96,7 +96,7 @@ mod tests {
     fn msg_timeout_on_close_try_from_raw() {
         let height = 50;
         let timeout_timestamp = 5;
-        let raw = get_dummy_raw_msg_timeout_on_close(height, timeout_timestamp);
+        let raw = dummy_raw_msg_timeout_on_close(height, timeout_timestamp);
 
         let msg = MsgTimeoutOnClose::try_from(raw.clone()).unwrap();
         let raw_back = RawMsgTimeoutOnClose::from(msg);
@@ -113,7 +113,7 @@ mod tests {
 
         let height = 50;
         let timeout_timestamp = 5;
-        let default_raw_msg = get_dummy_raw_msg_timeout_on_close(height, timeout_timestamp);
+        let default_raw_msg = dummy_raw_msg_timeout_on_close(height, timeout_timestamp);
 
         let tests: Vec<Test> = vec![
             Test {
@@ -166,34 +166,6 @@ mod tests {
                 test.raw,
                 res_msg.err(),
             );
-        }
-    }
-}
-
-#[cfg(any(test, feature = "test-utils"))]
-pub mod test_util {
-    use ibc_proto::ibc::core::channel::v1::MsgTimeoutOnClose as RawMsgTimeoutOnClose;
-    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-
-    use crate::core::ics04_channel::packet::test_util::get_dummy_raw_packet;
-    use crate::utils::dummy::{get_dummy_bech32_account, get_dummy_proof};
-
-    /// Returns a dummy `RawMsgTimeoutOnClose`, for testing only!
-    /// The `height` parametrizes both the proof height as well as the timeout height.
-    pub fn get_dummy_raw_msg_timeout_on_close(
-        height: u64,
-        timeout_timestamp: u64,
-    ) -> RawMsgTimeoutOnClose {
-        RawMsgTimeoutOnClose {
-            packet: Some(get_dummy_raw_packet(height, timeout_timestamp)),
-            proof_unreceived: get_dummy_proof(),
-            proof_close: get_dummy_proof(),
-            proof_height: Some(RawHeight {
-                revision_number: 0,
-                revision_height: height,
-            }),
-            next_sequence_recv: 1,
-            signer: get_dummy_bech32_account(),
         }
     }
 }

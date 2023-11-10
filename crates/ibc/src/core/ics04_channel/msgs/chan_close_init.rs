@@ -57,30 +57,12 @@ impl From<MsgChannelCloseInit> for RawMsgChannelCloseInit {
     }
 }
 
-#[cfg(any(test, feature = "test-utils"))]
-pub mod test_util {
-    use ibc_proto::ibc::core::channel::v1::MsgChannelCloseInit as RawMsgChannelCloseInit;
-
-    use crate::core::ics24_host::identifier::{ChannelId, PortId};
-    use crate::prelude::*;
-    use crate::utils::dummy::get_dummy_bech32_account;
-
-    /// Returns a dummy `RawMsgChannelCloseInit`, for testing only!
-    pub fn get_dummy_raw_msg_chan_close_init() -> RawMsgChannelCloseInit {
-        RawMsgChannelCloseInit {
-            port_id: PortId::transfer().to_string(),
-            channel_id: ChannelId::default().to_string(),
-            signer: get_dummy_bech32_account(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use ibc_proto::ibc::core::channel::v1::MsgChannelCloseInit as RawMsgChannelCloseInit;
+    use ibc_testkit::utils::dummies::core::channel::dummy_raw_msg_chan_close_init;
     use test_log::test;
 
-    use crate::core::ics04_channel::msgs::chan_close_init::test_util::get_dummy_raw_msg_chan_close_init;
     use crate::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
     use crate::prelude::*;
 
@@ -92,7 +74,7 @@ mod tests {
             want_pass: bool,
         }
 
-        let default_raw_msg = get_dummy_raw_msg_chan_close_init();
+        let default_raw_msg = dummy_raw_msg_chan_close_init();
 
         let tests: Vec<Test> = vec![
             Test {
@@ -168,7 +150,7 @@ mod tests {
 
     #[test]
     fn to_and_from() {
-        let raw = get_dummy_raw_msg_chan_close_init();
+        let raw = dummy_raw_msg_chan_close_init();
         let msg = MsgChannelCloseInit::try_from(raw.clone()).unwrap();
         let raw_back = RawMsgChannelCloseInit::from(msg.clone());
         let msg_back = MsgChannelCloseInit::try_from(raw_back.clone()).unwrap();

@@ -36,27 +36,3 @@ pub enum ConnectionMsg {
     OpenAck(MsgConnectionOpenAck),
     OpenConfirm(MsgConnectionOpenConfirm),
 }
-
-#[cfg(any(test, feature = "test-utils"))]
-pub mod test_util {
-
-    use ibc_proto::ibc::core::commitment::v1::MerklePrefix;
-    use ibc_proto::ibc::core::connection::v1::Counterparty as RawCounterparty;
-
-    use crate::core::ics24_host::identifier::{ClientId, ConnectionId};
-    use crate::prelude::*;
-
-    pub fn get_dummy_raw_counterparty(conn_id: Option<u64>) -> RawCounterparty {
-        let connection_id = match conn_id {
-            Some(id) => ConnectionId::new(id).to_string(),
-            None => "".to_string(),
-        };
-        RawCounterparty {
-            client_id: ClientId::default().to_string(),
-            connection_id,
-            prefix: Some(MerklePrefix {
-                key_prefix: b"ibc".to_vec(),
-            }),
-        }
-    }
-}

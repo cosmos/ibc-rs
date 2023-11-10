@@ -423,12 +423,11 @@ mod tests {
     use std::str::FromStr;
 
     use ibc_proto::google::protobuf::Any;
+    use ibc_testkit::utils::dummies::clients::mock::dummy_new_mock_header;
     use prost::Message;
     use tendermint::abci::Event as AbciEvent;
 
     use super::*;
-    use crate::core::timestamp::Timestamp;
-    use crate::mock::header::MockHeader;
 
     #[test]
     fn ibc_to_abci_client_events() {
@@ -444,9 +443,7 @@ mod tests {
         let client_id = ClientId::new(client_type.clone(), 0).unwrap();
         let consensus_height = Height::new(0, 5).unwrap();
         let consensus_heights = vec![Height::new(0, 5).unwrap(), Height::new(0, 7).unwrap()];
-        let header: Any = MockHeader::new(consensus_height)
-            .with_timestamp(Timestamp::none())
-            .into();
+        let header: Any = dummy_new_mock_header(5).into();
         let expected_keys = vec![
             "client_id",
             "client_type",

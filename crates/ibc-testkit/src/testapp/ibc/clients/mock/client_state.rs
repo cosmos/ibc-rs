@@ -1,29 +1,28 @@
 use core::str::FromStr;
 use core::time::Duration;
 
-use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::mock::ClientState as RawMockClientState;
-use ibc_proto::Protobuf;
-
-use crate::core::ics02_client::client_state::{
+use ibc::core::ics02_client::client_state::{
     ClientStateCommon, ClientStateExecution, ClientStateValidation, Status, UpdateKind,
 };
-use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
-use crate::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
-use crate::core::ics23_commitment::commitment::{
+use ibc::core::ics02_client::client_type::ClientType;
+use ibc::core::ics02_client::error::{ClientError, UpgradeClientError};
+use ibc::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
+use ibc::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
-use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, Path};
-use crate::core::timestamp::Timestamp;
-use crate::core::ContextError;
-use crate::mock::client_state::client_type as mock_client_type;
-use crate::mock::consensus_state::MockConsensusState;
-use crate::mock::header::MockHeader;
-use crate::mock::misbehaviour::Misbehaviour;
-use crate::prelude::*;
-use crate::Height;
+use ibc::core::ics24_host::identifier::ClientId;
+use ibc::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, Path};
+use ibc::core::timestamp::Timestamp;
+use ibc::core::ContextError;
+use ibc::prelude::*;
+use ibc::proto::mock::ClientState as RawMockClientState;
+use ibc::proto::{Any, Protobuf};
+use ibc::Height;
+
+use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
+use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
+use crate::testapp::ibc::clients::mock::header::MockHeader;
+use crate::testapp::ibc::clients::mock::misbehaviour::Misbehaviour;
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
 pub const MOCK_CLIENT_TYPE: &str = "9999-mock";
@@ -87,7 +86,7 @@ impl TryFrom<RawMockClientState> for MockClientState {
 impl From<MockClientState> for RawMockClientState {
     fn from(value: MockClientState) -> Self {
         RawMockClientState {
-            header: Some(ibc_proto::ibc::mock::Header {
+            header: Some(ibc::proto::mock::Header {
                 height: Some(value.header.height().into()),
                 timestamp: value.header.timestamp.nanoseconds(),
             }),

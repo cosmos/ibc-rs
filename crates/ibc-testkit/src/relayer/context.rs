@@ -3,7 +3,7 @@ use ibc::core::{ContextError, ValidationContext};
 use ibc::prelude::*;
 use ibc::{Height, Signer};
 
-use crate::testapp::ibc::clients::types::AnyClientState;
+use crate::testapp::ibc::clients::AnyClientState;
 use crate::testapp::ibc::core::types::MockContext;
 
 /// Trait capturing all dependencies (i.e., the context) which algorithms in ICS18 require to
@@ -48,7 +48,6 @@ mod tests {
     use ibc::core::ics02_client::msgs::ClientMsg;
     use ibc::core::ics24_host::identifier::{ChainId, ClientId};
     use ibc::core::MsgEnvelope;
-    use ibc::mock::client_state::client_type as mock_client_type;
     use ibc::prelude::*;
     use ibc::Height;
     use test_log::test;
@@ -57,6 +56,7 @@ mod tests {
     use super::RelayerContext;
     use crate::hosts::block::{HostBlock, HostType};
     use crate::relayer::error::RelayerError;
+    use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
     use crate::testapp::ibc::core::router::MockRouter;
     use crate::testapp::ibc::core::types::MockContext;
 

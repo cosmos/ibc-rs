@@ -20,13 +20,13 @@ use ibc::core::ics24_host::path::{
 };
 use ibc::core::timestamp::Timestamp;
 use ibc::core::{ContextError, ExecutionContext, ValidationContext};
-use ibc::mock::client_state::MockClientState;
 use ibc::prelude::*;
 use ibc::proto::Any;
 use ibc::{Height, Signer};
 
 use super::types::MockContext;
-use crate::testapp::ibc::clients::types::{AnyClientState, AnyConsensusState};
+use crate::testapp::ibc::clients::mock::client_state::MockClientState;
+use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 
 impl ValidationContext for MockContext {
     type V = Self;

@@ -42,10 +42,6 @@ serde = ["dep:serde", "dep:serde_derive", "serde_json", "ibc-proto/serde", "ics2
 # CosmWasm message API generator compatible, should not be inside on chain code
 schema = ["dep:schemars", "ibc-proto/json-schema", "serde", "std"]
 
-# This feature provides access to utility implementations for IBC types,
-# specifically designed for testing purposes.
-test-utils = ["typed-builder", "std"]
-
 [dependencies]
 # Proto definitions for all IBC-related interfaces, e.g., connections or channels.
 ibc-proto = { version = "0.38.0", default-features = false }
@@ -88,6 +84,7 @@ default-features = false
 features = ["rust-crypto"]
 
 [dev-dependencies]
+ibc-testkit = { version = "0.47.0", path = "../ibc-testkit", default-features = false, features = ["serde"] }
 env_logger = "0.10.0"
 rstest = "0.18.2"
 tracing-subscriber = { version = "0.3.17", features = ["fmt", "env-filter", "json"]}

@@ -3,14 +3,14 @@ use alloc::string::ToString;
 use ibc::applications::transfer::msgs::transfer::MsgTransfer;
 use ibc::applications::transfer::packet::PacketData;
 use ibc::applications::transfer::{Memo, PrefixedCoin};
-#[cfg(feature = "serde")]
 use ibc::core::ics04_channel::packet::{Packet, Sequence};
 use ibc::core::ics04_channel::timeout::TimeoutHeight;
 use ibc::core::ics24_host::identifier::{ChannelId, PortId};
 use ibc::core::timestamp::Timestamp;
-use ibc::utils::dummy::get_dummy_account_id;
 use ibc::Signer;
 use typed_builder::TypedBuilder;
+
+use crate::utils::dummies::core::signer::dummy_account_id;
 
 /// Configuration for a `MsgTransfer` message.
 #[derive(TypedBuilder, Debug)]
@@ -39,7 +39,6 @@ impl From<MsgTransferConfig> for MsgTransfer {
     }
 }
 
-#[cfg(feature = "serde")]
 pub fn extract_transfer_packet(msg: &MsgTransfer, sequence: Sequence) -> Packet {
     let data = serde_json::to_vec(&msg.packet_data)
         .expect("PacketData's infallible Serialize impl failed");
@@ -61,9 +60,9 @@ pub fn extract_transfer_packet(msg: &MsgTransfer, sequence: Sequence) -> Packet 
 #[builder(build_method(into = PacketData))]
 pub struct PacketDataConfig {
     pub token: PrefixedCoin,
-    #[builder(default = get_dummy_account_id())]
+    #[builder(default = dummy_account_id())]
     pub sender: Signer,
-    #[builder(default = get_dummy_account_id())]
+    #[builder(default = dummy_account_id())]
     pub receiver: Signer,
     #[builder(default = Memo::from("".to_string()))]
     pub memo: Memo,

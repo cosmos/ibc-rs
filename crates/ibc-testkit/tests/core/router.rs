@@ -4,28 +4,16 @@ use ibc::applications::transfer::{send_transfer, BaseCoin};
 use ibc::core::events::{IbcEvent, MessageEvent};
 use ibc::core::ics02_client::msgs::create_client::MsgCreateClient;
 use ibc::core::ics02_client::msgs::update_client::MsgUpdateClient;
-use ibc::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
 use ibc::core::ics02_client::msgs::ClientMsg;
-use ibc::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
-use ibc::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
-use ibc::core::ics03_connection::msgs::conn_open_try::MsgConnectionOpenTry;
 use ibc::core::ics03_connection::msgs::ConnectionMsg;
 use ibc::core::ics04_channel::error::ChannelError;
-use ibc::core::ics04_channel::msgs::acknowledgement::test_util::get_dummy_raw_msg_ack_with_packet;
 use ibc::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
-use ibc::core::ics04_channel::msgs::chan_close_confirm::test_util::get_dummy_raw_msg_chan_close_confirm;
 use ibc::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
-use ibc::core::ics04_channel::msgs::chan_close_init::test_util::get_dummy_raw_msg_chan_close_init;
 use ibc::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
-use ibc::core::ics04_channel::msgs::chan_open_ack::test_util::get_dummy_raw_msg_chan_open_ack;
 use ibc::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
-use ibc::core::ics04_channel::msgs::chan_open_init::test_util::get_dummy_raw_msg_chan_open_init;
 use ibc::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
-use ibc::core::ics04_channel::msgs::chan_open_try::test_util::get_dummy_raw_msg_chan_open_try;
 use ibc::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
-use ibc::core::ics04_channel::msgs::recv_packet::test_util::get_dummy_raw_msg_recv_packet;
 use ibc::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
-use ibc::core::ics04_channel::msgs::timeout_on_close::test_util::get_dummy_raw_msg_timeout_on_close;
 use ibc::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
 use ibc::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
 use ibc::core::ics04_channel::timeout::TimeoutHeight;
@@ -33,18 +21,28 @@ use ibc::core::ics24_host::identifier::ConnectionId;
 use ibc::core::ics24_host::path::CommitmentPath;
 use ibc::core::timestamp::Timestamp;
 use ibc::core::{dispatch, MsgEnvelope, RouterError, ValidationContext};
-use ibc::mock::client_state::MockClientState;
-use ibc::mock::consensus_state::MockConsensusState;
-use ibc::mock::header::MockHeader;
 use ibc::prelude::*;
-use ibc::utils::dummy::get_dummy_account_id;
 use ibc::Height;
-use ibc_testkit::testapp::ibc::applications::transfer::configs::{
-    extract_transfer_packet, MsgTransferConfig, PacketDataConfig,
-};
 use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
+use ibc_testkit::testapp::ibc::clients::mock::client_state::MockClientState;
+use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
+use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::utils::dummies::applications::transfer::{
+    extract_transfer_packet, MsgTransferConfig, PacketDataConfig,
+};
+use ibc_testkit::utils::dummies::core::channel::{
+    dummy_raw_msg_ack_with_packet, dummy_raw_msg_chan_close_confirm, dummy_raw_msg_chan_close_init,
+    dummy_raw_msg_chan_open_ack, dummy_raw_msg_chan_open_init, dummy_raw_msg_chan_open_try,
+    dummy_raw_msg_recv_packet, dummy_raw_msg_timeout_on_close,
+};
+use ibc_testkit::utils::dummies::core::client::dummy_msg_upgrade_client;
+use ibc_testkit::utils::dummies::core::connection::{
+    dummy_msg_conn_open_ack, dummy_msg_conn_open_init, dummy_msg_conn_open_init_with_client_id,
+    dummy_msg_conn_open_try, msg_conn_open_try_with_client_id,
+};
+use ibc_testkit::utils::dummies::core::signer::dummy_account_id;
 use primitive_types::U256;
 use test_log::test;
 
@@ -80,7 +78,7 @@ fn routing_module_and_keepers() {
         want_pass: bool,
         state_check: Option<Box<StateCheckFn>>,
     }
-    let default_signer = get_dummy_account_id();
+    let default_signer = dummy_account_id();
     let client_height = 5;
     let start_client_height = Height::new(0, client_height).unwrap();
     let update_client_height = Height::new(0, 34).unwrap();
@@ -107,38 +105,35 @@ fn routing_module_and_keepers() {
     //
     // Connection handshake messages.
     //
-    let msg_conn_init = MsgConnectionOpenInit::new_dummy();
+    let msg_conn_init = dummy_msg_conn_open_init();
 
-    let correct_msg_conn_try = MsgConnectionOpenTry::new_dummy(client_height, client_height);
+    let correct_msg_conn_try = dummy_msg_conn_open_try(client_height, client_height);
 
     // The handler will fail to process this msg because the client height is too advanced.
-    let incorrect_msg_conn_try =
-        MsgConnectionOpenTry::new_dummy(client_height + 1, client_height + 1);
+    let incorrect_msg_conn_try = dummy_msg_conn_open_try(client_height + 1, client_height + 1);
 
-    let msg_conn_ack = MsgConnectionOpenAck::new_dummy(client_height, client_height);
+    let msg_conn_ack = dummy_msg_conn_open_ack(client_height, client_height);
 
     //
     // Channel handshake messages.
     //
-    let msg_chan_init =
-        MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
+    let msg_chan_init = MsgChannelOpenInit::try_from(dummy_raw_msg_chan_open_init(None)).unwrap();
 
     // The handler will fail to process this b/c the associated connection does not exist
     let mut incorrect_msg_chan_init = msg_chan_init.clone();
     incorrect_msg_chan_init.connection_hops_on_a = vec![ConnectionId::new(590)];
 
     let msg_chan_try =
-        MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(client_height)).unwrap();
+        MsgChannelOpenTry::try_from(dummy_raw_msg_chan_open_try(client_height)).unwrap();
 
     let msg_chan_ack =
-        MsgChannelOpenAck::try_from(get_dummy_raw_msg_chan_open_ack(client_height)).unwrap();
+        MsgChannelOpenAck::try_from(dummy_raw_msg_chan_open_ack(client_height)).unwrap();
 
     let msg_chan_close_init =
-        MsgChannelCloseInit::try_from(get_dummy_raw_msg_chan_close_init()).unwrap();
+        MsgChannelCloseInit::try_from(dummy_raw_msg_chan_close_init()).unwrap();
 
     let msg_chan_close_confirm =
-        MsgChannelCloseConfirm::try_from(get_dummy_raw_msg_chan_close_confirm(client_height))
-            .unwrap();
+        MsgChannelCloseConfirm::try_from(dummy_raw_msg_chan_close_confirm(client_height)).unwrap();
 
     let packet_data = PacketDataConfig::builder()
         .token(
@@ -170,7 +165,7 @@ fn routing_module_and_keepers() {
         .build();
 
     let mut msg_to_on_close =
-        MsgTimeoutOnClose::try_from(get_dummy_raw_msg_timeout_on_close(36, 5)).unwrap();
+        MsgTimeoutOnClose::try_from(dummy_raw_msg_timeout_on_close(36, 5)).unwrap();
     msg_to_on_close.packet.seq_on_a = 2.into();
     msg_to_on_close.packet.timeout_height_on_b = msg_transfer_two.timeout_height_on_b;
     msg_to_on_close.packet.timeout_timestamp_on_b = msg_transfer_two.timeout_timestamp_on_b;
@@ -180,8 +175,8 @@ fn routing_module_and_keepers() {
 
     msg_to_on_close.packet.data = packet_data;
 
-    let msg_recv_packet = MsgRecvPacket::try_from(get_dummy_raw_msg_recv_packet(35)).unwrap();
-    let msg_ack_packet = MsgAcknowledgement::try_from(get_dummy_raw_msg_ack_with_packet(
+    let msg_recv_packet = MsgRecvPacket::try_from(dummy_raw_msg_recv_packet(35)).unwrap();
+    let msg_ack_packet = MsgAcknowledgement::try_from(dummy_raw_msg_ack_with_packet(
         extract_transfer_packet(&msg_transfer, 1u64.into()).into(),
         35,
     ))
@@ -243,7 +238,7 @@ fn routing_module_and_keepers() {
         Test {
             name: "Connection open init succeeds".to_string(),
             msg: MsgEnvelope::Connection(ConnectionMsg::OpenInit(
-                msg_conn_init.with_client_id(client_id.clone()),
+                dummy_msg_conn_open_init_with_client_id(msg_conn_init, client_id.clone()),
             ))
             .into(),
             want_pass: true,
@@ -257,9 +252,10 @@ fn routing_module_and_keepers() {
         },
         Test {
             name: "Connection open try succeeds".to_string(),
-            msg: MsgEnvelope::Connection(ConnectionMsg::OpenTry(
-                correct_msg_conn_try.with_client_id(client_id.clone()),
-            ))
+            msg: MsgEnvelope::Connection(ConnectionMsg::OpenTry(msg_conn_open_try_with_client_id(
+                correct_msg_conn_try,
+                client_id.clone(),
+            )))
             .into(),
             want_pass: true,
             state_check: None,
@@ -396,19 +392,20 @@ fn routing_module_and_keepers() {
         },
         Test {
             name: "Client upgrade successful".to_string(),
-            msg: MsgEnvelope::Client(ClientMsg::UpgradeClient(
-                MsgUpgradeClient::new_dummy(upgrade_client_height)
-                    .with_client_id(client_id.clone()),
-            ))
+            msg: MsgEnvelope::Client(ClientMsg::UpgradeClient(dummy_msg_upgrade_client(
+                client_id.clone(),
+                upgrade_client_height,
+            )))
             .into(),
             want_pass: true,
             state_check: None,
         },
         Test {
             name: "Client upgrade un-successful".to_string(),
-            msg: MsgEnvelope::Client(ClientMsg::UpgradeClient(
-                MsgUpgradeClient::new_dummy(upgrade_client_height_second).with_client_id(client_id),
-            ))
+            msg: MsgEnvelope::Client(ClientMsg::UpgradeClient(dummy_msg_upgrade_client(
+                client_id,
+                upgrade_client_height_second,
+            )))
             .into(),
             want_pass: false,
             state_check: None,

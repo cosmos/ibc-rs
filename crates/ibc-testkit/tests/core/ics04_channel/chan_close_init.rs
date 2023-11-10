@@ -2,19 +2,19 @@ use ibc::core::events::{IbcEvent, MessageEvent};
 use ibc::core::ics03_connection::connection::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
-use ibc::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
 use ibc::core::ics03_connection::version::get_compatible_versions;
 use ibc::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State as ChannelState};
-use ibc::core::ics04_channel::msgs::chan_close_init::test_util::get_dummy_raw_msg_chan_close_init;
 use ibc::core::ics04_channel::msgs::{ChannelMsg, MsgChannelCloseInit};
 use ibc::core::ics04_channel::Version;
 use ibc::core::ics24_host::identifier::{ClientId, ConnectionId};
 use ibc::core::timestamp::ZERO_DURATION;
 use ibc::core::{execute, validate, MsgEnvelope, ValidationContext};
-use ibc::mock::client_state::client_type as mock_client_type;
 use ibc::prelude::*;
+use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::utils::dummies::core::channel::dummy_raw_msg_chan_close_init;
+use ibc_testkit::utils::dummies::core::connection::dummy_raw_counterparty;
 
 #[test]
 fn test_chan_close_init_validate() {
@@ -24,14 +24,14 @@ fn test_chan_close_init_validate() {
     let conn_end = ConnectionEnd::new(
         ConnectionState::Open,
         client_id.clone(),
-        ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
+        ConnectionCounterparty::try_from(dummy_raw_counterparty(Some(0))).unwrap(),
         get_compatible_versions(),
         ZERO_DURATION,
     )
     .unwrap();
 
     let msg_chan_close_init =
-        MsgChannelCloseInit::try_from(get_dummy_raw_msg_chan_close_init()).unwrap();
+        MsgChannelCloseInit::try_from(dummy_raw_msg_chan_close_init()).unwrap();
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg_chan_close_init.clone()));
 
@@ -79,14 +79,14 @@ fn test_chan_close_init_execute() {
     let conn_end = ConnectionEnd::new(
         ConnectionState::Open,
         client_id.clone(),
-        ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
+        ConnectionCounterparty::try_from(dummy_raw_counterparty(Some(0))).unwrap(),
         get_compatible_versions(),
         ZERO_DURATION,
     )
     .unwrap();
 
     let msg_chan_close_init =
-        MsgChannelCloseInit::try_from(get_dummy_raw_msg_chan_close_init()).unwrap();
+        MsgChannelCloseInit::try_from(dummy_raw_msg_chan_close_init()).unwrap();
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg_chan_close_init.clone()));
 

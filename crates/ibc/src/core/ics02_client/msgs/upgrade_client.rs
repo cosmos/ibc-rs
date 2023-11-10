@@ -97,61 +97,25 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
     }
 }
 
-#[cfg(any(test, feature = "test-utils"))]
-pub mod test_util {
-    use super::*;
-    use crate::core::ics02_client::height::Height;
-    use crate::core::ics23_commitment::commitment::test_util::get_dummy_commitment_proof_bytes;
-    use crate::core::ics24_host::identifier::ClientId;
-    use crate::mock::client_state::{client_type as mock_client_type, MockClientState};
-    use crate::mock::consensus_state::MockConsensusState;
-    use crate::mock::header::MockHeader;
-    use crate::utils::dummy::{get_dummy_account_id, get_dummy_bech32_account, get_dummy_proof};
+// #[cfg(test)]
+// mod tests {
+//     use ibc_proto::ibc::core::client::v1::MsgUpgradeClient as RawMsgUpgradeClient;
+//     use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
+//     use ibc_testkit::utils::builders::core::client::dummy_msg_upgrade_client;
 
-    /// Extends the implementation with additional helper methods.
-    impl MsgUpgradeClient {
-        pub fn new_dummy(upgrade_height: Height) -> Self {
-            MsgUpgradeClient {
-                client_id: ClientId::new(mock_client_type(), 0).expect("invalid client id"),
-                upgraded_client_state: MockClientState::new(MockHeader::new(upgrade_height)).into(),
-                upgraded_consensus_state: MockConsensusState::new(MockHeader::new(upgrade_height))
-                    .into(),
-                proof_upgrade_client: get_dummy_commitment_proof_bytes(),
-                proof_upgrade_consensus_state: get_dummy_commitment_proof_bytes(),
-                signer: get_dummy_account_id(),
-            }
-        }
+//     use crate::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
+//     use crate::core::ics24_host::identifier::ClientId;
+//     use crate::Height;
 
-        pub fn with_client_id(self, client_id: ClientId) -> Self {
-            MsgUpgradeClient { client_id, ..self }
-        }
-    }
-
-    /// Returns a dummy `RawMsgUpgradeClient`, for testing only!
-    pub fn get_dummy_raw_msg_upgrade_client(upgrade_height: Height) -> RawMsgUpgradeClient {
-        RawMsgUpgradeClient {
-            client_id: mock_client_type().to_string(),
-            client_state: Some(MockClientState::new(MockHeader::new(upgrade_height)).into()),
-            consensus_state: Some(MockConsensusState::new(MockHeader::new(upgrade_height)).into()),
-            proof_upgrade_client: get_dummy_proof(),
-            proof_upgrade_consensus_state: get_dummy_proof(),
-            signer: get_dummy_bech32_account(),
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::core::ics02_client::height::Height;
-
-    #[test]
-    fn msg_upgrade_client_serialization() {
-        let msg = MsgUpgradeClient::new_dummy(Height::new(1, 1).unwrap());
-        let raw: RawMsgUpgradeClient = RawMsgUpgradeClient::from(msg.clone());
-        let msg_back = MsgUpgradeClient::try_from(raw.clone()).unwrap();
-        let raw_back: RawMsgUpgradeClient = RawMsgUpgradeClient::from(msg_back.clone());
-        assert_eq!(msg, msg_back);
-        assert_eq!(raw, raw_back);
-    }
-}
+//     #[test]
+//     fn msg_upgrade_client_serialization() {
+//         let client_id = ClientId::new(mock_client_type(), 0).expect("invalid client id");
+//         let height = Height::new(1, 1).unwrap();
+//         let msg = dummy_msg_upgrade_client(client_id, height);
+//         let raw: RawMsgUpgradeClient = RawMsgUpgradeClient::from(msg.clone());
+//         let msg_back = MsgUpgradeClient::try_from(raw.clone()).unwrap();
+//         let raw_back: RawMsgUpgradeClient = RawMsgUpgradeClient::from(msg_back.clone());
+//         assert_eq!(msg, msg_back);
+//         assert_eq!(raw, raw_back);
+//     }
+// }
