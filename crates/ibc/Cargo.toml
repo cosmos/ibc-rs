@@ -35,12 +35,12 @@ schemars = { workspace = true, optional = true }
 typed-builder = { workspace = true, optional = true }
 uint = { version = "0.9", default-features = false }
 
-# internal dependencies
+# ibc dependencies
 ibc-derive = { version = "0.3.0", path = "../ibc-derive" }
-
-# cosmos dependencies
 ibc-proto = { workspace = true }
 ics23 = { workspace = true, features = ["host-functions"] }
+
+# cosmos dependencies
 tendermint = { workspace = true }
 tendermint-proto = { workspace = true }
 tendermint-light-client-verifier = { workspace = true, features = ["rust-crypto"] }
