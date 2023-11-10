@@ -51,6 +51,7 @@ scale-info = { workspace = true , optional = true }
 
 
 [dev-dependencies]
+ibc-testkit = { version = "0.47.0", path = "../ibc-testkit", default-features = false, features = ["serde"] }
 env_logger = { workspace = true }
 rstest = { workspace = true }
 tracing-subscriber = { workspace = true }
