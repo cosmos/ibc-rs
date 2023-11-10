@@ -102,9 +102,10 @@ impl TryFrom<ClientStateConfig> for ClientState {
 pub fn dummy_tendermint_header() -> tendermint::block::Header {
     use tendermint::block::signed_header::SignedHeader;
 
-    serde_json::from_str::<SignedHeader>(include_str!(
-        "../../../../tests/data/json/signed_header.json"
-    ))
+    serde_json::from_str::<SignedHeader>(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/data/json/signed_header.json"
+    )))
     .expect("Never fails")
     .header
 }
@@ -131,9 +132,10 @@ pub fn dummy_ics07_header() -> Header {
     use tendermint::PublicKey;
 
     // Build a SignedHeader from a JSON file.
-    let shdr = serde_json::from_str::<SignedHeader>(include_str!(
-        "../../../../tests/data/json/signed_header.json"
-    ))
+    let shdr = serde_json::from_str::<SignedHeader>(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/data/json/signed_header.json"
+    )))
     .expect("Never fails");
 
     // Build a set of validators.
