@@ -2,9 +2,7 @@ use ibc::clients::ics07_tendermint::client_type as tm_client_type;
 use ibc::core::events::{IbcEvent, MessageEvent};
 use ibc::core::ics02_client::height::Height;
 use ibc::core::ics03_connection::connection::{ConnectionEnd, State as ConnectionState};
-use ibc::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
 use ibc::core::ics03_connection::version::get_compatible_versions;
-use ibc::core::ics04_channel::msgs::chan_open_init::test_util::get_dummy_raw_msg_chan_open_init;
 use ibc::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
 use ibc::core::ics04_channel::msgs::ChannelMsg;
 use ibc::core::ics24_host::identifier::{ClientId, ConnectionId};
@@ -12,6 +10,8 @@ use ibc::core::{execute, validate, MsgEnvelope, ValidationContext};
 use ibc::prelude::*;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::utils::core::channel::dummy_raw_msg_chan_open_init;
+use ibc_testkit::utils::core::connection::dummy_msg_conn_open_init;
 use rstest::*;
 use test_log::test;
 
@@ -24,14 +24,14 @@ pub struct Fixture {
 #[fixture]
 fn fixture() -> Fixture {
     let msg_chan_open_init =
-        MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
+        MsgChannelOpenInit::try_from(dummy_raw_msg_chan_open_init(None)).unwrap();
 
     let msg = MsgEnvelope::from(ChannelMsg::from(msg_chan_open_init));
 
     let default_ctx = MockContext::default();
     let router = MockRouter::new_with_transfer();
 
-    let msg_conn_init = MsgConnectionOpenInit::new_dummy();
+    let msg_conn_init = dummy_msg_conn_open_init();
 
     let client_id_on_a = ClientId::new(tm_client_type(), 0).unwrap();
     let client_height = Height::new(0, 10).unwrap();
@@ -67,7 +67,7 @@ fn chan_open_init_validate_happy_path(fixture: Fixture) {
 fn chan_open_init_validate_counterparty_chan_id_set(fixture: Fixture) {
     let Fixture { ctx, router, .. } = fixture;
 
-    let msg = MsgChannelOpenInit::try_from(get_dummy_raw_msg_chan_open_init(None)).unwrap();
+    let msg = MsgChannelOpenInit::try_from(dummy_raw_msg_chan_open_init(None)).unwrap();
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 

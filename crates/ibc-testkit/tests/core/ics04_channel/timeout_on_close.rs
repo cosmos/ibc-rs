@@ -5,7 +5,6 @@ use ibc::core::ics03_connection::connection::{
 use ibc::core::ics03_connection::version::get_compatible_versions;
 use ibc::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
 use ibc::core::ics04_channel::commitment::{compute_packet_commitment, PacketCommitment};
-use ibc::core::ics04_channel::msgs::timeout_on_close::test_util::get_dummy_raw_msg_timeout_on_close;
 use ibc::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
 use ibc::core::ics04_channel::msgs::PacketMsg;
 use ibc::core::ics04_channel::Version;
@@ -16,6 +15,7 @@ use ibc::prelude::*;
 use ibc::Height;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::utils::core::channel::dummy_raw_msg_timeout_on_close;
 use rstest::*;
 
 pub struct Fixture {
@@ -36,11 +36,9 @@ fn fixture() -> Fixture {
     let height = 2;
     let timeout_timestamp = 5;
 
-    let msg = MsgTimeoutOnClose::try_from(get_dummy_raw_msg_timeout_on_close(
-        height,
-        timeout_timestamp,
-    ))
-    .unwrap();
+    let msg =
+        MsgTimeoutOnClose::try_from(dummy_raw_msg_timeout_on_close(height, timeout_timestamp))
+            .unwrap();
 
     let packet = msg.packet.clone();
 

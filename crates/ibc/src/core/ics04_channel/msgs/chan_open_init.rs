@@ -91,33 +91,12 @@ impl From<MsgChannelOpenInit> for RawMsgChannelOpenInit {
     }
 }
 
-#[cfg(any(test, feature = "test-utils"))]
-pub mod test_util {
-    use ibc_proto::ibc::core::channel::v1::MsgChannelOpenInit as RawMsgChannelOpenInit;
-
-    use crate::core::ics04_channel::channel::test_util::get_dummy_raw_channel_end;
-    use crate::core::ics24_host::identifier::PortId;
-    use crate::prelude::*;
-    use crate::test_utils::get_dummy_bech32_account;
-
-    /// Returns a dummy `RawMsgChannelOpenInit`, for testing only!
-    pub fn get_dummy_raw_msg_chan_open_init(
-        counterparty_channel_id: Option<u64>,
-    ) -> RawMsgChannelOpenInit {
-        RawMsgChannelOpenInit {
-            port_id: PortId::transfer().to_string(),
-            channel: Some(get_dummy_raw_channel_end(1, counterparty_channel_id)),
-            signer: get_dummy_bech32_account(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use ibc_proto::ibc::core::channel::v1::MsgChannelOpenInit as RawMsgChannelOpenInit;
+    use ibc_testkit::utils::core::channel::dummy_raw_msg_chan_open_init;
     use test_log::test;
 
-    use crate::core::ics04_channel::msgs::chan_open_init::test_util::get_dummy_raw_msg_chan_open_init;
     use crate::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
     use crate::prelude::*;
 
@@ -129,7 +108,7 @@ mod tests {
             want_pass: bool,
         }
 
-        let default_raw_init_msg = get_dummy_raw_msg_chan_open_init(None);
+        let default_raw_init_msg = dummy_raw_msg_chan_open_init(None);
 
         let tests: Vec<Test> = vec![
             Test {
@@ -174,7 +153,7 @@ mod tests {
     #[test]
     fn to_and_from() {
         // Check if raw and domain types are equal after conversions
-        let raw = get_dummy_raw_msg_chan_open_init(None);
+        let raw = dummy_raw_msg_chan_open_init(None);
         let msg = MsgChannelOpenInit::try_from(raw.clone()).unwrap();
         let raw_back = RawMsgChannelOpenInit::from(msg.clone());
         let msg_back = MsgChannelOpenInit::try_from(raw_back.clone()).unwrap();
@@ -183,7 +162,7 @@ mod tests {
 
         // Check if handler sets counterparty channel id to `None`
         // in case relayer passes `MsgChannelOpenInit` message with it set to `Some(_)`
-        let raw_with_counterpary_chan_id_some = get_dummy_raw_msg_chan_open_init(None);
+        let raw_with_counterpary_chan_id_some = dummy_raw_msg_chan_open_init(None);
         let msg_with_counterpary_chan_id_some =
             MsgChannelOpenInit::try_from(raw_with_counterpary_chan_id_some).unwrap();
         let raw_with_counterpary_chan_id_some_back =

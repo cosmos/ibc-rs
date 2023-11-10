@@ -130,66 +130,13 @@ impl From<MsgConnectionOpenAck> for RawMsgConnectionOpenAck {
     }
 }
 
-#[cfg(any(test, feature = "test-utils"))]
-pub mod test_util {
-    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-    use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenAck as RawMsgConnectionOpenAck;
-
-    use super::MsgConnectionOpenAck;
-    use crate::core::ics02_client::height::Height;
-    use crate::core::ics03_connection::version::Version;
-    use crate::core::ics24_host::identifier::ConnectionId;
-    use crate::mock::client_state::MockClientState;
-    use crate::mock::header::MockHeader;
-    use crate::prelude::*;
-    use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
-
-    /// Testing-specific helper methods.
-    impl MsgConnectionOpenAck {
-        /// Returns a new `MsgConnectionOpenAck` with dummy values.
-        pub fn new_dummy(proof_height: u64, consensus_height: u64) -> Self {
-            MsgConnectionOpenAck::try_from(get_dummy_raw_msg_conn_open_ack(
-                proof_height,
-                consensus_height,
-            ))
-            .expect("Never fails")
-        }
-    }
-
-    pub fn get_dummy_raw_msg_conn_open_ack(
-        proof_height: u64,
-        consensus_height: u64,
-    ) -> RawMsgConnectionOpenAck {
-        let client_state_height = Height::new(0, consensus_height).expect("invalid height");
-        RawMsgConnectionOpenAck {
-            connection_id: ConnectionId::new(0).to_string(),
-            counterparty_connection_id: ConnectionId::new(1).to_string(),
-            proof_try: get_dummy_proof(),
-            proof_height: Some(RawHeight {
-                revision_number: 0,
-                revision_height: proof_height,
-            }),
-            proof_consensus: get_dummy_proof(),
-            consensus_height: Some(RawHeight {
-                revision_number: 0,
-                revision_height: consensus_height,
-            }),
-            client_state: Some(MockClientState::new(MockHeader::new(client_state_height)).into()),
-            proof_client: get_dummy_proof(),
-            version: Some(Version::default().into()),
-            signer: get_dummy_bech32_account(),
-            host_consensus_state_proof: vec![],
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use ibc_proto::ibc::core::client::v1::Height;
     use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenAck as RawMsgConnectionOpenAck;
+    use ibc_testkit::utils::core::connection::dummy_raw_msg_conn_open_ack;
     use test_log::test;
 
-    use crate::core::ics03_connection::msgs::conn_open_ack::test_util::get_dummy_raw_msg_conn_open_ack;
     use crate::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
     use crate::prelude::*;
 
@@ -202,7 +149,7 @@ mod tests {
             want_pass: bool,
         }
 
-        let default_ack_msg = get_dummy_raw_msg_conn_open_ack(5, 5);
+        let default_ack_msg = dummy_raw_msg_conn_open_ack(5, 5);
 
         let tests: Vec<Test> = vec![
             Test {
@@ -268,7 +215,7 @@ mod tests {
 
     #[test]
     fn to_and_from() {
-        let raw = get_dummy_raw_msg_conn_open_ack(5, 6);
+        let raw = dummy_raw_msg_conn_open_ack(5, 6);
         let msg = MsgConnectionOpenAck::try_from(raw.clone()).unwrap();
         let raw_back = RawMsgConnectionOpenAck::from(msg.clone());
         let msg_back = MsgConnectionOpenAck::try_from(raw_back.clone()).unwrap();

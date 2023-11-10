@@ -74,67 +74,16 @@ impl From<MsgRecvPacket> for RawMsgRecvPacket {
     }
 }
 
-#[cfg(any(test, feature = "test-utils"))]
-pub mod test_util {
-    use core::ops::Add;
-    use core::time::Duration;
-
-    use ibc_proto::ibc::core::channel::v1::MsgRecvPacket as RawMsgRecvPacket;
-    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-
-    use super::MsgRecvPacket;
-    use crate::core::ics04_channel::packet::test_util::get_dummy_raw_packet;
-    use crate::core::ics04_channel::packet::Packet;
-    use crate::core::ics23_commitment::commitment::CommitmentProofBytes;
-    use crate::core::timestamp::Timestamp;
-    use crate::signer::Signer;
-    use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
-
-    impl MsgRecvPacket {
-        pub fn new(
-            packet: Packet,
-            proof_commitment_on_a: CommitmentProofBytes,
-            proof_height_on_a: crate::Height,
-            signer: Signer,
-        ) -> MsgRecvPacket {
-            Self {
-                packet,
-                proof_commitment_on_a,
-                proof_height_on_a,
-                signer,
-            }
-        }
-    }
-
-    /// Returns a dummy `RawMsgRecvPacket`, for testing only! The `height` parametrizes both the
-    /// proof height as well as the timeout height.
-    pub fn get_dummy_raw_msg_recv_packet(height: u64) -> RawMsgRecvPacket {
-        let timestamp = Timestamp::now().add(Duration::from_secs(9));
-        RawMsgRecvPacket {
-            packet: Some(get_dummy_raw_packet(
-                height,
-                timestamp.expect("timestamp").nanoseconds(),
-            )),
-            proof_commitment: get_dummy_proof(),
-            proof_height: Some(RawHeight {
-                revision_number: 0,
-                revision_height: height,
-            }),
-            signer: get_dummy_bech32_account(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
     use ibc_proto::ibc::core::channel::v1::MsgRecvPacket as RawMsgRecvPacket;
+    use ibc_testkit::utils::core::channel::dummy_raw_msg_recv_packet;
+    use ibc_testkit::utils::core::signer::dummy_bech32_account;
     use test_log::test;
 
     use crate::core::ics04_channel::error::PacketError;
-    use crate::core::ics04_channel::msgs::recv_packet::test_util::get_dummy_raw_msg_recv_packet;
     use crate::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
     use crate::prelude::*;
-    use crate::test_utils::get_dummy_bech32_account;
 
     #[test]
     fn msg_recv_packet_try_from_raw() {
@@ -145,7 +94,7 @@ mod test {
         }
 
         let height = 20;
-        let default_raw_msg = get_dummy_raw_msg_recv_packet(height);
+        let default_raw_msg = dummy_raw_msg_recv_packet(height);
         let tests: Vec<Test> = vec![
             Test {
                 name: "Good parameters".to_string(),
@@ -171,7 +120,7 @@ mod test {
             Test {
                 name: "Empty signer".to_string(),
                 raw: RawMsgRecvPacket {
-                    signer: get_dummy_bech32_account(),
+                    signer: dummy_bech32_account(),
                     ..default_raw_msg
                 },
                 want_pass: true,
@@ -194,7 +143,7 @@ mod test {
 
     #[test]
     fn to_and_from() {
-        let raw = get_dummy_raw_msg_recv_packet(15);
+        let raw = dummy_raw_msg_recv_packet(15);
         let msg = MsgRecvPacket::try_from(raw.clone()).unwrap();
         let raw_back = RawMsgRecvPacket::from(msg.clone());
         let msg_back = MsgRecvPacket::try_from(raw_back.clone()).unwrap();

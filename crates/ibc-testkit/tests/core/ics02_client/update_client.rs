@@ -17,19 +17,21 @@ use ibc::core::ics24_host::identifier::{ChainId, ClientId};
 use ibc::core::ics24_host::path::ClientConsensusStatePath;
 use ibc::core::timestamp::Timestamp;
 use ibc::core::{execute, validate, MsgEnvelope, ValidationContext};
-use ibc::mock::client_state::{client_type as mock_client_type, MockClientState};
-use ibc::mock::header::MockHeader;
-use ibc::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
 use ibc::prelude::*;
 use ibc::proto::tendermint::v1::{ClientState as RawTmClientState, Fraction};
 use ibc::proto::Any;
-use ibc::test_utils::get_dummy_account_id;
 use ibc::{downcast, Height};
 use ibc_testkit::hosts::block::{HostBlock, HostType};
-use ibc_testkit::testapp::ibc::clients::types::AnyConsensusState;
-use ibc_testkit::testapp::ibc::core::configs::MockContextConfig;
+use ibc_testkit::testapp::ibc::clients::mock::client_state::{
+    client_type as mock_client_type, MockClientState,
+};
+use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
+use ibc_testkit::testapp::ibc::clients::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
+use ibc_testkit::testapp::ibc::clients::AnyConsensusState;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::utils::core::context::MockContextConfig;
+use ibc_testkit::utils::core::signer::dummy_account_id;
 use prost::Message;
 use tendermint_testgen::Validator as TestgenValidator;
 use test_log::test;
@@ -38,7 +40,7 @@ use test_log::test;
 fn test_update_client_ok() {
     let client_id = ClientId::default();
 
-    let signer = get_dummy_account_id();
+    let signer = dummy_account_id();
 
     let timestamp = Timestamp::now();
 
@@ -111,7 +113,7 @@ fn test_consensus_state_pruning() {
 
     // Move the chain forward by 2 blocks to pass the trusting period.
     for _ in 1..=2 {
-        let signer = get_dummy_account_id();
+        let signer = dummy_account_id();
 
         let update_height = ctx.latest_height();
 
@@ -168,7 +170,7 @@ fn test_consensus_state_pruning() {
 fn test_update_nonexisting_client() {
     let client_id = ClientId::from_str("mockclient1").unwrap();
 
-    let signer = get_dummy_account_id();
+    let signer = dummy_account_id();
 
     let ctx = MockContext::default().with_client(&client_id, Height::new(0, 42).unwrap());
 
@@ -212,7 +214,7 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
 
     let ctx_b = MockContext::new(chain_id_b, HostType::SyntheticTendermint, 5, update_height);
 
-    let signer = get_dummy_account_id();
+    let signer = dummy_account_id();
 
     let mut block = ctx_b.host_block(&update_height).unwrap().clone();
     block.set_trusted_height(client_height);
@@ -299,7 +301,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
         .validator_set_history(ctx_b_val_history)
         .build();
 
-    let signer = get_dummy_account_id();
+    let signer = dummy_account_id();
 
     let mut block = ctx_b.host_block(&update_height).unwrap().clone();
     block.set_trusted_height(client_height);
@@ -392,7 +394,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
         .validator_set_history(ctx_b_val_history)
         .build();
 
-    let signer = get_dummy_account_id();
+    let signer = dummy_account_id();
 
     let mut block = ctx_b.host_block(&update_height).unwrap().clone();
     block.set_trusted_height(client_height);
@@ -442,7 +444,7 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
 
     let ctx_b = MockContext::new(chain_id_b, HostType::SyntheticTendermint, 5, update_height);
 
-    let signer = get_dummy_account_id();
+    let signer = dummy_account_id();
 
     let mut block = ctx_b.host_block(&update_height).unwrap().clone();
     let trusted_height = client_height.clone().sub(1).unwrap();
@@ -500,7 +502,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
         client_height,
     );
 
-    let signer = get_dummy_account_id();
+    let signer = dummy_account_id();
 
     let block = ctx_b.host_block(&client_height).unwrap().clone();
 
@@ -630,7 +632,7 @@ fn test_update_synthetic_tendermint_client_lower_height() {
         client_height,
     );
 
-    let signer = get_dummy_account_id();
+    let signer = dummy_account_id();
 
     let block_ref = ctx_b.host_block(&client_update_height).unwrap();
 
@@ -649,7 +651,7 @@ fn test_update_synthetic_tendermint_client_lower_height() {
 #[test]
 fn test_update_client_events() {
     let client_id = ClientId::default();
-    let signer = get_dummy_account_id();
+    let signer = dummy_account_id();
 
     let timestamp = Timestamp::now();
 
@@ -714,7 +716,7 @@ fn test_misbehaviour_client_ok() {
             header2: MockHeader::new(height).with_timestamp(timestamp),
         }
         .into(),
-        signer: get_dummy_account_id(),
+        signer: dummy_account_id(),
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
@@ -742,7 +744,7 @@ fn test_misbehaviour_nonexisting_client() {
             header2: MockHeader::new(height),
         }
         .into(),
-        signer: get_dummy_account_id(),
+        signer: dummy_account_id(),
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
@@ -807,7 +809,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
     let msg = MsgSubmitMisbehaviour {
         client_id: client_id.clone(),
         misbehaviour: TmMisbehaviour::new(client_id.clone(), header1, header2).into(),
-        signer: get_dummy_account_id(),
+        signer: dummy_account_id(),
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
@@ -870,7 +872,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
     let msg = MsgSubmitMisbehaviour {
         client_id: client_id.clone(),
         misbehaviour: TmMisbehaviour::new(client_id.clone(), header1.into(), header2.into()).into(),
-        signer: get_dummy_account_id(),
+        signer: dummy_account_id(),
     };
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
@@ -970,7 +972,7 @@ fn test_client_update_max_clock_drift() {
 
     let update_height = ctx_b.latest_height();
 
-    let signer = get_dummy_account_id();
+    let signer = dummy_account_id();
 
     let mut block = ctx_b.host_block(&update_height).unwrap().clone();
     block.set_trusted_height(client_height);

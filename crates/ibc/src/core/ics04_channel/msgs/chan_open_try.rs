@@ -128,41 +128,13 @@ impl From<MsgChannelOpenTry> for RawMsgChannelOpenTry {
     }
 }
 
-#[cfg(any(test, feature = "test-utils"))]
-pub mod test_util {
-    use ibc_proto::ibc::core::channel::v1::MsgChannelOpenTry as RawMsgChannelOpenTry;
-    use ibc_proto::ibc::core::client::v1::Height;
-
-    use crate::core::ics04_channel::channel::test_util::get_dummy_raw_channel_end;
-    use crate::core::ics24_host::identifier::PortId;
-    use crate::prelude::*;
-    use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
-
-    /// Returns a dummy `RawMsgChannelOpenTry`, for testing only!
-    pub fn get_dummy_raw_msg_chan_open_try(proof_height: u64) -> RawMsgChannelOpenTry {
-        #[allow(deprecated)]
-        RawMsgChannelOpenTry {
-            port_id: PortId::transfer().to_string(),
-            previous_channel_id: "".to_string(),
-            channel: Some(get_dummy_raw_channel_end(2, Some(0))),
-            counterparty_version: "".to_string(),
-            proof_init: get_dummy_proof(),
-            proof_height: Some(Height {
-                revision_number: 0,
-                revision_height: proof_height,
-            }),
-            signer: get_dummy_bech32_account(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use ibc_proto::ibc::core::channel::v1::MsgChannelOpenTry as RawMsgChannelOpenTry;
     use ibc_proto::ibc::core::client::v1::Height;
+    use ibc_testkit::utils::core::channel::dummy_raw_msg_chan_open_try;
     use test_log::test;
 
-    use crate::core::ics04_channel::msgs::chan_open_try::test_util::get_dummy_raw_msg_chan_open_try;
     use crate::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
     use crate::prelude::*;
 
@@ -175,7 +147,7 @@ mod tests {
         }
 
         let proof_height = 10;
-        let default_raw_msg = get_dummy_raw_msg_chan_open_try(proof_height);
+        let default_raw_msg = dummy_raw_msg_chan_open_try(proof_height);
 
         let tests: Vec<Test> = vec![
             Test {
@@ -270,7 +242,7 @@ mod tests {
 
     #[test]
     fn to_and_from() {
-        let raw = get_dummy_raw_msg_chan_open_try(10);
+        let raw = dummy_raw_msg_chan_open_try(10);
         let msg = MsgChannelOpenTry::try_from(raw.clone()).unwrap();
         let raw_back = RawMsgChannelOpenTry::from(msg.clone());
         let msg_back = MsgChannelOpenTry::try_from(raw_back.clone()).unwrap();

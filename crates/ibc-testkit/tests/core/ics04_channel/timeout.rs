@@ -7,7 +7,6 @@ use ibc::core::ics03_connection::connection::{
 use ibc::core::ics03_connection::version::get_compatible_versions;
 use ibc::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
 use ibc::core::ics04_channel::commitment::{compute_packet_commitment, PacketCommitment};
-use ibc::core::ics04_channel::msgs::timeout::test_util::get_dummy_raw_msg_timeout;
 use ibc::core::ics04_channel::msgs::timeout::MsgTimeout;
 use ibc::core::ics04_channel::msgs::PacketMsg;
 use ibc::core::ics04_channel::Version;
@@ -17,6 +16,7 @@ use ibc::core::{execute, validate, ExecutionContext, MsgEnvelope};
 use ibc::prelude::*;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::utils::core::channel::dummy_raw_msg_timeout;
 use rstest::*;
 
 struct Fixture {
@@ -43,7 +43,7 @@ fn fixture() -> Fixture {
     let msg_timeout_height = 5;
     let timeout_timestamp = Timestamp::now().nanoseconds();
 
-    let msg = MsgTimeout::try_from(get_dummy_raw_msg_timeout(
+    let msg = MsgTimeout::try_from(dummy_raw_msg_timeout(
         msg_proof_height,
         msg_timeout_height,
         timeout_timestamp,

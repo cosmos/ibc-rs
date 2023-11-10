@@ -10,10 +10,10 @@ use ibc::core::ics24_host::identifier::{ChannelId, ClientId, PortId};
 use ibc::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
 use ibc::core::timestamp::Timestamp;
 use ibc::core::{ContextError, ValidationContext};
-use ibc::mock::client_state::MockClientContext;
 use ibc::Height;
 
-use crate::testapp::ibc::clients::types::{AnyClientState, AnyConsensusState};
+use crate::testapp::ibc::clients::mock::client_state::MockClientContext;
+use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::types::MockContext;
 
 pub type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;

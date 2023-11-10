@@ -72,37 +72,13 @@ impl From<MsgChannelOpenConfirm> for RawMsgChannelOpenConfirm {
     }
 }
 
-#[cfg(any(test, feature = "test-utils"))]
-pub mod test_util {
-    use ibc_proto::ibc::core::channel::v1::MsgChannelOpenConfirm as RawMsgChannelOpenConfirm;
-    use ibc_proto::ibc::core::client::v1::Height;
-
-    use crate::core::ics24_host::identifier::{ChannelId, PortId};
-    use crate::prelude::*;
-    use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
-
-    /// Returns a dummy `RawMsgChannelOpenConfirm`, for testing only!
-    pub fn get_dummy_raw_msg_chan_open_confirm(proof_height: u64) -> RawMsgChannelOpenConfirm {
-        RawMsgChannelOpenConfirm {
-            port_id: PortId::transfer().to_string(),
-            channel_id: ChannelId::default().to_string(),
-            proof_ack: get_dummy_proof(),
-            proof_height: Some(Height {
-                revision_number: 0,
-                revision_height: proof_height,
-            }),
-            signer: get_dummy_bech32_account(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use ibc_proto::ibc::core::channel::v1::MsgChannelOpenConfirm as RawMsgChannelOpenConfirm;
     use ibc_proto::ibc::core::client::v1::Height;
+    use ibc_testkit::utils::core::channel::dummy_raw_msg_chan_open_confirm;
     use test_log::test;
 
-    use crate::core::ics04_channel::msgs::chan_open_confirm::test_util::get_dummy_raw_msg_chan_open_confirm;
     use crate::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
     use crate::prelude::*;
 
@@ -115,7 +91,7 @@ mod tests {
         }
 
         let proof_height = 78;
-        let default_raw_msg = get_dummy_raw_msg_chan_open_confirm(proof_height);
+        let default_raw_msg = dummy_raw_msg_chan_open_confirm(proof_height);
 
         let tests: Vec<Test> = vec![
             Test {
@@ -210,7 +186,7 @@ mod tests {
 
     #[test]
     fn to_and_from() {
-        let raw = get_dummy_raw_msg_chan_open_confirm(19);
+        let raw = dummy_raw_msg_chan_open_confirm(19);
         let msg = MsgChannelOpenConfirm::try_from(raw.clone()).unwrap();
         let raw_back = RawMsgChannelOpenConfirm::from(msg.clone());
         let msg_back = MsgChannelOpenConfirm::try_from(raw_back.clone()).unwrap();

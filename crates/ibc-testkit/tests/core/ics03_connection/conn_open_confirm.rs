@@ -11,7 +11,8 @@ use ibc::core::{execute, validate, MsgEnvelope, ValidationContext};
 use ibc::Height;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
-use ibc_testkit::utils::fixture::{Expect, Fixture};
+use ibc_testkit::utils::core::connection::dummy_conn_open_confirm;
+use ibc_testkit::utils::{Expect, Fixture};
 use test_log::test;
 
 enum Ctx {
@@ -22,7 +23,7 @@ enum Ctx {
 
 fn conn_open_confirm_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenConfirm> {
     let client_id = ClientId::from_str("mock_clientid").unwrap();
-    let msg = MsgConnectionOpenConfirm::new_dummy();
+    let msg = dummy_conn_open_confirm();
     let counterparty = Counterparty::new(
         client_id.clone(),
         Some(msg.conn_id_on_b.clone()),

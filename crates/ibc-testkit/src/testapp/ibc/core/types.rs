@@ -7,7 +7,6 @@ use core::fmt::Debug;
 use core::ops::{Add, Sub};
 use core::time::Duration;
 
-use ibc::clients::ics07_tendermint::client_state::test_util::ClientStateConfig as TmClientStateConfig;
 use ibc::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
 use ibc::core::events::IbcEvent;
@@ -20,9 +19,6 @@ use ibc::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, Connection
 use ibc::core::router::Router;
 use ibc::core::timestamp::Timestamp;
 use ibc::core::{dispatch, MsgEnvelope, ValidationContext};
-use ibc::mock::client_state::{client_type as mock_client_type, MockClientState, MOCK_CLIENT_TYPE};
-use ibc::mock::consensus_state::MockConsensusState;
-use ibc::mock::header::MockHeader;
 use ibc::prelude::*;
 use ibc::Height;
 use parking_lot::Mutex;
@@ -33,8 +29,15 @@ use typed_builder::TypedBuilder;
 use super::client_ctx::{MockClientRecord, PortChannelIdMap};
 use crate::hosts::block::{HostBlock, HostType};
 use crate::relayer::error::RelayerError;
-use crate::testapp::ibc::clients::types::{AnyClientState, AnyConsensusState};
-
+use crate::testapp::ibc::clients::mock::client_state::{
+    client_type as mock_client_type, MockClientState, MOCK_CLIENT_TYPE,
+};
+use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
+use crate::testapp::ibc::clients::mock::header::MockHeader;
+use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
+use crate::utils::clients::tendermint::{
+    dummy_tm_client_state_from_header, ClientStateConfig as TmClientStateConfig,
+};
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
 /// An object that stores all IBC related data.
@@ -346,8 +349,13 @@ impl MockContext {
         let client_type = client_type.unwrap_or_else(mock_client_type);
         let (client_state, consensus_state) = if client_type.as_str() == MOCK_CLIENT_TYPE {
             (
-                Some(MockClientState::new(MockHeader::new(client_state_height)).into()),
-                MockConsensusState::new(MockHeader::new(cs_height)).into(),
+                Some(
+                    MockClientState::new(
+                        MockHeader::new(client_state_height).with_current_timestamp(),
+                    )
+                    .into(),
+                ),
+                MockConsensusState::new(MockHeader::new(cs_height).with_current_timestamp()).into(),
             )
         } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
             let light_block = HostBlock::generate_tm_block(
@@ -357,7 +365,7 @@ impl MockContext {
             );
 
             let client_state =
-                TmClientState::new_dummy_from_header(light_block.header().clone()).into();
+                dummy_tm_client_state_from_header(light_block.header().clone()).into();
 
             // Return the tuple.
             (Some(client_state), light_block.into())
@@ -424,7 +432,7 @@ impl MockContext {
                     HostBlock::generate_tm_block(client_chain_id, cs_height.revision_height(), now);
 
                 let client_state =
-                    TmClientState::new_dummy_from_header(light_block.header().clone()).into();
+                    dummy_tm_client_state_from_header(light_block.header().clone()).into();
 
                 // Return the tuple.
                 (Some(client_state), light_block.into())
@@ -781,13 +789,13 @@ mod tests {
     use ibc::core::ics04_channel::Version;
     use ibc::core::ics24_host::identifier::{ChainId, ChannelId, ConnectionId, PortId};
     use ibc::core::router::{Module, ModuleExtras, ModuleId};
-    use ibc::test_utils::get_dummy_bech32_account;
     use ibc::{Height, Signer};
     use test_log::test;
 
     use super::*;
-    use crate::testapp::ibc::core::configs::PacketConfig;
     use crate::testapp::ibc::core::router::MockRouter;
+    use crate::utils::core::channel::PacketConfig;
+    use crate::utils::core::signer::dummy_bech32_account;
 
     #[test]
     fn test_history_manipulation() {
@@ -1149,7 +1157,7 @@ mod tests {
 
             let packet = PacketConfig::builder().build();
 
-            let result = m.on_recv_packet_execute(&packet, &get_dummy_bech32_account().into());
+            let result = m.on_recv_packet_execute(&packet, &dummy_bech32_account().into());
             (module_id, result)
         };
 

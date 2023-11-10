@@ -7,8 +7,6 @@ use ibc::clients::ics07_tendermint::header::{Header, TENDERMINT_HEADER_TYPE_URL}
 use ibc::core::ics02_client::error::ClientError;
 use ibc::core::ics24_host::identifier::ChainId;
 use ibc::core::timestamp::Timestamp;
-use ibc::mock::consensus_state::MockConsensusState;
-use ibc::mock::header::MockHeader;
 use ibc::prelude::*;
 use ibc::proto::tendermint::v1::Header as RawHeader;
 use ibc::proto::{Any, Protobuf};
@@ -21,7 +19,9 @@ use tendermint_testgen::{
     Validator as TestgenValidator,
 };
 
-use crate::testapp::ibc::clients::types::AnyConsensusState;
+use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
+use crate::testapp::ibc::clients::mock::header::MockHeader;
+use crate::testapp::ibc::clients::AnyConsensusState;
 
 /// Defines the different types of host chains that a mock context can emulate.
 /// The variants are as follows:

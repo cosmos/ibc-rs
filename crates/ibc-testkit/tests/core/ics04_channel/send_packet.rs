@@ -8,7 +8,6 @@ use ibc::core::ics03_connection::connection::{
 };
 use ibc::core::ics03_connection::version::get_compatible_versions;
 use ibc::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
-use ibc::core::ics04_channel::packet::test_util::get_dummy_raw_packet;
 use ibc::core::ics04_channel::packet::Packet;
 use ibc::core::ics04_channel::Version;
 use ibc::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
@@ -16,6 +15,7 @@ use ibc::core::send_packet;
 use ibc::core::timestamp::{Timestamp, ZERO_DURATION};
 use ibc::prelude::*;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::utils::core::channel::dummy_raw_packet;
 use test_log::test;
 
 #[test]
@@ -57,14 +57,14 @@ fn send_packet_processing() {
     let timeout_height_future = 10;
 
     let mut packet: Packet =
-        get_dummy_raw_packet(timeout_height_future, timestamp_future.nanoseconds())
+        dummy_raw_packet(timeout_height_future, timestamp_future.nanoseconds())
             .try_into()
             .unwrap();
     packet.seq_on_a = 1.into();
     packet.data = vec![0];
 
     let mut packet_with_timestamp_old: Packet =
-        get_dummy_raw_packet(timeout_height_future, timestamp_ns_past)
+        dummy_raw_packet(timeout_height_future, timestamp_ns_past)
             .try_into()
             .unwrap();
     packet_with_timestamp_old.seq_on_a = 1.into();
@@ -72,11 +72,11 @@ fn send_packet_processing() {
 
     let client_raw_height = 5;
     let packet_timeout_equal_client_height: Packet =
-        get_dummy_raw_packet(client_raw_height, timestamp_future.nanoseconds())
+        dummy_raw_packet(client_raw_height, timestamp_future.nanoseconds())
             .try_into()
             .unwrap();
     let packet_timeout_one_before_client_height: Packet =
-        get_dummy_raw_packet(client_raw_height - 1, timestamp_future.nanoseconds())
+        dummy_raw_packet(client_raw_height - 1, timestamp_future.nanoseconds())
             .try_into()
             .unwrap();
 

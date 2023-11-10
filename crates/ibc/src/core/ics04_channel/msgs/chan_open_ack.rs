@@ -77,39 +77,13 @@ impl From<MsgChannelOpenAck> for RawMsgChannelOpenAck {
     }
 }
 
-#[cfg(any(test, feature = "test-utils"))]
-pub mod test_util {
-    use ibc_proto::ibc::core::channel::v1::MsgChannelOpenAck as RawMsgChannelOpenAck;
-    use ibc_proto::ibc::core::client::v1::Height;
-
-    use crate::core::ics24_host::identifier::{ChannelId, PortId};
-    use crate::prelude::*;
-    use crate::test_utils::{get_dummy_bech32_account, get_dummy_proof};
-
-    /// Returns a dummy `RawMsgChannelOpenAck`, for testing only!
-    pub fn get_dummy_raw_msg_chan_open_ack(proof_height: u64) -> RawMsgChannelOpenAck {
-        RawMsgChannelOpenAck {
-            port_id: PortId::transfer().to_string(),
-            channel_id: ChannelId::default().to_string(),
-            counterparty_channel_id: ChannelId::default().to_string(),
-            counterparty_version: "".to_string(),
-            proof_try: get_dummy_proof(),
-            proof_height: Some(Height {
-                revision_number: 0,
-                revision_height: proof_height,
-            }),
-            signer: get_dummy_bech32_account(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use ibc_proto::ibc::core::channel::v1::MsgChannelOpenAck as RawMsgChannelOpenAck;
     use ibc_proto::ibc::core::client::v1::Height;
+    use ibc_testkit::utils::core::channel::dummy_raw_msg_chan_open_ack;
     use test_log::test;
 
-    use crate::core::ics04_channel::msgs::chan_open_ack::test_util::get_dummy_raw_msg_chan_open_ack;
     use crate::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
     use crate::prelude::*;
 
@@ -122,7 +96,7 @@ mod tests {
         }
 
         let proof_height = 20;
-        let default_raw_msg = get_dummy_raw_msg_chan_open_ack(proof_height);
+        let default_raw_msg = dummy_raw_msg_chan_open_ack(proof_height);
 
         let tests: Vec<Test> = vec![
             Test {
@@ -265,7 +239,7 @@ mod tests {
 
     #[test]
     fn to_and_from() {
-        let raw = get_dummy_raw_msg_chan_open_ack(100);
+        let raw = dummy_raw_msg_chan_open_ack(100);
         let msg = MsgChannelOpenAck::try_from(raw.clone()).unwrap();
         let raw_back = RawMsgChannelOpenAck::from(msg.clone());
         let msg_back = MsgChannelOpenAck::try_from(raw_back.clone()).unwrap();

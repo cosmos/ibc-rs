@@ -2,21 +2,21 @@ use ibc::core::events::{IbcEvent, MessageEvent};
 use ibc::core::ics03_connection::connection::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
-use ibc::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
 use ibc::core::ics03_connection::version::get_compatible_versions;
 use ibc::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
-use ibc::core::ics04_channel::msgs::chan_open_confirm::test_util::get_dummy_raw_msg_chan_open_confirm;
 use ibc::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
 use ibc::core::ics04_channel::msgs::ChannelMsg;
 use ibc::core::ics04_channel::Version;
 use ibc::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId};
 use ibc::core::timestamp::ZERO_DURATION;
 use ibc::core::{execute, validate, MsgEnvelope};
-use ibc::mock::client_state::client_type as mock_client_type;
 use ibc::prelude::*;
 use ibc::Height;
+use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::utils::core::channel::dummy_raw_msg_chan_open_confirm;
+use ibc_testkit::utils::core::connection::dummy_raw_counterparty_conn;
 use rstest::*;
 use test_log::test;
 
@@ -43,14 +43,14 @@ fn fixture() -> Fixture {
     let conn_end_on_b = ConnectionEnd::new(
         ConnectionState::Open,
         client_id_on_b.clone(),
-        ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
+        ConnectionCounterparty::try_from(dummy_raw_counterparty_conn(Some(0))).unwrap(),
         get_compatible_versions(),
         ZERO_DURATION,
     )
     .unwrap();
 
     let msg =
-        MsgChannelOpenConfirm::try_from(get_dummy_raw_msg_chan_open_confirm(proof_height)).unwrap();
+        MsgChannelOpenConfirm::try_from(dummy_raw_msg_chan_open_confirm(proof_height)).unwrap();
 
     let chan_end_on_b = ChannelEnd::new(
         State::TryOpen,

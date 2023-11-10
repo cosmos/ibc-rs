@@ -2,19 +2,19 @@ use ibc::core::events::{IbcEvent, MessageEvent};
 use ibc::core::ics03_connection::connection::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
-use ibc::core::ics03_connection::msgs::test_util::get_dummy_raw_counterparty;
 use ibc::core::ics03_connection::version::get_compatible_versions;
-use ibc::core::ics04_channel::msgs::chan_open_try::test_util::get_dummy_raw_msg_chan_open_try;
 use ibc::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
 use ibc::core::ics04_channel::msgs::ChannelMsg;
 use ibc::core::ics24_host::identifier::{ClientId, ConnectionId};
 use ibc::core::timestamp::ZERO_DURATION;
 use ibc::core::{execute, validate, MsgEnvelope, ValidationContext};
-use ibc::mock::client_state::client_type as mock_client_type;
 use ibc::prelude::*;
 use ibc::Height;
+use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::utils::core::channel::dummy_raw_msg_chan_open_try;
+use ibc_testkit::utils::core::connection::dummy_raw_counterparty_conn;
 use rstest::*;
 use test_log::test;
 
@@ -38,7 +38,7 @@ fn fixture() -> Fixture {
     let conn_end_on_b = ConnectionEnd::new(
         ConnectionState::Open,
         client_id_on_b.clone(),
-        ConnectionCounterparty::try_from(get_dummy_raw_counterparty(Some(0))).unwrap(),
+        ConnectionCounterparty::try_from(dummy_raw_counterparty_conn(Some(0))).unwrap(),
         get_compatible_versions(),
         ZERO_DURATION,
     )
@@ -47,7 +47,7 @@ fn fixture() -> Fixture {
     // We're going to test message processing against this message.
     // Note: we make the counterparty's channel_id `None`.
     let mut msg_chan_open_try =
-        MsgChannelOpenTry::try_from(get_dummy_raw_msg_chan_open_try(proof_height)).unwrap();
+        MsgChannelOpenTry::try_from(dummy_raw_msg_chan_open_try(proof_height)).unwrap();
 
     let hops = vec![conn_id_on_b.clone()];
     msg_chan_open_try.connection_hops_on_b = hops;

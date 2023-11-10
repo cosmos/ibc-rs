@@ -1222,7 +1222,6 @@ dependencies = [
  "ibc-derive",
  "ibc-proto",
  "ics23",
- "num-traits",
  "primitive-types",
  "prost",
  "serde",
@@ -1234,7 +1233,6 @@ dependencies = [
  "tendermint-light-client-verifier",
  "tendermint-proto",
  "time",
- "tracing",
  "uint",
 ]
 

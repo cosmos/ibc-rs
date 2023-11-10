@@ -372,39 +372,13 @@ impl From<PacketState> for RawPacketState {
     }
 }
 
-#[cfg(any(test, feature = "test-utils"))]
-pub mod test_util {
-    use ibc_proto::ibc::core::channel::v1::Packet as RawPacket;
-    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-
-    use crate::core::ics24_host::identifier::{ChannelId, PortId};
-    use crate::prelude::*;
-
-    /// Returns a dummy `RawPacket`, for testing only!
-    pub fn get_dummy_raw_packet(timeout_height: u64, timeout_timestamp: u64) -> RawPacket {
-        RawPacket {
-            sequence: 1,
-            source_port: PortId::transfer().to_string(),
-            source_channel: ChannelId::default().to_string(),
-            destination_port: PortId::transfer().to_string(),
-            destination_channel: ChannelId::default().to_string(),
-            data: vec![0],
-            timeout_height: Some(RawHeight {
-                revision_number: 0,
-                revision_height: timeout_height,
-            }),
-            timeout_timestamp,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use ibc_proto::ibc::core::channel::v1::Packet as RawPacket;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
+    use ibc_testkit::utils::core::channel::dummy_raw_packet;
     use test_log::test;
 
-    use crate::core::ics04_channel::packet::test_util::get_dummy_raw_packet;
     use crate::core::ics04_channel::packet::Packet;
     use crate::prelude::*;
 
@@ -417,10 +391,10 @@ mod tests {
         }
 
         let proof_height = 10;
-        let default_raw_packet = get_dummy_raw_packet(proof_height, 1000);
-        let raw_packet_no_timeout_or_timestamp = get_dummy_raw_packet(10, 0);
+        let default_raw_packet = dummy_raw_packet(proof_height, 1000);
+        let raw_packet_no_timeout_or_timestamp = dummy_raw_packet(10, 0);
 
-        let mut raw_packet_invalid_timeout_height = get_dummy_raw_packet(0, 10);
+        let mut raw_packet_invalid_timeout_height = dummy_raw_packet(0, 10);
         raw_packet_invalid_timeout_height.timeout_height = Some(RawHeight {
             revision_number: 1,
             revision_height: 0,
@@ -581,7 +555,7 @@ mod tests {
 
     #[test]
     fn to_and_from() {
-        let raw = get_dummy_raw_packet(15, 0);
+        let raw = dummy_raw_packet(15, 0);
         let msg = Packet::try_from(raw.clone()).unwrap();
         let raw_back = RawPacket::from(msg.clone());
         let msg_back = Packet::try_from(raw_back.clone()).unwrap();
