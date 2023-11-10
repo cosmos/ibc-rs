@@ -35,7 +35,7 @@ use crate::testapp::ibc::clients::mock::client_state::{
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
-use crate::utils::dummies::clients::tendermint::{
+use crate::utils::clients::tendermint::{
     dummy_tm_client_state_from_header, ClientStateConfig as TmClientStateConfig,
 };
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
@@ -794,8 +794,8 @@ mod tests {
 
     use super::*;
     use crate::testapp::ibc::core::router::MockRouter;
-    use crate::utils::dummies::core::channel::PacketConfig;
-    use crate::utils::dummies::core::signer::dummy_bech32_account;
+    use crate::utils::core::channel::PacketConfig;
+    use crate::utils::core::signer::dummy_bech32_account;
 
     #[test]
     fn test_history_manipulation() {
