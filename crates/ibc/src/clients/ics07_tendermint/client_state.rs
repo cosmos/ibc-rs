@@ -792,21 +792,46 @@ fn check_header_trusted_next_validator_set(
     }
 }
 
+#[cfg(all(test, feature = "serde"))]
+mod serde_tests {
+    use tendermint_rpc::endpoint::abci_query::AbciQuery;
+
+    use crate::serializers::tests::test_serialization_roundtrip;
+    #[test]
+    fn serialization_roundtrip_no_proof() {
+        let json_data =
+            include_str!("../../../../ibc-testkit/src/utils/dummies/json/client_state.json");
+        test_serialization_roundtrip::<AbciQuery>(json_data);
+    }
+
+    #[test]
+    fn serialization_roundtrip_with_proof() {
+        let json_data =
+            include_str!("../../../../ibc-testkit/src/utils/dummies/json/client_state_proof.json");
+        test_serialization_roundtrip::<AbciQuery>(json_data);
+    }
+}
+
 #[cfg(test)]
-pub mod test_utils {
+mod tests {
     use core::str::FromStr;
     use core::time::Duration;
 
+    use ibc_proto::google::protobuf::Any;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
+    use ibc_proto::ics23::ProofSpec as Ics23ProofSpec;
+    use ibc_testkit::utils::clients::tendermint::dummy_tendermint_header;
     use tendermint::block::Header;
+    use test_log::test;
 
+    use super::*;
     use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState};
     use crate::clients::ics07_tendermint::error::Error;
     use crate::core::ics02_client::height::Height;
     use crate::core::ics23_commitment::specs::ProofSpecs;
     use crate::core::ics24_host::identifier::ChainId;
-    use crate::prelude::*;
+    use crate::core::timestamp::ZERO_DURATION;
 
     impl ClientState {
         pub fn new_dummy_from_raw(frozen_height: RawHeight) -> Result<Self, Error> {
@@ -853,45 +878,6 @@ pub mod test_utils {
             allow_update_after_misbehaviour: false,
         }
     }
-}
-
-#[cfg(all(test, feature = "serde"))]
-mod serde_tests {
-    use tendermint_rpc::endpoint::abci_query::AbciQuery;
-
-    use crate::serializers::tests::test_serialization_roundtrip;
-    #[test]
-    fn serialization_roundtrip_no_proof() {
-        let json_data =
-            include_str!("../../../../ibc-testkit/src/utils/dummies/json/client_state.json");
-        test_serialization_roundtrip::<AbciQuery>(json_data);
-    }
-
-    #[test]
-    fn serialization_roundtrip_with_proof() {
-        let json_data =
-            include_str!("../../../../ibc-testkit/src/utils/dummies/json/client_state_proof.json");
-        test_serialization_roundtrip::<AbciQuery>(json_data);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use core::time::Duration;
-
-    use ibc_proto::google::protobuf::Any;
-    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-    use ibc_proto::ics23::ProofSpec as Ics23ProofSpec;
-    use ibc_testkit::utils::clients::tendermint::dummy_tendermint_header;
-    use test_log::test;
-
-    use super::*;
-    use crate::clients::ics07_tendermint::client_state::AllowUpdate;
-    use crate::clients::ics07_tendermint::error::Error;
-    use crate::core::ics23_commitment::specs::ProofSpecs;
-    use crate::core::ics24_host::identifier::ChainId;
-    use crate::core::timestamp::ZERO_DURATION;
-    use crate::Height;
 
     #[derive(Clone, Debug, PartialEq)]
     struct ClientStateParams {
