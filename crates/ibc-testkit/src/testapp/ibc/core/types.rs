@@ -945,7 +945,7 @@ mod tests {
     fn test_router() {
         #[derive(Debug, Default)]
         struct FooModule {
-            counter: usize,
+            counter: u64,
         }
 
         impl Module for FooModule {
