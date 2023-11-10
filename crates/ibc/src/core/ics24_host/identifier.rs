@@ -516,13 +516,8 @@ impl PartialEq<str> for ChannelId {
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Display)]
 pub enum IdentifierError {
-    /// identifier `{id}` has invalid length `{length}` must be between `{min}`-`{max}` characters
-    InvalidLength {
-        id: String,
-        length: u64,
-        min: u64,
-        max: u64,
-    },
+    /// identifier `{id}` has invalid length; must be between `{min}` and `{max}` characters
+    InvalidLength { id: String, min: u64, max: u64 },
     /// identifier `{id}` must only contain alphanumeric characters or `.`, `_`, `+`, `-`, `#`, - `[`, `]`, `<`, `>`
     InvalidCharacter { id: String },
     /// identifier prefix `{prefix}` is invalid

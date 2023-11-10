@@ -37,7 +37,6 @@ pub fn validate_identifier_length(id: &str, min: u64, max: u64) -> Result<(), Er
     if (id.len() as u64) < min || id.len() as u64 > max {
         return Err(Error::InvalidLength {
             id: id.into(),
-            length: id.len() as u64,
             min,
             max,
         });
@@ -67,7 +66,6 @@ pub fn validate_prefix_length(
     if max_id_length < 22 {
         return Err(Error::InvalidLength {
             id: prefix.into(),
-            length: prefix.len() as u64,
             min: 0,
             max: 0,
         });
