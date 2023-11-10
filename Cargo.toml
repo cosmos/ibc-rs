@@ -49,7 +49,7 @@ ibc-derive = { version = "0.3.0", path = "../ibc-derive" }
 ibc-proto = { version = "0.38.0", default-features = false }
 ics23 = { version = "0.11", default-features = false }
 
-# cosmos depdenencies
+# cosmos dependencies
 tendermint = { version = "0.34.0", default-features = false }
 tendermint-light-client = { version = "0.34.0", default-features = false }
 tendermint-light-client-verifier = { version = "0.34.0", default-features = false }

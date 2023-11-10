@@ -22,7 +22,6 @@ borsh = { workspace = true, optional = true }
 bytes = { workspace = true }
 derive_more = { workspace = true }
 displaydoc = { workspace = true }
-cfg-if = "1.0.0"
 primitive-types = { workspace = true }
 prost = { workspace = true }
 serde_derive = { workspace = true, optional = true }
