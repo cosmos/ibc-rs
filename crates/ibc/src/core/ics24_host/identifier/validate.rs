@@ -26,18 +26,18 @@ pub fn validate_identifier_chars(id: &str) -> Result<(), Error> {
 /// [`ICS-24`](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#paths-identifiers-separators)]
 /// spec.
 pub fn validate_identifier_length(id: &str, min: u64, max: u64) -> Result<(), Error> {
-    assert!(max >= min);
-
-    // Check identifier length is between given min/max
-    if (id.len() as u64) < min || id.len() as u64 > max {
-        return Err(Error::InvalidLength {
+    // Make sure min is at least one so we reject empty identifiers.
+    let min = min.max(1);
+    let length = id.len() as u64;
+    if (min..=max).contains(&length) {
+        Ok(())
+    } else {
+        Err(Error::InvalidLength {
             id: id.into(),
             min,
             max,
-        });
+        })
     }
-
-    Ok(())
 }
 
 /// Checks if a prefix forms a valid identifier with the given min/max identifier's length.
@@ -48,41 +48,16 @@ pub fn validate_prefix_length(
     min_id_length: u64,
     max_id_length: u64,
 ) -> Result<(), Error> {
-    assert!(max_id_length >= min_id_length);
+    // Prefix must be at least `min_id_length - 2` characters long since the
+    // shortest identifier we can construct is `{prefix}-0` which extends prefix
+    // by 2 characters.
+    let min = min_id_length.saturating_sub(2);
+    // Prefix must be at most `max_id_length - 21` characters long since the
+    // longest identifier we can construct is `{prefix}-{u64::MAX}` which
+    // extends prefix by 21 characters.
+    let max = max_id_length.saturating_sub(21);
 
-    if prefix.is_empty() {
-        return Err(Error::InvalidPrefix {
-            prefix: prefix.into(),
-        });
-    }
-
-    // Statically checks if the prefix forms a valid identifier length when constructed with `u64::MAX`
-    // len(prefix + '-' + u64::MAX) <= max_id_length (minimum prefix length is 1)
-    if max_id_length < 22 {
-        return Err(Error::InvalidLength {
-            id: prefix.into(),
-            min: 0,
-            max: 0,
-        });
-    }
-
-    // Checks if the prefix forms a valid identifier length when constructed with `u64::MIN`
-    // len('-' + u64::MIN) = 2
-    validate_identifier_length(
-        prefix,
-        min_id_length.saturating_sub(2),
-        max_id_length.saturating_sub(2),
-    )?;
-
-    // Checks if the prefix forms a valid identifier length when constructed with `u64::MAX`
-    // len('-' + u64::MAX) = 21
-    validate_identifier_length(
-        prefix,
-        min_id_length.saturating_sub(21),
-        max_id_length.saturating_sub(21),
-    )?;
-
-    Ok(())
+    validate_identifier_length(prefix, min, max)
 }
 
 /// Default validator function for the Client types.
@@ -206,6 +181,24 @@ mod tests {
     }
 
     #[test]
+    fn validate_chars_empty_id() {
+        // validate_identifier_chars allows empty identifiers
+        assert!(validate_identifier_chars("").is_ok());
+    }
+
+    #[test]
+    fn validate_length_empty_id() {
+        // validate_identifier_length does not allow empty identifiers
+        assert!(validate_identifier_length("", 0, 64).is_err());
+    }
+
+    #[test]
+    fn validate_min_gt_max_constraints() {
+        // validate_identifier_length rejects the id if min > max.
+        assert!(validate_identifier_length("foobar", 5, 3).is_err());
+    }
+
+    #[test]
     fn parse_invalid_id_path_separator() {
         // invalid id with path separator
         let id = validate_identifier_chars("id/1");
@@ -231,8 +224,10 @@ mod tests {
     }
 
     #[rstest]
+    #[case::zero_min_length("", 0, 64, false)]
     #[case::empty_prefix("", 1, 64, false)]
     #[case::max_is_low("a", 1, 10, false)]
+    #[case::min_greater_than_max("foobar", 5, 3, false)]
     #[case::u64_max_is_too_big("a", 3, 21, false)]
     #[case::u64_min_is_too_small("a", 4, 22, false)]
     #[case::u64_min_max_boundary("a", 3, 22, true)]
