@@ -58,7 +58,7 @@ pub fn validate_prefix_length(
 ) -> Result<(), Error> {
     // Prefix must be at least `min_id_length - 2` characters long since the
     // shortest identifier we can construct is `{prefix}-0` which extends prefix
-    // by two characters.
+    // by 2 characters.
     let min = min_id_length.saturating_sub(2);
     // Prefix must be at most `max_id_length - 21` characters long since the
     // longest identifier we can construct is `{prefix}-{u64::MAX}` which
