@@ -189,6 +189,21 @@ mod tests {
     }
 
     #[test]
+    fn validate_empty_id() {
+        // validate_identifier_chars does not check for empty identifiers
+        validate_identifier_chars("").unwrap();
+        // validate_identifier_length never allows empty identifiers
+        validate_identifier_length("", 0, 64).unwrap_err();
+    }
+
+    #[test]
+    fn validate_bogus_constraints() {
+        // validate_identifier_length doesn’t assert min_id_length and
+        // max_id_length make sense.  It just rejects the id.
+        validate_identifier_length("foobar", 5, 3).unwrap_err();
+    }
+
+    #[test]
     fn parse_invalid_id_path_separator() {
         // invalid id with path separator
         let id = validate_identifier_chars("id/1");
@@ -214,8 +229,10 @@ mod tests {
     }
 
     #[rstest]
+    #[case::zero_min_length("", 0, 64, false)]
     #[case::empty_prefix("", 1, 64, false)]
     #[case::max_is_low("a", 1, 10, false)]
+    #[case::bogus_constraints("foobar", 5, 3, false)]
     #[case::u64_max_is_too_big("a", 3, 21, false)]
     #[case::u64_min_is_too_small("a", 4, 22, false)]
     #[case::u64_min_max_boundary("a", 3, 22, true)]
