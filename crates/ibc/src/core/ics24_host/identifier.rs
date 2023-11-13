@@ -526,6 +526,8 @@ pub enum IdentifierError {
     UnformattedRevisionNumber { chain_id: String },
     /// revision number overflowed
     RevisionNumberOverflow,
+    /// identifier cannot be empty
+    Empty,
 }
 
 #[cfg(feature = "std")]
