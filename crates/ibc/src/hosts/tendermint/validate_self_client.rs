@@ -38,47 +38,51 @@ pub trait ValidateSelfClientContext {
 
         let self_chain_id = self.chain_id();
         if self_chain_id != &tm_client_state.chain_id {
-            return Err(ConnectionError::InvalidClientState {
-                reason: format!(
-                    "invalid chain-id. expected: {}, got: {}",
-                    self_chain_id, tm_client_state.chain_id
-                ),
-            })
-            .map_err(ContextError::ConnectionError);
+            return Err(ContextError::ConnectionError(
+                ConnectionError::InvalidClientState {
+                    reason: format!(
+                        "invalid chain-id. expected: {}, got: {}",
+                        self_chain_id, tm_client_state.chain_id
+                    ),
+                },
+            ));
         }
 
         let self_revision_number = self_chain_id.revision_number();
         if self_revision_number != tm_client_state.latest_height().revision_number() {
-            return Err(ConnectionError::InvalidClientState {
-                reason: format!(
-                    "client is not in the same revision as the chain. expected: {}, got: {}",
-                    self_revision_number,
-                    tm_client_state.latest_height().revision_number()
-                ),
-            })
-            .map_err(ContextError::ConnectionError);
+            return Err(ContextError::ConnectionError(
+                ConnectionError::InvalidClientState {
+                    reason: format!(
+                        "client is not in the same revision as the chain. expected: {}, got: {}",
+                        self_revision_number,
+                        tm_client_state.latest_height().revision_number()
+                    ),
+                },
+            ));
         }
 
         if tm_client_state.latest_height() >= self.host_current_height() {
-            return Err(ConnectionError::InvalidClientState {
-                reason: format!(
-                    "client has latest height {} greater than or equal to chain height {}",
-                    tm_client_state.latest_height(),
-                    self.host_current_height()
-                ),
-            })
-            .map_err(ContextError::ConnectionError);
+            return Err(ContextError::ConnectionError(
+                ConnectionError::InvalidClientState {
+                    reason: format!(
+                        "client has latest height {} greater than or equal to chain height {}",
+                        tm_client_state.latest_height(),
+                        self.host_current_height()
+                    ),
+                },
+            ));
         }
 
         if self.proof_specs() != &tm_client_state.proof_specs {
-            return Err(ConnectionError::InvalidClientState {
-                reason: format!(
-                    "client has invalid proof specs. expected: {:?}, got: {:?}",
-                    self.proof_specs(),
-                    tm_client_state.proof_specs
-                ),
-            })
-            .map_err(ContextError::ConnectionError);
+            return Err(ContextError::ConnectionError(
+                ConnectionError::InvalidClientState {
+                    reason: format!(
+                        "client has invalid proof specs. expected: {:?}, got: {:?}",
+                        self.proof_specs(),
+                        tm_client_state.proof_specs
+                    ),
+                },
+            ));
         }
 
         let _ = {
@@ -94,36 +98,37 @@ pub trait ValidateSelfClientContext {
         };
 
         if self.unbonding_period() != tm_client_state.unbonding_period {
-            return Err(ConnectionError::InvalidClientState {
-                reason: format!(
-                    "invalid unbonding period. expected: {:?}, got: {:?}",
-                    self.unbonding_period(),
-                    tm_client_state.unbonding_period,
-                ),
-            })
-            .map_err(ContextError::ConnectionError);
+            return Err(ContextError::ConnectionError(
+                ConnectionError::InvalidClientState {
+                    reason: format!(
+                        "invalid unbonding period. expected: {:?}, got: {:?}",
+                        self.unbonding_period(),
+                        tm_client_state.unbonding_period,
+                    ),
+                },
+            ));
         }
 
         if tm_client_state.unbonding_period < tm_client_state.trusting_period {
-            return Err(ConnectionError::InvalidClientState{ reason: format!(
+            return Err(ContextError::ConnectionError(ConnectionError::InvalidClientState{ reason: format!(
                 "unbonding period must be greater than trusting period. unbonding period ({:?}) < trusting period ({:?})",
                 tm_client_state.unbonding_period,
                 tm_client_state.trusting_period
-            )})
-            .map_err(ContextError::ConnectionError);
+            )}));
         }
 
         if !tm_client_state.upgrade_path.is_empty()
             && self.upgrade_path() != tm_client_state.upgrade_path
         {
-            return Err(ConnectionError::InvalidClientState {
-                reason: format!(
-                    "invalid upgrade path. expected: {:?}, got: {:?}",
-                    self.upgrade_path(),
-                    tm_client_state.upgrade_path
-                ),
-            })
-            .map_err(ContextError::ConnectionError);
+            return Err(ContextError::ConnectionError(
+                ConnectionError::InvalidClientState {
+                    reason: format!(
+                        "invalid upgrade path. expected: {:?}, got: {:?}",
+                        self.upgrade_path(),
+                        tm_client_state.upgrade_path
+                    ),
+                },
+            ));
         }
 
         Ok(())

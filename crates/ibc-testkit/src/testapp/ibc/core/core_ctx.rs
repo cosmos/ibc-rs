@@ -144,26 +144,28 @@ impl ValidationContext for MockContext {
         let self_chain_id = &self.host_chain_id;
         let self_revision_number = self_chain_id.revision_number();
         if self_revision_number != mock_client_state.latest_height().revision_number() {
-            return Err(ConnectionError::InvalidClientState {
-                reason: format!(
-                    "client is not in the same revision as the chain. expected: {}, got: {}",
-                    self_revision_number,
-                    mock_client_state.latest_height().revision_number()
-                ),
-            })
-            .map_err(ContextError::ConnectionError);
+            return Err(ContextError::ConnectionError(
+                ConnectionError::InvalidClientState {
+                    reason: format!(
+                        "client is not in the same revision as the chain. expected: {}, got: {}",
+                        self_revision_number,
+                        mock_client_state.latest_height().revision_number()
+                    ),
+                },
+            ));
         }
 
         let host_current_height = self.latest_height().increment();
         if mock_client_state.latest_height() >= host_current_height {
-            return Err(ConnectionError::InvalidClientState {
-                reason: format!(
-                    "client has latest height {} greater than or equal to chain height {}",
-                    mock_client_state.latest_height(),
-                    host_current_height
-                ),
-            })
-            .map_err(ContextError::ConnectionError);
+            return Err(ContextError::ConnectionError(
+                ConnectionError::InvalidClientState {
+                    reason: format!(
+                        "client has latest height {} greater than or equal to chain height {}",
+                        mock_client_state.latest_height(),
+                        host_current_height
+                    ),
+                },
+            ));
         }
 
         Ok(())
