@@ -99,7 +99,7 @@ where
 
         {
             let event = {
-                let consensus_height = consensus_heights.get(0).ok_or(ClientError::Other {
+                let consensus_height = consensus_heights.first().ok_or(ClientError::Other {
                     description: "client update state returned no updated height".to_string(),
                 })?;
 

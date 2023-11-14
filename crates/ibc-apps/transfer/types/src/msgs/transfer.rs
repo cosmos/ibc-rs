@@ -70,7 +70,7 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
 
         // Packet timeout height and packet timeout timestamp cannot both be unset.
         if !timeout_height_on_b.is_set() && !timeout_timestamp_on_b.is_set() {
-            return Err(PacketError::MissingTimeout).map_err(ContextError::from)?;
+            return Err(ContextError::from(PacketError::MissingTimeout))?;
         }
 
         Ok(MsgTransfer {

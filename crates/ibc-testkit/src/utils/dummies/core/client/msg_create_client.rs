@@ -15,7 +15,7 @@ pub fn dummy_raw_msg_create_client() -> MsgCreateClient {
 
     MsgCreateClient {
         client_state: Some(Any::from(tm_client_state)),
-        consensus_state: Some(Any::from(TmConsensusState::try_from(tm_header).unwrap())),
+        consensus_state: Some(Any::from(TmConsensusState::from(tm_header))),
         signer: dummy_bech32_account(),
     }
 }

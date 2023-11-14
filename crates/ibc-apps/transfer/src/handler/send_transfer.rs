@@ -25,7 +25,7 @@ where
     send_transfer_execute(send_packet_ctx_a, token_ctx_a, msg)
 }
 
-/// Validates the token tranfer. If this succeeds, then it is legal to initiate the transfer with [`send_transfer_execute`].
+/// Validates the token transfer. If this succeeds, then it is legal to initiate the transfer with [`send_transfer_execute`].
 pub fn send_transfer_validate<SendPacketCtx, TokenCtx>(
     send_packet_ctx_a: &SendPacketCtx,
     token_ctx_a: &TokenCtx,
