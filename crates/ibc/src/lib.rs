@@ -36,12 +36,8 @@
 //!
 //! [ibc-standard]: https://github.com/cosmos/ibc
 
-extern crate alloc;
-
 #[cfg(any(test, feature = "std"))]
 extern crate std;
-
-pub mod clients;
 
 pub mod apps {
     #[doc(inline)]
