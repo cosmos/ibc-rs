@@ -24,6 +24,7 @@ members = [
     "crates/ibc-derive",
     "crates/ibc-testkit",
     "crates/ibc-query",
+    "crates/ibc-clients",
 ]
 exclude = [
     "ci/cw-check",
