@@ -6,6 +6,7 @@ mod update_client;
 
 use core::cmp::max;
 use core::convert::{TryFrom, TryInto};
+use core::str::FromStr;
 use core::time::Duration;
 
 use ibc_proto::google::protobuf::Any;
