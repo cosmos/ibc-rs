@@ -14,3 +14,22 @@ description  = """
 """
 
 [dependencies]
+# external dependencies
+bytes = { workspace = true }
+displaydoc = { workspace = true }
+prost = { workspace = true }
+
+# cosmos dependencies
+tendermint = { workspace = true }
+tendermint-light-client-verifier = { workspace = true, features = ["rust-crypto"] }
+tendermint-proto = { workspace = true }
+
+# ibc dependencies
+ibc = { version = "0.47.0", path = "../ibc" }
+ibc-proto = { workspace = true, features = ["server"] }
+
+[dev-dependencies]
+env_logger = { workspace = true }
+ibc-testkit = { version = "0.47.0", path = "../ibc-testkit", default-features = false, features = ["serde"] }
+test-log = { workspace = true }
+tracing-subscriber = { workspace = true }

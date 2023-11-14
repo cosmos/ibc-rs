@@ -8,10 +8,10 @@ use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightCl
 use tendermint_light_client_verifier::operations::VotingPowerTally;
 use tendermint_light_client_verifier::Verdict;
 
-use crate::core::ics02_client::error::ClientError;
-use crate::core::ics24_host::identifier::{ClientId, IdentifierError};
-use crate::prelude::*;
-use crate::Height;
+use ibc::core::ics02_client::error::ClientError;
+use ibc::core::ics24_host::identifier::{ClientId, IdentifierError};
+use ibc::prelude::*;
+use ibc::Height;
 
 /// The main error type
 #[derive(Debug, Display)]

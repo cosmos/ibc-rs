@@ -2,7 +2,6 @@
 
 use alloc::string::ToString;
 use core::fmt::{Display, Error as FmtError, Formatter};
-use core::str::FromStr;
 
 use bytes::Buf;
 use ibc_proto::google::protobuf::Any;
@@ -15,13 +14,13 @@ use tendermint::chain::Id as TmChainId;
 use tendermint::validator::Set as ValidatorSet;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 
-use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
-use crate::clients::ics07_tendermint::error::Error;
-use crate::core::ics02_client::error::ClientError;
-use crate::core::ics24_host::identifier::ChainId;
-use crate::core::timestamp::Timestamp;
-use crate::prelude::*;
-use crate::Height;
+use crate::ibc_client_tendermint::error::Error;
+use crate::ibc_client_tendermint::types::consensus_state::ConsensusState as TmConsensusState;
+use ibc::core::ics02_client::error::ClientError;
+use ibc::core::ics24_host::identifier::ChainId;
+use ibc::core::timestamp::Timestamp;
+use ibc::prelude::*;
+use ibc::Height;
 
 pub const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
 
@@ -208,7 +207,7 @@ impl From<Header> for RawHeader {
 
 mod pretty {
     pub use super::*;
-    use crate::utils::pretty::PrettySlice;
+    use ibc::utils::pretty::PrettySlice;
 
     pub struct PrettySignedHeader<'a>(pub &'a SignedHeader);
 
