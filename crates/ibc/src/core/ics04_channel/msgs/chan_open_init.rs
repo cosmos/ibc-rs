@@ -162,15 +162,15 @@ mod tests {
 
         // Check if handler sets counterparty channel id to `None`
         // in case relayer passes `MsgChannelOpenInit` message with it set to `Some(_)`
-        let raw_with_counterpary_chan_id_some = dummy_raw_msg_chan_open_init(None);
-        let msg_with_counterpary_chan_id_some =
-            MsgChannelOpenInit::try_from(raw_with_counterpary_chan_id_some).unwrap();
-        let raw_with_counterpary_chan_id_some_back =
-            RawMsgChannelOpenInit::from(msg_with_counterpary_chan_id_some.clone());
-        let msg_with_counterpary_chan_id_some_back =
-            MsgChannelOpenInit::try_from(raw_with_counterpary_chan_id_some_back.clone()).unwrap();
+        let raw_with_counterparty_chan_id_some = dummy_raw_msg_chan_open_init(None);
+        let msg_with_counterparty_chan_id_some =
+            MsgChannelOpenInit::try_from(raw_with_counterparty_chan_id_some).unwrap();
+        let raw_with_counterparty_chan_id_some_back =
+            RawMsgChannelOpenInit::from(msg_with_counterparty_chan_id_some.clone());
+        let msg_with_counterparty_chan_id_some_back =
+            MsgChannelOpenInit::try_from(raw_with_counterparty_chan_id_some_back.clone()).unwrap();
         assert_eq!(
-            raw_with_counterpary_chan_id_some_back
+            raw_with_counterparty_chan_id_some_back
                 .channel
                 .unwrap()
                 .counterparty
@@ -179,8 +179,8 @@ mod tests {
             "".to_string()
         );
         assert_eq!(
-            msg_with_counterpary_chan_id_some,
-            msg_with_counterpary_chan_id_some_back
+            msg_with_counterparty_chan_id_some,
+            msg_with_counterparty_chan_id_some_back
         );
     }
 }
