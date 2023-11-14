@@ -208,24 +208,24 @@ mod tests {
 
         // Check if handler sets counterparty connection id to `None`
         // in case relayer passes `MsgConnectionOpenInit` message with it set to `Some(_)`.
-        let raw_with_counterpary_conn_id_some = dummy_raw_msg_conn_open_init();
-        let msg_with_counterpary_conn_id_some =
-            MsgConnectionOpenInit::try_from(raw_with_counterpary_conn_id_some).unwrap();
-        let raw_with_counterpary_conn_id_some_back =
-            RawMsgConnectionOpenInit::from(msg_with_counterpary_conn_id_some.clone());
-        let msg_with_counterpary_conn_id_some_back =
-            MsgConnectionOpenInit::try_from(raw_with_counterpary_conn_id_some_back.clone())
+        let raw_with_counterparty_conn_id_some = dummy_raw_msg_conn_open_init();
+        let msg_with_counterparty_conn_id_some =
+            MsgConnectionOpenInit::try_from(raw_with_counterparty_conn_id_some).unwrap();
+        let raw_with_counterparty_conn_id_some_back =
+            RawMsgConnectionOpenInit::from(msg_with_counterparty_conn_id_some.clone());
+        let msg_with_counterparty_conn_id_some_back =
+            MsgConnectionOpenInit::try_from(raw_with_counterparty_conn_id_some_back.clone())
                 .unwrap();
         assert_eq!(
-            raw_with_counterpary_conn_id_some_back
+            raw_with_counterparty_conn_id_some_back
                 .counterparty
                 .unwrap()
                 .connection_id,
             "".to_string()
         );
         assert_eq!(
-            msg_with_counterpary_conn_id_some,
-            msg_with_counterpary_conn_id_some_back
+            msg_with_counterparty_conn_id_some,
+            msg_with_counterparty_conn_id_some_back
         );
     }
 
