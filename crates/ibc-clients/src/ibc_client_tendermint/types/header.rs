@@ -2,6 +2,7 @@
 
 use alloc::string::ToString;
 use core::fmt::{Display, Error as FmtError, Formatter};
+use core::str::FromStr;
 
 use bytes::Buf;
 use ibc_proto::google::protobuf::Any;

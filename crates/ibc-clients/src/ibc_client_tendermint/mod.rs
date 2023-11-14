@@ -1,4 +1,5 @@
 //! Tendermint light client implementation to be used in [core](crate::core).
+use core::str::FromStr;
 use ibc::core::ics02_client::client_type::ClientType;
 
 mod error;

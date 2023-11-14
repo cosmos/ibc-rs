@@ -1,13 +1,14 @@
 use alloc::string::ToString;
 
-use super::consensus_state::ConsensusState as TmConsensusState;
-use crate::core::ics02_client::ClientExecutionContext;
-use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::path::ClientConsensusStatePath;
-use crate::core::timestamp::Timestamp;
-use crate::core::ContextError;
-use crate::prelude::*;
-use crate::Height;
+use crate::ibc_client_tendermint::types::consensus_state::ConsensusState as TmConsensusState;
+
+use ibc::core::ics02_client::ClientExecutionContext;
+use ibc::core::ics24_host::identifier::ClientId;
+use ibc::core::ics24_host::path::ClientConsensusStatePath;
+use ibc::core::timestamp::Timestamp;
+use ibc::core::ContextError;
+use ibc::prelude::*;
+use ibc::Height;
 
 /// Client's context required during both validation and execution
 pub trait CommonContext {
