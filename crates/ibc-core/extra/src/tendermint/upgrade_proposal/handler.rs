@@ -7,6 +7,7 @@ use tendermint::abci::Event as TmEvent;
 use crate::tendermint::upgrade_proposal::{
     UpgradeClientProposal, UpgradeExecutionContext, UpgradeProposal,
 };
+use ibc_clients::ibc_client_tendermint::types::client_state::ClientState as TmClientState;
 
 /// Handles an upgrade client proposal
 ///
