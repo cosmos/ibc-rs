@@ -8,13 +8,13 @@ use tendermint::time::Time;
 use tendermint::Hash;
 use tendermint_proto::google::protobuf as tpb;
 
-use crate::clients::ics07_tendermint::error::Error;
-use crate::clients::ics07_tendermint::header::Header;
-use crate::core::ics02_client::consensus_state::ConsensusState as ConsensusStateTrait;
-use crate::core::ics02_client::error::ClientError;
-use crate::core::ics23_commitment::commitment::CommitmentRoot;
-use crate::core::timestamp::Timestamp;
-use crate::prelude::*;
+use crate::ibc_client_tendermint::error::Error;
+use crate::ibc_client_tendermint::types::header::Header;
+use ibc::core::ics02_client::consensus_state::ConsensusState as ConsensusStateTrait;
+use ibc::core::ics02_client::error::ClientError;
+use ibc::core::ics23_commitment::commitment::CommitmentRoot;
+use ibc::core::timestamp::Timestamp;
+use ibc::prelude::*;
 
 pub const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str =
     "/ibc.lightclients.tendermint.v1.ConsensusState";

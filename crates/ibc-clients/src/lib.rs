@@ -2,6 +2,8 @@
 
 use core::any::Any;
 
+extern crate alloc;
+
 pub mod ibc_client_tendermint;
 
 /// Allows type to be converted to `&dyn Any`

@@ -6,7 +6,6 @@ mod update_client;
 
 use core::cmp::max;
 use core::convert::{TryFrom, TryInto};
-use core::str::FromStr;
 use core::time::Duration;
 
 use ibc_proto::google::protobuf::Any;
@@ -21,35 +20,36 @@ use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::ProdVerifier;
 
 use super::trust_threshold::TrustThreshold;
-use super::{
-    client_type as tm_client_type, ExecutionContext as TmExecutionContext,
-    ValidationContext as TmValidationContext,
+use crate::ibc_client_tendermint::client_type as tm_client_type;
+use crate::ibc_client_tendermint::impls::context::{
+    ExecutionContext as TmExecutionContext, ValidationContext as TmValidationContext,
 };
-use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
-use crate::clients::ics07_tendermint::error::Error;
-use crate::clients::ics07_tendermint::header::Header as TmHeader;
-use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
-use crate::clients::ics07_tendermint::CommonContext;
-use crate::core::ics02_client::client_state::{
+
+use crate::ibc_client_tendermint::error::Error;
+use crate::ibc_client_tendermint::impls::context::CommonContext;
+use crate::ibc_client_tendermint::types::consensus_state::ConsensusState as TmConsensusState;
+use crate::ibc_client_tendermint::types::header::Header as TmHeader;
+use crate::ibc_client_tendermint::types::misbehaviour::Misbehaviour as TmMisbehaviour;
+use ibc::core::ics02_client::client_state::{
     ClientStateCommon, ClientStateExecution, ClientStateValidation, Status, UpdateKind,
 };
-use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
-use crate::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
-use crate::core::ics23_commitment::commitment::{
+use ibc::core::ics02_client::client_type::ClientType;
+use ibc::core::ics02_client::consensus_state::ConsensusState;
+use ibc::core::ics02_client::error::{ClientError, UpgradeClientError};
+use ibc::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
+use ibc::core::ics23_commitment::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
-use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
-use crate::core::ics23_commitment::specs::ProofSpecs;
-use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::core::ics24_host::path::{
+use ibc::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
+use ibc::core::ics23_commitment::specs::ProofSpecs;
+use ibc::core::ics24_host::identifier::{ChainId, ClientId};
+use ibc::core::ics24_host::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
-use crate::core::timestamp::ZERO_DURATION;
-use crate::core::ExecutionContext;
-use crate::prelude::*;
-use crate::Height;
+use ibc::core::timestamp::ZERO_DURATION;
+use ibc::core::ExecutionContext;
+use ibc::prelude::*;
+use ibc::Height;
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
@@ -830,12 +830,12 @@ mod tests {
     use test_log::test;
 
     use super::*;
-    use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState};
-    use crate::clients::ics07_tendermint::error::Error;
-    use crate::core::ics02_client::height::Height;
-    use crate::core::ics23_commitment::specs::ProofSpecs;
-    use crate::core::ics24_host::identifier::ChainId;
-    use crate::core::timestamp::ZERO_DURATION;
+    use crate::ibc_client_tendermint::error::Error;
+    use crate::ibc_client_tendermint::types::client_state::{AllowUpdate, ClientState};
+    use ibc::core::ics02_client::height::Height;
+    use ibc::core::ics23_commitment::specs::ProofSpecs;
+    use ibc::core::ics24_host::identifier::ChainId;
+    use ibc::core::timestamp::ZERO_DURATION;
 
     impl ClientState {
         pub fn new_dummy_from_raw(frozen_height: RawHeight) -> Result<Self, Error> {
