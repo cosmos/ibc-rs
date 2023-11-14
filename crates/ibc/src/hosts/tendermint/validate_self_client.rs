@@ -5,7 +5,7 @@ use core::time::Duration;
 use ibc_proto::google::protobuf::Any;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 
-use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
+use ibc_clients::ibc_client_tendermint::types::client_state::ClientState as TmClientState;
 use crate::core::ics02_client::client_state::ClientStateCommon;
 use crate::core::ics02_client::error::ClientError;
 use crate::core::ics03_connection::error::ConnectionError;

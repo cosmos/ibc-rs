@@ -1,13 +1,11 @@
-use alloc::string::ToString;
-
 use tendermint::abci::Event as TmEvent;
 
-use crate::clients::ics07_tendermint::client_state::ClientState as TmClientState;
 use crate::core::ics02_client::error::UpgradeClientError;
 use crate::core::ics24_host::path::UpgradeClientPath;
 use crate::hosts::tendermint::upgrade_proposal::{
     UpgradeClientProposal, UpgradeExecutionContext, UpgradeProposal,
 };
+use ibc_clients::ibc_client_tendermint::types::client_state::ClientState as TmClientState;
 
 /// Handles an upgrade client proposal
 ///

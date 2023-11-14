@@ -8,7 +8,7 @@ use derive_more::Into;
 use displaydoc::Display;
 use validate::*;
 
-use crate::clients::ics07_tendermint::client_type as tm_client_type;
+use ibc_clients::ibc_client_tendermint::types::client_type as tm_client_type;
 use crate::core::ics02_client::client_type::ClientType;
 use crate::prelude::*;
 

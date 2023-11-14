@@ -51,7 +51,6 @@ pub use signer::Signer;
 pub use crate::core::ics02_client::height::Height;
 
 pub mod applications;
-pub mod clients;
 pub mod core;
 pub mod hosts;
 

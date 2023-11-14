@@ -35,6 +35,7 @@ typed-builder = { workspace = true, optional = true }
 uint = { version = "0.9", default-features = false }
 
 # ibc dependencies
+ibc-clients = { version = "0.47.0", path = "../ibc-clients" }
 ibc-derive = { version = "0.3.0", path = "../ibc-derive" }
 ibc-proto = { workspace = true }
 ics23 = { workspace = true, features = ["host-functions"] }
@@ -47,7 +48,6 @@ tendermint-light-client-verifier = { workspace = true, features = ["rust-crypto"
 ## parity dependencies
 parity-scale-codec = { workspace = true , optional = true }
 scale-info = { workspace = true , optional = true }
-
 
 [dev-dependencies]
 ibc-testkit = { version = "0.47.0", path = "../ibc-testkit", default-features = false, features = ["serde"] }
