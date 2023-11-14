@@ -7,7 +7,7 @@ use core::fmt::{
 };
 use core::str::FromStr;
 
-use crate::prelude::*;
+use ibc::prelude::*;
 
 /// Represents the token transfer memo
 #[cfg_attr(

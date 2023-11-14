@@ -1,12 +1,28 @@
 //! Implementation of the [fungible token transfer module](https://github.com/cosmos/ibc/blob/main/spec/app/ics-020-fungible-token-transfer/README.md) (ICS-20)
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
+#![no_std]
+#![deny(
+    warnings,
+    trivial_casts,
+    trivial_numeric_casts,
+    unused_import_braces,
+    unused_qualifications,
+    rust_2018_idioms
+)]
+#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types,))]
+#![forbid(unsafe_code)]
 
-pub mod amount;
-pub mod coin;
-pub mod context;
-pub mod denom;
+extern crate alloc;
+
+#[cfg(any(test, feature = "std"))]
+extern crate std;
+
+mod amount;
+mod coin;
+mod denom;
 pub mod error;
 pub mod events;
-pub mod memo;
+mod memo;
 pub mod msgs;
 pub mod packet;
 
@@ -14,10 +30,6 @@ pub use amount::*;
 pub use coin::*;
 pub use denom::*;
 pub use memo::*;
-
-mod relay;
-
-pub use relay::send_transfer::{send_transfer, send_transfer_execute, send_transfer_validate};
 
 /// Module identifier for the ICS20 application.
 pub const MODULE_ID_STR: &str = "transfer";
@@ -33,7 +45,7 @@ pub const VERSION: &str = "ics20-1";
 /// equivalent to `base64::encode(0x01)`.
 pub const ACK_SUCCESS_B64: &str = "AQ==";
 
-use crate::core::ics04_channel::acknowledgement::StatusValue;
+use ibc::core::ics04_channel::acknowledgement::StatusValue;
 
 /// Returns a successful acknowledgement status for the token transfer application.
 pub fn ack_success_b64() -> StatusValue {

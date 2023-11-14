@@ -22,7 +22,6 @@ borsh = { workspace = true, optional = true }
 bytes = { workspace = true }
 derive_more = { workspace = true }
 displaydoc = { workspace = true }
-primitive-types = { workspace = true }
 prost = { workspace = true }
 serde_derive = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
@@ -32,9 +31,9 @@ sha2 = { workspace = true, default-features = false }
 time = { workspace = true, default-features = false }
 schemars = { workspace = true, optional = true }
 typed-builder = { workspace = true, optional = true }
-uint = { version = "0.9", default-features = false }
 
 # ibc dependencies
+# ibc-apps = { version = "0.47.0", path = "../ibc-apps" }
 ibc-derive = { version = "0.3.0", path = "../ibc-derive" }
 ibc-proto = { workspace = true }
 ics23 = { workspace = true, features = ["host-functions"] }
@@ -70,8 +69,6 @@ std = [
     "serde_json/std",
     "sha2/std",
     "displaydoc/std",
-    "uint/std",
-    "primitive-types/std",
     "tendermint/clock",
     "tendermint/std",
 ]

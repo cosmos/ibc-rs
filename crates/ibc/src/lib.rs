@@ -50,7 +50,6 @@ pub use signer::Signer;
 /// Represents a block height
 pub use crate::core::ics02_client::height::Height;
 
-pub mod applications;
 pub mod clients;
 pub mod core;
 pub mod hosts;
@@ -60,7 +59,7 @@ mod signer;
 pub mod utils;
 
 #[cfg(feature = "serde")]
-mod serializers;
+pub mod serializers;
 
 /// Re-exports pertinent ibc proto types from the `ibc-proto-rs` crate for added convenience
 pub mod proto {

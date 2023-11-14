@@ -1,11 +1,12 @@
 //! Defines all token transfer event types
 
+use ibc::core::events::ModuleEvent;
+use ibc::core::ics04_channel::acknowledgement::AcknowledgementStatus;
+use ibc::prelude::*;
+use ibc::Signer;
+
 use super::Memo;
-use crate::applications::transfer::{Amount, PrefixedDenom, MODULE_ID_STR};
-use crate::core::events::ModuleEvent;
-use crate::core::ics04_channel::acknowledgement::AcknowledgementStatus;
-use crate::prelude::*;
-use crate::signer::Signer;
+use crate::{Amount, PrefixedDenom, MODULE_ID_STR};
 
 const EVENT_TYPE_PACKET: &str = "fungible_token_packet";
 const EVENT_TYPE_TIMEOUT: &str = "timeout";

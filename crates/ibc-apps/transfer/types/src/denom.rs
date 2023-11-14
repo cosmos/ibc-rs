@@ -4,13 +4,13 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use derive_more::{Display, From};
+use ibc::core::ics24_host::identifier::{ChannelId, PortId};
+use ibc::prelude::*;
+#[cfg(feature = "serde")]
+use ibc::serializers::serde_string;
 use ibc_proto::ibc::applications::transfer::v1::DenomTrace as RawDenomTrace;
 
 use super::error::TokenTransferError;
-use crate::core::ics24_host::identifier::{ChannelId, PortId};
-use crate::prelude::*;
-#[cfg(feature = "serde")]
-use crate::serializers::serde_string;
 
 /// The "base" of a denomination.
 ///

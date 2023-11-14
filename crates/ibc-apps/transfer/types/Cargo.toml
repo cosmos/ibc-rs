@@ -1,0 +1,57 @@
+[package]
+name         = "ibc-app-transfer-types"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc", "transfer", "ics20", "types"]
+readme       = "README.md"
+description  = """
+    TBD
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+borsh = { workspace = true, optional = true }
+derive_more = { workspace = true }
+displaydoc = { workspace = true }
+primitive-types = { workspace = true }
+schemars = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+serde_json =  { workspace = true, optional = true}
+uint = { version = "0.9", default-features = false }
+
+# ibc dependencies
+ibc = { version = "0.47.0", path = "./../../../ibc" }
+ibc-derive = { version = "0.3.0", path = "./../../../ibc-derive" }
+ibc-proto = { workspace = true }
+ics23 = { workspace = true }
+
+## parity dependencies
+parity-scale-codec = { workspace = true , optional = true }
+scale-info = { workspace = true , optional = true }
+
+[dev-dependencies]
+ibc-testkit = { version = "0.47.0", path = "./../../../ibc-testkit", default-features = false}
+rstest = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "ibc-proto/std",
+    "ics23/std",
+    "serde/std",
+    "serde_json/std",
+    "displaydoc/std",
+    "uint/std",
+    "primitive-types/std",
+]
+borsh = ["dep:borsh", "ibc-proto/borsh"]
+serde = ["dep:serde", "serde_json", "ibc-proto/serde", "ics23/serde"]
+schema = ["dep:schemars", "ibc-proto/json-schema", "serde", "std"]
+parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-proto/parity-scale-codec"]

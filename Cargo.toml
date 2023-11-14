@@ -2,6 +2,8 @@
 resolver = "2"
 members = [
     "crates/ibc",
+    "crates/ibc-apps/transfer",
+    "crates/ibc-apps/transfer/types",
     "crates/ibc-derive",
     "crates/ibc-testkit",
     "crates/ibc-query",

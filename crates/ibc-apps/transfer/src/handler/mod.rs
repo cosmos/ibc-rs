@@ -1,14 +1,14 @@
 //! Implements the processing logic for ICS20 (token transfer) message.
-
-use super::context::{TokenTransferExecutionContext, TokenTransferValidationContext};
-use crate::applications::transfer::error::TokenTransferError;
-use crate::applications::transfer::is_sender_chain_source;
-use crate::applications::transfer::packet::PacketData;
-use crate::core::ics04_channel::packet::Packet;
-use crate::prelude::*;
-
 pub mod on_recv_packet;
 pub mod send_transfer;
+
+use ibc::core::ics04_channel::packet::Packet;
+use ibc::prelude::*;
+use ibc_app_transfer_types::error::TokenTransferError;
+use ibc_app_transfer_types::is_sender_chain_source;
+use ibc_app_transfer_types::packet::PacketData;
+
+use crate::context::{TokenTransferExecutionContext, TokenTransferValidationContext};
 
 pub fn refund_packet_token_execute(
     ctx_a: &mut impl TokenTransferExecutionContext,

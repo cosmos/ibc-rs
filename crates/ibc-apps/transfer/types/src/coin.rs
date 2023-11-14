@@ -3,12 +3,12 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
+use ibc::prelude::*;
 use ibc_proto::cosmos::base::v1beta1::Coin as ProtoCoin;
 
 use super::amount::Amount;
 use super::denom::{BaseDenom, PrefixedDenom};
 use super::error::TokenTransferError;
-use crate::prelude::*;
 
 /// A `Coin` type with fully qualified `PrefixedDenom`.
 pub type PrefixedCoin = Coin<PrefixedDenom>;

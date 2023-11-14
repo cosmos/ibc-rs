@@ -1,112 +1,20 @@
-//! Defines the main context traits and IBC module callbacks
-use sha2::{Digest, Sha256};
+use ibc::core::ics04_channel::acknowledgement::{Acknowledgement, AcknowledgementStatus};
+use ibc::core::ics04_channel::channel::{Counterparty, Order};
+use ibc::core::ics04_channel::packet::Packet;
+use ibc::core::ics04_channel::Version;
+use ibc::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
+use ibc::core::router::ModuleExtras;
+use ibc::core::ContextError;
+use ibc::prelude::*;
+use ibc::Signer;
+use ibc_app_transfer_types::error::TokenTransferError;
+use ibc_app_transfer_types::events::{AckEvent, AckStatusEvent, RecvEvent, TimeoutEvent};
+use ibc_app_transfer_types::packet::PacketData;
+use ibc_app_transfer_types::{ack_success_b64, VERSION};
 
-use super::ack_success_b64;
-use super::error::TokenTransferError;
-use crate::applications::transfer::events::{AckEvent, AckStatusEvent, RecvEvent, TimeoutEvent};
-use crate::applications::transfer::packet::PacketData;
-use crate::applications::transfer::relay::on_recv_packet::process_recv_packet_execute;
-use crate::applications::transfer::relay::{
-    refund_packet_token_execute, refund_packet_token_validate,
-};
-use crate::applications::transfer::{PrefixedCoin, PrefixedDenom, VERSION};
-use crate::core::ics04_channel::acknowledgement::{Acknowledgement, AcknowledgementStatus};
-use crate::core::ics04_channel::channel::{Counterparty, Order};
-use crate::core::ics04_channel::packet::Packet;
-use crate::core::ics04_channel::Version;
-use crate::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use crate::core::router::ModuleExtras;
-use crate::core::ContextError;
-use crate::prelude::*;
-use crate::signer::Signer;
-
-/// Methods required in token transfer validation, to be implemented by the host
-pub trait TokenTransferValidationContext {
-    type AccountId: TryFrom<Signer>;
-
-    /// get_port returns the portID for the transfer module.
-    fn get_port(&self) -> Result<PortId, TokenTransferError>;
-
-    /// Returns the escrow account id for a port and channel combination
-    fn get_escrow_account(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<Self::AccountId, TokenTransferError>;
-
-    /// Returns Ok() if the host chain supports sending coins.
-    fn can_send_coins(&self) -> Result<(), TokenTransferError>;
-
-    /// Returns Ok() if the host chain supports receiving coins.
-    fn can_receive_coins(&self) -> Result<(), TokenTransferError>;
-
-    /// Validates the sender and receiver accounts and the coin inputs
-    fn send_coins_validate(
-        &self,
-        from_account: &Self::AccountId,
-        to_account: &Self::AccountId,
-        coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError>;
-
-    /// Validates the receiver account and the coin input
-    fn mint_coins_validate(
-        &self,
-        account: &Self::AccountId,
-        coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError>;
-
-    /// Validates the sender account and the coin input
-    fn burn_coins_validate(
-        &self,
-        account: &Self::AccountId,
-        coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError>;
-
-    /// Returns a hash of the prefixed denom.
-    /// Implement only if the host chain supports hashed denominations.
-    fn denom_hash_string(&self, _denom: &PrefixedDenom) -> Option<String> {
-        None
-    }
-}
-
-/// Methods required in token transfer execution, to be implemented by the host
-pub trait TokenTransferExecutionContext: TokenTransferValidationContext {
-    /// This function should enable sending ibc fungible tokens from one account to another
-    fn send_coins_execute(
-        &mut self,
-        from_account: &Self::AccountId,
-        to_account: &Self::AccountId,
-        coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError>;
-
-    /// This function to enable minting ibc tokens to a user account
-    fn mint_coins_execute(
-        &mut self,
-        account: &Self::AccountId,
-        coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError>;
-
-    /// This function should enable burning of minted tokens in a user account
-    fn burn_coins_execute(
-        &mut self,
-        account: &Self::AccountId,
-        coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError>;
-}
-
-// https://github.com/cosmos/cosmos-sdk/blob/master/docs/architecture/adr-028-public-key-addresses.md
-pub fn cosmos_adr028_escrow_address(port_id: &PortId, channel_id: &ChannelId) -> Vec<u8> {
-    let contents = format!("{port_id}/{channel_id}");
-
-    let mut hasher = Sha256::new();
-    hasher.update(VERSION.as_bytes());
-    hasher.update([0]);
-    hasher.update(contents.as_bytes());
-
-    let mut hash = hasher.finalize().to_vec();
-    hash.truncate(20);
-    hash
-}
+use crate::context::{TokenTransferExecutionContext, TokenTransferValidationContext};
+use crate::handler::on_recv_packet::process_recv_packet_execute;
+use crate::handler::{refund_packet_token_execute, refund_packet_token_validate};
 
 pub fn on_chan_open_init_validate(
     ctx: &impl TokenTransferValidationContext,
@@ -411,39 +319,70 @@ pub fn on_timeout_packet_execute(
 }
 
 #[cfg(test)]
-mod tests {
-    use subtle_encoding::bech32;
+mod test {
+    use ibc_app_transfer_types::ack_success_b64;
+    use ibc_app_transfer_types::error::TokenTransferError;
 
     use super::*;
-    use crate::applications::transfer::context::cosmos_adr028_escrow_address;
 
     #[test]
-    fn test_cosmos_escrow_address() {
-        fn assert_eq_escrow_address(port_id: &str, channel_id: &str, address: &str) {
-            let port_id = port_id.parse().unwrap();
-            let channel_id = channel_id.parse().unwrap();
-            let gen_address = {
-                let addr = cosmos_adr028_escrow_address(&port_id, &channel_id);
-                bech32::encode("cosmos", addr)
-            };
-            assert_eq!(gen_address, address.to_owned())
+    fn test_ack_ser() {
+        fn ser_json_assert_eq(ack: AcknowledgementStatus, json_str: &str) {
+            let ser = serde_json::to_string(&ack).unwrap();
+            assert_eq!(ser, json_str)
         }
 
-        // addresses obtained using `gaiad query ibc-transfer escrow-address [port-id] [channel-id]`
-        assert_eq_escrow_address(
-            "transfer",
-            "channel-141",
-            "cosmos1x54ltnyg88k0ejmk8ytwrhd3ltm84xehrnlslf",
+        ser_json_assert_eq(
+            AcknowledgementStatus::success(ack_success_b64()),
+            r#"{"result":"AQ=="}"#,
         );
-        assert_eq_escrow_address(
-            "transfer",
-            "channel-207",
-            "cosmos1ju6tlfclulxumtt2kglvnxduj5d93a64r5czge",
+        ser_json_assert_eq(
+            AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into()),
+            r#"{"error":"failed to deserialize packet data"}"#,
         );
-        assert_eq_escrow_address(
-            "transfer",
-            "channel-187",
-            "cosmos177x69sver58mcfs74x6dg0tv6ls4s3xmmcaw53",
+    }
+
+    #[test]
+    fn test_ack_success_to_vec() {
+        let ack_success: Vec<u8> = AcknowledgementStatus::success(ack_success_b64()).into();
+
+        // Check that it's the same output as ibc-go
+        // Note: this also implicitly checks that the ack bytes are non-empty,
+        // which would make the conversion to `Acknowledgement` panic
+        assert_eq!(ack_success, r#"{"result":"AQ=="}"#.as_bytes());
+    }
+
+    #[test]
+    fn test_ack_error_to_vec() {
+        let ack_error: Vec<u8> =
+            AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into())
+                .into();
+
+        // Check that it's the same output as ibc-go
+        // Note: this also implicitly checks that the ack bytes are non-empty,
+        // which would make the conversion to `Acknowledgement` panic
+        assert_eq!(
+            ack_error,
+            r#"{"error":"failed to deserialize packet data"}"#.as_bytes()
         );
+    }
+
+    #[test]
+    fn test_ack_de() {
+        fn de_json_assert_eq(json_str: &str, ack: AcknowledgementStatus) {
+            let de = serde_json::from_str::<AcknowledgementStatus>(json_str).unwrap();
+            assert_eq!(de, ack)
+        }
+
+        de_json_assert_eq(
+            r#"{"result":"AQ=="}"#,
+            AcknowledgementStatus::success(ack_success_b64()),
+        );
+        de_json_assert_eq(
+            r#"{"error":"failed to deserialize packet data"}"#,
+            AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into()),
+        );
+
+        assert!(serde_json::from_str::<AcknowledgementStatus>(r#"{"success":"AQ=="}"#).is_err());
     }
 }

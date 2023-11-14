@@ -1,12 +1,13 @@
-use ibc::applications::transfer::context::{
-    cosmos_adr028_escrow_address, on_chan_open_init_execute, on_chan_open_init_validate,
-    on_chan_open_try_execute, on_chan_open_try_validate,
-};
-use ibc::applications::transfer::VERSION;
 use ibc::core::ics04_channel::channel::{Counterparty, Order};
 use ibc::core::ics04_channel::Version;
 use ibc::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
 use ibc::prelude::*;
+use ibc_app_transfer::context::cosmos_adr028_escrow_address;
+use ibc_app_transfer::module::{
+    on_chan_open_init_execute, on_chan_open_init_validate, on_chan_open_try_execute,
+    on_chan_open_try_validate,
+};
+use ibc_app_transfer::types::VERSION;
 use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use subtle_encoding::bech32;
 

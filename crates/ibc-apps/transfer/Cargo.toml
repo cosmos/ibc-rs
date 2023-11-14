@@ -1,0 +1,51 @@
+[package]
+name         = "ibc-app-transfer"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc", "transfer", "ics20"]
+readme       = "README.md"
+description  = """
+    TBD
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+serde_json =  { workspace = true, optional = true }
+sha2 = { workspace = true }
+
+# ibc dependencies
+ibc-app-transfer-types = { version = "0.47.0", path = "./types", default-features = false }
+ibc = { version = "0.47.0", path = "./../../ibc", default-features = false }
+ibc-derive = { version = "0.3.0", path = "./../../ibc-derive" }
+ibc-proto = { workspace = true }
+ics23 = { workspace = true }
+
+[dev-dependencies]
+subtle-encoding = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "ibc-app-transfer-types/std",
+    "ibc/std",
+    "ibc-proto/std",
+    "ics23/std",
+    "subtle-encoding/std",
+    "serde_json/std",
+    "sha2/std",
+]
+serde = [
+    "ibc-app-transfer-types/serde",
+    "ibc/serde",
+    "ibc-proto/serde",
+    "ics23/serde",
+    "serde_json"
+]
+
