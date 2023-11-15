@@ -1,5 +1,4 @@
 //! Defines coin types; the objects that are being transferred.
-
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 

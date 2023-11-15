@@ -1,5 +1,4 @@
 //! Defines the token transfer error type
-
 use core::convert::Infallible;
 use core::str::Utf8Error;
 

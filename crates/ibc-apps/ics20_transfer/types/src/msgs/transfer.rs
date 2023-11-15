@@ -1,5 +1,4 @@
 //! Defines the token transfer message type
-
 use ibc::core::ics04_channel::error::PacketError;
 use ibc::core::ics04_channel::timeout::TimeoutHeight;
 use ibc::core::ics24_host::identifier::{ChannelId, PortId};

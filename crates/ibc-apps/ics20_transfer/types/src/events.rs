@@ -1,5 +1,4 @@
 //! Defines all token transfer event types
-
 use ibc::core::events::ModuleEvent;
 use ibc::core::ics04_channel::acknowledgement::AcknowledgementStatus;
 use ibc::prelude::*;

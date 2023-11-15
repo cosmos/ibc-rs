@@ -1,5 +1,4 @@
 //! Contains the `Amount` type, which represents amounts of tokens transferred.
-
 use core::ops::Deref;
 use core::str::FromStr;
 
