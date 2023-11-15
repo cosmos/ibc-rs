@@ -45,15 +45,13 @@ This ADR aims to enhance both the usability and practicality of `ibc-rs` by
 restructuring the codebase and organizing it under multiple sub-libraries, as
 stated in the [decision](#decision) section. This will make different parts of
 `ibc-rs` accessible to users, positioning it as a more comprehensive, one-stop
-solution catering to diverse users groups, whether for on-chain or off-chain use
+solution catering to diverse user groups, whether for on-chain or off-chain use
 cases.
 
 ## Decision
 
-For the library organization, the first stage of separation is to split off the
-codebase of each IBC applications, clients, and core implementation, decoupling
-them from each other. The top-level libraries and the naming schema would look
-like as follow:
+For the library organization, the first stage of separation is to split the
+codebase so that each IBC application, client, and core implementation is decoupled from one another. The top-level libraries and the naming schema would look as follows:
 
 ```markdown
 .
@@ -81,11 +79,11 @@ like as follow:
 ```
 
 With this restructure, the main `ibc` crate primarily re-exports types,
-interfaces, and implementation of all the sub-libraries. Therefore, if someone
+interfaces, and implementations of all the sub-libraries. Therefore, if someone
 only wants to depend on the `ibc` crate without caring about this granularity,
 they can do so.
 
-Afterward, we split off data structure of each IBC layer into a separate
+Afterward, we split off the data structures of each IBC layer into a separate
 sub-library under a `types` folder, still maintained under the directory of that
 relevant component/module. As an example, the `ibc-core-client` crate’s tree and
 the naming schema looks like this:
@@ -100,15 +98,14 @@ ibc-core
 ```
 
 This way, the main crate of each IBC module contains all the necessary APIs and
-implementation to integrate with host chains, along with re-exporting the
+implementations to integrate with host chains, along with re-exporting the
 sub-library types. This allows projects to selectively import types (e.g.
 `ibc-core-client-types`), often required by off-chain users such as relayers. Or
 to pick the library containing the entire implementation of that particular
 module (e.g. `ibc-core-client`), typically more convenient for host chains or
-smart contract developers to integrate with their end.
+smart contract developers to integrate with on their end.
 
-By this restructuring, the **directory tree** of the repo would look like as
-follow:
+Once the restructuring is complete, the **directory tree** of the repo would look as follows:
 
 ```markdown
 ibc
@@ -128,7 +125,7 @@ ibc-core
 ├── ics24-host
 |   └── .
 ├── src
-├── cargo.toml
+├── Cargo.toml
 └── README.md
 ibc-clients
 ├── ics07-tendermint
@@ -162,8 +159,9 @@ We should acknowledge this restructuring, while a significant step forward, will
 not completely address all existing design couplings. Subsequent improvements in
 implementation logic will be necessary to completely decouple ibc core, clients,
 and applications from each other and make the entire logic as chain-agnostic as
-possible. For an instance, currently, our `IbcEvent` type depends on the
-Tendermint events in their conversion, which needs to be addressed afterward.
+possible. 
+For instance, currently, our `IbcEvent` type depends on the
+Tendermint events in their conversion, which can only be addressed once this restructuring is complete.
 There may be other mix-ups as well, but the new repository structure
 significantly simplifies their handling and ensures `ibc-rs` evolves into a more
 adaptable, modular, and composable implementation that can serve various use
