@@ -5,11 +5,10 @@ use core::str::FromStr;
 use derive_more::{Display, From};
 use ibc::core::ics24_host::identifier::{ChannelId, PortId};
 use ibc::prelude::*;
-#[cfg(feature = "serde")]
-use ibc::serializers::serde_string;
 use ibc_proto::ibc::applications::transfer::v1::DenomTrace as RawDenomTrace;
 
 use super::error::TokenTransferError;
+use crate::serializers;
 
 /// The "base" of a denomination.
 ///
@@ -217,7 +216,7 @@ impl Display for TracePath {
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct PrefixedDenom {
     /// A series of `{port-id}/{channel-id}`s for tracing the source of the token.
-    #[cfg_attr(feature = "serde", serde(with = "serde_string"))]
+    #[cfg_attr(feature = "serde", serde(with = "serializers"))]
     #[cfg_attr(feature = "schema", schemars(with = "String"))]
     pub trace_path: TracePath,
     /// Base denomination of the relayed fungible token.

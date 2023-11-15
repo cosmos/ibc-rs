@@ -56,7 +56,7 @@ mod signer;
 pub mod utils;
 
 #[cfg(feature = "serde")]
-pub mod serializers;
+mod serializers;
 
 /// Re-exports pertinent ibc proto types from the `ibc-proto-rs` crate for added convenience
 pub mod proto {
