@@ -1,0 +1,29 @@
+[package]
+name         = "ibc-apps"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc", "applications"]
+readme       = "README.md"
+description  = """
+    TBD
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# ibc dependencies
+ibc-app-transfer = { version = "0.47.0", path = "./ics20_transfer", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+    "ibc-app-transfer/std",
+]
+serde = [
+    "ibc-app-transfer/serde",
+]

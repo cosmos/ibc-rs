@@ -7,7 +7,7 @@ rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "transfer", "ics20", "types"]
-readme       = "README.md"
+readme       = "./../../README.md"
 description  = """
     TBD
 """
@@ -51,7 +51,7 @@ std = [
     "uint/std",
     "primitive-types/std",
 ]
-borsh = ["dep:borsh", "ibc-proto/borsh"]
-serde = ["dep:serde", "serde_json", "ibc-proto/serde", "ics23/serde"]
-schema = ["dep:schemars", "ibc-proto/json-schema", "serde", "std"]
-parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-proto/parity-scale-codec"]
+borsh = ["dep:borsh", "ibc/borsh", "ibc-proto/borsh"]
+serde = ["dep:serde", "serde_json", "ibc/serde", "ibc-proto/serde", "ics23/serde"]
+schema = ["dep:schemars", "ibc/schema", "ibc-proto/json-schema", "serde", "std"]
+parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc/parity-scale-codec", "ibc-proto/parity-scale-codec"]

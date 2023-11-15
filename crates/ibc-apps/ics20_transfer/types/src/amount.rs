@@ -8,10 +8,6 @@ use ibc::prelude::*;
 use primitive_types::U256;
 
 use super::error::TokenTransferError;
-#[cfg(feature = "schema")]
-use crate::alloc::borrow::ToOwned;
-#[cfg(feature = "schema")]
-use crate::alloc::string::String;
 
 /// A type for representing token transfer amounts.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

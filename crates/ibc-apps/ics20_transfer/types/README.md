@@ -1,1 +1,0 @@
-# `ibc-app-transfer-types`

@@ -7,7 +7,7 @@ rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "transfer", "ics20"]
-readme       = "README.md"
+readme       = "./../README.md"
 description  = """
     TBD
 """
@@ -37,7 +37,6 @@ std = [
     "ibc/std",
     "ibc-proto/std",
     "ics23/std",
-    "subtle-encoding/std",
     "serde_json/std",
     "sha2/std",
 ]

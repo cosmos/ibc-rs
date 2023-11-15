@@ -1,6 +1,8 @@
 //! Implementation of the [fungible token transfer module](https://github.com/cosmos/ibc/blob/main/spec/app/ics-020-fungible-token-transfer/README.md) (ICS-20)
-#![cfg_attr(not(test), deny(clippy::unwrap_used))]
 #![no_std]
+#![forbid(unsafe_code)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
+#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types,))]
 #![deny(
     warnings,
     trivial_casts,
@@ -9,26 +11,31 @@
     unused_qualifications,
     rust_2018_idioms
 )]
-#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types,))]
-#![forbid(unsafe_code)]
-
-extern crate alloc;
 
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
+#[cfg(feature = "serde")]
 mod amount;
+#[cfg(feature = "serde")]
+pub use amount::*;
+#[cfg(feature = "serde")]
 mod coin;
+#[cfg(feature = "serde")]
+pub use coin::*;
+#[cfg(feature = "serde")]
 mod denom;
-pub mod error;
+#[cfg(feature = "serde")]
+pub use denom::*;
+#[cfg(feature = "serde")]
 pub mod events;
-mod memo;
+#[cfg(feature = "serde")]
 pub mod msgs;
+#[cfg(feature = "serde")]
 pub mod packet;
 
-pub use amount::*;
-pub use coin::*;
-pub use denom::*;
+pub mod error;
+mod memo;
 pub use memo::*;
 
 /// Module identifier for the ICS20 application.
