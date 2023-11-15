@@ -3,8 +3,8 @@ resolver = "2"
 members = [
     "crates/ibc",
     "crates/ibc-apps",
-    "crates/ibc-apps/ics20_transfer",
-    "crates/ibc-apps/ics20_transfer/types",
+    "crates/ibc-apps/ics20-transfer",
+    "crates/ibc-apps/ics20-transfer/types",
     "crates/ibc-derive",
     "crates/ibc-testkit",
     "crates/ibc-query",

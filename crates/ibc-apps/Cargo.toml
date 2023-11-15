@@ -17,7 +17,7 @@ description  = """
 all-features = true
 
 [dependencies]
-ibc-app-transfer = { version = "0.47.0", path = "./ics20_transfer", default-features = false }
+ibc-app-transfer = { version = "0.47.0", path = "./ics20-transfer", default-features = false }
 
 [features]
 default = ["std"]
