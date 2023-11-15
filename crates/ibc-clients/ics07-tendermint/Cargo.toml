@@ -1,0 +1,25 @@
+[package]
+name         = "ibc-client-tendermint"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+readme       = "README.md"
+keywords     = ["blockchain", "consensus", "cosmos", "ibc", "tendermint"]
+description  = """
+    `ibc-client-tendermint` exports the types, handlers, and contexts for implementing Tendermint light clients.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# ibc dependencies
+ibc = { version = "0.47.0", path = "./../../ibc", default-features = false }
+ibc-client-tendermint-types = { version = "0.47.0", path = "./types", default-features = false }
+ibc-proto = { workspace = true, features = ["server"] }
+
+# cosmos dependencies
+tendermint-light-client-verifier = { workspace = true, features = ["rust-crypto"] }

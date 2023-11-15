@@ -1,0 +1,38 @@
+[package]
+name         = "ibc-client-tendermint-types"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc", "transfer", "ics20", "types"]
+readme       = "./../../README.md"
+description  = """
+    Containts the domain types and data structures necessary for implementing Tendermint-based
+    IBC clients.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+bytes = { workspace = true }
+displaydoc = { workspace = true }
+prost = { workspace = true }
+
+# cosmos dependencies
+tendermint = { workspace = true }
+tendermint-light-client-verifier = { workspace = true, features = ["rust-crypto"] }
+tendermint-proto = { workspace = true }
+
+# ibc dependencies
+ibc = { version = "0.47.0", path = "./../../../ibc" }
+ibc-proto = { workspace = true, features = ["server"] }
+
+[dev-dependencies]
+env_logger = { workspace = true }
+ibc-testkit = { version = "0.47.0", path = "./../../../ibc-testkit", default-features = false, features = ["serde"] }
+test-log = { workspace = true }
+tracing-subscriber = { workspace = true }

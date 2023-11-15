@@ -1,18 +1,15 @@
-//! Light client implementations to be used in [core](crate::core).
+//! Exports data structures and implementations of different IBC applications.
+#![no_std]
+#![forbid(unsafe_code)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
+#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types,))]
+#![deny(
+    warnings,
+    trivial_numeric_casts,
+    unused_import_braces,
+    unused_qualifications,
+    rust_2018_idioms
+)]
 
-use core::any::Any;
-
-extern crate alloc;
-
-pub mod ibc_client_tendermint;
-
-/// Allows type to be converted to `&dyn Any`
-pub trait AsAny: Any {
-    fn as_any(&self) -> &dyn Any;
-}
-
-impl<M: Any> AsAny for M {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
+#[doc(inline)]
+pub use ibc_client_tendermint as tendermint;

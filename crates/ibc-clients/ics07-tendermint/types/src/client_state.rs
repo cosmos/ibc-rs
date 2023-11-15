@@ -1,36 +1,17 @@
 //! Implements the core [`ClientState`](crate::core::ics02_client::client_state::ClientState) trait
 //! for the Tendermint light client.
 
-mod misbehaviour;
-mod update_client;
+use crate::consensus_state::ConsensusState as TmConsensusState;
+use crate::error::Error;
+use crate::header::Header as TmHeader;
+use crate::misbehaviour::Misbehaviour as TmMisbehaviour;
+use crate::trust_threshold::TrustThreshold;
 
 use core::cmp::max;
 use core::convert::{TryFrom, TryInto};
 use core::str::FromStr;
 use core::time::Duration;
 
-use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
-use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
-use ibc_proto::Protobuf;
-use prost::Message;
-use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
-use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
-use tendermint_light_client_verifier::options::Options;
-use tendermint_light_client_verifier::ProdVerifier;
-
-use super::trust_threshold::TrustThreshold;
-use crate::ibc_client_tendermint::client_type as tm_client_type;
-use crate::ibc_client_tendermint::impls::context::{
-    ExecutionContext as TmExecutionContext, ValidationContext as TmValidationContext,
-};
-
-use crate::ibc_client_tendermint::error::Error;
-use crate::ibc_client_tendermint::impls::context::CommonContext;
-use crate::ibc_client_tendermint::types::consensus_state::ConsensusState as TmConsensusState;
-use crate::ibc_client_tendermint::types::header::Header as TmHeader;
-use crate::ibc_client_tendermint::types::misbehaviour::Misbehaviour as TmMisbehaviour;
 use ibc::core::ics02_client::client_state::{
     ClientStateCommon, ClientStateExecution, ClientStateValidation, Status, UpdateKind,
 };
@@ -52,6 +33,19 @@ use ibc::core::ExecutionContext;
 use ibc::prelude::*;
 use ibc::Height;
 
+use ibc_proto::google::protobuf::Any;
+use ibc_proto::ibc::core::client::v1::Height as RawHeight;
+use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
+use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
+use ibc_proto::Protobuf;
+
+use prost::Message;
+
+use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
+use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
+use tendermint_light_client_verifier::options::Options;
+use tendermint_light_client_verifier::ProdVerifier;
+
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -69,14 +63,14 @@ pub struct ClientState {
     pub trust_level: TrustThreshold,
     pub trusting_period: Duration,
     pub unbonding_period: Duration,
-    max_clock_drift: Duration,
+    pub max_clock_drift: Duration,
     pub latest_height: Height,
     pub proof_specs: ProofSpecs,
     pub upgrade_path: Vec<String>,
-    allow_update: AllowUpdate,
-    frozen_height: Option<Height>,
+    pub allow_update: AllowUpdate,
+    pub frozen_height: Option<Height>,
     #[cfg_attr(feature = "serde", serde(skip))]
-    verifier: ProdVerifier,
+    pub verifier: ProdVerifier,
 }
 
 impl ClientState {
@@ -245,7 +239,7 @@ impl ClientState {
         })
     }
 
-    fn chain_id(&self) -> ChainId {
+    pub fn chain_id(&self) -> ChainId {
         self.chain_id.clone()
     }
 
@@ -261,379 +255,6 @@ impl ClientState {
         self.allow_update.after_misbehaviour = false;
         self.frozen_height = None;
         self.max_clock_drift = ZERO_DURATION;
-    }
-}
-
-impl ClientStateCommon for ClientState {
-    fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
-        let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
-        if tm_consensus_state.root().is_empty() {
-            return Err(ClientError::Other {
-                description: "empty commitment root".into(),
-            });
-        };
-
-        Ok(())
-    }
-
-    fn client_type(&self) -> ClientType {
-        tm_client_type()
-    }
-
-    fn latest_height(&self) -> Height {
-        self.latest_height
-    }
-
-    fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
-        if self.latest_height() < proof_height {
-            return Err(ClientError::InvalidProofHeight {
-                latest_height: self.latest_height(),
-                proof_height,
-            });
-        }
-        Ok(())
-    }
-
-    /// Perform client-specific verifications and check all data in the new
-    /// client state to be the same across all valid Tendermint clients for the
-    /// new chain.
-    ///
-    /// You can learn more about how to upgrade IBC-connected SDK chains in
-    /// [this](https://ibc.cosmos.network/main/ibc/upgrades/quick-guide.html)
-    /// guide
-    fn verify_upgrade_client(
-        &self,
-        upgraded_client_state: Any,
-        upgraded_consensus_state: Any,
-        proof_upgrade_client: CommitmentProofBytes,
-        proof_upgrade_consensus_state: CommitmentProofBytes,
-        root: &CommitmentRoot,
-    ) -> Result<(), ClientError> {
-        // Make sure that the client type is of Tendermint type `ClientState`
-        let upgraded_tm_client_state = Self::try_from(upgraded_client_state.clone())?;
-
-        // Make sure that the consensus type is of Tendermint type `ConsensusState`
-        TmConsensusState::try_from(upgraded_consensus_state.clone())?;
-
-        // Make sure the latest height of the current client is not greater then
-        // the upgrade height This condition checks both the revision number and
-        // the height
-        if self.latest_height() >= upgraded_tm_client_state.latest_height {
-            return Err(UpgradeClientError::LowUpgradeHeight {
-                upgraded_height: self.latest_height(),
-                client_height: upgraded_tm_client_state.latest_height,
-            })?;
-        }
-
-        // Check to see if the upgrade path is set
-        let mut upgrade_path = self.upgrade_path.clone();
-        if upgrade_path.pop().is_none() {
-            return Err(ClientError::ClientSpecific {
-                description: "cannot upgrade client as no upgrade path has been set".to_string(),
-            });
-        };
-
-        let upgrade_path_prefix = CommitmentPrefix::try_from(upgrade_path[0].clone().into_bytes())
-            .map_err(ClientError::InvalidCommitmentProof)?;
-
-        let last_height = self.latest_height().revision_height();
-
-        let mut client_state_value = Vec::new();
-        upgraded_client_state
-            .encode(&mut client_state_value)
-            .map_err(ClientError::Encode)?;
-
-        // Verify the proof of the upgraded client state
-        self.verify_membership(
-            &upgrade_path_prefix,
-            &proof_upgrade_client,
-            root,
-            Path::UpgradeClient(UpgradeClientPath::UpgradedClientState(last_height)),
-            client_state_value,
-        )?;
-
-        let mut cons_state_value = Vec::new();
-        upgraded_consensus_state
-            .encode(&mut cons_state_value)
-            .map_err(ClientError::Encode)?;
-
-        // Verify the proof of the upgraded consensus state
-        self.verify_membership(
-            &upgrade_path_prefix,
-            &proof_upgrade_consensus_state,
-            root,
-            Path::UpgradeClient(UpgradeClientPath::UpgradedClientConsensusState(last_height)),
-            cons_state_value,
-        )?;
-
-        Ok(())
-    }
-
-    fn verify_membership(
-        &self,
-        prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        path: Path,
-        value: Vec<u8>,
-    ) -> Result<(), ClientError> {
-        let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
-        let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
-            .map_err(ClientError::InvalidCommitmentProof)?
-            .into();
-
-        merkle_proof
-            .verify_membership(
-                &self.proof_specs,
-                root.clone().into(),
-                merkle_path,
-                value,
-                0,
-            )
-            .map_err(ClientError::Ics23Verification)
-    }
-
-    fn verify_non_membership(
-        &self,
-        prefix: &CommitmentPrefix,
-        proof: &CommitmentProofBytes,
-        root: &CommitmentRoot,
-        path: Path,
-    ) -> Result<(), ClientError> {
-        let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
-        let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
-            .map_err(ClientError::InvalidCommitmentProof)?
-            .into();
-
-        merkle_proof
-            .verify_non_membership(&self.proof_specs, root.clone().into(), merkle_path)
-            .map_err(ClientError::Ics23Verification)
-    }
-}
-
-impl<V> ClientStateValidation<V> for ClientState
-where
-    V: ClientValidationContext + TmValidationContext,
-    V::AnyConsensusState: TryInto<TmConsensusState>,
-    ClientError: From<<V::AnyConsensusState as TryInto<TmConsensusState>>::Error>,
-{
-    fn verify_client_message(
-        &self,
-        ctx: &V,
-        client_id: &ClientId,
-        client_message: Any,
-        update_kind: &UpdateKind,
-    ) -> Result<(), ClientError> {
-        match update_kind {
-            UpdateKind::UpdateClient => {
-                let header = TmHeader::try_from(client_message)?;
-                self.verify_header(ctx, client_id, header)
-            }
-            UpdateKind::SubmitMisbehaviour => {
-                let misbehaviour = TmMisbehaviour::try_from(client_message)?;
-                self.verify_misbehaviour(ctx, client_id, misbehaviour)
-            }
-        }
-    }
-
-    fn check_for_misbehaviour(
-        &self,
-        ctx: &V,
-        client_id: &ClientId,
-        client_message: Any,
-        update_kind: &UpdateKind,
-    ) -> Result<bool, ClientError> {
-        match update_kind {
-            UpdateKind::UpdateClient => {
-                let header = TmHeader::try_from(client_message)?;
-                self.check_for_misbehaviour_update_client(ctx, client_id, header)
-            }
-            UpdateKind::SubmitMisbehaviour => {
-                let misbehaviour = TmMisbehaviour::try_from(client_message)?;
-                self.check_for_misbehaviour_misbehavior(&misbehaviour)
-            }
-        }
-    }
-
-    fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError> {
-        if self.is_frozen() {
-            return Ok(Status::Frozen);
-        }
-
-        let latest_consensus_state: TmConsensusState = {
-            let any_latest_consensus_state = match ctx.consensus_state(
-                &ClientConsensusStatePath::new(client_id, &self.latest_height),
-            ) {
-                Ok(cs) => cs,
-                // if the client state does not have an associated consensus state for its latest height
-                // then it must be expired
-                Err(_) => return Ok(Status::Expired),
-            };
-
-            any_latest_consensus_state.try_into()?
-        };
-
-        // Note: if the `duration_since()` is `None`, indicating that the latest
-        // consensus state is in the future, then we don't consider the client
-        // to be expired.
-        let now = ctx.host_timestamp()?;
-        if let Some(elapsed_since_latest_consensus_state) =
-            now.duration_since(&latest_consensus_state.timestamp())
-        {
-            if elapsed_since_latest_consensus_state > self.trusting_period {
-                return Ok(Status::Expired);
-            }
-        }
-
-        Ok(Status::Active)
-    }
-}
-
-impl<E> ClientStateExecution<E> for ClientState
-where
-    E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
-    <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
-{
-    fn initialise(
-        &self,
-        ctx: &mut E,
-        client_id: &ClientId,
-        consensus_state: Any,
-    ) -> Result<(), ClientError> {
-        let host_timestamp = CommonContext::host_timestamp(ctx)?;
-        let host_height = CommonContext::host_height(ctx)?;
-
-        let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
-
-        ctx.store_client_state(ClientStatePath::new(client_id), self.clone().into())?;
-        ctx.store_consensus_state(
-            ClientConsensusStatePath::new(client_id, &self.latest_height),
-            tm_consensus_state.into(),
-        )?;
-        ctx.store_update_time(client_id.clone(), self.latest_height(), host_timestamp)?;
-        ctx.store_update_height(client_id.clone(), self.latest_height(), host_height)?;
-
-        Ok(())
-    }
-
-    fn update_state(
-        &self,
-        ctx: &mut E,
-        client_id: &ClientId,
-        header: Any,
-    ) -> Result<Vec<Height>, ClientError> {
-        let header = TmHeader::try_from(header)?;
-        let header_height = header.height();
-
-        self.prune_oldest_consensus_state(ctx, client_id)?;
-
-        let maybe_existing_consensus_state = {
-            let path_at_header_height = ClientConsensusStatePath::new(client_id, &header_height);
-
-            CommonContext::consensus_state(ctx, &path_at_header_height).ok()
-        };
-
-        if maybe_existing_consensus_state.is_some() {
-            // if we already had the header installed by a previous relayer
-            // then this is a no-op.
-            //
-            // Do nothing.
-        } else {
-            let host_timestamp = CommonContext::host_timestamp(ctx)?;
-            let host_height = CommonContext::host_height(ctx)?;
-
-            let new_consensus_state = TmConsensusState::from(header.clone());
-            let new_client_state = self.clone().with_header(header)?;
-
-            ctx.store_consensus_state(
-                ClientConsensusStatePath::new(client_id, &new_client_state.latest_height),
-                new_consensus_state.into(),
-            )?;
-            ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
-            ctx.store_update_time(client_id.clone(), header_height, host_timestamp)?;
-            ctx.store_update_height(client_id.clone(), header_height, host_height)?;
-        }
-
-        Ok(vec![header_height])
-    }
-
-    fn update_state_on_misbehaviour(
-        &self,
-        ctx: &mut E,
-        client_id: &ClientId,
-        _client_message: Any,
-        _update_kind: &UpdateKind,
-    ) -> Result<(), ClientError> {
-        let frozen_client_state = self.clone().with_frozen_height(Height::min(0));
-
-        ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state.into())?;
-
-        Ok(())
-    }
-
-    // Commit the new client state and consensus state to the store
-    fn update_state_on_upgrade(
-        &self,
-        ctx: &mut E,
-        client_id: &ClientId,
-        upgraded_client_state: Any,
-        upgraded_consensus_state: Any,
-    ) -> Result<Height, ClientError> {
-        let mut upgraded_tm_client_state = Self::try_from(upgraded_client_state)?;
-        let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
-
-        upgraded_tm_client_state.zero_custom_fields();
-
-        // Construct new client state and consensus state relayer chosen client
-        // parameters are ignored. All chain-chosen parameters come from
-        // committed client, all client-chosen parameters come from current
-        // client.
-        let new_client_state = ClientState::new(
-            upgraded_tm_client_state.chain_id,
-            self.trust_level,
-            self.trusting_period,
-            upgraded_tm_client_state.unbonding_period,
-            self.max_clock_drift,
-            upgraded_tm_client_state.latest_height,
-            upgraded_tm_client_state.proof_specs,
-            upgraded_tm_client_state.upgrade_path,
-            self.allow_update,
-        )?;
-
-        // The new consensus state is merely used as a trusted kernel against
-        // which headers on the new chain can be verified. The root is just a
-        // stand-in sentinel value as it cannot be known in advance, thus no
-        // proof verification will pass. The timestamp and the
-        // NextValidatorsHash of the consensus state is the blocktime and
-        // NextValidatorsHash of the last block committed by the old chain. This
-        // will allow the first block of the new chain to be verified against
-        // the last validators of the old chain so long as it is submitted
-        // within the TrustingPeriod of this client.
-        // NOTE: We do not set processed time for this consensus state since
-        // this consensus state should not be used for packet verification as
-        // the root is empty. The next consensus state submitted using update
-        // will be usable for packet-verification.
-        let sentinel_root = "sentinel_root".as_bytes().to_vec();
-        let new_consensus_state = TmConsensusState::new(
-            sentinel_root.into(),
-            upgraded_tm_cons_state.timestamp,
-            upgraded_tm_cons_state.next_validators_hash,
-        );
-
-        let latest_height = new_client_state.latest_height;
-        let host_timestamp = CommonContext::host_timestamp(ctx)?;
-        let host_height = CommonContext::host_height(ctx)?;
-
-        ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
-        ctx.store_consensus_state(
-            ClientConsensusStatePath::new(client_id, &latest_height),
-            new_consensus_state.into(),
-        )?;
-        ctx.store_update_time(client_id.clone(), latest_height, host_timestamp)?;
-        ctx.store_update_height(client_id.clone(), latest_height, host_height)?;
-
-        Ok(latest_height)
     }
 }
 
@@ -779,7 +400,7 @@ impl From<ClientState> for Any {
 // `header.trusted_validator_set` was given to us by the relayer. Thus, we
 // need to ensure that the relayer gave us the right set, i.e. by ensuring
 // that it matches the hash we have stored on chain.
-fn check_header_trusted_next_validator_set(
+pub fn check_header_trusted_next_validator_set(
     header: &TmHeader,
     trusted_consensus_state: &TmConsensusState,
 ) -> Result<(), ClientError> {
@@ -831,8 +452,8 @@ mod tests {
     use test_log::test;
 
     use super::*;
-    use crate::ibc_client_tendermint::error::Error;
-    use crate::ibc_client_tendermint::types::client_state::{AllowUpdate, ClientState};
+    use crate::error::Error;
+    use crate::client_state::{AllowUpdate, ClientState};
     use ibc::core::ics02_client::height::Height;
     use ibc::core::ics23_commitment::specs::ProofSpecs;
     use ibc::core::ics24_host::identifier::ChainId;

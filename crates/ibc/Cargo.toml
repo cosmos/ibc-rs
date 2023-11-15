@@ -35,7 +35,6 @@ typed-builder = { workspace = true, optional = true }
 uint = { version = "0.9", default-features = false }
 
 # ibc dependencies
-ibc-clients = { version = "0.47.0", path = "../ibc-clients" }
 ibc-derive = { version = "0.3.0", path = "../ibc-derive" }
 ibc-proto = { workspace = true }
 ics23 = { workspace = true, features = ["host-functions"] }
