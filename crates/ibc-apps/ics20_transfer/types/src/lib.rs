@@ -38,6 +38,12 @@ pub mod error;
 mod memo;
 pub use memo::*;
 
+/// Re-exports ICS-20 token transfer proto types from the `ibc-proto-rs` crate
+/// for added convenience
+pub mod proto {
+    pub use ibc_proto::ibc::apps::transfer;
+}
+
 /// Module identifier for the ICS20 application.
 pub const MODULE_ID_STR: &str = "transfer";
 

@@ -24,9 +24,6 @@
 //! client interface that is defined in `Core`) for specific consensus algorithms. A chain uses these
 //! verification algorithms to verify the state of remote chains.
 //!
-//! + [Applications](applications) consists of implementations of some IBC applications. This is the part of
-//! the protocol that abstracts away the core protocol and focuses solely on business logic.
-//!
 //! When processing a given message `M`, if any method in this library returns an error, the runtime
 //! is expected to rollback all state modifications made to the context
 //! (e.g. [`ExecutionContext`](core::ExecutionContext)) while processing `M`. If a transaction on your
@@ -64,7 +61,6 @@ pub mod serializers;
 /// Re-exports pertinent ibc proto types from the `ibc-proto-rs` crate for added convenience
 pub mod proto {
     pub use ibc_proto::google::protobuf::Any;
-    pub use ibc_proto::ibc::apps::transfer;
     pub use ibc_proto::ibc::lightclients::tendermint;
     pub use ibc_proto::ibc::{core, mock};
     pub use ibc_proto::{ics23, Protobuf};
