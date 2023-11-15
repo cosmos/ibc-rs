@@ -6,11 +6,12 @@ use ibc_proto::ibc::lightclients::tendermint::v1::Misbehaviour as RawMisbehaviou
 use ibc_proto::Protobuf;
 use prost::Message;
 
-use crate::ibc_client_tendermint::error::Error;
-use crate::ibc_client_tendermint::types::header::Header;
 use ibc::core::ics02_client::error::ClientError;
 use ibc::core::ics24_host::identifier::ClientId;
 use ibc::prelude::*;
+
+use crate::error::Error;
+use crate::header::Header;
 
 const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
 

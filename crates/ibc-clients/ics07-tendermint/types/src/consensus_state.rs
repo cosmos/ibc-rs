@@ -8,8 +8,8 @@ use tendermint::time::Time;
 use tendermint::Hash;
 use tendermint_proto::google::protobuf as tpb;
 
-use crate::ibc_client_tendermint::error::Error;
-use crate::ibc_client_tendermint::types::header::Header;
+use crate::error::Error;
+use crate::header::Header;
 use ibc::core::ics02_client::consensus_state::ConsensusState as ConsensusStateTrait;
 use ibc::core::ics02_client::error::ClientError;
 use ibc::core::ics23_commitment::commitment::CommitmentRoot;
@@ -144,20 +144,6 @@ impl From<tendermint::block::Header> for ConsensusState {
 impl From<Header> for ConsensusState {
     fn from(header: Header) -> Self {
         Self::from(header.signed_header.header)
-    }
-}
-
-impl ConsensusStateTrait for ConsensusState {
-    fn root(&self) -> &CommitmentRoot {
-        &self.root
-    }
-
-    fn timestamp(&self) -> Timestamp {
-        self.timestamp.into()
-    }
-
-    fn encode_vec(self) -> Vec<u8> {
-        <Self as Protobuf<Any>>::encode_vec(self)
     }
 }
 

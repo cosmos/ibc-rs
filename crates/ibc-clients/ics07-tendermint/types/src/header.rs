@@ -15,8 +15,8 @@ use tendermint::chain::Id as TmChainId;
 use tendermint::validator::Set as ValidatorSet;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 
-use crate::ibc_client_tendermint::error::Error;
-use crate::ibc_client_tendermint::types::consensus_state::ConsensusState as TmConsensusState;
+use crate::consensus_state::ConsensusState as TmConsensusState;
+use crate::error::Error;
 use ibc::core::ics02_client::error::ClientError;
 use ibc::core::ics24_host::identifier::ChainId;
 use ibc::core::timestamp::Timestamp;
@@ -62,7 +62,7 @@ impl Header {
         .expect("malformed tendermint header domain type has an illegal height of 0")
     }
 
-    pub(crate) fn as_untrusted_block_state(&self) -> UntrustedBlockState<'_> {
+    pub fn as_untrusted_block_state(&self) -> UntrustedBlockState<'_> {
         UntrustedBlockState {
             signed_header: &self.signed_header,
             validators: &self.validator_set,
@@ -70,7 +70,7 @@ impl Header {
         }
     }
 
-    pub(crate) fn as_trusted_block_state<'a>(
+    pub fn as_trusted_block_state<'a>(
         &'a self,
         consensus_state: &TmConsensusState,
         chain_id: &'a TmChainId,

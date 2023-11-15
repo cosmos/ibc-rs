@@ -1,13 +1,14 @@
-//! Tendermint light client implementation to be used in [core](crate::core).
 use core::str::FromStr;
 use ibc::core::ics02_client::client_type::ClientType;
 
-mod error;
+extern crate alloc;
 
-pub mod impls;
-pub mod types;
-
-pub use impls::context::*;
+pub mod error;
+pub mod client_state;
+pub mod consensus_state;
+pub mod header;
+pub mod misbehaviour;
+pub mod trust_threshold;
 
 pub const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
 

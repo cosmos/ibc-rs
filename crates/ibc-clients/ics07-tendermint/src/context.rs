@@ -1,6 +1,6 @@
 use alloc::string::ToString;
 
-use crate::ibc_client_tendermint::types::consensus_state::ConsensusState as TmConsensusState;
+use ibc_client_tendermint_types::consensus_state::ConsensusState as TmConsensusState;
 
 use ibc::core::ics02_client::ClientExecutionContext;
 use ibc::core::ics24_host::identifier::ClientId;
