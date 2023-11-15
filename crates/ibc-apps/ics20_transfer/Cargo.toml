@@ -9,7 +9,8 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "transfer", "ics20"]
 readme       = "./../README.md"
 description  = """
-    TBD
+    Contains the core implementation of the ICS-20 token transfer application logic
+    along with re-exporting the data structures from `ibc-app-transfer-types` crate.
 """
 
 [package.metadata.docs.rs]

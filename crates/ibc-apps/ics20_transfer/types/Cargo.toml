@@ -6,10 +6,11 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc", "transfer", "ics20", "types"]
+keywords     = ["blockchain", "cosmos", "ibc", "transfer", "ics20"]
 readme       = "./../../README.md"
 description  = """
-    TBD
+    Contains the universal data structures of the ICS-20 fungible token transfer application
+    that can be used across various IBC implementations
 """
 
 [package.metadata.docs.rs]
