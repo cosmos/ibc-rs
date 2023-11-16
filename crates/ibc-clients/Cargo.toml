@@ -19,11 +19,8 @@ all-features = true
 [dependencies]
 ibc-client-tendermint = { version = "0.47.0", path = "./ics07-tendermint", default-features = false }
 
-# [features]
-# default = ["std"]
-# std = [
-#     "ibc-client-tendermint/std",
-# ]
-# serde = [
-#     "ibc-client-tendermint/serde",
-# ]
+[features]
+default = ["std"]
+std = [
+    "ibc-client-tendermint/std",
+]
