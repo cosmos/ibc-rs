@@ -235,11 +235,9 @@ impl ClientExecutionContext for MockContext {
                 client_state: Default::default(),
             });
 
-        let height = Height::new(consensus_state_path.epoch, consensus_state_path.height)
-            .expect("Never fails");
         client_record
             .consensus_states
-            .insert(height, consensus_state);
+            .insert(consensus_state_path.height, consensus_state);
 
         Ok(())
     }
@@ -258,10 +256,9 @@ impl ClientExecutionContext for MockContext {
                 client_state: Default::default(),
             });
 
-        let height = Height::new(consensus_state_path.epoch, consensus_state_path.height)
-            .expect("Never fails");
-
-        client_record.consensus_states.remove(&height);
+        client_record
+            .consensus_states
+            .remove(&consensus_state_path.height);
 
         Ok(())
     }

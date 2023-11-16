@@ -70,7 +70,7 @@ impl ValidationContext for MockContext {
         client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<AnyConsensusState, ContextError> {
         let client_id = &client_cons_state_path.client_id;
-        let height = Height::new(client_cons_state_path.epoch, client_cons_state_path.height)?;
+        let height = client_cons_state_path.height;
         match self.ibc_store.lock().clients.get(client_id) {
             Some(client_record) => match client_record.consensus_states.get(&height) {
                 Some(consensus_state) => Ok(consensus_state.clone()),

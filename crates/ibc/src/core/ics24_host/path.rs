@@ -74,22 +74,84 @@ impl ClientStatePath {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "clients/{client_id}/consensusStates/{epoch}-{height}")]
+#[display(
+    fmt = "clients/{}/consensusStates/{}-{}",
+    client_id,
+    "height.revision_number()",
+    "height.revision_height()"
+)]
 pub struct ClientConsensusStatePath {
     pub client_id: ClientId,
-    pub epoch: u64,
-    pub height: u64,
+    pub height: Height,
 }
 
 impl ClientConsensusStatePath {
     pub fn new(client_id: &ClientId, height: &Height) -> ClientConsensusStatePath {
         ClientConsensusStatePath {
             client_id: client_id.clone(),
-            epoch: height.revision_number(),
-            height: height.revision_height(),
+            height: *height,
         }
+    }
+
+    pub fn revision_number(&self) -> u64 {
+        self.height.revision_number()
+    }
+
+    pub fn revision_height(&self) -> u64 {
+        self.height.revision_height()
+    }
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for ClientConsensusStatePath {
+    /// Serialises the path as a struct with three elements.
+    ///
+    /// Rather than serialising the path as a nested type with `height` being an
+    /// embedded structure, serialises it as a structure with three fields:
+    ///
+    /// ```ignore
+    /// struct ClientConsensusStatePath {
+    ///     client_id: ClientId,
+    ///     epoch: u64,   // equal height.revision_number()
+    ///     height: u64,  // equal height.revision_height()
+    /// }
+    /// ```
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+
+        let mut serializer = serializer.serialize_struct("ClientConsensusStatePath", 3)?;
+        serializer.serialize_field("client_id", &self.client_id)?;
+        serializer.serialize_field("epoch", &self.revision_number())?;
+        serializer.serialize_field("height", &self.revision_height())?;
+        serializer.end()
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for ClientConsensusStatePath {
+    /// Deserialises the path from a struct with three elements.
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::Error;
+
+        #[derive(serde::Deserialize)]
+        struct ClientConsensusStatePath {
+            client_id: ClientId,
+            epoch: u64,
+            height: u64,
+        }
+
+        let path = ClientConsensusStatePath::deserialize(deserializer)?;
+        let client_id = path.client_id;
+        Height::new(path.epoch, path.height)
+            .map(|height| Self { client_id, height })
+            .map_err(|_| D::Error::custom("height cannot be zero"))
     }
 }
 
@@ -480,8 +542,7 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
         Some(
             ClientConsensusStatePath {
                 client_id,
-                epoch,
-                height,
+                height: Height::new(epoch, height).ok()?,
             }
             .into(),
         )
@@ -862,8 +923,7 @@ mod tests {
             parse_client_paths(&components),
             Some(Path::ClientConsensusState(ClientConsensusStatePath {
                 client_id: ClientId::default(),
-                epoch: 15,
-                height: 31,
+                height: Height::new(15, 31).unwrap(),
             }))
         );
     }
@@ -890,8 +950,7 @@ mod tests {
             path.unwrap(),
             Path::ClientConsensusState(ClientConsensusStatePath {
                 client_id: ClientId::default(),
-                epoch: 15,
-                height: 31,
+                height: Height::new(15, 31).unwrap(),
             })
         );
     }
