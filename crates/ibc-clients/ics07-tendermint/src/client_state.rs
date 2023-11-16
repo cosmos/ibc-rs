@@ -305,7 +305,7 @@ where
 impl<E> ClientStateExecution<E> for ClientState
 where
     E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
+    <E as ClientExecutionContext>::AnyClientState: From<ibc_client_tendermint_types::client_state::ClientState>,
     <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
 {
     fn initialise(
@@ -319,7 +319,7 @@ where
 
         let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
 
-        ctx.store_client_state(ClientStatePath::new(client_id), self.clone().into())?;
+        ctx.store_client_state(ClientStatePath::new(client_id), self.0.clone().into())?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(client_id, &self.0.latest_height),
             tm_consensus_state.into(),
@@ -447,5 +447,92 @@ where
         ctx.store_update_height(client_id.clone(), latest_height, host_height)?;
 
         Ok(latest_height)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use core::time::Duration;
+
+    use test_log::test;
+
+    use super::*;
+    use ibc::core::ics02_client::height::Height;
+    use ibc::core::ics23_commitment::specs::ProofSpecs;
+    use ibc::core::ics24_host::identifier::ChainId;
+
+    use ibc_client_tendermint_types::client_state::{AllowUpdate, ClientState as ClientStateType};
+    use ibc_client_tendermint_types::client_state::ClientStateParams;
+    use ibc_client_tendermint_types::trust_threshold::TrustThreshold;
+
+    #[test]
+    fn client_state_verify_height() {
+        // Define a "default" set of parameters to reuse throughout these tests.
+        let default_params: ClientStateParams = ClientStateParams {
+            id: ChainId::new("ibc-1").unwrap(),
+            trust_level: TrustThreshold::ONE_THIRD,
+            trusting_period: Duration::new(64000, 0),
+            unbonding_period: Duration::new(128000, 0),
+            max_clock_drift: Duration::new(3, 0),
+            latest_height: Height::new(1, 10).expect("Never fails"),
+            proof_specs: ProofSpecs::default(),
+            upgrade_path: Default::default(),
+            allow_update: AllowUpdate {
+                after_expiry: false,
+                after_misbehaviour: false,
+            },
+        };
+
+        struct Test {
+            name: String,
+            height: Height,
+            setup: Option<Box<dyn FnOnce(ClientState) -> ClientState>>,
+            want_pass: bool,
+        }
+
+        let tests = vec![
+            Test {
+                name: "Successful height verification".to_string(),
+                height: Height::new(1, 8).expect("Never fails"),
+                setup: None,
+                want_pass: true,
+            },
+            Test {
+                name: "Invalid (too large)  client height".to_string(),
+                height: Height::new(1, 12).expect("Never fails"),
+                setup: None,
+                want_pass: false,
+            },
+        ];
+
+        for test in tests {
+            let p = default_params.clone();
+            let client_state = ClientStateType::new(
+                p.id,
+                p.trust_level,
+                p.trusting_period,
+                p.unbonding_period,
+                p.max_clock_drift,
+                p.latest_height,
+                p.proof_specs,
+                p.upgrade_path,
+                p.allow_update,
+            )
+            .expect("Never fails");
+            let client_state = match test.setup {
+                Some(setup) => (setup)(ClientState(client_state)),
+                _ => ClientState(client_state),
+            };
+            let res = client_state.validate_proof_height(test.height);
+
+            assert_eq!(
+                test.want_pass,
+                res.is_ok(),
+                "ClientState::validate_proof_height() failed for test {}, \nmsg{:?} with error {:?}",
+                test.name,
+                test.height,
+                res.err(),
+            );
+        }
     }
 }

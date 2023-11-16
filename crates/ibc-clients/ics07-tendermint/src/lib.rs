@@ -17,6 +17,9 @@ use core::any::Any;
 
 extern crate alloc;
 
+#[cfg(feature = "std")]
+extern crate std;
+
 pub mod context;
 pub mod client_state;
 
