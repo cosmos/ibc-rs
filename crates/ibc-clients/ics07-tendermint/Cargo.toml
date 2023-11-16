@@ -23,3 +23,5 @@ ibc-proto = { workspace = true, features = ["server"] }
 
 # cosmos dependencies
 tendermint-light-client-verifier = { workspace = true, features = ["rust-crypto"] }
+
+prost = { workspace = true }
