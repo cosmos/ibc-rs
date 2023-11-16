@@ -81,7 +81,9 @@ pub trait TokenTransferExecutionContext: TokenTransferValidationContext {
     ) -> Result<(), TokenTransferError>;
 }
 
-// https://github.com/cosmos/cosmos-sdk/blob/master/docs/architecture/adr-028-public-key-addresses.md
+/// Helper function to generate an escrow address for a given port and channel
+/// ids according to the format specified in the Cosmos SDK
+/// [`ADR-028`](https://github.com/cosmos/cosmos-sdk/blob/master/docs/architecture/adr-028-public-key-addresses.md)
 pub fn cosmos_adr028_escrow_address(port_id: &PortId, channel_id: &ChannelId) -> Vec<u8> {
     let contents = format!("{port_id}/{channel_id}");
 
