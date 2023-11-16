@@ -29,7 +29,7 @@ the `ibc` rust crate which defines the main data structures and on-chain logic f
 ## Libraries
 
 - [ibc](crates/ibc/README.md) - Data structures and on-chain logic for the IBC protocol.
-- [ibc-apps](crates/ibc-apps/README.md) - Contains implementation of various IBC applications.
+- [ibc-apps](crates/ibc-apps/README.md) - Contains implementations of various IBC applications.
 - [ibc-derive](crates/ibc-derive/README.md) - Derive macros for `ClientState`
   and `ConsensusState` traits, reducing boilerplate.
 - [ibc-testkit](crates/ibc-testkit/README.md) - Testing toolkit to aid `ibc-rs` and host chains in writing integration tests.
