@@ -20,17 +20,61 @@ use ibc::core::ExecutionContext;
 use ibc::prelude::*;
 use ibc::Height;
 
-use ibc_client_tendermint_types::client_state::ClientState;
+use ibc_client_tendermint_types::client_state::ClientState as ClientStateType;
 use ibc_client_tendermint_types::client_type as tm_client_type;
 use ibc_client_tendermint_types::consensus_state::ConsensusState as TmConsensusState;
+use ibc_client_tendermint_types::error::Error;
 use ibc_client_tendermint_types::header::Header as TmHeader;
 use ibc_client_tendermint_types::misbehaviour::Misbehaviour as TmMisbehaviour;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
+use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
+use ibc_proto::Protobuf;
+
+use prost::Message;
 
 mod misbehaviour;
 mod update_client;
+
+/// Newtype wrapper around the `ClientState` type imported from the `ibc-client-tendermint-types`
+/// crate. This wrapper exists so that we can bypass Rust's orphan rules and implement traits 
+/// from `ibc::core::ics02_client` on the `ClientState` type.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct ClientState(ClientStateType);
+
+impl Protobuf<RawTmClientState> for ClientState {}
+
+impl TryFrom<RawTmClientState> for ClientState {
+    type Error = Error;
+
+    fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
+        Ok(Self(ClientStateType::try_from(raw)?))
+    }
+}
+
+impl From<ClientState> for RawTmClientState {
+    fn from(client_state: ClientState) -> Self {
+        client_state.0.into()
+    }
+}
+
+impl Protobuf<Any> for ClientState {}
+
+impl TryFrom<Any> for ClientState {
+    type Error = ClientError;
+
+    fn try_from(raw: Any) -> Result<Self, Self::Error> {
+        Ok(Self(ClientStateType::try_from(raw)?))
+    }
+}
+
+impl From<ClientState> for Any {
+    fn from(client_state: ClientState) -> Self {
+        client_state.0.into()
+    }
+}
 
 impl ClientStateCommon for ClientState {
     fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
@@ -49,7 +93,7 @@ impl ClientStateCommon for ClientState {
     }
 
     fn latest_height(&self) -> Height {
-        self.latest_height
+        self.0.latest_height
     }
 
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
@@ -77,6 +121,7 @@ impl ClientStateCommon for ClientState {
         proof_upgrade_consensus_state: CommitmentProofBytes,
         root: &CommitmentRoot,
     ) -> Result<(), ClientError> {
+
         // Make sure that the client type is of Tendermint type `ClientState`
         let upgraded_tm_client_state = Self::try_from(upgraded_client_state.clone())?;
 
@@ -86,15 +131,15 @@ impl ClientStateCommon for ClientState {
         // Make sure the latest height of the current client is not greater then
         // the upgrade height This condition checks both the revision number and
         // the height
-        if self.latest_height() >= upgraded_tm_client_state.latest_height {
+        if self.latest_height() >= upgraded_tm_client_state.0.latest_height {
             return Err(UpgradeClientError::LowUpgradeHeight {
                 upgraded_height: self.latest_height(),
-                client_height: upgraded_tm_client_state.latest_height,
+                client_height: upgraded_tm_client_state.0.latest_height,
             })?;
         }
 
         // Check to see if the upgrade path is set
-        let mut upgrade_path = self.upgrade_path.clone();
+        let mut upgrade_path = self.0.upgrade_path.clone();
         if upgrade_path.pop().is_none() {
             return Err(ClientError::ClientSpecific {
                 description: "cannot upgrade client as no upgrade path has been set".to_string(),
@@ -152,7 +197,7 @@ impl ClientStateCommon for ClientState {
 
         merkle_proof
             .verify_membership(
-                &self.proof_specs,
+                &self.0.proof_specs,
                 root.clone().into(),
                 merkle_path,
                 value,
@@ -174,7 +219,7 @@ impl ClientStateCommon for ClientState {
             .into();
 
         merkle_proof
-            .verify_non_membership(&self.proof_specs, root.clone().into(), merkle_path)
+            .verify_non_membership(&self.0.proof_specs, root.clone().into(), merkle_path)
             .map_err(ClientError::Ics23Verification)
     }
 }
@@ -224,13 +269,13 @@ where
     }
 
     fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError> {
-        if self.is_frozen() {
+        if self.0.is_frozen() {
             return Ok(Status::Frozen);
         }
 
         let latest_consensus_state: TmConsensusState = {
             let any_latest_consensus_state = match ctx.consensus_state(
-                &ClientConsensusStatePath::new(client_id, &self.latest_height),
+                &ClientConsensusStatePath::new(client_id, &self.0.latest_height),
             ) {
                 Ok(cs) => cs,
                 // if the client state does not have an associated consensus state for its latest height
@@ -246,9 +291,9 @@ where
         // to be expired.
         let now = ctx.host_timestamp()?;
         if let Some(elapsed_since_latest_consensus_state) =
-            now.duration_since(&latest_consensus_state.timestamp())
+            now.duration_since(&latest_consensus_state.timestamp().into())
         {
-            if elapsed_since_latest_consensus_state > self.trusting_period {
+            if elapsed_since_latest_consensus_state > self.0.trusting_period {
                 return Ok(Status::Expired);
             }
         }
@@ -276,7 +321,7 @@ where
 
         ctx.store_client_state(ClientStatePath::new(client_id), self.clone().into())?;
         ctx.store_consensus_state(
-            ClientConsensusStatePath::new(client_id, &self.latest_height),
+            ClientConsensusStatePath::new(client_id, &self.0.latest_height),
             tm_consensus_state.into(),
         )?;
         ctx.store_update_time(client_id.clone(), self.latest_height(), host_timestamp)?;
@@ -312,7 +357,7 @@ where
             let host_height = CommonContext::host_height(ctx)?;
 
             let new_consensus_state = TmConsensusState::from(header.clone());
-            let new_client_state = self.clone().with_header(header)?;
+            let new_client_state = self.0.clone().with_header(header)?;
 
             ctx.store_consensus_state(
                 ClientConsensusStatePath::new(client_id, &new_client_state.latest_height),
@@ -333,7 +378,7 @@ where
         _client_message: Any,
         _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
-        let frozen_client_state = self.clone().with_frozen_height(Height::min(0));
+        let frozen_client_state = self.0.clone().with_frozen_height(Height::min(0));
 
         ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state.into())?;
 
@@ -351,22 +396,22 @@ where
         let mut upgraded_tm_client_state = Self::try_from(upgraded_client_state)?;
         let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
 
-        upgraded_tm_client_state.zero_custom_fields();
+        upgraded_tm_client_state.0.zero_custom_fields();
 
         // Construct new client state and consensus state relayer chosen client
         // parameters are ignored. All chain-chosen parameters come from
         // committed client, all client-chosen parameters come from current
         // client.
-        let new_client_state = ClientState::new(
-            upgraded_tm_client_state.chain_id,
-            self.trust_level,
-            self.trusting_period,
-            upgraded_tm_client_state.unbonding_period,
-            self.max_clock_drift,
-            upgraded_tm_client_state.latest_height,
-            upgraded_tm_client_state.proof_specs,
-            upgraded_tm_client_state.upgrade_path,
-            self.allow_update,
+        let new_client_state = ClientStateType::new(
+            upgraded_tm_client_state.0.chain_id,
+            self.0.trust_level,
+            self.0.trusting_period,
+            upgraded_tm_client_state.0.unbonding_period,
+            self.0.max_clock_drift,
+            upgraded_tm_client_state.0.latest_height,
+            upgraded_tm_client_state.0.proof_specs,
+            upgraded_tm_client_state.0.upgrade_path,
+            self.0.allow_update,
         )?;
 
         // The new consensus state is merely used as a trusted kernel against

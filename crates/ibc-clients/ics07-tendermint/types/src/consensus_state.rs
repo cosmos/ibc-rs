@@ -36,6 +36,14 @@ impl ConsensusState {
             next_validators_hash,
         }
     }
+    
+    pub fn timestamp(&self) -> Time {
+        self.timestamp
+    }
+
+    pub fn root(&self) -> CommitmentRoot {
+        self.root.clone()
+    }
 }
 
 impl Protobuf<RawConsensusState> for ConsensusState {}
