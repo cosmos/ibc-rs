@@ -55,6 +55,22 @@ pub struct AllowUpdate {
     pub after_misbehaviour: bool,
 }
 
+/// Parameters needed when initializing a new `ClientState`. This type
+/// exists mainly as a convenience for providing default values in
+/// testing scenarios.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ClientStateParams {
+    pub id: ChainId,
+    pub trust_level: TrustThreshold,
+    pub trusting_period: Duration,
+    pub unbonding_period: Duration,
+    pub max_clock_drift: Duration,
+    pub latest_height: Height,
+    pub proof_specs: ProofSpecs,
+    pub upgrade_path: Vec<String>,
+    pub allow_update: AllowUpdate,
+}
+
 /// Contains the core implementation of the Tendermint light client
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
@@ -452,8 +468,8 @@ mod tests {
     use test_log::test;
 
     use super::*;
-    use crate::error::Error;
     use crate::client_state::{AllowUpdate, ClientState};
+    use crate::error::Error;
     use ibc::core::ics02_client::height::Height;
     use ibc::core::ics23_commitment::specs::ProofSpecs;
     use ibc::core::ics24_host::identifier::ChainId;
@@ -503,19 +519,6 @@ mod tests {
             allow_update_after_expiry: false,
             allow_update_after_misbehaviour: false,
         }
-    }
-
-    #[derive(Clone, Debug, PartialEq)]
-    struct ClientStateParams {
-        id: ChainId,
-        trust_level: TrustThreshold,
-        trusting_period: Duration,
-        unbonding_period: Duration,
-        max_clock_drift: Duration,
-        latest_height: Height,
-        proof_specs: ProofSpecs,
-        upgrade_path: Vec<String>,
-        allow_update: AllowUpdate,
     }
 
     #[test]
@@ -680,77 +683,6 @@ mod tests {
                 test.name,
                 test.params.clone(),
                 cs_result.err(),
-            );
-        }
-    }
-
-    #[test]
-    fn client_state_verify_height() {
-        // Define a "default" set of parameters to reuse throughout these tests.
-        let default_params: ClientStateParams = ClientStateParams {
-            id: ChainId::new("ibc-1").unwrap(),
-            trust_level: TrustThreshold::ONE_THIRD,
-            trusting_period: Duration::new(64000, 0),
-            unbonding_period: Duration::new(128000, 0),
-            max_clock_drift: Duration::new(3, 0),
-            latest_height: Height::new(1, 10).expect("Never fails"),
-            proof_specs: ProofSpecs::default(),
-            upgrade_path: Default::default(),
-            allow_update: AllowUpdate {
-                after_expiry: false,
-                after_misbehaviour: false,
-            },
-        };
-
-        struct Test {
-            name: String,
-            height: Height,
-            setup: Option<Box<dyn FnOnce(ClientState) -> ClientState>>,
-            want_pass: bool,
-        }
-
-        let tests = vec![
-            Test {
-                name: "Successful height verification".to_string(),
-                height: Height::new(1, 8).expect("Never fails"),
-                setup: None,
-                want_pass: true,
-            },
-            Test {
-                name: "Invalid (too large)  client height".to_string(),
-                height: Height::new(1, 12).expect("Never fails"),
-                setup: None,
-                want_pass: false,
-            },
-        ];
-
-        for test in tests {
-            let p = default_params.clone();
-            let client_state = ClientState::new(
-                p.id,
-                p.trust_level,
-                p.trusting_period,
-                p.unbonding_period,
-                p.max_clock_drift,
-                p.latest_height,
-                p.proof_specs,
-                p.upgrade_path,
-                p.allow_update,
-            )
-            .expect("Never fails");
-            let client_state = match test.setup {
-                Some(setup) => (setup)(client_state),
-                _ => client_state,
-            };
-            let res = client_state.validate_proof_height(test.height);
-
-            assert_eq!(
-                test.want_pass,
-                res.is_ok(),
-                "ClientState::validate_proof_height() failed for test {}, \nmsg{:?} with error {:?}",
-                test.name,
-                test.height,
-                res.err(),
             );
         }
     }
