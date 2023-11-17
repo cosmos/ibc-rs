@@ -6,10 +6,10 @@
 //!
 //! The provided structs includes blanket implementation of their corresponding
 //! gRPC service traits, if the host implements the following _context_ traits:
-//! - [`ValidationContext`](ibc::core::ValidationContext)
+//! - [`ValidationContext`](ibc::core::context::ValidationContext)
 //! - [`ProvableContext`](crate::core::context::ProvableContext)
 //! - [`QueryContext`](crate::core::context::QueryContext)
-//! - [`UpgradeValidationContext`](ibc::hosts::tendermint::upgrade_proposal::UpgradeValidationContext)
+//! - [`UpgradeValidationContext`](ibc_core_extra::tendermint::upgrade_proposal::UpgradeValidationContext)
 //!   - Only for
 //!     [`ClientQuery::upgraded_client_state`](ibc_proto::ibc::core::client::v1::query_server::Query::upgraded_client_state)
 //!     and

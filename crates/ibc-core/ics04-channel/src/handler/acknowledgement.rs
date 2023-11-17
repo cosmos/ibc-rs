@@ -3,7 +3,6 @@ use ibc_core_channel_types::commitment::{compute_ack_commitment, compute_packet_
 use ibc_core_channel_types::error::{ChannelError, PacketError};
 use ibc_core_channel_types::events::AcknowledgePacket;
 use ibc_core_channel_types::msgs::MsgAcknowledgement;
-use ibc_core_channel_types::primitives::prelude::*;
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::types::error::ClientError;
@@ -16,6 +15,7 @@ use ibc_core_host_types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, SeqAckPath,
 };
 use ibc_core_router::module::Module;
+use ibc_primitives::prelude::*;
 
 pub fn acknowledgement_packet_validate<ValCtx>(
     ctx_a: &ValCtx,

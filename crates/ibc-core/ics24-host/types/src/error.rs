@@ -1,4 +1,5 @@
 use displaydoc::Display;
+use ibc_primitives::prelude::*;
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Display)]

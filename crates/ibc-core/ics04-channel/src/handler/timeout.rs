@@ -3,7 +3,6 @@ use ibc_core_channel_types::commitment::compute_packet_commitment;
 use ibc_core_channel_types::error::{ChannelError, PacketError};
 use ibc_core_channel_types::events::{ChannelClosed, TimeoutPacket};
 use ibc_core_channel_types::msgs::{MsgTimeout, MsgTimeoutOnClose};
-use ibc_core_channel_types::primitives::prelude::*;
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::types::error::ClientError;
@@ -15,6 +14,7 @@ use ibc_core_host_types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
 };
 use ibc_core_router::module::Module;
+use ibc_primitives::prelude::*;
 use prost::Message;
 
 use super::timeout_on_close;

@@ -10,7 +10,7 @@ keywords     = ["blockchain", "cosmos", "ibc"]
 readme       = "README.md"
 description  = """
     `ibc-core` provides a comprehensive set of libraries for IBC core (TAO) layers, 
-    facilitating seamless integration of IBC business logic into any blockchain system.
+    facilitating seamless integration of IBC core business logic into any blockchain system.
 """
 
 [package.metadata.docs.rs]
@@ -25,7 +25,6 @@ ibc-core-router = { workspace = true }
 ibc-core-context = { workspace = true }
 ibc-core-host-types = { workspace = true }
 ibc-primitives = { workspace = true }
-# ibc-core-utils = { workspace = true }
 
 [features]
 default = ["std"]
@@ -47,6 +46,30 @@ serde = [
     "ibc-core-context/serde",
     "ibc-core-host-types/serde",
 ]
-borsh = []
-schema = []
-parity-scale-codec = []
+borsh = [
+    "ibc-core-client/borsh",
+    "ibc-core-connection/borsh",
+    "ibc-core-channel/borsh",
+    "ibc-core-commitment-types/borsh",
+    "ibc-core-router/borsh",
+    "ibc-core-context/borsh",
+    "ibc-core-host-types/borsh",
+]
+schema = [
+    "ibc-core-client/schema",
+    "ibc-core-connection/schema",
+    "ibc-core-channel/schema",
+    "ibc-core-commitment-types/schema",
+    "ibc-core-router/schema",
+    "ibc-core-context/schema",
+    "ibc-core-host-types/schema",
+]
+parity-scale-codec = [
+    "ibc-core-client/parity-scale-codec",
+    "ibc-core-connection/parity-scale-codec",
+    "ibc-core-channel/parity-scale-codec",
+    "ibc-core-router/parity-scale-codec",
+    "ibc-core-context/parity-scale-codec",
+    "ibc-core-host-types/parity-scale-codec",
+    "ibc-primitives/parity-scale-codec",
+]

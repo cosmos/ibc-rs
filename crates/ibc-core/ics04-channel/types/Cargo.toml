@@ -7,9 +7,10 @@ rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc"]
-readme       = "README.md"
+readme       = "./../../README.md"
 description  = """
-    TBD
+    Encapsulates the shared data structures defining ICS-04 channel semantics,
+    crafted to offer compatibility across diverse IBC implementations.
 """
 
 [package.metadata.docs.rs]
@@ -17,28 +18,29 @@ all-features = true
 
 [dependencies]
 # external dependencies
-borsh = { workspace = true, optional = true }
-derive_more = { workspace = true }
-displaydoc = { workspace = true }
-prost = { workspace = true }
-sha2 = { workspace = true }
-serde = { workspace = true, optional = true }
+borsh           = { workspace = true, optional = true }
+derive_more     = { workspace = true }
+displaydoc      = { workspace = true }
+prost           = { workspace = true }
+sha2            = { workspace = true }
+schemars        = { workspace = true, optional = true }
+serde           = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
 
 # ibc dependencies
-ibc-core-client-types = { workspace = true }
+ibc-core-client-types     = { workspace = true }
 ibc-core-connection-types = { workspace = true }
 ibc-core-commitment-types = { workspace = true }
-ibc-core-host-types = { workspace = true }
-ibc-primitives = { workspace = true }
-ibc-proto = { workspace = true }
+ibc-core-host-types       = { workspace = true }
+ibc-primitives            = { workspace = true }
+ibc-proto                 = { workspace = true }
 
 # cosmos dependencies
 tendermint = { workspace = true }
 
 # parity dependencies
 parity-scale-codec = { workspace = true, optional = true }
-scale-info = { workspace = true, optional = true }
+scale-info         = { workspace = true, optional = true }
 
 [dev-dependencies]
 ibc-testkit = { workspace = true }
@@ -46,6 +48,15 @@ ibc-testkit = { workspace = true }
 [features]
 default = ["std"]
 std = [
+    "displaydoc/std",
+    "prost/std",
+    "ibc-core-client-types/std",
+    "ibc-core-connection-types/std",
+    "ibc-core-host-types/std",
+    "ibc-core-commitment-types/std",
+    "ibc-primitives/std",
+    "ibc-proto/std",
+    "tendermint/std",
 ]
 serde = [
     "dep:serde",
@@ -56,18 +67,31 @@ serde = [
     "ibc-primitives/serde",
     "ibc-proto/serde",
 ]
-schema = []
+schema = [
+    "dep:schemars",
+    "ibc-core-client-types/schema",
+    "ibc-core-connection-types/schema",
+    "ibc-core-host-types/schema",
+    "ibc-core-commitment-types/schema",
+    "ibc-primitives/schema",
+    "ibc-proto/json-schema",
+]
 borsh = [
     "dep:borsh",
     "ibc-core-client-types/borsh",
     "ibc-core-connection-types/borsh",
+    "ibc-core-commitment-types/borsh",
     "ibc-core-host-types/borsh",
     "ibc-primitives/borsh",
+    "ibc-proto/borsh",
 ]
 parity-scale-codec = [
     "dep:parity-scale-codec",
     "dep:scale-info",
     "ibc-core-client-types/parity-scale-codec",
     "ibc-core-connection-types/parity-scale-codec",
+    "ibc-core-commitment-types/parity-scale-codec",
     "ibc-core-host-types/parity-scale-codec",
+    "ibc-primitives/parity-scale-codec",
+    "ibc-proto/parity-scale-codec",
 ]

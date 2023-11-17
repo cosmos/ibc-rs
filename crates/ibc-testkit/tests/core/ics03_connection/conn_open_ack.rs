@@ -167,7 +167,7 @@ fn conn_open_ack_no_connection() {
     let expected_err = ContextError::ConnectionError(ConnectionError::ConnectionNotFound {
         connection_id: fxt.msg.conn_id_on_a.clone(),
     });
-    conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err.into())));
+    conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err)));
 }
 
 #[test]
@@ -177,7 +177,7 @@ fn conn_open_ack_invalid_consensus_height() {
         target_height: fxt.msg.consensus_height_of_a_on_b,
         current_height: Height::new(0, 10).unwrap(),
     });
-    conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err.into())));
+    conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err)));
 }
 
 #[test]
@@ -187,5 +187,5 @@ fn conn_open_ack_connection_mismatch() {
         expected: State::Init.to_string(),
         actual: State::Open.to_string(),
     });
-    conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err.into())));
+    conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err)));
 }

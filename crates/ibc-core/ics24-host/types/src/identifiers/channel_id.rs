@@ -1,6 +1,8 @@
 use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
+use ibc_primitives::prelude::*;
+
 use crate::error::IdentifierError;
 use crate::validate::validate_channel_identifier;
 

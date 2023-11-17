@@ -1,15 +1,31 @@
 //! ICS 23: Commitment implementation of a cryptographic scheme that verifies
 //! state transitions between chains.
+#![no_std]
+#![forbid(unsafe_code)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
+#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types,))]
+#![deny(
+    warnings,
+    trivial_numeric_casts,
+    unused_import_braces,
+    unused_qualifications,
+    rust_2018_idioms
+)]
+
+#[cfg(feature = "std")]
+extern crate std;
 
 pub mod commitment;
 pub mod error;
 pub mod merkle;
-#[cfg(feature = "serde")]
-pub mod serializer;
 pub mod specs;
 
-/// Re-exports commitment proto types from the `ibc-proto-rs` crate
+#[cfg(feature = "serde")]
+pub mod serializer;
+
+/// Re-exports commitment proto types from the `ibc-proto-rs` crate, which are
+/// used in the implementation of dependent IBC crates.
 pub mod proto {
     pub use ibc_proto::ibc::core::commitment::*;
-    pub use ibc_proto::{ics23, Protobuf};
+    pub use ibc_proto::ics23;
 }

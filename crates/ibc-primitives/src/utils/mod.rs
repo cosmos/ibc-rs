@@ -2,5 +2,4 @@
 mod macros;
 pub mod pretty;
 
-pub use macros::*;
 pub use pretty::*;

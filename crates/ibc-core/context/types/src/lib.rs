@@ -1,3 +1,6 @@
+//! Encapsulates essential data structures facilitating the seamless
+//! interaction between an implemented IBC module using ibc-rs and the
+//! underlying host blockchain.
 #![no_std]
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]
@@ -17,6 +20,9 @@ pub mod error;
 pub mod events;
 pub mod msgs;
 
+/// Re-exports necessary proto types from the `ibc-proto-rs` crate, which are
+/// instrumental in the implementation of the higher-level `ibc-core-context`
+/// crate.
 pub mod proto {
     pub use ibc_proto::google::protobuf::Any;
 }

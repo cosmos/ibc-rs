@@ -3,7 +3,6 @@ use ibc_core_channel_types::channel::State;
 use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::events::CloseInit;
 use ibc_core_channel_types::msgs::MsgChannelCloseInit;
-use ibc_core_channel_types::primitives::prelude::*;
 use ibc_core_client::context::client_state::ClientStateValidation;
 use ibc_core_client::types::error::ClientError;
 use ibc_core_connection::types::State as ConnectionState;
@@ -12,6 +11,7 @@ use ibc_core_context::types::events::{IbcEvent, MessageEvent};
 use ibc_core_context::{ExecutionContext, ValidationContext};
 use ibc_core_host_types::path::ChannelEndPath;
 use ibc_core_router::module::Module;
+use ibc_primitives::prelude::*;
 
 pub fn chan_close_init_validate<ValCtx>(
     ctx_a: &ValCtx,

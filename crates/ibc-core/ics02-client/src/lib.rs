@@ -12,8 +12,12 @@
     rust_2018_idioms
 )]
 
+#[cfg(feature = "std")]
+extern crate std;
+
 pub mod handler;
 
+/// Re-exports
 pub mod context {
     #[doc(inline)]
     pub use ibc_core_client_context::*;

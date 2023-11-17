@@ -1,3 +1,5 @@
+use ibc_primitives::prelude::*;
+
 use crate::error::IdentifierError;
 
 #[cfg_attr(
@@ -18,7 +20,7 @@ use crate::error::IdentifierError;
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Sequence(u64);
 
-impl std::str::FromStr for Sequence {
+impl core::str::FromStr for Sequence {
     type Err = IdentifierError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {

@@ -3,8 +3,6 @@ use ibc_core_channel_types::commitment::compute_packet_commitment;
 use ibc_core_channel_types::error::PacketError;
 use ibc_core_channel_types::events::SendPacket;
 use ibc_core_channel_types::packet::Packet;
-use ibc_core_channel_types::primitives::prelude::*;
-use ibc_core_channel_types::primitives::Expiry;
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::types::error::ClientError;
@@ -13,6 +11,8 @@ use ibc_core_context::types::events::{IbcEvent, MessageEvent};
 use ibc_core_host_types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
+use ibc_primitives::prelude::*;
+use ibc_primitives::Expiry;
 
 use crate::context::{SendPacketExecutionContext, SendPacketValidationContext};
 

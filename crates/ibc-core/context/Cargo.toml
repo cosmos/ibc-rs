@@ -7,9 +7,11 @@ rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc"]
-readme       = "README.md"
+readme       = "./../README.md"
 description  = """
-    TBD
+    Provides essential top-level traits designed for the seamless integration of host chains with ibc-rs.
+    It streamlines access to the host's storage, facilitating the efficient retrieval of states and metadata 
+    crucial for the execution of IBC logics.
 """
 
 [package.metadata.docs.rs]
@@ -17,21 +19,21 @@ all-features = true
 
 [dependencies]
 # external dependencies
-derive_more = { workspace = true }
-displaydoc = { workspace = true }
-prost = { workspace = true }
-subtle-encoding = { workspace = true }
+derive_more      = { workspace = true }
+displaydoc       = { workspace = true }
+prost            = { workspace = true }
+subtle-encoding  = { workspace = true }
 
 # ibc dependencies
-ibc-primitives = { workspace = true }
-ibc-core-client-types = { workspace = true }
-ibc-core-client-context = { workspace = true }
+ibc-core-client-types     = { workspace = true }
+ibc-core-client-context   = { workspace = true }
 ibc-core-connection-types = { workspace = true }
-ibc-core-channel-types = { workspace = true }
+ibc-core-channel-types    = { workspace = true }
 ibc-core-commitment-types = { workspace = true }
-ibc-core-host-types = { workspace = true }
-ibc-core-router = { workspace = true }
-ibc-core-context-types = { workspace = true }
+ibc-core-host-types       = { workspace = true }
+ibc-core-router           = { workspace = true }
+ibc-core-context-types    = { workspace = true }
+ibc-primitives            = { workspace = true }
 
 [dev-dependencies]
 rstest = { workspace = true }
@@ -39,7 +41,6 @@ rstest = { workspace = true }
 [features]
 default = ["std"]
 std = [
-    "ibc-primitives/std",
     "ibc-core-client-types/std",
     "ibc-core-client-context/std",
     "ibc-core-connection-types/std",
@@ -48,9 +49,9 @@ std = [
     "ibc-core-host-types/std",
     "ibc-core-router/std",
     "ibc-core-context-types/std",
+    "ibc-primitives/std",
 ]
 serde = [
-    "ibc-primitives/serde",
     "ibc-core-client-types/serde",
     "ibc-core-client-context/serde",
     "ibc-core-connection-types/serde",
@@ -59,4 +60,32 @@ serde = [
     "ibc-core-host-types/serde",
     "ibc-core-router/serde",
     "ibc-core-context-types/serde",
+    "ibc-primitives/serde",
+]
+schema = [
+    "ibc-core-client-types/schema",
+    "ibc-core-connection-types/schema",
+    "ibc-core-channel-types/schema",
+    "ibc-core-commitment-types/schema",
+    "ibc-core-host-types/schema",
+    "ibc-core-context-types/schema",
+    "ibc-primitives/schema",
+    "serde",
+    "std"
+]
+borsh = [
+    "ibc-core-client-types/borsh",
+    "ibc-core-connection-types/borsh",
+    "ibc-core-channel-types/borsh",
+    "ibc-core-commitment-types/borsh",
+    "ibc-core-host-types/borsh",
+    "ibc-primitives/borsh",
+]
+parity-scale-codec = [
+    "ibc-core-client-types/parity-scale-codec",
+    "ibc-core-connection-types/parity-scale-codec",
+    "ibc-core-channel-types/parity-scale-codec",
+    "ibc-core-commitment-types/parity-scale-codec",
+    "ibc-core-host-types/parity-scale-codec",
+    "ibc-primitives/parity-scale-codec",
 ]

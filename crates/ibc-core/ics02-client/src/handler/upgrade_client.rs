@@ -7,11 +7,11 @@ use ibc_core_client_context::consensus_state::ConsensusState;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::UpgradeClient;
 use ibc_core_client_types::msgs::MsgUpgradeClient;
-use ibc_core_client_types::primitives::prelude::*;
 use ibc_core_context::types::error::ContextError;
 use ibc_core_context::types::events::{IbcEvent, MessageEvent};
 use ibc_core_context::{ExecutionContext, ValidationContext};
 use ibc_core_host_types::path::ClientConsensusStatePath;
+use ibc_primitives::prelude::*;
 
 pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
