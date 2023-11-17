@@ -1,0 +1,55 @@
+[package]
+name         = "ibc-app-transfer-types"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc", "transfer", "ics20"]
+readme       = "./../../README.md"
+description  = """
+    Contains the universal data structures of the ICS-20 fungible token transfer application
+    that can be used across various IBC implementations
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+borsh = { workspace = true, optional = true }
+derive_more = { workspace = true }
+displaydoc = { workspace = true }
+primitive-types = { workspace = true }
+schemars = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+serde_json =  { workspace = true, optional = true}
+uint = { version = "0.9", default-features = false }
+
+# ibc dependencies
+ibc = { workspace = true }
+ibc-proto = { workspace = true }
+
+## parity dependencies
+parity-scale-codec = { workspace = true , optional = true }
+scale-info = { workspace = true , optional = true }
+
+[dev-dependencies]
+ibc-testkit = { workspace = true }
+rstest = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "ibc-proto/std",
+    "serde/std",
+    "serde_json/std",
+    "displaydoc/std",
+    "uint/std",
+    "primitive-types/std",
+]
+borsh = ["dep:borsh", "ibc/borsh", "ibc-proto/borsh"]
+serde = ["dep:serde", "serde_json", "ibc/serde", "ibc-proto/serde"]
+schema = ["dep:schemars", "ibc/schema", "ibc-proto/json-schema", "serde", "std"]
+parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc/parity-scale-codec", "ibc-proto/parity-scale-codec"]

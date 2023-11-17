@@ -1,10 +1,10 @@
 use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
 
-use ibc::applications::transfer::MODULE_ID_STR;
 use ibc::core::ics24_host::identifier::PortId;
 use ibc::core::router::{Module, ModuleId};
 use ibc::prelude::*;
+use ibc_app_transfer::types::MODULE_ID_STR;
 
 use crate::testapp::ibc::applications::transfer::types::DummyTransferModule;
 

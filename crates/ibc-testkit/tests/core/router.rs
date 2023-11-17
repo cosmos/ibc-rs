@@ -1,6 +1,3 @@
-use ibc::applications::transfer::error::TokenTransferError;
-use ibc::applications::transfer::msgs::transfer::MsgTransfer;
-use ibc::applications::transfer::{send_transfer, BaseCoin};
 use ibc::core::events::{IbcEvent, MessageEvent};
 use ibc::core::ics02_client::msgs::create_client::MsgCreateClient;
 use ibc::core::ics02_client::msgs::update_client::MsgUpdateClient;
@@ -23,6 +20,10 @@ use ibc::core::timestamp::Timestamp;
 use ibc::core::{dispatch, MsgEnvelope, RouterError, ValidationContext};
 use ibc::prelude::*;
 use ibc::Height;
+use ibc_app_transfer::handler::send_transfer::send_transfer;
+use ibc_app_transfer::types::error::TokenTransferError;
+use ibc_app_transfer::types::msgs::transfer::MsgTransfer;
+use ibc_app_transfer::types::BaseCoin;
 use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::MockClientState;
 use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusState;

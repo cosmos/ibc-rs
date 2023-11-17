@@ -2,6 +2,9 @@
 resolver = "2"
 members = [
     "crates/ibc",
+    "crates/ibc-apps",
+    "crates/ibc-apps/ics20-transfer",
+    "crates/ibc-apps/ics20-transfer/types",
     "crates/ibc-derive",
     "crates/ibc-testkit",
     "crates/ibc-query",
@@ -45,7 +48,11 @@ tracing-subscriber = { version = "0.3.17", features = ["fmt", "env-filter", "jso
 typed-builder = { version = "0.18.0"}
 
 # ibc dependencies
-ibc-derive = { version = "0.3.0", path = "../ibc-derive" }
+ibc = { version = "0.47.0", path = "./crates/ibc", default-features = false }
+ibc-testkit = { version = "0.47.0", path = "./crates/ibc-testkit", default-features = false}
+ibc-app-transfer = { version = "0.47.0", path = "./crates/ibc-apps/ics20-transfer", default-features = false }
+ibc-app-transfer-types = { version = "0.47.0", path = "./crates/ibc-apps/ics20-transfer/types", default-features = false }
+ibc-derive = { version = "0.3.0", path = "./crates/ibc-derive" }
 ibc-proto = { version = "0.38.0", default-features = false }
 ics23 = { version = "0.11", default-features = false }
 

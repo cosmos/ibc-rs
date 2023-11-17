@@ -1,4 +1,3 @@
-use ibc::applications::transfer::MODULE_ID_STR;
 use ibc::core::events::{IbcEvent, MessageEvent};
 use ibc::core::ics03_connection::connection::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
@@ -13,6 +12,7 @@ use ibc::core::timestamp::ZERO_DURATION;
 use ibc::core::{execute, validate, MsgEnvelope};
 use ibc::prelude::*;
 use ibc::Height;
+use ibc_app_transfer::types::MODULE_ID_STR;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;

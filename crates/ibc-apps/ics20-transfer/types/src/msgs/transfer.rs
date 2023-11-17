@@ -1,17 +1,16 @@
 //! Defines the token transfer message type
-
+use ibc::core::ics04_channel::error::PacketError;
+use ibc::core::ics04_channel::timeout::TimeoutHeight;
+use ibc::core::ics24_host::identifier::{ChannelId, PortId};
+use ibc::core::timestamp::Timestamp;
+use ibc::core::{ContextError, Msg};
+use ibc::prelude::*;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::applications::transfer::v1::MsgTransfer as RawMsgTransfer;
 use ibc_proto::Protobuf;
 
-use crate::applications::transfer::error::TokenTransferError;
-use crate::applications::transfer::packet::PacketData;
-use crate::core::ics04_channel::error::PacketError;
-use crate::core::ics04_channel::timeout::TimeoutHeight;
-use crate::core::ics24_host::identifier::{ChannelId, PortId};
-use crate::core::timestamp::Timestamp;
-use crate::core::{ContextError, Msg};
-use crate::prelude::*;
+use crate::error::TokenTransferError;
+use crate::packet::PacketData;
 
 pub(crate) const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 

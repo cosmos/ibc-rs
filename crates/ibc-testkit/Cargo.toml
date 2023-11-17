@@ -30,7 +30,8 @@ tracing = { workspace = true }
 typed-builder = { workspace = true }
 
 # ibc dependencies
-ibc = { version = "0.47.0" , path = "../ibc" } # NOTE: since `ibc-testkit` does not well support `no_std` yet, we keep `ibc` default features enabled
+ibc = { version = "0.47.0", path = "../ibc" } # NOTE: since `ibc-testkit` does not well support `no_std` yet, we keep `ibc` default features enabled
+ibc-app-transfer = { version = "0.47.0", path = "../ibc-apps/ics20-transfer", default-features = false, features = ["serde"] }
 
 # cosmos dependencies
 tendermint = { workspace = true }
@@ -46,6 +47,7 @@ test-log = { workspace = true }
 default = ["std"]
 std = [
     "ibc/std",
+    "ibc-app-transfer/std",
     "tracing/std",
     "prost/std",
     "serde/std",

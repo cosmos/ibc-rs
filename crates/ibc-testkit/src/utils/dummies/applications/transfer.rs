@@ -1,13 +1,13 @@
 use alloc::string::ToString;
 
-use ibc::applications::transfer::msgs::transfer::MsgTransfer;
-use ibc::applications::transfer::packet::PacketData;
-use ibc::applications::transfer::{Memo, PrefixedCoin};
 use ibc::core::ics04_channel::packet::{Packet, Sequence};
 use ibc::core::ics04_channel::timeout::TimeoutHeight;
 use ibc::core::ics24_host::identifier::{ChannelId, PortId};
 use ibc::core::timestamp::Timestamp;
 use ibc::Signer;
+use ibc_app_transfer::types::msgs::transfer::MsgTransfer;
+use ibc_app_transfer::types::packet::PacketData;
+use ibc_app_transfer::types::{Memo, PrefixedCoin};
 use typed_builder::TypedBuilder;
 
 use crate::utils::dummies::core::signer::dummy_account_id;

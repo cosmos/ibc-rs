@@ -1,0 +1,37 @@
+[package]
+name         = "ibc-apps"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc", "applications"]
+readme       = "README.md"
+description  = """
+    `ibc-apps` provides a comprehensive set of libraries for IBC applications, 
+    facilitating seamless integration of IBC business logic into any blockchain system.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+ibc-app-transfer = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "ibc-app-transfer/std",
+]
+serde = [
+    "ibc-app-transfer/serde",
+]
+schema = [
+    "ibc-app-transfer/schema",
+    "serde",
+    "std",
+]
+borsh = [
+    "ibc-app-transfer/borsh",
+]

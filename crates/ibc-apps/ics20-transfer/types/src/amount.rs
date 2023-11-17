@@ -1,17 +1,12 @@
 //! Contains the `Amount` type, which represents amounts of tokens transferred.
-
 use core::ops::Deref;
 use core::str::FromStr;
 
 use derive_more::{Display, From, Into};
+use ibc::prelude::*;
 use primitive_types::U256;
 
 use super::error::TokenTransferError;
-#[cfg(feature = "schema")]
-use crate::alloc::borrow::ToOwned;
-#[cfg(feature = "schema")]
-use crate::alloc::string::String;
-use crate::prelude::*;
 
 /// A type for representing token transfer amounts.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -19,7 +14,7 @@ use crate::prelude::*;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Display, From, Into)]
 pub struct Amount(
     #[cfg_attr(feature = "schema", schemars(with = "String"))]
-    #[serde(serialize_with = "crate::serializers::serde_string::serialize")]
+    #[serde(serialize_with = "crate::serializers::serialize")]
     #[serde(deserialize_with = "deserialize")]
     U256,
 );

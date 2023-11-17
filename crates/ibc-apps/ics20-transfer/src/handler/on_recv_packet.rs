@@ -1,11 +1,12 @@
-use crate::applications::transfer::context::TokenTransferExecutionContext;
-use crate::applications::transfer::error::TokenTransferError;
-use crate::applications::transfer::events::DenomTraceEvent;
-use crate::applications::transfer::packet::PacketData;
-use crate::applications::transfer::{is_receiver_chain_source, TracePrefix};
-use crate::core::ics04_channel::packet::Packet;
-use crate::core::router::ModuleExtras;
-use crate::prelude::*;
+use ibc::core::ics04_channel::packet::Packet;
+use ibc::core::router::ModuleExtras;
+use ibc::prelude::*;
+use ibc_app_transfer_types::error::TokenTransferError;
+use ibc_app_transfer_types::events::DenomTraceEvent;
+use ibc_app_transfer_types::packet::PacketData;
+use ibc_app_transfer_types::{is_receiver_chain_source, TracePrefix};
+
+use crate::context::TokenTransferExecutionContext;
 
 /// This function handles the transfer receiving logic.
 ///
