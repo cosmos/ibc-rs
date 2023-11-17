@@ -43,6 +43,11 @@ extern crate std;
 
 pub mod clients;
 
+pub mod apps {
+    #[doc(inline)]
+    pub use ibc_apps::*;
+}
+
 pub mod core {
     #[doc(inline)]
     pub use ibc_core::*;
