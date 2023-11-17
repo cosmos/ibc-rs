@@ -11,5 +11,10 @@
     rust_2018_idioms
 )]
 
-#[doc(inline)]
-pub use ibc_app_transfer as transfer;
+/// Re-exports the implementation of the IBC [fungible token
+/// transfer](https://github.com/cosmos/ibc/blob/main/spec/app/ics-020-fungible-token-transfer/README.md)
+/// (ICS-20) application logic.
+pub mod transfer {
+    #[doc(inline)]
+    pub use ibc_app_transfer::*;
+}

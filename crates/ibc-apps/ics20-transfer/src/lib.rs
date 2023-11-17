@@ -16,8 +16,13 @@
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
-#[doc(inline)]
-pub use ibc_app_transfer_types as types;
+/// Re-exports the implementation of the IBC [fungible token
+/// transfer](https://github.com/cosmos/ibc/blob/main/spec/app/ics-020-fungible-token-transfer/README.md)
+/// (ICS-20) data structures.
+pub mod types {
+    #[doc(inline)]
+    pub use ibc_app_transfer_types::*;
+}
 
 #[cfg(feature = "serde")]
 pub mod context;
