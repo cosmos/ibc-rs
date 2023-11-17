@@ -6,11 +6,10 @@ use ibc_client_tendermint_types::error::{Error, IntoResult};
 use ibc_client_tendermint_types::header::Header as TmHeader;
 use ibc_client_tendermint_types::misbehaviour::Misbehaviour as TmMisbehaviour;
 
-use ibc::core::ics02_client::error::ClientError;
-use ibc::core::ics24_host::identifier::ClientId;
-use ibc::core::ics24_host::path::ClientConsensusStatePath;
-use ibc::core::timestamp::Timestamp;
-use ibc::prelude::*;
+use ibc_core_client_types::error::ClientError;
+use ibc_core_host_types::identifiers::ClientId;
+use ibc_core_host_types::path::ClientConsensusStatePath;
+use ibc_primitives::{prelude::*, Timestamp};
 
 use super::ClientState;
 

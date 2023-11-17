@@ -20,6 +20,7 @@ all-features = true
 ibc = { version = "0.47.0", path = "./../../ibc", default-features = false }
 ibc-client-tendermint-types = { version = "0.47.0", path = "./types", default-features = false }
 ibc-core-commitment-types = { version = "0.47.0", path = "./../../ibc-core/ics23-commitment/types" }
+ibc-core-context = { version = "0.47.0", path = "./../../ibc-core/context" }
 ibc-core-client-context = { version = "0.47.0", path = "./../../ibc-core/ics02-client/context" }
 ibc-core-client-types = { version = "0.47.0", path = "./../../ibc-core/ics02-client/types" }
 ibc-core-context-types = { version = "0.47.0", path = "./../../ibc-core/context/types" }

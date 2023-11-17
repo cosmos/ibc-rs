@@ -5,11 +5,11 @@ use ibc_client_tendermint_types::consensus_state::ConsensusState as TmConsensusS
 use ibc_client_tendermint_types::error::{Error, IntoResult};
 use ibc_client_tendermint_types::header::Header as TmHeader;
 
-use ibc::core::ics02_client::error::ClientError;
-use ibc::core::ics02_client::ClientExecutionContext;
-use ibc::core::ics24_host::identifier::ClientId;
-use ibc::core::ics24_host::path::ClientConsensusStatePath;
-use ibc::prelude::*;
+use ibc_core_client_types::error::ClientError;
+use ibc_core_client_context::ClientExecutionContext;
+use ibc_core_host_types::identifiers::ClientId;
+use ibc_core_host_types::path::ClientConsensusStatePath;
+use ibc_primitives::prelude::*;
 
 use super::ClientState;
 
