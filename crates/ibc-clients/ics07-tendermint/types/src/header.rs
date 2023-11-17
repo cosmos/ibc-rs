@@ -208,7 +208,11 @@ impl From<Header> for RawHeader {
 
 mod pretty {
     pub use super::*;
+<<<<<<< HEAD
     use ibc_primitives::utils::pretty::PrettySlice;
+=======
+    use ibc::utils::pretty::PrettySlice;
+>>>>>>> f5a98d6d4d8569b592660c4d90c4babd7615b3e1
 
     pub struct PrettySignedHeader<'a>(pub &'a SignedHeader);
 
