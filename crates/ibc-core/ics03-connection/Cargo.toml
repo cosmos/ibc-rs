@@ -1,0 +1,36 @@
+[package]
+name         = "ibc-core-connection"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc"]
+readme       = "README.md"
+description  = """
+    TBD
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+prost = { workspace = true }
+
+# ibc dependencies
+ibc-core-connection-types = { workspace = true }
+ibc-core-client = { workspace = true }
+ibc-core-host-types = { workspace = true }
+ibc-core-context = { workspace = true }
+ibc-proto = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "ibc-core-connection-types/std",
+]
+serde = [
+    "ibc-core-connection-types/serde",
+]

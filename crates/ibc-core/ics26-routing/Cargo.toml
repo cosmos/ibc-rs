@@ -1,0 +1,37 @@
+[package]
+name         = "ibc-core-router"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc"]
+readme       = "README.md"
+description  = """
+    TBD
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+derive_more = { workspace = true }
+displaydoc = { workspace = true }
+prost = { workspace = true }
+subtle-encoding = { workspace = true }
+
+# ibc dependencies
+ibc-primitives = { workspace = true }
+ibc-core-channel-types = { workspace = true }
+ibc-core-host-types = { workspace = true }
+ibc-core-router-types = { workspace = true }
+
+
+[features]
+default = ["std"]
+std = [
+]
+serde = [
+]

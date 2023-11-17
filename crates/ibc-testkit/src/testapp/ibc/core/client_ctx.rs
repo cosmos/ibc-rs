@@ -4,13 +4,14 @@ use alloc::vec::Vec;
 use ibc::clients::ics07_tendermint::{
     CommonContext as TmCommonContext, ValidationContext as TmValidationContext,
 };
-use ibc::core::ics02_client::error::ClientError;
-use ibc::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
-use ibc::core::ics24_host::identifier::{ChannelId, ClientId, PortId};
-use ibc::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath};
-use ibc::core::timestamp::Timestamp;
-use ibc::core::{ContextError, ValidationContext};
-use ibc::Height;
+use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
+use ibc::core::client::types::error::ClientError;
+use ibc::core::client::types::Height;
+use ibc::core::context::types::error::ContextError;
+use ibc::core::context::ValidationContext;
+use ibc::core::host::identifiers::{ChannelId, ClientId, PortId};
+use ibc::core::host::path::{ClientConsensusStatePath, ClientStatePath};
+use ibc::core::primitives::Timestamp;
 
 use crate::testapp::ibc::clients::mock::client_state::MockClientContext;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
@@ -235,8 +236,11 @@ impl ClientExecutionContext for MockContext {
                 client_state: Default::default(),
             });
 
-        let height = Height::new(consensus_state_path.epoch, consensus_state_path.height)
-            .expect("Never fails");
+        let height = Height::new(
+            consensus_state_path.revision_number,
+            consensus_state_path.revision_height,
+        )
+        .expect("Never fails");
         client_record
             .consensus_states
             .insert(height, consensus_state);
@@ -258,8 +262,11 @@ impl ClientExecutionContext for MockContext {
                 client_state: Default::default(),
             });
 
-        let height = Height::new(consensus_state_path.epoch, consensus_state_path.height)
-            .expect("Never fails");
+        let height = Height::new(
+            consensus_state_path.revision_number,
+            consensus_state_path.revision_height,
+        )
+        .expect("Never fails");
 
         client_record.consensus_states.remove(&height);
 

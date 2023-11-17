@@ -1,3 +1,9 @@
+use ibc_core::client::context::consensus_state::ConsensusState;
+use ibc_core::client::types::error::ClientError;
+use ibc_core::host::identifiers::ClientId;
+use ibc_core::host::path::ClientConsensusStatePath;
+use ibc_core::primitives::prelude::*;
+use ibc_core::primitives::Timestamp;
 use tendermint_light_client_verifier::Verifier;
 
 use super::{check_header_trusted_next_validator_set, ClientState};
@@ -6,12 +12,6 @@ use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::clients::ics07_tendermint::ValidationContext as TmValidationContext;
-use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::error::ClientError;
-use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::path::ClientConsensusStatePath;
-use crate::core::timestamp::Timestamp;
-use crate::prelude::*;
 
 impl ClientState {
     // verify_misbehaviour determines whether or not two conflicting headers at
@@ -29,8 +29,11 @@ impl ClientState {
 
         let header_1 = misbehaviour.header1();
         let trusted_consensus_state_1 = {
-            let consensus_state_path =
-                ClientConsensusStatePath::new(client_id, &header_1.trusted_height);
+            let consensus_state_path = ClientConsensusStatePath::new(
+                client_id.clone(),
+                header_1.trusted_height.revision_number(),
+                header_1.trusted_height.revision_height(),
+            );
             let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
             consensus_state
@@ -42,8 +45,11 @@ impl ClientState {
 
         let header_2 = misbehaviour.header2();
         let trusted_consensus_state_2 = {
-            let consensus_state_path =
-                ClientConsensusStatePath::new(client_id, &header_2.trusted_height);
+            let consensus_state_path = ClientConsensusStatePath::new(
+                client_id.clone(),
+                header_2.trusted_height.revision_number(),
+                header_2.trusted_height.revision_height(),
+            );
             let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
             consensus_state

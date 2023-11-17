@@ -30,8 +30,10 @@ tracing = { workspace = true }
 typed-builder = { workspace = true }
 
 # ibc dependencies
-ibc = { version = "0.47.0", path = "../ibc" } # NOTE: since `ibc-testkit` does not well support `no_std` yet, we keep `ibc` default features enabled
-ibc-app-transfer = { version = "0.47.0", path = "../ibc-apps/ics20-transfer", default-features = false, features = ["serde"] }
+ibc = { workspace = true, features = ["std"] }
+ibc-app-transfer = { workspace = true, features = ["serde"] }
+ibc-proto = { workspace = true }
+
 
 # cosmos dependencies
 tendermint = { workspace = true }
@@ -39,7 +41,7 @@ tendermint-testgen = { workspace = true }
 
 [dev-dependencies]
 env_logger = { workspace = true }
-rstest =  { workspace = true }
+rstest = { workspace = true }
 tracing-subscriber = { workspace = true }
 test-log = { workspace = true }
 
@@ -55,4 +57,8 @@ std = [
 ]
 
 # This feature is required for token transfer (ICS-20)
-serde = ["dep:serde", "ibc/serde", "serde_json"]
+serde = [
+    "dep:serde",
+    "ibc/serde",
+    "serde_json",
+]

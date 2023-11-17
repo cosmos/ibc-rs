@@ -2,6 +2,22 @@
 resolver = "2"
 members = [
     "crates/ibc",
+    "crates/ibc-data-types",
+    "crates/ibc-primitives",
+    "crates/ibc-core",
+    "crates/ibc-core/ics02-client",
+    "crates/ibc-core/ics02-client/types",
+    "crates/ibc-core/ics03-connection",
+    "crates/ibc-core/ics03-connection/types",
+    "crates/ibc-core/ics04-channel",
+    "crates/ibc-core/ics04-channel/types",
+    "crates/ibc-core/ics23-commitment/types",
+    "crates/ibc-core/ics24-host/types",
+    "crates/ibc-core/context",
+    "crates/ibc-core/extra",
+    "crates/ibc-core/context/types",
+    "crates/ibc-core/ics26-routing",
+    "crates/ibc-core/ics26-routing/types",
     "crates/ibc-apps",
     "crates/ibc-apps/ics20-transfer",
     "crates/ibc-apps/ics20-transfer/types",
@@ -35,7 +51,7 @@ parking_lot = { version = "0.12.1", default-features = false }
 primitive-types = { version = "0.12.2", default-features = false, features = ["serde_no_std"] }
 prost = { version = "0.12", default-features = false }
 rstest = "0.18.2"
-schemars = { version = "0.8.15"}
+schemars = { version = "0.8.15" }
 sha2 = { version = "0.10.8", default-features = false }
 serde = { version = "1.0", default-features = false }
 serde_derive = { version = "1.0", default-features = false }
@@ -45,14 +61,34 @@ test-log = { version = "0.2.13", features = ["trace"] }
 time = { version = ">=0.3.0, <0.3.31", default-features = false }
 tracing = { version = "0.1.40", default-features = false }
 tracing-subscriber = { version = "0.3.17", features = ["fmt", "env-filter", "json"] }
-typed-builder = { version = "0.18.0"}
+typed-builder = { version = "0.18.0" }
 
 # ibc dependencies
-ibc = { version = "0.47.0", path = "./crates/ibc", default-features = false }
-ibc-testkit = { version = "0.47.0", path = "./crates/ibc-testkit", default-features = false}
-ibc-app-transfer = { version = "0.47.0", path = "./crates/ibc-apps/ics20-transfer", default-features = false }
-ibc-app-transfer-types = { version = "0.47.0", path = "./crates/ibc-apps/ics20-transfer/types", default-features = false }
-ibc-derive = { version = "0.3.0", path = "./crates/ibc-derive" }
+ibc            = { version = "0.47.0", path = "./crates/ibc", default-features = false }
+ibc-apps       = { version = "0.47.0", path = "./crates/ibc-apps", default-features = false }
+ibc-core       = { version = "0.47.0", path = "./crates//ibc-core", default-features = false }
+ibc-primitives = { version = "0.47.0", path = "./crates/ibc-primitives", default-features = false }
+ibc-testkit    = { version = "0.47.0", path = "./crates/ibc-testkit" }
+ibc-derive     = { version = "0.3.0", path = "./crates/ibc-derive" }
+
+ibc-core-client     = { version = "0.47.0", path = "./crates/ibc-core/ics02-client", default-features = false }
+ibc-core-connection = { version = "0.47.0", path = "./crates/ibc-core/ics03-connection", default-features = false }
+ibc-core-channel    = { version = "0.47.0", path = "./crates/ibc-core/ics04-channel", default-features = false }
+ibc-core-router     = { version = "0.47.0", path = "./crates/ibc-core/ics26-routing", default-features = false }
+ibc-core-context    = { version = "0.47.0", path = "./crates/ibc-core/context", default-features = false }
+ibc-core-extra      = { version = "0.47.0", path = "./crates/ibc-core/extra", default-features = false }
+ibc-app-transfer    = { version = "0.47.0", path = "./crates/ibc-apps/ics20-transfer", default-features = false }
+
+ibc-core-client-context   = { version = "0.47.0", path = "./crates/ibc-core/ics02-client/context", default-features = false }
+ibc-core-client-types     = { version = "0.47.0", path = "./crates/ibc-core/ics02-client/types", default-features = false }
+ibc-core-channel-types    = { version = "0.47.0", path = "./crates/ibc-core/ics04-channel/types", default-features = false }
+ibc-core-connection-types = { version = "0.47.0", path = "./crates/ibc-core/ics03-connection/types" }
+ibc-core-commitment-types = { version = "0.47.0", path = "./crates/ibc-core/ics23-commitment/types", default-features = false }
+ibc-core-host-types       = { version = "0.47.0", path = "./crates/ibc-core/ics24-host/types", default-features = false }
+ibc-core-router-types     = { version = "0.47.0", path = "./crates/ibc-core/ics26-routing/types", default-features = false }
+ibc-core-context-types    = { version = "0.47.0", path = "./crates/ibc-core/context/types", default-features = false }
+ibc-app-transfer-types    = { version = "0.47.0", path = "./crates/ibc-apps/ics20-transfer/types", default-features = false }
+
 ibc-proto = { version = "0.38.0", default-features = false }
 ics23 = { version = "0.11", default-features = false }
 

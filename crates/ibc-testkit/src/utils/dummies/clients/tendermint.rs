@@ -6,11 +6,11 @@ use ibc::clients::ics07_tendermint::error::{Error as ClientError, Error};
 #[cfg(feature = "serde")]
 use ibc::clients::ics07_tendermint::header::Header;
 use ibc::clients::ics07_tendermint::trust_threshold::TrustThreshold;
-use ibc::core::ics02_client::height::Height;
-use ibc::core::ics23_commitment::specs::ProofSpecs;
-use ibc::core::ics24_host::identifier::ChainId;
-use ibc::prelude::*;
-use ibc::proto::core::client::v1::Height as RawHeight;
+use ibc::core::client::types::proto::v1::Height as RawHeight;
+use ibc::core::client::types::Height;
+use ibc::core::commitment::specs::ProofSpecs;
+use ibc::core::host::identifiers::ChainId;
+use ibc::core::primitives::prelude::*;
 use ibc::proto::tendermint::v1::{ClientState as RawTmClientState, Fraction};
 use tendermint::block::Header as TmHeader;
 

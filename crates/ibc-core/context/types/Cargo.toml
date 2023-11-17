@@ -1,0 +1,72 @@
+[package]
+name         = "ibc-core-context-types"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc", "data structures"]
+readme       = "README.md"
+description  = """
+    TBD
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+derive_more = { workspace = true }
+displaydoc = { workspace = true }
+prost = { workspace = true }
+serde = { workspace = true, optional = true }
+subtle-encoding = { workspace = true }
+
+# ibc dependencies
+ibc-primitives = { workspace = true }
+ibc-core-client-types = { workspace = true }
+ibc-core-connection-types = { workspace = true }
+ibc-core-channel-types = { workspace = true }
+ibc-core-commitment-types = { workspace = true }
+ibc-core-host-types = { workspace = true }
+ibc-core-router-types = { workspace = true }
+ibc-proto = { workspace = true }
+
+# cosmos dependencies
+tendermint = { workspace = true }
+
+[dev-dependencies]
+ibc-testkit = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "displaydoc/std",
+    "prost/std",
+    "subtle-encoding/std",
+    "ibc-primitives/std",
+    "ibc-core-client-types/std",
+    "ibc-core-connection-types/std",
+    "ibc-core-channel-types/std",
+    "ibc-core-commitment-types/std",
+    "ibc-core-host-types/std",
+    "ibc-core-router-types/std",
+    "ibc-proto/std",
+    "tendermint/std",
+    "ibc-testkit/std",
+]
+borsh = ["ibc-proto/borsh"]
+serde = [
+    "dep:serde",
+    "ibc-proto/serde",
+    "ibc-primitives/serde",
+    "ibc-core-client-types/serde",
+    "ibc-core-connection-types/serde",
+    "ibc-core-channel-types/serde",
+    "ibc-core-commitment-types/serde",
+    "ibc-core-host-types/serde",
+    "ibc-core-router-types/serde",
+]
+schema = ["ibc-proto/json-schema", "std"]
+parity-scale-codec = ["ibc-proto/parity-scale-codec"]

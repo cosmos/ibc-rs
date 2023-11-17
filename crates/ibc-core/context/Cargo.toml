@@ -1,0 +1,62 @@
+[package]
+name         = "ibc-core-context"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc"]
+readme       = "README.md"
+description  = """
+    TBD
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+derive_more = { workspace = true }
+displaydoc = { workspace = true }
+prost = { workspace = true }
+subtle-encoding = { workspace = true }
+
+# ibc dependencies
+ibc-primitives = { workspace = true }
+ibc-core-client-types = { workspace = true }
+ibc-core-client-context = { workspace = true }
+ibc-core-connection-types = { workspace = true }
+ibc-core-channel-types = { workspace = true }
+ibc-core-commitment-types = { workspace = true }
+ibc-core-host-types = { workspace = true }
+ibc-core-router = { workspace = true }
+ibc-core-context-types = { workspace = true }
+
+[dev-dependencies]
+rstest = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "ibc-primitives/std",
+    "ibc-core-client-types/std",
+    "ibc-core-client-context/std",
+    "ibc-core-connection-types/std",
+    "ibc-core-channel-types/std",
+    "ibc-core-commitment-types/std",
+    "ibc-core-host-types/std",
+    "ibc-core-router/std",
+    "ibc-core-context-types/std",
+]
+serde = [
+    "ibc-primitives/serde",
+    "ibc-core-client-types/serde",
+    "ibc-core-client-context/serde",
+    "ibc-core-connection-types/serde",
+    "ibc-core-channel-types/serde",
+    "ibc-core-commitment-types/serde",
+    "ibc-core-host-types/serde",
+    "ibc-core-router/serde",
+    "ibc-core-context-types/serde",
+]

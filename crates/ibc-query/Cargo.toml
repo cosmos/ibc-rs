@@ -19,7 +19,8 @@ displaydoc = { version = "0.2", default-features = false }
 tonic = "0.10"
 
 # ibc dependencies
-ibc = { version = "0.47.0", path = "../ibc", default-features = false }
+ibc = { workspace = true }
+ibc-core-extra = { workspace = true }
 ibc-proto = { workspace = true, features = ["server"] }
 
 [features]

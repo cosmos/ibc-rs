@@ -1,11 +1,12 @@
-use ibc::core::ics24_host::identifier::ClientId;
-use ibc::core::{ContextError, ValidationContext};
-use ibc::prelude::*;
-use ibc::{Height, Signer};
+use ibc::core::client::types::Height;
+use ibc::core::context::types::error::ContextError;
+use ibc::core::context::ValidationContext;
+use ibc::core::host::identifiers::ClientId;
+use ibc::core::primitives::prelude::*;
+use ibc::core::primitives::Signer;
 
 use crate::testapp::ibc::clients::AnyClientState;
 use crate::testapp::ibc::core::types::MockContext;
-
 /// Trait capturing all dependencies (i.e., the context) which algorithms in ICS18 require to
 /// relay packets between chains. This trait comprises the dependencies towards a single chain.
 /// Most of the functions in this represent wrappers over the ABCI interface.
@@ -43,18 +44,17 @@ impl RelayerContext for MockContext {
 #[cfg(test)]
 mod tests {
     use ibc::clients::ics07_tendermint::client_type as tm_client_type;
-    use ibc::core::ics02_client::client_state::ClientStateCommon;
-    use ibc::core::ics02_client::msgs::update_client::MsgUpdateClient;
-    use ibc::core::ics02_client::msgs::ClientMsg;
-    use ibc::core::ics24_host::identifier::{ChainId, ClientId};
-    use ibc::core::MsgEnvelope;
-    use ibc::prelude::*;
-    use ibc::Height;
+    use ibc::core::client::context::client_state::ClientStateCommon;
+    use ibc::core::client::types::msgs::{ClientMsg, MsgUpdateClient};
+    use ibc::core::client::types::Height;
+    use ibc::core::context::types::msgs::MsgEnvelope;
+    use ibc::core::host::identifiers::ChainId;
     use test_log::test;
     use tracing::debug;
 
     use super::RelayerContext;
     use crate::hosts::block::{HostBlock, HostType};
+    use crate::relayer::context::ClientId;
     use crate::relayer::error::RelayerError;
     use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
     use crate::testapp::ibc::core::router::MockRouter;

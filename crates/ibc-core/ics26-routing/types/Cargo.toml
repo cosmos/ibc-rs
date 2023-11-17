@@ -1,0 +1,82 @@
+[package]
+name         = "ibc-core-router-types"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc"]
+readme       = "README.md"
+description  = """
+    TBD
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+borsh = { workspace = true, optional = true }
+derive_more = { workspace = true }
+displaydoc = { workspace = true }
+prost = { workspace = true }
+schemars = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+subtle-encoding = { workspace = true }
+
+# ibc dependencies
+ibc-primitives = { workspace = true }
+ibc-core-host-types = { workspace = true }
+ibc-core-channel-types = { workspace = true }
+ibc-proto = {workspace = true }
+ics23 = { workspace = true }
+
+# cosmos dependencies
+tendermint = { workspace = true }
+
+# parity dependencies
+parity-scale-codec = { workspace = true, optional = true }
+scale-info = { workspace = true, optional = true }
+
+[features]
+default = ["std"]
+std = [
+    "displaydoc/std",
+    "prost/std",
+    "subtle-encoding/std",
+    "ibc-primitives/std",
+    "ibc-core-host-types/std",
+    "ibc-core-channel-types/std",
+    "ibc-proto/std",
+    "ics23/std",
+    "tendermint/std",
+]
+serde = [
+    "dep:serde",
+    "ibc-primitives/serde",
+    "ibc-core-host-types/serde",
+    "ibc-core-channel-types/serde",
+    "ibc-proto/serde",
+    "ics23/serde",
+]
+borsh = [
+    "dep:borsh",
+    "ibc-primitives/borsh",
+    "ibc-core-host-types/borsh",
+    "ibc-core-channel-types/borsh",
+    "ibc-proto/borsh",
+]
+schema = [
+    "dep:schemars",
+    "ibc-primitives/schema",
+    "ibc-core-host-types/schema",
+    "ibc-core-channel-types/schema",
+    "ibc-proto/json-schema",
+]
+parity-scale-codec = [
+    "dep:parity-scale-codec",
+    "dep:scale-info",
+    "ibc-core-host-types/parity-scale-codec",
+    "ibc-core-channel-types/parity-scale-codec",
+]

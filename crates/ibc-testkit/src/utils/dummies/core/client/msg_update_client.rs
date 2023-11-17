@@ -1,4 +1,4 @@
-use ibc::proto::core::client::v1::MsgUpdateClient;
+use ibc::core::client::types::proto::v1::MsgUpdateClient;
 use ibc::proto::Any;
 
 use crate::utils::dummies::clients::tendermint::dummy_ics07_header;

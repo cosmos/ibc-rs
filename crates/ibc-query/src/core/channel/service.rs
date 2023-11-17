@@ -4,8 +4,8 @@
 
 use alloc::boxed::Box;
 
-use ibc::core::ValidationContext;
-use ibc::prelude::*;
+use ibc::core::context::ValidationContext;
+use ibc::core::primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::channel::v1::query_server::Query as ChannelQuery;
 use ibc_proto::ibc::core::channel::v1::{

@@ -1,13 +1,12 @@
 use core::fmt::Debug;
 
-use ibc::core::RouterError;
-use ibc::prelude::{String, *};
+use ibc::core::context::types::error::ContextError;
+use ibc::core::primitives::prelude::*;
 
 use crate::testapp::ibc::core::types::MockContext;
-
 pub enum Expect {
     Success,
-    Failure(Option<RouterError>),
+    Failure(Option<ContextError>),
 }
 
 #[derive(Clone, Debug)]
@@ -21,7 +20,7 @@ impl<M: Debug> Fixture<M> {
         &self,
         expect: &Expect,
         process: &str,
-        res: &Result<(), RouterError>,
+        res: &Result<(), ContextError>,
     ) -> String {
         let base_error = match expect {
             Expect::Success => "step failed!",

@@ -1,5 +1,10 @@
 //! Defines Tendermint's `ConsensusState` type
 
+use ibc_core::client::context::consensus_state::ConsensusState as ConsensusStateTrait;
+use ibc_core::client::types::error::ClientError;
+use ibc_core::commitment::commitment::CommitmentRoot;
+use ibc_core::primitives::prelude::*;
+use ibc_core::primitives::Timestamp;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::ConsensusState as RawConsensusState;
 use ibc_proto::Protobuf;
@@ -10,11 +15,6 @@ use tendermint_proto::google::protobuf as tpb;
 
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
-use crate::core::ics02_client::consensus_state::ConsensusState as ConsensusStateTrait;
-use crate::core::ics02_client::error::ClientError;
-use crate::core::ics23_commitment::commitment::CommitmentRoot;
-use crate::core::timestamp::Timestamp;
-use crate::prelude::*;
 
 pub const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str =
     "/ibc.lightclients.tendermint.v1.ConsensusState";
@@ -166,7 +166,7 @@ mod tests {
     use tendermint_rpc::endpoint::abci_query::AbciQuery;
     use test_log::test;
 
-    use crate::serializers::tests::test_serialization_roundtrip;
+    use crate::clients::ics07_tendermint::client_state::serde_tests::test_serialization_roundtrip;
 
     #[test]
     fn serialization_roundtrip_no_proof() {

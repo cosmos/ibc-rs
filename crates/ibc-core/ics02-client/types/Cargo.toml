@@ -1,0 +1,73 @@
+[package]
+name         = "ibc-core-client-types"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc"]
+readme       = "README.md"
+description  = """
+    TBD
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+borsh = { workspace = true, optional = true }
+derive_more = { workspace = true }
+displaydoc = { workspace = true }
+prost = { workspace = true }
+schemars = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+subtle-encoding = { workspace = true }
+
+# ibc dependencies
+ibc-core-commitment-types = { workspace = true }
+ibc-core-host-types = { workspace = true }
+ibc-derive = { workspace = true }
+ibc-primitives = { workspace = true }
+ibc-proto = { workspace = true }
+
+# cosmos dependencies
+tendermint = { workspace = true }
+
+# parity dependencies
+parity-scale-codec = { workspace = true, optional = true }
+scale-info = { workspace = true, optional = true }
+
+[dev-dependencies]
+ibc-testkit = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "ibc-core-commitment-types/std",
+    "ibc-core-host-types/std",
+    "ibc-primitives/std",
+    "ibc-proto/std",
+    "tendermint/std",
+]
+serde = [
+    "ibc-core-host-types/serde",
+    "ibc-proto/serde",
+    "dep:serde",
+]
+borsh = [
+    "dep:borsh",
+    "ibc-core-host-types/borsh",
+    "ibc-primitives/borsh",
+]
+schema = [
+    "dep:schemars",
+    "serde",
+    "std"
+]
+parity-scale-codec = [
+    "dep:parity-scale-codec",
+    "dep:scale-info",
+    "ibc-core-host-types/parity-scale-codec",
+]

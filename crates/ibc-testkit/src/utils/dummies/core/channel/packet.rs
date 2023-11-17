@@ -1,10 +1,10 @@
-use ibc::core::ics04_channel::packet::{Packet, Sequence};
-use ibc::core::ics04_channel::timeout::TimeoutHeight;
-use ibc::core::ics24_host::identifier::{ChannelId, PortId};
-use ibc::core::timestamp::Timestamp;
-use ibc::prelude::*;
-use ibc::proto::core::channel::v1::Packet as RawPacket;
-use ibc::proto::core::client::v1::Height as RawHeight;
+use ibc::core::channel::types::packet::Packet;
+use ibc::core::channel::types::proto::v1::Packet as RawPacket;
+use ibc::core::channel::types::timeout::TimeoutHeight;
+use ibc::core::client::types::proto::v1::Height as RawHeight;
+use ibc::core::host::identifiers::{ChannelId, PortId, Sequence};
+use ibc::core::primitives::prelude::*;
+use ibc::core::primitives::Timestamp;
 use typed_builder::TypedBuilder;
 
 /// Configuration of the `PacketData` type for building dummy packets.

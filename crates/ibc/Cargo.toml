@@ -23,20 +23,17 @@ bytes = { workspace = true }
 derive_more = { workspace = true }
 displaydoc = { workspace = true }
 prost = { workspace = true }
-serde_derive = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 serde_json =  { workspace = true, optional = true}
 subtle-encoding = { workspace = true, default-features = false }
 sha2 = { workspace = true, default-features = false }
 time = { workspace = true, default-features = false }
-schemars = { workspace = true, optional = true }
-typed-builder = { workspace = true, optional = true }
 
 # ibc dependencies
-# ibc-apps = { version = "0.47.0", path = "../ibc-apps" }
-ibc-derive = { version = "0.3.0", path = "../ibc-derive" }
+ibc-apps = { workspace = true }
+ibc-core = { workspace = true }
+ibc-derive = { workspace = true }
 ibc-proto = { workspace = true }
-ics23 = { workspace = true, features = ["host-functions"] }
 
 # cosmos dependencies
 tendermint = { workspace = true }
@@ -47,9 +44,8 @@ tendermint-light-client-verifier = { workspace = true, features = ["rust-crypto"
 parity-scale-codec = { workspace = true , optional = true }
 scale-info = { workspace = true , optional = true }
 
-
 [dev-dependencies]
-ibc-testkit = { version = "0.47.0", path = "../ibc-testkit", default-features = false, features = ["serde"] }
+ibc-testkit = { workspace = true, features = ["serde"] }
 env_logger = { workspace = true }
 rstest = { workspace = true }
 tracing-subscriber = { workspace = true }
@@ -61,7 +57,7 @@ default = ["std"]
 
 std = [
     "ibc-proto/std",
-    "ics23/std",
+    "ibc-core/std",
     "serde/std",
     "prost/std",
     "bytes/std",
@@ -78,7 +74,7 @@ parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-proto/par
 borsh = ["dep:borsh", "ibc-proto/borsh"]
 
 # This feature is required for token transfer (ICS-20)
-serde = ["dep:serde", "dep:serde_derive", "serde_json", "ibc-proto/serde", "ics23/serde"]
+serde = ["dep:serde", "serde_json", "ibc-proto/serde", "ibc-core/serde"]
 
 # CosmWasm message API generator compatible, should not be inside on chain code
-schema = ["dep:schemars", "ibc-proto/json-schema", "serde", "std"]
+schema = ["ibc-proto/json-schema", "serde", "std"]

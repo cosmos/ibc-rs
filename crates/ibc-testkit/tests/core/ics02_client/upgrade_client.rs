@@ -1,13 +1,15 @@
 use ibc::clients::ics07_tendermint::client_type;
-use ibc::core::events::{IbcEvent, MessageEvent};
-use ibc::core::ics02_client::error::{ClientError, UpgradeClientError};
-use ibc::core::ics02_client::msgs::upgrade_client::MsgUpgradeClient;
-use ibc::core::ics02_client::msgs::ClientMsg;
-use ibc::core::ics24_host::identifier::ClientId;
-use ibc::core::ics24_host::path::ClientConsensusStatePath;
-use ibc::core::{execute, validate, ContextError, MsgEnvelope, ValidationContext};
-use ibc::prelude::*;
-use ibc::{downcast, Height};
+use ibc::core::client::types::error::{ClientError, UpgradeClientError};
+use ibc::core::client::types::msgs::{ClientMsg, MsgUpgradeClient};
+use ibc::core::client::types::Height;
+use ibc::core::context::types::error::ContextError;
+use ibc::core::context::types::events::{IbcEvent, MessageEvent};
+use ibc::core::context::types::msgs::MsgEnvelope;
+use ibc::core::context::ValidationContext;
+use ibc::core::entrypoint::{execute, validate};
+use ibc::core::host::identifiers::ClientId;
+use ibc::core::host::path::ClientConsensusStatePath;
+use ibc::core::primitives::downcast;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
@@ -113,8 +115,9 @@ fn upgrade_client_execute(fxt: &mut Fixture<MsgUpgradeClient>, expect: Expect) {
             let consensus_state = fxt
                 .ctx
                 .consensus_state(&ClientConsensusStatePath::new(
-                    &fxt.msg.client_id,
-                    &plan_height,
+                    fxt.msg.client_id.clone(),
+                    plan_height.revision_number(),
+                    plan_height.revision_height(),
                 ))
                 .unwrap();
             let msg_consensus_state: AnyConsensusState =

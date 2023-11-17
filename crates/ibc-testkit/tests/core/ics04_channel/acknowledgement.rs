@@ -1,19 +1,19 @@
-use ibc::core::events::{IbcEvent, MessageEvent};
-use ibc::core::ics02_client::height::Height;
-use ibc::core::ics02_client::ClientExecutionContext;
-use ibc::core::ics03_connection::connection::{
+use ibc::core::channel::types::channel::{ChannelEnd, Counterparty, Order, State};
+use ibc::core::channel::types::commitment::{compute_packet_commitment, PacketCommitment};
+use ibc::core::channel::types::msgs::{MsgAcknowledgement, PacketMsg};
+use ibc::core::channel::types::Version;
+use ibc::core::client::context::ClientExecutionContext;
+use ibc::core::client::types::Height;
+use ibc::core::connection::types::version::get_compatible_versions;
+use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
-use ibc::core::ics03_connection::version::get_compatible_versions;
-use ibc::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
-use ibc::core::ics04_channel::commitment::{compute_packet_commitment, PacketCommitment};
-use ibc::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
-use ibc::core::ics04_channel::msgs::PacketMsg;
-use ibc::core::ics04_channel::Version;
-use ibc::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId, PortId};
-use ibc::core::timestamp::{Timestamp, ZERO_DURATION};
-use ibc::core::{execute, validate, ExecutionContext, MsgEnvelope};
-use ibc::prelude::*;
+use ibc::core::context::types::events::{IbcEvent, MessageEvent};
+use ibc::core::context::types::msgs::MsgEnvelope;
+use ibc::core::context::ExecutionContext;
+use ibc::core::entrypoint::{execute, validate};
+use ibc::core::host::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
+use ibc::core::primitives::*;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
 use ibc_testkit::utils::core::channel::dummy_raw_msg_acknowledgement;

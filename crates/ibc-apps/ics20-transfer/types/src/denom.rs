@@ -3,8 +3,8 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use derive_more::{Display, From};
-use ibc::core::ics24_host::identifier::{ChannelId, PortId};
-use ibc::prelude::*;
+use ibc_core::host::identifiers::{ChannelId, PortId};
+use ibc_core::primitives::prelude::*;
 use ibc_proto::ibc::applications::transfer::v1::DenomTrace as RawDenomTrace;
 
 use super::error::TokenTransferError;

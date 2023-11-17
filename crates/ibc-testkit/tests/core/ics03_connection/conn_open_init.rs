@@ -1,11 +1,12 @@
-use ibc::core::events::{IbcEvent, MessageEvent};
-use ibc::core::ics03_connection::connection::State;
-use ibc::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
-use ibc::core::ics03_connection::msgs::ConnectionMsg;
-use ibc::core::ics03_connection::version::Version;
-use ibc::core::{execute, validate, MsgEnvelope, ValidationContext};
-use ibc::prelude::*;
-use ibc::Height;
+use ibc::core::client::types::Height;
+use ibc::core::connection::types::msgs::{ConnectionMsg, MsgConnectionOpenInit};
+use ibc::core::connection::types::version::Version;
+use ibc::core::connection::types::State;
+use ibc::core::context::types::events::{IbcEvent, MessageEvent};
+use ibc::core::context::types::msgs::MsgEnvelope;
+use ibc::core::context::ValidationContext;
+use ibc::core::entrypoint::{execute, validate};
+use ibc::core::primitives::prelude::*;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
 use ibc_testkit::utils::core::connection::{

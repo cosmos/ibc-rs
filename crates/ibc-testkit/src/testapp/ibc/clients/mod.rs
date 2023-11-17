@@ -7,10 +7,10 @@ use ibc::clients::ics07_tendermint::client_state::{
 use ibc::clients::ics07_tendermint::consensus_state::{
     ConsensusState as TmConsensusState, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
 };
-use ibc::core::ics02_client::client_state::ClientState;
-use ibc::core::ics02_client::consensus_state::ConsensusState;
-use ibc::core::ics02_client::error::ClientError;
-use ibc::prelude::*;
+use ibc::core::client::context::client_state::ClientState;
+use ibc::core::client::context::consensus_state::ConsensusState;
+use ibc::core::client::types::error::ClientError;
+use ibc::core::primitives::prelude::*;
 use ibc::proto::{Any, Protobuf};
 
 use crate::testapp::ibc::clients::mock::client_state::{

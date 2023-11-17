@@ -1,11 +1,12 @@
 use ibc::clients::ics07_tendermint::client_type as tm_client_type;
 use ibc::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
-use ibc::core::ics02_client::client_state::ClientStateCommon;
-use ibc::core::ics02_client::msgs::create_client::MsgCreateClient;
-use ibc::core::ics02_client::msgs::ClientMsg;
-use ibc::core::ics24_host::identifier::ClientId;
-use ibc::core::{execute, validate, MsgEnvelope, ValidationContext};
-use ibc::Height;
+use ibc::core::client::context::client_state::ClientStateCommon;
+use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient};
+use ibc::core::client::types::Height;
+use ibc::core::context::types::msgs::MsgEnvelope;
+use ibc::core::context::ValidationContext;
+use ibc::core::entrypoint::{execute, validate};
+use ibc::core::host::identifiers::ClientId;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
     client_type as mock_client_type, MockClientState,
 };

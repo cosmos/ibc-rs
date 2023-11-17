@@ -1,4 +1,4 @@
-//! Implements the core [`ClientState`](crate::core::ics02_client::client_state::ClientState) trait
+//! Implements the core [`ClientState`](ibc_core::client::context::client_state::ClientState) trait
 //! for the Tendermint light client.
 
 mod misbehaviour;
@@ -9,6 +9,21 @@ use core::convert::{TryFrom, TryInto};
 use core::str::FromStr;
 use core::time::Duration;
 
+use ibc_core::client::context::client_state::{
+    ClientStateCommon, ClientStateExecution, ClientStateValidation,
+};
+use ibc_core::client::context::consensus_state::ConsensusState;
+use ibc_core::client::context::{ClientExecutionContext, ClientValidationContext};
+use ibc_core::client::types::error::{ClientError, UpgradeClientError};
+use ibc_core::client::types::{Height, Status, UpdateKind};
+use ibc_core::commitment::commitment::{CommitmentPrefix, CommitmentProofBytes, CommitmentRoot};
+use ibc_core::commitment::merkle::{apply_prefix, MerkleProof};
+use ibc_core::commitment::specs::ProofSpecs;
+use ibc_core::context::ExecutionContext;
+use ibc_core::host::identifiers::{ChainId, ClientId, ClientType};
+use ibc_core::host::path::{ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath};
+use ibc_core::primitives::prelude::*;
+use ibc_core::primitives::ZERO_DURATION;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
@@ -30,26 +45,6 @@ use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::clients::ics07_tendermint::CommonContext;
-use crate::core::ics02_client::client_state::{
-    ClientStateCommon, ClientStateExecution, ClientStateValidation, Status, UpdateKind,
-};
-use crate::core::ics02_client::client_type::ClientType;
-use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::error::{ClientError, UpgradeClientError};
-use crate::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
-use crate::core::ics23_commitment::commitment::{
-    CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
-};
-use crate::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
-use crate::core::ics23_commitment::specs::ProofSpecs;
-use crate::core::ics24_host::identifier::{ChainId, ClientId};
-use crate::core::ics24_host::path::{
-    ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
-};
-use crate::core::timestamp::ZERO_DURATION;
-use crate::core::ExecutionContext;
-use crate::prelude::*;
-use crate::Height;
 
 pub const TENDERMINT_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.ClientState";
 
@@ -460,14 +455,17 @@ where
         }
 
         let latest_consensus_state: TmConsensusState = {
-            let any_latest_consensus_state = match ctx.consensus_state(
-                &ClientConsensusStatePath::new(client_id, &self.latest_height),
-            ) {
-                Ok(cs) => cs,
-                // if the client state does not have an associated consensus state for its latest height
-                // then it must be expired
-                Err(_) => return Ok(Status::Expired),
-            };
+            let any_latest_consensus_state =
+                match ctx.consensus_state(&ClientConsensusStatePath::new(
+                    client_id.clone(),
+                    self.latest_height.revision_number(),
+                    self.latest_height.revision_height(),
+                )) {
+                    Ok(cs) => cs,
+                    // if the client state does not have an associated consensus state for its latest height
+                    // then it must be expired
+                    Err(_) => return Ok(Status::Expired),
+                };
 
             any_latest_consensus_state.try_into()?
         };
@@ -507,7 +505,11 @@ where
 
         ctx.store_client_state(ClientStatePath::new(client_id), self.clone().into())?;
         ctx.store_consensus_state(
-            ClientConsensusStatePath::new(client_id, &self.latest_height),
+            ClientConsensusStatePath::new(
+                client_id.clone(),
+                self.latest_height.revision_number(),
+                self.latest_height.revision_height(),
+            ),
             tm_consensus_state.into(),
         )?;
         ctx.store_update_time(client_id.clone(), self.latest_height(), host_timestamp)?;
@@ -528,7 +530,11 @@ where
         self.prune_oldest_consensus_state(ctx, client_id)?;
 
         let maybe_existing_consensus_state = {
-            let path_at_header_height = ClientConsensusStatePath::new(client_id, &header_height);
+            let path_at_header_height = ClientConsensusStatePath::new(
+                client_id.clone(),
+                header_height.revision_number(),
+                header_height.revision_height(),
+            );
 
             CommonContext::consensus_state(ctx, &path_at_header_height).ok()
         };
@@ -546,7 +552,11 @@ where
             let new_client_state = self.clone().with_header(header)?;
 
             ctx.store_consensus_state(
-                ClientConsensusStatePath::new(client_id, &new_client_state.latest_height),
+                ClientConsensusStatePath::new(
+                    client_id.clone(),
+                    new_client_state.latest_height.revision_number(),
+                    new_client_state.latest_height.revision_height(),
+                ),
                 new_consensus_state.into(),
             )?;
             ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
@@ -626,7 +636,11 @@ where
 
         ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
         ctx.store_consensus_state(
-            ClientConsensusStatePath::new(client_id, &latest_height),
+            ClientConsensusStatePath::new(
+                client_id.clone(),
+                latest_height.revision_number(),
+                latest_height.revision_height(),
+            ),
             new_consensus_state.into(),
         )?;
         ctx.store_update_time(client_id.clone(), latest_height, host_timestamp)?;
@@ -793,10 +807,36 @@ fn check_header_trusted_next_validator_set(
 }
 
 #[cfg(all(test, feature = "serde"))]
-mod serde_tests {
+pub(crate) mod serde_tests {
+    /// Test that a struct `T` can be:
+    ///
+    /// - parsed out of the provided JSON data
+    /// - serialized back to JSON
+    /// - parsed back from the serialized JSON of the previous step
+    /// - that the two parsed structs are equal according to their `PartialEq` impl
+    use serde::de::DeserializeOwned;
+    use serde::Serialize;
     use tendermint_rpc::endpoint::abci_query::AbciQuery;
 
-    use crate::serializers::tests::test_serialization_roundtrip;
+    pub fn test_serialization_roundtrip<T>(json_data: &str)
+    where
+        T: core::fmt::Debug + PartialEq + Serialize + DeserializeOwned,
+    {
+        let parsed0 = serde_json::from_str::<T>(json_data);
+        assert!(parsed0.is_ok());
+        let parsed0 = parsed0.unwrap();
+
+        let serialized = serde_json::to_string(&parsed0);
+        assert!(serialized.is_ok());
+        let serialized = serialized.unwrap();
+
+        let parsed1 = serde_json::from_str::<T>(&serialized);
+        assert!(parsed1.is_ok());
+        let parsed1 = parsed1.unwrap();
+
+        assert_eq!(parsed0, parsed1);
+    }
+
     #[test]
     fn serialization_roundtrip_no_proof() {
         let json_data = include_str!(concat!(
@@ -832,10 +872,10 @@ mod tests {
     use super::*;
     use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState};
     use crate::clients::ics07_tendermint::error::Error;
-    use crate::core::ics02_client::height::Height;
-    use crate::core::ics23_commitment::specs::ProofSpecs;
-    use crate::core::ics24_host::identifier::ChainId;
-    use crate::core::timestamp::ZERO_DURATION;
+    use crate::core::client::types::Height;
+    use crate::core::commitment::specs::ProofSpecs;
+    use crate::core::host::identifiers::ChainId;
+    use crate::core::primitives::ZERO_DURATION;
 
     impl ClientState {
         pub fn new_dummy_from_raw(frozen_height: RawHeight) -> Result<Self, Error> {

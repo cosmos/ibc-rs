@@ -1,11 +1,11 @@
 use bytes::Buf;
-use ibc::core::ics02_client::error::ClientError;
-use ibc::core::ics24_host::identifier::ClientId;
-use ibc::prelude::*;
-use ibc::proto::mock::Misbehaviour as RawMisbehaviour;
+use ibc::core::client::types::error::ClientError;
+use ibc::core::host::identifiers::ClientId;
+use ibc::core::primitives::prelude::*;
 use ibc::proto::{Any, Protobuf};
 
 use crate::testapp::ibc::clients::mock::header::MockHeader;
+use crate::testapp::ibc::clients::mock::proto::Misbehaviour as RawMisbehaviour;
 
 pub const MOCK_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.mock.Misbehavior";
 

@@ -7,10 +7,10 @@ pub use conn_open_ack::*;
 pub use conn_open_confirm::*;
 pub use conn_open_init::*;
 pub use conn_open_try::*;
-use ibc::core::ics24_host::identifier::{ClientId, ConnectionId};
-use ibc::prelude::*;
-use ibc::proto::core::commitment::v1::MerklePrefix;
-use ibc::proto::core::connection::v1::Counterparty as RawCounterparty;
+use ibc::core::commitment::proto::v1::MerklePrefix;
+use ibc::core::connection::types::proto::v1::Counterparty as RawCounterparty;
+use ibc::core::host::identifiers::{ClientId, ConnectionId};
+use ibc::core::primitives::prelude::*;
 use typed_builder::TypedBuilder;
 
 #[derive(TypedBuilder, Debug)]

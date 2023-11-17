@@ -1,3 +1,9 @@
+use ibc_core::client::context::consensus_state::ConsensusState;
+use ibc_core::client::context::ClientExecutionContext;
+use ibc_core::client::types::error::ClientError;
+use ibc_core::host::identifiers::ClientId;
+use ibc_core::host::path::ClientConsensusStatePath;
+use ibc_core::primitives::prelude::*;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::Verifier;
 
@@ -6,12 +12,6 @@ use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConse
 use crate::clients::ics07_tendermint::error::{Error, IntoResult};
 use crate::clients::ics07_tendermint::header::Header as TmHeader;
 use crate::clients::ics07_tendermint::{CommonContext, ValidationContext as TmValidationContext};
-use crate::core::ics02_client::consensus_state::ConsensusState;
-use crate::core::ics02_client::error::ClientError;
-use crate::core::ics02_client::ClientExecutionContext;
-use crate::core::ics24_host::identifier::ClientId;
-use crate::core::ics24_host::path::ClientConsensusStatePath;
-use crate::prelude::*;
 
 impl ClientState {
     pub fn verify_header<ClientValidationContext>(
@@ -35,8 +35,11 @@ impl ClientState {
         {
             let trusted_state =
                 {
-                    let trusted_client_cons_state_path =
-                        ClientConsensusStatePath::new(client_id, &header.trusted_height);
+                    let trusted_client_cons_state_path = ClientConsensusStatePath::new(
+                        client_id.clone(),
+                        header.trusted_height.revision_number(),
+                        header.trusted_height.revision_height(),
+                    );
                     let trusted_consensus_state: TmConsensusState = ctx
                         .consensus_state(&trusted_client_cons_state_path)?
                         .try_into()
@@ -103,7 +106,11 @@ impl ClientState {
         let header_consensus_state = TmConsensusState::from(header.clone());
 
         let maybe_existing_consensus_state = {
-            let path_at_header_height = ClientConsensusStatePath::new(client_id, &header.height());
+            let path_at_header_height = ClientConsensusStatePath::new(
+                client_id.clone(),
+                header.height().revision_number(),
+                header.height().revision_height(),
+            );
 
             ctx.consensus_state(&path_at_header_height).ok()
         };
@@ -179,7 +186,11 @@ impl ClientState {
         heights.sort();
 
         for height in heights {
-            let client_consensus_state_path = ClientConsensusStatePath::new(client_id, &height);
+            let client_consensus_state_path = ClientConsensusStatePath::new(
+                client_id.clone(),
+                height.revision_number(),
+                height.revision_height(),
+            );
             let consensus_state =
                 CommonContext::consensus_state(ctx, &client_consensus_state_path)?;
             let tm_consensus_state: TmConsensusState =

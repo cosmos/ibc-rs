@@ -1,0 +1,37 @@
+[package]
+name         = "ibc-core-client"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc"]
+readme       = "README.md"
+description  = """
+    TBD
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+prost = { workspace = true }
+
+# ibc dependencies
+ibc-core-client-types = { workspace = true }
+ibc-core-client-context = { workspace = true }
+ibc-core-commitment-types = { workspace = true }
+ibc-core-host-types = { workspace = true }
+ibc-core-context = { workspace = true }
+ibc-derive = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "ibc-core-client-types/std",
+]
+serde = [
+    "ibc-core-client-types/serde",
+]

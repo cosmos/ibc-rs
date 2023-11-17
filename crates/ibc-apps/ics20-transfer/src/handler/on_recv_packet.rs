@@ -1,10 +1,10 @@
-use ibc::core::ics04_channel::packet::Packet;
-use ibc::core::router::ModuleExtras;
-use ibc::prelude::*;
 use ibc_app_transfer_types::error::TokenTransferError;
 use ibc_app_transfer_types::events::DenomTraceEvent;
 use ibc_app_transfer_types::packet::PacketData;
 use ibc_app_transfer_types::{is_receiver_chain_source, TracePrefix};
+use ibc_core::channel::types::packet::Packet;
+use ibc_core::primitives::prelude::*;
+use ibc_core::router::types::module::ModuleExtras;
 
 use crate::context::TokenTransferExecutionContext;
 

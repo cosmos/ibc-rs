@@ -1,7 +1,7 @@
-use ibc::core::ics24_host::identifier::{ChannelId, PortId};
-use ibc::prelude::*;
-use ibc::proto::core::channel::v1::MsgChannelOpenConfirm as RawMsgChannelOpenConfirm;
-use ibc::proto::core::client::v1::Height;
+use ibc::core::channel::types::proto::v1::MsgChannelOpenConfirm as RawMsgChannelOpenConfirm;
+use ibc::core::client::types::proto::v1::Height;
+use ibc::core::host::identifiers::{ChannelId, PortId};
+use ibc::core::primitives::prelude::*;
 
 use super::dummy_proof;
 use crate::utils::dummies::core::signer::dummy_bech32_account;

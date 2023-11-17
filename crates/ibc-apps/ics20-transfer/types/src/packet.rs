@@ -3,8 +3,8 @@
 use core::convert::TryFrom;
 use core::str::FromStr;
 
-use ibc::prelude::*;
-use ibc::Signer;
+use ibc_core::primitives::prelude::*;
+use ibc_core::primitives::Signer;
 use ibc_proto::ibc::applications::transfer::v2::FungibleTokenPacketData as RawPacketData;
 
 use super::error::TokenTransferError;

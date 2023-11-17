@@ -1,7 +1,7 @@
 use core::fmt::Display;
 use core::str::FromStr;
 
-use ibc::prelude::*;
+use ibc_core::primitives::prelude::*;
 use serde::{de, Deserialize, Deserializer, Serializer};
 
 // Note: This method serializes to a String instead of a str

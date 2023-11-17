@@ -1,13 +1,14 @@
 //! Required traits for blanket implementations of [`gRPC query services`](crate::core).
 
-use ibc::core::ics03_connection::connection::IdentifiedConnectionEnd;
-use ibc::core::ics04_channel::channel::IdentifiedChannelEnd;
-use ibc::core::ics04_channel::packet::{PacketState, Sequence};
-use ibc::core::ics24_host::identifier::{ClientId, ConnectionId};
-use ibc::core::ics24_host::path::{ChannelEndPath, Path};
-use ibc::core::{ContextError, ValidationContext};
-use ibc::prelude::*;
-use ibc::Height;
+use ibc::core::channel::types::channel::IdentifiedChannelEnd;
+use ibc::core::channel::types::packet::PacketState;
+use ibc::core::client::types::Height;
+use ibc::core::connection::types::IdentifiedConnectionEnd;
+use ibc::core::context::types::error::ContextError;
+use ibc::core::context::ValidationContext;
+use ibc::core::host::identifiers::{ClientId, ConnectionId, Sequence};
+use ibc::core::host::path::{ChannelEndPath, Path};
+use ibc::core::primitives::prelude::*;
 
 /// Context to be implemented by the host to provide proofs in query responses
 pub trait ProvableContext {

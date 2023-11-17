@@ -1,10 +1,10 @@
-use ibc::core::ics02_client::height::Height;
-use ibc::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
-use ibc::core::ics03_connection::version::Version;
-use ibc::core::ics24_host::identifier::ConnectionId;
-use ibc::prelude::*;
-use ibc::proto::core::client::v1::Height as RawHeight;
-use ibc::proto::core::connection::v1::MsgConnectionOpenAck as RawMsgConnectionOpenAck;
+use ibc::core::client::types::proto::v1::Height as RawHeight;
+use ibc::core::client::types::Height;
+use ibc::core::connection::types::msgs::MsgConnectionOpenAck;
+use ibc::core::connection::types::proto::v1::MsgConnectionOpenAck as RawMsgConnectionOpenAck;
+use ibc::core::connection::types::version::Version;
+use ibc::core::host::identifiers::ConnectionId;
+use ibc::core::primitives::prelude::*;
 
 use crate::testapp::ibc::clients::mock::client_state::MockClientState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;

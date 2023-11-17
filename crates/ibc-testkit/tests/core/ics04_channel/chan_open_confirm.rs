@@ -1,17 +1,16 @@
-use ibc::core::events::{IbcEvent, MessageEvent};
-use ibc::core::ics03_connection::connection::{
+use ibc::core::channel::types::channel::{ChannelEnd, Counterparty, Order, State};
+use ibc::core::channel::types::msgs::{ChannelMsg, MsgChannelOpenConfirm};
+use ibc::core::channel::types::Version;
+use ibc::core::client::types::Height;
+use ibc::core::connection::types::version::get_compatible_versions;
+use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
-use ibc::core::ics03_connection::version::get_compatible_versions;
-use ibc::core::ics04_channel::channel::{ChannelEnd, Counterparty, Order, State};
-use ibc::core::ics04_channel::msgs::chan_open_confirm::MsgChannelOpenConfirm;
-use ibc::core::ics04_channel::msgs::ChannelMsg;
-use ibc::core::ics04_channel::Version;
-use ibc::core::ics24_host::identifier::{ChannelId, ClientId, ConnectionId};
-use ibc::core::timestamp::ZERO_DURATION;
-use ibc::core::{execute, validate, MsgEnvelope};
-use ibc::prelude::*;
-use ibc::Height;
+use ibc::core::context::types::events::{IbcEvent, MessageEvent};
+use ibc::core::context::types::msgs::MsgEnvelope;
+use ibc::core::entrypoint::{execute, validate};
+use ibc::core::host::identifiers::{ChannelId, ClientId, ConnectionId};
+use ibc::core::primitives::*;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;

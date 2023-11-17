@@ -1,5 +1,7 @@
-#![cfg_attr(not(test), deny(clippy::unwrap_used))]
 #![no_std]
+#![forbid(unsafe_code)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
+#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types,))]
 #![deny(
     warnings,
     trivial_casts,
@@ -8,10 +10,6 @@
     unused_qualifications,
     rust_2018_idioms
 )]
-#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types,))]
-#![forbid(unsafe_code)]
-// https://github.com/cosmos/ibc-rs/issues/342
-#![allow(clippy::result_large_err)]
 //! This library implements the InterBlockchain Communication (IBC) protocol in Rust. IBC is
 //! a distributed protocol that enables communication between distinct sovereign blockchains.
 //!
@@ -26,7 +24,7 @@
 //!
 //! When processing a given message `M`, if any method in this library returns an error, the runtime
 //! is expected to rollback all state modifications made to the context
-//! (e.g. [`ExecutionContext`](core::ExecutionContext)) while processing `M`. If a transaction on your
+//! (e.g. [`ExecutionContext`](crate::core::context::ExecutionContext)) while processing `M`. If a transaction on your
 //! blockchain contains multiple messages, then typically the state modifications from all messages
 //! is expected to be rolled back as well.
 //!
@@ -39,29 +37,19 @@
 //! [ibc-standard]: https://github.com/cosmos/ibc
 
 extern crate alloc;
+
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
-pub use signer::Signer;
-
-/// Represents a block height
-pub use crate::core::ics02_client::height::Height;
-
 pub mod clients;
-pub mod core;
-pub mod hosts;
 
-pub mod prelude;
-mod signer;
-pub mod utils;
-
-#[cfg(feature = "serde")]
-mod serializers;
-
+pub mod core {
+    #[doc(inline)]
+    pub use ibc_core::*;
+}
 /// Re-exports pertinent ibc proto types from the `ibc-proto-rs` crate for added convenience
 pub mod proto {
     pub use ibc_proto::google::protobuf::Any;
     pub use ibc_proto::ibc::lightclients::tendermint;
-    pub use ibc_proto::ibc::{core, mock};
-    pub use ibc_proto::{ics23, Protobuf};
+    pub use ibc_proto::Protobuf;
 }

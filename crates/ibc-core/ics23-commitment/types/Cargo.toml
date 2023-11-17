@@ -1,0 +1,44 @@
+[package]
+name = "ibc-core-commitment-types"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc"]
+readme       = "README.md"
+description  = """
+    `ibc-core-host` provides the core host functionality for IBC relayers.
+"""
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# external dependencies
+derive_more = { workspace = true }
+displaydoc = { workspace = true }
+prost = { workspace = true }
+serde = { workspace = true, optional = true }
+subtle-encoding = { workspace = true }
+
+# ibc dependencies
+ibc-proto = { workspace = true }
+ibc-primitives = {workspace = true }
+ics23 = { workspace = true, features = ["host-functions"] }
+
+[features]
+default = ["std"]
+std = [
+    "displaydoc/std",
+    "prost/std",
+    "serde/std",
+    "ibc-primitives/std",
+    "ibc-proto/std",
+    "ics23/std",
+]
+serde = [
+    "dep:serde",
+    "ibc-primitives/serde",
+    "ibc-proto/serde",
+    "ics23/serde",
+]

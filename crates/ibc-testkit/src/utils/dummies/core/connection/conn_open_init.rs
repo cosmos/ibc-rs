@@ -1,11 +1,11 @@
-use ibc::core::ics03_connection::connection::Counterparty;
-use ibc::core::ics03_connection::msgs::conn_open_init::MsgConnectionOpenInit;
-use ibc::core::ics03_connection::version::Version;
-use ibc::core::ics24_host::identifier::ClientId;
-use ibc::prelude::*;
-use ibc::proto::core::connection::v1::{
+use ibc::core::connection::types::msgs::MsgConnectionOpenInit;
+use ibc::core::connection::types::proto::v1::{
     MsgConnectionOpenInit as RawMsgConnectionOpenInit, Version as RawVersion,
 };
+use ibc::core::connection::types::version::Version;
+use ibc::core::connection::types::Counterparty;
+use ibc::core::host::identifiers::ClientId;
+use ibc::core::primitives::prelude::*;
 
 use super::dummy_raw_counterparty_conn;
 use crate::utils::dummies::core::signer::dummy_bech32_account;

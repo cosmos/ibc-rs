@@ -61,7 +61,7 @@ pub const VERSION: &str = "ics20-1";
 /// equivalent to `base64::encode(0x01)`.
 pub const ACK_SUCCESS_B64: &str = "AQ==";
 
-use ibc::core::ics04_channel::acknowledgement::StatusValue;
+use ibc_core::channel::types::acknowledgement::StatusValue;
 
 /// Returns a successful acknowledgement status for the token transfer application.
 pub fn ack_success_b64() -> StatusValue {

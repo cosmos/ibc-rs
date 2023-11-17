@@ -4,12 +4,12 @@ use alloc::format;
 use alloc::vec::Vec;
 use core::str::FromStr;
 
-use ibc::core::ics24_host::identifier::{ClientId, ConnectionId};
-use ibc::core::ics24_host::path::{
+use ibc::core::client::types::Height;
+use ibc::core::context::ValidationContext;
+use ibc::core::host::identifiers::{ClientId, ConnectionId};
+use ibc::core::host::path::{
     ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path,
 };
-use ibc::core::ValidationContext;
-use ibc::Height;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::IdentifiedClientState;
 use ibc_proto::ibc::core::connection::v1::{
@@ -156,7 +156,11 @@ where
 
     let height = Height::new(request.revision_number, request.revision_height)?;
 
-    let consensus_path = ClientConsensusStatePath::new(connection_end.client_id(), &height);
+    let consensus_path = ClientConsensusStatePath::new(
+        connection_end.client_id().clone(),
+        height.revision_number(),
+        height.revision_height(),
+    );
 
     let consensus_state = ibc_ctx.consensus_state(&consensus_path)?;
 

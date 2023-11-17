@@ -1,6 +1,9 @@
 //! Defines the misbehaviour type for the tendermint light client
 
 use bytes::Buf;
+use ibc_core::client::types::error::ClientError;
+use ibc_core::host::identifiers::ClientId;
+use ibc_core::primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Misbehaviour as RawMisbehaviour;
 use ibc_proto::Protobuf;
@@ -8,9 +11,6 @@ use prost::Message;
 
 use crate::clients::ics07_tendermint::error::Error;
 use crate::clients::ics07_tendermint::header::Header;
-use crate::core::ics02_client::error::ClientError;
-use crate::core::ics24_host::identifier::ClientId;
-use crate::prelude::*;
 
 const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
 

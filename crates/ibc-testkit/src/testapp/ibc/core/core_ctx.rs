@@ -4,25 +4,26 @@ use core::ops::Add;
 use core::time::Duration;
 
 use ibc::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use ibc::core::events::IbcEvent;
-use ibc::core::ics02_client::error::ClientError;
-use ibc::core::ics03_connection::connection::ConnectionEnd;
-use ibc::core::ics03_connection::error::ConnectionError;
-use ibc::core::ics04_channel::channel::ChannelEnd;
-use ibc::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
-use ibc::core::ics04_channel::error::{ChannelError, PacketError};
-use ibc::core::ics04_channel::packet::{Receipt, Sequence};
-use ibc::core::ics23_commitment::commitment::CommitmentPrefix;
-use ibc::core::ics24_host::identifier::{ClientId, ConnectionId};
-use ibc::core::ics24_host::path::{
+use ibc::core::channel::types::channel::ChannelEnd;
+use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
+use ibc::core::channel::types::error::{ChannelError, PacketError};
+use ibc::core::channel::types::packet::Receipt;
+use ibc::core::client::types::error::ClientError;
+use ibc::core::client::types::Height;
+use ibc::core::commitment::commitment::CommitmentPrefix;
+use ibc::core::connection::types::error::ConnectionError;
+use ibc::core::connection::types::ConnectionEnd;
+use ibc::core::context::types::error::ContextError;
+use ibc::core::context::types::events::IbcEvent;
+use ibc::core::context::{ExecutionContext, ValidationContext};
+use ibc::core::host::identifiers::{ClientId, ConnectionId, Sequence};
+use ibc::core::host::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
     ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
-use ibc::core::timestamp::Timestamp;
-use ibc::core::{ContextError, ExecutionContext, ValidationContext};
-use ibc::prelude::*;
+use ibc::core::primitives::prelude::*;
+use ibc::core::primitives::{Signer, Timestamp};
 use ibc::proto::Any;
-use ibc::{Height, Signer};
 
 use super::types::MockContext;
 use crate::testapp::ibc::clients::mock::client_state::MockClientState;
@@ -70,7 +71,10 @@ impl ValidationContext for MockContext {
         client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<AnyConsensusState, ContextError> {
         let client_id = &client_cons_state_path.client_id;
-        let height = Height::new(client_cons_state_path.epoch, client_cons_state_path.height)?;
+        let height = Height::new(
+            client_cons_state_path.revision_number,
+            client_cons_state_path.revision_height,
+        )?;
         match self.ibc_store.lock().clients.get(client_id) {
             Some(client_record) => match client_record.consensus_states.get(&height) {
                 Some(consensus_state) => Ok(consensus_state.clone()),

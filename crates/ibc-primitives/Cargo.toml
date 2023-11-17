@@ -1,0 +1,51 @@
+[package]
+name         = "ibc-primitives"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc"]
+readme       = "README.md"
+description  = """
+    `ibc-primitives` furnishes essential types and traits universally
+    utilized in the implementation of diverse IBC modules, encompassing
+    core functionalities, clients, and applications.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+borsh = { workspace = true, optional = true }
+derive_more = { workspace = true }
+displaydoc = { workspace = true }
+prost = { workspace = true }
+schemars = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+time = { workspace = true }
+
+# ibc dependencies
+ibc-proto = { workspace = true }
+
+# cosmos dependencies
+tendermint = { workspace = true }
+
+[features]
+default = ["std", "ibc-proto/std", "serde/std", "time/std", "tendermint/std"]
+std = [
+    "displaydoc/std",
+    "ibc-proto/std",
+    "prost/std",
+    "tendermint/std",
+    "time/std",
+]
+schema = [
+    "dep:schemars",
+    "ibc-proto/json-schema",
+    "serde",
+    "std"
+]
+borsh = ["dep:borsh"]

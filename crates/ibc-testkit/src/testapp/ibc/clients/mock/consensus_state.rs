@@ -1,13 +1,14 @@
-use ibc::core::ics02_client::consensus_state::ConsensusState;
-use ibc::core::ics02_client::error::ClientError;
-use ibc::core::ics23_commitment::commitment::CommitmentRoot;
-use ibc::core::timestamp::Timestamp;
-use ibc::prelude::*;
-use ibc::proto::mock::ConsensusState as RawMockConsensusState;
+use ibc::core::client::context::consensus_state::ConsensusState;
+use ibc::core::client::types::error::ClientError;
+use ibc::core::commitment::commitment::CommitmentRoot;
+use ibc::core::primitives::prelude::*;
+use ibc::core::primitives::Timestamp;
 use ibc::proto::{Any, Protobuf};
 
 use crate::testapp::ibc::clients::mock::header::MockHeader;
-
+use crate::testapp::ibc::clients::mock::proto::{
+    ConsensusState as RawMockConsensusState, Header as RawMockHeader,
+};
 pub const MOCK_CONSENSUS_STATE_TYPE_URL: &str = "/ibc.mock.ConsensusState";
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -48,7 +49,7 @@ impl TryFrom<RawMockConsensusState> for MockConsensusState {
 impl From<MockConsensusState> for RawMockConsensusState {
     fn from(value: MockConsensusState) -> Self {
         RawMockConsensusState {
-            header: Some(ibc::proto::mock::Header {
+            header: Some(RawMockHeader {
                 height: Some(value.header.height().into()),
                 timestamp: value.header.timestamp.nanoseconds(),
             }),

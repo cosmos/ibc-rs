@@ -28,7 +28,7 @@ serde_json =  { workspace = true, optional = true}
 uint = { version = "0.9", default-features = false }
 
 # ibc dependencies
-ibc = { workspace = true }
+ibc-core = { workspace = true }
 ibc-proto = { workspace = true }
 
 ## parity dependencies
@@ -49,7 +49,7 @@ std = [
     "uint/std",
     "primitive-types/std",
 ]
-borsh = ["dep:borsh", "ibc/borsh", "ibc-proto/borsh"]
-serde = ["dep:serde", "serde_json", "ibc/serde", "ibc-proto/serde"]
-schema = ["dep:schemars", "ibc/schema", "ibc-proto/json-schema", "serde", "std"]
-parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc/parity-scale-codec", "ibc-proto/parity-scale-codec"]
+borsh = ["dep:borsh", "ibc-core/borsh", "ibc-proto/borsh"]
+serde = ["dep:serde", "serde_json", "ibc-core/serde", "ibc-proto/serde"]
+schema = ["dep:schemars", "ibc-core/schema", "ibc-proto/json-schema", "serde", "std"]
+parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-core/parity-scale-codec", "ibc-proto/parity-scale-codec"]

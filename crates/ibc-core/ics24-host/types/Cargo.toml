@@ -1,0 +1,54 @@
+[package]
+name         = "ibc-core-host-types"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = ["blockchain", "cosmos", "ibc"]
+readme       = "README.md"
+description  = """
+    `ibc-core-host` provides the core host functionality for IBC relayers.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+borsh = { workspace = true, optional = true }
+derive_more = { workspace = true }
+displaydoc = { workspace = true }
+schemars = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+rstest = { workspace = true }
+
+# ibc dependencies
+ibc-primitives = { workspace = true }
+
+# parity dependencies
+parity-scale-codec = { workspace = true, optional = true }
+scale-info = { workspace = true, optional = true }
+
+[features]
+default = ["std"]
+std = [
+    "displaydoc/std",
+    "ibc-primitives/std",
+]
+serde = [
+    "dep:serde",
+]
+schema = [
+    "dep:schemars",
+    "serde",
+    "std"
+]
+borsh = [
+    "dep:borsh",
+]
+parity-scale-codec = [
+    "dep:parity-scale-codec",
+    "dep:scale-info",
+]

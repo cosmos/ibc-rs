@@ -1,7 +1,7 @@
-use ibc::core::ics23_commitment::commitment::CommitmentProofBytes;
-use ibc::prelude::*;
-use ibc::proto::core::commitment::v1::MerkleProof as RawMerkleProof;
-use ibc::proto::ics23::CommitmentProof;
+use ibc::core::commitment::commitment::CommitmentProofBytes;
+use ibc::core::commitment::proto::ics23::CommitmentProof;
+use ibc::core::commitment::proto::v1::MerkleProof as RawMerkleProof;
+use ibc::core::primitives::prelude::*;
 
 /// Returns a dummy `CommitmentProofBytes`, for testing purposes only!
 pub fn dummy_commitment_proof_bytes() -> CommitmentProofBytes {

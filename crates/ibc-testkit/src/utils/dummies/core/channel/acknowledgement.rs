@@ -1,7 +1,7 @@
-use ibc::proto::core::channel::v1::{
+use ibc::core::channel::types::proto::v1::{
     MsgAcknowledgement as RawMsgAcknowledgement, Packet as RawPacket,
 };
-use ibc::proto::core::client::v1::Height as RawHeight;
+use ibc::core::client::types::proto::v1::Height as RawHeight;
 
 use super::{dummy_proof, dummy_raw_packet};
 use crate::utils::dummies::core::signer::dummy_bech32_account;

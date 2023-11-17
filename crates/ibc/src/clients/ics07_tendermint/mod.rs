@@ -3,8 +3,6 @@
 
 use core::str::FromStr;
 
-use crate::core::ics02_client::client_type::ClientType;
-
 pub mod client_state;
 pub mod consensus_state;
 pub mod error;
@@ -14,6 +12,7 @@ pub mod trust_threshold;
 
 mod context;
 pub use context::*;
+use ibc_core::host::identifiers::ClientType;
 
 pub const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
 

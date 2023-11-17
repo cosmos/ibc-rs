@@ -1,7 +1,9 @@
 use alloc::sync::Arc;
 
-use ibc::core::ics24_host::identifier::PortId;
-use ibc::core::router::{Module, ModuleId, Router};
+use ibc::core::host::identifiers::PortId;
+use ibc::core::router::module::Module;
+use ibc::core::router::router::Router;
+use ibc::core::router::types::module::ModuleId;
 
 use super::types::MockRouter;
 

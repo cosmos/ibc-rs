@@ -4,13 +4,13 @@ use core::str::FromStr;
 
 use ibc::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
 use ibc::clients::ics07_tendermint::header::{Header, TENDERMINT_HEADER_TYPE_URL};
-use ibc::core::ics02_client::error::ClientError;
-use ibc::core::ics24_host::identifier::ChainId;
-use ibc::core::timestamp::Timestamp;
-use ibc::prelude::*;
+use ibc::core::client::types::error::ClientError;
+use ibc::core::client::types::Height;
+use ibc::core::host::identifiers::ChainId;
+use ibc::core::primitives::prelude::*;
+use ibc::core::primitives::Timestamp;
 use ibc::proto::tendermint::v1::Header as RawHeader;
 use ibc::proto::{Any, Protobuf};
-use ibc::Height;
 use tendermint::block::Header as TmHeader;
 use tendermint::validator::Set as ValidatorSet;
 use tendermint_testgen::light_block::TmLightBlock;
