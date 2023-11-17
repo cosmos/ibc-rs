@@ -1,7 +1,6 @@
 use core::time::Duration;
 
-use ibc::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use ibc_core_client_context::client_state::ClientStateCommon;
+use ibc_client_tendermint_types::client_state::ClientState as TmClientState;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::specs::ProofSpecs;

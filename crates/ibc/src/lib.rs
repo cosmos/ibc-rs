@@ -39,28 +39,10 @@
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
-<<<<<<< HEAD
 pub mod apps {
     #[doc(inline)]
     pub use ibc_apps::*;
 }
-=======
-pub use signer::Signer;
-
-/// Represents a block height
-pub use crate::core::ics02_client::height::Height;
-
-pub mod applications;
-pub mod core;
-pub mod hosts;
-
-pub mod prelude;
-mod signer;
-pub mod utils;
-
-#[cfg(feature = "serde")]
-mod serializers;
->>>>>>> f5a98d6d4d8569b592660c4d90c4babd7615b3e1
 
 pub mod core {
     #[doc(inline)]
