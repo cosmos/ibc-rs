@@ -4,9 +4,11 @@ use core::str::FromStr;
 use ibc::prelude::*;
 use serde::{de, Deserialize, Deserializer, Serializer};
 
-// Note: used String version (slower + heap) instead of str,
-// because both str ser/de hit some kind of f64/f32 case when compiled into wasm
-// and fails to be validated f32/f64 wasm runtimes
+// Note: This method serializes to a String instead of a str
+// in order to avoid a wasm compilation issue. Specifically,
+// str (de)serialization hits some kind of f64/f32 case
+// when compiled into wasm, but this fails validation on 
+// f32/f64 wasm runtimes.
 pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
 where
     T: Display,
