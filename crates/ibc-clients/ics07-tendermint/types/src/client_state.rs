@@ -4,7 +4,6 @@
 use crate::consensus_state::ConsensusState as TmConsensusState;
 use crate::error::Error;
 use crate::header::Header as TmHeader;
-use crate::misbehaviour::Misbehaviour as TmMisbehaviour;
 use crate::trust_threshold::TrustThreshold;
 
 use core::cmp::max;
@@ -12,30 +11,16 @@ use core::convert::{TryFrom, TryInto};
 use core::str::FromStr;
 use core::time::Duration;
 
-use ibc::core::ics02_client::client_state::{
-    ClientStateCommon, ClientStateExecution, ClientStateValidation, Status, UpdateKind,
-};
-use ibc::core::ics02_client::client_type::ClientType;
-use ibc::core::ics02_client::consensus_state::ConsensusState;
-use ibc::core::ics02_client::error::{ClientError, UpgradeClientError};
-use ibc::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
-use ibc::core::ics23_commitment::commitment::{
-    CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
-};
-use ibc::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
-use ibc::core::ics23_commitment::specs::ProofSpecs;
-use ibc::core::ics24_host::identifier::{ChainId, ClientId};
-use ibc::core::ics24_host::path::{
-    ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
-};
-use ibc::core::timestamp::ZERO_DURATION;
-use ibc::core::ExecutionContext;
-use ibc::prelude::*;
-use ibc::Height;
+use ibc_core_client_types::error::ClientError;
+use ibc_core_client_types::Height;
+use ibc_core_commitment_types::specs::ProofSpecs;
+use ibc_core_host_types::identifiers::ChainId;
+
+use ibc_primitives::prelude::*;
+use ibc_primitives::ZERO_DURATION;
 
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
 use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
 use ibc_proto::Protobuf;
 
@@ -43,6 +28,7 @@ use prost::Message;
 
 use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
+
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::ProdVerifier;
 

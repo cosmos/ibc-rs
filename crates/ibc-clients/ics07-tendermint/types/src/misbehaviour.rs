@@ -6,9 +6,9 @@ use ibc_proto::ibc::lightclients::tendermint::v1::Misbehaviour as RawMisbehaviou
 use ibc_proto::Protobuf;
 use prost::Message;
 
-use ibc::core::ics02_client::error::ClientError;
-use ibc::core::ics24_host::identifier::ClientId;
-use ibc::prelude::*;
+use ibc_core_host_types::identifiers::ClientId;
+use ibc_primitives::prelude::*;
+use ibc_core_client_types::error::ClientError;
 
 use crate::error::Error;
 use crate::header::Header;

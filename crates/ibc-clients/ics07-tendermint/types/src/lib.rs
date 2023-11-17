@@ -1,5 +1,5 @@
 use core::str::FromStr;
-use ibc::core::ics02_client::client_type::ClientType;
+use ibc_core_host_types::identifiers::ClientType;
 
 extern crate alloc;
 

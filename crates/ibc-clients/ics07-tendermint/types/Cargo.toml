@@ -29,6 +29,12 @@ tendermint-proto = { workspace = true }
 
 # ibc dependencies
 ibc = { version = "0.47.0", path = "./../../../ibc" }
+ibc-core-client-context = { version = "0.47.0", path = "./../../../ibc-core/ics02-client/context" }
+ibc-core-client-types = { version = "0.47.0", path = "./../../../ibc-core/ics02-client/types" }
+ibc-core-commitment-types = { version = "0.47.0", path = "./../../../ibc-core/ics23-commitment/types" }
+ibc-core-context = { version = "0.47.0", path = "./../../../ibc-core/context" }
+ibc-core-host-types = { version = "0.47.0", path = "./../../../ibc-core/ics24-host/types" }
+ibc-primitives = { version = "0.47.0", path = "./../../../ibc-primitives" }
 ibc-proto = { workspace = true, features = ["server"] }
 
 [dev-dependencies]

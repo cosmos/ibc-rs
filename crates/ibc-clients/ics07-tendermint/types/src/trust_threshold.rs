@@ -9,7 +9,7 @@ use ibc_proto::ibc::lightclients::tendermint::v1::Fraction;
 use ibc_proto::Protobuf;
 use tendermint::trust_threshold::TrustThresholdFraction;
 
-use ibc::core::ics02_client::error::ClientError;
+use ibc_core_client_types::error::ClientError;
 
 /// [`TrustThreshold`] defines the level of trust that a client has
 /// towards a set of validators of a chain.

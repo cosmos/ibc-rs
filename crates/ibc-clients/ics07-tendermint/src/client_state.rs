@@ -2,23 +2,23 @@ use crate::context::{
     CommonContext, ExecutionContext as TmExecutionContext, ValidationContext as TmValidationContext,
 };
 
-use ibc::core::ics02_client::client_state::{
+use ibc_core_client_types::client_state::{
     ClientStateCommon, ClientStateExecution, ClientStateValidation, Status, UpdateKind,
 };
 use ibc::core::ics02_client::client_type::ClientType;
 use ibc::core::ics02_client::error::{ClientError, UpgradeClientError};
 use ibc::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
-use ibc::core::ics23_commitment::commitment::{
+use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
-use ibc::core::ics23_commitment::merkle::{apply_prefix, MerkleProof};
-use ibc::core::ics24_host::identifier::ClientId;
-use ibc::core::ics24_host::path::{
+use ibc_core_commitment_types::merkle::{apply_prefix, MerkleProof};
+use ibc_core_host_types::identifiers::ClientId;
+use ibc_core_host_types::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
-use ibc::core::ExecutionContext;
-use ibc::prelude::*;
-use ibc::Height;
+use ibc_core_context_types::ExecutionContext;
+use ibc_primitives::prelude::*;
+use ibc_core_client_types::Height;
 
 use ibc_client_tendermint_types::client_state::ClientState as ClientStateType;
 use ibc_client_tendermint_types::client_type as tm_client_type;

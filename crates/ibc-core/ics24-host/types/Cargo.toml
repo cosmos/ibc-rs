@@ -9,7 +9,7 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc"]
 readme       = "README.md"
 description  = """
-    `ibc-core-host` provides the core host functionality for IBC relayers.
+    `ibc-core-host-types` provides the data structures and domain types for IBC relayers.
 """
 
 [package.metadata.docs.rs]
