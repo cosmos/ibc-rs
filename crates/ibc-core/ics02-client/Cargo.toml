@@ -27,6 +27,7 @@ ibc-core-commitment-types = { workspace = true }
 ibc-core-host-types       = { workspace = true }
 ibc-core-context          = { workspace = true }
 ibc-derive                = { workspace = true }
+ibc-primitives            = { workspace = true }
 
 [features]
 default = ["std"]
@@ -37,6 +38,7 @@ std = [
     "ibc-core-commitment-types/std",
     "ibc-core-host-types/std",
     "ibc-core-context/std",
+    "ibc-primitives/std",
 ]
 serde = [
     "ibc-core-client-types/serde",
@@ -44,6 +46,7 @@ serde = [
     "ibc-core-commitment-types/serde",
     "ibc-core-host-types/serde",
     "ibc-core-context/serde",
+    "ibc-primitives/serde",
 ]
 borsh = [
     "ibc-core-client-types/borsh",
@@ -51,6 +54,7 @@ borsh = [
     "ibc-core-commitment-types/borsh",
     "ibc-core-host-types/borsh",
     "ibc-core-context/borsh",
+    "ibc-primitives/borsh",
 ]
 schema = [
     "ibc-core-client-types/schema",
@@ -58,6 +62,7 @@ schema = [
     "ibc-core-commitment-types/schema",
     "ibc-core-host-types/schema",
     "ibc-core-context/schema",
+    "ibc-primitives/schema",
     "serde",
     "std"
 ]
@@ -67,4 +72,5 @@ parity-scale-codec = [
     "ibc-core-commitment-types/parity-scale-codec",
     "ibc-core-context/parity-scale-codec",
     "ibc-core-host-types/parity-scale-codec",
+    "ibc-primitives/parity-scale-codec",
 ]

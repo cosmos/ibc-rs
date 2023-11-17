@@ -69,12 +69,12 @@ std = [
     "tendermint/std",
 ]
 
-parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-proto/parity-scale-codec"]
+parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info","ibc-core/parity-scale-codec", "ibc-proto/parity-scale-codec"]
 
-borsh = ["dep:borsh", "ibc-proto/borsh"]
+borsh = ["dep:borsh", "ibc-core/borsh", "ibc-proto/borsh"]
 
 # This feature is required for token transfer (ICS-20)
 serde = ["dep:serde", "serde_json", "ibc-proto/serde", "ibc-core/serde"]
 
 # CosmWasm message API generator compatible, should not be inside on chain code
-schema = ["ibc-proto/json-schema", "serde", "std"]
+schema = ["ibc-core/schema", "ibc-proto/json-schema", "serde", "std"]

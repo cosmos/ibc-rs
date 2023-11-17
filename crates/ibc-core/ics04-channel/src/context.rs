@@ -13,6 +13,7 @@ use ibc_core_host_types::identifiers::{ClientId, ConnectionId, Sequence};
 use ibc_core_host_types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
+use ibc_primitives::prelude::*;
 
 /// Methods required in send packet validation, to be implemented by the host
 pub trait SendPacketValidationContext {

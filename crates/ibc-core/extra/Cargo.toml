@@ -9,7 +9,7 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc"]
 readme       = "./../README.md"
 description  = """
-    /// Provides chain-specific helper traits and implementations to faciliate integration of ibc-rs,
+    /// Provides chain-specific helper traits and implementations to facilitate integration of ibc-rs,
     /// ensuring efficient interaction with modules/components beyond the IBC modules on host chains.
 """
 

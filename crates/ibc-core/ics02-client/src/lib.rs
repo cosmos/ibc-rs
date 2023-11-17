@@ -12,6 +12,9 @@
     rust_2018_idioms
 )]
 
+#[cfg(feature = "std")]
+extern crate std;
+
 pub mod handler;
 
 /// Re-exports

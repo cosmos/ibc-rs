@@ -15,6 +15,9 @@
     rust_2018_idioms
 )]
 
+#[cfg(feature = "std")]
+extern crate std;
+
 pub mod client_state;
 pub mod consensus_state;
 

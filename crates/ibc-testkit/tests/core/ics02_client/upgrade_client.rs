@@ -140,7 +140,7 @@ fn upgrade_client_fail_nonexisting_client() {
     let expected_err = ContextError::ClientError(ClientError::ClientStateNotFound {
         client_id: fxt.msg.client_id.clone(),
     });
-    upgrade_client_validate(&fxt, Expect::Failure(Some(expected_err.into())));
+    upgrade_client_validate(&fxt, Expect::Failure(Some(expected_err)));
 }
 
 #[test]
@@ -154,7 +154,7 @@ fn upgrade_client_fail_low_upgrade_height() {
     .into();
     upgrade_client_validate(
         &fxt,
-        Expect::Failure(Some(ContextError::from(expected_err).into())),
+        Expect::Failure(Some(ContextError::from(expected_err))),
     );
 }
 
@@ -164,5 +164,5 @@ fn upgrade_client_fail_unknown_upgraded_client_state() {
     let expected_err = ContextError::ClientError(ClientError::UnknownClientStateType {
         client_state_type: client_type().to_string(),
     });
-    upgrade_client_validate(&fxt, Expect::Failure(Some(expected_err.into())));
+    upgrade_client_validate(&fxt, Expect::Failure(Some(expected_err)));
 }

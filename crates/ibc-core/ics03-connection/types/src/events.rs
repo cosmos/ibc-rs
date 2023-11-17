@@ -305,7 +305,7 @@ impl From<OpenConfirm> for abci::Event {
 #[cfg(test)]
 mod tests {
 
-    use std::str::FromStr;
+    use core::str::FromStr;
 
     use ibc_core_host_types::identifiers::ClientType;
     use tendermint::abci::Event as AbciEvent;

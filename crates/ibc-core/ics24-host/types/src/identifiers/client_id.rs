@@ -2,6 +2,7 @@ use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use derive_more::Into;
+use ibc_primitives::prelude::*;
 
 use super::ClientType;
 use crate::error::IdentifierError;

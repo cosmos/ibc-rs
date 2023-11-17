@@ -3,7 +3,6 @@
 use core::marker::{Send, Sync};
 
 use ibc_core_client_types::error::ClientError;
-use ibc_core_client_types::primitives::prelude::*;
 use ibc_core_client_types::proto::Any;
 use ibc_core_client_types::{Height, Status, UpdateKind};
 use ibc_core_commitment_types::commitment::{
@@ -11,6 +10,7 @@ use ibc_core_commitment_types::commitment::{
 };
 use ibc_core_host_types::identifiers::{ClientId, ClientType};
 use ibc_core_host_types::path::Path;
+use ibc_primitives::prelude::*;
 
 /// `ClientState` methods needed in both validation and execution.
 ///

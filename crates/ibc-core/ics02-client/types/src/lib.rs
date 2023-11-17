@@ -30,7 +30,3 @@ pub mod proto {
     pub use ibc_proto::ibc::core::client::*;
     pub use ibc_proto::Protobuf;
 }
-
-pub mod primitives {
-    pub use ibc_primitives::*;
-}

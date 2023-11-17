@@ -1,3 +1,4 @@
+use ibc_primitives::prelude::*;
 use tendermint::abci;
 
 /// The event type emitted by IBC applications
