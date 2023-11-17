@@ -5,6 +5,12 @@ pub mod upgrade_proposal;
 mod validate_self_client;
 pub use validate_self_client::ValidateSelfClientContext;
 
+/// Re-exports necessary proto types for implementing the tendermint client
+/// upgradeability feature.
+pub mod proto {
+    pub use ibc_proto::cosmos::upgrade::*;
+}
+
 /// ABCI store/query path for the IBC sub-store
 pub const IBC_QUERY_PATH: &str = "store/ibc/key";
 

@@ -3,7 +3,6 @@
 use ibc_core_channel_types::channel::{ChannelEnd, Counterparty, State};
 use ibc_core_channel_types::events::OpenInit;
 use ibc_core_channel_types::msgs::MsgChannelOpenInit;
-use ibc_core_channel_types::primitives::prelude::*;
 use ibc_core_client::context::client_state::ClientStateValidation;
 use ibc_core_client::types::error::ClientError;
 use ibc_core_context::types::error::ContextError;
@@ -12,6 +11,7 @@ use ibc_core_context::{ExecutionContext, ValidationContext};
 use ibc_core_host_types::identifiers::ChannelId;
 use ibc_core_host_types::path::{ChannelEndPath, SeqAckPath, SeqRecvPath, SeqSendPath};
 use ibc_core_router::module::Module;
+use ibc_primitives::prelude::*;
 
 pub fn chan_open_init_validate<ValCtx>(
     ctx_a: &ValCtx,

@@ -9,7 +9,8 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc"]
 readme       = "README.md"
 description  = """
-    `ibc-core-host` provides the core host functionality for IBC relayers.
+    Encapsulates the shared data structures defining ICS-24 host semantics,
+    crafted to offer compatibility across diverse IBC implementations.
 """
 
 [package.metadata.docs.rs]
@@ -17,19 +18,19 @@ all-features = true
 
 [dependencies]
 # external dependencies
-borsh = { workspace = true, optional = true }
+borsh       = { workspace = true, optional = true }
 derive_more = { workspace = true }
-displaydoc = { workspace = true }
-schemars = { workspace = true, optional = true }
-serde = { workspace = true, optional = true }
-rstest = { workspace = true }
+displaydoc  = { workspace = true }
+schemars    = { workspace = true, optional = true }
+serde       = { workspace = true, optional = true }
+rstest      = { workspace = true }
 
 # ibc dependencies
 ibc-primitives = { workspace = true }
 
 # parity dependencies
-parity-scale-codec = { workspace = true, optional = true }
-scale-info = { workspace = true, optional = true }
+parity-scale-codec  = { workspace = true, optional = true }
+scale-info          = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
@@ -39,16 +40,20 @@ std = [
 ]
 serde = [
     "dep:serde",
+    "ibc-primitives/serde",
 ]
 schema = [
     "dep:schemars",
+    "ibc-primitives/schema",
     "serde",
     "std"
 ]
 borsh = [
     "dep:borsh",
+    "ibc-primitives/borsh",
 ]
 parity-scale-codec = [
     "dep:parity-scale-codec",
     "dep:scale-info",
+    "ibc-primitives/parity-scale-codec",
 ]

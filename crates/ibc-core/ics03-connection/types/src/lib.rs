@@ -23,11 +23,8 @@ pub mod events;
 pub mod msgs;
 pub mod version;
 
-pub mod primitives {
-    #[doc(inline)]
-    pub use ibc_primitives::*;
-}
-
+/// Re-exports ICS-03 connection proto types from the `ibc-proto-rs` crate
+/// for added convenience
 pub mod proto {
     pub use ibc_proto::google::protobuf::Any;
     pub use ibc_proto::ibc::core::connection::*;

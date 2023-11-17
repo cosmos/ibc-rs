@@ -23,7 +23,7 @@ use ibc_core_host_types::path::{
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Signer, Timestamp};
 
-use crate::block_delay::calculate_block_delay;
+use crate::utils::calculate_block_delay;
 
 /// Context to be implemented by the host that provides all "read-only" methods.
 ///

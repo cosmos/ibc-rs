@@ -19,19 +19,23 @@ all-features = true
 
 [dependencies]
 # external dependencies
-borsh = { workspace = true, optional = true }
+borsh       = { workspace = true, optional = true }
 derive_more = { workspace = true }
-displaydoc = { workspace = true }
-prost = { workspace = true }
-schemars = { workspace = true, optional = true }
-serde = { workspace = true, optional = true }
-time = { workspace = true }
+displaydoc  = { workspace = true }
+prost       = { workspace = true }
+schemars    = { workspace = true, optional = true }
+serde       = { workspace = true, optional = true }
+time        = { workspace = true }
 
 # ibc dependencies
 ibc-proto = { workspace = true }
 
 # cosmos dependencies
 tendermint = { workspace = true }
+
+# parity dependencies
+parity-scale-codec  = { workspace = true, optional = true }
+scale-info          = { workspace = true, optional = true }
 
 [features]
 default = ["std", "ibc-proto/std", "serde/std", "time/std", "tendermint/std"]
@@ -49,3 +53,8 @@ schema = [
     "std"
 ]
 borsh = ["dep:borsh"]
+parity-scale-codec = [
+    "dep:parity-scale-codec",
+    "dep:scale-info",
+    "ibc-proto/parity-scale-codec",
+]

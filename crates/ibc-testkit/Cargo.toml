@@ -17,33 +17,33 @@ description  = """
 
 [dependencies]
 # external dependencies
-bytes = { workspace = true }
-derive_more = { workspace = true }
-displaydoc = { workspace = true }
-parking_lot = { workspace = true }
-primitive-types = { workspace = true }
-prost = { workspace = true }
-serde = { workspace = true, optional = true }
-serde_json = { workspace = true, optional = true }
-subtle-encoding = { workspace = true }
-tracing = { workspace = true }
-typed-builder = { workspace = true }
+bytes             = { workspace = true }
+derive_more       = { workspace = true }
+displaydoc        = { workspace = true }
+parking_lot       = { workspace = true }
+primitive-types   = { workspace = true }
+prost             = { workspace = true }
+serde             = { workspace = true, optional = true }
+serde_json        = { workspace = true, optional = true }
+subtle-encoding   = { workspace = true }
+tracing           = { workspace = true }
+typed-builder     = { workspace = true }
 
 # ibc dependencies
-ibc = { workspace = true, features = ["std"] }
-ibc-app-transfer = { workspace = true, features = ["serde"] }
-ibc-proto = { workspace = true }
+ibc               = { workspace = true, features = ["std"] }
+ibc-app-transfer  = { workspace = true, features = ["serde"] }
+ibc-proto         = { workspace = true }
 
 
 # cosmos dependencies
-tendermint = { workspace = true }
+tendermint         = { workspace = true }
 tendermint-testgen = { workspace = true }
 
 [dev-dependencies]
-env_logger = { workspace = true }
-rstest = { workspace = true }
+env_logger         = { workspace = true }
+rstest             = { workspace = true }
 tracing-subscriber = { workspace = true }
-test-log = { workspace = true }
+test-log           = { workspace = true }
 
 [features]
 default = ["std"]
@@ -55,8 +55,6 @@ std = [
     "serde/std",
     "serde_json/std",
 ]
-
-# This feature is required for token transfer (ICS-20)
 serde = [
     "dep:serde",
     "ibc/serde",

@@ -16,10 +16,7 @@ pub mod commitment;
 mod version;
 pub use version::Version;
 
-pub mod primitives {
-    pub use ibc_primitives::*;
-}
-
+/// Re-exports ICS-04 channel proto types from the `ibc-proto-rs` crate
 pub mod proto {
     pub use ibc_proto::google::protobuf::Any;
     pub use ibc_proto::ibc::core::channel::*;

@@ -9,7 +9,7 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc"]
 readme       = "README.md"
 description  = """
-    TBD
+    Encapsulates the data structures used by ICS-26 routing implementation
 """
 
 [package.metadata.docs.rs]
@@ -17,27 +17,27 @@ all-features = true
 
 [dependencies]
 # external dependencies
-borsh = { workspace = true, optional = true }
-derive_more = { workspace = true }
-displaydoc = { workspace = true }
-prost = { workspace = true }
-schemars = { workspace = true, optional = true }
-serde = { workspace = true, optional = true }
+borsh           = { workspace = true, optional = true }
+derive_more     = { workspace = true }
+displaydoc      = { workspace = true }
+prost           = { workspace = true }
+schemars        = { workspace = true, optional = true }
+serde           = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
 
 # ibc dependencies
-ibc-primitives = { workspace = true }
-ibc-core-host-types = { workspace = true }
+ibc-primitives         = { workspace = true }
+ibc-core-host-types    = { workspace = true }
 ibc-core-channel-types = { workspace = true }
-ibc-proto = {workspace = true }
-ics23 = { workspace = true }
+ibc-proto              = {workspace = true }
+ics23                  = { workspace = true }
 
 # cosmos dependencies
 tendermint = { workspace = true }
 
 # parity dependencies
 parity-scale-codec = { workspace = true, optional = true }
-scale-info = { workspace = true, optional = true }
+scale-info         = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
@@ -62,16 +62,16 @@ serde = [
 ]
 borsh = [
     "dep:borsh",
-    "ibc-primitives/borsh",
     "ibc-core-host-types/borsh",
     "ibc-core-channel-types/borsh",
+    "ibc-primitives/borsh",
     "ibc-proto/borsh",
 ]
 schema = [
     "dep:schemars",
-    "ibc-primitives/schema",
     "ibc-core-host-types/schema",
     "ibc-core-channel-types/schema",
+    "ibc-primitives/schema",
     "ibc-proto/json-schema",
 ]
 parity-scale-codec = [
@@ -79,4 +79,6 @@ parity-scale-codec = [
     "dep:scale-info",
     "ibc-core-host-types/parity-scale-codec",
     "ibc-core-channel-types/parity-scale-codec",
+    "ibc-primitives/parity-scale-codec",
+    "ibc-proto/parity-scale-codec",
 ]

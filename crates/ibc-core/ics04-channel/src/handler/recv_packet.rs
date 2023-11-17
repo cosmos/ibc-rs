@@ -4,8 +4,6 @@ use ibc_core_channel_types::error::{ChannelError, PacketError};
 use ibc_core_channel_types::events::{ReceivePacket, WriteAcknowledgement};
 use ibc_core_channel_types::msgs::MsgRecvPacket;
 use ibc_core_channel_types::packet::Receipt;
-use ibc_core_channel_types::primitives::prelude::*;
-use ibc_core_channel_types::primitives::Expiry;
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::types::error::ClientError;
@@ -19,6 +17,8 @@ use ibc_core_host_types::path::{
     SeqRecvPath,
 };
 use ibc_core_router::module::Module;
+use ibc_primitives::prelude::*;
+use ibc_primitives::Expiry;
 
 pub fn recv_packet_validate<ValCtx>(ctx_b: &ValCtx, msg: MsgRecvPacket) -> Result<(), ContextError>
 where

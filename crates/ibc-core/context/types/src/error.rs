@@ -1,3 +1,5 @@
+//! Defines the context error type
+
 use derive_more::From;
 use displaydoc::Display;
 use ibc_core_channel_types::error::{ChannelError, PacketError};

@@ -1,3 +1,7 @@
+//! Provides essential top-level traits designed for the seamless integration of
+//! host chains with ibc-rs. It streamlines access to the host's storage,
+//! facilitating the efficient retrieval of states and metadata crucial for the
+//! execution of IBC logics.
 #![no_std]
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]
@@ -10,7 +14,7 @@
     rust_2018_idioms
 )]
 
-pub(crate) mod block_delay;
+pub(crate) mod utils;
 
 mod context;
 pub use context::*;

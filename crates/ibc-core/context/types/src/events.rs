@@ -1,4 +1,4 @@
-//! Events emitted during message handling
+//! Defines events emitted during handling of IBC messages
 
 use core::convert::{TryFrom, TryInto};
 

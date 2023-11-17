@@ -7,24 +7,33 @@ rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc"]
-readme       = "README.md"
+readme       = "./../../README.md"
 description  = """
-    `ibc-core-host` provides the core host functionality for IBC relayers.
+    Serves as the implementation hub for ICS-23 commitment data structures
+    typically employed by different IBC core modules
 """
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[package.metadata.docs.rs]
+all-features = true
 
 [dependencies]
 # external dependencies
-derive_more = { workspace = true }
-displaydoc = { workspace = true }
-prost = { workspace = true }
-serde = { workspace = true, optional = true }
+borsh           = { workspace = true, optional = true }
+derive_more     = { workspace = true }
+displaydoc      = { workspace = true }
+prost           = { workspace = true }
+schemars        = { workspace = true, optional = true }
+serde           = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
 
 # ibc dependencies
-ibc-proto = { workspace = true }
-ibc-primitives = {workspace = true }
-ics23 = { workspace = true, features = ["host-functions"] }
+ibc-proto       = { workspace = true }
+ibc-primitives  = {workspace = true }
+ics23           = { workspace = true, features = ["host-functions"] }
+
+# parity dependencies
+parity-scale-codec  = { workspace = true, optional = true }
+scale-info          = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
@@ -42,3 +51,22 @@ serde = [
     "ibc-proto/serde",
     "ics23/serde",
 ]
+schema = [
+    "dep:schemars",
+    "ibc-proto/json-schema",
+    "ibc-primitives/schema",
+    "serde",
+    "std"
+]
+borsh = [
+    "dep:borsh",
+    "ibc-proto/borsh",
+    "ibc-primitives/borsh",
+]
+parity-scale-codec = [
+    "dep:parity-scale-codec",
+    "dep:scale-info",
+    "ibc-primitives/parity-scale-codec",
+    "ibc-proto/parity-scale-codec",
+]
+

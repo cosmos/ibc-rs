@@ -6,14 +6,14 @@ use ibc_core_client::types::error::ClientError;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenConfirm;
 use ibc_core_connection_types::msgs::MsgConnectionOpenConfirm;
-use ibc_core_connection_types::primitives::prelude::*;
+use ibc_core_connection_types::proto::Protobuf;
 use ibc_core_connection_types::{ConnectionEnd, Counterparty, State};
 use ibc_core_context::types::error::ContextError;
 use ibc_core_context::types::events::{IbcEvent, MessageEvent};
 use ibc_core_context::{ExecutionContext, ValidationContext};
 use ibc_core_host_types::identifiers::{ClientId, ConnectionId};
 use ibc_core_host_types::path::{ClientConsensusStatePath, ConnectionPath, Path};
-use ibc_proto::Protobuf;
+use ibc_primitives::prelude::*;
 
 pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ContextError>
 where

@@ -7,9 +7,10 @@ rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc"]
-readme       = "README.md"
+readme       = "./../../README.md"
 description  = """
-    TBD
+    Encapsulates the shared data structures defining ICS-03 connection semantics,
+    crafted to offer compatibility across diverse IBC implementations.
 """
 
 [package.metadata.docs.rs]
@@ -17,27 +18,27 @@ all-features = true
 
 [dependencies]
 # external dependencies
-borsh = { workspace = true, optional = true }
-derive_more = { workspace = true }
-displaydoc = { workspace = true }
-prost = { workspace = true }
-schemars = { workspace = true, optional = true}
-serde = { workspace = true, optional = true  }
+borsh           = { workspace = true, optional = true }
+derive_more     = { workspace = true }
+displaydoc      = { workspace = true }
+prost           = { workspace = true }
+schemars        = { workspace = true, optional = true}
+serde           = { workspace = true, optional = true  }
 subtle-encoding = { workspace = true }
 
 # ibc dependencies
-ibc-core-client-types = { workspace = true }
+ibc-core-client-types     = { workspace = true }
 ibc-core-commitment-types = { workspace = true }
-ibc-core-host-types = { workspace = true }
-ibc-primitives = { workspace = true }
-ibc-proto = { workspace = true }
+ibc-core-host-types       = { workspace = true }
+ibc-primitives            = { workspace = true }
+ibc-proto                 = { workspace = true }
 
 # cosmos dependencies
 tendermint = { workspace = true }
 
 # parity dependencies
 parity-scale-codec = { workspace = true, optional = true }
-scale-info = { workspace = true, optional = true }
+scale-info         = { workspace = true, optional = true }
 
 [dev-dependencies]
 ibc-testkit = { workspace = true }
@@ -54,29 +55,37 @@ std = [
     "ibc-primitives/std",
     "ibc-proto/std",
     "tendermint/std",
-
 ]
 serde = [
     "dep:serde",
-    "ibc-core-host-types/serde",
-    "ibc-core-commitment-types/serde",
     "ibc-core-client-types/serde",
+    "ibc-core-commitment-types/serde",
+    "ibc-core-host-types/serde",
+    "ibc-primitives/serde",
     "ibc-proto/serde",
 ]
 schema = [
     "dep:schemars",
-    "ibc-core-host-types/schema",
     "ibc-core-client-types/schema",
+    "ibc-core-commitment-types/schema",
+    "ibc-core-host-types/schema",
     "ibc-proto/json-schema",
+    "ibc-primitives/schema",
     "serde",
     "std"
 ]
 borsh = [
     "dep:borsh",
+    "ibc-core-client-types/borsh",
+    "ibc-core-commitment-types/borsh",
+    "ibc-core-host-types/borsh",
+    "ibc-primitives/borsh",
 ]
 parity-scale-codec = [
     "dep:parity-scale-codec",
     "dep:scale-info",
     "ibc-core-client-types/parity-scale-codec",
+    "ibc-core-commitment-types/parity-scale-codec",
     "ibc-core-host-types/parity-scale-codec",
+    "ibc-primitives/parity-scale-codec",
 ]
