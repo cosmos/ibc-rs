@@ -22,8 +22,8 @@ serde_json =  { workspace = true, optional = true }
 sha2 = { workspace = true }
 
 # ibc dependencies
-ibc-app-transfer-types = { version = "0.47.0", path = "./types", default-features = false }
-ibc = { version = "0.47.0", path = "./../../ibc", default-features = false }
+ibc = { workspace = true }
+ibc-app-transfer-types = { workspace = true }
 
 [dev-dependencies]
 subtle-encoding = { workspace = true }
@@ -41,4 +41,17 @@ serde = [
     "ibc/serde",
     "serde_json"
 ]
-
+schema = [
+    "ibc-app-transfer-types/schema",
+    "ibc/schema",
+    "serde",
+    "std",
+]
+borsh = [
+    "ibc-app-transfer-types/borsh",
+    "ibc/borsh",
+]
+parity-scale-codec = [
+    "ibc-app-transfer-types/parity-scale-codec",
+    "ibc/parity-scale-codec",
+]

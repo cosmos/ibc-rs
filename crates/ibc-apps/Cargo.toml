@@ -17,7 +17,7 @@ description  = """
 all-features = true
 
 [dependencies]
-ibc-app-transfer = { version = "0.47.0", path = "./ics20-transfer", default-features = false }
+ibc-app-transfer = { workspace = true }
 
 [features]
 default = ["std"]
@@ -26,4 +26,12 @@ std = [
 ]
 serde = [
     "ibc-app-transfer/serde",
+]
+schema = [
+    "ibc-app-transfer/schema",
+    "serde",
+    "std",
+]
+borsh = [
+    "ibc-app-transfer/borsh",
 ]

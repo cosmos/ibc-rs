@@ -28,7 +28,7 @@ serde_json =  { workspace = true, optional = true}
 uint = { version = "0.9", default-features = false }
 
 # ibc dependencies
-ibc = { version = "0.47.0", path = "./../../../ibc" }
+ibc = { workspace = true }
 ibc-proto = { workspace = true }
 
 ## parity dependencies
@@ -36,7 +36,7 @@ parity-scale-codec = { workspace = true , optional = true }
 scale-info = { workspace = true , optional = true }
 
 [dev-dependencies]
-ibc-testkit = { version = "0.47.0", path = "./../../../ibc-testkit", default-features = false}
+ibc-testkit = { workspace = true }
 rstest = { workspace = true }
 
 [features]

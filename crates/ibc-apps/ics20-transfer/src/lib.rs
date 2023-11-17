@@ -2,7 +2,7 @@
 #![no_std]
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]
-#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types,))]
+#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types))]
 #![deny(
     warnings,
     trivial_casts,

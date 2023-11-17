@@ -1,4 +1,4 @@
-//! Exports data structures and implementations of different IBC applications.
+//! Re-exports implementations and data structures of different IBC applications.
 #![no_std]
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]
