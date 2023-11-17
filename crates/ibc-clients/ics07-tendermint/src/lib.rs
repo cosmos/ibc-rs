@@ -17,11 +17,11 @@ use core::any::Any;
 
 extern crate alloc;
 
-#[cfg(feature = "std")]
+#[cfg(any(test, feature = "std"))]
 extern crate std;
 
-pub mod context;
 pub mod client_state;
+pub mod context;
 
 pub const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
 
