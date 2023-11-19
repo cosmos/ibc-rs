@@ -275,7 +275,7 @@ where
 
         let latest_consensus_state: TmConsensusState = {
             let any_latest_consensus_state = match ctx.consensus_state(
-                &ClientConsensusStatePath::new(client_id, &self.0.latest_height),
+                &ClientConsensusStatePath::new(client_id.clone(), self.0.latest_height.revision_number(), self.0.latest_height.revision_height()),
             ) {
                 Ok(cs) => cs,
                 // if the client state does not have an associated consensus state for its latest height
@@ -321,7 +321,7 @@ where
 
         ctx.store_client_state(ClientStatePath::new(client_id), self.0.clone().into())?;
         ctx.store_consensus_state(
-            ClientConsensusStatePath::new(client_id, &self.0.latest_height),
+            ClientConsensusStatePath::new(client_id.clone(), self.0.latest_height.revision_number(), self.0.latest_height.revision_height()),
             tm_consensus_state.into(),
         )?;
         ctx.store_update_time(client_id.clone(), self.latest_height(), host_timestamp)?;
@@ -342,7 +342,7 @@ where
         self.prune_oldest_consensus_state(ctx, client_id)?;
 
         let maybe_existing_consensus_state = {
-            let path_at_header_height = ClientConsensusStatePath::new(client_id, &header_height);
+            let path_at_header_height = ClientConsensusStatePath::new(client_id.clone(), header_height.revision_number(), header_height.revision_height());
 
             CommonContext::consensus_state(ctx, &path_at_header_height).ok()
         };
@@ -360,7 +360,7 @@ where
             let new_client_state = self.0.clone().with_header(header)?;
 
             ctx.store_consensus_state(
-                ClientConsensusStatePath::new(client_id, &new_client_state.latest_height),
+                ClientConsensusStatePath::new(client_id.clone(), new_client_state.latest_height.revision_number(), new_client_state.latest_height.revision_height()),
                 new_consensus_state.into(),
             )?;
             ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
@@ -440,7 +440,7 @@ where
 
         ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
         ctx.store_consensus_state(
-            ClientConsensusStatePath::new(client_id, &latest_height),
+            ClientConsensusStatePath::new(client_id.clone(), latest_height.revision_number(), latest_height.revision_height()),
             new_consensus_state.into(),
         )?;
         ctx.store_update_time(client_id.clone(), latest_height, host_timestamp)?;
@@ -457,9 +457,9 @@ mod tests {
     use test_log::test;
 
     use super::*;
-    use ibc::core::ics02_client::height::Height;
-    use ibc::core::ics23_commitment::specs::ProofSpecs;
-    use ibc::core::ics24_host::identifier::ChainId;
+    use ibc_core_client_types::Height;
+    use ibc_core_commitment_types::specs::ProofSpecs;
+    use ibc_core_host_types::identifiers::ChainId;
 
     use ibc_client_tendermint_types::client_state::{AllowUpdate, ClientState as ClientStateType};
     use ibc_client_tendermint_types::client_state::ClientStateParams;

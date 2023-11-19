@@ -32,7 +32,7 @@ impl ClientState {
         let header_1 = misbehaviour.header1();
         let trusted_consensus_state_1 = {
             let consensus_state_path =
-                ClientConsensusStatePath::new(client_id, &header_1.trusted_height);
+                ClientConsensusStatePath::new(client_id.clone(), header_1.trusted_height.revision_number(), header_1.trusted_height.revision_height());
             let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
             consensus_state
@@ -45,7 +45,7 @@ impl ClientState {
         let header_2 = misbehaviour.header2();
         let trusted_consensus_state_2 = {
             let consensus_state_path =
-                ClientConsensusStatePath::new(client_id, &header_2.trusted_height);
+                ClientConsensusStatePath::new(client_id.clone(), header_2.trusted_height.revision_number(), header_2.trusted_height.revision_height());
             let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
             consensus_state

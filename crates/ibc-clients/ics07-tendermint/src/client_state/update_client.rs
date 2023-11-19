@@ -38,7 +38,7 @@ impl ClientState {
         {
             let trusted_state = {
                 let trusted_client_cons_state_path =
-                    ClientConsensusStatePath::new(client_id, &header.trusted_height);
+                    ClientConsensusStatePath::new(client_id.clone(), header.trusted_height.revision_number(), header.trusted_height.revision_height());
                 let trusted_consensus_state: TmConsensusState = ctx
                     .consensus_state(&trusted_client_cons_state_path)?
                     .try_into()
@@ -110,7 +110,7 @@ impl ClientState {
         let header_consensus_state = TmConsensusState::from(header.clone());
 
         let maybe_existing_consensus_state = {
-            let path_at_header_height = ClientConsensusStatePath::new(client_id, &header.height());
+            let path_at_header_height = ClientConsensusStatePath::new(client_id.clone(), header.height().revision_number(), header.height().revision_height());
 
             ctx.consensus_state(&path_at_header_height).ok()
         };
@@ -186,7 +186,7 @@ impl ClientState {
         heights.sort();
 
         for height in heights {
-            let client_consensus_state_path = ClientConsensusStatePath::new(client_id, &height);
+            let client_consensus_state_path = ClientConsensusStatePath::new(client_id.clone(), height.revision_number(), height.revision_height());
             let consensus_state = CommonContext::consensus_state(ctx, &client_consensus_state_path)?;
             let tm_consensus_state: TmConsensusState =
                 consensus_state
