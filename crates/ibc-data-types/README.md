@@ -1,4 +1,4 @@
-# `ibc-data-types`
+# IBC Types
 
 This crate serves as a central hub for re-exporting the implemented
 Inter-Blockchain Communication (IBC) data structures. It simplifies the

@@ -1,4 +1,4 @@
-# `ibc-core`
+# IBC Core
 
 This crate is top-level library re-exports implemented Inter-Blockchain
 Communication (IBC) core modules serves as a centralized hub, simplifying the

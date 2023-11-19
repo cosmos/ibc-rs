@@ -1,4 +1,4 @@
-# `ibc-apps`
+# IBC Applications
 
 This crate is a top-level library that re-exports Inter-Blockchain Communication
 (IBC) applications implemented. It serves as a centralized hub, simplifying the
