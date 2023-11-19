@@ -6,11 +6,11 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "consensus", "cosmos", "ibc", "tendermint"]
+keywords     = ["blockchain", "consensus", "cosmos", "ibc"]
 readme       = "README.md"
 description  = """
-    Implementation of the Inter-Blockchain Communication Protocol (IBC).
-    This crate comprises the main data structures and on-chain logic.
+    Implementation of the Inter-Blockchain Communication Protocol (IBC), Re-exporting 
+    all the implmented IBC data structures and modules in the `ibc-rs` repository. 
 """
 
 [package.metadata.docs.rs]
@@ -54,10 +54,10 @@ tendermint-rpc = {  workspace = true, features = ["http-client", "websocket-clie
 
 [features]
 default = ["std"]
-
 std = [
     "ibc-proto/std",
     "ibc-core/std",
+    "ibc-apps/std",
     "serde/std",
     "prost/std",
     "bytes/std",
@@ -68,13 +68,30 @@ std = [
     "tendermint/clock",
     "tendermint/std",
 ]
-
-parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info","ibc-core/parity-scale-codec", "ibc-proto/parity-scale-codec"]
-
-borsh = ["dep:borsh", "ibc-core/borsh", "ibc-proto/borsh"]
-
-# This feature is required for token transfer (ICS-20)
-serde = ["dep:serde", "serde_json", "ibc-proto/serde", "ibc-core/serde"]
-
-# CosmWasm message API generator compatible, should not be inside on chain code
-schema = ["ibc-core/schema", "ibc-proto/json-schema", "serde", "std"]
+borsh = [
+    "dep:borsh",
+    "ibc-core/borsh",
+    "ibc-apps/borsh",
+    "ibc-proto/borsh"
+]
+serde = [
+    "dep:serde", 
+    "serde_json", 
+    "ibc-core/serde",
+    "ibc-apps/serde",
+    "ibc-proto/serde", 
+]
+schema = [
+    "ibc-core/schema",
+    "ibc-apps/schema",
+    "ibc-proto/json-schema", 
+    "serde", 
+    "std"
+]
+parity-scale-codec = [
+    "dep:parity-scale-codec", 
+    "dep:scale-info",
+    "ibc-core/parity-scale-codec", 
+    "ibc-apps/parity-scale-codec",
+    "ibc-proto/parity-scale-codec"
+]

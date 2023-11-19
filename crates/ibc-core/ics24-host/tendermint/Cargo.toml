@@ -6,7 +6,7 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc"]
+keywords     = ["blockchain", "cosmos", "ibc", "tendermint"]
 readme       = "./../README.md"
 description  = """
     Provides Tendermint-specific helper traits and implementations to facilitate `ibc-rs` integration,

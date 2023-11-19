@@ -6,7 +6,7 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc"]
+keywords     = ["blockchain", "cosmos", "ibc", "host", "types"]
 readme       = "README.md"
 description  = """
     Encapsulates the shared data structures defining ICS-24 host semantics,

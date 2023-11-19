@@ -9,8 +9,8 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc"]
 readme       = "./../README.md"
 description  = """
-    Provides necessary traits for custom IBC light client implementation and interfacing with host chains, 
-    facliliates interaction with the store for client state transitions.
+    Contains essential APIs to interface with the host chain's store, enabling client state transitions.
+    Additionally, provides necessary traits for implementing custom IBC light clients.
 """
 
 [package.metadata.docs.rs]

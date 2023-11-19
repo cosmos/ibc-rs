@@ -6,10 +6,10 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc"]
+keywords     = ["blockchain", "cosmos", "ibc", "routing", "types"]
 readme       = "README.md"
 description  = """
-    Encapsulates the data structures used by ICS-26 routing implementation
+    Encapsulates the data structures used by ICS-26 routing module implementation
 """
 
 [package.metadata.docs.rs]
@@ -26,9 +26,9 @@ serde           = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
 
 # ibc dependencies
-ibc-primitives         = { workspace = true }
 ibc-core-host-types    = { workspace = true }
 ibc-core-channel-types = { workspace = true }
+ibc-primitives         = { workspace = true }
 ibc-proto              = {workspace = true }
 ics23                  = { workspace = true }
 
@@ -57,6 +57,7 @@ serde = [
     "ibc-primitives/serde",
     "ibc-core-host-types/serde",
     "ibc-core-channel-types/serde",
+    "ibc-primitives/serde",
     "ibc-proto/serde",
     "ics23/serde",
 ]
@@ -73,6 +74,8 @@ schema = [
     "ibc-core-channel-types/schema",
     "ibc-primitives/schema",
     "ibc-proto/json-schema",
+    "serde",
+    "std"
 ]
 parity-scale-codec = [
     "dep:parity-scale-codec",

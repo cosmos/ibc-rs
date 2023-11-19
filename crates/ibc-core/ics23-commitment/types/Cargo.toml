@@ -6,7 +6,7 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc"]
+keywords     = ["blockchain", "cosmos", "ibc", "commitment", "types"]
 readme       = "./../../README.md"
 description  = """
     Serves as the implementation hub for ICS-23 commitment data structures

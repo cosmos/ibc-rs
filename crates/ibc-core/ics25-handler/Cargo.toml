@@ -6,12 +6,12 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc"]
+keywords     = ["blockchain", "cosmos", "ibc", "handler"]
 readme       = "README.md"
 description  = """
-    Exposes IBC handler entry points for an integrated IBC core modules via the `ibc-rs` crates.
-    These entry points are responsible for processing incoming IBC messages, performing validation,
-    and execution of the appropriate handler logic.
+    Exposes IBC handler entry points for an integrated IBC core modules. These entry points
+    are responsible for processing incoming IBC messages, performing validation,
+    and execution logic by invoking the appropriate module handler.
 """
 
 [package.metadata.docs.rs]

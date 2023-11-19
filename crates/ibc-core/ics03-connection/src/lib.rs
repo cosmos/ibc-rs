@@ -1,5 +1,6 @@
-//! This module implements the processing logic for ICS3 (connection open
-//! handshake) messages.
+//! ICS 03: Connection Semantics implementation to process connection open
+//! handshake. Exports data structures and implementations of IBC core
+//! connection module.
 #![no_std]
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]

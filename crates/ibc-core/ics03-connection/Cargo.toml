@@ -6,10 +6,10 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc"]
+keywords     = ["blockchain", "cosmos", "ibc", "connection"]
 readme       = "./../README.md"
 description  = """
-    Provides the implementation of ICS-03 connection, while also re-exporting
+    Contains the implementation of ICS-03 connection, along with re-exporting
     relevant necessary data structures and APIs for seamless integration.
 """
 

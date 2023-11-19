@@ -6,7 +6,7 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc", "data structures"]
+keywords     = ["blockchain", "cosmos", "ibc", "handler", "types"]
 readme       = "./../../README.md"
 description  = """
     Encapsulates top-level pivotal data structures, especially enums, designed to handle

@@ -1,4 +1,7 @@
-//! Exports data structures and implementations of different IBC core (TAO) components.
+//! Exposes IBC handler entry points for an integrated IBC core modules. These
+//! entry points are responsible for processing incoming IBC messages,
+//! performing validation, and execution logics by invoking the appropriate
+//! module handler.
 #![no_std]
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]

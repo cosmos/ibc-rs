@@ -6,7 +6,7 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc"]
+keywords     = ["blockchain", "cosmos", "ibc", "core"]
 readme       = "README.md"
 description  = """
     `ibc-core` re-exports a comprehensive set of libraries for IBC core (TAO) modules, 

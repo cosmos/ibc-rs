@@ -6,7 +6,7 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc"]
+keywords     = ["blockchain", "cosmos", "ibc", "host"]
 readme       = "./../README.md"
 description  = """
     Provides essential top-level traits designed for the seamless integration of host chains with ibc-rs.
