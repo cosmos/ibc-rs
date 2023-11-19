@@ -2,7 +2,7 @@
 
 use ibc_core::client::context::consensus_state::ConsensusState as ConsensusStateTrait;
 use ibc_core::client::types::error::ClientError;
-use ibc_core::commitment::commitment::CommitmentRoot;
+use ibc_core::commitment_types::commitment::CommitmentRoot;
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Timestamp;
 use ibc_proto::google::protobuf::Any;

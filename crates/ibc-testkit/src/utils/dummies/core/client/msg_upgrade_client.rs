@@ -1,7 +1,7 @@
 use ibc::core::client::types::msgs::MsgUpgradeClient;
 use ibc::core::client::types::proto::v1::MsgUpgradeClient as RawMsgUpgradeClient;
 use ibc::core::client::types::Height;
-use ibc::core::host::identifiers::ClientId;
+use ibc::core::host::types::identifiers::ClientId;
 
 use crate::testapp::ibc::clients::mock::client_state::MockClientState;
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;

@@ -10,17 +10,17 @@ use ibc::core::channel::types::error::{ChannelError, PacketError};
 use ibc::core::channel::types::packet::Receipt;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
-use ibc::core::commitment::commitment::CommitmentPrefix;
+use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::connection::types::error::ConnectionError;
 use ibc::core::connection::types::ConnectionEnd;
-use ibc::core::context::types::error::ContextError;
-use ibc::core::context::types::events::IbcEvent;
-use ibc::core::context::{ExecutionContext, ValidationContext};
-use ibc::core::host::identifiers::{ClientId, ConnectionId, Sequence};
-use ibc::core::host::path::{
+use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::events::IbcEvent;
+use ibc::core::host::types::identifiers::{ClientId, ConnectionId, Sequence};
+use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
     ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
+use ibc::core::host::{ExecutionContext, ValidationContext};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::{Signer, Timestamp};
 use ibc::proto::Any;

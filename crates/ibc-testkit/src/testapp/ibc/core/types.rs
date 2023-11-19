@@ -14,13 +14,13 @@ use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCom
 use ibc::core::channel::types::packet::Receipt;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
-use ibc::core::context::types::events::IbcEvent;
-use ibc::core::context::types::msgs::MsgEnvelope;
-use ibc::core::context::ValidationContext;
 use ibc::core::entrypoint::dispatch;
-use ibc::core::host::identifiers::{
+use ibc::core::handler::types::events::IbcEvent;
+use ibc::core::handler::types::msgs::MsgEnvelope;
+use ibc::core::host::types::identifiers::{
     ChainId, ChannelId, ClientId, ClientType, ConnectionId, PortId, Sequence,
 };
+use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::core::router::router::Router;

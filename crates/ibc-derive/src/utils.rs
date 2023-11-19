@@ -10,19 +10,19 @@ pub struct Imports;
 
 impl Imports {
     pub fn CommitmentRoot() -> TokenStream {
-        quote! {ibc::core::commitment::commitment::CommitmentRoot}
+        quote! {ibc::core::commitment_types::commitment::CommitmentRoot}
     }
 
     pub fn CommitmentPrefix() -> TokenStream {
-        quote! {ibc::core::commitment::commitment::CommitmentPrefix}
+        quote! {ibc::core::commitment_types::commitment::CommitmentPrefix}
     }
 
     pub fn CommitmentProofBytes() -> TokenStream {
-        quote! {ibc::core::commitment::commitment::CommitmentProofBytes}
+        quote! {ibc::core::commitment_types::commitment::CommitmentProofBytes}
     }
 
     pub fn Path() -> TokenStream {
-        quote! {ibc::core::host::path::Path}
+        quote! {ibc::core::host::types::path::Path}
     }
 
     pub fn ConsensusState() -> TokenStream {
@@ -42,11 +42,11 @@ impl Imports {
     }
 
     pub fn ClientId() -> TokenStream {
-        quote! {ibc::core::host::identifiers::ClientId}
+        quote! {ibc::core::host::types::identifiers::ClientId}
     }
 
     pub fn ClientType() -> TokenStream {
-        quote! {ibc::core::host::identifiers::ClientType}
+        quote! {ibc::core::host::types::identifiers::ClientType}
     }
 
     pub fn ClientError() -> TokenStream {

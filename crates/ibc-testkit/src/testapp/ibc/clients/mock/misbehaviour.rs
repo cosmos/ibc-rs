@@ -1,6 +1,6 @@
 use bytes::Buf;
 use ibc::core::client::types::error::ClientError;
-use ibc::core::host::identifiers::ClientId;
+use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::primitives::prelude::*;
 use ibc::proto::{Any, Protobuf};
 

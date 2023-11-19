@@ -1,6 +1,6 @@
 use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::types::error::ClientError;
-use ibc::core::commitment::commitment::CommitmentRoot;
+use ibc::core::commitment_types::commitment::CommitmentRoot;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::proto::{Any, Protobuf};

@@ -12,7 +12,7 @@ pub mod trust_threshold;
 
 mod context;
 pub use context::*;
-use ibc_core::host::identifiers::ClientType;
+use ibc_core::host::types::identifiers::ClientType;
 
 pub const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
 

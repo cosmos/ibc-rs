@@ -1,7 +1,7 @@
 use ibc::core::client::types::Height;
-use ibc::core::context::types::error::ContextError;
-use ibc::core::context::ValidationContext;
-use ibc::core::host::identifiers::ClientId;
+use ibc::core::handler::types::error::ContextError;
+use ibc::core::host::types::identifiers::ClientId;
+use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Signer;
 
@@ -47,8 +47,8 @@ mod tests {
     use ibc::core::client::context::client_state::ClientStateCommon;
     use ibc::core::client::types::msgs::{ClientMsg, MsgUpdateClient};
     use ibc::core::client::types::Height;
-    use ibc::core::context::types::msgs::MsgEnvelope;
-    use ibc::core::host::identifiers::ChainId;
+    use ibc::core::handler::types::msgs::MsgEnvelope;
+    use ibc::core::host::types::identifiers::ChainId;
     use test_log::test;
     use tracing::debug;
 

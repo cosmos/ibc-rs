@@ -21,5 +21,5 @@ pub use context::*;
 
 pub mod types {
     #[doc(inline)]
-    pub use ibc_core_context_types::*;
+    pub use ibc_core_host_types::*;
 }

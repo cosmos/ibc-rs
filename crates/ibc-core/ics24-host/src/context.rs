@@ -12,9 +12,9 @@ use ibc_core_connection_types::version::{
     get_compatible_versions, pick_version, Version as ConnectionVersion,
 };
 use ibc_core_connection_types::ConnectionEnd;
-use ibc_core_context_types::error::ContextError;
-use ibc_core_context_types::events::IbcEvent;
-use ibc_core_context_types::proto::Any;
+use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::events::IbcEvent;
+use ibc_core_handler_types::proto::Any;
 use ibc_core_host_types::identifiers::{ClientId, ConnectionId, Sequence};
 use ibc_core_host_types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
@@ -83,7 +83,7 @@ pub trait ValidationContext {
     /// requirements](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#client-state-validation)
     ///
     /// Additionally, implementations specific to individual chains can be found
-    /// in the `ibc-core-extra` crate.
+    /// in the `ibc-core-hostkit` crate.
     fn validate_self_client(
         &self,
         client_state_of_host_on_counterparty: Any,

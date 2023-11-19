@@ -3,7 +3,7 @@ use ibc::core::client::types::Height;
 use ibc::core::connection::types::msgs::MsgConnectionOpenTry;
 use ibc::core::connection::types::proto::v1::MsgConnectionOpenTry as RawMsgConnectionOpenTry;
 use ibc::core::connection::types::version::get_compatible_versions;
-use ibc::core::host::identifiers::{ClientId, ConnectionId};
+use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
 use ibc::core::primitives::prelude::*;
 
 use super::dummy_raw_counterparty_conn;

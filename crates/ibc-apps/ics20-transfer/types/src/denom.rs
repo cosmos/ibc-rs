@@ -3,7 +3,7 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use derive_more::{Display, From};
-use ibc_core::host::identifiers::{ChannelId, PortId};
+use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_proto::ibc::applications::transfer::v1::DenomTrace as RawDenomTrace;
 

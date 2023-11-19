@@ -3,10 +3,10 @@ use ibc::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsens
 use ibc::core::client::context::client_state::ClientStateCommon;
 use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient};
 use ibc::core::client::types::Height;
-use ibc::core::context::types::msgs::MsgEnvelope;
-use ibc::core::context::ValidationContext;
 use ibc::core::entrypoint::{execute, validate};
-use ibc::core::host::identifiers::ClientId;
+use ibc::core::handler::types::msgs::MsgEnvelope;
+use ibc::core::host::types::identifiers::ClientId;
+use ibc::core::host::ValidationContext;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
     client_type as mock_client_type, MockClientState,
 };

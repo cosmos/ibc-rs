@@ -1,5 +1,5 @@
 use ibc::core::channel::types::proto::v1::MsgChannelCloseInit as RawMsgChannelCloseInit;
-use ibc::core::host::identifiers::{ChannelId, PortId};
+use ibc::core::host::types::identifiers::{ChannelId, PortId};
 use ibc::core::primitives::prelude::*;
 
 use crate::utils::dummies::core::signer::dummy_bech32_account;

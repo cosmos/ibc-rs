@@ -1,7 +1,7 @@
 use ibc_core::client::context::consensus_state::ConsensusState;
 use ibc_core::client::types::error::ClientError;
-use ibc_core::host::identifiers::ClientId;
-use ibc_core::host::path::ClientConsensusStatePath;
+use ibc_core::host::types::identifiers::ClientId;
+use ibc_core::host::types::path::ClientConsensusStatePath;
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Timestamp;
 use tendermint_light_client_verifier::Verifier;

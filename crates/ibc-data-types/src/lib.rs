@@ -37,14 +37,14 @@ pub mod commitment {
     pub use ibc_core_commitment_types::*;
 }
 
-pub mod context {
-    #[doc(inline)]
-    pub use ibc_core_context_types::*;
-}
-
 pub mod host {
     #[doc(inline)]
     pub use ibc_core_host_types::*;
+}
+
+pub mod handler {
+    #[doc(inline)]
+    pub use ibc_core_handler_types::*;
 }
 
 pub mod router {

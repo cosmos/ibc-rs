@@ -7,7 +7,7 @@ use core::str::FromStr;
 use bytes::Buf;
 use ibc_core::client::types::error::ClientError;
 use ibc_core::client::types::Height;
-use ibc_core::host::identifiers::ChainId;
+use ibc_core::host::types::identifiers::ChainId;
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Timestamp;
 use ibc_proto::google::protobuf::Any;

@@ -1,4 +1,4 @@
-use ibc::core::host::identifiers::{ChannelId, PortId};
+use ibc::core::host::types::identifiers::{ChannelId, PortId};
 use ibc::core::primitives::Signer;
 use ibc_app_transfer::context::{
     cosmos_adr028_escrow_address, TokenTransferExecutionContext, TokenTransferValidationContext,

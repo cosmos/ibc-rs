@@ -6,8 +6,8 @@ use ibc_core::channel::types::acknowledgement::{Acknowledgement, Acknowledgement
 use ibc_core::channel::types::channel::{Counterparty, Order};
 use ibc_core::channel::types::packet::Packet;
 use ibc_core::channel::types::Version;
-use ibc_core::context::types::error::ContextError;
-use ibc_core::host::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc_core::handler::types::error::ContextError;
+use ibc_core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Signer;
 use ibc_core::router::types::module::ModuleExtras;

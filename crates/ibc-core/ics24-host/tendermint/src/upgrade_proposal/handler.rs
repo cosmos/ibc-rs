@@ -4,9 +4,7 @@ use ibc_core_host_types::path::UpgradeClientPath;
 use ibc_primitives::prelude::*;
 use tendermint::abci::Event as TmEvent;
 
-use crate::tendermint::upgrade_proposal::{
-    UpgradeClientProposal, UpgradeExecutionContext, UpgradeProposal,
-};
+use crate::upgrade_proposal::{UpgradeClientProposal, UpgradeExecutionContext, UpgradeProposal};
 
 /// Handles an upgrade client proposal
 ///

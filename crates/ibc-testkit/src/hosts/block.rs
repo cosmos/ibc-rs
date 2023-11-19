@@ -6,7 +6,7 @@ use ibc::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsens
 use ibc::clients::ics07_tendermint::header::{Header, TENDERMINT_HEADER_TYPE_URL};
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
-use ibc::core::host::identifiers::ChainId;
+use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::proto::tendermint::v1::Header as RawHeader;

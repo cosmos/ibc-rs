@@ -1,11 +1,11 @@
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::msgs::{ConnectionMsg, MsgConnectionOpenTry};
 use ibc::core::connection::types::State;
-use ibc::core::context::types::events::{IbcEvent, MessageEvent};
-use ibc::core::context::types::msgs::MsgEnvelope;
-use ibc::core::context::ValidationContext;
 use ibc::core::entrypoint::{execute, validate};
-use ibc::core::host::identifiers::ChainId;
+use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
+use ibc::core::handler::types::msgs::MsgEnvelope;
+use ibc::core::host::types::identifiers::ChainId;
+use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc_testkit::hosts::block::HostType;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;

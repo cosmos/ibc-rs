@@ -2,8 +2,8 @@ use alloc::string::{String, ToString};
 
 use displaydoc::Display;
 use ibc::core::client::types::error::ClientError;
-use ibc::core::context::types::error::ContextError;
-use ibc::core::host::error::IdentifierError;
+use ibc::core::handler::types::error::ContextError;
+use ibc::core::host::types::error::IdentifierError;
 use tonic::Status;
 
 #[derive(Debug, Display)]

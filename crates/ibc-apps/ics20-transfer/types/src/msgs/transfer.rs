@@ -2,8 +2,8 @@
 
 use ibc_core::channel::types::error::PacketError;
 use ibc_core::channel::types::timeout::TimeoutHeight;
-use ibc_core::context::types::error::ContextError;
-use ibc_core::host::identifiers::{ChannelId, PortId};
+use ibc_core::handler::types::error::ContextError;
+use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::{Msg, Timestamp};
 use ibc_proto::google::protobuf::Any;

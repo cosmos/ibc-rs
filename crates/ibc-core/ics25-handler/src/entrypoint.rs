@@ -15,9 +15,9 @@ use ibc_core_connection::handler::{
     conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try,
 };
 use ibc_core_connection::types::msgs::ConnectionMsg;
-use ibc_core_context::types::error::ContextError;
-use ibc_core_context::types::msgs::MsgEnvelope;
-use ibc_core_context::{ExecutionContext, ValidationContext};
+use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::msgs::MsgEnvelope;
+use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::router::Router;
 use ibc_core_router::types::error::RouterError;
 

@@ -4,7 +4,7 @@ use core::ops::{Add, Sub};
 use core::time::Duration;
 
 use ibc::core::client::types::Height;
-use ibc::core::host::identifiers::ChainId;
+use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use parking_lot::Mutex;

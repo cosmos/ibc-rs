@@ -16,12 +16,16 @@ use ibc_core::client::context::consensus_state::ConsensusState;
 use ibc_core::client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc_core::client::types::error::{ClientError, UpgradeClientError};
 use ibc_core::client::types::{Height, Status, UpdateKind};
-use ibc_core::commitment::commitment::{CommitmentPrefix, CommitmentProofBytes, CommitmentRoot};
-use ibc_core::commitment::merkle::{apply_prefix, MerkleProof};
-use ibc_core::commitment::specs::ProofSpecs;
-use ibc_core::context::ExecutionContext;
-use ibc_core::host::identifiers::{ChainId, ClientId, ClientType};
-use ibc_core::host::path::{ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath};
+use ibc_core::commitment_types::commitment::{
+    CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
+};
+use ibc_core::commitment_types::merkle::{apply_prefix, MerkleProof};
+use ibc_core::commitment_types::specs::ProofSpecs;
+use ibc_core::host::types::identifiers::{ChainId, ClientId, ClientType};
+use ibc_core::host::types::path::{
+    ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
+};
+use ibc_core::host::ExecutionContext;
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::ZERO_DURATION;
 use ibc_proto::google::protobuf::Any;
@@ -873,8 +877,8 @@ mod tests {
     use crate::clients::ics07_tendermint::client_state::{AllowUpdate, ClientState};
     use crate::clients::ics07_tendermint::error::Error;
     use crate::core::client::types::Height;
-    use crate::core::commitment::specs::ProofSpecs;
-    use crate::core::host::identifiers::ChainId;
+    use crate::core::commitment_types::specs::ProofSpecs;
+    use crate::core::host::types::identifiers::ChainId;
     use crate::core::primitives::ZERO_DURATION;
 
     impl ClientState {

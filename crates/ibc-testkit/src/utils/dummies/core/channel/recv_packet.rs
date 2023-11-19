@@ -6,7 +6,7 @@ use ibc::core::channel::types::packet::Packet;
 use ibc::core::channel::types::proto::v1::MsgRecvPacket as RawMsgRecvPacket;
 use ibc::core::client::types::proto::v1::Height as RawHeight;
 use ibc::core::client::types::Height;
-use ibc::core::commitment::commitment::CommitmentProofBytes;
+use ibc::core::commitment_types::commitment::CommitmentProofBytes;
 use ibc::core::primitives::{Signer, Timestamp};
 
 use super::{dummy_proof, dummy_raw_packet};

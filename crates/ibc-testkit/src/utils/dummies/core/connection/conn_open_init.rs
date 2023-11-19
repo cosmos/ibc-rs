@@ -4,7 +4,7 @@ use ibc::core::connection::types::proto::v1::{
 };
 use ibc::core::connection::types::version::Version;
 use ibc::core::connection::types::Counterparty;
-use ibc::core::host::identifiers::ClientId;
+use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::primitives::prelude::*;
 
 use super::dummy_raw_counterparty_conn;

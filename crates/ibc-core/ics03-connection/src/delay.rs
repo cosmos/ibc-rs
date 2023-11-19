@@ -2,8 +2,8 @@ use ibc_core_client::context::ClientValidationContext;
 use ibc_core_client::types::Height;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::ConnectionEnd;
-use ibc_core_context::types::error::ContextError;
-use ibc_core_context::ValidationContext;
+use ibc_core_handler_types::error::ContextError;
+use ibc_core_host::ValidationContext;
 
 pub fn verify_conn_delay_passed<Ctx>(
     ctx: &Ctx,

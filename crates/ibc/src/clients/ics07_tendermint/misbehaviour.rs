@@ -2,7 +2,7 @@
 
 use bytes::Buf;
 use ibc_core::client::types::error::ClientError;
-use ibc_core::host::identifiers::ClientId;
+use ibc_core::host::types::identifiers::ClientId;
 use ibc_core::primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Misbehaviour as RawMisbehaviour;

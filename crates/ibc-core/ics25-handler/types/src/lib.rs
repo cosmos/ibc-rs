@@ -21,7 +21,7 @@ pub mod events;
 pub mod msgs;
 
 /// Re-exports necessary proto types from the `ibc-proto-rs` crate, which are
-/// instrumental in the implementation of the higher-level `ibc-core-context`
+/// instrumental in the implementation of the higher-level `ibc-core-handler`
 /// crate.
 pub mod proto {
     pub use ibc_proto::google::protobuf::Any;

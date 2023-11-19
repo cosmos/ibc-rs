@@ -5,11 +5,11 @@ use alloc::vec::Vec;
 use core::str::FromStr;
 
 use ibc::core::client::types::Height;
-use ibc::core::context::ValidationContext;
-use ibc::core::host::identifiers::{ClientId, ConnectionId};
-use ibc::core::host::path::{
+use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
+use ibc::core::host::types::path::{
     ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path,
 };
+use ibc::core::host::ValidationContext;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::IdentifiedClientState;
 use ibc_proto::ibc::core::connection::v1::{

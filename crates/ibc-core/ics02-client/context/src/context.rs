@@ -1,5 +1,5 @@
 use ibc_core_client_types::Height;
-use ibc_core_context_types::error::ContextError;
+use ibc_core_handler_types::error::ContextError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_core_host_types::path::{ClientConsensusStatePath, ClientStatePath};
 use ibc_primitives::Timestamp;

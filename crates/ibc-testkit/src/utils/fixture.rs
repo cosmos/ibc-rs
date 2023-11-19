@@ -1,6 +1,6 @@
 use core::fmt::Debug;
 
-use ibc::core::context::types::error::ContextError;
+use ibc::core::handler::types::error::ContextError;
 use ibc::core::primitives::prelude::*;
 
 use crate::testapp::ibc::core::types::MockContext;

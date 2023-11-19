@@ -7,10 +7,12 @@ use ibc::core::client::context::client_state::{
 use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc::core::client::types::error::{ClientError, UpgradeClientError};
 use ibc::core::client::types::{Height, Status, UpdateKind};
-use ibc::core::commitment::commitment::{CommitmentPrefix, CommitmentProofBytes, CommitmentRoot};
-use ibc::core::context::types::error::ContextError;
-use ibc::core::host::identifiers::{ClientId, ClientType};
-use ibc::core::host::path::{ClientConsensusStatePath, ClientStatePath, Path};
+use ibc::core::commitment_types::commitment::{
+    CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
+};
+use ibc::core::handler::types::error::ContextError;
+use ibc::core::host::types::identifiers::{ClientId, ClientType};
+use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath, Path};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::proto::{Any, Protobuf};

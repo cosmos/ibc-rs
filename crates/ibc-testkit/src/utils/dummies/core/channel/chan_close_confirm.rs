@@ -1,6 +1,6 @@
 use ibc::core::channel::types::proto::v1::MsgChannelCloseConfirm as RawMsgChannelCloseConfirm;
 use ibc::core::client::types::proto::v1::Height;
-use ibc::core::host::identifiers::{ChannelId, PortId};
+use ibc::core::host::types::identifiers::{ChannelId, PortId};
 use ibc::core::primitives::prelude::*;
 
 use super::dummy_proof;

@@ -11,7 +11,10 @@
     rust_2018_idioms
 )]
 
-pub mod entrypoint;
+pub mod entrypoint {
+    #[doc(inline)]
+    pub use ibc_core_handler::entrypoint::*;
+}
 
 pub mod channel {
     #[doc(inline)]
@@ -23,7 +26,7 @@ pub mod client {
     pub use ibc_core_client::*;
 }
 
-pub mod commitment {
+pub mod commitment_types {
     #[doc(inline)]
     pub use ibc_core_commitment_types::*;
 }
@@ -33,14 +36,14 @@ pub mod connection {
     pub use ibc_core_connection::*;
 }
 
-pub mod context {
-    #[doc(inline)]
-    pub use ibc_core_context::*;
-}
-
 pub mod host {
     #[doc(inline)]
-    pub use ibc_core_host_types::*;
+    pub use ibc_core_host::*;
+}
+
+pub mod handler {
+    #[doc(inline)]
+    pub use ibc_core_handler::*;
 }
 
 pub mod router {
