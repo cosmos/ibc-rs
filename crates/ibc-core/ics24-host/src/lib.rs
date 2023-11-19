@@ -14,11 +14,15 @@
     rust_2018_idioms
 )]
 
+#[cfg(any(test, feature = "std"))]
+extern crate std;
+
 pub(crate) mod utils;
 
 mod context;
 pub use context::*;
 
+/// Re-export IBC host data structures from `ibc-core-host-types` crate.
 pub mod types {
     #[doc(inline)]
     pub use ibc_core_host_types::*;

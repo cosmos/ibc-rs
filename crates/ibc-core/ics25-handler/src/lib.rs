@@ -14,8 +14,12 @@
     rust_2018_idioms
 )]
 
+#[cfg(any(test, feature = "std"))]
+extern crate std;
+
 pub mod entrypoint;
 
+/// Re-export IBC handler types from `ibc-core-handler-types` crate.
 pub mod types {
     #[doc(inline)]
     pub use ibc_core_handler_types::*;
