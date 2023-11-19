@@ -24,7 +24,7 @@
 //!
 //! When processing a given message `M`, if any method in this library returns an error, the runtime
 //! is expected to rollback all state modifications made to the context
-//! (e.g. [`ExecutionContext`](crate::core::context::ExecutionContext)) while processing `M`. If a transaction on your
+//! (e.g. [`ExecutionContext`](crate::core::host::ExecutionContext)) while processing `M`. If a transaction on your
 //! blockchain contains multiple messages, then typically the state modifications from all messages
 //! is expected to be rolled back as well.
 //!
