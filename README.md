@@ -30,15 +30,15 @@ sub-crates that can be used independently or together.
 
 ## Project Structure
 
-| Crate                                  | Description |
-| -------------------------------------- | ----------- |
-|[ibc](crates/ibc)                       | One-stop shop library re-exporting all the data structures and implemented IBC core, clients and applications modules. |
-|[ibc-data-types](crates/ibc-data-types) | Re-exports all the IBC data types that are shared across different IBC implementations. |
-|[ibc-core](crate/ibc)                   | Contains data structures and implementations of all the IBC core specifications. |
-|[ibc-apps](crates/ibc-apps)             | Contains data structures and implementations of various IBC applications. |
-|[ibc-testkit](crates/ibc-testkit)       | Provides testing toolkit to aid `ibc-rs` and host chains in writing integration tests. |
-|[ibc-query](crates/ibc-query)           | Contains utility traits and implementations for querying states of IBC modules implemented by `ibc-rs`. |
-|[ibc-derive](crates/ibc-derive)         | Derive macros for `ClientState` and `ConsensusState` traits, reducing boilerplate. |
+| <div style="width:100px">Crate</div>      | Description |
+| ---------------------------------------- | ----------- |
+|[ibc](crates/ibc)                         | Re-exports all the implemented data structures and IBC core, clients and applications modules. |
+|[ibc-data-types](crates/ibc-data-types)   | Re-exports all the IBC data types that are shared across different IBC implementations. |
+|[ibc-core](crate/ibc)                     | Contains data structures and implementations of all the IBC core specifications. |
+|[ibc-apps](crates/ibc-apps)               | Contains data structures and implementations of various IBC applications. |
+|[ibc-testkit](crates/ibc-testkit)         | Provides testing toolkit to aid `ibc-rs` and host chains in writing integration tests. |
+|[ibc-query](crates/ibc-query)             | Contains utility traits and implementations for querying states of an integrated IBC module. |
+|[ibc-derive](crates/ibc-derive)           | Derive macros for `ClientState` and `ConsensusState` traits, reducing boilerplate. |
 
 ## Contributing
 
