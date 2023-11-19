@@ -31,7 +31,6 @@ ibc-core-connection-types = { workspace = true }
 ibc-core-channel-types    = { workspace = true }
 ibc-core-commitment-types = { workspace = true }
 ibc-core-host-types       = { workspace = true }
-ibc-core-router           = { workspace = true }
 ibc-core-handler-types    = { workspace = true }
 ibc-primitives            = { workspace = true }
 
@@ -47,7 +46,6 @@ std = [
     "ibc-core-channel-types/std",
     "ibc-core-commitment-types/std",
     "ibc-core-host-types/std",
-    "ibc-core-router/std",
     "ibc-core-handler-types/std",
     "ibc-primitives/std",
 ]
@@ -58,7 +56,6 @@ serde = [
     "ibc-core-channel-types/serde",
     "ibc-core-commitment-types/serde",
     "ibc-core-host-types/serde",
-    "ibc-core-router/serde",
     "ibc-core-handler-types/serde",
     "ibc-primitives/serde",
 ]

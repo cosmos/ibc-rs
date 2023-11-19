@@ -29,7 +29,6 @@ subtle-encoding = { workspace = true }
 # ibc dependencies
 ibc-core-commitment-types = { workspace = true }
 ibc-core-host-types       = { workspace = true }
-ibc-derive                = { workspace = true }
 ibc-primitives            = { workspace = true }
 ibc-proto                 = { workspace = true }
 

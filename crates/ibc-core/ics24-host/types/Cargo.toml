@@ -23,7 +23,6 @@ derive_more = { workspace = true }
 displaydoc  = { workspace = true }
 schemars    = { workspace = true, optional = true }
 serde       = { workspace = true, optional = true }
-rstest      = { workspace = true }
 
 # ibc dependencies
 ibc-primitives = { workspace = true }
@@ -31,6 +30,9 @@ ibc-primitives = { workspace = true }
 # parity dependencies
 parity-scale-codec  = { workspace = true, optional = true }
 scale-info          = { workspace = true, optional = true }
+
+[dev-dependencies]
+rstest = { workspace = true }
 
 [features]
 default = ["std"]

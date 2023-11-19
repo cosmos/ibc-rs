@@ -24,7 +24,6 @@ displaydoc      = { workspace = true }
 primitive-types = { workspace = true }
 schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
-serde_json      =  { workspace = true, optional = true}
 uint            = { version = "0.9", default-features = false }
 
 # ibc dependencies
@@ -37,6 +36,7 @@ scale-info         = { workspace = true , optional = true }
 
 [dev-dependencies]
 ibc-testkit = { workspace = true }
+serde_json  = { workspace = true }
 rstest      = { workspace = true }
 
 [features]
@@ -51,7 +51,7 @@ std = [
     "ibc-proto/std",
     "ibc-testkit/std",
 ]
-serde = ["dep:serde", "serde_json", "ibc-core/serde", "ibc-proto/serde", "ibc-testkit/serde"]
-schema = ["dep:schemars", "ibc-core/schema", "ibc-proto/json-schema", "serde", "std"]
+serde = ["dep:serde", "ibc-core/serde", "ibc-proto/serde", "ibc-testkit/serde"]
 borsh = ["dep:borsh", "ibc-core/borsh", "ibc-proto/borsh"]
+schema = ["dep:schemars", "ibc-core/schema", "ibc-proto/json-schema", "serde", "std"]
 parity-scale-codec = ["dep:parity-scale-codec", "dep:scale-info", "ibc-core/parity-scale-codec", "ibc-proto/parity-scale-codec"]
