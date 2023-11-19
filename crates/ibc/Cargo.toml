@@ -10,7 +10,7 @@ keywords     = ["blockchain", "consensus", "cosmos", "ibc"]
 readme       = "README.md"
 description  = """
     Implementation of the Inter-Blockchain Communication Protocol (IBC), Re-exporting 
-    all the implmented IBC data structures and modules in the `ibc-rs` repository. 
+    all the implemented IBC data structures and modules in the `ibc-rs` repository. 
 """
 
 [package.metadata.docs.rs]
