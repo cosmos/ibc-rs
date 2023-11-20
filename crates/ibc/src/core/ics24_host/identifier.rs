@@ -157,6 +157,18 @@ impl FromStr for ChainId {
     }
 }
 
+impl AsRef<str> for ChainId {
+    fn as_ref(&self) -> &str {
+        &self.id
+    }
+}
+
+impl From<ChainId> for String {
+    fn from(chain_id: ChainId) -> String {
+        chain_id.id
+    }
+}
+
 impl Display for ChainId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         write!(f, "{}", self.id)
@@ -240,6 +252,12 @@ impl Display for ClientId {
     }
 }
 
+impl AsRef<str> for ClientId {
+    fn as_ref(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
 impl FromStr for ClientId {
     type Err = IdentifierError;
 
@@ -282,7 +300,7 @@ impl PartialEq<str> for ClientId {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Into)]
 pub struct ConnectionId(String);
 
 impl ConnectionId {
@@ -321,6 +339,12 @@ impl ConnectionId {
 impl Display for ConnectionId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         write!(f, "{}", self.0)
+    }
+}
+
+impl AsRef<str> for ConnectionId {
+    fn as_ref(&self) -> &str {
+        self.0.as_str()
     }
 }
 
@@ -366,7 +390,7 @@ impl PartialEq<str> for ConnectionId {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Into)]
 pub struct PortId(String);
 
 impl PortId {
@@ -429,7 +453,7 @@ impl AsRef<str> for PortId {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Into)]
 pub struct ChannelId(String);
 
 impl ChannelId {
