@@ -7,12 +7,12 @@ use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValid
 use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::types::error::ClientError;
 use ibc_core_connection::delay::verify_conn_delay_passed;
-use ibc_core_context::types::error::ContextError;
-use ibc_core_context::types::events::{IbcEvent, MessageEvent};
-use ibc_core_context::{ExecutionContext, ValidationContext};
-use ibc_core_host_types::path::{
+use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_core_host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
 };
+use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
 use prost::Message;

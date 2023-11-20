@@ -10,8 +10,8 @@ use ibc::core::connection::types::version::get_compatible_versions;
 use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
-use ibc::core::context::types::events::{IbcEvent, MessageEvent};
-use ibc::core::host::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
+use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
+use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::primitives::*;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
 use ibc_testkit::utils::core::channel::dummy_raw_packet;

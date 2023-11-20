@@ -1,4 +1,4 @@
-//! Implementation of IBC channels, as described in ICS 4.
+//! Implementation of IBC channels, as described in ICS-04.
 
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;

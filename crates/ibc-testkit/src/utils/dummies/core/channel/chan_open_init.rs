@@ -1,5 +1,5 @@
 use ibc::core::channel::types::proto::v1::MsgChannelOpenInit as RawMsgChannelOpenInit;
-use ibc::core::host::identifiers::PortId;
+use ibc::core::host::types::identifiers::PortId;
 use ibc::core::primitives::prelude::*;
 
 use super::dummy_raw_channel_end;

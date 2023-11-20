@@ -20,7 +20,7 @@ pub use chan_open_try::*;
 use ibc::core::channel::types::proto::v1::{
     Channel as RawChannel, Counterparty as RawCounterparty,
 };
-use ibc::core::host::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
 use ibc::core::primitives::prelude::*;
 pub use packet::*;
 pub use recv_packet::*;

@@ -6,10 +6,11 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc"]
+keywords     = ["blockchain", "cosmos", "ibc", "routing"]
 readme       = "README.md"
 description  = """
-    Provides necessary traits to implement an IBC router module.
+    Contains necessary traits to implement the routing and callback functionality (IBC router module)
+    used for connecting the application layer to the transport layer of an IBC enabled chain.
 """
 
 [package.metadata.docs.rs]
@@ -27,7 +28,6 @@ ibc-primitives         = { workspace = true }
 ibc-core-channel-types = { workspace = true }
 ibc-core-host-types    = { workspace = true }
 ibc-core-router-types  = { workspace = true }
-
 
 [features]
 default = ["std"]

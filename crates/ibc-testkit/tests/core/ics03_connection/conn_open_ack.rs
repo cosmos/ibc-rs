@@ -1,16 +1,16 @@
 use core::str::FromStr;
 
 use ibc::core::client::types::Height;
-use ibc::core::commitment::commitment::CommitmentPrefix;
+use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::connection::types::error::ConnectionError;
 use ibc::core::connection::types::msgs::{ConnectionMsg, MsgConnectionOpenAck};
 use ibc::core::connection::types::{ConnectionEnd, Counterparty, State};
-use ibc::core::context::types::error::ContextError;
-use ibc::core::context::types::events::{IbcEvent, MessageEvent};
-use ibc::core::context::types::msgs::MsgEnvelope;
-use ibc::core::context::ValidationContext;
 use ibc::core::entrypoint::{execute, validate};
-use ibc::core::host::identifiers::{ChainId, ClientId};
+use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
+use ibc::core::handler::types::msgs::MsgEnvelope;
+use ibc::core::host::types::identifiers::{ChainId, ClientId};
+use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::ZERO_DURATION;
 use ibc_testkit::hosts::block::HostType;

@@ -20,7 +20,7 @@ tonic = "0.10"
 
 # ibc dependencies
 ibc = { workspace = true }
-ibc-core-extra = { workspace = true }
+ibc-core-host-tendermint = { workspace = true }
 ibc-proto = { workspace = true, features = ["server"] }
 
 [features]

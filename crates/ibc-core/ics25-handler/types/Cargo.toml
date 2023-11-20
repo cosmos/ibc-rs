@@ -1,17 +1,16 @@
 [package]
-name         = "ibc-core-context-types"
+name         = "ibc-core-handler-types"
 version      = { workspace = true }
 authors      = { workspace = true }
 edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc", "data structures"]
+keywords     = ["blockchain", "cosmos", "ibc", "handler", "types"]
 readme       = "./../../README.md"
 description  = """
-    Encapsulates essential top-level data structures necessary for the `ibc-core-context`
-    crate facilitating the seamless interaction between an implemented IBC modules using
-    `ibc-rs` and the underlying host blockchain.
+    Encapsulates top-level pivotal data structures, especially enums, designed to handle
+    any kind of incoming IBC messages within implemented IBC core modules.
 """
 
 [package.metadata.docs.rs]
@@ -84,9 +83,9 @@ schema = [
     "ibc-core-commitment-types/schema",
     "ibc-core-host-types/schema",
     "ibc-core-router-types/schema",
-    "serde",
     "ibc-primitives/schema",
     "ibc-proto/json-schema",
+    "serde",
     "std"
 ]
 borsh = [
@@ -103,7 +102,6 @@ borsh = [
 parity-scale-codec = [
     "dep:parity-scale-codec",
     "dep:scale-info",
-    "ibc-proto/parity-scale-codec",
     "ibc-core-client-types/parity-scale-codec",
     "ibc-core-connection-types/parity-scale-codec",
     "ibc-core-channel-types/parity-scale-codec",
@@ -111,4 +109,5 @@ parity-scale-codec = [
     "ibc-core-host-types/parity-scale-codec",
     "ibc-core-router-types/parity-scale-codec",
     "ibc-primitives/parity-scale-codec",
+    "ibc-proto/parity-scale-codec",
 ]

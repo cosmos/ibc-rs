@@ -7,9 +7,9 @@ use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::{ClientMisbehaviour, UpdateClient};
 use ibc_core_client_types::msgs::MsgUpdateOrMisbehaviour;
 use ibc_core_client_types::UpdateKind;
-use ibc_core_context::types::error::ContextError;
-use ibc_core_context::types::events::{IbcEvent, MessageEvent};
-use ibc_core_context::{ExecutionContext, ValidationContext};
+use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use prost::Message;
 

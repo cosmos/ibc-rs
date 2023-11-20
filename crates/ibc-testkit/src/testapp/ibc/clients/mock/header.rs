@@ -4,7 +4,7 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
 use ibc::core::primitives::Timestamp;
-use ibc::proto::{Any, Protobuf};
+use ibc::primitives::proto::{Any, Protobuf};
 
 use crate::testapp::ibc::clients::mock::proto::Header as RawMockHeader;
 

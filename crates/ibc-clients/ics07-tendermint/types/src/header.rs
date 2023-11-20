@@ -5,6 +5,11 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use bytes::Buf;
+use ibc_core_client_types::error::ClientError;
+use ibc_core_client_types::Height;
+use ibc_core_host_types::identifiers::ChainId;
+use ibc_primitives::prelude::*;
+use ibc_primitives::Timestamp;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
 use ibc_proto::Protobuf;
@@ -17,11 +22,6 @@ use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockS
 
 use crate::consensus_state::ConsensusState as TmConsensusState;
 use crate::error::Error;
-
-use ibc_core_client_types::error::ClientError;
-use ibc_core_client_types::Height;
-use ibc_core_host_types::identifiers::ChainId;
-use ibc_primitives::{prelude::*, Timestamp};
 
 pub const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
 
@@ -207,8 +207,9 @@ impl From<Header> for RawHeader {
 }
 
 mod pretty {
-    pub use super::*;
     use ibc_primitives::utils::pretty::PrettySlice;
+
+    pub use super::*;
 
     pub struct PrettySignedHeader<'a>(pub &'a SignedHeader);
 

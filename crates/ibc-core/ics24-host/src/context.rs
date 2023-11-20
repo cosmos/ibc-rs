@@ -12,15 +12,15 @@ use ibc_core_connection_types::version::{
     get_compatible_versions, pick_version, Version as ConnectionVersion,
 };
 use ibc_core_connection_types::ConnectionEnd;
-use ibc_core_context_types::error::ContextError;
-use ibc_core_context_types::events::IbcEvent;
-use ibc_core_context_types::proto::Any;
+use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::events::IbcEvent;
 use ibc_core_host_types::identifiers::{ClientId, ConnectionId, Sequence};
 use ibc_core_host_types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
     ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc_primitives::prelude::*;
+use ibc_primitives::proto::Any;
 use ibc_primitives::{Signer, Timestamp};
 
 use crate::utils::calculate_block_delay;
@@ -83,7 +83,7 @@ pub trait ValidationContext {
     /// requirements](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#client-state-validation)
     ///
     /// Additionally, implementations specific to individual chains can be found
-    /// in the `ibc-core-extra` crate.
+    /// in the `ibc-core-hostkit` crate.
     fn validate_self_client(
         &self,
         client_state_of_host_on_counterparty: Any,
@@ -95,13 +95,13 @@ pub trait ValidationContext {
     /// Returns a counter on how many connections have been created thus far.
     fn connection_counter(&self) -> Result<u64, ContextError>;
 
-    /// Function required by ICS 03. Returns the list of all possible versions that the connection
+    /// Function required by ICS-03. Returns the list of all possible versions that the connection
     /// handshake protocol supports.
     fn get_compatible_versions(&self) -> Vec<ConnectionVersion> {
         get_compatible_versions()
     }
 
-    /// Function required by ICS 03. Returns one version out of the supplied list of versions, which the
+    /// Function required by ICS-03. Returns one version out of the supplied list of versions, which the
     /// connection handshake protocol prefers.
     fn pick_version(
         &self,

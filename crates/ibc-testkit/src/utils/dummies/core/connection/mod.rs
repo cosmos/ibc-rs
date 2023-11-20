@@ -7,9 +7,9 @@ pub use conn_open_ack::*;
 pub use conn_open_confirm::*;
 pub use conn_open_init::*;
 pub use conn_open_try::*;
-use ibc::core::commitment::proto::v1::MerklePrefix;
+use ibc::core::commitment_types::proto::v1::MerklePrefix;
 use ibc::core::connection::types::proto::v1::Counterparty as RawCounterparty;
-use ibc::core::host::identifiers::{ClientId, ConnectionId};
+use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
 use ibc::core::primitives::prelude::*;
 use typed_builder::TypedBuilder;
 

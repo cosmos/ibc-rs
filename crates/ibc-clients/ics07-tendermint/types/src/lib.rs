@@ -1,11 +1,12 @@
 use core::str::FromStr;
+
 use ibc_core_host_types::identifiers::ClientType;
 
 extern crate alloc;
 
-pub mod error;
 pub mod client_state;
 pub mod consensus_state;
+pub mod error;
 pub mod header;
 pub mod misbehaviour;
 pub mod trust_threshold;

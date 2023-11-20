@@ -5,9 +5,9 @@ use core::str::Utf8Error;
 use displaydoc::Display;
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
-use ibc_core::context::types::error::ContextError;
-use ibc_core::host::error::IdentifierError;
-use ibc_core::host::identifiers::{ChannelId, PortId};
+use ibc_core::handler::types::error::ContextError;
+use ibc_core::host::types::error::IdentifierError;
+use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use uint::FromDecStrErr;
 

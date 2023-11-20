@@ -1,20 +1,17 @@
-use crate::context::{CommonContext, ValidationContext as TmValidationContext};
-
 use ibc_client_tendermint_types::client_state::check_header_trusted_next_validator_set;
 use ibc_client_tendermint_types::consensus_state::ConsensusState as TmConsensusState;
 use ibc_client_tendermint_types::error::{Error, IntoResult};
 use ibc_client_tendermint_types::header::Header as TmHeader;
-
-use ibc_core_client_types::error::ClientError;
 use ibc_core_client_context::ClientExecutionContext;
+use ibc_core_client_types::error::ClientError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_core_host_types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
-
-use super::ClientState;
-
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::Verifier;
+
+use super::ClientState;
+use crate::context::{CommonContext, ValidationContext as TmValidationContext};
 
 impl ClientState {
     pub fn verify_header<ClientValidationContext>(
@@ -36,39 +33,41 @@ impl ClientState {
         // Delegate to tendermint-light-client, which contains the required checks
         // of the new header against the trusted consensus state.
         {
-            let trusted_state = {
-                let trusted_client_cons_state_path =
-                    ClientConsensusStatePath::new(client_id.clone(), header.trusted_height.revision_number(), header.trusted_height.revision_height());
-                let trusted_consensus_state: TmConsensusState = ctx
-                    .consensus_state(&trusted_client_cons_state_path)?
-                    .try_into()
-                    .map_err(|err| ClientError::Other {
-                        description: err.to_string(),
-                    })?;
-
-                check_header_trusted_next_validator_set(&header, &trusted_consensus_state)?;
-
-                TrustedBlockState {
-                    chain_id: &self.0.chain_id.to_string().try_into().map_err(|e| {
-                        ClientError::Other {
-                            description: format!("failed to parse chain id: {}", e),
-                        }
-                    })?,
-                    header_time: trusted_consensus_state.timestamp,
-                    height: header
-                        .trusted_height
-                        .revision_height()
+            let trusted_state =
+                {
+                    let trusted_client_cons_state_path = ClientConsensusStatePath::new(
+                        client_id.clone(),
+                        header.trusted_height.revision_number(),
+                        header.trusted_height.revision_height(),
+                    );
+                    let trusted_consensus_state: TmConsensusState = ctx
+                        .consensus_state(&trusted_client_cons_state_path)?
                         .try_into()
-                        .map_err(|_| ClientError::ClientSpecific {
-                            description: Error::InvalidHeaderHeight {
-                                height: header.trusted_height.revision_height(),
+                        .map_err(|err| ClientError::Other {
+                            description: err.to_string(),
+                        })?;
+
+                    check_header_trusted_next_validator_set(&header, &trusted_consensus_state)?;
+
+                    TrustedBlockState {
+                        chain_id: &self.0.chain_id.to_string().try_into().map_err(|e| {
+                            ClientError::Other {
+                                description: format!("failed to parse chain id: {}", e),
                             }
-                            .to_string(),
                         })?,
-                    next_validators: &header.trusted_next_validator_set,
-                    next_validators_hash: trusted_consensus_state.next_validators_hash,
-                }
-            };
+                        header_time: trusted_consensus_state.timestamp,
+                        height: header.trusted_height.revision_height().try_into().map_err(
+                            |_| ClientError::ClientSpecific {
+                                description: Error::InvalidHeaderHeight {
+                                    height: header.trusted_height.revision_height(),
+                                }
+                                .to_string(),
+                            },
+                        )?,
+                        next_validators: &header.trusted_next_validator_set,
+                        next_validators_hash: trusted_consensus_state.next_validators_hash,
+                    }
+                };
 
             let untrusted_state = UntrustedBlockState {
                 signed_header: &header.signed_header,
@@ -80,16 +79,14 @@ impl ClientState {
             };
 
             let options = self.0.as_light_client_options()?;
-            let now =
-                ctx.host_timestamp()?
-                    .into_tm_time()
-                    .ok_or_else(|| ClientError::ClientSpecific {
-                        description: "host timestamp is not a valid TM timestamp".to_string(),
-                    })?;
+            let now = ctx.host_timestamp()?.into_tm_time().ok_or_else(|| {
+                ClientError::ClientSpecific {
+                    description: "host timestamp is not a valid TM timestamp".to_string(),
+                }
+            })?;
 
             // main header verification, delegated to the tendermint-light-client crate.
-            self
-                .0
+            self.0
                 .verifier
                 .verify_update_header(untrusted_state, trusted_state, &options, now)
                 .into_result()?;
@@ -110,7 +107,11 @@ impl ClientState {
         let header_consensus_state = TmConsensusState::from(header.clone());
 
         let maybe_existing_consensus_state = {
-            let path_at_header_height = ClientConsensusStatePath::new(client_id.clone(), header.height().revision_number(), header.height().revision_height());
+            let path_at_header_height = ClientConsensusStatePath::new(
+                client_id.clone(),
+                header.height().revision_number(),
+                header.height().revision_height(),
+            );
 
             ctx.consensus_state(&path_at_header_height).ok()
         };
@@ -186,8 +187,13 @@ impl ClientState {
         heights.sort();
 
         for height in heights {
-            let client_consensus_state_path = ClientConsensusStatePath::new(client_id.clone(), height.revision_number(), height.revision_height());
-            let consensus_state = CommonContext::consensus_state(ctx, &client_consensus_state_path)?;
+            let client_consensus_state_path = ClientConsensusStatePath::new(
+                client_id.clone(),
+                height.revision_number(),
+                height.revision_height(),
+            );
+            let consensus_state =
+                CommonContext::consensus_state(ctx, &client_consensus_state_path)?;
             let tm_consensus_state: TmConsensusState =
                 consensus_state
                     .try_into()
@@ -195,11 +201,12 @@ impl ClientState {
                         description: err.to_string(),
                     })?;
 
-            let host_timestamp = ctx.host_timestamp()?
-                .into_tm_time()
-                .ok_or_else(|| ClientError::Other {
-                    description: String::from("host timestamp is not a valid TM timestamp"),
-                })?;
+            let host_timestamp =
+                ctx.host_timestamp()?
+                    .into_tm_time()
+                    .ok_or_else(|| ClientError::Other {
+                        description: String::from("host timestamp is not a valid TM timestamp"),
+                    })?;
             let tm_consensus_state_timestamp = tm_consensus_state.timestamp();
             let tm_consensus_state_expiry = (tm_consensus_state_timestamp
                 + self.0.trusting_period)

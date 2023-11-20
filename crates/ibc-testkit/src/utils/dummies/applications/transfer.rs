@@ -2,7 +2,7 @@ use alloc::string::ToString;
 
 use ibc::core::channel::types::packet::Packet;
 use ibc::core::channel::types::timeout::TimeoutHeight;
-use ibc::core::host::identifiers::{ChannelId, PortId, Sequence};
+use ibc::core::host::types::identifiers::{ChannelId, PortId, Sequence};
 use ibc::core::primitives::{Signer, Timestamp};
 use ibc_app_transfer::types::msgs::transfer::MsgTransfer;
 use ibc_app_transfer::types::packet::PacketData;

@@ -6,9 +6,9 @@ use ibc_core_channel_types::packet::Packet;
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::types::error::ClientError;
-use ibc_core_context::types::error::ContextError;
-use ibc_core_context::types::events::{IbcEvent, MessageEvent};
-use ibc_core_host_types::path::{
+use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_core_host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
 use ibc_primitives::prelude::*;

@@ -7,10 +7,10 @@ use ibc::clients::ics07_tendermint::{
 use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
-use ibc::core::context::types::error::ContextError;
-use ibc::core::context::ValidationContext;
-use ibc::core::host::identifiers::{ChannelId, ClientId, PortId};
-use ibc::core::host::path::{ClientConsensusStatePath, ClientStatePath};
+use ibc::core::handler::types::error::ContextError;
+use ibc::core::host::types::identifiers::{ChannelId, ClientId, PortId};
+use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath};
+use ibc::core::host::ValidationContext;
 use ibc::core::primitives::Timestamp;
 
 use crate::testapp::ibc::clients::mock::client_state::MockClientContext;

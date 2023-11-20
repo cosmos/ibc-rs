@@ -1,5 +1,4 @@
-//! ICS 03: Connection implementation for connecting a client
-//! on the local chain with a client on a remote chain.
+//! Implementation of the Connection Semantics (ICS-03) data structures.
 #![no_std]
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]
@@ -23,10 +22,8 @@ pub mod events;
 pub mod msgs;
 pub mod version;
 
-/// Re-exports ICS-03 connection proto types from the `ibc-proto-rs` crate
-/// for added convenience
+/// Re-exports ICS-03 proto types from the `ibc-proto` crate for added
+/// convenience
 pub mod proto {
-    pub use ibc_proto::google::protobuf::Any;
     pub use ibc_proto::ibc::core::connection::*;
-    pub use ibc_proto::Protobuf;
 }

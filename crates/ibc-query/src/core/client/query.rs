@@ -6,10 +6,12 @@ use core::str::FromStr;
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
-use ibc::core::context::ValidationContext;
-use ibc::core::host::identifiers::ClientId;
-use ibc::core::host::path::{ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath};
-use ibc_core_extra::tendermint::upgrade_proposal::UpgradeValidationContext;
+use ibc::core::host::types::identifiers::ClientId;
+use ibc::core::host::types::path::{
+    ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
+};
+use ibc::core::host::ValidationContext;
+use ibc_core_host_tendermint::upgrade_proposal::UpgradeValidationContext;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::{
     ConsensusStateWithHeight, IdentifiedClientState, QueryClientStateRequest,

@@ -24,7 +24,7 @@ ibc-core-channel-types    = { workspace = true }
 ibc-core-commitment-types = { workspace = true }
 ibc-core-host-types       = { workspace = true }
 ibc-core-router-types     = { workspace = true }
-ibc-core-context-types    = { workspace = true }
+ibc-core-handler-types    = { workspace = true }
 ibc-primitives            = { workspace = true }
 
 [features]
@@ -37,7 +37,7 @@ std = [
     "ibc-core-commitment-types/std",
     "ibc-core-host-types/std",
     "ibc-core-router-types/std",
-    "ibc-core-context-types/std",
+    "ibc-core-handler-types/std",
     "ibc-primitives/std",
 ]
 serde = [
@@ -48,7 +48,7 @@ serde = [
     "ibc-core-commitment-types/serde",
     "ibc-core-host-types/serde",
     "ibc-core-router-types/serde",
-    "ibc-core-context-types/serde",
+    "ibc-core-handler-types/serde",
     "ibc-primitives/serde",
 ]
 borsh = [
@@ -58,7 +58,7 @@ borsh = [
     "ibc-core-channel-types/borsh",
     "ibc-core-host-types/borsh",
     "ibc-core-router-types/borsh",
-    "ibc-core-context-types/borsh",
+    "ibc-core-handler-types/borsh",
     "ibc-primitives/borsh",
 ]
 schema = [
@@ -68,7 +68,7 @@ schema = [
     "ibc-core-channel-types/schema",
     "ibc-core-host-types/schema",
     "ibc-core-router-types/schema",
-    "ibc-core-context-types/schema",
+    "ibc-core-handler-types/schema",
     "ibc-primitives/schema",
 ]
 parity-scale-codec = [
@@ -78,6 +78,6 @@ parity-scale-codec = [
     "ibc-core-channel-types/parity-scale-codec",
     "ibc-core-host-types/parity-scale-codec",
     "ibc-core-router-types/parity-scale-codec",
-    "ibc-core-context-types/parity-scale-codec",
+    "ibc-core-handler-types/parity-scale-codec",
     "ibc-primitives/parity-scale-codec",
 ]

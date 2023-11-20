@@ -1,6 +1,6 @@
 use ibc::core::channel::types::channel::{Counterparty, Order};
 use ibc::core::channel::types::Version;
-use ibc::core::host::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
 use ibc::core::primitives::prelude::*;
 use ibc_app_transfer::context::cosmos_adr028_escrow_address;
 use ibc_app_transfer::module::{

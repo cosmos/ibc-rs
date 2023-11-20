@@ -4,17 +4,17 @@ use ibc_core_channel_types::channel::{ChannelEnd, Counterparty, State, State as 
 use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::events::OpenConfirm;
 use ibc_core_channel_types::msgs::MsgChannelOpenConfirm;
-use ibc_core_channel_types::proto::Protobuf;
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::types::error::ClientError;
 use ibc_core_connection::types::State as ConnectionState;
-use ibc_core_context::types::error::ContextError;
-use ibc_core_context::types::events::{IbcEvent, MessageEvent};
-use ibc_core_context::{ExecutionContext, ValidationContext};
-use ibc_core_host_types::path::{ChannelEndPath, ClientConsensusStatePath, Path};
+use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_core_host::types::path::{ChannelEndPath, ClientConsensusStatePath, Path};
+use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
+use ibc_primitives::proto::Protobuf;
 
 pub fn chan_open_confirm_validate<ValCtx>(
     ctx_b: &ValCtx,

@@ -2,7 +2,7 @@ use ibc::core::channel::types::packet::Packet;
 use ibc::core::channel::types::proto::v1::Packet as RawPacket;
 use ibc::core::channel::types::timeout::TimeoutHeight;
 use ibc::core::client::types::proto::v1::Height as RawHeight;
-use ibc::core::host::identifiers::{ChannelId, PortId, Sequence};
+use ibc::core::host::types::identifiers::{ChannelId, PortId, Sequence};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use typed_builder::TypedBuilder;

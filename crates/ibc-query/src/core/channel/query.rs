@@ -4,12 +4,12 @@ use alloc::format;
 use core::str::FromStr;
 
 use ibc::core::client::types::Height;
-use ibc::core::context::ValidationContext;
-use ibc::core::host::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
-use ibc::core::host::path::{
+use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
+use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath, Path,
     ReceiptPath, SeqRecvPath,
 };
+use ibc::core::host::ValidationContext;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::channel::v1::{
     QueryChannelClientStateRequest, QueryChannelClientStateResponse,

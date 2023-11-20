@@ -1,19 +1,22 @@
-use crate::context::ValidationContext as TmValidationContext;
-
 use ibc_client_tendermint_types::client_state::check_header_trusted_next_validator_set;
 use ibc_client_tendermint_types::consensus_state::ConsensusState as TmConsensusState;
 use ibc_client_tendermint_types::error::{Error, IntoResult};
 use ibc_client_tendermint_types::header::Header as TmHeader;
 use ibc_client_tendermint_types::misbehaviour::Misbehaviour as TmMisbehaviour;
-
+use ibc_core::client::context::consensus_state::ConsensusState;
+use ibc_core::client::types::error::ClientError;
+use ibc_core::host::types::identifiers::ClientId;
+use ibc_core::host::types::path::ClientConsensusStatePath;
+use ibc_core::primitives::prelude::*;
+use ibc_core::primitives::Timestamp;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_core_host_types::path::ClientConsensusStatePath;
-use ibc_primitives::{prelude::*, Timestamp};
+use ibc_primitives::prelude::*;
+use ibc_primitives::Timestamp;
+use tendermint_light_client_verifier::Verifier;
 
 use super::ClientState;
-
-use tendermint_light_client_verifier::Verifier;
 
 impl ClientState {
     // verify_misbehaviour determines whether or not two conflicting headers at
@@ -31,8 +34,11 @@ impl ClientState {
 
         let header_1 = misbehaviour.header1();
         let trusted_consensus_state_1 = {
-            let consensus_state_path =
-                ClientConsensusStatePath::new(client_id.clone(), header_1.trusted_height.revision_number(), header_1.trusted_height.revision_height());
+            let consensus_state_path = ClientConsensusStatePath::new(
+                client_id.clone(),
+                header_1.trusted_height.revision_number(),
+                header_1.trusted_height.revision_height(),
+            );
             let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
             consensus_state
@@ -44,8 +50,11 @@ impl ClientState {
 
         let header_2 = misbehaviour.header2();
         let trusted_consensus_state_2 = {
-            let consensus_state_path =
-                ClientConsensusStatePath::new(client_id.clone(), header_2.trusted_height.revision_number(), header_2.trusted_height.revision_height());
+            let consensus_state_path = ClientConsensusStatePath::new(
+                client_id.clone(),
+                header_2.trusted_height.revision_number(),
+                header_2.trusted_height.revision_height(),
+            );
             let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
             consensus_state
@@ -56,11 +65,7 @@ impl ClientState {
         };
 
         let current_timestamp = ctx.host_timestamp()?;
-        self.verify_misbehaviour_header(
-            header_1,
-            &trusted_consensus_state_1,
-            current_timestamp,
-        )?;
+        self.verify_misbehaviour_header(header_1, &trusted_consensus_state_1, current_timestamp)?;
         self.verify_misbehaviour_header(header_2, &trusted_consensus_state_2, current_timestamp)
     }
 
@@ -94,15 +99,14 @@ impl ClientState {
         // main header verification, delegated to the tendermint-light-client crate.
         let untrusted_state = header.as_untrusted_block_state();
 
-        let chain_id =
-            self
-                .0
-                .chain_id
-                .to_string()
-                .try_into()
-                .map_err(|e| ClientError::Other {
-                    description: format!("failed to parse chain id: {}", e),
-                })?;
+        let chain_id = self
+            .0
+            .chain_id
+            .to_string()
+            .try_into()
+            .map_err(|e| ClientError::Other {
+                description: format!("failed to parse chain id: {}", e),
+            })?;
         let trusted_state = header.as_trusted_block_state(trusted_consensus_state, &chain_id)?;
 
         let options = self.0.as_light_client_options()?;
@@ -110,8 +114,7 @@ impl ClientState {
             description: "host timestamp must not be zero".to_string(),
         })?;
 
-        self
-            .0
+        self.0
             .verifier
             .verify_misbehaviour_header(untrusted_state, trusted_state, &options, current_timestamp)
             .into_result()?;

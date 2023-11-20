@@ -5,8 +5,8 @@ use ibc_app_transfer_types::{is_sender_chain_source, MODULE_ID_STR};
 use ibc_core::channel::context::{SendPacketExecutionContext, SendPacketValidationContext};
 use ibc_core::channel::handler::{send_packet_execute, send_packet_validate};
 use ibc_core::channel::types::packet::Packet;
-use ibc_core::context::types::events::MessageEvent;
-use ibc_core::host::path::{ChannelEndPath, SeqSendPath};
+use ibc_core::handler::types::events::MessageEvent;
+use ibc_core::host::types::path::{ChannelEndPath, SeqSendPath};
 use ibc_core::primitives::prelude::*;
 use ibc_core::router::types::event::ModuleEvent;
 

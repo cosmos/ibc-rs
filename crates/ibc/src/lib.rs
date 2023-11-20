@@ -10,47 +10,60 @@
     unused_qualifications,
     rust_2018_idioms
 )]
-//! This library implements the InterBlockchain Communication (IBC) protocol in Rust. IBC is
-//! a distributed protocol that enables communication between distinct sovereign blockchains.
+//! This library re-exports implementations of all the Inter-Blockchain
+//! Communication (IBC) specifications available in [`ibc-rs`][ibc-rs]
+//! repository. IBC is a distributed protocol that enables communication between
+//! distinct sovereign blockchains.
 //!
 //! The layout of this crate mirrors the organization of the [IBC
 //! Standard][ibc-standard]:
 //!
-//! + [Core](core) implements the transport, authentication, and ordering layers of the IBC protocol.
+//! + [Core](core) implements the transport, authentication, and ordering layers
+//!   of the IBC protocol.
 //!
-//! + [Clients](clients) consists of implementations of client verification algorithms (following the base
-//! client interface that is defined in `Core`) for specific consensus algorithms. A chain uses these
-//! verification algorithms to verify the state of remote chains.
+//! + [Clients](clients) consists of implementations of client verification
+//! algorithms (following the base client interface that is defined in `Core`)
+//! for specific consensus algorithms. A chain uses these verification
+//! algorithms to verify the state of remote chains.
 //!
-//! When processing a given message `M`, if any method in this library returns an error, the runtime
-//! is expected to rollback all state modifications made to the context
-//! (e.g. [`ExecutionContext`](crate::core::context::ExecutionContext)) while processing `M`. If a transaction on your
-//! blockchain contains multiple messages, then typically the state modifications from all messages
-//! is expected to be rolled back as well.
+//! + [Applications](apps) consists of implementations of some IBC applications.
+//! This is the part of the protocol that abstracts away the core protocol and
+//! focuses solely on business logic.
 //!
-//! # Note
-//!
-//! Currently, the `serde` feature (required by the token transfer app) does not work in `no_std` environments.
-//! See context [here](https://github.com/cosmos/ibc-proto-rs/pull/92). If this is a blocker for you, please
-//! open a Github issue.
+//! When processing a given message `M`, if any method in this library returns
+//! an error, the runtime is expected to rollback all state modifications made
+//! to the context (e.g.
+//! [`ExecutionContext`](crate::core::host::ExecutionContext)) while processing
+//! `M`. If a transaction on your blockchain contains multiple messages, then
+//! typically the state modifications from all messages is expected to be rolled
+//! back as well.
 //!
 //! [ibc-standard]: https://github.com/cosmos/ibc
+//! [ibc-rs]: https://github.com/cosmos/ibc-rs
 
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
+/// Re-exports primitive types and traits from the `ibc-primitives` crate.
+pub mod primitives {
+    pub use ibc_primitives::*;
+}
+
+pub mod clients;
+
+/// Re-exports implementations of all the IBC core (TAO) modules.
+pub mod core {
+    #[doc(inline)]
+    pub use ibc_core::*;
+}
+
+/// Re-exports implementations of various IBC applications.
 pub mod apps {
     #[doc(inline)]
     pub use ibc_apps::*;
 }
 
-pub mod core {
-    #[doc(inline)]
-    pub use ibc_core::*;
-}
-/// Re-exports pertinent ibc proto types from the `ibc-proto-rs` crate for added convenience
+/// Re-exports pertinent ibc proto types from the `ibc-proto` crate for added convenience
 pub mod proto {
-    pub use ibc_proto::google::protobuf::Any;
     pub use ibc_proto::ibc::lightclients::tendermint;
-    pub use ibc_proto::Protobuf;
 }

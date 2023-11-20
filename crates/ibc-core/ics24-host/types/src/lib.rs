@@ -1,5 +1,5 @@
-//! ICS 24: Host defines the minimal set of interfaces that a
-//! state machine hosting an IBC-enabled chain must implement.
+//! ICS-24: Host defines the minimal set of interfaces that a state machine
+//! hosting an IBC-enabled chain must implement.
 #![no_std]
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]

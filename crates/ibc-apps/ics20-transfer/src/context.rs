@@ -2,7 +2,7 @@
 
 use ibc_app_transfer_types::error::TokenTransferError;
 use ibc_app_transfer_types::{PrefixedCoin, PrefixedDenom, VERSION};
-use ibc_core::host::identifiers::{ChannelId, PortId};
+use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Signer;
 use sha2::{Digest, Sha256};

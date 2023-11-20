@@ -3,7 +3,7 @@ use ibc::core::channel::types::channel::{Counterparty, Order};
 use ibc::core::channel::types::error::{ChannelError, PacketError};
 use ibc::core::channel::types::packet::Packet;
 use ibc::core::channel::types::Version;
-use ibc::core::host::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Signer;
 use ibc::core::router::module::Module;

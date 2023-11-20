@@ -6,10 +6,10 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc", "applications"]
+keywords     = ["blockchain", "cosmos", "ibc", "applications", "token-transfer"]
 readme       = "README.md"
 description  = """
-    `ibc-apps` provides a comprehensive set of libraries for IBC applications, 
+    Re-exports a comprehensive set of libraries for IBC applications, 
     facilitating seamless integration of IBC business logic into any blockchain system.
 """
 
@@ -34,4 +34,7 @@ schema = [
 ]
 borsh = [
     "ibc-app-transfer/borsh",
+]
+parity-scale-codec = [
+    "ibc-app-transfer/parity-scale-codec",
 ]

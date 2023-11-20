@@ -5,7 +5,7 @@ use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::specs::ProofSpecs;
 use ibc_core_connection_types::error::ConnectionError;
-use ibc_core_context_types::error::ContextError;
+use ibc_core_handler_types::error::ContextError;
 use ibc_core_host_types::identifiers::ChainId;
 use ibc_primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;

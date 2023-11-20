@@ -1,9 +1,13 @@
 //! Defines Tendermint's `ConsensusState` type
 
+use ibc_core_client_context::consensus_state::ConsensusState as ConsensusStateTrait;
+use ibc_core_client_types::error::ClientError;
+use ibc_core_commitment_types::commitment::CommitmentRoot;
+use ibc_primitives::prelude::*;
+use ibc_primitives::Timestamp;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::ConsensusState as RawConsensusState;
 use ibc_proto::Protobuf;
-
 use tendermint::hash::Algorithm;
 use tendermint::time::Time;
 use tendermint::Hash;
@@ -11,11 +15,6 @@ use tendermint_proto::google::protobuf as tpb;
 
 use crate::error::Error;
 use crate::header::Header;
-
-use ibc_core_client_context::consensus_state::ConsensusState as ConsensusStateTrait;
-use ibc_core_client_types::error::ClientError;
-use ibc_core_commitment_types::commitment::CommitmentRoot;
-use ibc_primitives::{prelude::*, Timestamp};
 
 pub const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str =
     "/ibc.lightclients.tendermint.v1.ConsensusState";
@@ -37,7 +36,7 @@ impl ConsensusState {
             next_validators_hash,
         }
     }
-    
+
     pub fn timestamp(&self) -> Time {
         self.timestamp
     }

@@ -9,16 +9,16 @@ use ibc::core::client::context::client_state::{ClientStateCommon, ClientStateVal
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::msgs::{ClientMsg, MsgSubmitMisbehaviour, MsgUpdateClient};
 use ibc::core::client::types::Height;
-use ibc::core::commitment::specs::ProofSpecs;
-use ibc::core::context::types::events::{IbcEvent, MessageEvent};
-use ibc::core::context::types::msgs::MsgEnvelope;
-use ibc::core::context::ValidationContext;
+use ibc::core::commitment_types::specs::ProofSpecs;
 use ibc::core::entrypoint::{execute, validate};
-use ibc::core::host::identifiers::{ChainId, ClientId, ClientType};
-use ibc::core::host::path::ClientConsensusStatePath;
+use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
+use ibc::core::handler::types::msgs::MsgEnvelope;
+use ibc::core::host::types::identifiers::{ChainId, ClientId, ClientType};
+use ibc::core::host::types::path::ClientConsensusStatePath;
+use ibc::core::host::ValidationContext;
 use ibc::core::primitives::{downcast, Timestamp};
+use ibc::primitives::proto::Any;
 use ibc::proto::tendermint::v1::{ClientState as RawTmClientState, Fraction};
-use ibc::proto::Any;
 use ibc_testkit::hosts::block::{HostBlock, HostType};
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
     client_type as mock_client_type, MockClientState,

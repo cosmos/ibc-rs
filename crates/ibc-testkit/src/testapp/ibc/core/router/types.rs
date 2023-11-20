@@ -1,7 +1,7 @@
 use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
 
-use ibc::core::host::identifiers::PortId;
+use ibc::core::host::types::identifiers::PortId;
 use ibc::core::primitives::prelude::*;
 use ibc::core::router::module::Module;
 use ibc::core::router::types::module::ModuleId;

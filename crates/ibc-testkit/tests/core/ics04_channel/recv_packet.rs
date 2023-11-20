@@ -8,11 +8,11 @@ use ibc::core::connection::types::version::get_compatible_versions;
 use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
-use ibc::core::context::types::events::{IbcEvent, MessageEvent};
-use ibc::core::context::types::msgs::MsgEnvelope;
-use ibc::core::context::ExecutionContext;
 use ibc::core::entrypoint::{execute, validate};
-use ibc::core::host::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
+use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
+use ibc::core::handler::types::msgs::MsgEnvelope;
+use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
+use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::relayer::context::RelayerContext;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;

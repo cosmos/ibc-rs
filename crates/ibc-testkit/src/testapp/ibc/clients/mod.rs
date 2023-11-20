@@ -11,7 +11,7 @@ use ibc::core::client::context::client_state::ClientState;
 use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::primitives::prelude::*;
-use ibc::proto::{Any, Protobuf};
+use ibc::primitives::proto::{Any, Protobuf};
 
 use crate::testapp::ibc::clients::mock::client_state::{
     MockClientState, MOCK_CLIENT_STATE_TYPE_URL,

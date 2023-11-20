@@ -1,8 +1,8 @@
 use displaydoc::Display;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::error::ConnectionError;
-use ibc::core::context::types::error::ContextError;
-use ibc::core::host::identifiers::ClientId;
+use ibc::core::handler::types::error::ContextError;
+use ibc::core::host::types::identifiers::ClientId;
 
 #[derive(Debug, Display)]
 pub enum RelayerError {
