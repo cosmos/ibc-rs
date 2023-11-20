@@ -7,8 +7,8 @@ use core::fmt::Debug;
 use core::ops::{Add, Sub};
 use core::time::Duration;
 
-use ibc::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use ibc::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
+use ibc::clients::tendermint::client_state::ClientState as TmClientState;
+use ibc::clients::tendermint::types::TENDERMINT_CLIENT_TYPE;
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc::core::channel::types::packet::Receipt;
@@ -529,7 +529,7 @@ impl MockContext {
                     .try_into()
                     .expect("never fails");
 
-                client_state.validate().expect("never fails");
+                client_state.inner().validate().expect("never fails");
 
                 let cs_states = blocks
                     .into_iter()

@@ -6,7 +6,7 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-readme       = "README.md"
+readme       = "./../README.md"
 keywords     = ["blockchain", "consensus", "cosmos", "ibc", "tendermint"]
 description  = """
     `ibc-client-tendermint` exports the types, handlers, and contexts for implementing Tendermint light clients.
@@ -16,32 +16,60 @@ description  = """
 all-features = true
 
 [dependencies]
+# external dependencies
+prost = { workspace = true }
+
 # ibc dependencies
-ibc = { version = "0.47.0", path = "./../../ibc", default-features = false }
-ibc-client-tendermint-types = { version = "0.47.0", path = "./types", default-features = false }
-ibc-core-commitment-types = { version = "0.47.0", path = "./../../ibc-core/ics23-commitment/types" }
-ibc-core-context = { version = "0.47.0", path = "./../../ibc-core/context" }
-ibc-core-client-context = { version = "0.47.0", path = "./../../ibc-core/ics02-client/context" }
-ibc-core-client-types = { version = "0.47.0", path = "./../../ibc-core/ics02-client/types" }
-ibc-core-context-types = { version = "0.47.0", path = "./../../ibc-core/context/types" }
-ibc-core-host-types = { version = "0.47.0", path = "./../../ibc-core/ics24-host/types" }
-ibc-primitives = { version = "0.47.0", path = "./../../ibc-primitives" }
-ibc-proto = { workspace = true, features = ["server"] }
+ibc-client-tendermint-types      = { workspace = true }
+ibc-core-client                  = { workspace = true }
+ibc-core-commitment-types        = { workspace = true }
+ibc-core-host                    = { workspace = true }
+ibc-core-handler-types           = { workspace = true }
+ibc-primitives                   = { workspace = true }
 
 # cosmos dependencies
 tendermint-light-client-verifier = { workspace = true, features = ["rust-crypto"] }
 
-prost = { workspace = true }
-
-[dev-dependencies]
-env_logger = { workspace = true }
-test-log = { workspace = true }
-tracing-subscriber = { workspace = true }
-
 [features]
 default = ["std"]
-
 std = [
-    "ibc-proto/std",
     "prost/std",
+    "ibc-client-tendermint-types/std",
+    "ibc-core-client/std",
+    "ibc-core-commitment-types/std",
+    "ibc-core-host/std",
+    "ibc-core-handler-types/std",
+    "ibc-primitives/std",
+]
+serde = [
+    "ibc-client-tendermint-types/serde",
+    "ibc-core-client/serde",
+    "ibc-core-commitment-types/serde",
+    "ibc-core-host/serde",
+    "ibc-core-handler-types/serde",
+    "ibc-primitives/serde",
+]
+schema = [
+    "ibc-client-tendermint-types/schema",
+    "ibc-core-client/schema",
+    "ibc-core-commitment-types/schema",
+    "ibc-core-host/schema",
+    "ibc-core-handler-types/schema",
+    "ibc-primitives/schema",
+]
+borsh = [
+    "ibc-client-tendermint-types/borsh",
+    "ibc-core-client/borsh",
+    "ibc-core-commitment-types/borsh",
+    "ibc-core-host/borsh",
+    "ibc-core-handler-types/borsh",
+    "ibc-primitives/borsh",
+]
+parity-scale-codec = [
+    "ibc-client-tendermint-types/parity-scale-codec",
+    "ibc-core-client/parity-scale-codec",
+    "ibc-core-commitment-types/parity-scale-codec",
+    "ibc-core-host/parity-scale-codec",
+    "ibc-core-handler-types/parity-scale-codec",
+    "ibc-primitives/parity-scale-codec",
 ]

@@ -207,7 +207,7 @@ impl From<Header> for RawHeader {
 }
 
 mod pretty {
-    use ibc_primitives::utils::pretty::PrettySlice;
+    use ibc_primitives::utils::PrettySlice;
 
     pub use super::*;
 

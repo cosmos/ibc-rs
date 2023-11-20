@@ -32,14 +32,6 @@ If you're interested in contributing, please take a look at the
 [CONTRIBUTING](./../../CONTRIBUTING.md) guidelines. We welcome and appreciate
 community contributions!
 
-## Third-party clients
-
-Here, we list IBC third-party clients that are compatible with ibc-rs. You
-should always audit the implementation of any third-party crate. If you have a
-client that you'd like to be added to this list, please open a PR!
-
-+ [ICS 6: Solomachine](https://github.com/octopus-network/ics06-solomachine) by Octopus Network
-
 ## License
 
 Copyright © 2021 Informal Systems Inc. and ibc-rs authors.

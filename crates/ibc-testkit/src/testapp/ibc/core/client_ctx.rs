@@ -1,7 +1,7 @@
 use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 
-use ibc::clients::ics07_tendermint::{
+use ibc::clients::tendermint::context::{
     CommonContext as TmCommonContext, ValidationContext as TmValidationContext,
 };
 use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};

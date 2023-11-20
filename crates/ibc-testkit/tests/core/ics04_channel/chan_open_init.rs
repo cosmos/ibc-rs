@@ -1,4 +1,4 @@
-use ibc::clients::ics07_tendermint::client_type as tm_client_type;
+use ibc::clients::tendermint::types::client_type as tm_client_type;
 use ibc::core::channel::types::msgs::{ChannelMsg, MsgChannelOpenInit};
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::version::get_compatible_versions;

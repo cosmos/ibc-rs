@@ -1,4 +1,4 @@
-use ibc::clients::ics07_tendermint::client_type;
+use ibc::clients::tendermint::types::client_type;
 use ibc::core::client::types::error::{ClientError, UpgradeClientError};
 use ibc::core::client::types::msgs::{ClientMsg, MsgUpgradeClient};
 use ibc::core::client::types::Height;

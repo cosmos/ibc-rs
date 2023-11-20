@@ -49,21 +49,20 @@ pub mod primitives {
     pub use ibc_primitives::*;
 }
 
-pub mod clients;
-
 /// Re-exports implementations of all the IBC core (TAO) modules.
 pub mod core {
     #[doc(inline)]
     pub use ibc_core::*;
 }
 
+/// Re-exports implementations of IBC light clients.
+pub mod clients {
+    #[doc(inline)]
+    pub use ibc_clients::*;
+}
+
 /// Re-exports implementations of various IBC applications.
 pub mod apps {
     #[doc(inline)]
     pub use ibc_apps::*;
-}
-
-/// Re-exports pertinent ibc proto types from the `ibc-proto` crate for added convenience
-pub mod proto {
-    pub use ibc_proto::ibc::lightclients::tendermint;
 }

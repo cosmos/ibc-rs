@@ -1,15 +1,48 @@
+//! ICS-07: Tendermint Client implements a client verification algorithm for blockchains which use
+//! the Tendermint consensus algorithm.
+#![no_std]
+#![forbid(unsafe_code)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
+#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types,))]
+#![deny(
+    warnings,
+    trivial_casts,
+    trivial_numeric_casts,
+    unused_import_braces,
+    unused_qualifications,
+    rust_2018_idioms
+)]
+
 use core::str::FromStr;
 
 use ibc_core_host_types::identifiers::ClientType;
 
 extern crate alloc;
 
-pub mod client_state;
-pub mod consensus_state;
+#[cfg(any(test, feature = "std"))]
+extern crate std;
+
+mod client_state;
+mod consensus_state;
+mod header;
+mod misbehaviour;
+mod trust_threshold;
+
+pub use client_state::*;
+pub use consensus_state::*;
+pub use header::*;
+pub use misbehaviour::*;
+pub use trust_threshold::*;
+
 pub mod error;
-pub mod header;
-pub mod misbehaviour;
-pub mod trust_threshold;
+
+/// Re-exports necessary proto types for Tendermint light client implementation
+/// from `ibc-proto` crate.
+pub mod proto {
+    pub use ibc_proto::google::protobuf::Any;
+    pub use ibc_proto::ibc::lightclients::tendermint::*;
+    pub use ibc_proto::Protobuf;
+}
 
 pub const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
 

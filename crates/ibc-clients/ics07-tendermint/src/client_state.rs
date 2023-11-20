@@ -1,48 +1,54 @@
-use crate::context::{
-    CommonContext, ExecutionContext as TmExecutionContext, ValidationContext as TmValidationContext,
+use ibc_client_tendermint_types::error::Error;
+use ibc_client_tendermint_types::proto::v1::ClientState as RawTmClientState;
+use ibc_client_tendermint_types::proto::{Any, Protobuf};
+use ibc_client_tendermint_types::{
+    client_type as tm_client_type, ClientState as ClientStateType,
+    ConsensusState as TmConsensusState, Header as TmHeader, Misbehaviour as TmMisbehaviour,
 };
-
-use ibc_core_client_context::client_state::{
-    ClientStateCommon, ClientStateExecution, ClientStateValidation
+use ibc_core_client::context::client_state::{
+    ClientStateCommon, ClientStateExecution, ClientStateValidation,
 };
-use ibc_core_host_types::identifiers::ClientType;
-use ibc_core_client_types::error::{ClientError, UpgradeClientError};
-use ibc_core_client_context::{ClientExecutionContext, ClientValidationContext};
+use ibc_core_client::context::{ClientExecutionContext, ClientValidationContext};
+use ibc_core_client::types::error::{ClientError, UpgradeClientError};
+use ibc_core_client::types::{Height, Status, UpdateKind};
 use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use ibc_core_commitment_types::merkle::{apply_prefix, MerkleProof};
-use ibc_core_host_types::identifiers::ClientId;
-use ibc_core_host_types::path::{
+use ibc_core_commitment_types::proto::v1::MerkleProof as RawMerkleProof;
+use ibc_core_host::types::identifiers::{ClientId, ClientType};
+use ibc_core_host::types::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
-use ibc_core_context::ExecutionContext;
+use ibc_core_host::ExecutionContext;
 use ibc_primitives::prelude::*;
-use ibc_core_client_types::{Height, Status, UpdateKind};
-
-use ibc_client_tendermint_types::client_state::ClientState as ClientStateType;
-use ibc_client_tendermint_types::client_type as tm_client_type;
-use ibc_client_tendermint_types::consensus_state::ConsensusState as TmConsensusState;
-use ibc_client_tendermint_types::error::Error;
-use ibc_client_tendermint_types::header::Header as TmHeader;
-use ibc_client_tendermint_types::misbehaviour::Misbehaviour as TmMisbehaviour;
-
-use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
-use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
-use ibc_proto::Protobuf;
-
 use prost::Message;
+
+use crate::context::{
+    CommonContext, ExecutionContext as TmExecutionContext, ValidationContext as TmValidationContext,
+};
 
 mod misbehaviour;
 mod update_client;
 
 /// Newtype wrapper around the `ClientState` type imported from the `ibc-client-tendermint-types`
-/// crate. This wrapper exists so that we can bypass Rust's orphan rules and implement traits 
+/// crate. This wrapper exists so that we can bypass Rust's orphan rules and implement traits
 /// from `ibc::core::ics02_client` on the `ClientState` type.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
-pub(crate) struct ClientState(ClientStateType);
+pub struct ClientState(ClientStateType);
+
+impl ClientState {
+    pub fn inner(&self) -> &ClientStateType {
+        &self.0
+    }
+}
+
+impl From<ClientStateType> for ClientState {
+    fn from(client_state: ClientStateType) -> Self {
+        Self(client_state)
+    }
+}
 
 impl Protobuf<RawTmClientState> for ClientState {}
 
@@ -121,7 +127,6 @@ impl ClientStateCommon for ClientState {
         proof_upgrade_consensus_state: CommitmentProofBytes,
         root: &CommitmentRoot,
     ) -> Result<(), ClientError> {
-
         // Make sure that the client type is of Tendermint type `ClientState`
         let upgraded_tm_client_state = Self::try_from(upgraded_client_state.clone())?;
 
@@ -274,14 +279,17 @@ where
         }
 
         let latest_consensus_state: TmConsensusState = {
-            let any_latest_consensus_state = match ctx.consensus_state(
-                &ClientConsensusStatePath::new(client_id.clone(), self.0.latest_height.revision_number(), self.0.latest_height.revision_height()),
-            ) {
-                Ok(cs) => cs,
-                // if the client state does not have an associated consensus state for its latest height
-                // then it must be expired
-                Err(_) => return Ok(Status::Expired),
-            };
+            let any_latest_consensus_state =
+                match ctx.consensus_state(&ClientConsensusStatePath::new(
+                    client_id.clone(),
+                    self.0.latest_height.revision_number(),
+                    self.0.latest_height.revision_height(),
+                )) {
+                    Ok(cs) => cs,
+                    // if the client state does not have an associated consensus state for its latest height
+                    // then it must be expired
+                    Err(_) => return Ok(Status::Expired),
+                };
 
             any_latest_consensus_state.try_into()?
         };
@@ -305,7 +313,7 @@ where
 impl<E> ClientStateExecution<E> for ClientState
 where
     E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ibc_client_tendermint_types::client_state::ClientState>,
+    <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
     <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
 {
     fn initialise(
@@ -319,9 +327,13 @@ where
 
         let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
 
-        ctx.store_client_state(ClientStatePath::new(client_id), self.0.clone().into())?;
+        ctx.store_client_state(ClientStatePath::new(client_id), self.clone().into())?;
         ctx.store_consensus_state(
-            ClientConsensusStatePath::new(client_id.clone(), self.0.latest_height.revision_number(), self.0.latest_height.revision_height()),
+            ClientConsensusStatePath::new(
+                client_id.clone(),
+                self.0.latest_height.revision_number(),
+                self.0.latest_height.revision_height(),
+            ),
             tm_consensus_state.into(),
         )?;
         ctx.store_update_time(client_id.clone(), self.latest_height(), host_timestamp)?;
@@ -342,7 +354,11 @@ where
         self.prune_oldest_consensus_state(ctx, client_id)?;
 
         let maybe_existing_consensus_state = {
-            let path_at_header_height = ClientConsensusStatePath::new(client_id.clone(), header_height.revision_number(), header_height.revision_height());
+            let path_at_header_height = ClientConsensusStatePath::new(
+                client_id.clone(),
+                header_height.revision_number(),
+                header_height.revision_height(),
+            );
 
             CommonContext::consensus_state(ctx, &path_at_header_height).ok()
         };
@@ -360,10 +376,17 @@ where
             let new_client_state = self.0.clone().with_header(header)?;
 
             ctx.store_consensus_state(
-                ClientConsensusStatePath::new(client_id.clone(), new_client_state.latest_height.revision_number(), new_client_state.latest_height.revision_height()),
+                ClientConsensusStatePath::new(
+                    client_id.clone(),
+                    new_client_state.latest_height.revision_number(),
+                    new_client_state.latest_height.revision_height(),
+                ),
                 new_consensus_state.into(),
             )?;
-            ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
+            ctx.store_client_state(
+                ClientStatePath::new(client_id),
+                ClientState::from(new_client_state).into(),
+            )?;
             ctx.store_update_time(client_id.clone(), header_height, host_timestamp)?;
             ctx.store_update_height(client_id.clone(), header_height, host_height)?;
         }
@@ -380,7 +403,12 @@ where
     ) -> Result<(), ClientError> {
         let frozen_client_state = self.0.clone().with_frozen_height(Height::min(0));
 
-        ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state.into())?;
+        let wrapped_frozen_client_state = ClientState::from(frozen_client_state);
+
+        ctx.store_client_state(
+            ClientStatePath::new(client_id),
+            wrapped_frozen_client_state.into(),
+        )?;
 
         Ok(())
     }
@@ -438,9 +466,16 @@ where
         let host_timestamp = CommonContext::host_timestamp(ctx)?;
         let host_height = CommonContext::host_height(ctx)?;
 
-        ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
+        ctx.store_client_state(
+            ClientStatePath::new(client_id),
+            ClientState::from(new_client_state).into(),
+        )?;
         ctx.store_consensus_state(
-            ClientConsensusStatePath::new(client_id.clone(), latest_height.revision_number(), latest_height.revision_height()),
+            ClientConsensusStatePath::new(
+                client_id.clone(),
+                latest_height.revision_number(),
+                latest_height.revision_height(),
+            ),
             new_consensus_state.into(),
         )?;
         ctx.store_update_time(client_id.clone(), latest_height, host_timestamp)?;
@@ -454,16 +489,14 @@ where
 mod tests {
     use core::time::Duration;
 
-    use test_log::test;
+    use ibc_client_tendermint_types::{
+        AllowUpdate, ClientState as ClientStateType, ClientStateParams, TrustThreshold,
+    };
+    use ibc_core_client::types::Height;
+    use ibc_core_commitment_types::specs::ProofSpecs;
+    use ibc_core_host::types::identifiers::ChainId;
 
     use super::*;
-    use ibc_core_client_types::Height;
-    use ibc_core_commitment_types::specs::ProofSpecs;
-    use ibc_core_host_types::identifiers::ChainId;
-
-    use ibc_client_tendermint_types::client_state::{AllowUpdate, ClientState as ClientStateType};
-    use ibc_client_tendermint_types::client_state::ClientStateParams;
-    use ibc_client_tendermint_types::trust_threshold::TrustThreshold;
 
     #[test]
     fn client_state_verify_height() {

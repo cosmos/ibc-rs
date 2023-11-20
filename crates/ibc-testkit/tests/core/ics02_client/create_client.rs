@@ -1,5 +1,6 @@
-use ibc::clients::ics07_tendermint::client_type as tm_client_type;
-use ibc::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
+use ibc::clients::tendermint::types::{
+    client_type as tm_client_type, ConsensusState as TmConsensusState,
+};
 use ibc::core::client::context::client_state::ClientStateCommon;
 use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient};
 use ibc::core::client::types::Height;

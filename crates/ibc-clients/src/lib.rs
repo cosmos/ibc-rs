@@ -11,5 +11,8 @@
     rust_2018_idioms
 )]
 
-#[doc(inline)]
-pub use ibc_client_tendermint as tendermint;
+/// Re-exports implementations of ICS-07 Tendermint light client.
+pub mod tendermint {
+    #[doc(inline)]
+    pub use ibc_client_tendermint::*;
+}

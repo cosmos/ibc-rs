@@ -440,17 +440,14 @@ mod tests {
     use core::str::FromStr;
     use core::time::Duration;
 
-    use ibc::core::ics02_client::height::Height;
-    use ibc::core::ics23_commitment::specs::ProofSpecs;
-    use ibc::core::ics24_host::identifier::ChainId;
-    use ibc::core::timestamp::ZERO_DURATION;
+    use ibc_core_client_types::Height;
+    use ibc_core_commitment_types::specs::ProofSpecs;
     use ibc_proto::google::protobuf::Any;
     use ibc_proto::ibc::core::client::v1::Height as RawHeight;
     use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
     use ibc_proto::ics23::ProofSpec as Ics23ProofSpec;
     use ibc_testkit::utils::clients::tendermint::dummy_tendermint_header;
     use tendermint::block::Header;
-    use test_log::test;
 
     use super::*;
     use crate::client_state::{AllowUpdate, ClientState};

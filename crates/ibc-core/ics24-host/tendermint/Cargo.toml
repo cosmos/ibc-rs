@@ -26,7 +26,7 @@ serde           = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
 
 # ibc dependencies
-ibc                       = { workspace = true }
+ibc-client-tendermint     = { workspace = true }
 ibc-core-client-types     = { workspace = true }
 ibc-core-client-context   = { workspace = true }
 ibc-core-connection-types = { workspace = true }
@@ -50,7 +50,7 @@ rstest      = { workspace = true }
 [features]
 default = ["std"]
 std = [
-    "ibc/std",
+    "ibc-client-tendermint/std",
     "ibc-core-client-types/std",
     "ibc-core-client-context/std",
     "ibc-core-connection-types/std",
@@ -62,7 +62,7 @@ std = [
 ]
 serde = [
     "dep:serde",
-    "ibc/serde",
+    "ibc-client-tendermint/serde",
     "ibc-core-client-types/serde",
     "ibc-core-client-context/serde",
     "ibc-core-connection-types/serde",
@@ -74,7 +74,7 @@ serde = [
 ]
 borsh = [
     "dep:borsh",
-    "ibc/borsh",
+    "ibc-client-tendermint/borsh",
     "ibc-core-client-types/borsh",
     "ibc-core-connection-types/borsh",
     "ibc-core-commitment-types/borsh",
@@ -85,6 +85,7 @@ borsh = [
 parity-scale-codec = [
     "dep:parity-scale-codec",
     "dep:scale-info",
+    "ibc-client-tendermint/parity-scale-codec",
     "ibc-core-client-types/parity-scale-codec",
     "ibc-core-connection-types/parity-scale-codec",
     "ibc-core-commitment-types/parity-scale-codec",

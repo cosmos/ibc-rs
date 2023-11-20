@@ -3,7 +3,7 @@
 use core::ops::Add;
 use core::time::Duration;
 
-use ibc::clients::ics07_tendermint::client_state::ClientState as TmClientState;
+use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc::core::channel::types::error::{ChannelError, PacketError};
@@ -54,7 +54,7 @@ impl ValidationContext for MockContext {
 
     fn decode_client_state(&self, client_state: Any) -> Result<Self::AnyClientState, ContextError> {
         if let Ok(client_state) = TmClientState::try_from(client_state.clone()) {
-            client_state.validate().map_err(ClientError::from)?;
+            client_state.inner().validate().map_err(ClientError::from)?;
             Ok(client_state.into())
         } else if let Ok(client_state) = MockClientState::try_from(client_state.clone()) {
             Ok(client_state.into())

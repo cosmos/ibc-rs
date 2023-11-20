@@ -35,6 +35,7 @@ sub-crates that can be used independently or together.
 |[ibc](crates/ibc)                         | Re-exports all the implemented data structures and IBC core, clients and applications modules. |
 |[ibc-data-types](crates/ibc-data-types)   | Re-exports all the IBC data types that are shared across different IBC implementations. |
 |[ibc-core](crate/ibc)                     | Contains data structures and implementations of all the IBC core specifications. |
+|[ibc-client](crates/ibc-client)           | Contains data structures and implementations of various IBC light clients. |
 |[ibc-apps](crates/ibc-apps)               | Contains data structures and implementations of various IBC applications. |
 |[ibc-testkit](crates/ibc-testkit)         | Provides testing toolkit to aid `ibc-rs` and host chains in writing integration tests. |
 |[ibc-query](crates/ibc-query)             | Contains utility traits and implementations for querying states of an integrated IBC module. |
