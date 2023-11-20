@@ -43,7 +43,9 @@ parity-scale-codec = { workspace = true, optional = true }
 scale-info         = { workspace = true, optional = true }
 
 [dev-dependencies]
-ibc-testkit = { workspace = true }
+ibc-testkit    = { workspace = true }
+serde_json     = { workspace = true }
+tendermint-rpc = { workspace = true }
 
 [features]
 default = ["std"]
@@ -51,6 +53,8 @@ std = [
     "bytes/std",
     "displaydoc/std",
     "prost/std",
+    "serde/std",
+    "serde_json/std",
     "ibc-core-client-context/std",
     "ibc-core-client-types/std",
     "ibc-core-commitment-types/std",

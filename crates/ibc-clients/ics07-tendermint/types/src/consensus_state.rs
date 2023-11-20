@@ -172,15 +172,14 @@ impl From<Header> for ConsensusState {
 #[cfg(all(test, feature = "serde"))]
 mod tests {
     use tendermint_rpc::endpoint::abci_query::AbciQuery;
-    use test_log::test;
 
-    use crate::serializers::tests::test_serialization_roundtrip;
+    use crate::serde_tests::test_serialization_roundtrip;
 
     #[test]
     fn serialization_roundtrip_no_proof() {
         let json_data = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../ibc-testkit/tests/data/json/consensus_state.json"
+            "/../../../ibc-testkit/tests/data/json/consensus_state.json"
         ));
         test_serialization_roundtrip::<AbciQuery>(json_data);
     }
@@ -189,7 +188,7 @@ mod tests {
     fn serialization_roundtrip_with_proof() {
         let json_data = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../ibc-testkit/tests/data/json/consensus_state_proof.json"
+            "/../../../ibc-testkit/tests/data/json/consensus_state_proof.json"
         ));
         test_serialization_roundtrip::<AbciQuery>(json_data);
     }
