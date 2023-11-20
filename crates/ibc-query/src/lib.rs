@@ -1,8 +1,8 @@
 //! Contains a set of utility traits and implementations for querying the state
 //! of an `ibc-rs` enabled chain, including implementation of essential IBC
-//! query methods and gRPC query services defined in `ibc-proto-rs`. Therefore,
-//! some ready-to-use Query structs for each layer of the client, connection,
-//! and channel have been implemented and exposed by this crate.
+//! query methods and gRPC query services defined in `ibc-proto` crate.
+//! Therefore, some ready-to-use Query structs for each layer of the client,
+//! connection, and channel have been implemented and exposed by this crate.
 //!
 //! The provided structs includes blanket implementation of their corresponding
 //! gRPC service traits, if the host implements the following _context_ traits:

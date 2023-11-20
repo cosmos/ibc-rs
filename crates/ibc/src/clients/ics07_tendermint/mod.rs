@@ -1,4 +1,4 @@
-//! ICS 07: Tendermint Client implements a client verification algorithm for blockchains which use
+//! ICS-07: Tendermint Client implements a client verification algorithm for blockchains which use
 //! the Tendermint consensus algorithm.
 
 use core::str::FromStr;

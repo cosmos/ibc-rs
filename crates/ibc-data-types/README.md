@@ -7,7 +7,7 @@ protocol facilitating communication between independent sovereign blockchains
 and The IBC data structures within this crate abstract various IBC
 specifications, offering a convenient means to encode and decode IBC messages to
 and from proto types exposed by
-[`ibc-proto-rs`](https://github.com/cosmos/ibc-proto-rs). Additionally, it
+[`ibc-proto`](https://github.com/cosmos/ibc-proto-rs) crate. Additionally, it
 supports parsing events to and from ABCI event types.
 
 ## Sub-Crates

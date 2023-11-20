@@ -58,7 +58,7 @@ in a number of ways. See below for more details.
 
 ### Module system: no support for untrusted modules
 
-ICS 24 (Host Requirements) gives the [following
+ICS-24 (Host Requirements) gives the [following
 requirement](https://github.com/cosmos/ibc/blob/master/spec/core/ics-024-host-requirements/README.md#module-system)
 about the module system that the host state machine must support:
 
@@ -73,7 +73,7 @@ developers, or fully vetted by them.
 
 ### Port system: No object capability system
 
-ICS 5 (Port Allocation) requires the host system to support either
+ICS-05 (Port Allocation) requires the host system to support either
 object-capability reference or source authentication for modules.
 
 > In the former object-capability case, the IBC handler must have the ability to
@@ -92,7 +92,7 @@ For more background on this, see [this issue](https://github.com/informalsystems
 
 ### Port system: transferring and releasing a port
 
-ICS 5 (Port Allocation) requires the IBC handler to permit [transferring
+ICS-05 (Port Allocation) requires the IBC handler to permit [transferring
 ownership of a
 port](https://github.com/cosmos/ibc/tree/master/spec/core/ics-005-port-allocation#transferring-ownership-of-a-port)
 and [releasing a

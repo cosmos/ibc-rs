@@ -1,4 +1,4 @@
-//! ICS 03: Connection Semantics implementation to process connection open
+//! ICS-03: Connection Semantics implementation to process connection open
 //! handshake. Exports data structures and implementations of IBC core
 //! connection module.
 #![no_std]
@@ -19,7 +19,7 @@ extern crate std;
 pub mod delay;
 pub mod handler;
 
-/// Re-exports ICS-03 connection data structures from the `ibc-core-connection-types` crate
+/// Re-exports ICS-03 data structures from the `ibc-core-connection-types` crate
 pub mod types {
     #[doc(inline)]
     pub use ibc_core_connection_types::*;

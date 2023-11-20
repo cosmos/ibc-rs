@@ -1,4 +1,4 @@
-//! ICS 23: Commitment implementation of a cryptographic scheme that verifies
+//! ICS-23: Commitment implementation of a cryptographic scheme that verifies
 //! state transitions between chains.
 #![no_std]
 #![forbid(unsafe_code)]
@@ -23,7 +23,7 @@ pub mod specs;
 #[cfg(feature = "serde")]
 pub mod serializer;
 
-/// Re-exports commitment proto types from the `ibc-proto-rs` crate, which are
+/// Re-exports ICS-23 proto types from the `ibc-proto` crate, which are
 /// used in the implementation of dependent IBC crates.
 pub mod proto {
     pub use ibc_proto::ibc::core::commitment::*;

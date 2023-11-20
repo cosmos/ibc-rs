@@ -20,7 +20,7 @@ pub mod error;
 pub mod events;
 pub mod msgs;
 
-/// Re-exports necessary proto types from the `ibc-proto-rs` crate, which are
+/// Re-exports necessary proto types from the `ibc-proto` crate, which are
 /// instrumental in the implementation of the higher-level `ibc-core-handler`
 /// crate.
 pub mod proto {

@@ -1,4 +1,4 @@
-//! Implementation of the IBC [fungible token transfer](https://github.com/cosmos/ibc/blob/main/spec/app/ics-020-fungible-token-transfer/README.md) (ICS-20) data structures.
+//! Implementation of the Client Semantics (ICS-02) data structures.
 #![no_std]
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]
@@ -23,7 +23,7 @@ mod status;
 pub use height::*;
 pub use status::*;
 
-/// Re-exports pertinent ibc proto types from the `ibc-proto-rs` crate for added convenience
+/// Re-exports ICS-02 proto types from the `ibc-proto` crate for added convenience.
 pub mod proto {
     pub use ibc_proto::google::protobuf::Any;
     pub use ibc_proto::ibc::core::client::*;

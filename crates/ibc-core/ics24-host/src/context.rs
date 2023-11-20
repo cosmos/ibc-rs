@@ -95,13 +95,13 @@ pub trait ValidationContext {
     /// Returns a counter on how many connections have been created thus far.
     fn connection_counter(&self) -> Result<u64, ContextError>;
 
-    /// Function required by ICS 03. Returns the list of all possible versions that the connection
+    /// Function required by ICS-03. Returns the list of all possible versions that the connection
     /// handshake protocol supports.
     fn get_compatible_versions(&self) -> Vec<ConnectionVersion> {
         get_compatible_versions()
     }
 
-    /// Function required by ICS 03. Returns one version out of the supplied list of versions, which the
+    /// Function required by ICS-03. Returns one version out of the supplied list of versions, which the
     /// connection handshake protocol prefers.
     fn pick_version(
         &self,

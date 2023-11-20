@@ -1,5 +1,5 @@
-//! ICS 02: Client Semantics implementation for verifying remote IBC-enabled chains.
-//! Exports data structures and implementations of IBC core client module.
+//! ICS-02: Client Semantics implementation for verifying remote IBC-enabled chains,
+//! along with re-exporting data structures from `ibc-core-client-types` crate.
 #![no_std]
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]
