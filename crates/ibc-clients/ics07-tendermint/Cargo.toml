@@ -18,6 +18,7 @@ all-features = true
 [dependencies]
 # external dependencies
 prost = { workspace = true }
+serde = { workspace = true, optional = true }
 
 # ibc dependencies
 ibc-client-tendermint-types      = { workspace = true }
@@ -42,6 +43,7 @@ std = [
     "ibc-primitives/std",
 ]
 serde = [
+    "dep:serde",
     "ibc-client-tendermint-types/serde",
     "ibc-core-client/serde",
     "ibc-core-commitment-types/serde",
