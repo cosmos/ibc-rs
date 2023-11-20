@@ -9,7 +9,7 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "transfer", "ics20", "types"]
 readme       = "./../../README.md"
 description  = """
-    Containts the domain types and data structures necessary for implementing Tendermint-based
+    Contains the domain types and data structures necessary for implementing Tendermint-based
     IBC clients.
 """
 
@@ -31,7 +31,7 @@ ibc-core-commitment-types = { workspace = true }
 ibc-core-handler-types    = { workspace = true }
 ibc-core-host-types       = { workspace = true }
 ibc-primitives            = { workspace = true }
-ibc-proto                 = { workspace = true, features = ["server"] }
+ibc-proto                 = { workspace = true }
 
 # cosmos dependencies
 tendermint                       = { workspace = true }
