@@ -17,8 +17,8 @@ use ibc::core::host::types::identifiers::{ChainId, ClientId, ClientType};
 use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::{downcast, Timestamp};
+use ibc::primitives::proto::Any;
 use ibc::proto::tendermint::v1::{ClientState as RawTmClientState, Fraction};
-use ibc::proto::Any;
 use ibc_testkit::hosts::block::{HostBlock, HostType};
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
     client_type as mock_client_type, MockClientState,

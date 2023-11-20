@@ -46,6 +46,11 @@ extern crate alloc;
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
+/// Re-exports primitive types and traits from the `ibc-primitives` crate.
+pub mod primitives {
+    pub use ibc_primitives::*;
+}
+
 pub mod clients;
 
 /// Re-exports implementations of all the IBC core (TAO) modules.
@@ -62,7 +67,5 @@ pub mod apps {
 
 /// Re-exports pertinent ibc proto types from the `ibc-proto` crate for added convenience
 pub mod proto {
-    pub use ibc_proto::google::protobuf::Any;
     pub use ibc_proto::ibc::lightclients::tendermint;
-    pub use ibc_proto::Protobuf;
 }

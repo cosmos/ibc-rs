@@ -33,6 +33,7 @@ time = { workspace = true, default-features = false }
 ibc-apps = { workspace = true }
 ibc-core = { workspace = true }
 ibc-derive = { workspace = true }
+ibc-primitives = { workspace = true }
 ibc-proto = { workspace = true }
 
 # cosmos dependencies
@@ -55,6 +56,7 @@ tendermint-rpc = {  workspace = true, features = ["http-client", "websocket-clie
 [features]
 default = ["std"]
 std = [
+    "ibc-primitives/std",
     "ibc-proto/std",
     "ibc-core/std",
     "ibc-apps/std",
@@ -72,6 +74,7 @@ borsh = [
     "dep:borsh",
     "ibc-core/borsh",
     "ibc-apps/borsh",
+    "ibc-primitives/borsh",
     "ibc-proto/borsh"
 ]
 serde = [
@@ -79,11 +82,13 @@ serde = [
     "serde_json", 
     "ibc-core/serde",
     "ibc-apps/serde",
+    "ibc-primitives/serde",
     "ibc-proto/serde", 
 ]
 schema = [
     "ibc-core/schema",
     "ibc-apps/schema",
+    "ibc-primitives/schema",
     "ibc-proto/json-schema", 
     "serde", 
     "std"
@@ -93,5 +98,6 @@ parity-scale-codec = [
     "dep:scale-info",
     "ibc-core/parity-scale-codec", 
     "ibc-apps/parity-scale-codec",
+    "ibc-primitives/parity-scale-codec",
     "ibc-proto/parity-scale-codec"
 ]

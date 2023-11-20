@@ -31,7 +31,5 @@ pub use version::Version;
 
 /// Re-exports ICS-04 proto types from the `ibc-proto` crate
 pub mod proto {
-    pub use ibc_proto::google::protobuf::Any;
     pub use ibc_proto::ibc::core::channel::*;
-    pub use ibc_proto::Protobuf;
 }

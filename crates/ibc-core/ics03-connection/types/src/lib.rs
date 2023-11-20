@@ -25,7 +25,5 @@ pub mod version;
 /// Re-exports ICS-03 proto types from the `ibc-proto` crate for added
 /// convenience
 pub mod proto {
-    pub use ibc_proto::google::protobuf::Any;
     pub use ibc_proto::ibc::core::connection::*;
-    pub use ibc_proto::Protobuf;
 }

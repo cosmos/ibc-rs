@@ -15,7 +15,7 @@ use ibc::core::host::types::identifiers::{ClientId, ClientType};
 use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath, Path};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
-use ibc::proto::{Any, Protobuf};
+use ibc::primitives::proto::{Any, Protobuf};
 
 use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;

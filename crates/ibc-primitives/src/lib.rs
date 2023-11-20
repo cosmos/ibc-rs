@@ -24,3 +24,9 @@ pub use traits::*;
 
 mod types;
 pub use types::*;
+
+/// Re-export of common proto types from the `ibc-proto` crate.
+pub mod proto {
+    pub use ibc_proto::google::protobuf::Any;
+    pub use ibc_proto::Protobuf;
+}

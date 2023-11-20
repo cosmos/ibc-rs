@@ -1,5 +1,5 @@
 use ibc::core::client::types::proto::v1::MsgUpdateClient;
-use ibc::proto::Any;
+use ibc::primitives::proto::Any;
 
 use crate::utils::dummies::clients::tendermint::dummy_ics07_header;
 use crate::utils::dummies::core::signer::dummy_bech32_account;

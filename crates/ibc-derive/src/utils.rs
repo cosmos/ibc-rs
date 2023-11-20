@@ -58,7 +58,7 @@ impl Imports {
     }
 
     pub fn Any() -> TokenStream {
-        quote! {ibc::core::client::types::proto::Any}
+        quote! {ibc::primitives::proto::Any}
     }
 
     pub fn Timestamp() -> TokenStream {

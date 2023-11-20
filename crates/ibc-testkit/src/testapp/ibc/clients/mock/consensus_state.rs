@@ -3,7 +3,7 @@ use ibc::core::client::types::error::ClientError;
 use ibc::core::commitment_types::commitment::CommitmentRoot;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
-use ibc::proto::{Any, Protobuf};
+use ibc::primitives::proto::{Any, Protobuf};
 
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::mock::proto::{

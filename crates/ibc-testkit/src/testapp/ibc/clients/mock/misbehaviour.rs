@@ -2,7 +2,7 @@ use bytes::Buf;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::primitives::prelude::*;
-use ibc::proto::{Any, Protobuf};
+use ibc::primitives::proto::{Any, Protobuf};
 
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::mock::proto::Misbehaviour as RawMisbehaviour;

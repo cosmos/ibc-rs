@@ -14,13 +14,13 @@ use ibc_core_connection_types::version::{
 use ibc_core_connection_types::ConnectionEnd;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::IbcEvent;
-use ibc_core_handler_types::proto::Any;
 use ibc_core_host_types::identifiers::{ClientId, ConnectionId, Sequence};
 use ibc_core_host_types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
     ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc_primitives::prelude::*;
+use ibc_primitives::proto::Any;
 use ibc_primitives::{Signer, Timestamp};
 
 use crate::utils::calculate_block_delay;

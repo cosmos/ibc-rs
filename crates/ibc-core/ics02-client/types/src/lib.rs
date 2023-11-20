@@ -25,7 +25,5 @@ pub use status::*;
 
 /// Re-exports ICS-02 proto types from the `ibc-proto` crate for added convenience.
 pub mod proto {
-    pub use ibc_proto::google::protobuf::Any;
     pub use ibc_proto::ibc::core::client::*;
-    pub use ibc_proto::Protobuf;
 }

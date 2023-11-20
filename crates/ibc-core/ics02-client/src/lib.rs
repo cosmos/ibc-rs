@@ -17,12 +17,14 @@ extern crate std;
 
 pub mod handler;
 
-/// Re-exports
+/// Re-exports ICS-02 traits from `ibc-core-client-context` for custom IBC
+/// client implementation.
 pub mod context {
     #[doc(inline)]
     pub use ibc_core_client_context::*;
 }
 
+/// Re-exports ICS-02 data structures from the `ibc-core-client-types` crate.
 pub mod types {
     #[doc(inline)]
     pub use ibc_core_client_types::*;

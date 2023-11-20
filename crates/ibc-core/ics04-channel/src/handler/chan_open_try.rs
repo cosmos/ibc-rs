@@ -4,7 +4,6 @@ use ibc_core_channel_types::channel::{ChannelEnd, Counterparty, State as Channel
 use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::events::OpenTry;
 use ibc_core_channel_types::msgs::MsgChannelOpenTry;
-use ibc_core_channel_types::proto::Protobuf;
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::types::error::ClientError;
@@ -18,6 +17,7 @@ use ibc_core_host::types::path::{
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
+use ibc_primitives::proto::Protobuf;
 
 pub fn chan_open_try_validate<ValCtx>(
     ctx_b: &ValCtx,

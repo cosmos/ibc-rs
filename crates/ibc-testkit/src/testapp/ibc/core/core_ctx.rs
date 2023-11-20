@@ -23,7 +23,7 @@ use ibc::core::host::types::path::{
 use ibc::core::host::{ExecutionContext, ValidationContext};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::{Signer, Timestamp};
-use ibc::proto::Any;
+use ibc::primitives::proto::Any;
 
 use super::types::MockContext;
 use crate::testapp::ibc::clients::mock::client_state::MockClientState;

@@ -2,7 +2,6 @@ use ibc_core_channel_types::channel::{ChannelEnd, Counterparty, Order, State};
 use ibc_core_channel_types::commitment::compute_packet_commitment;
 use ibc_core_channel_types::error::{ChannelError, PacketError};
 use ibc_core_channel_types::msgs::MsgTimeoutOnClose;
-use ibc_core_channel_types::proto::Protobuf;
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::types::error::ClientError;
@@ -13,6 +12,7 @@ use ibc_core_host::types::path::{
 };
 use ibc_core_host::ValidationContext;
 use ibc_primitives::prelude::*;
+use ibc_primitives::proto::Protobuf;
 use prost::Message;
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), ContextError>
