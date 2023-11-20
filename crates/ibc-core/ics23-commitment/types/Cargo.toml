@@ -41,6 +41,7 @@ std = [
     "displaydoc/std",
     "prost/std",
     "serde/std",
+    "subtle-encoding/std",
     "ibc-primitives/std",
     "ibc-proto/std",
     "ics23/std",

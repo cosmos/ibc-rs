@@ -51,6 +51,7 @@ default = ["std"]
 std = [
     "displaydoc/std",
     "prost/std",
+    "serde/std",
     "subtle-encoding/std",
     "ibc-core-client-types/std",
     "ibc-core-connection-types/std",
