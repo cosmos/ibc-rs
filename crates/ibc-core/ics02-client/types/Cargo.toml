@@ -45,6 +45,10 @@ ibc-testkit = { workspace = true }
 [features]
 default = ["std"]
 std = [
+    "displaydoc/std",
+    "prost/std",
+    "serde/std",
+    "subtle-encoding/std",
     "ibc-core-commitment-types/std",
     "ibc-core-host-types/std",
     "ibc-primitives/std",
