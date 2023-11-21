@@ -5,15 +5,31 @@ on:
       - .github/workflows/rust.yml
       - Cargo.toml
       - ci/**
-      - crates/**
+      - ibc/**
+      - ibc-core/**
+      - ibc-apps/**
+      - ibc-data-types/**
+      - ibc-clients/**
+      - ibc-primitives/**
+      - ibc-query/**
+      - ibc-testkit/**
+      - ibc-derive/**
   push:
     branches: main
     paths:
       - .github/workflows/rust.yml
       - Cargo.toml
       - ci/**
-      - crates/**
-
+      - ibc/**
+      - ibc-core/**
+      - ibc-apps/**
+      - ibc-data-types/**
+      - ibc-clients/**
+      - ibc-primitives/**
+      - ibc-query/**
+      - ibc-testkit/**
+      - ibc-derive/**
+      
 env:
   CARGO_INCREMENTAL: 0
   CARGO_PROFILE_DEV_DEBUG: 1

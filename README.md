@@ -30,16 +30,16 @@ sub-crates that can be used independently or together.
 
 ## Project Structure
 
-| <div style="width:100px">Crate</div>      | Description |
-| ---------------------------------------- | ----------- |
-|[ibc](crates/ibc)                         | Re-exports all the data structures and on-chain logic of various IBC core, clients and applications. |
-|[ibc-data-types](crates/ibc-data-types)   | Re-exports all the IBC data types that are shared across different IBC implementations. |
-|[ibc-core](crate/ibc)                     | Contains data structures and implementations of all the IBC core specifications. |
-|[ibc-client](crates/ibc-client)           | Contains data structures and implementations of various IBC light clients. |
-|[ibc-apps](crates/ibc-apps)               | Contains data structures and implementations of various IBC applications. |
-|[ibc-testkit](crates/ibc-testkit)         | Provides testing toolkit to aid `ibc-rs` and host chains in writing integration tests. |
-|[ibc-query](crates/ibc-query)             | Contains utility traits and implementations for querying states of an integrated IBC module. |
-|[ibc-derive](crates/ibc-derive)           | Derive macros for `ClientState` and `ConsensusState` traits, reducing boilerplate. |
+| <div style="width:100px">Crate</div>  | Description |
+| ------------------------------------- | ----------- |
+|[ibc](ibc)                             | Re-exports all the data structures and on-chain logic of various IBC core, clients and applications. |
+|[ibc-data-types](ibc-data-types)       | Re-exports all the IBC data types that are shared across different IBC implementations. |
+|[ibc-core](ibc)                        | Contains data structures and implementations of all the IBC core specifications. |
+|[ibc-client](ibc-client)               | Contains data structures and implementations of various IBC light clients. |
+|[ibc-apps](ibc-apps)                   | Contains data structures and implementations of various IBC applications. |
+|[ibc-testkit](ibc-testkit)             | Provides testing toolkit to aid `ibc-rs` and host chains in writing integration tests. |
+|[ibc-query](ibc-query)                 | Contains utility traits and implementations for querying states of an integrated IBC module. |
+|[ibc-derive](ibc-derive)               | Derive macros for `ClientState` and `ConsensusState` traits, reducing boilerplate. |
 
 ## Contributing
 
