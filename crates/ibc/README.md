@@ -37,7 +37,7 @@ community contributions!
 
 ## License
 
-Copyright © 2021 Informal Systems Inc. and ibc-rs authors.
+Copyright © 2021 Informal Systems Inc. and `ibc-rs` authors.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 the files in this repository except in compliance with the License. You may

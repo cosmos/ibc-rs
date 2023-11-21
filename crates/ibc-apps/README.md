@@ -1,7 +1,7 @@
 # IBC Applications
 
 This crate is a top-level library that re-exports Inter-Blockchain Communication
-(IBC) applications implemented. It serves as a centralized hub, simplifying the
+(IBC) applications implemented. It serves as a meta-crate, simplifying the
 process of importing and integrating various IBC applications into your
 blockchain. IBC is a distributed protocol that enables communication between
 distinct sovereign blockchains. IBC applications abstract away the core

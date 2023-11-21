@@ -1,7 +1,7 @@
 # IBC Core
 
 This crate is top-level library re-exports implemented Inter-Blockchain
-Communication (IBC) core modules serves as a centralized hub, simplifying the
+Communication (IBC) core modules serves as a meta-crate, simplifying the
 process of importing and integrating various IBC core modules into your
 blockchain. IBC is a distributed protocol that enables communication between
 distinct sovereign blockchains and IBC core is the part of the protocol that
@@ -111,7 +111,7 @@ We currently force applications to process the packets as part of
 `onRecvPacket()`. If you need asynchronous acknowledgements for your
 application, please open an issue.
 
-Note that this still makes us 100% compatible with ibc-go.
+Note that this still makes us 100% compatible with `ibc-go`.
 
 ## Contributing
 

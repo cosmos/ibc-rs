@@ -1,7 +1,7 @@
 # IBC Clients
 
 This crate is top-level library re-exports implemented Inter-Blockchain
-Communication (IBC) light clients serves as a centralized hub, simplifying the
+Communication (IBC) light clients serves as a meta-crate, simplifying the
 process of importing and integrating various IBC clients into your blockchain.
 IBC is a distributed protocol that enables communication between distinct
 sovereign blockchains and IBC light clients track the consensus states and proof
@@ -28,7 +28,7 @@ IBC light clients:
 
 ## Third-party Clients
 
-Here, we list IBC third-party clients that are compatible with ibc-rs. You
+Here, we list IBC third-party clients that are compatible with `ibc-rs`. You
 should always audit the implementation of any third-party crate. If you have a
 client that you'd like to be added to this list, please open a PR!
 

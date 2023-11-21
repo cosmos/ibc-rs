@@ -10,7 +10,7 @@ keywords     = ["blockchain", "cosmos", "ibc", "transfer", "ics20"]
 readme       = "./../README.md"
 description  = """
     Maintained by `ibc-rs`, contains the implementation of the ICS-20 Fungible Token Transfer
-    application logc and re-exports essential data structures and domain types from
+    application logic and re-exports essential data structures and domain types from
     `ibc-app-transfer-types` crate.
 """
 

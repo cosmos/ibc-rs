@@ -3,7 +3,7 @@ name = "ibc-derive"
 version = "0.3.0"
 license = "Apache-2.0"
 readme = "README.md"
-description = "Maintained by `ibc-rs`, Macros implementation of #[derive(ClientState)] and #[derive(ConsensusState)]"
+description = "Maintained by `ibc-rs`, macros implementations of #[derive(ClientState)] and #[derive(ConsensusState)]"
 repository   = "https://github.com/cosmos/ibc-rs"
 edition = "2021"
 

@@ -32,7 +32,7 @@ sub-crates that can be used independently or together.
 
 | <div style="width:100px">Crate</div>      | Description |
 | ---------------------------------------- | ----------- |
-|[ibc](crates/ibc)                         | Re-exports all the implemented data structures and IBC core, clients and applications modules. |
+|[ibc](crates/ibc)                         | Re-exports all the data structures and on-chain logic of various IBC core, clients and applications. |
 |[ibc-data-types](crates/ibc-data-types)   | Re-exports all the IBC data types that are shared across different IBC implementations. |
 |[ibc-core](crate/ibc)                     | Contains data structures and implementations of all the IBC core specifications. |
 |[ibc-client](crates/ibc-client)           | Contains data structures and implementations of various IBC light clients. |
