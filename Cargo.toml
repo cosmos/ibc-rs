@@ -24,10 +24,10 @@ members = [
     "ibc-core/ics25-handler/types",
     "ibc-core/ics26-routing",
     "ibc-core/ics26-routing/types",
-    "ibc-apps/ics20-transfer",
-    "ibc-apps/ics20-transfer/types",
     "ibc-clients/ics07-tendermint",
     "ibc-clients/ics07-tendermint/types",
+    "ibc-apps/ics20-transfer",
+    "ibc-apps/ics20-transfer/types",
 ]
 exclude = [
     "ci/cw-check",
@@ -45,27 +45,20 @@ authors      = ["Informal Systems <hello@informal.systems>"]
 
 [workspace.dependencies]
 # external dependencies
-borsh               = {version = "0.10", default-features = false }
+borsh               = { version = "0.10", default-features = false }
 bytes               = { version = "1.5.0", default-features = false }
 displaydoc          = { version = "0.2", default-features = false }
 derive_more         = { version = "0.99.17", default-features = false, features = ["from", "into", "display", "try_into"] }
-env_logger          = "0.10.0"
 num-traits          = { version = "0.2.17", default-features = false }
-parking_lot         = { version = "0.12.1", default-features = false }
 primitive-types     = { version = "0.12.2", default-features = false, features = ["serde_no_std"] }
 prost               = { version = "0.12", default-features = false }
 rstest              = "0.18.2"
 schemars            = { version = "0.8.15" }
 sha2                = { version = "0.10.8", default-features = false }
 serde               = { version = "1.0", default-features = false }
-serde_derive        = { version = "1.0", default-features = false }
 serde_json          = { package = "serde-json-wasm", version = "1.0.0" , default-features = false }
 subtle-encoding     = { version = "0.5", default-features = false }
-test-log            = { version = "0.2.13", features = ["trace"] }
 time                = { version = ">=0.3.0, <0.3.31", default-features = false }
-tracing             = { version = "0.1.40", default-features = false }
-tracing-subscriber  = { version = "0.3.17", features = ["fmt", "env-filter", "json"] }
-typed-builder       = { version = "0.18.0" }
 
 # ibc dependencies
 ibc                 = { version = "0.47.0", path = "./ibc", default-features = false }

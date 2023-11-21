@@ -27,3 +27,14 @@ std = [
 serde = [
     "ibc-client-tendermint/serde",
 ]
+schema = [
+    "ibc-client-tendermint/schema",
+    "serde",
+    "std"
+]
+borsh = [
+    "ibc-client-tendermint/borsh",
+]
+parity-scale-codec = [
+    "ibc-client-tendermint/parity-scale-codec",
+]

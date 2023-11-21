@@ -26,7 +26,6 @@ ibc-core-client-context   = { workspace = true }
 ibc-core-commitment-types = { workspace = true }
 ibc-core-host             = { workspace = true }
 ibc-core-handler-types    = { workspace = true }
-ibc-derive                = { workspace = true }
 ibc-primitives            = { workspace = true }
 
 [features]

@@ -5,7 +5,7 @@ use ibc::core::host::types::identifiers::PortId;
 use ibc::core::primitives::prelude::*;
 use ibc::core::router::module::Module;
 use ibc::core::router::types::module::ModuleId;
-use ibc_app_transfer::types::MODULE_ID_STR;
+use ibc::apps::transfer::types::MODULE_ID_STR;
 
 use crate::testapp::ibc::applications::transfer::types::DummyTransferModule;
 

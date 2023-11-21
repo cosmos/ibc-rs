@@ -54,12 +54,14 @@ schema = [
 ]
 borsh = [
     "ibc-core-client/borsh",
+    "ibc-core-connection-types/borsh",
     "ibc-core-host/borsh",
     "ibc-core-handler-types/borsh",
     "ibc-primitives/borsh",
 ]
 parity-scale-codec = [
     "ibc-core-client/parity-scale-codec",
+    "ibc-core-connection-types/parity-scale-codec",
     "ibc-core-host/parity-scale-codec",
     "ibc-core-handler-types/parity-scale-codec",
     "ibc-primitives/parity-scale-codec",

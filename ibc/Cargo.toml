@@ -19,88 +19,44 @@ description  = """
 all-features = true
 
 [dependencies]
-# external dependencies
-borsh = { workspace = true, optional = true }
-bytes = { workspace = true }
-derive_more = { workspace = true }
-displaydoc = { workspace = true }
-prost = { workspace = true }
-serde = { workspace = true, optional = true }
-serde_json =  { workspace = true, optional = true}
-subtle-encoding = { workspace = true, default-features = false }
-sha2 = { workspace = true, default-features = false }
-time = { workspace = true, default-features = false }
-
 # ibc dependencies
-ibc-apps = { workspace = true }
-ibc-clients = { workspace = true }
-ibc-core = { workspace = true }
-ibc-derive = { workspace = true }
+ibc-apps       = { workspace = true }
+ibc-clients    = { workspace = true }
+ibc-core       = { workspace = true }
+ibc-derive     = { workspace = true }
 ibc-primitives = { workspace = true }
-ibc-proto = { workspace = true }
-
-# cosmos dependencies
-tendermint = { workspace = true }
-tendermint-proto = { workspace = true }
-tendermint-light-client-verifier = { workspace = true, features = ["rust-crypto"] }
-
-## parity dependencies
-parity-scale-codec = { workspace = true , optional = true }
-scale-info = { workspace = true , optional = true }
-
-[dev-dependencies]
-ibc-testkit = { workspace = true, features = ["serde"] }
-env_logger = { workspace = true }
-rstest = { workspace = true }
-tracing-subscriber = { workspace = true }
-test-log = { workspace = true }
-tendermint-rpc = {  workspace = true, features = ["http-client", "websocket-client"] }
 
 [features]
 default = ["std"]
 std = [
-    "ibc-primitives/std",
-    "ibc-proto/std",
-    "ibc-core/std",
     "ibc-apps/std",
-    "serde/std",
-    "prost/std",
-    "bytes/std",
-    "subtle-encoding/std",
-    "serde_json/std",
-    "sha2/std",
-    "displaydoc/std",
-    "tendermint/clock",
-    "tendermint/std",
+    "ibc-clients/std",
+    "ibc-core/std",
+    "ibc-primitives/std",
 ]
 borsh = [
-    "dep:borsh",
-    "ibc-core/borsh",
     "ibc-apps/borsh",
+    "ibc-clients/borsh",
+    "ibc-core/borsh",
     "ibc-primitives/borsh",
-    "ibc-proto/borsh"
 ]
 serde = [
-    "dep:serde", 
-    "serde_json", 
-    "ibc-core/serde",
     "ibc-apps/serde",
+    "ibc-clients/serde",
+    "ibc-core/serde",
     "ibc-primitives/serde",
-    "ibc-proto/serde", 
 ]
 schema = [
-    "ibc-core/schema",
     "ibc-apps/schema",
+    "ibc-clients/schema",
+    "ibc-core/schema",
     "ibc-primitives/schema",
-    "ibc-proto/json-schema", 
     "serde", 
     "std"
 ]
 parity-scale-codec = [
-    "dep:parity-scale-codec", 
-    "dep:scale-info",
-    "ibc-core/parity-scale-codec", 
     "ibc-apps/parity-scale-codec",
+    "ibc-clients/parity-scale-codec",
+    "ibc-core/parity-scale-codec",
     "ibc-primitives/parity-scale-codec",
-    "ibc-proto/parity-scale-codec"
 ]

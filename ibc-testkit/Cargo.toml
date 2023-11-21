@@ -20,43 +20,58 @@ description  = """
 bytes             = { workspace = true }
 derive_more       = { workspace = true }
 displaydoc        = { workspace = true }
-parking_lot       = { workspace = true }
+parking_lot       = { version = "0.12.1", default-features = false }
 primitive-types   = { workspace = true }
 prost             = { workspace = true }
 serde             = { workspace = true, optional = true }
 serde_json        = { workspace = true, optional = true }
 subtle-encoding   = { workspace = true }
-tracing           = { workspace = true }
-typed-builder     = { workspace = true }
+tracing           = { version = "0.1.40", default-features = false }
+typed-builder     = { version = "0.18.0" }
 
 # ibc dependencies
 ibc               = { workspace = true, features = ["std"] }
-ibc-app-transfer  = { workspace = true, features = ["serde"] }
 ibc-proto         = { workspace = true }
-
 
 # cosmos dependencies
 tendermint         = { workspace = true }
 tendermint-testgen = { workspace = true }
 
 [dev-dependencies]
-env_logger         = { workspace = true }
+env_logger         = "0.10.0"
 rstest             = { workspace = true }
-tracing-subscriber = { workspace = true }
-test-log           = { workspace = true }
+tracing-subscriber = { version = "0.3.17", features = ["fmt", "env-filter", "json"] }
+test-log           = { version = "0.2.13", features = ["trace"] }
 
 [features]
 default = ["std"]
 std = [
-    "ibc/std",
-    "ibc-app-transfer/std",
-    "tracing/std",
     "prost/std",
     "serde/std",
+    "tracing/std",
+    "tracing-subscriber/std",
     "serde_json/std",
+    "ibc/std",
+    "ibc-proto/std",
+    "tendermint/std",
 ]
 serde = [
     "dep:serde",
     "ibc/serde",
+    "ibc-proto/serde",
     "serde_json",
+]
+schema = [
+    "ibc/schema",
+    "ibc-proto/json-schema",
+    "serde",
+    "std",
+]
+borsh = [
+    "ibc/borsh",
+    "ibc-proto/borsh",
+]
+parity-scale-codec = [
+    "ibc/parity-scale-codec",
+    "ibc-proto/parity-scale-codec",
 ]

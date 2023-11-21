@@ -11,7 +11,7 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
 use ibc::core::primitives::*;
 use ibc::core::router::types::module::ModuleId;
-use ibc_app_transfer::types::MODULE_ID_STR;
+use ibc::apps::transfer::types::MODULE_ID_STR;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
