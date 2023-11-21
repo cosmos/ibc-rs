@@ -38,13 +38,18 @@ parity-scale-codec  = { workspace = true, optional = true }
 scale-info          = { workspace = true, optional = true }
 
 [features]
-default = ["std", "ibc-proto/std", "serde/std", "time/std", "tendermint/std"]
+default = ["std"]
 std = [
     "displaydoc/std",
-    "ibc-proto/std",
     "prost/std",
+    "serde/std",
+    "ibc-proto/std",
     "tendermint/std",
     "time/std",
+]
+serde = [
+    "dep:serde",
+    "ibc-proto/serde",
 ]
 schema = [
     "dep:schemars",
@@ -52,7 +57,10 @@ schema = [
     "serde",
     "std"
 ]
-borsh = ["dep:borsh"]
+borsh = [
+    "dep:borsh",
+    "ibc-proto/borsh",
+]
 parity-scale-codec = [
     "dep:parity-scale-codec",
     "dep:scale-info",
