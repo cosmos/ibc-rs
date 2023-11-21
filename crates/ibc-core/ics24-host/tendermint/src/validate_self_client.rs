@@ -1,6 +1,6 @@
 use core::time::Duration;
 
-use ibc::clients::ics07_tendermint::client_state::ClientState as TmClientState;
+use ibc_client_tendermint::client_state::ClientStateWrapper;
 use ibc_core_client_context::client_state::ClientStateCommon;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
@@ -19,15 +19,19 @@ pub trait ValidateSelfClientContext {
         &self,
         client_state_of_host_on_counterparty: Any,
     ) -> Result<(), ContextError> {
-        let tm_client_state = TmClientState::try_from(client_state_of_host_on_counterparty)
+        let tm_client_state = ClientStateWrapper::try_from(client_state_of_host_on_counterparty)
             .map_err(|_| ConnectionError::InvalidClientState {
                 reason: "client must be a tendermint client".to_string(),
             })
             .map_err(ContextError::ConnectionError)?;
 
-        tm_client_state.validate().map_err(ClientError::from)?;
+        let tm_client_state_inner = tm_client_state.inner();
 
-        if tm_client_state.is_frozen() {
+        tm_client_state_inner
+            .validate()
+            .map_err(ClientError::from)?;
+
+        if tm_client_state_inner.is_frozen() {
             return Err(ClientError::ClientFrozen {
                 description: String::new(),
             }
@@ -35,12 +39,12 @@ pub trait ValidateSelfClientContext {
         }
 
         let self_chain_id = self.chain_id();
-        if self_chain_id != &tm_client_state.chain_id {
+        if self_chain_id != &tm_client_state_inner.chain_id {
             return Err(ContextError::ConnectionError(
                 ConnectionError::InvalidClientState {
                     reason: format!(
                         "invalid chain-id. expected: {}, got: {}",
-                        self_chain_id, tm_client_state.chain_id
+                        self_chain_id, tm_client_state_inner.chain_id
                     ),
                 },
             ));
@@ -71,20 +75,20 @@ pub trait ValidateSelfClientContext {
             ));
         }
 
-        if self.proof_specs() != &tm_client_state.proof_specs {
+        if self.proof_specs() != &tm_client_state_inner.proof_specs {
             return Err(ContextError::ConnectionError(
                 ConnectionError::InvalidClientState {
                     reason: format!(
                         "client has invalid proof specs. expected: {:?}, got: {:?}",
                         self.proof_specs(),
-                        tm_client_state.proof_specs
+                        tm_client_state_inner.proof_specs
                     ),
                 },
             ));
         }
 
         let _ = {
-            let trust_level = tm_client_state.trust_level;
+            let trust_level = tm_client_state_inner.trust_level;
 
             TendermintTrustThresholdFraction::new(
                 trust_level.numerator(),
@@ -95,35 +99,35 @@ pub trait ValidateSelfClientContext {
             })?
         };
 
-        if self.unbonding_period() != tm_client_state.unbonding_period {
+        if self.unbonding_period() != tm_client_state_inner.unbonding_period {
             return Err(ContextError::ConnectionError(
                 ConnectionError::InvalidClientState {
                     reason: format!(
                         "invalid unbonding period. expected: {:?}, got: {:?}",
                         self.unbonding_period(),
-                        tm_client_state.unbonding_period,
+                        tm_client_state_inner.unbonding_period,
                     ),
                 },
             ));
         }
 
-        if tm_client_state.unbonding_period < tm_client_state.trusting_period {
+        if tm_client_state_inner.unbonding_period < tm_client_state_inner.trusting_period {
             return Err(ContextError::ConnectionError(ConnectionError::InvalidClientState{ reason: format!(
                 "unbonding period must be greater than trusting period. unbonding period ({:?}) < trusting period ({:?})",
-                tm_client_state.unbonding_period,
-                tm_client_state.trusting_period
+                tm_client_state_inner.unbonding_period,
+                tm_client_state_inner.trusting_period
             )}));
         }
 
-        if !tm_client_state.upgrade_path.is_empty()
-            && self.upgrade_path() != tm_client_state.upgrade_path
+        if !tm_client_state_inner.upgrade_path.is_empty()
+            && self.upgrade_path() != tm_client_state_inner.upgrade_path
         {
             return Err(ContextError::ConnectionError(
                 ConnectionError::InvalidClientState {
                     reason: format!(
                         "invalid upgrade path. expected: {:?}, got: {:?}",
                         self.upgrade_path(),
-                        tm_client_state.upgrade_path
+                        tm_client_state_inner.upgrade_path
                     ),
                 },
             ));

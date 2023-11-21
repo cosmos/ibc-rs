@@ -1,10 +1,12 @@
 use core::str::FromStr;
 use core::time::Duration;
 
-use ibc::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use ibc::clients::ics07_tendermint::client_type as tm_client_type;
-use ibc::clients::ics07_tendermint::header::Header as TmHeader;
-use ibc::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
+use ibc::clients::tendermint::client_state::ClientStateWrapper;
+use ibc::clients::tendermint::types::proto::v1::{ClientState as RawTmClientState, Fraction};
+use ibc::clients::tendermint::types::{
+    client_type as tm_client_type, ClientState as TmClientState, Header as TmHeader,
+    Misbehaviour as TmMisbehaviour,
+};
 use ibc::core::client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::msgs::{ClientMsg, MsgSubmitMisbehaviour, MsgUpdateClient};
@@ -18,7 +20,6 @@ use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::{downcast, Timestamp};
 use ibc::primitives::proto::Any;
-use ibc::proto::tendermint::v1::{ClientState as RawTmClientState, Fraction};
 use ibc_testkit::hosts::block::{HostBlock, HostType};
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
     client_type as mock_client_type, MockClientState,
@@ -570,7 +571,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
 
             let client_state = TmClientState::try_from(raw_client_state).unwrap();
 
-            client_state.into()
+            ClientStateWrapper::from(client_state).into()
         };
 
         let mut ibc_store = ctx_a.ibc_store.lock();

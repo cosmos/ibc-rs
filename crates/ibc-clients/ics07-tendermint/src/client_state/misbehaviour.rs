@@ -1,19 +1,18 @@
-use ibc_core::client::context::consensus_state::ConsensusState;
-use ibc_core::client::types::error::ClientError;
-use ibc_core::host::types::identifiers::ClientId;
-use ibc_core::host::types::path::ClientConsensusStatePath;
-use ibc_core::primitives::prelude::*;
-use ibc_core::primitives::Timestamp;
+use ibc_client_tendermint_types::error::{Error, IntoResult};
+use ibc_client_tendermint_types::{
+    check_header_trusted_next_validator_set, ConsensusState as TmConsensusState,
+    Header as TmHeader, Misbehaviour as TmMisbehaviour,
+};
+use ibc_core_client::types::error::ClientError;
+use ibc_core_host::types::identifiers::ClientId;
+use ibc_core_host::types::path::ClientConsensusStatePath;
+use ibc_primitives::prelude::*;
+use ibc_primitives::Timestamp;
 use tendermint_light_client_verifier::Verifier;
 
-use super::{check_header_trusted_next_validator_set, ClientState};
-use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
-use crate::clients::ics07_tendermint::error::{Error, IntoResult};
-use crate::clients::ics07_tendermint::header::Header as TmHeader;
-use crate::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
-use crate::clients::ics07_tendermint::ValidationContext as TmValidationContext;
+use super::{ClientStateWrapper, TmValidationContext};
 
-impl ClientState {
+impl ClientStateWrapper {
     // verify_misbehaviour determines whether or not two conflicting headers at
     // the same height would have convinced the light client.
     pub fn verify_misbehaviour<ClientValidationContext>(
@@ -76,16 +75,16 @@ impl ClientState {
         // ensure trusted consensus state is within trusting period
         {
             let duration_since_consensus_state = current_timestamp
-                .duration_since(&trusted_consensus_state.timestamp())
+                .duration_since(&(trusted_consensus_state.timestamp().into()))
                 .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
-                    time1: trusted_consensus_state.timestamp(),
+                    time1: trusted_consensus_state.timestamp().into(),
                     time2: current_timestamp,
                 })?;
 
-            if duration_since_consensus_state >= self.trusting_period {
+            if duration_since_consensus_state >= self.0.trusting_period {
                 return Err(Error::ConsensusStateTimestampGteTrustingPeriod {
                     duration_since_consensus_state,
-                    trusting_period: self.trusting_period,
+                    trusting_period: self.0.trusting_period,
                 }
                 .into());
             }
@@ -95,6 +94,7 @@ impl ClientState {
         let untrusted_state = header.as_untrusted_block_state();
 
         let chain_id = self
+            .0
             .chain_id
             .to_string()
             .try_into()
@@ -103,12 +103,13 @@ impl ClientState {
             })?;
         let trusted_state = header.as_trusted_block_state(trusted_consensus_state, &chain_id)?;
 
-        let options = self.as_light_client_options()?;
+        let options = self.0.as_light_client_options()?;
         let current_timestamp = current_timestamp.into_tm_time().ok_or(ClientError::Other {
             description: "host timestamp must not be zero".to_string(),
         })?;
 
-        self.verifier
+        self.0
+            .verifier
             .verify_misbehaviour_header(untrusted_state, trusted_state, &options, current_timestamp)
             .into_result()?;
 

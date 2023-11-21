@@ -1,19 +1,19 @@
-use ibc_core::client::context::consensus_state::ConsensusState;
-use ibc_core::client::context::ClientExecutionContext;
-use ibc_core::client::types::error::ClientError;
-use ibc_core::host::types::identifiers::ClientId;
-use ibc_core::host::types::path::ClientConsensusStatePath;
-use ibc_core::primitives::prelude::*;
+use ibc_client_tendermint_types::error::{Error, IntoResult};
+use ibc_client_tendermint_types::{
+    check_header_trusted_next_validator_set, ConsensusState as TmConsensusState, Header as TmHeader,
+};
+use ibc_core_client::context::ClientExecutionContext;
+use ibc_core_client::types::error::ClientError;
+use ibc_core_host::types::identifiers::ClientId;
+use ibc_core_host::types::path::ClientConsensusStatePath;
+use ibc_primitives::prelude::*;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::Verifier;
 
-use super::{check_header_trusted_next_validator_set, ClientState};
-use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
-use crate::clients::ics07_tendermint::error::{Error, IntoResult};
-use crate::clients::ics07_tendermint::header::Header as TmHeader;
-use crate::clients::ics07_tendermint::{CommonContext, ValidationContext as TmValidationContext};
+use super::ClientStateWrapper;
+use crate::context::{CommonContext, ValidationContext as TmValidationContext};
 
-impl ClientState {
+impl ClientStateWrapper {
     pub fn verify_header<ClientValidationContext>(
         &self,
         ctx: &ClientValidationContext,
@@ -28,7 +28,7 @@ impl ClientState {
 
         // The tendermint-light-client crate though works on heights that are assumed
         // to have the same revision number. We ensure this here.
-        header.verify_chain_id_version_matches_height(&self.chain_id())?;
+        header.verify_chain_id_version_matches_height(&self.0.chain_id())?;
 
         // Delegate to tendermint-light-client, which contains the required checks
         // of the new header against the trusted consensus state.
@@ -50,7 +50,7 @@ impl ClientState {
                     check_header_trusted_next_validator_set(&header, &trusted_consensus_state)?;
 
                     TrustedBlockState {
-                        chain_id: &self.chain_id.to_string().try_into().map_err(|e| {
+                        chain_id: &self.0.chain_id.to_string().try_into().map_err(|e| {
                             ClientError::Other {
                                 description: format!("failed to parse chain id: {}", e),
                             }
@@ -78,7 +78,7 @@ impl ClientState {
                 next_validators: None,
             };
 
-            let options = self.as_light_client_options()?;
+            let options = self.0.as_light_client_options()?;
             let now = ctx.host_timestamp()?.into_tm_time().ok_or_else(|| {
                 ClientError::ClientSpecific {
                     description: "host timestamp is not a valid TM timestamp".to_string(),
@@ -86,7 +86,8 @@ impl ClientState {
             })?;
 
             // main header verification, delegated to the tendermint-light-client crate.
-            self.verifier
+            self.0
+                .verifier
                 .verify_update_header(untrusted_state, trusted_state, &options, now)
                 .into_result()?;
         }
@@ -151,7 +152,7 @@ impl ClientState {
 
                 // 2. if a header comes in and is not the “last” header, then we also ensure
                 //    that its timestamp is less than the “next header”
-                if header.height() < self.latest_height {
+                if header.height() < self.0.latest_height {
                     let maybe_next_cs = ctx.next_consensus_state(client_id, &header.height())?;
 
                     if let Some(next_cs) = maybe_next_cs {
@@ -200,10 +201,19 @@ impl ClientState {
                         description: err.to_string(),
                     })?;
 
-            let host_timestamp = ctx.host_timestamp()?;
-            let tm_consensus_state_expiry = (tm_consensus_state.timestamp() + self.trusting_period)
+            let host_timestamp =
+                ctx.host_timestamp()?
+                    .into_tm_time()
+                    .ok_or_else(|| ClientError::Other {
+                        description: String::from("host timestamp is not a valid TM timestamp"),
+                    })?;
+            let tm_consensus_state_timestamp = tm_consensus_state.timestamp();
+            let tm_consensus_state_expiry = (tm_consensus_state_timestamp
+                + self.0.trusting_period)
                 .map_err(|_| ClientError::Other {
-                    description: String::from("Timestamp overflow error occurred while attempting to parse TmConsensusState")
+                    description: String::from(
+                        "Timestamp overflow error occurred while attempting to parse TmConsensusState",
+                    ),
                 })?;
 
             if tm_consensus_state_expiry > host_timestamp {

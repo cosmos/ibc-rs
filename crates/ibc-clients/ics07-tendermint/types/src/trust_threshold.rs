@@ -5,7 +5,7 @@
 use core::convert::TryFrom;
 use core::fmt::{Display, Error as FmtError, Formatter};
 
-use ibc_core::client::types::error::ClientError;
+use ibc_core_client_types::error::ClientError;
 use ibc_proto::ibc::lightclients::tendermint::v1::Fraction;
 use ibc_proto::Protobuf;
 use tendermint::trust_threshold::TrustThresholdFraction;

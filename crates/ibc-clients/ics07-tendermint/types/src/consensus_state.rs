@@ -1,10 +1,10 @@
 //! Defines Tendermint's `ConsensusState` type
 
-use ibc_core::client::context::consensus_state::ConsensusState as ConsensusStateTrait;
-use ibc_core::client::types::error::ClientError;
-use ibc_core::commitment_types::commitment::CommitmentRoot;
-use ibc_core::primitives::prelude::*;
-use ibc_core::primitives::Timestamp;
+use ibc_core_client_context::consensus_state::ConsensusState as ConsensusStateTrait;
+use ibc_core_client_types::error::ClientError;
+use ibc_core_commitment_types::commitment::CommitmentRoot;
+use ibc_primitives::prelude::*;
+use ibc_primitives::Timestamp;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::ConsensusState as RawConsensusState;
 use ibc_proto::Protobuf;
@@ -13,8 +13,8 @@ use tendermint::time::Time;
 use tendermint::Hash;
 use tendermint_proto::google::protobuf as tpb;
 
-use crate::clients::ics07_tendermint::error::Error;
-use crate::clients::ics07_tendermint::header::Header;
+use crate::error::Error;
+use crate::header::Header;
 
 pub const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str =
     "/ibc.lightclients.tendermint.v1.ConsensusState";
@@ -35,6 +35,28 @@ impl ConsensusState {
             root,
             next_validators_hash,
         }
+    }
+
+    pub fn timestamp(&self) -> Time {
+        self.timestamp
+    }
+
+    pub fn root(&self) -> CommitmentRoot {
+        self.root.clone()
+    }
+}
+
+impl ConsensusStateTrait for ConsensusState {
+    fn root(&self) -> &CommitmentRoot {
+        &self.root
+    }
+
+    fn timestamp(&self) -> Timestamp {
+        self.timestamp.into()
+    }
+
+    fn encode_vec(self) -> Vec<u8> {
+        <Self as Protobuf<Any>>::encode_vec(self)
     }
 }
 
@@ -147,32 +169,17 @@ impl From<Header> for ConsensusState {
     }
 }
 
-impl ConsensusStateTrait for ConsensusState {
-    fn root(&self) -> &CommitmentRoot {
-        &self.root
-    }
-
-    fn timestamp(&self) -> Timestamp {
-        self.timestamp.into()
-    }
-
-    fn encode_vec(self) -> Vec<u8> {
-        <Self as Protobuf<Any>>::encode_vec(self)
-    }
-}
-
 #[cfg(all(test, feature = "serde"))]
 mod tests {
     use tendermint_rpc::endpoint::abci_query::AbciQuery;
-    use test_log::test;
 
-    use crate::clients::ics07_tendermint::client_state::serde_tests::test_serialization_roundtrip;
+    use crate::serde_tests::test_serialization_roundtrip;
 
     #[test]
     fn serialization_roundtrip_no_proof() {
         let json_data = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../ibc-testkit/tests/data/json/consensus_state.json"
+            "/../../../ibc-testkit/tests/data/json/consensus_state.json"
         ));
         test_serialization_roundtrip::<AbciQuery>(json_data);
     }
@@ -181,7 +188,7 @@ mod tests {
     fn serialization_roundtrip_with_proof() {
         let json_data = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../ibc-testkit/tests/data/json/consensus_state_proof.json"
+            "/../../../ibc-testkit/tests/data/json/consensus_state_proof.json"
         ));
         test_serialization_roundtrip::<AbciQuery>(json_data);
     }

@@ -3,11 +3,11 @@
 use core::time::Duration;
 
 use displaydoc::Display;
-use ibc_core::client::types::error::ClientError;
-use ibc_core::client::types::Height;
-use ibc_core::host::types::error::IdentifierError;
-use ibc_core::host::types::identifiers::ClientId;
-use ibc_core::primitives::prelude::*;
+use ibc_core_client_types::error::ClientError;
+use ibc_core_client_types::Height;
+use ibc_core_host_types::error::IdentifierError;
+use ibc_core_host_types::identifiers::ClientId;
+use ibc_primitives::prelude::*;
 use tendermint::{Error as TendermintError, Hash};
 use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
 use tendermint_light_client_verifier::operations::VotingPowerTally;
@@ -124,7 +124,7 @@ impl From<IdentifierError> for Error {
     }
 }
 
-pub(crate) trait IntoResult<T, E> {
+pub trait IntoResult<T, E> {
     fn into_result(self) -> Result<T, E>;
 }
 

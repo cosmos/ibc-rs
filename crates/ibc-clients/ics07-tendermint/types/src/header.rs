@@ -5,11 +5,11 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use bytes::Buf;
-use ibc_core::client::types::error::ClientError;
-use ibc_core::client::types::Height;
-use ibc_core::host::types::identifiers::ChainId;
-use ibc_core::primitives::prelude::*;
-use ibc_core::primitives::Timestamp;
+use ibc_core_client_types::error::ClientError;
+use ibc_core_client_types::Height;
+use ibc_core_host_types::identifiers::ChainId;
+use ibc_primitives::prelude::*;
+use ibc_primitives::Timestamp;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
 use ibc_proto::Protobuf;
@@ -20,8 +20,8 @@ use tendermint::chain::Id as TmChainId;
 use tendermint::validator::Set as ValidatorSet;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 
-use crate::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
-use crate::clients::ics07_tendermint::error::Error;
+use crate::consensus_state::ConsensusState as TmConsensusState;
+use crate::error::Error;
 
 pub const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
 
@@ -62,7 +62,7 @@ impl Header {
         .expect("malformed tendermint header domain type has an illegal height of 0")
     }
 
-    pub(crate) fn as_untrusted_block_state(&self) -> UntrustedBlockState<'_> {
+    pub fn as_untrusted_block_state(&self) -> UntrustedBlockState<'_> {
         UntrustedBlockState {
             signed_header: &self.signed_header,
             validators: &self.validator_set,
@@ -70,7 +70,7 @@ impl Header {
         }
     }
 
-    pub(crate) fn as_trusted_block_state<'a>(
+    pub fn as_trusted_block_state<'a>(
         &'a self,
         consensus_state: &TmConsensusState,
         chain_id: &'a TmChainId,
@@ -207,7 +207,7 @@ impl From<Header> for RawHeader {
 }
 
 mod pretty {
-    use ibc_core::primitives::utils::PrettySlice;
+    use ibc_primitives::utils::PrettySlice;
 
     pub use super::*;
 

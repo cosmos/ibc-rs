@@ -1,14 +1,13 @@
 use alloc::string::ToString;
 
-use ibc_core::client::context::ClientExecutionContext;
-use ibc_core::client::types::Height;
-use ibc_core::handler::types::error::ContextError;
-use ibc_core::host::types::identifiers::ClientId;
-use ibc_core::host::types::path::ClientConsensusStatePath;
-use ibc_core::primitives::prelude::*;
-use ibc_core::primitives::Timestamp;
-
-use super::consensus_state::ConsensusState as TmConsensusState;
+use ibc_client_tendermint_types::ConsensusState as TmConsensusState;
+use ibc_core_client::context::ClientExecutionContext;
+use ibc_core_client::types::Height;
+use ibc_core_handler_types::error::ContextError;
+use ibc_core_host::types::identifiers::ClientId;
+use ibc_core_host::types::path::ClientConsensusStatePath;
+use ibc_primitives::prelude::*;
+use ibc_primitives::Timestamp;
 
 /// Client's context required during both validation and execution
 pub trait CommonContext {

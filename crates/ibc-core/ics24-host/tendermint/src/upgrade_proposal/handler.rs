@@ -1,4 +1,4 @@
-use ibc::clients::ics07_tendermint::client_state::ClientState as TmClientState;
+use ibc_client_tendermint::types::ClientState as TmClientState;
 use ibc_core_client_types::error::UpgradeClientError;
 use ibc_core_host_types::path::UpgradeClientPath;
 use ibc_primitives::prelude::*;

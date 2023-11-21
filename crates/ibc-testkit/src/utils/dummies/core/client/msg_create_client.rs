@@ -1,4 +1,4 @@
-use ibc::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
+use ibc::clients::tendermint::types::ConsensusState as TmConsensusState;
 use ibc::core::client::types::proto::v1::MsgCreateClient;
 use ibc::primitives::proto::Any;
 
