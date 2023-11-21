@@ -2,6 +2,8 @@
     <h1>IBC in Rust</h1>
 </div>
 
+![banner](./../../docs/static/img/ibc-rs-cover.svg)
+
 <div align="center">
 
 [![Crate][crate-image]][crate-link]
@@ -14,9 +16,10 @@
 </div>
 
 Implementation of the Inter-Blockchain Communication Protocol ([IBC]) in Rust.
-This crate serves as one-stop shop library re-exporting all the implemented data
-structures and IBC core, clients and applications modules in the [`ibc-rs`][ibc-rs]
-repository.
+This crate serves as one-stop shop library re-exporting data structures and
+implementations of various IBC core, clients and applications from the
+[`ibc-core`](../ibc-core), [`ibc-clients`](../ibc-clients) and
+[`ibc-apps`](../ibc-apps) crates.
 
 ## Documentation
 
@@ -63,4 +66,3 @@ specific language governing permissions and limitations under the License.
 [//]: # (general links)
 
 [IBC]: https://github.com/cosmos/ibc
-[ibc-rs]: https://github.com/cosmos/ibc-rs

@@ -9,8 +9,8 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "core"]
 readme       = "README.md"
 description  = """
-    `ibc-core` re-exports a comprehensive set of libraries for IBC core (TAO) modules, 
-    facilitating seamless integration of IBC core business logic into any blockchain system.
+    Maintained by `ibc-rs`, re-exports a comprehensive set of libraries that implement IBC core (TAO) 
+    modules, facilitating seamless integration of IBC core business logic into any blockchain system.
 """
 
 [package.metadata.docs.rs]

@@ -9,8 +9,8 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "light-client"]
 readme       = "README.md"
 description  = """
-    Contains the implementation of ICS-02 client semantics, along with re-exporting
-    relevant necessary data structures and APIs for seamless integration.
+    Maintained by `ibc-rs`, contains the implementation of ICS-02 client semantics and 
+    re-exports essential data structures and domain types from `ibc-core-client-types` crate.
 """
 
 [package.metadata.docs.rs]

@@ -9,8 +9,9 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "tendermint"]
 readme       = "./../README.md"
 description  = """
-    Provides Tendermint-specific helper traits and implementations to facilitate `ibc-rs` integration,
-    ensuring proper interaction with modules/components beyond the IBC modules on host chains.
+    Maintained by `ibc-rs`, contains Tendermint-specific helper traits and implementations
+    to facilitate IBC integration, ensuring proper interaction with modules/components
+    beyond the IBC modules on host chains.
 """
 
 [package.metadata.docs.rs]

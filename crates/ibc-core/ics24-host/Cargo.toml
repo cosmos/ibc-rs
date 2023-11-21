@@ -9,9 +9,9 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "host"]
 readme       = "./../README.md"
 description  = """
-    Provides essential top-level traits designed for the seamless integration of host chains with ibc-rs.
-    It streamlines access to the host's storage, facilitating the efficient retrieval of states and metadata 
-    crucial for the execution of IBC logics.
+    Maintained by `ibc-rs`, contains essential top-level traits designed for the seamless integration
+    of host chains, facilitating access to the host's storage, the efficient retrieval of states and 
+    metadata crucial for the execution of any IBC datagrams.
 """
 
 [package.metadata.docs.rs]

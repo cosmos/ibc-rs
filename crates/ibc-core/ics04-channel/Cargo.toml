@@ -9,8 +9,8 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "channel"]
 readme       = "./../../README.md"
 description  = """
-    Contains the implementation of ICS-04 channel, along withq re-exporting
-    relevant necessary data structures and APIs for seamless integration.
+    Maintained by `ibc-rs`, contains the implementation of the ICS-04 Channel & Packet Semantics and 
+    re-exports essential data structures and domain types from `ibc-core-channel-types` crate.
 """
 
 [package.metadata.docs.rs]

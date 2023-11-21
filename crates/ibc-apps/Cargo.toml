@@ -9,8 +9,8 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "applications", "token-transfer"]
 readme       = "README.md"
 description  = """
-    Re-exports a comprehensive set of libraries for IBC applications, 
-    facilitating seamless integration of IBC business logic into any blockchain system.
+    Maintained by `ibc-rs`, re-exports a comprehensive set of libraries that implement various
+    IBC applications, enabling smooth integration of IBC business logic into any blockchain system.
 """
 
 [package.metadata.docs.rs]

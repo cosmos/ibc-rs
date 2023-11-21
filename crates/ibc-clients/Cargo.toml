@@ -9,8 +9,8 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "applications", "tendermint"]
 readme       = "README.md"
 description  = """
-    `ibc-clients` provides a comprehensive set of libraries for IBC client implementations, 
-    facilitating seamless integration of IBC business logic into any blockchain system.
+    Maintained by `ibc-rs`, re-exports a comprehensive set of libraries that implement 
+    various IBC light clients, enabling smooth integration with IBC-enabled blockchains.
 """
 
 [package.metadata.docs.rs]

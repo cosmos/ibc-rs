@@ -9,8 +9,8 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "handler"]
 readme       = "README.md"
 description  = """
-    Exposes IBC handler entry points for an integrated IBC core modules. These entry points
-    are responsible for processing incoming IBC messages, performing validation,
+    Maintained by `ibc-rs`, exposes IBC handler entry points for an integrated IBC core modules. 
+    These entry points are responsible for processing incoming IBC messages, performing validation,
     and execution logic by invoking the appropriate module handler.
 """
 
