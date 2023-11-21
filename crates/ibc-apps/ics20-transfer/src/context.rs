@@ -1,10 +1,10 @@
 //! Defines the main context traits and IBC module callbacks
 
-use ibc::core::ics24_host::identifier::{ChannelId, PortId};
-use ibc::prelude::*;
-use ibc::Signer;
 use ibc_app_transfer_types::error::TokenTransferError;
 use ibc_app_transfer_types::{PrefixedCoin, PrefixedDenom, VERSION};
+use ibc_core::host::types::identifiers::{ChannelId, PortId};
+use ibc_core::primitives::prelude::*;
+use ibc_core::primitives::Signer;
 use sha2::{Digest, Sha256};
 
 /// Methods required in token transfer validation, to be implemented by the host

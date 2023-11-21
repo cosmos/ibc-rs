@@ -1,11 +1,12 @@
 use alloc::string::ToString;
 use core::fmt::{Display, Error as FmtError, Formatter};
 
-use ibc::core::ics02_client::error::ClientError;
-use ibc::core::timestamp::Timestamp;
-use ibc::proto::mock::Header as RawMockHeader;
-use ibc::proto::{Any, Protobuf};
-use ibc::Height;
+use ibc::core::client::types::error::ClientError;
+use ibc::core::client::types::Height;
+use ibc::core::primitives::Timestamp;
+use ibc::primitives::proto::{Any, Protobuf};
+
+use crate::testapp::ibc::clients::mock::proto::Header as RawMockHeader;
 
 pub const MOCK_HEADER_TYPE_URL: &str = "/ibc.mock.Header";
 

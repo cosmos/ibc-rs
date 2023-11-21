@@ -17,9 +17,11 @@ pub use chan_open_ack::*;
 pub use chan_open_confirm::*;
 pub use chan_open_init::*;
 pub use chan_open_try::*;
-use ibc::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use ibc::prelude::*;
-use ibc::proto::core::channel::v1::{Channel as RawChannel, Counterparty as RawCounterparty};
+use ibc::core::channel::types::proto::v1::{
+    Channel as RawChannel, Counterparty as RawCounterparty,
+};
+use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc::core::primitives::prelude::*;
 pub use packet::*;
 pub use recv_packet::*;
 pub use timeout::*;

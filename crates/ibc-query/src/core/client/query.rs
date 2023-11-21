@@ -3,15 +3,15 @@
 use alloc::format;
 use core::str::FromStr;
 
-use ibc::core::ics02_client::client_state::ClientStateValidation;
-use ibc::core::ics02_client::error::ClientError;
-use ibc::core::ics24_host::identifier::ClientId;
-use ibc::core::ics24_host::path::{
+use ibc::core::client::context::client_state::ClientStateValidation;
+use ibc::core::client::types::error::ClientError;
+use ibc::core::client::types::Height;
+use ibc::core::host::types::identifiers::ClientId;
+use ibc::core::host::types::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
-use ibc::core::ValidationContext;
-use ibc::hosts::tendermint::upgrade_proposal::UpgradeValidationContext;
-use ibc::Height;
+use ibc::core::host::ValidationContext;
+use ibc_core_host_tendermint::upgrade_proposal::UpgradeValidationContext;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::{
     ConsensusStateWithHeight, IdentifiedClientState, QueryClientStateRequest,
@@ -103,8 +103,11 @@ where
     } else {
         let height = Height::new(request.revision_number, request.revision_height)?;
 
-        let consensus_state =
-            ibc_ctx.consensus_state(&ClientConsensusStatePath::new(&client_id, &height))?;
+        let consensus_state = ibc_ctx.consensus_state(&ClientConsensusStatePath::new(
+            client_id.clone(),
+            height.revision_number(),
+            height.revision_height(),
+        ))?;
 
         (height, consensus_state)
     };
@@ -114,7 +117,11 @@ where
     let proof = ibc_ctx
         .get_proof(
             current_height,
-            &Path::ClientConsensusState(ClientConsensusStatePath::new(&client_id, &height)),
+            &Path::ClientConsensusState(ClientConsensusStatePath::new(
+                client_id.clone(),
+                height.revision_number(),
+                height.revision_height(),
+            )),
         )
         .ok_or(QueryError::ProofNotFound {
             description: format!("Proof not found for consensus state path: {client_id:?}"),

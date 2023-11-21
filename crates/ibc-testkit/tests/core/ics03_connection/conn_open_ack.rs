@@ -1,16 +1,18 @@
 use core::str::FromStr;
 
-use ibc::core::events::{IbcEvent, MessageEvent};
-use ibc::core::ics02_client::height::Height;
-use ibc::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
-use ibc::core::ics03_connection::error::ConnectionError;
-use ibc::core::ics03_connection::msgs::conn_open_ack::MsgConnectionOpenAck;
-use ibc::core::ics03_connection::msgs::ConnectionMsg;
-use ibc::core::ics23_commitment::commitment::CommitmentPrefix;
-use ibc::core::ics24_host::identifier::{ChainId, ClientId};
-use ibc::core::timestamp::ZERO_DURATION;
-use ibc::core::{execute, validate, ContextError, MsgEnvelope, RouterError, ValidationContext};
-use ibc::prelude::*;
+use ibc::core::client::types::Height;
+use ibc::core::commitment_types::commitment::CommitmentPrefix;
+use ibc::core::connection::types::error::ConnectionError;
+use ibc::core::connection::types::msgs::{ConnectionMsg, MsgConnectionOpenAck};
+use ibc::core::connection::types::{ConnectionEnd, Counterparty, State};
+use ibc::core::entrypoint::{execute, validate};
+use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
+use ibc::core::handler::types::msgs::MsgEnvelope;
+use ibc::core::host::types::identifiers::{ChainId, ClientId};
+use ibc::core::host::ValidationContext;
+use ibc::core::primitives::prelude::*;
+use ibc::core::primitives::ZERO_DURATION;
 use ibc_testkit::hosts::block::HostType;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
@@ -100,12 +102,7 @@ fn conn_open_ack_validate(fxt: &Fixture<MsgConnectionOpenAck>, expect: Expect) {
     let right_connection_id = fxt.msg.conn_id_on_a.clone();
     let cons_state_height = fxt.msg.consensus_height_of_a_on_b;
 
-    let ctx_err = match res.unwrap_err() {
-        RouterError::ContextError(e) => e,
-        _ => panic!("unexpected error type"),
-    };
-
-    match ctx_err {
+    match res.unwrap_err() {
         ContextError::ConnectionError(ConnectionError::ConnectionNotFound { connection_id }) => {
             assert_eq!(connection_id, right_connection_id)
         }
@@ -170,7 +167,7 @@ fn conn_open_ack_no_connection() {
     let expected_err = ContextError::ConnectionError(ConnectionError::ConnectionNotFound {
         connection_id: fxt.msg.conn_id_on_a.clone(),
     });
-    conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err.into())));
+    conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err)));
 }
 
 #[test]
@@ -180,7 +177,7 @@ fn conn_open_ack_invalid_consensus_height() {
         target_height: fxt.msg.consensus_height_of_a_on_b,
         current_height: Height::new(0, 10).unwrap(),
     });
-    conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err.into())));
+    conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err)));
 }
 
 #[test]
@@ -190,5 +187,5 @@ fn conn_open_ack_connection_mismatch() {
         expected: State::Init.to_string(),
         actual: State::Open.to_string(),
     });
-    conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err.into())));
+    conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err)));
 }

@@ -1,8 +1,8 @@
 //! Defines all token transfer event types
-use ibc::core::events::ModuleEvent;
-use ibc::core::ics04_channel::acknowledgement::AcknowledgementStatus;
-use ibc::prelude::*;
-use ibc::Signer;
+use ibc_core::channel::types::acknowledgement::AcknowledgementStatus;
+use ibc_core::primitives::prelude::*;
+use ibc_core::primitives::Signer;
+use ibc_core::router::types::event::ModuleEvent;
 
 use super::Memo;
 use crate::{Amount, PrefixedDenom, MODULE_ID_STR};
@@ -22,7 +22,7 @@ pub enum Event {
     Transfer(TransferEvent),
 }
 
-/// Event emitted in the `onRecvPacket` module callback to indicate that the
+/// Event emitted by the `onRecvPacket` module callback to indicate the that the
 /// `RecvPacket` message was processed
 pub struct RecvEvent {
     pub sender: Signer,
@@ -58,7 +58,7 @@ impl From<RecvEvent> for ModuleEvent {
     }
 }
 
-/// Event emitted by the `onAcknowledgePacket` module callback
+/// Event emitted in the `onAcknowledgePacket` module callback
 pub struct AckEvent {
     pub sender: Signer,
     pub receiver: Signer,
@@ -93,7 +93,7 @@ impl From<AckEvent> for ModuleEvent {
     }
 }
 
-/// Event emitted by the `onAcknowledgePacket` module callback to indicate
+/// Event emitted in the `onAcknowledgePacket` module callback to indicate
 /// whether the acknowledgement is a success or a failure
 pub struct AckStatusEvent {
     pub acknowledgement: AcknowledgementStatus,
@@ -114,7 +114,7 @@ impl From<AckStatusEvent> for ModuleEvent {
     }
 }
 
-/// Event emitted by the `onTimeoutPacket` module callback
+/// Event emitted in the `onTimeoutPacket` module callback
 pub struct TimeoutEvent {
     pub refund_receiver: Signer,
     pub refund_denom: PrefixedDenom,
@@ -143,7 +143,7 @@ impl From<TimeoutEvent> for ModuleEvent {
     }
 }
 
-/// Event emitted by the `onRecvPacket` module callback when new tokens are minted
+/// Event emitted in the `onRecvPacket` module callback when new tokens are minted
 pub struct DenomTraceEvent {
     pub trace_hash: Option<String>,
     pub denom: PrefixedDenom,

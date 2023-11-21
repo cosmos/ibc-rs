@@ -1,25 +1,21 @@
-use ibc::core::events::{IbcEvent, MessageEvent};
-use ibc::core::ics02_client::msgs::create_client::MsgCreateClient;
-use ibc::core::ics02_client::msgs::update_client::MsgUpdateClient;
-use ibc::core::ics02_client::msgs::ClientMsg;
-use ibc::core::ics03_connection::msgs::ConnectionMsg;
-use ibc::core::ics04_channel::error::ChannelError;
-use ibc::core::ics04_channel::msgs::acknowledgement::MsgAcknowledgement;
-use ibc::core::ics04_channel::msgs::chan_close_confirm::MsgChannelCloseConfirm;
-use ibc::core::ics04_channel::msgs::chan_close_init::MsgChannelCloseInit;
-use ibc::core::ics04_channel::msgs::chan_open_ack::MsgChannelOpenAck;
-use ibc::core::ics04_channel::msgs::chan_open_init::MsgChannelOpenInit;
-use ibc::core::ics04_channel::msgs::chan_open_try::MsgChannelOpenTry;
-use ibc::core::ics04_channel::msgs::recv_packet::MsgRecvPacket;
-use ibc::core::ics04_channel::msgs::timeout_on_close::MsgTimeoutOnClose;
-use ibc::core::ics04_channel::msgs::{ChannelMsg, PacketMsg};
-use ibc::core::ics04_channel::timeout::TimeoutHeight;
-use ibc::core::ics24_host::identifier::ConnectionId;
-use ibc::core::ics24_host::path::CommitmentPath;
-use ibc::core::timestamp::Timestamp;
-use ibc::core::{dispatch, MsgEnvelope, RouterError, ValidationContext};
-use ibc::prelude::*;
-use ibc::Height;
+use ibc::core::channel::types::error::ChannelError;
+use ibc::core::channel::types::msgs::{
+    ChannelMsg, MsgAcknowledgement, MsgChannelCloseConfirm, MsgChannelCloseInit, MsgChannelOpenAck,
+    MsgChannelOpenInit, MsgChannelOpenTry, MsgRecvPacket, MsgTimeoutOnClose, PacketMsg,
+};
+use ibc::core::channel::types::timeout::TimeoutHeight;
+use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient, MsgUpdateClient};
+use ibc::core::client::types::Height;
+use ibc::core::connection::types::msgs::ConnectionMsg;
+use ibc::core::entrypoint::dispatch;
+use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
+use ibc::core::handler::types::msgs::MsgEnvelope;
+use ibc::core::host::types::identifiers::ConnectionId;
+use ibc::core::host::types::path::CommitmentPath;
+use ibc::core::host::ValidationContext;
+use ibc::core::primitives::prelude::*;
+use ibc::core::primitives::Timestamp;
 use ibc_app_transfer::handler::send_transfer::send_transfer;
 use ibc_app_transfer::types::error::TokenTransferError;
 use ibc_app_transfer::types::msgs::transfer::MsgTransfer;
@@ -422,7 +418,7 @@ fn routing_module_and_keepers() {
                 .map_err(|e: TokenTransferError| ChannelError::AppModule {
                     description: e.to_string(),
                 })
-                .map_err(|e| RouterError::ContextError(e.into())),
+                .map_err(ContextError::from),
         };
 
         assert_eq!(

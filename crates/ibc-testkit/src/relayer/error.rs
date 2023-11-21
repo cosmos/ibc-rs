@@ -1,7 +1,8 @@
 use displaydoc::Display;
-use ibc::core::ics24_host::identifier::ClientId;
-use ibc::core::{ics03_connection, RouterError};
-use ibc::Height;
+use ibc::core::client::types::Height;
+use ibc::core::connection::types::error::ConnectionError;
+use ibc::core::handler::types::error::ContextError;
+use ibc::core::host::types::identifiers::ClientId;
 
 #[derive(Debug, Display)]
 pub enum RelayerError {
@@ -20,9 +21,9 @@ pub enum RelayerError {
         destination_height: Height,
     },
     /// transaction processing by modules failed error: `{0}`
-    TransactionFailed(RouterError),
+    TransactionFailed(ContextError),
     /// connection error: `{0}`
-    Connection(ics03_connection::error::ConnectionError),
+    Connection(ConnectionError),
 }
 
 #[cfg(feature = "std")]

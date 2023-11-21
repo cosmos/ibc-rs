@@ -7,20 +7,23 @@ use core::fmt::Debug;
 use core::ops::{Add, Sub};
 use core::time::Duration;
 
-use ibc::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use ibc::clients::ics07_tendermint::TENDERMINT_CLIENT_TYPE;
-use ibc::core::events::IbcEvent;
-use ibc::core::ics02_client::client_type::ClientType;
-use ibc::core::ics03_connection::connection::ConnectionEnd;
-use ibc::core::ics04_channel::channel::ChannelEnd;
-use ibc::core::ics04_channel::commitment::{AcknowledgementCommitment, PacketCommitment};
-use ibc::core::ics04_channel::packet::{Receipt, Sequence};
-use ibc::core::ics24_host::identifier::{ChainId, ChannelId, ClientId, ConnectionId, PortId};
-use ibc::core::router::Router;
-use ibc::core::timestamp::Timestamp;
-use ibc::core::{dispatch, MsgEnvelope, ValidationContext};
-use ibc::prelude::*;
-use ibc::Height;
+use ibc::clients::tendermint::client_state::ClientStateWrapper;
+use ibc::clients::tendermint::types::TENDERMINT_CLIENT_TYPE;
+use ibc::core::channel::types::channel::ChannelEnd;
+use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
+use ibc::core::channel::types::packet::Receipt;
+use ibc::core::client::types::Height;
+use ibc::core::connection::types::ConnectionEnd;
+use ibc::core::entrypoint::dispatch;
+use ibc::core::handler::types::events::IbcEvent;
+use ibc::core::handler::types::msgs::MsgEnvelope;
+use ibc::core::host::types::identifiers::{
+    ChainId, ChannelId, ClientId, ClientType, ConnectionId, PortId, Sequence,
+};
+use ibc::core::host::ValidationContext;
+use ibc::core::primitives::prelude::*;
+use ibc::core::primitives::Timestamp;
+use ibc::core::router::router::Router;
 use parking_lot::Mutex;
 use tendermint_testgen::Validator as TestgenValidator;
 use tracing::debug;
@@ -517,7 +520,7 @@ impl MockContext {
                     })
                     .collect();
 
-                let client_state: TmClientState = TmClientStateConfig::builder()
+                let client_state: ClientStateWrapper = TmClientStateConfig::builder()
                     .chain_id(client.client_chain_id)
                     .latest_height(client.client_state_height)
                     .trusting_period(client.trusting_period)
@@ -526,7 +529,7 @@ impl MockContext {
                     .try_into()
                     .expect("never fails");
 
-                client_state.validate().expect("never fails");
+                client_state.inner().validate().expect("never fails");
 
                 let cs_states = blocks
                     .into_iter()
@@ -782,14 +785,14 @@ impl MockContext {
 
 #[cfg(test)]
 mod tests {
-    use ibc::core::ics04_channel::acknowledgement::Acknowledgement;
-    use ibc::core::ics04_channel::channel::{Counterparty, Order};
-    use ibc::core::ics04_channel::error::{ChannelError, PacketError};
-    use ibc::core::ics04_channel::packet::Packet;
-    use ibc::core::ics04_channel::Version;
-    use ibc::core::ics24_host::identifier::{ChainId, ChannelId, ConnectionId, PortId};
-    use ibc::core::router::{Module, ModuleExtras, ModuleId};
-    use ibc::{Height, Signer};
+    use ibc::core::channel::types::acknowledgement::Acknowledgement;
+    use ibc::core::channel::types::channel::{Counterparty, Order};
+    use ibc::core::channel::types::error::{ChannelError, PacketError};
+    use ibc::core::channel::types::packet::Packet;
+    use ibc::core::channel::types::Version;
+    use ibc::core::primitives::Signer;
+    use ibc::core::router::module::Module;
+    use ibc::core::router::types::module::{ModuleExtras, ModuleId};
     use test_log::test;
 
     use super::*;

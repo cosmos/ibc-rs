@@ -1,28 +1,29 @@
 use core::str::FromStr;
 use core::time::Duration;
 
-use ibc::core::ics02_client::client_state::{
-    ClientStateCommon, ClientStateExecution, ClientStateValidation, Status, UpdateKind,
+use ibc::core::client::context::client_state::{
+    ClientStateCommon, ClientStateExecution, ClientStateValidation,
 };
-use ibc::core::ics02_client::client_type::ClientType;
-use ibc::core::ics02_client::error::{ClientError, UpgradeClientError};
-use ibc::core::ics02_client::{ClientExecutionContext, ClientValidationContext};
-use ibc::core::ics23_commitment::commitment::{
+use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
+use ibc::core::client::types::error::{ClientError, UpgradeClientError};
+use ibc::core::client::types::{Height, Status, UpdateKind};
+use ibc::core::commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
-use ibc::core::ics24_host::identifier::ClientId;
-use ibc::core::ics24_host::path::{ClientConsensusStatePath, ClientStatePath, Path};
-use ibc::core::timestamp::Timestamp;
-use ibc::core::ContextError;
-use ibc::prelude::*;
-use ibc::proto::mock::ClientState as RawMockClientState;
-use ibc::proto::{Any, Protobuf};
-use ibc::Height;
+use ibc::core::handler::types::error::ContextError;
+use ibc::core::host::types::identifiers::{ClientId, ClientType};
+use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath, Path};
+use ibc::core::primitives::prelude::*;
+use ibc::core::primitives::Timestamp;
+use ibc::primitives::proto::{Any, Protobuf};
 
 use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::mock::misbehaviour::Misbehaviour;
+use crate::testapp::ibc::clients::mock::proto::{
+    ClientState as RawMockClientState, Header as RawMockHeader,
+};
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
 pub const MOCK_CLIENT_TYPE: &str = "9999-mock";
@@ -86,7 +87,7 @@ impl TryFrom<RawMockClientState> for MockClientState {
 impl From<MockClientState> for RawMockClientState {
     fn from(value: MockClientState) -> Self {
         RawMockClientState {
-            header: Some(ibc::proto::mock::Header {
+            header: Some(RawMockHeader {
                 height: Some(value.header.height().into()),
                 timestamp: value.header.timestamp.nanoseconds(),
             }),
@@ -277,14 +278,17 @@ where
         }
 
         let latest_consensus_state: MockConsensusState = {
-            let any_latest_consensus_state = match ctx.consensus_state(
-                &ClientConsensusStatePath::new(client_id, &self.latest_height()),
-            ) {
-                Ok(cs) => cs,
-                // if the client state does not have an associated consensus state for its latest height
-                // then it must be expired
-                Err(_) => return Ok(Status::Expired),
-            };
+            let any_latest_consensus_state =
+                match ctx.consensus_state(&ClientConsensusStatePath::new(
+                    client_id.clone(),
+                    self.latest_height().revision_number(),
+                    self.latest_height().revision_height(),
+                )) {
+                    Ok(cs) => cs,
+                    // if the client state does not have an associated consensus state for its latest height
+                    // then it must be expired
+                    Err(_) => return Ok(Status::Expired),
+                };
 
             any_latest_consensus_state.try_into()?
         };
@@ -320,7 +324,11 @@ where
 
         ctx.store_client_state(ClientStatePath::new(client_id), (*self).into())?;
         ctx.store_consensus_state(
-            ClientConsensusStatePath::new(client_id, &self.latest_height()),
+            ClientConsensusStatePath::new(
+                client_id.clone(),
+                self.latest_height().revision_number(),
+                self.latest_height().revision_height(),
+            ),
             mock_consensus_state.into(),
         )?;
 
@@ -340,7 +348,11 @@ where
         let new_consensus_state = MockConsensusState::new(header);
 
         ctx.store_consensus_state(
-            ClientConsensusStatePath::new(client_id, &new_client_state.latest_height()),
+            ClientConsensusStatePath::new(
+                client_id.clone(),
+                new_client_state.latest_height().revision_number(),
+                new_client_state.latest_height().revision_height(),
+            ),
             new_consensus_state.into(),
         )?;
         ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
@@ -377,7 +389,11 @@ where
         let latest_height = new_client_state.latest_height();
 
         ctx.store_consensus_state(
-            ClientConsensusStatePath::new(client_id, &latest_height),
+            ClientConsensusStatePath::new(
+                client_id.clone(),
+                latest_height.revision_number(),
+                latest_height.revision_height(),
+            ),
             new_consensus_state.into(),
         )?;
         ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;

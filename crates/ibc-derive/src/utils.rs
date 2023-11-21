@@ -10,67 +10,67 @@ pub struct Imports;
 
 impl Imports {
     pub fn CommitmentRoot() -> TokenStream {
-        quote! {ibc::core::ics23_commitment::commitment::CommitmentRoot}
+        quote! {ibc::core::commitment_types::commitment::CommitmentRoot}
     }
 
     pub fn CommitmentPrefix() -> TokenStream {
-        quote! {ibc::core::ics23_commitment::commitment::CommitmentPrefix}
+        quote! {ibc::core::commitment_types::commitment::CommitmentPrefix}
     }
 
     pub fn CommitmentProofBytes() -> TokenStream {
-        quote! {ibc::core::ics23_commitment::commitment::CommitmentProofBytes}
+        quote! {ibc::core::commitment_types::commitment::CommitmentProofBytes}
     }
 
     pub fn Path() -> TokenStream {
-        quote! {ibc::core::ics24_host::path::Path}
+        quote! {ibc::core::host::types::path::Path}
     }
 
     pub fn ConsensusState() -> TokenStream {
-        quote! {ibc::core::ics02_client::consensus_state::ConsensusState}
+        quote! {ibc::core::client::context::consensus_state::ConsensusState}
     }
 
     pub fn ClientStateCommon() -> TokenStream {
-        quote! {ibc::core::ics02_client::client_state::ClientStateCommon}
+        quote! {ibc::core::client::context::client_state::ClientStateCommon}
     }
 
     pub fn ClientStateValidation() -> TokenStream {
-        quote! {ibc::core::ics02_client::client_state::ClientStateValidation}
+        quote! {ibc::core::client::context::client_state::ClientStateValidation}
     }
 
     pub fn ClientStateExecution() -> TokenStream {
-        quote! {ibc::core::ics02_client::client_state::ClientStateExecution}
+        quote! {ibc::core::client::context::client_state::ClientStateExecution}
     }
 
     pub fn ClientId() -> TokenStream {
-        quote! {ibc::core::ics24_host::identifier::ClientId}
+        quote! {ibc::core::host::types::identifiers::ClientId}
     }
 
     pub fn ClientType() -> TokenStream {
-        quote! {ibc::core::ics02_client::client_type::ClientType}
+        quote! {ibc::core::host::types::identifiers::ClientType}
     }
 
     pub fn ClientError() -> TokenStream {
-        quote! {ibc::core::ics02_client::error::ClientError}
+        quote! {ibc::core::client::types::error::ClientError}
     }
 
     pub fn Height() -> TokenStream {
-        quote! {ibc::Height}
+        quote! {ibc::core::client::types::Height}
     }
 
     pub fn Any() -> TokenStream {
-        quote! {ibc::proto::Any}
+        quote! {ibc::primitives::proto::Any}
     }
 
     pub fn Timestamp() -> TokenStream {
-        quote! {ibc::core::timestamp::Timestamp}
+        quote! {ibc::core::primitives::Timestamp}
     }
 
     pub fn UpdateKind() -> TokenStream {
-        quote! {ibc::core::ics02_client::client_state::UpdateKind}
+        quote! {ibc::core::client::types::UpdateKind}
     }
 
     pub fn Status() -> TokenStream {
-        quote! {ibc::core::ics02_client::client_state::Status}
+        quote! {ibc::core::client::types::Status}
     }
 }
 

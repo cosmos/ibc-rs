@@ -1,10 +1,9 @@
 use alloc::string::ToString;
 
-use ibc::core::ics04_channel::packet::{Packet, Sequence};
-use ibc::core::ics04_channel::timeout::TimeoutHeight;
-use ibc::core::ics24_host::identifier::{ChannelId, PortId};
-use ibc::core::timestamp::Timestamp;
-use ibc::Signer;
+use ibc::core::channel::types::packet::Packet;
+use ibc::core::channel::types::timeout::TimeoutHeight;
+use ibc::core::host::types::identifiers::{ChannelId, PortId, Sequence};
+use ibc::core::primitives::{Signer, Timestamp};
 use ibc_app_transfer::types::msgs::transfer::MsgTransfer;
 use ibc_app_transfer::types::packet::PacketData;
 use ibc_app_transfer::types::{Memo, PrefixedCoin};

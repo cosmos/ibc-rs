@@ -1,5 +1,5 @@
-use ibc::proto::core::channel::v1::MsgTimeout as RawMsgTimeout;
-use ibc::proto::core::client::v1::Height as RawHeight;
+use ibc::core::channel::types::proto::v1::MsgTimeout as RawMsgTimeout;
+use ibc::core::client::types::proto::v1::Height as RawHeight;
 
 use super::{dummy_proof, dummy_raw_packet};
 use crate::utils::dummies::core::signer::dummy_bech32_account;

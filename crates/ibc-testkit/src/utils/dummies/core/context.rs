@@ -3,10 +3,10 @@ use core::cmp::min;
 use core::ops::{Add, Sub};
 use core::time::Duration;
 
-use ibc::core::ics24_host::identifier::ChainId;
-use ibc::core::timestamp::Timestamp;
-use ibc::prelude::*;
-use ibc::Height;
+use ibc::core::client::types::Height;
+use ibc::core::host::types::identifiers::ChainId;
+use ibc::core::primitives::prelude::*;
+use ibc::core::primitives::Timestamp;
 use parking_lot::Mutex;
 use tendermint_testgen::Validator as TestgenValidator;
 use typed_builder::TypedBuilder;

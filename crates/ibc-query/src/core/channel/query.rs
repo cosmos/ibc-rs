@@ -3,14 +3,13 @@
 use alloc::format;
 use core::str::FromStr;
 
-use ibc::core::ics04_channel::packet::Sequence;
-use ibc::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use ibc::core::ics24_host::path::{
+use ibc::core::client::types::Height;
+use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
+use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath, Path,
     ReceiptPath, SeqRecvPath,
 };
-use ibc::core::ValidationContext;
-use ibc::Height;
+use ibc::core::host::ValidationContext;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::channel::v1::{
     QueryChannelClientStateRequest, QueryChannelClientStateResponse,
@@ -194,7 +193,11 @@ where
             description: format!("Channel {} does not have a connection", channel_id),
         })??;
 
-    let consensus_path = ClientConsensusStatePath::new(connection_end.client_id(), &height);
+    let consensus_path = ClientConsensusStatePath::new(
+        connection_end.client_id().clone(),
+        height.revision_number(),
+        height.revision_height(),
+    );
 
     let consensus_state = ibc_ctx.consensus_state(&consensus_path)?;
 

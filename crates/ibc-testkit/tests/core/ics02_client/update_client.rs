@@ -1,26 +1,25 @@
 use core::str::FromStr;
 use core::time::Duration;
 
-use ibc::clients::ics07_tendermint::client_state::ClientState as TmClientState;
-use ibc::clients::ics07_tendermint::client_type as tm_client_type;
-use ibc::clients::ics07_tendermint::header::Header as TmHeader;
-use ibc::clients::ics07_tendermint::misbehaviour::Misbehaviour as TmMisbehaviour;
-use ibc::core::events::{IbcEvent, MessageEvent};
-use ibc::core::ics02_client::client_state::{ClientStateCommon, ClientStateValidation};
-use ibc::core::ics02_client::client_type::ClientType;
-use ibc::core::ics02_client::msgs::misbehaviour::MsgSubmitMisbehaviour;
-use ibc::core::ics02_client::msgs::update_client::MsgUpdateClient;
-use ibc::core::ics02_client::msgs::ClientMsg;
-use ibc::core::ics02_client::ClientValidationContext;
-use ibc::core::ics23_commitment::specs::ProofSpecs;
-use ibc::core::ics24_host::identifier::{ChainId, ClientId};
-use ibc::core::ics24_host::path::ClientConsensusStatePath;
-use ibc::core::timestamp::Timestamp;
-use ibc::core::{execute, validate, MsgEnvelope, ValidationContext};
-use ibc::prelude::*;
-use ibc::proto::tendermint::v1::{ClientState as RawTmClientState, Fraction};
-use ibc::proto::Any;
-use ibc::{downcast, Height};
+use ibc::clients::tendermint::client_state::ClientStateWrapper;
+use ibc::clients::tendermint::types::proto::v1::{ClientState as RawTmClientState, Fraction};
+use ibc::clients::tendermint::types::{
+    client_type as tm_client_type, ClientState as TmClientState, Header as TmHeader,
+    Misbehaviour as TmMisbehaviour,
+};
+use ibc::core::client::context::client_state::{ClientStateCommon, ClientStateValidation};
+use ibc::core::client::context::ClientValidationContext;
+use ibc::core::client::types::msgs::{ClientMsg, MsgSubmitMisbehaviour, MsgUpdateClient};
+use ibc::core::client::types::Height;
+use ibc::core::commitment_types::specs::ProofSpecs;
+use ibc::core::entrypoint::{execute, validate};
+use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
+use ibc::core::handler::types::msgs::MsgEnvelope;
+use ibc::core::host::types::identifiers::{ChainId, ClientId, ClientType};
+use ibc::core::host::types::path::ClientConsensusStatePath;
+use ibc::core::host::ValidationContext;
+use ibc::core::primitives::{downcast, Timestamp};
+use ibc::primitives::proto::Any;
 use ibc_testkit::hosts::block::{HostBlock, HostType};
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
     client_type as mock_client_type, MockClientState,
@@ -137,7 +136,11 @@ fn test_consensus_state_pruning() {
 
     // Check that latest expired consensus state is pruned.
     let expired_height = Height::new(1, 1).unwrap();
-    let client_cons_state_path = ClientConsensusStatePath::new(&client_id, &expired_height);
+    let client_cons_state_path = ClientConsensusStatePath::new(
+        client_id.clone(),
+        expired_height.revision_number(),
+        expired_height.revision_height(),
+    );
     assert!(ctx
         .client_update_height(&client_id, &expired_height)
         .is_err());
@@ -146,7 +149,11 @@ fn test_consensus_state_pruning() {
 
     // Check that latest valid consensus state exists.
     let earliest_valid_height = Height::new(1, 2).unwrap();
-    let client_cons_state_path = ClientConsensusStatePath::new(&client_id, &earliest_valid_height);
+    let client_cons_state_path = ClientConsensusStatePath::new(
+        client_id.clone(),
+        earliest_valid_height.revision_number(),
+        earliest_valid_height.revision_height(),
+    );
 
     assert!(ctx
         .client_update_height(&client_id, &earliest_valid_height)
@@ -564,7 +571,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
 
             let client_state = TmClientState::try_from(raw_client_state).unwrap();
 
-            client_state.into()
+            ClientStateWrapper::from(client_state).into()
         };
 
         let mut ibc_store = ctx_a.ibc_store.lock();

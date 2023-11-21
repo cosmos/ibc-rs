@@ -1,12 +1,13 @@
-use ibc::core::ics04_channel::acknowledgement::Acknowledgement;
-use ibc::core::ics04_channel::channel::{Counterparty, Order};
-use ibc::core::ics04_channel::error::{ChannelError, PacketError};
-use ibc::core::ics04_channel::packet::Packet;
-use ibc::core::ics04_channel::Version;
-use ibc::core::ics24_host::identifier::{ChannelId, ConnectionId, PortId};
-use ibc::core::router::{Module, ModuleExtras};
-use ibc::prelude::*;
-use ibc::Signer;
+use ibc::core::channel::types::acknowledgement::Acknowledgement;
+use ibc::core::channel::types::channel::{Counterparty, Order};
+use ibc::core::channel::types::error::{ChannelError, PacketError};
+use ibc::core::channel::types::packet::Packet;
+use ibc::core::channel::types::Version;
+use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc::core::primitives::prelude::*;
+use ibc::core::primitives::Signer;
+use ibc::core::router::module::Module;
+use ibc::core::router::types::module::ModuleExtras;
 
 use super::types::DummyTransferModule;
 

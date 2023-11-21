@@ -2,15 +2,16 @@
 
 use core::str::FromStr;
 
-use ibc::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
-use ibc::clients::ics07_tendermint::header::{Header, TENDERMINT_HEADER_TYPE_URL};
-use ibc::core::ics02_client::error::ClientError;
-use ibc::core::ics24_host::identifier::ChainId;
-use ibc::core::timestamp::Timestamp;
-use ibc::prelude::*;
-use ibc::proto::tendermint::v1::Header as RawHeader;
-use ibc::proto::{Any, Protobuf};
-use ibc::Height;
+use ibc::clients::tendermint::types::proto::v1::Header as RawHeader;
+use ibc::clients::tendermint::types::{
+    ConsensusState as TmConsensusState, Header, TENDERMINT_HEADER_TYPE_URL,
+};
+use ibc::core::client::types::error::ClientError;
+use ibc::core::client::types::Height;
+use ibc::core::host::types::identifiers::ChainId;
+use ibc::core::primitives::prelude::*;
+use ibc::core::primitives::Timestamp;
+use ibc::primitives::proto::{Any, Protobuf};
 use tendermint::block::Header as TmHeader;
 use tendermint::validator::Set as ValidatorSet;
 use tendermint_testgen::light_block::TmLightBlock;

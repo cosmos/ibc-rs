@@ -1,13 +1,13 @@
 use core::ops::Add;
 use core::time::Duration;
 
-use ibc::core::ics04_channel::msgs::MsgRecvPacket;
-use ibc::core::ics04_channel::packet::Packet;
-use ibc::core::ics23_commitment::commitment::CommitmentProofBytes;
-use ibc::core::timestamp::Timestamp;
-use ibc::proto::core::channel::v1::MsgRecvPacket as RawMsgRecvPacket;
-use ibc::proto::core::client::v1::Height as RawHeight;
-use ibc::{Height, Signer};
+use ibc::core::channel::types::msgs::MsgRecvPacket;
+use ibc::core::channel::types::packet::Packet;
+use ibc::core::channel::types::proto::v1::MsgRecvPacket as RawMsgRecvPacket;
+use ibc::core::client::types::proto::v1::Height as RawHeight;
+use ibc::core::client::types::Height;
+use ibc::core::commitment_types::commitment::CommitmentProofBytes;
+use ibc::core::primitives::{Signer, Timestamp};
 
 use super::{dummy_proof, dummy_raw_packet};
 use crate::utils::dummies::core::signer::dummy_bech32_account;

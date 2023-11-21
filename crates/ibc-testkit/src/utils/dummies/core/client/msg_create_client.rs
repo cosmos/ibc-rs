@@ -1,6 +1,6 @@
-use ibc::clients::ics07_tendermint::consensus_state::ConsensusState as TmConsensusState;
-use ibc::proto::core::client::v1::MsgCreateClient;
-use ibc::proto::Any;
+use ibc::clients::tendermint::types::ConsensusState as TmConsensusState;
+use ibc::core::client::types::proto::v1::MsgCreateClient;
+use ibc::primitives::proto::Any;
 
 use crate::utils::dummies::clients::tendermint::{
     dummy_tendermint_header, dummy_tm_client_state_from_header,

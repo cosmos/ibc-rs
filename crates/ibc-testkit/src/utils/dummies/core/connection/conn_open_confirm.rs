@@ -1,8 +1,8 @@
 use alloc::string::ToString;
 
-use ibc::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
-use ibc::proto::core::client::v1::Height;
-use ibc::proto::core::connection::v1::MsgConnectionOpenConfirm as RawMsgConnectionOpenConfirm;
+use ibc::core::client::types::proto::v1::Height;
+use ibc::core::connection::types::msgs::MsgConnectionOpenConfirm;
+use ibc::core::connection::types::proto::v1::MsgConnectionOpenConfirm as RawMsgConnectionOpenConfirm;
 
 use crate::utils::dummies::core::channel::dummy_proof;
 use crate::utils::dummies::core::signer::dummy_bech32_account;

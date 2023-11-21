@@ -1,14 +1,16 @@
 use core::str::FromStr;
 
-use ibc::core::events::{IbcEvent, MessageEvent};
-use ibc::core::ics03_connection::connection::{ConnectionEnd, Counterparty, State};
-use ibc::core::ics03_connection::msgs::conn_open_confirm::MsgConnectionOpenConfirm;
-use ibc::core::ics03_connection::msgs::ConnectionMsg;
-use ibc::core::ics23_commitment::commitment::CommitmentPrefix;
-use ibc::core::ics24_host::identifier::ClientId;
-use ibc::core::timestamp::ZERO_DURATION;
-use ibc::core::{execute, validate, MsgEnvelope, ValidationContext};
-use ibc::Height;
+use ibc::core::client::types::Height;
+use ibc::core::commitment_types::commitment::CommitmentPrefix;
+use ibc::core::connection::types::msgs::{ConnectionMsg, MsgConnectionOpenConfirm};
+use ibc::core::connection::types::{ConnectionEnd, Counterparty, State};
+use ibc::core::entrypoint::{execute, validate};
+use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
+use ibc::core::handler::types::msgs::MsgEnvelope;
+use ibc::core::host::types::identifiers::ClientId;
+use ibc::core::host::ValidationContext;
+use ibc::core::primitives::prelude::*;
+use ibc::core::primitives::ZERO_DURATION;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
 use ibc_testkit::utils::core::connection::dummy_conn_open_confirm;
