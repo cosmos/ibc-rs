@@ -12,6 +12,8 @@ pub fn calculate_block_delay(
     if delay_period_time % max_expected_time_per_block == 0 {
         return delay_period_time / max_expected_time_per_block;
     }
+
+    // TODO: Use `u64::div_ceil` here instead
     (delay_period_time / max_expected_time_per_block) + 1
 }
 
