@@ -20,7 +20,7 @@ providing a clear and modular path for easy navigation and usage:
 
 | <div style="width:300px">Specification</div> | Crate |
 | ------------------------------------------- | ----- |
-| ICS-02: Client Semantics                    | [ibc-core-client-types](./../ibc-apps/ics02-client/types) |
+| ICS-02: Client Semantics                    | [ibc-core-client-types](./../ibc-core/ics02-client/types) |
 | ICS-03: Connection Semantics                | [ibc-core-connection-types](./../ibc-core/ics03-connection/types) |
 | ICS-04: Channel and Packet Semantics        | [ibc-core-channel-types](./../ibc-core/ics04-channel/types) |
 | ICS-24: Host Requirements                   | [ibc-core-host-types](./../ibc-core/ics24-host/types) |
@@ -46,5 +46,5 @@ repo](https://github.com/cosmos/ibc). Any protocol changes or clarifications
 should be contributed there.
 
 If you're interested in contributing, please take a look at the
-[CONTRIBUTING](./../../CONTRIBUTING.md) guidelines. We welcome and appreciate
+[CONTRIBUTING](./../CONTRIBUTING.md) guidelines. We welcome and appreciate
 community contributions!

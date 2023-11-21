@@ -2,7 +2,7 @@
     <h1>IBC in Rust</h1>
 </div>
 
-![banner](./../../docs/static/img/ibc-rs-cover.svg)
+![banner](./../docs/static/img/ibc-rs-cover.svg)
 
 <div align="center">
 
@@ -32,7 +32,7 @@ repo](https://github.com/cosmos/ibc). Any protocol changes or clarifications
 should be contributed there.
 
 If you're interested in contributing, please take a look at the
-[CONTRIBUTING](./../../CONTRIBUTING.md) guidelines. We welcome and appreciate
+[CONTRIBUTING](./../CONTRIBUTING.md) guidelines. We welcome and appreciate
 community contributions!
 
 ## License
