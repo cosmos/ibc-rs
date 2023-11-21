@@ -1,5 +1,8 @@
+//! Pretty printing utilities.
+
 use core::fmt::{Display, Error as FmtError, Formatter};
 
+/// A slice type that implements the `Display` trait to pretty-print the contained elements.
 pub struct PrettySlice<'a, T>(pub &'a [T]);
 
 impl<'a, T: Display> Display for PrettySlice<'a, T> {

@@ -1,4 +1,6 @@
-/// Downcast the given arguments to the associated enum variant.
+//! Macros used across the ibc-rs crates.
+
+/// Downcast an enum variant that contains a single value into its inner value.
 ///
 /// ## Note
 /// Only works for enums whose variants only hold a single value.
