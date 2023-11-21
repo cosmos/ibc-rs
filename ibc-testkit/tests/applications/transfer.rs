@@ -1,13 +1,13 @@
-use ibc::core::channel::types::channel::{Counterparty, Order};
-use ibc::core::channel::types::Version;
-use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
-use ibc::core::primitives::prelude::*;
 use ibc::apps::transfer::context::cosmos_adr028_escrow_address;
 use ibc::apps::transfer::module::{
     on_chan_open_init_execute, on_chan_open_init_validate, on_chan_open_try_execute,
     on_chan_open_try_validate,
 };
 use ibc::apps::transfer::types::VERSION;
+use ibc::core::channel::types::channel::{Counterparty, Order};
+use ibc::core::channel::types::Version;
+use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc::core::primitives::prelude::*;
 use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use subtle_encoding::bech32;
 

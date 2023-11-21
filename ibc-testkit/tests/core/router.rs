@@ -1,3 +1,7 @@
+use ibc::apps::transfer::handler::send_transfer::send_transfer;
+use ibc::apps::transfer::types::error::TokenTransferError;
+use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
+use ibc::apps::transfer::types::BaseCoin;
 use ibc::core::channel::types::error::ChannelError;
 use ibc::core::channel::types::msgs::{
     ChannelMsg, MsgAcknowledgement, MsgChannelCloseConfirm, MsgChannelCloseInit, MsgChannelOpenAck,
@@ -16,10 +20,6 @@ use ibc::core::host::types::path::CommitmentPath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
-use ibc::apps::transfer::handler::send_transfer::send_transfer;
-use ibc::apps::transfer::types::error::TokenTransferError;
-use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
-use ibc::apps::transfer::types::BaseCoin;
 use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::MockClientState;
 use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
