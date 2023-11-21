@@ -51,7 +51,9 @@ cases.
 ## Decision
 
 For the library organization, the first stage of separation is to split the
-codebase so that each IBC application, client, and core implementation is decoupled from one another. The top-level libraries and the naming schema would look as follows:
+codebase so that each IBC application, client, and core implementation is
+decoupled from one another. The top-level libraries and the naming schema would
+look as follows:
 
 ```markdown
 .
@@ -72,7 +74,7 @@ codebase so that each IBC application, client, and core implementation is decoup
 │   ├── ibc-app-ica
 │   │   └── .
 │   └── .
-├── ibc-preludes
+├── ibc-primitives
 ├── ibc-testkit (previously mock module + `test-utils` feature)
 ├── ibc-query
 └── ibc-derive
@@ -83,10 +85,10 @@ interfaces, and implementations of all the sub-libraries. Therefore, if someone
 only wants to depend on the `ibc` crate without caring about this granularity,
 they can do so.
 
-Afterward, we split off the data structures of each IBC layer into a separate
-sub-library under a `types` folder, still maintained under the directory of that
-relevant component/module. As an example, the `ibc-core-client` crate’s tree and
-the naming schema looks like this:
+Afterward, we split off data structure (domain types) of each IBC layer into a
+separate sub-library under a `types` folder, still maintained under the
+directory of that relevant component/module. As an example, the
+`ibc-core-client` crate’s tree and the naming schema would look like this:
 
 ```markdown
 ibc-core
@@ -105,7 +107,8 @@ to pick the library containing the entire implementation of that particular
 module (e.g. `ibc-core-client`), typically more convenient for host chains or
 smart contract developers to integrate with on their end.
 
-Once the restructuring is complete, the **directory tree** of the repo would look as follows:
+Once the restructuring is complete, the **directory tree** of the repo would
+look as follows:
 
 ```markdown
 ibc
@@ -114,8 +117,8 @@ ibc-core
 |   ├── src
 |   ├── types
 |   |   ├── src
-|   |   └── cargo.toml
-|   └── cargo.toml
+|   |   └── Cargo.toml
+|   └── Cargo.toml
 ├── ics03-connection
 |   └── .
 ├── ics04-channel
@@ -135,19 +138,27 @@ ibc-apps
 ├── ics20-transfer
 ├── ics27-ica
 └── .
-ibc-preludes
+ibc-primitives
 ibc-testkit
 ibc-query
 ibc-derive
 ```
 
-To implement this change efficiently and for more organization, we use the
+In the refactored codebase, there will be several `*-types` crates that rely on
+the `ibc-proto` library. This library acts as an upstream crate, facilitating
+the conversion to and from proto types. Each `*-types` crate also re-exports
+crucial proto types for added user convenience. This approach ensures a seamless
+experience for users downstream, sparing them the necessity of directly
+including the `ibc-proto` dependency in their projects. Consequently, the
+`*-types` crates serve as comprehensive, battery-included libraries.
+
+To implement this ADR efficiently and for more organization, we use the
 workspace inheritance feature and will add a top-level README for main library
 groups like `ibc-core`, `ibc-clients`, etc serving as a guide for users to
 understand the purpose and structure of their sub libraries.
 
-Later, to streamline our release process, it is crucial to come up with a Github
-action to automate and simplify the release process.
+Later, it is crucial to come up with a Github action to automate and simplify
+the release process as well.
 
 ## **Status**
 
@@ -159,13 +170,12 @@ We should acknowledge this restructuring, while a significant step forward, will
 not completely address all existing design couplings. Subsequent improvements in
 implementation logic will be necessary to completely decouple ibc core, clients,
 and applications from each other and make the entire logic as chain-agnostic as
-possible. 
-For instance, currently, our `IbcEvent` type depends on the
-Tendermint events in their conversion, which can only be addressed once this restructuring is complete.
-There may be other mix-ups as well, but the new repository structure
-significantly simplifies their handling and ensures `ibc-rs` evolves into a more
-adaptable, modular, and composable implementation that can serve various use
-cases.
+possible. For instance, currently, our `IbcEvent` type depends on the Tendermint
+events in their conversion, which can only be addressed once this restructuring
+is complete. There may be other mix-ups as well, but the new repository
+structure significantly simplifies their handling and ensures `ibc-rs` evolves
+into a more adaptable, modular, and composable implementation that can serve
+various use cases.
 
 ### **Positive**
 
