@@ -10,10 +10,10 @@ use ibc_primitives::prelude::*;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::Verifier;
 
-use super::ClientState;
+use super::ClientStateWrapper;
 use crate::context::{CommonContext, ValidationContext as TmValidationContext};
 
-impl ClientState {
+impl ClientStateWrapper {
     pub fn verify_header<ClientValidationContext>(
         &self,
         ctx: &ClientValidationContext,

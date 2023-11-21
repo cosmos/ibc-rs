@@ -1,12 +1,12 @@
 pub mod mock;
 
 use derive_more::{From, TryInto};
-use ibc::clients::tendermint::client_state::ClientState as ClientStateWrapper;
+use ibc::clients::tendermint::client_state::ClientStateWrapper;
 use ibc::clients::tendermint::types::{
-    ClientState as TmClientState, ConsensusState as TmConsensusState,
-    TENDERMINT_CLIENT_STATE_TYPE_URL, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
+    ConsensusState as TmConsensusState, TENDERMINT_CLIENT_STATE_TYPE_URL,
+    TENDERMINT_CONSENSUS_STATE_TYPE_URL,
 };
-use ibc::core::client::context::client_state::ClientState;
+use ibc::core::client::context::client_state::ClientState as ClientStateTrait;
 use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::primitives::prelude::*;
@@ -20,7 +20,7 @@ use crate::testapp::ibc::clients::mock::consensus_state::{
 };
 use crate::testapp::ibc::core::types::MockContext;
 
-#[derive(Debug, Clone, From, PartialEq, ClientState)]
+#[derive(Debug, Clone, From, PartialEq, ClientStateTrait)]
 #[generics(ClientValidationContext = MockContext,
            ClientExecutionContext = MockContext)
 ]
@@ -36,9 +36,7 @@ impl TryFrom<Any> for AnyClientState {
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         if raw.type_url == TENDERMINT_CLIENT_STATE_TYPE_URL {
-            let client_state = TmClientState::try_from(raw)?;
-
-            Ok(ClientStateWrapper::from(client_state).into())
+            Ok(ClientStateWrapper::try_from(raw)?.into())
         } else if raw.type_url == MOCK_CLIENT_STATE_TYPE_URL {
             MockClientState::try_from(raw).map(Into::into)
         } else {

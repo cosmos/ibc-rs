@@ -7,7 +7,7 @@ use core::fmt::Debug;
 use core::ops::{Add, Sub};
 use core::time::Duration;
 
-use ibc::clients::tendermint::client_state::ClientState as TmClientState;
+use ibc::clients::tendermint::client_state::ClientStateWrapper;
 use ibc::clients::tendermint::types::TENDERMINT_CLIENT_TYPE;
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
@@ -520,7 +520,7 @@ impl MockContext {
                     })
                     .collect();
 
-                let client_state: TmClientState = TmClientStateConfig::builder()
+                let client_state: ClientStateWrapper = TmClientStateConfig::builder()
                     .chain_id(client.client_chain_id)
                     .latest_height(client.client_state_height)
                     .trusting_period(client.trusting_period)

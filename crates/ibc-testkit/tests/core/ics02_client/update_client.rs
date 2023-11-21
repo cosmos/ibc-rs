@@ -1,7 +1,7 @@
 use core::str::FromStr;
 use core::time::Duration;
 
-use ibc::clients::tendermint::client_state::ClientState as ClientStateWrapper;
+use ibc::clients::tendermint::client_state::ClientStateWrapper;
 use ibc::clients::tendermint::types::proto::v1::{ClientState as RawTmClientState, Fraction};
 use ibc::clients::tendermint::types::{
     client_type as tm_client_type, ClientState as TmClientState, Header as TmHeader,

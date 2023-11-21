@@ -2,7 +2,7 @@ use ibc_client_tendermint_types::error::Error;
 use ibc_client_tendermint_types::proto::v1::ClientState as RawTmClientState;
 use ibc_client_tendermint_types::proto::{Any, Protobuf};
 use ibc_client_tendermint_types::{
-    client_type as tm_client_type, ClientState as ClientStateType,
+    client_type as tm_client_type, ClientState as TmClientState,
     ConsensusState as TmConsensusState, Header as TmHeader, Misbehaviour as TmMisbehaviour,
 };
 use ibc_core_client::context::client_state::{
@@ -33,56 +33,56 @@ mod update_client;
 
 /// Newtype wrapper around the `ClientState` type imported from the `ibc-client-tendermint-types`
 /// crate. This wrapper exists so that we can bypass Rust's orphan rules and implement traits
-/// from `ibc::core::ics02_client` on the `ClientState` type.
+/// from `ibc::core::client::context` on the `ClientState` type.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
-pub struct ClientState(ClientStateType);
+pub struct ClientStateWrapper(TmClientState);
 
-impl ClientState {
-    pub fn inner(&self) -> &ClientStateType {
+impl ClientStateWrapper {
+    pub fn inner(&self) -> &TmClientState {
         &self.0
     }
 }
 
-impl From<ClientStateType> for ClientState {
-    fn from(client_state: ClientStateType) -> Self {
+impl From<TmClientState> for ClientStateWrapper {
+    fn from(client_state: TmClientState) -> Self {
         Self(client_state)
     }
 }
 
-impl Protobuf<RawTmClientState> for ClientState {}
+impl Protobuf<RawTmClientState> for ClientStateWrapper {}
 
-impl TryFrom<RawTmClientState> for ClientState {
+impl TryFrom<RawTmClientState> for ClientStateWrapper {
     type Error = Error;
 
     fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
-        Ok(Self(ClientStateType::try_from(raw)?))
+        Ok(Self(TmClientState::try_from(raw)?))
     }
 }
 
-impl From<ClientState> for RawTmClientState {
-    fn from(client_state: ClientState) -> Self {
+impl From<ClientStateWrapper> for RawTmClientState {
+    fn from(client_state: ClientStateWrapper) -> Self {
         client_state.0.into()
     }
 }
 
-impl Protobuf<Any> for ClientState {}
+impl Protobuf<Any> for ClientStateWrapper {}
 
-impl TryFrom<Any> for ClientState {
+impl TryFrom<Any> for ClientStateWrapper {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        Ok(Self(ClientStateType::try_from(raw)?))
+        Ok(Self(TmClientState::try_from(raw)?))
     }
 }
 
-impl From<ClientState> for Any {
-    fn from(client_state: ClientState) -> Self {
+impl From<ClientStateWrapper> for Any {
+    fn from(client_state: ClientStateWrapper) -> Self {
         client_state.0.into()
     }
 }
 
-impl ClientStateCommon for ClientState {
+impl ClientStateCommon for ClientStateWrapper {
     fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
         let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
         if tm_consensus_state.root().is_empty() {
@@ -229,7 +229,7 @@ impl ClientStateCommon for ClientState {
     }
 }
 
-impl<V> ClientStateValidation<V> for ClientState
+impl<V> ClientStateValidation<V> for ClientStateWrapper
 where
     V: ClientValidationContext + TmValidationContext,
     V::AnyConsensusState: TryInto<TmConsensusState>,
@@ -310,10 +310,10 @@ where
     }
 }
 
-impl<E> ClientStateExecution<E> for ClientState
+impl<E> ClientStateExecution<E> for ClientStateWrapper
 where
     E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
+    <E as ClientExecutionContext>::AnyClientState: From<ClientStateWrapper>,
     <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
 {
     fn initialise(
@@ -385,7 +385,7 @@ where
             )?;
             ctx.store_client_state(
                 ClientStatePath::new(client_id),
-                ClientState::from(new_client_state).into(),
+                ClientStateWrapper::from(new_client_state).into(),
             )?;
             ctx.store_update_time(client_id.clone(), header_height, host_timestamp)?;
             ctx.store_update_height(client_id.clone(), header_height, host_height)?;
@@ -403,7 +403,7 @@ where
     ) -> Result<(), ClientError> {
         let frozen_client_state = self.0.clone().with_frozen_height(Height::min(0));
 
-        let wrapped_frozen_client_state = ClientState::from(frozen_client_state);
+        let wrapped_frozen_client_state = ClientStateWrapper::from(frozen_client_state);
 
         ctx.store_client_state(
             ClientStatePath::new(client_id),
@@ -430,7 +430,7 @@ where
         // parameters are ignored. All chain-chosen parameters come from
         // committed client, all client-chosen parameters come from current
         // client.
-        let new_client_state = ClientStateType::new(
+        let new_client_state = TmClientState::new(
             upgraded_tm_client_state.0.chain_id,
             self.0.trust_level,
             self.0.trusting_period,
@@ -468,7 +468,7 @@ where
 
         ctx.store_client_state(
             ClientStatePath::new(client_id),
-            ClientState::from(new_client_state).into(),
+            ClientStateWrapper::from(new_client_state).into(),
         )?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(
@@ -519,7 +519,7 @@ mod tests {
         struct Test {
             name: String,
             height: Height,
-            setup: Option<Box<dyn FnOnce(ClientState) -> ClientState>>,
+            setup: Option<Box<dyn FnOnce(ClientStateWrapper) -> ClientStateWrapper>>,
             want_pass: bool,
         }
 
@@ -553,8 +553,8 @@ mod tests {
             )
             .expect("Never fails");
             let client_state = match test.setup {
-                Some(setup) => (setup)(ClientState(client_state)),
-                _ => ClientState(client_state),
+                Some(setup) => (setup)(ClientStateWrapper(client_state)),
+                _ => ClientStateWrapper(client_state),
             };
             let res = client_state.validate_proof_height(test.height);
 

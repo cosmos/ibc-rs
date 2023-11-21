@@ -10,9 +10,9 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
 use tendermint_light_client_verifier::Verifier;
 
-use super::{ClientState, TmValidationContext};
+use super::{ClientStateWrapper, TmValidationContext};
 
-impl ClientState {
+impl ClientStateWrapper {
     // verify_misbehaviour determines whether or not two conflicting headers at
     // the same height would have convinced the light client.
     pub fn verify_misbehaviour<ClientValidationContext>(
