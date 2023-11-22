@@ -148,7 +148,7 @@ impl HostBlock {
                 let light_block = TestgenLightBlock::new_default_with_header(
                     TestgenHeader::new(validators)
                         .height(height)
-                        .chain_id(chain_id.as_ref())
+                        .chain_id(chain_id.as_str())
                         .next_validators(next_validators)
                         .time(timestamp.into_tm_time().expect("Never fails")),
                 )
