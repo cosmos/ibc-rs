@@ -1216,24 +1216,323 @@ name = "ibc"
 version = "0.47.0"
 dependencies = [
  "bytes",
- "cfg-if",
  "derive_more",
  "displaydoc",
+ "ibc-apps",
+ "ibc-clients",
+ "ibc-core",
  "ibc-derive",
+ "ibc-primitives",
  "ibc-proto",
- "ics23",
- "primitive-types",
  "prost",
  "serde",
  "serde-json-wasm",
- "serde_derive",
  "sha2 0.10.8",
  "subtle-encoding",
  "tendermint",
  "tendermint-light-client-verifier",
  "tendermint-proto",
  "time",
+]
+
+[[package]]
+name = "ibc-app-transfer"
+version = "0.47.0"
+dependencies = [
+ "ibc-app-transfer-types",
+ "ibc-core",
+ "serde-json-wasm",
+ "sha2 0.10.8",
+]
+
+[[package]]
+name = "ibc-app-transfer-types"
+version = "0.47.0"
+dependencies = [
+ "derive_more",
+ "displaydoc",
+ "ibc-core",
+ "ibc-proto",
+ "primitive-types",
+ "serde",
  "uint",
+]
+
+[[package]]
+name = "ibc-apps"
+version = "0.47.0"
+dependencies = [
+ "ibc-app-transfer",
+]
+
+[[package]]
+name = "ibc-client-tendermint"
+version = "0.47.0"
+dependencies = [
+ "ibc-client-tendermint-types",
+ "ibc-core-client",
+ "ibc-core-commitment-types",
+ "ibc-core-handler-types",
+ "ibc-core-host",
+ "ibc-primitives",
+ "prost",
+ "tendermint-light-client-verifier",
+]
+
+[[package]]
+name = "ibc-client-tendermint-types"
+version = "0.47.0"
+dependencies = [
+ "bytes",
+ "displaydoc",
+ "ibc-core-client-context",
+ "ibc-core-client-types",
+ "ibc-core-commitment-types",
+ "ibc-core-handler-types",
+ "ibc-core-host-types",
+ "ibc-primitives",
+ "ibc-proto",
+ "prost",
+ "tendermint",
+ "tendermint-light-client-verifier",
+ "tendermint-proto",
+]
+
+[[package]]
+name = "ibc-clients"
+version = "0.47.0"
+dependencies = [
+ "ibc-client-tendermint",
+]
+
+[[package]]
+name = "ibc-core"
+version = "0.47.0"
+dependencies = [
+ "ibc-core-channel",
+ "ibc-core-client",
+ "ibc-core-commitment-types",
+ "ibc-core-connection",
+ "ibc-core-handler",
+ "ibc-core-host",
+ "ibc-core-router",
+ "ibc-primitives",
+]
+
+[[package]]
+name = "ibc-core-channel"
+version = "0.47.0"
+dependencies = [
+ "ibc-core-channel-types",
+ "ibc-core-client",
+ "ibc-core-commitment-types",
+ "ibc-core-connection",
+ "ibc-core-handler-types",
+ "ibc-core-host",
+ "ibc-core-router",
+ "ibc-primitives",
+ "prost",
+]
+
+[[package]]
+name = "ibc-core-channel-types"
+version = "0.47.0"
+dependencies = [
+ "derive_more",
+ "displaydoc",
+ "ibc-core-client-types",
+ "ibc-core-commitment-types",
+ "ibc-core-connection-types",
+ "ibc-core-host-types",
+ "ibc-primitives",
+ "ibc-proto",
+ "prost",
+ "serde",
+ "sha2 0.10.8",
+ "subtle-encoding",
+ "tendermint",
+]
+
+[[package]]
+name = "ibc-core-client"
+version = "0.47.0"
+dependencies = [
+ "ibc-core-client-context",
+ "ibc-core-client-types",
+ "ibc-core-commitment-types",
+ "ibc-core-handler-types",
+ "ibc-core-host",
+ "ibc-derive",
+ "ibc-primitives",
+ "prost",
+]
+
+[[package]]
+name = "ibc-core-client-context"
+version = "0.47.0"
+dependencies = [
+ "derive_more",
+ "displaydoc",
+ "ibc-core-client-types",
+ "ibc-core-commitment-types",
+ "ibc-core-handler-types",
+ "ibc-core-host-types",
+ "ibc-derive",
+ "ibc-primitives",
+ "prost",
+ "subtle-encoding",
+ "tendermint",
+]
+
+[[package]]
+name = "ibc-core-client-types"
+version = "0.47.0"
+dependencies = [
+ "derive_more",
+ "displaydoc",
+ "ibc-core-commitment-types",
+ "ibc-core-host-types",
+ "ibc-primitives",
+ "ibc-proto",
+ "prost",
+ "serde",
+ "subtle-encoding",
+ "tendermint",
+]
+
+[[package]]
+name = "ibc-core-commitment-types"
+version = "0.47.0"
+dependencies = [
+ "derive_more",
+ "displaydoc",
+ "ibc-primitives",
+ "ibc-proto",
+ "ics23",
+ "prost",
+ "serde",
+ "subtle-encoding",
+]
+
+[[package]]
+name = "ibc-core-connection"
+version = "0.47.0"
+dependencies = [
+ "ibc-core-client",
+ "ibc-core-connection-types",
+ "ibc-core-handler-types",
+ "ibc-core-host",
+ "ibc-primitives",
+ "prost",
+]
+
+[[package]]
+name = "ibc-core-connection-types"
+version = "0.47.0"
+dependencies = [
+ "derive_more",
+ "displaydoc",
+ "ibc-core-client-types",
+ "ibc-core-commitment-types",
+ "ibc-core-host-types",
+ "ibc-primitives",
+ "ibc-proto",
+ "prost",
+ "serde",
+ "subtle-encoding",
+ "tendermint",
+]
+
+[[package]]
+name = "ibc-core-handler"
+version = "0.47.0"
+dependencies = [
+ "ibc-core-channel",
+ "ibc-core-client",
+ "ibc-core-commitment-types",
+ "ibc-core-connection",
+ "ibc-core-handler-types",
+ "ibc-core-host",
+ "ibc-core-router",
+ "ibc-primitives",
+]
+
+[[package]]
+name = "ibc-core-handler-types"
+version = "0.47.0"
+dependencies = [
+ "derive_more",
+ "displaydoc",
+ "ibc-core-channel-types",
+ "ibc-core-client-types",
+ "ibc-core-commitment-types",
+ "ibc-core-connection-types",
+ "ibc-core-host-types",
+ "ibc-core-router-types",
+ "ibc-primitives",
+ "ibc-proto",
+ "prost",
+ "serde",
+ "subtle-encoding",
+ "tendermint",
+]
+
+[[package]]
+name = "ibc-core-host"
+version = "0.47.0"
+dependencies = [
+ "derive_more",
+ "displaydoc",
+ "ibc-core-channel-types",
+ "ibc-core-client-context",
+ "ibc-core-client-types",
+ "ibc-core-commitment-types",
+ "ibc-core-connection-types",
+ "ibc-core-handler-types",
+ "ibc-core-host-types",
+ "ibc-primitives",
+ "prost",
+ "subtle-encoding",
+]
+
+[[package]]
+name = "ibc-core-host-types"
+version = "0.47.0"
+dependencies = [
+ "derive_more",
+ "displaydoc",
+ "ibc-primitives",
+ "serde",
+]
+
+[[package]]
+name = "ibc-core-router"
+version = "0.47.0"
+dependencies = [
+ "derive_more",
+ "displaydoc",
+ "ibc-core-channel-types",
+ "ibc-core-host-types",
+ "ibc-core-router-types",
+ "ibc-primitives",
+ "prost",
+ "subtle-encoding",
+]
+
+[[package]]
+name = "ibc-core-router-types"
+version = "0.47.0"
+dependencies = [
+ "derive_more",
+ "displaydoc",
+ "ibc-core-host-types",
+ "ibc-primitives",
+ "ibc-proto",
+ "ics23",
+ "prost",
+ "serde",
+ "subtle-encoding",
+ "tendermint",
 ]
 
 [[package]]
@@ -1244,6 +1543,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.38",
+]
+
+[[package]]
+name = "ibc-primitives"
+version = "0.47.0"
+dependencies = [
+ "derive_more",
+ "displaydoc",
+ "ibc-proto",
+ "prost",
+ "serde",
+ "tendermint",
+ "time",
 ]
 
 [[package]]
