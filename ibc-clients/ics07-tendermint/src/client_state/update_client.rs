@@ -1,7 +1,5 @@
 use ibc_client_tendermint_types::error::{Error, IntoResult};
-use ibc_client_tendermint_types::{
-    check_header_trusted_next_validator_set, ConsensusState as TmConsensusState, Header as TmHeader,
-};
+use ibc_client_tendermint_types::{ConsensusState as ConsensusStateType, Header as TmHeader};
 use ibc_core_client::context::ClientExecutionContext;
 use ibc_core_client::types::error::ClientError;
 use ibc_core_host::types::identifiers::ClientId;
@@ -10,10 +8,11 @@ use ibc_primitives::prelude::*;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::Verifier;
 
-use super::ClientStateWrapper;
+use super::ClientState;
+use crate::consensus_state::ConsensusState as TmConsensusState;
 use crate::context::{CommonContext, ValidationContext as TmValidationContext};
 
-impl ClientStateWrapper {
+impl ClientState {
     pub fn verify_header<ClientValidationContext>(
         &self,
         ctx: &ClientValidationContext,
@@ -47,7 +46,7 @@ impl ClientStateWrapper {
                             description: err.to_string(),
                         })?;
 
-                    check_header_trusted_next_validator_set(&header, &trusted_consensus_state)?;
+                    header.check_trusted_next_validator_set(trusted_consensus_state.inner())?;
 
                     TrustedBlockState {
                         chain_id: &self.0.chain_id.to_string().try_into().map_err(|e| {
@@ -55,7 +54,7 @@ impl ClientStateWrapper {
                                 description: format!("failed to parse chain id: {}", e),
                             }
                         })?,
-                        header_time: trusted_consensus_state.timestamp,
+                        header_time: trusted_consensus_state.timestamp(),
                         height: header.trusted_height.revision_height().try_into().map_err(
                             |_| ClientError::ClientSpecific {
                                 description: Error::InvalidHeaderHeight {
@@ -65,7 +64,7 @@ impl ClientStateWrapper {
                             },
                         )?,
                         next_validators: &header.trusted_next_validator_set,
-                        next_validators_hash: trusted_consensus_state.next_validators_hash,
+                        next_validators_hash: trusted_consensus_state.next_validators_hash(),
                     }
                 };
 
@@ -104,8 +103,6 @@ impl ClientStateWrapper {
     where
         ClientValidationContext: TmValidationContext,
     {
-        let header_consensus_state = TmConsensusState::from(header.clone());
-
         let maybe_existing_consensus_state = {
             let path_at_header_height = ClientConsensusStatePath::new(
                 client_id.clone(),
@@ -123,6 +120,9 @@ impl ClientStateWrapper {
                     .map_err(|err| ClientError::Other {
                         description: err.to_string(),
                     })?;
+
+                let header_consensus_state =
+                    TmConsensusState::from(ConsensusStateType::from(header.clone()));
 
                 // There is evidence of misbehaviour if the stored consensus state
                 // is different from the new one we received.
@@ -144,7 +144,7 @@ impl ClientStateWrapper {
                                 description: err.to_string(),
                             })?;
 
-                        if header.signed_header.header().time <= prev_cs.timestamp {
+                        if header.signed_header.header().time <= prev_cs.timestamp() {
                             return Ok(true);
                         }
                     }
@@ -163,7 +163,7 @@ impl ClientStateWrapper {
                                 description: err.to_string(),
                             })?;
 
-                        if header.signed_header.header().time >= next_cs.timestamp {
+                        if header.signed_header.header().time >= next_cs.timestamp() {
                             return Ok(true);
                         }
                     }

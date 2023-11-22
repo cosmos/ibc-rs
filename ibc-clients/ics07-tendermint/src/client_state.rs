@@ -2,12 +2,13 @@ use ibc_client_tendermint_types::error::Error;
 use ibc_client_tendermint_types::proto::v1::ClientState as RawTmClientState;
 use ibc_client_tendermint_types::proto::{Any, Protobuf};
 use ibc_client_tendermint_types::{
-    client_type as tm_client_type, ClientState as TmClientState,
-    ConsensusState as TmConsensusState, Header as TmHeader, Misbehaviour as TmMisbehaviour,
+    client_type as tm_client_type, ClientState as ClientStateType,
+    ConsensusState as ConsensusStateType, Header as TmHeader, Misbehaviour as TmMisbehaviour,
 };
 use ibc_core_client::context::client_state::{
     ClientStateCommon, ClientStateExecution, ClientStateValidation,
 };
+use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc_core_client::types::error::{ClientError, UpgradeClientError};
 use ibc_core_client::types::{Height, Status, UpdateKind};
@@ -24,6 +25,7 @@ use ibc_core_host::ExecutionContext;
 use ibc_primitives::prelude::*;
 use prost::Message;
 
+use super::consensus_state::ConsensusState as TmConsensusState;
 use crate::context::{
     CommonContext, ExecutionContext as TmExecutionContext, ValidationContext as TmValidationContext,
 };
@@ -31,58 +33,59 @@ use crate::context::{
 mod misbehaviour;
 mod update_client;
 
-/// Newtype wrapper around the `ClientState` type imported from the `ibc-client-tendermint-types`
-/// crate. This wrapper exists so that we can bypass Rust's orphan rules and implement traits
-/// from `ibc::core::client::context` on the `ClientState` type.
+/// Newtype wrapper around the `ClientState` type imported from the
+/// `ibc-client-tendermint-types` crate. This wrapper exists so that we can
+/// bypass Rust's orphan rules and implement traits from
+/// `ibc::core::client::context` on the `ClientState` type.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
-pub struct ClientStateWrapper(TmClientState);
+pub struct ClientState(ClientStateType);
 
-impl ClientStateWrapper {
-    pub fn inner(&self) -> &TmClientState {
+impl ClientState {
+    pub fn inner(&self) -> &ClientStateType {
         &self.0
     }
 }
 
-impl From<TmClientState> for ClientStateWrapper {
-    fn from(client_state: TmClientState) -> Self {
+impl From<ClientStateType> for ClientState {
+    fn from(client_state: ClientStateType) -> Self {
         Self(client_state)
     }
 }
 
-impl Protobuf<RawTmClientState> for ClientStateWrapper {}
+impl Protobuf<RawTmClientState> for ClientState {}
 
-impl TryFrom<RawTmClientState> for ClientStateWrapper {
+impl TryFrom<RawTmClientState> for ClientState {
     type Error = Error;
 
     fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
-        Ok(Self(TmClientState::try_from(raw)?))
+        Ok(Self(ClientStateType::try_from(raw)?))
     }
 }
 
-impl From<ClientStateWrapper> for RawTmClientState {
-    fn from(client_state: ClientStateWrapper) -> Self {
+impl From<ClientState> for RawTmClientState {
+    fn from(client_state: ClientState) -> Self {
         client_state.0.into()
     }
 }
 
-impl Protobuf<Any> for ClientStateWrapper {}
+impl Protobuf<Any> for ClientState {}
 
-impl TryFrom<Any> for ClientStateWrapper {
+impl TryFrom<Any> for ClientState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        Ok(Self(TmClientState::try_from(raw)?))
+        Ok(Self(ClientStateType::try_from(raw)?))
     }
 }
 
-impl From<ClientStateWrapper> for Any {
-    fn from(client_state: ClientStateWrapper) -> Self {
+impl From<ClientState> for Any {
+    fn from(client_state: ClientState) -> Self {
         client_state.0.into()
     }
 }
 
-impl ClientStateCommon for ClientStateWrapper {
+impl ClientStateCommon for ClientState {
     fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
         let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
         if tm_consensus_state.root().is_empty() {
@@ -229,7 +232,7 @@ impl ClientStateCommon for ClientStateWrapper {
     }
 }
 
-impl<V> ClientStateValidation<V> for ClientStateWrapper
+impl<V> ClientStateValidation<V> for ClientState
 where
     V: ClientValidationContext + TmValidationContext,
     V::AnyConsensusState: TryInto<TmConsensusState>,
@@ -310,10 +313,10 @@ where
     }
 }
 
-impl<E> ClientStateExecution<E> for ClientStateWrapper
+impl<E> ClientStateExecution<E> for ClientState
 where
     E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientStateWrapper>,
+    <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
     <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
 {
     fn initialise(
@@ -372,7 +375,7 @@ where
             let host_timestamp = CommonContext::host_timestamp(ctx)?;
             let host_height = CommonContext::host_height(ctx)?;
 
-            let new_consensus_state = TmConsensusState::from(header.clone());
+            let new_consensus_state = ConsensusStateType::from(header.clone());
             let new_client_state = self.0.clone().with_header(header)?;
 
             ctx.store_consensus_state(
@@ -381,11 +384,11 @@ where
                     new_client_state.latest_height.revision_number(),
                     new_client_state.latest_height.revision_height(),
                 ),
-                new_consensus_state.into(),
+                TmConsensusState::from(new_consensus_state).into(),
             )?;
             ctx.store_client_state(
                 ClientStatePath::new(client_id),
-                ClientStateWrapper::from(new_client_state).into(),
+                ClientState::from(new_client_state).into(),
             )?;
             ctx.store_update_time(client_id.clone(), header_height, host_timestamp)?;
             ctx.store_update_height(client_id.clone(), header_height, host_height)?;
@@ -403,7 +406,7 @@ where
     ) -> Result<(), ClientError> {
         let frozen_client_state = self.0.clone().with_frozen_height(Height::min(0));
 
-        let wrapped_frozen_client_state = ClientStateWrapper::from(frozen_client_state);
+        let wrapped_frozen_client_state = ClientState::from(frozen_client_state);
 
         ctx.store_client_state(
             ClientStatePath::new(client_id),
@@ -430,7 +433,7 @@ where
         // parameters are ignored. All chain-chosen parameters come from
         // committed client, all client-chosen parameters come from current
         // client.
-        let new_client_state = TmClientState::new(
+        let new_client_state = ClientStateType::new(
             upgraded_tm_client_state.0.chain_id,
             self.0.trust_level,
             self.0.trusting_period,
@@ -456,10 +459,10 @@ where
         // the root is empty. The next consensus state submitted using update
         // will be usable for packet-verification.
         let sentinel_root = "sentinel_root".as_bytes().to_vec();
-        let new_consensus_state = TmConsensusState::new(
+        let new_consensus_state = ConsensusStateType::new(
             sentinel_root.into(),
-            upgraded_tm_cons_state.timestamp,
-            upgraded_tm_cons_state.next_validators_hash,
+            upgraded_tm_cons_state.timestamp(),
+            upgraded_tm_cons_state.next_validators_hash(),
         );
 
         let latest_height = new_client_state.latest_height;
@@ -468,7 +471,7 @@ where
 
         ctx.store_client_state(
             ClientStatePath::new(client_id),
-            ClientStateWrapper::from(new_client_state).into(),
+            ClientState::from(new_client_state).into(),
         )?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(
@@ -476,7 +479,7 @@ where
                 latest_height.revision_number(),
                 latest_height.revision_height(),
             ),
-            new_consensus_state.into(),
+            TmConsensusState::from(new_consensus_state).into(),
         )?;
         ctx.store_update_time(client_id.clone(), latest_height, host_timestamp)?;
         ctx.store_update_height(client_id.clone(), latest_height, host_height)?;
@@ -519,7 +522,7 @@ mod tests {
         struct Test {
             name: String,
             height: Height,
-            setup: Option<Box<dyn FnOnce(ClientStateWrapper) -> ClientStateWrapper>>,
+            setup: Option<Box<dyn FnOnce(ClientState) -> ClientState>>,
             want_pass: bool,
         }
 
@@ -553,8 +556,8 @@ mod tests {
             )
             .expect("Never fails");
             let client_state = match test.setup {
-                Some(setup) => (setup)(ClientStateWrapper(client_state)),
-                _ => ClientStateWrapper(client_state),
+                Some(setup) => (setup)(ClientState(client_state)),
+                _ => ClientState(client_state),
             };
             let res = client_state.validate_proof_height(test.height);
 

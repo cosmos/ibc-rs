@@ -1,13 +1,13 @@
 pub mod mock;
 
 use derive_more::{From, TryInto};
-use ibc::clients::tendermint::client_state::ClientStateWrapper;
+use ibc::clients::tendermint::client_state::ClientState as TmClientState;
+use ibc::clients::tendermint::consensus_state::ConsensusState as TmConsensusState;
 use ibc::clients::tendermint::types::{
-    ConsensusState as TmConsensusState, TENDERMINT_CLIENT_STATE_TYPE_URL,
-    TENDERMINT_CONSENSUS_STATE_TYPE_URL,
+    TENDERMINT_CLIENT_STATE_TYPE_URL, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
 };
 use ibc::core::client::context::client_state::ClientState as ClientStateTrait;
-use ibc::core::client::context::consensus_state::ConsensusState;
+use ibc::core::client::context::consensus_state::ConsensusState as ConsensusStateTrait;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::primitives::prelude::*;
 use ibc::primitives::proto::{Any, Protobuf};
@@ -25,7 +25,7 @@ use crate::testapp::ibc::core::types::MockContext;
            ClientExecutionContext = MockContext)
 ]
 pub enum AnyClientState {
-    Tendermint(ClientStateWrapper),
+    Tendermint(TmClientState),
     Mock(MockClientState),
 }
 
@@ -36,7 +36,7 @@ impl TryFrom<Any> for AnyClientState {
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         if raw.type_url == TENDERMINT_CLIENT_STATE_TYPE_URL {
-            Ok(ClientStateWrapper::try_from(raw)?.into())
+            Ok(TmClientState::try_from(raw)?.into())
         } else if raw.type_url == MOCK_CLIENT_STATE_TYPE_URL {
             MockClientState::try_from(raw).map(Into::into)
         } else {
@@ -56,7 +56,7 @@ impl From<AnyClientState> for Any {
     }
 }
 
-#[derive(Debug, Clone, From, TryInto, PartialEq, ConsensusState)]
+#[derive(Debug, Clone, From, TryInto, PartialEq, ConsensusStateTrait)]
 pub enum AnyConsensusState {
     Tendermint(TmConsensusState),
     Mock(MockConsensusState),
@@ -69,7 +69,7 @@ impl TryFrom<Any> for AnyConsensusState {
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         if raw.type_url == TENDERMINT_CONSENSUS_STATE_TYPE_URL {
-            TmConsensusState::try_from(raw).map(Into::into)
+            Ok(TmConsensusState::try_from(raw)?.into())
         } else if raw.type_url == MOCK_CONSENSUS_STATE_TYPE_URL {
             MockConsensusState::try_from(raw).map(Into::into)
         } else {

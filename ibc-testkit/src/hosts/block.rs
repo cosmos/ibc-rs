@@ -2,10 +2,9 @@
 
 use core::str::FromStr;
 
+use ibc::clients::tendermint::consensus_state::ConsensusState as TmConsensusState;
 use ibc::clients::tendermint::types::proto::v1::Header as RawHeader;
-use ibc::clients::tendermint::types::{
-    ConsensusState as TmConsensusState, Header, TENDERMINT_HEADER_TYPE_URL,
-};
+use ibc::clients::tendermint::types::{Header, TENDERMINT_HEADER_TYPE_URL};
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::ChainId;

@@ -1,7 +1,7 @@
 use core::str::FromStr;
 use core::time::Duration;
 
-use ibc::clients::tendermint::client_state::ClientStateWrapper;
+use ibc::clients::tendermint::client_state::ClientState;
 use ibc::clients::tendermint::types::proto::v1::{ClientState as RawTmClientState, Fraction};
 use ibc::clients::tendermint::types::{
     client_type as tm_client_type, ClientState as TmClientState, Header as TmHeader,
@@ -571,7 +571,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
 
             let client_state = TmClientState::try_from(raw_client_state).unwrap();
 
-            ClientStateWrapper::from(client_state).into()
+            ClientState::from(client_state).into()
         };
 
         let mut ibc_store = ctx_a.ibc_store.lock();

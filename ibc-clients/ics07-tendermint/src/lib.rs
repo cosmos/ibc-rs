@@ -3,7 +3,7 @@
 #![no_std]
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]
-#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types,))]
+#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types))]
 #![deny(
     warnings,
     trivial_casts,
@@ -19,6 +19,7 @@ extern crate alloc;
 extern crate std;
 
 pub mod client_state;
+pub mod consensus_state;
 pub mod context;
 
 pub const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";

@@ -22,7 +22,6 @@ use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresh
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::ProdVerifier;
 
-use crate::consensus_state::ConsensusState as TmConsensusState;
 use crate::error::Error;
 use crate::header::Header as TmHeader;
 use crate::trust_threshold::TrustThreshold;
@@ -391,23 +390,6 @@ impl From<ClientState> for Any {
             type_url: TENDERMINT_CLIENT_STATE_TYPE_URL.to_string(),
             value: Protobuf::<RawTmClientState>::encode_vec(client_state),
         }
-    }
-}
-
-// `header.trusted_validator_set` was given to us by the relayer. Thus, we
-// need to ensure that the relayer gave us the right set, i.e. by ensuring
-// that it matches the hash we have stored on chain.
-pub fn check_header_trusted_next_validator_set(
-    header: &TmHeader,
-    trusted_consensus_state: &TmConsensusState,
-) -> Result<(), ClientError> {
-    if header.trusted_next_validator_set.hash() == trusted_consensus_state.next_validators_hash {
-        Ok(())
-    } else {
-        Err(ClientError::HeaderVerificationFailure {
-            reason: "header trusted next validator set hash does not match hash stored on chain"
-                .to_string(),
-        })
     }
 }
 

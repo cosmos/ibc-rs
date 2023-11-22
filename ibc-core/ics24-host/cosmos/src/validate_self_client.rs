@@ -1,6 +1,6 @@
 use core::time::Duration;
 
-use ibc_client_tendermint::client_state::ClientStateWrapper;
+use ibc_client_tendermint::client_state::ClientState;
 use ibc_core_client_context::client_state::ClientStateCommon;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
@@ -19,7 +19,7 @@ pub trait ValidateSelfClientContext {
         &self,
         client_state_of_host_on_counterparty: Any,
     ) -> Result<(), ContextError> {
-        let tm_client_state = ClientStateWrapper::try_from(client_state_of_host_on_counterparty)
+        let tm_client_state = ClientState::try_from(client_state_of_host_on_counterparty)
             .map_err(|_| ConnectionError::InvalidClientState {
                 reason: "client must be a tendermint client".to_string(),
             })

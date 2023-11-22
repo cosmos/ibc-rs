@@ -1,12 +1,14 @@
 use core::str::FromStr;
 use core::time::Duration;
 
-use ibc::clients::tendermint::client_state::ClientStateWrapper;
+use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::tendermint::types::error::{Error as ClientError, Error};
 use ibc::clients::tendermint::types::proto::v1::{ClientState as RawTmClientState, Fraction};
 #[cfg(feature = "serde")]
 use ibc::clients::tendermint::types::Header;
-use ibc::clients::tendermint::types::{AllowUpdate, ClientState as TmClientState, TrustThreshold};
+use ibc::clients::tendermint::types::{
+    AllowUpdate, ClientState as ClientStateType, TrustThreshold,
+};
 use ibc::core::client::types::proto::v1::Height as RawHeight;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::specs::ProofSpecs;
@@ -15,19 +17,17 @@ use ibc::core::primitives::prelude::*;
 use tendermint::block::Header as TmHeader;
 
 /// Returns a dummy tendermint `ClientState` by given `frozen_height`, for testing purposes only!
-pub fn dummy_tm_client_state_from_raw(
-    frozen_height: RawHeight,
-) -> Result<ClientStateWrapper, Error> {
+pub fn dummy_tm_client_state_from_raw(frozen_height: RawHeight) -> Result<TmClientState, Error> {
     let client_state =
-        TmClientState::try_from(dummy_raw_tm_client_state(frozen_height)).expect("Never fails");
+        ClientStateType::try_from(dummy_raw_tm_client_state(frozen_height)).expect("Never fails");
 
-    Ok(ClientStateWrapper::from(client_state))
+    Ok(TmClientState::from(client_state))
 }
 
 /// Returns a dummy tendermint `ClientState` from a `TmHeader`, for testing purposes only!
-pub fn dummy_tm_client_state_from_header(tm_header: TmHeader) -> ClientStateWrapper {
+pub fn dummy_tm_client_state_from_header(tm_header: TmHeader) -> TmClientState {
     let chain_id = ChainId::from_str(tm_header.chain_id.as_str()).expect("Never fails");
-    let client_state = TmClientState::new(
+    let client_state = ClientStateType::new(
         chain_id.clone(),
         Default::default(),
         Duration::from_secs(64000),
@@ -43,7 +43,7 @@ pub fn dummy_tm_client_state_from_header(tm_header: TmHeader) -> ClientStateWrap
     )
     .expect("Never fails");
 
-    ClientStateWrapper::from(client_state)
+    TmClientState::from(client_state)
 }
 
 /// Returns a dummy tendermint `RawTmClientState` by given `frozen_height`, for testing purposes only!
@@ -87,11 +87,11 @@ pub struct ClientStateConfig {
     allow_update: AllowUpdate,
 }
 
-impl TryFrom<ClientStateConfig> for ClientStateWrapper {
+impl TryFrom<ClientStateConfig> for TmClientState {
     type Error = ClientError;
 
     fn try_from(config: ClientStateConfig) -> Result<Self, Self::Error> {
-        let client_state = TmClientState::new(
+        let client_state = ClientStateType::new(
             config.chain_id,
             config.trust_level,
             config.trusting_period,
@@ -103,7 +103,7 @@ impl TryFrom<ClientStateConfig> for ClientStateWrapper {
             config.allow_update,
         )?;
 
-        Ok(ClientStateWrapper::from(client_state))
+        Ok(TmClientState::from(client_state))
     }
 }
 

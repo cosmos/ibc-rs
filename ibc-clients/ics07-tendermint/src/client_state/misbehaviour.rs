@@ -1,8 +1,5 @@
 use ibc_client_tendermint_types::error::{Error, IntoResult};
-use ibc_client_tendermint_types::{
-    check_header_trusted_next_validator_set, ConsensusState as TmConsensusState,
-    Header as TmHeader, Misbehaviour as TmMisbehaviour,
-};
+use ibc_client_tendermint_types::{Header as TmHeader, Misbehaviour as TmMisbehaviour};
 use ibc_core_client::types::error::ClientError;
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::ClientConsensusStatePath;
@@ -10,9 +7,10 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
 use tendermint_light_client_verifier::Verifier;
 
-use super::{ClientStateWrapper, TmValidationContext};
+use super::{ClientState as TmClientState, TmValidationContext};
+use crate::consensus_state::ConsensusState as TmConsensusState;
 
-impl ClientStateWrapper {
+impl TmClientState {
     // verify_misbehaviour determines whether or not two conflicting headers at
     // the same height would have convinced the light client.
     pub fn verify_misbehaviour<ClientValidationContext>(
@@ -70,7 +68,7 @@ impl ClientStateWrapper {
         current_timestamp: Timestamp,
     ) -> Result<(), ClientError> {
         // ensure correctness of the trusted next validator set provided by the relayer
-        check_header_trusted_next_validator_set(header, trusted_consensus_state)?;
+        header.check_trusted_next_validator_set(trusted_consensus_state.inner())?;
 
         // ensure trusted consensus state is within trusting period
         {
@@ -101,7 +99,8 @@ impl ClientStateWrapper {
             .map_err(|e| ClientError::Other {
                 description: format!("failed to parse chain id: {}", e),
             })?;
-        let trusted_state = header.as_trusted_block_state(trusted_consensus_state, &chain_id)?;
+        let trusted_state =
+            header.as_trusted_block_state(trusted_consensus_state.inner(), &chain_id)?;
 
         let options = self.0.as_light_client_options()?;
         let current_timestamp = current_timestamp.into_tm_time().ok_or(ClientError::Other {
