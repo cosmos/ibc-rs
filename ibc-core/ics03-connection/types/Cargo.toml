@@ -6,7 +6,7 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc", "types"]
+keywords     = ["blockchain", "cosmos", "ibc", "connection", "types"]
 readme       = "./../../README.md"
 description  = """
     Maintained by `ibc-rs`, encapsulates essential ICS-03 Connection Semantics data structures and domain types,

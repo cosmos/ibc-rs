@@ -1,11 +1,11 @@
 [package]
-name = "ibc-derive"
-version = "0.3.0"
-license = "Apache-2.0"
-readme = "README.md"
+name        = "ibc-derive"
+version     = "0.3.0"
+license     = { workspace = true }
+repository  = { workspace = true }
+edition     = { workspace = true }
+readme      = "README.md"
 description = "Maintained by `ibc-rs`, macros implementations of #[derive(ClientState)] and #[derive(ConsensusState)]"
-repository   = "https://github.com/cosmos/ibc-rs"
-edition = "2021"
 
 [lib]
 proc-macro = true

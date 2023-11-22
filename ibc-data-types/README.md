@@ -19,7 +19,7 @@ providing a clear and modular path for easy navigation and usage:
 ### Core
 
 | <div style="width:300px">Specification</div> | Crate |
-| ------------------------------------------- | ----- |
+| ------------------------------------------- | ------ |
 | ICS-02: Client Semantics                    | [ibc-core-client-types](./../ibc-core/ics02-client/types) |
 | ICS-03: Connection Semantics                | [ibc-core-connection-types](./../ibc-core/ics03-connection/types) |
 | ICS-04: Channel and Packet Semantics        | [ibc-core-channel-types](./../ibc-core/ics04-channel/types) |
@@ -30,13 +30,13 @@ providing a clear and modular path for easy navigation and usage:
 ### Clients
 
 | <div style="width:300px">Specification</div> | Crate |
-| ------------------------------------------- | ----- |
+| ------------------------------------------- | ------ |
 | ICS-07: Tendermint Client                   | [ibc-client-tendermint-types](./../ibc-clients/ics07-tendermint/types) |
 
 ### Apps
 
 | <div style="width:300px">Specification</div> | Crate |
-| ------------------------------------------- | ----- |
+| ------------------------------------------- | ------ |
 | ICS-20: Fungible Token Transfer             | [ibc-app-transfer-types](./../ibc-apps/ics20-transfer/types) |
 
 ## Contributing
