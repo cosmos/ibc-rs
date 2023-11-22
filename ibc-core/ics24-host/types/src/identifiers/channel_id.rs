@@ -1,6 +1,7 @@
 use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
+use derive_more::Into;
 use ibc_primitives::prelude::*;
 
 use crate::error::IdentifierError;
@@ -22,7 +23,7 @@ const CHANNEL_ID_PREFIX: &str = "channel";
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Into)]
 pub struct ChannelId(String);
 
 impl ChannelId {

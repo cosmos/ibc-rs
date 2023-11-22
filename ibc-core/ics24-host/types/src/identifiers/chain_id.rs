@@ -148,6 +148,12 @@ impl FromStr for ChainId {
     }
 }
 
+impl From<ChainId> for String {
+    fn from(chain_id: ChainId) -> String {
+        chain_id.id
+    }
+}
+
 impl Display for ChainId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         write!(f, "{}", self.id)
