@@ -1,12 +1,12 @@
 # IBC Applications
 
-This crate is a top-level library that re-exports Inter-Blockchain Communication
-(IBC) applications implemented. It serves as a meta-crate, simplifying the
+This crate is a top-level library that re-exports implementations of Inter-Blockchain Communication
+(IBC) applications. It serves as a meta-crate, simplifying the
 process of importing and integrating various IBC applications into your
 blockchain. IBC is a distributed protocol that enables communication between
 distinct sovereign blockchains. IBC applications abstract away the core
-transport, authentication and ordering (TAO) layers, letter blockchain app
-developers focus solely on business logic implementation.
+transport, authentication, and ordering (TAO) layers, letting blockchain app
+developers focus solely on implementing business logic.
 
 The structure within the `ibc-apps` crate is designed to provide flexibility for
 external users. It allows users to either utilize the entire `ibc-apps` crate,
