@@ -23,8 +23,8 @@ IBC light clients:
 
 ### ICS-07: Tendermint Light Client
 
-- [ibc-client-tendermint](../ibc-client-tendermint)
-- [ibc-client-tendermint-types](../ibc-client-tendermint-types)
+- [ibc-client-tendermint](./ics07-tendermint)
+- [ibc-client-tendermint-types](./ics07-tendermint/types)
 
 ## Third-party Clients
 
