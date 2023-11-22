@@ -6,7 +6,13 @@ on:
       - Cargo.toml
       - Cargo.lock
       - ci/no-std-check/**
-      - crates/**
+      - ci/**
+      - ibc/**
+      - ibc-core/**
+      - ibc-apps/**
+      - ibc-data-types/**
+      - ibc-clients/**
+      - ibc-primitives/**
   push:
     branches: main
     paths:
@@ -14,8 +20,13 @@ on:
       - Cargo.toml
       - Cargo.lock
       - ci/no-std-check/**
-      - crates/**
-
+      - ci/**
+      - ibc/**
+      - ibc-core/**
+      - ibc-apps/**
+      - ibc-data-types/**
+      - ibc-clients/**
+      - ibc-primitives/**
 jobs:
   check-no-std-panic-conflict:
     name: Check no_std panic conflict

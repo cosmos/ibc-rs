@@ -15,8 +15,15 @@ on:
       - Cargo.toml
       - Cargo.lock
       - ci/cw-check/**
-      - crates/**
-
+      - ci/**
+      - ibc/**
+      - ibc-core/**
+      - ibc-apps/**
+      - ibc-data-types/**
+      - ibc-clients/**
+      - ibc-primitives/**
+      - ibc-query/**
+      - ibc-derive/**
 jobs:
   cw-check:
     runs-on: ubuntu-20.04
