@@ -4,11 +4,14 @@
 version: 2
 updates:
   - package-ecosystem: "cargo"
-    directory: "crates/ibc"
+    directory: "/"
     schedule:
       interval: "weekly"
-
   - package-ecosystem: "cargo"
     directory: "ci/no-std-check"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "cargo"
+    directory: "ci/cw-check"
     schedule:
       interval: "weekly"

@@ -3,10 +3,10 @@ use std::str::FromStr;
 
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
-use ibc::{
-    applications::transfer::{msgs::transfer::MsgTransfer, packet::PacketData, *},
-    core::ics24_host::identifier::*,
-};
+use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
+use ibc::apps::transfer::types::packet::PacketData;
+use ibc::apps::transfer::types::{Amount, BaseDenom, PrefixedCoin, PrefixedDenom, TracePath};
+use ibc::core::host::types::identifiers::*;
 use thiserror::Error;
 
 #[cw_serde]
