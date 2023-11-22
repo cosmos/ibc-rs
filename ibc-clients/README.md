@@ -1,12 +1,12 @@
 # IBC Clients
 
-This top-level crate re-exports Inter-Blockchain
-Communication (IBC) implementations of light clients. It serves as a meta-crate, simplifying the
+This top-level crate re-exports Inter-Blockchain Communication (IBC)
+implementations of light clients. It serves as a meta-crate, simplifying the
 process of importing and integrating various IBC clients into your blockchain.
 IBC is a distributed protocol that enables communication between distinct
 sovereign blockchains and IBC light clients track the consensus states and proof
-specs of external blockchains, which are required to properly verify proofs against the
-client's consensus state.
+specs of external blockchains, which are required to properly verify proofs
+against the client's consensus state.
 
 The structure within the `ibc-clients` crate is designed to provide flexibility
 for external users. It allows you to utilize the own `ibc-clients` crate or

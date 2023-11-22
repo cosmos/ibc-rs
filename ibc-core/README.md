@@ -1,13 +1,22 @@
 # IBC Core
 
-This is the top-level library that re-exports the Inter-Blockchain Communication (IBC) core modules as a meta-crate. It serves to simplify the process of importing and integrating various IBC core modules into your blockchain.
+This is the top-level library that re-exports the Inter-Blockchain Communication
+(IBC) core modules as a meta-crate. It serves to simplify the process of
+importing and integrating various IBC core modules into your blockchain.
 
-IBC is a distributed protocol that enables communication between distinct sovereign blockchains and IBC core is the part of the protocol that handles the transport, authentication, and ordering (TAO) of data packets.
+IBC is a distributed protocol that enables communication between distinct
+sovereign blockchains and IBC core is the part of the protocol that handles the
+transport, authentication, and ordering (TAO) of data packets.
 
 The structure within the `ibc-core` crate is designed to provide flexibility for
-external users. You can choose to utilize the entire `ibc-core` crate, or selectively import specific libraries. From there, you also have the flexibility of bringing in an entire sub-module (e.g. the `ibc-core-client` crate), or only a module's associated data structures (e.g. `ibc-core-client-types`).
+external users. You can choose to utilize the entire `ibc-core` crate, or
+selectively import specific libraries. From there, you also have the flexibility
+of bringing in an entire sub-module (e.g. the `ibc-core-client` crate), or only
+a module's associated data structures (e.g. `ibc-core-client-types`).
 
-This versatility empowers hosts, including chain integrators, relayers, or any IBC tooling projects, to build their solution on top of the layers that best suit their particular requirements.
+This versatility empowers hosts, including chain integrators, relayers, or any
+IBC tooling projects, to build their solution on top of the layers that best
+suit their particular requirements.
 
 ## Sub-Crates
 

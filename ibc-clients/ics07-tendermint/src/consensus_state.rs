@@ -1,10 +1,9 @@
-//! This module includes trait implementations for the `ibc_client_tendermint_types::ConsensusState` 
-//! type. It implements the `ConsensusStateTrait` for 
-//! `ConsensusState` by defining a newtype wrapper in order
-//! to circumvent Rust's orphan rule, which disallows foreign
-//! traits from being implemented on foreign types.
-//! This module also includes some trait implementations that serve 
-//! to pass through traits implemented on the wrapped
+//! This module includes trait implementations for the
+//! `ibc_client_tendermint_types::ConsensusState` type. It implements the
+//! `ConsensusStateTrait` for `ConsensusState` by defining a newtype wrapper in
+//! order to circumvent Rust's orphan rule, which disallows foreign traits from
+//! being implemented on foreign types. This module also includes some trait
+//! implementations that serve to pass through traits implemented on the wrapped
 //! `ConsensusState` type.
 
 use ibc_client_tendermint_types::error::Error;

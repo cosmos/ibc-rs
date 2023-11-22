@@ -1,3 +1,13 @@
+//! This module includes trait implementations for the
+//! `ibc_client_tendermint_types::ClientState` type. Implemented traits include
+//! `ClientStateCommon`, `ClientStateValidation`, and `ClientStateExecution`.
+//!
+//! Note that this crate defines a newtype wrapper around the
+//! `ibc_client_tendermint_types::ClientState` type in order to enable
+//! implementing a foreign trait on a foreign type (i.e. the orphan rule in
+//! Rust). As such, this module also includes some trait implementations that
+//! serve to pass through traits implemented on the wrapped `ClientState` type.
+
 use ibc_client_tendermint_types::error::Error;
 use ibc_client_tendermint_types::proto::v1::ClientState as RawTmClientState;
 use ibc_client_tendermint_types::proto::{Any, Protobuf};
