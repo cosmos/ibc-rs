@@ -11,7 +11,7 @@ use ibc::core::host::types::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
 use ibc::core::host::ValidationContext;
-use ibc_core_host_tendermint::upgrade_proposal::UpgradeValidationContext;
+use ibc::cosmos_host::upgrade_proposal::UpgradeValidationContext;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::{
     ConsensusStateWithHeight, IdentifiedClientState, QueryClientStateRequest,

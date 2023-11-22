@@ -20,10 +20,9 @@ all-features = true
 [dependencies]
 # external dependencies
 serde_json =  { workspace = true, optional = true }
-sha2 = { workspace = true }
 
 # ibc dependencies
-ibc-core = { workspace = true }
+ibc-core               = { workspace = true }
 ibc-app-transfer-types = { workspace = true }
 
 [dev-dependencies]
@@ -35,12 +34,11 @@ std = [
     "ibc-app-transfer-types/std",
     "ibc-core/std",
     "serde_json/std",
-    "sha2/std",
 ]
 serde = [
     "ibc-app-transfer-types/serde",
     "ibc-core/serde",
-    "serde_json"
+    "dep:serde_json"
 ]
 schema = [
     "ibc-app-transfer-types/schema",

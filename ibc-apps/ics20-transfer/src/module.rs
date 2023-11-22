@@ -13,8 +13,9 @@ use ibc_core::primitives::Signer;
 use ibc_core::router::types::module::ModuleExtras;
 
 use crate::context::{TokenTransferExecutionContext, TokenTransferValidationContext};
-use crate::handler::on_recv_packet::process_recv_packet_execute;
-use crate::handler::{refund_packet_token_execute, refund_packet_token_validate};
+use crate::handler::{
+    process_recv_packet_execute, refund_packet_token_execute, refund_packet_token_validate,
+};
 
 pub fn on_chan_open_init_validate(
     ctx: &impl TokenTransferValidationContext,

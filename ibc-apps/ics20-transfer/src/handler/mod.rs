@@ -1,11 +1,13 @@
 //! Implements the processing logic for ICS20 (token transfer) message.
-pub mod on_recv_packet;
-pub mod send_transfer;
+mod on_recv_packet;
+mod send_transfer;
 
 use ibc_app_transfer_types::error::TokenTransferError;
 use ibc_app_transfer_types::is_sender_chain_source;
 use ibc_app_transfer_types::packet::PacketData;
 use ibc_core::channel::types::packet::Packet;
+pub use on_recv_packet::*;
+pub use send_transfer::*;
 
 use crate::context::{TokenTransferExecutionContext, TokenTransferValidationContext};
 

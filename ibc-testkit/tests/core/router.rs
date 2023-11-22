@@ -1,4 +1,4 @@
-use ibc::apps::transfer::handler::send_transfer::send_transfer;
+use ibc::apps::transfer::handler::send_transfer;
 use ibc::apps::transfer::types::error::TokenTransferError;
 use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
 use ibc::apps::transfer::types::BaseCoin;

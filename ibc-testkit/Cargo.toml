@@ -30,8 +30,8 @@ tracing           = { version = "0.1.40", default-features = false }
 typed-builder     = { version = "0.18.0" }
 
 # ibc dependencies
-ibc               = { workspace = true, features = ["std"] }
-ibc-proto         = { workspace = true }
+ibc       = { workspace = true, features = ["std"] }
+ibc-proto = { workspace = true }
 
 # cosmos dependencies
 tendermint         = { workspace = true }

@@ -1,7 +1,7 @@
 #![no_std]
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]
-#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types,))]
+#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types))]
 #![deny(
     warnings,
     trivial_casts,
@@ -65,4 +65,9 @@ pub mod clients {
 pub mod apps {
     #[doc(inline)]
     pub use ibc_apps::*;
+}
+
+/// Re-exports Cosmos-specific utility types, traits, and implementations.
+pub mod cosmos_host {
+    pub use ibc_core_host_cosmos::*;
 }

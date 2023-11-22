@@ -1,10 +1,9 @@
-use ibc::apps::transfer::context::{
-    cosmos_adr028_escrow_address, TokenTransferExecutionContext, TokenTransferValidationContext,
-};
+use ibc::apps::transfer::context::{TokenTransferExecutionContext, TokenTransferValidationContext};
 use ibc::apps::transfer::types::error::TokenTransferError;
 use ibc::apps::transfer::types::PrefixedCoin;
 use ibc::core::host::types::identifiers::{ChannelId, PortId};
 use ibc::core::primitives::Signer;
+use ibc::cosmos_host::utils::cosmos_adr028_escrow_address;
 use subtle_encoding::bech32;
 
 use super::types::DummyTransferModule;

@@ -12,6 +12,8 @@
 )]
 pub mod upgrade_proposal;
 
+pub mod utils;
+
 mod validate_self_client;
 pub use validate_self_client::ValidateSelfClientContext;
 

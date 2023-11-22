@@ -19,7 +19,7 @@ members = [
     "ibc-core/ics23-commitment/types",
     "ibc-core/ics24-host",
     "ibc-core/ics24-host/types",
-    "ibc-core/ics24-host/tendermint",
+    "ibc-core/ics24-host/cosmos",
     "ibc-core/ics25-handler",
     "ibc-core/ics25-handler/types",
     "ibc-core/ics26-routing",
@@ -83,7 +83,7 @@ ibc-core-client-types       = { version = "0.47.0", path = "./ibc-core/ics02-cli
 ibc-core-channel-types      = { version = "0.47.0", path = "./ibc-core/ics04-channel/types", default-features = false }
 ibc-core-connection-types   = { version = "0.47.0", path = "./ibc-core/ics03-connection/types", default-features = false }
 ibc-core-commitment-types   = { version = "0.47.0", path = "./ibc-core/ics23-commitment/types", default-features = false }
-ibc-core-host-tendermint    = { version = "0.47.0", path = "./ibc-core/ics24-host/tendermint", default-features = false }
+ibc-core-host-cosmos        = { version = "0.47.0", path = "./ibc-core/ics24-host/cosmos", default-features = false }
 ibc-core-host-types         = { version = "0.47.0", path = "./ibc-core/ics24-host/types", default-features = false }
 ibc-core-handler-types      = { version = "0.47.0", path = "./ibc-core/ics25-handler/types", default-features = false }
 ibc-core-router-types       = { version = "0.47.0", path = "./ibc-core/ics26-routing/types", default-features = false }

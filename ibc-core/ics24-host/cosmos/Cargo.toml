@@ -1,5 +1,5 @@
 [package]
-name         = "ibc-core-host-tendermint"
+name         = "ibc-core-host-cosmos"
 version      = { workspace = true }
 authors      = { workspace = true }
 edition      = { workspace = true }
@@ -9,7 +9,7 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "tendermint"]
 readme       = "./../README.md"
 description  = """
-    Maintained by `ibc-rs`, contains Tendermint-specific helper traits and implementations
+    Maintained by `ibc-rs`, contains Cosmos-specific helper traits and implementations
     to facilitate IBC integration, ensuring proper interaction with modules/components
     beyond the IBC modules on host chains.
 """
@@ -24,10 +24,12 @@ derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
 prost           = { workspace = true }
 serde           = { workspace = true, optional = true }
+sha2            = { workspace = true }
 subtle-encoding = { workspace = true }
 
 # ibc dependencies
 ibc-client-tendermint     = { workspace = true }
+ibc-app-transfer-types    = { workspace = true }
 ibc-core-client-types     = { workspace = true }
 ibc-core-client-context   = { workspace = true }
 ibc-core-connection-types = { workspace = true }
@@ -75,6 +77,17 @@ serde = [
     "ibc-core-handler-types/serde",
     "ibc-primitives/serde",
     "ibc-proto/serde",
+]
+schema = [
+    "ibc-client-tendermint/schema",
+    "ibc-core-client-types/schema",
+    "ibc-core-client-context/schema",
+    "ibc-core-connection-types/schema",
+    "ibc-core-commitment-types/schema",
+    "ibc-core-host-types/schema",
+    "ibc-core-handler-types/schema",
+    "ibc-primitives/schema",
+    "ibc-proto/json-schema",
 ]
 borsh = [
     "dep:borsh",

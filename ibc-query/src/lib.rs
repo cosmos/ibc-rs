@@ -9,7 +9,7 @@
 //! - [`ValidationContext`](ibc::core::host::ValidationContext)
 //! - [`ProvableContext`](crate::core::context::ProvableContext)
 //! - [`QueryContext`](crate::core::context::QueryContext)
-//! - [`UpgradeValidationContext`](ibc_core_host_tendermint::upgrade_proposal::UpgradeValidationContext)
+//! - [`UpgradeValidationContext`](ibc::cosmos_host::upgrade_proposal::UpgradeValidationContext)
 //!   - Only for
 //!     [`ClientQuery::upgraded_client_state`](ibc_proto::ibc::core::client::v1::query_server::Query::upgraded_client_state)
 //!     and

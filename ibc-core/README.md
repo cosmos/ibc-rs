@@ -39,6 +39,7 @@ core specifications:
 ### ICS-24: Host Requirements
 
 - [ibc-core-host](./../ibc-core/ics24-host)
+- [ibc-core-host-cosmos](./../ibc-core/ics24-host/cosmos)
 - [ibc-core-host-types](./../ibc-core/ics24-host/types)
 
 ### ICS-25: Handler Interface
