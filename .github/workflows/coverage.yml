@@ -7,7 +7,13 @@ on:
       - .github/workflows/coverage.yml
       - Cargo.toml
       - ci/**
-      - crates/**
+      - ibc/**
+      - ibc-core/**
+      - ibc-apps/**
+      - ibc-data-types/**
+      - ibc-clients/**
+      - ibc-primitives/**
+      - ibc-query/**
   push:
     branches:
       - main
