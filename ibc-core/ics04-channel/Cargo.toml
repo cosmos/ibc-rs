@@ -33,6 +33,7 @@ ibc-primitives            = { workspace = true }
 [features]
 default = ["std"]
 std = [
+    "prost/std",
     "ibc-core-client/std",
     "ibc-core-connection/std",
     "ibc-core-channel-types/std",
@@ -61,6 +62,8 @@ schema = [
     "ibc-core-handler-types/schema",
     "ibc-core-router/schema",
     "ibc-primitives/schema",
+    "serde",
+    "std"
 ]
 borsh = [
     "ibc-core-client/borsh",

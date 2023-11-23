@@ -79,6 +79,8 @@ schema = [
     "ibc-core-commitment-types/schema",
     "ibc-primitives/schema",
     "ibc-proto/json-schema",
+    "serde",
+    "std"
 ]
 borsh = [
     "dep:borsh",

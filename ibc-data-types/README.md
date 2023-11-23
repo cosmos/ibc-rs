@@ -19,25 +19,25 @@ providing a clear and modular path for easy navigation and usage:
 ### Core
 
 | <div style="width:300px">Specification</div> | Crate |
-| ------------------------------------------- | ------ |
-| ICS-02: Client Semantics                    | [ibc-core-client-types](./../ibc-core/ics02-client/types) |
-| ICS-03: Connection Semantics                | [ibc-core-connection-types](./../ibc-core/ics03-connection/types) |
-| ICS-04: Channel and Packet Semantics        | [ibc-core-channel-types](./../ibc-core/ics04-channel/types) |
-| ICS-24: Host Requirements                   | [ibc-core-host-types](./../ibc-core/ics24-host/types) |
-| ICS-25: Handler Interface                   | [ibc-core-handler-types](./../ibc-core/ics25-handler/types) |
-| ICS-26: Routing Module                      | [ibc-core-routing-types](./../ibc-core/ics26-routing/types) |
+| -------------------------------------------- | ------ |
+| ICS-02: Client Semantics                     | [ibc-core-client-types](./../ibc-core/ics02-client/types) |
+| ICS-03: Connection Semantics                 | [ibc-core-connection-types](./../ibc-core/ics03-connection/types) |
+| ICS-04: Channel and Packet Semantics         | [ibc-core-channel-types](./../ibc-core/ics04-channel/types) |
+| ICS-24: Host Requirements                    | [ibc-core-host-types](./../ibc-core/ics24-host/types) |
+| ICS-25: Handler Interface                    | [ibc-core-handler-types](./../ibc-core/ics25-handler/types) |
+| ICS-26: Routing Module                       | [ibc-core-routing-types](./../ibc-core/ics26-routing/types) |
 
 ### Clients
 
 | <div style="width:300px">Specification</div> | Crate |
-| ------------------------------------------- | ------ |
-| ICS-07: Tendermint Client                   | [ibc-client-tendermint-types](./../ibc-clients/ics07-tendermint/types) |
+| -------------------------------------------- | ------ |
+| ICS-07: Tendermint Client                    | [ibc-client-tendermint-types](./../ibc-clients/ics07-tendermint/types) |
 
 ### Apps
 
 | <div style="width:300px">Specification</div> | Crate |
-| ------------------------------------------- | ------ |
-| ICS-20: Fungible Token Transfer             | [ibc-app-transfer-types](./../ibc-apps/ics20-transfer/types) |
+| -------------------------------------------- | ------ |
+| ICS-20: Fungible Token Transfer              | [ibc-app-transfer-types](./../ibc-apps/ics20-transfer/types) |
 
 ## Contributing
 

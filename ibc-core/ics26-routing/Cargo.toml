@@ -57,6 +57,8 @@ schema = [
     "ibc-core-host-types/schema",
     "ibc-core-router-types/schema",
     "ibc-primitives/schema",
+    "serde",
+    "std"
 ]
 parity-scale-codec = [
     "ibc-core-channel-types/parity-scale-codec",
