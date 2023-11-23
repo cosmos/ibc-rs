@@ -66,7 +66,7 @@ ibc-core            = { version = "0.48.0", path = "./ibc-core", default-feature
 ibc-clients         = { version = "0.48.0", path = "./ibc-clients", default-features = false }
 ibc-apps            = { version = "0.48.0", path = "./ibc-apps", default-features = false }
 ibc-primitives      = { version = "0.48.0", path = "./ibc-primitives", default-features = false }
-ibc-testkit         = { version = "0.48.0", path = "./ibc-testkit" }
+ibc-testkit         = { path = "./ibc-testkit" }
 ibc-derive          = { version = "0.4.0", path = "./ibc-derive" }
 
 ibc-core-client       = { version = "0.48.0", path = "./ibc-core/ics02-client", default-features = false }
