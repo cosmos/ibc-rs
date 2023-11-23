@@ -3,11 +3,11 @@ use ibc::core::client::types::proto::v1::MsgUpgradeClient as RawMsgUpgradeClient
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::ClientId;
 
+use crate::fixtures::core::commitment::dummy_commitment_proof_bytes;
+use crate::fixtures::core::signer::{dummy_account_id, dummy_bech32_account};
 use crate::testapp::ibc::clients::mock::client_state::MockClientState;
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;
-use crate::utils::dummies::core::commitment::dummy_commitment_proof_bytes;
-use crate::utils::dummies::core::signer::{dummy_account_id, dummy_bech32_account};
 
 /// Returns a dummy `MsgUpgradeClient`, for testing purposes only!
 pub fn dummy_msg_upgrade_client(client_id: ClientId, upgrade_height: Height) -> MsgUpgradeClient {
@@ -34,5 +34,23 @@ pub fn dummy_raw_msg_upgrade_client() -> RawMsgUpgradeClient {
         proof_upgrade_client: dummy_commitment_proof_bytes().into(),
         proof_upgrade_consensus_state: dummy_commitment_proof_bytes().into(),
         signer: dummy_bech32_account(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use ibc::core::client::types::msgs::MsgUpgradeClient;
+
+    use super::*;
+
+    #[test]
+    fn msg_upgrade_client_serialization() {
+        let raw = dummy_raw_msg_upgrade_client();
+        let msg = MsgUpgradeClient::try_from(raw.clone()).unwrap();
+        let raw_back: RawMsgUpgradeClient = RawMsgUpgradeClient::from(msg.clone());
+        let msg_back = MsgUpgradeClient::try_from(raw_back.clone()).unwrap();
+        assert_eq!(msg, msg_back);
+        assert_eq!(raw, raw_back);
     }
 }

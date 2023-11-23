@@ -44,9 +44,6 @@ tendermint = { workspace = true }
 parity-scale-codec = { workspace = true, optional = true }
 scale-info         = { workspace = true, optional = true }
 
-[dev-dependencies]
-ibc-testkit = { workspace = true }
-
 [features]
 default = ["std"]
 std = [
@@ -63,7 +60,6 @@ std = [
     "ibc-primitives/std",
     "ibc-proto/std",
     "tendermint/std",
-    "ibc-testkit/std",
 ]
 serde = [
     "dep:serde",
@@ -75,7 +71,6 @@ serde = [
     "ibc-core-router-types/serde",
     "ibc-primitives/serde",
     "ibc-proto/serde",
-    "ibc-testkit/serde",
 ]
 schema = [
     "dep:schemars",

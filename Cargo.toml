@@ -1,33 +1,35 @@
 [workspace]
 resolver = "2"
+# members sorted by publishing order to `crates.io`
 members = [
-    "ibc",
-    "ibc-data-types",
-    "ibc-primitives",
-    "ibc-core",
-    "ibc-clients",
-    "ibc-apps",
-    "ibc-testkit",
-    "ibc-query",
     "ibc-derive",
-    "ibc-core/ics02-client",
-    "ibc-core/ics02-client/types",
-    "ibc-core/ics03-connection",
-    "ibc-core/ics03-connection/types",
-    "ibc-core/ics04-channel",
-    "ibc-core/ics04-channel/types",
-    "ibc-core/ics23-commitment/types",
-    "ibc-core/ics24-host",
+    "ibc-primitives",
     "ibc-core/ics24-host/types",
-    "ibc-core/ics24-host/cosmos",
-    "ibc-core/ics25-handler",
-    "ibc-core/ics25-handler/types",
-    "ibc-core/ics26-routing",
     "ibc-core/ics26-routing/types",
-    "ibc-clients/ics07-tendermint",
+    "ibc-core/ics23-commitment/types",
+    "ibc-core/ics02-client/types",
+    "ibc-core/ics03-connection/types",
+    "ibc-core/ics04-channel/types",
+    "ibc-core/ics25-handler/types",
+    "ibc-core/ics02-client/context",
+    "ibc-core/ics24-host",
+    "ibc-core/ics26-routing",
+    "ibc-core/ics02-client",
+    "ibc-core/ics03-connection",
+    "ibc-core/ics04-channel",
+    "ibc-core/ics25-handler",
+    "ibc-core",
     "ibc-clients/ics07-tendermint/types",
-    "ibc-apps/ics20-transfer",
+    "ibc-clients/ics07-tendermint",
+    "ibc-clients",
+    "ibc-core/ics24-host/cosmos",
     "ibc-apps/ics20-transfer/types",
+    "ibc-apps/ics20-transfer",
+    "ibc-apps",
+    "ibc-data-types",
+    "ibc",
+    "ibc-query",
+    "ibc-testkit",
 ]
 exclude = [
     "ci/cw-check",
@@ -66,7 +68,7 @@ ibc-core            = { version = "0.48.0", path = "./ibc-core", default-feature
 ibc-clients         = { version = "0.48.0", path = "./ibc-clients", default-features = false }
 ibc-apps            = { version = "0.48.0", path = "./ibc-apps", default-features = false }
 ibc-primitives      = { version = "0.48.0", path = "./ibc-primitives", default-features = false }
-ibc-testkit         = { path = "./ibc-testkit" }
+ibc-testkit         = { version = "0.48.0", path = "./ibc-testkit" }
 ibc-derive          = { version = "0.4.0", path = "./ibc-derive" }
 
 ibc-core-client       = { version = "0.48.0", path = "./ibc-core/ics02-client", default-features = false }

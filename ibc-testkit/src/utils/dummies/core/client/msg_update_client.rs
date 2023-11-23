@@ -1,18 +1,35 @@
-use ibc::core::client::types::proto::v1::MsgUpdateClient;
+use ibc::core::client::types::proto::v1::MsgUpdateClient as RawMsgUpdateClient;
 use ibc::primitives::proto::Any;
 
-use crate::utils::dummies::clients::tendermint::dummy_ics07_header;
-use crate::utils::dummies::core::signer::dummy_bech32_account;
+use crate::fixtures::clients::tendermint::dummy_ics07_header;
+use crate::fixtures::core::signer::dummy_bech32_account;
 
 /// Returns a dummy `RawMsgUpdateClient`, for testing purposes only!
-pub fn dummy_raw_msg_update_client() -> MsgUpdateClient {
+pub fn dummy_raw_msg_update_client() -> RawMsgUpdateClient {
     let client_id = "07-tendermint-0".parse().unwrap();
 
     let tm_header = dummy_ics07_header();
 
-    MsgUpdateClient {
+    RawMsgUpdateClient {
         client_id,
         client_message: Some(Any::from(tm_header)),
         signer: dummy_bech32_account(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use ibc::core::client::types::msgs::MsgUpdateClient;
+
+    use super::*;
+
+    #[test]
+    fn msg_update_client_serialization() {
+        let raw = dummy_raw_msg_update_client();
+        let msg = MsgUpdateClient::try_from(raw.clone()).unwrap();
+        let raw_back = RawMsgUpdateClient::from(msg.clone());
+        let msg_back = MsgUpdateClient::try_from(raw_back.clone()).unwrap();
+        assert_eq!(msg, msg_back);
+        assert_eq!(raw, raw_back);
     }
 }

@@ -35,9 +35,6 @@ ibc-primitives            = { workspace = true }
 # cosmos dependencies
 tendermint = { workspace = true }
 
-[dev-dependencies]
-ibc-testkit = { workspace = true }
-
 [features]
 default = ["std"]
 std = [

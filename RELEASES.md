@@ -1,4 +1,3 @@
-
 ## Releases
 
 Our release process is as follows:
@@ -33,8 +32,8 @@ Our release process is as follows:
    work. Fix any potential issues here and push them to the release PR.
 7. Mark the PR as **Ready for Review** and incorporate feedback on the release.
 8. Once approved, merge the PR, and pull the `main` branch.
-9. Run `cargo publish -p <PACKAGE_NAME>` for each package separately to publish
-   the crates.
+9. Publish each package to crates.io by running `cargo publish -p <PACKAGE_NAME>`
+   in the order specified in the workspace `Cargo.toml`.
 10. Create a signed tag and push it to GitHub: `git tag -s -a vX.Y.Z`. In the
    tag message, write the version and the link to the corresponding section of
    the changelog.

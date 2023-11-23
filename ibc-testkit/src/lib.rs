@@ -12,9 +12,10 @@
 
 extern crate alloc;
 
+#[cfg(feature = "std")]
 extern crate std;
 
+pub mod fixtures;
 pub mod hosts;
 pub mod relayer;
 pub mod testapp;
-pub mod utils;

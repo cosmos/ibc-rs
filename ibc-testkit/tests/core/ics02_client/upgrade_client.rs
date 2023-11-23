@@ -10,15 +10,15 @@ use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::downcast;
+use ibc_testkit::fixtures::clients::tendermint::{
+    dummy_tendermint_header, dummy_tm_client_state_from_header,
+};
+use ibc_testkit::fixtures::core::client::dummy_msg_upgrade_client;
+use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
-use ibc_testkit::utils::clients::tendermint::{
-    dummy_tendermint_header, dummy_tm_client_state_from_header,
-};
-use ibc_testkit::utils::core::client::dummy_msg_upgrade_client;
-use ibc_testkit::utils::{Expect, Fixture};
 
 enum Ctx {
     Default,

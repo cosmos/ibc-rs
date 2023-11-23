@@ -20,6 +20,8 @@ use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::{downcast, Timestamp};
 use ibc::primitives::proto::Any;
+use ibc_testkit::fixtures::core::context::MockContextConfig;
+use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::hosts::block::{HostBlock, HostType};
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
     client_type as mock_client_type, MockClientState,
@@ -29,8 +31,6 @@ use ibc_testkit::testapp::ibc::clients::mock::misbehaviour::Misbehaviour as Mock
 use ibc_testkit::testapp::ibc::clients::AnyConsensusState;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
-use ibc_testkit::utils::core::context::MockContextConfig;
-use ibc_testkit::utils::core::signer::dummy_account_id;
 use prost::Message;
 use tendermint_testgen::Validator as TestgenValidator;
 use test_log::test;
