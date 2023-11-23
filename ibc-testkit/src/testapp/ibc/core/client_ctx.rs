@@ -168,7 +168,7 @@ impl ClientValidationContext for MockContext {
             let height = ibc_store.client_processed_heights.get(&key)?;
             Some((*time, *height))
         })()
-        .ok_or_else(|| ClientError::ProcessedTimeNotFound {
+        .ok_or(ClientError::ProcessedTimeNotFound {
             client_id: key.0,
             height,
         })
