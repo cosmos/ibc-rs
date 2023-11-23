@@ -503,13 +503,26 @@ mod tests {
     use core::time::Duration;
 
     use ibc_client_tendermint_types::{
-        AllowUpdate, ClientState as ClientStateType, ClientStateParams, TrustThreshold,
+        AllowUpdate, ClientState as ClientStateType, TrustThreshold,
     };
     use ibc_core_client::types::Height;
     use ibc_core_commitment_types::specs::ProofSpecs;
     use ibc_core_host::types::identifiers::ChainId;
 
     use super::*;
+
+    #[derive(Clone, Debug, PartialEq)]
+    pub struct ClientStateParams {
+        pub id: ChainId,
+        pub trust_level: TrustThreshold,
+        pub trusting_period: Duration,
+        pub unbonding_period: Duration,
+        pub max_clock_drift: Duration,
+        pub latest_height: Height,
+        pub proof_specs: ProofSpecs,
+        pub upgrade_path: Vec<String>,
+        pub allow_update: AllowUpdate,
+    }
 
     #[test]
     fn client_state_verify_height() {

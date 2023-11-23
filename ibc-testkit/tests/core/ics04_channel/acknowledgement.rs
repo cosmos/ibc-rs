@@ -14,9 +14,9 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
+use ibc_testkit::fixtures::core::channel::dummy_raw_msg_acknowledgement;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
-use ibc_testkit::utils::core::channel::dummy_raw_msg_acknowledgement;
 use rstest::*;
 use test_log::test;
 

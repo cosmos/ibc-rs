@@ -1,5 +1,4 @@
-//! Implements the core [`ClientState`](crate::core::ics02_client::client_state::ClientState) trait
-//! for the Tendermint light client.
+//! Contains the implementation of the Tendermint `ClientState` domain type.
 
 use core::cmp::max;
 use core::convert::{TryFrom, TryInto};
@@ -35,23 +34,7 @@ pub struct AllowUpdate {
     pub after_misbehaviour: bool,
 }
 
-/// Parameters needed when initializing a new `ClientState`. This type
-/// exists mainly as a convenience for providing default values in
-/// testing scenarios.
-#[derive(Clone, Debug, PartialEq)]
-pub struct ClientStateParams {
-    pub id: ChainId,
-    pub trust_level: TrustThreshold,
-    pub trusting_period: Duration,
-    pub unbonding_period: Duration,
-    pub max_clock_drift: Duration,
-    pub latest_height: Height,
-    pub proof_specs: ProofSpecs,
-    pub upgrade_path: Vec<String>,
-    pub allow_update: AllowUpdate,
-}
-
-/// Contains the core implementation of the Tendermint light client
+/// Defines data structure for Tendermint client state.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct ClientState {
@@ -439,66 +422,23 @@ pub(crate) mod serde_tests {
 
 #[cfg(test)]
 mod tests {
-    use core::str::FromStr;
     use core::time::Duration;
 
-    use ibc_core_client_types::Height;
-    use ibc_core_commitment_types::specs::ProofSpecs;
-    use ibc_proto::google::protobuf::Any;
-    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-    use ibc_proto::ibc::lightclients::tendermint::v1::{ClientState as RawTmClientState, Fraction};
-    use ibc_proto::ics23::ProofSpec as Ics23ProofSpec;
-    use ibc_testkit::utils::clients::tendermint::dummy_tendermint_header;
-    use tendermint::block::Header;
+    use ibc_core_commitment_types::proto::ics23::ProofSpec as Ics23ProofSpec;
 
     use super::*;
-    use crate::client_state::{AllowUpdate, ClientState};
-    use crate::error::Error;
 
-    impl ClientState {
-        pub fn new_dummy_from_raw(frozen_height: RawHeight) -> Result<Self, Error> {
-            Self::try_from(get_dummy_raw_tm_client_state(frozen_height))
-        }
-
-        pub fn new_dummy_from_header(tm_header: Header) -> Self {
-            let chain_id = ChainId::from_str(tm_header.chain_id.as_str()).expect("Never fails");
-            Self::new(
-                chain_id.clone(),
-                Default::default(),
-                Duration::from_secs(64000),
-                Duration::from_secs(128000),
-                Duration::from_millis(3000),
-                Height::new(chain_id.revision_number(), u64::from(tm_header.height))
-                    .expect("Never fails"),
-                Default::default(),
-                Default::default(),
-                AllowUpdate {
-                    after_expiry: false,
-                    after_misbehaviour: false,
-                },
-            )
-            .expect("Never fails")
-        }
-    }
-
-    pub fn get_dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
-        #[allow(deprecated)]
-        RawTmClientState {
-            chain_id: ChainId::new("ibc-0").expect("Never fails").to_string(),
-            trust_level: Some(Fraction {
-                numerator: 1,
-                denominator: 3,
-            }),
-            trusting_period: Some(Duration::from_secs(64000).into()),
-            unbonding_period: Some(Duration::from_secs(128000).into()),
-            max_clock_drift: Some(Duration::from_millis(3000).into()),
-            latest_height: Some(Height::new(0, 10).expect("Never fails").into()),
-            proof_specs: ProofSpecs::default().into(),
-            upgrade_path: Default::default(),
-            frozen_height: Some(frozen_height),
-            allow_update_after_expiry: false,
-            allow_update_after_misbehaviour: false,
-        }
+    #[derive(Clone, Debug, PartialEq)]
+    pub struct ClientStateParams {
+        pub id: ChainId,
+        pub trust_level: TrustThreshold,
+        pub trusting_period: Duration,
+        pub unbonding_period: Duration,
+        pub max_clock_drift: Duration,
+        pub latest_height: Height,
+        pub proof_specs: ProofSpecs,
+        pub upgrade_path: Vec<String>,
+        pub allow_update: AllowUpdate,
     }
 
     #[test]
@@ -644,7 +584,7 @@ mod tests {
         for test in tests {
             let p = test.params.clone();
 
-            let cs_result = ClientState::new(
+            let cs_result: Result<ClientState, Error> = ClientState::new(
                 p.id,
                 p.trust_level,
                 p.trusting_period,
@@ -664,52 +604,6 @@ mod tests {
                 test.params.clone(),
                 cs_result.err(),
             );
-        }
-    }
-
-    #[test]
-    fn tm_client_state_conversions_healthy() {
-        // check client state creation path from a proto type
-        let tm_client_state_from_raw = ClientState::new_dummy_from_raw(RawHeight {
-            revision_number: 0,
-            revision_height: 0,
-        });
-        assert!(tm_client_state_from_raw.is_ok());
-
-        let any_from_tm_client_state = Any::from(
-            tm_client_state_from_raw
-                .as_ref()
-                .expect("Never fails")
-                .clone(),
-        );
-        let tm_client_state_from_any = ClientState::try_from(any_from_tm_client_state);
-        assert!(tm_client_state_from_any.is_ok());
-        assert_eq!(
-            tm_client_state_from_raw.expect("Never fails"),
-            tm_client_state_from_any.expect("Never fails")
-        );
-
-        // check client state creation path from a tendermint header
-        let tm_header = dummy_tendermint_header();
-        let tm_client_state_from_header = ClientState::new_dummy_from_header(tm_header);
-        let any_from_header = Any::from(tm_client_state_from_header.clone());
-        let tm_client_state_from_any = ClientState::try_from(any_from_header);
-        assert!(tm_client_state_from_any.is_ok());
-        assert_eq!(
-            tm_client_state_from_header,
-            tm_client_state_from_any.expect("Never fails")
-        );
-    }
-
-    #[test]
-    fn tm_client_state_malformed_with_frozen_height() {
-        let tm_client_state_from_raw = ClientState::new_dummy_from_raw(RawHeight {
-            revision_number: 0,
-            revision_height: 10,
-        });
-        match tm_client_state_from_raw {
-            Err(Error::FrozenHeightNotAllowed) => {}
-            _ => panic!("Expected to fail with FrozenHeightNotAllowed error"),
         }
     }
 }

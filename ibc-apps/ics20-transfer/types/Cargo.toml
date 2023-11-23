@@ -36,7 +36,6 @@ parity-scale-codec = { workspace = true , optional = true }
 scale-info         = { workspace = true , optional = true }
 
 [dev-dependencies]
-ibc-testkit = { workspace = true }
 serde_json  = { workspace = true }
 rstest      = { workspace = true }
 
@@ -50,13 +49,11 @@ std = [
     "primitive-types/std",
     "ibc-core/std",
     "ibc-proto/std",
-    "ibc-testkit/std",
 ]
 serde = [
     "dep:serde", 
     "ibc-core/serde",
     "ibc-proto/serde", 
-    "ibc-testkit/serde"
 ]
 schema = [
     "dep:schemars", 

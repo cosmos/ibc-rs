@@ -676,10 +676,8 @@ version = "0.48.0"
 dependencies = [
  "bytes",
  "displaydoc",
- "ibc-core-client-context",
  "ibc-core-client-types",
  "ibc-core-commitment-types",
- "ibc-core-handler-types",
  "ibc-core-host-types",
  "ibc-primitives",
  "ibc-proto",

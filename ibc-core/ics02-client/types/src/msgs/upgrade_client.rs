@@ -95,21 +95,3 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
         })
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use ibc_proto::ibc::core::client::v1::MsgUpgradeClient as RawMsgUpgradeClient;
-    use ibc_testkit::utils::core::client::dummy_raw_msg_upgrade_client;
-
-    use crate::msgs::upgrade_client::MsgUpgradeClient;
-
-    #[test]
-    fn msg_upgrade_client_serialization() {
-        let raw = dummy_raw_msg_upgrade_client();
-        let msg = MsgUpgradeClient::try_from(raw.clone()).unwrap();
-        let raw_back: RawMsgUpgradeClient = RawMsgUpgradeClient::from(msg.clone());
-        let msg_back = MsgUpgradeClient::try_from(raw_back.clone()).unwrap();
-        assert_eq!(msg, msg_back);
-        assert_eq!(raw, raw_back);
-    }
-}

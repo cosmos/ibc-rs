@@ -20,26 +20,26 @@ use ibc::core::host::types::path::CommitmentPath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
+use ibc_testkit::fixtures::applications::transfer::{
+    extract_transfer_packet, MsgTransferConfig, PacketDataConfig,
+};
+use ibc_testkit::fixtures::core::channel::{
+    dummy_raw_msg_ack_with_packet, dummy_raw_msg_chan_close_confirm, dummy_raw_msg_chan_close_init,
+    dummy_raw_msg_chan_open_ack, dummy_raw_msg_chan_open_init, dummy_raw_msg_chan_open_try,
+    dummy_raw_msg_recv_packet, dummy_raw_msg_timeout_on_close,
+};
+use ibc_testkit::fixtures::core::client::dummy_msg_upgrade_client;
+use ibc_testkit::fixtures::core::connection::{
+    dummy_msg_conn_open_ack, dummy_msg_conn_open_init, dummy_msg_conn_open_init_with_client_id,
+    dummy_msg_conn_open_try, msg_conn_open_try_with_client_id,
+};
+use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::MockClientState;
 use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
-use ibc_testkit::utils::applications::transfer::{
-    extract_transfer_packet, MsgTransferConfig, PacketDataConfig,
-};
-use ibc_testkit::utils::core::channel::{
-    dummy_raw_msg_ack_with_packet, dummy_raw_msg_chan_close_confirm, dummy_raw_msg_chan_close_init,
-    dummy_raw_msg_chan_open_ack, dummy_raw_msg_chan_open_init, dummy_raw_msg_chan_open_try,
-    dummy_raw_msg_recv_packet, dummy_raw_msg_timeout_on_close,
-};
-use ibc_testkit::utils::core::client::dummy_msg_upgrade_client;
-use ibc_testkit::utils::core::connection::{
-    dummy_msg_conn_open_ack, dummy_msg_conn_open_init, dummy_msg_conn_open_init_with_client_id,
-    dummy_msg_conn_open_try, msg_conn_open_try_with_client_id,
-};
-use ibc_testkit::utils::core::signer::dummy_account_id;
 use primitive_types::U256;
 use test_log::test;
 

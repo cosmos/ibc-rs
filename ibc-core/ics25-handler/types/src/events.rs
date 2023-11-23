@@ -211,30 +211,3 @@ impl From<ModuleEvent> for IbcEvent {
         IbcEvent::Module(e)
     }
 }
-
-#[cfg(test)]
-pub mod tests {
-
-    use ibc_core_channel_types::channel::Order;
-    use ibc_core_channel_types::events::SendPacket;
-    use ibc_core_channel_types::packet::Packet;
-    use ibc_core_host_types::identifiers::ConnectionId;
-    use ibc_testkit::utils::core::channel::dummy_raw_packet;
-
-    use super::*;
-
-    #[test]
-    /// Ensures that we don't panic when packet data is not valid UTF-8.
-    /// See issue [#199](https://github.com/cosmos/ibc-rs/issues/199)
-    pub fn test_packet_data_non_utf8() {
-        let mut packet = Packet::try_from(dummy_raw_packet(1, 1)).unwrap();
-        packet.data = vec![128];
-
-        let ibc_event = IbcEvent::SendPacket(SendPacket::new(
-            packet,
-            Order::Unordered,
-            ConnectionId::default(),
-        ));
-        let _ = abci::Event::try_from(ibc_event);
-    }
-}

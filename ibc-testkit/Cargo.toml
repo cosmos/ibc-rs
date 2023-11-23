@@ -17,12 +17,14 @@ description  = """
 
 [dependencies]
 # external dependencies
+borsh             = { workspace = true, optional = true }
 bytes             = { workspace = true }
 derive_more       = { workspace = true }
 displaydoc        = { workspace = true }
 parking_lot       = { version = "0.12.1", default-features = false }
 primitive-types   = { workspace = true }
 prost             = { workspace = true }
+schemars          = { workspace = true, optional = true }
 serde             = { workspace = true, optional = true }
 serde_json        = { workspace = true, optional = true }
 subtle-encoding   = { workspace = true }
@@ -62,12 +64,14 @@ serde = [
     "serde_json",
 ]
 schema = [
+    "dep:schemars",
     "ibc/schema",
     "ibc-proto/json-schema",
     "serde",
     "std",
 ]
 borsh = [
+    "dep:borsh",
     "ibc/borsh",
     "ibc-proto/borsh",
 ]

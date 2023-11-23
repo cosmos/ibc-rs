@@ -9,7 +9,7 @@ use ibc::core::host::types::identifiers::{ChannelId, PortId, Sequence};
 use ibc::core::primitives::{Signer, Timestamp};
 use typed_builder::TypedBuilder;
 
-use crate::utils::dummies::core::signer::dummy_account_id;
+use crate::fixtures::core::signer::dummy_account_id;
 
 /// Configuration of the `MsgTransfer` message for building dummy messages.
 #[derive(TypedBuilder, Debug)]

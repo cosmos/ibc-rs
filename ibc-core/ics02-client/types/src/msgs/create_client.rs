@@ -70,22 +70,3 @@ impl From<MsgCreateClient> for RawMsgCreateClient {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-
-    use ibc_proto::ibc::core::client::v1::MsgCreateClient as RawMsgCreateClient;
-    use ibc_testkit::utils::core::client::dummy_raw_msg_create_client;
-
-    use crate::msgs::create_client::MsgCreateClient;
-
-    #[test]
-    fn msg_create_client_serialization() {
-        let raw = dummy_raw_msg_create_client();
-        let msg = MsgCreateClient::try_from(raw.clone()).unwrap();
-        let raw_back = RawMsgCreateClient::from(msg.clone());
-        let msg_back = MsgCreateClient::try_from(raw_back.clone()).unwrap();
-        assert_eq!(msg, msg_back);
-        assert_eq!(raw, raw_back);
-    }
-}
