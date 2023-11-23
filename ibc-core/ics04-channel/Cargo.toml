@@ -33,6 +33,7 @@ ibc-primitives            = { workspace = true }
 [features]
 default = ["std"]
 std = [
+    "prost/std",
     "ibc-core-client/std",
     "ibc-core-connection/std",
     "ibc-core-channel-types/std",

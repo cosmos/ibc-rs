@@ -40,6 +40,9 @@ rstest = { workspace = true }
 [features]
 default = ["std"]
 std = [
+    "displaydoc/std",
+    "prost/std",
+    "subtle-encoding/std",
     "ibc-core-client-types/std",
     "ibc-core-client-context/std",
     "ibc-core-connection-types/std",
