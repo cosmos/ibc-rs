@@ -1,5 +1,88 @@
 # CHANGELOG
 
+## v0.48.0
+
+*November 22, 2023*
+
+In this release, we've undertaken a comprehensive overhaul of the **`ibc-rs`**
+repository, resulting in a strategic reorganization of the codebase. This
+restructuring dissects the implementation of each IBC specification,
+categorizing and situating them within relevant libraries. The primary objective
+is to elevate ibc-rs practicality and enhance user flexibility by providing a
+more modular and composable experience.
+
+Users now have the flexibility to choose from a spectrum of options. They can
+opt to utilize the entire suite of meta-crates, such as `ibc`, `ibc-core`,
+`ibc-clients`, or `ibc-apps`. Alternatively, they can exercise fine-grained
+control by selectively importing specific libraries. This can involve bringing
+in an entire implemented IBC sub-module, like the `ibc-core-client` crate, or
+importing only the associated data structures of a module, such as the
+`ibc-core-client-types` crate.
+
+Furthermore, this release introduces optimizations centered around construction
+and validation of ICS-24 host identifiers, aiming to curtail some heap
+allocations, beneficial for resource-constrained hosts.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Move ICS-20 and ICS-27 implementations to the respective part of `ibc-apps`
+  and `ibc-clients` crates, as part of the `ibc` crate restructuring effort.
+  ([\#716](https://github.com/cosmos/ibc-rs/issues/716))
+- Bump `ibc-proto-rs` to v0.38.0
+  ([\#949](https://github.com/cosmos/ibc-rs/issues/949))
+- Bump minimum supported Rust version to 1.64
+  ([\#956](https://github.com/cosmos/ibc-rs/issues/956))
+- Restructure `ibc-rs` codebase by organizing it into smaller self-contained,
+  modular libraries, enabling the selective import of specific domain types or
+  module implementations, either individually or in combination, providing
+  enhanced flexibility and ease of use.
+  ([\#965](https://github.com/cosmos/ibc-rs/issues/965))
+
+### FEATURES
+
+- Restructure the mock module implementation and separate its codebase into a
+  new crate named `ibc-testkit`
+  ([\#954](https://github.com/cosmos/ibc-rs/issues/953))
+- Provide `Into<String>` for all identifiers types.
+  ([\#974](https://github.com/cosmos/ibc-rs/pull/974))
+
+### IMPROVEMENTS
+
+- Re-export essential proto types from the underlying `ibc-*-*-types` crates,
+  removing the necessity for a direct dependency on `ibc-proto` in projects
+  integrating `ibc-rs` ([\#697](https://github.com/cosmos/ibc-rs/issues/697))
+- Rename `{submodule}.rs` with corresponding `{submodule}` directory to
+  `{submodule}/mod.rs` ([\#771](https://github.com/cosmos/ibc-rs/issues/771))
+- Add From implementation for ICS26 enum types to make it simpler to construct
+  the types. ([\#938](https://github.com/cosmos/ibc-rs/pull/938))
+- Reduce vector allocations in Commitment computation.
+  ([\#939](https://github.com/cosmos/ibc-rs/pull/939))
+- Support chain identifiers without the `{chain_name}-{revision_number}` pattern
+  of Tendermint chains. ([\#940](https://github.com/cosmos/ibc-rs/issues/940)).
+- Remove redundant `String` creation in `validate_prefix_length`
+  ([\#943](https://github.com/cosmos/ibc-rs/issues/943)).
+- Remove redundant `#[test_log::test]` attributes in test modules
+  ([\#948](https://github.com/cosmos/ibc-rs/issues/948))
+- Remove the default value and implementation for `PortId`
+  ([\#951](https://github.com/cosmos/ibc-rs/issues/951))
+- Expose domain message types under the `ics04_channel` as public
+  ([\#952](https://github.com/cosmos/ibc-rs/issues/952))
+- Enhance dependency management with workspace inheritance
+  ([\#955](https://github.com/cosmos/ibc-rs/issues/955))
+- Simplify and refactor ICS-24 identifier validation logic.
+  ([\#961](https://github.com/cosmos/ibc-rs/issues/961))
+- Reduce heap allocation by using `str` instead of `String` places we convert
+  domain event attributes to the ABCI event attributes
+  ([\#970](https://github.com/cosmos/ibc-rs/issues/970))
+- Expose various fields, types and functions in `ibc-rs` as public including:
+  - `validate` and `execute` handler functions for all the IBC message types.
+  - `TYPE_URL` constants.
+  - Any private fields within the domain message types.
+  - Any private fields within the Tendermint `ClientState` and `ConsensusState`
+  ([\#976](https://github.com/cosmos/ibc-rs/issues/976))
+
 ## v0.47.0
 
 *October 19, 2023*

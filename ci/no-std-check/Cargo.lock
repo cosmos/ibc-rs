@@ -1213,41 +1213,28 @@ dependencies = [
 
 [[package]]
 name = "ibc"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
- "bytes",
- "derive_more",
- "displaydoc",
  "ibc-apps",
  "ibc-clients",
  "ibc-core",
+ "ibc-core-host-cosmos",
  "ibc-derive",
  "ibc-primitives",
- "ibc-proto",
- "prost",
- "serde",
- "serde-json-wasm",
- "sha2 0.10.8",
- "subtle-encoding",
- "tendermint",
- "tendermint-light-client-verifier",
- "tendermint-proto",
- "time",
 ]
 
 [[package]]
 name = "ibc-app-transfer"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "ibc-app-transfer-types",
  "ibc-core",
  "serde-json-wasm",
- "sha2 0.10.8",
 ]
 
 [[package]]
 name = "ibc-app-transfer-types"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -1260,14 +1247,14 @@ dependencies = [
 
 [[package]]
 name = "ibc-apps"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "ibc-app-transfer",
 ]
 
 [[package]]
 name = "ibc-client-tendermint"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "ibc-client-tendermint-types",
  "ibc-core-client",
@@ -1276,12 +1263,14 @@ dependencies = [
  "ibc-core-host",
  "ibc-primitives",
  "prost",
+ "serde",
+ "tendermint",
  "tendermint-light-client-verifier",
 ]
 
 [[package]]
 name = "ibc-client-tendermint-types"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "bytes",
  "displaydoc",
@@ -1293,6 +1282,7 @@ dependencies = [
  "ibc-primitives",
  "ibc-proto",
  "prost",
+ "serde",
  "tendermint",
  "tendermint-light-client-verifier",
  "tendermint-proto",
@@ -1300,14 +1290,14 @@ dependencies = [
 
 [[package]]
 name = "ibc-clients"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "ibc-client-tendermint",
 ]
 
 [[package]]
 name = "ibc-core"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "ibc-core-channel",
  "ibc-core-client",
@@ -1321,7 +1311,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-channel"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "ibc-core-channel-types",
  "ibc-core-client",
@@ -1336,7 +1326,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-channel-types"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -1355,21 +1345,20 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-client"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "ibc-core-client-context",
  "ibc-core-client-types",
  "ibc-core-commitment-types",
  "ibc-core-handler-types",
  "ibc-core-host",
- "ibc-derive",
  "ibc-primitives",
  "prost",
 ]
 
 [[package]]
 name = "ibc-core-client-context"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -1386,7 +1375,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-client-types"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -1402,7 +1391,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-commitment-types"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -1416,7 +1405,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-connection"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "ibc-core-client",
  "ibc-core-connection-types",
@@ -1428,7 +1417,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-connection-types"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -1445,7 +1434,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-handler"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "ibc-core-channel",
  "ibc-core-client",
@@ -1459,7 +1448,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-handler-types"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -1479,7 +1468,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-host"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -1496,8 +1485,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "ibc-core-host-cosmos"
+version = "0.48.0"
+dependencies = [
+ "derive_more",
+ "displaydoc",
+ "ibc-app-transfer-types",
+ "ibc-client-tendermint",
+ "ibc-core-client-context",
+ "ibc-core-client-types",
+ "ibc-core-commitment-types",
+ "ibc-core-connection-types",
+ "ibc-core-handler-types",
+ "ibc-core-host-types",
+ "ibc-primitives",
+ "ibc-proto",
+ "prost",
+ "serde",
+ "sha2 0.10.8",
+ "subtle-encoding",
+ "tendermint",
+]
+
+[[package]]
 name = "ibc-core-host-types"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -1507,7 +1519,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-router"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -1521,7 +1533,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-router-types"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -1537,7 +1549,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-derive"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -1547,7 +1559,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-primitives"
-version = "0.47.0"
+version = "0.48.0"
 dependencies = [
  "derive_more",
  "displaydoc",
