@@ -373,11 +373,9 @@ trait ValidationContext {
     /// A hashing function for packet commitments
     fn hash(&self, value: Vec<u8>) -> Vec<u8>;
 
-    /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_time(&self, client_id: &ClientId, height: Height) -> Result<Timestamp, Error>;
-
-    /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_height(&self, client_id: &ClientId, height: Height) -> Result<Height, Error>;
+    /// Returns the time and height when the client state for the
+    /// given [`ClientId`] was updated with a header for the given [`Height`]
+    fn client_update_meta(&self, client_id: &ClientId, height: Height) -> Result<(Timestamp, Height), Error>;
 
     /// Returns a counter on the number of channel ids that have been created thus far.
     /// The value of this counter should increase only via method
@@ -561,8 +559,7 @@ pub trait Host {
     /// Methods currently in `ChannelReader`
     fn connection_channels(&self, cid: &ConnectionId) -> Result<Vec<(PortId, ChannelId)>, Error>;
     fn hash(&self, value: Vec<u8>) -> Vec<u8>;
-    fn client_update_time(&self, client_id: &ClientId, height: Height) -> Result<Timestamp, Error>;
-    fn client_update_height(&self, client_id: &ClientId, height: Height) -> Result<Height, Error>;
+    fn client_update_meta(&self, client_id: &ClientId, height: Height) -> Result<(Timestamp, Height), Error>;
     fn channel_counter(&self) -> Result<u64, Error>;
     fn max_expected_time_per_block(&self) -> Duration;
     fn block_delay(&self, delay_period_time: Duration) -> u64;

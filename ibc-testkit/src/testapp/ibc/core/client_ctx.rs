@@ -156,42 +156,23 @@ impl TmValidationContext for MockContext {
 }
 
 impl ClientValidationContext for MockContext {
-    fn client_update_time(
+    fn client_update_meta(
         &self,
         client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Timestamp, ContextError> {
-        match self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .get(&(client_id.clone(), *height))
-        {
-            Some(time) => Ok(*time),
-            None => Err(ClientError::ProcessedTimeNotFound {
-                client_id: client_id.clone(),
-                height: *height,
-            })?,
-        }
-    }
-
-    fn client_update_height(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ContextError> {
-        match self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .get(&(client_id.clone(), *height))
-        {
-            Some(height) => Ok(*height),
-            None => Err(ClientError::ProcessedHeightNotFound {
-                client_id: client_id.clone(),
-                height: *height,
-            })?,
-        }
+        height: Height,
+    ) -> Result<(Timestamp, Height), ContextError> {
+        let key = (client_id.clone(), height);
+        (|| {
+            let ibc_store = self.ibc_store.lock();
+            let time = ibc_store.client_processed_times.get(&key)?;
+            let height = ibc_store.client_processed_heights.get(&key)?;
+            Some((*time, *height))
+        })()
+        .ok_or_else(|| ClientError::ProcessedTimeNotFound {
+            client_id: key.0,
+            height,
+        })
+        .map_err(ContextError::from)
     }
 }
 

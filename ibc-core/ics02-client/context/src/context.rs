@@ -12,19 +12,13 @@ use super::consensus_state::ConsensusState;
 /// [crate::client_state::ClientStateValidation] must
 /// inherit from this trait.
 pub trait ClientValidationContext {
-    /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_time(
+    /// Returns the time and height when the client state for the given
+    /// [`ClientId`] was updated with a header for the given [`Height`]
+    fn client_update_meta(
         &self,
         client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Timestamp, ContextError>;
-
-    /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_height(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ContextError>;
+        height: Height,
+    ) -> Result<(Timestamp, Height), ContextError>;
 }
 
 /// Defines the methods that all client `ExecutionContext`s (precisely the

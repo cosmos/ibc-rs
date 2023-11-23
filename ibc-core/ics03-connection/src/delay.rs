@@ -19,19 +19,16 @@ where
 
     // Fetch the latest time and height that the counterparty client was updated on the host chain.
     let client_id = connection_end.client_id();
-    let last_client_update_time = ctx
+    let last_client_update = ctx
         .get_client_validation_context()
-        .client_update_time(client_id, &packet_proof_height)?;
-    let last_client_update_height = ctx
-        .get_client_validation_context()
-        .client_update_height(client_id, &packet_proof_height)?;
+        .client_update_meta(client_id, packet_proof_height)?;
 
     // Fetch the connection delay time and height periods.
     let conn_delay_time_period = connection_end.delay_period();
     let conn_delay_height_period = ctx.block_delay(&conn_delay_time_period);
 
     // Verify that the current host chain time is later than the last client update time
-    let earliest_valid_time = (last_client_update_time + conn_delay_time_period)
+    let earliest_valid_time = (last_client_update.0 + conn_delay_time_period)
         .map_err(ConnectionError::TimestampOverflow)?;
     if current_host_time < earliest_valid_time {
         return Err(ContextError::ConnectionError(
@@ -43,7 +40,7 @@ where
     }
 
     // Verify that the current host chain height is later than the last client update height
-    let earliest_valid_height = last_client_update_height.add(conn_delay_height_period);
+    let earliest_valid_height = last_client_update.1.add(conn_delay_height_period);
     if current_host_height < earliest_valid_height {
         return Err(ContextError::ConnectionError(
             ConnectionError::NotEnoughBlocksElapsed {
