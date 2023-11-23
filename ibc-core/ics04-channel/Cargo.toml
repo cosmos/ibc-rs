@@ -61,6 +61,8 @@ schema = [
     "ibc-core-handler-types/schema",
     "ibc-core-router/schema",
     "ibc-primitives/schema",
+    "serde",
+    "std"
 ]
 borsh = [
     "ibc-core-client/borsh",
