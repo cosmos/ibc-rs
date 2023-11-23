@@ -335,21 +335,18 @@ where
         client_id: &ClientId,
         consensus_state: Any,
     ) -> Result<(), ClientError> {
-        let host_timestamp = CommonContext::host_timestamp(ctx)?;
-        let host_height = CommonContext::host_height(ctx)?;
-
+        let height = self.latest_height();
         let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
-
         ctx.store_client_state(ClientStatePath::new(client_id), self.clone().into())?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(
                 client_id.clone(),
-                self.0.latest_height.revision_number(),
-                self.0.latest_height.revision_height(),
+                height.revision_number(),
+                height.revision_height(),
             ),
             tm_consensus_state.into(),
         )?;
-        ctx.store_update_meta(client_id, self.latest_height(), host_timestamp, host_height)?;
+        ctx.store_update_meta(client_id, height)?;
 
         Ok(())
     }
@@ -381,9 +378,6 @@ where
             //
             // Do nothing.
         } else {
-            let host_timestamp = CommonContext::host_timestamp(ctx)?;
-            let host_height = CommonContext::host_height(ctx)?;
-
             let new_consensus_state = ConsensusStateType::from(header.clone());
             let new_client_state = self.0.clone().with_header(header)?;
 
@@ -399,7 +393,7 @@ where
                 ClientStatePath::new(client_id),
                 ClientState::from(new_client_state).into(),
             )?;
-            ctx.store_update_meta(client_id, header_height, host_timestamp, host_height)?;
+            ctx.store_update_meta(client_id, header_height)?;
         }
 
         Ok(vec![header_height])
@@ -474,8 +468,6 @@ where
         );
 
         let latest_height = new_client_state.latest_height;
-        let host_timestamp = CommonContext::host_timestamp(ctx)?;
-        let host_height = CommonContext::host_height(ctx)?;
 
         ctx.store_client_state(
             ClientStatePath::new(client_id),
@@ -489,7 +481,7 @@ where
             ),
             TmConsensusState::from(new_consensus_state).into(),
         )?;
-        ctx.store_update_meta(client_id, latest_height, host_timestamp, host_height)?;
+        ctx.store_update_meta(client_id, latest_height)?;
 
         Ok(latest_height)
     }

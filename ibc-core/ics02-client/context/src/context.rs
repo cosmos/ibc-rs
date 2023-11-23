@@ -56,14 +56,12 @@ pub trait ClientExecutionContext: Sized {
 
     /// Called upon successful client update.
     ///
-    /// Implementations are expected to use this to record the specified time
-    /// and height as the time at which this update (or header) was processed.
+    /// Implementations are expected to use this to record the host time and
+    /// height as when this update (or header) was processed.
     fn store_update_meta(
         &mut self,
         client_id: &ClientId,
         height: Height,
-        host_timestamp: Timestamp,
-        host_height: Height,
     ) -> Result<(), ContextError>;
 
     /// Delete the update time and height associated with the client at the

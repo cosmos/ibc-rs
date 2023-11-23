@@ -426,15 +426,9 @@ trait ExecutionContext {
 
     /// Called upon successful client update.
     ///
-    /// Implementations are expected to use this to record the specified time
-    /// and height as the time at which this update (or header) was processed.
-    fn store_update_meta(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_timestamp: Timestamp,
-        host_height: Height,
-    ) -> Result<(), Error>;
+    /// Implementations are expected to use this to record the host time
+    /// and height as when this update (or header) was processed.
+    fn store_update_meta(&mut self, client_id: ClientId, height: Height) -> Result<(), Error>;
 
     /// Stores the given connection_end at path
     fn store_connection(
@@ -540,13 +534,7 @@ pub trait Host {
 
     /// Methods currently in `ClientKeeper`
     fn increase_client_counter(&mut self);
-    fn store_update_meta(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_timestamp: Timestamp,
-        host_height: Height,
-    ) -> Result<(), Error>;
+    fn store_update_meta(&mut self, client_id: ClientId, height: Height) -> Result<(), Error>;
 
     /// Methods currently in `ConnectionReader`
     fn host_oldest_height(&self) -> Height;

@@ -270,9 +270,9 @@ impl ClientExecutionContext for MockContext {
         &mut self,
         client_id: &ClientId,
         height: Height,
-        host_timestamp: Timestamp,
-        host_height: Height,
     ) -> Result<(), ContextError> {
+        let host_timestamp = ValidationContext::host_timestamp(self)?;
+        let host_height = ValidationContext::host_height(self)?;
         let mut ibc_store = self.ibc_store.lock();
         ibc_store
             .client_processed_times

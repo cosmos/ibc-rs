@@ -136,12 +136,7 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
 
     context
         .get_client_execution_context()
-        .store_update_meta(
-            &ClientId::default(),
-            client_height,
-            Timestamp::from_nanoseconds(1000).unwrap(),
-            Height::new(0, 5).unwrap(),
-        )
+        .store_update_meta(&ClientId::default(), client_height)
         .unwrap();
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));

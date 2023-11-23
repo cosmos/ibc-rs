@@ -191,13 +191,8 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
             packet_commitment,
         );
 
-    ctx.store_update_meta(
-        &ClientId::default(),
-        client_height,
-        Timestamp::from_nanoseconds(5).unwrap(),
-        Height::new(0, 4).unwrap(),
-    )
-    .unwrap();
+    ctx.store_update_meta(&ClientId::default(), client_height)
+        .unwrap();
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
@@ -269,12 +264,7 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
         );
 
     ctx.get_client_execution_context()
-        .store_update_meta(
-            &ClientId::default(),
-            client_height,
-            Timestamp::from_nanoseconds(1000).unwrap(),
-            Height::new(0, 5).unwrap(),
-        )
+        .store_update_meta(&ClientId::default(), client_height)
         .unwrap();
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
@@ -314,13 +304,8 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
             packet_commitment,
         );
 
-    ctx.store_update_meta(
-        &ClientId::default(),
-        client_height,
-        Timestamp::from_nanoseconds(1000).unwrap(),
-        Height::new(0, 4).unwrap(),
-    )
-    .unwrap();
+    ctx.store_update_meta(&ClientId::default(), client_height)
+        .unwrap();
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
