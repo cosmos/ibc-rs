@@ -191,15 +191,10 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
             packet_commitment,
         );
 
-    ctx.store_update_time(
-        ClientId::default(),
+    ctx.store_update_meta(
+        &ClientId::default(),
         client_height,
         Timestamp::from_nanoseconds(5).unwrap(),
-    )
-    .unwrap();
-    ctx.store_update_height(
-        ClientId::default(),
-        client_height,
         Height::new(0, 4).unwrap(),
     )
     .unwrap();
@@ -274,16 +269,10 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
         );
 
     ctx.get_client_execution_context()
-        .store_update_time(
-            ClientId::default(),
+        .store_update_meta(
+            &ClientId::default(),
             client_height,
             Timestamp::from_nanoseconds(1000).unwrap(),
-        )
-        .unwrap();
-    ctx.get_client_execution_context()
-        .store_update_height(
-            ClientId::default(),
-            client_height,
             Height::new(0, 5).unwrap(),
         )
         .unwrap();
@@ -325,15 +314,10 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
             packet_commitment,
         );
 
-    ctx.store_update_time(
-        ClientId::default(),
+    ctx.store_update_meta(
+        &ClientId::default(),
         client_height,
         Timestamp::from_nanoseconds(1000).unwrap(),
-    )
-    .unwrap();
-    ctx.store_update_height(
-        ClientId::default(),
-        client_height,
         Height::new(0, 4).unwrap(),
     )
     .unwrap();

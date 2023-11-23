@@ -40,14 +40,14 @@ function updateClient(
 
     clientState.VerifyClientMessage(clientMessage)
     // Validation END
-    
+
     // Execution START
     foundMisbehaviour := clientState.CheckForMisbehaviour(clientMessage)
     if foundMisbehaviour {
         clientState.UpdateStateOnMisbehaviour(clientMessage)
     }
-    else {    
-        clientState.UpdateState(clientMessage) 
+    else {
+        clientState.UpdateState(clientMessage)
     }
     // Execution END
 }
@@ -99,13 +99,13 @@ pub trait Host {
     /// An error type that can represent all host errors.
     type Error;
 
-    /// The Host's key-value store that must provide access to IBC paths. 
+    /// The Host's key-value store that must provide access to IBC paths.
     type KvStore: IbcStore<Self::Error>;
 
     /// An event logging facility.
     type EventLogger: EventLogger<Event=Event<DefaultIbcTypes>>;
 
-    /// Methods to access the store (ro & rw). 
+    /// Methods to access the store (ro & rw).
     fn store(&self) -> &Self::KvStore;
     fn store_mut(&mut self) -> &mut Self::KvStore;
 
@@ -427,22 +427,14 @@ trait ExecutionContext {
     fn increase_client_counter(&mut self);
 
     /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified time as the time at which
-    /// this update (or header) was processed.
-    fn store_update_time(
+    ///
+    /// Implementations are expected to use this to record the specified time
+    /// and height as the time at which this update (or header) was processed.
+    fn store_update_meta(
         &mut self,
         client_id: ClientId,
         height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), Error>;
-
-    /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified height as the height at
-    /// at which this update (or header) was processed.
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
+        host_timestamp: Timestamp,
         host_height: Height,
     ) -> Result<(), Error>;
 
@@ -550,16 +542,11 @@ pub trait Host {
 
     /// Methods currently in `ClientKeeper`
     fn increase_client_counter(&mut self);
-    fn store_update_time(
+    fn store_update_meta(
         &mut self,
         client_id: ClientId,
         height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), Error>;
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
+        host_timestamp: Timestamp,
         host_height: Height,
     ) -> Result<(), Error>;
 
@@ -626,7 +613,7 @@ pub trait StoreSerde {
     /// Serialize to canonical binary representation
     fn serialize(self) -> Vec<u8>;
 
-    /// Deserialize from bytes 
+    /// Deserialize from bytes
     fn deserialize(value: &[u8]) -> Self;
 }
 

@@ -61,40 +61,27 @@ pub trait ClientExecutionContext: Sized {
     ) -> Result<(), ContextError>;
 
     /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified time as the time at which
-    /// this update (or header) was processed.
-    fn store_update_time(
+    ///
+    /// Implementations are expected to use this to record the specified time
+    /// and height as the time at which this update (or header) was processed.
+    fn store_update_meta(
         &mut self,
-        client_id: ClientId,
+        client_id: &ClientId,
         height: Height,
         host_timestamp: Timestamp,
-    ) -> Result<(), ContextError>;
-
-    /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified height as the height at
-    /// at which this update (or header) was processed.
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
         host_height: Height,
     ) -> Result<(), ContextError>;
 
-    /// Delete the update time associated with the client at the specified height. This update
-    /// time should be associated with a consensus state through the specified height.
+    /// Delete the update time and height associated with the client at the
+    /// specified height.
+    ///
+    /// This update time should be associated with a consensus state through the
+    /// specified height.
     ///
     /// Note that this timestamp is determined by the host.
-    fn delete_update_time(
+    fn delete_update_meta(
         &mut self,
-        client_id: ClientId,
-        height: Height,
-    ) -> Result<(), ContextError>;
-
-    /// Delete the update height associated with the client at the specified height. This update
-    /// time should be associated with a consensus state through the specified height.
-    fn delete_update_height(
-        &mut self,
-        client_id: ClientId,
+        client_id: &ClientId,
         height: Height,
     ) -> Result<(), ContextError>;
 }

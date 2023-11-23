@@ -356,8 +356,12 @@ where
             new_consensus_state.into(),
         )?;
         ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
-        ctx.store_update_time(client_id.clone(), header_height, ctx.host_timestamp()?)?;
-        ctx.store_update_height(client_id.clone(), header_height, ctx.host_height()?)?;
+        ctx.store_update_meta(
+            client_id,
+            header_height,
+            ctx.host_timestamp()?,
+            ctx.host_height()?,
+        )?;
 
         Ok(vec![header_height])
     }
@@ -401,8 +405,7 @@ where
         let host_timestamp = ctx.host_timestamp()?;
         let host_height = ctx.host_height()?;
 
-        ctx.store_update_time(client_id.clone(), latest_height, host_timestamp)?;
-        ctx.store_update_height(client_id.clone(), latest_height, host_height)?;
+        ctx.store_update_meta(client_id, latest_height, host_timestamp, host_height)?;
 
         Ok(latest_height)
     }

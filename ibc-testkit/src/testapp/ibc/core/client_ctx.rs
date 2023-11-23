@@ -273,61 +273,32 @@ impl ClientExecutionContext for MockContext {
         Ok(())
     }
 
-    fn delete_update_height(
+    fn delete_update_meta(
         &mut self,
-        client_id: ClientId,
+        client_id: &ClientId,
         height: Height,
     ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .remove(&(client_id, height));
-
+        let key = (client_id.clone(), height);
+        let mut ibc_store = self.ibc_store.lock();
+        ibc_store.client_processed_times.remove(&key);
+        ibc_store.client_processed_heights.remove(&key);
         Ok(())
     }
 
-    fn delete_update_time(
+    fn store_update_meta(
         &mut self,
-        client_id: ClientId,
+        client_id: &ClientId,
         height: Height,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .remove(&(client_id, height));
-
-        Ok(())
-    }
-
-    fn store_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .insert((client_id, height), timestamp);
-
-        Ok(())
-    }
-
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
+        host_timestamp: Timestamp,
         host_height: Height,
     ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
+        let mut ibc_store = self.ibc_store.lock();
+        ibc_store
+            .client_processed_times
+            .insert((client_id.clone(), height), host_timestamp);
+        ibc_store
             .client_processed_heights
-            .insert((client_id, height), host_height);
-
+            .insert((client_id.clone(), height), host_height);
         Ok(())
     }
 }
