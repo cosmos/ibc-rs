@@ -18,6 +18,7 @@ pub trait TokenTransferValidationContext {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
+        coin: &PrefixedCoin,
     ) -> Result<Self::AccountId, TokenTransferError>;
 
     /// Returns Ok() if the host chain supports sending coins.

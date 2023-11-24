@@ -19,6 +19,7 @@ impl TokenTransferValidationContext for DummyTransferModule {
         &self,
         port_id: &PortId,
         channel_id: &ChannelId,
+        _coin: &PrefixedCoin,
     ) -> Result<Self::AccountId, TokenTransferError> {
         let addr = cosmos_adr028_escrow_address(port_id, channel_id);
         Ok(bech32::encode("cosmos", addr).into())

@@ -69,7 +69,7 @@ where
         &token.denom,
     ) {
         let escrow_address =
-            token_ctx_a.get_escrow_account(&msg.port_id_on_a, &msg.chan_id_on_a)?;
+            token_ctx_a.get_escrow_account(&msg.port_id_on_a, &msg.chan_id_on_a, token)?;
         token_ctx_a.send_coins_validate(&sender, &escrow_address, token)?;
     } else {
         token_ctx_a.burn_coins_validate(&sender, token)?;
@@ -138,7 +138,7 @@ where
         &token.denom,
     ) {
         let escrow_address =
-            token_ctx_a.get_escrow_account(&msg.port_id_on_a, &msg.chan_id_on_a)?;
+            token_ctx_a.get_escrow_account(&msg.port_id_on_a, &msg.chan_id_on_a, token)?;
         token_ctx_a.send_coins_execute(&sender, &escrow_address, token)?;
     } else {
         token_ctx_a.burn_coins_execute(&sender, token)?;

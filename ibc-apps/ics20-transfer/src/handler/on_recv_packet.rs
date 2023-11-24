@@ -44,7 +44,7 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
         };
 
         let escrow_address = ctx_b
-            .get_escrow_account(&packet.port_id_on_b, &packet.chan_id_on_b)
+            .get_escrow_account(&packet.port_id_on_b, &packet.chan_id_on_b, &coin)
             .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
 
         // Note: it is correct to do the validation here because `recv_packet()`
