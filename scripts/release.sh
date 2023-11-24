@@ -48,7 +48,7 @@ CARGO_PUBLISH_FLAGS=""
 
 # Allow us to specify a crates.io API token via environment variables. Mostly
 # for CI use.
-if [ "${CRATES_TOKEN}" != "" ]; then
+if [ "$CRATES_TOKEN" != "" ]; then
   CARGO_PUBLISH_FLAGS="${CARGO_PUBLISH_FLAGS} --token ${CRATES_TOKEN}"
 fi
 
@@ -66,7 +66,7 @@ check_version_online() {
 
 publish() {
   echo "Publishing crate $1..."
-  cargo publish --manifest-path "$(get_manifest_path "${1}")" ${CARGO_PUBLISH_FLAGS}
+  cargo publish --manifest-path "$(get_manifest_path "${1}")" "$CARGO_PUBLISH_FLAGS"
   echo ""
 }
 
@@ -75,11 +75,11 @@ wait_until_available() {
   for retry in {1..5}; do
     sleep 5
     ONLINE_DATE="$(check_version_online "${1}" "${2}")"
-    if [ "${ONLINE_DATE}" != "" ]; then
+    if [ "$ONLINE_DATE" != "" ]; then
       echo "Crate ${crate} is now available online"
       break
     else
-      if [ "${retry}" == 5 ]; then
+      if [ "$retry" == 5 ]; then
         echo "ERROR: Crate should have become available by now"
         exit 1
       else
@@ -93,15 +93,15 @@ wait_until_available() {
 
 echo "Attempting to publish crate(s): ${CRATES}"
 
-for crate in ${CRATES}; do
-  VERSION="$(get_local_version "${crate}")"
-  ONLINE_DATE="$(check_version_online "${crate}" "${VERSION}")"
+for crate in "$CRATES"; do
+  VERSION="$(get_local_version "$crate")"
+  ONLINE_DATE="$(check_version_online "$crate" "$VERSION")"
   echo "${crate} version number: ${VERSION}"
-  if [ "${ONLINE_DATE}" != "" ]; then
+  if [ "$ONLINE_DATE" != "" ]; then
     echo "${crate} ${VERSION} has already been published at ${ONLINE_DATE}, skipping"
     continue
   fi
 
-  publish "${crate}"
-  wait_until_available "${crate}" "${VERSION}"
+  publish "$crate"
+  wait_until_available "$crate" "$VERSION"
 done
