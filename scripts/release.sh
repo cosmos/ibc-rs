@@ -4,7 +4,7 @@
 # this repo in the right order. It is assumed that only one person will be
 # releasing all crates at the same time.
 
-set -eou pipefail
+set -euo pipefail
 
 # A space-separated list of all the crates we want to publish, in the order in
 # which they must be published. It's important to respect this order, since
@@ -75,7 +75,7 @@ wait_until_available() {
   for retry in {1..5}; do
     sleep 5
     ONLINE_DATE="$(check_version_online "${1}" "${2}")"
-    if [ -n "${ONLINE_DATE}" ]; then
+    if [ "${ONLINE_DATE}" != "" ]; then
       echo "Crate ${crate} is now available online"
       break
     else
@@ -97,7 +97,7 @@ for crate in ${CRATES}; do
   VERSION="$(get_local_version "${crate}")"
   ONLINE_DATE="$(check_version_online "${crate}" "${VERSION}")"
   echo "${crate} version number: ${VERSION}"
-  if [ -n "${ONLINE_DATE}" ]; then
+  if [ "${ONLINE_DATE}" != "" ]; then
     echo "${crate} ${VERSION} has already been published at ${ONLINE_DATE}, skipping"
     continue
   fi
