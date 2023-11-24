@@ -4,41 +4,43 @@
 # this repo in the right order. It is assumed that only one person will be
 # releasing all crates at the same time.
 
-set -e
+set -eou pipefail
 
 # A space-separated list of all the crates we want to publish, in the order in
 # which they must be published. It's important to respect this order, since
 # each subsequent crate depends on one or more of the preceding ones.
-DEFAULT_CRATES="ibc-primitives \
-                ibc-core-host-types \
-                ibc-core-router-types \
-                ibc-core-commitment-types \
-                ibc-core-client-types \
-                ibc-core-connection-types \
-                ibc-core-channel-types \
-                ibc-core-handler-types \
-                ibc-core-client-context \
-                ibc-core-host \
-                ibc-core-router \
-                ibc-core-client \
-                ibc-core-connection \
-                ibc-core-channel \
-                ibc-core-handler \
-                ibc-core \
-                ibc-client-tendermint-types \
-                ibc-client-tendermint \
-                ibc-clients \
-                ibc-app-transfer-types \
-                ibc-app-transfer \
-                ibc-apps \
-                ibc-core-host-cosmos \
-                ibc-data-types \
-                ibc \
-                ibc-query \
-                ibc-testkit"
+DEFAULT_CRATES=(
+    "ibc-primitives"
+    "ibc-core-host-types"
+    "ibc-core-router-types"
+    "ibc-core-commitment-types"
+    "ibc-core-client-types"
+    "ibc-core-connection-types"
+    "ibc-core-channel-types"
+    "ibc-core-handler-types"
+    "ibc-core-client-context"
+    "ibc-core-host"
+    "ibc-core-router"
+    "ibc-core-client"
+    "ibc-core-connection"
+    "ibc-core-channel"
+    "ibc-core-handler"
+    "ibc-core"
+    "ibc-client-tendermint-types"
+    "ibc-client-tendermint"
+    "ibc-clients"
+    "ibc-app-transfer-types"
+    "ibc-app-transfer"
+    "ibc-apps"
+    "ibc-core-host-cosmos"
+    "ibc-data-types"
+    "ibc"
+    "ibc-query"
+    "ibc-testkit"
+)
 
 # Allows us to override the crates we want to publish.
-CRATES=${*:-${DEFAULT_CRATES}}
+CRATES=("${@:-${DEFAULT_CRATES[@]}}")
 
 # Additional flags to pass to the "cargo publish" operation for every crate we
 # publish.
@@ -46,7 +48,7 @@ CARGO_PUBLISH_FLAGS=""
 
 # Allow us to specify a crates.io API token via environment variables. Mostly
 # for CI use.
-if [ -n "${CRATES_TOKEN}" ]; then
+if [ "${CRATES_TOKEN}" != "" ]; then
   CARGO_PUBLISH_FLAGS="${CARGO_PUBLISH_FLAGS} --token ${CRATES_TOKEN}"
 fi
 
