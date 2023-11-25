@@ -6,7 +6,7 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc", "transfer", "ics20", "types"]
+keywords     = ["blockchain", "cosmos", "ibc", "tendermint", "types"]
 readme       = "./../../README.md"
 description  = """
     Maintained by `ibc-rs`, encapsulates essential ICS-07 Tendermint Client data structures and domain types,
