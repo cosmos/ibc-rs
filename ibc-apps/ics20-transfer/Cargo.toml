@@ -33,7 +33,7 @@ default = ["std"]
 std = [
     "ibc-app-transfer-types/std",
     "ibc-core/std",
-    "serde_json/std",
+    "serde_json?/std",
 ]
 serde = [
     "ibc-app-transfer-types/serde",
