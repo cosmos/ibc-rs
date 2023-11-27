@@ -1,7 +1,7 @@
 #![no_std]
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]
-#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types,))]
+#![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types))]
 #![deny(
     warnings,
     trivial_numeric_casts,
@@ -18,7 +18,3 @@ extern crate std;
 pub mod error;
 pub mod event;
 pub mod module;
-
-pub mod primitives {
-    pub use ibc_primitives::*;
-}
