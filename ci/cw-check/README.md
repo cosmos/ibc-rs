@@ -1,0 +1,1 @@
+CosmWasm is `std` targeting `wasm32-unknown-unknown` with `stable` rust which provides precompiled extensions `alloc/core/std` which has only features available in `wasmd` runner and passed `cosmwasm-check`
