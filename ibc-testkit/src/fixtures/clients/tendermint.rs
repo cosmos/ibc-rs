@@ -165,7 +165,7 @@ pub fn dummy_ics07_header() -> Header {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "serde"))]
 mod tests {
 
     use ibc::primitives::proto::Any;
