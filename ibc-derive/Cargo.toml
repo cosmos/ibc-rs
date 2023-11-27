@@ -1,0 +1,17 @@
+[package]
+name        = "ibc-derive"
+version     = "0.4.0"
+license     = { workspace = true }
+repository  = { workspace = true }
+edition     = { workspace = true }
+readme      = "README.md"
+description = "Maintained by `ibc-rs`, macros implementations of #[derive(ClientState)] and #[derive(ConsensusState)]"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "2"
+proc-macro2 = "1"
+quote = "1"
+darling = "0.20"

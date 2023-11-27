@@ -17,26 +17,38 @@
 [![Code Coverage][codecov-image]][codecov-link]
 [![Apache 2.0 Licensed][license-image]][license-link]
 ![Rust Stable][rustc-image]
-![Rust 1.60+][rustc-version]
+![Rust 1.64+][rustc-version]
 ![Lines of Code][loc-image]
 
 </div>
 </div>
 
-Rust implementation of the Inter-Blockchain Communication (IBC) protocol. This project hosts
-the `ibc` rust crate which defines the main data structures and on-chain logic for the IBC protocol.
+Rust implementation of the Inter-Blockchain Communication (IBC) protocol that
+hosts all the data structures and on-chain logic implementations of various IBC
+core, clients and applications. This repository organized as a collection of
+sub-crates that can be used independently or together.
 
-See the [ibc](crates/ibc/README.md) crate's README.md for more detailed information on the `ibc` crate.
+## Project Structure
+
+| <div style="width:100px">Crate</div>  | Description |
+| ------------------------------------- | ----------- |
+|[ibc](ibc)                             | Re-exports all the data structures and on-chain logic of various IBC core, clients and applications. |
+|[ibc-data-types](ibc-data-types)       | Re-exports all the IBC data types that are shared across different IBC implementations. |
+|[ibc-core](ibc-core)                   | Contains data structures and implementations of all the IBC core specifications. |
+|[ibc-clients](ibc-clients)             | Contains data structures and implementations of various IBC light clients. |
+|[ibc-apps](ibc-apps)                   | Contains data structures and implementations of various IBC applications. |
+|[ibc-testkit](ibc-testkit)             | Provides testing toolkit to aid `ibc-rs` and host chains in writing integration tests. |
+|[ibc-query](ibc-query)                 | Contains utility traits and implementations for querying states of an integrated IBC module. |
+|[ibc-derive](ibc-derive)               | Derive macros for `ClientState` and `ConsensusState` traits, reducing boilerplate. |
 
 ## Contributing
 
-IBC is specified in English in the [cosmos/ibc repo][ibc]. Any
-protocol changes or clarifications should be contributed there.
+IBC is specified in English in the [cosmos/ibc repo][ibc]. Any protocol changes
+or clarifications should be contributed there.
 
-This repo contains the Rust implementation for the IBC modules. If you're interested in
-contributing, please comment on an issue or open a new one!
-
-See also [CONTRIBUTING.md](./CONTRIBUTING.md).
+If you're interested in contributing, please take a look at the
+[CONTRIBUTING](./CONTRIBUTING.md) guidelines. We welcome and appreciate
+community contributions!
 
 ## Community calls
 
@@ -50,26 +62,30 @@ receive a calendar invitation for the monthly meeting.
 
 ## Versioning
 
-We follow [Semantic Versioning][semver], though APIs are still
-under active development.
+We follow [Semantic Versioning][semver], though APIs are still under active
+development.
 
 ## Resources
 
 - [IBC Website][ibc-homepage]
 - [IBC Specification][ibc]
 - [IBC Go implementation][ibc-go]
+- [Protobuf definitions in Rust][ibc-proto-rs]
 
 ## License
 
 Copyright © 2022 Informal Systems Inc. and ibc-rs authors.
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use the files in this repository except in compliance with the License. You may
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+the files in this repository except in compliance with the License. You may
 obtain a copy of the License at
 
     https://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
 
 [//]: # (badges)
 [docs-image]: https://docs.rs/ibc/badge.svg
@@ -87,6 +103,7 @@ CONDITIONS OF ANY KIND, either express or implied. See the License for the speci
 [//]: # (general links)
 [ibc]: https://github.com/cosmos/ibc
 [ibc-go]: https://github.com/cosmos/ibc-go
+[ibc-proto-rs]: https://github.com/cosmos/ibc-proto-rs
 [ibc-homepage]: https://cosmos.network/ibc
 [cosmos-link]: https://cosmos.network
 [semver]: https://semver.org/

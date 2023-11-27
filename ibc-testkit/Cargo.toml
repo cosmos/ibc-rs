@@ -1,0 +1,81 @@
+[package]
+name         = "ibc-testkit"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+readme       = "README.md"
+keywords     = ["blockchain", "consensus", "cosmos", "ibc", "tendermint"]
+description  = """
+    Maintained by `ibc-rs`, serves as a versatile library that provides essential abstractions 
+    and implementations, fulfilling a dual role of enabling rigorous integration testing for
+    the `ibc-rs` implementation while also aiding host chains in addressing a broad spectrum 
+    of testing scenarios during their integrations with `ibc-rs`.
+"""
+
+[dependencies]
+# external dependencies
+borsh             = { workspace = true, optional = true }
+bytes             = { workspace = true }
+derive_more       = { workspace = true }
+displaydoc        = { workspace = true }
+parking_lot       = { version = "0.12.1", default-features = false }
+primitive-types   = { workspace = true }
+prost             = { workspace = true }
+schemars          = { workspace = true, optional = true }
+serde             = { workspace = true, optional = true }
+serde_json        = { workspace = true, optional = true }
+subtle-encoding   = { workspace = true }
+tracing           = { version = "0.1.40", default-features = false }
+typed-builder     = { version = "0.18.0" }
+
+# ibc dependencies
+ibc       = { workspace = true, features = ["std"] }
+ibc-proto = { workspace = true }
+
+# cosmos dependencies
+tendermint         = { workspace = true }
+tendermint-testgen = { workspace = true }
+
+[dev-dependencies]
+env_logger         = "0.10.0"
+rstest             = { workspace = true }
+tracing-subscriber = { version = "0.3.17", features = ["fmt", "env-filter", "json"] }
+test-log           = { version = "0.2.13", features = ["trace"] }
+
+[features]
+default = ["std"]
+std = [
+    "prost/std",
+    "serde/std",
+    "tracing/std",
+    "tracing-subscriber/std",
+    "serde_json/std",
+    "ibc/std",
+    "ibc-proto/std",
+    "tendermint/std",
+]
+serde = [
+    "dep:serde",
+    "ibc/serde",
+    "ibc-proto/serde",
+    "serde_json",
+]
+schema = [
+    "dep:schemars",
+    "ibc/schema",
+    "ibc-proto/json-schema",
+    "serde",
+    "std",
+]
+borsh = [
+    "dep:borsh",
+    "ibc/borsh",
+    "ibc-proto/borsh",
+]
+parity-scale-codec = [
+    "ibc/parity-scale-codec",
+    "ibc-proto/parity-scale-codec",
+]

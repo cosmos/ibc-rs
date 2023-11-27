@@ -5,15 +5,31 @@ on:
       - .github/workflows/rust.yml
       - Cargo.toml
       - ci/**
-      - crates/**
+      - ibc/**
+      - ibc-core/**
+      - ibc-apps/**
+      - ibc-data-types/**
+      - ibc-clients/**
+      - ibc-primitives/**
+      - ibc-query/**
+      - ibc-testkit/**
+      - ibc-derive/**
   push:
     branches: main
     paths:
       - .github/workflows/rust.yml
       - Cargo.toml
       - ci/**
-      - crates/**
-
+      - ibc/**
+      - ibc-core/**
+      - ibc-apps/**
+      - ibc-data-types/**
+      - ibc-clients/**
+      - ibc-primitives/**
+      - ibc-query/**
+      - ibc-testkit/**
+      - ibc-derive/**
+      
 env:
   CARGO_INCREMENTAL: 0
   CARGO_PROFILE_DEV_DEBUG: 1
@@ -31,7 +47,7 @@ jobs:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
     if: "!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/main'"
 
-  fmt:
+  nightly_fmt:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -119,3 +135,7 @@ jobs:
         with:
           command: test
           args: --all-features --no-fail-fast --workspace -- --nocapture
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --no-fail-fast --no-run

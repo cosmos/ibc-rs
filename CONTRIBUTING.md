@@ -19,7 +19,6 @@ repository:
 - [Pull Requests](#pull-requests) - what makes a good pull request
 - [Forking](#forking) - fork the repo to make pull requests
 - [Changelog](#changelog) - changes must be recorded in the changelog
-- [Releases](#releases) - how to release new version of the crates
 
 ## Decision Making
 
@@ -75,14 +74,13 @@ We welcome bug reports, feature requests, and other contributions to our project
 
 3. **Provide detailed information**: In the issue description, clearly state the purpose of the issue and follow the guidelines of the issue template
 
-4. A maintainer will take care of assigning the appropriate labels to your issue.
+Note: A maintainer will take care of assigning the appropriate labels to your issue with the following convention:
 
-We use the following convention for issue label names:
-    - (WHY) The purpose or objective of this issue with Objective-level "O" labels like `O: security`, `O: new-feature`, etc.
-    - (WHICH) The part of the system this issue relates to using:
-      - External-level "E" labels if the issue fall outside the current scope of the system and is related to external dependencies or projects like `E: non-cosmos`, `E: no-std` etc.
-      - or "Internal-level "I" labels for anything related to the current scope of the product like `I: errors`, `I: documentation`, etc.
-    - (HOW) If any administrative considerations should be taken into account use Administrative-level "A" labels like `A: help-wanted`, `A: critical`, etc.
+- Objective-level (WHY): conveys the overarching purpose or objective of the issue by labels starting with "O" like `O: security`, `O: new-feature`, etc.
+
+- Scope-level (WHICH): specifies the part of the system that the issue pertains to and labels starting with "S" like `S: non-cosmos`, `S: no-std`, etc.
+
+- Admin-level (HOW) includes relevant administrative considerations on how best handling the issue and labels starting with "A" like `A: help-wanted`, `A: critical`, etc.
 
 ## Pull Requests
 
@@ -110,7 +108,7 @@ single commit for the PR with all the commit messages.
 If the issue you worked on was tagged `A: low-priority`, we'll do our best to
 review it in a timely manner, but please expect longer wait times for a review
 in general. If a low priority issue is important to you, please leave a comment
-explaining why, and we will reprioritize it!
+explaining why, and we will re-prioritize it!
 
 ## Responsibilities of a PR Reviewer
 
@@ -201,7 +199,7 @@ See those changelogs for examples.
 We currently split changes for a given release between these four sections: Breaking
 Changes, Features, Improvements, Bug Fixes.
 
-Entries in the changelog should initially be logged in the __Unreleased__ section, which
+Entries in the changelog should initially be logged in the **Unreleased** section, which
 represents a "staging area" for accumulating all the changes throughout a
 release (see [Pull Requests](#pull-requests) below). With each release,
 the entries then move from this section into their permanent place under a
@@ -233,44 +231,3 @@ Any change that effects multiple APIs/users should be recorded multiply - for
 instance, a change to some core protocol data structure might need to be
 reflected both as breaking the core protocol but also breaking any APIs where core data structures are
 exposed.
-
-## Releases
-
-Our release process is as follows:
-
-1. In a new branch `release/vX.Y.Z`, update the [changelog](#changelog) to reflect and summarize all changes in
-   the release. This involves:
-   1. Running `unclog build -u` and copy pasting the output at the top
-      of the `CHANGELOG.md` file, making sure to update the header with
-      the new version.
-   2. Running `unclog release --editor <editor> --version vX.Y.Z` to create a summary of all of the changes
-      in this release.
-      1. Your text editor will open. Write the release summary, and close the editor.
-         1. Make sure to include a comment on whether or not the release contains consensus-breaking changes.
-      2. Add this same summary to `CHANGELOG.md` as well.
-   3. Committing the updated `CHANGELOG.md` file and `.changelog` directory to the repo.
-2. Push this to a branch `release/vX.Y.Z` according to the version number of
-   the anticipated release (e.g. `release/v0.18.0`) and open a **draft PR**.
-3. If there were changes in the `ibc-derive` crate, we need to publish a new version of that crate.
-   1. bump the version in `crates/ibc-derive/Cargo.toml`
-   2. Publish `ibc-derive` with `cargo publish -p ibc-derive`
-4. Bump the versions of relevant crates (`ibc` and `ibc-query`) in their
-   `Cargo.toml` to the new version, and push these changes to the release PR.
-      + If you released a new version of `ibc-derive` in step 3, make sure to update that dependency.
-5. Run `cargo doc -p ibc --all-features --open` locally to double-check that all the
-   documentation compiles and seems up-to-date and coherent. Fix any potential
-   issues here and push them to the release PR.
-6. Run `cargo publish -p ibc --dry-run` to double-check that publishing will work. Fix
-   any potential issues here and push them to the release PR.
-7. Mark the PR as **Ready for Review** and incorporate feedback on the release.
-8. Once approved, merge the PR, and pull the `main` branch.
-9. Run `cargo publish -p ibc` and `cargo publish -p ibc-query` to publish the crates.
-10. Create a signed tag and push it to GitHub: `git tag -s -a vX.Y.Z`. In the
-   tag message, write the version and the link to the corresponding section of
-   the changelog.
-       + Push the tag with `git push --tags`
-11. Once the tag is pushed, create a GitHub release and append
-   `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)` 
-   to the release description.
-
-All done! 🎉
