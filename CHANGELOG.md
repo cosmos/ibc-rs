@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## v0.48.1
+
+*November 27, 2023*
+
+This patch release eliminates the `dep:` syntax from the `serde` feature,
+addressing potential dependency resolution issue stemming from Rust v1.70.
+
+There are no consensus-breaking changes.
+
+### BUG FIXES
+
+- Fix Cargo test failure with `--no-default-features` flag.
+  ([\#770](https://github.com/cosmos/ibc-rs/issues/770))
+- Fix dependency resolution by removing the `dep:` syntax in `serde` feature of
+  `ibc-app-transfer` crate.
+  ([\#987](https://github.com/cosmos/ibc-rs/issues/987))
+
 ## v0.48.0
 
 *November 22, 2023*
