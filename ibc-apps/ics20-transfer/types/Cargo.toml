@@ -46,7 +46,6 @@ std = [
     "serde_json/std",
     "displaydoc/std",
     "uint/std",
-    "primitive-types/std",
     "ibc-core/std",
     "ibc-proto/std",
 ]
