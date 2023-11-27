@@ -49,7 +49,6 @@ mod tests {
     use ibc::core::client::types::Height;
     use ibc::core::handler::types::msgs::MsgEnvelope;
     use ibc::core::host::types::identifiers::ChainId;
-    use test_log::test;
     use tracing::debug;
 
     use super::RelayerContext;

@@ -793,7 +793,6 @@ mod tests {
     use ibc::core::primitives::Signer;
     use ibc::core::router::module::Module;
     use ibc::core::router::types::module::{ModuleExtras, ModuleId};
-    use test_log::test;
 
     use super::*;
     use crate::fixtures::core::channel::PacketConfig;
