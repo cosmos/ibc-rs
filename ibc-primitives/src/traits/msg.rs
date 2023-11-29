@@ -4,12 +4,14 @@ use crate::prelude::*;
 
 use core::fmt::Display;
 
-/// Trait to be implemented by all IBC messages
-pub trait Msg: Protobuf<Self::Raw> + prost::Name
+/// Types that implement this trait are able to be converted to
+/// a raw Protobuf `Any` type.
+pub trait ToProto: Protobuf<Self::Proto> + prost::Name
 where
-    <Self as TryFrom<Self::Raw>>::Error: Display,
+    Self::Proto: From<Self> + prost::Message + Default,
+    <Self as TryFrom<Self::Proto>>::Error: Display,
 {
-    type Raw: From<Self> + prost::Message + Default;
+    type Proto;
 
     fn to_any(self) -> Any {
         Any {
