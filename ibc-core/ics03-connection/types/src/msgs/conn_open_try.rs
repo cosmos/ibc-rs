@@ -5,7 +5,7 @@ use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::{Signer, ToProto};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenTry as RawMsgConnectionOpenTry;
 use ibc_proto::Protobuf;
@@ -50,13 +50,10 @@ pub struct MsgConnectionOpenTry {
     pub previous_connection_id: String,
 }
 
-impl Msg for MsgConnectionOpenTry {
-    type Raw = RawMsgConnectionOpenTry;
-
-    fn type_url(&self) -> String {
-        CONN_OPEN_TRY_TYPE_URL.to_string()
-    }
+impl ToProto for MsgConnectionOpenTry {
+    type Proto = RawMsgConnectionOpenTry;
 }
+
 #[allow(deprecated)]
 #[cfg(feature = "borsh")]
 mod borsh_impls {

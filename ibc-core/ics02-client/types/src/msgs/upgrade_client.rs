@@ -6,7 +6,7 @@ use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::{Signer, ToProto};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgUpgradeClient as RawMsgUpgradeClient;
 use ibc_proto::Protobuf;
@@ -38,12 +38,8 @@ pub struct MsgUpgradeClient {
     pub signer: Signer,
 }
 
-impl Msg for MsgUpgradeClient {
-    type Raw = RawMsgUpgradeClient;
-
-    fn type_url(&self) -> String {
-        UPGRADE_CLIENT_TYPE_URL.to_string()
-    }
+impl ToProto for MsgUpgradeClient {
+    type Proto = RawMsgUpgradeClient;
 }
 
 impl Protobuf<RawMsgUpgradeClient> for MsgUpgradeClient {}

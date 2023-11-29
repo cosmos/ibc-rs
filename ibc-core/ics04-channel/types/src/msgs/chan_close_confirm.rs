@@ -2,7 +2,7 @@ use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_core_host_types::identifiers::{ChannelId, PortId};
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::{Signer, ToProto};
 use ibc_proto::ibc::core::channel::v1::MsgChannelCloseConfirm as RawMsgChannelCloseConfirm;
 use ibc_proto::Protobuf;
 
@@ -29,12 +29,8 @@ pub struct MsgChannelCloseConfirm {
     pub signer: Signer,
 }
 
-impl Msg for MsgChannelCloseConfirm {
-    type Raw = RawMsgChannelCloseConfirm;
-
-    fn type_url(&self) -> String {
-        CHAN_CLOSE_CONFIRM_TYPE_URL.to_string()
-    }
+impl ToProto for MsgChannelCloseConfirm {
+    type Proto = RawMsgChannelCloseConfirm;
 }
 
 impl Protobuf<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {}

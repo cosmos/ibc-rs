@@ -1,6 +1,6 @@
 use ibc_core_host_types::identifiers::{ConnectionId, PortId};
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::{Signer, ToProto};
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenInit as RawMsgChannelOpenInit;
 use ibc_proto::Protobuf;
 
@@ -39,12 +39,8 @@ impl MsgChannelOpenInit {
     }
 }
 
-impl Msg for MsgChannelOpenInit {
-    type Raw = RawMsgChannelOpenInit;
-
-    fn type_url(&self) -> String {
-        CHAN_OPEN_INIT_TYPE_URL.to_string()
-    }
+impl ToProto for MsgChannelOpenInit {
+    type Proto = RawMsgChannelOpenInit;
 }
 
 impl Protobuf<RawMsgChannelOpenInit> for MsgChannelOpenInit {}

@@ -2,7 +2,7 @@ use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_core_host_types::identifiers::Sequence;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::{Signer, ToProto};
 use ibc_proto::ibc::core::channel::v1::MsgTimeout as RawMsgTimeout;
 use ibc_proto::Protobuf;
 
@@ -29,12 +29,8 @@ pub struct MsgTimeout {
     pub signer: Signer,
 }
 
-impl Msg for MsgTimeout {
-    type Raw = RawMsgTimeout;
-
-    fn type_url(&self) -> String {
-        TIMEOUT_TYPE_URL.to_string()
-    }
+impl ToProto for MsgTimeout {
+    type Proto = RawMsgTimeout;
 }
 
 impl Protobuf<RawMsgTimeout> for MsgTimeout {}

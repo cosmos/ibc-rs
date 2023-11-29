@@ -1,7 +1,7 @@
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::{Signer, ToProto};
 use ibc_proto::ibc::core::channel::v1::MsgAcknowledgement as RawMsgAcknowledgement;
 use ibc_proto::Protobuf;
 
@@ -30,12 +30,8 @@ pub struct MsgAcknowledgement {
     pub signer: Signer,
 }
 
-impl Msg for MsgAcknowledgement {
-    type Raw = RawMsgAcknowledgement;
-
-    fn type_url(&self) -> String {
-        ACKNOWLEDGEMENT_TYPE_URL.to_string()
-    }
+impl ToProto for MsgAcknowledgement {
+    type Proto = RawMsgAcknowledgement;
 }
 
 impl Protobuf<RawMsgAcknowledgement> for MsgAcknowledgement {}

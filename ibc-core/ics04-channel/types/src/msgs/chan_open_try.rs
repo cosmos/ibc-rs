@@ -2,7 +2,7 @@ use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId};
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::{Signer, ToProto};
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenTry as RawMsgChannelOpenTry;
 use ibc_proto::Protobuf;
 
@@ -47,12 +47,8 @@ impl MsgChannelOpenTry {
     }
 }
 
-impl Msg for MsgChannelOpenTry {
-    type Raw = RawMsgChannelOpenTry;
-
-    fn type_url(&self) -> String {
-        CHAN_OPEN_TRY_TYPE_URL.to_string()
-    }
+impl ToProto for MsgChannelOpenTry {
+    type Proto = RawMsgChannelOpenTry;
 }
 
 impl Protobuf<RawMsgChannelOpenTry> for MsgChannelOpenTry {}

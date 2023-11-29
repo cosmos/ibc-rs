@@ -2,7 +2,7 @@ use core::time::Duration;
 
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::{Signer, ToProto};
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenInit as RawMsgConnectionOpenInit;
 use ibc_proto::Protobuf;
 
@@ -25,12 +25,8 @@ pub struct MsgConnectionOpenInit {
     pub signer: Signer,
 }
 
-impl Msg for MsgConnectionOpenInit {
-    type Raw = RawMsgConnectionOpenInit;
-
-    fn type_url(&self) -> String {
-        CONN_OPEN_INIT_TYPE_URL.to_string()
-    }
+impl ToProto for MsgConnectionOpenInit {
+    type Proto = RawMsgConnectionOpenInit;
 }
 
 /// This module encapsulates the workarounds we need to do to implement
