@@ -5,15 +5,15 @@ use crate::prelude::*;
 use core::fmt::Display;
 
 /// Trait to be implemented by all IBC messages
-pub trait Msg: Protobuf<Self::Raw>
+pub trait Msg: Protobuf<Self::Raw> + prost::Name
 where
     <Self as TryFrom<Self::Raw>>::Error: Display,
 {
-    type Raw: From<Self> + prost::Message + prost::Name + Default;
+    type Raw: From<Self> + prost::Message + Default;
 
     fn to_any(self) -> Any {
         Any {
-            type_url: self.type_url(),
+            type_url: Self::type_url(),
             value: self.encode_vec(),
         }
     }
