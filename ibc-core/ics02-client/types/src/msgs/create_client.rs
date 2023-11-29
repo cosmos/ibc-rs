@@ -1,7 +1,7 @@
 //! Definition of domain type message `MsgCreateClient`.
 
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Signer, ToProto};
+use ibc_primitives::Signer;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgCreateClient as RawMsgCreateClient;
 use ibc_proto::Protobuf;
@@ -31,10 +31,6 @@ impl MsgCreateClient {
             signer,
         }
     }
-}
-
-impl ToProto for MsgCreateClient {
-    type Proto = RawMsgCreateClient;
 }
 
 impl Protobuf<RawMsgCreateClient> for MsgCreateClient {}

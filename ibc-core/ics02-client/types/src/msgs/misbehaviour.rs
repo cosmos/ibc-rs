@@ -2,7 +2,7 @@
 
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Signer, ToProto};
+use ibc_primitives::Signer;
 use ibc_proto::google::protobuf::Any as ProtoAny;
 use ibc_proto::ibc::core::client::v1::MsgSubmitMisbehaviour as RawMsgSubmitMisbehaviour;
 use ibc_proto::Protobuf;
@@ -25,10 +25,6 @@ pub struct MsgSubmitMisbehaviour {
     pub misbehaviour: ProtoAny,
     /// signer address
     pub signer: Signer,
-}
-
-impl ToProto for MsgSubmitMisbehaviour {
-    type Proto = RawMsgSubmitMisbehaviour;
 }
 
 impl Protobuf<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {}

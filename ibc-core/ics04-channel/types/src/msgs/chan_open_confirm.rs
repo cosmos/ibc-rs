@@ -2,7 +2,7 @@ use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_core_host_types::identifiers::{ChannelId, PortId};
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Signer, ToProto};
+use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenConfirm as RawMsgChannelOpenConfirm;
 use ibc_proto::Protobuf;
 
@@ -27,10 +27,6 @@ pub struct MsgChannelOpenConfirm {
     pub proof_chan_end_on_a: CommitmentProofBytes,
     pub proof_height_on_a: Height,
     pub signer: Signer,
-}
-
-impl ToProto for MsgChannelOpenConfirm {
-    type Proto = RawMsgChannelOpenConfirm;
 }
 
 impl Protobuf<RawMsgChannelOpenConfirm> for MsgChannelOpenConfirm {}

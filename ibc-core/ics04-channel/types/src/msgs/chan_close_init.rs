@@ -1,6 +1,6 @@
 use ibc_core_host_types::identifiers::{ChannelId, PortId};
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Signer, ToProto};
+use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgChannelCloseInit as RawMsgChannelCloseInit;
 use ibc_proto::Protobuf;
 
@@ -22,10 +22,6 @@ pub struct MsgChannelCloseInit {
     pub port_id_on_a: PortId,
     pub chan_id_on_a: ChannelId,
     pub signer: Signer,
-}
-
-impl ToProto for MsgChannelCloseInit {
-    type Proto = RawMsgChannelCloseInit;
 }
 
 impl Protobuf<RawMsgChannelCloseInit> for MsgChannelCloseInit {}

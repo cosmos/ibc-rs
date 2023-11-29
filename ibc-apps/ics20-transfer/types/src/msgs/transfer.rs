@@ -5,7 +5,7 @@ use ibc_core::channel::types::timeout::TimeoutHeight;
 use ibc_core::handler::types::error::ContextError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
-use ibc_core::primitives::{Timestamp, ToProto};
+use ibc_core::primitives::Timestamp;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::applications::transfer::v1::MsgTransfer as RawMsgTransfer;
 use ibc_proto::Protobuf;
@@ -45,10 +45,6 @@ pub struct MsgTransfer {
     /// Timeout timestamp relative to the current block timestamp.
     /// The timeout is disabled when set to 0.
     pub timeout_timestamp_on_b: Timestamp,
-}
-
-impl ToProto for MsgTransfer {
-    type Proto = RawMsgTransfer;
 }
 
 impl TryFrom<RawMsgTransfer> for MsgTransfer {

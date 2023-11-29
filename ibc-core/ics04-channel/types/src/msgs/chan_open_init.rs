@@ -1,6 +1,6 @@
 use ibc_core_host_types::identifiers::{ConnectionId, PortId};
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Signer, ToProto};
+use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenInit as RawMsgChannelOpenInit;
 use ibc_proto::Protobuf;
 
@@ -37,10 +37,6 @@ impl MsgChannelOpenInit {
     pub fn verify_connection_hops_length(&self) -> Result<(), ChannelError> {
         verify_connection_hops_length(&self.connection_hops_on_a, 1)
     }
-}
-
-impl ToProto for MsgChannelOpenInit {
-    type Proto = RawMsgChannelOpenInit;
 }
 
 impl Protobuf<RawMsgChannelOpenInit> for MsgChannelOpenInit {}

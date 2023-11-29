@@ -5,7 +5,7 @@ use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Signer, ToProto};
+use ibc_primitives::Signer;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenTry as RawMsgConnectionOpenTry;
 use ibc_proto::Protobuf;
@@ -48,10 +48,6 @@ pub struct MsgConnectionOpenTry {
     #[deprecated(since = "0.22.0")]
     /// Only kept here for proper conversion to/from the raw type
     pub previous_connection_id: String,
-}
-
-impl ToProto for MsgConnectionOpenTry {
-    type Proto = RawMsgConnectionOpenTry;
 }
 
 #[allow(deprecated)]

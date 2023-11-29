@@ -1,7 +1,7 @@
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Signer, ToProto};
+use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgAcknowledgement as RawMsgAcknowledgement;
 use ibc_proto::Protobuf;
 
@@ -28,10 +28,6 @@ pub struct MsgAcknowledgement {
     /// Height at which the commitment proof in this message were taken
     pub proof_height_on_b: Height,
     pub signer: Signer,
-}
-
-impl ToProto for MsgAcknowledgement {
-    type Proto = RawMsgAcknowledgement;
 }
 
 impl Protobuf<RawMsgAcknowledgement> for MsgAcknowledgement {}

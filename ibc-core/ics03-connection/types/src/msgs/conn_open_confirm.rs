@@ -2,7 +2,7 @@ use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_core_host_types::identifiers::ConnectionId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Signer, ToProto};
+use ibc_primitives::Signer;
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenConfirm as RawMsgConnectionOpenConfirm;
 use ibc_proto::Protobuf;
 
@@ -26,10 +26,6 @@ pub struct MsgConnectionOpenConfirm {
     /// Height at which `proof_conn_end_on_a` in this message was taken
     pub proof_height_on_a: Height,
     pub signer: Signer,
-}
-
-impl ToProto for MsgConnectionOpenConfirm {
-    type Proto = RawMsgConnectionOpenConfirm;
 }
 
 impl Protobuf<RawMsgConnectionOpenConfirm> for MsgConnectionOpenConfirm {}
