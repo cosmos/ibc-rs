@@ -6,19 +6,27 @@ use core::fmt::Display;
 
 /// Types that implement this trait are able to be converted to
 /// a raw Protobuf `Any` type.
-pub trait ToProto: Protobuf<Self::Proto>
+pub trait ToProto<P>: Protobuf<P>
 where
-    Self::Proto: From<Self> + prost::Message + prost::Name + Default,
-    <Self as TryFrom<Self::Proto>>::Error: Display,
+    P: From<Self> + prost::Message + prost::Name + Default,
+    <Self as TryFrom<P>>::Error: Display,
 {
-    type Proto;
+    fn type_url() -> String {
+        P::type_url()
+    }
 
     fn to_any(self) -> Any {
-        use prost::Name;
-
         Any {
-            type_url: Self::Proto::type_url(),
+            type_url: P::type_url(),
             value: self.encode_vec(),
         }
     }
+}
+
+impl<T, P> ToProto<P> for T
+where
+    T: Protobuf<P>,
+    P: From<Self> + prost::Message + prost::Name + Default,
+    <Self as TryFrom<P>>::Error: Display,
+{
 }
