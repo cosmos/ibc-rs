@@ -1,8 +1,9 @@
-use ibc_proto::{google::protobuf::Any, Protobuf};
+use core::fmt::Display;
+
+use ibc_proto::google::protobuf::Any;
+use ibc_proto::Protobuf;
 
 use crate::prelude::*;
-
-use core::fmt::Display;
 
 /// Types that implement this trait are able to be converted to
 /// a raw Protobuf `Any` type.
