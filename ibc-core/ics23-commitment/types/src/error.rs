@@ -2,14 +2,9 @@
 
 use displaydoc::Display;
 use ibc_primitives::prelude::*;
-use prost::DecodeError;
 
 #[derive(Debug, Display)]
 pub enum CommitmentError {
-    /// invalid raw merkle proof error: `{0}`
-    InvalidRawMerkleProof(DecodeError),
-    /// failed to decode commitment proof error: `{0}`
-    CommitmentProofDecodingFailed(DecodeError),
     /// empty commitment prefix
     EmptyCommitmentPrefix,
     /// empty merkle proof
@@ -28,15 +23,9 @@ pub enum CommitmentError {
     VerificationFailure,
     /// encoded commitment prefix is not a valid hex string: `{0}`
     EncodingFailure(String),
+    /// decoding failure: `{0}`
+    DecodingFailure(String),
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for CommitmentError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match &self {
-            Self::InvalidRawMerkleProof(e) => Some(e),
-            Self::CommitmentProofDecodingFailed(e) => Some(e),
-            _ => None,
-        }
-    }
-}
+impl std::error::Error for CommitmentError {}

@@ -4,7 +4,9 @@ use core::convert::TryFrom;
 use core::fmt;
 
 use ibc_primitives::prelude::*;
+use ibc_primitives::ToVec;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
+use ibc_proto::Protobuf;
 use subtle_encoding::{Encoding, Hex};
 
 use super::merkle::MerkleProof;
@@ -109,10 +111,7 @@ impl TryFrom<RawMerkleProof> for CommitmentProofBytes {
     type Error = CommitmentError;
 
     fn try_from(proof: RawMerkleProof) -> Result<Self, Self::Error> {
-        let mut buf = Vec::new();
-        prost::Message::encode(&proof, &mut buf)
-            .map_err(|e| Self::Error::EncodingFailure(e.to_string()))?;
-        buf.try_into()
+        proof.to_vec().try_into()
     }
 }
 
@@ -124,14 +123,14 @@ impl TryFrom<MerkleProof> for CommitmentProofBytes {
     }
 }
 
-impl TryFrom<CommitmentProofBytes> for RawMerkleProof {
+impl TryFrom<CommitmentProofBytes> for MerkleProof {
     type Error = CommitmentError;
 
     fn try_from(value: CommitmentProofBytes) -> Result<Self, Self::Error> {
         let value: Vec<u8> = value.into();
-        let res: RawMerkleProof = prost::Message::decode(value.as_ref())
-            .map_err(CommitmentError::InvalidRawMerkleProof)?;
-        Ok(res)
+        let merkle_proof = Protobuf::<RawMerkleProof>::decode_vec(value.as_ref())
+            .map_err(|e| CommitmentError::DecodingFailure(e.to_string()))?;
+        Ok(merkle_proof)
     }
 }
 

@@ -1,13 +1,11 @@
 //! Defines the misbehaviour type for the tendermint light client
 
-use bytes::Buf;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Misbehaviour as RawMisbehaviour;
 use ibc_proto::Protobuf;
-use prost::Message;
 
 use crate::error::Error;
 use crate::header::Header;
@@ -112,18 +110,15 @@ impl TryFrom<Any> for Misbehaviour {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, ClientError> {
-        use core::ops::Deref;
-
-        fn decode_misbehaviour<B: Buf>(buf: B) -> Result<Misbehaviour, Error> {
-            RawMisbehaviour::decode(buf)
-                .map_err(Error::Decode)?
-                .try_into()
+        fn decode_misbehaviour(value: &[u8]) -> Result<Misbehaviour, ClientError> {
+            let misbehaviour =
+                Protobuf::<RawMisbehaviour>::decode_vec(value).map_err(|e| ClientError::Other {
+                    description: e.to_string(),
+                })?;
+            Ok(misbehaviour)
         }
-
         match raw.type_url.as_str() {
-            TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
-                decode_misbehaviour(raw.value.deref()).map_err(Into::into)
-            }
+            TENDERMINT_MISBEHAVIOUR_TYPE_URL => decode_misbehaviour(&raw.value),
             _ => Err(ClientError::UnknownMisbehaviourType {
                 misbehaviour_type: raw.type_url,
             }),

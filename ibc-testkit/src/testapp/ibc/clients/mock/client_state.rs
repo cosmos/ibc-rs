@@ -101,21 +101,16 @@ impl TryFrom<Any> for MockClientState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        use core::ops::Deref;
-
-        use bytes::Buf;
-        use prost::Message;
-
-        fn decode_client_state<B: Buf>(buf: B) -> Result<MockClientState, ClientError> {
-            RawMockClientState::decode(buf)
-                .map_err(ClientError::Decode)?
-                .try_into()
+        fn decode_client_state(value: &[u8]) -> Result<MockClientState, ClientError> {
+            let client_state = Protobuf::<RawMockClientState>::decode_vec(value).map_err(|e| {
+                ClientError::Other {
+                    description: e.to_string(),
+                }
+            })?;
+            Ok(client_state)
         }
-
         match raw.type_url.as_str() {
-            MOCK_CLIENT_STATE_TYPE_URL => {
-                decode_client_state(raw.value.deref()).map_err(Into::into)
-            }
+            MOCK_CLIENT_STATE_TYPE_URL => decode_client_state(&raw.value),
             _ => Err(ClientError::UnknownClientStateType {
                 client_state_type: raw.type_url,
             }),

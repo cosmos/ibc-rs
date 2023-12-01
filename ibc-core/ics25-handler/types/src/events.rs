@@ -28,8 +28,6 @@ pub enum Error {
     Channel(channel_error::ChannelError),
     /// parsing timestamp error: `{0}`
     Timestamp(ParseTimestampError),
-    /// decoding protobuf error: `{0}`
-    Decode(prost::DecodeError),
     /// incorrect event type: `{event}`
     IncorrectEventType { event: String },
     /// module event cannot use core event types: `{event:?}`
@@ -45,7 +43,6 @@ impl std::error::Error for Error {
             Self::Connection(e) => Some(e),
             Self::Channel(e) => Some(e),
             Self::Timestamp(e) => Some(e),
-            Self::Decode(e) => Some(e),
             _ => None,
         }
     }

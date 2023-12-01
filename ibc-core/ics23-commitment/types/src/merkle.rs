@@ -7,6 +7,7 @@ use ibc_proto::ics23::{
     calculate_existence_root, verify_membership, verify_non_membership, CommitmentProof,
     NonExistenceProof,
 };
+use ibc_proto::Protobuf;
 
 use crate::commitment::{CommitmentPrefix, CommitmentRoot};
 use crate::error::CommitmentError;
@@ -31,14 +32,18 @@ pub struct MerkleProof {
     pub proofs: Vec<CommitmentProof>,
 }
 
+impl Protobuf<RawMerkleProof> for MerkleProof {}
+
 /// Convert to ics23::CommitmentProof
 /// The encoding and decoding shouldn't fail since ics23::CommitmentProof and ibc_proto::ics23::CommitmentProof should be the same
 /// Ref. <https://github.com/informalsystems/ibc-rs/issues/853>
-impl From<RawMerkleProof> for MerkleProof {
-    fn from(proof: RawMerkleProof) -> Self {
-        Self {
+impl TryFrom<RawMerkleProof> for MerkleProof {
+    type Error = CommitmentError;
+
+    fn try_from(proof: RawMerkleProof) -> Result<Self, Self::Error> {
+        Ok(Self {
             proofs: proof.proofs,
-        }
+        })
     }
 }
 

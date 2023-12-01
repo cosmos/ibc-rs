@@ -15,7 +15,6 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
 use ibc_proto::Protobuf;
-use prost::Message;
 use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
@@ -346,20 +345,17 @@ impl TryFrom<Any> for ClientState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        use core::ops::Deref;
-
-        use bytes::Buf;
-
-        fn decode_client_state<B: Buf>(buf: B) -> Result<ClientState, Error> {
-            RawTmClientState::decode(buf)
-                .map_err(Error::Decode)?
-                .try_into()
+        fn decode_client_state(value: &[u8]) -> Result<ClientState, ClientError> {
+            let client_state = Protobuf::<RawTmClientState>::decode_vec(value).map_err(|e| {
+                ClientError::Other {
+                    description: e.to_string(),
+                }
+            })?;
+            Ok(client_state)
         }
 
         match raw.type_url.as_str() {
-            TENDERMINT_CLIENT_STATE_TYPE_URL => {
-                decode_client_state(raw.value.deref()).map_err(Into::into)
-            }
+            TENDERMINT_CLIENT_STATE_TYPE_URL => decode_client_state(&raw.value),
             _ => Err(ClientError::UnknownClientStateType {
                 client_state_type: raw.type_url,
             }),

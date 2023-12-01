@@ -106,21 +106,17 @@ impl TryFrom<Any> for ConsensusState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        use core::ops::Deref;
-
-        use bytes::Buf;
-        use prost::Message;
-
-        fn decode_consensus_state<B: Buf>(buf: B) -> Result<ConsensusState, Error> {
-            RawConsensusState::decode(buf)
-                .map_err(Error::Decode)?
-                .try_into()
+        fn decode_consensus_state(value: &[u8]) -> Result<ConsensusState, ClientError> {
+            let client_state = Protobuf::<RawConsensusState>::decode_vec(value).map_err(|e| {
+                ClientError::Other {
+                    description: e.to_string(),
+                }
+            })?;
+            Ok(client_state)
         }
 
         match raw.type_url.as_str() {
-            TENDERMINT_CONSENSUS_STATE_TYPE_URL => {
-                decode_consensus_state(raw.value.deref()).map_err(Into::into)
-            }
+            TENDERMINT_CONSENSUS_STATE_TYPE_URL => decode_consensus_state(&raw.value),
             _ => Err(ClientError::UnknownConsensusStateType {
                 consensus_state_type: raw.type_url,
             }),

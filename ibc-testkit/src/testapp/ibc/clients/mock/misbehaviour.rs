@@ -1,4 +1,3 @@
-use bytes::Buf;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::primitives::prelude::*;
@@ -53,20 +52,15 @@ impl TryFrom<Any> for Misbehaviour {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, ClientError> {
-        use core::ops::Deref;
-
-        fn decode_misbehaviour<B: Buf>(buf: B) -> Result<Misbehaviour, ClientError> {
-            use prost::Message;
-
-            RawMisbehaviour::decode(buf)
-                .map_err(ClientError::Decode)?
-                .try_into()
+        fn decode_misbehaviour(value: &[u8]) -> Result<Misbehaviour, ClientError> {
+            let raw_misbehaviour =
+                Protobuf::<RawMisbehaviour>::decode_vec(value).map_err(|e| ClientError::Other {
+                    description: e.to_string(),
+                })?;
+            Ok(raw_misbehaviour)
         }
-
         match raw.type_url.as_str() {
-            MOCK_MISBEHAVIOUR_TYPE_URL => {
-                decode_misbehaviour(raw.value.deref()).map_err(Into::into)
-            }
+            MOCK_MISBEHAVIOUR_TYPE_URL => decode_misbehaviour(&raw.value),
             _ => Err(ClientError::UnknownMisbehaviourType {
                 misbehaviour_type: raw.type_url,
             }),

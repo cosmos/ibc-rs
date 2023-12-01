@@ -18,7 +18,6 @@ description  = """
 [dependencies]
 # external dependencies
 borsh             = { workspace = true, optional = true }
-bytes             = { workspace = true }
 derive_more       = { workspace = true }
 displaydoc        = { workspace = true }
 parking_lot       = { version = "0.12.1", default-features = false }
