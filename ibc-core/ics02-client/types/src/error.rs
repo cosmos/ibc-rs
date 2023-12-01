@@ -58,8 +58,6 @@ pub enum ClientError {
     MissingRawConsensusState,
     /// invalid client id in the update client message: `{0}`
     InvalidMsgUpdateClientId(IdentifierError),
-    /// encode error: `{0}`
-    Encode(prost::EncodeError),
     /// decode error: `{0}`
     Decode(prost::DecodeError),
     /// invalid client identifier error: `{0}`

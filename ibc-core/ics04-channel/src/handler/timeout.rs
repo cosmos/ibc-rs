@@ -15,7 +15,6 @@ use ibc_core_host::types::path::{
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
-use prost::Message;
 
 use super::timeout_on_close;
 
@@ -231,19 +230,12 @@ where
             let seq_recv_path_on_b =
                 SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
 
-            let mut value = Vec::new();
-            u64::from(msg.packet.seq_on_a)
-                .encode(&mut value)
-                .map_err(|_| PacketError::CannotEncodeSequence {
-                    sequence: msg.packet.seq_on_a,
-                })?;
-
             client_state_of_b_on_a.verify_membership(
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 Path::SeqRecv(seq_recv_path_on_b),
-                value,
+                msg.packet.seq_on_a.to_vec(),
             )
         } else {
             let receipt_path_on_b = ReceiptPath::new(

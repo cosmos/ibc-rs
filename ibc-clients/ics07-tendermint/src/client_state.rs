@@ -33,7 +33,7 @@ use ibc_core_host::types::path::{
 };
 use ibc_core_host::ExecutionContext;
 use ibc_primitives::prelude::*;
-use prost::Message;
+use ibc_primitives::ToVec;
 
 use super::consensus_state::ConsensusState as TmConsensusState;
 use crate::context::{
@@ -169,24 +169,14 @@ impl ClientStateCommon for ClientState {
 
         let last_height = self.latest_height().revision_height();
 
-        let mut client_state_value = Vec::new();
-        upgraded_client_state
-            .encode(&mut client_state_value)
-            .map_err(ClientError::Encode)?;
-
         // Verify the proof of the upgraded client state
         self.verify_membership(
             &upgrade_path_prefix,
             &proof_upgrade_client,
             root,
             Path::UpgradeClient(UpgradeClientPath::UpgradedClientState(last_height)),
-            client_state_value,
+            upgraded_client_state.to_vec(),
         )?;
-
-        let mut cons_state_value = Vec::new();
-        upgraded_consensus_state
-            .encode(&mut cons_state_value)
-            .map_err(ClientError::Encode)?;
 
         // Verify the proof of the upgraded consensus state
         self.verify_membership(
@@ -194,7 +184,7 @@ impl ClientStateCommon for ClientState {
             &proof_upgrade_consensus_state,
             root,
             Path::UpgradeClient(UpgradeClientPath::UpgradedClientConsensusState(last_height)),
-            cons_state_value,
+            upgraded_consensus_state.to_vec(),
         )?;
 
         Ok(())
