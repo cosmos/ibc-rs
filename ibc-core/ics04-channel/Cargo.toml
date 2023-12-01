@@ -17,10 +17,6 @@ description  = """
 all-features = true
 
 [dependencies]
-# external dependencies
-prost = { workspace = true }
-
-# ibc dependencies
 ibc-core-client           = { workspace = true }
 ibc-core-connection       = { workspace = true }
 ibc-core-channel-types    = { workspace = true }
@@ -33,7 +29,6 @@ ibc-primitives            = { workspace = true }
 [features]
 default = ["std"]
 std = [
-    "prost/std",
     "ibc-core-client/std",
     "ibc-core-connection/std",
     "ibc-core-channel-types/std",

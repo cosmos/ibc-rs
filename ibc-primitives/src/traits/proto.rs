@@ -31,3 +31,14 @@ where
     <Self as TryFrom<P>>::Error: Display,
 {
 }
+
+/// Convenient trait for converting types to a raw Protobuf `Vec<u8>`.
+pub trait ToVec {
+    fn to_vec(&self) -> Vec<u8>;
+}
+
+impl<T: prost::Message> ToVec for T {
+    fn to_vec(&self) -> Vec<u8> {
+        self.encode_to_vec()
+    }
+}

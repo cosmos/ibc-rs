@@ -11,7 +11,7 @@ use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
-use prost::Message;
+use ibc_primitives::ToVec;
 
 pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>
 where
@@ -108,7 +108,7 @@ where
                     client_state.client_type(),
                     *consensus_height,
                     consensus_heights,
-                    header.encode_to_vec(),
+                    header.to_vec(),
                 ))
             };
             ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))?;

@@ -14,7 +14,7 @@ use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath, Conn
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
-use prost::Message;
+use ibc_primitives::ToVec;
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
@@ -106,7 +106,7 @@ where
                 &msg.proof_client_state_of_a_on_b,
                 consensus_state_of_b_on_a.root(),
                 Path::ClientState(ClientStatePath::new(vars.client_id_on_b())),
-                msg.client_state_of_a_on_b.encode_to_vec(),
+                msg.client_state_of_a_on_b.to_vec(),
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
                 client_id: vars.client_id_on_b().clone(),
