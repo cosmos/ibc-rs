@@ -2,7 +2,7 @@ use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_core_host_types::identifiers::ConnectionId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::Signer;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenAck as RawMsgConnectionOpenAck;
 use ibc_proto::Protobuf;
@@ -42,14 +42,6 @@ pub struct MsgConnectionOpenAck {
     /// optional proof of host state machines (chain A) that are unable to
     /// introspect their own consensus state
     pub proof_consensus_state_of_a: Option<CommitmentProofBytes>,
-}
-
-impl Msg for MsgConnectionOpenAck {
-    type Raw = RawMsgConnectionOpenAck;
-
-    fn type_url(&self) -> String {
-        CONN_OPEN_ACK_TYPE_URL.to_string()
-    }
 }
 
 impl Protobuf<RawMsgConnectionOpenAck> for MsgConnectionOpenAck {}
