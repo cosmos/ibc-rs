@@ -20,6 +20,7 @@ use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::{downcast, Timestamp};
 use ibc::primitives::proto::Any;
+use ibc::primitives::ToVec;
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::hosts::block::{HostBlock, HostType};
@@ -31,7 +32,6 @@ use ibc_testkit::testapp::ibc::clients::mock::misbehaviour::Misbehaviour as Mock
 use ibc_testkit::testapp::ibc::clients::AnyConsensusState;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
-use prost::Message;
 use tendermint_testgen::Validator as TestgenValidator;
 use test_log::test;
 
@@ -686,7 +686,7 @@ fn test_update_client_events() {
     assert_eq!(update_client_event.client_type(), &mock_client_type());
     assert_eq!(update_client_event.consensus_height(), &height);
     assert_eq!(update_client_event.consensus_heights(), &vec![height]);
-    assert_eq!(update_client_event.header(), &header.encode_to_vec());
+    assert_eq!(update_client_event.header(), &header.to_vec());
 }
 
 fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &ClientType) {

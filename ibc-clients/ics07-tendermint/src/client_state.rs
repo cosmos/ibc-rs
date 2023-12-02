@@ -26,7 +26,6 @@ use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use ibc_core_commitment_types::merkle::{apply_prefix, MerkleProof};
-use ibc_core_commitment_types::proto::v1::MerkleProof as RawMerkleProof;
 use ibc_core_host::types::identifiers::{ClientId, ClientType};
 use ibc_core_host::types::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
@@ -199,9 +198,8 @@ impl ClientStateCommon for ClientState {
         value: Vec<u8>,
     ) -> Result<(), ClientError> {
         let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
-        let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
-            .map_err(ClientError::InvalidCommitmentProof)?
-            .into();
+        let merkle_proof =
+            MerkleProof::try_from(proof.clone()).map_err(ClientError::InvalidCommitmentProof)?;
 
         merkle_proof
             .verify_membership(
@@ -222,9 +220,8 @@ impl ClientStateCommon for ClientState {
         path: Path,
     ) -> Result<(), ClientError> {
         let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
-        let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
-            .map_err(ClientError::InvalidCommitmentProof)?
-            .into();
+        let merkle_proof =
+            MerkleProof::try_from(proof.clone()).map_err(ClientError::InvalidCommitmentProof)?;
 
         merkle_proof
             .verify_non_membership(&self.0.proof_specs, root.clone().into(), merkle_path)

@@ -48,19 +48,14 @@ authors      = ["Informal Systems <hello@informal.systems>"]
 [workspace.dependencies]
 # external dependencies
 borsh               = { version = "0.10", default-features = false }
-bytes               = { version = "1.5.0", default-features = false }
 displaydoc          = { version = "0.2", default-features = false }
 derive_more         = { version = "0.99.17", default-features = false, features = ["from", "into", "display", "try_into"] }
-num-traits          = { version = "0.2.17", default-features = false }
-primitive-types     = { version = "0.12.2", default-features = false, features = ["serde_no_std"] }
-prost               = { version = "0.12", default-features = false }
 rstest              = "0.18.2"
 schemars            = { version = "0.8.15" }
 sha2                = { version = "0.10.8", default-features = false }
 serde               = { version = "1.0", default-features = false }
 serde_json          = { package = "serde-json-wasm", version = "1.0.0" , default-features = false }
 subtle-encoding     = { version = "0.5", default-features = false }
-time                = { version = ">=0.3.0, <0.3.31", default-features = false }
 
 # ibc dependencies
 ibc                 = { version = "0.48.1", path = "./ibc", default-features = false }
@@ -92,7 +87,6 @@ ibc-client-tendermint-types = { version = "0.48.1", path = "./ibc-clients/ics07-
 ibc-app-transfer-types      = { version = "0.48.1", path = "./ibc-apps/ics20-transfer/types", default-features = false }
 
 ibc-proto = { version = "0.39.1", default-features = false }
-ics23     = { version = "0.11", default-features = false }
 
 # cosmos dependencies
 tendermint                       = { version = "0.34.0", default-features = false }
