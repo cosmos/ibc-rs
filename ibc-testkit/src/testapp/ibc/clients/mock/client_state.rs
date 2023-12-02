@@ -102,11 +102,10 @@ impl TryFrom<Any> for MockClientState {
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         fn decode_client_state(value: &[u8]) -> Result<MockClientState, ClientError> {
-            let client_state = Protobuf::<RawMockClientState>::decode_vec(value).map_err(|e| {
-                ClientError::Other {
+            let client_state =
+                Protobuf::<RawMockClientState>::decode(value).map_err(|e| ClientError::Other {
                     description: e.to_string(),
-                }
-            })?;
+                })?;
             Ok(client_state)
         }
         match raw.type_url.as_str() {

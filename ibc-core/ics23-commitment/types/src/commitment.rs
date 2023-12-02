@@ -128,7 +128,7 @@ impl TryFrom<CommitmentProofBytes> for MerkleProof {
 
     fn try_from(value: CommitmentProofBytes) -> Result<Self, Self::Error> {
         let value: Vec<u8> = value.into();
-        let merkle_proof = Protobuf::<RawMerkleProof>::decode_vec(value.as_ref())
+        let merkle_proof = Protobuf::<RawMerkleProof>::decode(value.as_ref())
             .map_err(|e| CommitmentError::DecodingFailure(e.to_string()))?;
         Ok(merkle_proof)
     }

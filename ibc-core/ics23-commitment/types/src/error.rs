@@ -23,7 +23,7 @@ pub enum CommitmentError {
     VerificationFailure,
     /// encoded commitment prefix is not a valid hex string: `{0}`
     EncodingFailure(String),
-    /// decoding failure: `{0}`
+    /// decoding commitment proof bytes failed: `{0}`
     DecodingFailure(String),
 }
 

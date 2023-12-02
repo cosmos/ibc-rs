@@ -107,11 +107,10 @@ impl TryFrom<Any> for ConsensusState {
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         fn decode_consensus_state(value: &[u8]) -> Result<ConsensusState, ClientError> {
-            let client_state = Protobuf::<RawConsensusState>::decode_vec(value).map_err(|e| {
-                ClientError::Other {
+            let client_state =
+                Protobuf::<RawConsensusState>::decode(value).map_err(|e| ClientError::Other {
                     description: e.to_string(),
-                }
-            })?;
+                })?;
             Ok(client_state)
         }
 

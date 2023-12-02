@@ -188,10 +188,9 @@ impl TryFrom<Any> for Header {
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         fn decode_header(value: &[u8]) -> Result<Header, ClientError> {
-            let header =
-                Protobuf::<RawHeader>::decode_vec(value).map_err(|e| ClientError::Other {
-                    description: e.to_string(),
-                })?;
+            let header = Protobuf::<RawHeader>::decode(value).map_err(|e| ClientError::Other {
+                description: e.to_string(),
+            })?;
             Ok(header)
         }
         match raw.type_url.as_str() {

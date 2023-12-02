@@ -30,7 +30,6 @@ subtle-encoding = { workspace = true }
 ibc-core-host-types    = { workspace = true }
 ibc-primitives         = { workspace = true }
 ibc-proto              = {workspace = true }
-ics23                  = { workspace = true }
 
 # cosmos dependencies
 tendermint = { workspace = true }
@@ -48,7 +47,6 @@ std = [
     "ibc-primitives/std",
     "ibc-core-host-types/std",
     "ibc-proto/std",
-    "ics23/std",
     "tendermint/std",
 ]
 serde = [
@@ -57,7 +55,6 @@ serde = [
     "ibc-core-host-types/serde",
     "ibc-primitives/serde",
     "ibc-proto/serde",
-    "ics23/serde",
 ]
 borsh = [
     "dep:borsh",

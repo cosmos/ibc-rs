@@ -64,9 +64,11 @@ impl TryFrom<Any> for MockConsensusState {
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         fn decode_consensus_state(value: &[u8]) -> Result<MockConsensusState, ClientError> {
-            let mock_consensus_state = Protobuf::<RawMockConsensusState>::decode_vec(value)
-                .map_err(|e| ClientError::Other {
-                    description: e.to_string(),
+            let mock_consensus_state =
+                Protobuf::<RawMockConsensusState>::decode(value).map_err(|e| {
+                    ClientError::Other {
+                        description: e.to_string(),
+                    }
                 })?;
             Ok(mock_consensus_state)
         }

@@ -34,9 +34,6 @@ pub struct MerkleProof {
 
 impl Protobuf<RawMerkleProof> for MerkleProof {}
 
-/// Convert to ics23::CommitmentProof
-/// The encoding and decoding shouldn't fail since ics23::CommitmentProof and ibc_proto::ics23::CommitmentProof should be the same
-/// Ref. <https://github.com/informalsystems/ibc-rs/issues/853>
 impl TryFrom<RawMerkleProof> for MerkleProof {
     type Error = CommitmentError;
 

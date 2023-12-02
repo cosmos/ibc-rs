@@ -112,7 +112,7 @@ impl TryFrom<Any> for Misbehaviour {
     fn try_from(raw: Any) -> Result<Self, ClientError> {
         fn decode_misbehaviour(value: &[u8]) -> Result<Misbehaviour, ClientError> {
             let misbehaviour =
-                Protobuf::<RawMisbehaviour>::decode_vec(value).map_err(|e| ClientError::Other {
+                Protobuf::<RawMisbehaviour>::decode(value).map_err(|e| ClientError::Other {
                     description: e.to_string(),
                 })?;
             Ok(misbehaviour)

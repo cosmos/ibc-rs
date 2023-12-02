@@ -21,7 +21,6 @@ borsh             = { workspace = true, optional = true }
 derive_more       = { workspace = true }
 displaydoc        = { workspace = true }
 parking_lot       = { version = "0.12.1", default-features = false }
-primitive-types   = { workspace = true }
 schemars          = { workspace = true, optional = true }
 serde             = { workspace = true, optional = true }
 serde_json        = { workspace = true, optional = true }
