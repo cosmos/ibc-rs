@@ -185,7 +185,6 @@ fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, u64), IdentifierEr
 #[cfg(test)]
 mod tests {
     use rstest::rstest;
-    use serde_json;
 
     use super::*;
 
@@ -278,9 +277,24 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn test_json_deserialization_matches_from_str() {
+        use serde_json;
+
         let json_str = r#"{"id": "foo-42", "revision_number": 69}"#;
         let id: ChainId = serde_json::from_str(json_str).unwrap();
+        let other = ChainId::new(id.as_str()).unwrap();
+
+        assert_eq!(id, other);
+    }
+
+    #[test]
+    #[cfg(feature = "borsh")]
+    fn test_borsh_deserialization_matches_from_str() {
+        use borsh::BorshDeserialize;
+
+        let byte_slice = b"\x06\0\0\0foo-42\x45\0\0\0\0\0\0\0";
+        let id = ChainId::try_from_slice(byte_slice).unwrap();
         let other = ChainId::new(id.as_str()).unwrap();
 
         assert_eq!(id, other);
