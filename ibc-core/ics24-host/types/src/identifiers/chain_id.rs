@@ -1,12 +1,14 @@
-use core::fmt::{Debug, Display, Error as FmtError, Formatter};
-use core::str::FromStr;
-
-use ibc_primitives::prelude::*;
-
 use crate::error::IdentifierError;
 use crate::validate::{
     validate_identifier_chars, validate_identifier_length, validate_prefix_length,
 };
+
+use core::fmt::{Debug, Display, Error as FmtError, Formatter};
+use core::str::FromStr;
+
+use serde::{de, Deserialize};
+
+use ibc_primitives::prelude::*;
 
 /// Defines the domain type for chain identifiers.
 ///
@@ -28,7 +30,7 @@ use crate::validate::{
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ChainId {
@@ -113,6 +115,17 @@ impl ChainId {
             Ok((chain_name, _)) => validate_prefix_length(chain_name, min_length, max_length),
             _ => validate_identifier_length(&self.id, min_length, max_length),
         }
+    }
+}
+
+impl<'de> Deserialize<'de> for ChainId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let de = <String>::deserialize(deserializer)?;
+        std::println!("Deserialized ChainId: {de}");
+        ChainId::from_str(de.as_str()).map_err(de::Error::custom)
     }
 }
 
@@ -250,8 +263,24 @@ mod tests {
     #[case(" -")]
     #[case("   -1")]
     #[case("/chainA-1")]
-    fn test_invalid_chain_id(#[case] chain_id_str: &str) {
+    #[case(r#"{"id": "foo-42", "revision_number": 69}"#)]
+    fn test_invalid_chain_id_from_str(#[case] chain_id_str: &str) {
         assert!(ChainId::new(chain_id_str).is_err());
+    }
+
+    #[cfg(feature = "serde")]
+    #[rstest]
+    #[case(r#"{"id": "foo-42", "revision_number": 0}"#)]
+    #[case(r#"{"id": "foo-42", "revision_number": 42}"#)]
+    fn test_valid_chain_id_json_deserialization(#[case] chain_id_json: &str) {
+        assert!(serde_json::from_str::<ChainId>(chain_id_json).is_ok());
+    }
+
+    #[cfg(feature = "serde")]
+    #[rstest]
+    #[case(r#"{"id": "foo-42", "revision_number": 69}"#)]
+    fn test_invalid_chain_id_json_deserialization(#[case] chain_id_json: &str) {
+        assert!(serde_json::from_str::<ChainId>(chain_id_json).is_err())
     }
 
     #[test]
@@ -274,18 +303,6 @@ mod tests {
         assert!(chain_id.increment_revision_number().is_err());
         assert_eq!(chain_id.revision_number(), 0);
         assert_eq!(chain_id.as_str(), "chainA");
-    }
-
-    #[test]
-    #[cfg(feature = "json")]
-    fn test_json_deserialization_matches_from_str() {
-        use serde_json;
-
-        let json_str = r#"{"id": "foo-42", "revision_number": 69}"#;
-        let id: ChainId = serde_json::from_str(json_str).unwrap();
-        let other = ChainId::new(id.as_str()).unwrap();
-
-        assert_eq!(id, other);
     }
 
     #[test]
