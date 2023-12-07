@@ -270,15 +270,16 @@ mod tests {
 
     #[cfg(feature = "serde")]
     #[rstest]
-    #[case(r#"{"id": "foo-42", "revision_number": 0}"#)]
-    #[case(r#"{"id": "foo-42", "revision_number": 42}"#)]
+    #[case(r#"{"id":"foo-42","revision_number":"0"}"#)]
+    #[case(r#"{"id":"foo-42","revision_number":"42"}"#)]
     fn test_valid_chain_id_json_deserialization(#[case] chain_id_json: &str) {
-        assert!(serde_json::from_str::<ChainId>(chain_id_json).is_ok());
+        serde_json::from_str::<ChainId>(chain_id_json).unwrap();
+        // assert!(serde_json::from_str::<ChainId>(chain_id_json).is_ok());
     }
 
     #[cfg(feature = "serde")]
     #[rstest]
-    #[case(r#"{"id": "foo-42", "revision_number": 69}"#)]
+    #[case(r#"{"id":"foo-42","revision_number":"69"}"#)]
     fn test_invalid_chain_id_json_deserialization(#[case] chain_id_json: &str) {
         assert!(serde_json::from_str::<ChainId>(chain_id_json).is_err())
     }
