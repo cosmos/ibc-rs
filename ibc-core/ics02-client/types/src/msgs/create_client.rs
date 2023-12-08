@@ -1,7 +1,7 @@
 //! Definition of domain type message `MsgCreateClient`.
 
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::Signer;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgCreateClient as RawMsgCreateClient;
 use ibc_proto::Protobuf;
@@ -30,14 +30,6 @@ impl MsgCreateClient {
             consensus_state,
             signer,
         }
-    }
-}
-
-impl Msg for MsgCreateClient {
-    type Raw = RawMsgCreateClient;
-
-    fn type_url(&self) -> String {
-        CREATE_CLIENT_TYPE_URL.to_string()
     }
 }
 

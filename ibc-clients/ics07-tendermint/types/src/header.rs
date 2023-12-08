@@ -4,7 +4,6 @@ use alloc::string::ToString;
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
-use bytes::Buf;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
 use ibc_core_host_types::identifiers::ChainId;
@@ -14,7 +13,6 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
 use ibc_proto::Protobuf;
 use pretty::{PrettySignedHeader, PrettyValidatorSet};
-use prost::Message;
 use tendermint::block::signed_header::SignedHeader;
 use tendermint::chain::Id as TmChainId;
 use tendermint::validator::Set as ValidatorSet;
@@ -189,10 +187,14 @@ impl TryFrom<Any> for Header {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        use core::ops::Deref;
-
+        fn decode_header(value: &[u8]) -> Result<Header, ClientError> {
+            let header = Protobuf::<RawHeader>::decode(value).map_err(|e| ClientError::Other {
+                description: e.to_string(),
+            })?;
+            Ok(header)
+        }
         match raw.type_url.as_str() {
-            TENDERMINT_HEADER_TYPE_URL => decode_header(raw.value.deref()).map_err(Into::into),
+            TENDERMINT_HEADER_TYPE_URL => decode_header(&raw.value),
             _ => Err(ClientError::UnknownHeaderType {
                 header_type: raw.type_url,
             }),
@@ -207,10 +209,6 @@ impl From<Header> for Any {
             value: Protobuf::<RawHeader>::encode_vec(header),
         }
     }
-}
-
-fn decode_header<B: Buf>(buf: B) -> Result<Header, Error> {
-    RawHeader::decode(buf).map_err(Error::Decode)?.try_into()
 }
 
 impl From<Header> for RawHeader {

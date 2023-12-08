@@ -13,7 +13,6 @@ use ibc_core_host::types::path::{
 use ibc_core_host::ValidationContext;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
-use prost::Message;
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), ContextError>
 where
@@ -135,19 +134,12 @@ where
             }
             let seq_recv_path_on_b = SeqRecvPath::new(&packet.port_id_on_b, &packet.chan_id_on_b);
 
-            let mut value = Vec::new();
-            u64::from(packet.seq_on_a).encode(&mut value).map_err(|_| {
-                PacketError::CannotEncodeSequence {
-                    sequence: packet.seq_on_a,
-                }
-            })?;
-
             client_state_of_b_on_a.verify_membership(
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 Path::SeqRecv(seq_recv_path_on_b),
-                value,
+                packet.seq_on_a.to_vec(),
             )
         } else {
             let receipt_path_on_b = ReceiptPath::new(

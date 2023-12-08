@@ -22,15 +22,14 @@ all-features = true
 borsh           = { workspace = true, optional = true }
 derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
-prost           = { workspace = true }
 schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
 
 # ibc dependencies
 ibc-proto       = { workspace = true }
-ibc-primitives  = {workspace = true }
-ics23           = { workspace = true, features = ["host-functions"] }
+ibc-primitives  = { workspace = true }
+ics23           = { version = "0.11", default-features = false, features = ["host-functions"] }
 
 # parity dependencies
 parity-scale-codec  = { workspace = true, optional = true }
@@ -40,7 +39,6 @@ scale-info          = { workspace = true, optional = true }
 default = ["std"]
 std = [
     "displaydoc/std",
-    "prost/std",
     "serde/std",
     "subtle-encoding/std",
     "ibc-primitives/std",

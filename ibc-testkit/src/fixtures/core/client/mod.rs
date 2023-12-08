@@ -18,8 +18,8 @@ mod tests {
     use ibc::core::client::types::Height;
     use ibc::core::host::types::identifiers::*;
     use ibc::primitives::prelude::*;
+    use ibc::primitives::ToVec;
     use ibc_proto::google::protobuf::Any;
-    use prost::Message;
     use tendermint::abci::Event as AbciEvent;
 
     use crate::fixtures::clients::mock::dummy_new_mock_header;
@@ -70,7 +70,7 @@ mod tests {
                     client_type.clone(),
                     consensus_height,
                     consensus_heights,
-                    header.encode_to_vec(),
+                    header.to_vec(),
                 )
                 .into(),
                 expected_keys: expected_keys.clone(),
