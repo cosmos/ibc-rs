@@ -24,8 +24,6 @@ pub enum TokenTransferError {
         send_attempt: Amount,
         available_funds: Amount,
     },
-    /// internal transfer failed: `{0}`
-    InternalTransferFailed(String),
     /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
     DestinationChannelNotFound {
         port_id: PortId,
