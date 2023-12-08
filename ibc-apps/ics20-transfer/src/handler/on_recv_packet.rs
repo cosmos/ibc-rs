@@ -14,7 +14,7 @@ use crate::context::TokenTransferExecutionContext;
 /// to validate accounts and token info. But the result is then used for
 /// execution on the IBC side, including storing acknowledgements and emitting
 /// events.
-pub fn process_recv_packet_execute<D, Ctx: TokenTransferExecutionContext<D>>(
+pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
     ctx_b: &mut Ctx,
     packet: &Packet,
     data: PacketData,
@@ -55,17 +55,17 @@ pub fn process_recv_packet_execute<D, Ctx: TokenTransferExecutionContext<D>>(
         // can be refunded.
         ctx_b
             .unescrow_coins_validate(
+                &receiver_account,
                 &packet.port_id_on_b,
                 &packet.chan_id_on_b,
-                &receiver_account,
                 &coin,
             )
             .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
         ctx_b
             .unescrow_coins_execute(
+                &receiver_account,
                 &packet.port_id_on_b,
                 &packet.chan_id_on_b,
-                &receiver_account,
                 &coin,
             )
             .map_err(|token_err| (ModuleExtras::empty(), token_err))?;

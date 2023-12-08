@@ -11,8 +11,8 @@ pub use send_transfer::*;
 
 use crate::context::{TokenTransferExecutionContext, TokenTransferValidationContext};
 
-pub fn refund_packet_token_execute<D>(
-    ctx_a: &mut impl TokenTransferExecutionContext<D>,
+pub fn refund_packet_token_execute(
+    ctx_a: &mut impl TokenTransferExecutionContext,
     packet: &Packet,
     data: &PacketData,
 ) -> Result<(), TokenTransferError> {
@@ -28,9 +28,9 @@ pub fn refund_packet_token_execute<D>(
         &data.token.denom,
     ) {
         ctx_a.unescrow_coins_execute(
+            &sender,
             &packet.port_id_on_a,
             &packet.chan_id_on_a,
-            &sender,
             &data.token,
         )
     }
@@ -40,8 +40,8 @@ pub fn refund_packet_token_execute<D>(
     }
 }
 
-pub fn refund_packet_token_validate<D>(
-    ctx_a: &impl TokenTransferValidationContext<D>,
+pub fn refund_packet_token_validate(
+    ctx_a: &impl TokenTransferValidationContext,
     packet: &Packet,
     data: &PacketData,
 ) -> Result<(), TokenTransferError> {
@@ -57,9 +57,9 @@ pub fn refund_packet_token_validate<D>(
         &data.token.denom,
     ) {
         ctx_a.unescrow_coins_validate(
+            &sender,
             &packet.port_id_on_a,
             &packet.chan_id_on_a,
-            &sender,
             &data.token,
         )
     } else {

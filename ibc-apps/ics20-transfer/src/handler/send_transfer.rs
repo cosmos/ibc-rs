@@ -13,30 +13,28 @@ use ibc_core::router::types::event::ModuleEvent;
 use crate::context::{TokenTransferExecutionContext, TokenTransferValidationContext};
 
 /// Initiate a token transfer. Equivalent to calling [`send_transfer_validate`], followed by [`send_transfer_execute`].
-pub fn send_transfer<SendPacketCtx, TokenCtx, D>(
+pub fn send_transfer<SendPacketCtx, TokenCtx>(
     send_packet_ctx_a: &mut SendPacketCtx,
     token_ctx_a: &mut TokenCtx,
     msg: MsgTransfer,
-    extra: &D,
 ) -> Result<(), TokenTransferError>
 where
     SendPacketCtx: SendPacketExecutionContext,
-    TokenCtx: TokenTransferExecutionContext<D>,
+    TokenCtx: TokenTransferExecutionContext,
 {
-    send_transfer_validate(send_packet_ctx_a, token_ctx_a, msg.clone(), extra)?;
-    send_transfer_execute(send_packet_ctx_a, token_ctx_a, msg, extra)
+    send_transfer_validate(send_packet_ctx_a, token_ctx_a, msg.clone())?;
+    send_transfer_execute(send_packet_ctx_a, token_ctx_a, msg)
 }
 
 /// Validates the token transfer. If this succeeds, then it is legal to initiate the transfer with [`send_transfer_execute`].
-pub fn send_transfer_validate<SendPacketCtx, TokenCtx, D>(
+pub fn send_transfer_validate<SendPacketCtx, TokenCtx>(
     send_packet_ctx_a: &SendPacketCtx,
     token_ctx_a: &TokenCtx,
     msg: MsgTransfer,
-    extra: &D,
 ) -> Result<(), TokenTransferError>
 where
     SendPacketCtx: SendPacketValidationContext,
-    TokenCtx: TokenTransferValidationContext<D>,
+    TokenCtx: TokenTransferValidationContext,
 {
     token_ctx_a.can_send_coins()?;
 
@@ -71,11 +69,11 @@ where
         &token.denom,
     ) {
         token_ctx_a.escrow_coins_validate(
+            &sender,
             &msg.port_id_on_a,
             &msg.chan_id_on_a,
-            &sender,
             token,
-            extra,
+            &msg.packet_data.memo,
         )?;
     } else {
         token_ctx_a.burn_coins_validate(&sender, token)?;
@@ -103,15 +101,14 @@ where
 }
 
 /// Executes the token transfer. A prior call to [`send_transfer_validate`] MUST have succeeded.
-pub fn send_transfer_execute<SendPacketCtx, TokenCtx, D>(
+pub fn send_transfer_execute<SendPacketCtx, TokenCtx>(
     send_packet_ctx_a: &mut SendPacketCtx,
     token_ctx_a: &mut TokenCtx,
     msg: MsgTransfer,
-    extra: &D,
 ) -> Result<(), TokenTransferError>
 where
     SendPacketCtx: SendPacketExecutionContext,
-    TokenCtx: TokenTransferExecutionContext<D>,
+    TokenCtx: TokenTransferExecutionContext,
 {
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let chan_end_on_a = send_packet_ctx_a.channel_end(&chan_end_path_on_a)?;
@@ -145,11 +142,11 @@ where
         &token.denom,
     ) {
         token_ctx_a.escrow_coins_execute(
+            &sender,
             &msg.port_id_on_a,
             &msg.chan_id_on_a,
-            &sender,
             token,
-            extra,
+            &msg.packet_data.memo,
         )?;
     } else {
         token_ctx_a.burn_coins_execute(&sender, token)?;

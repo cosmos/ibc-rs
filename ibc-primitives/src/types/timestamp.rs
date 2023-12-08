@@ -26,14 +26,9 @@ pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Default, PartialOrd, Ord)]
 pub struct Timestamp {
-    #[cfg_attr(feature = "schema", schemars(with = "Option<TimeSchema>"))]
+    // Note: The schema representation is the timestamp in nanoseconds (as we do with borsh).
+    #[cfg_attr(feature = "schema", schemars(with = "u64"))]
     time: Option<Time>,
-}
-
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct TimeSchema {
-    pub seconds: i64,
-    pub nanos: i32,
 }
 
 #[cfg(feature = "borsh")]

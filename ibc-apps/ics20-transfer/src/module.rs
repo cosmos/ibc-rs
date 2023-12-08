@@ -17,8 +17,8 @@ use crate::handler::{
     process_recv_packet_execute, refund_packet_token_execute, refund_packet_token_validate,
 };
 
-pub fn on_chan_open_init_validate<D>(
-    ctx: &impl TokenTransferValidationContext<D>,
+pub fn on_chan_open_init_validate(
+    ctx: &impl TokenTransferValidationContext,
     order: Order,
     _connection_hops: &[ConnectionId],
     port_id: &PortId,
@@ -49,8 +49,8 @@ pub fn on_chan_open_init_validate<D>(
     Ok(())
 }
 
-pub fn on_chan_open_init_execute<D>(
-    _ctx: &mut impl TokenTransferExecutionContext<D>,
+pub fn on_chan_open_init_execute(
+    _ctx: &mut impl TokenTransferExecutionContext,
     _order: Order,
     _connection_hops: &[ConnectionId],
     _port_id: &PortId,
@@ -61,8 +61,8 @@ pub fn on_chan_open_init_execute<D>(
     Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
 }
 
-pub fn on_chan_open_try_validate<D>(
-    _ctx: &impl TokenTransferValidationContext<D>,
+pub fn on_chan_open_try_validate(
+    _ctx: &impl TokenTransferValidationContext,
     order: Order,
     _connection_hops: &[ConnectionId],
     _port_id: &PortId,
@@ -84,8 +84,8 @@ pub fn on_chan_open_try_validate<D>(
     Ok(())
 }
 
-pub fn on_chan_open_try_execute<D>(
-    _ctx: &mut impl TokenTransferExecutionContext<D>,
+pub fn on_chan_open_try_execute(
+    _ctx: &mut impl TokenTransferExecutionContext,
     _order: Order,
     _connection_hops: &[ConnectionId],
     _port_id: &PortId,
@@ -96,8 +96,8 @@ pub fn on_chan_open_try_execute<D>(
     Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
 }
 
-pub fn on_chan_open_ack_validate<D>(
-    _ctx: &impl TokenTransferValidationContext<D>,
+pub fn on_chan_open_ack_validate(
+    _ctx: &impl TokenTransferValidationContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
     counterparty_version: &Version,
@@ -109,8 +109,8 @@ pub fn on_chan_open_ack_validate<D>(
     Ok(())
 }
 
-pub fn on_chan_open_ack_execute<D>(
-    _ctx: &mut impl TokenTransferExecutionContext<D>,
+pub fn on_chan_open_ack_execute(
+    _ctx: &mut impl TokenTransferExecutionContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
     _counterparty_version: &Version,
@@ -118,56 +118,56 @@ pub fn on_chan_open_ack_execute<D>(
     Ok(ModuleExtras::empty())
 }
 
-pub fn on_chan_open_confirm_validate<D>(
-    _ctx: &impl TokenTransferValidationContext<D>,
+pub fn on_chan_open_confirm_validate(
+    _ctx: &impl TokenTransferValidationContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<(), TokenTransferError> {
     Ok(())
 }
 
-pub fn on_chan_open_confirm_execute<D>(
-    _ctx: &mut impl TokenTransferExecutionContext<D>,
+pub fn on_chan_open_confirm_execute(
+    _ctx: &mut impl TokenTransferExecutionContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, TokenTransferError> {
     Ok(ModuleExtras::empty())
 }
 
-pub fn on_chan_close_init_validate<D>(
-    _ctx: &impl TokenTransferValidationContext<D>,
+pub fn on_chan_close_init_validate(
+    _ctx: &impl TokenTransferValidationContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<(), TokenTransferError> {
     Err(TokenTransferError::CantCloseChannel)
 }
 
-pub fn on_chan_close_init_execute<D>(
-    _ctx: &mut impl TokenTransferExecutionContext<D>,
+pub fn on_chan_close_init_execute(
+    _ctx: &mut impl TokenTransferExecutionContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, TokenTransferError> {
     Err(TokenTransferError::CantCloseChannel)
 }
 
-pub fn on_chan_close_confirm_validate<D>(
-    _ctx: &impl TokenTransferValidationContext<D>,
+pub fn on_chan_close_confirm_validate(
+    _ctx: &impl TokenTransferValidationContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<(), TokenTransferError> {
     Ok(())
 }
 
-pub fn on_chan_close_confirm_execute<D>(
-    _ctx: &mut impl TokenTransferExecutionContext<D>,
+pub fn on_chan_close_confirm_execute(
+    _ctx: &mut impl TokenTransferExecutionContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, TokenTransferError> {
     Ok(ModuleExtras::empty())
 }
 
-pub fn on_recv_packet_execute<D>(
-    ctx_b: &mut impl TokenTransferExecutionContext<D>,
+pub fn on_recv_packet_execute(
+    ctx_b: &mut impl TokenTransferExecutionContext,
     packet: &Packet,
 ) -> (ModuleExtras, Acknowledgement) {
     let data = match serde_json::from_slice::<PacketData>(&packet.data) {
@@ -197,14 +197,14 @@ pub fn on_recv_packet_execute<D>(
     (extras, ack.into())
 }
 
-pub fn on_acknowledgement_packet_validate<Ctx, D>(
+pub fn on_acknowledgement_packet_validate<Ctx>(
     ctx: &Ctx,
     packet: &Packet,
     acknowledgement: &Acknowledgement,
     _relayer: &Signer,
 ) -> Result<(), TokenTransferError>
 where
-    Ctx: TokenTransferValidationContext<D>,
+    Ctx: TokenTransferValidationContext,
 {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
         .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
@@ -219,8 +219,8 @@ where
     Ok(())
 }
 
-pub fn on_acknowledgement_packet_execute<D>(
-    ctx: &mut impl TokenTransferExecutionContext<D>,
+pub fn on_acknowledgement_packet_execute(
+    ctx: &mut impl TokenTransferExecutionContext,
     packet: &Packet,
     acknowledgement: &Acknowledgement,
     _relayer: &Signer,
@@ -269,13 +269,13 @@ pub fn on_acknowledgement_packet_execute<D>(
     (extras, Ok(()))
 }
 
-pub fn on_timeout_packet_validate<Ctx, D>(
+pub fn on_timeout_packet_validate<Ctx>(
     ctx: &Ctx,
     packet: &Packet,
     _relayer: &Signer,
 ) -> Result<(), TokenTransferError>
 where
-    Ctx: TokenTransferValidationContext<D>,
+    Ctx: TokenTransferValidationContext,
 {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
         .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
@@ -285,8 +285,8 @@ where
     Ok(())
 }
 
-pub fn on_timeout_packet_execute<D>(
-    ctx: &mut impl TokenTransferExecutionContext<D>,
+pub fn on_timeout_packet_execute(
+    ctx: &mut impl TokenTransferExecutionContext,
     packet: &Packet,
     _relayer: &Signer,
 ) -> (ModuleExtras, Result<(), TokenTransferError>) {

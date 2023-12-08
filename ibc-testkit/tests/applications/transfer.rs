@@ -73,7 +73,7 @@ fn test_on_chan_open_init_empty_version() {
 
     let in_version = Version::new("".to_string());
 
-    let (_, out_version) = on_chan_open_init_execute::<()>(
+    let (_, out_version) = on_chan_open_init_execute(
         &mut ctx,
         order,
         &connection_hops,
@@ -93,7 +93,7 @@ fn test_on_chan_open_init_ics20_version() {
     let (mut ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
 
     let in_version = Version::new(VERSION.to_string());
-    let (_, out_version) = on_chan_open_init_execute::<()>(
+    let (_, out_version) = on_chan_open_init_execute(
         &mut ctx,
         order,
         &connection_hops,
@@ -113,7 +113,7 @@ fn test_on_chan_open_init_incorrect_version() {
     let (ctx, order, connection_hops, port_id, channel_id, counterparty) = get_defaults();
 
     let in_version = Version::new("some-unsupported-version".to_string());
-    let res = on_chan_open_init_validate::<()>(
+    let res = on_chan_open_init_validate(
         &ctx,
         order,
         &connection_hops,
@@ -133,7 +133,7 @@ fn test_on_chan_open_try_counterparty_correct_version() {
 
     let counterparty_version = Version::new(VERSION.to_string());
 
-    let (_, out_version) = on_chan_open_try_execute::<()>(
+    let (_, out_version) = on_chan_open_try_execute(
         &mut ctx,
         order,
         &connection_hops,
@@ -154,7 +154,7 @@ fn test_on_chan_open_try_counterparty_incorrect_version() {
 
     let counterparty_version = Version::new("some-unsupported-version".to_string());
 
-    let res = on_chan_open_try_validate::<()>(
+    let res = on_chan_open_try_validate(
         &ctx,
         order,
         &connection_hops,
