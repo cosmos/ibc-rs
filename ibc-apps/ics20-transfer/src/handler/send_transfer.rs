@@ -76,7 +76,7 @@ where
             &msg.packet_data.memo,
         )?;
     } else {
-        token_ctx_a.burn_coins_validate(&sender, token)?;
+        token_ctx_a.burn_coins_validate(&sender, token, &msg.packet_data.memo)?;
     }
 
     let packet = {
@@ -149,7 +149,7 @@ where
             &msg.packet_data.memo,
         )?;
     } else {
-        token_ctx_a.burn_coins_execute(&sender, token)?;
+        token_ctx_a.burn_coins_execute(&sender, token, &msg.packet_data.memo)?;
     }
 
     let packet = {

@@ -32,6 +32,7 @@ impl TokenTransferValidationContext for DummyTransferModule {
         &self,
         _account: &Self::AccountId,
         _coin: &PrefixedCoin,
+        _memo: &Memo,
     ) -> Result<(), TokenTransferError> {
         Ok(())
     }
@@ -71,6 +72,7 @@ impl TokenTransferExecutionContext for DummyTransferModule {
         &mut self,
         _account: &Self::AccountId,
         _coin: &PrefixedCoin,
+        _memo: &Memo,
     ) -> Result<(), TokenTransferError> {
         Ok(())
     }

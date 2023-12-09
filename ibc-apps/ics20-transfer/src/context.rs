@@ -53,6 +53,7 @@ pub trait TokenTransferValidationContext {
         &self,
         account: &Self::AccountId,
         coin: &PrefixedCoin,
+        memo: &Memo,
     ) -> Result<(), TokenTransferError>;
 
     /// Returns a hash of the prefixed denom.
@@ -98,5 +99,6 @@ pub trait TokenTransferExecutionContext: TokenTransferValidationContext {
         &mut self,
         account: &Self::AccountId,
         coin: &PrefixedCoin,
+        memo: &Memo,
     ) -> Result<(), TokenTransferError>;
 }
