@@ -2,7 +2,7 @@
 
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::Signer;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;
 use ibc_proto::Protobuf;
@@ -25,14 +25,6 @@ pub struct MsgUpdateClient {
     pub client_id: ClientId,
     pub client_message: Any,
     pub signer: Signer,
-}
-
-impl Msg for MsgUpdateClient {
-    type Raw = RawMsgUpdateClient;
-
-    fn type_url(&self) -> String {
-        UPDATE_CLIENT_TYPE_URL.to_string()
-    }
 }
 
 impl Protobuf<RawMsgUpdateClient> for MsgUpdateClient {}
@@ -61,24 +53,5 @@ impl From<MsgUpdateClient> for RawMsgUpdateClient {
             client_message: Some(ics_msg.client_message),
             signer: ics_msg.signer.to_string(),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;
-    use ibc_testkit::utils::core::client::dummy_raw_msg_update_client;
-
-    use super::*;
-    use crate::msgs::MsgUpdateClient;
-
-    #[test]
-    fn msg_update_client_serialization() {
-        let raw = dummy_raw_msg_update_client();
-        let msg = MsgUpdateClient::try_from(raw.clone()).unwrap();
-        let raw_back = RawMsgUpdateClient::from(msg.clone());
-        let msg_back = MsgUpdateClient::try_from(raw_back.clone()).unwrap();
-        assert_eq!(msg, msg_back);
-        assert_eq!(raw, raw_back);
     }
 }

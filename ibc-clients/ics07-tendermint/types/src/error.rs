@@ -55,8 +55,6 @@ pub enum Error {
     InvalidRawHeader(TendermintError),
     /// invalid raw misbehaviour: `{reason}`
     InvalidRawMisbehaviour { reason: String },
-    /// decode error: `{0}`
-    Decode(prost::DecodeError),
     /// given other previous updates, header timestamp should be at most `{max}`, but was `{actual}`
     HeaderTimestampTooHigh { actual: String, max: String },
     /// given other previous updates, header timestamp should be at least `{min}`, but was `{actual}`
@@ -102,7 +100,6 @@ impl std::error::Error for Error {
             Self::InvalidHeader { error: e, .. } => Some(e),
             Self::InvalidTendermintTrustThreshold(e) => Some(e),
             Self::InvalidRawHeader(e) => Some(e),
-            Self::Decode(e) => Some(e),
             _ => None,
         }
     }

@@ -1,6 +1,6 @@
 use ibc_app_transfer_types::VERSION;
 use ibc_core_host_types::identifiers::{ChannelId, PortId};
-pub use ibc_primitives::prelude::*;
+use ibc_primitives::prelude::*;
 use sha2::{Digest, Sha256};
 
 /// Helper function to generate an escrow address for a given port and channel

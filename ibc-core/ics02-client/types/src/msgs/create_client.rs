@@ -1,7 +1,7 @@
 //! Definition of domain type message `MsgCreateClient`.
 
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::Signer;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgCreateClient as RawMsgCreateClient;
 use ibc_proto::Protobuf;
@@ -33,14 +33,6 @@ impl MsgCreateClient {
     }
 }
 
-impl Msg for MsgCreateClient {
-    type Raw = RawMsgCreateClient;
-
-    fn type_url(&self) -> String {
-        CREATE_CLIENT_TYPE_URL.to_string()
-    }
-}
-
 impl Protobuf<RawMsgCreateClient> for MsgCreateClient {}
 
 impl TryFrom<RawMsgCreateClient> for MsgCreateClient {
@@ -68,24 +60,5 @@ impl From<MsgCreateClient> for RawMsgCreateClient {
             consensus_state: Some(ics_msg.consensus_state),
             signer: ics_msg.signer.to_string(),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-
-    use ibc_proto::ibc::core::client::v1::MsgCreateClient as RawMsgCreateClient;
-    use ibc_testkit::utils::core::client::dummy_raw_msg_create_client;
-
-    use crate::msgs::create_client::MsgCreateClient;
-
-    #[test]
-    fn msg_create_client_serialization() {
-        let raw = dummy_raw_msg_create_client();
-        let msg = MsgCreateClient::try_from(raw.clone()).unwrap();
-        let raw_back = RawMsgCreateClient::from(msg.clone());
-        let msg_back = MsgCreateClient::try_from(raw_back.clone()).unwrap();
-        assert_eq!(msg, msg_back);
-        assert_eq!(raw, raw_back);
     }
 }

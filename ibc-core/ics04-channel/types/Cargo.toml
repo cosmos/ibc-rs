@@ -22,7 +22,6 @@ all-features = true
 borsh           = { workspace = true, optional = true }
 derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
-prost           = { workspace = true }
 sha2            = { workspace = true }
 schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
@@ -43,14 +42,10 @@ tendermint = { workspace = true }
 parity-scale-codec = { workspace = true, optional = true }
 scale-info         = { workspace = true, optional = true }
 
-[dev-dependencies]
-ibc-testkit = { workspace = true }
-
 [features]
 default = ["std"]
 std = [
     "displaydoc/std",
-    "prost/std",
     "sha2/std",
     "serde/std",
     "subtle-encoding/std",
@@ -79,6 +74,8 @@ schema = [
     "ibc-core-commitment-types/schema",
     "ibc-primitives/schema",
     "ibc-proto/json-schema",
+    "serde",
+    "std"
 ]
 borsh = [
     "dep:borsh",

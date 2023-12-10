@@ -14,11 +14,11 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
+use ibc_testkit::fixtures::core::channel::{dummy_msg_recv_packet, dummy_raw_msg_recv_packet};
+use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::relayer::context::RelayerContext;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
-use ibc_testkit::utils::core::channel::{dummy_msg_recv_packet, dummy_raw_msg_recv_packet};
-use ibc_testkit::utils::core::signer::dummy_account_id;
 use rstest::*;
 use test_log::test;
 

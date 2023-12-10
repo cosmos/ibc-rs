@@ -22,7 +22,6 @@ all-features = true
 borsh           = { workspace = true, optional = true }
 derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
-prost           = { workspace = true }
 schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
@@ -41,14 +40,10 @@ tendermint = { workspace = true }
 parity-scale-codec = { workspace = true, optional = true }
 scale-info         = { workspace = true, optional = true }
 
-[dev-dependencies]
-ibc-testkit = { workspace = true }
-
 [features]
 default = ["std"]
 std = [
     "displaydoc/std",
-    "prost/std",
     "subtle-encoding/std",
     "serde/std",
     "ibc-core-client-types/std",

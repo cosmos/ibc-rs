@@ -11,10 +11,10 @@ use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::ZERO_DURATION;
+use ibc_testkit::fixtures::core::connection::dummy_conn_open_confirm;
+use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
-use ibc_testkit::utils::core::connection::dummy_conn_open_confirm;
-use ibc_testkit::utils::{Expect, Fixture};
 use test_log::test;
 
 enum Ctx {

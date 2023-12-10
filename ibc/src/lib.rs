@@ -30,14 +30,6 @@
 //! This is the part of the protocol that abstracts away the core protocol and
 //! focuses solely on business logic.
 //!
-//! When processing a given message `M`, if any method in this library returns
-//! an error, the runtime is expected to rollback all state modifications made
-//! to the context (e.g.
-//! [`ExecutionContext`](crate::core::host::ExecutionContext)) while processing
-//! `M`. If a transaction on your blockchain contains multiple messages, then
-//! typically the state modifications from all messages is expected to be rolled
-//! back as well.
-//!
 //! [ibc-standard]: https://github.com/cosmos/ibc
 //! [ibc-rs]: https://github.com/cosmos/ibc-rs
 

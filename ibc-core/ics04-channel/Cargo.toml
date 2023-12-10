@@ -17,10 +17,6 @@ description  = """
 all-features = true
 
 [dependencies]
-# external dependencies
-prost = { workspace = true }
-
-# ibc dependencies
 ibc-core-client           = { workspace = true }
 ibc-core-connection       = { workspace = true }
 ibc-core-channel-types    = { workspace = true }
@@ -61,6 +57,8 @@ schema = [
     "ibc-core-handler-types/schema",
     "ibc-core-router/schema",
     "ibc-primitives/schema",
+    "serde",
+    "std"
 ]
 borsh = [
     "ibc-core-client/borsh",

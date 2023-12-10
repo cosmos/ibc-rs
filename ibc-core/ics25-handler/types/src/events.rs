@@ -28,8 +28,6 @@ pub enum Error {
     Channel(channel_error::ChannelError),
     /// parsing timestamp error: `{0}`
     Timestamp(ParseTimestampError),
-    /// decoding protobuf error: `{0}`
-    Decode(prost::DecodeError),
     /// incorrect event type: `{event}`
     IncorrectEventType { event: String },
     /// module event cannot use core event types: `{event:?}`
@@ -45,7 +43,6 @@ impl std::error::Error for Error {
             Self::Connection(e) => Some(e),
             Self::Channel(e) => Some(e),
             Self::Timestamp(e) => Some(e),
-            Self::Decode(e) => Some(e),
             _ => None,
         }
     }
@@ -209,32 +206,5 @@ impl From<MessageEvent> for IbcEvent {
 impl From<ModuleEvent> for IbcEvent {
     fn from(e: ModuleEvent) -> Self {
         IbcEvent::Module(e)
-    }
-}
-
-#[cfg(test)]
-pub mod tests {
-
-    use ibc_core_channel_types::channel::Order;
-    use ibc_core_channel_types::events::SendPacket;
-    use ibc_core_channel_types::packet::Packet;
-    use ibc_core_host_types::identifiers::ConnectionId;
-    use ibc_testkit::utils::core::channel::dummy_raw_packet;
-
-    use super::*;
-
-    #[test]
-    /// Ensures that we don't panic when packet data is not valid UTF-8.
-    /// See issue [#199](https://github.com/cosmos/ibc-rs/issues/199)
-    pub fn test_packet_data_non_utf8() {
-        let mut packet = Packet::try_from(dummy_raw_packet(1, 1)).unwrap();
-        packet.data = vec![128];
-
-        let ibc_event = IbcEvent::SendPacket(SendPacket::new(
-            packet,
-            Order::Unordered,
-            ConnectionId::default(),
-        ));
-        let _ = abci::Event::try_from(ibc_event);
     }
 }

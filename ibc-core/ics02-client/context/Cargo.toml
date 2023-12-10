@@ -7,7 +7,7 @@ rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc"]
-readme       = "./../README.md"
+readme       = "./../../README.md"
 description  = """
     Maintaind by `ibc-rs`, contains essential APIs to interface with the host chain's store, 
     enabling smooth client state transitions. Additionally, provides necessary traits for 
@@ -21,7 +21,6 @@ all-features = true
 # external dependencies
 derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
-prost           = { workspace = true }
 subtle-encoding = { workspace = true }
 
 # ibc dependencies
@@ -35,14 +34,10 @@ ibc-primitives            = { workspace = true }
 # cosmos dependencies
 tendermint = { workspace = true }
 
-[dev-dependencies]
-ibc-testkit = { workspace = true }
-
 [features]
 default = ["std"]
 std = [
     "displaydoc/std",
-    "prost/std",
     "subtle-encoding/std",
     "ibc-core-client-types/std",
     "ibc-core-commitment-types/std",

@@ -38,7 +38,7 @@ std = [
 serde = [
     "ibc-app-transfer-types/serde",
     "ibc-core/serde",
-    "dep:serde_json"
+    "serde_json"
 ]
 schema = [
     "ibc-app-transfer-types/schema",

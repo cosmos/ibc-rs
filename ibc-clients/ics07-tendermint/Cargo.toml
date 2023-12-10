@@ -18,7 +18,6 @@ all-features = true
 
 [dependencies]
 # external dependencies
-prost = { workspace = true }
 serde = { workspace = true, optional = true }
 
 # ibc dependencies
@@ -36,7 +35,7 @@ tendermint-light-client-verifier = { workspace = true, features = ["rust-crypto"
 [features]
 default = ["std"]
 std = [
-    "prost/std",
+    "serde/std",
     "ibc-client-tendermint-types/std",
     "ibc-core-client/std",
     "ibc-core-commitment-types/std",
@@ -60,6 +59,8 @@ schema = [
     "ibc-core-host/schema",
     "ibc-core-handler-types/schema",
     "ibc-primitives/schema",
+    "serde",
+    "std"
 ]
 borsh = [
     "ibc-client-tendermint-types/borsh",

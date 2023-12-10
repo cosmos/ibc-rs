@@ -1,5 +1,6 @@
-#![cfg_attr(not(test), deny(clippy::unwrap_used))]
 #![no_std]
+#![forbid(unsafe_code)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
 #![deny(
     warnings,
     trivial_casts,
@@ -8,13 +9,13 @@
     unused_qualifications,
     rust_2018_idioms
 )]
-#![forbid(unsafe_code)]
 
 extern crate alloc;
 
+#[cfg(feature = "std")]
 extern crate std;
 
+pub mod fixtures;
 pub mod hosts;
 pub mod relayer;
 pub mod testapp;
-pub mod utils;

@@ -7,7 +7,7 @@ rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "tendermint"]
-readme       = "./../README.md"
+readme       = "./../../README.md"
 description  = """
     Maintained by `ibc-rs`, contains Cosmos-specific helper traits and implementations
     to facilitate IBC integration, ensuring proper interaction with modules/components
@@ -22,7 +22,6 @@ all-features = true
 borsh           = { workspace = true, optional = true}
 derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
-prost           = { workspace = true }
 serde           = { workspace = true, optional = true }
 sha2            = { workspace = true }
 subtle-encoding = { workspace = true }
@@ -46,16 +45,12 @@ tendermint = { workspace = true }
 parity-scale-codec = { workspace = true, optional = true }
 scale-info         = { workspace = true, optional = true }
 
-[dev-dependencies]
-ibc-testkit = { workspace = true }
-rstest      = { workspace = true }
-
 [features]
 default = ["std"]
 std = [
     "displaydoc/std",
-    "prost/std",
     "serde/std",
+    "sha2/std",
     "subtle-encoding/std",
     "ibc-core-client-types/std",
     "ibc-core-client-context/std",
@@ -88,6 +83,8 @@ schema = [
     "ibc-core-handler-types/schema",
     "ibc-primitives/schema",
     "ibc-proto/json-schema",
+    "serde",
+    "std"
 ]
 borsh = [
     "dep:borsh",

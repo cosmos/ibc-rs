@@ -6,7 +6,7 @@ use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::Signer;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgUpgradeClient as RawMsgUpgradeClient;
 use ibc_proto::Protobuf;
@@ -36,14 +36,6 @@ pub struct MsgUpgradeClient {
     pub proof_upgrade_consensus_state: CommitmentProofBytes,
     // signer address
     pub signer: Signer,
-}
-
-impl Msg for MsgUpgradeClient {
-    type Raw = RawMsgUpgradeClient;
-
-    fn type_url(&self) -> String {
-        UPGRADE_CLIENT_TYPE_URL.to_string()
-    }
 }
 
 impl Protobuf<RawMsgUpgradeClient> for MsgUpgradeClient {}
@@ -93,23 +85,5 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
             proof_upgrade_consensus_state: cs_bytes,
             signer: proto_msg.signer.into(),
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use ibc_proto::ibc::core::client::v1::MsgUpgradeClient as RawMsgUpgradeClient;
-    use ibc_testkit::utils::core::client::dummy_raw_msg_upgrade_client;
-
-    use crate::msgs::upgrade_client::MsgUpgradeClient;
-
-    #[test]
-    fn msg_upgrade_client_serialization() {
-        let raw = dummy_raw_msg_upgrade_client();
-        let msg = MsgUpgradeClient::try_from(raw.clone()).unwrap();
-        let raw_back: RawMsgUpgradeClient = RawMsgUpgradeClient::from(msg.clone());
-        let msg_back = MsgUpgradeClient::try_from(raw_back.clone()).unwrap();
-        assert_eq!(msg, msg_back);
-        assert_eq!(raw, raw_back);
     }
 }

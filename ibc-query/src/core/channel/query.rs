@@ -7,7 +7,7 @@ use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
 use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath, Path,
-    ReceiptPath, SeqRecvPath,
+    ReceiptPath, SeqRecvPath, SeqSendPath,
 };
 use ibc::core::host::ValidationContext;
 use ibc_proto::google::protobuf::Any;
@@ -17,12 +17,12 @@ use ibc_proto::ibc::core::channel::v1::{
     QueryChannelResponse, QueryChannelsRequest, QueryChannelsResponse,
     QueryConnectionChannelsRequest, QueryConnectionChannelsResponse,
     QueryNextSequenceReceiveRequest, QueryNextSequenceReceiveResponse,
-    QueryPacketAcknowledgementRequest, QueryPacketAcknowledgementResponse,
-    QueryPacketAcknowledgementsRequest, QueryPacketAcknowledgementsResponse,
-    QueryPacketCommitmentRequest, QueryPacketCommitmentResponse, QueryPacketCommitmentsRequest,
-    QueryPacketCommitmentsResponse, QueryPacketReceiptRequest, QueryPacketReceiptResponse,
-    QueryUnreceivedAcksRequest, QueryUnreceivedAcksResponse, QueryUnreceivedPacketsRequest,
-    QueryUnreceivedPacketsResponse,
+    QueryNextSequenceSendRequest, QueryNextSequenceSendResponse, QueryPacketAcknowledgementRequest,
+    QueryPacketAcknowledgementResponse, QueryPacketAcknowledgementsRequest,
+    QueryPacketAcknowledgementsResponse, QueryPacketCommitmentRequest,
+    QueryPacketCommitmentResponse, QueryPacketCommitmentsRequest, QueryPacketCommitmentsResponse,
+    QueryPacketReceiptRequest, QueryPacketReceiptResponse, QueryUnreceivedAcksRequest,
+    QueryUnreceivedAcksResponse, QueryUnreceivedPacketsRequest, QueryUnreceivedPacketsResponse,
 };
 use ibc_proto::ibc::core::client::v1::IdentifiedClientState;
 
@@ -454,12 +454,40 @@ where
     })
 }
 
-// NOTE: The [previous `query_next_sequence_send`
-// method](https://github.com/cosmos/ibc-rs/blob/a4a5f78405bd3a28c060df6c65438edf0b02e9e2/crates/ibc-query/src/core/channel/query.rs#L472-L504)
-// is currently not present in the generated protobuf from `ibc-go` v0.7.3.
-// However, this method has been reintroduced through [this
-// PR](https://github.com/cosmos/ibc-go/pull/3417) in ibc-go. Once included in a
-// new release, we can implement this method call.
+/// Queries for the next sequence to send for the channel specified
+/// in the `request`.
+pub fn query_next_sequence_send<I>(
+    ibc_ctx: &I,
+    request: &QueryNextSequenceSendRequest,
+) -> Result<QueryNextSequenceSendResponse, QueryError>
+where
+    I: ValidationContext + ProvableContext,
+{
+    let channel_id = ChannelId::from_str(request.channel_id.as_str())?;
+
+    let port_id = PortId::from_str(request.port_id.as_str())?;
+
+    let next_seq_send_path = SeqSendPath::new(&port_id, &channel_id);
+
+    let next_sequence_send = ibc_ctx.get_next_sequence_send(&next_seq_send_path)?;
+
+    let current_height = ibc_ctx.host_height()?;
+
+    let proof = ibc_ctx
+        .get_proof(current_height, &Path::SeqSend(next_seq_send_path))
+        .ok_or(QueryError::ProofNotFound {
+            description: format!(
+                "Next sequence send proof not found for channel {}",
+                channel_id
+            ),
+        })?;
+
+    Ok(QueryNextSequenceSendResponse {
+        next_sequence_send: next_sequence_send.into(),
+        proof,
+        proof_height: Some(current_height.into()),
+    })
+}
 
 /// Queries for the next sequence receive associated with a channel
 pub fn query_next_sequence_receive<I>(

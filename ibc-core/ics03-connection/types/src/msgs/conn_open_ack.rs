@@ -2,7 +2,7 @@ use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_core_host_types::identifiers::ConnectionId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::Signer;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenAck as RawMsgConnectionOpenAck;
 use ibc_proto::Protobuf;
@@ -42,14 +42,6 @@ pub struct MsgConnectionOpenAck {
     /// optional proof of host state machines (chain A) that are unable to
     /// introspect their own consensus state
     pub proof_consensus_state_of_a: Option<CommitmentProofBytes>,
-}
-
-impl Msg for MsgConnectionOpenAck {
-    type Raw = RawMsgConnectionOpenAck;
-
-    fn type_url(&self) -> String {
-        CONN_OPEN_ACK_TYPE_URL.to_string()
-    }
 }
 
 impl Protobuf<RawMsgConnectionOpenAck> for MsgConnectionOpenAck {}
@@ -126,98 +118,5 @@ impl From<MsgConnectionOpenAck> for RawMsgConnectionOpenAck {
                 None => vec![],
             },
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use ibc_primitives::prelude::*;
-    use ibc_proto::ibc::core::client::v1::Height;
-    use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenAck as RawMsgConnectionOpenAck;
-    use ibc_testkit::utils::core::connection::dummy_raw_msg_conn_open_ack;
-
-    use crate::msgs::conn_open_ack::MsgConnectionOpenAck;
-
-    #[test]
-    fn parse_connection_open_ack_msg() {
-        #[derive(Clone, Debug, PartialEq)]
-        struct Test {
-            name: String,
-            raw: RawMsgConnectionOpenAck,
-            want_pass: bool,
-        }
-
-        let default_ack_msg = dummy_raw_msg_conn_open_ack(5, 5);
-
-        let tests: Vec<Test> = vec![
-            Test {
-                name: "Good parameters".to_string(),
-                raw: default_ack_msg.clone(),
-                want_pass: true,
-            },
-            Test {
-                name: "Bad connection id, non-alpha".to_string(),
-                raw: RawMsgConnectionOpenAck {
-                    connection_id: "con007".to_string(),
-                    ..default_ack_msg.clone()
-                },
-                want_pass: false,
-            },
-            Test {
-                name: "Bad version, missing version".to_string(),
-                raw: RawMsgConnectionOpenAck {
-                    version: None,
-                    ..default_ack_msg.clone()
-                },
-                want_pass: false,
-            },
-            Test {
-                name: "Bad proof height, height is 0".to_string(),
-                raw: RawMsgConnectionOpenAck {
-                    proof_height: Some(Height {
-                        revision_number: 1,
-                        revision_height: 0,
-                    }),
-                    ..default_ack_msg.clone()
-                },
-                want_pass: false,
-            },
-            Test {
-                name: "Bad consensus height, height is 0".to_string(),
-                raw: RawMsgConnectionOpenAck {
-                    consensus_height: Some(Height {
-                        revision_number: 1,
-                        revision_height: 0,
-                    }),
-                    ..default_ack_msg
-                },
-                want_pass: false,
-            },
-        ]
-        .into_iter()
-        .collect();
-
-        for test in tests {
-            let msg = MsgConnectionOpenAck::try_from(test.raw.clone());
-
-            assert_eq!(
-                test.want_pass,
-                msg.is_ok(),
-                "MsgConnOpenAck::new failed for test {}, \nmsg {:?} with error {:?}",
-                test.name,
-                test.raw,
-                msg.err(),
-            );
-        }
-    }
-
-    #[test]
-    fn to_and_from() {
-        let raw = dummy_raw_msg_conn_open_ack(5, 6);
-        let msg = MsgConnectionOpenAck::try_from(raw.clone()).unwrap();
-        let raw_back = RawMsgConnectionOpenAck::from(msg.clone());
-        let msg_back = MsgConnectionOpenAck::try_from(raw_back.clone()).unwrap();
-        assert_eq!(raw, raw_back);
-        assert_eq!(msg, msg_back);
     }
 }

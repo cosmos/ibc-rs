@@ -21,7 +21,6 @@ all-features = true
 # external dependencies
 derive_more      = { workspace = true }
 displaydoc       = { workspace = true }
-prost            = { workspace = true }
 subtle-encoding  = { workspace = true }
 
 # ibc dependencies
@@ -40,6 +39,8 @@ rstest = { workspace = true }
 [features]
 default = ["std"]
 std = [
+    "displaydoc/std",
+    "subtle-encoding/std",
     "ibc-core-client-types/std",
     "ibc-core-client-context/std",
     "ibc-core-connection-types/std",

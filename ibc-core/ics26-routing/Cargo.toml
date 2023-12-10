@@ -20,7 +20,6 @@ all-features = true
 # external dependencies
 derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
-prost           = { workspace = true }
 subtle-encoding = { workspace = true }
 
 # ibc dependencies
@@ -33,7 +32,6 @@ ibc-core-router-types  = { workspace = true }
 default = ["std"]
 std = [
     "displaydoc/std",
-    "prost/std",
     "subtle-encoding/std",
     "ibc-primitives/std",
     "ibc-core-channel-types/std",
@@ -57,6 +55,8 @@ schema = [
     "ibc-core-host-types/schema",
     "ibc-core-router-types/schema",
     "ibc-primitives/schema",
+    "serde",
+    "std"
 ]
 parity-scale-codec = [
     "ibc-core-channel-types/parity-scale-codec",

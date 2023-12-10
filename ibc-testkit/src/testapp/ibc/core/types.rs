@@ -30,6 +30,9 @@ use tracing::debug;
 use typed_builder::TypedBuilder;
 
 use super::client_ctx::{MockClientRecord, PortChannelIdMap};
+use crate::fixtures::clients::tendermint::{
+    dummy_tm_client_state_from_header, ClientStateConfig as TmClientStateConfig,
+};
 use crate::hosts::block::{HostBlock, HostType};
 use crate::relayer::error::RelayerError;
 use crate::testapp::ibc::clients::mock::client_state::{
@@ -38,9 +41,6 @@ use crate::testapp::ibc::clients::mock::client_state::{
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
-use crate::utils::clients::tendermint::{
-    dummy_tm_client_state_from_header, ClientStateConfig as TmClientStateConfig,
-};
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
 /// An object that stores all IBC related data.
@@ -793,12 +793,11 @@ mod tests {
     use ibc::core::primitives::Signer;
     use ibc::core::router::module::Module;
     use ibc::core::router::types::module::{ModuleExtras, ModuleId};
-    use test_log::test;
 
     use super::*;
+    use crate::fixtures::core::channel::PacketConfig;
+    use crate::fixtures::core::signer::dummy_bech32_account;
     use crate::testapp::ibc::core::router::MockRouter;
-    use crate::utils::core::channel::PacketConfig;
-    use crate::utils::core::signer::dummy_bech32_account;
 
     #[test]
     fn test_history_manipulation() {

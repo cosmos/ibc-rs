@@ -2,7 +2,7 @@ use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId};
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenTry as RawMsgChannelOpenTry;
 use ibc_proto::Protobuf;
 
@@ -44,14 +44,6 @@ impl MsgChannelOpenTry {
     /// Note: Current IBC version only supports one connection hop.
     pub fn verify_connection_hops_length(&self) -> Result<(), ChannelError> {
         verify_connection_hops_length(&self.connection_hops_on_b, 1)
-    }
-}
-
-impl Msg for MsgChannelOpenTry {
-    type Raw = RawMsgChannelOpenTry;
-
-    fn type_url(&self) -> String {
-        CHAN_OPEN_TRY_TYPE_URL.to_string()
     }
 }
 
@@ -122,127 +114,5 @@ impl From<MsgChannelOpenTry> for RawMsgChannelOpenTry {
             proof_height: Some(domain_msg.proof_height_on_a.into()),
             signer: domain_msg.signer.to_string(),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use ibc_primitives::prelude::*;
-    use ibc_proto::ibc::core::channel::v1::MsgChannelOpenTry as RawMsgChannelOpenTry;
-    use ibc_proto::ibc::core::client::v1::Height;
-    use ibc_testkit::utils::core::channel::dummy_raw_msg_chan_open_try;
-
-    use crate::msgs::chan_open_try::MsgChannelOpenTry;
-
-    #[test]
-    fn channel_open_try_from_raw() {
-        struct Test {
-            name: String,
-            raw: RawMsgChannelOpenTry,
-            want_pass: bool,
-        }
-
-        let proof_height = 10;
-        let default_raw_msg = dummy_raw_msg_chan_open_try(proof_height);
-
-        let tests: Vec<Test> = vec![
-            Test {
-                name: "Good parameters".to_string(),
-                raw: default_raw_msg.clone(),
-                want_pass: true,
-            },
-            Test {
-                name: "Correct port".to_string(),
-                raw: RawMsgChannelOpenTry {
-                    port_id: "p34".to_string(),
-                    ..default_raw_msg.clone()
-                },
-                want_pass: true,
-            },
-            Test {
-                name: "Bad port, name too short".to_string(),
-                raw: RawMsgChannelOpenTry {
-                    port_id: "p".to_string(),
-                    ..default_raw_msg.clone()
-                },
-                want_pass: false,
-            },
-            Test {
-                name: "Bad port, name too long".to_string(),
-                raw: RawMsgChannelOpenTry {
-                    port_id: "abcdefghijasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfadgasgasdfasdfaabcdefghijasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfadgasgasdfasdfa".to_string(),
-                    ..default_raw_msg.clone()
-                },
-                want_pass: false,
-            },
-            Test {
-                name: "Empty counterparty version (valid choice)".to_string(),
-                raw: RawMsgChannelOpenTry {
-                    counterparty_version: " ".to_string(),
-                    ..default_raw_msg.clone()
-                },
-                want_pass: true,
-            },
-            Test {
-                name: "Arbitrary counterparty version (valid choice)".to_string(),
-                raw: RawMsgChannelOpenTry {
-                    counterparty_version: "anyversion".to_string(),
-                    ..default_raw_msg.clone()
-                },
-                want_pass: true,
-            },
-            Test {
-                name: "Bad proof height, height = 0".to_string(),
-                raw: RawMsgChannelOpenTry {
-                    proof_height: Some(Height {
-                        revision_number: 0,
-                        revision_height: 0,
-                    }),
-                    ..default_raw_msg.clone()
-                },
-                want_pass: false,
-            },
-            Test {
-                name: "Missing proof height".to_string(),
-                raw: RawMsgChannelOpenTry {
-                    proof_height: None,
-                    ..default_raw_msg.clone()
-                },
-                want_pass: false,
-            },
-            Test {
-                name: "Missing proof init (object proof)".to_string(),
-                raw: RawMsgChannelOpenTry {
-                    proof_init: Vec::new(),
-                    ..default_raw_msg
-                },
-                want_pass: false,
-            },
-        ]
-            .into_iter()
-            .collect();
-
-        for test in tests {
-            let res_msg = MsgChannelOpenTry::try_from(test.raw.clone());
-
-            assert_eq!(
-                test.want_pass,
-                res_msg.is_ok(),
-                "MsgChanOpenTry::try_from failed for test {}, \nraw msg {:?} with error {:?}",
-                test.name,
-                test.raw,
-                res_msg.err(),
-            );
-        }
-    }
-
-    #[test]
-    fn to_and_from() {
-        let raw = dummy_raw_msg_chan_open_try(10);
-        let msg = MsgChannelOpenTry::try_from(raw.clone()).unwrap();
-        let raw_back = RawMsgChannelOpenTry::from(msg.clone());
-        let msg_back = MsgChannelOpenTry::try_from(raw_back.clone()).unwrap();
-        assert_eq!(raw, raw_back);
-        assert_eq!(msg, msg_back);
     }
 }

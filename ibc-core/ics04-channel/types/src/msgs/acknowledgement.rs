@@ -1,7 +1,7 @@
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgAcknowledgement as RawMsgAcknowledgement;
 use ibc_proto::Protobuf;
 
@@ -28,14 +28,6 @@ pub struct MsgAcknowledgement {
     /// Height at which the commitment proof in this message were taken
     pub proof_height_on_b: Height,
     pub signer: Signer,
-}
-
-impl Msg for MsgAcknowledgement {
-    type Raw = RawMsgAcknowledgement;
-
-    fn type_url(&self) -> String {
-        ACKNOWLEDGEMENT_TYPE_URL.to_string()
-    }
 }
 
 impl Protobuf<RawMsgAcknowledgement> for MsgAcknowledgement {}
@@ -71,82 +63,6 @@ impl From<MsgAcknowledgement> for RawMsgAcknowledgement {
             signer: domain_msg.signer.to_string(),
             proof_height: Some(domain_msg.proof_height_on_b.into()),
             proof_acked: domain_msg.proof_acked_on_b.into(),
-        }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use ibc_primitives::prelude::*;
-    use ibc_proto::ibc::core::channel::v1::MsgAcknowledgement as RawMsgAcknowledgement;
-    use ibc_testkit::utils::core::channel::dummy_raw_msg_acknowledgement;
-    use ibc_testkit::utils::core::signer::dummy_bech32_account;
-
-    use crate::error::PacketError;
-    use crate::msgs::acknowledgement::MsgAcknowledgement;
-
-    #[test]
-    fn msg_acknowledgment_try_from_raw() {
-        struct Test {
-            name: String,
-            raw: RawMsgAcknowledgement,
-            want_pass: bool,
-        }
-
-        let height = 50;
-        let default_raw_msg = dummy_raw_msg_acknowledgement(height);
-
-        let tests: Vec<Test> = vec![
-            Test {
-                name: "Good parameters".to_string(),
-                raw: default_raw_msg.clone(),
-                want_pass: true,
-            },
-            Test {
-                name: "Missing packet".to_string(),
-                raw: RawMsgAcknowledgement {
-                    packet: None,
-                    ..default_raw_msg.clone()
-                },
-                want_pass: false,
-            },
-            Test {
-                name: "Missing proof height".to_string(),
-                raw: RawMsgAcknowledgement {
-                    proof_height: None,
-                    ..default_raw_msg.clone()
-                },
-                want_pass: false,
-            },
-            Test {
-                name: "Empty signer".to_string(),
-                raw: RawMsgAcknowledgement {
-                    signer: dummy_bech32_account(),
-                    ..default_raw_msg.clone()
-                },
-                want_pass: true,
-            },
-            Test {
-                name: "Empty proof acked".to_string(),
-                raw: RawMsgAcknowledgement {
-                    proof_acked: Vec::new(),
-                    ..default_raw_msg
-                },
-                want_pass: false,
-            },
-        ];
-
-        for test in tests {
-            let res_msg: Result<MsgAcknowledgement, PacketError> = test.raw.clone().try_into();
-
-            assert_eq!(
-                res_msg.is_ok(),
-                test.want_pass,
-                "MsgAcknowledgement::try_from failed for test {} \nraw message: {:?} with error: {:?}",
-                test.name,
-                test.raw,
-                res_msg.err()
-            );
         }
     }
 }

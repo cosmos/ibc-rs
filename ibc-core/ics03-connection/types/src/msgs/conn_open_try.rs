@@ -5,7 +5,7 @@ use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::Signer;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenTry as RawMsgConnectionOpenTry;
 use ibc_proto::Protobuf;
@@ -50,13 +50,6 @@ pub struct MsgConnectionOpenTry {
     pub previous_connection_id: String,
 }
 
-impl Msg for MsgConnectionOpenTry {
-    type Raw = RawMsgConnectionOpenTry;
-
-    fn type_url(&self) -> String {
-        CONN_OPEN_TRY_TYPE_URL.to_string()
-    }
-}
 #[allow(deprecated)]
 #[cfg(feature = "borsh")]
 mod borsh_impls {
@@ -238,154 +231,5 @@ impl From<MsgConnectionOpenTry> for RawMsgConnectionOpenTry {
                 None => vec![],
             },
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use ibc_primitives::prelude::*;
-    use ibc_proto::ibc::core::client::v1::Height;
-    use ibc_proto::ibc::core::connection::v1::{
-        Counterparty as RawCounterparty, MsgConnectionOpenTry as RawMsgConnectionOpenTry,
-    };
-    use ibc_testkit::utils::core::connection::{
-        dummy_raw_counterparty_conn, dummy_raw_msg_conn_open_try,
-    };
-
-    use crate::msgs::conn_open_try::MsgConnectionOpenTry;
-
-    #[test]
-    fn parse_connection_open_try_msg() {
-        #[derive(Clone, Debug, PartialEq)]
-        struct Test {
-            name: String,
-            raw: RawMsgConnectionOpenTry,
-            want_pass: bool,
-        }
-
-        let default_try_msg = dummy_raw_msg_conn_open_try(10, 34);
-
-        let tests: Vec<Test> =
-            vec![
-                Test {
-                    name: "Good parameters".to_string(),
-                    raw: default_try_msg.clone(),
-                    want_pass: true,
-                },
-                Test {
-                    name: "Bad client id, name too short".to_string(),
-                    raw: RawMsgConnectionOpenTry {
-                        client_id: "client".to_string(),
-                        ..default_try_msg.clone()
-                    },
-                    want_pass: false,
-                },
-                Test {
-                    name: "Bad destination connection id, name too long".to_string(),
-                    raw: RawMsgConnectionOpenTry {
-                        counterparty: Some(RawCounterparty {
-                            connection_id:
-                            "abcdasdfasdfsdfasfdwefwfsdfsfsfasfwewvxcvdvwgadvaadsefghijklmnopqrstu"
-                                .to_string(),
-                            ..dummy_raw_counterparty_conn(Some(0))
-                        }),
-                        ..default_try_msg.clone()
-                    },
-                    want_pass: false,
-                },
-                Test {
-                    name: "Correct destination client id with lower/upper case and special chars"
-                        .to_string(),
-                    raw: RawMsgConnectionOpenTry {
-                        counterparty: Some(RawCounterparty {
-                            client_id: "ClientId_".to_string(),
-                            ..dummy_raw_counterparty_conn(Some(0))
-                        }),
-                        ..default_try_msg.clone()
-                    },
-                    want_pass: true,
-                },
-                Test {
-                    name: "Bad counterparty versions, empty versions vec".to_string(),
-                    raw: RawMsgConnectionOpenTry {
-                        counterparty_versions: Vec::new(),
-                        ..default_try_msg.clone()
-                    },
-                    want_pass: false,
-                },
-                Test {
-                    name: "Bad counterparty versions, empty version string".to_string(),
-                    raw: RawMsgConnectionOpenTry {
-                        counterparty_versions: Vec::new(),
-                        ..default_try_msg.clone()
-                    },
-                    want_pass: false,
-                },
-                Test {
-                    name: "Bad proof height, height is 0".to_string(),
-                    raw: RawMsgConnectionOpenTry {
-                        proof_height: Some(Height { revision_number: 1, revision_height: 0 }),
-                        ..default_try_msg.clone()
-                    },
-                    want_pass: false,
-                },
-                Test {
-                    name: "Bad consensus height, height is 0".to_string(),
-                    raw: RawMsgConnectionOpenTry {
-                        proof_height: Some(Height { revision_number: 1, revision_height: 0 }),
-                        ..default_try_msg.clone()
-                    },
-                    want_pass: false,
-                },
-                Test {
-                    name: "Empty proof".to_string(),
-                    raw: RawMsgConnectionOpenTry {
-                        proof_init: b"".to_vec(),
-                        ..default_try_msg
-                    },
-                    want_pass: false,
-                }
-            ]
-            .into_iter()
-            .collect();
-
-        for test in tests {
-            let msg = MsgConnectionOpenTry::try_from(test.raw.clone());
-
-            assert_eq!(
-                test.want_pass,
-                msg.is_ok(),
-                "MsgConnOpenTry::new failed for test {}, \nmsg {:?} with error {:?}",
-                test.name,
-                test.raw,
-                msg.err(),
-            );
-        }
-    }
-
-    #[test]
-    fn to_and_from() {
-        let raw = dummy_raw_msg_conn_open_try(10, 34);
-        let msg = MsgConnectionOpenTry::try_from(raw.clone()).unwrap();
-        let raw_back = RawMsgConnectionOpenTry::from(msg.clone());
-        let msg_back = MsgConnectionOpenTry::try_from(raw_back.clone()).unwrap();
-        assert_eq!(raw, raw_back);
-        assert_eq!(msg, msg_back);
-    }
-
-    /// Test that borsh serialization/deserialization works well with delay periods up to u64::MAX
-    #[cfg(feature = "borsh")]
-    #[test]
-    fn test_borsh() {
-        let mut raw = dummy_raw_msg_conn_open_try(10, 34);
-        raw.delay_period = u64::MAX;
-        let msg = MsgConnectionOpenTry::try_from(raw.clone()).unwrap();
-
-        let serialized = borsh::to_vec(&msg).unwrap();
-
-        let msg_deserialized =
-            <MsgConnectionOpenTry as borsh::BorshDeserialize>::try_from_slice(&serialized).unwrap();
-
-        assert_eq!(msg, msg_deserialized);
     }
 }
