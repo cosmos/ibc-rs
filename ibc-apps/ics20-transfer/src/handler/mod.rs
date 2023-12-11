@@ -27,11 +27,12 @@ pub fn refund_packet_token_execute(
         packet.chan_id_on_a.clone(),
         &data.token.denom,
     ) {
-        // unescrow tokens back to sender
-        let escrow_address =
-            ctx_a.get_escrow_account(&packet.port_id_on_a, &packet.chan_id_on_a)?;
-
-        ctx_a.send_coins_execute(&escrow_address, &sender, &data.token)
+        ctx_a.unescrow_coins_execute(
+            &sender,
+            &packet.port_id_on_a,
+            &packet.chan_id_on_a,
+            &data.token,
+        )
     }
     // mint vouchers back to sender
     else {
@@ -55,10 +56,12 @@ pub fn refund_packet_token_validate(
         packet.chan_id_on_a.clone(),
         &data.token.denom,
     ) {
-        let escrow_address =
-            ctx_a.get_escrow_account(&packet.port_id_on_a, &packet.chan_id_on_a)?;
-
-        ctx_a.send_coins_validate(&escrow_address, &sender, &data.token)
+        ctx_a.unescrow_coins_validate(
+            &sender,
+            &packet.port_id_on_a,
+            &packet.chan_id_on_a,
+            &data.token,
+        )
     } else {
         ctx_a.mint_coins_validate(&sender, &data.token)
     }
