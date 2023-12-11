@@ -20,23 +20,6 @@ impl TokenTransferValidationContext for DummyTransferModule {
     fn can_receive_coins(&self) -> Result<(), TokenTransferError> {
         Ok(())
     }
-    fn mint_coins_validate(
-        &self,
-        _account: &Self::AccountId,
-        _coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
-    fn burn_coins_validate(
-        &self,
-        _account: &Self::AccountId,
-        _coin: &PrefixedCoin,
-        _memo: &Memo,
-    ) -> Result<(), TokenTransferError> {
-        Ok(())
-    }
-
     fn escrow_coins_validate(
         &self,
         _from_account: &Self::AccountId,
@@ -57,26 +40,26 @@ impl TokenTransferValidationContext for DummyTransferModule {
     ) -> Result<(), TokenTransferError> {
         Ok(())
     }
-}
 
-impl TokenTransferExecutionContext for DummyTransferModule {
-    fn mint_coins_execute(
-        &mut self,
+    fn mint_coins_validate(
+        &self,
         _account: &Self::AccountId,
         _coin: &PrefixedCoin,
     ) -> Result<(), TokenTransferError> {
         Ok(())
     }
 
-    fn burn_coins_execute(
-        &mut self,
+    fn burn_coins_validate(
+        &self,
         _account: &Self::AccountId,
         _coin: &PrefixedCoin,
         _memo: &Memo,
     ) -> Result<(), TokenTransferError> {
         Ok(())
     }
+}
 
+impl TokenTransferExecutionContext for DummyTransferModule {
     fn escrow_coins_execute(
         &mut self,
         _from_account: &Self::AccountId,
@@ -94,6 +77,23 @@ impl TokenTransferExecutionContext for DummyTransferModule {
         _port_id: &PortId,
         _channel_id: &ChannelId,
         _coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    fn mint_coins_execute(
+        &mut self,
+        _account: &Self::AccountId,
+        _coin: &PrefixedCoin,
+    ) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    fn burn_coins_execute(
+        &mut self,
+        _account: &Self::AccountId,
+        _coin: &PrefixedCoin,
+        _memo: &Memo,
     ) -> Result<(), TokenTransferError> {
         Ok(())
     }

@@ -19,10 +19,10 @@ pub trait TokenTransferValidationContext {
     /// Returns Ok() if the host chain supports receiving coins.
     fn can_receive_coins(&self) -> Result<(), TokenTransferError>;
 
-    /// Validates that the tokens can be escrowed successfully
+    /// Validates that the tokens can be escrowed successfully.
     ///
-    /// `memo` field allows to incorporate additional contextual details
-    /// in escrow validation.
+    /// `memo` field allows to incorporate additional contextual details in the
+    /// escrow validation.
     fn escrow_coins_validate(
         &self,
         from_account: &Self::AccountId,
@@ -32,7 +32,7 @@ pub trait TokenTransferValidationContext {
         memo: &Memo,
     ) -> Result<(), TokenTransferError>;
 
-    /// Validates that the tokens can be unescrowed successfully
+    /// Validates that the tokens can be unescrowed successfully.
     fn unescrow_coins_validate(
         &self,
         to_account: &Self::AccountId,
@@ -48,7 +48,10 @@ pub trait TokenTransferValidationContext {
         coin: &PrefixedCoin,
     ) -> Result<(), TokenTransferError>;
 
-    /// Validates the sender account and the coin input
+    /// Validates the sender account and the coin input before burning.
+    ///
+    /// `memo` field allows to incorporate additional contextual details in the
+    /// burn validation.
     fn burn_coins_validate(
         &self,
         account: &Self::AccountId,
@@ -63,12 +66,12 @@ pub trait TokenTransferValidationContext {
     }
 }
 
-/// Methods required in token transfer execution, to be implemented by the host
+/// Methods required in token transfer execution, to be implemented by the host.
 pub trait TokenTransferExecutionContext: TokenTransferValidationContext {
-    /// Escrows the tokens
+    /// Executes the escrow of the tokens in a user account.
     ///
-    /// `memo` field allows to incorporate additional contextual details
-    /// in escrow execution.
+    /// `memo` field allows to incorporate additional contextual details in the
+    /// escrow execution.
     fn escrow_coins_execute(
         &mut self,
         from_account: &Self::AccountId,
@@ -78,7 +81,7 @@ pub trait TokenTransferExecutionContext: TokenTransferValidationContext {
         memo: &Memo,
     ) -> Result<(), TokenTransferError>;
 
-    /// Unescrows the tokens
+    /// Executes the unescrow of the tokens in a user account.
     fn unescrow_coins_execute(
         &mut self,
         to_account: &Self::AccountId,
@@ -87,14 +90,17 @@ pub trait TokenTransferExecutionContext: TokenTransferValidationContext {
         coin: &PrefixedCoin,
     ) -> Result<(), TokenTransferError>;
 
-    /// This function to enable minting ibc tokens to a user account
+    /// Executes minting of the tokens in a user account.
     fn mint_coins_execute(
         &mut self,
         account: &Self::AccountId,
         coin: &PrefixedCoin,
     ) -> Result<(), TokenTransferError>;
 
-    /// This function should enable burning of minted tokens in a user account
+    /// Executes burning of the tokens in a user account.
+    ///
+    /// `memo` field allows to incorporate additional contextual details in the
+    /// burn execution.
     fn burn_coins_execute(
         &mut self,
         account: &Self::AccountId,

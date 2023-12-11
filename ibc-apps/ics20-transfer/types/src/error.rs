@@ -77,7 +77,7 @@ pub enum TokenTransferError {
     InvalidCoin { coin: String },
     /// decoding raw bytes as UTF8 string error: `{0}`
     Utf8Decode(Utf8Error),
-    /// `{0}`
+    /// other error: `{0}`
     Other(String),
 }
 
