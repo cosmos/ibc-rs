@@ -4,7 +4,6 @@ use ibc_core_channel_types::channel::{ChannelEnd, Counterparty, State};
 use ibc_core_channel_types::events::OpenInit;
 use ibc_core_channel_types::msgs::MsgChannelOpenInit;
 use ibc_core_client::context::client_state::ClientStateValidation;
-use ibc_core_client::types::error::ClientError;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::ChannelId;
@@ -123,13 +122,9 @@ where
     let client_id_on_a = conn_end_on_a.client_id();
     let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
 
-    {
-        let status =
-            client_state_of_b_on_a.status(ctx_a.get_client_validation_context(), client_id_on_a)?;
-        if !status.is_active() {
-            return Err(ClientError::ClientNotActive { status }.into());
-        }
-    }
+    client_state_of_b_on_a
+        .status(ctx_a.get_client_validation_context(), client_id_on_a)?
+        .verify_active()?;
 
     let conn_version = conn_end_on_a.versions();
 

@@ -1,5 +1,7 @@
 use core::fmt::{Debug, Display, Formatter};
 
+use crate::error::ClientError;
+
 /// `UpdateKind` represents the 2 ways that a client can be updated
 /// in IBC: either through a `MsgUpdateClient`, or a `MsgSubmitMisbehaviour`.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -14,7 +16,7 @@ pub enum UpdateKind {
 }
 
 /// Represents the status of a client
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Status {
     /// The client is active and allowed to be used
     Active,
@@ -37,6 +39,14 @@ impl Status {
 
     pub fn is_expired(&self) -> bool {
         *self == Status::Expired
+    }
+
+    /// Checks whether the status is active; returns `Err` if not.
+    pub fn verify_active(&self) -> Result<(), ClientError> {
+        match self.clone() {
+            Self::Active => Ok(()),
+            status => Err(ClientError::ClientNotActive { status }),
+        }
     }
 }
 

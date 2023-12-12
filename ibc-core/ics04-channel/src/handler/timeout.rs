@@ -5,7 +5,6 @@ use ibc_core_channel_types::events::{ChannelClosed, TimeoutPacket};
 use ibc_core_channel_types::msgs::{MsgTimeout, MsgTimeoutOnClose};
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
-use ibc_core_client::types::error::ClientError;
 use ibc_core_connection::delay::verify_conn_delay_passed;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
@@ -189,13 +188,10 @@ where
         let client_id_on_a = conn_end_on_a.client_id();
         let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
 
-        {
-            let status = client_state_of_b_on_a
-                .status(ctx_a.get_client_validation_context(), client_id_on_a)?;
-            if !status.is_active() {
-                return Err(ClientError::ClientNotActive { status }.into());
-            }
-        }
+        client_state_of_b_on_a
+            .status(ctx_a.get_client_validation_context(), client_id_on_a)?
+            .verify_active()?;
+
         client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
 
         // check that timeout height or timeout timestamp has passed on the other end

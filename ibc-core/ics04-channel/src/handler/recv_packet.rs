@@ -6,7 +6,6 @@ use ibc_core_channel_types::msgs::MsgRecvPacket;
 use ibc_core_channel_types::packet::Receipt;
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
-use ibc_core_client::types::error::ClientError;
 use ibc_core_connection::delay::verify_conn_delay_passed;
 use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_handler_types::error::ContextError;
@@ -182,13 +181,10 @@ where
         let client_id_on_b = conn_end_on_b.client_id();
         let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
 
-        {
-            let status = client_state_of_a_on_b
-                .status(ctx_b.get_client_validation_context(), client_id_on_b)?;
-            if !status.is_active() {
-                return Err(ClientError::ClientNotActive { status }.into());
-            }
-        }
+        client_state_of_a_on_b
+            .status(ctx_b.get_client_validation_context(), client_id_on_b)?
+            .verify_active()?;
+
         client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
 
         let client_cons_state_path_on_b = ClientConsensusStatePath::new(

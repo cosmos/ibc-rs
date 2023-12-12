@@ -2,7 +2,6 @@
 
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
-use ibc_core_client::types::error::ClientError;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenAck;
 use ibc_core_connection_types::msgs::MsgConnectionOpenAck;
@@ -56,13 +55,9 @@ where
     {
         let client_state_of_b_on_a = ctx_a.client_state(vars.client_id_on_a())?;
 
-        {
-            let status = client_state_of_b_on_a
-                .status(ctx_a.get_client_validation_context(), vars.client_id_on_a())?;
-            if !status.is_active() {
-                return Err(ClientError::ClientNotActive { status }.into());
-            }
-        }
+        client_state_of_b_on_a
+            .status(ctx_a.get_client_validation_context(), vars.client_id_on_a())?
+            .verify_active()?;
         client_state_of_b_on_a.validate_proof_height(msg.proofs_height_on_b)?;
 
         let client_cons_state_path_on_a = ClientConsensusStatePath::new(
