@@ -30,7 +30,7 @@ where
 
     client_state
         .status(ctx.get_client_validation_context(), &client_id)?
-        .verify_active()?;
+        .verify_is_active()?;
 
     let client_message = msg.client_message();
 

@@ -21,7 +21,7 @@ where
 
     client_state_of_b_on_a
         .status(ctx_a.get_client_validation_context(), &msg.client_id_on_a)?
-        .verify_active()?;
+        .verify_is_active()?;
 
     if let Some(version) = msg.version {
         version.verify_is_supported(&ctx_a.get_compatible_versions())?;

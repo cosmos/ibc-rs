@@ -16,7 +16,7 @@ pub enum UpdateKind {
 }
 
 /// Represents the status of a client
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Status {
     /// The client is active and allowed to be used
     Active,
@@ -42,8 +42,8 @@ impl Status {
     }
 
     /// Checks whether the status is active; returns `Err` if not.
-    pub fn verify_active(&self) -> Result<(), ClientError> {
-        match self.clone() {
+    pub fn verify_is_active(self) -> Result<(), ClientError> {
+        match self {
             Self::Active => Ok(()),
             status => Err(ClientError::ClientNotActive { status }),
         }
