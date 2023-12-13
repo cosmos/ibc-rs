@@ -157,6 +157,34 @@ where
 
     chan_end_on_b.verify_counterparty_matches(&counterparty)?;
 
+    // Check if another relayer already relayed the packet.
+    // We don't want to fail the transaction in this case.
+    {
+        let packet_already_received = match chan_end_on_b.ordering {
+            // Note: ibc-go doesn't make the check for `Order::None` channels
+            Order::None => false,
+            Order::Unordered => {
+                let packet = &msg.packet;
+                let receipt_path_on_b =
+                    ReceiptPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
+                ctx_b.get_packet_receipt(&receipt_path_on_b).is_ok()
+            }
+            Order::Ordered => {
+                let seq_recv_path_on_b =
+                    SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
+                let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
+
+                // the sequence number has already been incremented, so
+                // another relayer already relayed the packet
+                msg.packet.seq_on_a < next_seq_recv
+            }
+        };
+
+        if packet_already_received {
+            return Ok(());
+        }
+    }
+
     let conn_id_on_b = &chan_end_on_b.connection_hops()[0];
     let conn_end_on_b = ctx_b.connection_end(conn_id_on_b)?;
 

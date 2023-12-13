@@ -136,6 +136,13 @@ fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeout) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
+    //verify packet commitment
+    let commitment_path_on_a = CommitmentPath::new(
+        &msg.packet.port_id_on_a,
+        &msg.packet.chan_id_on_a,
+        msg.packet.seq_on_a,
+    );
+    
     ctx_a.validate_message_signer(&msg.signer)?;
 
     let chan_end_on_a = ctx_a.channel_end(&ChannelEndPath::new(
@@ -155,12 +162,6 @@ where
     let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
     let conn_end_on_a = ctx_a.connection_end(&conn_id_on_a)?;
 
-    //verify packet commitment
-    let commitment_path_on_a = CommitmentPath::new(
-        &msg.packet.port_id_on_a,
-        &msg.packet.chan_id_on_a,
-        msg.packet.seq_on_a,
-    );
     let commitment_on_a = match ctx_a.get_packet_commitment(&commitment_path_on_a) {
         Ok(commitment_on_a) => commitment_on_a,
 
