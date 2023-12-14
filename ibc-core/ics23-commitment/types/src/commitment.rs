@@ -71,7 +71,8 @@ impl From<Vec<u8>> for CommitmentRoot {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, derive_more::AsRef, derive_more::Into)]
+#[as_ref(forward)]
 pub struct CommitmentProofBytes {
     #[cfg_attr(
         feature = "serde",
@@ -101,12 +102,6 @@ impl TryFrom<Vec<u8>> for CommitmentProofBytes {
     }
 }
 
-impl From<CommitmentProofBytes> for Vec<u8> {
-    fn from(p: CommitmentProofBytes) -> Vec<u8> {
-        p.bytes
-    }
-}
-
 impl TryFrom<RawMerkleProof> for CommitmentProofBytes {
     type Error = CommitmentError;
 
@@ -127,10 +122,16 @@ impl TryFrom<CommitmentProofBytes> for MerkleProof {
     type Error = CommitmentError;
 
     fn try_from(value: CommitmentProofBytes) -> Result<Self, Self::Error> {
-        let value: Vec<u8> = value.into();
-        let merkle_proof = Protobuf::<RawMerkleProof>::decode(value.as_ref())
-            .map_err(|e| CommitmentError::DecodingFailure(e.to_string()))?;
-        Ok(merkle_proof)
+        Self::try_from(&value)
+    }
+}
+
+impl<'a> TryFrom<&'a CommitmentProofBytes> for MerkleProof {
+    type Error = CommitmentError;
+
+    fn try_from(value: &'a CommitmentProofBytes) -> Result<Self, Self::Error> {
+        Protobuf::<RawMerkleProof>::decode(value.bytes.as_slice())
+            .map_err(|e| CommitmentError::DecodingFailure(e.to_string()))
     }
 }
 
