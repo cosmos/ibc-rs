@@ -1,5 +1,4 @@
 use ibc_primitives::prelude::*;
-use ibc_primitives::ToVec;
 
 use crate::error::IdentifierError;
 
@@ -50,10 +49,9 @@ impl Sequence {
         Sequence(self.0 + 1)
     }
 
-    /// Encodes the sequence number into a `Vec<u8>` using
-    /// `prost::Message::encode_to_vec`.
+    /// Encodes the sequence number into a byte array in big endian.
     pub fn to_vec(&self) -> Vec<u8> {
-        self.0.to_vec()
+        self.0.to_be_bytes().to_vec()
     }
 }
 
