@@ -44,6 +44,11 @@ impl Sequence {
     pub fn increment(&self) -> Sequence {
         Sequence(self.0 + 1)
     }
+
+    /// Encodes the sequence number into a byte array in big endian.
+    pub fn to_vec(&self) -> Vec<u8> {
+        self.0.to_be_bytes().to_vec()
+    }
 }
 
 impl From<u64> for Sequence {
