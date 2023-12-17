@@ -1,7 +1,7 @@
 use ibc::apps::transfer::handler::send_transfer;
 use ibc::apps::transfer::types::error::TokenTransferError;
 use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
-use ibc::apps::transfer::types::BaseCoin;
+use ibc::apps::transfer::types::{BaseCoin, U256};
 use ibc::core::channel::types::error::ChannelError;
 use ibc::core::channel::types::msgs::{
     ChannelMsg, MsgAcknowledgement, MsgChannelCloseConfirm, MsgChannelCloseInit, MsgChannelOpenAck,
@@ -40,7 +40,6 @@ use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusStat
 use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
-use primitive_types::U256;
 use test_log::test;
 
 #[test]

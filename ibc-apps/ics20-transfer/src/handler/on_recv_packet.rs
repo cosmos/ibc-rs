@@ -43,10 +43,6 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
             c
         };
 
-        let escrow_address = ctx_b
-            .get_escrow_account(&packet.port_id_on_b, &packet.chan_id_on_b)
-            .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
-
         // Note: it is correct to do the validation here because `recv_packet()`
         // works slightly differently. We do not have a
         // `on_recv_packet_validate()` callback because regardless of whether or
@@ -58,11 +54,20 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
         // gets relayed back to the sender so that the escrowed tokens
         // can be refunded.
         ctx_b
-            .send_coins_validate(&escrow_address, &receiver_account, &coin)
+            .unescrow_coins_validate(
+                &receiver_account,
+                &packet.port_id_on_b,
+                &packet.chan_id_on_b,
+                &coin,
+            )
             .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
-
         ctx_b
-            .send_coins_execute(&escrow_address, &receiver_account, &coin)
+            .unescrow_coins_execute(
+                &receiver_account,
+                &packet.port_id_on_b,
+                &packet.chan_id_on_b,
+                &coin,
+            )
             .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
 
         ModuleExtras::empty()

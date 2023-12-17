@@ -17,10 +17,6 @@ description  = """
 all-features = true
 
 [dependencies]
-# external dependencies
-prost = { workspace = true }
-
-# ibc dependencies
 ibc-core-client-types     = { workspace = true }
 ibc-core-client-context   = { workspace = true }
 ibc-core-commitment-types = { workspace = true }
@@ -31,7 +27,6 @@ ibc-primitives            = { workspace = true }
 [features]
 default = ["std"]
 std = [
-    "prost/std",
     "ibc-core-client-types/std",
     "ibc-core-client-context/std",
     "ibc-core-commitment-types/std",

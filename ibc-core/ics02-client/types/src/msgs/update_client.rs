@@ -2,7 +2,7 @@
 
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::Signer;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgUpdateClient as RawMsgUpdateClient;
 use ibc_proto::Protobuf;
@@ -25,14 +25,6 @@ pub struct MsgUpdateClient {
     pub client_id: ClientId,
     pub client_message: Any,
     pub signer: Signer,
-}
-
-impl Msg for MsgUpdateClient {
-    type Raw = RawMsgUpdateClient;
-
-    fn type_url(&self) -> String {
-        UPDATE_CLIENT_TYPE_URL.to_string()
-    }
 }
 
 impl Protobuf<RawMsgUpdateClient> for MsgUpdateClient {}

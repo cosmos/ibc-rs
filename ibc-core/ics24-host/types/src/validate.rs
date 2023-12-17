@@ -2,19 +2,12 @@ use ibc_primitives::prelude::*;
 
 use crate::error::IdentifierError as Error;
 
-/// Path separator (ie. forward slash '/')
-const PATH_SEPARATOR: char = '/';
 const VALID_SPECIAL_CHARS: &str = "._+-#[]<>";
 
 /// Checks if the identifier only contains valid characters as specified in the
 /// [`ICS-24`](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#paths-identifiers-separators)]
 /// spec.
 pub fn validate_identifier_chars(id: &str) -> Result<(), Error> {
-    // Check identifier does not contain path separators
-    if id.contains(PATH_SEPARATOR) {
-        return Err(Error::ContainSeparator { id: id.into() });
-    }
-
     // Check that the identifier comprises only valid characters:
     // - Alphanumeric
     // - `.`, `_`, `+`, `-`, `#`
@@ -42,7 +35,6 @@ pub fn validate_identifier_length(id: &str, min: u64, max: u64) -> Result<(), Er
     } else {
         Err(Error::InvalidLength {
             id: id.into(),
-            length,
             min,
             max,
         })

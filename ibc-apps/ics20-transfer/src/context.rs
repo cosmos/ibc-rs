@@ -1,7 +1,7 @@
 //! Defines the main context traits and IBC module callbacks
 
 use ibc_app_transfer_types::error::TokenTransferError;
-use ibc_app_transfer_types::{PrefixedCoin, PrefixedDenom};
+use ibc_app_transfer_types::{Memo, PrefixedCoin, PrefixedDenom};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Signer;
@@ -13,24 +13,31 @@ pub trait TokenTransferValidationContext {
     /// get_port returns the portID for the transfer module.
     fn get_port(&self) -> Result<PortId, TokenTransferError>;
 
-    /// Returns the escrow account id for a port and channel combination
-    fn get_escrow_account(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<Self::AccountId, TokenTransferError>;
-
     /// Returns Ok() if the host chain supports sending coins.
     fn can_send_coins(&self) -> Result<(), TokenTransferError>;
 
     /// Returns Ok() if the host chain supports receiving coins.
     fn can_receive_coins(&self) -> Result<(), TokenTransferError>;
 
-    /// Validates the sender and receiver accounts and the coin inputs
-    fn send_coins_validate(
+    /// Validates that the tokens can be escrowed successfully.
+    ///
+    /// `memo` field allows to incorporate additional contextual details in the
+    /// escrow validation.
+    fn escrow_coins_validate(
         &self,
         from_account: &Self::AccountId,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        coin: &PrefixedCoin,
+        memo: &Memo,
+    ) -> Result<(), TokenTransferError>;
+
+    /// Validates that the tokens can be unescrowed successfully.
+    fn unescrow_coins_validate(
+        &self,
         to_account: &Self::AccountId,
+        port_id: &PortId,
+        channel_id: &ChannelId,
         coin: &PrefixedCoin,
     ) -> Result<(), TokenTransferError>;
 
@@ -41,11 +48,15 @@ pub trait TokenTransferValidationContext {
         coin: &PrefixedCoin,
     ) -> Result<(), TokenTransferError>;
 
-    /// Validates the sender account and the coin input
+    /// Validates the sender account and the coin input before burning.
+    ///
+    /// `memo` field allows to incorporate additional contextual details in the
+    /// burn validation.
     fn burn_coins_validate(
         &self,
         account: &Self::AccountId,
         coin: &PrefixedCoin,
+        memo: &Memo,
     ) -> Result<(), TokenTransferError>;
 
     /// Returns a hash of the prefixed denom.
@@ -55,27 +66,45 @@ pub trait TokenTransferValidationContext {
     }
 }
 
-/// Methods required in token transfer execution, to be implemented by the host
+/// Methods required in token transfer execution, to be implemented by the host.
 pub trait TokenTransferExecutionContext: TokenTransferValidationContext {
-    /// This function should enable sending ibc fungible tokens from one account to another
-    fn send_coins_execute(
+    /// Executes the escrow of the tokens in a user account.
+    ///
+    /// `memo` field allows to incorporate additional contextual details in the
+    /// escrow execution.
+    fn escrow_coins_execute(
         &mut self,
         from_account: &Self::AccountId,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+        coin: &PrefixedCoin,
+        memo: &Memo,
+    ) -> Result<(), TokenTransferError>;
+
+    /// Executes the unescrow of the tokens in a user account.
+    fn unescrow_coins_execute(
+        &mut self,
         to_account: &Self::AccountId,
+        port_id: &PortId,
+        channel_id: &ChannelId,
         coin: &PrefixedCoin,
     ) -> Result<(), TokenTransferError>;
 
-    /// This function to enable minting ibc tokens to a user account
+    /// Executes minting of the tokens in a user account.
     fn mint_coins_execute(
         &mut self,
         account: &Self::AccountId,
         coin: &PrefixedCoin,
     ) -> Result<(), TokenTransferError>;
 
-    /// This function should enable burning of minted tokens in a user account
+    /// Executes burning of the tokens in a user account.
+    ///
+    /// `memo` field allows to incorporate additional contextual details in the
+    /// burn execution.
     fn burn_coins_execute(
         &mut self,
         account: &Self::AccountId,
         coin: &PrefixedCoin,
+        memo: &Memo,
     ) -> Result<(), TokenTransferError>;
 }

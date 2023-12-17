@@ -2,7 +2,6 @@
 
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
-use ibc_core_client::types::error::ClientError;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenAck;
 use ibc_core_connection_types::msgs::MsgConnectionOpenAck;
@@ -14,7 +13,7 @@ use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath, Conn
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
-use prost::Message;
+use ibc_primitives::ToVec;
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ContextError>
 where
@@ -56,13 +55,9 @@ where
     {
         let client_state_of_b_on_a = ctx_a.client_state(vars.client_id_on_a())?;
 
-        {
-            let status = client_state_of_b_on_a
-                .status(ctx_a.get_client_validation_context(), vars.client_id_on_a())?;
-            if !status.is_active() {
-                return Err(ClientError::ClientNotActive { status }.into());
-            }
-        }
+        client_state_of_b_on_a
+            .status(ctx_a.get_client_validation_context(), vars.client_id_on_a())?
+            .verify_is_active()?;
         client_state_of_b_on_a.validate_proof_height(msg.proofs_height_on_b)?;
 
         let client_cons_state_path_on_a = ClientConsensusStatePath::new(
@@ -106,7 +101,7 @@ where
                 &msg.proof_client_state_of_a_on_b,
                 consensus_state_of_b_on_a.root(),
                 Path::ClientState(ClientStatePath::new(vars.client_id_on_b())),
-                msg.client_state_of_a_on_b.encode_to_vec(),
+                msg.client_state_of_a_on_b.to_vec(),
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
                 client_id: vars.client_id_on_b().clone(),

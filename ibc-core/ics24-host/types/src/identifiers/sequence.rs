@@ -34,15 +34,24 @@ impl core::str::FromStr for Sequence {
 }
 
 impl Sequence {
+    /// Gives the sequence number.
     pub fn value(&self) -> u64 {
         self.0
     }
+
+    /// Returns `true` if the sequence number is zero.
     pub fn is_zero(&self) -> bool {
         self.0 == 0
     }
 
+    /// Increments the sequence number by one.
     pub fn increment(&self) -> Sequence {
         Sequence(self.0 + 1)
+    }
+
+    /// Encodes the sequence number into a byte array in big endian.
+    pub fn to_vec(&self) -> Vec<u8> {
+        self.0.to_be_bytes().to_vec()
     }
 }
 

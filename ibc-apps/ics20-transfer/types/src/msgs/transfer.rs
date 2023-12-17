@@ -5,7 +5,7 @@ use ibc_core::channel::types::timeout::TimeoutHeight;
 use ibc_core::handler::types::error::ContextError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
-use ibc_core::primitives::{Msg, Timestamp};
+use ibc_core::primitives::Timestamp;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::applications::transfer::v1::MsgTransfer as RawMsgTransfer;
 use ibc_proto::Protobuf;
@@ -32,6 +32,7 @@ pub(crate) const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct MsgTransfer {
     /// the port on which the packet will be sent
     pub port_id_on_a: PortId,
@@ -45,14 +46,6 @@ pub struct MsgTransfer {
     /// Timeout timestamp relative to the current block timestamp.
     /// The timeout is disabled when set to 0.
     pub timeout_timestamp_on_b: Timestamp,
-}
-
-impl Msg for MsgTransfer {
-    type Raw = RawMsgTransfer;
-
-    fn type_url(&self) -> String {
-        TYPE_URL.to_string()
-    }
 }
 
 impl TryFrom<RawMsgTransfer> for MsgTransfer {
