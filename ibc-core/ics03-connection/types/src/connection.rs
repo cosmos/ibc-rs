@@ -559,6 +559,11 @@ impl TryFrom<i32> for State {
 
 impl From<State> for i32 {
     fn from(value: State) -> Self {
-        value.into()
+        match value {
+            State::Uninitialized => 0,
+            State::Init => 1,
+            State::TryOpen => 2,
+            State::Open => 3,
+        }
     }
 }
