@@ -32,6 +32,7 @@ pub(crate) const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct MsgTransfer {
     /// the port on which the packet will be sent
     pub port_id_on_a: PortId,

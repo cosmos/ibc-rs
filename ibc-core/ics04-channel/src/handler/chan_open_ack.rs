@@ -5,7 +5,6 @@ use ibc_core_channel_types::events::OpenAck;
 use ibc_core_channel_types::msgs::MsgChannelOpenAck;
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
-use ibc_core_client::types::error::ClientError;
 use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
@@ -112,13 +111,9 @@ where
         let client_id_on_a = conn_end_on_a.client_id();
         let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
 
-        {
-            let status = client_state_of_b_on_a
-                .status(ctx_a.get_client_validation_context(), client_id_on_a)?;
-            if !status.is_active() {
-                return Err(ClientError::ClientNotActive { status }.into());
-            }
-        }
+        client_state_of_b_on_a
+            .status(ctx_a.get_client_validation_context(), client_id_on_a)?
+            .verify_is_active()?;
         client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
 
         let client_cons_state_path_on_a = ClientConsensusStatePath::new(

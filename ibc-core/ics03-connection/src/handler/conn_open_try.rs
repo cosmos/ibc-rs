@@ -1,7 +1,6 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenTry`.;
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
-use ibc_core_client::types::error::ClientError;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenTry;
 use ibc_core_connection_types::msgs::MsgConnectionOpenTry;
@@ -55,13 +54,9 @@ where
     {
         let client_state_of_a_on_b = ctx_b.client_state(vars.conn_end_on_b.client_id())?;
 
-        {
-            let status = client_state_of_a_on_b
-                .status(ctx_b.get_client_validation_context(), &msg.client_id_on_b)?;
-            if !status.is_active() {
-                return Err(ClientError::ClientNotActive { status }.into());
-            }
-        }
+        client_state_of_a_on_b
+            .status(ctx_b.get_client_validation_context(), &msg.client_id_on_b)?
+            .verify_is_active()?;
         client_state_of_a_on_b.validate_proof_height(msg.proofs_height_on_a)?;
 
         let client_cons_state_path_on_b = ClientConsensusStatePath::new(

@@ -28,12 +28,9 @@ where
     // Read client state from the host chain store. The client should already exist.
     let client_state = ctx.client_state(&client_id)?;
 
-    {
-        let status = client_state.status(ctx.get_client_validation_context(), &client_id)?;
-        if !status.is_active() {
-            return Err(ClientError::ClientNotActive { status }.into());
-        }
-    }
+    client_state
+        .status(ctx.get_client_validation_context(), &client_id)?
+        .verify_is_active()?;
 
     let client_message = msg.client_message();
 
