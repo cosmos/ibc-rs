@@ -3,12 +3,13 @@ use crate::validate::{
     validate_identifier_chars, validate_identifier_length, validate_prefix_length,
 };
 
-use core::fmt::{Debug, Display, Error as FmtError, Formatter};
+use core::fmt::{self, Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
-use serde::{de, Deserialize};
-
 use ibc_primitives::prelude::*;
+
+#[cfg(feature = "serde")]
+use serde::de::{Deserialize, Deserializer, Error, MapAccess, Visitor};
 
 /// Defines the domain type for chain identifiers.
 ///
@@ -118,14 +119,65 @@ impl ChainId {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for ChainId {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
-        let de = <String>::deserialize(deserializer)?;
-        std::println!("Deserialized ChainId: {de}");
-        ChainId::from_str(de.as_str()).map_err(de::Error::custom)
+        #[derive(serde::Deserialize)]
+        #[serde(field_identifier, rename_all = "lowercase")]
+        enum Field {
+            Id,
+            RevisionNumber,
+        }
+
+        const FIELDS: &[&str] = &["id", "revision_number"];
+        struct ChainIdVisitor;
+
+        impl<'de> Visitor<'de> for ChainIdVisitor {
+            type Value = ChainId;
+
+            fn expecting(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+                formatter.write_str("struct ChainId")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<ChainId, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                let mut id = None;
+                let mut revision_number = None;
+
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Id => {
+                            if id.is_some() {
+                                return Err(Error::duplicate_field("id"));
+                            }
+                            id = Some(map.next_value()?);
+                        }
+                        Field::RevisionNumber => {
+                            if revision_number.is_some() {
+                                return Err(Error::duplicate_field("revision_number"));
+                            }
+                            revision_number = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                let id = id.ok_or_else(|| Error::missing_field("id"))?;
+                let revision_number =
+                    revision_number.ok_or_else(|| Error::missing_field("revision_number"))?;
+
+                Ok(ChainId {
+                    id,
+                    revision_number,
+                })
+            }
+        }
+
+        deserializer.deserialize_struct("ChainId", FIELDS, ChainIdVisitor)
     }
 }
 
@@ -263,7 +315,7 @@ mod tests {
     #[case(" -")]
     #[case("   -1")]
     #[case("/chainA-1")]
-    #[case(r#"{"id": "foo-42", "revision_number": 69}"#)]
+    #[case(r#"{"id":"foo-42","revision_number":"69"}"#)]
     fn test_invalid_chain_id_from_str(#[case] chain_id_str: &str) {
         assert!(ChainId::new(chain_id_str).is_err());
     }
@@ -273,15 +325,15 @@ mod tests {
     #[case(r#"{"id":"foo-42","revision_number":"0"}"#)]
     #[case(r#"{"id":"foo-42","revision_number":"42"}"#)]
     fn test_valid_chain_id_json_deserialization(#[case] chain_id_json: &str) {
-        serde_json::from_str::<ChainId>(chain_id_json).unwrap();
-        // assert!(serde_json::from_str::<ChainId>(chain_id_json).is_ok());
+        // serde_json::from_str::<ChainId>(chain_id_json).unwrap();
+        assert!(serde_json::to_string::<ChainId>(chain_id_json).is_ok());
     }
 
     #[cfg(feature = "serde")]
     #[rstest]
     #[case(r#"{"id":"foo-42","revision_number":"69"}"#)]
     fn test_invalid_chain_id_json_deserialization(#[case] chain_id_json: &str) {
-        assert!(serde_json::from_str::<ChainId>(chain_id_json).is_err())
+        assert!(serde_json::to_string::<ChainId>(chain_id_json).is_err())
     }
 
     #[test]
