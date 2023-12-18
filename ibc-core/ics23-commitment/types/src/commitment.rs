@@ -118,14 +118,6 @@ impl TryFrom<MerkleProof> for CommitmentProofBytes {
     }
 }
 
-impl TryFrom<CommitmentProofBytes> for MerkleProof {
-    type Error = CommitmentError;
-
-    fn try_from(value: CommitmentProofBytes) -> Result<Self, Self::Error> {
-        Self::try_from(&value)
-    }
-}
-
 impl<'a> TryFrom<&'a CommitmentProofBytes> for MerkleProof {
     type Error = CommitmentError;
 
