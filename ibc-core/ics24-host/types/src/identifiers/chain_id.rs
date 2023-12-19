@@ -236,11 +236,10 @@ impl<'de> Deserialize<'de> for ChainId {
 
                 let id = id.ok_or_else(|| Error::missing_field("id"))?;
 
-                let Ok(chain_id) = ChainId::from_str(id) else {
-                    return Err(Error::custom(format_args!("invalid chain ID `{}`", id)));
-                };
-
-                Ok(chain_id)
+                Ok(ChainId {
+                    id: id.into(),
+                    revision_number: revision_number.unwrap_or(0),
+                })
             }
         }
 
