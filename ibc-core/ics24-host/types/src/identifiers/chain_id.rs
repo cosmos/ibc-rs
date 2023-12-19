@@ -125,14 +125,43 @@ impl<'de> Deserialize<'de> for ChainId {
     where
         D: Deserializer<'de>,
     {
-        #[derive(serde::Deserialize)]
-        #[serde(field_identifier, rename_all = "lowercase")]
+        const FIELDS: &[&str] = &["id", "revision_number"];
+
         enum Field {
             Id,
             RevisionNumber,
         }
 
-        const FIELDS: &[&str] = &["id", "revision_number"];
+        impl<'de> Deserialize<'de> for Field {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                struct FieldVisitor;
+
+                impl<'de> Visitor<'de> for FieldVisitor {
+                    type Value = Field;
+
+                    fn expecting(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+                        write!(formatter, "expected one of: {:?}", &FIELDS)
+                    }
+
+                    fn visit_str<E>(self, value: &str) -> Result<Field, E>
+                    where
+                        E: Error,
+                    {
+                        match value {
+                            "id" => Ok(Field::Id),
+                            "revisionnumber" | "revision_number" => Ok(Field::RevisionNumber),
+                            _ => Err(Error::unknown_field(value, FIELDS)),
+                        }
+                    }
+                }
+
+                deserializer.deserialize_identifier(FieldVisitor)
+            }
+        }
+
         struct ChainIdVisitor;
 
         impl<'de> Visitor<'de> for ChainIdVisitor {
@@ -142,7 +171,20 @@ impl<'de> Deserialize<'de> for ChainId {
                 formatter.write_str("struct ChainId")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<ChainId, V::Error>
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: Error,
+            {
+                match ChainId::from_str(v) {
+                    Ok(chain_id) => Ok(chain_id),
+                    Err(e) => Err(Error::custom(format_args!(
+                        "invalid chain ID `{}`: `{}`",
+                        v, e
+                    ))),
+                }
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
             where
                 V: MapAccess<'de>,
             {
@@ -155,25 +197,50 @@ impl<'de> Deserialize<'de> for ChainId {
                             if id.is_some() {
                                 return Err(Error::duplicate_field("id"));
                             }
-                            id = Some(map.next_value()?);
+
+                            let next_value = map.next_value::<&str>()?;
+
+                            match parse_chain_id_string(next_value) {
+                                Ok((chain_name, rn)) => {
+                                    validate_prefix_length(chain_name, 1, 64).map_err(|_| {
+                                        Error::custom("invalid chain ID prefix length")
+                                    })?;
+
+                                    id = Some(chain_name);
+                                    revision_number = Some(rn);
+                                }
+                                _ => {
+                                    validate_identifier_length(next_value, 1, 64).map_err(
+                                        |_| Error::custom("invalid chain ID identifier length"),
+                                    )?;
+
+                                    id = Some(next_value);
+                                    revision_number = Some(0);
+                                }
+                            }
                         }
                         Field::RevisionNumber => {
-                            if revision_number.is_some() {
-                                return Err(Error::duplicate_field("revision_number"));
+                            let next_value = map.next_value::<&str>()?;
+                            let rev = u64::from_str(next_value).unwrap_or(0);
+
+                            if let Some(rn) = revision_number {
+                                if rn != rev {
+                                    return Err(Error::duplicate_field("revision_number"));
+                                }
+                            } else {
+                                revision_number = Some(rev);
                             }
-                            revision_number = Some(map.next_value()?);
                         }
                     }
                 }
 
                 let id = id.ok_or_else(|| Error::missing_field("id"))?;
-                let revision_number =
-                    revision_number.ok_or_else(|| Error::missing_field("revision_number"))?;
 
-                Ok(ChainId {
-                    id,
-                    revision_number,
-                })
+                let Ok(chain_id) = ChainId::from_str(id) else {
+                    return Err(Error::custom(format_args!("invalid chain ID `{}`", id)));
+                };
+
+                Ok(chain_id)
             }
         }
 
@@ -322,18 +389,18 @@ mod tests {
 
     #[cfg(feature = "serde")]
     #[rstest]
-    #[case(r#"{"id":"foo-42","revision_number":"0"}"#)]
+    #[case(r#"{"id":"foo","revision_number":"0"}"#)]
     #[case(r#"{"id":"foo-42","revision_number":"42"}"#)]
     fn test_valid_chain_id_json_deserialization(#[case] chain_id_json: &str) {
-        // serde_json::from_str::<ChainId>(chain_id_json).unwrap();
-        assert!(serde_json::to_string::<ChainId>(chain_id_json).is_ok());
+        assert!(serde_json::from_str::<ChainId>(chain_id_json).is_ok());
     }
 
     #[cfg(feature = "serde")]
     #[rstest]
+    #[case(r#"{"id":"foo-42","revision_number":"0"}"#)]
     #[case(r#"{"id":"foo-42","revision_number":"69"}"#)]
     fn test_invalid_chain_id_json_deserialization(#[case] chain_id_json: &str) {
-        assert!(serde_json::to_string::<ChainId>(chain_id_json).is_err())
+        assert!(serde_json::from_str::<ChainId>(chain_id_json).is_err())
     }
 
     #[test]
