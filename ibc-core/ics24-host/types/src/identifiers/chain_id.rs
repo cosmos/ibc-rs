@@ -206,7 +206,7 @@ impl<'de> Deserialize<'de> for ChainId {
                                         Error::custom("invalid chain ID prefix length")
                                     })?;
 
-                                    id = Some(chain_name);
+                                    id = Some(next_value);
                                     revision_number = Some(rn);
                                 }
                                 _ => {
@@ -224,7 +224,8 @@ impl<'de> Deserialize<'de> for ChainId {
                             let rev = u64::from_str(next_value).unwrap_or(0);
 
                             if let Some(rn) = revision_number {
-                                if rn != rev {
+                                if rev != 0 && rn != rev {
+                                    std::println!("rn, rev: {:?}, {:?}", rn, rev);
                                     return Err(Error::duplicate_field("revision_number"));
                                 }
                             } else {
@@ -388,16 +389,24 @@ mod tests {
 
     #[cfg(feature = "serde")]
     #[rstest]
-    #[case(r#"{"id":"foo","revision_number":"0"}"#)]
     #[case(r#"{"id":"foo-42","revision_number":"42"}"#)]
+    #[case(r#"{"id":"foo-42","revision_number":"0"}"#)]
     fn test_valid_chain_id_json_deserialization(#[case] chain_id_json: &str) {
-        assert!(serde_json::from_str::<ChainId>(chain_id_json).is_ok());
+        let chain_id = serde_json::from_str::<ChainId>(chain_id_json);
+        std::println!("{:?}", chain_id);
+        assert!(chain_id.is_ok());
+
+        let chain_id = chain_id.unwrap();
+
+        let (_id, rev_num) = chain_id.split_chain_id().unwrap();
+
+        assert_eq!(rev_num, chain_id.revision_number());
     }
 
     #[cfg(feature = "serde")]
     #[rstest]
-    #[case(r#"{"id":"foo-42","revision_number":"0"}"#)]
     #[case(r#"{"id":"foo-42","revision_number":"69"}"#)]
+    #[case(r#"{"id":"foo-0","revision_number":"69"}"#)]
     fn test_invalid_chain_id_json_deserialization(#[case] chain_id_json: &str) {
         assert!(serde_json::from_str::<ChainId>(chain_id_json).is_err())
     }
