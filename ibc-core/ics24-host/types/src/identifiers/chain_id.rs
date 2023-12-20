@@ -1,15 +1,14 @@
-use crate::error::IdentifierError;
-use crate::validate::{
-    validate_identifier_chars, validate_identifier_length, validate_prefix_length,
-};
-
 use core::fmt::{self, Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use ibc_primitives::prelude::*;
-
 #[cfg(feature = "serde")]
 use serde::de::{Deserialize, Deserializer, Error, MapAccess, Visitor};
+
+use crate::error::IdentifierError;
+use crate::validate::{
+    validate_identifier_chars, validate_identifier_length, validate_prefix_length,
+};
 
 /// Defines the domain type for chain identifiers.
 ///
