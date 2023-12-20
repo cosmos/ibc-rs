@@ -1,7 +1,9 @@
 use crate::error::IdentifierError;
-use crate::validate::{validate_identifier_length, validate_prefix_length};
+use crate::validate::{
+    validate_identifier_chars, validate_identifier_length, validate_prefix_length,
+};
 
-use core::fmt::{self, Debug, Display, Error as FmtError, Formatter};
+use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use ibc_primitives::prelude::*;
@@ -25,10 +27,7 @@ use serde::de::{Deserialize, Deserializer, Error, MapAccess, Visitor};
         scale_info::TypeInfo
     )
 )]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
+#[cfg_attr(feature = "borsh", derive(borsh::BorshSerialize))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -223,8 +222,10 @@ impl<'de> Deserialize<'de> for ChainId {
 
                             if let Some(rn) = revision_number {
                                 if rev != 0 && rn != rev {
-                                    std::println!("rn, rev: {:?}, {:?}", rn, rev);
-                                    return Err(Error::duplicate_field("revision_number"));
+                                    return Err(Error::custom(format_args!(
+                                        "chain ID revision numbers do not match; got `{}` and `{}`",
+                                        rn, rev,
+                                    )));
                                 }
                             } else {
                                 revision_number = Some(rev);
@@ -248,7 +249,7 @@ impl<'de> Deserialize<'de> for ChainId {
 
 #[cfg(feature = "borsh")]
 mod borsh_impls {
-    use borsh::maybestd::io::{self, Read};
+    use borsh::maybestd::io::{self, Error, ErrorKind, Read};
     use borsh::BorshDeserialize;
 
     use super::*;
@@ -262,6 +263,17 @@ mod borsh_impls {
     impl BorshDeserialize for ChainId {
         fn deserialize_reader<R: Read>(reader: &mut R) -> io::Result<Self> {
             let inner = InnerChainId::deserialize_reader(reader)?;
+
+            let Ok((_, rn)) = parse_chain_id_string(&inner.id) else {
+                return Err(Error::new(ErrorKind::Other, "failed to parse chain ID"));
+            };
+
+            if inner.revision_number != 0 && rn != inner.revision_number {
+                return Err(Error::new(
+                    ErrorKind::Other,
+                    "chain ID revision numbers do no match",
+                ));
+            }
 
             Ok(ChainId {
                 id: inner.id,
