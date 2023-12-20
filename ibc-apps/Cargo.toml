@@ -17,23 +17,28 @@ description  = """
 all-features = true
 
 [dependencies]
-ibc-app-transfer = { workspace = true }
+ibc-app-transfer     = { workspace = true }
+ibc-app-nft-transfer = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
     "ibc-app-transfer/std",
+    "ibc-app-nft-transfer/std",
 ]
 serde = [
     "ibc-app-transfer/serde",
+    "ibc-app-nft-transfer/serde",
 ]
 schema = [
     "ibc-app-transfer/schema",
+    "ibc-app-nft-transfer/schema",
     "serde",
     "std",
 ]
 borsh = [
     "ibc-app-transfer/borsh",
+    "ibc-app-nft-transfer/borsh",
 ]
 parity-scale-codec = [
     "ibc-app-transfer/parity-scale-codec",
