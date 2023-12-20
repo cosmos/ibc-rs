@@ -1,7 +1,7 @@
 //! Defines the representation of timestamps used in IBC.
 
 use core::fmt::{Display, Error as FmtError, Formatter};
-use core::hash::{Hash, Hasher};
+use core::hash::Hash;
 use core::num::ParseIntError;
 use core::ops::{Add, Sub};
 use core::str::FromStr;
@@ -24,7 +24,7 @@ pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 /// of timestamp.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(PartialEq, Eq, Copy, Clone, Debug, Default, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug, Default, PartialOrd, Ord, Hash)]
 pub struct Timestamp {
     // Note: The schema representation is the timestamp in nanoseconds (as we do with borsh).
     #[cfg_attr(feature = "schema", schemars(with = "u64"))]
@@ -82,16 +82,6 @@ impl scale_info::TypeInfo for Timestamp {
                 scale_info::build::Fields::named()
                     .field(|f| f.ty::<u64>().name("time").type_name("u64")),
             )
-    }
-}
-
-// TODO: derive when tendermint::Time supports it:
-// https://github.com/informalsystems/tendermint-rs/pull/1054
-#[allow(clippy::derived_hash_with_manual_eq)]
-impl Hash for Timestamp {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        let odt: Option<OffsetDateTime> = self.time.map(Into::into);
-        odt.hash(state);
     }
 }
 

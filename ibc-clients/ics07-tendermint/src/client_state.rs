@@ -199,7 +199,7 @@ impl ClientStateCommon for ClientState {
     ) -> Result<(), ClientError> {
         let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
         let merkle_proof =
-            MerkleProof::try_from(proof.clone()).map_err(ClientError::InvalidCommitmentProof)?;
+            MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
         merkle_proof
             .verify_membership(
@@ -221,7 +221,7 @@ impl ClientStateCommon for ClientState {
     ) -> Result<(), ClientError> {
         let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
         let merkle_proof =
-            MerkleProof::try_from(proof.clone()).map_err(ClientError::InvalidCommitmentProof)?;
+            MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
         merkle_proof
             .verify_non_membership(&self.0.proof_specs, root.clone().into(), merkle_path)
