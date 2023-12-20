@@ -42,4 +42,5 @@ borsh = [
 ]
 parity-scale-codec = [
     "ibc-app-transfer/parity-scale-codec",
+    "ibc-app-nft-transfer/parity-scale-codec",
 ]
