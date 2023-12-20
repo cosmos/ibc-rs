@@ -24,6 +24,8 @@ members = [
     "ibc-clients",
     "ibc-apps/ics20-transfer/types",
     "ibc-apps/ics20-transfer",
+    "ibc-apps/ics721-nft-transfer/types",
+    "ibc-apps/ics721-nft-transfer",
     "ibc-apps",
     "ibc-core/ics24-host/cosmos",
     "ibc-data-types",

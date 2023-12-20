@@ -18,3 +18,11 @@ pub mod transfer {
     #[doc(inline)]
     pub use ibc_app_transfer::*;
 }
+
+/// Re-exports the implementation of the IBC [Non-Fungible Token
+/// Transfer](https://github.com/cosmos/ibc/blob/main/spec/app/ics-721-nft-transfer/README.md)
+/// (ICS-721) application logic.
+pub mod nft_transfer {
+    #[doc(inline)]
+    pub use ibc_app_nft_transfer::*;
+}
