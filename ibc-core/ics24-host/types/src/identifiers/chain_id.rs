@@ -468,15 +468,12 @@ mod tests {
         assert_eq!(chain_id.as_str(), "chainA");
     }
 
-    #[test]
     #[cfg(feature = "borsh")]
-    fn test_borsh_deserialization_matches_from_str() {
+    #[rstest]
+    #[case(b"\x06\0\0\0foo-42\x45\0\0\0\0\0\0\0")]
+    fn test_invalid_chain_id_borsh_deserialization(#[case] chain_id_bytes: &[u8]) {
         use borsh::BorshDeserialize;
 
-        let byte_slice = b"\x06\0\0\0foo-42\x45\0\0\0\0\0\0\0";
-        let id = ChainId::try_from_slice(byte_slice).unwrap();
-        let other = ChainId::new(id.as_str()).unwrap();
-
-        assert_eq!(id, other);
+        assert!(ChainId::try_from_slice(chain_id_bytes).is_err())
     }
 }
