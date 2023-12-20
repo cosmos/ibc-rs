@@ -26,6 +26,11 @@ applications:
 - [ibc-app-transfer](./../ibc-apps/ics20-transfer)
 - [ibc-app-transfer-types](./../ibc-apps/ics20-transfer/types)
 
+### ICS-721: Non-Fungible Token Transfer Application
+
+- [ibc-app-nft-transfer](./../ibc-apps/ics721-nft-transfer)
+- [ibc-app-nft-transfer-types](./../ibc-apps/ics721-nft-transfer/types)
+
 ## Contributing
 
 IBC is specified in English in the [cosmos/ibc
