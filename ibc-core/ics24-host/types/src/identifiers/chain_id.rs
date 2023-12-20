@@ -1,7 +1,5 @@
 use crate::error::IdentifierError;
-use crate::validate::{
-    validate_identifier_chars, validate_identifier_length, validate_prefix_length,
-};
+use crate::validate::{validate_identifier_length, validate_prefix_length};
 
 use core::fmt::{self, Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
@@ -245,6 +243,31 @@ impl<'de> Deserialize<'de> for ChainId {
         }
 
         deserializer.deserialize_struct("ChainId", FIELDS, ChainIdVisitor)
+    }
+}
+
+#[cfg(feature = "borsh")]
+mod borsh_impls {
+    use borsh::maybestd::io::{self, Read};
+    use borsh::BorshDeserialize;
+
+    use super::*;
+
+    #[derive(BorshDeserialize)]
+    pub struct InnerChainId {
+        id: String,
+        revision_number: u64,
+    }
+
+    impl BorshDeserialize for ChainId {
+        fn deserialize_reader<R: Read>(reader: &mut R) -> io::Result<Self> {
+            let inner = InnerChainId::deserialize_reader(reader)?;
+
+            Ok(ChainId {
+                id: inner.id,
+                revision_number: inner.revision_number,
+            })
+        }
     }
 }
 
