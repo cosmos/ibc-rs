@@ -1,10 +1,9 @@
+#[cfg(feature = "serde")]
+use core::fmt;
 use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use ibc_primitives::prelude::*;
-
-#[cfg(feature = "serde")]
-use core::fmt;
 #[cfg(feature = "serde")]
 use serde::de::{Deserialize, Deserializer, Error, MapAccess, Visitor};
 
@@ -450,27 +449,24 @@ mod tests {
 
     #[cfg(feature = "borsh")]
     #[rstest]
-    #[case(r#"foo-42"#)]
-    #[case(r#"{"id":"foo","revision_number":"0"}"#)]
-    fn test_valid_chain_id_borsh_deserialization(#[case] chain_id_str: &str) {
-        use borsh::{BorshDeserialize, BorshSerialize};
-
-        let mut chain_id_bytes: Vec<u8> = Vec::new();
-        chain_id_str.serialize(&mut chain_id_bytes).unwrap();
-
-        let res = ChainId::try_from_slice(&chain_id_bytes);
-
-        std::println!("{:?}", res);
-
-        assert!(res.is_ok())
-    }
-
-    #[cfg(feature = "borsh")]
-    #[rstest]
     #[case(b"\x06\0\0\0foo-42\x45\0\0\0\0\0\0\0")]
     fn test_invalid_chain_id_borsh_deserialization(#[case] chain_id_bytes: &[u8]) {
         use borsh::BorshDeserialize;
 
         assert!(ChainId::try_from_slice(chain_id_bytes).is_err())
+    }
+
+    pub fn borsh_ser_de_roundtrip(chain_id: ChainId) {
+        use borsh::{BorshDeserialize, BorshSerialize};
+
+        let chain_id_bytes = chain_id.try_to_vec().unwrap();
+        let res = ChainId::try_from_slice(&chain_id_bytes).unwrap();
+        assert_eq!(chain_id, res);
+    }
+
+    #[test]
+    fn test_valid_borsh_ser_de_roundtrip() {
+        borsh_ser_de_roundtrip(ChainId::new("foo-42").unwrap());
+        borsh_ser_de_roundtrip(ChainId::new("foo").unwrap());
     }
 }
