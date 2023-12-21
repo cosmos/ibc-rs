@@ -30,7 +30,8 @@ impl ClientId {
     /// a prefix derived from the client type `ctype`, and a monotonically
     /// increasing `counter`; these are separated by a dash "-".
     ///
-    /// See also [`ClientType::get_client_id`] method.
+    /// See also [`ClientType::get_client_id`](super::ClientType::get_client_id)
+    /// method.
     ///
     /// # Example
     ///
