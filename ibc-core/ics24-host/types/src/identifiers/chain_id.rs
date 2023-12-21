@@ -2,9 +2,6 @@ use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use ibc_primitives::prelude::*;
-
-#[cfg(feature = "serde")]
-use core::fmt;
 #[cfg(feature = "serde")]
 use serde::de::{Deserialize, Deserializer, Error, MapAccess, Visitor};
 
@@ -124,6 +121,8 @@ impl<'de> Deserialize<'de> for ChainId {
     where
         D: Deserializer<'de>,
     {
+        use core::fmt;
+
         const FIELDS: &[&str] = &["id", "revision_number"];
 
         enum Field {
