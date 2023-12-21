@@ -1,7 +1,10 @@
-use core::fmt::{self, Debug, Display, Error as FmtError, Formatter};
+use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use ibc_primitives::prelude::*;
+
+#[cfg(feature = "serde")]
+use core::fmt;
 #[cfg(feature = "serde")]
 use serde::de::{Deserialize, Deserializer, Error, MapAccess, Visitor};
 
@@ -231,15 +234,24 @@ mod borsh_impls {
         fn deserialize_reader<R: Read>(reader: &mut R) -> io::Result<Self> {
             let (id, revision_number) = <(String, u64)>::deserialize_reader(reader)?;
 
-            let Ok((_, rn)) = parse_chain_id_string(&id) else {
-                return Err(Error::new(ErrorKind::Other, "failed to parse chain ID"));
-            };
+            // let Ok((_, rn)) = parse_chain_id_string(&id) else {
+            //     return Err(Error::new(ErrorKind::Other, "failed to parse chain ID"));
+            // };
 
-            if revision_number != 0 && rn != revision_number {
-                return Err(Error::new(
-                    ErrorKind::Other,
-                    "chain ID revision numbers do no match",
-                ));
+            match parse_chain_id_string(&id) {
+                Ok((_, rn)) => {
+                    if revision_number != 0 && rn != revision_number {
+                        return Err(Error::new(
+                            ErrorKind::Other,
+                            "chain ID revision numbers do not match",
+                        ));
+                    }
+                }
+                _ => {
+                    if revision_number != 0 {
+                        return Err(Error::new(ErrorKind::Other, "failed to parse chain ID"));
+                    }
+                }
             }
 
             Ok(ChainId {
@@ -438,11 +450,19 @@ mod tests {
 
     #[cfg(feature = "borsh")]
     #[rstest]
-    #[case(b"\x06\0\0\0foo-42\0\0\0\0\0\0\0\0")]
-    fn test_valid_chain_id_borsh_deserialization(#[case] chain_id_bytes: &[u8]) {
-        use borsh::BorshDeserialize;
+    #[case(r#"foo-42"#)]
+    #[case(r#"{"id":"foo","revision_number":"0"}"#)]
+    fn test_valid_chain_id_borsh_deserialization(#[case] chain_id_str: &str) {
+        use borsh::{BorshDeserialize, BorshSerialize};
 
-        assert!(ChainId::try_from_slice(chain_id_bytes).is_ok())
+        let mut chain_id_bytes: Vec<u8> = Vec::new();
+        chain_id_str.serialize(&mut chain_id_bytes).unwrap();
+
+        let res = ChainId::try_from_slice(&chain_id_bytes);
+
+        std::println!("{:?}", res);
+
+        assert!(res.is_ok())
     }
 
     #[cfg(feature = "borsh")]
