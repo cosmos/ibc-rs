@@ -51,8 +51,8 @@ impl ClientId {
     pub(super) fn format(client_type: &str, counter: u64) -> Self {
         let client_id = format!("{client_type}-{counter}");
         if cfg!(debug_assertions) {
-            validate_client_type(client_type).unwrap();
-            validate_client_identifier(&client_id).unwrap();
+            validate_client_type(client_type).expect("valid client type");
+            validate_client_identifier(&client_id).expect("valid client id");
         }
         Self(client_id)
     }
