@@ -401,7 +401,6 @@ mod tests {
     #[case(r#"{"id":"foo-42","revision_number":"0"}"#)]
     fn test_valid_chain_id_json_deserialization(#[case] chain_id_json: &str) {
         let chain_id = serde_json::from_str::<ChainId>(chain_id_json);
-        std::println!("{:?}", chain_id);
         assert!(chain_id.is_ok());
 
         let chain_id = chain_id.unwrap();
