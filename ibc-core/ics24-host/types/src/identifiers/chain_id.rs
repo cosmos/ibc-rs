@@ -227,21 +227,15 @@ mod borsh_impls {
 
     use super::*;
 
-    #[derive(BorshDeserialize)]
-    pub struct InnerChainId {
-        id: String,
-        revision_number: u64,
-    }
-
     impl BorshDeserialize for ChainId {
         fn deserialize_reader<R: Read>(reader: &mut R) -> io::Result<Self> {
-            let inner = InnerChainId::deserialize_reader(reader)?;
+            let (id, revision_number) = <(String, u64)>::deserialize_reader(reader)?;
 
-            let Ok((_, rn)) = parse_chain_id_string(&inner.id) else {
+            let Ok((_, rn)) = parse_chain_id_string(&id) else {
                 return Err(Error::new(ErrorKind::Other, "failed to parse chain ID"));
             };
 
-            if inner.revision_number != 0 && rn != inner.revision_number {
+            if revision_number != 0 && rn != revision_number {
                 return Err(Error::new(
                     ErrorKind::Other,
                     "chain ID revision numbers do no match",
@@ -249,8 +243,8 @@ mod borsh_impls {
             }
 
             Ok(ChainId {
-                id: inner.id,
-                revision_number: inner.revision_number,
+                id,
+                revision_number,
             })
         }
     }
@@ -439,6 +433,15 @@ mod tests {
         assert!(chain_id.increment_revision_number().is_err());
         assert_eq!(chain_id.revision_number(), 0);
         assert_eq!(chain_id.as_str(), "chainA");
+    }
+
+    #[cfg(feature = "borsh")]
+    #[rstest]
+    #[case(b"\x06\0\0\0foo-42\x45\0\0\0\0\0\0\0")]
+    fn test_valid_chain_id_borsh_deserialization(#[case] chain_id_bytes: &[u8]) {
+        use borsh::BorshDeserialize;
+
+        assert!(ChainId::try_from_slice(chain_id_bytes).is_ok())
     }
 
     #[cfg(feature = "borsh")]
