@@ -114,8 +114,8 @@ mod tests {
         let client_on_a_for_b_height = Height::new(1, 20).unwrap(); // Should be smaller than `chain_b_start_height`
         let num_iterations = 4;
 
-        let client_on_a_for_b = ClientId::new(tm_client_type(), 0).unwrap();
-        let client_on_b_for_a = ClientId::new(mock_client_type(), 0).unwrap();
+        let client_on_a_for_b = tm_client_type().get_client_id(0);
+        let client_on_b_for_a = mock_client_type().get_client_id(0);
 
         let chain_id_a = ChainId::new("mockgaiaA-1").unwrap();
         let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();

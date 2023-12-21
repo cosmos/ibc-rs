@@ -8,7 +8,7 @@ use ibc::core::connection::types::{
 use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
-use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
+use ibc::core::host::types::identifiers::ConnectionId;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_close_init;
@@ -19,7 +19,7 @@ use ibc_testkit::testapp::ibc::core::types::MockContext;
 
 #[test]
 fn test_chan_close_init_validate() {
-    let client_id = ClientId::new(mock_client_type(), 24).unwrap();
+    let client_id = mock_client_type().get_client_id(24);
     let conn_id = ConnectionId::new(2);
 
     let conn_end = ConnectionEnd::new(
@@ -74,7 +74,7 @@ fn test_chan_close_init_validate() {
 
 #[test]
 fn test_chan_close_init_execute() {
-    let client_id = ClientId::new(mock_client_type(), 24).unwrap();
+    let client_id = mock_client_type().get_client_id(24);
     let conn_id = ConnectionId::new(2);
 
     let conn_end = ConnectionEnd::new(

@@ -6,7 +6,7 @@ use ibc::core::connection::types::{ConnectionEnd, State as ConnectionState};
 use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
-use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
+use ibc::core::host::types::identifiers::ConnectionId;
 use ibc::core::host::ValidationContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_init;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_init;
@@ -33,7 +33,7 @@ fn fixture() -> Fixture {
 
     let msg_conn_init = dummy_msg_conn_open_init();
 
-    let client_id_on_a = ClientId::new(tm_client_type(), 0).unwrap();
+    let client_id_on_a = tm_client_type().get_client_id(0);
     let client_height = Height::new(0, 10).unwrap();
 
     let conn_end_on_a = ConnectionEnd::new(

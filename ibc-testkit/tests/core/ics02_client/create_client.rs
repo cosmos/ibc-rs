@@ -6,7 +6,6 @@ use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient};
 use ibc::core::client::types::Height;
 use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::msgs::MsgEnvelope;
-use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::ValidationContext;
 use ibc_testkit::fixtures::clients::tendermint::{
     dummy_tendermint_header, dummy_tm_client_state_from_header,
@@ -37,11 +36,7 @@ fn test_create_client_ok() {
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
     let client_type = mock_client_type();
-
-    let client_id = {
-        let id_counter = ctx.client_counter().unwrap();
-        ClientId::new(client_type.clone(), id_counter).unwrap()
-    };
+    let client_id = client_type.get_client_id(ctx.client_counter().unwrap());
 
     let res = validate(&ctx, &router, msg_envelope.clone());
 
@@ -69,11 +64,7 @@ fn test_tm_create_client_ok() {
     let tm_client_state = dummy_tm_client_state_from_header(tm_header.clone()).into();
 
     let client_type = tm_client_type();
-
-    let client_id = {
-        let id_counter = ctx.client_counter().unwrap();
-        ClientId::new(client_type.clone(), id_counter).unwrap()
-    };
+    let client_id = client_type.get_client_id(ctx.client_counter().unwrap());
 
     let msg = MsgCreateClient::new(
         tm_client_state,

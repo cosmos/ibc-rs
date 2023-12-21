@@ -6,7 +6,6 @@ use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
-use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::downcast;
@@ -32,7 +31,7 @@ enum Msg {
 }
 
 fn msg_upgrade_client_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgUpgradeClient> {
-    let client_id = ClientId::new(mock_client_type(), 0).unwrap();
+    let client_id = mock_client_type().get_client_id(0);
 
     let ctx_default = MockContext::default();
     let ctx_with_client = ctx_default
