@@ -1,4 +1,4 @@
-- Introduce `ClientType::get_client_id` which avoids unnecessary validaiton.
+- `[ibc-core-host-types]` Introduce `ClientType::get_client_id` which avoids unnecessary validaiton.
   ([#1014](https://github.com/cosmos/ibc-rs/issues/1014))
-- Optimise `ClientId::new` to avoid unnecessary validaiton and temporary
+- `[ibc-core-host-types]` Optimise `ClientId::new` to avoid unnecessary validaiton and temporary
   string allocation. ([#1014](https://github.com/cosmos/ibc-rs/issues/1014))
