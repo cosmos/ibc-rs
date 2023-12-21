@@ -1,5 +1,3 @@
-#[cfg(feature = "serde")]
-use core::fmt;
 use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
@@ -123,8 +121,6 @@ impl<'de> Deserialize<'de> for ChainId {
     where
         D: Deserializer<'de>,
     {
-        use core::fmt;
-
         const FIELDS: &[&str] = &["id", "revision_number"];
 
         enum Field {
@@ -142,7 +138,7 @@ impl<'de> Deserialize<'de> for ChainId {
                 impl<'de> Visitor<'de> for FieldVisitor {
                     type Value = Field;
 
-                    fn expecting(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+                    fn expecting(&self, formatter: &mut Formatter<'_>) -> core::fmt::Result {
                         write!(formatter, "expected one of: {:?}", &FIELDS)
                     }
 
@@ -167,7 +163,7 @@ impl<'de> Deserialize<'de> for ChainId {
         impl<'de> Visitor<'de> for ChainIdVisitor {
             type Value = ChainId;
 
-            fn expecting(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+            fn expecting(&self, formatter: &mut Formatter<'_>) -> core::fmt::Result {
                 formatter.write_str("struct ChainId")
             }
 
