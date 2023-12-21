@@ -1,0 +1,1 @@
+- `[ibc-core-host-types]` Implement custom JSON and Borsh deserialization for `ChainId` ([#996](https://github.com/cosmos/ibc-rs/pull/1013))
