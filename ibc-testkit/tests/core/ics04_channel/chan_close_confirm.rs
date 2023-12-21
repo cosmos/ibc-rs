@@ -19,7 +19,7 @@ use ibc_testkit::testapp::ibc::core::types::MockContext;
 
 #[test]
 fn test_chan_close_confirm_validate() {
-    let client_id = mock_client_type().get_client_id(24);
+    let client_id = mock_client_type().build_client_id(24);
     let conn_id = ConnectionId::new(2);
     let default_context = MockContext::default();
     let client_consensus_state_height = default_context.host_height().unwrap();
@@ -73,7 +73,7 @@ fn test_chan_close_confirm_validate() {
 
 #[test]
 fn test_chan_close_confirm_execute() {
-    let client_id = mock_client_type().get_client_id(24);
+    let client_id = mock_client_type().build_client_id(24);
     let conn_id = ConnectionId::new(2);
     let default_context = MockContext::default();
     let client_consensus_state_height = default_context.host_height().unwrap();

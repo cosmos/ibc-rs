@@ -31,7 +31,7 @@ enum Msg {
 }
 
 fn msg_upgrade_client_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgUpgradeClient> {
-    let client_id = mock_client_type().get_client_id(0);
+    let client_id = mock_client_type().build_client_id(0);
 
     let ctx_default = MockContext::default();
     let ctx_with_client = ctx_default

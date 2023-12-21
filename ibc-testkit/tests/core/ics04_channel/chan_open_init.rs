@@ -33,7 +33,7 @@ fn fixture() -> Fixture {
 
     let msg_conn_init = dummy_msg_conn_open_init();
 
-    let client_id_on_a = tm_client_type().get_client_id(0);
+    let client_id_on_a = tm_client_type().build_client_id(0);
     let client_height = Height::new(0, 10).unwrap();
 
     let conn_end_on_a = ConnectionEnd::new(

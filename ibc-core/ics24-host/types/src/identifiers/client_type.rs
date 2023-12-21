@@ -43,10 +43,10 @@ impl ClientType {
     /// # use ibc_core_host_types::identifiers::ClientType;
     /// # use std::str::FromStr;
     /// let client_type = ClientType::from_str("07-tendermint").unwrap();
-    /// let client_id = client_type.get_client_id(14);
+    /// let client_id = client_type.build_client_id(14);
     /// assert_eq!(client_id.as_str(), "07-tendermint-14");
     /// ```
-    pub fn get_client_id(&self, counter: u64) -> ClientId {
+    pub fn build_client_id(&self, counter: u64) -> ClientId {
         ClientId::format(self.as_str(), counter)
     }
 

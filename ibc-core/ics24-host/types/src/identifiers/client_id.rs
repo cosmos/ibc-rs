@@ -30,7 +30,7 @@ impl ClientId {
     /// a prefix derived from the client type `ctype`, and a monotonically
     /// increasing `counter`; these are separated by a dash "-".
     ///
-    /// See also [`ClientType::get_client_id`](super::ClientType::get_client_id)
+    /// See also [`ClientType::build_client_id`](super::ClientType::build_client_id)
     /// method.
     ///
     /// # Example
@@ -40,7 +40,7 @@ impl ClientId {
     /// # use ibc_core_host_types::identifiers::ClientType;
     /// # use std::str::FromStr;
     /// let client_type = ClientType::from_str("07-tendermint").unwrap();
-    /// let client_id = &client_type.get_client_id(0);
+    /// let client_id = &client_type.build_client_id(0);
     /// assert_eq!(client_id.as_str(), "07-tendermint-0");
     /// ```
     pub fn new(client_type: &str, counter: u64) -> Result<Self, IdentifierError> {

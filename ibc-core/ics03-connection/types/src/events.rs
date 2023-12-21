@@ -324,9 +324,9 @@ mod tests {
         let client_type = ClientType::from_str("07-tendermint")
             .expect("never fails because it's a valid client type");
         let conn_id_on_a = ConnectionId::default();
-        let client_id_on_a = client_type.get_client_id(0);
+        let client_id_on_a = client_type.build_client_id(0);
         let conn_id_on_b = ConnectionId::new(1);
-        let client_id_on_b = client_type.get_client_id(1);
+        let client_id_on_b = client_type.build_client_id(1);
         let expected_keys = vec![
             "connection_id",
             "client_id",

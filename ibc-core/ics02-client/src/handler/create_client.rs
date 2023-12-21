@@ -28,7 +28,7 @@ where
 
     client_state.verify_consensus_state(consensus_state)?;
 
-    let client_id = client_state.client_type().get_client_id(id_counter);
+    let client_id = client_state.client_type().build_client_id(id_counter);
 
     if ctx.client_state(&client_id).is_ok() {
         return Err(ClientError::ClientStateAlreadyExists { client_id }.into());
@@ -51,7 +51,7 @@ where
     let id_counter = ctx.client_counter()?;
     let client_state = ctx.decode_client_state(client_state)?;
     let client_type = client_state.client_type();
-    let client_id = client_type.get_client_id(id_counter);
+    let client_id = client_type.build_client_id(id_counter);
 
     client_state.initialise(
         ctx.get_client_execution_context(),

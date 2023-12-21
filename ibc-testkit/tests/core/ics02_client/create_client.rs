@@ -36,7 +36,7 @@ fn test_create_client_ok() {
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
     let client_type = mock_client_type();
-    let client_id = client_type.get_client_id(ctx.client_counter().unwrap());
+    let client_id = client_type.build_client_id(ctx.client_counter().unwrap());
 
     let res = validate(&ctx, &router, msg_envelope.clone());
 
@@ -64,7 +64,7 @@ fn test_tm_create_client_ok() {
     let tm_client_state = dummy_tm_client_state_from_header(tm_header.clone()).into();
 
     let client_type = tm_client_type();
-    let client_id = client_type.get_client_id(ctx.client_counter().unwrap());
+    let client_id = client_type.build_client_id(ctx.client_counter().unwrap());
 
     let msg = MsgCreateClient::new(
         tm_client_state,
