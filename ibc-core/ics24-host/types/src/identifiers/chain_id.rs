@@ -148,7 +148,7 @@ impl<'de> Deserialize<'de> for ChainId {
                     {
                         match value {
                             "id" => Ok(Field::Id),
-                            "revisionnumber" | "revision_number" => Ok(Field::RevisionNumber),
+                            "revisionNumber" | "revision_number" => Ok(Field::RevisionNumber),
                             _ => Err(Error::unknown_field(value, FIELDS)),
                         }
                     }
@@ -210,7 +210,7 @@ impl<'de> Deserialize<'de> for ChainId {
                 let id = id.ok_or_else(|| Error::missing_field("id"))?;
 
                 Ok(ChainId {
-                    id: id.into(),
+                    id,
                     revision_number: revision_number.unwrap_or(0),
                 })
             }
@@ -393,6 +393,7 @@ mod tests {
     #[rstest]
     #[case(r#"{"id":"foo-42","revision_number":"42"}"#)]
     #[case(r#"{"id":"foo-42","revision_number":"0"}"#)]
+    #[case(r#"{"id":"foo-bar-42","revision_number":"0"}"#)]
     fn test_valid_chain_id_json_deserialization(#[case] chain_id_json: &str) {
         let chain_id = serde_json::from_str::<ChainId>(chain_id_json);
         assert!(chain_id.is_ok());
@@ -437,7 +438,7 @@ mod tests {
 
     #[cfg(feature = "borsh")]
     #[rstest]
-    #[case(b"\x06\0\0\0foo-42\x45\0\0\0\0\0\0\0")]
+    #[case(b"\x06\0\0\0foo-42\0\0\0\0\0\0\0\0")]
     fn test_valid_chain_id_borsh_deserialization(#[case] chain_id_bytes: &[u8]) {
         use borsh::BorshDeserialize;
 
