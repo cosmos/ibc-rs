@@ -1,3 +1,5 @@
+#[cfg(feature = "serde")]
+use core::fmt;
 use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
@@ -391,9 +393,30 @@ mod tests {
     #[case(" -")]
     #[case("   -1")]
     #[case("/chainA-1")]
-    #[case(r#"{"id":"foo-42","revision_number":"69"}"#)]
     fn test_invalid_chain_id_from_str(#[case] chain_id_str: &str) {
         assert!(ChainId::new(chain_id_str).is_err());
+    }
+
+    #[test]
+    fn test_inc_revision_number() {
+        let mut chain_id = ChainId::new("chainA-1").unwrap();
+
+        assert!(chain_id.increment_revision_number().is_ok());
+        assert_eq!(chain_id.revision_number(), 2);
+        assert_eq!(chain_id.as_str(), "chainA-2");
+
+        assert!(chain_id.increment_revision_number().is_ok());
+        assert_eq!(chain_id.revision_number(), 3);
+        assert_eq!(chain_id.as_str(), "chainA-3");
+    }
+
+    #[test]
+    fn test_failed_inc_revision_number() {
+        let mut chain_id = ChainId::new("chainA").unwrap();
+
+        assert!(chain_id.increment_revision_number().is_err());
+        assert_eq!(chain_id.revision_number(), 0);
+        assert_eq!(chain_id.as_str(), "chainA");
     }
 
     #[cfg(feature = "serde")]
@@ -419,28 +442,6 @@ mod tests {
     #[case(r#"{"id":"/foo-42","revision_number":"0"}"#)]
     fn test_invalid_chain_id_json_deserialization(#[case] chain_id_json: &str) {
         assert!(serde_json::from_str::<ChainId>(chain_id_json).is_err())
-    }
-
-    #[test]
-    fn test_inc_revision_number() {
-        let mut chain_id = ChainId::new("chainA-1").unwrap();
-
-        assert!(chain_id.increment_revision_number().is_ok());
-        assert_eq!(chain_id.revision_number(), 2);
-        assert_eq!(chain_id.as_str(), "chainA-2");
-
-        assert!(chain_id.increment_revision_number().is_ok());
-        assert_eq!(chain_id.revision_number(), 3);
-        assert_eq!(chain_id.as_str(), "chainA-3");
-    }
-
-    #[test]
-    fn test_failed_inc_revision_number() {
-        let mut chain_id = ChainId::new("chainA").unwrap();
-
-        assert!(chain_id.increment_revision_number().is_err());
-        assert_eq!(chain_id.revision_number(), 0);
-        assert_eq!(chain_id.as_str(), "chainA");
     }
 
     #[cfg(feature = "borsh")]
