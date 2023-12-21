@@ -1,9 +1,10 @@
-#[cfg(feature = "serde")]
-use core::fmt;
 use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use ibc_primitives::prelude::*;
+
+#[cfg(feature = "serde")]
+use core::fmt;
 #[cfg(feature = "serde")]
 use serde::de::{Deserialize, Deserializer, Error, MapAccess, Visitor};
 
@@ -233,10 +234,6 @@ mod borsh_impls {
         fn deserialize_reader<R: Read>(reader: &mut R) -> io::Result<Self> {
             let (id, revision_number) = <(String, u64)>::deserialize_reader(reader)?;
 
-            // let Ok((_, rn)) = parse_chain_id_string(&id) else {
-            //     return Err(Error::new(ErrorKind::Other, "failed to parse chain ID"));
-            // };
-
             match parse_chain_id_string(&id) {
                 Ok((_, rn)) => {
                     if revision_number != 0 && rn != revision_number {
@@ -456,7 +453,8 @@ mod tests {
         assert!(ChainId::try_from_slice(chain_id_bytes).is_err())
     }
 
-    pub fn borsh_ser_de_roundtrip(chain_id: ChainId) {
+    #[cfg(feature = "borsh")]
+    fn borsh_ser_de_roundtrip(chain_id: ChainId) {
         use borsh::{BorshDeserialize, BorshSerialize};
 
         let chain_id_bytes = chain_id.try_to_vec().unwrap();
@@ -464,6 +462,7 @@ mod tests {
         assert_eq!(chain_id, res);
     }
 
+    #[cfg(feature = "borsh")]
     #[test]
     fn test_valid_borsh_ser_de_roundtrip() {
         borsh_ser_de_roundtrip(ChainId::new("foo-42").unwrap());
