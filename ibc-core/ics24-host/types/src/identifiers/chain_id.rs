@@ -167,19 +167,6 @@ impl<'de> Deserialize<'de> for ChainId {
                 formatter.write_str("struct ChainId")
             }
 
-            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-            where
-                E: Error,
-            {
-                match ChainId::from_str(v) {
-                    Ok(chain_id) => Ok(chain_id),
-                    Err(e) => Err(Error::custom(format_args!(
-                        "invalid chain ID `{}`: `{}`",
-                        v, e
-                    ))),
-                }
-            }
-
             fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
             where
                 V: MapAccess<'de>,
@@ -196,24 +183,11 @@ impl<'de> Deserialize<'de> for ChainId {
 
                             let next_value = map.next_value::<&str>()?;
 
-                            match parse_chain_id_string(next_value) {
-                                Ok((chain_name, rn)) => {
-                                    validate_prefix_length(chain_name, 1, 64).map_err(|_| {
-                                        Error::custom("invalid chain ID prefix length")
-                                    })?;
+                            let chain_id = ChainId::from_str(next_value)
+                                .map_err(|_| Error::custom("failed to parse ChainId `id` field"))?;
 
-                                    id = Some(next_value);
-                                    revision_number = Some(rn);
-                                }
-                                _ => {
-                                    validate_identifier_length(next_value, 1, 64).map_err(
-                                        |_| Error::custom("invalid chain ID identifier length"),
-                                    )?;
-
-                                    id = Some(next_value);
-                                    revision_number = Some(0);
-                                }
-                            }
+                            id = Some(chain_id.id);
+                            revision_number = Some(chain_id.revision_number);
                         }
                         Field::RevisionNumber => {
                             let next_value = map.next_value::<&str>()?;
@@ -441,6 +415,7 @@ mod tests {
     #[rstest]
     #[case(r#"{"id":"foo-42","revision_number":"69"}"#)]
     #[case(r#"{"id":"foo-0","revision_number":"69"}"#)]
+    #[case(r#"{"id":"/foo-42","revision_number":"0"}"#)]
     fn test_invalid_chain_id_json_deserialization(#[case] chain_id_json: &str) {
         assert!(serde_json::from_str::<ChainId>(chain_id_json).is_err())
     }
