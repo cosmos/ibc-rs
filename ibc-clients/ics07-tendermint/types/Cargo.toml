@@ -20,9 +20,7 @@ all-features = true
 [dependencies]
 # external dependencies
 borsh      = { workspace = true, optional = true }
-bytes      = { workspace = true }
 displaydoc = { workspace = true }
-prost      = { workspace = true }
 serde      = { workspace = true, optional = true }
 
 # ibc dependencies
@@ -48,9 +46,7 @@ tendermint-rpc = { workspace = true }
 [features]
 default = ["std"]
 std = [
-    "bytes/std",
     "displaydoc/std",
-    "prost/std",
     "serde/std",
     "serde_json/std",
     "ibc-core-client-types/std",

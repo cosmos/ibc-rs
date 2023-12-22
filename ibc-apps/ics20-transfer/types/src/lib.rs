@@ -40,9 +40,10 @@ pub(crate) mod serializers;
 pub mod error;
 mod memo;
 pub use memo::*;
+/// Re-exports `U256` from `primitive-types` crate for convenience.
+pub use primitive_types::U256;
 
-/// Re-exports ICS-20 token transfer proto types from the `ibc-proto` crate
-/// for added convenience
+/// Re-exports ICS-20 token transfer proto types from the `ibc-proto` crate.
 pub mod proto {
     pub use ibc_proto::ibc::apps::transfer;
 }

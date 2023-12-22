@@ -1,3 +1,3 @@
-mod msg;
+mod proto;
 
-pub use msg::*;
+pub use proto::*;

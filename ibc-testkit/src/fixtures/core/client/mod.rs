@@ -18,8 +18,8 @@ mod tests {
     use ibc::core::client::types::Height;
     use ibc::core::host::types::identifiers::*;
     use ibc::primitives::prelude::*;
+    use ibc::primitives::ToVec;
     use ibc_proto::google::protobuf::Any;
-    use prost::Message;
     use tendermint::abci::Event as AbciEvent;
 
     use crate::fixtures::clients::mock::dummy_new_mock_header;
@@ -35,7 +35,7 @@ mod tests {
 
         let client_type = ClientType::from_str("07-tendermint")
             .expect("never fails because it's a valid client type");
-        let client_id = ClientId::new(client_type.clone(), 0).unwrap();
+        let client_id = client_type.build_client_id(0);
         let consensus_height = Height::new(0, 5).unwrap();
         let consensus_heights = vec![Height::new(0, 5).unwrap(), Height::new(0, 7).unwrap()];
         let header: Any = dummy_new_mock_header(5).into();
@@ -70,7 +70,7 @@ mod tests {
                     client_type.clone(),
                     consensus_height,
                     consensus_heights,
-                    header.encode_to_vec(),
+                    header.to_vec(),
                 )
                 .into(),
                 expected_keys: expected_keys.clone(),

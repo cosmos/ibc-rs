@@ -37,7 +37,7 @@ fn fixture() -> Fixture {
 
     let router = MockRouter::new_with_transfer();
 
-    let client_id_on_b = ClientId::new(mock_client_type(), 45).unwrap();
+    let client_id_on_b = mock_client_type().build_client_id(45);
     let conn_id_on_b = ConnectionId::new(2);
     let conn_end_on_b = ConnectionEnd::new(
         ConnectionState::Open,

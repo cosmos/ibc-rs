@@ -1,7 +1,6 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenTry`.;
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
-use ibc_core_client::types::error::ClientError;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenTry;
 use ibc_core_connection_types::msgs::MsgConnectionOpenTry;
@@ -15,7 +14,7 @@ use ibc_core_host::types::path::{
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
-use prost::Message;
+use ibc_primitives::ToVec;
 
 pub fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
@@ -55,13 +54,9 @@ where
     {
         let client_state_of_a_on_b = ctx_b.client_state(vars.conn_end_on_b.client_id())?;
 
-        {
-            let status = client_state_of_a_on_b
-                .status(ctx_b.get_client_validation_context(), &msg.client_id_on_b)?;
-            if !status.is_active() {
-                return Err(ClientError::ClientNotActive { status }.into());
-            }
-        }
+        client_state_of_a_on_b
+            .status(ctx_b.get_client_validation_context(), &msg.client_id_on_b)?
+            .verify_is_active()?;
         client_state_of_a_on_b.validate_proof_height(msg.proofs_height_on_a)?;
 
         let client_cons_state_path_on_b = ClientConsensusStatePath::new(
@@ -101,7 +96,7 @@ where
                 &msg.proof_client_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
                 Path::ClientState(ClientStatePath::new(client_id_on_a)),
-                msg.client_state_of_b_on_a.encode_to_vec(),
+                msg.client_state_of_b_on_a.to_vec(),
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
                 client_id: msg.client_id_on_b.clone(),

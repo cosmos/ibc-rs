@@ -22,7 +22,6 @@ all-features = true
 borsh           = { workspace = true, optional = true}
 derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
-prost           = { workspace = true }
 serde           = { workspace = true, optional = true }
 sha2            = { workspace = true }
 subtle-encoding = { workspace = true }
@@ -50,7 +49,6 @@ scale-info         = { workspace = true, optional = true }
 default = ["std"]
 std = [
     "displaydoc/std",
-    "prost/std",
     "serde/std",
     "sha2/std",
     "subtle-encoding/std",

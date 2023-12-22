@@ -26,14 +26,13 @@ use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use ibc_core_commitment_types::merkle::{apply_prefix, MerkleProof};
-use ibc_core_commitment_types::proto::v1::MerkleProof as RawMerkleProof;
 use ibc_core_host::types::identifiers::{ClientId, ClientType};
 use ibc_core_host::types::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
 use ibc_core_host::ExecutionContext;
 use ibc_primitives::prelude::*;
-use prost::Message;
+use ibc_primitives::ToVec;
 
 use super::consensus_state::ConsensusState as TmConsensusState;
 use crate::context::{
@@ -169,24 +168,14 @@ impl ClientStateCommon for ClientState {
 
         let last_height = self.latest_height().revision_height();
 
-        let mut client_state_value = Vec::new();
-        upgraded_client_state
-            .encode(&mut client_state_value)
-            .map_err(ClientError::Encode)?;
-
         // Verify the proof of the upgraded client state
         self.verify_membership(
             &upgrade_path_prefix,
             &proof_upgrade_client,
             root,
             Path::UpgradeClient(UpgradeClientPath::UpgradedClientState(last_height)),
-            client_state_value,
+            upgraded_client_state.to_vec(),
         )?;
-
-        let mut cons_state_value = Vec::new();
-        upgraded_consensus_state
-            .encode(&mut cons_state_value)
-            .map_err(ClientError::Encode)?;
 
         // Verify the proof of the upgraded consensus state
         self.verify_membership(
@@ -194,7 +183,7 @@ impl ClientStateCommon for ClientState {
             &proof_upgrade_consensus_state,
             root,
             Path::UpgradeClient(UpgradeClientPath::UpgradedClientConsensusState(last_height)),
-            cons_state_value,
+            upgraded_consensus_state.to_vec(),
         )?;
 
         Ok(())
@@ -209,9 +198,8 @@ impl ClientStateCommon for ClientState {
         value: Vec<u8>,
     ) -> Result<(), ClientError> {
         let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
-        let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
-            .map_err(ClientError::InvalidCommitmentProof)?
-            .into();
+        let merkle_proof =
+            MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
         merkle_proof
             .verify_membership(
@@ -232,9 +220,8 @@ impl ClientStateCommon for ClientState {
         path: Path,
     ) -> Result<(), ClientError> {
         let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
-        let merkle_proof: MerkleProof = RawMerkleProof::try_from(proof.clone())
-            .map_err(ClientError::InvalidCommitmentProof)?
-            .into();
+        let merkle_proof =
+            MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
         merkle_proof
             .verify_non_membership(&self.0.proof_specs, root.clone().into(), merkle_path)

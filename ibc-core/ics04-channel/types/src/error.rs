@@ -164,8 +164,6 @@ pub enum PacketError {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// Cannot encode sequence `{sequence}`
-    CannotEncodeSequence { sequence: Sequence },
     /// other error: `{description}`
     Other { description: String },
 }

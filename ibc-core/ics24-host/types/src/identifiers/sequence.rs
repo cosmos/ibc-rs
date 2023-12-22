@@ -34,13 +34,17 @@ impl core::str::FromStr for Sequence {
 }
 
 impl Sequence {
+    /// Gives the sequence number.
     pub fn value(&self) -> u64 {
         self.0
     }
+
+    /// Returns `true` if the sequence number is zero.
     pub fn is_zero(&self) -> bool {
         self.0 == 0
     }
 
+    /// Increments the sequence number by one.
     pub fn increment(&self) -> Sequence {
         Sequence(self.0 + 1)
     }

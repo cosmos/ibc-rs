@@ -22,10 +22,10 @@ all-features = true
 borsh       = { workspace = true, optional = true }
 derive_more = { workspace = true }
 displaydoc  = { workspace = true }
-prost       = { workspace = true }
+prost       = { version = "0.12", default-features = false }
 schemars    = { workspace = true, optional = true }
 serde       = { workspace = true, optional = true }
-time        = { workspace = true }
+time        = { version = ">=0.3.0, <0.3.31", default-features = false }
 
 # ibc dependencies
 ibc-proto = { workspace = true }

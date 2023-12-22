@@ -4,7 +4,9 @@ use core::convert::TryFrom;
 use core::fmt;
 
 use ibc_primitives::prelude::*;
+use ibc_primitives::ToVec;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
+use ibc_proto::Protobuf;
 use subtle_encoding::{Encoding, Hex};
 
 use super::merkle::MerkleProof;
@@ -69,7 +71,8 @@ impl From<Vec<u8>> for CommitmentRoot {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, derive_more::AsRef, derive_more::Into)]
+#[as_ref(forward)]
 pub struct CommitmentProofBytes {
     #[cfg_attr(
         feature = "serde",
@@ -99,20 +102,11 @@ impl TryFrom<Vec<u8>> for CommitmentProofBytes {
     }
 }
 
-impl From<CommitmentProofBytes> for Vec<u8> {
-    fn from(p: CommitmentProofBytes) -> Vec<u8> {
-        p.bytes
-    }
-}
-
 impl TryFrom<RawMerkleProof> for CommitmentProofBytes {
     type Error = CommitmentError;
 
     fn try_from(proof: RawMerkleProof) -> Result<Self, Self::Error> {
-        let mut buf = Vec::new();
-        prost::Message::encode(&proof, &mut buf)
-            .map_err(|e| Self::Error::EncodingFailure(e.to_string()))?;
-        buf.try_into()
+        proof.to_vec().try_into()
     }
 }
 
@@ -124,14 +118,12 @@ impl TryFrom<MerkleProof> for CommitmentProofBytes {
     }
 }
 
-impl TryFrom<CommitmentProofBytes> for RawMerkleProof {
+impl<'a> TryFrom<&'a CommitmentProofBytes> for MerkleProof {
     type Error = CommitmentError;
 
-    fn try_from(value: CommitmentProofBytes) -> Result<Self, Self::Error> {
-        let value: Vec<u8> = value.into();
-        let res: RawMerkleProof = prost::Message::decode(value.as_ref())
-            .map_err(CommitmentError::InvalidRawMerkleProof)?;
-        Ok(res)
+    fn try_from(value: &'a CommitmentProofBytes) -> Result<Self, Self::Error> {
+        Protobuf::<RawMerkleProof>::decode(value.as_ref())
+            .map_err(|e| CommitmentError::DecodingFailure(e.to_string()))
     }
 }
 

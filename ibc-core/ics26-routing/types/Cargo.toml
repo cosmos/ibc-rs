@@ -22,7 +22,6 @@ all-features = true
 borsh           = { workspace = true, optional = true }
 derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
-prost           = { workspace = true }
 schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
@@ -31,7 +30,6 @@ subtle-encoding = { workspace = true }
 ibc-core-host-types    = { workspace = true }
 ibc-primitives         = { workspace = true }
 ibc-proto              = {workspace = true }
-ics23                  = { workspace = true }
 
 # cosmos dependencies
 tendermint = { workspace = true }
@@ -44,13 +42,11 @@ scale-info         = { workspace = true, optional = true }
 default = ["std"]
 std = [
     "displaydoc/std",
-    "prost/std",
     "serde/std",
     "subtle-encoding/std",
     "ibc-primitives/std",
     "ibc-core-host-types/std",
     "ibc-proto/std",
-    "ics23/std",
     "tendermint/std",
 ]
 serde = [
@@ -59,7 +55,6 @@ serde = [
     "ibc-core-host-types/serde",
     "ibc-primitives/serde",
     "ibc-proto/serde",
-    "ics23/serde",
 ]
 borsh = [
     "dep:borsh",

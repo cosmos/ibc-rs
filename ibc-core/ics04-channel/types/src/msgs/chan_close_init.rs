@@ -1,6 +1,6 @@
 use ibc_core_host_types::identifiers::{ChannelId, PortId};
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Msg, Signer};
+use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgChannelCloseInit as RawMsgChannelCloseInit;
 use ibc_proto::Protobuf;
 
@@ -22,14 +22,6 @@ pub struct MsgChannelCloseInit {
     pub port_id_on_a: PortId,
     pub chan_id_on_a: ChannelId,
     pub signer: Signer,
-}
-
-impl Msg for MsgChannelCloseInit {
-    type Raw = RawMsgChannelCloseInit;
-
-    fn type_url(&self) -> String {
-        CHAN_CLOSE_INIT_TYPE_URL.to_string()
-    }
 }
 
 impl Protobuf<RawMsgChannelCloseInit> for MsgChannelCloseInit {}

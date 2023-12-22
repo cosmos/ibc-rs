@@ -20,6 +20,7 @@ use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::{downcast, Timestamp};
 use ibc::primitives::proto::Any;
+use ibc::primitives::ToVec;
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::hosts::block::{HostBlock, HostType};
@@ -31,7 +32,6 @@ use ibc_testkit::testapp::ibc::clients::mock::misbehaviour::Misbehaviour as Mock
 use ibc_testkit::testapp::ibc::clients::AnyConsensusState;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
-use prost::Message;
 use tendermint_testgen::Validator as TestgenValidator;
 use test_log::test;
 
@@ -87,7 +87,7 @@ fn test_consensus_state_pruning() {
 
     let client_height = Height::new(1, 1).unwrap();
 
-    let client_id = ClientId::new(tm_client_type(), 0).unwrap();
+    let client_id = tm_client_type().build_client_id(0);
 
     let mut ctx = MockContextConfig::builder()
         .host_id(chain_id.clone())
@@ -198,7 +198,7 @@ fn test_update_nonexisting_client() {
 
 #[test]
 fn test_update_synthetic_tendermint_client_adjacent_ok() {
-    let client_id = ClientId::new(tm_client_type(), 0).unwrap();
+    let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
     let update_height = Height::new(1, 21).unwrap();
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
@@ -252,7 +252,7 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
 
 #[test]
 fn test_update_synthetic_tendermint_client_validator_change_ok() {
-    let client_id = ClientId::new(tm_client_type(), 0).unwrap();
+    let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
@@ -344,7 +344,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
 
 #[test]
 fn test_update_synthetic_tendermint_client_validator_change_fail() {
-    let client_id = ClientId::new(tm_client_type(), 0).unwrap();
+    let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
@@ -428,7 +428,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
 
 #[test]
 fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
-    let client_id = ClientId::new(tm_client_type(), 0).unwrap();
+    let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
     let update_height = Height::new(1, 21).unwrap();
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
@@ -484,7 +484,7 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
 
 #[test]
 fn test_update_synthetic_tendermint_client_duplicate_ok() {
-    let client_id = ClientId::new(tm_client_type(), 0).unwrap();
+    let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
 
     let ctx_a_chain_id = ChainId::new("mockgaiaA-1").unwrap();
@@ -610,7 +610,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
 
 #[test]
 fn test_update_synthetic_tendermint_client_lower_height() {
-    let client_id = ClientId::new(tm_client_type(), 0).unwrap();
+    let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
 
     let client_update_height = Height::new(1, 19).unwrap();
@@ -686,7 +686,7 @@ fn test_update_client_events() {
     assert_eq!(update_client_event.client_type(), &mock_client_type());
     assert_eq!(update_client_event.consensus_height(), &height);
     assert_eq!(update_client_event.consensus_heights(), &vec![height]);
-    assert_eq!(update_client_event.header(), &header.encode_to_vec());
+    assert_eq!(update_client_event.header(), &header.to_vec());
 }
 
 fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &ClientType) {
@@ -765,7 +765,7 @@ fn test_misbehaviour_nonexisting_client() {
 /// Misbehaviour evidence consists of equivocal headers.
 #[test]
 fn test_misbehaviour_synthetic_tendermint_equivocation() {
-    let client_id = ClientId::new(tm_client_type(), 0).unwrap();
+    let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
     let misbehaviour_height = Height::new(1, 21).unwrap();
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
@@ -829,7 +829,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
 
 #[test]
 fn test_misbehaviour_synthetic_tendermint_bft_time() {
-    let client_id = ClientId::new(tm_client_type(), 0).unwrap();
+    let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
     let misbehaviour_height = Height::new(1, 21).unwrap();
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
@@ -898,7 +898,7 @@ fn test_expired_client() {
     let update_height = Height::new(1, 21).unwrap();
     let client_height = update_height.sub(3).unwrap();
 
-    let client_id = ClientId::new(tm_client_type(), 0).unwrap();
+    let client_id = tm_client_type().build_client_id(0);
 
     let timestamp = Timestamp::now();
 
@@ -936,7 +936,7 @@ fn test_client_update_max_clock_drift() {
 
     let client_height = Height::new(1, 20).unwrap();
 
-    let client_id = ClientId::new(tm_client_type(), 0).unwrap();
+    let client_id = tm_client_type().build_client_id(0);
 
     let timestamp = Timestamp::now();
 

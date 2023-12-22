@@ -11,6 +11,7 @@ use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::{Any, Protobuf};
+use ibc::primitives::ToVec;
 use tendermint::block::Header as TmHeader;
 use tendermint::validator::Set as ValidatorSet;
 use tendermint_testgen::light_block::TmLightBlock;
@@ -233,8 +234,6 @@ impl TryFrom<Any> for HostBlock {
 impl From<HostBlock> for Any {
     fn from(value: HostBlock) -> Self {
         fn encode_light_block(light_block: SyntheticTmBlock) -> Vec<u8> {
-            use prost::Message;
-
             let SyntheticTmBlock {
                 trusted_height,
                 trusted_next_validators,
@@ -247,7 +246,7 @@ impl From<HostBlock> for Any {
                 trusted_height: Some(trusted_height.into()),
                 trusted_validators: Some(trusted_next_validators.into()),
             }
-            .encode_to_vec()
+            .to_vec()
         }
 
         match value {

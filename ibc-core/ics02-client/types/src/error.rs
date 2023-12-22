@@ -16,12 +16,6 @@ use crate::height::Height;
 pub enum ClientError {
     /// upgrade client error: `{0}`
     Upgrade(UpgradeClientError),
-    /// Client identifier constructor failed for type `{client_type}` with counter `{counter}`, validation error: `{validation_error}`
-    ClientIdentifierConstructor {
-        client_type: ClientType,
-        counter: u64,
-        validation_error: IdentifierError,
-    },
     /// client is frozen with description: `{description}`
     ClientFrozen { description: String },
     /// client is not active. Status=`{status}`
@@ -58,10 +52,6 @@ pub enum ClientError {
     MissingRawConsensusState,
     /// invalid client id in the update client message: `{0}`
     InvalidMsgUpdateClientId(IdentifierError),
-    /// encode error: `{0}`
-    Encode(prost::EncodeError),
-    /// decode error: `{0}`
-    Decode(prost::DecodeError),
     /// invalid client identifier error: `{0}`
     InvalidClientIdentifier(IdentifierError),
     /// invalid raw header error: `{reason}`
@@ -122,10 +112,6 @@ impl From<&'static str> for ClientError {
 impl std::error::Error for ClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::ClientIdentifierConstructor {
-                validation_error: e,
-                ..
-            } => Some(e),
             Self::InvalidMsgUpdateClientId(e) => Some(e),
             Self::InvalidClientIdentifier(e) => Some(e),
             Self::InvalidRawMisbehaviour(e) => Some(e),

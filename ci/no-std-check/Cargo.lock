@@ -1262,7 +1262,6 @@ dependencies = [
  "ibc-core-handler-types",
  "ibc-core-host",
  "ibc-primitives",
- "prost",
  "serde",
  "tendermint",
  "tendermint-light-client-verifier",
@@ -1272,14 +1271,12 @@ dependencies = [
 name = "ibc-client-tendermint-types"
 version = "0.48.2"
 dependencies = [
- "bytes",
  "displaydoc",
  "ibc-core-client-types",
  "ibc-core-commitment-types",
  "ibc-core-host-types",
  "ibc-primitives",
  "ibc-proto",
- "prost",
  "serde",
  "tendermint",
  "tendermint-light-client-verifier",
@@ -1319,7 +1316,6 @@ dependencies = [
  "ibc-core-host",
  "ibc-core-router",
  "ibc-primitives",
- "prost",
 ]
 
 [[package]]
@@ -1334,7 +1330,6 @@ dependencies = [
  "ibc-core-host-types",
  "ibc-primitives",
  "ibc-proto",
- "prost",
  "serde",
  "sha2 0.10.8",
  "subtle-encoding",
@@ -1351,7 +1346,6 @@ dependencies = [
  "ibc-core-handler-types",
  "ibc-core-host",
  "ibc-primitives",
- "prost",
 ]
 
 [[package]]
@@ -1366,7 +1360,6 @@ dependencies = [
  "ibc-core-host-types",
  "ibc-derive",
  "ibc-primitives",
- "prost",
  "subtle-encoding",
  "tendermint",
 ]
@@ -1381,7 +1374,6 @@ dependencies = [
  "ibc-core-host-types",
  "ibc-primitives",
  "ibc-proto",
- "prost",
  "serde",
  "subtle-encoding",
  "tendermint",
@@ -1396,7 +1388,6 @@ dependencies = [
  "ibc-primitives",
  "ibc-proto",
  "ics23",
- "prost",
  "serde",
  "subtle-encoding",
 ]
@@ -1410,7 +1401,6 @@ dependencies = [
  "ibc-core-handler-types",
  "ibc-core-host",
  "ibc-primitives",
- "prost",
 ]
 
 [[package]]
@@ -1424,7 +1414,6 @@ dependencies = [
  "ibc-core-host-types",
  "ibc-primitives",
  "ibc-proto",
- "prost",
  "serde",
  "subtle-encoding",
  "tendermint",
@@ -1458,7 +1447,6 @@ dependencies = [
  "ibc-core-router-types",
  "ibc-primitives",
  "ibc-proto",
- "prost",
  "serde",
  "subtle-encoding",
  "tendermint",
@@ -1478,7 +1466,6 @@ dependencies = [
  "ibc-core-handler-types",
  "ibc-core-host-types",
  "ibc-primitives",
- "prost",
  "subtle-encoding",
 ]
 
@@ -1498,7 +1485,6 @@ dependencies = [
  "ibc-core-host-types",
  "ibc-primitives",
  "ibc-proto",
- "prost",
  "serde",
  "sha2 0.10.8",
  "subtle-encoding",
@@ -1525,7 +1511,6 @@ dependencies = [
  "ibc-core-host-types",
  "ibc-core-router-types",
  "ibc-primitives",
- "prost",
  "subtle-encoding",
 ]
 
@@ -1539,7 +1524,6 @@ dependencies = [
  "ibc-primitives",
  "ibc-proto",
  "ics23",
- "prost",
  "serde",
  "subtle-encoding",
  "tendermint",
@@ -1570,9 +1554,9 @@ dependencies = [
 
 [[package]]
 name = "ibc-proto"
-version = "0.38.0"
+version = "0.39.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93cbf4cbe9e5113cc7c70f3208a7029b2205c629502cbb2ae7ea0a09a97d3005"
+checksum = "c8a8b1356652b9f160f5a010dd6b084675b8a28e163bf2b41ca5abecf27d9701"
 dependencies = [
  "base64 0.21.4",
  "borsh",
@@ -2181,9 +2165,9 @@ dependencies = [
 
 [[package]]
 name = "prost"
-version = "0.12.1"
+version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4fdd22f3b9c31b53c060df4a0613a1c7f062d4115a2b984dd15b1858f7e340d"
+checksum = "146c289cda302b98a28d40c8b3b90498d6e526dd24ac2ecea73e4e491685b94a"
 dependencies = [
  "bytes",
  "prost-derive",
@@ -2191,9 +2175,9 @@ dependencies = [
 
 [[package]]
 name = "prost-derive"
-version = "0.12.1"
+version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "265baba7fabd416cf5078179f7d2cbeca4ce7a9041111900675ea7c4cb8a4c32"
+checksum = "efb6c9a1dd1def8e2124d17e83a20af56f1570d6c2d2bd9e266ccb768df3840e"
 dependencies = [
  "anyhow",
  "itertools 0.11.0",

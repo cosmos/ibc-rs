@@ -32,7 +32,7 @@ pub struct Fixture {
 fn fixture() -> Fixture {
     let proof_height = 10;
     let conn_id_on_b = ConnectionId::new(2);
-    let client_id_on_b = ClientId::new(mock_client_type(), 45).unwrap();
+    let client_id_on_b = mock_client_type().build_client_id(45);
 
     // This is the connection underlying the channel we're trying to open.
     let conn_end_on_b = ConnectionEnd::new(

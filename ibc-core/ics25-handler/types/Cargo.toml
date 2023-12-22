@@ -22,7 +22,6 @@ all-features = true
 borsh           = { workspace = true, optional = true }
 derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
-prost           = { workspace = true }
 serde           = { workspace = true, optional = true }
 schemars        = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
@@ -48,7 +47,6 @@ scale-info         = { workspace = true, optional = true }
 default = ["std"]
 std = [
     "displaydoc/std",
-    "prost/std",
     "serde/std",
     "subtle-encoding/std",
     "ibc-core-client-types/std",
