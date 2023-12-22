@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## v0.48.2
+
+*December 22, 2023*
+
+This patch release resolves two issues. It corrects the packet sequence number
+encoding within Timeout message handlers to align with the big-endian format and
+addresses a recursive call error during the conversion from connection `State`
+to `i32`.
+
+There are no consensus-breaking changes.
+
+### BUG FIXES
+
+- `[ibc-core-host-types]` Encode packet sequence into a big endian bytes.
+  ([\#1004](https://github.com/cosmos/ibc-rs/pull/1004))
+- `[ibc-core-connection-types]` Fix recursive call in connection `State`
+  conversion to `i32` ([\#1010](https://github.com/cosmos/ibc-rs/issues/1010))
+
 ## v0.48.1
 
 *November 27, 2023*
