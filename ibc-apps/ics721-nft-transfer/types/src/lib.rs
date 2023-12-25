@@ -17,6 +17,35 @@
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
-pub mod error;
+mod class;
+pub use class::*;
 pub mod events;
 pub mod msgs;
+pub mod packet;
+mod token;
+pub use token::*;
+
+#[cfg(feature = "serde")]
+pub(crate) mod serializers;
+
+pub mod error;
+mod memo;
+
+/// Re-exports ICS-721 NFT transfer proto types from the `ibc-proto` crate.
+pub mod proto {
+    pub use ibc_proto::ibc::apps::nft_transfer;
+}
+
+/// ICS-721 application current version.
+pub const VERSION: &str = "ics721-1";
+
+/// The successful string used for creating an acknowledgement status,
+/// equivalent to `base64::encode(0x01)`.
+pub const ACK_SUCCESS_B64: &str = "AQ==";
+
+use ibc_core::channel::types::acknowledgement::StatusValue;
+
+/// Returns a successful acknowledgement status for the NFT transfer application.
+pub fn ack_success_b64() -> StatusValue {
+    StatusValue::new(ACK_SUCCESS_B64).expect("ack status value is never supposed to be empty")
+}

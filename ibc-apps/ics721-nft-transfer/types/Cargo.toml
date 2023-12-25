@@ -24,6 +24,8 @@ derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
 schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
+serde_json      = { workspace = true }
+http            = "0.2.9"
 
 # ibc dependencies
 ibc-core  = { workspace = true }
@@ -34,7 +36,6 @@ parity-scale-codec = { workspace = true , optional = true }
 scale-info         = { workspace = true , optional = true }
 
 [dev-dependencies]
-serde_json  = { workspace = true }
 rstest      = { workspace = true }
 
 [features]
