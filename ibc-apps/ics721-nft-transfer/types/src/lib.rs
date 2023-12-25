@@ -30,11 +30,18 @@ pub(crate) mod serializers;
 
 pub mod error;
 mod memo;
+pub use memo::*;
 
 /// Re-exports ICS-721 NFT transfer proto types from the `ibc-proto` crate.
 pub mod proto {
     pub use ibc_proto::ibc::apps::nft_transfer;
 }
+
+/// Module identifier for the ICS-721 application.
+pub const MODULE_ID_STR: &str = "nft_transfer";
+
+/// The port identifier that the ICS-721 applications typically bind with.
+pub const PORT_ID_STR: &str = "nft-transfer";
 
 /// ICS-721 application current version.
 pub const VERSION: &str = "ics721-1";
