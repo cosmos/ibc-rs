@@ -1,5 +1,6 @@
 //! Defines the Non-Fungible Token Transfer (ICS-721) error types.
 use core::convert::Infallible;
+use core::str::Utf8Error;
 
 use displaydoc::Display;
 use ibc_core::channel::types::acknowledgement::StatusValue;
@@ -15,29 +16,11 @@ pub enum NftTransferError {
     ContextError(ContextError),
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
-    /// invalid URI: `{uri}`, validation error: `{error}`
+    /// invalid URI: `{uri}`, validation error: `{validation_error}``
     InvalidUri {
         uri: String,
-        error: http::uri::InvalidUri,
+        validation_error: http::uri::InvalidUri,
     },
-    /// expected `{expect_order}` channel, got `{got_order}`
-    ChannelNotUnordered {
-        expect_order: Order,
-        got_order: Order,
-    },
-    /// channel cannot be closed
-    CantCloseChannel,
-    /// invalid port: `{port_id}`, expected `{exp_port_id}`
-    InvalidPort {
-        port_id: PortId,
-        exp_port_id: PortId,
-    },
-    /// invalid token
-    InvalidTokenId,
-    /// decoding raw msg error: `{reason}`
-    DecodeRawMsg { reason: String },
-    /// unknown msg type: `{msg_type}`
-    UnknownMsgType { msg_type: String },
     /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
     DestinationChannelNotFound {
         port_id: PortId,
@@ -57,6 +40,15 @@ pub enum NftTransferError {
     },
     /// trace length must be even but got: `{len}`
     InvalidTraceLength { len: u64 },
+    /// invalid token
+    InvalidTokenId,
+    /// expected `{expect_order}` channel, got `{got_order}`
+    ChannelNotUnordered {
+        expect_order: Order,
+        got_order: Order,
+    },
+    /// channel cannot be closed
+    CantCloseChannel,
     /// failed to deserialize packet data
     PacketDataDeserialization,
     /// failed to deserialize acknowledgement
@@ -67,6 +59,19 @@ pub enum NftTransferError {
     SendDisabled { reason: String },
     /// failed to parse as AccountId
     ParseAccountFailure,
+    /// invalid port: `{port_id}`, expected `{exp_port_id}`
+    InvalidPort {
+        port_id: PortId,
+        exp_port_id: PortId,
+    },
+    /// decoding raw msg error: `{reason}`
+    DecodeRawMsg { reason: String },
+    /// unknown msg type: `{msg_type}`
+    UnknownMsgType { msg_type: String },
+    /// decoding raw bytes as UTF8 string error: `{0}`
+    Utf8Decode(Utf8Error),
+    /// other error: `{0}`
+    Other(String),
 }
 
 #[cfg(feature = "std")]
@@ -75,7 +80,10 @@ impl std::error::Error for NftTransferError {
         match &self {
             Self::ContextError(e) => Some(e),
             Self::InvalidIdentifier(e) => Some(e),
-            Self::InvalidUri { uri: _, error } => Some(error),
+            Self::InvalidUri {
+                validation_error: e,
+                ..
+            } => Some(e),
             Self::InvalidTracePortId {
                 validation_error: e,
                 ..
@@ -84,7 +92,6 @@ impl std::error::Error for NftTransferError {
                 validation_error: e,
                 ..
             } => Some(e),
-
             _ => None,
         }
     }

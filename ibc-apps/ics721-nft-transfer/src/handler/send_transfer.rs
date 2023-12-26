@@ -178,7 +178,7 @@ where
 
     {
         send_packet_ctx_a.log_message(format!(
-            "IBC NFT transfer: {} --({}, ({}))--> {}",
+            "IBC NFT transfer: {} --({}, [{}])--> {}",
             msg.packet_data.sender, class_id, token_ids, msg.packet_data.receiver
         ))?;
 

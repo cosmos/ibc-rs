@@ -1,4 +1,5 @@
-//! Defines Non-Fungible Token Transfer (ICS-721) token types.
+//! Defines Non-Furgible Token Transfer (ICS-721) token types.
+use core::convert::Infallible;
 use core::fmt::{self, Display};
 use core::str::FromStr;
 
@@ -38,14 +39,10 @@ impl Display for TokenId {
 }
 
 impl FromStr for TokenId {
-    type Err = NftTransferError;
+    type Err = Infallible;
 
     fn from_str(token_id: &str) -> Result<Self, Self::Err> {
-        if token_id.contains(',') {
-            Err(NftTransferError::InvalidTokenId)
-        } else {
-            Ok(Self(token_id.to_string()))
-        }
+        Ok(Self(token_id.to_string()))
     }
 }
 
@@ -86,14 +83,14 @@ impl Display for TokenIds {
     }
 }
 
-impl FromStr for TokenIds {
-    type Err = NftTransferError;
-
-    fn from_str(token_ids: &str) -> Result<Self, Self::Err> {
-        let token_ids: Result<Vec<TokenId>, _> = token_ids.split(',').map(|t| t.parse()).collect();
-        Ok(Self(token_ids?))
-    }
-}
+//impl FromStr for TokenIds {
+//    type Err = NftTransferError;
+//
+//    fn from_str(token_ids: &str) -> Result<Self, Self::Err> {
+//        let token_ids: Result<Vec<TokenId>, _> = token_ids.split(',').map(|t| t.parse()).collect();
+//        Ok(Self(token_ids?))
+//    }
+//}
 
 impl TryFrom<Vec<String>> for TokenIds {
     type Error = NftTransferError;
@@ -140,9 +137,9 @@ impl FromStr for TokenUri {
     fn from_str(token_uri: &str) -> Result<Self, Self::Err> {
         match Uri::from_str(token_uri) {
             Ok(_) => Ok(Self(token_uri.to_string())),
-            Err(e) => Err(NftTransferError::InvalidUri {
+            Err(err) => Err(NftTransferError::InvalidUri {
                 uri: token_uri.to_string(),
-                error: e,
+                validation_error: err,
             }),
         }
     }

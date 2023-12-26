@@ -77,8 +77,8 @@ pub trait NftTransferValidationContext<N, C> {
     ) -> Result<(), NftTransferError>;
 
     /// Returns a hash of the prefixed class ID.
-    /// Implement only if the host chain supports hashed denominations.
-    fn denom_hash_string(&self, _class_id: &PrefixedClassId) -> Option<String> {
+    /// Implement only if the host chain supports hashed class ID.
+    fn class_hash_string(&self, _class_id: &PrefixedClassId) -> Option<String> {
         None
     }
 

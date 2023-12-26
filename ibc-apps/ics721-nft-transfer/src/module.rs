@@ -11,6 +11,9 @@ use ibc_core::primitives::Signer;
 use ibc_core::router::types::module::ModuleExtras;
 
 use crate::context::{NftTransferExecutionContext, NftTransferValidationContext};
+use crate::handler::{
+    process_recv_packet_execute, refund_packet_nft_execute, refund_packet_nft_validate,
+};
 use crate::types::error::NftTransferError;
 use crate::types::events::{AckEvent, AckStatusEvent, RecvEvent, TimeoutEvent};
 use crate::types::packet::PacketData;
@@ -180,7 +183,10 @@ pub fn on_recv_packet_execute<N, C>(
 
     let (mut extras, ack) = match process_recv_packet_execute(ctx_b, packet, data.clone()) {
         Ok(extras) => (extras, AcknowledgementStatus::success(ack_success_b64())),
-        Err((extras, error)) => (extras, AcknowledgementStatus::error(error.into())),
+        Err(boxed_error) => {
+            let (extras, error) = *boxed_error;
+            (extras, AcknowledgementStatus::error(error.into()))
+        }
     };
 
     let recv_event = RecvEvent {
@@ -209,7 +215,7 @@ pub fn on_acknowledgement_packet_validate<N, C>(
         .map_err(|_| NftTransferError::AckDeserialization)?;
 
     if !acknowledgement.is_successful() {
-        refund_packet_token_validate(ctx, packet, &data)?;
+        refund_packet_nft_validate(ctx, packet, &data)?;
     }
 
     Ok(())
@@ -243,7 +249,7 @@ pub fn on_acknowledgement_packet_execute<N, C>(
         };
 
     if !acknowledgement.is_successful() {
-        if let Err(err) = refund_packet_token_execute(ctx, packet, &data) {
+        if let Err(err) = refund_packet_nft_execute(ctx, packet, &data) {
             return (ModuleExtras::empty(), Err(err));
         }
     }
@@ -273,7 +279,7 @@ pub fn on_timeout_packet_validate<N, C>(
     let data = serde_json::from_slice::<PacketData>(&packet.data)
         .map_err(|_| NftTransferError::PacketDataDeserialization)?;
 
-    refund_packet_token_validate(ctx, packet, &data)?;
+    refund_packet_nft_validate(ctx, packet, &data)?;
 
     Ok(())
 }
@@ -293,7 +299,7 @@ pub fn on_timeout_packet_execute<N, C>(
         }
     };
 
-    if let Err(err) = refund_packet_token_execute(ctx, packet, &data) {
+    if let Err(err) = refund_packet_nft_execute(ctx, packet, &data) {
         return (ModuleExtras::empty(), Err(err));
     }
 
