@@ -6,7 +6,7 @@ use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Signer;
 use ibc_proto::ibc::applications::nft_transfer::v1::NonFungibleTokenPacketData as RawPacketData;
 
-use crate::class::{ClassData, ClassUri, PrefixedClass};
+use crate::class::{ClassData, ClassUri, PrefixedClassId};
 use crate::error::NftTransferError;
 use crate::memo::Memo;
 use crate::token::{TokenData, TokenIds, TokenUri};
@@ -28,7 +28,7 @@ use crate::token::{TokenData, TokenIds, TokenUri};
 )]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PacketData {
-    pub class_id: PrefixedClass,
+    pub class_id: PrefixedClassId,
     pub class_uri: Option<ClassUri>,
     pub class_data: Option<ClassData>,
     pub token_ids: TokenIds,

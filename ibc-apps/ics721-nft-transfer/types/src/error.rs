@@ -6,7 +6,7 @@ use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
 use ibc_core::handler::types::error::ContextError;
 use ibc_core::host::types::error::IdentifierError;
-use ibc_core::host::types::identifiers::PortId;
+use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 
 #[derive(Display, Debug)]
@@ -38,6 +38,11 @@ pub enum NftTransferError {
     DecodeRawMsg { reason: String },
     /// unknown msg type: `{msg_type}`
     UnknownMsgType { msg_type: String },
+    /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
+    DestinationChannelNotFound {
+        port_id: PortId,
+        channel_id: ChannelId,
+    },
     /// base class ID is empty
     EmptyBaseClassId,
     /// invalid prot id n trace at position: `{pos}`, validation error: `{validation_error}`
@@ -56,6 +61,12 @@ pub enum NftTransferError {
     PacketDataDeserialization,
     /// failed to deserialize acknowledgement
     AckDeserialization,
+    /// receive is not enabled
+    ReceiveDisabled { reason: String },
+    /// send is not enabled
+    SendDisabled { reason: String },
+    /// failed to parse as AccountId
+    ParseAccountFailure,
 }
 
 #[cfg(feature = "std")]

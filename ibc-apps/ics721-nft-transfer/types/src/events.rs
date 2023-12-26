@@ -5,7 +5,7 @@ use ibc_core::primitives::Signer;
 use ibc_core::router::types::event::ModuleEvent;
 
 use super::Memo;
-use crate::{PrefixedClass, TokenIds, MODULE_ID_STR};
+use crate::{PrefixedClassId, TokenIds, MODULE_ID_STR};
 
 const EVENT_TYPE_PACKET: &str = "nft_packet";
 const EVENT_TYPE_TIMEOUT: &str = "timeout";
@@ -27,7 +27,7 @@ pub enum Event {
 pub struct RecvEvent {
     pub sender: Signer,
     pub receiver: Signer,
-    pub class: PrefixedClass,
+    pub class: PrefixedClassId,
     pub tokens: TokenIds,
     pub memo: Memo,
     pub success: bool,
@@ -62,7 +62,7 @@ impl From<RecvEvent> for ModuleEvent {
 pub struct AckEvent {
     pub sender: Signer,
     pub receiver: Signer,
-    pub class: PrefixedClass,
+    pub class: PrefixedClassId,
     pub tokens: TokenIds,
     pub memo: Memo,
     pub acknowledgement: AcknowledgementStatus,
@@ -117,7 +117,7 @@ impl From<AckStatusEvent> for ModuleEvent {
 /// Event emitted in the `onTimeoutPacket` module callback
 pub struct TimeoutEvent {
     pub refund_receiver: Signer,
-    pub refund_class: PrefixedClass,
+    pub refund_class: PrefixedClassId,
     pub refund_tokens: TokenIds,
     pub memo: Memo,
 }
@@ -146,7 +146,7 @@ impl From<TimeoutEvent> for ModuleEvent {
 /// Event emitted in the `onRecvPacket` module callback when new tokens are minted
 pub struct ClassTraceEvent {
     pub trace_hash: Option<String>,
-    pub class: PrefixedClass,
+    pub class: PrefixedClassId,
 }
 
 impl From<ClassTraceEvent> for ModuleEvent {
@@ -167,7 +167,7 @@ impl From<ClassTraceEvent> for ModuleEvent {
 pub struct TransferEvent {
     pub sender: Signer,
     pub receiver: Signer,
-    pub class: PrefixedClass,
+    pub class: PrefixedClassId,
     pub tokens: TokenIds,
     pub memo: Memo,
 }
