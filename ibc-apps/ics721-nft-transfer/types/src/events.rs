@@ -5,7 +5,7 @@ use ibc_core::primitives::Signer;
 use ibc_core::router::types::event::ModuleEvent;
 
 use super::Memo;
-use crate::{PrefixedClass, TokenId, MODULE_ID_STR};
+use crate::{PrefixedClass, TokenIds, MODULE_ID_STR};
 
 const EVENT_TYPE_PACKET: &str = "nft_packet";
 const EVENT_TYPE_TIMEOUT: &str = "timeout";
@@ -28,7 +28,7 @@ pub struct RecvEvent {
     pub sender: Signer,
     pub receiver: Signer,
     pub class: PrefixedClass,
-    pub token: TokenId,
+    pub tokens: TokenIds,
     pub memo: Memo,
     pub success: bool,
 }
@@ -39,7 +39,7 @@ impl From<RecvEvent> for ModuleEvent {
             sender,
             receiver,
             class,
-            token,
+            tokens,
             memo,
             success,
         } = ev;
@@ -50,7 +50,7 @@ impl From<RecvEvent> for ModuleEvent {
                 ("sender", sender).into(),
                 ("receiver", receiver).into(),
                 ("class", class).into(),
-                ("token", token).into(),
+                ("tokens", tokens).into(),
                 ("memo", memo).into(),
                 ("success", success).into(),
             ],
@@ -63,7 +63,7 @@ pub struct AckEvent {
     pub sender: Signer,
     pub receiver: Signer,
     pub class: PrefixedClass,
-    pub token: TokenId,
+    pub tokens: TokenIds,
     pub memo: Memo,
     pub acknowledgement: AcknowledgementStatus,
 }
@@ -74,7 +74,7 @@ impl From<AckEvent> for ModuleEvent {
             sender,
             receiver,
             class,
-            token,
+            tokens,
             memo,
             acknowledgement,
         } = ev;
@@ -85,7 +85,7 @@ impl From<AckEvent> for ModuleEvent {
                 ("sender", sender).into(),
                 ("receiver", receiver).into(),
                 ("class", class).into(),
-                ("token", token).into(),
+                ("tokens", tokens).into(),
                 ("memo", memo).into(),
                 ("acknowledgement", acknowledgement).into(),
             ],
@@ -118,7 +118,7 @@ impl From<AckStatusEvent> for ModuleEvent {
 pub struct TimeoutEvent {
     pub refund_receiver: Signer,
     pub refund_class: PrefixedClass,
-    pub refund_token: TokenId,
+    pub refund_tokens: TokenIds,
     pub memo: Memo,
 }
 
@@ -127,7 +127,7 @@ impl From<TimeoutEvent> for ModuleEvent {
         let TimeoutEvent {
             refund_receiver,
             refund_class,
-            refund_token,
+            refund_tokens,
             memo,
         } = ev;
         Self {
@@ -136,7 +136,7 @@ impl From<TimeoutEvent> for ModuleEvent {
                 ("module", MODULE_ID_STR).into(),
                 ("refund_receiver", refund_receiver).into(),
                 ("refund_class", refund_class).into(),
-                ("refund_token", refund_token).into(),
+                ("refund_tokens", refund_tokens).into(),
                 ("memo", memo).into(),
             ],
         }
@@ -168,7 +168,7 @@ pub struct TransferEvent {
     pub sender: Signer,
     pub receiver: Signer,
     pub class: PrefixedClass,
-    pub token: TokenId,
+    pub tokens: TokenIds,
     pub memo: Memo,
 }
 
@@ -178,7 +178,7 @@ impl From<TransferEvent> for ModuleEvent {
             sender,
             receiver,
             class,
-            token,
+            tokens,
             memo,
         } = ev;
 
@@ -188,7 +188,7 @@ impl From<TransferEvent> for ModuleEvent {
                 ("sender", sender).into(),
                 ("receiver", receiver).into(),
                 ("class", class).into(),
-                ("token", token).into(),
+                ("tokens", tokens).into(),
                 ("memo", memo).into(),
             ],
         }

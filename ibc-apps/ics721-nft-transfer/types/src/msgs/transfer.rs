@@ -73,11 +73,7 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
                 class_id: raw_msg.class_id.parse()?,
                 class_uri: None,
                 class_data: None,
-                token_ids: raw_msg
-                    .token_ids
-                    .iter()
-                    .map(|t| t.parse().expect("infallible"))
-                    .collect(),
+                token_ids: raw_msg.token_ids.try_into()?,
                 token_uris: Vec::new(),
                 token_data: Vec::new(),
                 sender: raw_msg.sender.into(),
@@ -99,6 +95,7 @@ impl From<MsgTransfer> for RawMsgTransfer {
             token_ids: domain_msg
                 .packet_data
                 .token_ids
+                .as_ref()
                 .iter()
                 .map(|t| t.to_string())
                 .collect(),

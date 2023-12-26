@@ -6,10 +6,10 @@ use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Signer;
 use ibc_proto::ibc::applications::nft_transfer::v1::NonFungibleTokenPacketData as RawPacketData;
 
-use crate::class::{ClassData, ClassId, ClassUri};
+use crate::class::{ClassData, ClassUri, PrefixedClass};
 use crate::error::NftTransferError;
 use crate::memo::Memo;
-use crate::token::{TokenData, TokenId, TokenUri};
+use crate::token::{TokenData, TokenIds, TokenUri};
 
 /// Defines the structure of token transfers' packet bytes
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -28,10 +28,10 @@ use crate::token::{TokenData, TokenId, TokenUri};
 )]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PacketData {
-    pub class_id: ClassId,
+    pub class_id: PrefixedClass,
     pub class_uri: Option<ClassUri>,
     pub class_data: Option<ClassData>,
-    pub token_ids: Vec<TokenId>,
+    pub token_ids: TokenIds,
     pub token_uris: Vec<TokenUri>,
     pub token_data: Vec<TokenData>,
     pub sender: Signer,
@@ -43,11 +43,7 @@ impl TryFrom<RawPacketData> for PacketData {
     type Error = NftTransferError;
 
     fn try_from(raw_pkt_data: RawPacketData) -> Result<Self, Self::Error> {
-        let token_ids = raw_pkt_data
-            .token_ids
-            .iter()
-            .map(|t| t.parse().expect("infallible"))
-            .collect();
+        let token_ids = raw_pkt_data.token_ids.try_into()?;
         let token_uris: Result<Vec<TokenUri>, _> =
             raw_pkt_data.token_uris.iter().map(|t| t.parse()).collect();
         let token_data: Result<Vec<TokenData>, _> =
@@ -88,7 +84,12 @@ impl From<PacketData> for RawPacketData {
                 .class_data
                 .map(|c| c.to_string())
                 .unwrap_or_default(),
-            token_ids: pkt_data.token_ids.iter().map(|t| t.to_string()).collect(),
+            token_ids: pkt_data
+                .token_ids
+                .as_ref()
+                .iter()
+                .map(|t| t.to_string())
+                .collect(),
             token_uris: pkt_data.token_uris.iter().map(|t| t.to_string()).collect(),
             token_data: pkt_data.token_data.iter().map(|t| t.to_string()).collect(),
             sender: pkt_data.sender.to_string(),

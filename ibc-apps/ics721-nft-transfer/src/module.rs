@@ -1,8 +1,6 @@
 //! Provides IBC module callbacks implementation for the ICS-721 transfer.
 
-use ibc_app_nft_transfer_types::error::NftTransferError;
-use ibc_app_nft_transfer_types::VERSION;
-use ibc_core::channel::types::acknowledgement::Acknowledgement;
+use ibc_core::channel::types::acknowledgement::{Acknowledgement, AcknowledgementStatus};
 use ibc_core::channel::types::channel::{Counterparty, Order};
 use ibc_core::channel::types::packet::Packet;
 use ibc_core::channel::types::Version;
@@ -13,6 +11,10 @@ use ibc_core::primitives::Signer;
 use ibc_core::router::types::module::ModuleExtras;
 
 use crate::context::{NftTransferExecutionContext, NftTransferValidationContext};
+use crate::types::error::NftTransferError;
+use crate::types::events::{AckEvent, AckStatusEvent, RecvEvent, TimeoutEvent};
+use crate::types::packet::PacketData;
+use crate::types::{ack_success_b64, VERSION};
 
 pub fn on_chan_open_init_validate<N, C>(
     ctx: &impl NftTransferValidationContext<N, C>,
@@ -164,42 +166,148 @@ pub fn on_chan_close_confirm_execute<N, C>(
 }
 
 pub fn on_recv_packet_execute<N, C>(
-    _ctx_b: &mut impl NftTransferExecutionContext<N, C>,
-    _packet: &Packet,
+    ctx_b: &mut impl NftTransferExecutionContext<N, C>,
+    packet: &Packet,
 ) -> (ModuleExtras, Acknowledgement) {
-    unimplemented!()
+    let data = match serde_json::from_slice::<PacketData>(&packet.data) {
+        Ok(data) => data,
+        Err(_) => {
+            let ack =
+                AcknowledgementStatus::error(NftTransferError::PacketDataDeserialization.into());
+            return (ModuleExtras::empty(), ack.into());
+        }
+    };
+
+    let (mut extras, ack) = match process_recv_packet_execute(ctx_b, packet, data.clone()) {
+        Ok(extras) => (extras, AcknowledgementStatus::success(ack_success_b64())),
+        Err((extras, error)) => (extras, AcknowledgementStatus::error(error.into())),
+    };
+
+    let recv_event = RecvEvent {
+        sender: data.sender,
+        receiver: data.receiver,
+        class: data.class_id,
+        tokens: data.token_ids,
+        memo: data.memo,
+        success: ack.is_successful(),
+    };
+    extras.events.push(recv_event.into());
+
+    (extras, ack.into())
 }
 
 pub fn on_acknowledgement_packet_validate<N, C>(
-    _ctx: &impl NftTransferValidationContext<N, C>,
-    _packet: &Packet,
-    _acknowledgement: &Acknowledgement,
+    ctx: &impl NftTransferValidationContext<N, C>,
+    packet: &Packet,
+    acknowledgement: &Acknowledgement,
     _relayer: &Signer,
 ) -> Result<(), NftTransferError> {
-    unimplemented!()
+    let data = serde_json::from_slice::<PacketData>(&packet.data)
+        .map_err(|_| NftTransferError::PacketDataDeserialization)?;
+
+    let acknowledgement = serde_json::from_slice::<AcknowledgementStatus>(acknowledgement.as_ref())
+        .map_err(|_| NftTransferError::AckDeserialization)?;
+
+    if !acknowledgement.is_successful() {
+        refund_packet_token_validate(ctx, packet, &data)?;
+    }
+
+    Ok(())
 }
 
 pub fn on_acknowledgement_packet_execute<N, C>(
-    _ctx: &mut impl NftTransferExecutionContext<N, C>,
-    _packet: &Packet,
-    _acknowledgement: &Acknowledgement,
+    ctx: &mut impl NftTransferExecutionContext<N, C>,
+    packet: &Packet,
+    acknowledgement: &Acknowledgement,
     _relayer: &Signer,
 ) -> (ModuleExtras, Result<(), NftTransferError>) {
-    unimplemented!()
+    let data = match serde_json::from_slice::<PacketData>(&packet.data) {
+        Ok(data) => data,
+        Err(_) => {
+            return (
+                ModuleExtras::empty(),
+                Err(NftTransferError::PacketDataDeserialization),
+            );
+        }
+    };
+
+    let acknowledgement =
+        match serde_json::from_slice::<AcknowledgementStatus>(acknowledgement.as_ref()) {
+            Ok(ack) => ack,
+            Err(_) => {
+                return (
+                    ModuleExtras::empty(),
+                    Err(NftTransferError::AckDeserialization),
+                );
+            }
+        };
+
+    if !acknowledgement.is_successful() {
+        if let Err(err) = refund_packet_token_execute(ctx, packet, &data) {
+            return (ModuleExtras::empty(), Err(err));
+        }
+    }
+
+    let ack_event = AckEvent {
+        sender: data.sender,
+        receiver: data.receiver,
+        class: data.class_id,
+        tokens: data.token_ids,
+        memo: data.memo,
+        acknowledgement: acknowledgement.clone(),
+    };
+
+    let extras = ModuleExtras {
+        events: vec![ack_event.into(), AckStatusEvent { acknowledgement }.into()],
+        log: Vec::new(),
+    };
+
+    (extras, Ok(()))
 }
 
 pub fn on_timeout_packet_validate<N, C>(
-    _ctx: &impl NftTransferValidationContext<N, C>,
-    _packet: &Packet,
+    ctx: &impl NftTransferValidationContext<N, C>,
+    packet: &Packet,
     _relayer: &Signer,
 ) -> Result<(), NftTransferError> {
-    unimplemented!()
+    let data = serde_json::from_slice::<PacketData>(&packet.data)
+        .map_err(|_| NftTransferError::PacketDataDeserialization)?;
+
+    refund_packet_token_validate(ctx, packet, &data)?;
+
+    Ok(())
 }
 
 pub fn on_timeout_packet_execute<N, C>(
-    _ctx: &mut impl NftTransferExecutionContext<N, C>,
-    _packet: &Packet,
+    ctx: &mut impl NftTransferExecutionContext<N, C>,
+    packet: &Packet,
     _relayer: &Signer,
 ) -> (ModuleExtras, Result<(), NftTransferError>) {
-    unimplemented!()
+    let data = match serde_json::from_slice::<PacketData>(&packet.data) {
+        Ok(data) => data,
+        Err(_) => {
+            return (
+                ModuleExtras::empty(),
+                Err(NftTransferError::PacketDataDeserialization),
+            );
+        }
+    };
+
+    if let Err(err) = refund_packet_token_execute(ctx, packet, &data) {
+        return (ModuleExtras::empty(), Err(err));
+    }
+
+    let timeout_event = TimeoutEvent {
+        refund_receiver: data.sender,
+        refund_class: data.class_id,
+        refund_tokens: data.token_ids,
+        memo: data.memo,
+    };
+
+    let extras = ModuleExtras {
+        events: vec![timeout_event.into()],
+        log: Vec::new(),
+    };
+
+    (extras, Ok(()))
 }

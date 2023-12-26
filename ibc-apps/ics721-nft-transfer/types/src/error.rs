@@ -52,6 +52,10 @@ pub enum NftTransferError {
     },
     /// trace length must be even but got: `{len}`
     InvalidTraceLength { len: u64 },
+    /// failed to deserialize packet data
+    PacketDataDeserialization,
+    /// failed to deserialize acknowledgement
+    AckDeserialization,
 }
 
 #[cfg(feature = "std")]

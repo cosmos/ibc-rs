@@ -1,5 +1,4 @@
 //! Defines Non-Fungible Token Transfer (ICS-721) token types.
-use core::convert::Infallible;
 use core::fmt::{self, Display};
 use core::str::FromStr;
 
@@ -39,10 +38,69 @@ impl Display for TokenId {
 }
 
 impl FromStr for TokenId {
-    type Err = Infallible;
+    type Err = NftTransferError;
 
-    fn from_str(token_id: &str) -> Result<Self, Infallible> {
-        Ok(Self(token_id.to_string()))
+    fn from_str(token_id: &str) -> Result<Self, Self::Err> {
+        if token_id.contains(',') {
+            Err(NftTransferError::InvalidTokenId)
+        } else {
+            Ok(Self(token_id.to_string()))
+        }
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TokenIds(pub Vec<TokenId>);
+
+impl TokenIds {
+    pub fn as_ref(&self) -> Vec<&TokenId> {
+        self.0.iter().collect()
+    }
+}
+
+impl Display for TokenIds {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.0
+                .iter()
+                .map(|t| t.to_string())
+                .collect::<Vec<String>>()
+                .join(",")
+        )
+    }
+}
+
+impl FromStr for TokenIds {
+    type Err = NftTransferError;
+
+    fn from_str(token_ids: &str) -> Result<Self, Self::Err> {
+        let token_ids: Result<Vec<TokenId>, _> = token_ids.split(',').map(|t| t.parse()).collect();
+        Ok(Self(token_ids?))
+    }
+}
+
+impl TryFrom<Vec<String>> for TokenIds {
+    type Error = NftTransferError;
+
+    fn try_from(token_ids: Vec<String>) -> Result<Self, Self::Error> {
+        let token_ids: Result<Vec<TokenId>, _> = token_ids.iter().map(|t| t.parse()).collect();
+        Ok(Self(token_ids?))
     }
 }
 
