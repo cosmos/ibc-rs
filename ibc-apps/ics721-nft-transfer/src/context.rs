@@ -9,9 +9,36 @@ use crate::types::{
     ClassData, ClassId, ClassUri, Memo, PrefixedClassId, TokenData, TokenId, TokenUri,
 };
 
+pub trait NftContext {
+    /// Get the class ID of the token
+    fn get_class_id(&self) -> ClassId;
+
+    /// Get the token ID
+    fn get_id(&self) -> TokenId;
+
+    /// Get the token URI
+    fn get_uri(&self) -> TokenUri;
+
+    /// Get the token Data
+    fn get_data(&self) -> TokenData;
+}
+
+pub trait NftClassContext {
+    /// Get the class ID
+    fn get_id(&self) -> ClassId;
+
+    /// Get the class URI
+    fn get_uri(&self) -> ClassUri;
+
+    /// Get the class Data
+    fn get_data(&self) -> ClassData;
+}
+
 /// Read-only methods required in NFT transfer validation context.
-pub trait NftTransferValidationContext<N, C> {
-    type AccountId: TryFrom<Signer>;
+pub trait NftTransferValidationContext {
+    type AccountId: TryFrom<Signer> + PartialEq;
+    type Nft: NftContext;
+    type NftClass: NftClassContext;
 
     /// get_port returns the portID for the transfer module.
     fn get_port(&self) -> Result<PortId, NftTransferError>;
@@ -82,30 +109,33 @@ pub trait NftTransferValidationContext<N, C> {
         None
     }
 
-    /// Returns the current owner of the NFT
+    /// Returns the current owner of the NFT. If the NFT doesn't exist, it returns None.
     fn get_owner(
         &self,
-        class_id: &ClassId,
+        class_id: &PrefixedClassId,
         token_id: &TokenId,
-    ) -> Result<Self::AccountId, NftTransferError>;
+    ) -> Result<Option<Self::AccountId>, NftTransferError>;
 
-    /// Returns the NFT
+    /// Returns the NFT. If the NFT doesn't exist, it returns None.
     fn get_nft(
         &self,
-        class_id: &ClassId,
+        class_id: &PrefixedClassId,
         token_id: &TokenId,
-    ) -> Result<Option<N>, NftTransferError>;
+    ) -> Result<Option<Self::Nft>, NftTransferError>;
 
-    /// Returns the NFT class
-    fn get_nft_class(class_id: &ClassId) -> Result<Option<C>, NftTransferError>;
+    /// Returns the NFT class. If the NFT class doesn't exist, it returns None.
+    fn get_nft_class(
+        &self,
+        class_id: &PrefixedClassId,
+    ) -> Result<Option<Self::NftClass>, NftTransferError>;
 }
 
 /// Read-write methods required in NFT transfer execution context.
-pub trait NftTransferExecutionContext<N, C>: NftTransferValidationContext<N, C> {
+pub trait NftTransferExecutionContext: NftTransferValidationContext {
     /// Creates a new NFT Class identified by classId. If the class ID already exists, it updates the class metadata.
     fn create_or_update_class_execute(
         &self,
-        class_id: &ClassId,
+        class_id: &PrefixedClassId,
         class_uri: &ClassUri,
         class_data: &ClassData,
     ) -> Result<(), NftTransferError>;

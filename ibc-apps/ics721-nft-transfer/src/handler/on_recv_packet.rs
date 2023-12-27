@@ -13,13 +13,13 @@ use crate::types::{is_receiver_chain_source, TracePrefix};
 /// Note that `send/mint_nft_validate` steps are performed on the host chain
 /// to validate accounts and NFT info. But the result is then used for execution
 /// on the IBC side, including storing acknowledgements and emitting events.
-pub fn process_recv_packet_execute<Ctx, N, C>(
+pub fn process_recv_packet_execute<Ctx>(
     ctx_b: &mut Ctx,
     packet: &Packet,
     data: PacketData,
 ) -> Result<ModuleExtras, Box<(ModuleExtras, NftTransferError)>>
 where
-    Ctx: NftTransferExecutionContext<N, C>,
+    Ctx: NftTransferExecutionContext,
 {
     ctx_b
         .can_receive_nft()
@@ -102,39 +102,46 @@ where
             }
         };
 
-        // Note: it is correct to do the validation here because `recv_packet()`
-        // works slightly differently. We do not have a
-        // `on_recv_packet_validate()` callback because regardless of whether or
-        // not the app succeeds to receive the packet, we want to run the
-        // `execute()` phase. And this is because the app failing to receive
-        // does not constitute a failure of the message processing.
-        // Specifically, when the app fails to receive, we need to return
-        // a `TokenTransferAcknowledgement::Error` acknowledgement, which
-        // gets relayed back to the sender so that the escrowed tokens
-        // can be refunded.
-        data.token_ids
-            .0
+        for ((token_id, token_uri), token_data) in data
+            .token_ids
+            .as_ref()
             .iter()
             .zip(data.token_uris.iter())
             .zip(data.token_data.iter())
-            .try_for_each(|((token_id, token_uri), token_data)| {
-                ctx_b
-                    .mint_nft_validate(
-                        &receiver_account,
-                        &class_id,
-                        token_id,
-                        token_uri,
-                        token_data,
-                    )
-                    .and(ctx_b.mint_nft_execute(
-                        &receiver_account,
-                        &class_id,
-                        token_id,
-                        token_uri,
-                        token_data,
-                    ))
-            })
-            .map_err(|nft_error| (extras.clone(), nft_error))?;
+        {
+            let class_uri = data
+                .class_uri
+                .as_ref()
+                .ok_or((ModuleExtras::empty(), NftTransferError::NftClassNotFound))?;
+            let class_data = data
+                .class_data
+                .as_ref()
+                .ok_or((ModuleExtras::empty(), NftTransferError::NftClassNotFound))?;
+            ctx_b
+                .create_or_update_class_execute(&class_id, class_uri, class_data)
+                .map_err(|nft_error| (ModuleExtras::empty(), nft_error))?;
+
+            // Note: the validation is called before the execution.
+            // Refer to ICS-20 `process_recv_packet_execute()`.
+            ctx_b
+                .mint_nft_validate(
+                    &receiver_account,
+                    &class_id,
+                    token_id,
+                    token_uri,
+                    token_data,
+                )
+                .map_err(|nft_error| (extras.clone(), nft_error))?;
+            ctx_b
+                .mint_nft_execute(
+                    &receiver_account,
+                    &class_id,
+                    token_id,
+                    token_uri,
+                    token_data,
+                )
+                .map_err(|nft_error| (extras.clone(), nft_error))?;
+        }
 
         extras
     };

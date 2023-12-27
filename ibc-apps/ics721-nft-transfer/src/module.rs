@@ -19,8 +19,8 @@ use crate::types::events::{AckEvent, AckStatusEvent, RecvEvent, TimeoutEvent};
 use crate::types::packet::PacketData;
 use crate::types::{ack_success_b64, VERSION};
 
-pub fn on_chan_open_init_validate<N, C>(
-    ctx: &impl NftTransferValidationContext<N, C>,
+pub fn on_chan_open_init_validate(
+    ctx: &impl NftTransferValidationContext,
     order: Order,
     _connection_hops: &[ConnectionId],
     port_id: &PortId,
@@ -51,8 +51,8 @@ pub fn on_chan_open_init_validate<N, C>(
     Ok(())
 }
 
-pub fn on_chan_open_init_execute<N, C>(
-    _ctx: &mut impl NftTransferExecutionContext<N, C>,
+pub fn on_chan_open_init_execute(
+    _ctx: &mut impl NftTransferExecutionContext,
     _order: Order,
     _connection_hops: &[ConnectionId],
     _port_id: &PortId,
@@ -63,8 +63,8 @@ pub fn on_chan_open_init_execute<N, C>(
     Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
 }
 
-pub fn on_chan_open_try_validate<N, C>(
-    _ctx: &impl NftTransferValidationContext<N, C>,
+pub fn on_chan_open_try_validate(
+    _ctx: &impl NftTransferValidationContext,
     order: Order,
     _connection_hops: &[ConnectionId],
     _port_id: &PortId,
@@ -86,8 +86,8 @@ pub fn on_chan_open_try_validate<N, C>(
     Ok(())
 }
 
-pub fn on_chan_open_try_execute<N, C>(
-    _ctx: &mut impl NftTransferExecutionContext<N, C>,
+pub fn on_chan_open_try_execute(
+    _ctx: &mut impl NftTransferExecutionContext,
     _order: Order,
     _connection_hops: &[ConnectionId],
     _port_id: &PortId,
@@ -98,8 +98,8 @@ pub fn on_chan_open_try_execute<N, C>(
     Ok((ModuleExtras::empty(), Version::new(VERSION.to_string())))
 }
 
-pub fn on_chan_open_ack_validate<N, C>(
-    _ctx: &impl NftTransferExecutionContext<N, C>,
+pub fn on_chan_open_ack_validate(
+    _ctx: &impl NftTransferExecutionContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
     counterparty_version: &Version,
@@ -111,8 +111,8 @@ pub fn on_chan_open_ack_validate<N, C>(
     Ok(())
 }
 
-pub fn on_chan_open_ack_execute<N, C>(
-    _ctx: &mut impl NftTransferExecutionContext<N, C>,
+pub fn on_chan_open_ack_execute(
+    _ctx: &mut impl NftTransferExecutionContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
     _counterparty_version: &Version,
@@ -120,56 +120,56 @@ pub fn on_chan_open_ack_execute<N, C>(
     Ok(ModuleExtras::empty())
 }
 
-pub fn on_chan_open_confirm_validate<N, C>(
-    _ctx: &impl NftTransferValidationContext<N, C>,
+pub fn on_chan_open_confirm_validate(
+    _ctx: &impl NftTransferValidationContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<(), NftTransferError> {
     Ok(())
 }
 
-pub fn on_chan_open_confirm_execute<N, C>(
-    _ctx: &mut impl NftTransferExecutionContext<N, C>,
+pub fn on_chan_open_confirm_execute(
+    _ctx: &mut impl NftTransferExecutionContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, NftTransferError> {
     Ok(ModuleExtras::empty())
 }
 
-pub fn on_chan_close_init_validate<N, C>(
-    _ctx: &impl NftTransferValidationContext<N, C>,
+pub fn on_chan_close_init_validate(
+    _ctx: &impl NftTransferValidationContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<(), NftTransferError> {
     Err(NftTransferError::CantCloseChannel)
 }
 
-pub fn on_chan_close_init_execute<N, C>(
-    _ctx: &mut impl NftTransferExecutionContext<N, C>,
+pub fn on_chan_close_init_execute(
+    _ctx: &mut impl NftTransferExecutionContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, NftTransferError> {
     unimplemented!()
 }
 
-pub fn on_chan_close_confirm_validate<N, C>(
-    _ctx: &impl NftTransferValidationContext<N, C>,
+pub fn on_chan_close_confirm_validate(
+    _ctx: &impl NftTransferValidationContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<(), NftTransferError> {
     Ok(())
 }
 
-pub fn on_chan_close_confirm_execute<N, C>(
-    _ctx: &mut impl NftTransferExecutionContext<N, C>,
+pub fn on_chan_close_confirm_execute(
+    _ctx: &mut impl NftTransferExecutionContext,
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, NftTransferError> {
     Ok(ModuleExtras::empty())
 }
 
-pub fn on_recv_packet_execute<N, C>(
-    ctx_b: &mut impl NftTransferExecutionContext<N, C>,
+pub fn on_recv_packet_execute(
+    ctx_b: &mut impl NftTransferExecutionContext,
     packet: &Packet,
 ) -> (ModuleExtras, Acknowledgement) {
     let data = match serde_json::from_slice::<PacketData>(&packet.data) {
@@ -202,8 +202,8 @@ pub fn on_recv_packet_execute<N, C>(
     (extras, ack.into())
 }
 
-pub fn on_acknowledgement_packet_validate<N, C>(
-    ctx: &impl NftTransferValidationContext<N, C>,
+pub fn on_acknowledgement_packet_validate(
+    ctx: &impl NftTransferValidationContext,
     packet: &Packet,
     acknowledgement: &Acknowledgement,
     _relayer: &Signer,
@@ -221,8 +221,8 @@ pub fn on_acknowledgement_packet_validate<N, C>(
     Ok(())
 }
 
-pub fn on_acknowledgement_packet_execute<N, C>(
-    ctx: &mut impl NftTransferExecutionContext<N, C>,
+pub fn on_acknowledgement_packet_execute(
+    ctx: &mut impl NftTransferExecutionContext,
     packet: &Packet,
     acknowledgement: &Acknowledgement,
     _relayer: &Signer,
@@ -271,8 +271,8 @@ pub fn on_acknowledgement_packet_execute<N, C>(
     (extras, Ok(()))
 }
 
-pub fn on_timeout_packet_validate<N, C>(
-    ctx: &impl NftTransferValidationContext<N, C>,
+pub fn on_timeout_packet_validate(
+    ctx: &impl NftTransferValidationContext,
     packet: &Packet,
     _relayer: &Signer,
 ) -> Result<(), NftTransferError> {
@@ -284,8 +284,8 @@ pub fn on_timeout_packet_validate<N, C>(
     Ok(())
 }
 
-pub fn on_timeout_packet_execute<N, C>(
-    ctx: &mut impl NftTransferExecutionContext<N, C>,
+pub fn on_timeout_packet_execute(
+    ctx: &mut impl NftTransferExecutionContext,
     packet: &Packet,
     _relayer: &Signer,
 ) -> (ModuleExtras, Result<(), NftTransferError>) {

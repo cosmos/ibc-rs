@@ -16,8 +16,8 @@ use crate::types::packet::PacketData;
 
 use crate::context::{NftTransferExecutionContext, NftTransferValidationContext};
 
-pub fn refund_packet_nft_execute<N, C>(
-    ctx_a: &mut impl NftTransferExecutionContext<N, C>,
+pub fn refund_packet_nft_execute(
+    ctx_a: &mut impl NftTransferExecutionContext,
     packet: &Packet,
     data: &PacketData,
 ) -> Result<(), NftTransferError> {
@@ -55,8 +55,8 @@ pub fn refund_packet_nft_execute<N, C>(
     }
 }
 
-pub fn refund_packet_nft_validate<N, C>(
-    ctx_a: &impl NftTransferValidationContext<N, C>,
+pub fn refund_packet_nft_validate(
+    ctx_a: &impl NftTransferValidationContext,
     packet: &Packet,
     data: &PacketData,
 ) -> Result<(), NftTransferError> {

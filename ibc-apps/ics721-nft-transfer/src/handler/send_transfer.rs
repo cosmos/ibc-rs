@@ -6,37 +6,39 @@ use ibc_core::host::types::path::{ChannelEndPath, SeqSendPath};
 use ibc_core::primitives::prelude::*;
 use ibc_core::router::types::event::ModuleEvent;
 
-use crate::context::{NftTransferExecutionContext, NftTransferValidationContext};
+use crate::context::{
+    NftClassContext, NftContext, NftTransferExecutionContext, NftTransferValidationContext,
+};
 use crate::types::error::NftTransferError;
 use crate::types::events::TransferEvent;
 use crate::types::msgs::transfer::MsgTransfer;
 use crate::types::{is_sender_chain_source, MODULE_ID_STR};
 
 /// Initiate a token transfer. Equivalent to calling [`send_nft_transfer_validate`], followed by [`send_nft_transfer_execute`].
-pub fn send_nft_transfer<SendPacketCtx, NftCtx, N, C>(
+pub fn send_nft_transfer<SendPacketCtx, TransferCtx>(
     send_packet_ctx_a: &mut SendPacketCtx,
-    nft_ctx: &mut NftCtx,
+    transfer_ctx: &mut TransferCtx,
     msg: MsgTransfer,
 ) -> Result<(), NftTransferError>
 where
     SendPacketCtx: SendPacketExecutionContext,
-    NftCtx: NftTransferExecutionContext<N, C>,
+    TransferCtx: NftTransferExecutionContext,
 {
-    send_nft_transfer_validate(send_packet_ctx_a, nft_ctx, msg.clone())?;
-    send_nft_transfer_execute(send_packet_ctx_a, nft_ctx, msg)
+    send_nft_transfer_validate(send_packet_ctx_a, transfer_ctx, msg.clone())?;
+    send_nft_transfer_execute(send_packet_ctx_a, transfer_ctx, msg)
 }
 
-/// Validates the token transfer
-pub fn send_nft_transfer_validate<SendPacketCtx, NftCtx, N, C>(
+/// Validates the NFT transfer
+pub fn send_nft_transfer_validate<SendPacketCtx, TransferCtx>(
     send_packet_ctx_a: &SendPacketCtx,
-    nft_ctx: &NftCtx,
+    transfer_ctx: &TransferCtx,
     msg: MsgTransfer,
 ) -> Result<(), NftTransferError>
 where
     SendPacketCtx: SendPacketValidationContext,
-    NftCtx: NftTransferValidationContext<N, C>,
+    TransferCtx: NftTransferValidationContext,
 {
-    nft_ctx.can_send_nft()?;
+    transfer_ctx.can_send_nft()?;
 
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let chan_end_on_a = send_packet_ctx_a.channel_end(&chan_end_path_on_a)?;
@@ -54,35 +56,57 @@ where
     let seq_send_path_on_a = SeqSendPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let sequence = send_packet_ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
-    let class_id = &msg.packet_data.class_id;
-    let token_ids = &msg.packet_data.token_ids;
-
-    let sender: NftCtx::AccountId = msg
+    let sender: TransferCtx::AccountId = msg
         .packet_data
         .sender
         .clone()
         .try_into()
         .map_err(|_| NftTransferError::ParseAccountFailure)?;
 
-    if is_sender_chain_source(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone(), class_id) {
-        token_ids.as_ref().iter().try_for_each(|token_id| {
-            nft_ctx.escrow_nft_validate(
+    let mut packet_data = msg.packet_data;
+    let class_id = &packet_data.class_id;
+    let token_ids = &packet_data.token_ids;
+    // overwrite even if they are set in MsgTransfer
+    packet_data.token_uris.clear();
+    packet_data.token_data.clear();
+    for token_id in token_ids.as_ref() {
+        // Check the sender
+        match transfer_ctx.get_owner(class_id, token_id)? {
+            Some(owner) if owner == sender => {}
+            _ => {
+                return Err(NftTransferError::InvalidOwner {
+                    sender: packet_data.sender.to_string(),
+                })
+            }
+        }
+
+        if is_sender_chain_source(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone(), class_id) {
+            transfer_ctx.escrow_nft_validate(
                 &sender,
                 &msg.port_id_on_a,
                 &msg.chan_id_on_a,
                 class_id,
                 token_id,
-                &msg.packet_data.memo,
-            )
-        })?;
-    } else {
-        token_ids.as_ref().iter().try_for_each(|token_id| {
-            nft_ctx.burn_nft_validate(&sender, class_id, token_id, &msg.packet_data.memo)
-        })?;
+                &packet_data.memo,
+            )?;
+        } else {
+            transfer_ctx.burn_nft_validate(&sender, class_id, token_id, &packet_data.memo)?;
+        }
+        let nft = transfer_ctx
+            .get_nft(class_id, token_id)?
+            .ok_or(NftTransferError::NftNotFound)?;
+        packet_data.token_uris.push(nft.get_uri());
+        packet_data.token_data.push(nft.get_data());
     }
 
+    let nft_class = transfer_ctx
+        .get_nft_class(class_id)?
+        .ok_or(NftTransferError::NftClassNotFound)?;
+    packet_data.class_uri = Some(nft_class.get_uri());
+    packet_data.class_data = Some(nft_class.get_data());
+
     let packet = {
-        let data = serde_json::to_vec(&msg.packet_data)
+        let data = serde_json::to_vec(&packet_data)
             .expect("PacketData's infallible Serialize impl failed");
 
         Packet {
@@ -103,14 +127,14 @@ where
 }
 
 /// Executes the token transfer. A prior call to [`send_transfer_validate`] MUST have succeeded.
-pub fn send_nft_transfer_execute<SendPacketCtx, NftCtx, N, C>(
+pub fn send_nft_transfer_execute<SendPacketCtx, TransferCtx>(
     send_packet_ctx_a: &mut SendPacketCtx,
-    nft_ctx: &mut NftCtx,
+    transfer_ctx: &mut TransferCtx,
     msg: MsgTransfer,
 ) -> Result<(), NftTransferError>
 where
     SendPacketCtx: SendPacketExecutionContext,
-    NftCtx: NftTransferExecutionContext<N, C>,
+    TransferCtx: NftTransferExecutionContext,
 {
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let chan_end_on_a = send_packet_ctx_a.channel_end(&chan_end_path_on_a)?;
@@ -129,9 +153,6 @@ where
     let seq_send_path_on_a = SeqSendPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let sequence = send_packet_ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
-    let class_id = &msg.packet_data.class_id;
-    let token_ids = &msg.packet_data.token_ids;
-
     let sender = msg
         .packet_data
         .sender
@@ -139,27 +160,41 @@ where
         .try_into()
         .map_err(|_| NftTransferError::ParseAccountFailure)?;
 
-    if is_sender_chain_source(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone(), class_id) {
-        token_ids.as_ref().iter().try_for_each(|token_id| {
-            nft_ctx.escrow_nft_execute(
+    let mut packet_data = msg.packet_data;
+    let class_id = &packet_data.class_id;
+    let token_ids = &packet_data.token_ids;
+    // overwrite even if they are set in MsgTransfer
+    packet_data.token_uris.clear();
+    packet_data.token_data.clear();
+    for token_id in token_ids.as_ref() {
+        if is_sender_chain_source(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone(), class_id) {
+            transfer_ctx.escrow_nft_execute(
                 &sender,
                 &msg.port_id_on_a,
                 &msg.chan_id_on_a,
                 class_id,
                 token_id,
-                &msg.packet_data.memo,
-            )
-        })?;
-    } else {
-        token_ids.as_ref().iter().try_for_each(|token_id| {
-            nft_ctx.burn_nft_execute(&sender, class_id, token_id, &msg.packet_data.memo)
-        })?;
+                &packet_data.memo,
+            )?;
+        } else {
+            transfer_ctx.burn_nft_execute(&sender, class_id, token_id, &packet_data.memo)?;
+        }
+        let nft = transfer_ctx
+            .get_nft(class_id, token_id)?
+            .ok_or(NftTransferError::NftNotFound)?;
+        packet_data.token_uris.push(nft.get_uri());
+        packet_data.token_data.push(nft.get_data());
     }
+
+    let nft_class = transfer_ctx
+        .get_nft_class(class_id)?
+        .ok_or(NftTransferError::NftClassNotFound)?;
+    packet_data.class_uri = Some(nft_class.get_uri());
+    packet_data.class_data = Some(nft_class.get_data());
 
     let packet = {
         let data = {
-            serde_json::to_vec(&msg.packet_data)
-                .expect("PacketData's infallible Serialize impl failed")
+            serde_json::to_vec(&packet_data).expect("PacketData's infallible Serialize impl failed")
         };
 
         Packet {
@@ -179,15 +214,15 @@ where
     {
         send_packet_ctx_a.log_message(format!(
             "IBC NFT transfer: {} --({}, [{}])--> {}",
-            msg.packet_data.sender, class_id, token_ids, msg.packet_data.receiver
+            packet_data.sender, class_id, token_ids, packet_data.receiver
         ))?;
 
         let transfer_event = TransferEvent {
-            sender: msg.packet_data.sender,
-            receiver: msg.packet_data.receiver,
-            class: msg.packet_data.class_id,
-            tokens: msg.packet_data.token_ids,
-            memo: msg.packet_data.memo,
+            sender: packet_data.sender,
+            receiver: packet_data.receiver,
+            class: packet_data.class_id,
+            tokens: packet_data.token_ids,
+            memo: packet_data.memo,
         };
         send_packet_ctx_a.emit_ibc_event(ModuleEvent::from(transfer_event).into())?;
 

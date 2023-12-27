@@ -55,6 +55,12 @@ pub enum NftTransferError {
     },
     /// channel cannot be closed
     CantCloseChannel,
+    /// `{sender}` doesn't own the NFT
+    InvalidOwner { sender: String },
+    /// nft is not found
+    NftNotFound,
+    /// nft class is not found
+    NftClassNotFound,
     /// failed to deserialize packet data
     PacketDataDeserialization,
     /// failed to deserialize acknowledgement
