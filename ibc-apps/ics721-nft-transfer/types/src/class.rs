@@ -1,14 +1,14 @@
 //! Defines Non-Fungible Token Transfer (ICS-721) class types.
-use core::convert::Infallible;
 use core::fmt::{self, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
-use derive_more::From;
+use derive_more::{Display, From};
 use http::Uri;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_proto::ibc::applications::nft_transfer::v1::ClassTrace as RawClassTrace;
 
+use crate::data::Data;
 use crate::error::NftTransferError;
 use crate::serializers;
 
@@ -43,10 +43,14 @@ impl Display for ClassId {
 }
 
 impl FromStr for ClassId {
-    type Err = Infallible;
+    type Err = NftTransferError;
 
-    fn from_str(class_id: &str) -> Result<Self, Infallible> {
-        Ok(Self(class_id.to_string()))
+    fn from_str(class_id: &str) -> Result<Self, Self::Err> {
+        if class_id.trim().is_empty() {
+            Err(NftTransferError::EmptyBaseClassId)
+        } else {
+            Ok(Self(class_id.to_string()))
+        }
     }
 }
 
@@ -334,18 +338,12 @@ impl Display for PrefixedClassId {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Display)]
 pub struct ClassUri(String);
 
 impl AsRef<str> for ClassUri {
     fn as_ref(&self) -> &str {
         &self.0
-    }
-}
-
-impl Display for ClassUri {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
     }
 }
 
@@ -379,13 +377,7 @@ impl FromStr for ClassUri {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ClassData(String);
-
-impl AsRef<str> for ClassData {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
+pub struct ClassData(Data);
 
 impl Display for ClassData {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -397,8 +389,9 @@ impl FromStr for ClassData {
     type Err = NftTransferError;
 
     fn from_str(class_data: &str) -> Result<Self, Self::Err> {
-        // TODO validation
-        Ok(Self(class_data.to_string()))
+        // validate the data
+        let data = Data::from_str(class_data)?;
+        Ok(Self(data))
     }
 }
 
@@ -409,45 +402,39 @@ mod tests {
     #[test]
     fn test_denom_validation() -> Result<(), NftTransferError> {
         assert!(ClassId::from_str("").is_err(), "empty base class ID");
-        assert!(
-            ClassId::from_str("nft_class").is_ok(),
-            "valid base class ID"
-        );
+        assert!(ClassId::from_str("myclass").is_ok(), "valid base class ID");
         assert!(PrefixedClassId::from_str("").is_err(), "empty class trace");
         assert!(
             PrefixedClassId::from_str("transfer/channel-0/").is_err(),
             "empty base class ID with trace"
         );
         assert!(
-            PrefixedClassId::from_str("/nft_class").is_err(),
+            PrefixedClassId::from_str("/myclass").is_err(),
             "empty prefix"
         );
-        assert!(
-            PrefixedClassId::from_str("//nft_class").is_err(),
-            "empty ids"
-        );
+        assert!(PrefixedClassId::from_str("//myclass").is_err(), "empty ids");
         assert!(
             PrefixedClassId::from_str("transfer/").is_err(),
             "single trace"
         );
         assert!(
-            PrefixedClassId::from_str("transfer/nft_class").is_err(),
+            PrefixedClassId::from_str("transfer/myclass").is_err(),
             "single trace with base class ID"
         );
         assert!(
-            PrefixedClassId::from_str("transfer/channel-0/nft_class").is_ok(),
+            PrefixedClassId::from_str("transfer/channel-0/myclass").is_ok(),
             "valid single trace info"
         );
         assert!(
-            PrefixedClassId::from_str("transfer/channel-0/transfer/channel-1/nft_class").is_ok(),
+            PrefixedClassId::from_str("transfer/channel-0/transfer/channel-1/myclass").is_ok(),
             "valid multiple trace info"
         );
         assert!(
-            PrefixedClassId::from_str("(transfer)/channel-0/nft_class").is_err(),
+            PrefixedClassId::from_str("(transfer)/channel-0/myclass").is_err(),
             "invalid port"
         );
         assert!(
-            PrefixedClassId::from_str("transfer/(channel-0)/nft_class").is_err(),
+            PrefixedClassId::from_str("transfer/(channel-0)/myclass").is_err(),
             "invalid channel"
         );
 
@@ -457,18 +444,18 @@ mod tests {
     #[test]
     fn test_denom_trace() -> Result<(), NftTransferError> {
         assert_eq!(
-            PrefixedClassId::from_str("transfer/channel-0/nft_class")?,
+            PrefixedClassId::from_str("transfer/channel-0/myclass")?,
             PrefixedClassId {
                 trace_path: "transfer/channel-0".parse()?,
-                base_class_id: "nft_class".parse()?
+                base_class_id: "myclass".parse()?
             },
             "valid single trace info"
         );
         assert_eq!(
-            PrefixedClassId::from_str("transfer/channel-0/transfer/channel-1/nft_class")?,
+            PrefixedClassId::from_str("transfer/channel-0/transfer/channel-1/myclass")?,
             PrefixedClassId {
                 trace_path: "transfer/channel-0/transfer/channel-1".parse()?,
-                base_class_id: "nft_class".parse()?
+                base_class_id: "myclass".parse()?
             },
             "valid multiple trace info"
         );
@@ -478,11 +465,11 @@ mod tests {
 
     #[test]
     fn test_denom_serde() -> Result<(), NftTransferError> {
-        let dt_str = "transfer/channel-0/nft_class";
+        let dt_str = "transfer/channel-0/myclass";
         let dt = PrefixedClassId::from_str(dt_str)?;
         assert_eq!(dt.to_string(), dt_str, "valid single trace info");
 
-        let dt_str = "transfer/channel-0/transfer/channel-1/nft_class";
+        let dt_str = "transfer/channel-0/transfer/channel-1/myclass";
         let dt = PrefixedClassId::from_str(dt_str)?;
         assert_eq!(dt.to_string(), dt_str, "valid multiple trace info");
 
@@ -493,11 +480,11 @@ mod tests {
     fn test_trace_path() -> Result<(), NftTransferError> {
         assert!(TracePath::from_str("").is_ok(), "empty trace path");
         assert!(
-            TracePath::from_str("transfer/nft_class").is_err(),
+            TracePath::from_str("transfer/myclass").is_err(),
             "invalid trace path: bad ChannelId"
         );
         assert!(
-            TracePath::from_str("transfer//nft_class").is_err(),
+            TracePath::from_str("transfer//myclass").is_err(),
             "malformed trace path: missing ChannelId"
         );
         assert!(

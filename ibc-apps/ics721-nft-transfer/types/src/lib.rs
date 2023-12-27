@@ -17,12 +17,21 @@
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
+#[cfg(feature = "serde")]
 mod class;
+#[cfg(feature = "serde")]
 pub use class::*;
+#[cfg(feature = "serde")]
+mod data;
+#[cfg(feature = "serde")]
 pub mod events;
+#[cfg(feature = "serde")]
 pub mod msgs;
+#[cfg(feature = "serde")]
 pub mod packet;
+#[cfg(feature = "serde")]
 mod token;
+#[cfg(feature = "serde")]
 pub use token::*;
 
 #[cfg(feature = "serde")]

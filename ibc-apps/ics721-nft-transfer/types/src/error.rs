@@ -40,8 +40,14 @@ pub enum NftTransferError {
     },
     /// trace length must be even but got: `{len}`
     InvalidTraceLength { len: u64 },
-    /// invalid token
+    /// no token ID
+    NoTokenId,
+    /// invalid token ID
     InvalidTokenId,
+    /// invalid token ID
+    TokenMismatched,
+    /// invalid json data
+    InvalidJsonData,
     /// expected `{expect_order}` channel, got `{got_order}`
     ChannelNotUnordered {
         expect_order: Order,

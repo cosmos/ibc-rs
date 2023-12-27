@@ -1,11 +1,11 @@
 //! Defines Non-Furgible Token Transfer (ICS-721) token types.
-use core::convert::Infallible;
 use core::fmt::{self, Display};
 use core::str::FromStr;
 
 use http::Uri;
 use ibc_core::primitives::prelude::*;
 
+use crate::data::Data;
 use crate::error::NftTransferError;
 
 /// Token ID for an NFT
@@ -39,10 +39,14 @@ impl Display for TokenId {
 }
 
 impl FromStr for TokenId {
-    type Err = Infallible;
+    type Err = NftTransferError;
 
     fn from_str(token_id: &str) -> Result<Self, Self::Err> {
-        Ok(Self(token_id.to_string()))
+        if token_id.trim().is_empty() {
+            Err(NftTransferError::InvalidTokenId)
+        } else {
+            Ok(Self(token_id.to_string()))
+        }
     }
 }
 
@@ -83,19 +87,13 @@ impl Display for TokenIds {
     }
 }
 
-//impl FromStr for TokenIds {
-//    type Err = NftTransferError;
-//
-//    fn from_str(token_ids: &str) -> Result<Self, Self::Err> {
-//        let token_ids: Result<Vec<TokenId>, _> = token_ids.split(',').map(|t| t.parse()).collect();
-//        Ok(Self(token_ids?))
-//    }
-//}
-
 impl TryFrom<Vec<String>> for TokenIds {
     type Error = NftTransferError;
 
     fn try_from(token_ids: Vec<String>) -> Result<Self, Self::Error> {
+        if token_ids.is_empty() {
+            return Err(NftTransferError::NoTokenId);
+        }
         let token_ids: Result<Vec<TokenId>, _> = token_ids.iter().map(|t| t.parse()).collect();
         Ok(Self(token_ids?))
     }
@@ -161,13 +159,7 @@ impl FromStr for TokenUri {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TokenData(String);
-
-impl AsRef<str> for TokenData {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
+pub struct TokenData(Data);
 
 impl Display for TokenData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -179,7 +171,7 @@ impl FromStr for TokenData {
     type Err = NftTransferError;
 
     fn from_str(token_data: &str) -> Result<Self, Self::Err> {
-        // TODO validation
-        Ok(Self(token_data.to_string()))
+        let data = Data::from_str(token_data)?;
+        Ok(Self(data))
     }
 }
