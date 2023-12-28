@@ -13,35 +13,35 @@ use super::types::{DummyNft, DummyNftClass, DummyNftTransferModule};
 
 impl NftContext for DummyNft {
     fn get_class_id(&self) -> ClassId {
-        "class_0".parse().unwrap()
+        "class_0".parse().expect("infallible")
     }
 
     fn get_id(&self) -> TokenId {
-        "token_0".parse().unwrap()
+        "token_0".parse().expect("infallible")
     }
 
     fn get_uri(&self) -> TokenUri {
-        "http://example.com".parse().unwrap()
+        "http://example.com".parse().expect("infallible")
     }
 
     fn get_data(&self) -> TokenData {
         let data = r#"{"name":{"value":"Crypto Creatures"},"image":{"value":"binary","mime":"image/png"}}"#;
-        data.parse().unwrap()
+        data.parse().expect("infallible")
     }
 }
 
 impl NftClassContext for DummyNftClass {
     fn get_id(&self) -> ClassId {
-        "class_0".parse().unwrap()
+        "class_0".parse().expect("infallible")
     }
 
     fn get_uri(&self) -> ClassUri {
-        "http://example.com".parse().unwrap()
+        "http://example.com".parse().expect("infallible")
     }
 
     fn get_data(&self) -> ClassData {
         let data = r#"{"name":{"value":"Crypto Creatures"},"image":{"value":"binary","mime":"image/png"}}"#;
-        data.parse().unwrap()
+        data.parse().expect("infallible")
     }
 }
 
@@ -129,14 +129,14 @@ impl NftTransferValidationContext for DummyNftTransferModule {
         _class_id: &PrefixedClassId,
         _token_id: &TokenId,
     ) -> Result<Self::Nft, NftTransferError> {
-        Ok(DummyNft::default())
+        Ok(DummyNft)
     }
 
     fn get_nft_class(
         &self,
         _class_id: &PrefixedClassId,
     ) -> Result<Self::NftClass, NftTransferError> {
-        Ok(DummyNftClass::default())
+        Ok(DummyNftClass)
     }
 }
 

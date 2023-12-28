@@ -120,7 +120,7 @@ where
     Ok(())
 }
 
-/// Executes the token transfer. A prior call to [`send_transfer_validate`] MUST have succeeded.
+/// Executes the token transfer. A prior call to [`send_nft_transfer_validate`] MUST have succeeded.
 pub fn send_nft_transfer_execute<SendPacketCtx, TransferCtx>(
     send_packet_ctx_a: &mut SendPacketCtx,
     transfer_ctx: &mut TransferCtx,

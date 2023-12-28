@@ -1,10 +1,10 @@
 #[derive(Debug)]
 pub struct DummyNftTransferModule;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct DummyNft;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct DummyNftClass;
 
 impl DummyNftTransferModule {
