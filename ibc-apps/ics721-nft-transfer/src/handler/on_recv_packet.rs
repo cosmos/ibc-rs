@@ -44,42 +44,28 @@ where
             c
         };
 
-        // Note: it is correct to do the validation here because `recv_packet()`
-        // works slightly differently. We do not have a
-        // `on_recv_packet_validate()` callback because regardless of whether or
-        // not the app succeeds to receive the packet, we want to run the
-        // `execute()` phase. And this is because the app failing to receive
-        // does not constitute a failure of the message processing.
-        // Specifically, when the app fails to receive, we need to return
-        // a `TokenTransferAcknowledgement::Error` acknowledgement, which
-        // gets relayed back to the sender so that the escrowed tokens
-        // can be refunded.
-        data.token_ids
-            .as_ref()
-            .iter()
-            .try_for_each(|token_id| {
-                ctx_b.unescrow_nft_validate(
+        // Note: the validation is called before the execution.
+        // Refer to ICS-20 `process_recv_packet_execute()`.
+        for token_id in data.token_ids.as_ref() {
+            ctx_b
+                .unescrow_nft_validate(
                     &receiver_account,
                     &packet.port_id_on_b,
                     &packet.chan_id_on_b,
                     &class_id,
                     token_id,
                 )
-            })
-            .map_err(|nft_error| (ModuleExtras::empty(), nft_error))?;
-        data.token_ids
-            .as_ref()
-            .iter()
-            .try_for_each(|token_id| {
-                ctx_b.unescrow_nft_execute(
+                .map_err(|nft_error| (ModuleExtras::empty(), nft_error))?;
+            ctx_b
+                .unescrow_nft_execute(
                     &receiver_account,
                     &packet.port_id_on_b,
                     &packet.chan_id_on_b,
                     &class_id,
                     token_id,
                 )
-            })
-            .map_err(|nft_error| (ModuleExtras::empty(), nft_error))?;
+                .map_err(|nft_error| (ModuleExtras::empty(), nft_error))?;
+        }
 
         ModuleExtras::empty()
     } else {
@@ -109,6 +95,9 @@ where
             .zip(data.token_uris.iter())
             .zip(data.token_data.iter())
         {
+            // Note: the validation is called before the execution.
+            // Refer to ICS-20 `process_recv_packet_execute()`.
+
             let class_uri = data
                 .class_uri
                 .as_ref()
@@ -118,11 +107,12 @@ where
                 .as_ref()
                 .ok_or((ModuleExtras::empty(), NftTransferError::NftClassNotFound))?;
             ctx_b
+                .create_or_update_class_validate(&class_id, class_uri, class_data)
+                .map_err(|nft_error| (ModuleExtras::empty(), nft_error))?;
+            ctx_b
                 .create_or_update_class_execute(&class_id, class_uri, class_data)
                 .map_err(|nft_error| (ModuleExtras::empty(), nft_error))?;
 
-            // Note: the validation is called before the execution.
-            // Refer to ICS-20 `process_recv_packet_execute()`.
             ctx_b
                 .mint_nft_validate(
                     &receiver_account,

@@ -57,6 +57,8 @@ pub enum NftTransferError {
     CantCloseChannel,
     /// `{sender}` doesn't own the NFT
     InvalidOwner { sender: String },
+    /// owner is not found
+    OwnerNotFound,
     /// nft is not found
     NftNotFound,
     /// nft class is not found

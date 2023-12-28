@@ -52,7 +52,7 @@ pub trait NftTransferValidationContext {
     /// Validates that the NFT can be created or updated successfully.
     fn create_or_update_class_validate(
         &self,
-        class_id: &ClassId,
+        class_id: &PrefixedClassId,
         class_uri: &ClassUri,
         class_data: &ClassData,
     ) -> Result<(), NftTransferError>;
@@ -109,25 +109,23 @@ pub trait NftTransferValidationContext {
         None
     }
 
-    /// Returns the current owner of the NFT. If the NFT doesn't exist, it returns None.
+    /// Returns the current owner of the NFT
     fn get_owner(
         &self,
         class_id: &PrefixedClassId,
         token_id: &TokenId,
-    ) -> Result<Option<Self::AccountId>, NftTransferError>;
+    ) -> Result<Self::AccountId, NftTransferError>;
 
-    /// Returns the NFT. If the NFT doesn't exist, it returns None.
+    /// Returns the NFT
     fn get_nft(
         &self,
         class_id: &PrefixedClassId,
         token_id: &TokenId,
-    ) -> Result<Option<Self::Nft>, NftTransferError>;
+    ) -> Result<Self::Nft, NftTransferError>;
 
-    /// Returns the NFT class. If the NFT class doesn't exist, it returns None.
-    fn get_nft_class(
-        &self,
-        class_id: &PrefixedClassId,
-    ) -> Result<Option<Self::NftClass>, NftTransferError>;
+    /// Returns the NFT class
+    fn get_nft_class(&self, class_id: &PrefixedClassId)
+        -> Result<Self::NftClass, NftTransferError>;
 }
 
 /// Read-write methods required in NFT transfer execution context.

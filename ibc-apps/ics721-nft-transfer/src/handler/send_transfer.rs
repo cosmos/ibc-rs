@@ -71,13 +71,11 @@ where
     packet_data.token_data.clear();
     for token_id in token_ids.as_ref() {
         // Check the sender
-        match transfer_ctx.get_owner(class_id, token_id)? {
-            Some(owner) if owner == sender => {}
-            _ => {
-                return Err(NftTransferError::InvalidOwner {
-                    sender: packet_data.sender.to_string(),
-                })
-            }
+        let owner = transfer_ctx.get_owner(class_id, token_id)?;
+        if owner != sender {
+            return Err(NftTransferError::InvalidOwner {
+                sender: packet_data.sender.to_string(),
+            });
         }
 
         if is_sender_chain_source(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone(), class_id) {
@@ -92,16 +90,12 @@ where
         } else {
             transfer_ctx.burn_nft_validate(&sender, class_id, token_id, &packet_data.memo)?;
         }
-        let nft = transfer_ctx
-            .get_nft(class_id, token_id)?
-            .ok_or(NftTransferError::NftNotFound)?;
+        let nft = transfer_ctx.get_nft(class_id, token_id)?;
         packet_data.token_uris.push(nft.get_uri());
         packet_data.token_data.push(nft.get_data());
     }
 
-    let nft_class = transfer_ctx
-        .get_nft_class(class_id)?
-        .ok_or(NftTransferError::NftClassNotFound)?;
+    let nft_class = transfer_ctx.get_nft_class(class_id)?;
     packet_data.class_uri = Some(nft_class.get_uri());
     packet_data.class_data = Some(nft_class.get_data());
 
@@ -179,16 +173,12 @@ where
         } else {
             transfer_ctx.burn_nft_execute(&sender, class_id, token_id, &packet_data.memo)?;
         }
-        let nft = transfer_ctx
-            .get_nft(class_id, token_id)?
-            .ok_or(NftTransferError::NftNotFound)?;
+        let nft = transfer_ctx.get_nft(class_id, token_id)?;
         packet_data.token_uris.push(nft.get_uri());
         packet_data.token_data.push(nft.get_data());
     }
 
-    let nft_class = transfer_ctx
-        .get_nft_class(class_id)?
-        .ok_or(NftTransferError::NftClassNotFound)?;
+    let nft_class = transfer_ctx.get_nft_class(class_id)?;
     packet_data.class_uri = Some(nft_class.get_uri());
     packet_data.class_data = Some(nft_class.get_data());
 
