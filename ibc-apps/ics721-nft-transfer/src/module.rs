@@ -320,10 +320,9 @@ pub fn on_timeout_packet_execute(
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use crate::types::ack_success_b64;
     use crate::types::error::NftTransferError;
-
-    use super::*;
 
     #[test]
     fn test_ack_ser() {

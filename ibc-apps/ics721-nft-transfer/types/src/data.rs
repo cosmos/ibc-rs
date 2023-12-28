@@ -2,8 +2,9 @@
 use core::fmt::{self, Display, Formatter};
 use core::str::FromStr;
 
-use crate::error::NftTransferError;
 use ibc_core::primitives::prelude::*;
+
+use crate::error::NftTransferError;
 
 #[cfg_attr(
     feature = "parity-scale-codec",
