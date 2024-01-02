@@ -11,17 +11,16 @@
 name: Release
 
 on:
-  pull_request:
+  push:
     branches:
       - "release/*"
-  push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"             # Push events to matching v*, i.e. v0.26.0, v1.0.0
       - "v[0-9]+.[0-9]+.[0-9]+-pre.[0-9]+"  # e.g. v0.26.0-pre.1
 
 jobs:
   release-check:
-    if: github.event_name == 'pull_request'
+    if: github.ref_type != 'tag'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +31,7 @@ jobs:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
   release:
-    if: github.event_name == 'push' && github.ref_type == 'tag'
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
