@@ -11,7 +11,7 @@
 name: Release
 
 on:
-  push:
+  pull_request:
     branches:
       - "release/*"
   push:
@@ -21,7 +21,7 @@ on:
 
 jobs:
   release-check:
-    if: startsWith(github.ref, 'refs/heads/release/')
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && github.ref_type == 'tag'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
