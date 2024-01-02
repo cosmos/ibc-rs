@@ -37,8 +37,8 @@ Our release process is as follows:
 9. Create a signed tag `git tag -s -a vX.Y.Z`. In the tag message, write the
    version and the link to the corresponding section of the changelog. Then push
    the tag to GitHub with `git push --tags`.
-   - The [release workflow][release.yml] will run the [`release.sh`] script in a
-   CI worker.
+   - The [release workflow][release.yml] will run the `cargo release --execute` 
+   command in a CI worker.
 10. If some crates have not been released, check the cause of the failure and
    act accordingly:
     1. In case of intermittent problems with the registry, rerun the script
