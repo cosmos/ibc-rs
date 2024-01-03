@@ -2,7 +2,7 @@
 use core::fmt::{self, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
-use derive_more::{Display, From};
+use derive_more::From;
 use http::Uri;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
@@ -324,26 +324,69 @@ impl Display for PrefixedClassId {
 }
 
 /// Class URI for an NFT
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, PartialEq, Eq, Display)]
-pub struct ClassUri(String);
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClassUri(
+    #[cfg_attr(feature = "serde", serde(with = "serializers"))]
+    #[cfg_attr(feature = "schema", schemars(with = "String"))]
+    Uri,
+);
 
-impl AsRef<str> for ClassUri {
-    fn as_ref(&self) -> &str {
-        &self.0
+#[cfg(feature = "borsh")]
+impl borsh::BorshSerialize for ClassUri {
+    fn serialize<W: borsh::maybestd::io::Write>(
+        &self,
+        writer: &mut W,
+    ) -> borsh::maybestd::io::Result<()> {
+        borsh::BorshSerialize::serialize(&self.to_string(), writer)
+    }
+}
+
+#[cfg(feature = "borsh")]
+impl borsh::BorshDeserialize for ClassUri {
+    fn deserialize_reader<R: borsh::maybestd::io::Read>(
+        reader: &mut R,
+    ) -> borsh::maybestd::io::Result<Self> {
+        let uri = String::deserialize_reader(reader)?;
+        Ok(ClassUri::from_str(&uri).map_err(|_| borsh::maybestd::io::ErrorKind::Other)?)
+    }
+}
+
+#[cfg(feature = "parity-scale-codec")]
+impl parity_scale_codec::Encode for ClassUri {
+    fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, writer: &mut T) {
+        self.to_string().encode_to(writer);
+    }
+}
+
+#[cfg(feature = "parity-scale-codec")]
+impl parity_scale_codec::Decode for ClassUri {
+    fn decode<I: parity_scale_codec::Input>(
+        input: &mut I,
+    ) -> Result<Self, parity_scale_codec::Error> {
+        let uri = String::decode(input)?;
+        ClassUri::from_str(&uri).map_err(|_| parity_scale_codec::Error::from("from str error"))
+    }
+}
+
+#[cfg(feature = "parity-scale-codec")]
+impl scale_info::TypeInfo for ClassUri {
+    type Identity = Self;
+
+    fn type_info() -> scale_info::Type {
+        scale_info::Type::builder()
+            .path(scale_info::Path::new("ClassUri", module_path!()))
+            .composite(
+                scale_info::build::Fields::unnamed()
+                    .field(|f| f.ty::<String>().type_name("String")),
+            )
+    }
+}
+
+impl Display for ClassUri {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -352,7 +395,7 @@ impl FromStr for ClassUri {
 
     fn from_str(class_uri: &str) -> Result<Self, Self::Err> {
         match Uri::from_str(class_uri) {
-            Ok(_) => Ok(Self(class_uri.to_string())),
+            Ok(uri) => Ok(Self(uri)),
             Err(err) => Err(NftTransferError::InvalidUri {
                 uri: class_uri.to_string(),
                 validation_error: err,
@@ -400,7 +443,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_denom_validation() -> Result<(), NftTransferError> {
+    fn test_class_id_validation() -> Result<(), NftTransferError> {
         assert!(ClassId::from_str("").is_err(), "empty base class ID");
         assert!(ClassId::from_str("myclass").is_ok(), "valid base class ID");
         assert!(PrefixedClassId::from_str("").is_err(), "empty class trace");
@@ -442,7 +485,7 @@ mod tests {
     }
 
     #[test]
-    fn test_denom_trace() -> Result<(), NftTransferError> {
+    fn test_class_id_trace() -> Result<(), NftTransferError> {
         assert_eq!(
             PrefixedClassId::from_str("transfer/channel-0/myclass")?,
             PrefixedClassId {
@@ -464,7 +507,7 @@ mod tests {
     }
 
     #[test]
-    fn test_denom_serde() -> Result<(), NftTransferError> {
+    fn test_class_id_serde() -> Result<(), NftTransferError> {
         let dt_str = "transfer/channel-0/myclass";
         let dt = PrefixedClassId::from_str(dt_str)?;
         assert_eq!(dt.to_string(), dt_str, "valid single trace info");

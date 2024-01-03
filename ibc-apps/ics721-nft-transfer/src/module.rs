@@ -149,7 +149,7 @@ pub fn on_chan_close_init_execute(
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, NftTransferError> {
-    unimplemented!()
+    Err(NftTransferError::CantCloseChannel)
 }
 
 pub fn on_chan_close_confirm_validate(

@@ -1,4 +1,4 @@
-//! Defines Non-Furgible Token Transfer (ICS-721) token types.
+//! Defines Non-Fungible Token Transfer (ICS-721) token types.
 use core::fmt::{self, Display};
 use core::str::FromStr;
 
@@ -7,6 +7,7 @@ use ibc_core::primitives::prelude::*;
 
 use crate::data::Data;
 use crate::error::NftTransferError;
+use crate::serializers;
 
 /// Token ID for an NFT
 #[cfg_attr(
@@ -23,7 +24,7 @@ use crate::error::NftTransferError;
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TokenId(String);
 
 impl AsRef<str> for TokenId {
@@ -94,32 +95,75 @@ impl TryFrom<Vec<String>> for TokenIds {
         if token_ids.is_empty() {
             return Err(NftTransferError::NoTokenId);
         }
-        let token_ids: Result<Vec<TokenId>, _> = token_ids.iter().map(|t| t.parse()).collect();
-        Ok(Self(token_ids?))
+        let ids: Result<Vec<TokenId>, _> = token_ids.iter().map(|t| t.parse()).collect();
+        let mut ids = ids?;
+        ids.sort();
+        ids.dedup();
+        if ids.len() != token_ids.len() {
+            return Err(NftTransferError::DuplicatedTokenIds);
+        }
+        Ok(Self(ids))
     }
 }
 
 /// Token URI for an NFT
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TokenUri(String);
+pub struct TokenUri(
+    #[cfg_attr(feature = "serde", serde(with = "serializers"))]
+    #[cfg_attr(feature = "schema", schemars(with = "String"))]
+    Uri,
+);
 
-impl AsRef<str> for TokenUri {
-    fn as_ref(&self) -> &str {
-        &self.0
+#[cfg(feature = "borsh")]
+impl borsh::BorshSerialize for TokenUri {
+    fn serialize<W: borsh::maybestd::io::Write>(
+        &self,
+        writer: &mut W,
+    ) -> borsh::maybestd::io::Result<()> {
+        borsh::BorshSerialize::serialize(&self.to_string(), writer)
+    }
+}
+
+#[cfg(feature = "borsh")]
+impl borsh::BorshDeserialize for TokenUri {
+    fn deserialize_reader<R: borsh::maybestd::io::Read>(
+        reader: &mut R,
+    ) -> borsh::maybestd::io::Result<Self> {
+        let uri = String::deserialize_reader(reader)?;
+        Ok(TokenUri::from_str(&uri).map_err(|_| borsh::maybestd::io::ErrorKind::Other)?)
+    }
+}
+
+#[cfg(feature = "parity-scale-codec")]
+impl parity_scale_codec::Encode for TokenUri {
+    fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, writer: &mut T) {
+        self.to_string().encode_to(writer);
+    }
+}
+
+#[cfg(feature = "parity-scale-codec")]
+impl parity_scale_codec::Decode for TokenUri {
+    fn decode<I: parity_scale_codec::Input>(
+        input: &mut I,
+    ) -> Result<Self, parity_scale_codec::Error> {
+        let uri = String::decode(input)?;
+        TokenUri::from_str(&uri).map_err(|_| parity_scale_codec::Error::from("from str error"))
+    }
+}
+
+#[cfg(feature = "parity-scale-codec")]
+impl scale_info::TypeInfo for TokenUri {
+    type Identity = Self;
+
+    fn type_info() -> scale_info::Type {
+        scale_info::Type::builder()
+            .path(scale_info::Path::new("TokenUri", module_path!()))
+            .composite(
+                scale_info::build::Fields::unnamed()
+                    .field(|f| f.ty::<String>().type_name("String")),
+            )
     }
 }
 
@@ -134,7 +178,7 @@ impl FromStr for TokenUri {
 
     fn from_str(token_uri: &str) -> Result<Self, Self::Err> {
         match Uri::from_str(token_uri) {
-            Ok(_) => Ok(Self(token_uri.to_string())),
+            Ok(uri) => Ok(Self(uri)),
             Err(err) => Err(NftTransferError::InvalidUri {
                 uri: token_uri.to_string(),
                 validation_error: err,

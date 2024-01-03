@@ -11,27 +11,27 @@ use crate::types::{
 
 pub trait NftContext {
     /// Get the class ID of the token
-    fn get_class_id(&self) -> ClassId;
+    fn get_class_id(&self) -> &ClassId;
 
     /// Get the token ID
-    fn get_id(&self) -> TokenId;
+    fn get_id(&self) -> &TokenId;
 
     /// Get the token URI
-    fn get_uri(&self) -> TokenUri;
+    fn get_uri(&self) -> &TokenUri;
 
     /// Get the token Data
-    fn get_data(&self) -> TokenData;
+    fn get_data(&self) -> &TokenData;
 }
 
 pub trait NftClassContext {
     /// Get the class ID
-    fn get_id(&self) -> ClassId;
+    fn get_id(&self) -> &ClassId;
 
     /// Get the class URI
-    fn get_uri(&self) -> ClassUri;
+    fn get_uri(&self) -> &ClassUri;
 
     /// Get the class Data
-    fn get_data(&self) -> ClassData;
+    fn get_data(&self) -> &ClassData;
 }
 
 /// Read-only methods required in NFT transfer validation context.
@@ -59,6 +59,7 @@ pub trait NftTransferValidationContext {
 
     /// Validates that the tokens can be escrowed successfully.
     ///
+    /// The owner of the NFT should be checked in this validation.
     /// `memo` field allows to incorporate additional contextual details in the
     /// escrow validation.
     fn escrow_nft_validate(
@@ -93,6 +94,7 @@ pub trait NftTransferValidationContext {
 
     /// Validates the sender account and the coin input before burning.
     ///
+    /// The owner of the NFT should be checked in this validation.
     /// `memo` field allows to incorporate additional contextual details in the
     /// burn validation.
     fn burn_nft_validate(
@@ -108,13 +110,6 @@ pub trait NftTransferValidationContext {
     fn class_hash_string(&self, _class_id: &PrefixedClassId) -> Option<String> {
         None
     }
-
-    /// Returns the current owner of the NFT
-    fn get_owner(
-        &self,
-        class_id: &PrefixedClassId,
-        token_id: &TokenId,
-    ) -> Result<Self::AccountId, NftTransferError>;
 
     /// Returns the NFT
     fn get_nft(

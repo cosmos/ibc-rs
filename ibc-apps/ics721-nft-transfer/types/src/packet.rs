@@ -204,7 +204,7 @@ mod tests {
     }
 
     fn dummy_json_packet_data() -> &'static str {
-        r#"{"class_id":"class","class_uri":"http://example.com","class_data":"{\"image\":{\"value\":\"binary\",\"mime\":\"image/png\"},\"name\":{\"value\":\"Crypto Creatures\"}}","token_ids":["token_0","token_1"],"token_uris":["http://example.com","http://example.com"],"token_data":["{\"image\":{\"value\":\"binary\",\"mime\":\"image/png\"},\"name\":{\"value\":\"Crypto Creatures\"}}","{\"image\":{\"value\":\"binary\",\"mime\":\"image/png\"},\"name\":{\"value\":\"Crypto Creatures\"}}"],"sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","memo":""}"#
+        r#"{"class_id":"class","class_uri":"http://example.com/","class_data":"{\"image\":{\"value\":\"binary\",\"mime\":\"image/png\"},\"name\":{\"value\":\"Crypto Creatures\"}}","token_ids":["token_0","token_1"],"token_uris":["http://example.com/","http://example.com/"],"token_data":["{\"image\":{\"value\":\"binary\",\"mime\":\"image/png\"},\"name\":{\"value\":\"Crypto Creatures\"}}","{\"image\":{\"value\":\"binary\",\"mime\":\"image/png\"},\"name\":{\"value\":\"Crypto Creatures\"}}"],"sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","memo":""}"#
     }
 
     fn dummy_json_packet_data_without_memo() -> &'static str {

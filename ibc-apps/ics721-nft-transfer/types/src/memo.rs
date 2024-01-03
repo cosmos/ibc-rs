@@ -1,5 +1,5 @@
 //! Defines the memo type, which represents the string that users can include
-//! with a token transfer
+//! with a Non-Fungible Token Transfer
 
 use core::convert::Infallible;
 use core::fmt::{

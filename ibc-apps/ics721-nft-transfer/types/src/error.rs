@@ -44,6 +44,8 @@ pub enum NftTransferError {
     NoTokenId,
     /// invalid token ID
     InvalidTokenId,
+    /// duplicated token IDs
+    DuplicatedTokenIds,
     /// invalid token ID
     TokenMismatched,
     /// invalid json data

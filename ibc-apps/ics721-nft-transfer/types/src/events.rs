@@ -7,9 +7,9 @@ use ibc_core::router::types::event::ModuleEvent;
 use super::Memo;
 use crate::{PrefixedClassId, TokenIds, MODULE_ID_STR};
 
-const EVENT_TYPE_PACKET: &str = "nft_packet";
+const EVENT_TYPE_PACKET: &str = "non_fungible_token_packet";
 const EVENT_TYPE_TIMEOUT: &str = "timeout";
-const EVENT_TYPE_CLASS_TRACE: &str = "nft_class_trace";
+const EVENT_TYPE_CLASS_TRACE: &str = "class_trace";
 const EVENT_TYPE_TRANSFER: &str = "ibc_nft_transfer";
 
 /// Contains all events variants that can be emitted from the NFT transfer application

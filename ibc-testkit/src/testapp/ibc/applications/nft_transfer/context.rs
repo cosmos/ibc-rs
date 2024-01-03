@@ -12,36 +12,34 @@ use ibc::core::primitives::Signer;
 use super::types::{DummyNft, DummyNftClass, DummyNftTransferModule};
 
 impl NftContext for DummyNft {
-    fn get_class_id(&self) -> ClassId {
-        "class_0".parse().expect("infallible")
+    fn get_class_id(&self) -> &ClassId {
+        &self.class_id
     }
 
-    fn get_id(&self) -> TokenId {
-        "token_0".parse().expect("infallible")
+    fn get_id(&self) -> &TokenId {
+        &self.token_id
     }
 
-    fn get_uri(&self) -> TokenUri {
-        "http://example.com".parse().expect("infallible")
+    fn get_uri(&self) -> &TokenUri {
+        &self.token_uri
     }
 
-    fn get_data(&self) -> TokenData {
-        let data = r#"{"name":{"value":"Crypto Creatures"},"image":{"value":"binary","mime":"image/png"}}"#;
-        data.parse().expect("infallible")
+    fn get_data(&self) -> &TokenData {
+        &self.token_data
     }
 }
 
 impl NftClassContext for DummyNftClass {
-    fn get_id(&self) -> ClassId {
-        "class_0".parse().expect("infallible")
+    fn get_id(&self) -> &ClassId {
+        &self.class_id
     }
 
-    fn get_uri(&self) -> ClassUri {
-        "http://example.com".parse().expect("infallible")
+    fn get_uri(&self) -> &ClassUri {
+        &self.class_uri
     }
 
-    fn get_data(&self) -> ClassData {
-        let data = r#"{"name":{"value":"Crypto Creatures"},"image":{"value":"binary","mime":"image/png"}}"#;
-        data.parse().expect("infallible")
+    fn get_data(&self) -> &ClassData {
+        &self.class_data
     }
 }
 
@@ -115,28 +113,19 @@ impl NftTransferValidationContext for DummyNftTransferModule {
         Ok(())
     }
 
-    fn get_owner(
-        &self,
-        _class_id: &PrefixedClassId,
-        _token_id: &TokenId,
-    ) -> Result<Self::AccountId, NftTransferError> {
-        let owner = "owner".to_string();
-        Ok(owner.into())
-    }
-
     fn get_nft(
         &self,
         _class_id: &PrefixedClassId,
         _token_id: &TokenId,
     ) -> Result<Self::Nft, NftTransferError> {
-        Ok(DummyNft)
+        Ok(DummyNft::default())
     }
 
     fn get_nft_class(
         &self,
         _class_id: &PrefixedClassId,
     ) -> Result<Self::NftClass, NftTransferError> {
-        Ok(DummyNftClass)
+        Ok(DummyNftClass::default())
     }
 }
 
