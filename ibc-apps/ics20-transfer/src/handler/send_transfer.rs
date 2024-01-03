@@ -1,7 +1,7 @@
 use ibc_app_transfer_types::error::TokenTransferError;
 use ibc_app_transfer_types::events::TransferEvent;
 use ibc_app_transfer_types::msgs::transfer::MsgTransfer;
-use ibc_app_transfer_types::{is_sender_chain_source, MODULE_ID_STR};
+use ibc_app_transfer_types::{is_sender_chain_source, MODULE_ID_STR, TracePrefix};
 use ibc_core::channel::context::{SendPacketExecutionContext, SendPacketValidationContext};
 use ibc_core::channel::handler::{send_packet_execute, send_packet_validate};
 use ibc_core::channel::types::packet::Packet;
@@ -54,7 +54,13 @@ where
     let seq_send_path_on_a = SeqSendPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let sequence = send_packet_ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
-    let token = &msg.packet_data.token;
+    // let token = &msg.packet_data.token;
+    let prefix = TracePrefix::new(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone());
+    let token = {
+        let mut c = msg.packet_data.token.clone();
+        c.denom.remove_trace_prefix(&prefix);
+        c
+    };
 
     let sender: TokenCtx::AccountId = msg
         .packet_data
@@ -72,11 +78,11 @@ where
             &sender,
             &msg.port_id_on_a,
             &msg.chan_id_on_a,
-            token,
+            &token,
             &msg.packet_data.memo,
         )?;
     } else {
-        token_ctx_a.burn_coins_validate(&sender, token, &msg.packet_data.memo)?;
+        token_ctx_a.burn_coins_validate(&sender, &token, &msg.packet_data.memo)?;
     }
 
     let packet = {
