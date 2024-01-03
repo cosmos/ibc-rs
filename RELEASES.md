@@ -28,29 +28,27 @@ Our release process is as follows:
 5. Run `cargo doc -p ibc --all-features --open` locally to double-check that all
    the documentation compiles and seems up-to-date and coherent. Fix any
    potential issues here and push them to the release PR.
-6. Run `cargo publish -p ibc --dry-run` to double-check that publishing will
-   work. Fix any potential issues here and push them to the release PR.
-7. Mark the PR as **Ready for Review** and incorporate feedback on the release.
-8. Once approved, merge the PR, and pull the `main` branch.
-9. Create a signed tag `git tag -s -a vX.Y.Z`. In the tag message, write the
+6. Mark the PR as **Ready for Review** and incorporate feedback on the release.
+   Once approved, merge the PR.
+7. Checkout the `main` and pull it with `git checkout main && git pull origin main`.
+8. Create a signed tag `git tag -s -a vX.Y.Z`. In the tag message, write the
    version and the link to the corresponding section of the changelog. Then push
-   the tag to GitHub with `git push --tags`.
-   - The [release workflow][release.yml] will run the [`release.sh`] script in a
-   CI worker.
-10. If some crates have not been released, check the cause of the failure and
+   the tag to GitHub with `git push origin vX.Y.Z`.
+   - The [release workflow][release.yml] will run the `cargo release --execute`
+   command in a CI worker.
+9. If some crates have not been released, check the cause of the failure and
    act accordingly:
-    1. In case of intermittent problems with the registry, rerun the script
+    1. In case of intermittent problems with the registry, try `cargo release`
       locally to publish any missing crates from this release. This step
       requires the appropriate privileges to push crates to [crates.io].
     2. In case the problems arise from the source files, fix them, bump a new
       patch version (e.g. `v0.48.1`) and repeat the process with its
       corresponding new tag.
-11. Once the tag is pushed, create a GitHub release and append
+10. Once the tag is pushed, wait for the CI bot to create a GitHub release,
+    then update the release description and append:
    `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)`
-   to the release description.
 
 All done! 🎉
 
 [crates.io]: https://crates.io
-[`release.sh`]: https://github.com/cosmos/ibc-rs/blob/main/scripts/release.sh
 [release.yml]: https://github.com/cosmos/ibc-rs/blob/main/.github/workflows/release.yml

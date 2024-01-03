@@ -1,5 +1,71 @@
 # CHANGELOG
 
+## v0.49.0
+
+*January 3, 2024*
+
+This release continues the trend of further decoupling dependencies between the
+different ibc-rs sub-crates and modules.
+
+In particular, the `prost` dependency is now only imported in the
+`ibc-primitives` crate; note that error variants originating from `prost` have
+largely been removed, which is a breaking change. The `bytes` dependency was
+also removed. Additionally, `CommitmentProofBytes` can now be accessed without
+explicit ownership of the object for which the proof is being queried for.
+
+Some other improvements of note include making the CosmWasm check more rigorous,
+streamlining the `Msg` trait and renaming it to `ToProto`, as well as
+implementing custom JSON and Borsh `ChainId` deserialization.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- `[ibc-app-transfer]` Refactor `send-coins-*()` methods by breaking them down
+  into distinct escrow and unescrow methods, enhancing both clarity and
+  specificity in functionality.
+  ([\#837](https://github.com/cosmos/ibc-rs/issues/837))
+- `[ibc-app-transfer]` Add `memo` field to `escrow-coins-*()` and
+  `burn-coins-*()` methods, allowing implementors to pass in arbitrary data
+  necessary for their use case.
+  ([\#839](https://github.com/cosmos/ibc-rs/issues/837))
+- `[ibc-core-host-type]` Optimize `IdentifierError` variants and make them
+  mutually exclusive. ([\#978](https://github.com/cosmos/ibc-rs/issues/978))
+- `[ibc-data-types]` Bump ibc-proto-rs dependency to v0.39.1.
+  ([\#993](https://github.com/cosmos/ibc-rs/issues/993))
+- `[ibc]` Minimize `prost` dependency by introducing `ToVec` trait
+  - Now `prost` is only imported in `ibc-primitives` crate
+  - Remove error variants originating from `prost` (Breaking change)
+  - Eliminate the need for the `bytes` dependency
+ ([\#997](https://github.com/cosmos/ibc-rs/issues/997))
+- `[ibc-core-host-types]` Introduce `ClientType::build_client_id` which avoids unnecessary validation.
+  ([#1014](https://github.com/cosmos/ibc-rs/issues/1014))
+- `[ibc-core-host-types]` Optimise `ClientId::new` to avoid unnecessary validation and temporary
+  string allocation. ([#1014](https://github.com/cosmos/ibc-rs/issues/1014))
+
+### FEATURES
+
+- `[ibc-core-commitment-types]` implement `AsRef<Vec<u8>>` and
+  `AsRef<[u8]>` for `CommitmentProofBytes` so it’s possible to gain
+  access to the proof byte slice without having to own the object.
+  ([#1008](https://github.com/cosmos/ibc-rs/pull/1008))
+
+### IMPROVEMENTS
+
+- `[cw-check]` More rigorous CosmWasm check by upgrading dependencies and
+  including `std` and `schema` features for `ibc-core`.
+  ([\#992](https://github.com/cosmos/ibc-rs/pull/992))
+- `[ibc-primitives]` streamline `Msg` trait and rename to `ToProto`
+ ([#993](https://github.com/cosmos/ibc-rs/issues/993))
+- `[ibc-core-host-types]` Implement custom JSON and Borsh deserialization for `ChainId` ([#996](https://github.com/cosmos/ibc-rs/pull/1013))
+- `[ibc-core-client-types]` Add a convenient `Status::verify_is_active` method.
+  ([#1005](https://github.com/cosmos/ibc-rs/pull/1005))
+- `[ibc-primitives]` Derive `Hash` on `Timestamp` instead of explicit
+  implementation ([#1011](https://github.com/cosmos/ibc-rs/pull/1005))
+- `[ibc-derive]` Use global paths in generated code by macros to prevent
+  namespace conflicts with local modules
+  ([#1017](https://github.com/cosmos/ibc-rs/pull/1017))
+
 ## v0.48.2
 
 *December 22, 2023*

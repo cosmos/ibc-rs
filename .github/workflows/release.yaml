@@ -1,27 +1,65 @@
-# Attempts to perform a release when a particular tag is pushed. This uses the
-# `./scripts/release.sh`, and assumes that the CRATES_TOKEN secret has been set
-# and contains an API token with which we can publish our crates to crates.io.
+# Attempts to perform a release when a particular tag is pushed. This job uses 
+# the `cargo release` command and assumes that the `CRATES_TOKEN`secret has 
+# been set and contains an API token with which we can publish our crates to 
+# crates.io.
+#
+# The `ibc-derive` publishing process is managed manually since it's not
+# consistently published with every release.
 #
 # If release operation fails partway through due to a temporary error (e.g. the
 # crate being published depends on the crate published just prior, but the prior
 # crate isn't yet available via crates.io), one can simply rerun this workflow.
-# The release.sh script aims to be an idempotent operation, skipping the
-# publishing of crates that have already been published.
 name: Release
 
 on:
   push:
+    branches:
+      - "release/*"
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"             # Push events to matching v*, i.e. v0.26.0, v1.0.0
       - "v[0-9]+.[0-9]+.[0-9]+-pre.[0-9]+"  # e.g. v0.26.0-pre.1
 
 jobs:
-  release:
+  publish-check:
+    if: github.ref_type != 'tag'
+    name: Check publish to crates.io (dry run)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Publish crates
-        run: ./scripts/release.sh
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Cache cargo dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: Install cargo-release
+        run: cargo install cargo-release
+      - name: Publish crates (dry run)
+        run: cargo release --workspace --no-push --no-tag --no-publish --exclude ibc-derive
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+
+  publish:
+    if: github.ref_type == 'tag'
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Cache cargo dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: Install cargo-release
+        run: cargo install cargo-release
+      - name: Publish crates
+        run: cargo release --workspace --no-push --no-tag --exclude ibc-derive --execute
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+  
+  gh-release:
+    if: github.ref_type == 'tag'
+    name: Create GitHub release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/create-gh-release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
