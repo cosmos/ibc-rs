@@ -68,7 +68,7 @@ fn test_tm_create_client_ok() {
 
     let msg = MsgCreateClient::new(
         tm_client_state,
-        TmConsensusState::try_from(tm_header).unwrap().into(),
+        TmConsensusState::from(tm_header).into(),
         signer,
     );
 
