@@ -43,6 +43,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.ref }}
       - name: Cache cargo dependencies
         uses: Swatinem/rust-cache@v2
       - name: Install cargo-release
