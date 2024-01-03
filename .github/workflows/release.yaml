@@ -50,7 +50,7 @@ jobs:
       - name: Install cargo-release
         run: cargo install cargo-release
       - name: Publish crates
-        run: cargo release --workspace --no-push --no-tag --exclude ibc-derive --execute
+        run: cargo release --workspace --no-push --no-tag --allow-branch [HEAD, *] --exclude ibc-derive --execute
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
   
