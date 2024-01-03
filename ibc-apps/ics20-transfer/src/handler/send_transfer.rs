@@ -1,7 +1,7 @@
 use ibc_app_transfer_types::error::TokenTransferError;
 use ibc_app_transfer_types::events::TransferEvent;
 use ibc_app_transfer_types::msgs::transfer::MsgTransfer;
-use ibc_app_transfer_types::{is_sender_chain_source, MODULE_ID_STR, TracePrefix};
+use ibc_app_transfer_types::{is_sender_chain_source, TracePrefix, MODULE_ID_STR};
 use ibc_core::channel::context::{SendPacketExecutionContext, SendPacketValidationContext};
 use ibc_core::channel::handler::{send_packet_execute, send_packet_validate};
 use ibc_core::channel::types::packet::Packet;
