@@ -19,24 +19,46 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+-pre.[0-9]+"  # e.g. v0.26.0-pre.1
 
 jobs:
-  release-check:
+  publish-check:
     if: github.ref_type != 'tag'
+    name: Check publish to crates.io (dry run)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Cache cargo dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: Install cargo-release
+        run: cargo install cargo-release
       - name: Publish crates (dry run)
-        run: cargo release --workspace --exclude ibc-derive
+        run: cargo release --workspace --no-push --no-tag --no-publish --exclude ibc-derive
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
-  release:
+  publish:
     if: github.ref_type == 'tag'
+    name: Publish to crates.io
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Cache cargo dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: Install cargo-release
+        run: cargo install cargo-release
       - name: Publish crates
-        run: cargo release --workspace --exclude ibc-derive
+        run: cargo release --workspace --no-push --no-tag --exclude ibc-derive --execute
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+  
+  gh-release:
+    if: github.ref_type == 'tag'
+    name: Create GitHub release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/create-gh-release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
