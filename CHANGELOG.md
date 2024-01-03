@@ -2,7 +2,7 @@
 
 ## v0.49.0
 
-*January 2, 2024*
+*January 3, 2024*
 
 This release continues the trend of further decoupling dependencies between the
 different ibc-rs sub-crates and modules.
