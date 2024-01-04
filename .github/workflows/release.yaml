@@ -48,7 +48,7 @@ jobs:
       - name: Cache cargo dependencies
         uses: Swatinem/rust-cache@v2
       - name: Publish crates
-        run: cargo release --workspace --no-push --no-tag --exclude ibc-derive --allow-branch HEAD --execute
+        run: yes | cargo release --workspace --no-push --no-tag --exclude ibc-derive --allow-branch HEAD --execute
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
   
