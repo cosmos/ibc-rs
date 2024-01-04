@@ -190,10 +190,37 @@ impl FromStr for Data {
 mod tests {
     use super::*;
 
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_json_serialization() {}
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_valid_serde_roundtrip() {
+        fn serde_roundtrip(data_value: DataValue) {
+            let serialized =
+                serde_json::to_string(&data_value).expect("failed to serialize DataValue");
+            let deserialized = serde_json::from_str::<DataValue>(&serialized)
+                .expect("failed to deserialize DataValue");
+
+            assert_eq!(deserialized, data_value);
+        }
+
+        serde_roundtrip(DataValue {
+            value: String::from("foo"),
+            mime: None,
+        });
+
+        serde_roundtrip(DataValue {
+            value: String::from("foo"),
+            mime: Some(mime::TEXT_PLAIN_UTF_8),
+        });
+    }
+
     #[cfg(feature = "borsh")]
     #[test]
-    fn test_valid_borsh_ser_de_roundtrip() {
-        fn borsh_ser_de_roundtrip(data_value: DataValue) {
+    fn test_valid_borsh_roundtrip() {
+        fn borsh_roundtrip(data_value: DataValue) {
             use borsh::{BorshDeserialize, BorshSerialize};
 
             let data_value_bytes = data_value.try_to_vec().unwrap();
@@ -202,12 +229,12 @@ mod tests {
             assert_eq!(data_value, res);
         }
 
-        borsh_ser_de_roundtrip(DataValue {
+        borsh_roundtrip(DataValue {
             value: String::from("foo"),
             mime: None,
         });
 
-        borsh_ser_de_roundtrip(DataValue {
+        borsh_roundtrip(DataValue {
             value: String::from("foo"),
             mime: Some(mime::TEXT_PLAIN_UTF_8),
         });
