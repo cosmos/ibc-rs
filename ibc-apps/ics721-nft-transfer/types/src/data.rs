@@ -185,3 +185,23 @@ impl FromStr for Data {
         Ok(Self(data))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(feature = "borsh")]
+    #[test]
+    fn test_valid_borsh_ser_de_roundtrip() {
+        fn borsh_ser_de_roundtrip(data_value: DataValue) {
+            use borsh::{BorshDeserialize, BorshSerialize};
+
+            let data_value_bytes = data_value.try_to_vec().unwrap();
+            let res = DataValue::try_from_slice(&data_value_bytes).unwrap();
+
+            assert_eq!(data_value, res);
+        }
+
+        borsh_ser_de_roundtrip(DataValue::new().unwrap());
+    }
+}
