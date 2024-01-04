@@ -27,10 +27,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Cache cargo dependencies
-        uses: Swatinem/rust-cache@v2
       - name: Install cargo-release
         run: cargo install cargo-release
+      - name: Cache cargo dependencies
+        uses: Swatinem/rust-cache@v2
       - name: Publish crates (dry run)
         run: cargo release --workspace --no-push --no-tag --no-publish --exclude ibc-derive
         env:
@@ -43,14 +43,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.ref }}
-      - name: Cache cargo dependencies
-        uses: Swatinem/rust-cache@v2
       - name: Install cargo-release
         run: cargo install cargo-release
+      - name: Cache cargo dependencies
+        uses: Swatinem/rust-cache@v2
       - name: Publish crates
-        run: cargo release --workspace --no-push --no-tag --allow-branch [HEAD, *] --exclude ibc-derive --execute
+        run: cargo release --workspace --no-push --no-tag --exclude ibc-derive --allow-branch HEAD --execute
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
   
@@ -62,8 +60,6 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.ref }}
       - uses: taiki-e/create-gh-release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
