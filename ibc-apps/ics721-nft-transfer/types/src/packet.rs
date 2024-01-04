@@ -214,7 +214,6 @@ mod tests {
     /// Ensures `PacketData` properly encodes to JSON by first converting to a
     /// `RawPacketData` and then serializing that.
     #[test]
-    #[ignore]
     fn test_packet_data_ser() {
         PacketData::new_dummy().ser_json_assert_eq(dummy_json_packet_data());
     }
