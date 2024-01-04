@@ -202,6 +202,14 @@ mod tests {
             assert_eq!(data_value, res);
         }
 
-        borsh_ser_de_roundtrip(DataValue::new().unwrap());
+        borsh_ser_de_roundtrip(DataValue {
+            value: String::from("foo"),
+            mime: None,
+        });
+
+        borsh_ser_de_roundtrip(DataValue {
+            value: String::from("foo"),
+            mime: Some(mime::TEXT_PLAIN_UTF_8),
+        });
     }
 }
