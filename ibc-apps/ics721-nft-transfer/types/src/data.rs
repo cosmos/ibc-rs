@@ -188,15 +188,29 @@ impl FromStr for Data {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     #[cfg(feature = "serde")]
-    #[test]
-    fn test_json_serialization() {}
+    #[rstest]
+    #[case(r#"{"value":"foo"}"#)]
+    #[case(r#"{"value":"foo-42","mime":"multipart/form-data; boundary=ABCDEFG"}"#)]
+    fn test_valid_json_deserialization(#[case] data_value_json: &str) {
+        assert!(serde_json::from_str::<DataValue>(data_value_json).is_ok());
+    }
+
+    #[cfg(feature = "serde")]
+    #[rstest]
+    #[case(r#"{"value":"foo-42","mime":"invalid"}"#)]
+    #[case(r#"{"value":"invalid","mime":""}"#)]
+    fn test_invalid_json_deserialization(#[case] data_value_json: &str) {
+        assert!(serde_json::from_str::<DataValue>(data_value_json).is_err());
+    }
 
     #[cfg(feature = "serde")]
     #[test]
-    fn test_valid_serde_roundtrip() {
+    fn test_valid_serde_json_roundtrip() {
         fn serde_roundtrip(data_value: DataValue) {
             let serialized =
                 serde_json::to_string(&data_value).expect("failed to serialize DataValue");
