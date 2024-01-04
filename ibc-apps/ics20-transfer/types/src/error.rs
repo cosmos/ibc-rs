@@ -11,8 +11,6 @@ use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use uint::FromDecStrErr;
 
-use crate::Amount;
-
 #[derive(Display, Debug)]
 pub enum TokenTransferError {
     /// context error: `{0}`
@@ -21,8 +19,8 @@ pub enum TokenTransferError {
     InvalidIdentifier(IdentifierError),
     /// insufficient funds: tried to send `{send_attempt}`, sender only has `{available_funds}`
     InsufficientFunds {
-        send_attempt: Amount,
-        available_funds: Amount,
+        send_attempt: String,
+        available_funds: String,
     },
     /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
     DestinationChannelNotFound {
