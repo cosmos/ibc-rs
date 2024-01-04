@@ -210,7 +210,7 @@ mod tests {
 
     #[cfg(feature = "serde")]
     #[test]
-    fn test_valid_serde_json_roundtrip() {
+    fn test_serde_json_roundtrip() {
         fn serde_roundtrip(data_value: DataValue) {
             let serialized =
                 serde_json::to_string(&data_value).expect("failed to serialize DataValue");
@@ -233,7 +233,7 @@ mod tests {
 
     #[cfg(feature = "borsh")]
     #[test]
-    fn test_valid_borsh_roundtrip() {
+    fn test_borsh_roundtrip() {
         fn borsh_roundtrip(data_value: DataValue) {
             use borsh::{BorshDeserialize, BorshSerialize};
 
