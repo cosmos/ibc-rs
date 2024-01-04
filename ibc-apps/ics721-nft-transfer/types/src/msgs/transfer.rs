@@ -7,13 +7,13 @@ use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Timestamp;
 use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::applications::transfer::v1::MsgTransfer as RawMsgTransfer;
+use ibc_proto::ibc::applications::nft_transfer::v1::MsgTransfer as RawMsgTransfer;
 use ibc_proto::Protobuf;
 
-use crate::error::TokenTransferError;
+use crate::error::NftTransferError;
 use crate::packet::PacketData;
 
-pub(crate) const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
+pub(crate) const TYPE_URL: &str = "/ibc.applications.nft_transfer.v1.MsgTransfer";
 
 /// Message used to build an ICS-721 Non-Fungible Token Transfer packet.
 ///
@@ -38,7 +38,7 @@ pub struct MsgTransfer {
     pub port_id_on_a: PortId,
     /// the channel by which the packet will be sent
     pub chan_id_on_a: ChannelId,
-    /// token transfer packet data of the packet that will be sent
+    /// NFT transfer packet data of the packet that will be sent
     pub packet_data: PacketData,
     /// Timeout height relative to the current block height.
     /// The timeout is disabled when set to None.
@@ -49,7 +49,7 @@ pub struct MsgTransfer {
 }
 
 impl TryFrom<RawMsgTransfer> for MsgTransfer {
-    type Error = TokenTransferError;
+    type Error = NftTransferError;
 
     fn try_from(raw_msg: RawMsgTransfer) -> Result<Self, Self::Error> {
         let timeout_timestamp_on_b = Timestamp::from_nanoseconds(raw_msg.timeout_timestamp)
@@ -70,11 +70,12 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
             port_id_on_a: raw_msg.source_port.parse()?,
             chan_id_on_a: raw_msg.source_channel.parse()?,
             packet_data: PacketData {
-                token: raw_msg
-                    .token
-                    .ok_or(TokenTransferError::InvalidToken)?
-                    .try_into()
-                    .map_err(|_| TokenTransferError::InvalidToken)?,
+                class_id: raw_msg.class_id.parse()?,
+                class_uri: None,
+                class_data: None,
+                token_ids: raw_msg.token_ids.try_into()?,
+                token_uris: vec![],
+                token_data: vec![],
                 sender: raw_msg.sender.into(),
                 receiver: raw_msg.receiver.into(),
                 memo: raw_msg.memo.into(),
@@ -90,7 +91,14 @@ impl From<MsgTransfer> for RawMsgTransfer {
         RawMsgTransfer {
             source_port: domain_msg.port_id_on_a.to_string(),
             source_channel: domain_msg.chan_id_on_a.to_string(),
-            token: Some(domain_msg.packet_data.token.into()),
+            class_id: domain_msg.packet_data.class_id.to_string(),
+            token_ids: domain_msg
+                .packet_data
+                .token_ids
+                .as_ref()
+                .iter()
+                .map(|t| t.to_string())
+                .collect(),
             sender: domain_msg.packet_data.sender.to_string(),
             receiver: domain_msg.packet_data.receiver.to_string(),
             timeout_height: domain_msg.timeout_height_on_b.into(),
@@ -103,16 +111,16 @@ impl From<MsgTransfer> for RawMsgTransfer {
 impl Protobuf<RawMsgTransfer> for MsgTransfer {}
 
 impl TryFrom<Any> for MsgTransfer {
-    type Error = TokenTransferError;
+    type Error = NftTransferError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         match raw.type_url.as_str() {
             TYPE_URL => {
-                MsgTransfer::decode_vec(&raw.value).map_err(|e| TokenTransferError::DecodeRawMsg {
+                MsgTransfer::decode_vec(&raw.value).map_err(|e| NftTransferError::DecodeRawMsg {
                     reason: e.to_string(),
                 })
             }
-            _ => Err(TokenTransferError::UnknownMsgType {
+            _ => Err(NftTransferError::UnknownMsgType {
                 msg_type: raw.type_url,
             }),
         }
