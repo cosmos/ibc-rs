@@ -1189,17 +1189,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "http"
-version = "0.2.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8947b1a6fad4393052c7ba1f4cd97bed3e953a95c79c92ad9b051a04611d9fbb"
-dependencies = [
- "bytes",
- "fnv",
- "itoa",
-]
-
-[[package]]
 name = "iana-time-zone"
 version = "0.1.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1235,28 +1224,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ibc-app-nft-transfer"
-version = "0.48.1"
-dependencies = [
- "ibc-app-nft-transfer-types",
- "ibc-core",
- "serde-json-wasm",
-]
-
-[[package]]
-name = "ibc-app-nft-transfer-types"
-version = "0.48.1"
-dependencies = [
- "derive_more",
- "displaydoc",
- "http",
- "ibc-core",
- "ibc-proto 0.39.1 (git+https://github.com/heliaxdev/ibc-proto-rs?branch=yuji/feat/ics721-impl)",
- "serde",
- "serde-json-wasm",
-]
-
-[[package]]
 name = "ibc-app-transfer"
 version = "0.48.1"
 dependencies = [
@@ -1282,7 +1249,6 @@ dependencies = [
 name = "ibc-apps"
 version = "0.48.1"
 dependencies = [
- "ibc-app-nft-transfer",
  "ibc-app-transfer",
 ]
 

@@ -22,7 +22,7 @@ all-features = true
 borsh           = { workspace = true, optional = true }
 derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
-http            = "1.0.0"
+http            = { version = "1.0.0", optional = true }
 mime            = "0.3.17"
 schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
@@ -45,6 +45,7 @@ std = [
     "serde/std",
     "serde_json/std",
     "displaydoc/std",
+    "http/std",
     "ibc-core/std",
     "ibc-proto/std",
 ]
