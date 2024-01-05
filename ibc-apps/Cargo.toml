@@ -21,9 +21,10 @@ ibc-app-transfer     = { workspace = true }
 ibc-app-nft-transfer = { workspace = true, optional = true, features = [ "std", "serde", "schema", "borsh", "parity-scale-codec" ] }
 
 [features]
-default = ["std", "nft-transfer"]
+default = ["std"]
 std = [
     "ibc-app-transfer/std",
+    "nft-transfer",
 ]
 serde = [
     "ibc-app-transfer/serde",
