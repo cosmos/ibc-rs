@@ -9,7 +9,7 @@ edition 	 = { workspace = true }
 [dependencies]
 # external dependencies
 base64          = { version = "0.21", default-features = false, features = ["alloc"] }
-bytes           = "1.2.1"
+bytes           = { version = "1.2.1", default-features = false }
 displaydoc      = { workspace = true }
 serde 			= { workspace = true , optional = true }
 cosmwasm-schema = { version = "1.4.1", default-features = false, optional = true }
@@ -20,10 +20,11 @@ ibc-primitives 	= { workspace = true, default-features = false }
 ibc-proto 		= { workspace = true, default-features = false }
 
 [features]
-default = ["cosmwasm"]
+default = ["std"]
 std = [
 	"ibc-core-client/std",
 	"ibc-proto/std",
+	"bytes/std",
 	"serde/std"
 ]
 serde = [
