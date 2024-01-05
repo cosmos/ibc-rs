@@ -1,0 +1,45 @@
+[package]
+name = "ibc-client-wasm-types"
+version 	 = { workspace = true }
+authors 	 = { workspace = true }
+license 	 = { workspace = true }
+rust-version = { workspace = true }
+edition 	 = { workspace = true }
+
+[dependencies]
+# external dependencies
+base64          = { version = "0.21", default-features = false, features = ["alloc"] }
+bytes           = "1.2.1"
+displaydoc      = { workspace = true }
+serde 			= { workspace = true , optional = true }
+cosmwasm-schema = { version = "1.4.1", default-features = false, optional = true }
+
+# ibc dependencies
+ibc-core-client = { workspace = true, default-features = false }
+ibc-primitives 	= { workspace = true, default-features = false }
+ibc-proto 		= { workspace = true, default-features = false }
+
+[features]
+default = ["cosmwasm"]
+std = [
+	"ibc-core-client/std",
+	"ibc-proto/std",
+	"serde/std"
+]
+serde = [
+	"ibc-core-client/serde",
+	"ibc-primitives/serde",
+	"ibc-proto/serde",
+	"dep:serde"
+]
+schema = [
+	"ibc-core-client/schema",
+	"ibc-primitives/schema",
+	"ibc-proto/json-schema",
+	"serde",
+	"std"
+]
+cosmwasm = [
+	"cosmwasm-schema",
+	"schema"
+]

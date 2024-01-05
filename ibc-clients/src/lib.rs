@@ -16,3 +16,8 @@ pub mod tendermint {
     #[doc(inline)]
     pub use ibc_client_tendermint::*;
 }
+
+pub mod wasm_types {
+    #[doc(inline)]
+    pub use ibc_client_wasm_types::*;
+}
