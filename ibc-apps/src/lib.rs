@@ -23,7 +23,7 @@ pub mod transfer {
 /// Transfer](https://github.com/cosmos/ibc/blob/main/spec/app/ics-721-nft-transfer/README.md)
 /// (ICS-721) application logic.
 pub mod nft_transfer {
-    #[cfg(feature = "std")]
     #[doc(inline)]
+    #[cfg(feature = "std")]
     pub use ibc_app_nft_transfer::*;
 }
