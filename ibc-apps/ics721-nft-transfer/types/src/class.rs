@@ -558,4 +558,45 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_serde_json_roundtrip() {
+        fn serde_roundtrip(class_uri: ClassUri) {
+            let serialized =
+                serde_json::to_string(&class_uri).expect("failed to serialize ClassUri");
+            let deserialized = serde_json::from_str::<ClassUri>(&serialized)
+                .expect("failed to deserialize ClassUri");
+
+            assert_eq!(deserialized, class_uri);
+        }
+
+        let uri = "/foo/bar?baz".parse::<Uri>().unwrap();
+        serde_roundtrip(ClassUri(uri));
+
+        let uri = "https://www.rust-lang.org/install.html"
+            .parse::<Uri>()
+            .unwrap();
+        serde_roundtrip(ClassUri(uri));
+    }
+
+    #[cfg(feature = "borsh")]
+    #[test]
+    fn test_borsh_roundtrip() {
+        fn borsh_roundtrip(class_uri: ClassUri) {
+            use borsh::{BorshDeserialize, BorshSerialize};
+
+            let class_uri_bytes = class_uri.try_to_vec().unwrap();
+            let res = ClassUri::try_from_slice(&class_uri_bytes).unwrap();
+
+            assert_eq!(class_uri, res);
+        }
+
+        let uri = "/foo/bar?baz".parse::<Uri>().unwrap();
+        borsh_roundtrip(ClassUri(uri));
+
+        let uri = "https://www.rust-lang.org/install.html"
+            .parse::<Uri>()
+            .unwrap();
+        borsh_roundtrip(ClassUri(uri));
+    }
 }

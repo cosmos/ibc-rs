@@ -185,3 +185,72 @@ impl FromStr for Data {
         Ok(Self(data))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rstest::rstest;
+
+    use super::*;
+
+    #[cfg(feature = "serde")]
+    #[rstest]
+    #[case(r#"{"value":"foo"}"#)]
+    #[case(r#"{"value":"foo-42","mime":"multipart/form-data; boundary=ABCDEFG"}"#)]
+    fn test_valid_json_deserialization(#[case] data_value_json: &str) {
+        assert!(serde_json::from_str::<DataValue>(data_value_json).is_ok());
+    }
+
+    #[cfg(feature = "serde")]
+    #[rstest]
+    #[case(r#"{"value":"foo-42","mime":"invalid"}"#)]
+    #[case(r#"{"value":"invalid","mime":""}"#)]
+    fn test_invalid_json_deserialization(#[case] data_value_json: &str) {
+        assert!(serde_json::from_str::<DataValue>(data_value_json).is_err());
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_serde_json_roundtrip() {
+        fn serde_roundtrip(data_value: DataValue) {
+            let serialized =
+                serde_json::to_string(&data_value).expect("failed to serialize DataValue");
+            let deserialized = serde_json::from_str::<DataValue>(&serialized)
+                .expect("failed to deserialize DataValue");
+
+            assert_eq!(deserialized, data_value);
+        }
+
+        serde_roundtrip(DataValue {
+            value: String::from("foo"),
+            mime: None,
+        });
+
+        serde_roundtrip(DataValue {
+            value: String::from("foo"),
+            mime: Some(mime::TEXT_PLAIN_UTF_8),
+        });
+    }
+
+    #[cfg(feature = "borsh")]
+    #[test]
+    fn test_borsh_roundtrip() {
+        fn borsh_roundtrip(data_value: DataValue) {
+            use borsh::{BorshDeserialize, BorshSerialize};
+
+            let data_value_bytes = data_value.try_to_vec().unwrap();
+            let res = DataValue::try_from_slice(&data_value_bytes).unwrap();
+
+            assert_eq!(data_value, res);
+        }
+
+        borsh_roundtrip(DataValue {
+            value: String::from("foo"),
+            mime: None,
+        });
+
+        borsh_roundtrip(DataValue {
+            value: String::from("foo"),
+            mime: Some(mime::TEXT_PLAIN_UTF_8),
+        });
+    }
+}

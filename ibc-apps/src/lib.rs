@@ -24,5 +24,6 @@ pub mod transfer {
 /// (ICS-721) application logic.
 pub mod nft_transfer {
     #[doc(inline)]
+    #[cfg(feature = "nft-transfer")]
     pub use ibc_app_nft_transfer::*;
 }

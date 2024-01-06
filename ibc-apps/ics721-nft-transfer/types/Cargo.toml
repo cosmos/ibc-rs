@@ -45,6 +45,7 @@ std = [
     "serde/std",
     "serde_json/std",
     "displaydoc/std",
+    "http/std",
     "ibc-core/std",
     "ibc-proto/std",
 ]

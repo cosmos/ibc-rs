@@ -219,3 +219,50 @@ impl FromStr for TokenData {
         Ok(Self(data))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_serde_json_roundtrip() {
+        fn serde_roundtrip(token_uri: TokenUri) {
+            let serialized =
+                serde_json::to_string(&token_uri).expect("failed to serialize TokenUri");
+            let deserialized = serde_json::from_str::<TokenUri>(&serialized)
+                .expect("failed to deserialize TokenUri");
+
+            assert_eq!(deserialized, token_uri);
+        }
+
+        let uri = "/foo/bar?baz".parse::<Uri>().unwrap();
+        serde_roundtrip(TokenUri(uri));
+
+        let uri = "https://www.rust-lang.org/install.html"
+            .parse::<Uri>()
+            .unwrap();
+        serde_roundtrip(TokenUri(uri));
+    }
+
+    #[cfg(feature = "borsh")]
+    #[test]
+    fn test_borsh_roundtrip() {
+        fn borsh_roundtrip(token_uri: TokenUri) {
+            use borsh::{BorshDeserialize, BorshSerialize};
+
+            let token_uri_bytes = token_uri.try_to_vec().unwrap();
+            let res = TokenUri::try_from_slice(&token_uri_bytes).unwrap();
+
+            assert_eq!(token_uri, res);
+        }
+
+        let uri = "/foo/bar?baz".parse::<Uri>().unwrap();
+        borsh_roundtrip(TokenUri(uri));
+
+        let uri = "https://www.rust-lang.org/install.html"
+            .parse::<Uri>()
+            .unwrap();
+        borsh_roundtrip(TokenUri(uri));
+    }
+}

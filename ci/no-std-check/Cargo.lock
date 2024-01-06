@@ -1194,17 +1194,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "http"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b32afd38673a8016f7c9ae69e5af41a58f81b1d31689040f2f1959594ce194ea"
-dependencies = [
- "bytes",
- "fnv",
- "itoa",
-]
-
-[[package]]
 name = "iana-time-zone"
 version = "0.1.59"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1240,29 +1229,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ibc-app-nft-transfer"
-version = "0.49.1"
-dependencies = [
- "ibc-app-nft-transfer-types",
- "ibc-core",
- "serde-json-wasm",
-]
-
-[[package]]
-name = "ibc-app-nft-transfer-types"
-version = "0.49.1"
-dependencies = [
- "derive_more",
- "displaydoc",
- "http",
- "ibc-core",
- "ibc-proto 0.40.0",
- "mime",
- "serde",
- "serde-json-wasm",
-]
-
-[[package]]
 name = "ibc-app-transfer"
 version = "0.49.1"
 dependencies = [
@@ -1288,7 +1254,6 @@ dependencies = [
 name = "ibc-apps"
 version = "0.49.1"
 dependencies = [
- "ibc-app-nft-transfer",
  "ibc-app-transfer",
 ]
 
@@ -1941,12 +1906,6 @@ dependencies = [
  "rand_core 0.5.1",
  "zeroize",
 ]
-
-[[package]]
-name = "mime"
-version = "0.3.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
 
 [[package]]
 name = "miniz_oxide"
