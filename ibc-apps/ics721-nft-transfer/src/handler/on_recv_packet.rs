@@ -4,7 +4,7 @@ use ibc_core::router::types::module::ModuleExtras;
 
 use crate::context::NftTransferExecutionContext;
 use crate::types::error::NftTransferError;
-use crate::types::events::ClassTraceEvent;
+use crate::types::events::TokenTraceEvent;
 use crate::types::packet::PacketData;
 use crate::types::{is_receiver_chain_source, TracePrefix};
 
@@ -77,24 +77,24 @@ where
             c
         };
 
-        let extras = {
-            let class_trace_event = ClassTraceEvent {
-                trace_hash: ctx_b.class_hash_string(&class_id),
-                class: class_id.clone(),
-            };
-            ModuleExtras {
-                events: vec![class_trace_event.into()],
-                log: Vec::new(),
-            }
+        let mut extras = ModuleExtras {
+            events: vec![],
+            log: Vec::new(),
         };
-
         for ((token_id, token_uri), token_data) in data
             .token_ids
-            .as_ref()
+            .0
             .iter()
             .zip(data.token_uris.iter())
             .zip(data.token_data.iter())
         {
+            let trace_event = TokenTraceEvent {
+                trace_hash: ctx_b.token_hash_string(&class_id, token_id),
+                class: class_id.clone(),
+                token: token_id.clone(),
+            };
+            extras.events.push(trace_event.into());
+
             // Note: the validation is called before the execution.
             // Refer to ICS-20 `process_recv_packet_execute()`.
 

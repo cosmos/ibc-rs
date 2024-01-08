@@ -5,11 +5,11 @@ use ibc_core::primitives::Signer;
 use ibc_core::router::types::event::ModuleEvent;
 
 use super::Memo;
-use crate::{PrefixedClassId, TokenIds, MODULE_ID_STR};
+use crate::{PrefixedClassId, TokenId, TokenIds, MODULE_ID_STR};
 
 const EVENT_TYPE_PACKET: &str = "non_fungible_token_packet";
 const EVENT_TYPE_TIMEOUT: &str = "timeout";
-const EVENT_TYPE_CLASS_TRACE: &str = "class_trace";
+const EVENT_TYPE_TOKEN_TRACE: &str = "token_trace";
 const EVENT_TYPE_TRANSFER: &str = "ibc_nft_transfer";
 
 /// Contains all events variants that can be emitted from the NFT transfer application
@@ -18,7 +18,7 @@ pub enum Event {
     Ack(AckEvent),
     AckStatus(AckStatusEvent),
     Timeout(TimeoutEvent),
-    ClassTrace(ClassTraceEvent),
+    TokenTrace(TokenTraceEvent),
     Transfer(TransferEvent),
 }
 
@@ -144,17 +144,22 @@ impl From<TimeoutEvent> for ModuleEvent {
 }
 
 /// Event emitted in the `onRecvPacket` module callback when new tokens are minted
-pub struct ClassTraceEvent {
+pub struct TokenTraceEvent {
     pub trace_hash: Option<String>,
     pub class: PrefixedClassId,
+    pub token: TokenId,
 }
 
-impl From<ClassTraceEvent> for ModuleEvent {
-    fn from(ev: ClassTraceEvent) -> Self {
-        let ClassTraceEvent { trace_hash, class } = ev;
+impl From<TokenTraceEvent> for ModuleEvent {
+    fn from(ev: TokenTraceEvent) -> Self {
+        let TokenTraceEvent {
+            trace_hash,
+            class,
+            token,
+        } = ev;
         let mut ev = Self {
-            kind: EVENT_TYPE_CLASS_TRACE.to_string(),
-            attributes: vec![("class", class).into()],
+            kind: EVENT_TYPE_TOKEN_TRACE.to_string(),
+            attributes: vec![("class", class).into(), ("token", token).into()],
         };
         if let Some(hash) = trace_hash {
             ev.attributes.push(("trace_hash", hash).into());
@@ -202,7 +207,7 @@ impl From<Event> for ModuleEvent {
             Event::Ack(ev) => ev.into(),
             Event::AckStatus(ev) => ev.into(),
             Event::Timeout(ev) => ev.into(),
-            Event::ClassTrace(ev) => ev.into(),
+            Event::TokenTrace(ev) => ev.into(),
             Event::Transfer(ev) => ev.into(),
         }
     }
