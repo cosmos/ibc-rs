@@ -86,7 +86,7 @@ ibc-core-router-types       = { version = "0.49.1", path = "./ibc-core/ics26-rou
 ibc-client-tendermint-types = { version = "0.49.1", path = "./ibc-clients/ics07-tendermint/types", default-features = false }
 ibc-app-transfer-types      = { version = "0.49.1", path = "./ibc-apps/ics20-transfer/types", default-features = false }
 
-ibc-proto = { version = "0.39.1", default-features = false }
+ibc-proto = { version = "0.40.0", default-features = false }
 
 # cosmos dependencies
 tendermint                       = { version = "0.34.0", default-features = false }
