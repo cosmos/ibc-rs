@@ -47,7 +47,7 @@ authors      = ["Informal Systems <hello@informal.systems>"]
 
 [workspace.dependencies]
 # external dependencies
-borsh               = { version = "0.10", default-features = false }
+borsh               = { version = "1.3", default-features = false }
 displaydoc          = { version = "0.2", default-features = false }
 derive_more         = { version = "0.99.17", default-features = false, features = ["from", "into", "display", "try_into"] }
 rstest              = "0.18.2"
