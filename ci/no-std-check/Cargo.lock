@@ -1296,6 +1296,7 @@ dependencies = [
  "bytes",
  "displaydoc",
  "ibc-core-client",
+ "ibc-core-host-types",
  "ibc-primitives",
  "ibc-proto",
  "serde",

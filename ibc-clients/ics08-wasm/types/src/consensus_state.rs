@@ -1,3 +1,5 @@
+//! Defines the consensus state type for the ICS-08 Wasm light client.
+
 #[cfg(feature = "cosmwasm")]
 use cosmwasm_schema::cw_serde;
 use ibc_core_client::types::error::ClientError;
