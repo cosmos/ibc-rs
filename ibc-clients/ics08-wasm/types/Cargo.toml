@@ -15,26 +15,31 @@ serde 			= { workspace = true , optional = true }
 cosmwasm-schema = { version = "1.4.1", default-features = false, optional = true }
 
 # ibc dependencies
-ibc-core-client = { workspace = true, default-features = false }
-ibc-primitives 	= { workspace = true, default-features = false }
-ibc-proto 		= { workspace = true, default-features = false }
+ibc-core-client     = { workspace = true, default-features = false }
+ibc-core-host-types = { workspace = true, default-features = false }
+ibc-primitives    	= { workspace = true, default-features = false }
+ibc-proto 		    = { workspace = true, default-features = false }
 
 [features]
 default = ["std"]
 std = [
 	"ibc-core-client/std",
+	"ibc-core-host-types/std",
 	"ibc-proto/std",
+	"base64/std",
 	"bytes/std",
 	"serde/std"
 ]
 serde = [
 	"ibc-core-client/serde",
+	"ibc-core-host-types/serde",
 	"ibc-primitives/serde",
 	"ibc-proto/serde",
 	"dep:serde"
 ]
 schema = [
 	"ibc-core-client/schema",
+	"ibc-core-host-types/schema",
 	"ibc-primitives/schema",
 	"ibc-proto/json-schema",
 	"serde",

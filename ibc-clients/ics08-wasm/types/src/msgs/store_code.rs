@@ -6,7 +6,7 @@ use ibc_proto::Protobuf;
 use crate::error::Error;
 use crate::Bytes;
 
-pub const WASM_MSG_STORE_CODE_TYPE_URL: &str = "/ibc.lightclients.wasm.v1.MsgStoreCode";
+pub const STORE_CODE_TYPE_URL: &str = "/ibc.lightclients.wasm.v1.MsgStoreCode";
 
 /// Defines the message type for storing the Wasm byte code on the chain.
 #[derive(Clone, PartialEq, Debug, Eq)]
