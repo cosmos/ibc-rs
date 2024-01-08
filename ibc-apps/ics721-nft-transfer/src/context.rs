@@ -105,9 +105,13 @@ pub trait NftTransferValidationContext {
         memo: &Memo,
     ) -> Result<(), NftTransferError>;
 
-    /// Returns a hash of the prefixed class ID.
-    /// Implement only if the host chain supports hashed class ID.
-    fn class_hash_string(&self, _class_id: &PrefixedClassId) -> Option<String> {
+    /// Returns a hash of the prefixed class ID and the token ID.
+    /// Implement only if the host chain supports hashed class ID and token ID.
+    fn token_hash_string(
+        &self,
+        _class_id: &PrefixedClassId,
+        _token_id: &TokenId,
+    ) -> Option<String> {
         None
     }
 

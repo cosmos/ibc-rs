@@ -17,8 +17,11 @@
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
+#[cfg(feature = "serde")]
 pub mod context;
+#[cfg(feature = "serde")]
 pub mod handler;
+#[cfg(feature = "serde")]
 pub mod module;
 
 /// Re-exports the implementation of the IBC [Non-Fungible Token
