@@ -24,5 +24,5 @@ pub mod serializer;
 use ibc_primitives::prelude::Vec;
 pub type Bytes = Vec<u8>;
 
-pub static SUBJECT_PREFIX: &[u8] = "subject/".as_bytes();
-pub static SUBSTITUTE_PREFIX: &[u8] = "substitute/".as_bytes();
+pub static SUBJECT_PREFIX: &[u8] = b"subject/";
+pub static SUBSTITUTE_PREFIX: &[u8] = b"substitute/";

@@ -1,9 +1,10 @@
+use core::convert::Infallible;
+
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::ibc::lightclients::wasm::v1::MsgStoreCode as RawMsgStoreCode;
 use ibc_proto::Protobuf;
 
-use crate::error::Error;
 use crate::Bytes;
 
 pub const STORE_CODE_TYPE_URL: &str = "/ibc.lightclients.wasm.v1.MsgStoreCode";
@@ -27,7 +28,7 @@ impl From<MsgStoreCode> for RawMsgStoreCode {
 }
 
 impl TryFrom<RawMsgStoreCode> for MsgStoreCode {
-    type Error = Error;
+    type Error = Infallible;
 
     fn try_from(value: RawMsgStoreCode) -> Result<Self, Self::Error> {
         Ok(Self {

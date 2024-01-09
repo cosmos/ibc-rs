@@ -1,24 +1,24 @@
 [package]
 name = "ibc-client-wasm-types"
-version 	 = { workspace = true }
-authors 	 = { workspace = true }
-license 	 = { workspace = true }
+version      = { workspace = true }
+authors      = { workspace = true }
+license      = { workspace = true }
 rust-version = { workspace = true }
-edition 	 = { workspace = true }
+edition      = { workspace = true }
 
 [dependencies]
 # external dependencies
 base64          = { version = "0.21", default-features = false, features = ["alloc"] }
 bytes           = { version = "1.2.1", default-features = false }
 displaydoc      = { workspace = true }
-serde 			= { workspace = true , optional = true }
+serde           = { workspace = true , optional = true }
 cosmwasm-schema = { version = "1.4.1", default-features = false, optional = true }
 
 # ibc dependencies
-ibc-core-client     = { workspace = true, default-features = false }
-ibc-core-host-types = { workspace = true, default-features = false }
-ibc-primitives    	= { workspace = true, default-features = false }
-ibc-proto 		    = { workspace = true, default-features = false }
+ibc-core-client     = { workspace = true }
+ibc-core-host-types = { workspace = true }
+ibc-primitives      = { workspace = true }
+ibc-proto           = { workspace = true }
 
 [features]
 default = ["std"]

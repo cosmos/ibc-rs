@@ -1,9 +1,10 @@
+use core::convert::Infallible;
+
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::ibc::lightclients::wasm::v1::MsgRemoveChecksum as RawMsgRemoveChecksum;
 use ibc_proto::Protobuf;
 
-use crate::error::Error;
 use crate::Bytes;
 
 pub const REMOVE_CHECKSUM_TYPE_URL: &str = "/ibc.lightclients.wasm.v1.MsgRemoveChecksum";
@@ -27,7 +28,7 @@ impl From<MsgRemoveChecksum> for RawMsgRemoveChecksum {
 }
 
 impl TryFrom<RawMsgRemoveChecksum> for MsgRemoveChecksum {
-    type Error = Error;
+    type Error = Infallible;
 
     fn try_from(value: RawMsgRemoveChecksum) -> Result<Self, Self::Error> {
         Ok(Self {
