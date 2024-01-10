@@ -21,8 +21,29 @@ pub mod msgs;
 #[cfg(feature = "cosmwasm")]
 pub mod serializer;
 
+use core::str::FromStr;
+
+use ibc_core_host_types::identifiers::ClientType;
 use ibc_primitives::prelude::Vec;
 pub type Bytes = Vec<u8>;
 
 pub static SUBJECT_PREFIX: &[u8] = b"subject/";
 pub static SUBSTITUTE_PREFIX: &[u8] = b"substitute/";
+
+pub const WASM_CLIENT_TYPE: &str = "08-wasm";
+
+/// Returns the wasm `ClientType`
+pub fn client_type() -> ClientType {
+    ClientType::from_str(WASM_CLIENT_TYPE).expect("Never fails because it's valid")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Ensures that the validation in `ClientType::from_str` doesn't fail for the wasm client type
+    #[test]
+    pub fn test_wasm_client_type() {
+        let _ = ClientType::from_str(WASM_CLIENT_TYPE).unwrap();
+    }
+}
