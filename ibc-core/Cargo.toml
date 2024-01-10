@@ -24,10 +24,12 @@ ibc-core-commitment-types = { workspace = true }
 ibc-core-host             = { workspace = true }
 ibc-core-router           = { workspace = true }
 ibc-core-handler          = { workspace = true }
+ibc-derive                = { workspace = true, optional = true }
 ibc-primitives            = { workspace = true }
 
 [features]
 default = ["std"]
+derive = ["ibc-derive"]
 std = [
     "ibc-core-client/std",
     "ibc-core-connection/std",

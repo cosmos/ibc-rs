@@ -24,37 +24,6 @@ pub mod consensus_state;
 mod context;
 pub use context::*;
 
-/// Re-exports convenient derive macros from `ibc-derive` for implementing the
-/// [`ClientState`](crate::client_state::ClientState) and
-/// [`ConsensusState`](crate::consensus_state::ConsensusState) traits.
-pub mod derive {
-    /// A derive macro for implementing the
-    /// [`ClientState`](crate::client_state::ClientState) trait for enums. Enums
-    /// with variants that also implement the
-    /// [`ClientState`](crate::client_state::ClientState) trait can leverage
-    /// this macro for automatic implementation.
-    ///
-    /// To specify the generic arguments for `ClientState`, use the following
-    /// attributes:
-    /// - `#[validation(<YourClientValidationContext>)]`
-    /// - `#[execution(<YourClientExecutionContext>)]`
-    ///
-    /// When utilizing the `ibc` meta-crate, apply this macro with
-    /// `IbcClientState`. For the `ibc-core` crate, utilize
-    /// `IbcCoreClientState`.
-    pub use ibc_derive::{IbcClientState, IbcCoreClientState};
-    /// A derive macro for implementing the
-    /// [`ConsensusState`](crate::consensus_state::ConsensusState) trait for
-    /// enums. Enums with variants that also implement the
-    /// [`ConsensusState`](crate::consensus_state::ConsensusState) trait can
-    /// leverage this macro for automatic implementation.
-    ///
-    /// When utilizing the `ibc` meta-crate, apply this macro with
-    /// `IbcConsensusState`. For the `ibc-core` crate, utilize
-    /// `IbcCoreConsensusState`.
-    pub use ibc_derive::{IbcConsensusState, IbcCoreConsensusState};
-}
-
 pub mod types {
     #[doc(inline)]
     pub use ibc_core_client_types::*;

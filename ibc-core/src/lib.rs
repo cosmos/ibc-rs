@@ -65,3 +65,25 @@ pub mod router {
     #[doc(inline)]
     pub use ibc_core_router::*;
 }
+
+/// Re-exports convenient derive macros from `ibc-derive` crate.
+#[cfg(feature = "derive")]
+pub mod derive {
+    /// A derive macro for implementing the
+    /// [`ClientState`](crate::client::context::client_state::ClientState) trait for enums. Enums
+    /// with variants that also implement the
+    /// [`ClientState`](crate::client::context::client_state::ClientState) trait can leverage
+    /// this macro for automatic implementation.
+    ///
+    /// To specify the generic arguments for `ClientState`, use the following
+    /// attributes:
+    /// - `#[validation(<YourClientValidationContext>)]`
+    /// - `#[execution(<YourClientExecutionContext>)]`
+    pub use ibc_derive::IbcCoreClientState as ClientState;
+    /// A derive macro for implementing the
+    /// [`ConsensusState`](crate::client::context::consensus_state::ConsensusState) trait for
+    /// enums. Enums with variants that also implement the
+    /// [`ConsensusState`](crate::client::context::consensus_state::ConsensusState) trait can
+    /// leverage this macro for automatic implementation.
+    pub use ibc_derive::IbcCoreConsensusState as ConsensusState;
+}
