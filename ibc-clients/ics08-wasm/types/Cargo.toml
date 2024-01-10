@@ -20,6 +20,10 @@ ibc-core-host-types = { workspace = true }
 ibc-primitives      = { workspace = true }
 ibc-proto           = { workspace = true }
 
+[dev-dependencies]
+rstest     = { workspace = true }
+serde_json = { workspace = true }
+
 [features]
 default = ["std"]
 std = [

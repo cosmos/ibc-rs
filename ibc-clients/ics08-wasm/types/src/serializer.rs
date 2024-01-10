@@ -21,3 +21,26 @@ impl Base64 {
         Ok(bytes)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rstest::rstest;
+
+    use super::*;
+
+    #[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+    struct Foo(#[serde(with = "Base64")] crate::Bytes);
+
+    // Ensures Base64 serialize and deserialize work as expected
+    #[rstest]
+    #[case(b"", "")]
+    #[case(&[118], "dg==")]
+    #[case(&[0x1, 0x2, 0x3, 0x4, 0x5], "AQIDBAU=")]
+    #[case(b"hello world", "aGVsbG8gd29ybGQ=")]
+    pub fn test_ser_and_deser(#[case] bytes: &[u8], #[case] hash: &str) {
+        let foo = Foo(bytes.to_vec());
+        let json = format!("\"{hash}\"");
+        assert_eq!(serde_json::to_string(&foo).unwrap(), json);
+        assert_eq!(serde_json::from_str::<Foo>(&json).unwrap(), foo);
+    }
+}
