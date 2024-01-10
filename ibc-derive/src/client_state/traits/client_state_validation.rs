@@ -1,5 +1,5 @@
 use proc_macro2::{Ident, TokenStream};
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::punctuated::{Iter, Punctuated};
 use syn::token::Comma;
 use syn::Variant;
@@ -47,14 +47,17 @@ pub(crate) fn impl_ClientStateValidation(
 
     // The types we need for the generated code.
     let HostClientState = client_state_enum_name;
-    let ClientValidationContext = &opts.client_validation_context;
+    let ClientValidationContext = opts.client_validation_context.clone().into_token_stream();
 
-    // The impl block we generate, considering whether the context contains
-    // generics.
-    let Impl = opts.get_impl_quote(ClientValidationContext);
+    // The `impl` block quote based on whether the context includes generics.
+    let Impl = opts.client_validation_context.impl_ts();
+
+    // The `Where` clause quote based on whether the generics within the context
+    // include trait bounds
+    let Where = opts.client_validation_context.where_clause_ts();
 
     quote! {
-        #Impl #ClientStateValidation<#ClientValidationContext> for #HostClientState {
+        #Impl #ClientStateValidation<#ClientValidationContext> for #HostClientState #Where {
             fn verify_client_message(
                 &self,
                 ctx: &#ClientValidationContext,
