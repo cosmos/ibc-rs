@@ -1,5 +1,3 @@
-use core::convert::Infallible;
-
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::ibc::lightclients::wasm::v1::MsgRemoveChecksum as RawMsgRemoveChecksum;
@@ -27,13 +25,11 @@ impl From<MsgRemoveChecksum> for RawMsgRemoveChecksum {
     }
 }
 
-impl TryFrom<RawMsgRemoveChecksum> for MsgRemoveChecksum {
-    type Error = Infallible;
-
-    fn try_from(value: RawMsgRemoveChecksum) -> Result<Self, Self::Error> {
-        Ok(Self {
+impl From<RawMsgRemoveChecksum> for MsgRemoveChecksum {
+    fn from(value: RawMsgRemoveChecksum) -> Self {
+        Self {
             signer: Signer::from(value.signer),
             checksum: value.checksum,
-        })
+        }
     }
 }

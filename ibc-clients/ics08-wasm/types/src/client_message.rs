@@ -1,5 +1,4 @@
 //! Defines the client message type for the ICS-08 Wasm light client.
-use core::convert::Infallible;
 
 use ibc_primitives::proto::Protobuf;
 use ibc_proto::ibc::lightclients::wasm::v1::ClientMessage as RawClientMessage;
@@ -16,11 +15,9 @@ pub struct ClientMessage {
 
 impl Protobuf<RawClientMessage> for ClientMessage {}
 
-impl TryFrom<RawClientMessage> for ClientMessage {
-    type Error = Infallible;
-
-    fn try_from(raw: RawClientMessage) -> Result<Self, Self::Error> {
-        Ok(Self { data: raw.data })
+impl From<RawClientMessage> for ClientMessage {
+    fn from(raw: RawClientMessage) -> Self {
+        Self { data: raw.data }
     }
 }
 

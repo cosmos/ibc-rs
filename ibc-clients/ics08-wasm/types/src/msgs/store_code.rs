@@ -1,5 +1,3 @@
-use core::convert::Infallible;
-
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::ibc::lightclients::wasm::v1::MsgStoreCode as RawMsgStoreCode;
@@ -27,13 +25,11 @@ impl From<MsgStoreCode> for RawMsgStoreCode {
     }
 }
 
-impl TryFrom<RawMsgStoreCode> for MsgStoreCode {
-    type Error = Infallible;
-
-    fn try_from(value: RawMsgStoreCode) -> Result<Self, Self::Error> {
-        Ok(Self {
+impl From<RawMsgStoreCode> for MsgStoreCode {
+    fn from(value: RawMsgStoreCode) -> Self {
+        Self {
             signer: Signer::from(value.signer),
             wasm_byte_code: value.wasm_byte_code,
-        })
+        }
     }
 }
