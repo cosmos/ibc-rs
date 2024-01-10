@@ -37,9 +37,7 @@ pub(crate) fn impl_ClientStateValidation(
         imports,
     );
 
-    let HostClientState = client_state_enum_name;
-    let ClientValidationContext = &opts.client_validation_context;
-
+    // The imports we need for the generated code.
     let Any = imports.any();
     let ClientId = imports.client_id();
     let ClientError = imports.client_error();
@@ -47,17 +45,13 @@ pub(crate) fn impl_ClientStateValidation(
     let Status = imports.status();
     let UpdateKind = imports.update_kind();
 
-    let Impl = match opts.client_validation_context.path.segments.last() {
-        Some(segment) => match segment.arguments {
-            syn::PathArguments::AngleBracketed(ref gen) => {
-                let Gen = gen.args.clone();
+    // The types we need for the generated code.
+    let HostClientState = client_state_enum_name;
+    let ClientValidationContext = &opts.client_validation_context;
 
-                quote! { impl<#Gen> }
-            }
-            _ => quote! { impl },
-        },
-        None => panic!("Invalid ClientValidationContext type"),
-    };
+    // The impl block we generate, considering whether the context contains
+    // generics.
+    let Impl = opts.get_impl_quote(ClientValidationContext);
 
     quote! {
         #Impl #ClientStateValidation<#ClientValidationContext> for #HostClientState {

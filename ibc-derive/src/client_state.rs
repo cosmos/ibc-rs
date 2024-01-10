@@ -12,7 +12,7 @@ use crate::utils::Imports;
 const MISSING_ATTR: &str = "must be annotated with #[validation(<your ClientValidationContext>) and #[execution(<your ClientExecutionContext>)]";
 const MISSING_VALIDATION_ATTR: &str = "missing #[validation(<your ClientValidationContext>)]";
 const MISSING_EXECUTION_ATTR: &str = "missing #[execution(<your ClientExecutionContext>)]";
-const INVALID_ATTR: &str = "invalid attribute annotation!";
+const INVALID_ATTR: &str = "invalid attribute annotation.";
 
 pub(crate) struct Opts {
     client_validation_context: syn::TypePath,
@@ -20,6 +20,7 @@ pub(crate) struct Opts {
 }
 
 impl Opts {
+    /// Returns the `Opts` struct from the given `DeriveInput` AST.
     fn from_derive_input(ast: &DeriveInput) -> Result<Self, syn::Error> {
         let mut client_validation_context = None;
         let mut client_execution_context = None;
@@ -57,6 +58,22 @@ impl Opts {
             client_validation_context,
             client_execution_context,
         })
+    }
+
+    /// Returns the `impl` quote block for the given context type, used for
+    /// implementing ClientValidation/ExecutionContext on the given enum.
+    fn get_impl_quote(&self, context: &syn::TypePath) -> TokenStream {
+        let Impl = match context.path.segments.last() {
+            Some(segment) => match segment.arguments {
+                syn::PathArguments::AngleBracketed(ref gen) => {
+                    let Gen = gen.args.clone();
+                    quote! { impl<#Gen> }
+                }
+                _ => quote! { impl },
+            },
+            None => panic!("invalid context type."),
+        };
+        Impl
     }
 }
 
