@@ -11,24 +11,28 @@ pub(crate) fn impl_ClientStateExecution(
     client_state_enum_name: &Ident,
     enum_variants: &Punctuated<Variant, Comma>,
     opts: &Opts,
+    imports: &Imports,
 ) -> TokenStream {
     let initialise_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
         opts,
         quote! { initialise(cs, ctx, client_id, consensus_state) },
+        imports,
     );
     let update_state_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
         opts,
         quote! { update_state(cs, ctx, client_id, header) },
+        imports,
     );
     let update_state_on_misbehaviour_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
         opts,
         quote! { update_state_on_misbehaviour(cs, ctx, client_id, client_message, update_kind) },
+        imports,
     );
 
     let update_state_with_upgrade_client_impl = delegate_call_in_match(
@@ -36,20 +40,33 @@ pub(crate) fn impl_ClientStateExecution(
         enum_variants.iter(),
         opts,
         quote! { update_state_on_upgrade(cs, ctx, client_id, upgraded_client_state, upgraded_consensus_state) },
+        imports,
     );
 
     let HostClientState = client_state_enum_name;
     let ClientExecutionContext = &opts.client_execution_context;
 
-    let Any = Imports::Any();
-    let ClientId = Imports::ClientId();
-    let ClientError = Imports::ClientError();
-    let ClientStateExecution = Imports::ClientStateExecution();
-    let UpdateKind = Imports::UpdateKind();
-    let Height = Imports::Height();
+    let Any = imports.any();
+    let ClientId = imports.client_id();
+    let ClientError = imports.client_error();
+    let ClientStateExecution = imports.client_state_execution();
+    let UpdateKind = imports.update_kind();
+    let Height = imports.height();
+
+    let Impl = match opts.client_validation_context.path.segments.last() {
+        Some(segment) => match segment.arguments {
+            syn::PathArguments::AngleBracketed(ref gen) => {
+                let Gen = gen.args.clone();
+
+                quote! { impl<#Gen> }
+            }
+            _ => quote! { impl },
+        },
+        None => panic!("Invalid ClientExecutionContext type"),
+    };
 
     quote! {
-        impl #ClientStateExecution<#ClientExecutionContext> for #HostClientState {
+        #Impl #ClientStateExecution<#ClientExecutionContext> for #HostClientState {
             fn initialise(
                 &self,
                 ctx: &mut #ClientExecutionContext,
@@ -105,8 +122,9 @@ fn delegate_call_in_match(
     enum_variants: Iter<'_, Variant>,
     opts: &Opts,
     fn_call: TokenStream,
+    imports: &Imports,
 ) -> Vec<TokenStream> {
-    let ClientStateExecution = Imports::ClientStateExecution();
+    let ClientStateExecution = imports.client_state_execution();
 
     enum_variants
         .map(|variant| {

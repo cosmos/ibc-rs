@@ -5,22 +5,31 @@ use syn::{DeriveInput, Ident, Variant};
 
 use crate::utils::{get_enum_variant_type_path, Imports};
 
-pub fn consensus_state_derive_impl(ast: DeriveInput) -> TokenStream {
+pub fn consensus_state_derive_impl(ast: DeriveInput, imports: &Imports) -> TokenStream {
     let enum_name = &ast.ident;
     let enum_variants = match ast.data {
         syn::Data::Enum(ref enum_data) => &enum_data.variants,
         _ => panic!("ConsensusState only supports enums"),
     };
 
-    let root_impl = delegate_call_in_match(enum_name, enum_variants.iter(), quote! {root(cs)});
-    let timestamp_impl =
-        delegate_call_in_match(enum_name, enum_variants.iter(), quote! {timestamp(cs)});
-    let encode_vec_impl =
-        delegate_call_in_match(enum_name, enum_variants.iter(), quote! {encode_vec(cs)});
+    let root_impl =
+        delegate_call_in_match(enum_name, enum_variants.iter(), quote! {root(cs)}, imports);
+    let timestamp_impl = delegate_call_in_match(
+        enum_name,
+        enum_variants.iter(),
+        quote! {timestamp(cs)},
+        imports,
+    );
+    let encode_vec_impl = delegate_call_in_match(
+        enum_name,
+        enum_variants.iter(),
+        quote! {encode_vec(cs)},
+        imports,
+    );
 
-    let CommitmentRoot = Imports::CommitmentRoot();
-    let ConsensusState = Imports::ConsensusState();
-    let Timestamp = Imports::Timestamp();
+    let CommitmentRoot = imports.commitment_root();
+    let ConsensusState = imports.consensus_state();
+    let Timestamp = imports.timestamp();
 
     quote! {
         impl #ConsensusState for #enum_name {
@@ -49,8 +58,9 @@ fn delegate_call_in_match(
     enum_name: &Ident,
     enum_variants: Iter<'_, Variant>,
     fn_call: TokenStream,
+    imports: &Imports,
 ) -> Vec<TokenStream> {
-    let ConsensusState = Imports::ConsensusState();
+    let ConsensusState = imports.consensus_state();
 
     enum_variants
         .map(|variant| {
