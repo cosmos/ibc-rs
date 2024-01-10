@@ -24,12 +24,11 @@ ibc-apps              = { workspace = true }
 ibc-clients           = { workspace = true }
 ibc-core              = { workspace = true }
 ibc-core-host-cosmos  = { workspace = true }
-ibc-derive            = { workspace = true, optional = true }
+ibc-derive            = { workspace = true }
 ibc-primitives        = { workspace = true }
 
 [features]
 default = ["std"]
-derive = ["ibc-derive"]
 std = [
     "ibc-apps/std",
     "ibc-clients/std",

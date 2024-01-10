@@ -185,14 +185,14 @@ impl ClientStateCommon for AnyClientState {
 To relieve users of such torture, we provide derive macros that do just that:
 
 ```rust
-#[derive(IbcConsensusState)]
+#[derive(ConsensusState)]
 enum AnyConsensusState {
     Tendermint(TmConsensusState),
     Near(NearConsensusState),
     // ...
 }
 
-#[derive(IbcClientState)]
+#[derive(ClientState)]
 #[validation(MyClientValidationContext)]
 #[execution(MyClientExecutionContext)]
 enum AnyClientState {

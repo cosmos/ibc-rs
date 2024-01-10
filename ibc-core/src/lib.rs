@@ -67,7 +67,6 @@ pub mod router {
 }
 
 /// Re-exports convenient derive macros from `ibc-derive` crate.
-#[cfg(feature = "derive")]
 pub mod derive {
     /// A derive macro for implementing the
     /// [`ClientState`](crate::client::context::client_state::ClientState) trait for enums. Enums

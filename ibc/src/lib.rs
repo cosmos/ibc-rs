@@ -65,7 +65,6 @@ pub mod cosmos_host {
 }
 
 /// Re-exports convenient derive macros from `ibc-derive` crate.
-#[cfg(feature = "derive")]
 pub mod derive {
     /// A derive macro for implementing the
     /// [`ClientState`](crate::core::client::context::client_state::ClientState)
