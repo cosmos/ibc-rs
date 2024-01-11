@@ -101,11 +101,11 @@ mod tests {
     use super::*;
 
     #[rstest]
-    #[case("data", "checksum", 1)]
-    fn test_roundtrip(#[case] data: &str, #[case] checksum: &str, #[case] height: u64) {
+    #[case(b"data", b"checksum", 1)]
+    fn test_roundtrip(#[case] data: &[u8], #[case] checksum: &[u8], #[case] height: u64) {
         let raw_client_state = RawClientState {
-            data: data.as_bytes().to_vec(),
-            checksum: checksum.as_bytes().to_vec(),
+            data: data.to_vec(),
+            checksum: checksum.to_vec(),
             latest_height: Some(RawHeight {
                 revision_number: 0,
                 revision_height: height,
