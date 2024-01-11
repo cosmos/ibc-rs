@@ -20,6 +20,7 @@ all-features = true
 [dependencies]
 # external dependencies
 borsh           = { workspace = true, optional = true }
+base64          = { version = "0.21.6", default-features = false }
 derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
 http            = "1.0.0"
@@ -44,6 +45,7 @@ default = ["std"]
 std = [
     "serde/std",
     "serde_json/std",
+    "base64/std",
     "displaydoc/std",
     "http/std",
     "ibc-core/std",

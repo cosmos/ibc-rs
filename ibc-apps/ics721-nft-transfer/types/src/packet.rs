@@ -2,6 +2,8 @@
 
 use core::convert::TryFrom;
 
+use base64::prelude::BASE64_STANDARD;
+use base64::Engine;
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Signer;
 use ibc_proto::ibc::applications::nft_transfer::v1::NonFungibleTokenPacketData as RawPacketData;
@@ -87,14 +89,29 @@ impl TryFrom<RawPacketData> for PacketData {
         let class_data = if raw_pkt_data.class_data.is_empty() {
             None
         } else {
-            Some(raw_pkt_data.class_data.parse()?)
+            let decoded = BASE64_STANDARD
+                .decode(raw_pkt_data.class_data)
+                .map_err(|_| NftTransferError::InvalidJsonData)?;
+            let data_str =
+                String::from_utf8(decoded).map_err(|_| NftTransferError::InvalidJsonData)?;
+            Some(data_str.parse()?)
         };
 
         let token_ids = raw_pkt_data.token_ids.try_into()?;
         let token_uris: Result<Vec<TokenUri>, _> =
             raw_pkt_data.token_uris.iter().map(|t| t.parse()).collect();
-        let token_data: Result<Vec<TokenData>, _> =
-            raw_pkt_data.token_data.iter().map(|t| t.parse()).collect();
+        let token_data: Result<Vec<TokenData>, _> = raw_pkt_data
+            .token_data
+            .iter()
+            .map(|data| {
+                let decoded = BASE64_STANDARD
+                    .decode(data)
+                    .map_err(|_| NftTransferError::InvalidJsonData)?;
+                let data_str =
+                    String::from_utf8(decoded).map_err(|_| NftTransferError::InvalidJsonData)?;
+                data_str.parse()
+            })
+            .collect();
         Self::new(
             raw_pkt_data.class_id.parse()?,
             class_uri,
@@ -119,7 +136,7 @@ impl From<PacketData> for RawPacketData {
                 .unwrap_or_default(),
             class_data: pkt_data
                 .class_data
-                .map(|c| c.to_string())
+                .map(|c| BASE64_STANDARD.encode(c.to_string()))
                 .unwrap_or_default(),
             token_ids: pkt_data
                 .token_ids
@@ -128,7 +145,11 @@ impl From<PacketData> for RawPacketData {
                 .map(|t| t.to_string())
                 .collect(),
             token_uris: pkt_data.token_uris.iter().map(|t| t.to_string()).collect(),
-            token_data: pkt_data.token_data.iter().map(|t| t.to_string()).collect(),
+            token_data: pkt_data
+                .token_data
+                .iter()
+                .map(|t| BASE64_STANDARD.encode(t.to_string()))
+                .collect(),
             sender: pkt_data.sender.to_string(),
             receiver: pkt_data.receiver.to_string(),
             memo: pkt_data.memo.to_string(),
@@ -204,11 +225,11 @@ mod tests {
     }
 
     fn dummy_json_packet_data() -> &'static str {
-        r#"{"classId":"class","classUri":"http://example.com/","classData":"{\"image\":{\"value\":\"binary\",\"mime\":\"image/png\"},\"name\":{\"value\":\"Crypto Creatures\"}}","tokenIds":["token_0","token_1"],"tokenUris":["http://example.com/","http://example.com/"],"tokenData":["{\"image\":{\"value\":\"binary\",\"mime\":\"image/png\"},\"name\":{\"value\":\"Crypto Creatures\"}}","{\"image\":{\"value\":\"binary\",\"mime\":\"image/png\"},\"name\":{\"value\":\"Crypto Creatures\"}}"],"sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","memo":""}"#
+        r#"{"classId":"class","classUri":"http://example.com/","classData":"eyJpbWFnZSI6eyJ2YWx1ZSI6ImJpbmFyeSIsIm1pbWUiOiJpbWFnZS9wbmcifSwibmFtZSI6eyJ2YWx1ZSI6IkNyeXB0byBDcmVhdHVyZXMifX0=","tokenIds":["token_0","token_1"],"tokenUris":["http://example.com/","http://example.com/"],"tokenData":["eyJpbWFnZSI6eyJ2YWx1ZSI6ImJpbmFyeSIsIm1pbWUiOiJpbWFnZS9wbmcifSwibmFtZSI6eyJ2YWx1ZSI6IkNyeXB0byBDcmVhdHVyZXMifX0=","eyJpbWFnZSI6eyJ2YWx1ZSI6ImJpbmFyeSIsIm1pbWUiOiJpbWFnZS9wbmcifSwibmFtZSI6eyJ2YWx1ZSI6IkNyeXB0byBDcmVhdHVyZXMifX0="],"sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","memo":""}"#
     }
 
     fn dummy_json_packet_data_without_memo() -> &'static str {
-        r#"{"classId":"class","classUri":"http://example.com","classData":"{\"name\":{\"value\":\"Crypto Creatures\"},\"image\":{\"value\":\"binary\",\"mime\":\"image/png\"}}","tokenIds":["token_0","token_1"],"tokenUris":["http://example.com","http://example.com"],"tokenData":["{\"name\":{\"value\":\"Crypto Creatures\"},\"image\":{\"value\":\"binary\",\"mime\":\"image/png\"}}","{\"name\":{\"value\":\"Crypto Creatures\"},\"image\":{\"value\":\"binary\",\"mime\":\"image/png\"}}"],"sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng"}"#
+        r#"{"classId":"class","classUri":"http://example.com/","classData":"eyJpbWFnZSI6eyJ2YWx1ZSI6ImJpbmFyeSIsIm1pbWUiOiJpbWFnZS9wbmcifSwibmFtZSI6eyJ2YWx1ZSI6IkNyeXB0byBDcmVhdHVyZXMifX0=","tokenIds":["token_0","token_1"],"tokenUris":["http://example.com/","http://example.com/"],"tokenData":["eyJpbWFnZSI6eyJ2YWx1ZSI6ImJpbmFyeSIsIm1pbWUiOiJpbWFnZS9wbmcifSwibmFtZSI6eyJ2YWx1ZSI6IkNyeXB0byBDcmVhdHVyZXMifX0=","eyJpbWFnZSI6eyJ2YWx1ZSI6ImJpbmFyeSIsIm1pbWUiOiJpbWFnZS9wbmcifSwibmFtZSI6eyJ2YWx1ZSI6IkNyeXB0byBDcmVhdHVyZXMifX0="],"sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng"}"#
     }
 
     /// Ensures `PacketData` properly encodes to JSON by first converting to a
