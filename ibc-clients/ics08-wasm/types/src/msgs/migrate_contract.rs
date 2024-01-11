@@ -45,3 +45,30 @@ impl TryFrom<RawMsgMigrateContract> for MsgMigrateContract {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rstest::rstest;
+
+    use super::*;
+
+    #[rstest]
+    #[case("signer", "08-wasm-2", b"checksum", b"msg")]
+    fn test_roundtrip(
+        #[case] signer: &str,
+        #[case] client_id: &str,
+        #[case] checksum: &[u8],
+        #[case] msg: &[u8],
+    ) {
+        let raw_msg = RawMsgMigrateContract {
+            signer: signer.to_string(),
+            client_id: client_id.to_string(),
+            checksum: checksum.to_vec(),
+            msg: msg.to_vec(),
+        };
+        assert_eq!(
+            RawMsgMigrateContract::from(MsgMigrateContract::try_from(raw_msg.clone()).unwrap()),
+            raw_msg,
+        )
+    }
+}

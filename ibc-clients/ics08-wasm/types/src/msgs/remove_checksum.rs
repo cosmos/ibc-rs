@@ -33,3 +33,23 @@ impl From<RawMsgRemoveChecksum> for MsgRemoveChecksum {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rstest::rstest;
+
+    use super::*;
+
+    #[rstest]
+    #[case("signer", b"checksum")]
+    fn test_roundtrip(#[case] signer: &str, #[case] checksum: &[u8]) {
+        let raw_msg = RawMsgRemoveChecksum {
+            signer: signer.to_string(),
+            checksum: checksum.to_vec(),
+        };
+        assert_eq!(
+            RawMsgRemoveChecksum::from(MsgRemoveChecksum::from(raw_msg.clone())),
+            raw_msg,
+        )
+    }
+}

@@ -92,3 +92,30 @@ impl TryFrom<Any> for ClientState {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use ibc_proto::ibc::core::client::v1::Height as RawHeight;
+    use rstest::rstest;
+
+    use super::*;
+
+    #[rstest]
+    #[case("data", "checksum", 1)]
+    fn test_roundtrip(#[case] data: &str, #[case] checksum: &str, #[case] height: u64) {
+        let raw_client_state = RawClientState {
+            data: data.as_bytes().to_vec(),
+            checksum: checksum.as_bytes().to_vec(),
+            latest_height: Some(RawHeight {
+                revision_number: 0,
+                revision_height: height,
+            }),
+        };
+        let client_state: ClientState = raw_client_state.clone().try_into().unwrap();
+        assert_eq!(RawClientState::from(client_state.clone()), raw_client_state);
+        assert_eq!(
+            ClientState::try_from(Any::from(client_state.clone())).unwrap(),
+            client_state
+        );
+    }
+}

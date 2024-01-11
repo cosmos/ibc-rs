@@ -74,3 +74,24 @@ impl TryFrom<Any> for ConsensusState {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rstest::rstest;
+
+    use super::*;
+
+    #[rstest]
+    #[case(b"data")]
+    fn test_roundtrip(#[case] data: &[u8]) {
+        let raw_msg = RawConsensusState {
+            data: data.to_vec(),
+        };
+        let msg = ConsensusState::try_from(raw_msg.clone()).unwrap();
+        assert_eq!(RawConsensusState::from(msg.clone()), raw_msg);
+        assert_eq!(
+            ConsensusState::try_from(Any::from(msg.clone())).unwrap(),
+            msg
+        );
+    }
+}

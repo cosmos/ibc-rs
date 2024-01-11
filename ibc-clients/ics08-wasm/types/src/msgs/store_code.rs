@@ -33,3 +33,23 @@ impl From<RawMsgStoreCode> for MsgStoreCode {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rstest::rstest;
+
+    use super::*;
+
+    #[rstest]
+    #[case("signer", b"wasm_data")]
+    fn test_roundtrip(#[case] signer: &str, #[case] wasm_byte_code: &[u8]) {
+        let raw_msg = RawMsgStoreCode {
+            signer: signer.to_string(),
+            wasm_byte_code: wasm_byte_code.to_vec(),
+        };
+        assert_eq!(
+            RawMsgStoreCode::from(MsgStoreCode::from(raw_msg.clone())),
+            raw_msg,
+        )
+    }
+}

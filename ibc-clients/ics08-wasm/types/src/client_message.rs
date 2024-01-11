@@ -26,3 +26,22 @@ impl From<ClientMessage> for RawClientMessage {
         RawClientMessage { data: value.data }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rstest::rstest;
+
+    use super::*;
+
+    #[rstest]
+    #[case(b"data")]
+    fn test_roundtrip(#[case] data: &[u8]) {
+        let raw_msg = RawClientMessage {
+            data: data.to_vec(),
+        };
+        assert_eq!(
+            RawClientMessage::from(ClientMessage::from(raw_msg.clone())),
+            raw_msg,
+        )
+    }
+}
