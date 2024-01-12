@@ -9,7 +9,6 @@ edition      = { workspace = true }
 [dependencies]
 # external dependencies
 base64          = { version = "0.21", default-features = false, features = ["alloc"] }
-bytes           = { version = "1.2.1", default-features = false }
 displaydoc      = { workspace = true }
 serde           = { workspace = true , optional = true }
 cosmwasm-schema = { version = "1.4.1", default-features = false, optional = true }
@@ -31,7 +30,6 @@ std = [
 	"ibc-core-host-types/std",
 	"ibc-proto/std",
 	"base64/std",
-	"bytes/std",
 	"serde/std"
 ]
 serde = [
