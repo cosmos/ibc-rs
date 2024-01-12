@@ -74,8 +74,17 @@ pub mod derive {
     ///
     /// To specify the generic arguments for `ClientState`, use the following
     /// attributes:
+    ///
     /// - `#[validation(<YourClientValidationContext>)]`
     /// - `#[execution(<YourClientExecutionContext>)]`
+    ///
+    /// The argument to the `validation` or `execution` attributes may contain
+    /// lifetimes or generic types and even that types might be bounded by
+    /// traits. For instance:
+    ///
+    /// - `#[validation(Context<S>)]`
+    /// - `#[validation(Context<'a, S>)]`
+    /// - `#[validation(Context<'a, S: Clone>)]`
     pub use ibc_derive::IbcClientState as ClientState;
     /// A derive macro for implementing the
     /// [`ConsensusState`](crate::core::client::context::consensus_state::ConsensusState)
