@@ -6,15 +6,16 @@ use alloc::fmt::Debug;
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::primitives::prelude::*;
 
+use crate::store::impls::InMemoryStore;
 use crate::testapp::ibc::core::types::MockContext;
 pub enum Expect {
     Success,
     Failure(Option<ContextError>),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Fixture<M: Debug> {
-    pub ctx: MockContext,
+    pub ctx: MockContext<InMemoryStore>,
     pub msg: M,
 }
 

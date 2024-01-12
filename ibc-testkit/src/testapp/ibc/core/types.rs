@@ -1,6 +1,6 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
-use alloc::collections::btree_map::BTreeMap;
+use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
 use core::cmp::min;
 use core::fmt::Debug;
@@ -8,10 +8,10 @@ use core::ops::{Add, Sub};
 use core::time::Duration;
 
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
+use ibc::clients::tendermint::consensus_state::ConsensusState as TmConsensusState;
 use ibc::clients::tendermint::types::TENDERMINT_CLIENT_TYPE;
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
-use ibc::core::channel::types::packet::Receipt;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::entrypoint::dispatch;
@@ -20,16 +20,21 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{
     ChainId, ChannelId, ClientId, ClientType, ConnectionId, PortId, Sequence,
 };
+use ibc::core::host::types::path::{
+    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
+    CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
+};
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::core::router::router::Router;
+use ibc_proto::google::protobuf::Any;
 use parking_lot::Mutex;
 use tendermint_testgen::Validator as TestgenValidator;
 use tracing::debug;
 use typed_builder::TypedBuilder;
 
-use super::client_ctx::{MockClientRecord, PortChannelIdMap};
+use super::client_ctx::MockClientRecord;
 use crate::fixtures::clients::tendermint::{
     dummy_tm_client_state_from_header, ClientStateConfig as TmClientStateConfig,
 };
@@ -43,61 +48,111 @@ use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
+use ibc_proto::ibc::core::channel::v1::Channel as RawChannelEnd;
+use ibc_proto::ibc::core::connection::v1::ConnectionEnd as RawConnectionEnd;
+
+use crate::store::context::ProvableStore;
+use crate::store::impls::SharedStore;
+use crate::store::types::{BinStore, JsonStore, ProtobufStore, TypedSet, TypedStore};
+
 /// An object that stores all IBC related data.
-#[derive(Clone, Debug, Default)]
-pub struct MockIbcStore {
-    /// The set of all clients, indexed by their id.
-    pub clients: BTreeMap<ClientId, MockClientRecord>,
-
-    /// Tracks the processed time for clients header updates
+/// Note: Cloning of this object is not thread-safe.
+#[derive(Debug, Clone)]
+pub struct MockIbcStore<S>
+where
+    S: ProvableStore,
+{
+    /// Handle to store instance.
+    /// The module is guaranteed exclusive access to all paths in the store key-space.
+    pub store: SharedStore<S>,
+    /// Counter for clients
+    pub client_counter: u64,
+    /// Counter for connections
+    pub conn_counter: u64,
+    /// Counter for channels
+    pub channel_counter: u64,
+    /// Tracks the processed time for client updates
     pub client_processed_times: BTreeMap<(ClientId, Height), Timestamp>,
-
-    /// Tracks the processed height for the clients
+    /// Tracks the processed height for client updates
     pub client_processed_heights: BTreeMap<(ClientId, Height), Height>,
+    /// Map of host consensus states
+    pub consensus_states: BTreeMap<u64, TmConsensusState>,
+    /// A typed-store for AnyClientState
+    pub client_state_store: ProtobufStore<SharedStore<S>, ClientStatePath, AnyClientState, Any>,
+    /// A typed-store for AnyConsensusState
+    pub consensus_state_store:
+        ProtobufStore<SharedStore<S>, ClientConsensusStatePath, AnyConsensusState, Any>,
+    /// A typed-store for ConnectionEnd
+    pub connection_end_store:
+        ProtobufStore<SharedStore<S>, ConnectionPath, ConnectionEnd, RawConnectionEnd>,
+    /// A typed-store for ConnectionIds
+    pub connection_ids_store: JsonStore<SharedStore<S>, ClientConnectionPath, Vec<ConnectionId>>,
+    /// A typed-store for ChannelEnd
+    pub channel_end_store: ProtobufStore<SharedStore<S>, ChannelEndPath, ChannelEnd, RawChannelEnd>,
+    /// A typed-store for send sequences
+    pub send_sequence_store: JsonStore<SharedStore<S>, SeqSendPath, Sequence>,
+    /// A typed-store for receive sequences
+    pub recv_sequence_store: JsonStore<SharedStore<S>, SeqRecvPath, Sequence>,
+    /// A typed-store for ack sequences
+    pub ack_sequence_store: JsonStore<SharedStore<S>, SeqAckPath, Sequence>,
+    /// A typed-store for packet commitments
+    pub packet_commitment_store: BinStore<SharedStore<S>, CommitmentPath, PacketCommitment>,
+    /// A typed-store for packet receipts
+    pub packet_receipt_store: TypedSet<SharedStore<S>, ReceiptPath>,
+    /// A typed-store for packet ack
+    pub packet_ack_store: BinStore<SharedStore<S>, AckPath, AcknowledgementCommitment>,
+    /// IBC Events
+    pub events: Vec<IbcEvent>,
+    /// message logs
+    pub logs: Vec<String>,
+}
 
-    /// Counter for the client identifiers, necessary for `increase_client_counter` and the
-    /// `client_counter` methods.
-    pub client_ids_counter: u64,
+impl<S> MockIbcStore<S>
+where
+    S: ProvableStore,
+{
+    pub fn new(store: S) -> Self {
+        let shared_store = SharedStore::new(store);
+        Self {
+            client_counter: 0,
+            conn_counter: 0,
+            channel_counter: 0,
+            client_processed_times: Default::default(),
+            client_processed_heights: Default::default(),
+            consensus_states: Default::default(),
+            client_state_store: TypedStore::new(shared_store.clone()),
+            consensus_state_store: TypedStore::new(shared_store.clone()),
+            connection_end_store: TypedStore::new(shared_store.clone()),
+            connection_ids_store: TypedStore::new(shared_store.clone()),
+            channel_end_store: TypedStore::new(shared_store.clone()),
+            send_sequence_store: TypedStore::new(shared_store.clone()),
+            recv_sequence_store: TypedStore::new(shared_store.clone()),
+            ack_sequence_store: TypedStore::new(shared_store.clone()),
+            packet_commitment_store: TypedStore::new(shared_store.clone()),
+            packet_receipt_store: TypedStore::new(shared_store.clone()),
+            packet_ack_store: TypedStore::new(shared_store.clone()),
+            store: shared_store,
+            events: Vec::new(),
+            logs: Vec::new(),
+        }
+    }
+}
 
-    /// Association between client ids and connection ids.
-    pub client_connections: BTreeMap<ClientId, ConnectionId>,
-
-    /// All the connections in the store.
-    pub connections: BTreeMap<ConnectionId, ConnectionEnd>,
-
-    /// Counter for connection identifiers (see `increase_connection_counter`).
-    pub connection_ids_counter: u64,
-
-    /// Association between connection ids and channel ids.
-    pub connection_channels: BTreeMap<ConnectionId, Vec<(PortId, ChannelId)>>,
-
-    /// Counter for channel identifiers (see `increase_channel_counter`).
-    pub channel_ids_counter: u64,
-
-    /// All the channels in the store. TODO Make new key PortId X ChannelId
-    pub channels: PortChannelIdMap<ChannelEnd>,
-
-    /// Tracks the sequence number for the next packet to be sent.
-    pub next_sequence_send: PortChannelIdMap<Sequence>,
-
-    /// Tracks the sequence number for the next packet to be received.
-    pub next_sequence_recv: PortChannelIdMap<Sequence>,
-
-    /// Tracks the sequence number for the next packet to be acknowledged.
-    pub next_sequence_ack: PortChannelIdMap<Sequence>,
-
-    pub packet_acknowledgement: PortChannelIdMap<BTreeMap<Sequence, AcknowledgementCommitment>>,
-
-    /// Constant-size commitments to packets data fields
-    pub packet_commitment: PortChannelIdMap<BTreeMap<Sequence, PacketCommitment>>,
-
-    // Used by unordered channel
-    pub packet_receipt: PortChannelIdMap<BTreeMap<Sequence, Receipt>>,
+impl<S> Default for MockIbcStore<S>
+where
+    S: ProvableStore + Default,
+{
+    fn default() -> Self {
+        Self::new(S::default())
+    }
 }
 
 /// A context implementing the dependencies necessary for testing any IBC module.
 #[derive(Debug)]
-pub struct MockContext {
+pub struct MockContext<S>
+where
+    S: ProvableStore,
+{
     /// The type of host chain underlying this mock context.
     pub host_chain_type: HostType,
 
@@ -115,11 +170,7 @@ pub struct MockContext {
     pub block_time: Duration,
 
     /// An object that stores all IBC related data.
-    pub ibc_store: Arc<Mutex<MockIbcStore>>,
-
-    pub events: Vec<IbcEvent>,
-
-    pub logs: Vec<String>,
+    pub ibc_store: Arc<Mutex<MockIbcStore<S>>>,
 }
 
 #[derive(Debug, TypedBuilder)]
@@ -143,7 +194,10 @@ pub struct MockClientConfig {
 /// Returns a MockContext with bare minimum initialization: no clients, no connections and no channels are
 /// present, and the chain has Height(5). This should be used sparingly, mostly for testing the
 /// creation of new domain objects.
-impl Default for MockContext {
+impl<S> Default for MockContext<S>
+where
+    S: ProvableStore + Default + Debug,
+{
     fn default() -> Self {
         Self::new(
             ChainId::new("mockgaia-0").expect("Never fails"),
@@ -156,7 +210,11 @@ impl Default for MockContext {
 
 /// A manual clone impl is provided because the tests are oblivious to the fact that the `ibc_store`
 /// is a shared ptr.
-impl Clone for MockContext {
+/// Note: This clone implementation is not thread-safe.
+impl<S> Clone for MockContext<S>
+where
+    S: ProvableStore + Debug,
+{
     fn clone(&self) -> Self {
         let ibc_store = {
             let ibc_store = self.ibc_store.lock().clone();
@@ -170,15 +228,16 @@ impl Clone for MockContext {
             history: self.history.clone(),
             block_time: self.block_time,
             ibc_store,
-            events: self.events.clone(),
-            logs: self.logs.clone(),
         }
     }
 }
 
 /// Implementation of internal interface for use in testing. The methods in this interface should
 /// _not_ be accessible to any Ics handler.
-impl MockContext {
+impl<S> MockContext<S>
+where
+    S: ProvableStore + Debug,
+{
     /// Creates a mock context. Parameter `max_history_size` determines how many blocks will
     /// the chain maintain in its history, which also determines the pruning window. Parameter
     /// `latest_height` determines the current height of the chain. This context
@@ -188,7 +247,10 @@ impl MockContext {
         host_type: HostType,
         max_history_size: u64,
         latest_height: Height,
-    ) -> Self {
+    ) -> Self
+    where
+        S: Default,
+    {
         assert_ne!(
             max_history_size, 0,
             "The chain must have a non-zero max_history_size"
@@ -232,8 +294,6 @@ impl MockContext {
                 .collect(),
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
-            events: Vec::new(),
-            logs: Vec::new(),
         }
     }
 
@@ -246,7 +306,10 @@ impl MockContext {
         host_type: HostType,
         validator_history: &[Vec<TestgenValidator>],
         latest_height: Height,
-    ) -> Self {
+    ) -> Self
+    where
+        S: Default,
+    {
         let max_history_size = validator_history.len() as u64 - 1;
 
         assert_ne!(
@@ -299,8 +362,6 @@ impl MockContext {
             history,
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
-            events: Vec::new(),
-            logs: Vec::new(),
         }
     }
 
@@ -773,7 +834,7 @@ impl MockContext {
             .height()
     }
 
-    pub fn ibc_store_share(&self) -> Arc<Mutex<MockIbcStore>> {
+    pub fn ibc_store_share(&self) -> Arc<Mutex<MockIbcStore<S>>> {
         self.ibc_store.clone()
     }
 
@@ -797,13 +858,14 @@ mod tests {
     use super::*;
     use crate::fixtures::core::channel::PacketConfig;
     use crate::fixtures::core::signer::dummy_bech32_account;
+    use crate::store::impls::InMemoryStore;
     use crate::testapp::ibc::core::router::MockRouter;
 
     #[test]
     fn test_history_manipulation() {
         pub struct Test {
             name: String,
-            ctx: MockContext,
+            ctx: MockContext<InMemoryStore>,
         }
         let cv = 1; // The version to use for all chains.
 

@@ -1,3 +1,5 @@
+use alloc::fmt::Debug;
+
 use ibc::core::client::types::Height;
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::host::types::identifiers::ClientId;
@@ -5,6 +7,7 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Signer;
 
+use crate::store::context::ProvableStore;
 use crate::testapp::ibc::clients::AnyClientState;
 use crate::testapp::ibc::core::types::MockContext;
 /// Trait capturing all dependencies (i.e., the context) which algorithms in ICS18 require to
@@ -24,7 +27,10 @@ pub trait RelayerContext {
     fn signer(&self) -> Signer;
 }
 
-impl RelayerContext for MockContext {
+impl<S> RelayerContext for MockContext<S>
+where
+    S: ProvableStore + Debug,
+{
     fn query_latest_height(&self) -> Result<Height, ContextError> {
         ValidationContext::host_height(self)
     }
@@ -55,9 +61,12 @@ mod tests {
     use crate::hosts::block::{HostBlock, HostType};
     use crate::relayer::context::ClientId;
     use crate::relayer::error::RelayerError;
+    use crate::store::impls::{InMemoryStore, RevertibleStore};
     use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
     use crate::testapp::ibc::core::router::MockRouter;
-    use crate::testapp::ibc::core::types::MockContext;
+    use crate::testapp::ibc::core::types::MockContext as MockContextGenericStore;
+
+    type MockContext = MockContextGenericStore<RevertibleStore<InMemoryStore>>;
 
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
     /// context, assuming that the latest header on the source context is `src_header`.

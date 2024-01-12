@@ -12,11 +12,12 @@ use tendermint_testgen::Validator as TestgenValidator;
 use typed_builder::TypedBuilder;
 
 use crate::hosts::block::{HostBlock, HostType};
+use crate::store::context::ProvableStore;
 use crate::testapp::ibc::core::types::{MockContext, MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
 
 /// Configuration of the `MockContext` type for generating dummy contexts.
 #[derive(Debug, TypedBuilder)]
-#[builder(build_method(into = MockContext))]
+#[builder(build_method(into))]
 pub struct MockContextConfig {
     #[builder(default = HostType::Mock)]
     host_type: HostType,
@@ -39,7 +40,10 @@ pub struct MockContextConfig {
     latest_timestamp: Timestamp,
 }
 
-impl From<MockContextConfig> for MockContext {
+impl<S> From<MockContextConfig> for MockContext<S>
+where
+    S: ProvableStore + Default,
+{
     fn from(params: MockContextConfig) -> Self {
         assert_ne!(
             params.max_history_size, 0,
@@ -120,8 +124,6 @@ impl From<MockContextConfig> for MockContext {
             history,
             block_time: params.block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
-            events: Vec::new(),
-            logs: Vec::new(),
         }
     }
 }

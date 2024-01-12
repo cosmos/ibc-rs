@@ -11,6 +11,7 @@ use ibc::core::primitives::prelude::*;
 use ibc::derive::{ClientState, ConsensusState};
 use ibc::primitives::proto::{Any, Protobuf};
 
+use crate::store::context::ProvableStore;
 use crate::testapp::ibc::clients::mock::client_state::{
     MockClientState, MOCK_CLIENT_STATE_TYPE_URL,
 };
@@ -20,8 +21,8 @@ use crate::testapp::ibc::clients::mock::consensus_state::{
 use crate::testapp::ibc::core::types::MockContext;
 
 #[derive(Debug, Clone, From, PartialEq, ClientState)]
-#[validation(MockContext)]
-#[execution(MockContext)]
+#[validation(MockContext<S: ProvableStore + alloc::fmt::Debug>)]
+#[execution(MockContext<S: ProvableStore + alloc::fmt::Debug>)]
 pub enum AnyClientState {
     Tendermint(TmClientState),
     Mock(MockClientState),

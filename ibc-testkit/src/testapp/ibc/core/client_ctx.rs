@@ -1,22 +1,24 @@
 use alloc::collections::BTreeMap;
-use alloc::vec::Vec;
+use alloc::fmt::Debug;
 
 use ibc::clients::tendermint::context::{
     CommonContext as TmCommonContext, ValidationContext as TmValidationContext,
 };
 use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc::core::client::types::error::ClientError;
-use ibc::core::client::types::Height;
+use ibc::core::client::types::Height as IbcHeight;
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, PortId};
-use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath};
+use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath, Path as IbcPath};
 use ibc::core::host::ValidationContext;
+use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 
+use crate::store::context::{ProvableStore, Store};
+use crate::store::types::Height as StoreHeight;
 use crate::testapp::ibc::clients::mock::client_state::MockClientContext;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::types::MockContext;
-
 pub type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
 
 /// A mock of an IBC client record as it is stored in a mock context.
@@ -27,10 +29,13 @@ pub struct MockClientRecord {
     pub client_state: Option<AnyClientState>,
 
     /// Mapping of heights to consensus states for this client.
-    pub consensus_states: BTreeMap<Height, AnyConsensusState>,
+    pub consensus_states: BTreeMap<IbcHeight, AnyConsensusState>,
 }
 
-impl MockClientContext for MockContext {
+impl<S> MockClientContext for MockContext<S>
+where
+    S: ProvableStore + Debug,
+{
     type ConversionError = &'static str;
     type AnyConsensusState = AnyConsensusState;
 
@@ -38,7 +43,7 @@ impl MockClientContext for MockContext {
         ValidationContext::host_timestamp(self)
     }
 
-    fn host_height(&self) -> Result<Height, ContextError> {
+    fn host_height(&self) -> Result<IbcHeight, ContextError> {
         ValidationContext::host_height(self)
     }
 
@@ -50,201 +55,145 @@ impl MockClientContext for MockContext {
     }
 }
 
-impl TmCommonContext for MockContext {
-    type ConversionError = &'static str;
-    type AnyConsensusState = AnyConsensusState;
-
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
-        ValidationContext::host_timestamp(self)
-    }
-
-    fn host_height(&self) -> Result<Height, ContextError> {
-        ValidationContext::host_height(self)
-    }
-
-    fn consensus_state(
-        &self,
-        client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::AnyConsensusState, ContextError> {
-        ValidationContext::consensus_state(self, client_cons_state_path)
-    }
-
-    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError> {
-        let ibc_store = self.ibc_store.lock();
-        let client_record =
-            ibc_store
-                .clients
-                .get(client_id)
-                .ok_or_else(|| ClientError::ClientStateNotFound {
-                    client_id: client_id.clone(),
-                })?;
-
-        let heights = client_record.consensus_states.keys().cloned().collect();
-
-        Ok(heights)
-    }
-}
-
-impl TmValidationContext for MockContext {
-    fn next_consensus_state(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Option<Self::AnyConsensusState>, ContextError> {
-        let ibc_store = self.ibc_store.lock();
-        let client_record =
-            ibc_store
-                .clients
-                .get(client_id)
-                .ok_or_else(|| ClientError::ClientStateNotFound {
-                    client_id: client_id.clone(),
-                })?;
-
-        // Get the consensus state heights and sort them in ascending order.
-        let mut heights: Vec<Height> = client_record.consensus_states.keys().cloned().collect();
-        heights.sort();
-
-        // Search for next state.
-        for h in heights {
-            if h > *height {
-                // unwrap should never happen, as the consensus state for h must exist
-                return Ok(Some(
-                    client_record
-                        .consensus_states
-                        .get(&h)
-                        .expect("Never fails")
-                        .clone(),
-                ));
-            }
-        }
-        Ok(None)
-    }
-
-    fn prev_consensus_state(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Option<Self::AnyConsensusState>, ContextError> {
-        let ibc_store = self.ibc_store.lock();
-        let client_record =
-            ibc_store
-                .clients
-                .get(client_id)
-                .ok_or_else(|| ClientError::ClientStateNotFound {
-                    client_id: client_id.clone(),
-                })?;
-
-        // Get the consensus state heights and sort them in descending order.
-        let mut heights: Vec<Height> = client_record.consensus_states.keys().cloned().collect();
-        heights.sort_by(|a, b| b.cmp(a));
-
-        // Search for previous state.
-        for h in heights {
-            if h < *height {
-                // unwrap should never happen, as the consensus state for h must exist
-                return Ok(Some(
-                    client_record
-                        .consensus_states
-                        .get(&h)
-                        .expect("Never fails")
-                        .clone(),
-                ));
-            }
-        }
-        Ok(None)
-    }
-}
-
-impl ClientValidationContext for MockContext {
+impl<S> ClientValidationContext for MockContext<S>
+where
+    S: ProvableStore + Debug,
+{
+    /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`IbcHeight`]
     fn client_update_time(
         &self,
         client_id: &ClientId,
-        height: &Height,
+        height: &IbcHeight,
     ) -> Result<Timestamp, ContextError> {
-        match self
-            .ibc_store
-            .lock()
+        let store = self.ibc_store.lock();
+        let processed_timestamp = store
             .client_processed_times
             .get(&(client_id.clone(), *height))
-        {
-            Some(time) => Ok(*time),
-            None => Err(ClientError::ProcessedTimeNotFound {
+            .cloned()
+            .ok_or(ClientError::ProcessedTimeNotFound {
                 client_id: client_id.clone(),
                 height: *height,
-            })?,
-        }
+            })?;
+        Ok(processed_timestamp)
     }
 
+    /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`IbcHeight`]
     fn client_update_height(
         &self,
         client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ContextError> {
-        match self
-            .ibc_store
-            .lock()
+        height: &IbcHeight,
+    ) -> Result<IbcHeight, ContextError> {
+        let store = self.ibc_store.lock();
+        let processed_height = store
             .client_processed_heights
             .get(&(client_id.clone(), *height))
-        {
-            Some(height) => Ok(*height),
-            None => Err(ClientError::ProcessedHeightNotFound {
+            .cloned()
+            .ok_or(ClientError::ProcessedHeightNotFound {
                 client_id: client_id.clone(),
                 height: *height,
-            })?,
-        }
+            })?;
+        Ok(processed_height)
     }
 }
 
-impl ClientExecutionContext for MockContext {
+impl<S> ClientExecutionContext for MockContext<S>
+where
+    S: ProvableStore + Debug,
+{
     type V = Self;
+
     type AnyClientState = AnyClientState;
+
     type AnyConsensusState = AnyConsensusState;
 
+    /// Called upon successful client creation and update
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
         client_state: Self::AnyClientState,
     ) -> Result<(), ContextError> {
-        let mut ibc_store = self.ibc_store.lock();
-
-        let client_id = client_state_path.0;
-        let client_record = ibc_store
-            .clients
-            .entry(client_id)
-            .or_insert(MockClientRecord {
-                consensus_states: Default::default(),
-                client_state: Default::default(),
-            });
-
-        client_record.client_state = Some(client_state);
-
+        let mut store = self.ibc_store.lock();
+        store
+            .client_state_store
+            .set(client_state_path, client_state)
+            .map(|_| ())
+            .map_err(|_| ClientError::Other {
+                description: "Client state store error".to_string(),
+            })?;
         Ok(())
     }
 
+    /// Called upon successful client creation and update
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
         consensus_state: Self::AnyConsensusState,
     ) -> Result<(), ContextError> {
-        let mut ibc_store = self.ibc_store.lock();
+        let mut store = self.ibc_store.lock();
+        let tm_consensus_state: AnyConsensusState =
+            consensus_state.try_into().map_err(|_| ClientError::Other {
+                description: "Consensus state type mismatch".to_string(),
+            })?;
+        store
+            .consensus_state_store
+            .set(consensus_state_path, tm_consensus_state)
+            .map_err(|_| ClientError::Other {
+                description: "Consensus state store error".to_string(),
+            })?;
+        Ok(())
+    }
 
-        let client_record = ibc_store
-            .clients
-            .entry(consensus_state_path.client_id)
-            .or_insert(MockClientRecord {
-                consensus_states: Default::default(),
-                client_state: Default::default(),
-            });
+    /// Called upon successful client update.
+    /// Implementations are expected to use this to record the specified time as the time at which
+    /// this update (or header) was processed.
+    fn store_update_time(
+        &mut self,
+        client_id: ClientId,
+        height: IbcHeight,
+        timestamp: Timestamp,
+    ) -> Result<(), ContextError> {
+        let mut store = self.ibc_store.lock();
+        store
+            .client_processed_times
+            .insert((client_id, height), timestamp);
+        Ok(())
+    }
 
-        let height = Height::new(
-            consensus_state_path.revision_number,
-            consensus_state_path.revision_height,
-        )
-        .expect("Never fails");
-        client_record
-            .consensus_states
-            .insert(height, consensus_state);
+    /// Called upon successful client update.
+    /// Implementations are expected to use this to record the specified height as the height at
+    /// at which this update (or header) was processed.
+    fn store_update_height(
+        &mut self,
+        client_id: ClientId,
+        height: IbcHeight,
+        host_height: IbcHeight,
+    ) -> Result<(), ContextError> {
+        let mut store = self.ibc_store.lock();
+        store
+            .client_processed_heights
+            .insert((client_id, height), host_height);
+        Ok(())
+    }
 
+    /// Delete the update time associated with the client at the specified height.
+    fn delete_update_time(
+        &mut self,
+        client_id: ClientId,
+        height: IbcHeight,
+    ) -> Result<(), ContextError> {
+        let mut store = self.ibc_store.lock();
+        store.client_processed_times.remove(&(client_id, height));
+        Ok(())
+    }
+
+    /// Delete the update height associated with the client at the specified height.
+    fn delete_update_height(
+        &mut self,
+        client_id: ClientId,
+        height: IbcHeight,
+    ) -> Result<(), ContextError> {
+        let mut store = self.ibc_store.lock();
+        store.client_processed_heights.remove(&(client_id, height));
         Ok(())
     }
 
@@ -252,82 +201,141 @@ impl ClientExecutionContext for MockContext {
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
     ) -> Result<(), ContextError> {
-        let mut ibc_store = self.ibc_store.lock();
-
-        let client_record = ibc_store
-            .clients
-            .entry(consensus_state_path.client_id)
-            .or_insert(MockClientRecord {
-                consensus_states: Default::default(),
-                client_state: Default::default(),
-            });
-
-        let height = Height::new(
-            consensus_state_path.revision_number,
-            consensus_state_path.revision_height,
-        )
-        .expect("Never fails");
-
-        client_record.consensus_states.remove(&height);
-
+        let mut store = self.ibc_store.lock();
+        store.consensus_state_store.delete(consensus_state_path);
         Ok(())
     }
+}
 
-    fn delete_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .remove(&(client_id, height));
+impl<S> TmCommonContext for MockContext<S>
+where
+    S: ProvableStore + Debug,
+{
+    type ConversionError = &'static str;
+    type AnyConsensusState = AnyConsensusState;
 
-        Ok(())
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
+        ValidationContext::host_timestamp(self)
     }
 
-    fn delete_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .remove(&(client_id, height));
-
-        Ok(())
+    fn host_height(&self) -> Result<IbcHeight, ContextError> {
+        ValidationContext::host_height(self)
     }
 
-    fn store_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_times
-            .insert((client_id, height), timestamp);
-
-        Ok(())
+    fn consensus_state(
+        &self,
+        client_cons_state_path: &ClientConsensusStatePath,
+    ) -> Result<Self::AnyConsensusState, ContextError> {
+        ValidationContext::consensus_state(self, client_cons_state_path)
     }
 
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_height: Height,
-    ) -> Result<(), ContextError> {
-        let _ = self
-            .ibc_store
-            .lock()
-            .client_processed_heights
-            .insert((client_id, height), host_height);
+    fn consensus_state_heights(
+        &self,
+        client_id: &ClientId,
+    ) -> Result<Vec<IbcHeight>, ContextError> {
+        let path = format!("clients/{}/consensusStates", client_id)
+            .try_into()
+            .map_err(|_| ClientError::Other {
+                description: "Invalid consensus state path".into(),
+            })?;
 
-        Ok(())
+        let store = self.ibc_store.lock();
+        store
+            .consensus_state_store
+            .get_keys(&path)
+            .into_iter()
+            .flat_map(|path| {
+                if let Ok(IbcPath::ClientConsensusState(consensus_path)) = path.try_into() {
+                    Some(consensus_path)
+                } else {
+                    None
+                }
+            })
+            .map(|consensus_path| {
+                let height = IbcHeight::new(
+                    consensus_path.revision_number,
+                    consensus_path.revision_height,
+                )?;
+                Ok(height)
+            })
+            .collect()
+    }
+}
+
+impl<S> TmValidationContext for MockContext<S>
+where
+    S: ProvableStore + Debug,
+{
+    fn next_consensus_state(
+        &self,
+        client_id: &ClientId,
+        height: &IbcHeight,
+    ) -> Result<Option<Self::AnyConsensusState>, ContextError> {
+        let path = format!("clients/{client_id}/consensusStates")
+            .try_into()
+            .unwrap(); // safety - path must be valid since ClientId and height are valid Identifiers
+
+        let store = self.ibc_store.lock();
+        let keys = store.store.get_keys(&path);
+        let found_path = keys.into_iter().find_map(|path| {
+            if let Ok(IbcPath::ClientConsensusState(path)) = IbcPath::try_from(path) {
+                if height > &IbcHeight::new(path.revision_number, path.revision_height).unwrap() {
+                    return Some(path);
+                }
+            }
+            None
+        });
+
+        if let Some(path) = found_path {
+            let consensus_state = store
+                .consensus_state_store
+                .get(StoreHeight::Pending, &path)
+                .ok_or(ClientError::ConsensusStateNotFound {
+                    client_id: client_id.clone(),
+                    height: *height,
+                })?;
+
+            Ok(Some(consensus_state.into()))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn prev_consensus_state(
+        &self,
+        client_id: &ClientId,
+        height: &IbcHeight,
+    ) -> Result<Option<Self::AnyConsensusState>, ContextError> {
+        let path = format!("clients/{client_id}/consensusStates")
+            .try_into()
+            .unwrap(); // safety - path must be valid since ClientId and height are valid Identifiers
+
+        let store = self.ibc_store.lock();
+        let keys = store.store.get_keys(&path);
+        let pos = keys.iter().position(|path| {
+            if let Ok(IbcPath::ClientConsensusState(path)) = IbcPath::try_from(path.clone()) {
+                height >= &IbcHeight::new(path.revision_number, path.revision_height).unwrap()
+            } else {
+                false
+            }
+        });
+
+        if let Some(pos) = pos {
+            if pos > 0 {
+                let prev_path = match IbcPath::try_from(keys[pos - 1].clone()) {
+                    Ok(IbcPath::ClientConsensusState(p)) => p,
+                    _ => unreachable!(), // safety - path retrieved from store
+                };
+                let consensus_state = store
+                    .consensus_state_store
+                    .get(StoreHeight::Pending, &prev_path)
+                    .ok_or(ClientError::ConsensusStateNotFound {
+                        client_id: client_id.clone(),
+                        height: *height,
+                    })?;
+                return Ok(Some(consensus_state.into()));
+            }
+        }
+        Ok(None)
     }
 }
