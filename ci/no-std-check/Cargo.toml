@@ -6,7 +6,7 @@ resolver = "2"
 
 [dependencies]
 ibc = { path = "../../ibc", default-features = false, features = ["serde"] }
-ibc-proto = { version = "0.41.0", default-features = false, features = [
+ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs.git", rev = "d1daaab", default-features = false, features = [
   "parity-scale-codec",
   "borsh",
   "serde",
