@@ -63,3 +63,39 @@ impl FromStr for ClientType {
         Self::new(s)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use rstest::rstest;
+
+    use super::*;
+
+    #[rstest]
+    #[case::tendermint("07-tendermint")]
+    #[case::wasm("08-wasm")]
+    #[case::zero_double_digits("00-dummy")]
+    #[case::zero_single_digit("0-dummy")]
+    #[case::length_seven("1234567")]
+    fn client_type_from_str(#[case] client_str: &str) {
+        let client_type = ClientType::from_str(client_str).unwrap();
+        assert_eq!(client_type.as_str(), client_str);
+    }
+
+    #[rstest]
+    #[case::length_less_than_seven("00-foo")]
+    #[case::length_six("123456")]
+    fn client_type_from_str_fails(#[case] client_str: &str) {
+        let client_type = ClientType::from_str(client_str);
+        assert!(client_type.is_err());
+    }
+
+    #[rstest]
+    #[case::tendermint("07-tendermint", 118)]
+    #[case::wasm("08-wasm", 2)]
+    #[case::zero_counter("01-dummy", 0)]
+    fn client_type_build_client_id(#[case] client_str: &str, #[case] counter: u64) {
+        let client_type = ClientType::from_str(client_str).unwrap();
+        let client_id = client_type.build_client_id(counter);
+        assert_eq!(client_id.as_str(), format!("{}-{}", client_str, counter));
+    }
+}
