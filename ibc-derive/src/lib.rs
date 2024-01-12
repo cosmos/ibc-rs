@@ -16,24 +16,22 @@ use client_state::client_state_derive_impl;
 use consensus_state::consensus_state_derive_impl;
 use proc_macro::TokenStream as RawTokenStream;
 use syn::{parse_macro_input, DeriveInput};
-use utils::Imports;
+use utils::{Imports, SupportedCrate};
 
 #[proc_macro_derive(IbcClientState, attributes(validation, execution))]
 pub fn ibc_client_state_macro_derive(input: RawTokenStream) -> RawTokenStream {
-    let ast: DeriveInput = parse_macro_input!(input);
-
-    let imports = Imports::new_ibc();
-
-    let output = client_state_derive_impl(ast, &imports);
-
-    RawTokenStream::from(output)
+    generate_client_state_derive(input, SupportedCrate::Ibc)
 }
 
 #[proc_macro_derive(IbcCoreClientState, attributes(validation, execution))]
 pub fn ibc_core_client_state_macro_derive(input: RawTokenStream) -> RawTokenStream {
+    generate_client_state_derive(input, SupportedCrate::IbcCore)
+}
+
+fn generate_client_state_derive(input: RawTokenStream, source: SupportedCrate) -> RawTokenStream {
     let ast: DeriveInput = parse_macro_input!(input);
 
-    let imports = Imports::new_ibc_core();
+    let imports = Imports::new(source);
 
     let output = client_state_derive_impl(ast, &imports);
 
@@ -42,20 +40,21 @@ pub fn ibc_core_client_state_macro_derive(input: RawTokenStream) -> RawTokenStre
 
 #[proc_macro_derive(IbcConsensusState)]
 pub fn ibc_consensus_state_macro_derive(input: RawTokenStream) -> RawTokenStream {
-    let ast: DeriveInput = parse_macro_input!(input);
-
-    let imports = Imports::new_ibc();
-
-    let output = consensus_state_derive_impl(ast, &imports);
-
-    RawTokenStream::from(output)
+    generate_consensus_state_derive(input, SupportedCrate::Ibc)
 }
 
 #[proc_macro_derive(IbcCoreConsensusState)]
 pub fn ibc_core_consensus_state_macro_derive(input: RawTokenStream) -> RawTokenStream {
+    generate_consensus_state_derive(input, SupportedCrate::IbcCore)
+}
+
+fn generate_consensus_state_derive(
+    input: RawTokenStream,
+    source: SupportedCrate,
+) -> RawTokenStream {
     let ast: DeriveInput = parse_macro_input!(input);
 
-    let imports = Imports::new_ibc_core();
+    let imports = Imports::new(source);
 
     let output = consensus_state_derive_impl(ast, &imports);
 

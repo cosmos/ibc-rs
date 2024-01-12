@@ -2,6 +2,12 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Path, Variant};
 
+/// The IBC crates that we already support in the derive macro
+pub enum SupportedCrate {
+    Ibc,
+    IbcCore,
+}
+
 /// Encodes the ibc-rs types that will be used in the macro
 ///
 /// Note: we use `ibc` or `ibc-core` as our top-level crate, due to the `extern
@@ -11,16 +17,13 @@ pub struct Imports {
 }
 
 impl Imports {
-    pub fn new_ibc() -> Self {
-        Self {
-            prefix: quote! {::ibc::core},
-        }
-    }
+    pub fn new(crate_name: SupportedCrate) -> Self {
+        let prefix = match crate_name {
+            SupportedCrate::Ibc => quote! {::ibc::core},
+            SupportedCrate::IbcCore => quote! {::ibc_core},
+        };
 
-    pub fn new_ibc_core() -> Self {
-        Self {
-            prefix: quote! {::ibc_core},
-        }
+        Self { prefix }
     }
 
     pub fn prefix(&self) -> &TokenStream {
