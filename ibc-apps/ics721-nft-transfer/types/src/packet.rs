@@ -167,7 +167,7 @@ mod tests {
     const DUMMY_CLASS_ID: &str = "class";
     const DUMMY_URI: &str = "http://example.com";
     const DUMMY_DATA: &str =
-        r#"{"name":{"value":"Crypto Creatures"},"image":{"value":"binary","mime":"image/png"}}"#;
+        r#"{"image":{"value":"binary","mime":"image/png"},"name":{"value":"Crypto Creatures"}}"#;
 
     impl PacketData {
         pub fn new_dummy() -> Self {

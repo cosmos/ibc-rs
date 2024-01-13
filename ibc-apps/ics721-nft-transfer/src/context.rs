@@ -17,10 +17,10 @@ pub trait NftContext {
     fn get_id(&self) -> &TokenId;
 
     /// Get the token URI
-    fn get_uri(&self) -> &TokenUri;
+    fn get_uri(&self) -> Option<&TokenUri>;
 
     /// Get the token Data
-    fn get_data(&self) -> &TokenData;
+    fn get_data(&self) -> Option<&TokenData>;
 }
 
 pub trait NftClassContext {
@@ -28,10 +28,10 @@ pub trait NftClassContext {
     fn get_id(&self) -> &ClassId;
 
     /// Get the class URI
-    fn get_uri(&self) -> &ClassUri;
+    fn get_uri(&self) -> Option<&ClassUri>;
 
     /// Get the class Data
-    fn get_data(&self) -> &ClassData;
+    fn get_data(&self) -> Option<&ClassData>;
 }
 
 /// Read-only methods required in NFT transfer validation context.
@@ -53,8 +53,8 @@ pub trait NftTransferValidationContext {
     fn create_or_update_class_validate(
         &self,
         class_id: &PrefixedClassId,
-        class_uri: &ClassUri,
-        class_data: &ClassData,
+        class_uri: Option<&ClassUri>,
+        class_data: Option<&ClassData>,
     ) -> Result<(), NftTransferError>;
 
     /// Validates that the tokens can be escrowed successfully.
@@ -88,8 +88,8 @@ pub trait NftTransferValidationContext {
         account: &Self::AccountId,
         class_id: &PrefixedClassId,
         token_id: &TokenId,
-        token_uri: &TokenUri,
-        token_data: &TokenData,
+        token_uri: Option<&TokenUri>,
+        token_data: Option<&TokenData>,
     ) -> Result<(), NftTransferError>;
 
     /// Validates the sender account and the coin input before burning.
@@ -133,8 +133,8 @@ pub trait NftTransferExecutionContext: NftTransferValidationContext {
     fn create_or_update_class_execute(
         &self,
         class_id: &PrefixedClassId,
-        class_uri: &ClassUri,
-        class_data: &ClassData,
+        class_uri: Option<&ClassUri>,
+        class_data: Option<&ClassData>,
     ) -> Result<(), NftTransferError>;
 
     /// Executes the escrow of the NFT in a user account.
@@ -167,8 +167,8 @@ pub trait NftTransferExecutionContext: NftTransferValidationContext {
         account: &Self::AccountId,
         class_id: &PrefixedClassId,
         token_id: &TokenId,
-        token_uri: &TokenUri,
-        token_data: &TokenData,
+        token_uri: Option<&TokenUri>,
+        token_data: Option<&TokenData>,
     ) -> Result<(), NftTransferError>;
 
     /// Executes burning of the NFT in a user account.

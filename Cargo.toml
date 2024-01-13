@@ -90,8 +90,7 @@ ibc-client-tendermint-types = { version = "0.49.1", path = "./ibc-clients/ics07-
 ibc-app-transfer-types      = { version = "0.49.1", path = "./ibc-apps/ics20-transfer/types", default-features = false }
 ibc-app-nft-transfer-types  = { version = "0.49.1", path = "./ibc-apps/ics721-nft-transfer/types", default-features = false }
 
-#ibc-proto = { version = "0.39.1", default-features = false }
-ibc-proto = { git = "https://github.com/heliaxdev/ibc-proto-rs", branch = "yuji/feat/ics721-impl", default-features = false }
+ibc-proto = { version = "0.41.0", default-features = false }
 
 # cosmos dependencies
 tendermint                       = { version = "0.34.0", default-features = false }

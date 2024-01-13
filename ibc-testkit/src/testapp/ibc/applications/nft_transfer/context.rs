@@ -20,12 +20,12 @@ impl NftContext for DummyNft {
         &self.token_id
     }
 
-    fn get_uri(&self) -> &TokenUri {
-        &self.token_uri
+    fn get_uri(&self) -> Option<&TokenUri> {
+        self.token_uri.as_ref()
     }
 
-    fn get_data(&self) -> &TokenData {
-        &self.token_data
+    fn get_data(&self) -> Option<&TokenData> {
+        self.token_data.as_ref()
     }
 }
 
@@ -34,12 +34,12 @@ impl NftClassContext for DummyNftClass {
         &self.class_id
     }
 
-    fn get_uri(&self) -> &ClassUri {
-        &self.class_uri
+    fn get_uri(&self) -> Option<&ClassUri> {
+        self.class_uri.as_ref()
     }
 
-    fn get_data(&self) -> &ClassData {
-        &self.class_data
+    fn get_data(&self) -> Option<&ClassData> {
+        self.class_data.as_ref()
     }
 }
 
@@ -63,8 +63,8 @@ impl NftTransferValidationContext for DummyNftTransferModule {
     fn create_or_update_class_validate(
         &self,
         _class_id: &PrefixedClassId,
-        _class_uri: &ClassUri,
-        _class_data: &ClassData,
+        _class_uri: Option<&ClassUri>,
+        _class_data: Option<&ClassData>,
     ) -> Result<(), NftTransferError> {
         Ok(())
     }
@@ -97,8 +97,8 @@ impl NftTransferValidationContext for DummyNftTransferModule {
         _account: &Self::AccountId,
         _class_id: &PrefixedClassId,
         _token_id: &TokenId,
-        _token_uri: &TokenUri,
-        _token_data: &TokenData,
+        _token_uri: Option<&TokenUri>,
+        _token_data: Option<&TokenData>,
     ) -> Result<(), NftTransferError> {
         Ok(())
     }
@@ -133,8 +133,8 @@ impl NftTransferExecutionContext for DummyNftTransferModule {
     fn create_or_update_class_execute(
         &self,
         _class_id: &PrefixedClassId,
-        _class_uri: &ClassUri,
-        _class_data: &ClassData,
+        _class_uri: Option<&ClassUri>,
+        _class_data: Option<&ClassData>,
     ) -> Result<(), NftTransferError> {
         Ok(())
     }
@@ -167,8 +167,8 @@ impl NftTransferExecutionContext for DummyNftTransferModule {
         _account: &Self::AccountId,
         _class_id: &PrefixedClassId,
         _token_id: &TokenId,
-        _token_uri: &TokenUri,
-        _token_data: &TokenData,
+        _token_uri: Option<&TokenUri>,
+        _token_data: Option<&TokenData>,
     ) -> Result<(), NftTransferError> {
         Ok(())
     }

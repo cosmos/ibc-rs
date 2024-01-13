@@ -83,13 +83,22 @@ where
             transfer_ctx.burn_nft_validate(&sender, class_id, token_id, &packet_data.memo)?;
         }
         let nft = transfer_ctx.get_nft(class_id, token_id)?;
-        packet_data.token_uris.push(nft.get_uri().clone());
-        packet_data.token_data.push(nft.get_data().clone());
+        if let Some(uri) = nft.get_uri() {
+            packet_data.token_uris.push(uri.clone());
+        }
+        if let Some(data) = nft.get_data() {
+            packet_data.token_data.push(data.clone());
+        }
+    }
+    let token_len = packet_data.token_ids.0.len();
+    if token_len != packet_data.token_uris.len() || token_len != packet_data.token_data.len() {
+        // When the length mismatched, we can't send these token URIs and data
+        return Err(NftTransferError::TokenMismatched);
     }
 
     let nft_class = transfer_ctx.get_nft_class(class_id)?;
-    packet_data.class_uri = Some(nft_class.get_uri().clone());
-    packet_data.class_data = Some(nft_class.get_data().clone());
+    packet_data.class_uri = nft_class.get_uri().cloned();
+    packet_data.class_data = nft_class.get_data().cloned();
 
     let packet = {
         let data = serde_json::to_vec(&packet_data)
@@ -166,13 +175,17 @@ where
             transfer_ctx.burn_nft_execute(&sender, class_id, token_id, &packet_data.memo)?;
         }
         let nft = transfer_ctx.get_nft(class_id, token_id)?;
-        packet_data.token_uris.push(nft.get_uri().clone());
-        packet_data.token_data.push(nft.get_data().clone());
+        if let Some(uri) = nft.get_uri() {
+            packet_data.token_uris.push(uri.clone());
+        }
+        if let Some(data) = nft.get_data() {
+            packet_data.token_data.push(data.clone());
+        }
     }
 
     let nft_class = transfer_ctx.get_nft_class(class_id)?;
-    packet_data.class_uri = Some(nft_class.get_uri().clone());
-    packet_data.class_data = Some(nft_class.get_data().clone());
+    packet_data.class_uri = nft_class.get_uri().cloned();
+    packet_data.class_data = nft_class.get_data().cloned();
 
     let packet = {
         let data = {
