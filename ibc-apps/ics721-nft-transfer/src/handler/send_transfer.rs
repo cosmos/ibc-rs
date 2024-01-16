@@ -83,15 +83,17 @@ where
             transfer_ctx.burn_nft_validate(&sender, class_id, token_id, &packet_data.memo)?;
         }
         let nft = transfer_ctx.get_nft(class_id, token_id)?;
-        if let Some(uri) = nft.get_uri() {
+        // Set the URI and the data if both exists
+        if let (Some(uri), Some(data)) = (nft.get_uri(), nft.get_data()) {
             packet_data.token_uris.push(uri.clone());
-        }
-        if let Some(data) = nft.get_data() {
             packet_data.token_data.push(data.clone());
         }
     }
+
     let token_len = packet_data.token_ids.0.len();
-    if token_len != packet_data.token_uris.len() || token_len != packet_data.token_data.len() {
+    let uris_len = packet_data.token_uris.len();
+    // The length of token_uris is equal to that of token_data in this case
+    if uris_len != 0 && token_len != uris_len {
         // When the length mismatched, we can't send these token URIs and data
         return Err(NftTransferError::TokenMismatched);
     }
