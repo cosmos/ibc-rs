@@ -177,10 +177,9 @@ where
             transfer_ctx.burn_nft_execute(&sender, class_id, token_id, &packet_data.memo)?;
         }
         let nft = transfer_ctx.get_nft(class_id, token_id)?;
-        if let Some(uri) = nft.get_uri() {
+        // Set the URI and the data if both exists
+        if let (Some(uri), Some(data)) = (nft.get_uri(), nft.get_data()) {
             packet_data.token_uris.push(uri.clone());
-        }
-        if let Some(data) = nft.get_data() {
             packet_data.token_data.push(data.clone());
         }
     }
