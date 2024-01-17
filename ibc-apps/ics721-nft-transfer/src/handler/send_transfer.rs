@@ -90,13 +90,7 @@ where
         }
     }
 
-    let token_len = packet_data.token_ids.0.len();
-    let uris_len = packet_data.token_uris.len();
-    // The length of token_uris is equal to that of token_data in this case
-    if uris_len != 0 && token_len != uris_len {
-        // When the length mismatched, we can't send these token URIs and data
-        return Err(NftTransferError::TokenMismatched);
-    }
+    packet_data.validate_basic()?;
 
     let nft_class = transfer_ctx.get_nft_class(class_id)?;
     packet_data.class_uri = nft_class.get_uri().cloned();

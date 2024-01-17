@@ -54,16 +54,7 @@ impl PacketData {
         receiver: Signer,
         memo: Memo,
     ) -> Result<Self, NftTransferError> {
-        if token_ids.0.is_empty() {
-            return Err(NftTransferError::NoTokenId);
-        }
-        let num = token_ids.0.len();
-        let num_uri = token_uris.len();
-        let num_data = token_data.len();
-        if (num_uri != 0 && num_uri != num) || (num_data != 0 && num_data != num) {
-            return Err(NftTransferError::TokenMismatched);
-        }
-        Ok(Self {
+        let packet_data = Self {
             class_id,
             class_uri,
             class_data,
@@ -73,7 +64,25 @@ impl PacketData {
             sender,
             receiver,
             memo,
-        })
+        };
+
+        packet_data.validate_basic()?;
+
+        Ok(packet_data)
+    }
+
+    /// Performs the basic validation of the packet data fields.
+    pub fn validate_basic(&self) -> Result<(), NftTransferError> {
+        if self.token_ids.0.is_empty() {
+            return Err(NftTransferError::NoTokenId);
+        }
+        let num = self.token_ids.0.len();
+        let num_uri = self.token_uris.len();
+        let num_data = self.token_data.len();
+        if (num_uri != 0 && num_uri != num) || (num_data != 0 && num_data != num) {
+            return Err(NftTransferError::TokenMismatched);
+        }
+        Ok(())
     }
 }
 
