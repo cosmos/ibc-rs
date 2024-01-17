@@ -13,7 +13,7 @@ use typed_builder::TypedBuilder;
 
 use crate::hosts::block::{HostBlock, HostType};
 use crate::store::context::ProvableStore;
-use crate::testapp::ibc::core::types::{MockContext, MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
+use crate::testapp::ibc::core::types::{GenericMockContext, MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
 
 /// Configuration of the `MockContext` type for generating dummy contexts.
 #[derive(Debug, TypedBuilder)]
@@ -40,7 +40,7 @@ pub struct MockContextConfig {
     latest_timestamp: Timestamp,
 }
 
-impl<S> From<MockContextConfig> for MockContext<S>
+impl<S> From<MockContextConfig> for GenericMockContext<S>
 where
     S: ProvableStore + Default,
 {
@@ -117,13 +117,13 @@ where
                 .collect()
         };
 
-        MockContext {
+        GenericMockContext {
             host_chain_type: params.host_type,
             host_chain_id: params.host_id.clone(),
             max_history_size: params.max_history_size,
             history,
             block_time: params.block_time,
-            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+            ibc_store: Arc::new(Mutex::new(MockIbcStore::new(S::default()))),
         }
     }
 }

@@ -1,19 +1,24 @@
 use std::fmt::{Display, Formatter};
 use std::str::{from_utf8, FromStr, Utf8Error};
 
+use derive_more::From;
 use displaydoc::Display as DisplayDoc;
+use ibc::core::host::types::error::IdentifierError;
 use ibc::core::host::types::path::{Path as IbcPath, PathError};
+use ibc::core::host::types::validate::validate_identifier_chars;
 use ibc::core::primitives::prelude::*;
 
 use super::Identifier;
 use crate::store::avl::{AsBytes, ByteSlice};
 
-#[derive(Debug, DisplayDoc)]
+#[derive(Debug, From, DisplayDoc)]
 pub enum Error {
     /// path isn't a valid string: `{error}`
     MalformedPathString { error: Utf8Error },
     /// parse error: `{0}`
     ParseError(String),
+    /// host identifier error: `{0}`
+    HostIdentifierError(IdentifierError),
 }
 
 /// A new type representing a valid ICS024 `Path`.
@@ -34,6 +39,7 @@ impl TryFrom<String> for Path {
         let mut identifiers = vec![];
         let parts = s.split('/'); // split will never return an empty iterator
         for part in parts {
+            validate_identifier_chars(part)?;
             identifiers.push(Identifier::from(part.to_owned()));
         }
         Ok(Self(identifiers))
@@ -85,7 +91,7 @@ impl TryFrom<Path> for IbcPath {
 
 impl From<IbcPath> for Path {
     fn from(ibc_path: IbcPath) -> Self {
-        Self::try_from(ibc_path.to_string()).unwrap() // safety - `IbcPath`s are correct-by-construction
+        Self::try_from(ibc_path.to_string()).expect("no error") // safety - `IbcPath`s are correct-by-construction
     }
 }
 
@@ -95,18 +101,19 @@ mod tests {
 
     use super::*;
 
-    const ALLOWED_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
-                                   abcdefghijklmnopqrstuvwxyz\
-                                   ._+-#[]<>";
+    // const ALLOWED_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
+    //                                abcdefghijklmnopqrstuvwxyz\
+    //                                ._+-#[]<>";
 
     #[rstest]
     #[case("hello/world/")]
+    #[case("hello/1234/")]
     fn path_with_valid_parts_is_valid(#[case] path: &str) {
         assert!(Path::try_from(path.to_owned()).is_ok());
     }
 
     #[rstest]
-    #[case("hello/1234/")]
+    #[case("hello/123@/")]
     fn path_with_invalid_parts_is_invalid(#[case] path: &str) {
         assert!(Path::try_from(path.to_owned()).is_err());
     }

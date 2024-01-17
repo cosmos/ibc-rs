@@ -18,7 +18,7 @@ use crate::store::context::{ProvableStore, Store};
 use crate::store::types::Height as StoreHeight;
 use crate::testapp::ibc::clients::mock::client_state::MockClientContext;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
-use crate::testapp::ibc::core::types::MockContext;
+use crate::testapp::ibc::core::types::GenericMockContext;
 pub type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
 
 /// A mock of an IBC client record as it is stored in a mock context.
@@ -32,7 +32,7 @@ pub struct MockClientRecord {
     pub consensus_states: BTreeMap<IbcHeight, AnyConsensusState>,
 }
 
-impl<S> MockClientContext for MockContext<S>
+impl<S> MockClientContext for GenericMockContext<S>
 where
     S: ProvableStore + Debug,
 {
@@ -55,7 +55,7 @@ where
     }
 }
 
-impl<S> ClientValidationContext for MockContext<S>
+impl<S> ClientValidationContext for GenericMockContext<S>
 where
     S: ProvableStore + Debug,
 {
@@ -96,7 +96,7 @@ where
     }
 }
 
-impl<S> ClientExecutionContext for MockContext<S>
+impl<S> ClientExecutionContext for GenericMockContext<S>
 where
     S: ProvableStore + Debug,
 {
@@ -130,13 +130,9 @@ where
         consensus_state: Self::AnyConsensusState,
     ) -> Result<(), ContextError> {
         let mut store = self.ibc_store.lock();
-        let tm_consensus_state: AnyConsensusState =
-            consensus_state.try_into().map_err(|_| ClientError::Other {
-                description: "Consensus state type mismatch".to_string(),
-            })?;
         store
             .consensus_state_store
-            .set(consensus_state_path, tm_consensus_state)
+            .set(consensus_state_path, consensus_state)
             .map_err(|_| ClientError::Other {
                 description: "Consensus state store error".to_string(),
             })?;
@@ -207,7 +203,7 @@ where
     }
 }
 
-impl<S> TmCommonContext for MockContext<S>
+impl<S> TmCommonContext for GenericMockContext<S>
 where
     S: ProvableStore + Debug,
 {
@@ -262,7 +258,7 @@ where
     }
 }
 
-impl<S> TmValidationContext for MockContext<S>
+impl<S> TmValidationContext for GenericMockContext<S>
 where
     S: ProvableStore + Debug,
 {
@@ -273,13 +269,16 @@ where
     ) -> Result<Option<Self::AnyConsensusState>, ContextError> {
         let path = format!("clients/{client_id}/consensusStates")
             .try_into()
-            .unwrap(); // safety - path must be valid since ClientId and height are valid Identifiers
+            .expect("failed to create ibc path"); // safety - path must be valid since ClientId and height are valid Identifiers
 
         let store = self.ibc_store.lock();
         let keys = store.store.get_keys(&path);
         let found_path = keys.into_iter().find_map(|path| {
             if let Ok(IbcPath::ClientConsensusState(path)) = IbcPath::try_from(path) {
-                if height > &IbcHeight::new(path.revision_number, path.revision_height).unwrap() {
+                if height
+                    > &IbcHeight::new(path.revision_number, path.revision_height)
+                        .expect("failed to create IBC height")
+                {
                     return Some(path);
                 }
             }
@@ -295,7 +294,7 @@ where
                     height: *height,
                 })?;
 
-            Ok(Some(consensus_state.into()))
+            Ok(Some(consensus_state))
         } else {
             Ok(None)
         }
@@ -308,13 +307,15 @@ where
     ) -> Result<Option<Self::AnyConsensusState>, ContextError> {
         let path = format!("clients/{client_id}/consensusStates")
             .try_into()
-            .unwrap(); // safety - path must be valid since ClientId and height are valid Identifiers
+            .expect("failed to create ibc path"); // safety - path must be valid since ClientId and height are valid Identifiers
 
         let store = self.ibc_store.lock();
         let keys = store.store.get_keys(&path);
         let pos = keys.iter().position(|path| {
             if let Ok(IbcPath::ClientConsensusState(path)) = IbcPath::try_from(path.clone()) {
-                height >= &IbcHeight::new(path.revision_number, path.revision_height).unwrap()
+                height
+                    >= &IbcHeight::new(path.revision_number, path.revision_height)
+                        .expect("failed to create IBC height")
             } else {
                 false
             }
@@ -333,7 +334,7 @@ where
                         client_id: client_id.clone(),
                         height: *height,
                     })?;
-                return Ok(Some(consensus_state.into()));
+                return Ok(Some(consensus_state));
             }
         }
         Ok(None)

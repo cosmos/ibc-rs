@@ -216,13 +216,13 @@ fn ack_unordered_chan_execute(fixture: Fixture) {
     let res = execute(&mut ctx, &mut router, msg_envelope);
 
     assert!(res.is_ok());
-
-    assert_eq!(ctx.events.len(), 2);
+    let ibc_events = ctx.events();
+    assert_eq!(ibc_events.len(), 2);
     assert!(matches!(
-        ctx.events[0],
+        ibc_events[0],
         IbcEvent::Message(MessageEvent::Channel)
     ));
-    assert!(matches!(ctx.events[1], IbcEvent::AcknowledgePacket(_)));
+    assert!(matches!(ibc_events[1], IbcEvent::AcknowledgePacket(_)));
 }
 
 #[rstest]
@@ -256,10 +256,11 @@ fn ack_ordered_chan_execute(fixture: Fixture) {
 
     assert!(res.is_ok());
 
-    assert_eq!(ctx.events.len(), 2);
+    let ibc_events = ctx.events();
+    assert_eq!(ibc_events.len(), 2);
     assert!(matches!(
-        ctx.events[0],
+        ibc_events[0],
         IbcEvent::Message(MessageEvent::Channel)
     ));
-    assert!(matches!(ctx.events[1], IbcEvent::AcknowledgePacket(_)));
+    assert!(matches!(ibc_events[1], IbcEvent::AcknowledgePacket(_)));
 }

@@ -107,9 +107,11 @@ pub fn compute_ack_commitment(ack: &Acknowledgement) -> AcknowledgementCommitmen
 /// Note that computing commitments with anything other than SHA256 will
 /// break the Merkle proofs of the IBC provable store.
 fn hash(data: &[u8]) -> [u8; 32] {
-    use sha2::Digest;
+    use sha2::{Digest, Sha256};
 
-    sha2::Sha256::digest(data).into()
+    let mut hash: Sha256 = Digest::new();
+    hash.update(data);
+    hash.finalize().into()
 }
 
 #[cfg(test)]

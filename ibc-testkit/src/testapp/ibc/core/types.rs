@@ -12,6 +12,7 @@ use ibc::clients::tendermint::consensus_state::ConsensusState as TmConsensusStat
 use ibc::clients::tendermint::types::TENDERMINT_CLIENT_TYPE;
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
+use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::entrypoint::dispatch;
@@ -24,17 +25,15 @@ use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
-use ibc::core::host::ValidationContext;
+use ibc::core::host::{ExecutionContext, ValidationContext};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::core::router::router::Router;
 use ibc_proto::google::protobuf::Any;
 use parking_lot::Mutex;
 use tendermint_testgen::Validator as TestgenValidator;
-use tracing::debug;
 use typed_builder::TypedBuilder;
 
-use super::client_ctx::MockClientRecord;
 use crate::fixtures::clients::tendermint::{
     dummy_tm_client_state_from_header, ClientStateConfig as TmClientStateConfig,
 };
@@ -51,8 +50,8 @@ pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 use ibc_proto::ibc::core::channel::v1::Channel as RawChannelEnd;
 use ibc_proto::ibc::core::connection::v1::ConnectionEnd as RawConnectionEnd;
 
-use crate::store::context::ProvableStore;
-use crate::store::impls::SharedStore;
+use crate::store::context::{ProvableStore, Store};
+use crate::store::impls::{InMemoryStore, RevertibleStore, SharedStore};
 use crate::store::types::{BinStore, JsonStore, ProtobufStore, TypedSet, TypedStore};
 
 /// An object that stores all IBC related data.
@@ -138,18 +137,9 @@ where
     }
 }
 
-impl<S> Default for MockIbcStore<S>
-where
-    S: ProvableStore + Default,
-{
-    fn default() -> Self {
-        Self::new(S::default())
-    }
-}
-
 /// A context implementing the dependencies necessary for testing any IBC module.
 #[derive(Debug)]
-pub struct MockContext<S>
+pub struct GenericMockContext<S>
 where
     S: ProvableStore,
 {
@@ -173,6 +163,8 @@ where
     pub ibc_store: Arc<Mutex<MockIbcStore<S>>>,
 }
 
+pub type MockContext = GenericMockContext<RevertibleStore<InMemoryStore>>;
+
 #[derive(Debug, TypedBuilder)]
 pub struct MockClientConfig {
     client_chain_id: ChainId,
@@ -194,7 +186,7 @@ pub struct MockClientConfig {
 /// Returns a MockContext with bare minimum initialization: no clients, no connections and no channels are
 /// present, and the chain has Height(5). This should be used sparingly, mostly for testing the
 /// creation of new domain objects.
-impl<S> Default for MockContext<S>
+impl<S> Default for GenericMockContext<S>
 where
     S: ProvableStore + Default + Debug,
 {
@@ -211,7 +203,7 @@ where
 /// A manual clone impl is provided because the tests are oblivious to the fact that the `ibc_store`
 /// is a shared ptr.
 /// Note: This clone implementation is not thread-safe.
-impl<S> Clone for MockContext<S>
+impl<S> Clone for GenericMockContext<S>
 where
     S: ProvableStore + Debug,
 {
@@ -234,7 +226,7 @@ where
 
 /// Implementation of internal interface for use in testing. The methods in this interface should
 /// _not_ be accessible to any Ics handler.
-impl<S> MockContext<S>
+impl<S> GenericMockContext<S>
 where
     S: ProvableStore + Debug,
 {
@@ -273,7 +265,7 @@ where
 
         let block_time = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS);
         let next_block_timestamp = Timestamp::now().add(block_time).expect("Never fails");
-        MockContext {
+        GenericMockContext {
             host_chain_type: host_type,
             host_chain_id: host_id.clone(),
             max_history_size,
@@ -293,7 +285,7 @@ where
                 })
                 .collect(),
             block_time,
-            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+            ibc_store: Arc::new(Mutex::new(MockIbcStore::new(S::default()))),
         }
     }
 
@@ -355,13 +347,13 @@ where
             })
             .collect();
 
-        MockContext {
+        GenericMockContext {
             host_chain_type: host_type,
             host_chain_id: host_id.clone(),
             max_history_size,
             history,
             block_time,
-            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+            ibc_store: Arc::new(Mutex::new(MockIbcStore::new(S::default()))),
         }
     }
 
@@ -411,14 +403,13 @@ where
         let cs_height = consensus_state_height.unwrap_or(client_state_height);
 
         let client_type = client_type.unwrap_or_else(mock_client_type);
-        let (client_state, consensus_state) = if client_type.as_str() == MOCK_CLIENT_TYPE {
+        let (client_state, consensus_state): (AnyClientState, AnyConsensusState) = if client_type
+            .as_str()
+            == MOCK_CLIENT_TYPE
+        {
             (
-                Some(
-                    MockClientState::new(
-                        MockHeader::new(client_state_height).with_current_timestamp(),
-                    )
+                MockClientState::new(MockHeader::new(client_state_height).with_current_timestamp())
                     .into(),
-                ),
                 MockConsensusState::new(MockHeader::new(cs_height).with_current_timestamp()).into(),
             )
         } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
@@ -432,23 +423,55 @@ where
                 dummy_tm_client_state_from_header(light_block.header().clone()).into();
 
             // Return the tuple.
-            (Some(client_state), light_block.into())
+            (client_state, light_block.into())
         } else {
             panic!("unknown client type")
         };
-        // If it's a mock client, create the corresponding mock states.
-        let consensus_states = vec![(cs_height, consensus_state)].into_iter().collect();
 
-        debug!("consensus states: {:?}", consensus_states);
+        self.with_client_state(client_id, client_state)
+            .with_consensus_state(client_id, cs_height, consensus_state)
+    }
 
-        let client_record = MockClientRecord {
-            client_state,
-            consensus_states,
-        };
+    pub fn with_client_state(mut self, client_id: &ClientId, client_state: AnyClientState) -> Self {
+        let client_state_path = ClientStatePath::new(client_id);
+        self.store_client_state(client_state_path, client_state)
+            .expect("error writing to store");
         self.ibc_store
             .lock()
-            .clients
-            .insert(client_id.clone(), client_record);
+            .store
+            .apply()
+            .expect("error applying store");
+        self.ibc_store
+            .lock()
+            .store
+            .commit()
+            .expect("error committing store");
+        self
+    }
+
+    pub fn with_consensus_state(
+        mut self,
+        client_id: &ClientId,
+        height: Height,
+        consensus_state: AnyConsensusState,
+    ) -> Self {
+        let consensus_state_path = ClientConsensusStatePath::new(
+            client_id.clone(),
+            height.revision_number(),
+            height.revision_height(),
+        );
+        self.store_consensus_state(consensus_state_path, consensus_state)
+            .expect("error writing to store");
+        self.ibc_store
+            .lock()
+            .store
+            .apply()
+            .expect("error applying store");
+        self.ibc_store
+            .lock()
+            .store
+            .commit()
+            .expect("error committing store");
         self
     }
 
@@ -483,11 +506,11 @@ where
         let client_type = client_type.unwrap_or_else(mock_client_type);
         let now = Timestamp::now();
 
-        let (client_state, consensus_state): (Option<AnyClientState>, AnyConsensusState) =
+        let (client_state, consensus_state): (AnyClientState, AnyConsensusState) =
             if client_type.as_str() == MOCK_CLIENT_TYPE {
                 // If it's a mock client, create the corresponding mock states.
                 (
-                    Some(MockClientState::new(MockHeader::new(client_state_height)).into()),
+                    MockClientState::new(MockHeader::new(client_state_height)).into(),
                     MockConsensusState::new(MockHeader::new(cs_height)).into(),
                 )
             } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
@@ -499,7 +522,7 @@ where
                     dummy_tm_client_state_from_header(light_block.header().clone()).into();
 
                 // Return the tuple.
-                (Some(client_state), light_block.into())
+                (client_state, light_block.into())
             } else {
                 panic!("Unknown client type")
             };
@@ -517,35 +540,22 @@ where
             panic!("Unknown client type")
         };
 
-        let consensus_states = vec![
-            (prev_cs_height, prev_consensus_state),
-            (cs_height, consensus_state),
-        ]
-        .into_iter()
-        .collect();
-
-        debug!("consensus states: {:?}", consensus_states);
-
-        let client_record = MockClientRecord {
-            client_state,
-            consensus_states,
-        };
-
-        self.ibc_store
-            .lock()
-            .clients
-            .insert(client_id.clone(), client_record);
-        self
+        self.with_client_state(client_id, client_state)
+            .with_consensus_state(client_id, prev_cs_height, prev_consensus_state)
+            .with_consensus_state(client_id, cs_height, consensus_state)
     }
 
-    pub fn with_client_config(self, client: MockClientConfig) -> Self {
+    pub fn with_client_config(mut self, client: MockClientConfig) -> Self {
         let cs_heights = if client.consensus_state_heights.is_empty() {
             vec![client.client_state_height]
         } else {
             client.consensus_state_heights
         };
 
-        let (client_state, consensus_states) = match client.client_type.as_str() {
+        let (client_state, consensus_states): (
+            AnyClientState,
+            BTreeMap<Height, AnyConsensusState>,
+        ) = match client.client_type.as_str() {
             MOCK_CLIENT_TYPE => {
                 let blocks: Vec<_> = cs_heights
                     .into_iter()
@@ -602,89 +612,122 @@ where
             _ => panic!("unknown client type"),
         };
 
-        let client_record = MockClientRecord {
-            client_state: Some(client_state),
-            consensus_states,
-        };
+        self = self.with_client_state(&client.client_id, client_state);
 
-        self.ibc_store
-            .lock()
-            .clients
-            .insert(client.client_id.clone(), client_record);
+        for (height, consensus_state) in consensus_states {
+            self = self.with_consensus_state(&client.client_id, height, consensus_state);
+        }
         self
     }
 
     /// Associates a connection to this context.
     pub fn with_connection(
-        self,
+        mut self,
         connection_id: ConnectionId,
         connection_end: ConnectionEnd,
     ) -> Self {
+        let connection_path = ConnectionPath::new(&connection_id);
+        self.store_connection(&connection_path, connection_end)
+            .expect("error writing to store");
         self.ibc_store
             .lock()
-            .connections
-            .insert(connection_id, connection_end);
+            .store
+            .apply()
+            .expect("error applying store");
+        self.ibc_store
+            .lock()
+            .store
+            .commit()
+            .expect("error committing store");
         self
     }
 
     /// Associates a channel (in an arbitrary state) to this context.
     pub fn with_channel(
-        self,
+        mut self,
         port_id: PortId,
         chan_id: ChannelId,
         channel_end: ChannelEnd,
     ) -> Self {
-        let mut channels = self.ibc_store.lock().channels.clone();
-        channels
-            .entry(port_id)
-            .or_default()
-            .insert(chan_id, channel_end);
-        self.ibc_store.lock().channels = channels;
+        let channel_end_path = ChannelEndPath::new(&port_id, &chan_id);
+        self.store_channel(&channel_end_path, channel_end)
+            .expect("error writing to store");
+        self.ibc_store
+            .lock()
+            .store
+            .apply()
+            .expect("error applying store");
+        self.ibc_store
+            .lock()
+            .store
+            .commit()
+            .expect("error committing store");
         self
     }
 
     pub fn with_send_sequence(
-        self,
+        mut self,
         port_id: PortId,
         chan_id: ChannelId,
         seq_number: Sequence,
     ) -> Self {
-        let mut next_sequence_send = self.ibc_store.lock().next_sequence_send.clone();
-        next_sequence_send
-            .entry(port_id)
-            .or_default()
-            .insert(chan_id, seq_number);
-        self.ibc_store.lock().next_sequence_send = next_sequence_send;
+        let seq_send_path = SeqSendPath::new(&port_id, &chan_id);
+        self.store_next_sequence_send(&seq_send_path, seq_number)
+            .expect("error writing to store");
+        self.ibc_store
+            .lock()
+            .store
+            .apply()
+            .expect("error applying store");
+        self.ibc_store
+            .lock()
+            .store
+            .commit()
+            .expect("error committing store");
         self
     }
 
     pub fn with_recv_sequence(
-        self,
+        mut self,
         port_id: PortId,
         chan_id: ChannelId,
         seq_number: Sequence,
     ) -> Self {
-        let mut next_sequence_recv = self.ibc_store.lock().next_sequence_recv.clone();
-        next_sequence_recv
-            .entry(port_id)
-            .or_default()
-            .insert(chan_id, seq_number);
-        self.ibc_store.lock().next_sequence_recv = next_sequence_recv;
+        let seq_recv_path = SeqRecvPath::new(&port_id, &chan_id);
+        self.store_next_sequence_recv(&seq_recv_path, seq_number)
+            .expect("error writing to store");
+        self.ibc_store
+            .lock()
+            .store
+            .apply()
+            .expect("error applying store");
+        self.ibc_store
+            .lock()
+            .store
+            .commit()
+            .expect("error committing store");
         self
     }
 
     pub fn with_ack_sequence(
-        self,
+        mut self,
         port_id: PortId,
         chan_id: ChannelId,
         seq_number: Sequence,
     ) -> Self {
-        let mut next_sequence_ack = self.ibc_store.lock().next_sequence_send.clone();
-        next_sequence_ack
-            .entry(port_id)
-            .or_default()
-            .insert(chan_id, seq_number);
-        self.ibc_store.lock().next_sequence_ack = next_sequence_ack;
+        let seq_ack_path = SeqAckPath::new(&port_id, &chan_id);
+        self.store_next_sequence_ack(&seq_ack_path, seq_number)
+            .expect("error writing to store");
+        self.ibc_store
+            .lock()
+            .store
+            .apply()
+            .expect("error applying store");
+        self.ibc_store
+            .lock()
+            .store
+            .commit()
+            .expect("error committing store");
         self
     }
 
@@ -710,20 +753,25 @@ where
     }
 
     pub fn with_packet_commitment(
-        self,
+        mut self,
         port_id: PortId,
         chan_id: ChannelId,
         seq: Sequence,
         data: PacketCommitment,
     ) -> Self {
-        let mut packet_commitment = self.ibc_store.lock().packet_commitment.clone();
-        packet_commitment
-            .entry(port_id)
-            .or_default()
-            .entry(chan_id)
-            .or_default()
-            .insert(seq, data);
-        self.ibc_store.lock().packet_commitment = packet_commitment;
+        let commitment_path = CommitmentPath::new(&port_id, &chan_id, seq);
+        self.store_packet_commitment(&commitment_path, data)
+            .expect("error writing to store");
+        self.ibc_store
+            .lock()
+            .store
+            .apply()
+            .expect("error applying store");
+        self.ibc_store
+            .lock()
+            .store
+            .commit()
+            .expect("error committing store");
         self
     }
 
@@ -763,6 +811,17 @@ where
             // History is not full yet.
             self.history.push(new_block);
         }
+
+        self.ibc_store
+            .lock()
+            .store
+            .apply()
+            .expect("error applying store");
+        self.ibc_store
+            .lock()
+            .store
+            .commit()
+            .expect("error committing store");
     }
 
     /// A datagram passes from the relayer to the IBC module (on host chain).
@@ -808,11 +867,8 @@ where
     }
 
     pub fn latest_client_states(&self, client_id: &ClientId) -> AnyClientState {
-        self.ibc_store.lock().clients[client_id]
-            .client_state
-            .as_ref()
-            .expect("Never fails")
-            .clone()
+        self.client_state(client_id)
+            .expect("error reading from store")
     }
 
     pub fn latest_consensus_states(
@@ -820,11 +876,12 @@ where
         client_id: &ClientId,
         height: &Height,
     ) -> AnyConsensusState {
-        self.ibc_store.lock().clients[client_id]
-            .consensus_states
-            .get(height)
-            .expect("Never fails")
-            .clone()
+        self.consensus_state(&ClientConsensusStatePath::new(
+            client_id.clone(),
+            height.revision_number(),
+            height.revision_height(),
+        ))
+        .expect("error reading from store")
     }
 
     pub fn latest_height(&self) -> Height {
@@ -836,6 +893,10 @@ where
 
     pub fn ibc_store_share(&self) -> Arc<Mutex<MockIbcStore<S>>> {
         self.ibc_store.clone()
+    }
+
+    pub fn events(&self) -> Vec<IbcEvent> {
+        self.ibc_store.lock().events.clone()
     }
 
     pub fn query_latest_header(&self) -> Option<HostBlock> {
@@ -858,14 +919,13 @@ mod tests {
     use super::*;
     use crate::fixtures::core::channel::PacketConfig;
     use crate::fixtures::core::signer::dummy_bech32_account;
-    use crate::store::impls::InMemoryStore;
     use crate::testapp::ibc::core::router::MockRouter;
 
     #[test]
     fn test_history_manipulation() {
         pub struct Test {
             name: String,
-            ctx: MockContext<InMemoryStore>,
+            ctx: MockContext,
         }
         let cv = 1; // The version to use for all chains.
 

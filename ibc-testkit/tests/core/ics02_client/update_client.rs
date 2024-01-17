@@ -95,7 +95,7 @@ fn test_consensus_state_pruning() {
         .latest_height(client_height)
         .latest_timestamp(Timestamp::now())
         .max_history_size(u64::MAX)
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             MockClientConfig::builder()
                 .client_chain_id(chain_id.clone())
@@ -259,7 +259,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
     let mut ctx_a = MockContextConfig::builder()
         .host_id(ChainId::new("mockgaiaA-1").unwrap())
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             // client state initialized with client_height, and
             // [{id: 1, power: 50}, {id: 2, power: 50}] for validator set and next validator set.
@@ -300,7 +300,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
 
     let update_height = client_height.add(ctx_b_val_history.len() as u64 - 2);
 
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b: MockContext = MockContextConfig::builder()
         .host_id(chain_id_b.clone())
         .host_type(HostType::SyntheticTendermint)
         .latest_height(update_height)
@@ -351,7 +351,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
     let ctx_a = MockContextConfig::builder()
         .host_id(ChainId::new("mockgaiaA-1").unwrap())
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             // client state initialized with client_height, and
             // [{id: 1, power: 50}, {id: 2, power: 50}] for validator set and next validator set.
@@ -393,7 +393,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
 
     let update_height = client_height.add(ctx_b_val_history.len() as u64 - 2);
 
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b: MockContext = MockContextConfig::builder()
         .host_id(chain_id_b.clone())
         .host_type(HostType::SyntheticTendermint)
         .latest_height(update_height)
@@ -433,7 +433,7 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
     let update_height = Height::new(1, 21).unwrap();
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
-    let mut ctx = MockContext::new(
+    let mut ctx: MockContext = MockContext::new(
         ChainId::new("mockgaiaA-1").unwrap(),
         HostType::Mock,
         5,
@@ -530,6 +530,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
         _ => block,
     };
 
+    // TODO (rano): expose a method from MockContext
     // Update the client height to `client_height`
     //
     // Note: The current MockContext interface doesn't allow us to
@@ -574,14 +575,17 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
             ClientState::from(client_state).into()
         };
 
-        let mut ibc_store = ctx_a.ibc_store.lock();
-        let client_record = ibc_store.clients.get_mut(&client_id).unwrap();
+        // let mut ibc_store = ctx_a.ibc_store.lock();
+        // let client_record = ibc_store.clients.get_mut(&client_id).unwrap();
 
-        client_record
-            .consensus_states
-            .insert(client_height, consensus_state);
+        // client_record
+        //     .consensus_states
+        //     .insert(client_height, consensus_state);
 
-        client_record.client_state = Some(client_state);
+        // client_record.client_state = Some(client_state);
+
+        ctx_a = ctx_a.with_client_state(&client_id, client_state);
+        ctx_a = ctx_a.with_consensus_state(&client_id, client_height, consensus_state);
     }
 
     let latest_header_height = block.height();
@@ -676,11 +680,13 @@ fn test_update_client_events() {
     let res = execute(&mut ctx, &mut router, msg_envelope);
     assert!(res.is_ok());
 
+    let ibc_events = ctx.events();
+
     assert!(matches!(
-        ctx.events[0],
+        ibc_events[0],
         IbcEvent::Message(MessageEvent::Client)
     ));
-    let update_client_event = downcast!(&ctx.events[1] => IbcEvent::UpdateClient).unwrap();
+    let update_client_event = downcast!(&ibc_events[1] => IbcEvent::UpdateClient).unwrap();
 
     assert_eq!(update_client_event.client_id(), &client_id);
     assert_eq!(update_client_event.client_type(), &mock_client_type());
@@ -695,14 +701,16 @@ fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &Cl
     let status = client_state.status(ctx, client_id).unwrap();
     assert!(status.is_frozen(), "client_state status: {status}");
 
+    let ibc_events = ctx.events();
+
     // check events
-    assert_eq!(ctx.events.len(), 2);
+    assert_eq!(ibc_events.len(), 2);
     assert!(matches!(
-        ctx.events[0],
+        ibc_events[0],
         IbcEvent::Message(MessageEvent::Client),
     ));
     let misbehaviour_client_event =
-        downcast!(&ctx.events[1] => IbcEvent::ClientMisbehaviour).unwrap();
+        downcast!(&ibc_events[1] => IbcEvent::ClientMisbehaviour).unwrap();
     assert_eq!(misbehaviour_client_event.client_id(), client_id);
     assert_eq!(misbehaviour_client_event.client_type(), client_type);
 }
@@ -908,7 +916,7 @@ fn test_expired_client() {
         .host_id(ChainId::new("mockgaiaA-1").unwrap())
         .latest_height(Height::new(1, 1).unwrap())
         .latest_timestamp(timestamp)
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             MockClientConfig::builder()
                 .client_chain_id(chain_id_b.clone())
@@ -946,7 +954,7 @@ fn test_client_update_max_clock_drift() {
         .host_id(ChainId::new("mockgaiaA-1").unwrap())
         .latest_height(Height::new(1, 1).unwrap())
         .latest_timestamp(timestamp)
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             MockClientConfig::builder()
                 .client_chain_id(chain_id_b.clone())
@@ -960,7 +968,7 @@ fn test_client_update_max_clock_drift() {
 
     let router_a = MockRouter::new_with_transfer();
 
-    let mut ctx_b = MockContextConfig::builder()
+    let mut ctx_b: MockContext = MockContextConfig::builder()
         .host_id(chain_id_b.clone())
         .host_type(HostType::SyntheticTendermint)
         .latest_height(client_height)

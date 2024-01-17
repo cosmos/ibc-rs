@@ -14,7 +14,7 @@ use ibc::core::primitives::ZERO_DURATION;
 use ibc_testkit::fixtures::core::connection::dummy_conn_open_confirm;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::GenericMockContext;
 use test_log::test;
 
 enum Ctx {
@@ -32,7 +32,7 @@ fn conn_open_confirm_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenConfirm> {
         CommitmentPrefix::try_from(b"ibc".to_vec()).unwrap(),
     );
 
-    let ctx_default = MockContext::default();
+    let ctx_default = GenericMockContext::default();
 
     let incorrect_conn_end_state = ConnectionEnd::new(
         State::Init,
@@ -84,14 +84,15 @@ fn conn_open_confirm_execute(fxt: &mut Fixture<MsgConnectionOpenConfirm>, expect
             assert!(res.is_err(), "{err_msg}");
         }
         Expect::Success => {
+            let ibc_events = fxt.ctx.events();
             assert!(res.is_ok(), "{err_msg}");
-            assert_eq!(fxt.ctx.events.len(), 2);
+            assert_eq!(ibc_events.len(), 2);
 
             assert!(matches!(
-                fxt.ctx.events[0],
+                ibc_events[0],
                 IbcEvent::Message(MessageEvent::Connection)
             ));
-            let event = &fxt.ctx.events[1];
+            let event = &ibc_events[1];
             assert!(matches!(event, &IbcEvent::OpenConfirmConnection(_)));
 
             let conn_open_try_event = match event {

@@ -43,8 +43,9 @@ where
         let hash = sha.finalize();
         let mut sha_2: Sha256 = Digest::new();
         sha_2.update(hash);
-        let merkle_hash = Hash::from_bytes(HASH_ALGO, &sha_2.finalize()).unwrap();
-        let hash = Hash::from_bytes(HASH_ALGO, &hash).unwrap();
+        let merkle_hash =
+            Hash::from_bytes(HASH_ALGO, &sha_2.finalize()).expect("merkle hash error");
+        let hash = Hash::from_bytes(HASH_ALGO, &hash).expect("hash error");
 
         AvlNode {
             key,
@@ -81,7 +82,7 @@ where
         sha.update(key.as_bytes());
         sha.update(value.borrow());
         let hash = sha.finalize();
-        Hash::from_bytes(HASH_ALGO, &hash).unwrap()
+        Hash::from_bytes(HASH_ALGO, &hash).expect("hash error")
     }
 
     /// The left merkle hash, if any
@@ -120,7 +121,8 @@ where
         if let Some(right) = &self.right {
             sha.update(right.merkle_hash.as_bytes())
         }
-        self.merkle_hash = Hash::from_bytes(HASH_ALGO, sha.finalize().as_slice()).unwrap();
+        self.merkle_hash =
+            Hash::from_bytes(HASH_ALGO, sha.finalize().as_slice()).expect("hash error");
     }
 
     /// Update node meta data, such as its height and merkle hash, by looking at its two

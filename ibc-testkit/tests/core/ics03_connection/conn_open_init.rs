@@ -13,7 +13,7 @@ use ibc_testkit::fixtures::core::connection::{
 };
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::GenericMockContext;
 use test_log::test;
 
 enum Ctx {
@@ -39,7 +39,7 @@ fn conn_open_init_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConn
         Msg::WithCounterpartyConnId => msg_conn_open_init_with_counterparty_conn_id(msg_default, 2),
     };
 
-    let ctx_default = MockContext::default();
+    let ctx_default = GenericMockContext::default();
     let ctx = match ctx_variant {
         Ctx::WithClient => {
             ctx_default.with_client(&msg.client_id_on_a, Height::new(0, 10).unwrap())
@@ -81,15 +81,17 @@ fn conn_open_init_execute(
         Expect::Success => {
             assert!(res.is_ok(), "{err_msg}");
 
+            let ibc_events = fxt.ctx.events();
+
             assert_eq!(fxt.ctx.connection_counter().unwrap(), 1);
 
-            assert_eq!(fxt.ctx.events.len(), 2);
+            assert_eq!(ibc_events.len(), 2);
 
             assert!(matches!(
-                fxt.ctx.events[0],
+                ibc_events[0],
                 IbcEvent::Message(MessageEvent::Connection)
             ));
-            let event = &fxt.ctx.events[1];
+            let event = &ibc_events[1];
             assert!(matches!(event, &IbcEvent::OpenInitConnection(_)));
 
             let conn_open_init_event = match event {

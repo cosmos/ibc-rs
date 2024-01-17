@@ -18,11 +18,11 @@ use crate::testapp::ibc::clients::mock::client_state::{
 use crate::testapp::ibc::clients::mock::consensus_state::{
     MockConsensusState, MOCK_CONSENSUS_STATE_TYPE_URL,
 };
-use crate::testapp::ibc::core::types::MockContext;
+use crate::testapp::ibc::core::types::GenericMockContext;
 
 #[derive(Debug, Clone, From, PartialEq, ClientState)]
-#[validation(MockContext<S: ProvableStore + alloc::fmt::Debug>)]
-#[execution(MockContext<S: ProvableStore + alloc::fmt::Debug>)]
+#[validation(GenericMockContext<S: ProvableStore + alloc::fmt::Debug>)]
+#[execution(GenericMockContext<S: ProvableStore + alloc::fmt::Debug>)]
 pub enum AnyClientState {
     Tendermint(TmClientState),
     Mock(MockClientState),

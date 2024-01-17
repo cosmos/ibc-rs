@@ -53,7 +53,13 @@ where
     #[inline]
     pub fn set(&mut self, path: K, value: V) -> Result<Option<V>, S::Error> {
         self.store
-            .set(path.into(), C::encode(&value).unwrap().as_ref().to_vec())
+            .set(
+                path.into(),
+                C::encode(&value)
+                    .expect("failed to encode")
+                    .as_ref()
+                    .to_vec(),
+            )
             .map(|prev_val| prev_val.and_then(|v| C::decode(&v)))
     }
 
@@ -88,7 +94,10 @@ where
     #[inline]
     pub fn set_path(&mut self, path: K) -> Result<(), S::Error> {
         self.store
-            .set(path.into(), NullCodec::encode(&()).unwrap())
+            .set(
+                path.into(),
+                NullCodec::encode(&()).expect("failed to encode"),
+            )
             .map(|_| ())
     }
 

@@ -28,14 +28,14 @@ use ibc::core::primitives::{Signer, Timestamp};
 use ibc::primitives::proto::Any;
 use ibc_query::core::context::{ProvableContext, QueryContext};
 
-use super::types::MockContext;
-use crate::store::context::{ProvableStore, Store};
+use super::types::GenericMockContext;
+use crate::store::context::ProvableStore;
 use crate::store::types::Height as StoreHeight;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 
 pub const CHAIN_REVISION_NUMBER: u64 = 1;
 
-impl<S> ValidationContext for MockContext<S>
+impl<S> ValidationContext for GenericMockContext<S>
 where
     S: ProvableStore + Debug,
 {
@@ -76,15 +76,16 @@ where
                 height,
             })?;
 
-        Ok(consensus_state.into())
+        Ok(consensus_state)
     }
 
     fn host_height(&self) -> Result<IbcHeight, ContextError> {
-        let store = self.ibc_store.lock();
-        Ok(IbcHeight::new(
-            CHAIN_REVISION_NUMBER,
-            store.store.current_height(),
-        )?)
+        // let store = self.ibc_store.lock();
+        // Ok(IbcHeight::new(
+        //     CHAIN_REVISION_NUMBER,
+        //     store.store.current_height(),
+        // )?)
+        Ok(self.latest_height())
     }
 
     fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
@@ -271,7 +272,7 @@ where
 }
 
 /// Trait to provide proofs in gRPC service blanket implementations.
-impl<S> ProvableContext for MockContext<S>
+impl<S> ProvableContext for GenericMockContext<S>
 where
     S: ProvableStore + Debug,
 {
@@ -286,7 +287,7 @@ where
 }
 
 /// Trait to complete the gRPC service blanket implementations.
-impl<S> QueryContext for MockContext<S>
+impl<S> QueryContext for GenericMockContext<S>
 where
     S: ProvableStore + Debug,
 {
@@ -360,7 +361,7 @@ where
                             height,
                         }
                     })?;
-                Ok((height, client_state.into()))
+                Ok((height, client_state))
             })
             .collect()
     }
@@ -663,7 +664,7 @@ where
     }
 }
 
-impl<S> ExecutionContext for MockContext<S>
+impl<S> ExecutionContext for GenericMockContext<S>
 where
     S: ProvableStore + Debug,
 {

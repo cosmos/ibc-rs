@@ -9,7 +9,7 @@ use ibc::core::primitives::Signer;
 
 use crate::store::context::ProvableStore;
 use crate::testapp::ibc::clients::AnyClientState;
-use crate::testapp::ibc::core::types::MockContext;
+use crate::testapp::ibc::core::types::GenericMockContext;
 /// Trait capturing all dependencies (i.e., the context) which algorithms in ICS18 require to
 /// relay packets between chains. This trait comprises the dependencies towards a single chain.
 /// Most of the functions in this represent wrappers over the ABCI interface.
@@ -27,7 +27,7 @@ pub trait RelayerContext {
     fn signer(&self) -> Signer;
 }
 
-impl<S> RelayerContext for MockContext<S>
+impl<S> RelayerContext for GenericMockContext<S>
 where
     S: ProvableStore + Debug,
 {
@@ -61,12 +61,9 @@ mod tests {
     use crate::hosts::block::{HostBlock, HostType};
     use crate::relayer::context::ClientId;
     use crate::relayer::error::RelayerError;
-    use crate::store::impls::{InMemoryStore, RevertibleStore};
     use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
     use crate::testapp::ibc::core::router::MockRouter;
-    use crate::testapp::ibc::core::types::MockContext as MockContextGenericStore;
-
-    type MockContext = MockContextGenericStore<RevertibleStore<InMemoryStore>>;
+    use crate::testapp::ibc::core::types::MockContext;
 
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
     /// context, assuming that the latest header on the source context is `src_header`.
@@ -174,18 +171,20 @@ mod tests {
 
             // - send the message to B. We bypass ICS18 interface and call directly into
             // MockContext `recv` method (to avoid additional serialization steps).
-            let dispatch_res_b = ctx_b.deliver(&mut router_b, MsgEnvelope::Client(client_msg_b));
+            let dispatch_res_b =
+                ctx_b.deliver(&mut router_b, MsgEnvelope::Client(std::dbg!(client_msg_b)));
+            // Check if the update succeeded.
+            assert!(
+                dispatch_res_b.is_ok(),
+                "Dispatch failed for host chain b with error: {dispatch_res_b:?}"
+            );
+
             let validation_res = ctx_b.validate();
             assert!(
                 validation_res.is_ok(),
                 "context validation failed with error {validation_res:?} for context {ctx_b:?}",
             );
 
-            // Check if the update succeeded.
-            assert!(
-                dispatch_res_b.is_ok(),
-                "Dispatch failed for host chain b with error: {dispatch_res_b:?}"
-            );
             let client_height_b = ctx_b
                 .query_client_full_state(&client_on_b_for_a)
                 .unwrap()

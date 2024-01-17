@@ -91,7 +91,7 @@ impl ProvableStore for InMemoryStore {
     fn root_hash(&self) -> Vec<u8> {
         self.pending
             .root_hash()
-            .unwrap_or(&Hash::from_bytes(Algorithm::Sha256, &[0u8; 32]).unwrap())
+            .unwrap_or(&Hash::from_bytes(Algorithm::Sha256, &[0u8; 32]).expect("failed to hash"))
             .as_bytes()
             .to_vec()
     }
