@@ -775,6 +775,14 @@ impl MockContext {
         let block_ref = self.host_block(&self.host_height().expect("Never fails"));
         block_ref.cloned()
     }
+
+    pub fn get_events(&self) -> Vec<IbcEvent> {
+        self.ibc_store.lock().events.clone()
+    }
+
+    pub fn get_logs(&self) -> Vec<String> {
+        self.ibc_store.lock().logs.clone()
+    }
 }
 
 #[cfg(test)]
