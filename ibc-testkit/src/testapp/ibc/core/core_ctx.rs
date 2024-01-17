@@ -543,12 +543,12 @@ impl ExecutionContext for MockContext {
     }
 
     fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ContextError> {
-        self.events.push(event);
+        self.ibc_store.lock().events.push(event);
         Ok(())
     }
 
     fn log_message(&mut self, message: String) -> Result<(), ContextError> {
-        self.logs.push(message);
+        self.ibc_store.lock().logs.push(message);
         Ok(())
     }
 }

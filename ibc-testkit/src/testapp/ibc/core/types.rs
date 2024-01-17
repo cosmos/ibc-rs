@@ -93,6 +93,10 @@ pub struct MockIbcStore {
 
     // Used by unordered channel
     pub packet_receipt: PortChannelIdMap<BTreeMap<Sequence, Receipt>>,
+
+    pub events: Vec<IbcEvent>,
+
+    pub logs: Vec<String>,
 }
 
 /// A context implementing the dependencies necessary for testing any IBC module.
@@ -116,10 +120,6 @@ pub struct MockContext {
 
     /// An object that stores all IBC related data.
     pub ibc_store: Arc<Mutex<MockIbcStore>>,
-
-    pub events: Vec<IbcEvent>,
-
-    pub logs: Vec<String>,
 }
 
 #[derive(Debug, TypedBuilder)]
@@ -170,8 +170,6 @@ impl Clone for MockContext {
             history: self.history.clone(),
             block_time: self.block_time,
             ibc_store,
-            events: self.events.clone(),
-            logs: self.logs.clone(),
         }
     }
 }
@@ -232,8 +230,6 @@ impl MockContext {
                 .collect(),
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
-            events: Vec::new(),
-            logs: Vec::new(),
         }
     }
 
@@ -299,8 +295,6 @@ impl MockContext {
             history,
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
-            events: Vec::new(),
-            logs: Vec::new(),
         }
     }
 
