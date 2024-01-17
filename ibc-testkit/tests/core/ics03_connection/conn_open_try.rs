@@ -96,13 +96,15 @@ fn conn_open_try_execute(fxt: &mut Fixture<MsgConnectionOpenTry>, expect: Expect
 
             assert_eq!(fxt.ctx.connection_counter().unwrap(), 1);
 
-            assert_eq!(fxt.ctx.events.len(), 2);
+            let ibc_events = fxt.ctx.get_events();
+
+            assert_eq!(ibc_events.len(), 2);
 
             assert!(matches!(
-                fxt.ctx.events[0],
+                ibc_events[0],
                 IbcEvent::Message(MessageEvent::Connection)
             ));
-            let event = &fxt.ctx.events[1];
+            let event = &ibc_events[1];
             assert!(matches!(event, &IbcEvent::OpenTryConnection(_)));
 
             let conn_open_try_event = match event {

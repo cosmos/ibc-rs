@@ -160,15 +160,17 @@ fn send_packet_processing() {
                         test.ctx.clone()
                     );
 
-                assert!(!test.ctx.events.is_empty()); // Some events must exist.
+                let ibc_events = test.ctx.get_events();
 
-                assert_eq!(test.ctx.events.len(), 2);
+                assert!(!ibc_events.is_empty()); // Some events must exist.
+
+                assert_eq!(ibc_events.len(), 2);
                 assert!(matches!(
-                    &test.ctx.events[0],
+                    &ibc_events[0],
                     &IbcEvent::Message(MessageEvent::Channel)
                 ));
                 // TODO: The object in the output is a PacketResult what can we check on it?
-                assert!(matches!(&test.ctx.events[1], &IbcEvent::SendPacket(_)));
+                assert!(matches!(&ibc_events[1], &IbcEvent::SendPacket(_)));
             }
             Err(e) => {
                 assert!(

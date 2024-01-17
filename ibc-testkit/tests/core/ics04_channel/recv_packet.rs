@@ -231,15 +231,17 @@ fn recv_packet_execute_happy_path(fixture: Fixture) {
 
     assert!(res.is_ok());
 
-    assert_eq!(ctx.events.len(), 4);
+    let ibc_events = ctx.get_events();
+
+    assert_eq!(ibc_events.len(), 4);
     assert!(matches!(
-        &ctx.events[0],
+        &ibc_events[0],
         &IbcEvent::Message(MessageEvent::Channel)
     ));
-    assert!(matches!(&ctx.events[1], &IbcEvent::ReceivePacket(_)));
+    assert!(matches!(&ibc_events[1], &IbcEvent::ReceivePacket(_)));
     assert!(matches!(
-        &ctx.events[2],
+        &ibc_events[2],
         &IbcEvent::Message(MessageEvent::Channel)
     ));
-    assert!(matches!(&ctx.events[3], &IbcEvent::WriteAcknowledgement(_)));
+    assert!(matches!(&ibc_events[3], &IbcEvent::WriteAcknowledgement(_)));
 }

@@ -114,13 +114,15 @@ fn chan_open_try_execute_happy_path(fixture: Fixture) {
 
     assert_eq!(ctx.channel_counter().unwrap(), 1);
 
-    assert_eq!(ctx.events.len(), 2);
+    let ibc_events = ctx.get_events();
+
+    assert_eq!(ibc_events.len(), 2);
 
     assert!(matches!(
-        ctx.events[0],
+        ibc_events[0],
         IbcEvent::Message(MessageEvent::Channel)
     ));
-    assert!(matches!(ctx.events[1], IbcEvent::OpenTryChannel(_)));
+    assert!(matches!(ibc_events[1], IbcEvent::OpenTryChannel(_)));
 }
 
 #[rstest]

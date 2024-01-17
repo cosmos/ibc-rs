@@ -676,11 +676,13 @@ fn test_update_client_events() {
     let res = execute(&mut ctx, &mut router, msg_envelope);
     assert!(res.is_ok());
 
+    let ibc_events = ctx.get_events();
+
     assert!(matches!(
-        ctx.events[0],
+        ibc_events[0],
         IbcEvent::Message(MessageEvent::Client)
     ));
-    let update_client_event = downcast!(&ctx.events[1] => IbcEvent::UpdateClient).unwrap();
+    let update_client_event = downcast!(&ibc_events[1] => IbcEvent::UpdateClient).unwrap();
 
     assert_eq!(update_client_event.client_id(), &client_id);
     assert_eq!(update_client_event.client_type(), &mock_client_type());
@@ -696,13 +698,14 @@ fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &Cl
     assert!(status.is_frozen(), "client_state status: {status}");
 
     // check events
-    assert_eq!(ctx.events.len(), 2);
+    let ibc_events = ctx.get_events();
+    assert_eq!(ibc_events.len(), 2);
     assert!(matches!(
-        ctx.events[0],
+        ibc_events[0],
         IbcEvent::Message(MessageEvent::Client),
     ));
     let misbehaviour_client_event =
-        downcast!(&ctx.events[1] => IbcEvent::ClientMisbehaviour).unwrap();
+        downcast!(&ibc_events[1] => IbcEvent::ClientMisbehaviour).unwrap();
     assert_eq!(misbehaviour_client_event.client_id(), client_id);
     assert_eq!(misbehaviour_client_event.client_type(), client_type);
 }
