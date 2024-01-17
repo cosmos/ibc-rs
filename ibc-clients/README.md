@@ -26,6 +26,10 @@ IBC light clients:
 - [ibc-client-tendermint](./ics07-tendermint)
 - [ibc-client-tendermint-types](./ics07-tendermint/types)
 
+### ICS-08: WASM Proxy Light Client
+
+- [ibc-client-wasm-types](./ics08-wasm/types)
+
 ## Third-party Clients
 
 Here, we list IBC third-party clients that are compatible with `ibc-rs`. You
