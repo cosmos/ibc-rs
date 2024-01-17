@@ -203,23 +203,28 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
     let update_height = Height::new(1, 21).unwrap();
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
-    let mut ctx = MockContext::new(
-        ChainId::new("mockgaiaA-1").unwrap(),
-        HostType::Mock,
-        5,
-        Height::new(1, 1).unwrap(),
-    )
-    .with_client_parametrized_with_chain_id(
-        chain_id_b.clone(),
-        &client_id,
-        client_height,
-        Some(tm_client_type()), // The target host chain (B) is synthetic TM.
-        Some(client_height),
-    );
+    let mut ctx = MockContextConfig::builder()
+        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host_type(HostType::Mock)
+        .max_history_size(5)
+        .latest_height(Height::new(1, 1).unwrap())
+        .build()
+        .with_client_parametrized_with_chain_id(
+            chain_id_b.clone(),
+            &client_id,
+            client_height,
+            Some(tm_client_type()), // The target host chain (B) is synthetic TM.
+            Some(client_height),
+        );
 
     let mut router = MockRouter::new_with_transfer();
 
-    let ctx_b = MockContext::new(chain_id_b, HostType::SyntheticTendermint, 5, update_height);
+    let ctx_b = MockContextConfig::builder()
+        .host_id(chain_id_b)
+        .host_type(HostType::SyntheticTendermint)
+        .max_history_size(5)
+        .latest_height(update_height)
+        .build();
 
     let signer = dummy_account_id();
 
@@ -433,23 +438,28 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
     let update_height = Height::new(1, 21).unwrap();
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
-    let mut ctx = MockContext::new(
-        ChainId::new("mockgaiaA-1").unwrap(),
-        HostType::Mock,
-        5,
-        Height::new(1, 1).unwrap(),
-    )
-    .with_client_parametrized_history_with_chain_id(
-        chain_id_b.clone(),
-        &client_id,
-        client_height,
-        Some(tm_client_type()), // The target host chain (B) is synthetic TM.
-        Some(client_height),
-    );
+    let mut ctx = MockContextConfig::builder()
+        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host_type(HostType::Mock)
+        .max_history_size(5)
+        .latest_height(Height::new(1, 1).unwrap())
+        .build()
+        .with_client_parametrized_history_with_chain_id(
+            chain_id_b.clone(),
+            &client_id,
+            client_height,
+            Some(tm_client_type()), // The target host chain (B) is synthetic TM.
+            Some(client_height),
+        );
 
     let mut router = MockRouter::new_with_transfer();
 
-    let ctx_b = MockContext::new(chain_id_b, HostType::SyntheticTendermint, 5, update_height);
+    let ctx_b = MockContextConfig::builder()
+        .host_id(chain_id_b)
+        .host_type(HostType::SyntheticTendermint)
+        .max_history_size(5)
+        .latest_height(update_height)
+        .build();
 
     let signer = dummy_account_id();
 
@@ -491,7 +501,12 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
     let ctx_b_chain_id = ChainId::new("mockgaiaB-1").unwrap();
     let start_height = Height::new(1, 11).unwrap();
 
-    let mut ctx_a = MockContext::new(ctx_a_chain_id, HostType::Mock, 5, start_height)
+    let mut ctx_a = MockContextConfig::builder()
+        .host_id(ctx_a_chain_id)
+        .host_type(HostType::Mock)
+        .max_history_size(5)
+        .latest_height(start_height)
+        .build()
         .with_client_parametrized_with_chain_id(
             ctx_b_chain_id.clone(),
             &client_id,
@@ -502,12 +517,12 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
 
     let mut router_a = MockRouter::new_with_transfer();
 
-    let ctx_b = MockContext::new(
-        ctx_b_chain_id,
-        HostType::SyntheticTendermint,
-        5,
-        client_height,
-    );
+    let ctx_b = MockContextConfig::builder()
+        .host_id(ctx_b_chain_id)
+        .host_type(HostType::SyntheticTendermint)
+        .max_history_size(5)
+        .latest_height(client_height)
+        .build();
 
     let signer = dummy_account_id();
 
@@ -617,27 +632,27 @@ fn test_update_synthetic_tendermint_client_lower_height() {
 
     let chain_start_height = Height::new(1, 11).unwrap();
 
-    let ctx = MockContext::new(
-        ChainId::new("mockgaiaA-1").unwrap(),
-        HostType::Mock,
-        5,
-        chain_start_height,
-    )
-    .with_client_parametrized(
-        &client_id,
-        client_height,
-        Some(tm_client_type()), // The target host chain (B) is synthetic TM.
-        Some(client_height),
-    );
+    let ctx = MockContextConfig::builder()
+        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host_type(HostType::Mock)
+        .max_history_size(5)
+        .latest_height(chain_start_height)
+        .build()
+        .with_client_parametrized(
+            &client_id,
+            client_height,
+            Some(tm_client_type()), // The target host chain (B) is synthetic TM.
+            Some(client_height),
+        );
 
     let router = MockRouter::new_with_transfer();
 
-    let ctx_b = MockContext::new(
-        ChainId::new("mockgaiaB-1").unwrap(),
-        HostType::SyntheticTendermint,
-        5,
-        client_height,
-    );
+    let ctx_b = MockContextConfig::builder()
+        .host_id(ChainId::new("mockgaiaB-1").unwrap())
+        .host_type(HostType::SyntheticTendermint)
+        .max_history_size(5)
+        .latest_height(client_height)
+        .build();
 
     let signer = dummy_account_id();
 
@@ -774,29 +789,29 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
     // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
-    let mut ctx_a = MockContext::new(
-        ChainId::new("mockgaiaA-1").unwrap(),
-        HostType::Mock,
-        5,
-        Height::new(1, 1).unwrap(),
-    )
-    .with_client_parametrized_with_chain_id(
-        chain_id_b.clone(),
-        &client_id,
-        client_height,
-        Some(tm_client_type()),
-        Some(client_height),
-    );
+    let mut ctx_a = MockContextConfig::builder()
+        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host_type(HostType::Mock)
+        .max_history_size(5)
+        .latest_height(Height::new(1, 1).unwrap())
+        .build()
+        .with_client_parametrized_with_chain_id(
+            chain_id_b.clone(),
+            &client_id,
+            client_height,
+            Some(tm_client_type()),
+            Some(client_height),
+        );
 
     let mut router_a = MockRouter::new_with_transfer();
 
     // Create a mock context for chain-B
-    let ctx_b = MockContext::new(
-        chain_id_b.clone(),
-        HostType::SyntheticTendermint,
-        5,
-        misbehaviour_height,
-    );
+    let ctx_b = MockContextConfig::builder()
+        .host_id(chain_id_b.clone())
+        .host_type(HostType::SyntheticTendermint)
+        .max_history_size(5)
+        .latest_height(misbehaviour_height)
+        .build();
 
     // Get chain-B's header at `misbehaviour_height`
     let header1: TmHeader = {
@@ -838,19 +853,19 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
     // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
-    let mut ctx_a = MockContext::new(
-        ChainId::new("mockgaiaA-1").unwrap(),
-        HostType::Mock,
-        5,
-        Height::new(1, 1).unwrap(),
-    )
-    .with_client_parametrized_with_chain_id(
-        chain_id_b.clone(),
-        &client_id,
-        client_height,
-        Some(tm_client_type()),
-        Some(client_height),
-    );
+    let mut ctx_a = MockContextConfig::builder()
+        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host_type(HostType::Mock)
+        .max_history_size(5)
+        .latest_height(Height::new(1, 1).unwrap())
+        .build()
+        .with_client_parametrized_with_chain_id(
+            chain_id_b.clone(),
+            &client_id,
+            client_height,
+            Some(tm_client_type()),
+            Some(client_height),
+        );
 
     let mut router_a = MockRouter::new_with_transfer();
 

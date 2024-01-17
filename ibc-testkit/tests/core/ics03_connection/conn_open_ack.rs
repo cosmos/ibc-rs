@@ -14,6 +14,7 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::ZERO_DURATION;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_ack;
+use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::hosts::block::HostType;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
@@ -59,12 +60,12 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
     conn_end_open.set_state(State::Open); // incorrect field
 
     let ctx_default = MockContext::default();
-    let ctx_new = MockContext::new(
-        ChainId::new(&format!("mockgaia-{}", latest_height.revision_number())).unwrap(),
-        HostType::Mock,
-        max_history_size,
-        latest_height,
-    );
+    let ctx_new = MockContextConfig::builder()
+        .host_id(ChainId::new(&format!("mockgaia-{}", latest_height.revision_number())).unwrap())
+        .host_type(HostType::Mock)
+        .max_history_size(max_history_size)
+        .latest_height(latest_height)
+        .build();
     let ctx = match ctx {
         Ctx::New => ctx_new,
         Ctx::NewWithConnection => ctx_new

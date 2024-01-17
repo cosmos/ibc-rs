@@ -33,6 +33,7 @@ use super::client_ctx::{MockClientRecord, PortChannelIdMap};
 use crate::fixtures::clients::tendermint::{
     dummy_tm_client_state_from_header, ClientStateConfig as TmClientStateConfig,
 };
+use crate::fixtures::core::context::MockContextConfig;
 use crate::hosts::block::{HostBlock, HostType};
 use crate::relayer::error::RelayerError;
 use crate::testapp::ibc::clients::mock::client_state::{
@@ -147,12 +148,12 @@ pub struct MockClientConfig {
 /// creation of new domain objects.
 impl Default for MockContext {
     fn default() -> Self {
-        Self::new(
-            ChainId::new("mockgaia-0").expect("Never fails"),
-            HostType::Mock,
-            5,
-            Height::new(0, 5).expect("Never fails"),
-        )
+        MockContextConfig::builder()
+            .host_id(ChainId::new("mockgaia-0").expect("Never fails"))
+            .host_type(HostType::Mock)
+            .max_history_size(5)
+            .latest_height(Height::new(0, 5).expect("Never fails"))
+            .build()
     }
 }
 
@@ -824,93 +825,93 @@ mod tests {
         let tests: Vec<Test> = vec![
             Test {
                 name: "Empty history, small pruning window".to_string(),
-                ctx: MockContext::new(
-                    mock_chain_id.clone(),
-                    HostType::Mock,
-                    2,
-                    Height::new(cv, 1).expect("Never fails"),
-                ),
+                ctx: MockContextConfig::builder()
+                    .host_id(mock_chain_id.clone())
+                    .host_type(HostType::Mock)
+                    .max_history_size(2)
+                    .latest_height(Height::new(cv, 1).expect("Never fails"))
+                    .build(),
             },
             Test {
                 name: "[Synthetic TM host] Empty history, small pruning window".to_string(),
-                ctx: MockContext::new(
-                    mock_chain_id.clone(),
-                    HostType::SyntheticTendermint,
-                    2,
-                    Height::new(cv, 1).expect("Never fails"),
-                ),
+                ctx: MockContextConfig::builder()
+                    .host_id(mock_chain_id.clone())
+                    .host_type(HostType::SyntheticTendermint)
+                    .max_history_size(2)
+                    .latest_height(Height::new(cv, 1).expect("Never fails"))
+                    .build(),
             },
             Test {
                 name: "Large pruning window".to_string(),
-                ctx: MockContext::new(
-                    mock_chain_id.clone(),
-                    HostType::Mock,
-                    30,
-                    Height::new(cv, 2).expect("Never fails"),
-                ),
+                ctx: MockContextConfig::builder()
+                    .host_id(mock_chain_id.clone())
+                    .host_type(HostType::Mock)
+                    .max_history_size(30)
+                    .latest_height(Height::new(cv, 2).expect("Never fails"))
+                    .build(),
             },
             Test {
                 name: "[Synthetic TM host] Large pruning window".to_string(),
-                ctx: MockContext::new(
-                    mock_chain_id.clone(),
-                    HostType::SyntheticTendermint,
-                    30,
-                    Height::new(cv, 2).expect("Never fails"),
-                ),
+                ctx: MockContextConfig::builder()
+                    .host_id(mock_chain_id.clone())
+                    .host_type(HostType::SyntheticTendermint)
+                    .max_history_size(30)
+                    .latest_height(Height::new(cv, 2).expect("Never fails"))
+                    .build(),
             },
             Test {
                 name: "Small pruning window".to_string(),
-                ctx: MockContext::new(
-                    mock_chain_id.clone(),
-                    HostType::Mock,
-                    3,
-                    Height::new(cv, 30).expect("Never fails"),
-                ),
+                ctx: MockContextConfig::builder()
+                    .host_id(mock_chain_id.clone())
+                    .host_type(HostType::Mock)
+                    .max_history_size(3)
+                    .latest_height(Height::new(cv, 30).expect("Never fails"))
+                    .build(),
             },
             Test {
                 name: "[Synthetic TM host] Small pruning window".to_string(),
-                ctx: MockContext::new(
-                    mock_chain_id.clone(),
-                    HostType::SyntheticTendermint,
-                    3,
-                    Height::new(cv, 30).expect("Never fails"),
-                ),
+                ctx: MockContextConfig::builder()
+                    .host_id(mock_chain_id.clone())
+                    .host_type(HostType::SyntheticTendermint)
+                    .max_history_size(3)
+                    .latest_height(Height::new(cv, 30).expect("Never fails"))
+                    .build(),
             },
             Test {
                 name: "Small pruning window, small starting height".to_string(),
-                ctx: MockContext::new(
-                    mock_chain_id.clone(),
-                    HostType::Mock,
-                    3,
-                    Height::new(cv, 2).expect("Never fails"),
-                ),
+                ctx: MockContextConfig::builder()
+                    .host_id(mock_chain_id.clone())
+                    .host_type(HostType::Mock)
+                    .max_history_size(3)
+                    .latest_height(Height::new(cv, 2).expect("Never fails"))
+                    .build(),
             },
             Test {
                 name: "[Synthetic TM host] Small pruning window, small starting height".to_string(),
-                ctx: MockContext::new(
-                    mock_chain_id.clone(),
-                    HostType::SyntheticTendermint,
-                    3,
-                    Height::new(cv, 2).expect("Never fails"),
-                ),
+                ctx: MockContextConfig::builder()
+                    .host_id(mock_chain_id.clone())
+                    .host_type(HostType::SyntheticTendermint)
+                    .max_history_size(3)
+                    .latest_height(Height::new(cv, 2).expect("Never fails"))
+                    .build(),
             },
             Test {
                 name: "Large pruning window, large starting height".to_string(),
-                ctx: MockContext::new(
-                    mock_chain_id.clone(),
-                    HostType::Mock,
-                    50,
-                    Height::new(cv, 2000).expect("Never fails"),
-                ),
+                ctx: MockContextConfig::builder()
+                    .host_id(mock_chain_id.clone())
+                    .host_type(HostType::Mock)
+                    .max_history_size(50)
+                    .latest_height(Height::new(cv, 2000).expect("Never fails"))
+                    .build(),
             },
             Test {
                 name: "[Synthetic TM host] Large pruning window, large starting height".to_string(),
-                ctx: MockContext::new(
-                    mock_chain_id,
-                    HostType::SyntheticTendermint,
-                    50,
-                    Height::new(cv, 2000).expect("Never fails"),
-                ),
+                ctx: MockContextConfig::builder()
+                    .host_id(mock_chain_id)
+                    .host_type(HostType::SyntheticTendermint)
+                    .max_history_size(50)
+                    .latest_height(Height::new(cv, 2000).expect("Never fails"))
+                    .build(),
             },
         ];
 
