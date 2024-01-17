@@ -12,7 +12,6 @@ use ibc_core_host_types::identifiers::ChainId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::ZERO_DURATION;
 use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
 use ibc_proto::Protobuf;
 use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
@@ -283,13 +282,16 @@ impl TryFrom<RawTmClientState> for ClientState {
         // In `RawClientState`, a `frozen_height` of `0` means "not frozen".
         // See:
         // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
-        if raw
-            .frozen_height
-            .and_then(|h| Height::try_from(h).ok())
-            .is_some()
-        {
-            return Err(Error::FrozenHeightNotAllowed);
-        }
+        //
+        // Comment out this check for now to allow fixing the client state.
+        //
+        // if raw
+        //     .frozen_height
+        //     .and_then(|h| Height::try_from(h).ok())
+        //     .is_some()
+        // {
+        //     return Err(Error::FrozenHeightNotAllowed);
+        // }
 
         // We use set this deprecated field just so that we can properly convert
         // it back in its raw form
@@ -299,8 +301,8 @@ impl TryFrom<RawTmClientState> for ClientState {
             after_misbehaviour: raw.allow_update_after_misbehaviour,
         };
 
-        let client_state = Self::new_without_validation(
-            chain_id,
+        let mut client_state = Self::new_without_validation(
+            chain_id.clone(),
             trust_level,
             trusting_period,
             unbonding_period,
@@ -311,6 +313,12 @@ impl TryFrom<RawTmClientState> for ClientState {
             allow_update,
         );
 
+        // Restore the frozen height if it was set, allow fixing the client state.
+        if let Some(frozen_height) = raw.frozen_height {
+            client_state = client_state.with_frozen_height(
+                Height::try_from(frozen_height).unwrap_or(Height::min(chain_id.revision_number())),
+            );
+        };
         Ok(client_state)
     }
 }
@@ -324,12 +332,7 @@ impl From<ClientState> for RawTmClientState {
             trusting_period: Some(value.trusting_period.into()),
             unbonding_period: Some(value.unbonding_period.into()),
             max_clock_drift: Some(value.max_clock_drift.into()),
-            frozen_height: Some(value.frozen_height.map(|height| height.into()).unwrap_or(
-                RawHeight {
-                    revision_number: 0,
-                    revision_height: 0,
-                },
-            )),
+            frozen_height: value.frozen_height.map(|height| height.into()),
             latest_height: Some(value.latest_height.into()),
             proof_specs: value.proof_specs.into(),
             upgrade_path: value.upgrade_path,
