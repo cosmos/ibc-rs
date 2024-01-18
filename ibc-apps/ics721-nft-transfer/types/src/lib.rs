@@ -24,6 +24,8 @@ pub use class::*;
 #[cfg(feature = "serde")]
 mod data;
 #[cfg(feature = "serde")]
+pub use data::*;
+#[cfg(feature = "serde")]
 pub mod events;
 #[cfg(feature = "serde")]
 pub mod msgs;

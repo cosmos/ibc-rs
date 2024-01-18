@@ -225,6 +225,17 @@ mod tests {
 
         pub fn deser_json_assert_eq(&self, json: &str) {
             let deser: Self = serde_json::from_str(json).unwrap();
+
+            if let Some(data) = &deser.class_data {
+                assert!(data.as_ref().parse_as_ics721_data().is_ok());
+            };
+
+            if deser.token_data.len() > 0 {
+                for data in deser.token_data.iter() {
+                    assert!(data.as_ref().parse_as_ics721_data().is_ok());
+                }
+            }
+
             assert_eq!(&deser, self);
         }
     }
