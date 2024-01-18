@@ -91,11 +91,13 @@ pub struct MockIbcStore {
     /// Constant-size commitments to packets data fields
     pub packet_commitment: PortChannelIdMap<BTreeMap<Sequence, PacketCommitment>>,
 
-    // Used by unordered channel
+    /// Used by unordered channel
     pub packet_receipt: PortChannelIdMap<BTreeMap<Sequence, Receipt>>,
 
+    /// Emitted IBC events in order
     pub events: Vec<IbcEvent>,
 
+    /// Logs of the IBC module
     pub logs: Vec<String>,
 }
 
