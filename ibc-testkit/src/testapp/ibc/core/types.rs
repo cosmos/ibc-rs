@@ -183,6 +183,10 @@ impl MockContext {
     /// the chain maintain in its history, which also determines the pruning window. Parameter
     /// `latest_height` determines the current height of the chain. This context
     /// has support to emulate two type of underlying chains: Mock or SyntheticTendermint.
+    #[deprecated(
+        since = "0.49.2",
+        note = "Please use `MockContextConfig::builder().build()` instead"
+    )]
     pub fn new(
         host_id: ChainId,
         host_type: HostType,
@@ -239,6 +243,10 @@ impl MockContext {
     /// Note: the validator history is used accordingly for current validator set and next validator set.
     /// `validator_history[i]` and `validator_history[i+1]` is i'th block's current and next validator set.
     /// The number of blocks will be `validator_history.len() - 1` due to the above.
+    #[deprecated(
+        since = "0.49.2",
+        note = "Please use `MockContextConfig::builder().build()` instead"
+    )]
     pub fn new_with_validator_history(
         host_id: ChainId,
         host_type: HostType,
