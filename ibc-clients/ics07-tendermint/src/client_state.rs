@@ -30,8 +30,8 @@ use ibc_core_host::types::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
 use ibc_core_host::ExecutionContext;
-use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::prelude::*;
+use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::ToVec;
 
 use super::consensus_state::ConsensusState as TmConsensusState;
