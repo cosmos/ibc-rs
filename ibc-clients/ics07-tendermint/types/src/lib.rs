@@ -36,12 +36,9 @@ pub use trust_threshold::*;
 
 pub mod error;
 
-/// Re-exports necessary proto types for Tendermint light client implementation
-/// from `ibc-proto` crate.
+/// Re-exports ICS-07 Tendermint light client from `ibc-proto` crate.
 pub mod proto {
-    pub use ibc_proto::google::protobuf::Any;
     pub use ibc_proto::ibc::lightclients::tendermint::*;
-    pub use ibc_proto::Protobuf;
 }
 
 pub const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";

@@ -66,6 +66,21 @@ pub mod core {
     }
 }
 
+pub mod clients {
+    /// Re-exports ICS-07 tendermint client data structures from the
+    /// `ibc-client-tendermint-types` crate
+    pub mod tendermint {
+        #[doc(inline)]
+        pub use ibc_client_tendermint_types::*;
+    }
+    /// Re-exports ICS-08 wasm client data structures from the
+    /// `ibc-client-wasm-types` crate
+    pub mod wasm {
+        #[doc(inline)]
+        pub use ibc_client_wasm_types::*;
+    }
+}
+
 /// Re-exports data structures of various IBC applications
 pub mod apps {
     /// Re-exports ICS-27 client update data structures from the
