@@ -26,8 +26,7 @@ pub struct Data(String);
 
 impl Data {
     /// Parses the data in the format specified by ICS-721.
-    pub fn parse_as_ics721_data(&self) -> Result<Ics721Data, NftTransferError>
-    {
+    pub fn parse_as_ics721_data(&self) -> Result<Ics721Data, NftTransferError> {
         self.0.parse::<Ics721Data>()
     }
 }
@@ -62,7 +61,6 @@ impl FromStr for Data {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Ics721Data(BTreeMap<String, DataValue>);
-
 
 impl FromStr for Ics721Data {
     type Err = NftTransferError;

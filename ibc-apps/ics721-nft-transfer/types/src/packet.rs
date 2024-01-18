@@ -230,7 +230,7 @@ mod tests {
                 assert!(data.as_ref().parse_as_ics721_data().is_ok());
             };
 
-            if deser.token_data.len() > 0 {
+            if !deser.token_data.is_empty() {
                 for data in deser.token_data.iter() {
                     assert!(data.as_ref().parse_as_ics721_data().is_ok());
                 }

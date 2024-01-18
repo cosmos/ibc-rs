@@ -50,7 +50,7 @@ pub trait NftTransferValidationContext {
     fn can_receive_nft(&self) -> Result<(), NftTransferError>;
 
     /// Validates that the NFT can be created or updated successfully.
-    /// 
+    ///
     /// Note: some existing ICS-721 implementations may not strictly adhere to
     /// the ICS-721 class data structure. The
     /// [`ClassData`](crate::types::ClassData) associated with this
@@ -90,7 +90,7 @@ pub trait NftTransferValidationContext {
     ) -> Result<(), NftTransferError>;
 
     /// Validates the receiver account and the NFT input
-    /// 
+    ///
     /// Note: some existing ICS-721 implementations may not strictly adhere to
     /// the ICS-721 token data structure. The
     /// [`TokenData`](crate::types::TokenData) associated with this
