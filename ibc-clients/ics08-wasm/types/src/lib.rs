@@ -27,6 +27,11 @@ use ibc_core_host_types::identifiers::ClientType;
 use ibc_primitives::prelude::Vec;
 pub type Bytes = Vec<u8>;
 
+/// Re-exports ICS-08 Wasm light client proto types from `ibc-proto` crate.
+pub mod proto {
+    pub use ibc_proto::ibc::lightclients::wasm::*;
+}
+
 pub static SUBJECT_PREFIX: &[u8] = b"subject/";
 pub static SUBSTITUTE_PREFIX: &[u8] = b"substitute/";
 

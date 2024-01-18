@@ -10,7 +10,6 @@
 
 use ibc_client_tendermint_types::error::Error;
 use ibc_client_tendermint_types::proto::v1::ClientState as RawTmClientState;
-use ibc_client_tendermint_types::proto::{Any, Protobuf};
 use ibc_client_tendermint_types::{
     client_type as tm_client_type, ClientState as ClientStateType,
     ConsensusState as ConsensusStateType, Header as TmHeader, Misbehaviour as TmMisbehaviour,
@@ -31,6 +30,7 @@ use ibc_core_host::types::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
 use ibc_core_host::ExecutionContext;
+use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::prelude::*;
 use ibc_primitives::ToVec;
 
