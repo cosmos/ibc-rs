@@ -3,12 +3,10 @@ use core::fmt::{self, Display, Formatter};
 use core::str::FromStr;
 
 use ibc_core::primitives::prelude::*;
-#[cfg(feature = "ics721-data")]
 use mime::Mime;
 
 use crate::error::NftTransferError;
 
-#[cfg(not(feature = "ics721-data"))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -23,17 +21,23 @@ use crate::error::NftTransferError;
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, derive_more::From)]
 pub struct Data(String);
 
-#[cfg(not(feature = "ics721-data"))]
+impl Data {
+    /// Parses the data in the format specified by ICS-721.
+    pub fn parse_as_ics721_data(&self) -> Result<Ics721Data, NftTransferError>
+    {
+        self.0.parse::<Ics721Data>()
+    }
+}
+
 impl Display for Data {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
-#[cfg(not(feature = "ics721-data"))]
 impl FromStr for Data {
     type Err = NftTransferError;
 
@@ -57,17 +61,23 @@ impl FromStr for Data {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-#[cfg(feature = "ics721-data")]
-pub struct Data(BTreeMap<String, DataValue>);
+pub struct Ics721Data(BTreeMap<String, DataValue>);
 
-#[cfg(feature = "ics721-data")]
+
+impl FromStr for Ics721Data {
+    type Err = NftTransferError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        serde_json::from_str(s).map_err(|_| NftTransferError::InvalidIcs721Data)
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct DataValue {
     value: String,
     mime: Option<Mime>,
 }
 
-#[cfg(feature = "ics721-data")]
 #[cfg(feature = "serde")]
 impl serde::Serialize for DataValue {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -87,7 +97,6 @@ impl serde::Serialize for DataValue {
     }
 }
 
-#[cfg(feature = "ics721-data")]
 #[cfg(feature = "serde")]
 impl<'de> serde::Deserialize<'de> for DataValue {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -113,7 +122,6 @@ impl<'de> serde::Deserialize<'de> for DataValue {
     }
 }
 
-#[cfg(feature = "ics721-data")]
 #[cfg(feature = "borsh")]
 impl borsh::BorshSerialize for DataValue {
     fn serialize<W: borsh::maybestd::io::Write>(
@@ -130,7 +138,6 @@ impl borsh::BorshSerialize for DataValue {
     }
 }
 
-#[cfg(feature = "ics721-data")]
 #[cfg(feature = "borsh")]
 impl borsh::BorshDeserialize for DataValue {
     fn deserialize_reader<R: borsh::maybestd::io::Read>(
@@ -148,7 +155,6 @@ impl borsh::BorshDeserialize for DataValue {
     }
 }
 
-#[cfg(feature = "ics721-data")]
 #[cfg(feature = "parity-scale-codec")]
 impl parity_scale_codec::Encode for DataValue {
     fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, writer: &mut T) {
@@ -161,7 +167,6 @@ impl parity_scale_codec::Encode for DataValue {
     }
 }
 
-#[cfg(feature = "ics721-data")]
 #[cfg(feature = "parity-scale-codec")]
 impl parity_scale_codec::Decode for DataValue {
     fn decode<I: parity_scale_codec::Input>(
@@ -182,7 +187,6 @@ impl parity_scale_codec::Decode for DataValue {
     }
 }
 
-#[cfg(feature = "ics721-data")]
 #[cfg(feature = "parity-scale-codec")]
 impl scale_info::TypeInfo for DataValue {
     type Identity = Self;
@@ -198,7 +202,6 @@ impl scale_info::TypeInfo for DataValue {
     }
 }
 
-#[cfg(feature = "ics721-data")]
 #[cfg(feature = "schema")]
 impl schemars::JsonSchema for DataValue {
     fn schema_name() -> String {
@@ -214,26 +217,6 @@ impl schemars::JsonSchema for DataValue {
     }
 }
 
-#[cfg(feature = "ics721-data")]
-impl Display for Data {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", serde_json::to_string(&self.0).expect("infallible"))
-    }
-}
-
-#[cfg(feature = "ics721-data")]
-impl FromStr for Data {
-    type Err = NftTransferError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let data: BTreeMap<String, DataValue> =
-            serde_json::from_str(s).map_err(|_| NftTransferError::InvalidJsonData)?;
-
-        Ok(Self(data))
-    }
-}
-
-#[cfg(feature = "ics721-data")]
 #[cfg(test)]
 mod tests {
     use rstest::rstest;

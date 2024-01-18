@@ -50,6 +50,8 @@ pub enum NftTransferError {
     TokenMismatched,
     /// invalid json data
     InvalidJsonData,
+    /// the data is not in the JSON format specified by ICS-721
+    InvalidIcs721Data,
     /// expected `{expect_order}` channel, got `{got_order}`
     ChannelNotUnordered {
         expect_order: Order,
