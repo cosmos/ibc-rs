@@ -376,13 +376,15 @@ fn timeout_unordered_chan_execute(fixture: Fixture) {
 
     assert!(res.is_ok());
 
+    let ibc_events = ctx.get_events();
+
     // Unordered channels only emit one event
-    assert_eq!(ctx.events.len(), 2);
+    assert_eq!(ibc_events.len(), 2);
     assert!(matches!(
-        ctx.events[0],
+        ibc_events[0],
         IbcEvent::Message(MessageEvent::Channel)
     ));
-    assert!(matches!(ctx.events[1], IbcEvent::TimeoutPacket(_)));
+    assert!(matches!(ibc_events[1], IbcEvent::TimeoutPacket(_)));
 }
 
 #[rstest]
@@ -416,16 +418,18 @@ fn timeout_ordered_chan_execute(fixture: Fixture) {
 
     assert!(res.is_ok());
 
+    let ibc_events = ctx.get_events();
+
     // Ordered channels emit 2 events
-    assert_eq!(ctx.events.len(), 4);
+    assert_eq!(ibc_events.len(), 4);
     assert!(matches!(
-        ctx.events[0],
+        ibc_events[0],
         IbcEvent::Message(MessageEvent::Channel)
     ));
-    assert!(matches!(ctx.events[1], IbcEvent::TimeoutPacket(_)));
+    assert!(matches!(ibc_events[1], IbcEvent::TimeoutPacket(_)));
     assert!(matches!(
-        ctx.events[2],
+        ibc_events[2],
         IbcEvent::Message(MessageEvent::Channel)
     ));
-    assert!(matches!(ctx.events[3], IbcEvent::ChannelClosed(_)));
+    assert!(matches!(ibc_events[3], IbcEvent::ChannelClosed(_)));
 }

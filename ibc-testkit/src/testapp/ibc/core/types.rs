@@ -91,8 +91,14 @@ pub struct MockIbcStore {
     /// Constant-size commitments to packets data fields
     pub packet_commitment: PortChannelIdMap<BTreeMap<Sequence, PacketCommitment>>,
 
-    // Used by unordered channel
+    /// Used by unordered channel
     pub packet_receipt: PortChannelIdMap<BTreeMap<Sequence, Receipt>>,
+
+    /// Emitted IBC events in order
+    pub events: Vec<IbcEvent>,
+
+    /// Logs of the IBC module
+    pub logs: Vec<String>,
 }
 
 /// A context implementing the dependencies necessary for testing any IBC module.
@@ -116,10 +122,6 @@ pub struct MockContext {
 
     /// An object that stores all IBC related data.
     pub ibc_store: Arc<Mutex<MockIbcStore>>,
-
-    pub events: Vec<IbcEvent>,
-
-    pub logs: Vec<String>,
 }
 
 #[derive(Debug, TypedBuilder)]
@@ -170,8 +172,6 @@ impl Clone for MockContext {
             history: self.history.clone(),
             block_time: self.block_time,
             ibc_store,
-            events: self.events.clone(),
-            logs: self.logs.clone(),
         }
     }
 }
@@ -232,8 +232,6 @@ impl MockContext {
                 .collect(),
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
-            events: Vec::new(),
-            logs: Vec::new(),
         }
     }
 
@@ -299,8 +297,6 @@ impl MockContext {
             history,
             block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
-            events: Vec::new(),
-            logs: Vec::new(),
         }
     }
 
@@ -780,6 +776,14 @@ impl MockContext {
     pub fn query_latest_header(&self) -> Option<HostBlock> {
         let block_ref = self.host_block(&self.host_height().expect("Never fails"));
         block_ref.cloned()
+    }
+
+    pub fn get_events(&self) -> Vec<IbcEvent> {
+        self.ibc_store.lock().events.clone()
+    }
+
+    pub fn get_logs(&self) -> Vec<String> {
+        self.ibc_store.lock().logs.clone()
     }
 }
 

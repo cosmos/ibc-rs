@@ -94,12 +94,13 @@ fn upgrade_client_execute(fxt: &mut Fixture<MsgUpgradeClient>, expect: Expect) {
         }
         Expect::Success => {
             assert!(res.is_ok(), "{err_msg}");
+            let ibc_events = fxt.ctx.get_events();
             assert!(matches!(
-                fxt.ctx.events[0],
+                ibc_events[0],
                 IbcEvent::Message(MessageEvent::Client)
             ));
             let upgrade_client_event =
-                downcast!(&fxt.ctx.events[1] => IbcEvent::UpgradeClient).unwrap();
+                downcast!(&ibc_events[1] => IbcEvent::UpgradeClient).unwrap();
             let plan_height = Height::new(1, 26).unwrap();
 
             assert_eq!(upgrade_client_event.client_id(), &fxt.msg.client_id);

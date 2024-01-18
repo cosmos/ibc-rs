@@ -120,8 +120,6 @@ impl From<MockContextConfig> for MockContext {
             history,
             block_time: params.block_time,
             ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
-            events: Vec::new(),
-            logs: Vec::new(),
         }
     }
 }
