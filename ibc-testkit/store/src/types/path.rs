@@ -100,10 +100,8 @@ mod tests {
         assert!(Path::try_from(path).is_ok());
     }
 
-    // TODO(rano): add failing case for `Path::try_from`
     #[rstest]
-    #[ignore]
-    #[case(b"hello/@@@")]
+    #[case(b"hello/\xf0\x28\x8c\xbc")]
     fn sad_test(#[case] path: &[u8]) {
         assert!(Path::try_from(path).is_err());
     }
