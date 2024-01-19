@@ -16,7 +16,6 @@ use ibc::core::primitives::ZERO_DURATION;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_ack;
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
-use ibc_testkit::hosts::block::HostType;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
 use test_log::test;
@@ -39,7 +38,6 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
     // Parametrize the host chain to have a height at least as recent as the
     // the height of the proofs in the Ack msg.
     let latest_height = proof_height.increment();
-    let max_history_size = 5;
 
     // A connection end that will exercise the successful path.
     let default_conn_end = ConnectionEnd::new(
@@ -62,8 +60,6 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
     let ctx_default = MockContext::default();
     let ctx_new = MockContextConfig::builder()
         .host_id(ChainId::new(&format!("mockgaia-{}", latest_height.revision_number())).unwrap())
-        .host_type(HostType::Mock)
-        .max_history_size(max_history_size)
         .latest_height(latest_height)
         .build();
     let ctx = match ctx {

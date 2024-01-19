@@ -148,12 +148,7 @@ pub struct MockClientConfig {
 /// creation of new domain objects.
 impl Default for MockContext {
     fn default() -> Self {
-        MockContextConfig::builder()
-            .host_id(ChainId::new("mockgaia-0").expect("Never fails"))
-            .host_type(HostType::Mock)
-            .max_history_size(5)
-            .latest_height(Height::new(0, 5).expect("Never fails"))
-            .build()
+        MockContextConfig::builder().build()
     }
 }
 
@@ -827,7 +822,6 @@ mod tests {
                 name: "Empty history, small pruning window".to_string(),
                 ctx: MockContextConfig::builder()
                     .host_id(mock_chain_id.clone())
-                    .host_type(HostType::Mock)
                     .max_history_size(2)
                     .latest_height(Height::new(cv, 1).expect("Never fails"))
                     .build(),
@@ -845,7 +839,6 @@ mod tests {
                 name: "Large pruning window".to_string(),
                 ctx: MockContextConfig::builder()
                     .host_id(mock_chain_id.clone())
-                    .host_type(HostType::Mock)
                     .max_history_size(30)
                     .latest_height(Height::new(cv, 2).expect("Never fails"))
                     .build(),
@@ -863,7 +856,6 @@ mod tests {
                 name: "Small pruning window".to_string(),
                 ctx: MockContextConfig::builder()
                     .host_id(mock_chain_id.clone())
-                    .host_type(HostType::Mock)
                     .max_history_size(3)
                     .latest_height(Height::new(cv, 30).expect("Never fails"))
                     .build(),
@@ -881,7 +873,6 @@ mod tests {
                 name: "Small pruning window, small starting height".to_string(),
                 ctx: MockContextConfig::builder()
                     .host_id(mock_chain_id.clone())
-                    .host_type(HostType::Mock)
                     .max_history_size(3)
                     .latest_height(Height::new(cv, 2).expect("Never fails"))
                     .build(),
@@ -899,7 +890,6 @@ mod tests {
                 name: "Large pruning window, large starting height".to_string(),
                 ctx: MockContextConfig::builder()
                     .host_id(mock_chain_id.clone())
-                    .host_type(HostType::Mock)
                     .max_history_size(50)
                     .latest_height(Height::new(cv, 2000).expect("Never fails"))
                     .build(),

@@ -123,8 +123,6 @@ mod tests {
         // Create two mock contexts, one for each chain.
         let mut ctx_a = MockContextConfig::builder()
             .host_id(chain_id_a.clone())
-            .host_type(HostType::Mock)
-            .max_history_size(5)
             .latest_height(chain_a_start_height)
             .build()
             .with_client_parametrized_with_chain_id(
@@ -140,7 +138,6 @@ mod tests {
         let mut ctx_b = MockContextConfig::builder()
             .host_id(chain_id_b)
             .host_type(HostType::SyntheticTendermint)
-            .max_history_size(5)
             .latest_height(chain_b_start_height)
             .build()
             .with_client_parametrized_with_chain_id(
