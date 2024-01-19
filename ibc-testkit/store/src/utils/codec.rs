@@ -1,5 +1,7 @@
-use serde::{de::DeserializeOwned, Serialize};
 use std::marker::PhantomData;
+
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 
 /// A trait that defines how types are decoded/encoded.
 pub trait Codec {

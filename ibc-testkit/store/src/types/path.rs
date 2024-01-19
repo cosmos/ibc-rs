@@ -1,10 +1,11 @@
-use super::Identifier;
-use crate::avl::{AsBytes, ByteSlice};
+use std::fmt::{Display, Formatter};
+use std::str::{from_utf8, FromStr, Utf8Error};
+
 use displaydoc::Display as DisplayDoc;
 use ibc::core::host::types::path::{Path as IbcPath, PathError};
-use std::fmt::{Display, Formatter};
-use std::str::FromStr;
-use std::str::{from_utf8, Utf8Error};
+
+use super::Identifier;
+use crate::avl::{AsBytes, ByteSlice};
 
 #[derive(Debug, DisplayDoc)]
 pub enum Error {
@@ -89,12 +90,15 @@ impl From<IbcPath> for Path {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::{collections::HashSet, convert::TryFrom};
+    use std::collections::HashSet;
+    use std::convert::TryFrom;
 
     use lazy_static::lazy_static;
     use proptest::prelude::*;
-    use rand::{distributions::Standard, seq::SliceRandom};
+    use rand::distributions::Standard;
+    use rand::seq::SliceRandom;
+
+    use super::*;
 
     const ALLOWED_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
                                    abcdefghijklmnopqrstuvwxyz\

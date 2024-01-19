@@ -1,10 +1,11 @@
+use ics23::CommitmentProof;
+use tendermint::hash::Algorithm;
+use tendermint::Hash;
+use tracing::trace;
+
 use crate::avl::{AsBytes, AvlTree};
 use crate::context::{ProvableStore, Store};
 use crate::types::{Height, Path, State};
-
-use ics23::CommitmentProof;
-use tendermint::{hash::Algorithm, Hash};
-use tracing::trace;
 
 /// An in-memory store backed by an AvlTree.
 #[derive(Clone, Debug)]

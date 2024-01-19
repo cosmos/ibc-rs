@@ -1,7 +1,5 @@
-use std::{
-    fmt::{Debug, Display, Formatter},
-    ops::Deref,
-};
+use std::fmt::{Debug, Display, Formatter};
+use std::ops::Deref;
 
 /// A new type representing a valid ICS024 identifier.
 /// Implements `Deref<Target=String>`.

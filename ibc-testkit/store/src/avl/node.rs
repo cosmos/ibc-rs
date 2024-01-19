@@ -1,9 +1,11 @@
-use std::{borrow::Borrow, mem};
+use std::borrow::Borrow;
+use std::mem;
 
 use sha2::{Digest, Sha256};
 use tendermint::hash::Hash;
 
-use crate::avl::{as_bytes::AsBytes, proof, HASH_ALGO};
+use crate::avl::as_bytes::AsBytes;
+use crate::avl::{proof, HASH_ALGO};
 
 pub type NodeRef<T, V> = Option<Box<AvlNode<T, V>>>;
 

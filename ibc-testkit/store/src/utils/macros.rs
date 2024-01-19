@@ -1,10 +1,10 @@
-use crate::types::Path;
-
 use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
     UpgradeClientPath,
 };
+
+use crate::types::Path;
 
 macro_rules! impl_into_path_for {
     ($($path:ty),+) => {

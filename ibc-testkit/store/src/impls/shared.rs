@@ -1,10 +1,11 @@
+use std::ops::{Deref, DerefMut};
+use std::sync::{Arc, RwLock};
+
+use ics23::CommitmentProof;
+
 use crate::context::{ProvableStore, Store};
 use crate::types::{Height, Path, RawHeight};
 use crate::utils::{SharedRw, SharedRwExt};
-
-use ics23::CommitmentProof;
-use std::ops::{Deref, DerefMut};
-use std::sync::{Arc, RwLock};
 
 /// Wraps a store to make it shareable by cloning
 #[derive(Clone, Debug)]

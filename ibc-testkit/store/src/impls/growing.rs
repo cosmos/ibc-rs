@@ -1,9 +1,7 @@
-use crate::context::ProvableStore;
-use crate::context::Store;
-use crate::types::Height;
-use crate::types::Path;
-
 use ics23::CommitmentProof;
+
+use crate::context::{ProvableStore, Store};
+use crate::types::{Height, Path};
 
 /// GrowingStore does not prune any path.
 /// If the path is set to v, the stored value is v

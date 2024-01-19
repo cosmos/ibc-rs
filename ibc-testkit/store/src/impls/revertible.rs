@@ -1,10 +1,8 @@
-use crate::context::ProvableStore;
-use crate::context::Store;
-use crate::types::Height;
-use crate::types::Path;
-
 use ics23::CommitmentProof;
 use tracing::trace;
+
+use crate::context::{ProvableStore, Store};
+use crate::types::{Height, Path};
 
 /// A wrapper store that implements rudimentary `apply()`/`reset()` support for other stores
 #[derive(Clone, Debug)]

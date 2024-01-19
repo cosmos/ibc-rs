@@ -1,10 +1,12 @@
+use std::fmt::Debug;
+use std::marker::PhantomData;
+
 use crate::avl::AvlTree;
 use crate::context::Store;
 use crate::impls::{RevertibleStore, SharedStore};
 use crate::types::{Height, Path, RawHeight};
 use crate::utils::codec::{BinCodec, JsonCodec, NullCodec, ProtobufCodec};
 use crate::utils::Codec;
-use std::{fmt::Debug, marker::PhantomData};
 
 // A state type that represents a snapshot of the store at every block.
 // The value is a `Vec<u8>` to allow stored types to choose their own serde.

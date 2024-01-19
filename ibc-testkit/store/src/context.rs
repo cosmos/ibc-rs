@@ -1,8 +1,9 @@
-use crate::types::{Height, Path, RawHeight};
-use crate::utils::Async;
+use std::fmt::Debug;
 
 use ics23::CommitmentProof;
-use std::fmt::Debug;
+
+use crate::types::{Height, Path, RawHeight};
+use crate::utils::Async;
 
 /// Store trait - maybe provableStore or privateStore
 pub trait Store: Async + Clone {
