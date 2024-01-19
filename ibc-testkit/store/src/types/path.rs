@@ -95,16 +95,16 @@ mod tests {
     use super::*;
 
     #[rstest]
-    #[case("hello/world")]
-    fn happy_test(#[case] path: &str) {
-        assert!(Path::try_from(path.to_owned()).is_ok());
+    #[case(b"hello/world")]
+    fn happy_test(#[case] path: &[u8]) {
+        assert!(Path::try_from(path).is_ok());
     }
 
     // TODO(rano): add failing case for `Path::try_from`
     #[rstest]
     #[ignore]
-    #[case("hello/@@@")]
-    fn sad_test(#[case] path: &str) {
-        assert!(Path::try_from(path.to_owned()).is_err());
+    #[case(b"hello/@@@")]
+    fn sad_test(#[case] path: &[u8]) {
+        assert!(Path::try_from(path).is_err());
     }
 }
