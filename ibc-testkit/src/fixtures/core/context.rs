@@ -21,6 +21,7 @@ pub struct MockContextConfig {
     #[builder(default = HostType::Mock)]
     host_type: HostType,
 
+    #[builder(default = ChainId::new("mockgaia-0").expect("Never fails"))]
     host_id: ChainId,
 
     #[builder(default = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS))]
@@ -33,6 +34,7 @@ pub struct MockContextConfig {
     #[builder(default, setter(strip_option))]
     validator_set_history: Option<Vec<Vec<TestgenValidator>>>,
 
+    #[builder(default = Height::new(0, 5).expect("Never fails"))]
     latest_height: Height,
 
     #[builder(default = Timestamp::now())]
