@@ -1,0 +1,30 @@
+[package]
+name         = "ibc-testkit-store"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+readme       = "README.md"
+keywords     = ["blockchain", "store", "merkle", "avl"]
+description  = """
+    Maintained by `ibc-rs`, a simple implementation of an AVL store tailored for the `ibc-testkit`.
+"""
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+displaydoc  = { workspace = true }
+tendermint  = { workspace = true }
+ibc         = { workspace = true }
+ics23       = { workspace = true }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+sha2        = { workspace = true }
+prost       = { workspace = true }
+tracing     = { workspace = true }
+
+[dev-dependencies]
+rstest      = { workspace = true }
