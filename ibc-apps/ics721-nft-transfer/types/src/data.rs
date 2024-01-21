@@ -2,6 +2,8 @@
 use core::fmt::{self, Display, Formatter};
 use core::str::FromStr;
 
+use base64::prelude::BASE64_STANDARD;
+use base64::Engine;
 use ibc_core::primitives::prelude::*;
 use mime::Mime;
 
@@ -19,7 +21,6 @@ use crate::error::NftTransferError;
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Default, PartialEq, Eq, derive_more::From)]
 pub struct Data(String);
@@ -42,6 +43,29 @@ impl FromStr for Data {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self(s.to_string()))
+    }
+}
+
+impl serde::Serialize for Data {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&BASE64_STANDARD.encode(&self.0))
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for Data {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let encoded = String::deserialize(deserializer)?;
+        let decoded = BASE64_STANDARD
+            .decode(encoded)
+            .map_err(serde::de::Error::custom)?;
+        let decoded_str = String::from_utf8(decoded).map_err(serde::de::Error::custom)?;
+        Ok(Data(decoded_str))
     }
 }
 

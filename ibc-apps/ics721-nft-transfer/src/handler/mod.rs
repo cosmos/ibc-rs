@@ -41,8 +41,8 @@ pub fn refund_packet_nft_execute(
     // mint vouchers back to sender
     else {
         for (i, token_id) in data.token_ids.0.iter().enumerate() {
-            let token_uri = data.token_uris.get(i);
-            let token_data = data.token_data.get(i);
+            let token_uri = data.token_uris.as_ref().and_then(|uris| uris.get(i));
+            let token_data = data.token_data.as_ref().and_then(|data| data.get(i));
             ctx_a.mint_nft_execute(&sender, &data.class_id, token_id, token_uri, token_data)?;
         }
         Ok(())
@@ -76,8 +76,8 @@ pub fn refund_packet_nft_validate(
         })
     } else {
         for (i, token_id) in data.token_ids.0.iter().enumerate() {
-            let token_uri = data.token_uris.get(i);
-            let token_data = data.token_data.get(i);
+            let token_uri = data.token_uris.as_ref().and_then(|uris| uris.get(i));
+            let token_data = data.token_data.as_ref().and_then(|data| data.get(i));
             ctx_a.mint_nft_validate(&sender, &data.class_id, token_id, token_uri, token_data)?;
         }
         Ok(())

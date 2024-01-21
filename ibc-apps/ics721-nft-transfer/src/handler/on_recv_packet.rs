@@ -82,8 +82,8 @@ where
             log: Vec::new(),
         };
         for (i, token_id) in data.token_ids.0.iter().enumerate() {
-            let token_uri = data.token_uris.get(i);
-            let token_data = data.token_data.get(i);
+            let token_uri = data.token_uris.as_ref().and_then(|uris| uris.get(i));
+            let token_data = data.token_data.as_ref().and_then(|data| data.get(i));
 
             let trace_event = TokenTraceEvent {
                 trace_hash: ctx_b.token_hash_string(&class_id, token_id),
