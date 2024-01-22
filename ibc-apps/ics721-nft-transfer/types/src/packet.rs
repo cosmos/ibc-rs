@@ -1,7 +1,12 @@
 //! Contains the `PacketData` type that defines the structure of NFT transfers' packet bytes
 
+use core::convert::TryFrom;
+
+use base64::prelude::BASE64_STANDARD;
+use base64::Engine;
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Signer;
+use ibc_proto::ibc::applications::nft_transfer::v1::NonFungibleTokenPacketData as RawPacketData;
 
 use crate::class::{ClassData, ClassUri, PrefixedClassId};
 use crate::error::NftTransferError;
@@ -39,6 +44,51 @@ pub struct PacketData {
 }
 
 impl PacketData {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        class_id: PrefixedClassId,
+        class_uri: Option<ClassUri>,
+        class_data: Option<ClassData>,
+        token_ids: TokenIds,
+        token_uris: Vec<TokenUri>,
+        token_data: Vec<TokenData>,
+        sender: Signer,
+        receiver: Signer,
+        memo: Memo,
+    ) -> Result<Self, NftTransferError> {
+        let token_uris = if token_uris.is_empty() {
+            None
+        } else {
+            Some(token_uris)
+        };
+        let token_data = if token_data.is_empty() {
+            None
+        } else {
+            Some(token_data)
+        };
+        let memo = if memo.as_ref().is_empty() {
+            None
+        } else {
+            Some(memo)
+        };
+
+        let packet_data = Self {
+            class_id,
+            class_uri,
+            class_data,
+            token_ids,
+            token_uris,
+            token_data,
+            sender,
+            receiver,
+            memo,
+        };
+
+        packet_data.validate_basic()?;
+
+        Ok(packet_data)
+    }
+
     /// Performs the basic validation of the packet data fields.
     pub fn validate_basic(&self) -> Result<(), NftTransferError> {
         if self.token_ids.0.is_empty() {
@@ -59,6 +109,92 @@ impl PacketData {
             return Err(NftTransferError::TokenMismatched);
         }
         Ok(())
+    }
+}
+
+impl TryFrom<RawPacketData> for PacketData {
+    type Error = NftTransferError;
+
+    fn try_from(raw_pkt_data: RawPacketData) -> Result<Self, Self::Error> {
+        let class_uri = if raw_pkt_data.class_uri.is_empty() {
+            None
+        } else {
+            Some(raw_pkt_data.class_uri.parse()?)
+        };
+        let class_data = if raw_pkt_data.class_data.is_empty() {
+            None
+        } else {
+            let decoded = BASE64_STANDARD
+                .decode(raw_pkt_data.class_data)
+                .map_err(|_| NftTransferError::InvalidJsonData)?;
+            let data_str =
+                String::from_utf8(decoded).map_err(|_| NftTransferError::InvalidJsonData)?;
+            Some(data_str.parse()?)
+        };
+
+        let token_ids = raw_pkt_data.token_ids.try_into()?;
+        let token_uris: Result<Vec<TokenUri>, _> =
+            raw_pkt_data.token_uris.iter().map(|t| t.parse()).collect();
+        let token_data: Result<Vec<TokenData>, _> = raw_pkt_data
+            .token_data
+            .iter()
+            .map(|data| {
+                let decoded = BASE64_STANDARD
+                    .decode(data)
+                    .map_err(|_| NftTransferError::InvalidJsonData)?;
+                let data_str =
+                    String::from_utf8(decoded).map_err(|_| NftTransferError::InvalidJsonData)?;
+                data_str.parse()
+            })
+            .collect();
+        Self::new(
+            raw_pkt_data.class_id.parse()?,
+            class_uri,
+            class_data,
+            token_ids,
+            token_uris?,
+            token_data?,
+            raw_pkt_data.sender.into(),
+            raw_pkt_data.receiver.into(),
+            raw_pkt_data.memo.into(),
+        )
+    }
+}
+
+impl From<PacketData> for RawPacketData {
+    fn from(pkt_data: PacketData) -> Self {
+        Self {
+            class_id: pkt_data.class_id.to_string(),
+            class_uri: pkt_data
+                .class_uri
+                .map(|c| c.to_string())
+                .unwrap_or_default(),
+            class_data: pkt_data
+                .class_data
+                .map(|c| BASE64_STANDARD.encode(c.to_string()))
+                .unwrap_or_default(),
+            token_ids: pkt_data
+                .token_ids
+                .as_ref()
+                .iter()
+                .map(|t| t.to_string())
+                .collect(),
+            token_uris: pkt_data
+                .token_uris
+                .map(|uris| uris.iter().map(|t| t.to_string()).collect())
+                .unwrap_or_default(),
+            token_data: pkt_data
+                .token_data
+                .map(|data| {
+                    data.iter()
+                        .map(|t| BASE64_STANDARD.encode(t.to_string()))
+                        .collect()
+                })
+                .unwrap_or_default(),
+            sender: pkt_data.sender.to_string(),
+            receiver: pkt_data.receiver.to_string(),
+            memo: pkt_data.memo.map(|m| m.to_string()).unwrap_or_default(),
+        }
     }
 }
 
