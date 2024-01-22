@@ -140,6 +140,10 @@ mod tests {
         r#"{"classId":"class","tokenIds":["token_0"],"sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng"}"#
     }
 
+    fn dummy_min_json_packet_data_with_null() -> &'static str {
+        r#"{"classId":"class","classUri":null,"classData":null,"tokenIds":["token_0"],"tokenUris":null,"tokenData":null,"sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng"}"#
+    }
+
     fn dummy_json_packet_data() -> &'static str {
         r#"{"classId":"class","classUri":"http://example.com/","classData":"eyJpbWFnZSI6eyJ2YWx1ZSI6ImJpbmFyeSIsIm1pbWUiOiJpbWFnZS9wbmcifSwibmFtZSI6eyJ2YWx1ZSI6IkNyeXB0byBDcmVhdHVyZXMifX0=","tokenIds":["token_0","token_1"],"tokenUris":["http://example.com/","http://example.com/"],"tokenData":["eyJpbWFnZSI6eyJ2YWx1ZSI6ImJpbmFyeSIsIm1pbWUiOiJpbWFnZS9wbmcifSwibmFtZSI6eyJ2YWx1ZSI6IkNyeXB0byBDcmVhdHVyZXMifX0=","eyJpbWFnZSI6eyJ2YWx1ZSI6ImJpbmFyeSIsIm1pbWUiOiJpbWFnZS9wbmcifSwibmFtZSI6eyJ2YWx1ZSI6IkNyeXB0byBDcmVhdHVyZXMifX0="],"sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","memo":"memo"}"#
     }
@@ -162,6 +166,7 @@ mod tests {
         PacketData::new_dummy(Some("memo")).deser_json_assert_eq(dummy_json_packet_data());
         PacketData::new_dummy(None).deser_json_assert_eq(dummy_json_packet_data_without_memo());
         PacketData::new_min_dummy().deser_json_assert_eq(dummy_min_json_packet_data());
+        PacketData::new_min_dummy().deser_json_assert_eq(dummy_min_json_packet_data_with_null());
     }
 
     #[test]
