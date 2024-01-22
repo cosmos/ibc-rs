@@ -11,14 +11,12 @@ use ibc_proto::ibc::applications::nft_transfer::v1::NonFungibleTokenPacketData a
 use crate::class::{ClassData, ClassUri, PrefixedClassId};
 use crate::error::NftTransferError;
 use crate::memo::Memo;
+use crate::serializers;
 use crate::token::{TokenData, TokenIds, TokenUri};
 
 /// Defines the structure of token transfers' packet bytes
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(try_from = "RawPacketData", into = "RawPacketData")
-)]
+#[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[cfg_attr(
     feature = "parity-scale-codec",
@@ -30,15 +28,19 @@ use crate::token::{TokenData, TokenIds, TokenUri};
 )]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PacketData {
+    #[cfg_attr(feature = "serde", serde(with = "serializers"))]
+    #[cfg_attr(feature = "schema", schemars(with = "String"))]
     pub class_id: PrefixedClassId,
     pub class_uri: Option<ClassUri>,
     pub class_data: Option<ClassData>,
     pub token_ids: TokenIds,
-    pub token_uris: Vec<TokenUri>,
-    pub token_data: Vec<TokenData>,
+    // Need `Option` to decode `null` value
+    pub token_uris: Option<Vec<TokenUri>>,
+    // Need `Option` to decode `null` value
+    pub token_data: Option<Vec<TokenData>>,
     pub sender: Signer,
     pub receiver: Signer,
-    pub memo: Memo,
+    pub memo: Option<Memo>,
 }
 
 impl PacketData {
@@ -54,16 +56,23 @@ impl PacketData {
         receiver: Signer,
         memo: Memo,
     ) -> Result<Self, NftTransferError> {
-        if token_ids.0.is_empty() {
-            return Err(NftTransferError::NoTokenId);
-        }
-        let num = token_ids.0.len();
-        let num_uri = token_uris.len();
-        let num_data = token_data.len();
-        if (num_uri != 0 && num_uri != num) || (num_data != 0 && num_data != num) {
-            return Err(NftTransferError::TokenMismatched);
-        }
-        Ok(Self {
+        let token_uris = if token_uris.is_empty() {
+            None
+        } else {
+            Some(token_uris)
+        };
+        let token_data = if token_data.is_empty() {
+            None
+        } else {
+            Some(token_data)
+        };
+        let memo = if memo.as_ref().is_empty() {
+            None
+        } else {
+            Some(memo)
+        };
+
+        let packet_data = Self {
             class_id,
             class_uri,
             class_data,
@@ -73,7 +82,33 @@ impl PacketData {
             sender,
             receiver,
             memo,
-        })
+        };
+
+        packet_data.validate_basic()?;
+
+        Ok(packet_data)
+    }
+
+    /// Performs the basic validation of the packet data fields.
+    pub fn validate_basic(&self) -> Result<(), NftTransferError> {
+        if self.token_ids.0.is_empty() {
+            return Err(NftTransferError::NoTokenId);
+        }
+        let num = self.token_ids.0.len();
+        let num_uri = self
+            .token_uris
+            .as_ref()
+            .map(|t| t.len())
+            .unwrap_or_default();
+        let num_data = self
+            .token_data
+            .as_ref()
+            .map(|t| t.len())
+            .unwrap_or_default();
+        if (num_uri != 0 && num_uri != num) || (num_data != 0 && num_data != num) {
+            return Err(NftTransferError::TokenMismatched);
+        }
+        Ok(())
     }
 }
 
@@ -144,15 +179,21 @@ impl From<PacketData> for RawPacketData {
                 .iter()
                 .map(|t| t.to_string())
                 .collect(),
-            token_uris: pkt_data.token_uris.iter().map(|t| t.to_string()).collect(),
+            token_uris: pkt_data
+                .token_uris
+                .map(|uris| uris.iter().map(|t| t.to_string()).collect())
+                .unwrap_or_default(),
             token_data: pkt_data
                 .token_data
-                .iter()
-                .map(|t| BASE64_STANDARD.encode(t.to_string()))
-                .collect(),
+                .map(|data| {
+                    data.iter()
+                        .map(|t| BASE64_STANDARD.encode(t.to_string()))
+                        .collect()
+                })
+                .unwrap_or_default(),
             sender: pkt_data.sender.to_string(),
             receiver: pkt_data.receiver.to_string(),
-            memo: pkt_data.memo.to_string(),
+            memo: pkt_data.memo.map(|m| m.to_string()).unwrap_or_default(),
         }
     }
 }
@@ -167,10 +208,10 @@ mod tests {
     const DUMMY_CLASS_ID: &str = "class";
     const DUMMY_URI: &str = "http://example.com";
     const DUMMY_DATA: &str =
-        r#"{"name":{"value":"Crypto Creatures"},"image":{"value":"binary","mime":"image/png"}}"#;
+        r#"{"image":{"value":"binary","mime":"image/png"},"name":{"value":"Crypto Creatures"}}"#;
 
     impl PacketData {
-        pub fn new_dummy() -> Self {
+        pub fn new_dummy(memo: Option<&str>) -> Self {
             let address: Signer = DUMMY_ADDRESS.to_string().into();
 
             Self {
@@ -179,17 +220,17 @@ mod tests {
                 class_data: Some(ClassData::from_str(DUMMY_DATA).unwrap()),
                 token_ids: TokenIds::try_from(vec!["token_0".to_string(), "token_1".to_string()])
                     .unwrap(),
-                token_uris: vec![
+                token_uris: Some(vec![
                     TokenUri::from_str(DUMMY_URI).unwrap(),
                     TokenUri::from_str(DUMMY_URI).unwrap(),
-                ],
-                token_data: vec![
+                ]),
+                token_data: Some(vec![
                     TokenData::from_str(DUMMY_DATA).unwrap(),
                     TokenData::from_str(DUMMY_DATA).unwrap(),
-                ],
+                ]),
                 sender: address.clone(),
                 receiver: address,
-                memo: "".to_string().into(),
+                memo: memo.map(|m| m.to_string().into()),
             }
         }
 
@@ -201,11 +242,11 @@ mod tests {
                 class_uri: None,
                 class_data: None,
                 token_ids: TokenIds::try_from(vec!["token_0".to_string()]).unwrap(),
-                token_uris: vec![],
-                token_data: vec![],
+                token_uris: None,
+                token_data: None,
                 sender: address.clone(),
                 receiver: address,
-                memo: "".to_string().into(),
+                memo: None,
             }
         }
 
@@ -216,6 +257,17 @@ mod tests {
 
         pub fn deser_json_assert_eq(&self, json: &str) {
             let deser: Self = serde_json::from_str(json).unwrap();
+
+            if let Some(data) = &deser.class_data {
+                assert!(data.as_ref().parse_as_ics721_data().is_ok());
+            };
+
+            if let Some(token_data) = &deser.token_data {
+                for data in token_data.iter() {
+                    assert!(data.as_ref().parse_as_ics721_data().is_ok());
+                }
+            }
+
             assert_eq!(&deser, self);
         }
     }
@@ -224,8 +276,12 @@ mod tests {
         r#"{"classId":"class","tokenIds":["token_0"],"sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng"}"#
     }
 
+    fn dummy_min_json_packet_data_with_null() -> &'static str {
+        r#"{"classId":"class","classUri":null,"classData":null,"tokenIds":["token_0"],"tokenUris":null,"tokenData":null,"sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng"}"#
+    }
+
     fn dummy_json_packet_data() -> &'static str {
-        r#"{"classId":"class","classUri":"http://example.com/","classData":"eyJpbWFnZSI6eyJ2YWx1ZSI6ImJpbmFyeSIsIm1pbWUiOiJpbWFnZS9wbmcifSwibmFtZSI6eyJ2YWx1ZSI6IkNyeXB0byBDcmVhdHVyZXMifX0=","tokenIds":["token_0","token_1"],"tokenUris":["http://example.com/","http://example.com/"],"tokenData":["eyJpbWFnZSI6eyJ2YWx1ZSI6ImJpbmFyeSIsIm1pbWUiOiJpbWFnZS9wbmcifSwibmFtZSI6eyJ2YWx1ZSI6IkNyeXB0byBDcmVhdHVyZXMifX0=","eyJpbWFnZSI6eyJ2YWx1ZSI6ImJpbmFyeSIsIm1pbWUiOiJpbWFnZS9wbmcifSwibmFtZSI6eyJ2YWx1ZSI6IkNyeXB0byBDcmVhdHVyZXMifX0="],"sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","memo":""}"#
+        r#"{"classId":"class","classUri":"http://example.com/","classData":"eyJpbWFnZSI6eyJ2YWx1ZSI6ImJpbmFyeSIsIm1pbWUiOiJpbWFnZS9wbmcifSwibmFtZSI6eyJ2YWx1ZSI6IkNyeXB0byBDcmVhdHVyZXMifX0=","tokenIds":["token_0","token_1"],"tokenUris":["http://example.com/","http://example.com/"],"tokenData":["eyJpbWFnZSI6eyJ2YWx1ZSI6ImJpbmFyeSIsIm1pbWUiOiJpbWFnZS9wbmcifSwibmFtZSI6eyJ2YWx1ZSI6IkNyeXB0byBDcmVhdHVyZXMifX0=","eyJpbWFnZSI6eyJ2YWx1ZSI6ImJpbmFyeSIsIm1pbWUiOiJpbWFnZS9wbmcifSwibmFtZSI6eyJ2YWx1ZSI6IkNyeXB0byBDcmVhdHVyZXMifX0="],"sender":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","receiver":"cosmos1wxeyh7zgn4tctjzs0vtqpc6p5cxq5t2muzl7ng","memo":"memo"}"#
     }
 
     fn dummy_json_packet_data_without_memo() -> &'static str {
@@ -236,16 +292,17 @@ mod tests {
     /// `RawPacketData` and then serializing that.
     #[test]
     fn test_packet_data_ser() {
-        PacketData::new_dummy().ser_json_assert_eq(dummy_json_packet_data());
+        PacketData::new_dummy(Some("memo")).ser_json_assert_eq(dummy_json_packet_data());
     }
 
     /// Ensures `PacketData` properly decodes from JSON by first deserializing to a
     /// `RawPacketData` and then converting from that.
     #[test]
     fn test_packet_data_deser() {
-        PacketData::new_dummy().deser_json_assert_eq(dummy_json_packet_data());
-        PacketData::new_dummy().deser_json_assert_eq(dummy_json_packet_data_without_memo());
+        PacketData::new_dummy(Some("memo")).deser_json_assert_eq(dummy_json_packet_data());
+        PacketData::new_dummy(None).deser_json_assert_eq(dummy_json_packet_data_without_memo());
         PacketData::new_min_dummy().deser_json_assert_eq(dummy_min_json_packet_data());
+        PacketData::new_min_dummy().deser_json_assert_eq(dummy_min_json_packet_data_with_null());
     }
 
     #[test]

@@ -17,10 +17,10 @@ pub trait NftContext {
     fn get_id(&self) -> &TokenId;
 
     /// Get the token URI
-    fn get_uri(&self) -> &TokenUri;
+    fn get_uri(&self) -> Option<&TokenUri>;
 
     /// Get the token Data
-    fn get_data(&self) -> &TokenData;
+    fn get_data(&self) -> Option<&TokenData>;
 }
 
 pub trait NftClassContext {
@@ -28,10 +28,10 @@ pub trait NftClassContext {
     fn get_id(&self) -> &ClassId;
 
     /// Get the class URI
-    fn get_uri(&self) -> &ClassUri;
+    fn get_uri(&self) -> Option<&ClassUri>;
 
     /// Get the class Data
-    fn get_data(&self) -> &ClassData;
+    fn get_data(&self) -> Option<&ClassData>;
 }
 
 /// Read-only methods required in NFT transfer validation context.
@@ -50,11 +50,18 @@ pub trait NftTransferValidationContext {
     fn can_receive_nft(&self) -> Result<(), NftTransferError>;
 
     /// Validates that the NFT can be created or updated successfully.
+    ///
+    /// Note: some existing ICS-721 implementations may not strictly adhere to
+    /// the ICS-721 class data structure. The
+    /// [`ClassData`] associated with this
+    /// implementation can take any valid JSON format. If your project requires
+    /// ICS-721 format for the `ClassData`, ensure correctness by checking with
+    /// [`parse_as_ics721_data()`](crate::types::Data::parse_as_ics721_data).
     fn create_or_update_class_validate(
         &self,
         class_id: &PrefixedClassId,
-        class_uri: &ClassUri,
-        class_data: &ClassData,
+        class_uri: Option<&ClassUri>,
+        class_data: Option<&ClassData>,
     ) -> Result<(), NftTransferError>;
 
     /// Validates that the tokens can be escrowed successfully.
@@ -83,13 +90,20 @@ pub trait NftTransferValidationContext {
     ) -> Result<(), NftTransferError>;
 
     /// Validates the receiver account and the NFT input
+    ///
+    /// Note: some existing ICS-721 implementations may not strictly adhere to
+    /// the ICS-721 token data structure. The
+    /// [`TokenData`] associated with this
+    /// implementation can take any valid JSON format. If your project requires
+    /// ICS-721 format for `TokenData`, ensure correctness by checking with
+    /// [`parse_as_ics721_data()`](crate::types::Data::parse_as_ics721_data).
     fn mint_nft_validate(
         &self,
         account: &Self::AccountId,
         class_id: &PrefixedClassId,
         token_id: &TokenId,
-        token_uri: &TokenUri,
-        token_data: &TokenData,
+        token_uri: Option<&TokenUri>,
+        token_data: Option<&TokenData>,
     ) -> Result<(), NftTransferError>;
 
     /// Validates the sender account and the coin input before burning.
@@ -133,8 +147,8 @@ pub trait NftTransferExecutionContext: NftTransferValidationContext {
     fn create_or_update_class_execute(
         &self,
         class_id: &PrefixedClassId,
-        class_uri: &ClassUri,
-        class_data: &ClassData,
+        class_uri: Option<&ClassUri>,
+        class_data: Option<&ClassData>,
     ) -> Result<(), NftTransferError>;
 
     /// Executes the escrow of the NFT in a user account.
@@ -167,8 +181,8 @@ pub trait NftTransferExecutionContext: NftTransferValidationContext {
         account: &Self::AccountId,
         class_id: &PrefixedClassId,
         token_id: &TokenId,
-        token_uri: &TokenUri,
-        token_data: &TokenData,
+        token_uri: Option<&TokenUri>,
+        token_data: Option<&TokenData>,
     ) -> Result<(), NftTransferError>;
 
     /// Executes burning of the NFT in a user account.

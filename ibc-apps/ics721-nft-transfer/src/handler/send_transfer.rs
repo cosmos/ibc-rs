@@ -67,8 +67,12 @@ where
     let class_id = &packet_data.class_id;
     let token_ids = &packet_data.token_ids;
     // overwrite even if they are set in MsgTransfer
-    packet_data.token_uris.clear();
-    packet_data.token_data.clear();
+    if let Some(uris) = &mut packet_data.token_uris {
+        uris.clear();
+    }
+    if let Some(data) = &mut packet_data.token_data {
+        data.clear();
+    }
     for token_id in token_ids.as_ref() {
         if is_sender_chain_source(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone(), class_id) {
             transfer_ctx.escrow_nft_validate(
@@ -77,19 +81,35 @@ where
                 &msg.chan_id_on_a,
                 class_id,
                 token_id,
-                &packet_data.memo,
+                &packet_data.memo.clone().unwrap_or_default(),
             )?;
         } else {
-            transfer_ctx.burn_nft_validate(&sender, class_id, token_id, &packet_data.memo)?;
+            transfer_ctx.burn_nft_validate(
+                &sender,
+                class_id,
+                token_id,
+                &packet_data.memo.clone().unwrap_or_default(),
+            )?;
         }
         let nft = transfer_ctx.get_nft(class_id, token_id)?;
-        packet_data.token_uris.push(nft.get_uri().clone());
-        packet_data.token_data.push(nft.get_data().clone());
+        // Set the URI and the data if both exists
+        if let (Some(uri), Some(data)) = (nft.get_uri(), nft.get_data()) {
+            match &mut packet_data.token_uris {
+                Some(uris) => uris.push(uri.clone()),
+                None => packet_data.token_uris = Some(vec![uri.clone()]),
+            }
+            match &mut packet_data.token_data {
+                Some(token_data) => token_data.push(data.clone()),
+                None => packet_data.token_data = Some(vec![data.clone()]),
+            }
+        }
     }
 
+    packet_data.validate_basic()?;
+
     let nft_class = transfer_ctx.get_nft_class(class_id)?;
-    packet_data.class_uri = Some(nft_class.get_uri().clone());
-    packet_data.class_data = Some(nft_class.get_data().clone());
+    packet_data.class_uri = nft_class.get_uri().cloned();
+    packet_data.class_data = nft_class.get_data().cloned();
 
     let packet = {
         let data = serde_json::to_vec(&packet_data)
@@ -150,8 +170,12 @@ where
     let class_id = &packet_data.class_id;
     let token_ids = &packet_data.token_ids;
     // overwrite even if they are set in MsgTransfer
-    packet_data.token_uris.clear();
-    packet_data.token_data.clear();
+    if let Some(uris) = &mut packet_data.token_uris {
+        uris.clear();
+    }
+    if let Some(data) = &mut packet_data.token_data {
+        data.clear();
+    }
     for token_id in token_ids.as_ref() {
         if is_sender_chain_source(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone(), class_id) {
             transfer_ctx.escrow_nft_execute(
@@ -160,19 +184,33 @@ where
                 &msg.chan_id_on_a,
                 class_id,
                 token_id,
-                &packet_data.memo,
+                &packet_data.memo.clone().unwrap_or_default(),
             )?;
         } else {
-            transfer_ctx.burn_nft_execute(&sender, class_id, token_id, &packet_data.memo)?;
+            transfer_ctx.burn_nft_execute(
+                &sender,
+                class_id,
+                token_id,
+                &packet_data.memo.clone().unwrap_or_default(),
+            )?;
         }
         let nft = transfer_ctx.get_nft(class_id, token_id)?;
-        packet_data.token_uris.push(nft.get_uri().clone());
-        packet_data.token_data.push(nft.get_data().clone());
+        // Set the URI and the data if both exists
+        if let (Some(uri), Some(data)) = (nft.get_uri(), nft.get_data()) {
+            match &mut packet_data.token_uris {
+                Some(uris) => uris.push(uri.clone()),
+                None => packet_data.token_uris = Some(vec![uri.clone()]),
+            }
+            match &mut packet_data.token_data {
+                Some(token_data) => token_data.push(data.clone()),
+                None => packet_data.token_data = Some(vec![data.clone()]),
+            }
+        }
     }
 
     let nft_class = transfer_ctx.get_nft_class(class_id)?;
-    packet_data.class_uri = Some(nft_class.get_uri().clone());
-    packet_data.class_data = Some(nft_class.get_data().clone());
+    packet_data.class_uri = nft_class.get_uri().cloned();
+    packet_data.class_data = nft_class.get_data().cloned();
 
     let packet = {
         let data = {
@@ -204,7 +242,7 @@ where
             receiver: packet_data.receiver,
             class: packet_data.class_id,
             tokens: packet_data.token_ids,
-            memo: packet_data.memo,
+            memo: packet_data.memo.unwrap_or_default(),
         };
         send_packet_ctx_a.emit_ibc_event(ModuleEvent::from(transfer_event).into())?;
 

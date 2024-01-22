@@ -66,6 +66,12 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
             return Err(ContextError::from(PacketError::MissingTimeout))?;
         }
 
+        let memo = if raw_msg.memo.is_empty() {
+            None
+        } else {
+            Some(raw_msg.memo.into())
+        };
+
         Ok(MsgTransfer {
             port_id_on_a: raw_msg.source_port.parse()?,
             chan_id_on_a: raw_msg.source_channel.parse()?,
@@ -74,11 +80,11 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
                 class_uri: None,
                 class_data: None,
                 token_ids: raw_msg.token_ids.try_into()?,
-                token_uris: vec![],
-                token_data: vec![],
+                token_uris: None,
+                token_data: None,
                 sender: raw_msg.sender.into(),
                 receiver: raw_msg.receiver.into(),
-                memo: raw_msg.memo.into(),
+                memo,
             },
             timeout_height_on_b,
             timeout_timestamp_on_b,
@@ -103,7 +109,11 @@ impl From<MsgTransfer> for RawMsgTransfer {
             receiver: domain_msg.packet_data.receiver.to_string(),
             timeout_height: domain_msg.timeout_height_on_b.into(),
             timeout_timestamp: domain_msg.timeout_timestamp_on_b.nanoseconds(),
-            memo: domain_msg.packet_data.memo.to_string(),
+            memo: domain_msg
+                .packet_data
+                .memo
+                .map(|m| m.to_string())
+                .unwrap_or_default(),
         }
     }
 }

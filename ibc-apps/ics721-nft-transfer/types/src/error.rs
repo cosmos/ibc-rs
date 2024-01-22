@@ -46,10 +46,12 @@ pub enum NftTransferError {
     InvalidTokenId,
     /// duplicated token IDs
     DuplicatedTokenIds,
-    /// invalid token ID
+    /// The length of token IDs mismatched that of token URIs or token data
     TokenMismatched,
     /// invalid json data
     InvalidJsonData,
+    /// the data is not in the JSON format specified by ICS-721
+    InvalidIcs721Data,
     /// expected `{expect_order}` channel, got `{got_order}`
     ChannelNotUnordered {
         expect_order: Order,

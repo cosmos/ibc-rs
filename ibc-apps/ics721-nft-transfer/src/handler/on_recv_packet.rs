@@ -81,13 +81,10 @@ where
             events: vec![],
             log: Vec::new(),
         };
-        for ((token_id, token_uri), token_data) in data
-            .token_ids
-            .0
-            .iter()
-            .zip(data.token_uris.iter())
-            .zip(data.token_data.iter())
-        {
+        for (i, token_id) in data.token_ids.0.iter().enumerate() {
+            let token_uri = data.token_uris.as_ref().and_then(|uris| uris.get(i));
+            let token_data = data.token_data.as_ref().and_then(|data| data.get(i));
+
             let trace_event = TokenTraceEvent {
                 trace_hash: ctx_b.token_hash_string(&class_id, token_id),
                 class: class_id.clone(),
@@ -98,19 +95,19 @@ where
             // Note: the validation is called before the execution.
             // Refer to ICS-20 `process_recv_packet_execute()`.
 
-            let class_uri = data
-                .class_uri
-                .as_ref()
-                .ok_or((ModuleExtras::empty(), NftTransferError::NftClassNotFound))?;
-            let class_data = data
-                .class_data
-                .as_ref()
-                .ok_or((ModuleExtras::empty(), NftTransferError::NftClassNotFound))?;
             ctx_b
-                .create_or_update_class_validate(&class_id, class_uri, class_data)
+                .create_or_update_class_validate(
+                    &class_id,
+                    data.class_uri.as_ref(),
+                    data.class_data.as_ref(),
+                )
                 .map_err(|nft_error| (ModuleExtras::empty(), nft_error))?;
             ctx_b
-                .create_or_update_class_execute(&class_id, class_uri, class_data)
+                .create_or_update_class_execute(
+                    &class_id,
+                    data.class_uri.as_ref(),
+                    data.class_data.as_ref(),
+                )
                 .map_err(|nft_error| (ModuleExtras::empty(), nft_error))?;
 
             ctx_b

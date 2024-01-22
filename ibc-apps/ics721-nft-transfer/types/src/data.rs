@@ -2,6 +2,8 @@
 use core::fmt::{self, Display, Formatter};
 use core::str::FromStr;
 
+use base64::prelude::BASE64_STANDARD;
+use base64::Engine;
 use ibc_core::primitives::prelude::*;
 use mime::Mime;
 
@@ -19,10 +21,78 @@ use crate::error::NftTransferError;
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(Clone, Debug, Default, PartialEq, Eq, derive_more::From)]
+pub struct Data(String);
+
+impl Data {
+    /// Parses the data in the format specified by ICS-721.
+    pub fn parse_as_ics721_data(&self) -> Result<Ics721Data, NftTransferError> {
+        self.0.parse::<Ics721Data>()
+    }
+}
+
+impl Display for Data {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl FromStr for Data {
+    type Err = NftTransferError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(s.to_string()))
+    }
+}
+
+impl serde::Serialize for Data {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&BASE64_STANDARD.encode(&self.0))
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for Data {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let encoded = String::deserialize(deserializer)?;
+        let decoded = BASE64_STANDARD
+            .decode(encoded)
+            .map_err(serde::de::Error::custom)?;
+        let decoded_str = String::from_utf8(decoded).map_err(serde::de::Error::custom)?;
+        Ok(Data(decoded_str))
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Data(BTreeMap<String, DataValue>);
+pub struct Ics721Data(BTreeMap<String, DataValue>);
+
+impl FromStr for Ics721Data {
+    type Err = NftTransferError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        serde_json::from_str(s).map_err(|_| NftTransferError::InvalidIcs721Data)
+    }
+}
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct DataValue {
@@ -166,23 +236,6 @@ impl schemars::JsonSchema for DataValue {
 
     fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
         gen.subschema_for::<Self>()
-    }
-}
-
-impl Display for Data {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", serde_json::to_string(&self.0).expect("infallible"))
-    }
-}
-
-impl FromStr for Data {
-    type Err = NftTransferError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let data: BTreeMap<String, DataValue> =
-            serde_json::from_str(s).map_err(|_| NftTransferError::InvalidJsonData)?;
-
-        Ok(Self(data))
     }
 }
 
