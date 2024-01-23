@@ -89,6 +89,16 @@ impl Height {
     pub fn decrement(&self) -> Result<Height, ClientError> {
         self.sub(1)
     }
+
+    pub fn since(&self, other: Height) -> Option<i64> {
+        if self.revision_number != other.revision_number
+            || self.revision_height < other.revision_height
+        {
+            return None;
+        }
+
+        Some((self.revision_height - other.revision_height) as i64)
+    }
 }
 
 impl PartialOrd for Height {
