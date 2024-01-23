@@ -94,7 +94,6 @@ fn send_packet_processing() {
                 .clone()
                 .with_client_config(
                     MockClientConfig::builder()
-                        .client_id(ClientId::default())
                         .client_state_height(client_height)
                         .build(),
                 )
@@ -114,7 +113,6 @@ fn send_packet_processing() {
                 .clone()
                 .with_client_config(
                     MockClientConfig::builder()
-                        .client_id(ClientId::default())
                         .client_state_height(client_height)
                         .build(),
                 )
@@ -134,7 +132,6 @@ fn send_packet_processing() {
                 .clone()
                 .with_client_config(
                     MockClientConfig::builder()
-                        .client_id(ClientId::default())
                         .client_state_height(client_height)
                         .build(),
                 )
@@ -153,7 +150,6 @@ fn send_packet_processing() {
             ctx: context
                 .with_client_config(
                     MockClientConfig::builder()
-                        .client_id(ClientId::default())
                         .client_state_height(client_height)
                         .build(),
                 )

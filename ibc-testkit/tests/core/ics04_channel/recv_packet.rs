@@ -116,7 +116,6 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
     let mut context = context
         .with_client_config(
             MockClientConfig::builder()
-                .client_id(ClientId::default())
                 .client_state_height(client_height)
                 .build(),
         )
@@ -202,7 +201,6 @@ fn recv_packet_timeout_expired(fixture: Fixture) {
     let context = context
         .with_client_config(
             MockClientConfig::builder()
-                .client_id(ClientId::default())
                 .client_state_height(client_height)
                 .build(),
         )
@@ -233,7 +231,6 @@ fn recv_packet_execute_happy_path(fixture: Fixture) {
     let mut ctx = context
         .with_client_config(
             MockClientConfig::builder()
-                .client_id(ClientId::default())
                 .client_state_height(client_height)
                 .build(),
         )
