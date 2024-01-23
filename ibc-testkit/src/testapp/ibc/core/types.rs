@@ -450,21 +450,25 @@ impl MockContext {
             client.consensus_state_heights
         };
 
+        fn blocks_since(a: Height, b: Height) -> Option<u64> {
+            (a.revision_number() != b.revision_number()
+                || a.revision_height() < b.revision_height())
+            .then(|| a.revision_height() - b.revision_height())
+        }
+
         let (client_state, consensus_states) = match client.client_type.as_str() {
             MOCK_CLIENT_TYPE => {
                 let blocks: Vec<_> = cs_heights
                     .into_iter()
                     .map(|cs_height| {
-                        let height_delta = client
-                            .latest_height
-                            .since(cs_height)
+                        let n_blocks = blocks_since(client.latest_height, cs_height)
                             .expect("less or equal height");
                         (
                             cs_height,
                             MockHeader::new(cs_height).with_timestamp(
                                 client
                                     .latest_timestamp
-                                    .sub(self.block_time * (height_delta as u32))
+                                    .sub(self.block_time * (n_blocks as u32))
                                     .expect("never fails"),
                             ),
                         )
@@ -486,9 +490,7 @@ impl MockContext {
                 let blocks: Vec<_> = cs_heights
                     .into_iter()
                     .map(|cs_height| {
-                        let height_delta = client
-                            .latest_height
-                            .since(cs_height)
+                        let n_blocks = blocks_since(client.latest_height, cs_height)
                             .expect("less or equal height");
                         (
                             cs_height,
@@ -497,7 +499,7 @@ impl MockContext {
                                 cs_height.revision_height(),
                                 client
                                     .latest_timestamp
-                                    .sub(self.block_time * (height_delta as u32))
+                                    .sub(self.block_time * (n_blocks as u32))
                                     .expect("never fails"),
                             ),
                         )
