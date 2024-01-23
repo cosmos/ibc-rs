@@ -130,7 +130,7 @@ pub struct MockClientConfig {
     client_id: ClientId,
     #[builder(default = mock_client_type())]
     client_type: ClientType,
-    client_state_height: Height,
+    latest_height: Height,
     #[builder(default)]
     consensus_state_heights: Vec<Height>,
     #[builder(default = Timestamp::now())]
