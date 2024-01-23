@@ -452,9 +452,21 @@ impl MockContext {
 
         let (client_state, consensus_states) = match client.client_type.as_str() {
             MOCK_CLIENT_TYPE => {
+                let n_blocks = cs_heights.len();
                 let blocks: Vec<_> = cs_heights
                     .into_iter()
-                    .map(|cs_height| (cs_height, MockHeader::new(cs_height)))
+                    .enumerate()
+                    .map(|(i, cs_height)| {
+                        (
+                            cs_height,
+                            MockHeader::new(cs_height).with_timestamp(
+                                client
+                                    .latest_timestamp
+                                    .sub(self.block_time * ((n_blocks - 1 - i) as u32))
+                                    .expect("never fails"),
+                            ),
+                        )
+                    })
                     .collect();
 
                 let client_state = MockClientState::new(blocks.last().expect("never fails").1);
