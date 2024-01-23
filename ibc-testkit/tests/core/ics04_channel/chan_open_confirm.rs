@@ -131,14 +131,16 @@ fn chan_open_confirm_execute_happy_path(fixture: Fixture) {
 
     assert!(res.is_ok(), "Execution happy path");
 
-    assert_eq!(context.events.len(), 2);
+    let ibc_events = context.get_events();
+
+    assert_eq!(ibc_events.len(), 2);
 
     assert!(matches!(
-        context.events[0],
+        ibc_events[0],
         IbcEvent::Message(MessageEvent::Channel)
     ));
 
-    assert!(matches!(context.events[1], IbcEvent::OpenConfirmChannel(_)));
+    assert!(matches!(ibc_events[1], IbcEvent::OpenConfirmChannel(_)));
 }
 
 #[rstest]

@@ -123,12 +123,14 @@ fn test_chan_close_init_execute() {
 
     assert!(res.is_ok(), "Execution happy path");
 
-    assert_eq!(context.events.len(), 2);
+    let ibc_events = context.get_events();
+
+    assert_eq!(ibc_events.len(), 2);
 
     assert!(matches!(
-        context.events[0],
+        ibc_events[0],
         IbcEvent::Message(MessageEvent::Channel)
     ));
 
-    assert!(matches!(context.events[1], IbcEvent::CloseInitChannel(_)));
+    assert!(matches!(ibc_events[1], IbcEvent::CloseInitChannel(_)));
 }

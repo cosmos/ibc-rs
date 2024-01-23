@@ -21,6 +21,7 @@ members = [
     "ibc-core",
     "ibc-clients/ics07-tendermint/types",
     "ibc-clients/ics07-tendermint",
+    "ibc-clients/ics08-wasm/types",
     "ibc-clients",
     "ibc-apps/ics20-transfer/types",
     "ibc-apps/ics20-transfer",
@@ -87,6 +88,7 @@ ibc-core-host-types         = { version = "0.49.1", path = "./ibc-core/ics24-hos
 ibc-core-handler-types      = { version = "0.49.1", path = "./ibc-core/ics25-handler/types", default-features = false }
 ibc-core-router-types       = { version = "0.49.1", path = "./ibc-core/ics26-routing/types", default-features = false }
 ibc-client-tendermint-types = { version = "0.49.1", path = "./ibc-clients/ics07-tendermint/types", default-features = false }
+ibc-client-wasm-types       = { version = "0.49.1", path = "./ibc-clients/ics08-wasm/types", default-features = false }
 ibc-app-transfer-types      = { version = "0.49.1", path = "./ibc-apps/ics20-transfer/types", default-features = false }
 ibc-app-nft-transfer-types  = { version = "0.49.1", path = "./ibc-apps/ics721-nft-transfer/types", default-features = false }
 

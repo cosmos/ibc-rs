@@ -14,8 +14,8 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::ZERO_DURATION;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_ack;
+use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
-use ibc_testkit::hosts::block::HostType;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
 use test_log::test;
@@ -38,7 +38,6 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
     // Parametrize the host chain to have a height at least as recent as the
     // the height of the proofs in the Ack msg.
     let latest_height = proof_height.increment();
-    let max_history_size = 5;
 
     // A connection end that will exercise the successful path.
     let default_conn_end = ConnectionEnd::new(
@@ -59,12 +58,10 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
     conn_end_open.set_state(State::Open); // incorrect field
 
     let ctx_default = MockContext::default();
-    let ctx_new = MockContext::new(
-        ChainId::new(&format!("mockgaia-{}", latest_height.revision_number())).unwrap(),
-        HostType::Mock,
-        max_history_size,
-        latest_height,
-    );
+    let ctx_new = MockContextConfig::builder()
+        .host_id(ChainId::new(&format!("mockgaia-{}", latest_height.revision_number())).unwrap())
+        .latest_height(latest_height)
+        .build();
     let ctx = match ctx {
         Ctx::New => ctx_new,
         Ctx::NewWithConnection => ctx_new
@@ -130,14 +127,15 @@ fn conn_open_ack_execute(fxt: &mut Fixture<MsgConnectionOpenAck>, expect: Expect
             assert!(res.is_err(), "{err_msg}");
         }
         Expect::Success => {
+            let ibc_events = fxt.ctx.get_events();
             assert!(res.is_ok(), "{err_msg}");
-            assert_eq!(fxt.ctx.events.len(), 2);
+            assert_eq!(ibc_events.len(), 2);
 
             assert!(matches!(
-                fxt.ctx.events[0],
+                ibc_events[0],
                 IbcEvent::Message(MessageEvent::Connection)
             ));
-            let event = &fxt.ctx.events[1];
+            let event = &ibc_events[1];
             assert!(matches!(event, &IbcEvent::OpenAckConnection(_)));
 
             let conn_open_try_event = match event {
