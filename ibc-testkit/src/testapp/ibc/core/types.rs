@@ -452,24 +452,29 @@ impl MockContext {
 
         let (client_state, consensus_states) = match client.client_type.as_str() {
             MOCK_CLIENT_TYPE => {
-                let n_blocks = cs_heights.len();
                 let blocks: Vec<_> = cs_heights
                     .into_iter()
-                    .enumerate()
-                    .map(|(i, cs_height)| {
+                    .map(|cs_height| {
+                        let height_delta = client
+                            .client_state_height
+                            .since(cs_height)
+                            .expect("less or equal height");
                         (
                             cs_height,
                             MockHeader::new(cs_height).with_timestamp(
                                 client
                                     .latest_timestamp
-                                    .sub(self.block_time * ((n_blocks - 1 - i) as u32))
+                                    .sub(self.block_time * (height_delta as u32))
                                     .expect("never fails"),
                             ),
                         )
                     })
                     .collect();
 
-                let client_state = MockClientState::new(blocks.last().expect("never fails").1);
+                let client_state = MockClientState::new(
+                    MockHeader::new(client.client_state_height)
+                        .with_timestamp(client.latest_timestamp),
+                );
 
                 let cs_states = blocks
                     .into_iter()
@@ -479,11 +484,13 @@ impl MockContext {
                 (client_state.into(), cs_states)
             }
             TENDERMINT_CLIENT_TYPE => {
-                let n_blocks = cs_heights.len();
                 let blocks: Vec<_> = cs_heights
                     .into_iter()
-                    .enumerate()
-                    .map(|(i, cs_height)| {
+                    .map(|cs_height| {
+                        let height_delta = client
+                            .client_state_height
+                            .since(cs_height)
+                            .expect("less or equal height");
                         (
                             cs_height,
                             HostBlock::generate_tm_block(
@@ -491,7 +498,7 @@ impl MockContext {
                                 cs_height.revision_height(),
                                 client
                                     .latest_timestamp
-                                    .sub(self.block_time * ((n_blocks - 1 - i) as u32))
+                                    .sub(self.block_time * (height_delta as u32))
                                     .expect("never fails"),
                             ),
                         )
