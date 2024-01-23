@@ -26,13 +26,10 @@ use ibc::core::primitives::Timestamp;
 use ibc::core::router::router::Router;
 use parking_lot::Mutex;
 use tendermint_testgen::Validator as TestgenValidator;
-use tracing::debug;
 use typed_builder::TypedBuilder;
 
 use super::client_ctx::{MockClientRecord, PortChannelIdMap};
-use crate::fixtures::clients::tendermint::{
-    dummy_tm_client_state_from_header, ClientStateConfig as TmClientStateConfig,
-};
+use crate::fixtures::clients::tendermint::ClientStateConfig as TmClientStateConfig;
 use crate::fixtures::core::context::MockContextConfig;
 use crate::hosts::block::{HostBlock, HostType};
 use crate::relayer::error::RelayerError;
@@ -127,6 +124,7 @@ pub struct MockContext {
 
 #[derive(Debug, TypedBuilder)]
 pub struct MockClientConfig {
+    #[builder(default = ChainId::new("mockZ-1").expect("no error"))]
     client_chain_id: ChainId,
     client_id: ClientId,
     #[builder(default = mock_client_type())]
@@ -138,9 +136,11 @@ pub struct MockClientConfig {
     latest_timestamp: Timestamp,
 
     #[builder(default = Duration::from_secs(64000))]
-    pub trusting_period: Duration,
+    trusting_period: Duration,
     #[builder(default = Duration::from_millis(3000))]
     max_clock_drift: Duration,
+    #[builder(default = Duration::from_secs(128000))]
+    unbonding_period: Duration,
 }
 
 /// Returns a MockContext with bare minimum initialization: no clients, no connections and no channels are
@@ -308,8 +308,25 @@ impl MockContext {
     /// Given a client id and a height, registers a new client in the context and also associates
     /// to this client a mock client state and a mock consensus state for height `height`. The type
     /// of this client is implicitly assumed to be Mock.
+    #[deprecated(
+        since = "0.49.2",
+        note = "Please use `MockClientConfig::builder().build()` instead"
+    )]
     pub fn with_client(self, client_id: &ClientId, height: Height) -> Self {
-        self.with_client_parametrized(client_id, height, Some(mock_client_type()), Some(height))
+        // NOTE: this is wrong; the client chain ID is supposed to represent
+        // the chain ID of the counterparty chain. But at this point this is
+        // too ingrained in our tests; `with_client()` is called everywhere,
+        // which delegates to this.
+        let client_chain_id = self.host_chain_id.clone();
+
+        self.with_client_config(
+            MockClientConfig::builder()
+                .client_chain_id(client_chain_id)
+                .client_id(client_id.clone())
+                .client_state_height(height)
+                .client_type(mock_client_type())
+                .build(),
+        )
     }
 
     /// Similar to `with_client`, this function associates a client record to this context, but
@@ -317,6 +334,10 @@ impl MockContext {
     /// then the client will have type Mock, otherwise the specified type. If
     /// `consensus_state_height` is None, then the client will be initialized with a consensus
     /// state matching the same height as the client state (`client_state_height`).
+    #[deprecated(
+        since = "0.49.2",
+        note = "Please use `MockClientConfig::builder().build()` instead"
+    )]
     pub fn with_client_parametrized(
         self,
         client_id: &ClientId,
@@ -330,15 +351,23 @@ impl MockContext {
         // which delegates to this.
         let client_chain_id = self.host_chain_id.clone();
 
-        self.with_client_parametrized_with_chain_id(
-            client_chain_id,
-            client_id,
-            client_state_height,
-            client_type,
-            consensus_state_height,
+        self.with_client_config(
+            MockClientConfig::builder()
+                .client_chain_id(client_chain_id)
+                .client_id(client_id.clone())
+                .client_state_height(client_state_height)
+                .client_type(client_type.unwrap_or_else(mock_client_type))
+                .consensus_state_heights(
+                    vec![consensus_state_height.unwrap_or(client_state_height)],
+                )
+                .build(),
         )
     }
 
+    #[deprecated(
+        since = "0.49.2",
+        note = "Please use `MockClientConfig::builder().build()` instead"
+    )]
     pub fn with_client_parametrized_with_chain_id(
         self,
         client_chain_id: ChainId,
@@ -347,50 +376,23 @@ impl MockContext {
         client_type: Option<ClientType>,
         consensus_state_height: Option<Height>,
     ) -> Self {
-        let cs_height = consensus_state_height.unwrap_or(client_state_height);
-
-        let client_type = client_type.unwrap_or_else(mock_client_type);
-        let (client_state, consensus_state) = if client_type.as_str() == MOCK_CLIENT_TYPE {
-            (
-                Some(
-                    MockClientState::new(
-                        MockHeader::new(client_state_height).with_current_timestamp(),
-                    )
-                    .into(),
-                ),
-                MockConsensusState::new(MockHeader::new(cs_height).with_current_timestamp()).into(),
-            )
-        } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
-            let light_block = HostBlock::generate_tm_block(
-                client_chain_id,
-                cs_height.revision_height(),
-                Timestamp::now(),
-            );
-
-            let client_state =
-                dummy_tm_client_state_from_header(light_block.header().clone()).into();
-
-            // Return the tuple.
-            (Some(client_state), light_block.into())
-        } else {
-            panic!("unknown client type")
-        };
-        // If it's a mock client, create the corresponding mock states.
-        let consensus_states = vec![(cs_height, consensus_state)].into_iter().collect();
-
-        debug!("consensus states: {:?}", consensus_states);
-
-        let client_record = MockClientRecord {
-            client_state,
-            consensus_states,
-        };
-        self.ibc_store
-            .lock()
-            .clients
-            .insert(client_id.clone(), client_record);
-        self
+        self.with_client_config(
+            MockClientConfig::builder()
+                .client_chain_id(client_chain_id)
+                .client_id(client_id.clone())
+                .client_state_height(client_state_height)
+                .client_type(client_type.unwrap_or_else(mock_client_type))
+                .consensus_state_heights(
+                    vec![consensus_state_height.unwrap_or(client_state_height)],
+                )
+                .build(),
+        )
     }
 
+    #[deprecated(
+        since = "0.49.2",
+        note = "Please use `MockClientConfig::builder().build()` instead"
+    )]
     pub fn with_client_parametrized_history(
         self,
         client_id: &ClientId,
@@ -399,15 +401,25 @@ impl MockContext {
         consensus_state_height: Option<Height>,
     ) -> Self {
         let client_chain_id = self.host_chain_id.clone();
-        self.with_client_parametrized_history_with_chain_id(
-            client_chain_id,
-            client_id,
-            client_state_height,
-            client_type,
-            consensus_state_height,
+        let current_consensus_height = consensus_state_height.unwrap_or(client_state_height);
+        let prev_consensus_height = current_consensus_height
+            .sub(1)
+            .unwrap_or(client_state_height);
+        self.with_client_config(
+            MockClientConfig::builder()
+                .client_chain_id(client_chain_id)
+                .client_id(client_id.clone())
+                .client_state_height(client_state_height)
+                .client_type(client_type.unwrap_or_else(mock_client_type))
+                .consensus_state_heights(vec![prev_consensus_height, current_consensus_height])
+                .build(),
         )
     }
 
+    #[deprecated(
+        since = "0.49.2",
+        note = "Please use `MockClientConfig::builder().build()` instead"
+    )]
     pub fn with_client_parametrized_history_with_chain_id(
         self,
         client_chain_id: ChainId,
@@ -416,65 +428,19 @@ impl MockContext {
         client_type: Option<ClientType>,
         consensus_state_height: Option<Height>,
     ) -> Self {
-        let cs_height = consensus_state_height.unwrap_or(client_state_height);
-        let prev_cs_height = cs_height.clone().sub(1).unwrap_or(client_state_height);
-
-        let client_type = client_type.unwrap_or_else(mock_client_type);
-        let now = Timestamp::now();
-
-        let (client_state, consensus_state): (Option<AnyClientState>, AnyConsensusState) =
-            if client_type.as_str() == MOCK_CLIENT_TYPE {
-                // If it's a mock client, create the corresponding mock states.
-                (
-                    Some(MockClientState::new(MockHeader::new(client_state_height)).into()),
-                    MockConsensusState::new(MockHeader::new(cs_height)).into(),
-                )
-            } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
-                // If it's a Tendermint client, we need TM states.
-                let light_block =
-                    HostBlock::generate_tm_block(client_chain_id, cs_height.revision_height(), now);
-
-                let client_state =
-                    dummy_tm_client_state_from_header(light_block.header().clone()).into();
-
-                // Return the tuple.
-                (Some(client_state), light_block.into())
-            } else {
-                panic!("Unknown client type")
-            };
-
-        let prev_consensus_state = if client_type.as_str() == MOCK_CLIENT_TYPE {
-            MockConsensusState::new(MockHeader::new(prev_cs_height)).into()
-        } else if client_type.as_str() == TENDERMINT_CLIENT_TYPE {
-            let light_block = HostBlock::generate_tm_block(
-                self.host_chain_id.clone(),
-                prev_cs_height.revision_height(),
-                now.sub(self.block_time).expect("Never fails"),
-            );
-            light_block.into()
-        } else {
-            panic!("Unknown client type")
-        };
-
-        let consensus_states = vec![
-            (prev_cs_height, prev_consensus_state),
-            (cs_height, consensus_state),
-        ]
-        .into_iter()
-        .collect();
-
-        debug!("consensus states: {:?}", consensus_states);
-
-        let client_record = MockClientRecord {
-            client_state,
-            consensus_states,
-        };
-
-        self.ibc_store
-            .lock()
-            .clients
-            .insert(client_id.clone(), client_record);
-        self
+        let current_consensus_height = consensus_state_height.unwrap_or(client_state_height);
+        let prev_consensus_height = current_consensus_height
+            .sub(1)
+            .unwrap_or(client_state_height);
+        self.with_client_config(
+            MockClientConfig::builder()
+                .client_chain_id(client_chain_id)
+                .client_id(client_id.clone())
+                .client_state_height(client_state_height)
+                .client_type(client_type.unwrap_or_else(mock_client_type))
+                .consensus_state_heights(vec![prev_consensus_height, current_consensus_height])
+                .build(),
+        )
     }
 
     pub fn with_client_config(self, client: MockClientConfig) -> Self {
@@ -525,6 +491,7 @@ impl MockContext {
                     .latest_height(client.client_state_height)
                     .trusting_period(client.trusting_period)
                     .max_clock_drift(client.max_clock_drift)
+                    .unbonding_period(client.unbonding_period)
                     .build()
                     .try_into()
                     .expect("never fails");
