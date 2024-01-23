@@ -819,7 +819,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
             MockClientConfig::builder()
                 .client_chain_id(chain_id_b.clone())
                 .client_id(client_id.clone())
-                .client_type(tm_client_type()) // The target host chain (B) is synthetic TM.
+                .client_type(tm_client_type())
                 .client_state_height(client_height)
                 .build(),
         );
@@ -881,7 +881,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
             MockClientConfig::builder()
                 .client_chain_id(chain_id_b.clone())
                 .client_id(client_id.clone())
-                .client_type(tm_client_type()) // The target host chain (B) is synthetic TM.
+                .client_type(tm_client_type())
                 .client_state_height(client_height)
                 .build(),
         );
