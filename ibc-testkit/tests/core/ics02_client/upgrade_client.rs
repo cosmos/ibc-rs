@@ -17,7 +17,7 @@ use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
 
 enum Ctx {
     Default,
@@ -34,9 +34,12 @@ fn msg_upgrade_client_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<Msg
     let client_id = mock_client_type().build_client_id(0);
 
     let ctx_default = MockContext::default();
-    let ctx_with_client = ctx_default
-        .clone()
-        .with_client(&client_id, Height::new(0, 42).unwrap());
+    let ctx_with_client = ctx_default.clone().with_client_config(
+        MockClientConfig::builder()
+            .client_id(client_id.clone())
+            .client_state_height(Height::new(0, 42).unwrap())
+            .build(),
+    );
     let ctx = match ctx_variant {
         Ctx::Default => ctx_default,
         Ctx::WithClient => ctx_with_client,

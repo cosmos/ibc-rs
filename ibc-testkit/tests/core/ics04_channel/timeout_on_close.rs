@@ -15,7 +15,7 @@ use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout_on_close;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
 use rstest::*;
 
 pub struct Fixture {
@@ -30,7 +30,12 @@ pub struct Fixture {
 #[fixture]
 fn fixture() -> Fixture {
     let client_height = Height::new(0, 2).unwrap();
-    let context = MockContext::default().with_client(&ClientId::default(), client_height);
+    let context = MockContext::default().with_client_config(
+        MockClientConfig::builder()
+            .client_id(ClientId::default())
+            .client_state_height(client_height)
+            .build(),
+    );
     let router = MockRouter::new_with_transfer();
 
     let height = 2;

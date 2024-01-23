@@ -14,7 +14,7 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_packet;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
 use test_log::test;
 
 #[test]
@@ -92,7 +92,12 @@ fn send_packet_processing() {
             name: "Good parameters".to_string(),
             ctx: context
                 .clone()
-                .with_client(&ClientId::default(), client_height)
+                .with_client_config(
+                    MockClientConfig::builder()
+                        .client_id(ClientId::default())
+                        .client_state_height(client_height)
+                        .build(),
+                )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                 .with_channel(
                     PortId::transfer(),
@@ -107,7 +112,12 @@ fn send_packet_processing() {
             name: "Packet timeout height same as destination chain height".to_string(),
             ctx: context
                 .clone()
-                .with_client(&ClientId::default(), client_height)
+                .with_client_config(
+                    MockClientConfig::builder()
+                        .client_id(ClientId::default())
+                        .client_state_height(client_height)
+                        .build(),
+                )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                 .with_channel(
                     PortId::transfer(),
@@ -122,7 +132,12 @@ fn send_packet_processing() {
             name: "Packet timeout height one more than destination chain height".to_string(),
             ctx: context
                 .clone()
-                .with_client(&ClientId::default(), client_height)
+                .with_client_config(
+                    MockClientConfig::builder()
+                        .client_id(ClientId::default())
+                        .client_state_height(client_height)
+                        .build(),
+                )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                 .with_channel(
                     PortId::transfer(),
@@ -136,7 +151,12 @@ fn send_packet_processing() {
         Test {
             name: "Packet timeout due to timestamp".to_string(),
             ctx: context
-                .with_client(&ClientId::default(), client_height)
+                .with_client_config(
+                    MockClientConfig::builder()
+                        .client_id(ClientId::default())
+                        .client_state_height(client_height)
+                        .build(),
+                )
                 .with_connection(ConnectionId::default(), conn_end_on_a)
                 .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_a)
                 .with_send_sequence(PortId::transfer(), ChannelId::default(), 1.into()),
