@@ -324,7 +324,6 @@ impl MockContext {
                 .client_chain_id(client_chain_id)
                 .client_id(client_id.clone())
                 .client_state_height(height)
-                .client_type(mock_client_type())
                 .build(),
         )
     }

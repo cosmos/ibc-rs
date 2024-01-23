@@ -148,7 +148,6 @@ mod tests {
                     .client_chain_id(chain_id_a)
                     .client_id(client_on_b_for_a.clone())
                     .client_state_height(client_on_b_for_a_height)
-                    .client_type(mock_client_type()) // The target host chain is mock.
                     .build(),
             );
         // dummy; not actually used in client updates
