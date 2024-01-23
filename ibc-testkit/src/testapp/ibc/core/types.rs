@@ -324,7 +324,7 @@ impl MockContext {
             MockClientConfig::builder()
                 .client_chain_id(client_chain_id)
                 .client_id(client_id.clone())
-                .client_state_height(height)
+                .latest_height(height)
                 .build(),
         )
     }
@@ -355,7 +355,7 @@ impl MockContext {
             MockClientConfig::builder()
                 .client_chain_id(client_chain_id)
                 .client_id(client_id.clone())
-                .client_state_height(client_state_height)
+                .latest_height(client_state_height)
                 .client_type(client_type.unwrap_or_else(mock_client_type))
                 .consensus_state_heights(
                     vec![consensus_state_height.unwrap_or(client_state_height)],
@@ -380,7 +380,7 @@ impl MockContext {
             MockClientConfig::builder()
                 .client_chain_id(client_chain_id)
                 .client_id(client_id.clone())
-                .client_state_height(client_state_height)
+                .latest_height(client_state_height)
                 .client_type(client_type.unwrap_or_else(mock_client_type))
                 .consensus_state_heights(
                     vec![consensus_state_height.unwrap_or(client_state_height)],
@@ -409,7 +409,7 @@ impl MockContext {
             MockClientConfig::builder()
                 .client_chain_id(client_chain_id)
                 .client_id(client_id.clone())
-                .client_state_height(client_state_height)
+                .latest_height(client_state_height)
                 .client_type(client_type.unwrap_or_else(mock_client_type))
                 .consensus_state_heights(vec![prev_consensus_height, current_consensus_height])
                 .build(),
@@ -436,7 +436,7 @@ impl MockContext {
             MockClientConfig::builder()
                 .client_chain_id(client_chain_id)
                 .client_id(client_id.clone())
-                .client_state_height(client_state_height)
+                .latest_height(client_state_height)
                 .client_type(client_type.unwrap_or_else(mock_client_type))
                 .consensus_state_heights(vec![prev_consensus_height, current_consensus_height])
                 .build(),
@@ -445,7 +445,7 @@ impl MockContext {
 
     pub fn with_client_config(self, client: MockClientConfig) -> Self {
         let cs_heights = if client.consensus_state_heights.is_empty() {
-            vec![client.client_state_height]
+            vec![client.latest_height]
         } else {
             client.consensus_state_heights
         };
@@ -456,7 +456,7 @@ impl MockContext {
                     .into_iter()
                     .map(|cs_height| {
                         let height_delta = client
-                            .client_state_height
+                            .latest_height
                             .since(cs_height)
                             .expect("less or equal height");
                         (
@@ -472,8 +472,7 @@ impl MockContext {
                     .collect();
 
                 let client_state = MockClientState::new(
-                    MockHeader::new(client.client_state_height)
-                        .with_timestamp(client.latest_timestamp),
+                    MockHeader::new(client.latest_height).with_timestamp(client.latest_timestamp),
                 );
 
                 let cs_states = blocks
@@ -488,7 +487,7 @@ impl MockContext {
                     .into_iter()
                     .map(|cs_height| {
                         let height_delta = client
-                            .client_state_height
+                            .latest_height
                             .since(cs_height)
                             .expect("less or equal height");
                         (
@@ -507,7 +506,7 @@ impl MockContext {
 
                 let client_state: TmClientState = TmClientStateConfig::builder()
                     .chain_id(client.client_chain_id)
-                    .latest_height(client.client_state_height)
+                    .latest_height(client.latest_height)
                     .trusting_period(client.trusting_period)
                     .max_clock_drift(client.max_clock_drift)
                     .unbonding_period(client.unbonding_period)

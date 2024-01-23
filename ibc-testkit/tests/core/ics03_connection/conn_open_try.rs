@@ -59,7 +59,7 @@ fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConne
         Ctx::WithClient => ctx_new.with_client_config(
             MockClientConfig::builder()
                 .client_id(msg.client_id_on_b.clone())
-                .client_state_height(Height::new(0, client_cons_state_height).unwrap())
+                .latest_height(Height::new(0, client_cons_state_height).unwrap())
                 .build(),
         ),
     };

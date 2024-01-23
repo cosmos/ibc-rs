@@ -86,7 +86,7 @@ fn chan_open_try_validate_happy_path(fixture: Fixture) {
         .with_client_config(
             MockClientConfig::builder()
                 .client_id(client_id_on_b.clone())
-                .client_state_height(Height::new(0, proof_height).unwrap())
+                .latest_height(Height::new(0, proof_height).unwrap())
                 .build(),
         )
         .with_connection(conn_id_on_b, conn_end_on_b);
@@ -113,7 +113,7 @@ fn chan_open_try_execute_happy_path(fixture: Fixture) {
         .with_client_config(
             MockClientConfig::builder()
                 .client_id(client_id_on_b.clone())
-                .client_state_height(Height::new(0, proof_height).unwrap())
+                .latest_height(Height::new(0, proof_height).unwrap())
                 .build(),
         )
         .with_connection(conn_id_on_b, conn_end_on_b);

@@ -68,7 +68,7 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
             .with_client_config(
                 MockClientConfig::builder()
                     .client_id(client_id.clone())
-                    .client_state_height(proof_height)
+                    .latest_height(proof_height)
                     .build(),
             )
             .with_connection(conn_id, default_conn_end),
@@ -76,7 +76,7 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
             .with_client_config(
                 MockClientConfig::builder()
                     .client_id(client_id.clone())
-                    .client_state_height(proof_height)
+                    .latest_height(proof_height)
                     .build(),
             )
             .with_connection(conn_id, default_conn_end),
@@ -84,7 +84,7 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
             .with_client_config(
                 MockClientConfig::builder()
                     .client_id(client_id.clone())
-                    .client_state_height(proof_height)
+                    .latest_height(proof_height)
                     .build(),
             )
             .with_connection(conn_id, conn_end_open),

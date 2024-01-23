@@ -56,7 +56,7 @@ fn test_chan_close_confirm_validate() {
         .with_client_config(
             MockClientConfig::builder()
                 .client_id(client_id.clone())
-                .client_state_height(client_consensus_state_height)
+                .latest_height(client_consensus_state_height)
                 .build(),
         )
         .with_connection(conn_id, conn_end)
@@ -115,7 +115,7 @@ fn test_chan_close_confirm_execute() {
         .with_client_config(
             MockClientConfig::builder()
                 .client_id(client_id.clone())
-                .client_state_height(client_consensus_state_height)
+                .latest_height(client_consensus_state_height)
                 .build(),
         )
         .with_connection(conn_id, conn_end)

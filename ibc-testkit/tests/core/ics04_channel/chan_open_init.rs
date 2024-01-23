@@ -49,7 +49,7 @@ fn fixture() -> Fixture {
         .with_client_config(
             MockClientConfig::builder()
                 .client_id(client_id_on_a.clone())
-                .client_state_height(client_height)
+                .latest_height(client_height)
                 .build(),
         )
         .with_connection(ConnectionId::default(), conn_end_on_a);

@@ -37,7 +37,7 @@ fn msg_upgrade_client_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<Msg
     let ctx_with_client = ctx_default.clone().with_client_config(
         MockClientConfig::builder()
             .client_id(client_id.clone())
-            .client_state_height(Height::new(0, 42).unwrap())
+            .latest_height(Height::new(0, 42).unwrap())
             .build(),
     );
     let ctx = match ctx_variant {

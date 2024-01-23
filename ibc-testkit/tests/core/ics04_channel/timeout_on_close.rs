@@ -32,7 +32,7 @@ fn fixture() -> Fixture {
     let client_height = Height::new(0, 2).unwrap();
     let context = MockContext::default().with_client_config(
         MockClientConfig::builder()
-            .client_state_height(client_height)
+            .latest_height(client_height)
             .build(),
     );
     let router = MockRouter::new_with_transfer();

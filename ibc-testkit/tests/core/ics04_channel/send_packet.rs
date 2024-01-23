@@ -94,7 +94,7 @@ fn send_packet_processing() {
                 .clone()
                 .with_client_config(
                     MockClientConfig::builder()
-                        .client_state_height(client_height)
+                        .latest_height(client_height)
                         .build(),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
@@ -113,7 +113,7 @@ fn send_packet_processing() {
                 .clone()
                 .with_client_config(
                     MockClientConfig::builder()
-                        .client_state_height(client_height)
+                        .latest_height(client_height)
                         .build(),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
@@ -132,7 +132,7 @@ fn send_packet_processing() {
                 .clone()
                 .with_client_config(
                     MockClientConfig::builder()
-                        .client_state_height(client_height)
+                        .latest_height(client_height)
                         .build(),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
@@ -150,7 +150,7 @@ fn send_packet_processing() {
             ctx: context
                 .with_client_config(
                     MockClientConfig::builder()
-                        .client_state_height(client_height)
+                        .latest_height(client_height)
                         .build(),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a)

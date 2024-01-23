@@ -35,7 +35,7 @@ fn fixture() -> Fixture {
     let client_height = Height::new(0, 2).unwrap();
     let ctx = MockContext::default().with_client_config(
         MockClientConfig::builder()
-            .client_state_height(client_height)
+            .latest_height(client_height)
             .build(),
     );
 
@@ -110,7 +110,7 @@ fn timeout_fail_no_channel(fixture: Fixture) {
     } = fixture;
     let ctx = ctx.with_client_config(
         MockClientConfig::builder()
-            .client_state_height(client_height)
+            .latest_height(client_height)
             .build(),
     );
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
@@ -187,7 +187,7 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
     let mut ctx = ctx
         .with_client_config(
             MockClientConfig::builder()
-                .client_state_height(client_height)
+                .latest_height(client_height)
                 .build(),
         )
         .with_connection(ConnectionId::default(), conn_end_on_a)
@@ -273,7 +273,7 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
     let mut ctx = ctx
         .with_client_config(
             MockClientConfig::builder()
-                .client_state_height(client_height)
+                .latest_height(client_height)
                 .build(),
         )
         .with_connection(ConnectionId::default(), conn_end_on_a)
@@ -329,7 +329,7 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
     let mut ctx = ctx
         .with_client_config(
             MockClientConfig::builder()
-                .client_state_height(client_height)
+                .latest_height(client_height)
                 .build(),
         )
         .with_connection(ConnectionId::default(), conn_end_on_a)

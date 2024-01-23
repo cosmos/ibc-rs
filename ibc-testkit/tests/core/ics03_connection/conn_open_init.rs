@@ -44,7 +44,7 @@ fn conn_open_init_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConn
         Ctx::WithClient => ctx_default.with_client_config(
             MockClientConfig::builder()
                 .client_id(msg.client_id_on_a.clone())
-                .client_state_height(Height::new(0, 10).unwrap())
+                .latest_height(Height::new(0, 10).unwrap())
                 .build(),
         ),
         _ => ctx_default,

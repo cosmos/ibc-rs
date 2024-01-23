@@ -131,7 +131,7 @@ mod tests {
                 MockClientConfig::builder()
                     .client_chain_id(chain_id_b.clone())
                     .client_id(client_on_a_for_b.clone())
-                    .client_state_height(client_on_a_for_b_height)
+                    .latest_height(client_on_a_for_b_height)
                     .client_type(tm_client_type()) // The target host chain (B) is synthetic TM.
                     .build(),
             );
@@ -147,7 +147,7 @@ mod tests {
                 MockClientConfig::builder()
                     .client_chain_id(chain_id_a)
                     .client_id(client_on_b_for_a.clone())
-                    .client_state_height(client_on_b_for_a_height)
+                    .latest_height(client_on_b_for_a_height)
                     .build(),
             );
         // dummy; not actually used in client updates

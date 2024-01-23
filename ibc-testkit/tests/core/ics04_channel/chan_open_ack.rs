@@ -93,7 +93,7 @@ fn chan_open_ack_happy_path(fixture: Fixture) {
         .with_client_config(
             MockClientConfig::builder()
                 .client_id(client_id_on_a.clone())
-                .client_state_height(Height::new(0, proof_height).unwrap())
+                .latest_height(Height::new(0, proof_height).unwrap())
                 .build(),
         )
         .with_connection(conn_id_on_a, conn_end_on_a)
@@ -128,7 +128,7 @@ fn chan_open_ack_execute_happy_path(fixture: Fixture) {
         .with_client_config(
             MockClientConfig::builder()
                 .client_id(client_id_on_a.clone())
-                .client_state_height(Height::new(0, proof_height).unwrap())
+                .latest_height(Height::new(0, proof_height).unwrap())
                 .build(),
         )
         .with_connection(conn_id_on_a, conn_end_on_a)
@@ -170,7 +170,7 @@ fn chan_open_ack_fail_no_connection(fixture: Fixture) {
         .with_client_config(
             MockClientConfig::builder()
                 .client_id(client_id_on_a.clone())
-                .client_state_height(Height::new(0, proof_height).unwrap())
+                .latest_height(Height::new(0, proof_height).unwrap())
                 .build(),
         )
         .with_channel(
@@ -205,7 +205,7 @@ fn chan_open_ack_fail_no_channel(fixture: Fixture) {
         .with_client_config(
             MockClientConfig::builder()
                 .client_id(client_id_on_a.clone())
-                .client_state_height(Height::new(0, proof_height).unwrap())
+                .latest_height(Height::new(0, proof_height).unwrap())
                 .build(),
         )
         .with_connection(conn_id_on_a, conn_end_on_a);
@@ -245,7 +245,7 @@ fn chan_open_ack_fail_channel_wrong_state(fixture: Fixture) {
         .with_client_config(
             MockClientConfig::builder()
                 .client_id(client_id_on_a.clone())
-                .client_state_height(Height::new(0, proof_height).unwrap())
+                .latest_height(Height::new(0, proof_height).unwrap())
                 .build(),
         )
         .with_connection(conn_id_on_a, conn_end_on_a)
