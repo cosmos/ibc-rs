@@ -7,8 +7,8 @@ Our release process is as follows:
    1. Running `unclog build -u` and copy pasting the output at the top of the
       `CHANGELOG.md` file, making sure to update the header with the new
       version.
-   2. Running `unclog release --editor <editor> --version vX.Y.Z` to create a
-      summary of all of the changes in this release.
+   2. Running `unclog release --editor <editor> vX.Y.Z` to create a summary of
+      all of the changes in this release.
       1. Your text editor will open. Write the release summary, and close the
          editor. Make sure to include a comment on whether or not the release
          contains consensus-breaking changes.
