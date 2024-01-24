@@ -51,7 +51,7 @@ There are no consensus-breaking changes.
 - [ibc-testkit] Deprecate `MockContext::with_client*` in favor of
   `MockContext::with_client_config`.
   ([\#1049](https://github.com/cosmos/ibc-rs/issues/1049))
-- [ibc-primitives] Re-exports additional google proto types, like `Timestamp`
+- [ibc-primitives] Re-export additional google proto types, like `Timestamp`
   and `Duration` for added convenience when developing IBC light clients or
   applications. ([\#1054](https://github.com/cosmos/ibc-rs/pull/1054))
 - [ibc-primitives] Relocate `serializers.rs` module to reside within the
