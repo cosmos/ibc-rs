@@ -25,9 +25,9 @@ pub use traits::*;
 mod types;
 pub use types::*;
 
-/// Re-exports google proto types and `Protobuf` trait from the `ibc-proto-rs`
-/// crate.
+/// Re-exports necessary google proto types and `Protobuf` trait from the
+/// `ibc-proto-rs` crate.
 pub mod proto {
-    pub use ibc_proto::google::protobuf::*;
+    pub use ibc_proto::google::protobuf::{Any, Duration, Timestamp};
     pub use ibc_proto::Protobuf;
 }
