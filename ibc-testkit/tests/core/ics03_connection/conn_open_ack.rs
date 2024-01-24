@@ -17,7 +17,7 @@ use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_ack;
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
 use test_log::test;
 
 enum Ctx {
@@ -65,13 +65,28 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
     let ctx = match ctx {
         Ctx::New => ctx_new,
         Ctx::NewWithConnection => ctx_new
-            .with_client(&client_id, proof_height)
+            .with_client_config(
+                MockClientConfig::builder()
+                    .client_id(client_id.clone())
+                    .latest_height(proof_height)
+                    .build(),
+            )
             .with_connection(conn_id, default_conn_end),
         Ctx::DefaultWithConnection => ctx_default
-            .with_client(&client_id, proof_height)
+            .with_client_config(
+                MockClientConfig::builder()
+                    .client_id(client_id.clone())
+                    .latest_height(proof_height)
+                    .build(),
+            )
             .with_connection(conn_id, default_conn_end),
         Ctx::NewWithConnectionEndOpen => ctx_new
-            .with_client(&client_id, proof_height)
+            .with_client_config(
+                MockClientConfig::builder()
+                    .client_id(client_id.clone())
+                    .latest_height(proof_height)
+                    .build(),
+            )
             .with_connection(conn_id, conn_end_open),
     };
 

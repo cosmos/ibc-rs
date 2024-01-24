@@ -16,7 +16,7 @@ use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
 use rstest::*;
 
 struct Fixture {
@@ -33,7 +33,11 @@ struct Fixture {
 #[fixture]
 fn fixture() -> Fixture {
     let client_height = Height::new(0, 2).unwrap();
-    let ctx = MockContext::default().with_client(&ClientId::default(), client_height);
+    let ctx = MockContext::default().with_client_config(
+        MockClientConfig::builder()
+            .latest_height(client_height)
+            .build(),
+    );
 
     let client_height = Height::new(0, 2).unwrap();
 
@@ -104,7 +108,11 @@ fn timeout_fail_no_channel(fixture: Fixture) {
         client_height,
         ..
     } = fixture;
-    let ctx = ctx.with_client(&ClientId::default(), client_height);
+    let ctx = ctx.with_client_config(
+        MockClientConfig::builder()
+            .latest_height(client_height)
+            .build(),
+    );
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
     let res = validate(&ctx, &router, msg_envelope);
 
@@ -177,7 +185,11 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
     let packet = msg.packet.clone();
 
     let mut ctx = ctx
-        .with_client(&ClientId::default(), client_height)
+        .with_client_config(
+            MockClientConfig::builder()
+                .latest_height(client_height)
+                .build(),
+        )
         .with_connection(ConnectionId::default(), conn_end_on_a)
         .with_channel(
             PortId::transfer(),
@@ -259,7 +271,11 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
     let packet = msg.packet.clone();
 
     let mut ctx = ctx
-        .with_client(&ClientId::default(), client_height)
+        .with_client_config(
+            MockClientConfig::builder()
+                .latest_height(client_height)
+                .build(),
+        )
         .with_connection(ConnectionId::default(), conn_end_on_a)
         .with_channel(
             PortId::transfer(),
@@ -311,7 +327,11 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
     let packet = msg.packet.clone();
 
     let mut ctx = ctx
-        .with_client(&ClientId::default(), client_height)
+        .with_client_config(
+            MockClientConfig::builder()
+                .latest_height(client_height)
+                .build(),
+        )
         .with_connection(ConnectionId::default(), conn_end_on_a)
         .with_channel(
             PortId::transfer(),

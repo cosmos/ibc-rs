@@ -16,7 +16,7 @@ use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_acknowledgement;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
 use rstest::*;
 use test_log::test;
 
@@ -34,7 +34,11 @@ struct Fixture {
 #[fixture]
 fn fixture() -> Fixture {
     let client_height = Height::new(0, 2).unwrap();
-    let ctx = MockContext::default().with_client(&ClientId::default(), client_height);
+    let ctx = MockContext::default().with_client_config(
+        MockClientConfig::builder()
+            .latest_height(client_height)
+            .build(),
+    );
 
     let router = MockRouter::new_with_transfer();
 
@@ -117,7 +121,11 @@ fn ack_success_no_packet_commitment(fixture: Fixture) {
         ..
     } = fixture;
     let ctx = ctx
-        .with_client(&ClientId::default(), client_height)
+        .with_client_config(
+            MockClientConfig::builder()
+                .latest_height(client_height)
+                .build(),
+        )
         .with_channel(
             PortId::transfer(),
             ChannelId::default(),
@@ -148,7 +156,11 @@ fn ack_success_happy_path(fixture: Fixture) {
         ..
     } = fixture;
     let mut ctx: MockContext = ctx
-        .with_client(&ClientId::default(), client_height)
+        .with_client_config(
+            MockClientConfig::builder()
+                .latest_height(client_height)
+                .build(),
+        )
         .with_channel(
             PortId::transfer(),
             ChannelId::default(),

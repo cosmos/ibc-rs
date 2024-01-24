@@ -15,7 +15,7 @@ use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_close_confirm;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
 
 #[test]
 fn test_chan_close_confirm_validate() {
@@ -53,7 +53,12 @@ fn test_chan_close_confirm_validate() {
     .unwrap();
 
     let context = default_context
-        .with_client(&client_id, client_consensus_state_height)
+        .with_client_config(
+            MockClientConfig::builder()
+                .client_id(client_id.clone())
+                .latest_height(client_consensus_state_height)
+                .build(),
+        )
         .with_connection(conn_id, conn_end)
         .with_channel(
             msg_chan_close_confirm.port_id_on_b.clone(),
@@ -107,7 +112,12 @@ fn test_chan_close_confirm_execute() {
     .unwrap();
 
     let mut context = default_context
-        .with_client(&client_id, client_consensus_state_height)
+        .with_client_config(
+            MockClientConfig::builder()
+                .client_id(client_id.clone())
+                .latest_height(client_consensus_state_height)
+                .build(),
+        )
         .with_connection(conn_id, conn_end)
         .with_channel(
             msg_chan_close_confirm.port_id_on_b.clone(),
