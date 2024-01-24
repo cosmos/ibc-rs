@@ -36,9 +36,6 @@ mod token;
 #[cfg(feature = "serde")]
 pub use token::*;
 
-#[cfg(feature = "serde")]
-pub(crate) mod serializers;
-
 pub mod error;
 mod memo;
 pub use memo::*;

@@ -4,10 +4,10 @@ use core::str::FromStr;
 
 use http::Uri;
 use ibc_core::primitives::prelude::*;
+use ibc_core::primitives::serializers;
 
 use crate::data::Data;
 use crate::error::NftTransferError;
-use crate::serializers;
 
 /// Token ID for an NFT
 #[cfg_attr(

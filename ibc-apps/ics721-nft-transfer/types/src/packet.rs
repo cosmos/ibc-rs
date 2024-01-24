@@ -5,13 +5,12 @@ use core::convert::TryFrom;
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 use ibc_core::primitives::prelude::*;
-use ibc_core::primitives::Signer;
+use ibc_core::primitives::{serializers, Signer};
 use ibc_proto::ibc::applications::nft_transfer::v1::NonFungibleTokenPacketData as RawPacketData;
 
 use crate::class::{ClassData, ClassUri, PrefixedClassId};
 use crate::error::NftTransferError;
 use crate::memo::Memo;
-use crate::serializers;
 use crate::token::{TokenData, TokenIds, TokenUri};
 
 /// Defines the structure of token transfers' packet bytes
