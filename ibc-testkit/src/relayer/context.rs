@@ -49,6 +49,7 @@ mod tests {
     use ibc::core::client::types::Height;
     use ibc::core::handler::types::msgs::MsgEnvelope;
     use ibc::core::host::types::identifiers::ChainId;
+    use ibc::core::primitives::prelude::*;
     use tracing::debug;
 
     use super::RelayerContext;
@@ -58,6 +59,7 @@ mod tests {
     use crate::relayer::error::RelayerError;
     use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
     use crate::testapp::ibc::core::router::MockRouter;
+    use crate::testapp::ibc::core::types::MockClientConfig;
 
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
     /// context, assuming that the latest header on the source context is `src_header`.
@@ -125,12 +127,13 @@ mod tests {
             .host_id(chain_id_a.clone())
             .latest_height(chain_a_start_height)
             .build()
-            .with_client_parametrized_with_chain_id(
-                chain_id_b.clone(),
-                &client_on_a_for_b,
-                client_on_a_for_b_height,
-                Some(tm_client_type()), // The target host chain (B) is synthetic TM.
-                Some(client_on_a_for_b_height),
+            .with_client_config(
+                MockClientConfig::builder()
+                    .client_chain_id(chain_id_b.clone())
+                    .client_id(client_on_a_for_b.clone())
+                    .latest_height(client_on_a_for_b_height)
+                    .client_type(tm_client_type()) // The target host chain (B) is synthetic TM.
+                    .build(),
             );
         // dummy; not actually used in client updates
         let mut router_a = MockRouter::new_with_transfer();
@@ -140,12 +143,12 @@ mod tests {
             .host_type(HostType::SyntheticTendermint)
             .latest_height(chain_b_start_height)
             .build()
-            .with_client_parametrized_with_chain_id(
-                chain_id_a,
-                &client_on_b_for_a,
-                client_on_b_for_a_height,
-                Some(mock_client_type()), // The target host chain is mock.
-                Some(client_on_b_for_a_height),
+            .with_client_config(
+                MockClientConfig::builder()
+                    .client_chain_id(chain_id_a)
+                    .client_id(client_on_b_for_a.clone())
+                    .latest_height(client_on_b_for_a_height)
+                    .build(),
             );
         // dummy; not actually used in client updates
         let mut router_b = MockRouter::new_with_transfer();

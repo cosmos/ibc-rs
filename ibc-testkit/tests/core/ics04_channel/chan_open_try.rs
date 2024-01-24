@@ -14,7 +14,7 @@ use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_try;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
 use rstest::*;
 use test_log::test;
 
@@ -83,7 +83,12 @@ fn chan_open_try_validate_happy_path(fixture: Fixture) {
     } = fixture;
 
     let ctx = ctx
-        .with_client(&client_id_on_b, Height::new(0, proof_height).unwrap())
+        .with_client_config(
+            MockClientConfig::builder()
+                .client_id(client_id_on_b.clone())
+                .latest_height(Height::new(0, proof_height).unwrap())
+                .build(),
+        )
         .with_connection(conn_id_on_b, conn_end_on_b);
 
     let res = validate(&ctx, &router, msg);
@@ -105,7 +110,12 @@ fn chan_open_try_execute_happy_path(fixture: Fixture) {
     } = fixture;
 
     let mut ctx = ctx
-        .with_client(&client_id_on_b, Height::new(0, proof_height).unwrap())
+        .with_client_config(
+            MockClientConfig::builder()
+                .client_id(client_id_on_b.clone())
+                .latest_height(Height::new(0, proof_height).unwrap())
+                .build(),
+        )
         .with_connection(conn_id_on_b, conn_end_on_b);
 
     let res = execute(&mut ctx, &mut router, msg);

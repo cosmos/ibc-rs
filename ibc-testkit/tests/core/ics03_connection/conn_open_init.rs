@@ -13,7 +13,7 @@ use ibc_testkit::fixtures::core::connection::{
 };
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
 use test_log::test;
 
 enum Ctx {
@@ -41,9 +41,12 @@ fn conn_open_init_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConn
 
     let ctx_default = MockContext::default();
     let ctx = match ctx_variant {
-        Ctx::WithClient => {
-            ctx_default.with_client(&msg.client_id_on_a, Height::new(0, 10).unwrap())
-        }
+        Ctx::WithClient => ctx_default.with_client_config(
+            MockClientConfig::builder()
+                .client_id(msg.client_id_on_a.clone())
+                .latest_height(Height::new(0, 10).unwrap())
+                .build(),
+        ),
         _ => ctx_default,
     };
 

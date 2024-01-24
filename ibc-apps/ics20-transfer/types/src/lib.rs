@@ -34,9 +34,6 @@ pub mod msgs;
 #[cfg(feature = "serde")]
 pub mod packet;
 
-#[cfg(feature = "serde")]
-pub(crate) mod serializers;
-
 pub mod error;
 mod memo;
 pub use memo::*;

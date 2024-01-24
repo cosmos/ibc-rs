@@ -11,7 +11,7 @@ use ibc::core::host::ValidationContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_init;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_init;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
 use rstest::*;
 use test_log::test;
 
@@ -46,7 +46,12 @@ fn fixture() -> Fixture {
     .unwrap();
 
     let ctx = default_ctx
-        .with_client(&client_id_on_a, client_height)
+        .with_client_config(
+            MockClientConfig::builder()
+                .client_id(client_id_on_a.clone())
+                .latest_height(client_height)
+                .build(),
+        )
         .with_connection(ConnectionId::default(), conn_end_on_a);
 
     Fixture { ctx, router, msg }
