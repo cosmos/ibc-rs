@@ -250,41 +250,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "darling"
-version = "0.20.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0209d94da627ab5605dcccf08bb18afa5009cfbef48d8a8b7d7bdbc79be25c5e"
-dependencies = [
- "darling_core",
- "darling_macro",
-]
-
-[[package]]
-name = "darling_core"
-version = "0.20.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "177e3443818124b357d8e76f53be906d60937f0d3a90773a664fa63fa253e621"
-dependencies = [
- "fnv",
- "ident_case",
- "proc-macro2",
- "quote",
- "strsim",
- "syn 2.0.48",
-]
-
-[[package]]
-name = "darling_macro"
-version = "0.20.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "836a9bbc7ad63342d6d6e7b815ccab164bc77a2d95d84bc3117a8c0d5c98e2d5"
-dependencies = [
- "darling_core",
- "quote",
- "syn 2.0.48",
-]
-
-[[package]]
 name = "der"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -473,12 +438,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fnv"
-version = "1.0.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
-
-[[package]]
 name = "forward_ref"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -610,7 +569,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-app-transfer"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "ibc-app-transfer-types",
  "ibc-core",
@@ -619,7 +578,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-app-transfer-types"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -634,14 +593,14 @@ dependencies = [
 
 [[package]]
 name = "ibc-apps"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "ibc-app-transfer",
 ]
 
 [[package]]
 name = "ibc-core"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "ibc-core-channel",
  "ibc-core-client",
@@ -650,12 +609,13 @@ dependencies = [
  "ibc-core-handler",
  "ibc-core-host",
  "ibc-core-router",
+ "ibc-derive",
  "ibc-primitives",
 ]
 
 [[package]]
 name = "ibc-core-channel"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "ibc-core-channel-types",
  "ibc-core-client",
@@ -669,7 +629,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-channel-types"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -690,7 +650,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-client"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "ibc-core-client-context",
  "ibc-core-client-types",
@@ -702,7 +662,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-client-context"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -710,7 +670,6 @@ dependencies = [
  "ibc-core-commitment-types",
  "ibc-core-handler-types",
  "ibc-core-host-types",
- "ibc-derive",
  "ibc-primitives",
  "subtle-encoding",
  "tendermint",
@@ -718,7 +677,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-client-types"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -736,7 +695,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-commitment-types"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -752,7 +711,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-connection"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "ibc-core-client",
  "ibc-core-connection-types",
@@ -763,7 +722,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-connection-types"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -782,7 +741,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-handler"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "ibc-core-channel",
  "ibc-core-client",
@@ -796,7 +755,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-handler-types"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -818,7 +777,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-host"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -835,7 +794,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-host-types"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -848,7 +807,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-router"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -861,7 +820,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-router-types"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -878,9 +837,8 @@ dependencies = [
 
 [[package]]
 name = "ibc-derive"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
- "darling",
  "proc-macro2",
  "quote",
  "syn 2.0.48",
@@ -888,7 +846,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-primitives"
-version = "0.49.1"
+version = "0.50.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -938,12 +896,6 @@ dependencies = [
  "sha2 0.10.8",
  "sha3",
 ]
-
-[[package]]
-name = "ident_case"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
 
 [[package]]
 name = "impl-serde"
@@ -1463,12 +1415,6 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
-
-[[package]]
-name = "strsim"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
 
 [[package]]
 name = "subtle"

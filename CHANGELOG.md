@@ -1,5 +1,63 @@
 # CHANGELOG
 
+## v0.50.0
+
+*January 24, 2024*
+
+This release introduces several noteworthy libraries. A standout addition is the
+implementation of the ICS-721 NFT transfer application, enabling the transfer of
+NFT packets across chains that support this capability.
+
+In addition, It incorporates the ICS-08 Wasm light client data structure and
+types. This empowers light client developers to create CosmWasm contracts for
+deployment on Cosmos chains compatible with the version of ibc-go supporting
+ICS-08 Wasm client.
+
+Furthermore, this release addresses the issue with the macro derivation of the
+`ClientState` when contexts include generic types, exposes additional convenient
+types and serializers through `ibc-primitives` and includes a more flexible
+constructor for `MockContext` types within the `ibc-testkit` crate, allowing to
+write tests with diverse parameter combinations.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- [ibc] Bump `ibc-proto-rs` to v0.41.0
+  ([\#1036](https://github.com/cosmos/ibc-rs/pull/1036)).
+
+### BUG FIXES
+
+- [ibc-derive] Refactor `ClientState` macro derivation to handle contexts with
+  generic types. ([\#910](https://github.com/cosmos/ibc-rs/issues/910))
+- [ibc-derive] Adapt macro derivations to integrate with projects dependent on
+  `ibc-core` ([\#999](https://github.com/cosmos/ibc-rs/issues/999)).
+
+### FEATURES
+
+- [ibc-app-nft-transfer] Implement ICS-721 NFT transfer application
+  ([\#346](https://github.com/cosmos/ibc-rs/issues/346))
+- [ibc-client-wasm-types] Implement ICS-08 Wasm light client domain types
+  ([\#1030](https://github.com/cosmos/ibc-rs/issues/1030)).
+
+### IMPROVEMENTS
+
+- [ibc-data-types] Re-export clients' domain type from `ibc-data-types`
+  ([\#1041](https://github.com/cosmos/ibc-rs/pull/1041)).
+- [ibc-testkit] Deprecate `MockContext::new*` in favor of `MockContextConfig`.
+  ([\#1042](https://github.com/cosmos/ibc-rs/issues/1042))
+- [ibc-testkit] Remove field access of `MockContext`.
+  ([\#1043](https://github.com/cosmos/ibc-rs/issues/1043))
+- [ibc-testkit] Deprecate `MockContext::with_client*` in favor of
+  `MockContext::with_client_config`.
+  ([\#1049](https://github.com/cosmos/ibc-rs/issues/1049))
+- [ibc-primitives] Re-exports additional google proto types, like `Timestamp`
+  and `Duration` for added convenience when developing IBC light clients or
+  applications. ([\#1054](https://github.com/cosmos/ibc-rs/pull/1054))
+- [ibc-primitives] Relocate `serializers.rs` module to reside within the
+  `ibc-primitives` crate extending its utility for a broader range of IBC
+  applications. ([\#1055](https://github.com/cosmos/ibc-rs/issues/1055))
+
 ## v0.49.1
 
 *January 3, 2024*
