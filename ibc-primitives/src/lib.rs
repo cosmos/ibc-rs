@@ -25,6 +25,11 @@ pub use traits::*;
 mod types;
 pub use types::*;
 
+// Helper module for serializing and deserializing types through the `String`
+// primarily used by IBC applications.
+#[cfg(feature = "serde")]
+pub mod serializers;
+
 /// Re-export of common proto types from the `ibc-proto` crate.
 pub mod proto {
     pub use ibc_proto::google::protobuf::Any;

@@ -6,11 +6,11 @@ use derive_more::From;
 use http::Uri;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
+use ibc_core::primitives::serializers;
 use ibc_proto::ibc::applications::nft_transfer::v1::ClassTrace as RawClassTrace;
 
 use crate::data::Data;
 use crate::error::NftTransferError;
-use crate::serializers;
 
 /// Class ID for an NFT
 #[cfg_attr(
