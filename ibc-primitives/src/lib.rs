@@ -30,8 +30,7 @@ pub use types::*;
 #[cfg(feature = "serde")]
 pub mod serializers;
 
-/// Re-export of common proto types from the `ibc-proto` crate.
 pub mod proto {
-    pub use ibc_proto::google::protobuf::Any;
+    pub use ibc_proto::google::protobuf::{Any, Duration, Timestamp};
     pub use ibc_proto::Protobuf;
 }
