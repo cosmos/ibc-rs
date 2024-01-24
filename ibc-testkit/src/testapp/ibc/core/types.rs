@@ -181,7 +181,7 @@ impl MockContext {
     /// `latest_height` determines the current height of the chain. This context
     /// has support to emulate two type of underlying chains: Mock or SyntheticTendermint.
     #[deprecated(
-        since = "0.49.2",
+        since = "0.50.0",
         note = "Please use `MockContextConfig::builder().build()` instead"
     )]
     pub fn new(
@@ -241,7 +241,7 @@ impl MockContext {
     /// `validator_history[i]` and `validator_history[i+1]` is i'th block's current and next validator set.
     /// The number of blocks will be `validator_history.len() - 1` due to the above.
     #[deprecated(
-        since = "0.49.2",
+        since = "0.50.0",
         note = "Please use `MockContextConfig::builder().build()` instead"
     )]
     pub fn new_with_validator_history(
@@ -310,7 +310,7 @@ impl MockContext {
     /// to this client a mock client state and a mock consensus state for height `height`. The type
     /// of this client is implicitly assumed to be Mock.
     #[deprecated(
-        since = "0.49.2",
+        since = "0.50.0",
         note = "Please use `MockClientConfig::builder().build()` instead"
     )]
     pub fn with_client(self, client_id: &ClientId, height: Height) -> Self {
@@ -335,7 +335,7 @@ impl MockContext {
     /// `consensus_state_height` is None, then the client will be initialized with a consensus
     /// state matching the same height as the client state (`client_state_height`).
     #[deprecated(
-        since = "0.49.2",
+        since = "0.50.0",
         note = "Please use `MockClientConfig::builder().build()` instead"
     )]
     pub fn with_client_parametrized(
@@ -365,7 +365,7 @@ impl MockContext {
     }
 
     #[deprecated(
-        since = "0.49.2",
+        since = "0.50.0",
         note = "Please use `MockClientConfig::builder().build()` instead"
     )]
     pub fn with_client_parametrized_with_chain_id(
@@ -390,7 +390,7 @@ impl MockContext {
     }
 
     #[deprecated(
-        since = "0.49.2",
+        since = "0.50.0",
         note = "Please use `MockClientConfig::builder().build()` instead"
     )]
     pub fn with_client_parametrized_history(
@@ -417,7 +417,7 @@ impl MockContext {
     }
 
     #[deprecated(
-        since = "0.49.2",
+        since = "0.50.0",
         note = "Please use `MockClientConfig::builder().build()` instead"
     )]
     pub fn with_client_parametrized_history_with_chain_id(
