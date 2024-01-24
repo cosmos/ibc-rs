@@ -1,4 +1,4 @@
-//! Defines the Non-Fungible Token Transfer message type
+//! Defines the token transfer message type
 
 use ibc_core::channel::types::error::PacketError;
 use ibc_core::channel::types::timeout::TimeoutHeight;
@@ -15,7 +15,7 @@ use crate::packet::PacketData;
 
 pub(crate) const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 
-/// Message used to build an ICS-721 Non-Fungible Token Transfer packet.
+/// Message used to build an ICS20 token transfer packet.
 ///
 /// Note that this message is not a packet yet, as it lacks the proper sequence
 /// number, and destination port/channel. This is by design. The sender of the
