@@ -17,28 +17,19 @@
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
-#[cfg(feature = "serde")]
 mod class;
-#[cfg(feature = "serde")]
-pub use class::*;
-#[cfg(feature = "serde")]
 mod data;
-#[cfg(feature = "serde")]
-pub use data::*;
-#[cfg(feature = "serde")]
-pub mod events;
-#[cfg(feature = "serde")]
-pub mod msgs;
-#[cfg(feature = "serde")]
-pub mod packet;
-#[cfg(feature = "serde")]
-mod token;
-#[cfg(feature = "serde")]
-pub use token::*;
-
-pub mod error;
 mod memo;
+mod token;
+
+pub mod events;
+pub mod msgs;
+pub use class::*;
+pub use data::*;
+pub mod packet;
 pub use memo::*;
+pub use token::*;
+pub mod error;
 
 /// Re-exports ICS-721 NFT transfer proto types from the `ibc-proto` crate.
 pub mod proto {

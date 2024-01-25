@@ -2,7 +2,9 @@
 use core::fmt::{self, Display, Formatter};
 use core::str::FromStr;
 
+#[cfg(feature = "serde")]
 use base64::prelude::BASE64_STANDARD;
+#[cfg(feature = "serde")]
 use base64::Engine;
 use ibc_core::primitives::prelude::*;
 use mime::Mime;
@@ -25,6 +27,7 @@ use crate::error::NftTransferError;
 #[derive(Clone, Debug, Default, PartialEq, Eq, derive_more::From)]
 pub struct Data(String);
 
+#[cfg(feature = "serde")]
 impl Data {
     /// Parses the data in the format specified by ICS-721.
     pub fn parse_as_ics721_data(&self) -> Result<Ics721Data, NftTransferError> {
@@ -46,6 +49,7 @@ impl FromStr for Data {
     }
 }
 
+#[cfg(feature = "serde")]
 impl serde::Serialize for Data {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -55,6 +59,7 @@ impl serde::Serialize for Data {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> serde::Deserialize<'de> for Data {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -86,6 +91,7 @@ impl<'de> serde::Deserialize<'de> for Data {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Ics721Data(BTreeMap<String, DataValue>);
 
+#[cfg(feature = "serde")]
 impl FromStr for Ics721Data {
     type Err = NftTransferError;
 

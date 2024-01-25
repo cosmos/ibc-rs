@@ -16,8 +16,8 @@ use super::error::TokenTransferError;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Display, From, Into)]
 pub struct Amount(
     #[cfg_attr(feature = "schema", schemars(with = "String"))]
-    #[serde(serialize_with = "serializers::serialize")]
-    #[serde(deserialize_with = "deserialize")]
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serializers::serialize"))]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize"))]
     U256,
 );
 

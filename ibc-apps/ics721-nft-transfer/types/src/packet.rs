@@ -17,7 +17,7 @@ use crate::token::{TokenData, TokenIds, TokenUri};
 
 /// Defines the structure of token transfers' packet bytes
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[cfg_attr(
     feature = "parity-scale-codec",

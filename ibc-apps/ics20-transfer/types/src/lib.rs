@@ -15,27 +15,18 @@
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
-#[cfg(feature = "serde")]
 mod amount;
-#[cfg(feature = "serde")]
-pub use amount::*;
-#[cfg(feature = "serde")]
 mod coin;
-#[cfg(feature = "serde")]
-pub use coin::*;
-#[cfg(feature = "serde")]
 mod denom;
-#[cfg(feature = "serde")]
-pub use denom::*;
-#[cfg(feature = "serde")]
-pub mod events;
-#[cfg(feature = "serde")]
-pub mod msgs;
-#[cfg(feature = "serde")]
-pub mod packet;
-
-pub mod error;
 mod memo;
+
+pub use amount::*;
+pub use coin::*;
+pub use denom::*;
+pub mod error;
+pub mod events;
+pub mod msgs;
+pub mod packet;
 pub use memo::*;
 /// Re-exports `U256` from `primitive-types` crate for convenience.
 pub use primitive_types::U256;
