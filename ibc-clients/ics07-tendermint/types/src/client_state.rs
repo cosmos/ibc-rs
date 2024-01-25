@@ -61,6 +61,7 @@ impl ClientState {
         latest_height: Height,
         proof_specs: ProofSpecs,
         upgrade_path: Vec<String>,
+        frozen_height: Option<Height>,
         allow_update: AllowUpdate,
     ) -> Self {
         Self {
@@ -73,11 +74,13 @@ impl ClientState {
             proof_specs,
             upgrade_path,
             allow_update,
-            frozen_height: None,
+            frozen_height,
             verifier: ProdVerifier::default(),
         }
     }
 
+    /// Constructs a new Tendermint `ClientState` by given parameters and checks
+    /// if the parameters are valid.
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         chain_id: ChainId,
@@ -99,6 +102,7 @@ impl ClientState {
             latest_height,
             proof_specs,
             upgrade_path,
+            None, // New valid client must not be frozen.
             allow_update,
         );
         client_state.validate()?;
@@ -282,16 +286,7 @@ impl TryFrom<RawTmClientState> for ClientState {
         // In `RawClientState`, a `frozen_height` of `0` means "not frozen".
         // See:
         // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
-        //
-        // Comment out this check for now to allow fixing the client state.
-        //
-        // if raw
-        //     .frozen_height
-        //     .and_then(|h| Height::try_from(h).ok())
-        //     .is_some()
-        // {
-        //     return Err(Error::FrozenHeightNotAllowed);
-        // }
+        let frozen_height = raw.frozen_height.and_then(|h| Height::try_from(h).ok());
 
         // We use set this deprecated field just so that we can properly convert
         // it back in its raw form
@@ -301,7 +296,7 @@ impl TryFrom<RawTmClientState> for ClientState {
             after_misbehaviour: raw.allow_update_after_misbehaviour,
         };
 
-        let mut client_state = Self::new_without_validation(
+        let client_state = Self::new_without_validation(
             chain_id.clone(),
             trust_level,
             trusting_period,
@@ -310,15 +305,10 @@ impl TryFrom<RawTmClientState> for ClientState {
             latest_height,
             raw.proof_specs.into(),
             raw.upgrade_path,
+            frozen_height,
             allow_update,
         );
 
-        // Restore the frozen height if it was set, allow fixing the client state.
-        if let Some(frozen_height) = raw.frozen_height {
-            client_state = client_state.with_frozen_height(
-                Height::try_from(frozen_height).unwrap_or(Height::min(chain_id.revision_number())),
-            );
-        };
         Ok(client_state)
     }
 }
