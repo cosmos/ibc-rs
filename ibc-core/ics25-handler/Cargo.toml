@@ -37,6 +37,7 @@ std = [
     "ibc-core-host/std",
     "ibc-core-router/std",
     "ibc-core-handler-types/std",
+    "ibc-primitives/std",
 ]
 serde = [
     "ibc-core-client/serde",
@@ -46,6 +47,7 @@ serde = [
     "ibc-core-host/serde",
     "ibc-core-router/serde",
     "ibc-core-handler-types/serde",
+    "ibc-primitives/serde",
 ]
 borsh = [
     "ibc-core-client/borsh",
@@ -55,6 +57,7 @@ borsh = [
     "ibc-core-host/borsh",
     "ibc-core-router/borsh",
     "ibc-core-handler-types/borsh",
+    "ibc-primitives/borsh",
 ]
 schema = [
     "ibc-core-client/schema",
@@ -64,6 +67,7 @@ schema = [
     "ibc-core-host/schema",
     "ibc-core-router/schema",
     "ibc-core-handler-types/schema",
+    "ibc-primitives/schema",
     "serde",
     "std"
 ]

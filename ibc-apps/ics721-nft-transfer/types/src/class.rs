@@ -6,6 +6,7 @@ use derive_more::From;
 use http::Uri;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
+#[cfg(feature = "serde")]
 use ibc_core::primitives::serializers;
 use ibc_proto::ibc::applications::nft_transfer::v1::ClassTrace as RawClassTrace;
 
