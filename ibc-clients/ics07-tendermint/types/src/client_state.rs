@@ -297,7 +297,7 @@ impl TryFrom<RawTmClientState> for ClientState {
         };
 
         let client_state = Self::new_without_validation(
-            chain_id.clone(),
+            chain_id,
             trust_level,
             trusting_period,
             unbonding_period,

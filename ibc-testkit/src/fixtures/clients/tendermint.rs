@@ -202,7 +202,7 @@ mod tests {
         // try conversions for when the client is frozen
         try_tm_client_state_conversions(RawHeight {
             revision_number: 0,
-            revision_height: 10,
+            revision_height: 1,
         });
     }
 
