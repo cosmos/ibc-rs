@@ -4,6 +4,7 @@ use core::str::FromStr;
 
 use derive_more::{Display, From, Into};
 use ibc_core::primitives::prelude::*;
+#[cfg(feature = "serde")]
 use ibc_core::primitives::serializers;
 use primitive_types::U256;
 
