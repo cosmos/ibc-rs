@@ -401,6 +401,11 @@ where
         _client_message: Any,
         _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
+        // NOTE: frozen height is  set to `Height {revision_height: 0,
+        // revision_number: 1}` and it is the same for all misbehaviour. This
+        // aligns with the
+        // [`ibc-go`](https://github.com/cosmos/ibc-go/blob/0e3f428e66d6fc0fc6b10d2f3c658aaa5000daf7/modules/light-clients/07-tendermint/misbehaviour.go#L18-L19)
+        // implementation.
         let frozen_client_state = self.0.clone().with_frozen_height(Height::min(0));
 
         let wrapped_frozen_client_state = ClientState::from(frozen_client_state);
