@@ -34,29 +34,29 @@ serde_json = { workspace = true }
 [features]
 default = ["std"]
 std = [
-	"ibc-core-client/std",
-	"ibc-core-host-types/std",
-	"ibc-primitives/std",
-	"ibc-proto/std",
-	"base64/std",
-	"serde/std"
+    "ibc-core-client/std",
+    "ibc-core-host-types/std",
+    "ibc-primitives/std",
+    "ibc-proto/std",
+    "base64/std",
+    "serde/std"
 ]
 serde = [
-	"ibc-core-client/serde",
-	"ibc-core-host-types/serde",
-	"ibc-primitives/serde",
-	"ibc-proto/serde",
-	"dep:serde"
+    "ibc-core-client/serde",
+    "ibc-core-host-types/serde",
+    "ibc-primitives/serde",
+    "ibc-proto/serde",
+    "dep:serde"
 ]
 schema = [
-	"ibc-core-client/schema",
-	"ibc-core-host-types/schema",
-	"ibc-primitives/schema",
-	"ibc-proto/json-schema",
-	"serde",
-	"std"
+    "ibc-core-client/schema",
+    "ibc-core-host-types/schema",
+    "ibc-primitives/schema",
+    "ibc-proto/json-schema",
+    "serde",
+    "std"
 ]
 cosmwasm = [
-	"cosmwasm-schema",
-	"schema"
+    "cosmwasm-schema",
+    "schema"
 ]
