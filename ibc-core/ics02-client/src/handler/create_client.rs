@@ -1,6 +1,8 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
-use ibc_core_client_context::client_state::{ClientStateCommon, ClientStateExecution};
+use ibc_core_client_context::client_state::{
+    ClientStateCommon, ClientStateExecution, ClientStateValidation,
+};
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::CreateClient;
 use ibc_core_client_types::msgs::MsgCreateClient;
@@ -26,9 +28,18 @@ where
 
     let client_state = ctx.decode_client_state(client_state)?;
 
-    client_state.verify_consensus_state(consensus_state)?;
-
     let client_id = client_state.client_type().build_client_id(id_counter);
+
+    let status = client_state.status(ctx.get_client_validation_context(), &client_id)?;
+
+    if status.is_frozen() {
+        return Err(ClientError::ClientFrozen {
+            description: "the client is frozen".to_string(),
+        }
+        .into());
+    };
+
+    client_state.verify_consensus_state(consensus_state)?;
 
     if ctx.client_state(&client_id).is_ok() {
         return Err(ClientError::ClientStateAlreadyExists { client_id }.into());
