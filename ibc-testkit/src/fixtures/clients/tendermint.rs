@@ -169,10 +169,24 @@ pub fn dummy_ics07_header() -> Header {
 mod tests {
 
     use ibc::primitives::proto::Any;
+    use rstest::rstest;
 
     use super::*;
 
-    fn try_tm_client_state_conversions(frozen_height: RawHeight) {
+    #[rstest]
+    // try conversions for when the client is not frozen
+    #[case::valid_client(0, 0)]
+    // try conversions for when the client is frozen
+    #[case::frozen_client(0, 1)]
+    fn tm_client_state_conversions_healthy(
+        #[case] revision_number: u64,
+        #[case] revision_height: u64,
+    ) {
+        let frozen_height = RawHeight {
+            revision_number,
+            revision_height,
+        };
+
         // check client state creation path from a proto type
         let tm_client_state_from_raw = dummy_tm_client_state_from_raw(frozen_height);
         assert!(tm_client_state_from_raw.is_ok());
@@ -189,21 +203,6 @@ mod tests {
             tm_client_state_from_raw.expect("Never fails"),
             tm_client_state_from_any.expect("Never fails").into()
         );
-    }
-
-    #[test]
-    fn tm_client_state_conversions_healthy() {
-        // try conversions for when the client is not frozen
-        try_tm_client_state_conversions(RawHeight {
-            revision_number: 0,
-            revision_height: 0,
-        });
-
-        // try conversions for when the client is frozen
-        try_tm_client_state_conversions(RawHeight {
-            revision_number: 0,
-            revision_height: 1,
-        });
     }
 
     #[test]
