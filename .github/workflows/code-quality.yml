@@ -7,37 +7,52 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RIPGREP_VERSION: 14.1.0
+      FD_VERSION: 9.0.0
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Download Ripgrep
+      - name: Download ripgrep
         uses: dsaltares/fetch-gh-release-asset@master
         with:
           repo: BurntSushi/ripgrep
           version: "tags/${{ env.RIPGREP_VERSION }}"
           file: "ripgrep-${{ env.RIPGREP_VERSION }}-x86_64-unknown-linux-musl.tar.gz"
 
+      - name: Download fd
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: sharkdp/fd
+          version: "tags/v${{ env.FD_VERSION }}"
+          file: "fd-v${{ env.FD_VERSION }}-x86_64-unknown-linux-gnu.tar.gz"
+
       - name: Create local bin directory
         run: |
           mkdir -p ~/local/bin
           echo "${HOME}/local/bin" >> $GITHUB_PATH
 
-      - name: Setup ripgrep
+      - name: Setup ripgrep and fd
         run: |
           tar -xzf "ripgrep-${{ env.RIPGREP_VERSION }}-x86_64-unknown-linux-musl.tar.gz"
+          tar -xzf "fd-v${{ env.FD_VERSION }}-x86_64-unknown-linux-gnu.tar.gz"
           mv "ripgrep-${{ env.RIPGREP_VERSION }}-x86_64-unknown-linux-musl/rg" rg
-          chmod +x rg
-          mv rg ~/local/bin
+          mv "fd-v${{ env.FD_VERSION }}-x86_64-unknown-linux-gnu/fd" fd
+          chmod +x rg fd
+          mv rg fd ~/local/bin
           rm -r "ripgrep-${{ env.RIPGREP_VERSION }}-x86_64-unknown-linux-musl"
+          rm -r "fd-v${{ env.FD_VERSION }}-x86_64-unknown-linux-gnu"
 
-      - name: Check for tabs
+      - name: Whitestapace lints
         run: |
-          ! rg '\t' --type toml --type rust
-
-      - name: Check for trailing whitespace
-        run: |
+          echo "Checking trailing whitespaces"
           ! rg '\s+$' --type toml --type rust
+          echo "Checking tabs"
+          ! rg '\t' --type toml --type rust
+          echo "Checking anything except newline at end of file"
+          fd --type file --extension rs --extension toml --exec sh -c \
+            'test "$(tail -c1 {})" = "" || echo {}' \
+            | tee /dev/stderr \
+            | test "$(wc -l)" -eq 0
 
       - name: Spell Check with Typos
         uses: crate-ci/typos@master
