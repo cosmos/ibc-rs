@@ -175,12 +175,13 @@ mod tests {
 
     #[rstest]
     // try conversions for when the client is not frozen
-    #[case::valid_client(0, 0)]
+    #[case::valid_client(0, 0, false)]
     // try conversions for when the client is frozen
-    #[case::frozen_client(0, 1)]
+    #[case::frozen_client(0, 1, true)]
     fn tm_client_state_conversions_healthy(
         #[case] revision_number: u64,
         #[case] revision_height: u64,
+        #[case] is_frozen: bool,
     ) {
         let frozen_height = RawHeight {
             revision_number,
@@ -199,6 +200,13 @@ mod tests {
         );
         let tm_client_state_from_any = ClientStateType::try_from(any_from_tm_client_state);
         assert!(tm_client_state_from_any.is_ok());
+        assert_eq!(
+            Some(is_frozen),
+            tm_client_state_from_any
+                .as_ref()
+                .map(|x| x.is_frozen())
+                .ok()
+        );
         assert_eq!(
             tm_client_state_from_raw.expect("Never fails"),
             tm_client_state_from_any.expect("Never fails").into()
