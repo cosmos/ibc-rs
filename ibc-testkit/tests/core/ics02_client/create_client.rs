@@ -114,10 +114,8 @@ fn test_invalid_frozen_tm_client_creation() {
 
     let res = validate(&ctx, &router, msg_envelope.clone());
 
-    assert!(res.is_err());
-
-    match res.unwrap_err() {
-        ContextError::ClientError(ClientError::ClientFrozen { .. }) => {}
-        e => panic!("unexpected error: {}", e),
-    }
+    assert!(matches!(
+        res,
+        Err(ContextError::ClientError(ClientError::ClientFrozen { .. }))
+    ))
 }
