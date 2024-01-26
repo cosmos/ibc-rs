@@ -33,11 +33,11 @@ jobs:
 
       - name: Check for tabs
         run: |
-          ! rg '\t'
+          ! rg '\t' --type toml --type rust
 
       - name: Check for trailing whitespace
         run: |
-          ! rg '\s+$'
+          ! rg '\s+$' --type toml --type rust
 
       - name: Spell Check with Typos
         uses: crate-ci/typos@master
