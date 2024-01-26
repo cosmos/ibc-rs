@@ -5,7 +5,9 @@ use core::convert::TryFrom;
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 use ibc_core::primitives::prelude::*;
-use ibc_core::primitives::{serializers, Signer};
+#[cfg(feature = "serde")]
+use ibc_core::primitives::serializers;
+use ibc_core::primitives::Signer;
 use ibc_proto::ibc::applications::nft_transfer::v1::NonFungibleTokenPacketData as RawPacketData;
 
 use crate::class::{ClassData, ClassUri, PrefixedClassId};
@@ -15,7 +17,7 @@ use crate::token::{TokenData, TokenIds, TokenUri};
 
 /// Defines the structure of token transfers' packet bytes
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[cfg_attr(
     feature = "parity-scale-codec",

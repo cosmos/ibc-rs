@@ -90,6 +90,7 @@ borsh = [
     "dep:borsh",
     "ibc-client-tendermint/borsh",
     "ibc-core-client-types/borsh",
+    "ibc-core-client-context/borsh",
     "ibc-core-connection-types/borsh",
     "ibc-core-commitment-types/borsh",
     "ibc-core-host-types/borsh",

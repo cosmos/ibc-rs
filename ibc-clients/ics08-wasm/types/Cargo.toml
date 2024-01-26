@@ -36,6 +36,7 @@ default = ["std"]
 std = [
 	"ibc-core-client/std",
 	"ibc-core-host-types/std",
+	"ibc-primitives/std",
 	"ibc-proto/std",
 	"base64/std",
 	"serde/std"

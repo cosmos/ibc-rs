@@ -63,6 +63,7 @@ schema = [
     "ibc-core-client-types/schema",
     "ibc-core-host-types/schema",
     "ibc-core-handler-types/schema",
+    "ibc-primitives/schema",
     "serde",
     "std"
 ]

@@ -77,7 +77,8 @@ schema = [
 parity-scale-codec = [
     "dep:parity-scale-codec",
     "dep:scale-info",
-    "ibc-core-commitment-types/parity-scale-codec",
     "ibc-core-host-types/parity-scale-codec",
+    "ibc-core-commitment-types/parity-scale-codec",
     "ibc-primitives/parity-scale-codec",
+    "ibc-proto/parity-scale-codec",
 ]
